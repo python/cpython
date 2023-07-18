@@ -1319,7 +1319,7 @@ regen-limited-abi: all
 regen-all: regen-cases regen-opcode regen-opcode-targets regen-typeslots \
 	regen-token regen-ast regen-keyword regen-sre regen-frozen clinic \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
-	regen-test-levenshtein regen-global-objects regen-jit-stencils
+	regen-test-levenshtein regen-global-objects regen-jit
 	@echo
 	@echo "Note: make regen-stdlib-module-names, make regen-limited-abi"
 	@echo "and make regen-configure should be run manually"
@@ -2560,11 +2560,11 @@ Python/asm_trampoline.o: $(srcdir)/Python/asm_trampoline.S
 
 Python/jit.o: $(srcdir)/Python/jit_stencils.h
 
-Python/jit_stencils.h: regen-jit-stencils
+Python/jit_stencils.h: regen-jit
 
-.PHONY: regen-jit-stencils
-regen-jit-stencils: regen-cases
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/justin/build.py \
+.PHONY: regen-jit
+regen-jit: regen-cases
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/jit/build.py \
 		$(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/jit_stencils.h
 
 # Some make's put the object file in the current directory
@@ -2660,6 +2660,7 @@ clean-retain-profile: pycremoval
 	-rm -f Python/deepfreeze/*.[co]
 	-rm -f Python/frozen_modules/*.h
 	-rm -f Python/frozen_modules/MANIFEST
+	-rm -f Python/jit_stencils.h
 	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
 	-rm -f Include/pydtrace_probes.h
 	-rm -f profile-gen-stamp

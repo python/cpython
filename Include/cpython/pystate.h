@@ -28,14 +28,6 @@ typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 #define PyTrace_C_RETURN 6
 #define PyTrace_OPCODE 7
 
-// XXX
-// 1 << 4:
-// 1 << 5: 137.8% deferred, 81.7% failure, 81.9% too long, 15.9% other
-// 1 << 6: 102.0% deferred, 13.3% failure, 74.0% too long, 22.0% other
-// 1 << 7:  98.7% deferred, 21.1% failure, 63.8% too long, 28.9% other
-// 1 << 8:
-#define _PyJIT_MAX_RECORDING_LENGTH (1 << 6)
-
 // Internal structure: you should not use it directly, but use public functions
 // like PyThreadState_EnterTracing() and PyThreadState_LeaveTracing().
 typedef struct _PyCFrame {
@@ -52,12 +44,6 @@ typedef struct _PyCFrame {
     /* Pointer to the currently executing frame (it can be NULL) */
     struct _PyInterpreterFrame *current_frame;
     struct _PyCFrame *previous;
-    // JIT recording info:
-    _Py_CODEUNIT *jit_recording_end;
-    // XXX: Dynamically allocate this?
-    _Py_CODEUNIT *jit_recording[_PyJIT_MAX_RECORDING_LENGTH];
-    int jit_recording_size;
-    // XXX: Need to hold refs to code objects.
 } _PyCFrame;
 
 typedef struct _err_stackitem {

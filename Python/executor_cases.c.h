@@ -759,8 +759,8 @@
             // Can't use ERROR_IF here.
             if (err != 0) {
                 _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                     NAME_ERROR_MSG,
-                                     name);
+                                          NAME_ERROR_MSG,
+                                          name);
                 goto error;
             }
             break;
@@ -2537,9 +2537,9 @@
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
             assert(0 <= oparg);
-            assert((unsigned)oparg < Py_ARRAY_LENGTH(binary_ops));
-            assert(binary_ops[oparg]);
-            res = binary_ops[oparg](lhs, rhs);
+            assert((unsigned)oparg < Py_ARRAY_LENGTH(_PyEval_BinaryOps));
+            assert(_PyEval_BinaryOps[oparg]);
+            res = _PyEval_BinaryOps[oparg](lhs, rhs);
             Py_DECREF(lhs);
             Py_DECREF(rhs);
             if (res == NULL) goto pop_2_error;

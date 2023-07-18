@@ -699,8 +699,8 @@ uop_optimize(
         return trace_length;
     }
     OBJECT_STAT_INC(optimization_traces_created);
-    _PyJITFunction jitted = _PyJIT_CompileTrace(trace, trace_length);
-    if (jitted == NULL) {
+    _PyJITFunction execute = _PyJIT_CompileTrace(trace, trace_length);
+    if (execute == NULL) {
         if (PyErr_Occurred()) {
             return -1;
         }
@@ -710,7 +710,7 @@ uop_optimize(
     if (executor == NULL) {
         return -1;
     }
-    executor->base.execute = jitted;
+    executor->base.execute = execute;
     memcpy(executor->trace, trace, trace_length * sizeof(_PyUOpInstruction));
         if (trace_length < _Py_UOP_MAX_TRACE_LENGTH) {
             executor->trace[trace_length].opcode = 0;  // Sentinel

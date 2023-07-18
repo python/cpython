@@ -68,10 +68,7 @@
         lastopcode = op; \
     } while (0)
 #else
-#define INSTRUCTION_START(op)              \
-    do {                                   \
-        frame->prev_instr = next_instr++;  \
-    } while (0)
+#define INSTRUCTION_START(op) (frame->prev_instr = next_instr++)
 #endif
 
 #if USE_COMPUTED_GOTOS
@@ -345,48 +342,6 @@ do { \
         goto error; \
     } \
 } while (0);
-
-#define SET_LOCALS_FROM_FRAME()                          \
-    do {                                                 \
-        next_instr = frame->prev_instr + 1;              \
-        stack_pointer = _PyFrame_GetStackPointer(frame); \
-    } while (0);
-
-// GH-89279: Force inlining by using a macro.
-#if defined(_MSC_VER) && SIZEOF_INT == 4
-#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) (assert(sizeof((ATOMIC_VAL)->_value) == 4), *((volatile int*)&((ATOMIC_VAL)->_value)))
-#else
-#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) _Py_atomic_load_relaxed(ATOMIC_VAL)
-#endif
-
-static const binaryfunc binary_ops[] = {
-    [NB_ADD] = PyNumber_Add,
-    [NB_AND] = PyNumber_And,
-    [NB_FLOOR_DIVIDE] = PyNumber_FloorDivide,
-    [NB_LSHIFT] = PyNumber_Lshift,
-    [NB_MATRIX_MULTIPLY] = PyNumber_MatrixMultiply,
-    [NB_MULTIPLY] = PyNumber_Multiply,
-    [NB_REMAINDER] = PyNumber_Remainder,
-    [NB_OR] = PyNumber_Or,
-    [NB_POWER] = _PyNumber_PowerNoMod,
-    [NB_RSHIFT] = PyNumber_Rshift,
-    [NB_SUBTRACT] = PyNumber_Subtract,
-    [NB_TRUE_DIVIDE] = PyNumber_TrueDivide,
-    [NB_XOR] = PyNumber_Xor,
-    [NB_INPLACE_ADD] = PyNumber_InPlaceAdd,
-    [NB_INPLACE_AND] = PyNumber_InPlaceAnd,
-    [NB_INPLACE_FLOOR_DIVIDE] = PyNumber_InPlaceFloorDivide,
-    [NB_INPLACE_LSHIFT] = PyNumber_InPlaceLshift,
-    [NB_INPLACE_MATRIX_MULTIPLY] = PyNumber_InPlaceMatrixMultiply,
-    [NB_INPLACE_MULTIPLY] = PyNumber_InPlaceMultiply,
-    [NB_INPLACE_REMAINDER] = PyNumber_InPlaceRemainder,
-    [NB_INPLACE_OR] = PyNumber_InPlaceOr,
-    [NB_INPLACE_POWER] = _PyNumber_InPlacePowerNoMod,
-    [NB_INPLACE_RSHIFT] = PyNumber_InPlaceRshift,
-    [NB_INPLACE_SUBTRACT] = PyNumber_InPlaceSubtract,
-    [NB_INPLACE_TRUE_DIVIDE] = PyNumber_InPlaceTrueDivide,
-    [NB_INPLACE_XOR] = PyNumber_InPlaceXor,
-};
 
 typedef PyObject *(*convertion_func_ptr)(PyObject *);
 

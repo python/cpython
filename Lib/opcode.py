@@ -191,9 +191,6 @@ def_op('SET_FUNCTION_ATTRIBUTE', 177)    # Attribute
 # Optimizer hook
 def_op('ENTER_EXECUTOR', 230)
 
-# Optimizer hook
-def_op('ENTER_EXECUTOR', 230)
-
 # Instrumented instructions
 MIN_INSTRUMENTED_OPCODE = 237
 

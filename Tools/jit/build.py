@@ -1,4 +1,4 @@
-"""The Justin(time) template JIT for CPython 3.13, based on copy-and-patch."""
+"""A template JIT for CPython 3.13, based on copy-and-patch."""
 
 import asyncio
 import dataclasses
@@ -241,22 +241,22 @@ class ObjectParser:
         self._data = json.loads(output[start:end])
         for section in unwrap(self._data, "Section"):
             self._handle_section(section)
-        # if "_justin_entry" in self.body_symbols:
-        #     entry = self.body_symbols["_justin_entry"]
+        # if "_jit_entry" in self.body_symbols:
+        #     entry = self.body_symbols["_jit_entry"]
         # else:
-        #     entry = self.body_symbols["_justin_trampoline"]
+        #     entry = self.body_symbols["_jit_trampoline"]
         entry = 0  # XXX
         holes = []
         for newhole in handle_relocations(self.got_entries, self.body, self.relocations_todo):
             assert newhole.symbol not in self.dupes
             if newhole.symbol in self.body_symbols:
                 addend = newhole.addend + self.body_symbols[newhole.symbol] - entry
-                newhole = Hole(newhole.kind, "_justin_base", newhole.offset, addend)
+                newhole = Hole(newhole.kind, "_jit_base", newhole.offset, addend)
             holes.append(newhole)
         got = len(self.body)
         for i, (got_symbol, addend) in enumerate(self.got_entries):
             if got_symbol in self.body_symbols:
-                holes.append(Hole("PATCH_ABS_64", "_justin_base", got + 8 * i, self.body_symbols[got_symbol] + addend))
+                holes.append(Hole("PATCH_ABS_64", "_jit_base", got + 8 * i, self.body_symbols[got_symbol] + addend))
                 continue
             # XXX: PATCH_ABS_32 on 32-bit platforms?
             holes.append(Hole("PATCH_ABS_64", got_symbol, got + 8 * i, addend))
@@ -328,7 +328,7 @@ def handle_relocations(
                 while len(body) % 8:
                     body.append(0)
                 addend = len(body) + got_entries.index((symbol, addend)) * 8
-                yield Hole("PATCH_REL_21", "_justin_base", offset, addend)
+                yield Hole("PATCH_REL_21", "_jit_base", offset, addend)
             case {
                 "Length": 2 as length,
                 "Offset": int(offset),
@@ -356,7 +356,7 @@ def handle_relocations(
                 while len(body) % 8:
                     body.append(0)
                 addend = len(body) + got_entries.index((symbol, addend)) * 8
-                yield Hole("PATCH_ABS_12", "_justin_base", offset, addend)
+                yield Hole("PATCH_ABS_12", "_jit_base", offset, addend)
             case {
                 "Length": 2 as length,
                 "Offset": int(offset),
@@ -483,7 +483,7 @@ def handle_relocations(
                 while len(body) % 8:
                     body.append(0)
                 addend = len(body) + got_entries.index((symbol, addend)) * 8
-                yield Hole("PATCH_REL_21", "_justin_base", offset, addend)
+                yield Hole("PATCH_REL_21", "_jit_base", offset, addend)
             case {
                 "Addend": 0,
                 "Offset": int(offset),
@@ -522,7 +522,7 @@ def handle_relocations(
                 while len(body) % 8:
                     body.append(0)
                 addend = len(body) + got_entries.index((symbol, addend)) * 8
-                yield Hole("PATCH_ABS_12", "_justin_base", offset, addend)
+                yield Hole("PATCH_ABS_12", "_jit_base", offset, addend)
             case {
                 "Addend": int(addend),
                 "Offset": int(offset),
@@ -533,7 +533,7 @@ def handle_relocations(
                 where = slice(offset, offset + 4)
                 what = int.from_bytes(body[where], "little", signed=False)
                 assert ((what >> 5) & 0xFFFF) == 0, what
-                yield Hole("PATCH_ABS_16_A", "_justin_base", offset, addend)
+                yield Hole("PATCH_ABS_16_A", "_jit_base", offset, addend)
             case {
                 "Addend": int(addend),
                 "Offset": int(offset),
@@ -544,7 +544,7 @@ def handle_relocations(
                 where = slice(offset, offset + 4)
                 what = int.from_bytes(body[where], "little", signed=False)
                 assert ((what >> 5) & 0xFFFF) == 0, what
-                yield Hole("PATCH_ABS_16_B", "_justin_base", offset, addend)
+                yield Hole("PATCH_ABS_16_B", "_jit_base", offset, addend)
             case {
                 "Addend": int(addend),
                 "Offset": int(offset),
@@ -555,7 +555,7 @@ def handle_relocations(
                 where = slice(offset, offset + 4)
                 what = int.from_bytes(body[where], "little", signed=False)
                 assert ((what >> 5) & 0xFFFF) == 0, what
-                yield Hole("PATCH_ABS_16_C", "_justin_base", offset, addend)
+                yield Hole("PATCH_ABS_16_C", "_jit_base", offset, addend)
             case {
                 "Addend": int(addend),
                 "Offset": int(offset),
@@ -566,7 +566,7 @@ def handle_relocations(
                 where = slice(offset, offset + 4)
                 what = int.from_bytes(body[where], "little", signed=False)
                 assert ((what >> 5) & 0xFFFF) == 0, what
-                yield Hole("PATCH_ABS_16_D", "_justin_base", offset, addend)
+                yield Hole("PATCH_ABS_16_D", "_jit_base", offset, addend)
             # x86_64-unknown-linux-gnu:
             case {
                 "Addend": int(addend),
@@ -848,8 +848,8 @@ class Compiler:
     def _use_ghccc(self, ll: pathlib.Path) -> None:
         if self._ghccc:
             ir = ll.read_text()
-            ir = ir.replace("i32 @_justin_continue", "ghccc i32 @_justin_continue")
-            ir = ir.replace("i32 @_justin_entry", "ghccc i32 @_justin_entry")
+            ir = ir.replace("i32 @_jit_continue", "ghccc i32 @_jit_continue")
+            ir = ir.replace("i32 @_jit_entry", "ghccc i32 @_jit_entry")
             ll.write_text(ir)
 
     def _use_tos_caching(self, c: pathlib.Path) -> None:
@@ -863,7 +863,7 @@ class Compiler:
         c.write_text(sc)
 
     async def _compile(self, opname, body) -> None:
-        defines = [f"-D_JUSTIN_OPCODE={opname}"]
+        defines = [f"-D_JIT_OPCODE={opname}"]
         with tempfile.TemporaryDirectory() as tempdir:
             c = pathlib.Path(tempdir, f"{opname}.c")
             ll = pathlib.Path(tempdir, f"{opname}.ll")
@@ -937,8 +937,8 @@ class Compiler:
             loads = []
             for hole in stencil.holes:
                 assert hole.kind in kinds, hole.kind
-                if hole.symbol.startswith("_justin_"):
-                    value = f"HOLE_{hole.symbol.removeprefix('_justin_')}"
+                if hole.symbol.startswith("_jit_"):
+                    value = f"HOLE_{hole.symbol.removeprefix('_jit_')}"
                     assert value in values, value
                     holes.append(f"    {{.kind = {hole.kind}, .offset = {hole.offset:4}, .addend = {hole.addend % (1 << 64):4}, .value = {value}}},")
                 else:
@@ -980,7 +980,7 @@ class Compiler:
                 lines.append(f"    INIT_HOLE({name}), \\")
         lines.append(f"}}")
         header = []
-        header.append(f"// Don't be scared... this entire file is generated by Justin!")
+        header.append(f"// Don't be scared... this entire file is generated by {__file__}!")
         header.append(f"")
         header.append(f"typedef enum {{")
         for kind in sorted(kinds):

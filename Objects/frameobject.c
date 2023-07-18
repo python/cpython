@@ -324,7 +324,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 case POP_JUMP_IF_TRUE:
                 {
                     int64_t target_stack;
-                    j = next_i + oparg;
+                    int j = next_i + oparg;
                     assert(j < len);
                     next_stack = pop_value(next_stack);
                     target_stack = next_stack;
@@ -334,14 +334,14 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     break;
                 }
                 case SEND:
-                    j = next_i + oparg;
+                    j = oparg + i + INLINE_CACHE_ENTRIES_SEND + 1;
                     assert(j < len);
                     assert(stacks[j] == UNINITIALIZED || stacks[j] == next_stack);
                     stacks[j] = next_stack;
                     stacks[next_i] = next_stack;
                     break;
                 case JUMP_FORWARD:
-                    j = next_i + oparg;
+                    j = oparg + i + 1;
                     assert(j < len);
                     assert(stacks[j] == UNINITIALIZED || stacks[j] == next_stack);
                     stacks[j] = next_stack;
@@ -366,7 +366,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 {
                     int64_t target_stack = push_value(next_stack, Object);
                     stacks[next_i] = target_stack;
-                    j = next_i + oparg;
+                    j = oparg + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + i;
                     assert(j < len);
                     assert(stacks[j] == UNINITIALIZED || stacks[j] == target_stack);
                     stacks[j] = target_stack;
@@ -403,7 +403,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     break;
                 case LOAD_GLOBAL:
                 {
-                    j = oparg;
+                    int j = oparg;
                     if (j & 1) {
                         next_stack = push_value(next_stack, Null);
                     }
@@ -414,7 +414,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 case LOAD_ATTR:
                 {
                     assert(top_of_stack(next_stack) == Object);
-                    j = oparg;
+                    int j = oparg;
                     if (j & 1) {
                         next_stack = pop_value(next_stack);
                         next_stack = push_value(next_stack, Null);
@@ -426,7 +426,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 case CALL:
                 {
                     int args = oparg;
-                    for (j = 0; j < args+2; j++) {
+                    for (int j = 0; j < args+2; j++) {
                         next_stack = pop_value(next_stack);
                     }
                     next_stack = push_value(next_stack, Object);

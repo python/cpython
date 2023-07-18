@@ -96,6 +96,13 @@
     } while (0)
 #endif
 
+// GH-89279: Similar to above, force inlining by using a macro.
+#if defined(_MSC_VER) && SIZEOF_INT == 4
+#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) (assert(sizeof((ATOMIC_VAL)->_value) == 4), *((volatile int*)&((ATOMIC_VAL)->_value)))
+#else
+#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) _Py_atomic_load_relaxed(ATOMIC_VAL)
+#endif
+
 
 #ifdef LLTRACE
 static void
@@ -201,14 +208,14 @@ static PyObject * import_name(PyThreadState *, _PyInterpreterFrame *,
 static PyObject * import_from(PyThreadState *, PyObject *, PyObject *);
 static int check_args_iterable(PyThreadState *, PyObject *func, PyObject *vararg);
 static int get_exception_handler(PyCodeObject *, int, int*, int*, int*);
-_PyInterpreterFrame *
+static _PyInterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
                         PyObject *locals, PyObject* const* args,
                         size_t argcount, PyObject *kwnames);
 static  _PyInterpreterFrame *
 _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
     PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs);
-void
+static void
 _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
 
 #define UNBOUNDLOCAL_ERROR_MSG \
@@ -271,6 +278,36 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
     }
     return 0;
 }
+
+
+const binaryfunc _PyEval_BinaryOps[] = {
+    [NB_ADD] = PyNumber_Add,
+    [NB_AND] = PyNumber_And,
+    [NB_FLOOR_DIVIDE] = PyNumber_FloorDivide,
+    [NB_LSHIFT] = PyNumber_Lshift,
+    [NB_MATRIX_MULTIPLY] = PyNumber_MatrixMultiply,
+    [NB_MULTIPLY] = PyNumber_Multiply,
+    [NB_REMAINDER] = PyNumber_Remainder,
+    [NB_OR] = PyNumber_Or,
+    [NB_POWER] = _PyNumber_PowerNoMod,
+    [NB_RSHIFT] = PyNumber_Rshift,
+    [NB_SUBTRACT] = PyNumber_Subtract,
+    [NB_TRUE_DIVIDE] = PyNumber_TrueDivide,
+    [NB_XOR] = PyNumber_Xor,
+    [NB_INPLACE_ADD] = PyNumber_InPlaceAdd,
+    [NB_INPLACE_AND] = PyNumber_InPlaceAnd,
+    [NB_INPLACE_FLOOR_DIVIDE] = PyNumber_InPlaceFloorDivide,
+    [NB_INPLACE_LSHIFT] = PyNumber_InPlaceLshift,
+    [NB_INPLACE_MATRIX_MULTIPLY] = PyNumber_InPlaceMatrixMultiply,
+    [NB_INPLACE_MULTIPLY] = PyNumber_InPlaceMultiply,
+    [NB_INPLACE_REMAINDER] = PyNumber_InPlaceRemainder,
+    [NB_INPLACE_OR] = PyNumber_InPlaceOr,
+    [NB_INPLACE_POWER] = _PyNumber_InPlacePowerNoMod,
+    [NB_INPLACE_RSHIFT] = PyNumber_InPlaceRshift,
+    [NB_INPLACE_SUBTRACT] = PyNumber_InPlaceSubtract,
+    [NB_INPLACE_TRUE_DIVIDE] = PyNumber_InPlaceTrueDivide,
+    [NB_INPLACE_XOR] = PyNumber_InPlaceXor,
+};
 
 
 // PEP 634: Structural Pattern Matching
@@ -564,6 +601,16 @@ int _Py_CheckRecursiveCallPy(
     return 0;
 }
 
+static inline int _Py_EnterRecursivePy(PyThreadState *tstate) {
+    return (tstate->py_recursion_remaining-- <= 0) &&
+        _Py_CheckRecursiveCallPy(tstate);
+}
+
+
+static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
+    tstate->py_recursion_remaining++;
+}
+
 static const _Py_CODEUNIT _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
     /* Put a NOP at the start, so that the IP points into
     * the code, rather than before it */
@@ -620,7 +667,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     cframe.previous = prev_cframe;
     tstate->cframe = &cframe;
 
-    cframe.jit_recording_end = NULL;
 #ifdef Py_DEBUG
     /* Set these to invalid but identifiable values for debugging. */
     entry_frame.f_funcobj = (PyObject*)0xaaa0;
@@ -663,6 +709,12 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 
     _Py_CODEUNIT *next_instr;
     PyObject **stack_pointer;
+    
+/* Sets the above local variables from the frame */
+#define SET_LOCALS_FROM_FRAME() \
+    /* Jump back to the last instruction executed... */ \
+    next_instr = frame->prev_instr + 1; \
+    stack_pointer = _PyFrame_GetStackPointer(frame);
 
 start_frame:
     if (_Py_EnterRecursivePy(tstate)) {
@@ -1426,7 +1478,7 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     frame->previous = NULL;
 }
 
-void
+static void
 _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
     if (frame->owner == FRAME_OWNED_BY_THREAD) {
@@ -1438,7 +1490,7 @@ _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
 }
 
 /* Consumes references to func, locals and all the args */
-_PyInterpreterFrame *
+static _PyInterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
                         PyObject *locals, PyObject* const* args,
                         size_t argcount, PyObject *kwnames)

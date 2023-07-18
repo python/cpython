@@ -8,7 +8,7 @@
         }
 
         TARGET(RESUME) {
-            // assert(tstate->cframe == &cframe);
+            assert(tstate->cframe == &cframe);
             assert(frame == cframe.current_frame);
             /* Possibly combine this with eval breaker */
             if (_PyFrame_GetCode(frame)->_co_instrumentation_version != tstate->interp->monitoring_version) {
@@ -909,7 +909,7 @@
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _Py_LeaveRecursiveCallPy(tstate);
-            // assert(frame != &entry_frame);
+            assert(frame != &entry_frame);
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
             frame = cframe.current_frame = dying->previous;
@@ -945,7 +945,7 @@
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _Py_LeaveRecursiveCallPy(tstate);
-            // assert(frame != &entry_frame);
+            assert(frame != &entry_frame);
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
             frame = cframe.current_frame = dying->previous;
@@ -1196,7 +1196,7 @@
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
             assert(oparg >= 0); /* make the generator identify this as HAS_ARG */
-            // assert(frame != &entry_frame);
+            assert(frame != &entry_frame);
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
             gen->gi_frame_state = FRAME_SUSPENDED;
             _PyFrame_SetStackPointer(frame, stack_pointer - 1);
@@ -1337,8 +1337,8 @@
             // Can't use ERROR_IF here.
             if (err != 0) {
                 _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                     NAME_ERROR_MSG,
-                                     name);
+                                          NAME_ERROR_MSG,
+                                          name);
                 goto error;
             }
             DISPATCH();
@@ -4364,7 +4364,7 @@
             gen->gi_frame_state = FRAME_CREATED;
             gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
             _Py_LeaveRecursiveCallPy(tstate);
-            // assert(frame != &entry_frame);
+            assert(frame != &entry_frame);
             _PyInterpreterFrame *prev = frame->previous;
             _PyThreadState_PopFrame(tstate, frame);
             frame = cframe.current_frame = prev;
@@ -4458,9 +4458,9 @@
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
             assert(0 <= oparg);
-            assert((unsigned)oparg < Py_ARRAY_LENGTH(binary_ops));
-            assert(binary_ops[oparg]);
-            res = binary_ops[oparg](lhs, rhs);
+            assert((unsigned)oparg < Py_ARRAY_LENGTH(_PyEval_BinaryOps));
+            assert(_PyEval_BinaryOps[oparg]);
+            res = _PyEval_BinaryOps[oparg](lhs, rhs);
             Py_DECREF(lhs);
             Py_DECREF(rhs);
             if (res == NULL) goto pop_2_error;

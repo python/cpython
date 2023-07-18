@@ -102,7 +102,7 @@
     <!-- venv[w]launcher.exe -->
     <Projects2 Include="venvlauncher.vcxproj;venvwlauncher.vcxproj" />
     <!-- JIT -->
-    <JITProjects Include="justin.vcxproj"/>
+    <JITProjects Include="jit.vcxproj"/>
   </ItemGroup>
 
   <Target Name="Build">

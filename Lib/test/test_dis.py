@@ -1680,7 +1680,6 @@ expected_opinfo_inner = [
   Instruction(opname='RETURN_CONST', opcode=121, arg=0, argval=None, argrepr='None', offset=34, start_offset=34, starts_line=None, is_jump_target=False, positions=None),
 ]
 
-
 expected_opinfo_jumpy = [
   Instruction(opname='RESUME', opcode=151, arg=0, argval=0, argrepr='', offset=0, start_offset=0, starts_line=1, is_jump_target=False, positions=None),
   Instruction(opname='LOAD_GLOBAL', opcode=116, arg=1, argval='range', argrepr='NULL + range', offset=2, start_offset=2, starts_line=3, is_jump_target=False, positions=None),

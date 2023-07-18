@@ -17,7 +17,7 @@ this type and there is exactly one in existence.
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
-#include "pycore_sliceobject.h"      // _PyIndex_Check()
+#include "pycore_sliceobject.h"
 #include "structmember.h"         // PyMemberDef
 
 static PyObject *

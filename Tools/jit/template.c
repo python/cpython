@@ -1,21 +1,17 @@
 #include "Python.h"
 
-#include "pycore_abstract.h"
 #include "pycore_call.h"
 #include "pycore_ceval.h"
 #include "pycore_dict.h"
-#include "pycore_emscripten_signal.h"
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"
 #include "pycore_object.h"
-#include "pycore_opcode.h"
 #include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"
 #include "pycore_pyerrors.h"
 #include "pycore_range.h"
 #include "pycore_sliceobject.h"
 #include "pycore_uops.h"
-#include "pycore_jit.h"
 
 #include "Python/ceval_macros.h"
 
@@ -30,51 +26,51 @@
 #define ASSERT_KWNAMES_IS_NULL() (void)0
 
 // Stuff that will be patched at "JIT time":
-extern _PyInterpreterFrame *_justin_continue(_PyExecutorObject *executor,
-                                             _PyInterpreterFrame *frame,
-                                             PyObject **stack_pointer,
-                                             PyThreadState *tstate, int pc
-                                             , PyObject *_tos1
-                                             , PyObject *_tos2
-                                             , PyObject *_tos3
-                                             , PyObject *_tos4
-                                             );
+extern _PyInterpreterFrame *_jit_continue(_PyExecutorObject *executor,
+                                          _PyInterpreterFrame *frame,
+                                          PyObject **stack_pointer,
+                                          PyThreadState *tstate, int pc
+                                          , PyObject *_tos1
+                                          , PyObject *_tos2
+                                          , PyObject *_tos3
+                                          , PyObject *_tos4
+                                          );
 // The address of an extern can't be 0:
-extern void _justin_oparg_plus_one;
-extern void _justin_operand_plus_one;
-extern _Py_CODEUNIT _justin_pc_plus_one;
+extern void _jit_oparg_plus_one;
+extern void _jit_operand_plus_one;
+extern _Py_CODEUNIT _jit_pc_plus_one;
 
 // XXX
 #define ip_offset ((_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive)
 
 _PyInterpreterFrame *
-_justin_entry(_PyExecutorObject *executor, _PyInterpreterFrame *frame,
-              PyObject **stack_pointer, PyThreadState *tstate, int pc
-              , PyObject *_tos1
-              , PyObject *_tos2
-              , PyObject *_tos3
-              , PyObject *_tos4
-              )
+_jit_entry(_PyExecutorObject *executor, _PyInterpreterFrame *frame,
+           PyObject **stack_pointer, PyThreadState *tstate, int pc
+           , PyObject *_tos1
+           , PyObject *_tos2
+           , PyObject *_tos3
+           , PyObject *_tos4
+           )
 {
     __builtin_assume(_tos1 == stack_pointer[/* DON'T REPLACE ME */ -1]);
     __builtin_assume(_tos2 == stack_pointer[/* DON'T REPLACE ME */ -2]);
     __builtin_assume(_tos3 == stack_pointer[/* DON'T REPLACE ME */ -3]);
     __builtin_assume(_tos4 == stack_pointer[/* DON'T REPLACE ME */ -4]);
-    if (pc != (intptr_t)&_justin_pc_plus_one - 1) {
+    if (pc != (intptr_t)&_jit_pc_plus_one - 1) {
         return _PyUopExecute(executor, frame, stack_pointer, pc);
     }
     // Locals that the instruction implementations expect to exist:
     _PyUOpExecutorObject *self = (_PyUOpExecutorObject *)executor;
-    uint32_t opcode = _JUSTIN_OPCODE;
-    int32_t oparg = (uintptr_t)&_justin_oparg_plus_one - 1;
-    uint64_t operand = (uintptr_t)&_justin_operand_plus_one - 1;
+    uint32_t opcode = _JIT_OPCODE;
+    int32_t oparg = (uintptr_t)&_jit_oparg_plus_one - 1;
+    uint64_t operand = (uintptr_t)&_jit_operand_plus_one - 1;
     assert(self->trace[pc].opcode == opcode);
     assert(self->trace[pc].oparg == oparg);
     assert(self->trace[pc].operand == operand);
     pc++;
     switch (opcode) {
         // Now, the actual instruction definitions (only one will be used):
-#include "Python/executor_cases.c.h" 
+#include "Python/executor_cases.c.h"
         default:
             Py_UNREACHABLE();
     }
@@ -84,12 +80,12 @@ _justin_entry(_PyExecutorObject *executor, _PyInterpreterFrame *frame,
     _tos3 = stack_pointer[/* DON'T REPLACE ME */ -3];
     _tos4 = stack_pointer[/* DON'T REPLACE ME */ -4];
     __attribute__((musttail))
-    return _justin_continue(executor, frame, stack_pointer, tstate, pc
-                            , _tos1
-                            , _tos2
-                            , _tos3
-                            , _tos4
-                            );
+    return _jit_continue(executor, frame, stack_pointer, tstate, pc
+                         , _tos1
+                         , _tos2
+                         , _tos3
+                         , _tos4
+                         );
     // Labels that the instruction implementations expect to exist:
 unbound_local_error:
     _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
