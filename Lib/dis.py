@@ -4,6 +4,8 @@ import sys
 import types
 import collections
 import io
+import _opcode
+from _opcode import stack_effect
 
 from opcode import *
 from opcode import (
@@ -17,13 +19,27 @@ from opcode import (
     _specialized_instructions,
 )
 
-__all__ = ["code_info", "dis", "disassemble", "distb", "disco",
+__all__ = ["hasarg", "hasconst", "hasname", "hasjump", "hasjrel",
+           "hasjabs", "hasfree", "haslocal", "hasexc", "hascompare",
+           "code_info", "dis", "disassemble", "distb", "disco",
            "findlinestarts", "findlabels", "show_code",
            "get_instructions", "Instruction", "Bytecode"] + _opcodes_all
 del _opcodes_all
 
 _have_code = (types.MethodType, types.FunctionType, types.CodeType,
               classmethod, staticmethod, type)
+
+# These lists are documented as part of the dis module's API
+hasarg = [op for op in opmap.values() if _opcode.has_arg(op)]
+hasconst = [op for op in opmap.values() if _opcode.has_const(op)]
+hasname = [op for op in opmap.values() if _opcode.has_name(op)]
+hasjump = [op for op in opmap.values() if _opcode.has_jump(op)]
+hasjrel = hasjump  # for backward compatibility
+hasjabs = []
+hasfree = [op for op in opmap.values() if _opcode.has_free(op)]
+haslocal = [op for op in opmap.values() if _opcode.has_local(op)]
+hasexc = [op for op in opmap.values() if _opcode.has_exc(op)]
+hascompare = [opmap["COMPARE_OP"]]
 
 CONVERT_VALUE = opmap['CONVERT_VALUE']
 
