@@ -4,6 +4,8 @@ opcode module - potentially shared between dis and other modules which
 operate on bytecodes (e.g. peephole optimizers).
 """
 
+
+# Note that __all__ is further extended below
 __all__ = ["cmp_op", "opname", "opmap", "stack_effect", "hascompare",
            "HAVE_ARGUMENT", "EXTENDED_ARG"]
 
@@ -25,8 +27,8 @@ def is_pseudo(op):
 
 opmap = {}
 
-## pseudo opcodes (used in the compiler) mapped to the values
-## they can become in the actual code.
+# pseudo opcodes (used in the compiler) mapped to the values
+# they can become in the actual code.
 _pseudo_ops = {}
 
 def def_op(name, op):
@@ -241,6 +243,7 @@ for op, i in opmap.items():
 
 # The build uses older versions of Python which do not have _opcode.has_* functions
 if sys.version_info[:2] >= (3, 13):
+    # These lists are documented as part of the dis module's API
     hasarg = [op for op in opmap.values() if _opcode.has_arg(op)]
     hasconst = [op for op in opmap.values() if _opcode.has_const(op)]
     hasname = [op for op in opmap.values() if _opcode.has_name(op)]
