@@ -2,7 +2,6 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
-#include "pycore_modsupport.h"  // _PyModule_AddNew()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_runtime.h"       // _Py_ID()
@@ -1791,7 +1790,7 @@ init_timezone(PyObject *m)
         return -1;
     }
 #endif // MS_WINDOWS
-    if (_PyModule_AddNew(m, "tzname", Py_BuildValue("(NN)", otz0, otz1)) < 0) {
+    if (PyModule_Add(m, "tzname", Py_BuildValue("(NN)", otz0, otz1)) < 0) {
         return -1;
     }
 #else // !HAVE_DECL_TZNAME
@@ -1836,7 +1835,7 @@ init_timezone(PyObject *m)
         PyModule_AddIntConstant(m, "daylight", janzone != julyzone);
         tzname_obj = Py_BuildValue("(zz)", janname, julyname);
     }
-    if (_PyModule_AddNew(m, "tzname", tzname_obj) < 0) {
+    if (PyModule_Add(m, "tzname", tzname_obj) < 0) {
         return -1;
     }
 #endif // !HAVE_DECL_TZNAME

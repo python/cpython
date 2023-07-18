@@ -17,6 +17,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_opcode.h"        // EXTRA_CASES
+#include "pycore_opcode_metadata.h"  // uop names
 #include "pycore_opcode_utils.h"  // MAKE_FUNCTION_*
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -55,13 +56,14 @@
 static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
 static PyObject *container, *start, *stop, *v, *lhs, *rhs, *res2;
 static PyObject *list, *tuple, *dict, *owner, *set, *str, *tup, *map, *keys;
-static PyObject *exit_func, *lasti, *val, *retval, *obj, *iter;
+static PyObject *exit_func, *lasti, *val, *retval, *obj, *iter, *exhausted;
 static PyObject *aiter, *awaitable, *iterable, *w, *exc_value, *bc, *locals;
 static PyObject *orig, *excs, *update, *b, *fromlist, *level, *from;
 static PyObject **pieces, **values;
 static size_t jump;
 // Dummy variables for cache effects
 static uint16_t invert, counter, index, hint;
+#define unused 0  // Used in a macro def, can't be static
 static uint32_t type_version;
 
 static PyObject *
@@ -282,8 +284,7 @@ dummy_func(
             res = Py_IsFalse(value) ? Py_True : Py_False;
         }
 
-        family(to_bool, INLINE_CACHE_ENTRIES_TO_BOOL) = {
-            TO_BOOL,
+        family(TO_BOOL, INLINE_CACHE_ENTRIES_TO_BOOL) = {
             TO_BOOL_ALWAYS_TRUE,
             TO_BOOL_BOOL,
             TO_BOOL_INT,
@@ -370,8 +371,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        family(binary_op, INLINE_CACHE_ENTRIES_BINARY_OP) = {
-            BINARY_OP,
+        family(BINARY_OP, INLINE_CACHE_ENTRIES_BINARY_OP) = {
             BINARY_OP_MULTIPLY_INT,
             BINARY_OP_ADD_INT,
             BINARY_OP_SUBTRACT_INT,
@@ -505,8 +505,7 @@ dummy_func(
         macro(BINARY_OP_INPLACE_ADD_UNICODE) =
             _GUARD_BOTH_UNICODE + _BINARY_OP_INPLACE_ADD_UNICODE;
 
-        family(binary_subscr, INLINE_CACHE_ENTRIES_BINARY_SUBSCR) = {
-            BINARY_SUBSCR,
+        family(BINARY_SUBSCR, INLINE_CACHE_ENTRIES_BINARY_SUBSCR) = {
             BINARY_SUBSCR_DICT,
             BINARY_SUBSCR_GETITEM,
             BINARY_SUBSCR_LIST_INT,
@@ -641,24 +640,21 @@ dummy_func(
             ERROR_IF(err, error);
         }
 
-        family(store_subscr, INLINE_CACHE_ENTRIES_STORE_SUBSCR) = {
-            STORE_SUBSCR,
+        family(STORE_SUBSCR, INLINE_CACHE_ENTRIES_STORE_SUBSCR) = {
             STORE_SUBSCR_DICT,
             STORE_SUBSCR_LIST_INT,
         };
 
-        inst(STORE_SUBSCR, (counter/1, v, container, sub -- )) {
+        inst(STORE_SUBSCR, (unused/1, v, container, sub -- )) {
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+            _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 next_instr--;
                 _Py_Specialize_StoreSubscr(container, sub, next_instr);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(STORE_SUBSCR, deferred);
-            _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            #else
-            (void)counter;  // Unused.
             #endif  /* ENABLE_SPECIALIZATION */
             /* container[sub] = v */
             int err = PyObject_SetItem(container, sub, v);
@@ -919,8 +915,7 @@ dummy_func(
             ERROR_IF(iter == NULL, error);
         }
 
-        family(send, INLINE_CACHE_ENTRIES_SEND) = {
-            SEND,
+        family(SEND, INLINE_CACHE_ENTRIES_SEND) = {
             SEND_GEN,
         };
 
@@ -1132,8 +1127,7 @@ dummy_func(
             }
         }
 
-        family(unpack_sequence, INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE) = {
-            UNPACK_SEQUENCE,
+        family(UNPACK_SEQUENCE, INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE) = {
             UNPACK_SEQUENCE_TWO_TUPLE,
             UNPACK_SEQUENCE_TUPLE,
             UNPACK_SEQUENCE_LIST,
@@ -1196,26 +1190,23 @@ dummy_func(
             ERROR_IF(res == 0, error);
         }
 
-        family(store_attr, INLINE_CACHE_ENTRIES_STORE_ATTR) = {
-            STORE_ATTR,
+        family(STORE_ATTR, INLINE_CACHE_ENTRIES_STORE_ATTR) = {
             STORE_ATTR_INSTANCE_VALUE,
             STORE_ATTR_SLOT,
             STORE_ATTR_WITH_HINT,
         };
 
-        inst(STORE_ATTR, (counter/1, unused/3, v, owner --)) {
+        inst(STORE_ATTR, (unused/1, unused/3, v, owner --)) {
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
                 next_instr--;
                 _Py_Specialize_StoreAttr(owner, next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(STORE_ATTR, deferred);
-            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            #else
-            (void)counter;  // Unused.
             #endif  /* ENABLE_SPECIALIZATION */
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err = PyObject_SetAttr(owner, name, v);
@@ -1296,8 +1287,7 @@ dummy_func(
 
         macro(LOAD_FROM_DICT_OR_GLOBALS) = _LOAD_FROM_DICT_OR_GLOBALS;
 
-        family(load_global, INLINE_CACHE_ENTRIES_LOAD_GLOBAL) = {
-            LOAD_GLOBAL,
+        family(LOAD_GLOBAL, INLINE_CACHE_ENTRIES_LOAD_GLOBAL) = {
             LOAD_GLOBAL_MODULE,
             LOAD_GLOBAL_BUILTIN,
         };
@@ -1645,8 +1635,7 @@ dummy_func(
             GO_TO_INSTRUCTION(LOAD_SUPER_ATTR);
         }
 
-        family(load_super_attr, INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR) = {
-            LOAD_SUPER_ATTR,
+        family(LOAD_SUPER_ATTR, INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR) = {
             LOAD_SUPER_ATTR_ATTR,
             LOAD_SUPER_ATTR_METHOD,
         };
@@ -1748,8 +1737,7 @@ dummy_func(
             }
         }
 
-        family(load_attr, INLINE_CACHE_ENTRIES_LOAD_ATTR) = {
-            LOAD_ATTR,
+        family(LOAD_ATTR, INLINE_CACHE_ENTRIES_LOAD_ATTR) = {
             LOAD_ATTR_INSTANCE_VALUE,
             LOAD_ATTR_MODULE,
             LOAD_ATTR_WITH_HINT,
@@ -1816,14 +1804,21 @@ dummy_func(
             LOAD_ATTR,
         };
 
-        inst(LOAD_ATTR_INSTANCE_VALUE, (unused/1, type_version/2, index/1, unused/5, owner -- res2 if (oparg & 1), res)) {
+        op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
             PyTypeObject *tp = Py_TYPE(owner);
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
-            assert(tp->tp_dictoffset < 0);
-            assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+        }
+
+        op(_CHECK_MANAGED_OBJECT_HAS_VALUES, (owner -- owner)) {
+            assert(Py_TYPE(owner)->tp_dictoffset < 0);
+            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             DEOPT_IF(!_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
+        }
+
+        op(_LOAD_ATTR_INSTANCE_VALUE, (index/1, unused/5, owner -- res2 if (oparg & 1), res)) {
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             res = _PyDictOrValues_GetValues(dorv)->values[index];
             DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
@@ -1831,6 +1826,12 @@ dummy_func(
             res2 = NULL;
             DECREF_INPUTS();
         }
+
+        macro(LOAD_ATTR_INSTANCE_VALUE) =
+            _SKIP_CACHE + // Skip over the counter
+            _GUARD_TYPE_VERSION +
+            _CHECK_MANAGED_OBJECT_HAS_VALUES +
+            _LOAD_ATTR_INSTANCE_VALUE;
 
         inst(LOAD_ATTR_MODULE, (unused/1, type_version/2, index/1, unused/5, owner -- res2 if (oparg & 1), res)) {
             DEOPT_IF(!PyModule_CheckExact(owner), LOAD_ATTR);
@@ -2033,8 +2034,7 @@ dummy_func(
             Py_DECREF(owner);
         }
 
-        family(compare_op, INLINE_CACHE_ENTRIES_COMPARE_OP) = {
-            COMPARE_OP,
+        family(COMPARE_OP, INLINE_CACHE_ENTRIES_COMPARE_OP) = {
             COMPARE_OP_FLOAT,
             COMPARE_OP_INT,
             COMPARE_OP_STR,
@@ -2335,8 +2335,7 @@ dummy_func(
         // This is optimized by skipping that instruction and combining
         // its effect (popping 'iter' instead of pushing 'next'.)
 
-        family(for_iter, INLINE_CACHE_ENTRIES_FOR_ITER) = {
-            FOR_ITER,
+        family(FOR_ITER, INLINE_CACHE_ENTRIES_FOR_ITER) = {
             FOR_ITER_LIST,
             FOR_ITER_TUPLE,
             FOR_ITER_RANGE,
@@ -2405,51 +2404,117 @@ dummy_func(
             INSTRUMENTED_JUMP(here, target, PY_MONITORING_EVENT_BRANCH);
         }
 
-        inst(FOR_ITER_LIST, (unused/1, iter -- iter, next)) {
+        op(_ITER_CHECK_LIST, (iter -- iter)) {
             DEOPT_IF(Py_TYPE(iter) != &PyListIter_Type, FOR_ITER);
-            _PyListIterObject *it = (_PyListIterObject *)iter;
-            STAT_INC(FOR_ITER, hit);
-            PyListObject *seq = it->it_seq;
-            if (seq) {
-                if (it->it_index < PyList_GET_SIZE(seq)) {
-                    next = Py_NewRef(PyList_GET_ITEM(seq, it->it_index++));
-                    goto end_for_iter_list;  // End of this instruction
-                }
-                it->it_seq = NULL;
-                Py_DECREF(seq);
-            }
-            Py_DECREF(iter);
-            STACK_SHRINK(1);
-            SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
-            /* Jump forward oparg, then skip following END_FOR instruction */
-            JUMPBY(oparg + 1);
-            DISPATCH();
-        end_for_iter_list:
-            // Common case: no jump, leave it to the code generator
         }
 
-        inst(FOR_ITER_TUPLE, (unused/1, iter -- iter, next)) {
+        op(_ITER_JUMP_LIST, (iter -- iter)) {
+            _PyListIterObject *it = (_PyListIterObject *)iter;
+            assert(Py_TYPE(iter) == &PyListIter_Type);
+            STAT_INC(FOR_ITER, hit);
+            PyListObject *seq = it->it_seq;
+            if (seq == NULL || it->it_index >= PyList_GET_SIZE(seq)) {
+                if (seq != NULL) {
+                    it->it_seq = NULL;
+                    Py_DECREF(seq);
+                }
+                Py_DECREF(iter);
+                STACK_SHRINK(1);
+                SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
+                /* Jump forward oparg, then skip following END_FOR instruction */
+                JUMPBY(oparg + 1);
+                DISPATCH();
+            }
+        }
+
+        // Only used by Tier 2
+        op(_IS_ITER_EXHAUSTED_LIST, (iter -- iter, exhausted)) {
+            _PyListIterObject *it = (_PyListIterObject *)iter;
+            assert(Py_TYPE(iter) == &PyListIter_Type);
+            PyListObject *seq = it->it_seq;
+            if (seq == NULL) {
+                exhausted = Py_True;
+            }
+            else if (it->it_index >= PyList_GET_SIZE(seq)) {
+                Py_DECREF(seq);
+                it->it_seq = NULL;
+                exhausted = Py_True;
+            }
+            else {
+                exhausted = Py_False;
+            }
+        }
+
+        op(_ITER_NEXT_LIST, (iter -- iter, next)) {
+            _PyListIterObject *it = (_PyListIterObject *)iter;
+            assert(Py_TYPE(iter) == &PyListIter_Type);
+            PyListObject *seq = it->it_seq;
+            assert(seq);
+            assert(it->it_index < PyList_GET_SIZE(seq));
+            next = Py_NewRef(PyList_GET_ITEM(seq, it->it_index++));
+        }
+
+        macro(FOR_ITER_LIST) =
+            unused/1 +  // Skip over the counter
+            _ITER_CHECK_LIST +
+            _ITER_JUMP_LIST +
+            _ITER_NEXT_LIST;
+
+        op(_ITER_CHECK_TUPLE, (iter -- iter)) {
+            DEOPT_IF(Py_TYPE(iter) != &PyTupleIter_Type, FOR_ITER);
+        }
+
+        op(_ITER_JUMP_TUPLE, (iter -- iter)) {
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
-            DEOPT_IF(Py_TYPE(it) != &PyTupleIter_Type, FOR_ITER);
+            assert(Py_TYPE(iter) == &PyTupleIter_Type);
             STAT_INC(FOR_ITER, hit);
             PyTupleObject *seq = it->it_seq;
-            if (seq) {
-                if (it->it_index < PyTuple_GET_SIZE(seq)) {
-                    next = Py_NewRef(PyTuple_GET_ITEM(seq, it->it_index++));
-                    goto end_for_iter_tuple;  // End of this instruction
+            if (seq == NULL || it->it_index >= PyTuple_GET_SIZE(seq)) {
+                if (seq != NULL) {
+                    it->it_seq = NULL;
+                    Py_DECREF(seq);
                 }
-                it->it_seq = NULL;
-                Py_DECREF(seq);
+                Py_DECREF(iter);
+                STACK_SHRINK(1);
+                SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
+                /* Jump forward oparg, then skip following END_FOR instruction */
+                JUMPBY(oparg + 1);
+                DISPATCH();
             }
-            Py_DECREF(iter);
-            STACK_SHRINK(1);
-            SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
-            /* Jump forward oparg, then skip following END_FOR instruction */
-            JUMPBY(oparg + 1);
-            DISPATCH();
-        end_for_iter_tuple:
-            // Common case: no jump, leave it to the code generator
         }
+
+        // Only used by Tier 2
+        op(_IS_ITER_EXHAUSTED_TUPLE, (iter -- iter, exhausted)) {
+            _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
+            assert(Py_TYPE(iter) == &PyTupleIter_Type);
+            PyTupleObject *seq = it->it_seq;
+            if (seq == NULL) {
+                exhausted = Py_True;
+            }
+            else if (it->it_index >= PyTuple_GET_SIZE(seq)) {
+                Py_DECREF(seq);
+                it->it_seq = NULL;
+                exhausted = Py_True;
+            }
+            else {
+                exhausted = Py_False;
+            }
+        }
+
+        op(_ITER_NEXT_TUPLE, (iter -- iter, next)) {
+            _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
+            assert(Py_TYPE(iter) == &PyTupleIter_Type);
+            PyTupleObject *seq = it->it_seq;
+            assert(seq);
+            assert(it->it_index < PyTuple_GET_SIZE(seq));
+            next = Py_NewRef(PyTuple_GET_ITEM(seq, it->it_index++));
+        }
+
+        macro(FOR_ITER_TUPLE) =
+            unused/1 +  // Skip over the counter
+            _ITER_CHECK_TUPLE +
+            _ITER_JUMP_TUPLE +
+            _ITER_NEXT_TUPLE;
 
         op(_ITER_CHECK_RANGE, (iter -- iter)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
@@ -2471,7 +2536,7 @@ dummy_func(
         }
 
         // Only used by Tier 2
-        op(_ITER_EXHAUSTED_RANGE, (iter -- iter, exhausted)) {
+        op(_IS_ITER_EXHAUSTED_RANGE, (iter -- iter, exhausted)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             assert(Py_TYPE(r) == &PyRangeIter_Type);
             exhausted = r->len <= 0 ? Py_True : Py_False;
@@ -2489,7 +2554,10 @@ dummy_func(
         }
 
         macro(FOR_ITER_RANGE) =
-            unused/1 + _ITER_CHECK_RANGE + _ITER_JUMP_RANGE + _ITER_NEXT_RANGE;
+            unused/1 +  // Skip over the counter
+            _ITER_CHECK_RANGE +
+            _ITER_JUMP_RANGE +
+            _ITER_NEXT_RANGE;
 
         inst(FOR_ITER_GEN, (unused/1, iter -- iter, unused)) {
             DEOPT_IF(tstate->interp->eval_frame, FOR_ITER);
@@ -2704,7 +2772,7 @@ dummy_func(
         }
 
         inst(KW_NAMES, (--)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg < PyTuple_GET_SIZE(FRAME_CO_CONSTS));
             kwnames = GETITEM(FRAME_CO_CONSTS, oparg);
         }
@@ -2726,8 +2794,7 @@ dummy_func(
 
         // Cache layout: counter/1, func_version/2
         // Neither CALL_INTRINSIC_1/2 nor CALL_FUNCTION_EX are members!
-        family(call, INLINE_CACHE_ENTRIES_CALL) = {
-            CALL,
+        family(CALL, INLINE_CACHE_ENTRIES_CALL) = {
             CALL_BOUND_METHOD_EXACT_ARGS,
             CALL_PY_EXACT_ARGS,
             CALL_PY_WITH_DEFAULTS,
@@ -2856,7 +2923,7 @@ dummy_func(
         }
 
         inst(CALL_PY_EXACT_ARGS, (unused/1, func_version/2, method, callable, args[oparg] -- unused)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             int is_meth = method != NULL;
             int argcount = oparg;
@@ -2884,7 +2951,7 @@ dummy_func(
         }
 
         inst(CALL_PY_WITH_DEFAULTS, (unused/1, func_version/2, method, callable, args[oparg] -- unused)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             int is_meth = method != NULL;
             int argcount = oparg;
@@ -2922,7 +2989,7 @@ dummy_func(
         }
 
         inst(CALL_NO_KW_TYPE_1, (unused/1, unused/2, null, callable, args[oparg] -- res)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             PyObject *obj = args[0];
@@ -2934,7 +3001,7 @@ dummy_func(
         }
 
         inst(CALL_NO_KW_STR_1, (unused/1, unused/2, null, callable, args[oparg] -- res)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyUnicode_Type, CALL);
@@ -2948,7 +3015,7 @@ dummy_func(
         }
 
         inst(CALL_NO_KW_TUPLE_1, (unused/1, unused/2, null, callable, args[oparg] -- res)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyTuple_Type, CALL);
@@ -2967,7 +3034,7 @@ dummy_func(
              * 2. Pushes a shim frame to the frame stack (to cleanup after ``__init__``)
              * 3. Pushes the frame for ``__init__`` to the frame stack
              * */
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             _PyCallCache *cache = (_PyCallCache *)next_instr;
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(!PyType_Check(callable), CALL);
@@ -3051,7 +3118,7 @@ dummy_func(
 
         inst(CALL_NO_KW_BUILTIN_O, (unused/1, unused/2, method, callable, args[oparg] -- res)) {
             /* Builtin METH_O functions */
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
             int total_args = oparg;
             if (is_meth) {
@@ -3082,7 +3149,7 @@ dummy_func(
 
         inst(CALL_NO_KW_BUILTIN_FAST, (unused/1, unused/2, method, callable, args[oparg] -- res)) {
             /* Builtin METH_FASTCALL functions, without keywords */
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
             int total_args = oparg;
             if (is_meth) {
@@ -3151,7 +3218,7 @@ dummy_func(
         }
 
         inst(CALL_NO_KW_LEN, (unused/1, unused/2, method, callable, args[oparg] -- res)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             /* len(o) */
             int is_meth = method != NULL;
             int total_args = oparg;
@@ -3178,7 +3245,7 @@ dummy_func(
         }
 
         inst(CALL_NO_KW_ISINSTANCE, (unused/1, unused/2, method, callable, args[oparg] -- res)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             /* isinstance(o, o2) */
             int is_meth = method != NULL;
             int total_args = oparg;
@@ -3208,7 +3275,7 @@ dummy_func(
 
         // This is secretly a super-instruction
         inst(CALL_NO_KW_LIST_APPEND, (unused/1, unused/2, method, self, args[oparg] -- unused)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             assert(method != NULL);
             PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -3228,7 +3295,7 @@ dummy_func(
         }
 
         inst(CALL_NO_KW_METHOD_DESCRIPTOR_O, (unused/1, unused/2, method, unused, args[oparg] -- res)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
             int total_args = oparg;
             if (is_meth) {
@@ -3294,7 +3361,7 @@ dummy_func(
         }
 
         inst(CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS, (unused/1, unused/2, method, unused, args[oparg] -- res)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 0 || oparg == 1);
             int is_meth = method != NULL;
             int total_args = oparg;
@@ -3326,7 +3393,7 @@ dummy_func(
         }
 
         inst(CALL_NO_KW_METHOD_DESCRIPTOR_FAST, (unused/1, unused/2, method, unused, args[oparg] -- res)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
             int total_args = oparg;
             if (is_meth) {
@@ -3639,6 +3706,36 @@ dummy_func(
         inst(RESERVED, (--)) {
             assert(0 && "Executing RESERVED instruction.");
             Py_UNREACHABLE();
+        }
+
+        ///////// Tier-2 only opcodes /////////
+
+        op(_POP_JUMP_IF_FALSE, (flag -- )) {
+            if (Py_IsFalse(flag)) {
+                pc = oparg;
+            }
+        }
+
+        op(_POP_JUMP_IF_TRUE, (flag -- )) {
+            if (Py_IsTrue(flag)) {
+                pc = oparg;
+            }
+        }
+
+        op(JUMP_TO_TOP, (--)) {
+            pc = 0;
+            CHECK_EVAL_BREAKER();
+        }
+
+        op(SAVE_IP, (--)) {
+            frame->prev_instr = ip_offset + oparg;
+        }
+
+        op(EXIT_TRACE, (--)) {
+            frame->prev_instr--;  // Back up to just before destination
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            Py_DECREF(self);
+            return frame;
         }
 
 

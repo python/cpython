@@ -172,8 +172,9 @@ Doc/c-api/stable.rst          @encukou
 **/*pathlib*                  @barneygale
 
 # zipfile.Path
-**/*zipfile/*_path.py         @jaraco
+**/*zipfile/_path/*           @jaraco
 
 # Argument Clinic
 /Tools/clinic/**              @erlend-aasland @AlexWaygood
 /Lib/test/test_clinic.py      @erlend-aasland @AlexWaygood
+Doc/howto/clinic.rst          @erlend-aasland

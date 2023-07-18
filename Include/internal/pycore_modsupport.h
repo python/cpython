@@ -21,7 +21,6 @@ extern PyObject ** _Py_VaBuildStack(
     Py_ssize_t *p_nargs);
 
 extern PyObject* _PyModule_CreateInitialized(PyModuleDef*, int apiver);
-PyAPI_FUNC(int) _PyModule_AddNew(PyObject *, const char *, PyObject *);
 
 #ifdef __cplusplus
 }

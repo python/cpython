@@ -15,7 +15,7 @@
 #include "pycore_atomic_funcs.h" // _Py_atomic_int_get()
 #include "pycore_bitutils.h"     // _Py_bswap32()
 #include "pycore_bytesobject.h"  // _PyBytes_Find()
-#include "pycore_compile.h"      // _PyCompile_CodeGen, _PyCompile_OptimizeCfg, _PyCompile_Assemble
+#include "pycore_compile.h"      // _PyCompile_CodeGen, _PyCompile_OptimizeCfg, _PyCompile_Assemble, _PyCompile_CleanDoc
 #include "pycore_ceval.h"        // _PyEval_AddPendingCall
 #include "pycore_fileutils.h"    // _Py_normpath
 #include "pycore_frame.h"        // _PyInterpreterFrame
@@ -23,7 +23,6 @@
 #include "pycore_hashtable.h"    // _Py_hashtable_new()
 #include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
 #include "pycore_interp.h"       // _PyInterpreterState_GetConfigCopy()
-#include "pycore_modsupport.h"   // _PyModule_AddNew()
 #include "pycore_pathconfig.h"   // _PyPathConfig_ClearGlobal()
 #include "pycore_pyerrors.h"     // _Py_UTF8_Edit_Cost()
 #include "pycore_pystate.h"      // _PyThreadState_GET()
@@ -704,6 +703,23 @@ set_eval_frame_record(PyObject *self, PyObject *list)
     _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), record_eval);
     Py_RETURN_NONE;
 }
+
+/*[clinic input]
+
+_testinternalcapi.compiler_cleandoc -> object
+
+    doc: unicode
+
+C implementation of inspect.cleandoc().
+[clinic start generated code]*/
+
+static PyObject *
+_testinternalcapi_compiler_cleandoc_impl(PyObject *module, PyObject *doc)
+/*[clinic end generated code: output=2dd203a80feff5bc input=2de03fab931d9cdc]*/
+{
+    return _PyCompile_CleanDoc(doc);
+}
+
 
 /*[clinic input]
 
@@ -1449,6 +1465,7 @@ static PyMethodDef module_functions[] = {
     {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
     {"set_eval_frame_default", set_eval_frame_default, METH_NOARGS, NULL},
     {"set_eval_frame_record", set_eval_frame_record, METH_O, NULL},
+    _TESTINTERNALCAPI_COMPILER_CLEANDOC_METHODDEF
     _TESTINTERNALCAPI_COMPILER_CODEGEN_METHODDEF
     _TESTINTERNALCAPI_OPTIMIZE_CFG_METHODDEF
     _TESTINTERNALCAPI_ASSEMBLE_CODE_OBJECT_METHODDEF
@@ -1494,12 +1511,12 @@ static PyMethodDef module_functions[] = {
 static int
 module_exec(PyObject *module)
 {
-    if (_PyModule_AddNew(module, "SIZEOF_PYGC_HEAD",
+    if (PyModule_Add(module, "SIZEOF_PYGC_HEAD",
                         PyLong_FromSsize_t(sizeof(PyGC_Head))) < 0) {
         return 1;
     }
 
-    if (_PyModule_AddNew(module, "SIZEOF_TIME_T",
+    if (PyModule_Add(module, "SIZEOF_TIME_T",
                         PyLong_FromSsize_t(sizeof(time_t))) < 0) {
         return 1;
     }

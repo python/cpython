@@ -11,12 +11,7 @@
  *
  */
 
-#ifndef Py_BUILD_CORE_BUILTIN
-#  define Py_BUILD_CORE_MODULE 1
-#endif
-
 #include "Python.h"
-#include "pycore_modsupport.h"    // _PyModule_AddNew()
 
 #ifdef __cplusplus
 extern "C" {
@@ -596,15 +591,15 @@ stat_exec(PyObject *module)
     ADD_INT_MACRO(module, FILE_ATTRIBUTE_TEMPORARY);
     ADD_INT_MACRO(module, FILE_ATTRIBUTE_VIRTUAL);
 
-    if (_PyModule_AddNew(module, "IO_REPARSE_TAG_SYMLINK",
+    if (PyModule_Add(module, "IO_REPARSE_TAG_SYMLINK",
             PyLong_FromUnsignedLong(IO_REPARSE_TAG_SYMLINK)) < 0) {
         return -1;
     }
-    if (_PyModule_AddNew(module, "IO_REPARSE_TAG_MOUNT_POINT",
+    if (PyModule_Add(module, "IO_REPARSE_TAG_MOUNT_POINT",
             PyLong_FromUnsignedLong(IO_REPARSE_TAG_MOUNT_POINT)) < 0) {
         return -1;
     }
-    if (_PyModule_AddNew(module, "IO_REPARSE_TAG_APPEXECLINK",
+    if (PyModule_Add(module, "IO_REPARSE_TAG_APPEXECLINK",
             PyLong_FromUnsignedLong(IO_REPARSE_TAG_APPEXECLINK)) < 0) {
         return -1;
     }

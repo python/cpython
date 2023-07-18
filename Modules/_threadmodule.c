@@ -4,7 +4,6 @@
 
 #include "Python.h"
 #include "pycore_interp.h"        // _PyInterpreterState.threads.count
-#include "pycore_modsupport.h"    // _PyModule_AddNew()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
@@ -1672,7 +1671,7 @@ thread_module_exec(PyObject *module)
     // Round towards minus infinity
     timeout_max = floor(timeout_max);
 
-    if (_PyModule_AddNew(module, "TIMEOUT_MAX",
+    if (PyModule_Add(module, "TIMEOUT_MAX",
                         PyFloat_FromDouble(timeout_max)) < 0) {
         return -1;
     }
