@@ -261,6 +261,8 @@ class InstructionFlags:
     HAS_CONST_FLAG: bool
     HAS_NAME_FLAG: bool
     HAS_JUMP_FLAG: bool
+    HAS_FREE_FLAG: bool
+    HAS_LOCAL_FLAG: bool
 
     def __post_init__(self):
         self.bitmask = {
@@ -269,16 +271,25 @@ class InstructionFlags:
 
     @staticmethod
     def fromInstruction(instr: "AnyInstruction"):
+
+        has_free = (variable_used(instr, "PyCell_New") or
+                    variable_used(instr, "PyCell_GET") or
+                    variable_used(instr, "PyCell_SET"))
+
         return InstructionFlags(
             HAS_ARG_FLAG=variable_used(instr, "oparg"),
             HAS_CONST_FLAG=variable_used(instr, "FRAME_CO_CONSTS"),
             HAS_NAME_FLAG=variable_used(instr, "FRAME_CO_NAMES"),
             HAS_JUMP_FLAG=variable_used(instr, "JUMPBY"),
+            HAS_FREE_FLAG=has_free,
+            HAS_LOCAL_FLAG=(variable_used(instr, "GETLOCAL") or
+                            variable_used(instr, "SETLOCAL")) and
+                            not has_free,
         )
 
     @staticmethod
     def newEmpty():
-        return InstructionFlags(False, False, False, False)
+        return InstructionFlags(False, False, False, False, False, False)
 
     def add(self, other: "InstructionFlags") -> None:
         for name, value in dataclasses.asdict(other).items():
