@@ -1092,8 +1092,8 @@ static PyMethodDef module_functions[] = {
 static int
 module_exec(PyObject *module)
 {
-    if (PyModule_AddObject(module, "SIZEOF_PYGC_HEAD",
-                           PyLong_FromSsize_t(sizeof(PyGC_Head))) < 0) {
+    if (_PyModule_Add(module, "SIZEOF_PYGC_HEAD",
+                        PyLong_FromSsize_t(sizeof(PyGC_Head))) < 0) {
         return 1;
     }
 
