@@ -99,7 +99,7 @@ def effect_size(effect: StackEffect) -> tuple[int, str]:
         return 0, effect.size
     elif effect.cond:
         if effect.cond in ("0", "1"):
-            return 0, effect.cond
+            return int(effect.cond), ""
         return 0, f"{maybe_parenthesize(effect.cond)} ? 1 : 0"
     else:
         return 1, ""
@@ -841,9 +841,9 @@ class Analyzer:
     def check_families(self) -> None:
         """Check each family:
 
-        - Must have at least 2 members
-        - All members must be known instructions
-        - All members must have the same cache, input and output effects
+        - Must have at least 2 members (including head)
+        - Head and all members must be known instructions
+        - Head and all members must have the same cache, input and output effects
         """
         for family in self.families.values():
             if family.name not in self.macro_instrs and family.name not in self.instrs:
@@ -868,7 +868,7 @@ class Analyzer:
                     self.error(
                         f"Family {family.name!r} has inconsistent "
                         f"(cache, input, output) effects:\n"
-                        f"  {family.members[0]} = {expected_effects}; "
+                        f"  {family.name} = {expected_effects}; "
                         f"{member} = {member_effects}",
                         family,
                     )
