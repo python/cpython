@@ -5,7 +5,12 @@ operate on bytecodes (e.g. peephole optimizers).
 """
 
 
-__all__ = ["cmp_op", "opname", "opmap", "HAVE_ARGUMENT", "EXTENDED_ARG"]
+# Note that __all__ is further extended below
+__all__ = ["cmp_op", "opname", "opmap", "stack_effect", "hascompare",
+           "HAVE_ARGUMENT", "EXTENDED_ARG"]
+
+import _opcode
+from _opcode import stack_effect
 
 import sys
 # The build uses older versions of Python which do not have _opcode_metadata
@@ -235,6 +240,24 @@ del def_op, pseudo_op
 opname = ['<%r>' % (op,) for op in range(MAX_PSEUDO_OPCODE + 1)]
 for op, i in opmap.items():
     opname[i] = op
+
+# The build uses older versions of Python which do not have _opcode.has_* functions
+if sys.version_info[:2] >= (3, 13):
+    # These lists are documented as part of the dis module's API
+    hasarg = [op for op in opmap.values() if _opcode.has_arg(op)]
+    hasconst = [op for op in opmap.values() if _opcode.has_const(op)]
+    hasname = [op for op in opmap.values() if _opcode.has_name(op)]
+    hasjump = [op for op in opmap.values() if _opcode.has_jump(op)]
+    hasjrel = hasjump  # for backward compatibility
+    hasjabs = []
+    hasfree = [op for op in opmap.values() if _opcode.has_free(op)]
+    haslocal = [op for op in opmap.values() if _opcode.has_local(op)]
+    hasexc = [op for op in opmap.values() if _opcode.has_exc(op)]
+
+    __all__.extend(["hasarg", "hasconst", "hasname", "hasjump", "hasjrel",
+                    "hasjabs", "hasfree", "haslocal", "hasexc"])
+
+hascompare = [opmap["COMPARE_OP"]]
 
 _nb_ops = [
     ("NB_ADD", "+"),
