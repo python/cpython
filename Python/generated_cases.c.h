@@ -773,18 +773,15 @@
             PyObject *sub = stack_pointer[-1];
             PyObject *container = stack_pointer[-2];
             PyObject *v = stack_pointer[-3];
-            uint16_t counter = read_u16(&next_instr[0].cache);
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+            _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 next_instr--;
                 _Py_Specialize_StoreSubscr(container, sub, next_instr);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(STORE_SUBSCR, deferred);
-            _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            #else
-            (void)counter;  // Unused.
             #endif  /* ENABLE_SPECIALIZATION */
             /* container[sub] = v */
             int err = PyObject_SetItem(container, sub, v);
@@ -1437,19 +1434,16 @@
             static_assert(INLINE_CACHE_ENTRIES_STORE_ATTR == 4, "incorrect cache size");
             PyObject *owner = stack_pointer[-1];
             PyObject *v = stack_pointer[-2];
-            uint16_t counter = read_u16(&next_instr[0].cache);
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
                 next_instr--;
                 _Py_Specialize_StoreAttr(owner, next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(STORE_ATTR, deferred);
-            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            #else
-            (void)counter;  // Unused.
             #endif  /* ENABLE_SPECIALIZATION */
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err = PyObject_SetAttr(owner, name, v);
@@ -3360,9 +3354,9 @@
             res2 = Py_NewRef(descr);
             assert(_PyType_HasFeature(Py_TYPE(res2), Py_TPFLAGS_METHOD_DESCRIPTOR));
             res = self;
-            STACK_GROW((1 ? 1 : 0));
+            STACK_GROW(1);
             stack_pointer[-1] = res;
-            if (1) { stack_pointer[-(1 + (1 ? 1 : 0))] = res2; }
+            stack_pointer[-2] = res2;
             next_instr += 9;
             DISPATCH();
         }
@@ -3382,16 +3376,15 @@
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             res2 = Py_NewRef(descr);
             res = self;
-            STACK_GROW((1 ? 1 : 0));
+            STACK_GROW(1);
             stack_pointer[-1] = res;
-            if (1) { stack_pointer[-(1 + (1 ? 1 : 0))] = res2; }
+            stack_pointer[-2] = res2;
             next_instr += 9;
             DISPATCH();
         }
 
         TARGET(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES) {
             PyObject *self = stack_pointer[-1];
-            PyObject *res2 = NULL;
             PyObject *res;
             uint32_t type_version = read_u32(&next_instr[1].cache);
             uint32_t keys_version = read_u32(&next_instr[3].cache);
@@ -3410,16 +3403,13 @@
             assert(descr != NULL);
             Py_DECREF(self);
             res = Py_NewRef(descr);
-            STACK_GROW((0 ? 1 : 0));
             stack_pointer[-1] = res;
-            if (0) { stack_pointer[-(1 + (0 ? 1 : 0))] = res2; }
             next_instr += 9;
             DISPATCH();
         }
 
         TARGET(LOAD_ATTR_NONDESCRIPTOR_NO_DICT) {
             PyObject *self = stack_pointer[-1];
-            PyObject *res2 = NULL;
             PyObject *res;
             uint32_t type_version = read_u32(&next_instr[1].cache);
             PyObject *descr = read_obj(&next_instr[5].cache);
@@ -3432,9 +3422,7 @@
             assert(descr != NULL);
             Py_DECREF(self);
             res = Py_NewRef(descr);
-            STACK_GROW((0 ? 1 : 0));
             stack_pointer[-1] = res;
-            if (0) { stack_pointer[-(1 + (0 ? 1 : 0))] = res2; }
             next_instr += 9;
             DISPATCH();
         }
@@ -3458,15 +3446,15 @@
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             res2 = Py_NewRef(descr);
             res = self;
-            STACK_GROW((1 ? 1 : 0));
+            STACK_GROW(1);
             stack_pointer[-1] = res;
-            if (1) { stack_pointer[-(1 + (1 ? 1 : 0))] = res2; }
+            stack_pointer[-2] = res2;
             next_instr += 9;
             DISPATCH();
         }
 
         TARGET(KW_NAMES) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg < PyTuple_GET_SIZE(FRAME_CO_CONSTS));
             kwnames = GETITEM(FRAME_CO_CONSTS, oparg);
             DISPATCH();
@@ -3603,7 +3591,7 @@
             PyObject *callable = stack_pointer[-(1 + oparg)];
             PyObject *method = stack_pointer[-(2 + oparg)];
             uint32_t func_version = read_u32(&next_instr[1].cache);
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             int is_meth = method != NULL;
             int argcount = oparg;
@@ -3635,7 +3623,7 @@
             PyObject *callable = stack_pointer[-(1 + oparg)];
             PyObject *method = stack_pointer[-(2 + oparg)];
             uint32_t func_version = read_u32(&next_instr[1].cache);
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             int is_meth = method != NULL;
             int argcount = oparg;
@@ -3677,7 +3665,7 @@
             PyObject *callable = stack_pointer[-(1 + oparg)];
             PyObject *null = stack_pointer[-(2 + oparg)];
             PyObject *res;
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             PyObject *obj = args[0];
@@ -3698,7 +3686,7 @@
             PyObject *callable = stack_pointer[-(1 + oparg)];
             PyObject *null = stack_pointer[-(2 + oparg)];
             PyObject *res;
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyUnicode_Type, CALL);
@@ -3721,7 +3709,7 @@
             PyObject *callable = stack_pointer[-(1 + oparg)];
             PyObject *null = stack_pointer[-(2 + oparg)];
             PyObject *res;
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyTuple_Type, CALL);
@@ -3748,7 +3736,7 @@
              * 2. Pushes a shim frame to the frame stack (to cleanup after ``__init__``)
              * 3. Pushes the frame for ``__init__`` to the frame stack
              * */
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             _PyCallCache *cache = (_PyCallCache *)next_instr;
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(!PyType_Check(callable), CALL);
@@ -3848,7 +3836,7 @@
             PyObject *method = stack_pointer[-(2 + oparg)];
             PyObject *res;
             /* Builtin METH_O functions */
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
             int total_args = oparg;
             if (is_meth) {
@@ -3888,7 +3876,7 @@
             PyObject *method = stack_pointer[-(2 + oparg)];
             PyObject *res;
             /* Builtin METH_FASTCALL functions, without keywords */
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
             int total_args = oparg;
             if (is_meth) {
@@ -3975,7 +3963,7 @@
             PyObject *callable = stack_pointer[-(1 + oparg)];
             PyObject *method = stack_pointer[-(2 + oparg)];
             PyObject *res;
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             /* len(o) */
             int is_meth = method != NULL;
             int total_args = oparg;
@@ -4011,7 +3999,7 @@
             PyObject *callable = stack_pointer[-(1 + oparg)];
             PyObject *method = stack_pointer[-(2 + oparg)];
             PyObject *res;
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             /* isinstance(o, o2) */
             int is_meth = method != NULL;
             int total_args = oparg;
@@ -4048,7 +4036,7 @@
             PyObject **args = (stack_pointer - oparg);
             PyObject *self = stack_pointer[-(1 + oparg)];
             PyObject *method = stack_pointer[-(2 + oparg)];
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             assert(method != NULL);
             PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -4071,7 +4059,7 @@
             PyObject **args = (stack_pointer - oparg);
             PyObject *method = stack_pointer[-(2 + oparg)];
             PyObject *res;
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
             int total_args = oparg;
             if (is_meth) {
@@ -4153,7 +4141,7 @@
             PyObject **args = (stack_pointer - oparg);
             PyObject *method = stack_pointer[-(2 + oparg)];
             PyObject *res;
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 0 || oparg == 1);
             int is_meth = method != NULL;
             int total_args = oparg;
@@ -4193,7 +4181,7 @@
             PyObject **args = (stack_pointer - oparg);
             PyObject *method = stack_pointer[-(2 + oparg)];
             PyObject *res;
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
             int total_args = oparg;
             if (is_meth) {
@@ -4463,7 +4451,7 @@
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 next_instr--;
-                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
+                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, LOCALS_ARRAY);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(BINARY_OP, deferred);

@@ -896,6 +896,24 @@ PyUnstable_OpcodeHasJump(int opcode)
     return OPCODE_HAS_JUMP(opcode);
 }
 
+int
+PyUnstable_OpcodeHasFree(int opcode)
+{
+    return OPCODE_HAS_FREE(opcode);
+}
+
+int
+PyUnstable_OpcodeHasLocal(int opcode)
+{
+    return OPCODE_HAS_LOCAL(opcode);
+}
+
+int
+PyUnstable_OpcodeHasExc(int opcode)
+{
+    return IS_BLOCK_PUSH_OPCODE(opcode);
+}
+
 static int
 codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
 {
@@ -2267,6 +2285,7 @@ compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t f
         }
     }
     if (compiler_add_const(c->c_const_cache, c->u, docstring ? docstring : Py_None) < 0) {
+        Py_XDECREF(docstring);
         compiler_exit_scope(c);
         return ERROR;
     }
@@ -8060,7 +8079,9 @@ _PyCompile_CleanDoc(PyObject *doc)
     }
 
     Py_DECREF(doc);
-    return PyUnicode_FromStringAndSize(buff, w - buff);
+    PyObject *res = PyUnicode_FromStringAndSize(buff, w - buff);
+    PyMem_Free(buff);
+    return res;
 }
 
 
