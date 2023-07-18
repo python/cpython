@@ -18,7 +18,8 @@
 #include "Python.h"
 #include "pycore_import.h"        // _PyImport_GetModuleAttrString()
 #include "pycore_pyhash.h"        // _Py_HashSecret
-#include "structmember.h"         // PyMemberDef
+
+#include <stddef.h>               // offsetof()
 #include "expat.h"
 #include "pyexpat.h"
 
@@ -4134,8 +4135,8 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
 }
 
 static PyMemberDef xmlparser_members[] = {
-    {"entity", T_OBJECT, offsetof(XMLParserObject, entity), READONLY, NULL},
-    {"target", T_OBJECT, offsetof(XMLParserObject, target), READONLY, NULL},
+    {"entity", _Py_T_OBJECT, offsetof(XMLParserObject, entity), Py_READONLY, NULL},
+    {"target", _Py_T_OBJECT, offsetof(XMLParserObject, target), Py_READONLY, NULL},
     {NULL}
 };
 
@@ -4191,7 +4192,7 @@ static PyMethodDef element_methods[] = {
 };
 
 static struct PyMemberDef element_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(ElementObject, weakreflist), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(ElementObject, weakreflist), Py_READONLY},
     {NULL},
 };
 

@@ -18,9 +18,9 @@
 
 #include "Python.h"
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
-#include "structmember.h"         // PyMemberDef
 
 #include <stdbool.h>
+#include <stddef.h>               // offsetof()
 
 /*[clinic input]
 module unicodedata
@@ -82,7 +82,7 @@ typedef struct previous_version {
 #define get_old_record(self, v)    ((((PreviousDBVersion*)self)->getrecord)(v))
 
 static PyMemberDef DB_members[] = {
-        {"unidata_version", T_STRING, offsetof(PreviousDBVersion, name), READONLY},
+        {"unidata_version", Py_T_STRING, offsetof(PreviousDBVersion, name), Py_READONLY},
         {NULL}
 };
 
