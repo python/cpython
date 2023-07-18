@@ -5549,7 +5549,11 @@ class TestResourceTracker(unittest.TestCase):
         # Keep it on variable, so it won't be cleared yet
         q = mp_context.Queue()
         if delete_queue:
+            # Clearing the queue resource to be sure explicitly with deleting
+            # and gc.collect
+            q.close()
             del q
+            gc.collect()
             expected_exit_code = 0
         else:
             expected_exit_code = 1
