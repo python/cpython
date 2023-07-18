@@ -21,8 +21,8 @@ from opcode import (
 
 __all__ = ["hasarg", "hasconst", "hasname", "hasjump", "hasjrel",
            "hasjabs", "hasfree", "haslocal", "hasexc", "hascompare",
-           "code_info", "dis", "disassemble", "distb", "disco",
-           "findlinestarts", "findlabels", "show_code",
+           "stack_effect", "code_info", "dis", "disassemble", "distb",
+           "disco", "findlinestarts", "findlabels", "show_code",
            "get_instructions", "Instruction", "Bytecode"] + _opcodes_all
 del _opcodes_all
 
