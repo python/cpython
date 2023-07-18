@@ -6834,8 +6834,7 @@ _datetime_exec(PyObject *module)
         return -1;
     }
 
-    if (PyModule_AddObject(module, "datetime_CAPI", x) < 0) {
-        Py_DECREF(x);
+    if (PyModule_Add(module, "datetime_CAPI", x) < 0) {
         return -1;
     }
 

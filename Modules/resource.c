@@ -372,9 +372,7 @@ resource_exec(PyObject *module)
     } while (0)
 
     /* Add some symbolic constants to the module */
-    Py_INCREF(PyExc_OSError);
-    if (PyModule_AddObject(module, "error", PyExc_OSError) < 0) {
-        Py_DECREF(PyExc_OSError);
+    if (PyModule_AddObjectRef(module, "error", PyExc_OSError) < 0) {
         return -1;
     }
 
@@ -502,12 +500,7 @@ resource_exec(PyObject *module)
     {
         v = PyLong_FromLong((long) RLIM_INFINITY);
     }
-    if (!v) {
-        return -1;
-    }
-
-    if (PyModule_AddObject(module, "RLIM_INFINITY", v) < 0) {
-        Py_DECREF(v);
+    if (PyModule_Add(module, "RLIM_INFINITY", v) < 0) {
         return -1;
     }
     return 0;

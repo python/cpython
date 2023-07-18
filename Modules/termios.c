@@ -1232,12 +1232,7 @@ termios_exec(PyObject *mod)
     struct constant *constant = termios_constants;
     termiosmodulestate *state = get_termios_state(mod);
     state->TermiosError = PyErr_NewException("termios.error", NULL, NULL);
-    if (state->TermiosError == NULL) {
-        return -1;
-    }
-    Py_INCREF(state->TermiosError);
-    if (PyModule_AddObject(mod, "error", state->TermiosError) < 0) {
-        Py_DECREF(state->TermiosError);
+    if (PyModule_AddObjectRef(mod, "error", state->TermiosError) < 0) {
         return -1;
     }
 

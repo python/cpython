@@ -1655,8 +1655,7 @@ add_submodule(PyObject *mod, const char *fullname)
     Py_DECREF(mod_name);
 
     /* gives away the reference to the submodule */
-    if (PyModule_AddObject(mod, name, submodule) < 0) {
-        Py_DECREF(submodule);
+    if (PyModule_Add(mod, name, submodule) < 0) {
         return NULL;
     }
 
@@ -1889,10 +1888,7 @@ add_features(PyObject *mod)
             goto error;
         }
     }
-    if (PyModule_AddObject(mod, "features", list) < 0) {
-        goto error;
-    }
-    return 0;
+    return PyModule_Add(mod, "features", list);
 
 error:
     Py_DECREF(list);
@@ -1961,8 +1957,7 @@ pyexpat_exec(PyObject *mod)
                                               info.major,
                                               info.minor,
                                               info.micro);
-        if (PyModule_AddObject(mod, "version_info", versionInfo) < 0) {
-            Py_DECREF(versionInfo);
+        if (PyModule_Add(mod, "version_info", versionInfo) < 0) {
             return -1;
         }
     }
@@ -2042,8 +2037,7 @@ pyexpat_exec(PyObject *mod)
         return -1;
     }
 
-    if (PyModule_AddObject(mod, "expat_CAPI", capi_object) < 0) {
-        Py_DECREF(capi_object);
+    if (PyModule_Add(mod, "expat_CAPI", capi_object) < 0) {
         return -1;
     }
 

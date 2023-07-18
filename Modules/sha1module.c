@@ -357,16 +357,9 @@ _sha1_exec(PyObject *module)
 
     st->sha1_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         module, &sha1_type_spec, NULL);
-
-    if (st->sha1_type == NULL) {
-        return -1;
-    }
-
-    Py_INCREF(st->sha1_type);
-    if (PyModule_AddObject(module,
+    if (PyModule_AddObjectRef(module,
                            "SHA1Type",
                            (PyObject *)st->sha1_type) < 0) {
-        Py_DECREF(st->sha1_type);
         return -1;
     }
 

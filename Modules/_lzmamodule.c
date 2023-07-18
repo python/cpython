@@ -1498,15 +1498,7 @@ _lzma__decode_filter_properties_impl(PyObject *module, lzma_vli filter_id,
 static int
 module_add_int_constant(PyObject *m, const char *name, long long value)
 {
-    PyObject *o = PyLong_FromLongLong(value);
-    if (o == NULL) {
-        return -1;
-    }
-    if (PyModule_AddObject(m, name, o) == 0) {
-        return 0;
-    }
-    Py_DECREF(o);
-    return -1;
+    return PyModule_Add(m, name, PyLong_FromLongLong(value));
 }
 
 static int
