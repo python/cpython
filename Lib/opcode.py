@@ -7,6 +7,11 @@ operate on bytecodes (e.g. peephole optimizers).
 
 __all__ = ["cmp_op", "opname", "opmap", "HAVE_ARGUMENT", "EXTENDED_ARG"]
 
+import sys
+# The build uses older versions of Python which do not have _opcode_metadata
+if sys.version_info[:2] >= (3, 13):
+    from _opcode_metadata import _specializations, _specialized_instructions
+
 cmp_op = ('<', '<=', '==', '!=', '>', '>=')
 
 
