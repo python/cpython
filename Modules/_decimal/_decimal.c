@@ -84,6 +84,7 @@ typedef struct {
     PyObject *SignalTuple;
 
     struct DecCondMap *signal_map;
+    struct DecCondMap *cond_map;
 
     /* External C-API functions */
     binaryfunc _py_long_multiply;
@@ -210,7 +211,7 @@ static DecCondMap signal_map_template[] = {
 };
 
 /* Exceptions that inherit from InvalidOperation */
-static DecCondMap cond_map[] = {
+static DecCondMap cond_map_template[] = {
   {"InvalidOperation", "decimal.InvalidOperation", MPD_Invalid_operation, NULL},
   {"ConversionSyntax", "decimal.ConversionSyntax", MPD_Conversion_syntax, NULL},
   {"DivisionImpossible", "decimal.DivisionImpossible", MPD_Division_impossible, NULL},
@@ -369,7 +370,7 @@ flags_as_list(uint32_t flags)
         return NULL;
     }
 
-    for (cm = cond_map; cm->name != NULL; cm++) {
+    for (cm = state->cond_map; cm->name != NULL; cm++) {
         if (flags&cm->flag) {
             if (PyList_Append(list, cm->ex) < 0) {
                 goto error;
@@ -5995,10 +5996,12 @@ PyInit__decimal(void)
      * several conditions, including InvalidOperation! Naming the
      * signal IEEEInvalidOperation would prevent the confusion.
      */
-    cond_map[0].ex = state->signal_map[0].ex;
+    ASSIGN_PTR(state->cond_map, dec_cond_map_init(cond_map_template,
+                                                  sizeof(cond_map_template)));
+    state->cond_map[0].ex = state->signal_map[0].ex;
 
     /* Add remaining exceptions, inherit from InvalidOperation */
-    for (cm = cond_map+1; cm->name != NULL; cm++) {
+    for (cm = state->cond_map+1; cm->name != NULL; cm++) {
         PyObject *base;
         if (cm->flag == MPD_Division_undefined) {
             base = PyTuple_Pack(2, state->signal_map[0].ex, PyExc_ZeroDivisionError);
@@ -6085,6 +6088,7 @@ error:
     Py_CLEAR(MutableMapping); /* GCOV_NOT_REACHED */
     Py_CLEAR(state->SignalTuple); /* GCOV_NOT_REACHED */
     PyMem_Free(state->signal_map); /* GCOV_NOT_REACHED */
+    PyMem_Free(state->cond_map); /* GCOV_NOT_REACHED */
     Py_CLEAR(state->DecimalTuple); /* GCOV_NOT_REACHED */
     Py_CLEAR(state->default_context_template); /* GCOV_NOT_REACHED */
 #ifndef WITH_DECIMAL_CONTEXTVAR
