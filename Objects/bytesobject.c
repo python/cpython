@@ -1,7 +1,5 @@
 /* bytes object implementation */
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_bytesobject.h"   // _PyBytes_Find(), _PyBytes_Repeat()
@@ -1274,8 +1272,25 @@ _PyBytes_Find(const char *haystack, Py_ssize_t len_haystack,
               const char *needle, Py_ssize_t len_needle,
               Py_ssize_t offset)
 {
-    return stringlib_find(haystack, len_haystack,
-                          needle, len_needle, offset);
+    assert(len_haystack >= 0);
+    assert(len_needle >= 0);
+    // Extra checks because stringlib_find accesses haystack[len_haystack].
+    if (len_needle == 0) {
+        return offset;
+    }
+    if (len_needle > len_haystack) {
+        return -1;
+    }
+    assert(len_haystack >= 1);
+    Py_ssize_t res = stringlib_find(haystack, len_haystack - 1,
+                                    needle, len_needle, offset);
+    if (res == -1) {
+        Py_ssize_t last_align = len_haystack - len_needle;
+        if (memcmp(haystack + last_align, needle, len_needle) == 0) {
+            return offset + last_align;
+        }
+    }
+    return res;
 }
 
 Py_ssize_t

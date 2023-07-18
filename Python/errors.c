@@ -1748,7 +1748,7 @@ PyErr_SyntaxLocationObjectEx(PyObject *filename, int lineno, int col_offset,
         }
     }
     if ((PyObject *)Py_TYPE(exc) != PyExc_SyntaxError) {
-        if (_PyObject_LookupAttr(exc, &_Py_ID(msg), &tmp) < 0) {
+        if (PyObject_GetOptionalAttr(exc, &_Py_ID(msg), &tmp) < 0) {
             _PyErr_Clear(tstate);
         }
         else if (tmp) {
@@ -1767,7 +1767,7 @@ PyErr_SyntaxLocationObjectEx(PyObject *filename, int lineno, int col_offset,
             }
         }
 
-        if (_PyObject_LookupAttr(exc, &_Py_ID(print_file_and_line), &tmp) < 0) {
+        if (PyObject_GetOptionalAttr(exc, &_Py_ID(print_file_and_line), &tmp) < 0) {
             _PyErr_Clear(tstate);
         }
         else if (tmp) {

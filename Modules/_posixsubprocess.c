@@ -6,6 +6,7 @@
 #include "Python.h"
 #include "pycore_fileutils.h"
 #include "pycore_pystate.h"
+#include "pycore_signal.h"        // _Py_RestoreSignals()
 #if defined(HAVE_PIPE2) && !defined(_GNU_SOURCE)
 # define _GNU_SOURCE
 #endif
@@ -739,8 +740,9 @@ child_exec(char *const exec_array[],
     if (child_umask >= 0)
         umask(child_umask);  /* umask() always succeeds. */
 
-    if (restore_signals)
+    if (restore_signals) {
         _Py_RestoreSignals();
+    }
 
 #ifdef VFORK_USABLE
     if (child_sigmask) {
@@ -1025,7 +1027,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
     int *c_fds_to_keep = NULL;
     Py_ssize_t fds_to_keep_len = PyTuple_GET_SIZE(py_fds_to_keep);
 
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if ((preexec_fn != Py_None) && interp->finalizing) {
         PyErr_SetString(PyExc_RuntimeError,
                         "preexec_fn not supported at interpreter shutdown");
