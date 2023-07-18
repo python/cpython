@@ -554,11 +554,11 @@ if hasattr(select, 'kqueue'):
             except InterruptedError:
                 return ready
 
-            fd_to_key = self._fd_to_key
+            fd_to_key_get = self._fd_to_key.get
             for kev in kev_list:
                 fd = kev.ident
                 flag = kev.filter
-                key = fd_to_key.get(fd)
+                key = fd_to_key_get(fd)
                 if key:
                     events = ((flag == select.KQ_FILTER_READ and EVENT_READ)
                               | (flag == select.KQ_FILTER_WRITE and EVENT_WRITE))
