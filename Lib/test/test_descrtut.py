@@ -8,9 +8,9 @@
 # of much interest anymore), and a few were fiddled to make the output
 # deterministic.
 
+from test.support import sortdict
 import doctest
 import unittest
-from test.support import sortdict
 
 
 class defaultdict(dict):
