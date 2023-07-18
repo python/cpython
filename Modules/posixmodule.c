@@ -13463,7 +13463,7 @@ setup_confname_table(struct constdef *table, size_t tablesize,
         }
         Py_DECREF(o);
     }
-    return PyModule_AddObject(module, tablename, d);
+    return _PyModule_Add(module, tablename, d);
 }
 
 /* Return -1 on failure, 0 on success. */
@@ -16778,11 +16778,9 @@ posixmodule_exec(PyObject *m)
 #endif
 
     /* Initialize environ dictionary */
-    PyObject *v = convertenviron();
-    Py_XINCREF(v);
-    if (v == NULL || PyModule_AddObject(m, "environ", v) != 0)
+    if (_PyModule_Add(m, "environ", convertenviron()) != 0) {
         return -1;
-    Py_DECREF(v);
+    }
 
     if (all_ins(m))
         return -1;
@@ -16897,9 +16895,7 @@ posixmodule_exec(PyObject *m)
         Py_DECREF(unicode);
     }
 
-    PyModule_AddObject(m, "_have_functions", list);
-
-    return 0;
+    return _PyModule_Add(m, "_have_functions", list);
 }
 
 
