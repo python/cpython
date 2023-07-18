@@ -7,70 +7,6 @@ _opcode = import_module("_opcode")
 from _opcode import stack_effect
 
 
-EXPECTED_OPLISTS = {
-    'HAS_ARG': [
-        'BINARY_OP', 'BUILD_CONST_KEY_MAP', 'BUILD_LIST', 'BUILD_MAP',
-        'BUILD_SET', 'BUILD_SLICE', 'BUILD_STRING', 'BUILD_TUPLE', 'CALL',
-        'CALL_FUNCTION_EX', 'CALL_INTRINSIC_1', 'CALL_INTRINSIC_2', 'COMPARE_OP',
-        'CONTAINS_OP', 'CONVERT_VALUE', 'COPY', 'COPY_FREE_VARS', 'DELETE_ATTR',
-        'DELETE_DEREF', 'DELETE_FAST', 'DELETE_GLOBAL', 'DELETE_NAME',
-        'DICT_MERGE', 'DICT_UPDATE', 'ENTER_EXECUTOR', 'EXTENDED_ARG',
-        'FOR_ITER', 'GET_AWAITABLE', 'IMPORT_FROM', 'IMPORT_NAME',
-        'INSTRUMENTED_CALL', 'INSTRUMENTED_FOR_ITER',
-        'INSTRUMENTED_JUMP_BACKWARD', 'INSTRUMENTED_JUMP_FORWARD',
-        'INSTRUMENTED_LOAD_SUPER_ATTR', 'INSTRUMENTED_POP_JUMP_IF_FALSE',
-        'INSTRUMENTED_POP_JUMP_IF_NONE', 'INSTRUMENTED_POP_JUMP_IF_NOT_NONE',
-        'INSTRUMENTED_POP_JUMP_IF_TRUE', 'INSTRUMENTED_RESUME',
-        'INSTRUMENTED_RETURN_CONST', 'INSTRUMENTED_YIELD_VALUE', 'IS_OP', 'JUMP',
-        'JUMP_BACKWARD', 'JUMP_BACKWARD_NO_INTERRUPT', 'JUMP_FORWARD',
-        'JUMP_NO_INTERRUPT', 'KW_NAMES', 'LIST_APPEND', 'LIST_EXTEND',
-        'LOAD_ATTR', 'LOAD_CLOSURE', 'LOAD_CONST', 'LOAD_DEREF', 'LOAD_FAST',
-        'LOAD_FAST_AND_CLEAR', 'LOAD_FAST_CHECK', 'LOAD_FAST_LOAD_FAST',
-        'LOAD_FROM_DICT_OR_DEREF', 'LOAD_FROM_DICT_OR_GLOBALS', 'LOAD_GLOBAL',
-        'LOAD_METHOD', 'LOAD_NAME', 'LOAD_SUPER_ATTR', 'LOAD_SUPER_METHOD',
-        'LOAD_ZERO_SUPER_ATTR', 'LOAD_ZERO_SUPER_METHOD', 'MAKE_CELL', 'MAP_ADD',
-        'MATCH_CLASS', 'POP_JUMP_IF_FALSE', 'POP_JUMP_IF_NONE',
-        'POP_JUMP_IF_NOT_NONE', 'POP_JUMP_IF_TRUE', 'RAISE_VARARGS', 'RERAISE',
-        'RESUME', 'RETURN_CONST', 'SEND', 'SET_ADD', 'SET_FUNCTION_ATTRIBUTE',
-        'SET_UPDATE', 'STORE_ATTR', 'STORE_DEREF', 'STORE_FAST',
-        'STORE_FAST_LOAD_FAST', 'STORE_FAST_MAYBE_NULL', 'STORE_FAST_STORE_FAST',
-        'STORE_GLOBAL', 'STORE_NAME', 'SWAP', 'UNPACK_EX', 'UNPACK_SEQUENCE',
-        'YIELD_VALUE'],
-
-    'HAS_CONST': [
-        'INSTRUMENTED_RETURN_CONST', 'KW_NAMES', 'LOAD_CONST', 'RETURN_CONST'],
-
-    'HAS_NAME': [
-        'DELETE_ATTR', 'DELETE_GLOBAL', 'DELETE_NAME', 'IMPORT_FROM',
-        'IMPORT_NAME', 'LOAD_ATTR', 'LOAD_FROM_DICT_OR_GLOBALS', 'LOAD_GLOBAL',
-        'LOAD_METHOD', 'LOAD_NAME', 'LOAD_SUPER_ATTR', 'LOAD_SUPER_METHOD',
-        'LOAD_ZERO_SUPER_ATTR', 'LOAD_ZERO_SUPER_METHOD', 'STORE_ATTR',
-        'STORE_GLOBAL', 'STORE_NAME'],
-
-    'HAS_CONST': [
-        'INSTRUMENTED_RETURN_CONST', 'KW_NAMES', 'LOAD_CONST', 'RETURN_CONST'],
-
-    'HAS_JUMP': [
-        'ENTER_EXECUTOR', 'FOR_ITER', 'JUMP', 'JUMP_BACKWARD',
-        'JUMP_BACKWARD_NO_INTERRUPT', 'JUMP_FORWARD', 'JUMP_NO_INTERRUPT',
-        'POP_JUMP_IF_FALSE', 'POP_JUMP_IF_NONE', 'POP_JUMP_IF_NOT_NONE',
-        'POP_JUMP_IF_TRUE', 'SEND'],
-
-    'HAS_FREE': [
-        'DELETE_DEREF', 'LOAD_DEREF', 'LOAD_FROM_DICT_OR_DEREF', 'MAKE_CELL',
-        'STORE_DEREF'],
-
-    'HAS_LOCAL': [
-        'DELETE_FAST', 'LOAD_CLOSURE', 'LOAD_FAST', 'LOAD_FAST_AND_CLEAR',
-        'LOAD_FAST_CHECK', 'LOAD_FAST_LOAD_FAST', 'STORE_FAST',
-        'STORE_FAST_LOAD_FAST', 'STORE_FAST_MAYBE_NULL',
-        'STORE_FAST_STORE_FAST'],
-
-    'HAS_EXC': ['SETUP_CLEANUP', 'SETUP_FINALLY', 'SETUP_WITH'],
-
-    'HAS_COMPARE': ['COMPARE_OP'],
-}
-
 class OpListTests(unittest.TestCase):
     def test_invalid_opcodes(self):
         invalid = [-100, -1, 255, 512, 513, 1000]
@@ -102,13 +38,13 @@ class OpListTests(unittest.TestCase):
                     self.assertIsInstance(res, bool)
                     self.assertEqual(res, op in expected)
 
-        check_function(self, _opcode.has_arg, EXPECTED_OPLISTS['HAS_ARG'])
-        check_function(self, _opcode.has_const, EXPECTED_OPLISTS['HAS_CONST'])
-        check_function(self, _opcode.has_name, EXPECTED_OPLISTS['HAS_NAME'])
-        check_function(self, _opcode.has_jump, EXPECTED_OPLISTS['HAS_JUMP'])
-        check_function(self, _opcode.has_free, EXPECTED_OPLISTS['HAS_FREE'])
-        check_function(self, _opcode.has_local, EXPECTED_OPLISTS['HAS_LOCAL'])
-        check_function(self, _opcode.has_exc, EXPECTED_OPLISTS['HAS_EXC'])
+        check_function(self, _opcode.has_arg, dis.hasarg)
+        check_function(self, _opcode.has_const, dis.hasconst)
+        check_function(self, _opcode.has_name, dis.hasname)
+        check_function(self, _opcode.has_jump, dis.hasjump)
+        check_function(self, _opcode.has_free, dis.hasfree)
+        check_function(self, _opcode.has_local, dis.haslocal)
+        check_function(self, _opcode.has_exc, dis.hasexc)
 
 
 class OpListTests(unittest.TestCase):

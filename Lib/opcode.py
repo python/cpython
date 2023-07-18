@@ -159,7 +159,7 @@ def_op('LOAD_SUPER_ATTR', 141)
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 def_op('LOAD_FAST_AND_CLEAR', 143)  # Local variable number
 def_op('EXTENDED_ARG', 144)
-EXTENDED_ARG = 144
+EXTENDED_ARG = opmap['EXTENDED_ARG']
 def_op('LIST_APPEND', 145)
 def_op('SET_ADD', 146)
 def_op('MAP_ADD', 147)
