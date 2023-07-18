@@ -6,54 +6,50 @@
 #include "pycore_dict.h"
 #include "pycore_emscripten_signal.h"
 #include "pycore_intrinsics.h"
-#include "pycore_jit.h"
 #include "pycore_long.h"
 #include "pycore_object.h"
 #include "pycore_opcode.h"
+#include "pycore_opcode_metadata.h"
+#include "pycore_opcode_utils.h"
 #include "pycore_pyerrors.h"
 #include "pycore_range.h"
 #include "pycore_sliceobject.h"
+#include "pycore_uops.h"
+#include "pycore_jit.h"
 
 #include "Python/ceval_macros.h"
 
 #undef DEOPT_IF
 #define DEOPT_IF(COND, INSTNAME) \
-    do {                         \
-        if ((COND)) {            \
-            goto _return_deopt;  \
-        }                        \
-    } while (0)
-#undef DISPATCH_GOTO
-#define DISPATCH_GOTO() \
-    do {                \
-        goto _continue; \
-    } while (0)
-#undef PREDICT
-#define PREDICT(OP)
-#undef TARGET
-#define TARGET(OP) INSTRUCTION_START((OP));
-
-// XXX: Turn off trace recording in here?
+    if ((COND)) {                \
+        goto deoptimize;         \
+    }
+#undef ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZATION 0
+#undef ASSERT_KWNAMES_IS_NULL
+#define ASSERT_KWNAMES_IS_NULL() (void)0
 
 // Stuff that will be patched at "JIT time":
-extern _PyJITReturnCode _justin_continue(PyThreadState *tstate,
-                                         _PyInterpreterFrame *frame,
-                                         PyObject **stack_pointer,
-                                         _Py_CODEUNIT *next_instr
-                                         , PyObject *_tos1
-                                         , PyObject *_tos2
-                                         , PyObject *_tos3
-                                         , PyObject *_tos4
-                                         );
-extern _Py_CODEUNIT _justin_next_instr;
+extern _PyInterpreterFrame *_justin_continue(_PyExecutorObject *executor,
+                                             _PyInterpreterFrame *frame,
+                                             PyObject **stack_pointer,
+                                             PyThreadState *tstate, int pc
+                                             , PyObject *_tos1
+                                             , PyObject *_tos2
+                                             , PyObject *_tos3
+                                             , PyObject *_tos4
+                                             );
+// The address of an extern can't be 0:
 extern void _justin_oparg_plus_one;
+extern void _justin_operand_plus_one;
+extern _Py_CODEUNIT _justin_pc_plus_one;
 
 // XXX
-#define cframe (*tstate->cframe)
+#define ip_offset ((_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive)
 
-_PyJITReturnCode
-_justin_entry(PyThreadState *tstate, _PyInterpreterFrame *frame,
-              PyObject **stack_pointer, _Py_CODEUNIT *next_instr
+_PyInterpreterFrame *
+_justin_entry(_PyExecutorObject *executor, _PyInterpreterFrame *frame,
+              PyObject **stack_pointer, PyThreadState *tstate, int pc
               , PyObject *_tos1
               , PyObject *_tos2
               , PyObject *_tos3
@@ -64,38 +60,43 @@ _justin_entry(PyThreadState *tstate, _PyInterpreterFrame *frame,
     __builtin_assume(_tos2 == stack_pointer[/* DON'T REPLACE ME */ -2]);
     __builtin_assume(_tos3 == stack_pointer[/* DON'T REPLACE ME */ -3]);
     __builtin_assume(_tos4 == stack_pointer[/* DON'T REPLACE ME */ -4]);
+    if (pc != (intptr_t)&_justin_pc_plus_one - 1) {
+        return _PyUopExecute(executor, frame, stack_pointer, pc);
+    }
     // Locals that the instruction implementations expect to exist:
-    // The address of an extern can't be 0:
-    int oparg = (uintptr_t)&_justin_oparg_plus_one - 1;
-    uint8_t opcode = _JUSTIN_OPCODE;
-    // XXX: This temporary solution only works because we don't trace KW_NAMES:
-    PyObject *kwnames = NULL;
-#ifdef Py_STATS
-    int lastopcode = frame->prev_instr->op.code;
-#endif
-    if (next_instr != &_justin_next_instr) {
-        goto _return_ok;
+    _PyUOpExecutorObject *self = (_PyUOpExecutorObject *)executor;
+    uint32_t opcode = _JUSTIN_OPCODE;
+    int32_t oparg = (uintptr_t)&_justin_oparg_plus_one - 1;
+    uint64_t operand = (uintptr_t)&_justin_operand_plus_one - 1;
+    assert(self->trace[pc].opcode == opcode);
+    assert(self->trace[pc].oparg == oparg);
+    assert(self->trace[pc].operand == operand);
+    pc++;
+    switch (opcode) {
+        // Now, the actual instruction definitions (only one will be used):
+#include "Python/executor_cases.c.h" 
+        default:
+            Py_UNREACHABLE();
     }
-    if (opcode != JUMP_BACKWARD_QUICK && next_instr->op.code != opcode) {
-        frame->prev_instr = next_instr;
-        goto _return_deopt;
-    }
-    // Now, the actual instruction definition:
-%s
-    Py_UNREACHABLE();
+    // Finally, the continuation:
+    _tos1 = stack_pointer[/* DON'T REPLACE ME */ -1];
+    _tos2 = stack_pointer[/* DON'T REPLACE ME */ -2];
+    _tos3 = stack_pointer[/* DON'T REPLACE ME */ -3];
+    _tos4 = stack_pointer[/* DON'T REPLACE ME */ -4];
+    __attribute__((musttail))
+    return _justin_continue(executor, frame, stack_pointer, tstate, pc
+                            , _tos1
+                            , _tos2
+                            , _tos3
+                            , _tos4
+                            );
     // Labels that the instruction implementations expect to exist:
-start_frame:
-    if (_Py_EnterRecursivePy(tstate)) {
-        goto exit_unwind;
-    }
-resume_frame:
-    SET_LOCALS_FROM_FRAME();
-    DISPATCH();
-handle_eval_breaker:
-    if (_Py_HandlePending(tstate) != 0) {
-        goto error;
-    }
-    DISPATCH();
+unbound_local_error:
+    _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
+        UNBOUNDLOCAL_ERROR_MSG,
+        PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
+    );
+    goto error;
 pop_4_error:
     STACK_SHRINK(1);
 pop_3_error:
@@ -105,48 +106,12 @@ pop_2_error:
 pop_1_error:
     STACK_SHRINK(1);
 error:
-    frame->prev_instr = next_instr;
     _PyFrame_SetStackPointer(frame, stack_pointer);
-    return _JUSTIN_RETURN_GOTO_ERROR;
-exit_unwind:
-    assert(_PyErr_Occurred(tstate));
-    _Py_LeaveRecursiveCallPy(tstate);
-    // assert(frame != &entry_frame);
-    // GH-99729: We need to unlink the frame *before* clearing it:
-    _PyInterpreterFrame *dying = frame;
-    frame = cframe.current_frame = dying->previous;
-    _PyEvalFrameClearAndPop(tstate, dying);
-    frame->return_offset = 0;
-    // if (frame == &entry_frame) {
-    //     /* Restore previous cframe and exit */
-    //     tstate->cframe = cframe.previous;
-    //     assert(tstate->cframe->current_frame == frame->previous);
-    //     _Py_LeaveRecursiveCallTstate(tstate);
-    //     return NULL;
-    // }
-// resume_with_error:
-    // SET_LOCALS_FROM_FRAME();
-    goto error;
-    // Other labels:
-_return_ok:
-    frame->prev_instr = next_instr;
+    Py_DECREF(self);
+    return NULL;
+deoptimize:
+    frame->prev_instr--;
     _PyFrame_SetStackPointer(frame, stack_pointer);
-    return _JUSTIN_RETURN_OK;
-_return_deopt:
-    _PyFrame_SetStackPointer(frame, stack_pointer);
-    return _JUSTIN_RETURN_DEOPT;
-_continue:
-    ;  // XXX
-    // Finally, the continuation:
-    _tos1 = stack_pointer[/* DON'T REPLACE ME */ -1];
-    _tos2 = stack_pointer[/* DON'T REPLACE ME */ -2];
-    _tos3 = stack_pointer[/* DON'T REPLACE ME */ -3];
-    _tos4 = stack_pointer[/* DON'T REPLACE ME */ -4];
-    __attribute__((musttail))
-    return _justin_continue(tstate, frame, stack_pointer, next_instr
-                            , _tos1
-                            , _tos2
-                            , _tos3
-                            , _tos4
-                            );
+    Py_DECREF(self);
+    return frame;
 }

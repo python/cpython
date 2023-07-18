@@ -8,7 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_global_objects.h"  // _PY_NSMALLNEGINTS
+#include "pycore_bytesobject.h"   // _PyBytesWriter
+#include "pycore_global_objects.h"// _PY_NSMALLNEGINTS
 #include "pycore_runtime.h"       // _PyRuntime
 
 /*

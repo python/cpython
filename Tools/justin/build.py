@@ -17,7 +17,7 @@ import typing
 TOOLS_JUSTIN = pathlib.Path(__file__).parent
 TOOLS_JUSTIN_TEMPLATE = TOOLS_JUSTIN / "template.c"
 TOOLS_JUSTIN_TRAMPOLINE = TOOLS_JUSTIN / "trampoline.c"
-PYTHON_GENERATED_CASES_C_H = TOOLS_JUSTIN.parent.parent / "Python" / "generated_cases.c.h"
+PYTHON_GENERATED_CASES_C_H = TOOLS_JUSTIN.parent.parent / "Python" / "executor_cases.c.h"
 
 def batched(iterable, n):
     """Batch an iterable into lists of size n."""
@@ -667,6 +667,13 @@ def handle_relocations(
                 assert symbol.startswith("_")
                 symbol = symbol.removeprefix("_")
                 yield Hole("PATCH_ABS_64", symbol, offset, addend)
+            case {
+                "Addend": int(addend),
+                "Offset": int(offset),
+                "Symbol": {"Value": "_Py_tss_tstate"},
+                "Type": {"Value": "R_X86_64_GOTTPOFF"},
+            }:
+                raise NotImplementedError('Please use "PyThreadState_GET()" instead of "_PyThreadState_GET()" here... note the leading underscore!')
             case _:
                 raise NotImplementedError(relocation)
 
@@ -816,67 +823,6 @@ else:
     raise NotImplementedError(sys.platform)
 
 class Compiler:
-    _SKIP = frozenset(
-        {
-            "CALL_BOUND_METHOD_EXACT_ARGS",
-            "CALL_FUNCTION_EX",
-            "CHECK_EG_MATCH",
-            "CHECK_EXC_MATCH",
-            "CLEANUP_THROW",
-            "DELETE_DEREF",
-            "DELETE_FAST",
-            "DELETE_GLOBAL",
-            "DELETE_NAME",
-            "DICT_MERGE",
-            "END_ASYNC_FOR",
-            "EXTENDED_ARG",  # XXX: Only because we don't handle extended args correctly...
-            "FOR_ITER",
-            "FORMAT_VALUE",
-            "GET_AWAITABLE",
-            "IMPORT_FROM",
-            "IMPORT_NAME",
-            "INSTRUMENTED_CALL", # XXX
-            "INSTRUMENTED_CALL_FUNCTION_EX", # XXX
-            "INSTRUMENTED_END_FOR", # XXX
-            "INSTRUMENTED_END_SEND", # XXX
-            "INSTRUMENTED_FOR_ITER", # XXX
-            "INSTRUMENTED_INSTRUCTION", # XXX
-            "INSTRUMENTED_JUMP_BACKWARD", # XXX
-            "INSTRUMENTED_JUMP_FORWARD", # XXX
-            "INSTRUMENTED_LINE", # XXX
-            "INSTRUMENTED_LOAD_SUPER_ATTR", # XXX
-            "INSTRUMENTED_POP_JUMP_IF_FALSE", # XXX
-            "INSTRUMENTED_POP_JUMP_IF_NONE", # XXX
-            "INSTRUMENTED_POP_JUMP_IF_NOT_NONE", # XXX
-            "INSTRUMENTED_POP_JUMP_IF_TRUE", # XXX
-            "INSTRUMENTED_RESUME", # XXX
-            "INSTRUMENTED_RETURN_CONST", # XXX
-            "INSTRUMENTED_RETURN_VALUE", # XXX
-            "INSTRUMENTED_YIELD_VALUE", # XXX
-            "INTERPRETER_EXIT", # XXX
-            "JUMP_BACKWARD",  # XXX: Is this a problem?
-            "JUMP_BACKWARD_INTO_TRACE",
-            "JUMP_BACKWARD_NO_INTERRUPT",
-            "KW_NAMES",  # XXX: Only because we don't handle kwnames correctly...
-            "LOAD_CLASSDEREF",
-            "LOAD_CLOSURE",
-            "LOAD_DEREF",
-            "LOAD_FAST_CHECK",
-            "LOAD_FROM_DICT_OR_DEREF",
-            "LOAD_FROM_DICT_OR_GLOBALS",
-            "LOAD_GLOBAL",
-            "LOAD_NAME",
-            "MAKE_CELL",
-            "MATCH_CLASS",
-            "MATCH_KEYS",
-            "RAISE_VARARGS",
-            "RERAISE",
-            "SEND",
-            "STORE_ATTR_WITH_HINT",
-            "UNPACK_EX",
-            "UNPACK_SEQUENCE",
-        }
-    )
 
     def __init__(
         self,
@@ -946,19 +892,13 @@ class Compiler:
 
     async def build(self) -> None:
         generated_cases = PYTHON_GENERATED_CASES_C_H.read_text()
-        pattern = r"(?s:\n( {8}TARGET\((\w+)\) \{\n.*?\n {8}\})\n)"
-        self._cases = {}
-        for body, opname in re.findall(pattern, generated_cases):
-            self._cases[opname] = body.replace(" " * 8, " " * 4)
+        opnames = sorted(re.findall(r"\n {8}case (\w+): \{\n", generated_cases))
+        trampoline = TOOLS_JUSTIN_TRAMPOLINE.read_text()
         template = TOOLS_JUSTIN_TEMPLATE.read_text()
-        tasks = []
-        for opname in sorted(self._cases.keys() - self._SKIP):
-            body = template % self._cases[opname]
-            tasks.append(self._compile(opname, body))
-        opname = "trampoline"
-        body = TOOLS_JUSTIN_TRAMPOLINE.read_text()
-        tasks.append(self._compile(opname, body))
-        await asyncio.gather(*tasks)
+        await asyncio.gather(
+            self._compile("trampoline", trampoline),
+            *[self._compile(opname, template) for opname in opnames],
+        )
 
     def dump(self) -> str:
         lines = []
@@ -979,9 +919,10 @@ class Compiler:
         values = {
             "HOLE_base",
             "HOLE_continue",
-            "HOLE_next_instr",
             "HOLE_next_trace",
             "HOLE_oparg_plus_one",
+            "HOLE_operand_plus_one",
+            "HOLE_pc_plus_one",
         }
         opnames = []
         for opname, stencil in sorted(self._stencils_built.items()):
@@ -1024,7 +965,7 @@ class Compiler:
         lines.append(f"")
         lines.append(f"static const Stencil trampoline_stencil = INIT_STENCIL(trampoline);")
         lines.append(f"")
-        lines.append(f"static const Stencil stencils[256] = {{")
+        lines.append(f"static const Stencil stencils[512] = {{")
         assert opnames[-1] == "trampoline"
         for opname in opnames[:-1]:
             lines.append(f"    [{opname}] = INIT_STENCIL({opname}),")

@@ -66,12 +66,16 @@ class _SelectorMapping(Mapping):
     def __len__(self):
         return len(self._selector._fd_to_key)
 
+    def get(self, fileobj, default=None):
+        fd = self._selector._fileobj_lookup(fileobj)
+        return self._selector._fd_to_key.get(fd, default)
+
     def __getitem__(self, fileobj):
-        try:
-            fd = self._selector._fileobj_lookup(fileobj)
-            return self._selector._fd_to_key[fd]
-        except KeyError:
-            raise KeyError("{!r} is not registered".format(fileobj)) from None
+        fd = self._selector._fileobj_lookup(fileobj)
+        key = self._selector._fd_to_key.get(fd)
+        if key is None:
+            raise KeyError("{!r} is not registered".format(fileobj))
+        return key
 
     def __iter__(self):
         return iter(self._selector._fd_to_key)
@@ -272,19 +276,6 @@ class _BaseSelectorImpl(BaseSelector):
     def get_map(self):
         return self._map
 
-    def _key_from_fd(self, fd):
-        """Return the key associated to a given file descriptor.
-
-        Parameters:
-        fd -- file descriptor
-
-        Returns:
-        corresponding key, or None if not found
-        """
-        try:
-            return self._fd_to_key[fd]
-        except KeyError:
-            return None
 
 
 class SelectSelector(_BaseSelectorImpl):
@@ -332,7 +323,7 @@ class SelectSelector(_BaseSelectorImpl):
             if fd in w:
                 events |= EVENT_WRITE
 
-            key = self._key_from_fd(fd)
+            key = self._fd_to_key.get(fd)
             if key:
                 ready.append((key, events & key.events))
         return ready
@@ -422,7 +413,7 @@ class _PollLikeSelector(_BaseSelectorImpl):
             if event & ~self._EVENT_WRITE:
                 events |= EVENT_READ
 
-            key = self._key_from_fd(fd)
+            key = self._fd_to_key.get(fd)
             if key:
                 ready.append((key, events & key.events))
         return ready
@@ -438,6 +429,9 @@ if hasattr(select, 'poll'):
 
 
 if hasattr(select, 'epoll'):
+
+    _NOT_EPOLLIN = ~select.EPOLLIN
+    _NOT_EPOLLOUT = ~select.EPOLLOUT
 
     class EpollSelector(_PollLikeSelector):
         """Epoll-based selector."""
@@ -461,22 +455,20 @@ if hasattr(select, 'epoll'):
             # epoll_wait() expects `maxevents` to be greater than zero;
             # we want to make sure that `select()` can be called when no
             # FD is registered.
-            max_ev = max(len(self._fd_to_key), 1)
+            max_ev = len(self._fd_to_key) or 1
 
             ready = []
             try:
                 fd_event_list = self._selector.poll(timeout, max_ev)
             except InterruptedError:
                 return ready
-            for fd, event in fd_event_list:
-                events = 0
-                if event & ~select.EPOLLIN:
-                    events |= EVENT_WRITE
-                if event & ~select.EPOLLOUT:
-                    events |= EVENT_READ
 
-                key = self._key_from_fd(fd)
+            fd_to_key = self._fd_to_key
+            for fd, event in fd_event_list:
+                key = fd_to_key.get(fd)
                 if key:
+                    events = ((event & _NOT_EPOLLIN and EVENT_WRITE)
+                              | (event & _NOT_EPOLLOUT and EVENT_READ))
                     ready.append((key, events & key.events))
             return ready
 
@@ -570,7 +562,7 @@ if hasattr(select, 'kqueue'):
                 if flag == select.KQ_FILTER_WRITE:
                     events |= EVENT_WRITE
 
-                key = self._key_from_fd(fd)
+                key = self._fd_to_key.get(fd)
                 if key:
                     ready.append((key, events & key.events))
             return ready

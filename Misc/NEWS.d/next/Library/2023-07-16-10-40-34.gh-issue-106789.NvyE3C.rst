@@ -1,0 +1,1 @@
+Remove import of :mod:``pprint`` from :mod:``sysconfig``.

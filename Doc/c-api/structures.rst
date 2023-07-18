@@ -288,7 +288,7 @@ There are these calling conventions:
 
    .. versionchanged:: 3.10
 
-      ``METH_FASTCALL`` is now part of the stable ABI.
+      ``METH_FASTCALL`` is now part of the :ref:`stable ABI <stable-abi>`.
 
 
 .. data:: METH_FASTCALL | METH_KEYWORDS
