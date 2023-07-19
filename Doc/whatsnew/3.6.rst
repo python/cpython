@@ -1404,7 +1404,7 @@ socket
 ------
 
 The :func:`~socket.socket.ioctl` function now supports the
-:data:`~socket.SIO_LOOPBACK_FAST_PATH` control code.
+:const:`~socket.SIO_LOOPBACK_FAST_PATH` control code.
 (Contributed by Daniel Stokes in :issue:`26536`.)
 
 The :meth:`~socket.socket.getsockopt` constants ``SO_DOMAIN``,
@@ -1416,7 +1416,7 @@ The :meth:`~socket.socket.setsockopt` now supports the
 (Contributed by Christian Heimes in :issue:`27744`.)
 
 The socket module now supports the address family
-:data:`~socket.AF_ALG` to interface with Linux Kernel crypto API. ``ALG_*``,
+:const:`~socket.AF_ALG` to interface with Linux Kernel crypto API. ``ALG_*``,
 ``SOL_ALG`` and :meth:`~socket.socket.sendmsg_afalg` were added.
 (Contributed by Christian Heimes in :issue:`27744` with support from
 Victor Stinner.)
