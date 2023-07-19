@@ -316,15 +316,13 @@ class SelectSelector(_BaseSelectorImpl):
             return ready
         r = set(r)
         w = set(w)
-        for fd in r | w:
-            events = 0
-            if fd in r:
-                events |= EVENT_READ
-            if fd in w:
-                events |= EVENT_WRITE
-
-            key = self._fd_to_key.get(fd)
+        rw = r | w
+        fd_to_key_get = self._fd_to_key.get
+        for fd in rw:
+            key = fd_to_key_get(fd)
             if key:
+                events = ((fd in r and EVENT_READ)
+                          | (fd in w and EVENT_WRITE))
                 ready.append((key, events & key.events))
         return ready
 
