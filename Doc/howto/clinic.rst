@@ -1416,7 +1416,7 @@ all its subclasses.
 How to convert ``METH_O`` and ``METH_NOARGS`` functions
 -------------------------------------------------------
 
-To convert a function using :c:data:`METH_O`, make sure the function's
+To convert a function using :data:`METH_O`, make sure the function's
 single argument is using the ``object`` converter, and mark the
 arguments as positional-only::
 
@@ -1428,11 +1428,11 @@ arguments as positional-only::
     [clinic start generated code]*/
 
 
-To convert a function using :c:data:`METH_NOARGS`, just don't specify
+To convert a function using :data:`METH_NOARGS`, just don't specify
 any arguments.
 
 You can still use a self converter, a return converter, and specify
-a *type* argument to the object converter for :c:data:`METH_O`.
+a *type* argument to the object converter for :data:`METH_O`.
 
 
 How to convert ``tp_new`` and ``tp_init`` functions
