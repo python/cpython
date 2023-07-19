@@ -163,7 +163,8 @@ Let's dive in!
 1. Find a Python builtin that calls either :c:func:`PyArg_ParseTuple`
    or :c:func:`PyArg_ParseTupleAndKeywords`, and hasn't been converted
    to work with Argument Clinic yet.
-   For my example I'm using :py:meth:`!_pickle.Pickler.dump`.
+   For my example I'm using
+   :py:meth:`_pickle.Pickler.dump <pickle.Pickler.dump>`.
 
 2. If the call to the :c:func:`!PyArg_Parse*` function uses any of the
    following format units:
@@ -185,7 +186,7 @@ Let's dive in!
    Also, if the function has multiple calls to :c:func:`!PyArg_ParseTuple`
    or :c:func:`PyArg_ParseTupleAndKeywords` where it supports different
    types for the same argument, or if the function uses something besides
-   PyArg_Parse functions to parse its arguments, it probably
+   :c:func:`!PyArg_Parse*` functions to parse its arguments, it probably
    isn't suitable for conversion to Argument Clinic.  Argument Clinic
    doesn't support generic functions or polymorphic parameters.
 
@@ -577,7 +578,7 @@ Argument Clinic will use that function name for the base (generated) function,
 then add ``"_impl"`` to the end and use that for the name of the impl function.
 
 For example, if we wanted to rename the C function names generated for
-:py:meth:`!pickle.Pickler.dump`, it'd look like this::
+:py:meth:`pickle.Pickler.dump`, it'd look like this::
 
     /*[clinic input]
     pickle.Pickler.dump as pickler_dumper
@@ -888,7 +889,7 @@ Just run :program:`Tools/clinic/clinic.py --converters` to see the full list.
 How to use the ``Py_buffer`` converter
 --------------------------------------
 
-When using the :c:data:`Py_buffer` converter
+When using the ``Py_buffer`` converter
 (or the ``'s*'``, ``'w*'``, ``'*y'``, or ``'z*'`` legacy converters),
 you *must* not call :c:func:`PyBuffer_Release` on the provided buffer.
 Argument Clinic generates code that does it for you (in the parsing function).
@@ -916,7 +917,7 @@ to use the converter ``object(type='PyUnicodeObject *', subclass_of='&PyUnicode_
 
 One possible problem with using Argument Clinic: it takes away some possible
 flexibility for the format units starting with ``e``.  When writing a
-:c:func:`PyArg_Parse` call by hand, you could theoretically decide at runtime what
+:c:func:`!PyArg_Parse*` call by hand, you could theoretically decide at runtime what
 encoding string to pass in to :c:func:`PyArg_ParseTuple`.   But now this string must
 be hard-coded at Argument-Clinic-preprocessing-time.  This limitation is deliberate;
 it made supporting this format unit much easier, and may allow for future optimizations.
@@ -970,7 +971,7 @@ expression.  Currently the following are explicitly supported:
 * Numeric constants (integer and float)
 * String constants
 * ``True``, ``False``, and ``None``
-* Simple symbolic constants like :py:attr:`sys.maxsize`, which must
+* Simple symbolic constants like :py:data:`sys.maxsize`, which must
   start with the name of the module
 
 (In the future, this may need to get even more elaborate,
@@ -991,7 +992,7 @@ Consider the following example:
 
     foo: Py_ssize_t = sys.maxsize - 1
 
-:py:attr:`sys.maxsize` can have different values on different platforms.  Therefore
+:py:data:`sys.maxsize` can have different values on different platforms.  Therefore
 Argument Clinic can't simply evaluate that expression locally and hard-code it
 in C.  So it stores the default in such a way that it will get evaluated at
 runtime, when the user asks for the function's signature.
@@ -1005,8 +1006,8 @@ attribute called :py:attr:`!max_widgets`, you may simply use it:
     foo: Py_ssize_t = max_widgets
 
 If the symbol isn't found in the current module, it fails over to looking in
-:py:attr:`sys.modules`.  That's how it can find :py:attr:`sys.maxsize` for example.  (Since you
-don't know in advance what modules the user will load into their interpreter,
+:py:data:`sys.modules`.  That's how it can find :py:data:`sys.maxsize` for example.
+(Since you don't know in advance what modules the user will load into their interpreter,
 it's best to restrict yourself to modules that are preloaded by Python itself.)
 
 Evaluating default values only at runtime means Argument Clinic can't compute
@@ -1317,48 +1318,61 @@ the converter in Argument Clinic will be passed along to your
 There are some additional members of :py:class:`!CConverter` you may wish
 to specify in your subclass.  Here's the current list:
 
-:py:attr:`!type`
-    The C type to use for this variable.
-    ``type`` should be a Python string specifying the type, e.g. ``int``.
-    If this is a pointer type, the type string should end with ``' *'``.
+.. module:: clinic
 
-:py:attr:`!default`
-    The Python default value for this parameter, as a Python value.
-    Or the magic value ``unspecified`` if there is no default.
+.. class:: CConverter
 
-:py:attr:`!py_default`
-    ``default`` as it should appear in Python code,
-    as a string.
-    Or ``None`` if there is no default.
+   .. attribute:: type
 
-:py:attr:`!c_default`
-    ``default`` as it should appear in C code,
-    as a string.
-    Or ``None`` if there is no default.
+      The C type to use for this variable.
+      :attr:`!type` should be a Python string specifying the type,
+      e.g. :class:`int`.
+      If this is a pointer type, the type string should end with ``' *'``.
 
-:py:attr:`!c_ignored_default`
-    The default value used to initialize the C variable when
-    there is no default, but not specifying a default may
-    result in an "uninitialized variable" warning.  This can
-    easily happen when using option groups—although
-    properly written code will never actually use this value,
-    the variable does get passed in to the impl, and the
-    C compiler will complain about the "use" of the
-    uninitialized value.  This value should always be a
-    non-empty string.
+   .. attribute:: default
 
-:py:attr:`!converter`
-    The name of the C converter function, as a string.
+      The Python default value for this parameter, as a Python value.
+      Or the magic value ``unspecified`` if there is no default.
 
-:py:attr:`!impl_by_reference`
-    A boolean value.  If true,
-    Argument Clinic will add a ``&`` in front of the name of
-    the variable when passing it into the impl function.
+   .. attribute:: py_default
 
-:py:attr:`!parse_by_reference`
-    A boolean value.  If true,
-    Argument Clinic will add a ``&`` in front of the name of
-    the variable when passing it into :c:func:`PyArg_ParseTuple`.
+      :attr:`!default` as it should appear in Python code,
+      as a string.
+      Or ``None`` if there is no default.
+
+   .. attribute:: c_default
+
+      :attr:`!default` as it should appear in C code,
+      as a string.
+      Or ``None`` if there is no default.
+
+   .. attribute:: c_ignored_default
+
+      The default value used to initialize the C variable when
+      there is no default, but not specifying a default may
+      result in an "uninitialized variable" warning.  This can
+      easily happen when using option groups—although
+      properly written code will never actually use this value,
+      the variable does get passed in to the impl, and the
+      C compiler will complain about the "use" of the
+      uninitialized value.  This value should always be a
+      non-empty string.
+
+   .. attribute:: converter
+
+      The name of the C converter function, as a string.
+
+   .. attribute:: impl_by_reference
+
+      A boolean value.  If true,
+      Argument Clinic will add a ``&`` in front of the name of
+      the variable when passing it into the impl function.
+
+   .. attribute:: parse_by_reference
+
+      A boolean value.  If true,
+      Argument Clinic will add a ``&`` in front of the name of
+      the variable when passing it into :c:func:`PyArg_ParseTuple`.
 
 
 Here's the simplest example of a custom converter, from :source:`Modules/zlibmodule.c`::
