@@ -108,7 +108,9 @@ cache the compiled regex patterns in the following functions: :func:`fnmatch`,
      :exc:`ValueError` is raised.
    - ``*`` and ``?`` wildcards in other positions don't match path separators.
 
-   This closely approximates the matching rules of the :mod:`glob` module.
+   These rules approximate shell recursive globbing. The :mod:`pathlib` module
+   calls this function and supplies *seps* to implement
+   :meth:`~pathlib.PurePath.match` and :meth:`~pathlib.Path.glob`.
 
    .. versionchanged:: 3.13
       The *seps* parameter was added.

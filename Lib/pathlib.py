@@ -67,7 +67,7 @@ def _is_case_sensitive(pathmod):
 @functools.lru_cache(maxsize=256)
 def _compile_pattern(pat, sep, case_sensitive):
     """Compile given glob pattern to a re.Pattern object (observing case
-    sensitivity), or None if the pattern should match everything."""
+    sensitivity)."""
     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
     return re.compile(fnmatch.translate(pat, sep), flags).match
 

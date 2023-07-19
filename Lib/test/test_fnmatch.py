@@ -256,6 +256,8 @@ class TranslateTestCase(unittest.TestCase):
         self.assertEqual(translate('a?b*', seps='/'), r'(?s:a[^/]b[^/]*)\Z')
         self.assertEqual(translate('/**/*/*.*/**', seps='/'),
                          r'(?s:/(.*[/])?[^/]+/[^/]*\.[^/]*/.*)\Z')
+        self.assertEqual(translate('foo/bar\\baz', seps=('/', '\\')),
+                         r'(?s:foo/bar\\baz)\Z')
         self.assertRaises(ValueError, translate, 'a**', seps='/')
         self.assertRaises(ValueError, translate, '**b', seps='/')
 
