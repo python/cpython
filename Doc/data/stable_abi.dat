@@ -399,6 +399,7 @@ type,PyModuleDef,3.2,,full-abi
 type,PyModuleDef_Base,3.2,,full-abi
 function,PyModuleDef_Init,3.5,,
 var,PyModuleDef_Type,3.5,,
+function,PyModule_Add,3.13,,
 function,PyModule_AddFunctions,3.7,,
 function,PyModule_AddIntConstant,3.2,,
 function,PyModule_AddObject,3.2,,

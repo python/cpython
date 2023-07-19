@@ -234,6 +234,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 /* Local variable macros */
 
+#define LOCALS_ARRAY    (frame->localsplus)
 #define GETLOCAL(i)     (frame->localsplus[i])
 
 /* The SETLOCAL() macro must not DECREF the local variable in-place and
@@ -349,3 +350,5 @@ static const convertion_func_ptr CONVERSION_FUNCTIONS[4] = {
     [FVC_REPR] = PyObject_Repr,
     [FVC_ASCII] = PyObject_ASCII
 };
+
+#define ASSERT_KWNAMES_IS_NULL() assert(kwnames == NULL)

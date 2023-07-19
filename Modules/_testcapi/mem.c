@@ -692,13 +692,11 @@ _PyTestCapi_Init_Mem(PyObject *mod)
 
     PyObject *v;
 #ifdef WITH_PYMALLOC
-    v = Py_NewRef(Py_True);
+    v = Py_True;
 #else
-    v = Py_NewRef(Py_False);
+    v = Py_False;
 #endif
-    int rc = PyModule_AddObjectRef(mod, "WITH_PYMALLOC", v);
-    Py_DECREF(v);
-    if (rc < 0) {
+    if (PyModule_AddObjectRef(mod, "WITH_PYMALLOC", v) < 0) {
         return -1;
     }
 

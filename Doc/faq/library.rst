@@ -669,41 +669,6 @@ and client-side web systems.
 A summary of available frameworks is maintained by Paul Boddie at
 https://wiki.python.org/moin/WebProgramming\ .
 
-Cameron Laird maintains a useful set of pages about Python web technologies at
-https://web.archive.org/web/20210224183619/http://phaseit.net/claird/comp.lang.python/web_python.
-
-
-How can I mimic CGI form submission (METHOD=POST)?
---------------------------------------------------
-
-I would like to retrieve web pages that are the result of POSTing a form. Is
-there existing code that would let me do this easily?
-
-Yes. Here's a simple example that uses :mod:`urllib.request`::
-
-   #!/usr/local/bin/python
-
-   import urllib.request
-
-   # build the query string
-   qs = "First=Josephine&MI=Q&Last=Public"
-
-   # connect and send the server a path
-   req = urllib.request.urlopen('http://www.some-server.out-there'
-                                '/cgi-bin/some-cgi-script', data=qs)
-   with req:
-       msg, hdrs = req.read(), req.info()
-
-Note that in general for percent-encoded POST operations, query strings must be
-quoted using :func:`urllib.parse.urlencode`.  For example, to send
-``name=Guy Steele, Jr.``::
-
-   >>> import urllib.parse
-   >>> urllib.parse.urlencode({'name': 'Guy Steele, Jr.'})
-   'name=Guy+Steele%2C+Jr.'
-
-.. seealso:: :ref:`urllib-howto` for extensive examples.
-
 
 What module should I use to help with generating HTML?
 ------------------------------------------------------
