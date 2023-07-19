@@ -369,11 +369,8 @@ class _PollLikeSelector(_BaseSelectorImpl):
 
         changed = False
         if events != key.events:
-            selector_events = 0
-            if events & EVENT_READ:
-                selector_events |= self._EVENT_READ
-            if events & EVENT_WRITE:
-                selector_events |= self._EVENT_WRITE
+            selector_events = ((events & EVENT_READ and self._EVENT_READ)
+                               | (events & EVENT_WRITE and self._EVENT_WRITE) )
             try:
                 self._selector.modify(key.fd, selector_events)
             except:
@@ -404,15 +401,12 @@ class _PollLikeSelector(_BaseSelectorImpl):
             fd_event_list = self._selector.poll(timeout)
         except InterruptedError:
             return ready
+        fd_to_key_get = self._fd_to_key.get
         for fd, event in fd_event_list:
-            events = 0
-            if event & ~self._EVENT_READ:
-                events |= EVENT_WRITE
-            if event & ~self._EVENT_WRITE:
-                events |= EVENT_READ
-
-            key = self._fd_to_key.get(fd)
+            key = fd_to_key_get(fd)
             if key:
+                events = ( (event & ~self._EVENT_READ and EVENT_WRITE)
+                           | (event & ~self.EVENT_WRITE and EVENT_READ))
                 ready.append((key, events & key.events))
         return ready
 
