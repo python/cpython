@@ -1,0 +1,3 @@
+Python no longer crashes due to an infrequent race when simultaneously
+initializing the sys/builtins modules in multiple subinterpreters that have
+their own GILs.
