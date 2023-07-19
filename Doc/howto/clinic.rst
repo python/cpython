@@ -750,25 +750,25 @@ the same converters.
 All arguments to Argument Clinic converters are keyword-only.
 All Argument Clinic converters accept the following arguments:
 
-  ``c_default``
+  *c_default*
     The default value for this parameter when defined in C.
     Specifically, this will be the initializer for the variable declared
     in the "parse function".  See :ref:`the section on default values <default_values>`
     for how to use this.
     Specified as a string.
 
-  ``annotation``
+  *annotation*
     The annotation value for this parameter.  Not currently supported,
     because :pep:`8` mandates that the Python library may not use
     annotations.
 
-  ``unused``
+  *unused*
     Wrap the argument with :c:macro:`Py_UNUSED` in the impl function signature.
 
 In addition, some converters accept additional arguments.  Here is a list
 of these arguments, along with their meanings:
 
-  ``accept``
+  *accept*
     A set of Python types (and possibly pseudo-types);
     this restricts the allowable Python argument to values of these types.
     (This is not a general-purpose facility; as a rule it only supports
@@ -776,31 +776,31 @@ of these arguments, along with their meanings:
 
     To accept ``None``, add ``NoneType`` to this set.
 
-  ``bitwise``
+  *bitwise*
     Only supported for unsigned integers.  The native integer value of this
     Python argument will be written to the parameter without any range checking,
     even for negative values.
 
-  ``converter``
+  *converter*
     Only supported by the ``object`` converter.  Specifies the name of a
     :ref:`C "converter function" <o_ampersand>`
     to use to convert this object to a native type.
 
-  ``encoding``
+  *encoding*
     Only supported for strings.  Specifies the encoding to use when converting
     this string from a Python str (Unicode) value into a C ``char *`` value.
 
 
-  ``subclass_of``
+  *subclass_of*
     Only supported for the ``object`` converter.  Requires that the Python
     value be a subclass of a Python type, as expressed in C.
 
-  ``type``
+  *type*
     Only supported for the ``object`` and ``self`` converters.  Specifies
     the C type that will be used to declare the variable.  Default value is
     ``"PyObject *"``.
 
-  ``zeroes``
+  *zeroes*
     Only supported for strings.  If true, embedded NUL bytes (``'\\0'``) are
     permitted inside the value.  The length of the string will be passed in
     to the impl function, just after the string parameter, as a parameter named
@@ -907,11 +907,11 @@ conversion functions, or types, or strings specifying an encoding.
 (But "legacy converters" don't support arguments.  That's why we
 skipped them for your first function.)  The argument you specified
 to the format unit is now an argument to the converter; this
-argument is either ``converter`` (for ``O&``), ``subclass_of`` (for ``O!``),
-or ``encoding`` (for all the format units that start with ``e``).
+argument is either *converter* (for ``O&``), *subclass_of* (for ``O!``),
+or *encoding* (for all the format units that start with ``e``).
 
-When using ``subclass_of``, you may also want to use the other
-custom argument for ``object()``: ``type``, which lets you set the type
+When using *subclass_of*, you may also want to use the other
+custom argument for ``object()``: *type*, which lets you set the type
 actually used for the parameter.  For example, if you want to ensure
 that the object is a subclass of :c:var:`PyUnicode_Type`, you probably want
 to use the converter ``object(type='PyUnicodeObject *', subclass_of='&PyUnicode_Type')``.
@@ -1186,9 +1186,9 @@ using a default converter.  It automatically sets the ``type``
 of this parameter to the "pointer to an instance" you specified
 when you declared the type.  However, you can override
 Argument Clinic's converter and specify one yourself.
-Just add your own ``self`` parameter as the first parameter in a
+Just add your own *self* parameter as the first parameter in a
 block, and ensure that its converter is an instance of
-``self_converter`` or a subclass thereof.
+:class:`!self_converter` or a subclass thereof.
 
 What's the point?  This lets you override the type of ``self``,
 or give it a different default name.
@@ -1196,7 +1196,7 @@ or give it a different default name.
 How do you specify the custom type you want to cast ``self`` to?
 If you only have one or two functions with the same type for ``self``,
 you can directly use Argument Clinic's existing ``self`` converter,
-passing in the type you want to use as the ``type`` parameter::
+passing in the type you want to use as the *type* parameter::
 
     /*[clinic input]
 
@@ -1211,7 +1211,7 @@ passing in the type you want to use as the ``type`` parameter::
 
 On the other hand, if you have a lot of functions that will use the same
 type for ``self``, it's best to create your own converter, subclassing
-``self_converter`` but overwriting the ``type`` member::
+:class:`!self_converter` but overwriting the :py:attr:`!type` member::
 
     /*[python input]
     class PicklerObject_converter(self_converter):
