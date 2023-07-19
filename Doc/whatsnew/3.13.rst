@@ -184,6 +184,13 @@ Deprecated
   Replace ``ctypes.ARRAY(item_type, size)`` with ``item_type * size``.
   (Contributed by Victor Stinner in :gh:`105733`.)
 
+* The :mod:`getopt` and :mod:`optparse` modules are now
+  :term:`soft deprecated`: the :mod:`argparse` should be used for new projects.
+  Previously, the :mod:`optparse` module was already deprecated, its removal
+  was not scheduled, and no warnings was emitted: so there is no change in
+  practice.
+  (Contributed by Victor Stinner in :gh:`106535`.)
+
 Pending Removal in Python 3.14
 ------------------------------
 
@@ -945,6 +952,11 @@ Removed
   <https://github.com/python/pythoncapi-compat/>`__ can be used to get
   :c:func:`PyInterpreterState_Get()` on Python 3.8 and older.
   (Contributed by Victor Stinner in :gh:`106320`.)
+
+* The :c:func:`PyModule_AddObject` function is now :term:`soft deprecated`:
+  :c:func:`PyModule_Add` or :c:func:`PyModule_AddObjectRef` functions should
+  be used instead.
+  (Contributed by Serhiy Storchaka in :gh:`86493`.)
 
 Pending Removal in Python 3.14
 ------------------------------
