@@ -130,7 +130,7 @@ def main(opcode_py,
         for name, op in specialized_opmap.items():
             fobj.write(DEFINE.format(name, op))
 
-        iobj.write("\nconst uint8_t _PyOpcode_Caches[256];\n")
+        iobj.write("\nextern const uint8_t _PyOpcode_Caches[256];\n")
         iobj.write("\nextern const uint8_t _PyOpcode_Deopt[256];\n")
         iobj.write("\n#ifdef NEED_OPCODE_TABLES\n")
 
