@@ -547,23 +547,21 @@ if hasattr(select, 'kqueue'):
             # If max_ev is 0, kqueue will ignore the timeout. For consistent
             # behavior with the other selector classes, we prevent that here
             # (using max). See https://bugs.python.org/issue29255
-            max_ev = max(len(self._fd_to_key), 1)
+            max_ev = len(self._fd_to_key) or 1
             ready = []
             try:
                 kev_list = self._selector.control(None, max_ev, timeout)
             except InterruptedError:
                 return ready
+
+            fd_to_key_get = self._fd_to_key.get
             for kev in kev_list:
                 fd = kev.ident
                 flag = kev.filter
-                events = 0
-                if flag == select.KQ_FILTER_READ:
-                    events |= EVENT_READ
-                if flag == select.KQ_FILTER_WRITE:
-                    events |= EVENT_WRITE
-
-                key = self._fd_to_key.get(fd)
+                key = fd_to_key_get(fd)
                 if key:
+                    events = ((flag == select.KQ_FILTER_READ and EVENT_READ)
+                              | (flag == select.KQ_FILTER_WRITE and EVENT_WRITE))
                     ready.append((key, events & key.events))
             return ready
 
