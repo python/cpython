@@ -919,7 +919,7 @@ to use the converter ``object(type='PyUnicodeObject *', subclass_of='&PyUnicode_
 One possible problem with using Argument Clinic: it takes away some possible
 flexibility for the format units starting with ``e``.  When writing a
 :c:func:`!PyArg_Parse*` call by hand, you could theoretically decide at runtime what
-encoding string to pass in to :c:func:`PyArg_ParseTuple`.   But now this string must
+encoding string to pass to that call.   But now this string must
 be hard-coded at Argument-Clinic-preprocessing-time.  This limitation is deliberate;
 it made supporting this format unit much easier, and may allow for future optimizations.
 This restriction doesn't seem unreasonable; CPython itself always passes in static
