@@ -367,7 +367,7 @@ class _PollLikeSelector(_BaseSelectorImpl):
         changed = False
         if events != key.events:
             selector_events = ((events & EVENT_READ and self._EVENT_READ)
-                               | (events & EVENT_WRITE and self._EVENT_WRITE) )
+                               | (events & EVENT_WRITE and self._EVENT_WRITE))
             try:
                 self._selector.modify(key.fd, selector_events)
             except:
