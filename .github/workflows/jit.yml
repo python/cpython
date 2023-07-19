@@ -156,9 +156,9 @@ jobs:
           choco install llvm --allow-downgrade --version ${{ matrix.llvm }}
           echo "::endgroup::"
           echo "::group::Build Python"
-          ./PCbuild/build ${{ matrix.debug && '-d' || '--pgo' }} -p ${{ matrix.architecture }}
+          ./PCbuild/build.bat ${{ matrix.debug && '-d' || '--pgo' }} -p ${{ matrix.architecture }}
           echo "::endgroup::"
           echo "::group::Test Python"
-          ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
-          ./PCbuild/rt ${{ matrix.debug && '-d' }} -p ${{ matrix.architecture }} -q --exclude ${{ matrix.exclude }} test_capi test_dis test_embed test_gdb test_monitoring test_sys_settrace test_tools test_trace --multiprocess 0 --timeout 3600 --verbose2 --verbose3
+          ./python.bat -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
+          ./PCbuild/rt.bat ${{ matrix.debug && '-d' }} -p ${{ matrix.architecture }} -q --exclude ${{ matrix.exclude }} test_capi test_dis test_embed test_gdb test_monitoring test_sys_settrace test_tools test_trace --multiprocess 0 --timeout 3600 --verbose2 --verbose3
           echo "::endgroup::"
