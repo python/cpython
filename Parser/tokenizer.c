@@ -1,7 +1,6 @@
 
 /* Tokenizer implementation */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 
@@ -1039,9 +1038,6 @@ tok_readline_raw(struct tok_state *tok)
         if (line == NULL) {
             return 1;
         }
-        if (tok->tok_mode_stack_index && !update_fstring_expr(tok, 0)) {
-            return 0;
-        }
         if (tok->fp_interactive &&
             tok_concatenate_interactive_new_line(tok, line) == -1) {
             return 0;
@@ -1106,11 +1102,7 @@ tok_readline_string(struct tok_state* tok) {
     tok->inp += buflen;
     *tok->inp = '\0';
 
-    if (tok->start == NULL) {
-        tok->buf = tok->cur;
-    }
     tok->line_start = tok->cur;
-
     Py_DECREF(line);
     return 1;
 error:
@@ -1274,6 +1266,10 @@ tok_underflow_file(struct tok_state *tok) {
         tok->implicit_newline = 1;
     }
 
+    if (tok->tok_mode_stack_index && !update_fstring_expr(tok, 0)) {
+        return 0;
+    }
+
     ADVANCE_LINENO();
     if (tok->decoding_state != STATE_NORMAL) {
         if (tok->lineno > 2) {
@@ -1316,6 +1312,10 @@ tok_underflow_readline(struct tok_state* tok) {
         *tok->inp++ = '\n';
         *tok->inp = '\0';
         tok->implicit_newline = 1;
+    }
+
+    if (tok->tok_mode_stack_index && !update_fstring_expr(tok, 0)) {
+        return 0;
     }
 
     ADVANCE_LINENO();
@@ -1558,12 +1558,12 @@ warn_invalid_escape_sequence(struct tok_state *tok, int first_invalid_escape_cha
         return -1;
     }
 
-    if (PyErr_WarnExplicitObject(PyExc_DeprecationWarning, msg, tok->filename,
+    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg, tok->filename,
                                  tok->lineno, NULL, NULL) < 0) {
         Py_DECREF(msg);
 
-        if (PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
-            /* Replace the DeprecationWarning exception with a SyntaxError
+        if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
+            /* Replace the SyntaxWarning exception with a SyntaxError
                to get a more accurate error report */
             PyErr_Clear();
             return syntaxerror(tok, "invalid escape sequence '\\%c'", (char) first_invalid_escape_char);

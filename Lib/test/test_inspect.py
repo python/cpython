@@ -596,9 +596,40 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertEqual(finddoc(int.from_bytes), int.from_bytes.__doc__)
         self.assertEqual(finddoc(int.real), int.real.__doc__)
 
+    cleandoc_testdata = [
+        # first line should have different margin
+        (' An\n  indented\n   docstring.', 'An\nindented\n docstring.'),
+        # trailing whitespace are not removed.
+        (' An \n   \n  indented \n   docstring. ',
+         'An \n \nindented \n docstring. '),
+        # NUL is not termination.
+        ('doc\0string\n\n  second\0line\n  third\0line\0',
+         'doc\0string\n\nsecond\0line\nthird\0line\0'),
+        # first line is lstrip()-ped. other lines are kept when no margin.[w:
+        ('   ', ''),
+        # compiler.cleandoc() doesn't strip leading/trailing newlines
+        # to keep maximum backward compatibility.
+        # inspect.cleandoc() removes them.
+        ('\n\n\n  first paragraph\n\n   second paragraph\n\n',
+         '\n\n\nfirst paragraph\n\n second paragraph\n\n'),
+        ('   \n \n  \n   ', '\n \n  \n   '),
+    ]
+
     def test_cleandoc(self):
-        self.assertEqual(inspect.cleandoc('An\n    indented\n    docstring.'),
-                         'An\nindented\ndocstring.')
+        func = inspect.cleandoc
+        for i, (input, expected) in enumerate(self.cleandoc_testdata):
+            # only inspect.cleandoc() strip \n
+            expected = expected.strip('\n')
+            with self.subTest(i=i):
+                self.assertEqual(func(input), expected)
+
+    @cpython_only
+    def test_c_cleandoc(self):
+        import _testinternalcapi
+        func = _testinternalcapi.compiler_cleandoc
+        for i, (input, expected) in enumerate(self.cleandoc_testdata):
+            with self.subTest(i=i):
+                self.assertEqual(func(input), expected)
 
     def test_getcomments(self):
         self.assertEqual(inspect.getcomments(mod), '# line 1\n')
@@ -918,7 +949,6 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(mod2.cls196.cls200, 198, 201)
 
     def test_class_inside_conditional(self):
-        self.assertSourceEqual(mod2.cls238, 238, 240)
         self.assertSourceEqual(mod2.cls238.cls239, 239, 240)
 
     def test_multiple_children_classes(self):
@@ -943,6 +973,10 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(asyncio.run(mod2.func225()), 226, 227)
         self.assertSourceEqual(mod2.cls226, 231, 235)
         self.assertSourceEqual(asyncio.run(mod2.cls226().func232()), 233, 234)
+
+    def test_class_definition_same_name_diff_methods(self):
+        self.assertSourceEqual(mod2.cls296, 296, 298)
+        self.assertSourceEqual(mod2.cls310, 310, 312)
 
 class TestNoEOL(GetSourceBase):
     def setUp(self):

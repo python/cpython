@@ -38,6 +38,18 @@ class TestAbstractAsyncContextManager(unittest.TestCase):
             self.assertIs(manager, context)
 
     @_async_test
+    async def test_slots(self):
+        class DefaultAsyncContextManager(AbstractAsyncContextManager):
+            __slots__ = ()
+
+            async def __aexit__(self, *args):
+                await super().__aexit__(*args)
+
+        with self.assertRaises(AttributeError):
+            manager = DefaultAsyncContextManager()
+            manager.var = 42
+
+    @_async_test
     async def test_async_gen_propagates_generator_exit(self):
         # A regression test for https://bugs.python.org/issue33786.
 
