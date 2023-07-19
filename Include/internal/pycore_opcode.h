@@ -12,7 +12,7 @@ extern "C" {
 
 #include "opcode.h"
 
-const uint8_t _PyOpcode_Caches[256];
+extern const uint8_t _PyOpcode_Caches[256];
 
 extern const uint8_t _PyOpcode_Deopt[256];
 
