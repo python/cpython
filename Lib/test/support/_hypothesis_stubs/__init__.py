@@ -109,5 +109,3 @@ class Phase(Enum):
     target = 3
     shrink = 4
     explain = 5
-
-

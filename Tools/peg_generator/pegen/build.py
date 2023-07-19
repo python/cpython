@@ -150,7 +150,6 @@ def compile_c_extension(
     customize_compiler(compiler)
     compiler.set_include_dirs(cmd.include_dirs)
     compiler.set_library_dirs(cmd.library_dirs)
-
     # build static lib
     if library_dir:
         library_filename = compiler.library_filename(extension_name, output_dir=library_dir)
