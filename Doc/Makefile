@@ -20,7 +20,7 @@ SPHINXERRORHANDLING = -W
 PAPEROPT_a4     = -D latex_elements.papersize=a4paper
 PAPEROPT_letter = -D latex_elements.papersize=letterpaper
 
-ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees $(PAPEROPT_$(PAPER)) -j $(JOBS) \
+ALLSPHINXOPTS = -b $(BUILDER) -W -d build/doctrees $(PAPEROPT_$(PAPER)) -j $(JOBS) \
                 $(SPHINXOPTS) $(SPHINXERRORHANDLING) . build/$(BUILDER) $(SOURCES)
 
 .PHONY: help

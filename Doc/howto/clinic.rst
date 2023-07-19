@@ -394,8 +394,9 @@ Let's dive in!
         Write a pickled representation of obj to the open file.
         [clinic start generated code]*/
 
-12. Save and close the file, then run :program:`Tools/clinic/clinic.py` on
-    it.  With luck everything worked---your block now has output, and
+12. Save and close the file, then run :program:`make clinic`
+    to regenerate the Argument Clinic code.
+    With luck everything worked---your block now has output, and
     a ``.c.h`` file has been generated! Reopen the file in your
     text editor to see::
 
@@ -459,7 +460,7 @@ Let's dive in!
 
     If any of these items differ in *any way*,
     adjust your Argument Clinic function specification and rerun
-    :program:`Tools/clinic/clinic.py` until they *are* the same.
+    :program:`make clinic` until they *are* the same.
 
 
 14. Notice that the last line of its output is the declaration
@@ -548,7 +549,7 @@ Let's dive in!
 
         &_Py_ID(new_unique_py_id)
 
-    If it does, you'll have to run :program:`Tools/scripts/generate_global_objects.py`
+    If it does, you'll have to run :program:`make regen-global-objects`
     to regenerate the list of precompiled identifiers at this point.
 
 
@@ -1102,7 +1103,7 @@ For all of these, return ``-1`` to indicate error.
 
 To see all the return converters Argument Clinic supports, along with
 their parameters (if any),
-just run :program:`Tools/clinic/clinic.py --converters` for the full list.
+just run :program:`./Tools/clinic/clinic.py --converters` for the full list.
 
 
 How to clone existing functions
