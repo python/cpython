@@ -401,6 +401,7 @@ class _PollLikeSelector(_BaseSelectorImpl):
             fd_event_list = self._selector.poll(timeout)
         except InterruptedError:
             return ready
+
         fd_to_key_get = self._fd_to_key.get
         for fd, event in fd_event_list:
             key = fd_to_key_get(fd)
