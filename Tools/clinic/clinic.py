@@ -1226,6 +1226,7 @@ class CLanguage(Language):
                         arg = p.name
                         thenceforth = p.deprecated_positional
                         major, minor = thenceforth.split(".")
+                        assert isinstance(self.cpp.filename, str)
                         source = os.path.basename(self.cpp.filename)
                         cpp_warning = (
                             f"Update {p.name!r} in {f.name!r} in {source!r} to be keyword-only."
