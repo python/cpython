@@ -157,7 +157,6 @@ For the sake of clarity, here's the terminology we'll use with Argument Clinic:
 
 .. _clinic-tutorial:
 
-
 Tutorial -- converting your first function
 ==========================================
 
@@ -577,7 +576,6 @@ Let's dive in!
 
 
 .. _clinic-howtos:
-
 
 How-to guides
 =============
