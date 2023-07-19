@@ -3055,6 +3055,8 @@ void
 _PyImport_Fini(void)
 {
     /* Destroy the database used by _PyImport_{Fixup,Find}Extension */
+    // XXX Should we actually leave them (mostly) intact, since we don't
+    // ever dlclose() the module files?
     _extensions_cache_clear_all();
 
     /* Use the same memory allocator as _PyImport_Init(). */
