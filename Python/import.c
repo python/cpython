@@ -1233,6 +1233,8 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
         PyObject *m_copy = def->m_base.m_copy;
         /* Module does not support repeated initialization */
         if (m_copy == NULL) {
+            /* It might be a core module (e.g. sys & builtins),
+               for which we don't set m_copy. */
             m_copy = get_core_module_dict(tstate->interp, name, filename);
             if (m_copy == NULL) {
                 return NULL;
