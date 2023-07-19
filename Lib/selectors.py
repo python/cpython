@@ -314,8 +314,8 @@ class SelectSelector(_BaseSelectorImpl):
             r, w, _ = self._select(self._readers, self._writers, [], timeout)
         except InterruptedError:
             return ready
-        r = set(r)
-        w = set(w)
+        r = frozenset(r)
+        w = frozenset(w)
         rw = r | w
         fd_to_key_get = self._fd_to_key.get
         for fd in rw:
