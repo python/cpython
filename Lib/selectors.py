@@ -403,7 +403,7 @@ class _PollLikeSelector(_BaseSelectorImpl):
         for fd, event in fd_event_list:
             key = fd_to_key_get(fd)
             if key:
-                events = ( (event & ~self._EVENT_READ and EVENT_WRITE)
+                events = ((event & ~self._EVENT_READ and EVENT_WRITE)
                            | (event & ~self._EVENT_WRITE and EVENT_READ))
                 ready.append((key, events & key.events))
         return ready
