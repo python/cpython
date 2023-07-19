@@ -157,8 +157,8 @@ For the sake of clarity, here's the terminology we'll use with Argument Clinic:
 
 .. _clinic-tutorial:
 
-Tutorial -- converting your first function
-==========================================
+Tutorial --- converting your first function
+===========================================
 
 The best way to get a sense of how Argument Clinic works is to
 convert a function to work with it.  Here, then, are the bare
