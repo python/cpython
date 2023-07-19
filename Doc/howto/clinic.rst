@@ -397,7 +397,7 @@ Let's dive in!
 12. Save and close the file, then run :program:`make clinic`
     to regenerate the Argument Clinic code.
     With luck everything worked---your block now has output, and
-    a ``.c.h`` file has been generated! Reopen the file in your
+    a :file:`.c.h` file has been generated! Reopen the file in your
     text editor to see::
 
        /*[clinic input]
@@ -418,8 +418,8 @@ Let's dive in!
     it found an error in your input.  Keep fixing your errors and retrying
     until Argument Clinic processes your file without complaint.
 
-    For readability, most of the glue code has been generated to a ``.c.h``
-    file.  You'll need to include that in your original ``.c`` file,
+    For readability, most of the glue code has been generated to a :file:`.c.h`
+    file.  You'll need to include that in your original :file:`.c` file,
     typically right after the clinic module block::
 
        #include "clinic/_pickle.c.h"
@@ -1526,8 +1526,8 @@ Let's start with defining some terminology:
     The filename chosen for the file is ``{basename}.clinic{extension}``,
     where ``basename`` and ``extension`` were assigned the output
     from ``os.path.splitext()`` run on the current file.  (Example:
-    the ``file`` destination for ``_pickle.c`` would be written to
-    ``_pickle.clinic.c``.)
+    the ``file`` destination for :file:`_pickle.c` would be written to
+    :file:`_pickle.clinic.c`.)
 
     **Important: When using a** ``file`` **destination, you**
     *must check in* **the generated file!**
