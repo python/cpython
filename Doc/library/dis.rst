@@ -318,6 +318,12 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.8
       Added *jump* parameter.
 
+   .. versionchanged:: 3.13
+      If ``oparg`` is omitted (or ``None``), the stack effect is now returned
+      for ``oparg=0``. Previously this was an error for opcodes that use their
+      arg. It is also no longer an error to pass an integer ``oparg`` when
+      the ``opcode`` does not use it; the ``oparg`` in this case is ignored.
+
 
 .. _bytecodes:
 
@@ -523,6 +529,9 @@ result back on the stack.
 
    Implements ``STACK[-1] = not STACK[-1]``.
 
+   .. versionchanged:: 3.13
+      This instruction now requires an exact :class:`bool` operand.
+
 
 .. opcode:: UNARY_INVERT
 
@@ -540,6 +549,13 @@ result back on the stack.
    it is left as is.  Otherwise, implements ``STACK[-1] = iter(STACK[-1])``.
 
    .. versionadded:: 3.5
+
+
+.. opcode:: TO_BOOL
+
+   Implements ``STACK[-1] = bool(STACK[-1])``.
+
+   .. versionadded:: 3.13
 
 
 **Binary and in-place operations**
@@ -1121,7 +1137,12 @@ iterations of the loop.
 .. opcode:: COMPARE_OP (opname)
 
    Performs a Boolean operation.  The operation name can be found in
-   ``cmp_op[opname]``.
+   ``cmp_op[opname >> 5]``. If the fifth-lowest bit of ``opname`` is set
+   (``opname & 16``), the result should be coerced to ``bool``.
+
+   .. versionchanged:: 3.13
+      The fifth-lowest bit of the oparg now indicates a forced conversion to
+      :class:`bool`.
 
 
 .. opcode:: IS_OP (invert)
@@ -1185,6 +1206,9 @@ iterations of the loop.
    .. versionchanged:: 3.12
       This is no longer a pseudo-instruction.
 
+   .. versionchanged:: 3.13
+      This instruction now requires an exact :class:`bool` operand.
+
 .. opcode:: POP_JUMP_IF_FALSE (delta)
 
    If ``STACK[-1]`` is false, increments the bytecode counter by *delta*.
@@ -1197,6 +1221,9 @@ iterations of the loop.
 
    .. versionchanged:: 3.12
       This is no longer a pseudo-instruction.
+
+   .. versionchanged:: 3.13
+      This instruction now requires an exact :class:`bool` operand.
 
 .. opcode:: POP_JUMP_IF_NOT_NONE (delta)
 
@@ -1283,18 +1310,6 @@ iterations of the loop.
    that value is stored into the new cell.
 
    .. versionadded:: 3.11
-
-
-.. opcode:: LOAD_CLOSURE (i)
-
-   Pushes a reference to the cell contained in slot ``i`` of the "fast locals"
-   storage.  The name of the variable is ``co_fastlocalnames[i]``.
-
-   Note that ``LOAD_CLOSURE`` is effectively an alias for ``LOAD_FAST``.
-   It exists to keep bytecode a little more readable.
-
-   .. versionchanged:: 3.11
-      ``i`` is no longer offset by the length of ``co_varnames``.
 
 
 .. opcode:: LOAD_DEREF (i)
@@ -1719,6 +1734,17 @@ but are replaced by real opcodes or removed before bytecode is generated.
    Undirected relative jump instructions which are replaced by their
    directed (forward/backward) counterparts by the assembler.
 
+.. opcode:: LOAD_CLOSURE (i)
+
+   Pushes a reference to the cell contained in slot ``i`` of the "fast locals"
+   storage.
+
+   Note that ``LOAD_CLOSURE`` is replaced with ``LOAD_FAST`` in the assembler.
+
+   .. versionchanged:: 3.13
+      This opcode is now a pseudo-instruction.
+
+
 .. opcode:: LOAD_METHOD
 
    Optimized unbound method lookup. Emitted as a ``LOAD_ATTR`` opcode
@@ -1777,15 +1803,12 @@ instructions:
    Sequence of bytecodes that access an attribute by name.
 
 
-.. data:: hasjrel
+.. data:: hasjump
 
-   Sequence of bytecodes that have a relative jump target.
+   Sequence of bytecodes that have a jump target. All jumps
+   are relative.
 
-
-.. data:: hasjabs
-
-   Sequence of bytecodes that have an absolute jump target.
-
+   .. versionadded:: 3.13
 
 .. data:: haslocal
 
@@ -1801,3 +1824,20 @@ instructions:
    Sequence of bytecodes that set an exception handler.
 
    .. versionadded:: 3.12
+
+
+.. data:: hasjrel
+
+   Sequence of bytecodes that have a relative jump target.
+
+   .. deprecated:: 3.13
+      All jumps are now relative. Use :data:`hasjump`.
+
+
+.. data:: hasjabs
+
+   Sequence of bytecodes that have an absolute jump target.
+
+   .. deprecated:: 3.13
+      All jumps are now relative. This list is empty.
+

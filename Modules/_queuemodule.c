@@ -4,6 +4,7 @@
 
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_time.h"          // _PyTime_t
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 
