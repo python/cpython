@@ -339,11 +339,8 @@ class _PollLikeSelector(_BaseSelectorImpl):
 
     def register(self, fileobj, events, data=None):
         key = super().register(fileobj, events, data)
-        poller_events = 0
-        if events & EVENT_READ:
-            poller_events |= self._EVENT_READ
-        if events & EVENT_WRITE:
-            poller_events |= self._EVENT_WRITE
+        poller_events = ((events & EVENT_READ and self._EVENT_READ)
+                         | (events & EVENT_WRITE and self._EVENT_WRITE) )
         try:
             self._selector.register(key.fd, poller_events)
         except:
@@ -407,7 +404,7 @@ class _PollLikeSelector(_BaseSelectorImpl):
             key = fd_to_key_get(fd)
             if key:
                 events = ( (event & ~self._EVENT_READ and EVENT_WRITE)
-                           | (event & ~self.EVENT_WRITE and EVENT_READ))
+                           | (event & ~self._EVENT_WRITE and EVENT_READ))
                 ready.append((key, events & key.events))
         return ready
 
