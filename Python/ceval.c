@@ -2706,6 +2706,9 @@ void Py_LeaveRecursiveCall(void)
 
 ///////////////////// Experimental UOp Interpreter /////////////////////
 
+#undef ASSERT_KWNAMES_IS_NULL
+#define ASSERT_KWNAMES_IS_NULL() (void)0
+
 #undef DEOPT_IF
 #define DEOPT_IF(COND, INSTNAME) \
     if ((COND)) {                \
@@ -2744,16 +2747,18 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
     _Py_CODEUNIT *ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
     int pc = 0;
     int opcode;
-    uint64_t operand;
     int oparg;
+    uint64_t operand;
+
     for (;;) {
         opcode = self->trace[pc].opcode;
+        oparg = self->trace[pc].oparg;
         operand = self->trace[pc].operand;
-        oparg = (int)operand;
         DPRINTF(3,
-                "%4d: uop %s, operand %" PRIu64 ", stack_level %d\n",
+                "%4d: uop %s, oparg %d, operand %" PRIu64 ", stack_level %d\n",
                 pc,
                 opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode],
+                oparg,
                 operand,
                 (int)(stack_pointer - _PyFrame_Stackbase(frame)));
         pc++;
@@ -2763,46 +2768,6 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
 #undef ENABLE_SPECIALIZATION
 #define ENABLE_SPECIALIZATION 0
 #include "executor_cases.c.h"
-
-            // NOTE: These pop-jumps move the uop pc, not the bytecode ip
-            case _POP_JUMP_IF_FALSE:
-            {
-                if (Py_IsFalse(stack_pointer[-1])) {
-                    pc = oparg;
-                }
-                stack_pointer--;
-                break;
-            }
-
-            case _POP_JUMP_IF_TRUE:
-            {
-                if (Py_IsTrue(stack_pointer[-1])) {
-                    pc = oparg;
-                }
-                stack_pointer--;
-                break;
-            }
-
-            case JUMP_TO_TOP:
-            {
-                pc = 0;
-                CHECK_EVAL_BREAKER();
-                break;
-            }
-
-            case SAVE_IP:
-            {
-                frame->prev_instr = ip_offset + oparg;
-                break;
-            }
-
-            case EXIT_TRACE:
-            {
-                frame->prev_instr--;  // Back up to just before destination
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                Py_DECREF(self);
-                return frame;
-            }
 
             default:
             {

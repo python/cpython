@@ -42,6 +42,7 @@ from typing import (
     Literal,
     NamedTuple,
     NoReturn,
+    Protocol,
     TypeGuard,
     overload,
 )
@@ -108,7 +109,7 @@ class _TextAccumulator(NamedTuple):
 
 def _text_accumulator() -> _TextAccumulator:
     text: list[str] = []
-    def output():
+    def output() -> str:
         s = ''.join(text)
         text.clear()
         return s
@@ -432,10 +433,10 @@ class FormatCounterFormatter(string.Formatter):
          the counts dict would now look like
          {'a': 2, 'b': 1, 'c': 1}
     """
-    def __init__(self):
-        self.counts = collections.Counter()
+    def __init__(self) -> None:
+        self.counts = collections.Counter[str]()
 
-    def get_value(self, key, args, kwargs):
+    def get_value(self, key: str, args, kwargs) -> str:  # type: ignore[override]
         self.counts[key] += 1
         return ''
 
@@ -446,18 +447,25 @@ class Language(metaclass=abc.ABCMeta):
     stop_line = ""
     checksum_line = ""
 
-    def __init__(self, filename):
+    def __init__(self, filename: str) -> None:
         pass
 
     @abc.abstractmethod
-    def render(self, clinic, signatures):
+    def render(
+            self,
+            clinic: Clinic | None,
+            signatures: Iterable[Module | Class | Function]
+    ) -> str:
         pass
 
-    def parse_line(self, line):
+    def parse_line(self, line: str) -> None:
         pass
 
-    def validate(self):
-        def assert_only_one(attr, *additional_fields):
+    def validate(self) -> None:
+        def assert_only_one(
+                attr: str,
+                *additional_fields: str
+        ) -> None:
             """
             Ensures that the string found at getattr(self, attr)
             contains exactly one formatter replacement string for
@@ -484,10 +492,10 @@ class Language(metaclass=abc.ABCMeta):
             """
             fields = ['dsl_name']
             fields.extend(additional_fields)
-            line = getattr(self, attr)
+            line: str = getattr(self, attr)
             fcf = FormatCounterFormatter()
             fcf.format(line)
-            def local_fail(should_be_there_but_isnt):
+            def local_fail(should_be_there_but_isnt: bool) -> None:
                 if should_be_there_but_isnt:
                     fail("{} {} must contain {{{}}} exactly once!".format(
                         self.__class__.__name__, attr, name))
@@ -748,10 +756,10 @@ class CLanguage(Language):
     stop_line     = "[{dsl_name} start generated code]*/"
     checksum_line = "/*[{dsl_name} end generated code: {arguments}]*/"
 
-    def __init__(self, filename):
+    def __init__(self, filename: str) -> None:
         super().__init__(filename)
         self.cpp = cpp.Monitor(filename)
-        self.cpp.fail = fail
+        self.cpp.fail = fail  # type: ignore[method-assign]
 
     def parse_line(self, line: str) -> None:
         self.cpp.writeline(line)
@@ -792,11 +800,14 @@ class CLanguage(Language):
             add('"')
         return ''.join(text)
 
-    def output_templates(self, f):
+    def output_templates(
+            self,
+            f: Function
+    ) -> dict[str, str]:
         parameters = list(f.parameters.values())
         assert parameters
-        assert isinstance(parameters[0].converter, self_converter)
-        del parameters[0]
+        first_param = parameters.pop(0)
+        assert isinstance(first_param.converter, self_converter)
         requires_defining_class = False
         if parameters and isinstance(parameters[0].converter, defining_class_converter):
             requires_defining_class = True
@@ -807,9 +818,9 @@ class CLanguage(Language):
         default_return_converter = (not f.return_converter or
             f.return_converter.type == 'PyObject *')
 
-        new_or_init = f.kind in (METHOD_NEW, METHOD_INIT)
+        new_or_init = f.kind.new_or_init
 
-        vararg = NO_VARARG
+        vararg: int | str = NO_VARARG
         pos_only = min_pos = max_pos = min_kw_only = pseudo_args = 0
         for i, p in enumerate(parameters, 1):
             if p.is_keyword_only():
@@ -897,23 +908,25 @@ class CLanguage(Language):
 
         # parser_body_fields remembers the fields passed in to the
         # previous call to parser_body. this is used for an awful hack.
-        parser_body_fields = ()
-        def parser_body(prototype, *fields, declarations=''):
+        parser_body_fields: tuple[str, ...] = ()
+        def parser_body(
+                prototype: str,
+                *fields: str,
+                declarations: str = ''
+        ) -> str:
             nonlocal parser_body_fields
             add, output = text_accumulator()
             add(prototype)
             parser_body_fields = fields
 
-            fields = list(fields)
-            fields.insert(0, normalize_snippet("""
+            preamble = normalize_snippet("""
                 {{
                     {return_value_declaration}
                     {parser_declarations}
                     {declarations}
                     {initializers}
-                """) + "\n")
-            # just imagine--your code is here in the middle
-            fields.append(normalize_snippet("""
+            """) + "\n"
+            finale = normalize_snippet("""
                     {modifications}
                     {return_value} = {c_basename}_impl({impl_arguments});
                     {return_conversion}
@@ -923,13 +936,15 @@ class CLanguage(Language):
                     {cleanup}
                     return return_value;
                 }}
-                """))
-            for field in fields:
+            """)
+            for field in preamble, *fields, finale:
                 add('\n')
                 add(field)
             return linear_format(output(), parser_declarations=declarations)
 
+        parsearg: str | None
         if not parameters:
+            parser_code: list[str] | None
             if not requires_defining_class:
                 # no parameters, METH_NOARGS
                 flags = "METH_NOARGS"
@@ -1163,7 +1178,7 @@ class CLanguage(Language):
                 flags = 'METH_METHOD|' + flags
                 parser_prototype = parser_prototype_def_class
 
-            add_label = None
+            add_label: str | None = None
             for i, p in enumerate(parameters):
                 if isinstance(p.converter, defining_class_converter):
                     raise ValueError("defining_class should be the first "
@@ -1248,7 +1263,7 @@ class CLanguage(Language):
         if new_or_init:
             methoddef_define = ''
 
-            if f.kind == METHOD_NEW:
+            if f.kind is METHOD_NEW:
                 parser_prototype = parser_prototype_keyword
             else:
                 return_value_declaration = "int return_value = -1;"
@@ -1306,6 +1321,8 @@ class CLanguage(Language):
             cpp_if = "#if " + conditional
             cpp_endif = "#endif /* " + conditional + " */"
 
+            assert clinic is not None
+            assert f.full_name is not None
             if methoddef_define and f.full_name not in clinic.ifndef_symbols:
                 clinic.ifndef_symbols.add(f.full_name)
                 methoddef_ifndef = normalize_snippet("""
@@ -1473,7 +1490,7 @@ class CLanguage(Language):
         last_group = 0
         first_optional = len(selfless)
         positional = selfless and selfless[-1].is_positional_only()
-        new_or_init = f.kind in (METHOD_NEW, METHOD_INIT)
+        new_or_init = f.kind.new_or_init
         has_option_groups = False
 
         # offset i by -1 because first_optional needs to ignore self
@@ -1704,7 +1721,13 @@ class BlockParser:
     Iterator, yields Block objects.
     """
 
-    def __init__(self, input, language, *, verify=True):
+    def __init__(
+            self,
+            input: str,
+            language: Language,
+            *,
+            verify: bool = True
+    ) -> None:
         """
         "input" should be a str object
         with embedded \n characters.
@@ -1722,15 +1745,15 @@ class BlockParser:
         self.find_start_re = create_regex(before, after, whole_line=False)
         self.start_re = create_regex(before, after)
         self.verify = verify
-        self.last_checksum_re = None
-        self.last_dsl_name = None
-        self.dsl_name = None
+        self.last_checksum_re: re.Pattern[str] | None = None
+        self.last_dsl_name: str | None = None
+        self.dsl_name: str | None = None
         self.first_block = True
 
-    def __iter__(self):
+    def __iter__(self) -> BlockParser:
         return self
 
-    def __next__(self):
+    def __next__(self) -> Block:
         while True:
             if not self.input:
                 raise StopIteration
@@ -1747,18 +1770,18 @@ class BlockParser:
             return block
 
 
-    def is_start_line(self, line):
+    def is_start_line(self, line: str) -> str | None:
         match = self.start_re.match(line.lstrip())
         return match.group(1) if match else None
 
-    def _line(self, lookahead=False):
+    def _line(self, lookahead: bool = False) -> str:
         self.line_number += 1
         line = self.input.pop()
         if not lookahead:
             self.language.parse_line(line)
         return line
 
-    def parse_verbatim_block(self):
+    def parse_verbatim_block(self) -> Block:
         add, output = text_accumulator()
         self.block_start_line_number = self.line_number
 
@@ -1772,13 +1795,13 @@ class BlockParser:
 
         return Block(output())
 
-    def parse_clinic_block(self, dsl_name):
+    def parse_clinic_block(self, dsl_name: str) -> Block:
         input_add, input_output = text_accumulator()
         self.block_start_line_number = self.line_number + 1
         stop_line = self.language.stop_line.format(dsl_name=dsl_name)
         body_prefix = self.language.body_prefix.format(dsl_name=dsl_name)
 
-        def is_stop_line(line):
+        def is_stop_line(line: str) -> bool:
             # make sure to recognize stop line even if it
             # doesn't end with EOL (it could be the very end of the file)
             if line.startswith(stop_line):
@@ -1812,6 +1835,7 @@ class BlockParser:
             checksum_re = create_regex(before, after, word=False)
             self.last_dsl_name = dsl_name
             self.last_checksum_re = checksum_re
+        assert checksum_re is not None
 
         # scan forward for checksum line
         output_add, output_output = text_accumulator()
@@ -1826,6 +1850,7 @@ class BlockParser:
             if self.is_start_line(line):
                 break
 
+        output: str | None
         output = output_output()
         if arguments:
             d = {}
@@ -1863,7 +1888,12 @@ class BlockPrinter:
     language: Language
     f: io.StringIO = dc.field(default_factory=io.StringIO)
 
-    def print_block(self, block, *, core_includes=False):
+    def print_block(
+            self,
+            block: Block,
+            *,
+            core_includes: bool = False
+    ) -> None:
         input = block.input
         output = block.output
         dsl_name = block.dsl_name
@@ -1914,7 +1944,7 @@ class BlockPrinter:
         write(self.language.checksum_line.format(dsl_name=dsl_name, arguments=arguments))
         write("\n")
 
-    def write(self, text):
+    def write(self, text: str) -> None:
         self.f.write(text)
 
 
@@ -1954,27 +1984,32 @@ class BufferSeries:
         return "".join(texts)
 
 
+@dc.dataclass(slots=True, repr=False)
 class Destination:
-    def __init__(self, name, type, clinic, *args):
-        self.name = name
-        self.type = type
-        self.clinic = clinic
-        self.buffers = BufferSeries()
+    name: str
+    type: str
+    clinic: Clinic
+    buffers: BufferSeries = dc.field(init=False, default_factory=BufferSeries)
+    filename: str = dc.field(init=False)  # set in __post_init__
 
+    args: dc.InitVar[tuple[str, ...]] = ()
+
+    def __post_init__(self, args: tuple[str, ...]) -> None:
         valid_types = ('buffer', 'file', 'suppress')
-        if type not in valid_types:
+        if self.type not in valid_types:
             fail(
-                f"Invalid destination type {type!r} for {name}, "
+                f"Invalid destination type {self.type!r} for {self.name}, "
                 f"must be {', '.join(valid_types)}"
             )
-        extra_arguments = 1 if type == "file" else 0
+        extra_arguments = 1 if self.type == "file" else 0
         if len(args) < extra_arguments:
-            fail(f"Not enough arguments for destination {name} new {type}")
+            fail(f"Not enough arguments for destination {self.name} new {self.type}")
         if len(args) > extra_arguments:
-            fail(f"Too many arguments for destination {name} new {type}")
-        if type =='file':
+            fail(f"Too many arguments for destination {self.name} new {self.type}")
+        if self.type =='file':
             d = {}
-            filename = clinic.filename
+            filename = self.clinic.filename
+            assert filename is not None
             d['path'] = filename
             dirname, basename = os.path.split(filename)
             if not dirname:
@@ -1984,19 +2019,19 @@ class Destination:
             d['basename_root'], d['basename_extension'] = os.path.splitext(filename)
             self.filename = args[0].format_map(d)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.type == 'file':
             file_repr = " " + repr(self.filename)
         else:
             file_repr = ''
         return "".join(("<Destination ", self.name, " ", self.type, file_repr, ">"))
 
-    def clear(self):
+    def clear(self) -> None:
         if self.type != 'buffer':
             fail("Can't clear destination" + self.name + " , it's not of type buffer")
         self.buffers.clear()
 
-    def dump(self):
+    def dump(self) -> str:
         return self.buffers.dump()
 
 
@@ -2034,7 +2069,12 @@ def write_file(filename: str, new_contents: str) -> None:
 ClassDict = dict[str, "Class"]
 DestinationDict = dict[str, Destination]
 ModuleDict = dict[str, "Module"]
-ParserDict = dict[str, "DSLParser"]
+
+
+class Parser(Protocol):
+    def __init__(self, clinic: Clinic) -> None: ...
+    def parse(self, block: Block) -> None: ...
+
 
 clinic = None
 class Clinic:
@@ -2092,7 +2132,7 @@ impl_definition block
     ) -> None:
         # maps strings to Parser objects.
         # (instantiated from the "parsers" global.)
-        self.parsers: ParserDict = {}
+        self.parsers: dict[str, Parser] = {}
         self.language: CLanguage = language
         if printer:
             fail("Custom printers are broken right now")
@@ -2164,11 +2204,11 @@ impl_definition block
             self,
             name: str,
             type: str,
-            *args
+            *args: str
     ) -> None:
         if name in self.destinations:
             fail("Destination already exists: " + repr(name))
-        self.destinations[name] = Destination(name, type, self, *args)
+        self.destinations[name] = Destination(name, type, self, args)
 
     def get_destination(self, name: str) -> Destination:
         d = self.destinations.get(name)
@@ -2184,7 +2224,7 @@ impl_definition block
         d = self.get_destination(name)
         return d.buffers[item]
 
-    def parse(self, input):
+    def parse(self, input: str) -> str:
         printer = self.printer
         self.block_parser = BlockParser(input, self.language, verify=self.verify)
         for block in self.block_parser:
@@ -2434,9 +2474,28 @@ __xor__
 """.strip().split())
 
 
-INVALID, CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW = """
-INVALID, CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW
-""".replace(",", "").strip().split()
+class FunctionKind(enum.Enum):
+    INVALID         = enum.auto()
+    CALLABLE        = enum.auto()
+    STATIC_METHOD   = enum.auto()
+    CLASS_METHOD    = enum.auto()
+    METHOD_INIT     = enum.auto()
+    METHOD_NEW      = enum.auto()
+
+    @functools.cached_property
+    def new_or_init(self) -> bool:
+        return self in {FunctionKind.METHOD_INIT, FunctionKind.METHOD_NEW}
+
+    def __repr__(self) -> str:
+        return f"<FunctionKind.{self.name}>"
+
+
+INVALID: Final = FunctionKind.INVALID
+CALLABLE: Final = FunctionKind.CALLABLE
+STATIC_METHOD: Final = FunctionKind.STATIC_METHOD
+CLASS_METHOD: Final = FunctionKind.CLASS_METHOD
+METHOD_INIT: Final = FunctionKind.METHOD_INIT
+METHOD_NEW: Final = FunctionKind.METHOD_NEW
 
 ParamDict = dict[str, "Parameter"]
 ReturnConverterType = Callable[..., "CReturnConverter"]
@@ -2464,7 +2523,7 @@ class Function:
     return_converter: CReturnConverter
     return_annotation: object = inspect.Signature.empty
     docstring: str = ''
-    kind: str = CALLABLE
+    kind: FunctionKind = CALLABLE
     coexist: bool = False
     # docstring_only means "don't generate a machine-readable
     # signature, just a normal docstring".  it's True for
@@ -2490,15 +2549,16 @@ class Function:
 
     @property
     def methoddef_flags(self) -> str | None:
-        if self.kind in (METHOD_INIT, METHOD_NEW):
+        if self.kind.new_or_init:
             return None
         flags = []
-        if self.kind == CLASS_METHOD:
-            flags.append('METH_CLASS')
-        elif self.kind == STATIC_METHOD:
-            flags.append('METH_STATIC')
-        else:
-            assert self.kind == CALLABLE, "unknown kind: " + repr(self.kind)
+        match self.kind:
+            case FunctionKind.CLASS_METHOD:
+                flags.append('METH_CLASS')
+            case FunctionKind.STATIC_METHOD:
+                flags.append('METH_STATIC')
+            case _ as kind:
+                assert kind is FunctionKind.CALLABLE, f"unknown kind: {kind!r}"
         if self.coexist:
             flags.append('METH_COEXIST')
         return '|'.join(flags)
@@ -2708,7 +2768,7 @@ class CConverter(metaclass=CConverterAutoRegister):
     # If not None, should be a string representing a pointer to a
     # PyTypeObject (e.g. "&PyUnicode_Type").
     # Only used by the 'O!' format unit (and the "object" converter).
-    subclass_of = None
+    subclass_of: str | None = None
 
     # Do we want an adjacent '_length' variable for this variable?
     # Only used by format units ending with '#'.
@@ -2901,7 +2961,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         prototype.append(name)
         return "".join(prototype)
 
-    def declaration(self, *, in_parser=False):
+    def declaration(self, *, in_parser=False) -> str:
         """
         The C statement to declare this variable.
         """
@@ -2959,7 +3019,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         """
         pass
 
-    def parse_arg(self, argname, displayname):
+    def parse_arg(self, argname: str, displayname: str):
         if self.format_unit == 'O&':
             return """
                 if (!{converter}({argname}, &{paramname})) {{{{
@@ -3881,7 +3941,7 @@ def correct_name_for_self(
         if f.cls:
             return "PyObject *", "self"
         return "PyObject *", "module"
-    if f.kind == STATIC_METHOD:
+    if f.kind is STATIC_METHOD:
         return "void *", "null"
     if f.kind in (CLASS_METHOD, METHOD_NEW):
         return "PyTypeObject *", "type"
@@ -3914,9 +3974,8 @@ class self_converter(CConverter):
         self.type = self.specified_type or self.type or default_type
 
         kind = self.function.kind
-        new_or_init = kind in (METHOD_NEW, METHOD_INIT)
 
-        if (kind == STATIC_METHOD) or new_or_init:
+        if kind is STATIC_METHOD or kind.new_or_init:
             self.show_in_signature = False
 
     # tp_new (METHOD_NEW) functions are of type newfunc:
@@ -3966,7 +4025,7 @@ class self_converter(CConverter):
         parameter is a clinic.Parameter instance.
         data is a CRenderData instance.
         """
-        if self.function.kind == STATIC_METHOD:
+        if self.function.kind is STATIC_METHOD:
             return
 
         self._render_self(parameter, data)
@@ -3985,8 +4044,8 @@ class self_converter(CConverter):
         kind = self.function.kind
         cls = self.function.cls
 
-        if ((kind in (METHOD_NEW, METHOD_INIT)) and cls and cls.typedef):
-            if kind == METHOD_NEW:
+        if kind.new_or_init and cls and cls.typedef:
+            if kind is METHOD_NEW:
                 type_check = (
                     '({0} == base_tp || {0}->tp_init == base_tp->tp_init)'
                  ).format(self.name)
@@ -4330,7 +4389,7 @@ class DSLParser:
     parameter_state: int
     seen_positional_with_default: bool
     indent: IndentStack
-    kind: str
+    kind: FunctionKind
     coexist: bool
     parameter_continuation: str
     preserve_output: bool
@@ -4619,7 +4678,7 @@ class DSLParser:
                 function_name = fields.pop()
                 module, cls = self.clinic._module_and_class(fields)
 
-                if not (existing_function.kind == self.kind and existing_function.coexist == self.coexist):
+                if not (existing_function.kind is self.kind and existing_function.coexist == self.coexist):
                     fail("'kind' of function and cloned function don't match!  (@classmethod/@staticmethod/@coexist)")
                 function = existing_function.copy(
                     name=function_name, full_name=full_name, module=module,
@@ -4672,11 +4731,11 @@ class DSLParser:
             fail(f"{fields[-1]} is a special method and cannot be converted to Argument Clinic!  (Yet.)")
 
         if fields[-1] == '__new__':
-            if (self.kind != CLASS_METHOD) or (not cls):
+            if (self.kind is not CLASS_METHOD) or (not cls):
                 fail("__new__ must be a class method!")
             self.kind = METHOD_NEW
         elif fields[-1] == '__init__':
-            if (self.kind != CALLABLE) or (not cls):
+            if (self.kind is not CALLABLE) or (not cls):
                 fail("__init__ must be a normal method, not a class or static method!")
             self.kind = METHOD_INIT
             if not return_converter:
@@ -4805,11 +4864,21 @@ class DSLParser:
             self.parameter_continuation = line[:-1]
             return
 
-        line = line.lstrip()
+        func = self.function
+        match line.lstrip():
+            case '*':
+                self.parse_star(func)
+            case '[':
+                self.parse_opening_square_bracket(func)
+            case ']':
+                self.parse_closing_square_bracket(func)
+            case '/':
+                self.parse_slash(func)
+            case param:
+                self.parse_parameter(param)
 
-        if line in ('*', '/', '[', ']'):
-            self.parse_special_symbol(line)
-            return
+    def parse_parameter(self, line: str) -> None:
+        assert self.function is not None
 
         match self.parameter_state:
             case ParamState.START | ParamState.REQUIRED:
@@ -5087,57 +5156,71 @@ class DSLParser:
                     "Annotations must be either a name, a function call, or a string."
                 )
 
-    def parse_special_symbol(self, symbol):
-        if symbol == '*':
-            if self.keyword_only:
-                fail("Function " + self.function.name + " uses '*' more than once.")
-            self.keyword_only = True
-        elif symbol == '[':
-            match self.parameter_state:
-                case ParamState.START | ParamState.LEFT_SQUARE_BEFORE:
-                    self.parameter_state = ParamState.LEFT_SQUARE_BEFORE
-                case ParamState.REQUIRED | ParamState.GROUP_AFTER:
-                    self.parameter_state = ParamState.GROUP_AFTER
-                case st:
-                    fail(f"Function {self.function.name} has an unsupported group configuration. (Unexpected state {st}.b)")
-            self.group += 1
-            self.function.docstring_only = True
-        elif symbol == ']':
-            if not self.group:
-                fail("Function " + self.function.name + " has a ] without a matching [.")
-            if not any(p.group == self.group for p in self.function.parameters.values()):
-                fail("Function " + self.function.name + " has an empty group.\nAll groups must contain at least one parameter.")
-            self.group -= 1
-            match self.parameter_state:
-                case ParamState.LEFT_SQUARE_BEFORE | ParamState.GROUP_BEFORE:
-                    self.parameter_state = ParamState.GROUP_BEFORE
-                case ParamState.GROUP_AFTER | ParamState.RIGHT_SQUARE_AFTER:
-                    self.parameter_state = ParamState.RIGHT_SQUARE_AFTER
-                case st:
-                    fail(f"Function {self.function.name} has an unsupported group configuration. (Unexpected state {st}.c)")
-        elif symbol == '/':
-            if self.positional_only:
-                fail("Function " + self.function.name + " uses '/' more than once.")
-            self.positional_only = True
-            # REQUIRED and OPTIONAL are allowed here, that allows positional-only without option groups
-            # to work (and have default values!)
-            allowed = {
-                ParamState.REQUIRED,
-                ParamState.OPTIONAL,
-                ParamState.RIGHT_SQUARE_AFTER,
-                ParamState.GROUP_BEFORE,
-            }
-            if (self.parameter_state not in allowed) or self.group:
-                fail(f"Function {self.function.name} has an unsupported group configuration. (Unexpected state {self.parameter_state}.d)")
-            if self.keyword_only:
-                fail("Function " + self.function.name + " mixes keyword-only and positional-only parameters, which is unsupported.")
-            # fixup preceding parameters
-            for p in self.function.parameters.values():
-                if p.is_vararg():
-                    continue
-                if (p.kind != inspect.Parameter.POSITIONAL_OR_KEYWORD and not isinstance(p.converter, self_converter)):
-                    fail("Function " + self.function.name + " mixes keyword-only and positional-only parameters, which is unsupported.")
-                p.kind = inspect.Parameter.POSITIONAL_ONLY
+    def parse_star(self, function: Function) -> None:
+        """Parse keyword-only parameter marker '*'."""
+        if self.keyword_only:
+            fail(f"Function {function.name} uses '*' more than once.")
+        self.keyword_only = True
+
+    def parse_opening_square_bracket(self, function: Function) -> None:
+        """Parse opening parameter group symbol '['."""
+        match self.parameter_state:
+            case ParamState.START | ParamState.LEFT_SQUARE_BEFORE:
+                self.parameter_state = ParamState.LEFT_SQUARE_BEFORE
+            case ParamState.REQUIRED | ParamState.GROUP_AFTER:
+                self.parameter_state = ParamState.GROUP_AFTER
+            case st:
+                fail(f"Function {function.name} has an unsupported group configuration. "
+                     f"(Unexpected state {st}.b)")
+        self.group += 1
+        function.docstring_only = True
+
+    def parse_closing_square_bracket(self, function: Function) -> None:
+        """Parse closing parameter group symbol ']'."""
+        if not self.group:
+            fail(f"Function {function.name} has a ] without a matching [.")
+        if not any(p.group == self.group for p in function.parameters.values()):
+            fail(f"Function {function.name} has an empty group.\n"
+                 "All groups must contain at least one parameter.")
+        self.group -= 1
+        match self.parameter_state:
+            case ParamState.LEFT_SQUARE_BEFORE | ParamState.GROUP_BEFORE:
+                self.parameter_state = ParamState.GROUP_BEFORE
+            case ParamState.GROUP_AFTER | ParamState.RIGHT_SQUARE_AFTER:
+                self.parameter_state = ParamState.RIGHT_SQUARE_AFTER
+            case st:
+                fail(f"Function {function.name} has an unsupported group configuration. "
+                     f"(Unexpected state {st}.c)")
+
+    def parse_slash(self, function: Function) -> None:
+        """Parse positional-only parameter marker '/'."""
+        if self.positional_only:
+            fail(f"Function {function.name} uses '/' more than once.")
+        self.positional_only = True
+        # REQUIRED and OPTIONAL are allowed here, that allows positional-only
+        # without option groups to work (and have default values!)
+        allowed = {
+            ParamState.REQUIRED,
+            ParamState.OPTIONAL,
+            ParamState.RIGHT_SQUARE_AFTER,
+            ParamState.GROUP_BEFORE,
+        }
+        if (self.parameter_state not in allowed) or self.group:
+            fail(f"Function {function.name} has an unsupported group configuration. "
+                 f"(Unexpected state {self.parameter_state}.d)")
+        if self.keyword_only:
+            fail(f"Function {function.name} mixes keyword-only and "
+                 "positional-only parameters, which is unsupported.")
+        # fixup preceding parameters
+        for p in function.parameters.values():
+            if p.is_vararg():
+                continue
+            if (p.kind is not inspect.Parameter.POSITIONAL_OR_KEYWORD and
+                not isinstance(p.converter, self_converter)
+            ):
+                fail(f"Function {function.name} mixes keyword-only and "
+                     "positional-only parameters, which is unsupported.")
+            p.kind = inspect.Parameter.POSITIONAL_ONLY
 
     def state_parameter_docstring_start(self, line: str | None) -> None:
         self.parameter_docstring_indent = len(self.indent.margin)
@@ -5196,7 +5279,7 @@ class DSLParser:
     def format_docstring(self):
         f = self.function
 
-        new_or_init = f.kind in (METHOD_NEW, METHOD_INIT)
+        new_or_init = f.kind.new_or_init
         if new_or_init and not f.docstring:
             # don't render a docstring at all, no signature, nothing.
             return f.docstring
@@ -5481,7 +5564,10 @@ class DSLParser:
 #   "clinic", handles the Clinic DSL
 #   "python", handles running Python code
 #
-parsers = {'clinic' : DSLParser, 'python': PythonParser}
+parsers: dict[str, Callable[[Clinic], Parser]] = {
+    'clinic': DSLParser,
+    'python': PythonParser,
+}
 
 
 clinic = None
