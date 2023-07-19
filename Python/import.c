@@ -919,167 +919,134 @@ extensions_lock_release(void)
 static void
 _extensions_cache_init(void)
 {
-    /* The runtime (i.e. main interpreter) must be initializing,
-       so we don't need to worry about the lock. */
-    _PyThreadState_InitDetached(&EXTENSIONS.main_tstate,
-                                _PyInterpreterState_Main());
+    /* The lock is initialized directly with the general runtime state. */
+    assert(EXTENSIONS.mutex != NULL);
+    //assert(EXTENSIONS.head == NULL);
+}
+
+static struct _cached_module_def *
+_extensions_cache_lookup(PyObject *filename, PyObject *name,
+                         struct _cached_module_def **prev_p)
+{
+    struct _cached_module_def *prev = NULL;
+    struct _cached_module_def *cached = EXTENSIONS.head;
+    while (cached != NULL) {
+        if (PyUnicode_CompareWithASCIIString(filename, cached->filename) == 0) {
+            if (PyUnicode_CompareWithASCIIString(name, cached->name) == 0) {
+                break;
+            }
+        }
+        prev = cached;
+        cached = cached->next;
+    }
+    if (prev_p != NULL) {
+        *prev_p = prev;
+    }
+    return cached;
 }
 
 static PyModuleDef *
 _extensions_cache_get(PyObject *filename, PyObject *name)
 {
-    PyModuleDef *def = NULL;
     extensions_lock_acquire();
-
-    PyObject *key = PyTuple_Pack(2, filename, name);
-    if (key == NULL) {
-        goto finally;
-    }
-
-    PyObject *extensions = EXTENSIONS.dict;
-    if (extensions == NULL) {
-        goto finally;
-    }
-    def = (PyModuleDef *)PyDict_GetItemWithError(extensions, key);
-
-finally:
-    Py_XDECREF(key);
+    struct _cached_module_def *found =
+                _extensions_cache_lookup(filename, name, NULL);
     extensions_lock_release();
-    return def;
+    return (found != NULL) ? found->def : NULL;
 }
 
 static int
 _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
 {
     int res = -1;
-    PyThreadState *oldts = NULL;
     extensions_lock_acquire();
 
-    /* Swap to the main interpreter, if necessary.  This matters if
-       the dict hasn't been created yet or if the item isn't in the
-       dict yet.  In both cases we must ensure the relevant objects
-       are created using the main interpreter. */
-    PyThreadState *main_tstate = &EXTENSIONS.main_tstate;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (!_Py_IsMainInterpreter(interp)) {
-        _PyThreadState_BindDetached(main_tstate);
-        oldts = _PyThreadState_Swap(interp->runtime, main_tstate);
-        assert(!_Py_IsMainInterpreter(oldts->interp));
-
-        /* Make sure the name and filename objects are owned
-           by the main interpreter. */
-        name = PyUnicode_InternFromString(PyUnicode_AsUTF8(name));
-        assert(name != NULL);
-        filename = PyUnicode_InternFromString(PyUnicode_AsUTF8(filename));
-        assert(filename != NULL);
-    }
-
-    PyObject *key = PyTuple_Pack(2, filename, name);
-    if (key == NULL) {
-        goto finally;
-    }
-
-    PyObject *extensions = EXTENSIONS.dict;
-    if (extensions == NULL) {
-        extensions = PyDict_New();
-        if (extensions == NULL) {
-            goto finally;
-        }
-        EXTENSIONS.dict = extensions;
-    }
-
-    PyModuleDef *actual = (PyModuleDef *)PyDict_GetItemWithError(extensions, key);
-    if (PyErr_Occurred()) {
-        goto finally;
-    }
-    else if (actual != NULL) {
-        /* We expect it to be static, so it must be the same pointer. */
-        assert(def == actual);
+    struct _cached_module_def *found =
+                _extensions_cache_lookup(filename, name, NULL);
+    if (found != NULL) {
+        assert(found->def == def);
         res = 0;
         goto finally;
     }
 
-    /* This might trigger a resize, which is why we must switch
-       to the main interpreter. */
-    res = PyDict_SetItem(extensions, key, (PyObject *)def);
-    if (res < 0) {
-        res = -1;
+    /* Create and populate the new entry. */
+    struct _cached_module_def *cached = PyMem_RawMalloc(
+                                            sizeof(struct _cached_module_def));
+    if (cached == NULL) {
+        PyErr_NoMemory();
         goto finally;
     }
+    cached->filename = PyMem_RawMalloc(strlen(PyUnicode_AsUTF8(filename)) + 1);
+    if (cached->filename == NULL) {
+        PyMem_RawFree(cached);
+        PyErr_NoMemory();
+        goto finally;
+    }
+    cached->name = PyMem_RawMalloc(strlen(PyUnicode_AsUTF8(name)) + 1);
+    if (cached->name == NULL) {
+        PyMem_RawFree(cached->filename);
+        PyMem_RawFree(cached);
+        PyErr_NoMemory();
+        goto finally;
+    }
+    strcpy(cached->filename, PyUnicode_AsUTF8(filename));
+    strcpy(cached->name, PyUnicode_AsUTF8(name));
+    cached->def = (PyModuleDef *)Py_NewRef(def);
+
+    /* Add it to the list. */
+    cached->next = EXTENSIONS.head;
+    EXTENSIONS.head = cached;
+
     res = 0;
 
 finally:
-    Py_XDECREF(key);
-    if (oldts != NULL) {
-        _PyThreadState_Swap(interp->runtime, oldts);
-        _PyThreadState_UnbindDetached(main_tstate);
-        Py_DECREF(name);
-        Py_DECREF(filename);
-    }
-    extensions_lock_release();
-    return res;
-}
-
-static int
-_extensions_cache_delete(PyObject *filename, PyObject *name)
-{
-    int res = -1;
-    PyThreadState *oldts = NULL;
-    extensions_lock_acquire();
-
-    PyObject *key = PyTuple_Pack(2, filename, name);
-    if (key == NULL) {
-        goto finally;
-    }
-
-    PyObject *extensions = EXTENSIONS.dict;
-    if (extensions == NULL) {
-        res = 0;
-        goto finally;
-    }
-
-    PyModuleDef *actual = (PyModuleDef *)PyDict_GetItemWithError(extensions, key);
-    if (PyErr_Occurred()) {
-        goto finally;
-    }
-    else if (actual == NULL) {
-        /* It was already removed or never added. */
-        res = 0;
-        goto finally;
-    }
-
-    /* Swap to the main interpreter, if necessary. */
-    PyThreadState *main_tstate = &EXTENSIONS.main_tstate;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (!_Py_IsMainInterpreter(interp)) {
-        _PyThreadState_BindDetached(main_tstate);
-        oldts = _PyThreadState_Swap(interp->runtime, main_tstate);
-        assert(!_Py_IsMainInterpreter(oldts->interp));
-    }
-
-    if (PyDict_DelItem(extensions, key) < 0) {
-        goto finally;
-    }
-    res = 0;
-
-finally:
-    if (oldts != NULL) {
-        _PyThreadState_Swap(interp->runtime, oldts);
-        _PyThreadState_UnbindDetached(main_tstate);
-    }
-    Py_XDECREF(key);
     extensions_lock_release();
     return res;
 }
 
 static void
+_extensions_cache_delete(PyObject *filename, PyObject *name)
+{
+    extensions_lock_acquire();
+
+    struct _cached_module_def *prev = NULL;
+    struct _cached_module_def *found =
+                _extensions_cache_lookup(filename, name, &prev);
+    if (found == NULL) {
+        /* It was already removed or never added. */
+        goto finally;
+    }
+
+    /* Drop it from the list. */
+    if (prev == NULL) {
+        assert(EXTENSIONS.head == found);
+        EXTENSIONS.head = found->next;
+    }
+    else {
+        prev->next = found->next;
+    }
+
+    /* Destroy the cache data. */
+    PyMem_RawFree(found->filename);
+    PyMem_RawFree(found->name);
+    PyMem_RawFree(found);
+
+finally:
+    extensions_lock_release();
+}
+
+static void
 _extensions_cache_clear_all(void)
 {
-    /* The runtime (i.e. main interpreter) must be finalizing,
-       so we don't need to worry about the lock. */
-    // XXX assert(_Py_IsMainInterpreter(_PyInterpreterState_GET()));
-    Py_CLEAR(EXTENSIONS.dict);
-    _PyThreadState_ClearDetached(&EXTENSIONS.main_tstate);
+    struct _cached_module_def *cached = EXTENSIONS.head;
+    while (cached != NULL) {
+        struct _cached_module_def *last = cached;
+        cached = cached->next;
+        PyMem_RawFree(last->filename);
+        PyMem_RawFree(last->name);
+        Py_DECREF(last->def);
+        PyMem_RawFree(last);
+    }
 }
 
 
@@ -1304,9 +1271,7 @@ clear_singlephase_extension(PyInterpreterState *interp,
     }
 
     /* Clear the cached module def. */
-    if (_extensions_cache_delete(filename, name) < 0) {
-        return -1;
-    }
+    _extensions_cache_delete(filename, name);
 
     return 0;
 }
