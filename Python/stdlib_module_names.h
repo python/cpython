@@ -47,6 +47,7 @@ static const char* _Py_stdlib_module_names[] = {
 "_multibytecodec",
 "_multiprocessing",
 "_opcode",
+"_opcode_metadata",
 "_operator",
 "_osx_support",
 "_overlapped",

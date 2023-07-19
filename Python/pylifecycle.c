@@ -2,10 +2,12 @@
 
 #include "Python.h"
 
+#include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
+#include "pycore_codecs.h"        // _PyCodec_Lookup()
 #include "pycore_context.h"       // _PyContext_Init()
-#include "pycore_exceptions.h"    // _PyExc_InitTypes()
 #include "pycore_dict.h"          // _PyDict_Fini()
+#include "pycore_exceptions.h"    // _PyExc_InitTypes()
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
 #include "pycore_floatobject.h"   // _PyFloat_InitTypes()
 #include "pycore_genobject.h"     // _PyAsyncGen_Fini()
@@ -28,6 +30,7 @@
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
+#include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 #include "opcode.h"
 
 #include <locale.h>               // setlocale()
@@ -578,12 +581,14 @@ init_interp_settings(PyInterpreterState *interp,
         interp->feature_flags |= Py_RTFLAGS_MULTI_INTERP_EXTENSIONS;
     }
 
+    /* We check "gil" in init_interp_create_gil(). */
+
     return _PyStatus_OK();
 }
 
 
 static PyStatus
-init_interp_create_gil(PyThreadState *tstate, int own_gil)
+init_interp_create_gil(PyThreadState *tstate, int gil)
 {
     PyStatus status;
 
@@ -596,6 +601,15 @@ init_interp_create_gil(PyThreadState *tstate, int own_gil)
     status = _PyGILState_SetTstate(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
+    }
+
+    int own_gil;
+    switch (gil) {
+    case PyInterpreterConfig_DEFAULT_GIL: own_gil = 0; break;
+    case PyInterpreterConfig_SHARED_GIL: own_gil = 0; break;
+    case PyInterpreterConfig_OWN_GIL: own_gil = 1; break;
+    default:
+        return _PyStatus_ERR("invalid interpreter config 'gil' value");
     }
 
     /* Create the GIL and take it */
@@ -633,7 +647,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
 
     PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
     // The main interpreter always has its own GIL.
-    config.own_gil = 1;
+    config.gil = PyInterpreterConfig_OWN_GIL;
     status = init_interp_settings(interp, &config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -647,7 +661,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     // XXX For now we do this before the GIL is created.
     (void) _PyThreadState_SwapNoGIL(tstate);
 
-    status = init_interp_create_gil(tstate, config.own_gil);
+    status = init_interp_create_gil(tstate, config.gil);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -726,22 +740,6 @@ pycore_init_types(PyInterpreterState *interp)
     return _PyStatus_OK();
 }
 
-static const uint8_t INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
-    /* Put a NOP at the start, so that the IP points into
-    * the code, rather than before it */
-    NOP, 0,
-    INTERPRETER_EXIT, 0,
-    /* RESUME at end makes sure that the frame appears incomplete */
-    RESUME, 0
-};
-
-static const _PyShimCodeDef INTERPRETER_TRAMPOLINE_CODEDEF = {
-    INTERPRETER_TRAMPOLINE_INSTRUCTIONS,
-    sizeof(INTERPRETER_TRAMPOLINE_INSTRUCTIONS),
-    1,
-    "<interpreter trampoline>"
-};
-
 static PyStatus
 pycore_init_builtins(PyThreadState *tstate)
 {
@@ -775,10 +773,6 @@ pycore_init_builtins(PyThreadState *tstate)
     PyObject *object__getattribute__ = _PyType_Lookup(&PyBaseObject_Type, &_Py_ID(__getattribute__));
     assert(object__getattribute__);
     interp->callable_cache.object__getattribute__ = object__getattribute__;
-    interp->interpreter_trampoline = _Py_MakeShimCode(&INTERPRETER_TRAMPOLINE_CODEDEF);
-    if (interp->interpreter_trampoline == NULL) {
-        return _PyStatus_ERR("failed to create interpreter trampoline.");
-    }
     if (_PyBuiltins_AddExceptions(bimod) < 0) {
         return _PyStatus_ERR("failed to add exceptions to builtins");
     }
@@ -1189,6 +1183,19 @@ init_interp_main(PyThreadState *tstate)
 #endif
     }
 
+    // Turn on experimental tier 2 (uops-based) optimizer
+    if (is_main_interp) {
+        char *envvar = Py_GETENV("PYTHONUOPS");
+        int enabled = envvar != NULL && *envvar > '0';
+        if (_Py_get_xoption(&config->xoptions, L"uops") != NULL) {
+            enabled = 1;
+        }
+        if (enabled) {
+            PyObject *opt = PyUnstable_Optimizer_NewUOpOptimizer();
+            PyUnstable_SetOptimizer((_PyOptimizerObject *)opt);
+        }
+    }
+
     assert(!_PyErr_Occurred(tstate));
 
     return _PyStatus_OK();
@@ -1473,16 +1480,16 @@ finalize_modules_clear_weaklist(PyInterpreterState *interp,
     for (Py_ssize_t i = PyList_GET_SIZE(weaklist) - 1; i >= 0; i--) {
         PyObject *tup = PyList_GET_ITEM(weaklist, i);
         PyObject *name = PyTuple_GET_ITEM(tup, 0);
-        PyObject *mod = PyWeakref_GET_OBJECT(PyTuple_GET_ITEM(tup, 1));
-        if (mod == Py_None) {
+        PyObject *mod = _PyWeakref_GET_REF(PyTuple_GET_ITEM(tup, 1));
+        if (mod == NULL) {
             continue;
         }
         assert(PyModule_Check(mod));
-        PyObject *dict = PyModule_GetDict(mod);
+        PyObject *dict = _PyModule_GetDict(mod);  // borrowed reference
         if (dict == interp->builtins || dict == interp->sysdict) {
+            Py_DECREF(mod);
             continue;
         }
-        Py_INCREF(mod);
         if (verbose && PyUnicode_Check(name)) {
             PySys_FormatStderr("# cleanup[3] wiping %U\n", name);
         }
@@ -2057,7 +2064,7 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
         goto error;
     }
 
-    status = init_interp_create_gil(tstate, config->own_gil);
+    status = init_interp_create_gil(tstate, config->gil);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
     }
@@ -2140,6 +2147,9 @@ Py_EndInterpreter(PyThreadState *tstate)
 
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown(tstate);
+
+    // Make any remaining pending calls.
+    _Py_FinishPendingCalls(tstate);
 
     _PyAtExit_Call(tstate->interp);
 

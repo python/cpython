@@ -3,7 +3,6 @@
 # https://gist.github.com/markshannon/db7ab649440b5af765451bb77c7dba34
 
 import re
-import sys
 from dataclasses import dataclass
 
 def choice(*opts):

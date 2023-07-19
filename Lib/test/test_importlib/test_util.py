@@ -655,7 +655,7 @@ class MagicNumberTests(unittest.TestCase):
 @unittest.skipIf(_interpreters is None, 'subinterpreters required')
 class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
 
-    ERROR = re.compile("^<class 'ImportError'>: module (.*) does not support loading in subinterpreters")
+    ERROR = re.compile("^ImportError: module (.*) does not support loading in subinterpreters")
 
     def run_with_own_gil(self, script):
         interpid = _interpreters.create(isolated=True)

@@ -87,21 +87,9 @@ jobs:
         with:
           filter: |
             Doc/**
-            # Temporarily skip paths with spaces
-            # (i.e. "C API", "Core and Builtins")
-            # to avoid "Error: One of your files includes a space".
-            # Pending https://github.com/python/core-workflow/issues/186
-            # Misc/**
-            Misc/NEWS.d/next/Build/**
-            Misc/NEWS.d/next/Documentation/**
-            Misc/NEWS.d/next/IDLE/**
-            Misc/NEWS.d/next/Library/**
-            Misc/NEWS.d/next/Security/**
-            Misc/NEWS.d/next/Tests/**
-            Misc/NEWS.d/next/Tools-Demos/**
-            Misc/NEWS.d/next/Windows/**
-            Misc/NEWS.d/next/macOS/**
+            Misc/**
             .github/workflows/reusable-docs.yml
+          format: csv  # works for paths with spaces
       - name: Check for docs changes
         if: >-
           github.event_name == 'pull_request'
@@ -232,7 +220,7 @@ jobs:
         path: config.cache
         key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}
     - name: Install Homebrew dependencies
-      run: brew install pkg-config openssl@1.1 xz gdbm tcl-tk
+      run: brew install pkg-config openssl@3.0 xz gdbm tcl-tk
     - name: Configure CPython
       run: |
         GDBM_CFLAGS="-I$(brew --prefix gdbm)/include" \
@@ -241,7 +229,7 @@ jobs:
           --config-cache \
           --with-pydebug \
           --prefix=/opt/python-dev \
-          --with-openssl="$(brew --prefix openssl@1.1)"
+          --with-openssl="$(brew --prefix openssl@3.0)"
     - name: Build CPython
       run: make -j4
     - name: Display build info
@@ -531,3 +519,60 @@ jobs:
       run: make pythoninfo
     - name: Tests
       run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
+
+  all-required-green:  # This job does nothing and is only used for the branch protection
+    name: All required checks pass
+    if: always()
+
+    needs:
+    - check_source  # Transitive dependency, needed to access `run_tests` value
+    - check-docs
+    - check_generated_files
+    - build_win32
+    - build_win_amd64
+    - build_macos
+    - build_ubuntu
+    - build_ubuntu_ssltests
+    - test_hypothesis
+    - build_asan
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check whether the needed jobs succeeded or failed
+      uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe
+      with:
+        allowed-failures: >-
+          build_macos,
+          build_ubuntu_ssltests,
+          build_win32,
+          test_hypothesis,
+        allowed-skips: >-
+          ${{
+            !fromJSON(needs.check_source.outputs.run-docs)
+            && '
+            check-docs,
+            '
+            || ''
+          }}
+          ${{
+            needs.check_source.outputs.run_tests != 'true'
+            && '
+            check_generated_files,
+            build_win32,
+            build_win_amd64,
+            build_macos,
+            build_ubuntu,
+            build_ubuntu_ssltests,
+            build_asan,
+            '
+            || ''
+          }}
+          ${{
+            !fromJSON(needs.check_source.outputs.run_hypothesis)
+            && '
+            test_hypothesis,
+            '
+            || ''
+          }}
+        jobs: ${{ toJSON(needs) }}

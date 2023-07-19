@@ -744,6 +744,12 @@ static PyType_Spec HeapCTypeMetaclassCustomNew_spec = {
     HeapCTypeMetaclassCustomNew_slots
 };
 
+static PyType_Spec HeapCTypeMetaclassNullNew_spec = {
+    .name = "_testcapi.HeapCTypeMetaclassNullNew",
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .slots = empty_type_slots
+};
+
 
 typedef struct {
     PyObject_HEAD
@@ -1230,6 +1236,13 @@ _PyTestCapi_Init_Heaptype(PyObject *m) {
         return -1;
     }
     PyModule_AddObject(m, "HeapCTypeMetaclassCustomNew", HeapCTypeMetaclassCustomNew);
+
+    PyObject *HeapCTypeMetaclassNullNew = PyType_FromMetaclass(
+        &PyType_Type, m, &HeapCTypeMetaclassNullNew_spec, (PyObject *) &PyType_Type);
+    if (HeapCTypeMetaclassNullNew == NULL) {
+        return -1;
+    }
+    PyModule_AddObject(m, "HeapCTypeMetaclassNullNew", HeapCTypeMetaclassNullNew);
 
     PyObject *HeapCCollection = PyType_FromMetaclass(
         NULL, m, &HeapCCollection_spec, NULL);

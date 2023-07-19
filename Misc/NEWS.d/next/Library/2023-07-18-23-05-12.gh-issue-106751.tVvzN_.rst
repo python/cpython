@@ -1,0 +1,2 @@
+Optimize :meth:`KqueueSelector.select` for many iteration case. Patch By
+Dong-hee Na.

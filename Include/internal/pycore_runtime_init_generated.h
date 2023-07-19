@@ -557,7 +557,6 @@ extern "C" {
     INIT_STR(newline, "\n"), \
     INIT_STR(open_br, "{"), \
     INIT_STR(percent, "%"), \
-    INIT_STR(shim_name, "<shim>"), \
     INIT_STR(type_params, ".type_params"), \
     INIT_STR(utf_8, "utf-8"), \
 }
@@ -664,6 +663,7 @@ extern "C" {
     INIT_ID(__lshift__), \
     INIT_ID(__lt__), \
     INIT_ID(__main__), \
+    INIT_ID(__match_args__), \
     INIT_ID(__matmul__), \
     INIT_ID(__missing__), \
     INIT_ID(__mod__), \
