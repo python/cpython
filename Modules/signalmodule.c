@@ -13,7 +13,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_signal.h"        // Py_NSIG
+#include "pycore_signal.h"        // _Py_RestoreSignals()
 
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"
@@ -314,7 +314,8 @@ trip_signal(int sig_num)
                        still use it for this exceptional case. */
                     _PyEval_AddPendingCall(interp,
                                            report_wakeup_send_error,
-                                           (void *)(intptr_t) last_error);
+                                           (void *)(intptr_t) last_error,
+                                           1);
                 }
             }
         }
@@ -333,7 +334,8 @@ trip_signal(int sig_num)
                        still use it for this exceptional case. */
                     _PyEval_AddPendingCall(interp,
                                            report_wakeup_write_error,
-                                           (void *)(intptr_t)errno);
+                                           (void *)(intptr_t)errno,
+                                           1);
                 }
             }
         }
