@@ -888,7 +888,7 @@ zlib.decompress on input data that expands that large.
 .. nonce: YHuV_s
 .. section: Core and Builtins
 
-Heap types with the :const:`Py_TPFLAGS_IMMUTABLETYPE` flag can now inherit
+Heap types with the :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` flag can now inherit
 the :pep:`590` vectorcall protocol.  Previously, this was only possible for
 :ref:`static types <static-types>`.  Patch by Erlend E. Aasland.
 
@@ -2575,7 +2575,7 @@ E. Aasland.
 .. nonce: bamAGF
 .. section: Library
 
-Set the proper :const:`Py_TPFLAGS_MAPPING` and :const:`Py_TPFLAGS_SEQUENCE`
+Set the proper :c:macro:`Py_TPFLAGS_MAPPING` and :c:macro:`Py_TPFLAGS_SEQUENCE`
 flags for subclasses created before a parent has been registered as a
 :class:`collections.abc.Mapping` or :class:`collections.abc.Sequence`.
 
@@ -2693,7 +2693,7 @@ libgcc_s.so file (ex: EMFILE error). Patch by Victor Stinner.
 .. section: Library
 
 The _thread.RLock type now fully implement the GC protocol: add a traverse
-function and the :const:`Py_TPFLAGS_HAVE_GC` flag. Patch by Victor Stinner.
+function and the :c:macro:`Py_TPFLAGS_HAVE_GC` flag. Patch by Victor Stinner.
 
 ..
 
@@ -5014,7 +5014,7 @@ must now be used to set an object type and size. Patch by Victor Stinner.
 .. section: C API
 
 The :c:func:`PyType_Ready` function now raises an error if a type is defined
-with the :const:`Py_TPFLAGS_HAVE_GC` flag set but has no traverse function
+with the :c:macro:`Py_TPFLAGS_HAVE_GC` flag set but has no traverse function
 (:c:member:`PyTypeObject.tp_traverse`). Patch by Victor Stinner.
 
 ..

@@ -2116,7 +2116,7 @@ Changes in the C API
   extension types across feature releases, anymore.  A :c:type:`PyTypeObject`
   exported by a third-party extension module is supposed to have all the
   slots expected in the current Python version, including
-  :c:member:`~PyTypeObject.tp_finalize` (:const:`Py_TPFLAGS_HAVE_FINALIZE`
+  :c:member:`~PyTypeObject.tp_finalize` (:c:macro:`Py_TPFLAGS_HAVE_FINALIZE`
   is not checked anymore before reading :c:member:`~PyTypeObject.tp_finalize`).
 
   (Contributed by Antoine Pitrou in :issue:`32388`.)
