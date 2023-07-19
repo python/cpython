@@ -314,17 +314,15 @@ class SelectSelector(_BaseSelectorImpl):
             r, w, _ = self._select(self._readers, self._writers, [], timeout)
         except InterruptedError:
             return ready
-        r = set(r)
-        w = set(w)
-        for fd in r | w:
-            events = 0
-            if fd in r:
-                events |= EVENT_READ
-            if fd in w:
-                events |= EVENT_WRITE
-
-            key = self._fd_to_key.get(fd)
+        r = frozenset(r)
+        w = frozenset(w)
+        rw = r | w
+        fd_to_key_get = self._fd_to_key.get
+        for fd in rw:
+            key = fd_to_key_get(fd)
             if key:
+                events = ((fd in r and EVENT_READ)
+                          | (fd in w and EVENT_WRITE))
                 ready.append((key, events & key.events))
         return ready
 
