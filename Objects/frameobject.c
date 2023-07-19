@@ -27,6 +27,9 @@ frame_getlocals(PyFrameObject *f, void *closure)
     if (PyFrame_FastToLocalsWithError(f) < 0)
         return NULL;
     PyObject *locals = f->f_frame->f_locals;
+    if (locals == NULL) {
+        Py_RETURN_NONE;
+    }
     return Py_NewRef(locals);
 }
 
