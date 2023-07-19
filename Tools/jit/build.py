@@ -248,7 +248,7 @@ class ObjectParser:
         entry = 0  # XXX
         holes = []
         for newhole in handle_relocations(self.got_entries, self.body, self.relocations_todo):
-            assert newhole.symbol not in self.dupes
+            assert newhole.symbol not in self.dupes, newhole.symbol
             if newhole.symbol in self.body_symbols:
                 addend = newhole.addend + self.body_symbols[newhole.symbol] - entry
                 newhole = Hole(newhole.kind, "_jit_base", newhole.offset, addend)
@@ -892,7 +892,7 @@ class Compiler:
 
     async def build(self) -> None:
         generated_cases = PYTHON_GENERATED_CASES_C_H.read_text()
-        opnames = sorted(re.findall(r"\n {8}case (\w+): \{\n", generated_cases))
+        opnames = sorted(set(re.findall(r"\n {8}case (\w+): \{\n", generated_cases)) - {"SET_FUNCTION_ATTRIBUTE"}) # XXX: 32-bit Windows...
         trampoline = TOOLS_JUSTIN_TRAMPOLINE.read_text()
         template = TOOLS_JUSTIN_TEMPLATE.read_text()
         await asyncio.gather(

@@ -219,7 +219,6 @@ preload_stencil(const Stencil *loading)
             PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, load->symbol);
             return -1;
         }
-        patch_one(loading->bytes + load->offset, load->kind, value, load->addend);
     }
     return 0;
 }
@@ -254,6 +253,12 @@ copy_and_patch(unsigned char *memory, const Stencil *stencil, uintptr_t patches[
     for (size_t i = 0; i < stencil->nholes; i++) {
         const Hole *hole = &stencil->holes[i];
         patch_one(memory + hole->offset, hole->kind, patches[hole->value], hole->addend);
+    }
+    for (size_t i = 0; i < stencil->nloads; i++) {
+        const SymbolLoad *load = &stencil->loads[i];
+        // XXX: Cache these somehow...
+        uintptr_t value = (uintptr_t)DLSYM(load->symbol);
+        patch_one(memory + load->offset, load->kind, value, load->addend);
     }
 }
 
