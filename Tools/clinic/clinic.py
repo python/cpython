@@ -5206,7 +5206,7 @@ class DSLParser:
                     "Annotations must be either a name, a function call, or a string."
                 )
 
-    def parse_deprecated_positional(self, thenceforth: str):
+    def parse_deprecated_positional(self, thenceforth: str) -> None:
         assert isinstance(self.function, Function)
 
         if "." not in thenceforth:
