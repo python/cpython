@@ -79,6 +79,13 @@ Other Language Changes
 * Allow the *count* argument of :meth:`str.replace` to be a keyword.
   (Contributed by Hugo van Kemenade in :gh:`106487`.)
 
+* Compiler now strip indents from docstrings.
+  This will reduce the size of :term:`bytecode cache <bytecode>` (e.g. ``.pyc`` file).
+  For example, cache file size for ``sqlalchemy.orm.session`` in SQLAlchemy 2.0
+  is reduced by about 5%.
+  This change will affect tools using docstrings, like :mod:`doctest`.
+  (Contributed by Inada Naoki in :gh:`81283`.)
+
 New Modules
 ===========
 
@@ -161,6 +168,10 @@ Deprecated
   ``NT = NamedTuple("NT", [])``. To create a TypedDict class with 0 fields, use
   ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
   (Contributed by Alex Waygood in :gh:`105566` and :gh:`105570`.)
+* :func:`typing.no_type_check_decorator` is deprecated, and scheduled for
+  removal in Python 3.15. After eight years in the :mod:`typing` module, it
+  has yet to be supported by any major type checkers.
+  (Contributed by Alex Waygood in :gh:`106309`.)
 
 * :mod:`array`'s ``'u'`` format code, deprecated in docs since Python 3.3,
   emits :exc:`DeprecationWarning` since 3.13
@@ -172,6 +183,13 @@ Deprecated
   and :func:`!ctypes.ARRAY` functions.
   Replace ``ctypes.ARRAY(item_type, size)`` with ``item_type * size``.
   (Contributed by Victor Stinner in :gh:`105733`.)
+
+* The :mod:`getopt` and :mod:`optparse` modules are now
+  :term:`soft deprecated`: the :mod:`argparse` should be used for new projects.
+  Previously, the :mod:`optparse` module was already deprecated, its removal
+  was not scheduled, and no warnings was emitted: so there is no change in
+  practice.
+  (Contributed by Victor Stinner in :gh:`106535`.)
 
 Pending Removal in Python 3.14
 ------------------------------
@@ -763,6 +781,11 @@ New Features
   If the assertion fails, make sure that the size is set before.
   (Contributed by Victor Stinner in :gh:`106168`.)
 
+* Add :c:func:`PyModule_Add` function: similar to
+  :c:func:`PyModule_AddObjectRef` and :c:func:`PyModule_AddObject` but
+  always steals a reference to the value.
+  (Contributed by Serhiy Storchaka in :gh:`86493`.)
+
 Porting to Python 3.13
 ----------------------
 
@@ -929,6 +952,11 @@ Removed
   <https://github.com/python/pythoncapi-compat/>`__ can be used to get
   :c:func:`PyInterpreterState_Get()` on Python 3.8 and older.
   (Contributed by Victor Stinner in :gh:`106320`.)
+
+* The :c:func:`PyModule_AddObject` function is now :term:`soft deprecated`:
+  :c:func:`PyModule_Add` or :c:func:`PyModule_AddObjectRef` functions should
+  be used instead.
+  (Contributed by Serhiy Storchaka in :gh:`86493`.)
 
 Pending Removal in Python 3.14
 ------------------------------
