@@ -257,6 +257,9 @@ if sys.version_info[:2] >= (3, 13):
     __all__.extend(["hasarg", "hasconst", "hasname", "hasjump", "hasjrel",
                     "hasjabs", "hasfree", "haslocal", "hasexc"])
 
+    _intrinsic_1_descs = _opcode.get_intrinsic1_descs()
+    _intrinsic_2_descs = _opcode.get_intrinsic2_descs()
+
 hascompare = [opmap["COMPARE_OP"]]
 
 _nb_ops = [
@@ -286,29 +289,6 @@ _nb_ops = [
     ("NB_INPLACE_SUBTRACT", "-="),
     ("NB_INPLACE_TRUE_DIVIDE", "/="),
     ("NB_INPLACE_XOR", "^="),
-]
-
-_intrinsic_1_descs = [
-    "INTRINSIC_1_INVALID",
-    "INTRINSIC_PRINT",
-    "INTRINSIC_IMPORT_STAR",
-    "INTRINSIC_STOPITERATION_ERROR",
-    "INTRINSIC_ASYNC_GEN_WRAP",
-    "INTRINSIC_UNARY_POSITIVE",
-    "INTRINSIC_LIST_TO_TUPLE",
-    "INTRINSIC_TYPEVAR",
-    "INTRINSIC_PARAMSPEC",
-    "INTRINSIC_TYPEVARTUPLE",
-    "INTRINSIC_SUBSCRIPT_GENERIC",
-    "INTRINSIC_TYPEALIAS",
-]
-
-_intrinsic_2_descs = [
-    "INTRINSIC_2_INVALID",
-    "INTRINSIC_PREP_RERAISE_STAR",
-    "INTRINSIC_TYPEVAR_WITH_BOUND",
-    "INTRINSIC_TYPEVAR_WITH_CONSTRAINTS",
-    "INTRINSIC_SET_FUNCTION_TYPE_PARAMS",
 ]
 
 
