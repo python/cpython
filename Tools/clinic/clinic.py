@@ -530,12 +530,12 @@ class PythonLanguage(Language):
     checksum_line = "#/*[{dsl_name} end generated code: {arguments}]*/"
 
 
-ParamGroup = Iterable["Parameter"]
+ParamIter = Iterable["Parameter"]
 ParamTuple = tuple["Parameter", ...]
 
 
 def permute_left_option_groups(
-        l: Sequence[ParamGroup]
+        l: Sequence[ParamIter]
 ) -> Iterator[ParamTuple]:
     """
     Given [(1,), (2,), (3,)], should yield:
@@ -552,7 +552,7 @@ def permute_left_option_groups(
 
 
 def permute_right_option_groups(
-        l: Sequence[ParamGroup]
+        l: Sequence[ParamIter]
 ) -> Iterator[ParamTuple]:
     """
     Given [(1,), (2,), (3,)], should yield:
@@ -569,9 +569,9 @@ def permute_right_option_groups(
 
 
 def permute_optional_groups(
-        left: Sequence[ParamGroup],
-        required: ParamGroup,
-        right: Sequence[ParamGroup]
+        left: Sequence[ParamIter],
+        required: ParamIter,
+        right: Sequence[ParamIter]
 ) -> tuple[ParamTuple, ...]:
     """
     Generator function that computes the set of acceptable
@@ -1374,7 +1374,11 @@ class CLanguage(Language):
         adjective = "left_" if group < 0 else "right_"
         return "group_" + adjective + str(abs(group))
 
-    def render_option_group_parsing(self, f, template_dict):
+    def render_option_group_parsing(
+            self,
+            f: Function,
+            template_dict: TemplateDict
+    ) -> None:
         # positional only, grouped, optional arguments!
         # can be optional on the left or right.
         # here's an example:
@@ -1398,11 +1402,11 @@ class CLanguage(Language):
         if isinstance(parameters[0].converter, self_converter):
             del parameters[0]
 
-        group = None
+        group: list["Parameter"] | None = None
         left = []
         right = []
-        required = []
-        last = unspecified
+        required: list["Parameter"] = []
+        last: int | Literal[Sentinels.unspecified] = unspecified
 
         for p in parameters:
             group_id = p.group
@@ -1415,6 +1419,7 @@ class CLanguage(Language):
                     group = required
                 else:
                     right.append(group)
+            assert group is not None
             group.append(p)
 
         count_min = sys.maxsize
@@ -1433,19 +1438,21 @@ class CLanguage(Language):
                 continue
 
             group_ids = {p.group for p in subset}  # eliminate duplicates
-            d = {}
+            d: dict[str, str | int] = {}
             d['count'] = count
             d['name'] = f.name
             d['format_units'] = "".join(p.converter.format_unit for p in subset)
 
-            parse_arguments = []
+            parse_arguments: list[Any] = []
             for p in subset:
                 p.converter.parse_argument(parse_arguments)
             d['parse_arguments'] = ", ".join(parse_arguments)
 
             group_ids.discard(0)
-            lines = [self.group_to_variable_name(g) + " = 1;" for g in group_ids]
-            lines = "\n".join(lines)
+            lines = "\n".join([
+                self.group_to_variable_name(g) + " = 1;"
+                for g in group_ids
+            ])
 
             s = """\
     case {count}:
