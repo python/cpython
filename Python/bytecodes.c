@@ -698,14 +698,14 @@ dummy_func(
 
         inst(CALL_INTRINSIC_1, (value -- res)) {
             assert(oparg <= MAX_INTRINSIC_1);
-            res = _PyIntrinsics_UnaryFunctions[oparg](tstate, value);
+            res = _PyIntrinsics_UnaryFunctions[oparg].func(tstate, value);
             DECREF_INPUTS();
             ERROR_IF(res == NULL, error);
         }
 
         inst(CALL_INTRINSIC_2, (value2, value1 -- res)) {
             assert(oparg <= MAX_INTRINSIC_2);
-            res = _PyIntrinsics_BinaryFunctions[oparg](tstate, value2, value1);
+            res = _PyIntrinsics_BinaryFunctions[oparg].func(tstate, value2, value1);
             DECREF_INPUTS();
             ERROR_IF(res == NULL, error);
         }
