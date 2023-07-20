@@ -2017,6 +2017,7 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
+            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -2038,6 +2039,7 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
+            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -2089,6 +2091,7 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
+            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -2131,6 +2134,7 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
+            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -2243,6 +2247,7 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
+            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -2281,6 +2286,7 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
+            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -2318,6 +2324,7 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
+            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -2496,6 +2503,7 @@
 
         case JUMP_TO_TOP: {
             pc = 0;
+            CHECK_EVAL_BREAKER();
             break;
         }
 
