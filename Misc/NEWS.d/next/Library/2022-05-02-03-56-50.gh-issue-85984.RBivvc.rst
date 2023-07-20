@@ -1,1 +1,0 @@
-New function os.login_tty() for Unix.

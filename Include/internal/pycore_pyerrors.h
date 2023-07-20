@@ -9,6 +9,54 @@ extern "C" {
 #endif
 
 
+/* Error handling definitions */
+
+PyAPI_FUNC(_PyErr_StackItem*) _PyErr_GetTopmostException(PyThreadState *tstate);
+PyAPI_FUNC(PyObject*) _PyErr_GetHandledException(PyThreadState *);
+PyAPI_FUNC(void) _PyErr_SetHandledException(PyThreadState *, PyObject *);
+PyAPI_FUNC(void) _PyErr_GetExcInfo(PyThreadState *, PyObject **, PyObject **, PyObject **);
+
+/* Like PyErr_Format(), but saves current exception as __context__ and
+   __cause__.
+ */
+PyAPI_FUNC(PyObject *) _PyErr_FormatFromCause(
+    PyObject *exception,
+    const char *format,   /* ASCII-encoded string  */
+    ...
+    );
+
+PyAPI_FUNC(int) _PyException_AddNote(
+     PyObject *exc,
+     PyObject *note);
+
+PyAPI_FUNC(int) _PyErr_CheckSignals(void);
+
+/* Support for adding program text to SyntaxErrors */
+
+PyAPI_FUNC(PyObject *) _PyErr_ProgramDecodedTextObject(
+    PyObject *filename,
+    int lineno,
+    const char* encoding);
+
+PyAPI_FUNC(PyObject *) _PyUnicodeTranslateError_Create(
+    PyObject *object,
+    Py_ssize_t start,
+    Py_ssize_t end,
+    const char *reason          /* UTF-8 encoded string */
+    );
+
+PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalErrorFormat(
+    const char *func,
+    const char *format,
+    ...);
+
+extern PyObject *_PyErr_SetImportErrorWithNameFrom(
+        PyObject *,
+        PyObject *,
+        PyObject *,
+        PyObject *);
+
+
 /* runtime lifecycle */
 
 extern PyStatus _PyErr_InitTypes(PyInterpreterState *);
@@ -20,7 +68,10 @@ extern void _PyErr_FiniTypes(PyInterpreterState *);
 static inline PyObject* _PyErr_Occurred(PyThreadState *tstate)
 {
     assert(tstate != NULL);
-    return tstate->curexc_type;
+    if (tstate->current_exception == NULL) {
+        return NULL;
+    }
+    return (PyObject *)Py_TYPE(tstate->current_exception);
 }
 
 static inline void _PyErr_ClearExcState(_PyErr_StackItem *exc_state)
@@ -37,9 +88,15 @@ PyAPI_FUNC(void) _PyErr_Fetch(
     PyObject **value,
     PyObject **traceback);
 
+extern PyObject *
+_PyErr_GetRaisedException(PyThreadState *tstate);
+
 PyAPI_FUNC(int) _PyErr_ExceptionMatches(
     PyThreadState *tstate,
     PyObject *exc);
+
+void
+_PyErr_SetRaisedException(PyThreadState *tstate, PyObject *exc);
 
 PyAPI_FUNC(void) _PyErr_Restore(
     PyThreadState *tstate,
@@ -52,8 +109,7 @@ PyAPI_FUNC(void) _PyErr_SetObject(
     PyObject *type,
     PyObject *value);
 
-PyAPI_FUNC(void) _PyErr_ChainStackItem(
-    _PyErr_StackItem *exc_info);
+PyAPI_FUNC(void) _PyErr_ChainStackItem(void);
 
 PyAPI_FUNC(void) _PyErr_Clear(PyThreadState *tstate);
 
@@ -99,6 +155,8 @@ PyAPI_FUNC(void) _Py_DumpExtensionModules(int fd, PyInterpreterState *interp);
 extern PyObject* _Py_Offer_Suggestions(PyObject* exception);
 PyAPI_FUNC(Py_ssize_t) _Py_UTF8_Edit_Cost(PyObject *str_a, PyObject *str_b,
                                           Py_ssize_t max_cost);
+
+void _PyErr_FormatNote(const char *format, ...);
 
 #ifdef __cplusplus
 }

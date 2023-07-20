@@ -1,2 +1,0 @@
-Improve error message when subscript a type with ``__class_getitem__`` set
-to ``None``.

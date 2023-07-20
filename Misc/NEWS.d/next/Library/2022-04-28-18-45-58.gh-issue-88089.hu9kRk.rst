@@ -1,1 +1,0 @@
-Add support for generic :class:`typing.NamedTuple`.

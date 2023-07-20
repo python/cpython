@@ -1,2 +1,0 @@
-If Python is built in debug mode, Python now ensures that deallocator
-functions leave the current exception unchanged. Patch by Victor Stinner.

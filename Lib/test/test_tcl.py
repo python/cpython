@@ -1,10 +1,7 @@
 import unittest
-import locale
-import re
 import subprocess
 import sys
 import os
-import warnings
 from test import support
 from test.support import import_helper
 from test.support import os_helper
@@ -28,15 +25,7 @@ def get_tk_patchlevel():
     global _tk_patchlevel
     if _tk_patchlevel is None:
         tcl = Tcl()
-        patchlevel = tcl.call('info', 'patchlevel')
-        m = re.fullmatch(r'(\d+)\.(\d+)([ab.])(\d+)', patchlevel)
-        major, minor, releaselevel, serial = m.groups()
-        major, minor, serial = int(major), int(minor), int(serial)
-        releaselevel = {'a': 'alpha', 'b': 'beta', '.': 'final'}[releaselevel]
-        if releaselevel == 'final':
-            _tk_patchlevel = major, minor, serial, releaselevel, 0
-        else:
-            _tk_patchlevel = major, minor, 0, releaselevel, serial
+        _tk_patchlevel = tcl.info_patchlevel()
     return _tk_patchlevel
 
 
@@ -153,7 +142,10 @@ class TclTest(unittest.TestCase):
         for i in self.get_integers():
             self.assertEqual(tcl.getint(' %d ' % i), i)
             self.assertEqual(tcl.getint(' %#o ' % i), i)
-            self.assertEqual(tcl.getint((' %#o ' % i).replace('o', '')), i)
+            # Numbers starting with 0 are parsed as decimal in Tcl 9.0
+            # and as octal in older versions.
+            self.assertEqual(tcl.getint((' %#o ' % i).replace('o', '')),
+                             i if tcl_version < (9, 0) else int('%o' % i))
             self.assertEqual(tcl.getint(' %#x ' % i), i)
         self.assertEqual(tcl.getint(42), 42)
         self.assertRaises(TypeError, tcl.getint)
@@ -723,7 +715,7 @@ class BigmemTclTest(unittest.TestCase):
 def setUpModule():
     if support.verbose:
         tcl = Tcl()
-        print('patchlevel =', tcl.call('info', 'patchlevel'))
+        print('patchlevel =', tcl.call('info', 'patchlevel'), flush=True)
 
 
 if __name__ == "__main__":

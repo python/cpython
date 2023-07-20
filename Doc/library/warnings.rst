@@ -154,14 +154,19 @@ the disposition of the match.  Each entry is a tuple of the form (*action*,
   +---------------+----------------------------------------------+
 
 * *message* is a string containing a regular expression that the start of
-  the warning message must match.  The expression is compiled to always be
-  case-insensitive.
+  the warning message must match, case-insensitively.  In :option:`-W` and
+  :envvar:`PYTHONWARNINGS`, *message* is a literal string that the start of the
+  warning message must contain (case-insensitively), ignoring any whitespace at
+  the start or end of *message*.
 
 * *category* is a class (a subclass of :exc:`Warning`) of which the warning
   category must be a subclass in order to match.
 
-* *module* is a string containing a regular expression that the module name must
-  match.  The expression is compiled to be case-sensitive.
+* *module* is a string containing a regular expression that the start of the
+  fully qualified module name must match, case-sensitively.  In :option:`-W` and
+  :envvar:`PYTHONWARNINGS`, *module* is a literal string that the
+  fully qualified module name must be equal to (case-sensitively), ignoring any
+  whitespace at the start or end of *module*.
 
 * *lineno* is an integer that the line number where the warning occurred must
   match, or ``0`` to match all line numbers.
@@ -207,8 +212,7 @@ Some examples::
    error::ResourceWarning       # Treat ResourceWarning messages as errors
    default::DeprecationWarning  # Show DeprecationWarning messages
    ignore,default:::mymodule    # Only report warnings triggered by "mymodule"
-   error:::mymodule[.*]         # Convert warnings to errors in "mymodule"
-                                # and any subpackages of "mymodule"
+   error:::mymodule             # Convert warnings to errors in "mymodule"
 
 
 .. _default-warning-filter:
@@ -392,7 +396,7 @@ Available Functions
 -------------------
 
 
-.. function:: warn(message, category=None, stacklevel=1, source=None)
+.. function:: warn(message, category=None, stacklevel=1, source=None, \*, skip_file_prefixes=None)
 
    Issue a warning, or maybe ignore it or raise an exception.  The *category*
    argument, if given, must be a :ref:`warning category class <warning-categories>`; it
@@ -403,18 +407,48 @@ Available Functions
    :ref:`warnings filter <warning-filter>`.  The *stacklevel* argument can be used by wrapper
    functions written in Python, like this::
 
-      def deprecation(message):
+      def deprecated_api(message):
           warnings.warn(message, DeprecationWarning, stacklevel=2)
 
-   This makes the warning refer to :func:`deprecation`'s caller, rather than to the
-   source of :func:`deprecation` itself (since the latter would defeat the purpose
-   of the warning message).
+   This makes the warning refer to ``deprecated_api``'s caller, rather than to
+   the source of ``deprecated_api`` itself (since the latter would defeat the
+   purpose of the warning message).
+
+   The *skip_file_prefixes* keyword argument can be used to indicate which
+   stack frames are ignored when counting stack levels. This can be useful when
+   you want the warning to always appear at call sites outside of a package
+   when a constant *stacklevel* does not fit all call paths or is otherwise
+   challenging to maintain. If supplied, it must be a tuple of strings. When
+   prefixes are supplied, stacklevel is implicitly overridden to be ``max(2,
+   stacklevel)``. To cause a warning to be attributed to the caller from
+   outside of the current package you might write::
+
+      # example/lower.py
+      _warn_skips = (os.path.dirname(__file__),)
+
+      def one_way(r_luxury_yacht=None, t_wobbler_mangrove=None):
+          if r_luxury_yacht:
+              warnings.warn("Please migrate to t_wobbler_mangrove=.",
+                            skip_file_prefixes=_warn_skips)
+
+      # example/higher.py
+      from . import lower
+
+      def another_way(**kw):
+          lower.one_way(**kw)
+
+   This makes the warning refer to both the ``example.lower.one_way()`` and
+   ``package.higher.another_way()`` call sites only from calling code living
+   outside of ``example`` package.
 
    *source*, if supplied, is the destroyed object which emitted a
    :exc:`ResourceWarning`.
 
    .. versionchanged:: 3.6
       Added *source* parameter.
+
+   .. versionchanged:: 3.12
+      Added *skip_file_prefixes*.
 
 
 .. function:: warn_explicit(message, category, filename, lineno, module=None, registry=None, module_globals=None, source=None)

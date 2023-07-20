@@ -3,7 +3,6 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_add_relfile()
-#include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 #ifdef HAVE_DIRECT_H
@@ -126,14 +125,15 @@ static char *GetPythonImport (HINSTANCE hModule)
                 !strncmp(import_name,"python",6)) {
                 char *pch;
 
-#ifndef _DEBUG
-                /* In a release version, don't claim that python3.dll is
-                   a Python DLL. */
+                /* Don't claim that python3.dll is a Python DLL. */
+#ifdef _DEBUG
+                if (strcmp(import_name, "python3_d.dll") == 0) {
+#else
                 if (strcmp(import_name, "python3.dll") == 0) {
+#endif
                     import_data += 20;
                     continue;
                 }
-#endif
 
                 /* Ensure python prefix is followed only
                    by numbers to the end of the basename */
@@ -163,6 +163,7 @@ static char *GetPythonImport (HINSTANCE hModule)
     return NULL;
 }
 
+#ifdef Py_ENABLE_SHARED
 /* Load python3.dll before loading any extension module that might refer
    to it. That way, we can be sure that always the python3.dll corresponding
    to this python DLL is loaded, not a python3.dll that might be on the path
@@ -216,6 +217,7 @@ _Py_CheckPython3(void)
     return hPython3 != NULL;
     #undef MAXPATHLEN
 }
+#endif /* Py_ENABLE_SHARED */
 
 dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
                                               const char *shortname,
@@ -224,13 +226,11 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
     dl_funcptr p;
     char funcname[258], *import_python;
 
+#ifdef Py_ENABLE_SHARED
     _Py_CheckPython3();
+#endif /* Py_ENABLE_SHARED */
 
-#if USE_UNICODE_WCHAR_CACHE
-    const wchar_t *wpathname = _PyUnicode_AsUnicode(pathname);
-#else /* USE_UNICODE_WCHAR_CACHE */
     wchar_t *wpathname = PyUnicode_AsWideCharString(pathname, NULL);
-#endif /* USE_UNICODE_WCHAR_CACHE */
     if (wpathname == NULL)
         return NULL;
 
@@ -238,10 +238,12 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
 
     {
         HINSTANCE hDLL = NULL;
+#ifdef MS_WINDOWS_DESKTOP
         unsigned int old_mode;
 
         /* Don't display a message box when Python can't load a DLL */
         old_mode = SetErrorMode(SEM_FAILCRITICALERRORS);
+#endif
 
         /* bpo-36085: We use LoadLibraryEx with restricted search paths
            to avoid DLL preloading attacks and enable use of the
@@ -252,12 +254,12 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
                               LOAD_LIBRARY_SEARCH_DEFAULT_DIRS |
                               LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
         Py_END_ALLOW_THREADS
-#if !USE_UNICODE_WCHAR_CACHE
         PyMem_Free(wpathname);
-#endif /* USE_UNICODE_WCHAR_CACHE */
 
+#ifdef MS_WINDOWS_DESKTOP
         /* restore old error mode settings */
         SetErrorMode(old_mode);
+#endif
 
         if (hDLL==NULL){
             PyObject *message;

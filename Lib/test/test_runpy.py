@@ -781,13 +781,15 @@ class TestExit(unittest.TestCase):
             super().run(*args, **kwargs)
 
     @requires_subprocess()
-    def assertSigInt(self, *args, **kwargs):
-        proc = subprocess.run(*args, **kwargs, text=True, stderr=subprocess.PIPE)
-        self.assertTrue(proc.stderr.endswith("\nKeyboardInterrupt\n"))
+    def assertSigInt(self, cmd, *args, **kwargs):
+        # Use -E to ignore PYTHONSAFEPATH
+        cmd = [sys.executable, '-E', *cmd]
+        proc = subprocess.run(cmd, *args, **kwargs, text=True, stderr=subprocess.PIPE)
+        self.assertTrue(proc.stderr.endswith("\nKeyboardInterrupt\n"), proc.stderr)
         self.assertEqual(proc.returncode, self.EXPECTED_CODE)
 
     def test_pymain_run_file(self):
-        self.assertSigInt([sys.executable, self.ham])
+        self.assertSigInt([self.ham])
 
     def test_pymain_run_file_runpy_run_module(self):
         tmp = self.ham.parent
@@ -800,7 +802,7 @@ class TestExit(unittest.TestCase):
                 """
             )
         )
-        self.assertSigInt([sys.executable, run_module], cwd=tmp)
+        self.assertSigInt([run_module], cwd=tmp)
 
     def test_pymain_run_file_runpy_run_module_as_main(self):
         tmp = self.ham.parent
@@ -813,23 +815,23 @@ class TestExit(unittest.TestCase):
                 """
             )
         )
-        self.assertSigInt([sys.executable, run_module_as_main], cwd=tmp)
+        self.assertSigInt([run_module_as_main], cwd=tmp)
 
     def test_pymain_run_command_run_module(self):
         self.assertSigInt(
-            [sys.executable, "-c", "import runpy; runpy.run_module('ham')"],
+            ["-c", "import runpy; runpy.run_module('ham')"],
             cwd=self.ham.parent,
         )
 
     def test_pymain_run_command(self):
-        self.assertSigInt([sys.executable, "-c", "import ham"], cwd=self.ham.parent)
+        self.assertSigInt(["-c", "import ham"], cwd=self.ham.parent)
 
     def test_pymain_run_stdin(self):
-        self.assertSigInt([sys.executable], input="import ham", cwd=self.ham.parent)
+        self.assertSigInt([], input="import ham", cwd=self.ham.parent)
 
     def test_pymain_run_module(self):
         ham = self.ham
-        self.assertSigInt([sys.executable, "-m", ham.stem], cwd=ham.parent)
+        self.assertSigInt(["-m", ham.stem], cwd=ham.parent)
 
 
 if __name__ == "__main__":

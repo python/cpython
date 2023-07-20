@@ -46,7 +46,7 @@ details see :ref:`tut-match`.
 ==========================
 
 .. index::
-   statement: for
+   pair: statement; for
 
 The :keyword:`for` statement in Python differs a bit from what you may be used
 to in C or Pascal.  Rather than always iterating over an arithmetic progression
@@ -253,8 +253,10 @@ at a more abstract level.  The :keyword:`!pass` is silently ignored::
 A :keyword:`match` statement takes an expression and compares its value to successive
 patterns given as one or more case blocks.  This is superficially
 similar to a switch statement in C, Java or JavaScript (and many
-other languages), but it can also extract components (sequence elements or
-object attributes) from the value into variables.
+other languages), but it's more similar to pattern matching in
+languages like Rust or Haskell. Only the first pattern that matches
+gets executed and it can also extract components (sequence elements
+or object attributes) from the value into variables.
 
 The simplest form compares a subject value against one or more literals::
 
@@ -305,8 +307,9 @@ you can use the class name followed by an argument list resembling a
 constructor, but with the ability to capture attributes into variables::
 
     class Point:
-        x: int
-        y: int
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
 
     def where_is(point):
         match point:
@@ -340,7 +343,13 @@ Dotted names (like ``foo.bar``), attribute names (the ``x=`` and ``y=`` above) o
 (recognized by the "(...)" next to them like ``Point`` above) are never assigned to.
 
 Patterns can be arbitrarily nested.  For example, if we have a short
-list of points, we could match it like this::
+list of Points, with ``__match_args__`` added, we could match it like this::
+
+    class Point:
+        __match_args__ = ('x', 'y')
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
 
     match points:
         case []:
@@ -838,8 +847,9 @@ will always bind to the first parameter. For example::
 
 But using ``/`` (positional only arguments), it is possible since it allows ``name`` as a positional argument and ``'name'`` as a key in the keyword arguments::
 
-    def foo(name, /, **kwds):
-        return 'name' in kwds
+    >>> def foo(name, /, **kwds):
+    ...     return 'name' in kwds
+    ...
     >>> foo(1, **{'name': 2})
     True
 

@@ -1,1 +1,0 @@
-When multiprocessing is enabled, libregrtest can now use a Python executable other than :code:`sys.executable` via the ``--python`` flag.

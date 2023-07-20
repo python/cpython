@@ -7,6 +7,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
+#include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 #include <stddef.h>               // offsetof()
 #include "structmember.h"         // PyMemberDef
 
@@ -57,6 +58,7 @@ lock_traverse(lockobject *self, visitproc visit, void *arg)
 static void
 lock_dealloc(lockobject *self)
 {
+    PyObject_GC_UnTrack(self);
     if (self->in_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) self);
     }
@@ -80,6 +82,7 @@ lock_dealloc(lockobject *self)
 static PyLockStatus
 acquire_timed(PyThread_type_lock lock, _PyTime_t timeout)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     _PyTime_t endtime = 0;
     if (timeout > 0) {
         endtime = _PyDeadline_Init(timeout);
@@ -102,7 +105,7 @@ acquire_timed(PyThread_type_lock lock, _PyTime_t timeout)
             /* Run signal handlers if we were interrupted.  Propagate
              * exceptions from signal handlers, such as KeyboardInterrupt, by
              * passing up PY_LOCK_INTR.  */
-            if (Py_MakePendingCalls() < 0) {
+            if (_PyEval_MakePendingCalls(tstate) < 0) {
                 return PY_LOCK_INTR;
             }
 
@@ -134,7 +137,7 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
 
     *timeout = unset_timeout ;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iO:acquire", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|pO:acquire", kwlist,
                                      &blocking, &timeout_obj))
         return -1;
 
@@ -333,6 +336,7 @@ rlock_traverse(rlockobject *self, visitproc visit, void *arg)
 static void
 rlock_dealloc(rlockobject *self)
 {
+    PyObject_GC_UnTrack(self);
     if (self->in_weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
     /* self->rlock_lock can be NULL if PyThread_allocate_lock() failed
@@ -847,18 +851,23 @@ local_clear(localobject *self)
     /* Remove all strong references to dummies from the thread states */
     if (self->key) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
+        _PyRuntimeState *runtime = &_PyRuntime;
+        HEAD_LOCK(runtime);
         PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
-        for(; tstate; tstate = PyThreadState_Next(tstate)) {
-            if (tstate->dict == NULL) {
-                continue;
+        HEAD_UNLOCK(runtime);
+        while (tstate) {
+            if (tstate->dict) {
+                PyObject *v = _PyDict_Pop(tstate->dict, self->key, Py_None);
+                if (v != NULL) {
+                    Py_DECREF(v);
+                }
+                else {
+                    PyErr_Clear();
+                }
             }
-            PyObject *v = _PyDict_Pop(tstate->dict, self->key, Py_None);
-            if (v != NULL) {
-                Py_DECREF(v);
-            }
-            else {
-                PyErr_Clear();
-            }
+            HEAD_LOCK(runtime);
+            tstate = PyThreadState_Next(tstate);
+            HEAD_UNLOCK(runtime);
         }
     }
     return 0;
@@ -939,7 +948,7 @@ local_setattro(localobject *self, PyObject *name, PyObject *v)
     }
     if (r == 1) {
         PyErr_Format(PyExc_AttributeError,
-                     "'%.50s' object attribute '%U' is read-only",
+                     "'%.100s' object attribute '%U' is read-only",
                      Py_TYPE(self)->tp_name, name);
         return -1;
     }
@@ -1016,15 +1025,13 @@ local_getattro(localobject *self, PyObject *name)
 static PyObject *
 _localdummy_destroyed(PyObject *localweakref, PyObject *dummyweakref)
 {
-    assert(PyWeakref_CheckRef(localweakref));
-    PyObject *obj = PyWeakref_GET_OBJECT(localweakref);
-    if (obj == Py_None) {
+    localobject *self = (localobject *)_PyWeakref_GET_REF(localweakref);
+    if (self == NULL) {
         Py_RETURN_NONE;
     }
 
     /* If the thread-local object is still alive and not being cleared,
        remove the corresponding local dict */
-    localobject *self = (localobject *)Py_NewRef(obj);
     if (self->dummies != NULL) {
         PyObject *ldict;
         ldict = PyDict_GetItemWithError(self->dummies, dummyweakref);
@@ -1032,9 +1039,9 @@ _localdummy_destroyed(PyObject *localweakref, PyObject *dummyweakref)
             PyDict_DelItem(self->dummies, dummyweakref);
         }
         if (PyErr_Occurred())
-            PyErr_WriteUnraisable(obj);
+            PyErr_WriteUnraisable((PyObject*)self);
     }
-    Py_DECREF(obj);
+    Py_DECREF(self);
     Py_RETURN_NONE;
 }
 
@@ -1067,13 +1074,7 @@ thread_run(void *boot_raw)
     PyThreadState *tstate;
 
     tstate = boot->tstate;
-    tstate->thread_id = PyThread_get_thread_ident();
-#ifdef PY_HAVE_THREAD_NATIVE_ID
-    tstate->native_thread_id = PyThread_get_thread_native_id();
-#else
-    tstate->native_thread_id = 0;
-#endif
-    _PyThreadState_SetCurrent(tstate);
+    _PyThreadState_Bind(tstate);
     PyEval_AcquireThread(tstate);
     tstate->interp->threads.count++;
 
@@ -1101,6 +1102,24 @@ thread_run(void *boot_raw)
 }
 
 static PyObject *
+thread_daemon_threads_allowed(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->feature_flags & Py_RTFLAGS_DAEMON_THREADS) {
+        Py_RETURN_TRUE;
+    }
+    else {
+        Py_RETURN_FALSE;
+    }
+}
+
+PyDoc_STRVAR(daemon_threads_allowed_doc,
+"daemon_threads_allowed()\n\
+\n\
+Return True if daemon threads are allowed in the current interpreter,\n\
+and False otherwise.\n");
+
+static PyObject *
 thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
@@ -1125,10 +1144,20 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
         return NULL;
     }
 
+    if (PySys_Audit("_thread.start_new_thread", "OOO",
+                    func, args, kwargs ? kwargs : Py_None) < 0) {
+        return NULL;
+    }
+
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->config._isolated_interpreter) {
+    if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_THREADS)) {
         PyErr_SetString(PyExc_RuntimeError,
                         "thread is not supported for isolated subinterpreters");
+        return NULL;
+    }
+    if (interp->finalizing) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "can't create new thread at interpreter shutdown");
         return NULL;
     }
 
@@ -1137,10 +1166,13 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
         return PyErr_NoMemory();
     }
     boot->interp = _PyInterpreterState_GET();
-    boot->tstate = _PyThreadState_Prealloc(boot->interp);
+    boot->tstate = _PyThreadState_New(boot->interp);
     if (boot->tstate == NULL) {
         PyMem_Free(boot);
-        return PyErr_NoMemory();
+        if (!PyErr_Occurred()) {
+            return PyErr_NoMemory();
+        }
+        return NULL;
     }
     boot->runtime = runtime;
     boot->func = Py_NewRef(func);
@@ -1281,24 +1313,25 @@ This function is meant for internal and specialized purposes only.\n\
 In most applications `threading.enumerate()` should be used instead.");
 
 static void
-release_sentinel(void *wr_raw)
+release_sentinel(void *weakref_raw)
 {
-    PyObject *wr = _PyObject_CAST(wr_raw);
+    PyObject *weakref = _PyObject_CAST(weakref_raw);
+
     /* Tricky: this function is called when the current thread state
        is being deleted.  Therefore, only simple C code can safely
        execute here. */
-    PyObject *obj = PyWeakref_GET_OBJECT(wr);
-    lockobject *lock;
-    if (obj != Py_None) {
-        lock = (lockobject *) obj;
+    lockobject *lock = (lockobject *)_PyWeakref_GET_REF(weakref);
+    if (lock != NULL) {
         if (lock->locked) {
             PyThread_release_lock(lock->lock_lock);
             lock->locked = 0;
         }
+        Py_DECREF(lock);
     }
+
     /* Deallocating a weakref with a NULL callback only calls
        PyObject_GC_Del(), which can't call any Python code. */
-    Py_DECREF(wr);
+    Py_DECREF(weakref);
 }
 
 static PyObject *
@@ -1405,7 +1438,7 @@ thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
 
     PyObject *name = NULL;
     if (thread != Py_None) {
-        if (_PyObject_LookupAttr(thread, &_Py_ID(name), &name) < 0) {
+        if (PyObject_GetOptionalAttr(thread, &_Py_ID(name), &name) < 0) {
             return -1;
         }
     }
@@ -1541,6 +1574,8 @@ static PyMethodDef thread_methods[] = {
      METH_VARARGS, start_new_doc},
     {"start_new",               (PyCFunction)thread_PyThread_start_new_thread,
      METH_VARARGS, start_new_doc},
+    {"daemon_threads_allowed",  (PyCFunction)thread_daemon_threads_allowed,
+     METH_NOARGS, daemon_threads_allowed_doc},
     {"allocate_lock",           thread_PyThread_allocate_lock,
      METH_NOARGS, allocate_doc},
     {"allocate",                thread_PyThread_allocate_lock,
@@ -1636,8 +1671,8 @@ thread_module_exec(PyObject *module)
     // Round towards minus infinity
     timeout_max = floor(timeout_max);
 
-    if (PyModule_AddObject(module, "TIMEOUT_MAX",
-                           PyFloat_FromDouble(timeout_max)) < 0) {
+    if (PyModule_Add(module, "TIMEOUT_MAX",
+                        PyFloat_FromDouble(timeout_max)) < 0) {
         return -1;
     }
 
@@ -1681,6 +1716,7 @@ The 'threading' module provides a more convenient interface.");
 
 static PyModuleDef_Slot thread_module_slots[] = {
     {Py_mod_exec, thread_module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
