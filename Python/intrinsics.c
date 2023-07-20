@@ -265,6 +265,8 @@ _PyIntrinsics_BinaryFunctions[] = {
     INTRINSIC_FUNC_ENTRY(INTRINSIC_SET_FUNCTION_TYPE_PARAMS, _Py_set_function_type_params)
 };
 
+#undef INTRINSIC_FUNC_ENTRY
+
 PyObject*
 _PyUnstable_GetUnaryIntrinsicName(int index)
 {
