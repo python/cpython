@@ -1402,10 +1402,10 @@ class CLanguage(Language):
         if isinstance(parameters[0].converter, self_converter):
             del parameters[0]
 
-        group: list["Parameter"] | None = None
+        group: list[Parameter] | None = None
         left = []
         right = []
-        required: list["Parameter"] = []
+        required: list[Parameter] = []
         last: int | Literal[Sentinels.unspecified] = unspecified
 
         for p in parameters:
