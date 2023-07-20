@@ -19,7 +19,8 @@ Argument Clinic How-To
 
   * :ref:`clinic-background` talks about the basic concepts and goals of
     Argument Clinic.
-  * :ref:`clinic-tutorial`
+  * :ref:`clinic-tutorial` guides you through all the steps required to
+    adapt an existing C function to Argument Clinic.
   * :ref:`clinic-howtos` details how to handle specific tasks.
 
 
@@ -157,8 +158,8 @@ For the sake of clarity, here's the terminology we'll use with Argument Clinic:
 
 .. _clinic-tutorial:
 
-Tutorial --- converting your first function
-===========================================
+Tutorial
+========
 
 The best way to get a sense of how Argument Clinic works is to
 convert a function to work with it.  Here, then, are the bare
