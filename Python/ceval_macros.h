@@ -1,4 +1,4 @@
-// Macros and other things needed by ceval.c and bytecodes.c
+// Macros and other things needed by ceval.c, executor.c, and bytecodes.c
 
 /* Computed GOTOs, or
        the-optimization-commonly-but-improperly-known-as-"threaded code"
@@ -352,3 +352,13 @@ static const convertion_func_ptr CONVERSION_FUNCTIONS[4] = {
 };
 
 #define ASSERT_KWNAMES_IS_NULL() assert(kwnames == NULL)
+
+#define UNBOUNDLOCAL_ERROR_MSG \
+    "cannot access local variable '%s' where it is not associated with a value"
+
+// GH-89279: Force inlining by using a macro.
+#if defined(_MSC_VER) && SIZEOF_INT == 4
+#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) (assert(sizeof((ATOMIC_VAL)->_value) == 4), *((volatile int*)&((ATOMIC_VAL)->_value)))
+#else
+#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) _Py_atomic_load_relaxed(ATOMIC_VAL)
+#endif
