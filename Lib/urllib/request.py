@@ -404,6 +404,7 @@ class OpenerDirector:
         self.handle_error = {}
         self.process_response = {}
         self.process_request = {}
+        self.req = None
 
     def add_handler(self, handler):
         if not hasattr(handler, "add_parent"):
@@ -467,6 +468,13 @@ class OpenerDirector:
             if result is not None:
                 return result
 
+    def __getattr__(self, attr):
+        dct = self.__dict__
+        if attr in dct:
+            return dct[attr]
+
+        return getattr(self.req, attr)
+    
     def open(self, fullurl, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
         # accept a URL or a Request object
         if isinstance(fullurl, str):
@@ -476,6 +484,7 @@ class OpenerDirector:
             if data is not None:
                 req.data = data
 
+        self.req = req
         req.timeout = timeout
         protocol = req.type
 
