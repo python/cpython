@@ -211,10 +211,6 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
 static void
 _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
 
-#define UNBOUNDFREE_ERROR_MSG \
-    "cannot access free variable '%s' where it is not associated with a" \
-    " value in enclosing scope"
-
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
 #endif

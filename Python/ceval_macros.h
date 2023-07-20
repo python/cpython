@@ -304,6 +304,11 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         (COUNTER) += (1 << ADAPTIVE_BACKOFF_BITS);   \
     } while (0);
 
+#define UNBOUNDLOCAL_ERROR_MSG \
+    "cannot access local variable '%s' where it is not associated with a value"
+#define UNBOUNDFREE_ERROR_MSG \
+    "cannot access free variable '%s' where it is not associated with a value" \
+    " in enclosing scope"
 #define NAME_ERROR_MSG "name '%.200s' is not defined"
 
 #define KWNAMES_LEN() \
@@ -352,9 +357,6 @@ static const convertion_func_ptr CONVERSION_FUNCTIONS[4] = {
 };
 
 #define ASSERT_KWNAMES_IS_NULL() assert(kwnames == NULL)
-
-#define UNBOUNDLOCAL_ERROR_MSG \
-    "cannot access local variable '%s' where it is not associated with a value"
 
 // GH-89279: Force inlining by using a macro.
 #if defined(_MSC_VER) && SIZEOF_INT == 4
