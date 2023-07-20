@@ -394,7 +394,7 @@ Let's dive in!
         Write a pickled representation of obj to the open file.
         [clinic start generated code]*/
 
-12. Save and close the file, then run :program:`make clinic`
+12. Save and close the file, then run ``make clinic``
     to regenerate the Argument Clinic code.
     With luck everything worked---your block now has output, and
     a :file:`.c.h` file has been generated! Reopen the file in your
@@ -460,7 +460,7 @@ Let's dive in!
 
     If any of these items differ in *any way*,
     adjust your Argument Clinic function specification and rerun
-    :program:`make clinic` until they *are* the same.
+    ``make clinic`` until they *are* the same.
 
 
 14. Notice that the last line of its output is the declaration
@@ -549,7 +549,7 @@ Let's dive in!
 
         &_Py_ID(new_unique_py_id)
 
-    If it does, you'll have to run :program:`make regen-global-objects`
+    If it does, you'll have to run ``make regen-global-objects``
     to regenerate the list of precompiled identifiers at this point.
 
 
@@ -884,7 +884,7 @@ negative numbers.  You just can't do that with a legacy converter!
 Argument Clinic will show you all the converters it has
 available.  For each converter it'll show you all the parameters
 it accepts, along with the default value for each parameter.
-Just run :program:`Tools/clinic/clinic.py --converters` to see the full list.
+Just run ``./Tools/clinic/clinic.py --converters`` to see the full list.
 
 
 How to use the ``Py_buffer`` converter
@@ -1103,7 +1103,7 @@ For all of these, return ``-1`` to indicate error.
 
 To see all the return converters Argument Clinic supports, along with
 their parameters (if any),
-just run :program:`./Tools/clinic/clinic.py --converters` for the full list.
+just run ``./Tools/clinic/clinic.py --converters`` for the full list.
 
 
 How to clone existing functions
