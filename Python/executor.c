@@ -14,7 +14,7 @@
 #include "pycore_sliceobject.h"
 #include "pycore_uops.h"
 
-#include "Python/ceval_macros.h"
+#include "ceval_macros.h"
 
 
 #undef ASSERT_KWNAMES_IS_NULL
