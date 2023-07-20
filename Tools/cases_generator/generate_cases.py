@@ -1154,10 +1154,15 @@ class Analyzer:
         self.out.emit("")
 
     def from_source_files(self) -> str:
-        paths = f"\n{self.out.comment}   ".join(
-            prettify_filename(os.path.relpath(filename, ROOT))
-            for filename in self.input_filenames
-        )
+        filenames = []
+        for filename in self.input_filenames:
+            try:
+                filename = os.path.relpath(filename, ROOT)
+            except ValueError:
+            # May happen on Windows if root and temp on different volumes
+                pass
+            filenames.append(filename)
+        paths = f"\n{self.out.comment}   ".join(filenames)
         return f"{self.out.comment} from:\n{self.out.comment}   {paths}\n"
 
     def write_provenance_header(self):
