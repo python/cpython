@@ -2698,10 +2698,10 @@ class CConverter(metaclass=CConverterAutoRegister):
     """
 
     # The C name to use for this variable.
-    name: str | None = None
+    name: str
 
     # The Python name to use for this variable.
-    py_name: str | None = None
+    py_name: str
 
     # The C type to use for this variable.
     # 'type' should be a Python string specifying the type, e.g. "int".
@@ -2713,7 +2713,7 @@ class CConverter(metaclass=CConverterAutoRegister):
     # Or the magic value "unknown" if this value is a cannot be evaluated
     # at Argument-Clinic-preprocessing time (but is presumed to be valid
     # at runtime).
-    default: object = unspecified
+    default: object
 
     # If not None, default must be isinstance() of this type.
     # (You can also specify a tuple of types.)
@@ -2864,7 +2864,11 @@ class CConverter(metaclass=CConverterAutoRegister):
         if self.length:
             data.impl_parameters.append("Py_ssize_t " + self.length_name())
 
-    def _render_non_self(self, parameter, data):
+    def _render_non_self(
+            self,
+            parameter: Parameter,
+            data: CRenderData
+    ) -> None:
         self.parameter = parameter
         name = self.name
 
@@ -2917,16 +2921,15 @@ class CConverter(metaclass=CConverterAutoRegister):
         self._render_self(parameter, data)
         self._render_non_self(parameter, data)
 
-    def length_name(self):
+    def length_name(self) -> str:
         """Computes the name of the associated "length" variable."""
-        if not self.length:
-            return None
+        assert self.length is not None
         return self.parser_name + "_length"
 
     # Why is this one broken out separately?
     # For "positional-only" function parsing,
     # which generates a bunch of PyArg_ParseTuple calls.
-    def parse_argument(self, list):
+    def parse_argument(self, list: list[str]) -> None:
         assert not (self.converter and self.encoding)
         if self.format_unit == 'O&':
             assert self.converter
@@ -3066,7 +3069,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         pass
 
     @property
-    def parser_name(self):
+    def parser_name(self) -> str:
         if self.name in CLINIC_PREFIXED_ARGS: # bpo-39741
             return CLINIC_PREFIX + self.name
         else:
