@@ -2713,7 +2713,7 @@ class CConverter(metaclass=CConverterAutoRegister):
     # Or the magic value "unknown" if this value is a cannot be evaluated
     # at Argument-Clinic-preprocessing time (but is presumed to be valid
     # at runtime).
-    default: object
+    default: object = unspecified
 
     # If not None, default must be isinstance() of this type.
     # (You can also specify a tuple of types.)
