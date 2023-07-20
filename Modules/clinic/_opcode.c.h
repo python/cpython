@@ -612,4 +612,40 @@ _opcode_get_specialization_stats(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _opcode_get_specialization_stats_impl(module);
 }
-/*[clinic end generated code: output=e507bf14fb2796f8 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_opcode_get_intrinsic1_descs__doc__,
+"get_intrinsic1_descs($module, /)\n"
+"--\n"
+"\n"
+"Return a list of names of the unary intrinsics.");
+
+#define _OPCODE_GET_INTRINSIC1_DESCS_METHODDEF    \
+    {"get_intrinsic1_descs", (PyCFunction)_opcode_get_intrinsic1_descs, METH_NOARGS, _opcode_get_intrinsic1_descs__doc__},
+
+static PyObject *
+_opcode_get_intrinsic1_descs_impl(PyObject *module);
+
+static PyObject *
+_opcode_get_intrinsic1_descs(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _opcode_get_intrinsic1_descs_impl(module);
+}
+
+PyDoc_STRVAR(_opcode_get_intrinsic2_descs__doc__,
+"get_intrinsic2_descs($module, /)\n"
+"--\n"
+"\n"
+"Return a list of names of the binary intrinsics.");
+
+#define _OPCODE_GET_INTRINSIC2_DESCS_METHODDEF    \
+    {"get_intrinsic2_descs", (PyCFunction)_opcode_get_intrinsic2_descs, METH_NOARGS, _opcode_get_intrinsic2_descs__doc__},
+
+static PyObject *
+_opcode_get_intrinsic2_descs_impl(PyObject *module);
+
+static PyObject *
+_opcode_get_intrinsic2_descs(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _opcode_get_intrinsic2_descs_impl(module);
+}
+/*[clinic end generated code: output=d85de5f2887b3661 input=a9049054013a1b77]*/
