@@ -2929,22 +2929,22 @@ class CConverter(metaclass=CConverterAutoRegister):
     # Why is this one broken out separately?
     # For "positional-only" function parsing,
     # which generates a bunch of PyArg_ParseTuple calls.
-    def parse_argument(self, list: list[str]) -> None:
+    def parse_argument(self, args: list[str]) -> None:
         assert not (self.converter and self.encoding)
         if self.format_unit == 'O&':
             assert self.converter
-            list.append(self.converter)
+            args.append(self.converter)
 
         if self.encoding:
-            list.append(c_repr(self.encoding))
+            args.append(c_repr(self.encoding))
         elif self.subclass_of:
-            list.append(self.subclass_of)
+            args.append(self.subclass_of)
 
         s = ("&" if self.parse_by_reference else "") + self.name
-        list.append(s)
+        args.append(s)
 
         if self.length:
-            list.append("&" + self.length_name())
+            args.append("&" + self.length_name())
 
     #
     # All the functions after here are intended as extension points.
