@@ -2623,7 +2623,8 @@ class Parameter:
     annotation: object = inspect.Parameter.empty
     docstring: str = ''
     group: int = 0
-    deprecated_positional: str = ""
+    # (`None` signifies that there is no deprecation)
+    deprecated_positional: str | None = None
     right_bracket_count: int = dc.field(init=False, default=0)
 
     def __repr__(self) -> str:
@@ -4420,7 +4421,7 @@ class DSLParser:
     state: StateKeeper
     keyword_only: bool
     positional_only: bool
-    deprecated_positional: str
+    deprecated_positional: str | None
     group: int
     parameter_state: int
     seen_positional_with_default: bool
@@ -4457,7 +4458,7 @@ class DSLParser:
         self.state = self.state_dsl_start
         self.keyword_only = False
         self.positional_only = False
-        self.deprecated_positional = ""
+        self.deprecated_positional = None
         self.group = 0
         self.parameter_state: ParamState = ParamState.START
         self.seen_positional_with_default = False
