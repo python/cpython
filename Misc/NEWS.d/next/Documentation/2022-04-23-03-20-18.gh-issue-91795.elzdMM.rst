@@ -1,2 +1,0 @@
-Updated build_pgo part under 'Profile Guided Optimization' according to the
-current build script. Updated Microsoft docs link.
