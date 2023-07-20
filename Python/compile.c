@@ -8053,6 +8053,11 @@ _PyCompile_CleanDoc(PyObject *doc)
     }
 
     char *buff = PyMem_Malloc(doc_size);
+    if (buff == NULL){
+        PyErr_NoMemory();
+        return NULL;
+    }
+
     char *w = buff;
 
     while (p < pend) {
