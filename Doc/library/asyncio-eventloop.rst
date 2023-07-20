@@ -1593,6 +1593,9 @@ Do not instantiate the :class:`Server` class directly.
    .. versionchanged:: 3.7
       Server object is an asynchronous context manager since Python 3.7.
 
+   .. versionchanged:: 3.11
+      This class was exposed publicly as ``asyncio.Server`` in Python 3.9.11, 3.10.3 and 3.11.
+
    .. method:: close()
 
       Stop serving: close listening sockets and set the :attr:`sockets`
