@@ -1955,7 +1955,7 @@ introduced in :pep:`692`.
 .. section: Documentation
 
 Clarifying documentation about the url parameter to urllib.request.urlopen
-and urllib.request.Requst needing to be encoded properly.
+and urllib.request.Request needing to be encoded properly.
 
 ..
 
