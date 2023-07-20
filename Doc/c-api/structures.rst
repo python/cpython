@@ -179,7 +179,7 @@ Implementing functions and methods
 .. c:type:: PyCFunctionWithKeywords
 
    Type of the functions used to implement Python callables in C
-   with signature :ref:`METH_VARARGS | METH_KEYWORDS`.
+   with signature :ref:`METH_VARARGS | METH_KEYWORDS <METH_VARARGS-METH_KEYWORDS>`.
    The function signature is::
 
       PyObject *PyCFunctionWithKeywords(PyObject *self,
@@ -200,7 +200,7 @@ Implementing functions and methods
 .. c:type:: _PyCFunctionFastWithKeywords
 
    Type of the functions used to implement Python callables in C
-   with signature :ref:`METH_FASTCALL | METH_KEYWORDS`.
+   with signature :ref:`METH_FASTCALL | METH_KEYWORDS <METH_FASTCALL-METH_KEYWORDS>`.
    The function signature is::
 
       PyObject *_PyCFunctionFastWithKeywords(PyObject *self,
@@ -211,7 +211,7 @@ Implementing functions and methods
 .. c:type:: PyCMethod
 
    Type of the functions used to implement Python callables in C
-   with signature :ref:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS`.
+   with signature :ref:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS <METH_METHOD-METH_FASTCALL-METH_KEYWORDS>`.
    The function signature is::
 
       PyObject *PyCMethod(PyObject *self,
@@ -270,12 +270,12 @@ There are these calling conventions:
 .. c:macro:: METH_KEYWORDS
 
    Can only be used in certain combinations with other flags:
-   :ref:`METH_VARARGS | METH_KEYWORDS`,
-   :ref:`METH_FASTCALL | METH_KEYWORDS` and
-   :ref:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS`.
+   :ref:`METH_VARARGS | METH_KEYWORDS <METH_VARARGS-METH_KEYWORDS>`,
+   :ref:`METH_FASTCALL | METH_KEYWORDS <METH_FASTCALL-METH_KEYWORDS>` and
+   :ref:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS <METH_METHOD-METH_FASTCALL-METH_KEYWORDS>`.
 
 
-.. _meth_varargs | Meth_keywords:
+.. _METH_VARARGS-METH_KEYWORDS:
 
 :c:expr:`METH_VARARGS | METH_KEYWORDS`
    Methods with these flags must be of type :c:type:`PyCFunctionWithKeywords`.
@@ -300,7 +300,7 @@ There are these calling conventions:
       ``METH_FASTCALL`` is now part of the :ref:`stable ABI <stable-abi>`.
 
 
-.. _meth_fastcall | meth_keywords:
+.. _METH_FASTCALL-METH_KEYWORDS:
 
 :c:expr:`METH_FASTCALL | METH_KEYWORDS`
    Extension of :c:macro:`METH_FASTCALL` supporting also keyword arguments,
@@ -319,13 +319,14 @@ There are these calling conventions:
 .. c:macro:: METH_METHOD
 
    Can only be used in the combination with other flags:
-   :ref:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS`.
+   :ref:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS <METH_METHOD-METH_FASTCALL-METH_KEYWORDS>`.
 
 
-.. _meth_method | meth_fastcall | meth_keywords:
+.. _METH_METHOD-METH_FASTCALL-METH_KEYWORDS:
 
 :c:expr:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS`
-   Extension of :ref:`METH_FASTCALL | METH_KEYWORDS` supporting the *defining
+   Extension of :ref:`METH_FASTCALL | METH_KEYWORDS <METH_FASTCALL-METH_KEYWORDS>`
+   supporting the *defining
    class*, that is, the class that contains the method in question.
    The defining class might be a superclass of ``Py_TYPE(self)``.
 
