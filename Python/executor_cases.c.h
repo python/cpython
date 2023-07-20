@@ -558,7 +558,7 @@
             PyObject *value = stack_pointer[-1];
             PyObject *res;
             assert(oparg <= MAX_INTRINSIC_1);
-            res = _PyIntrinsics_UnaryFunctions[oparg](tstate, value);
+            res = _PyIntrinsics_UnaryFunctions[oparg].func(tstate, value);
             Py_DECREF(value);
             if (res == NULL) goto pop_1_error;
             stack_pointer[-1] = res;
@@ -570,7 +570,7 @@
             PyObject *value2 = stack_pointer[-2];
             PyObject *res;
             assert(oparg <= MAX_INTRINSIC_2);
-            res = _PyIntrinsics_BinaryFunctions[oparg](tstate, value2, value1);
+            res = _PyIntrinsics_BinaryFunctions[oparg].func(tstate, value2, value1);
             Py_DECREF(value2);
             Py_DECREF(value1);
             if (res == NULL) goto pop_2_error;
