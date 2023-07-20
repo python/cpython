@@ -1506,6 +1506,8 @@ class Analyzer:
                             self.out.emit("")
                             with self.out.block(f"case {thing.name}:"):
                                 instr.write(self.out, tier=TIER_TWO)
+                                if instr.check_eval_breaker:
+                                    self.out.emit("CHECK_EVAL_BREAKER();")
                                 self.out.emit("break;")
                         # elif instr.kind != "op":
                         #     print(f"NOTE: {thing.name} is not a viable uop")
