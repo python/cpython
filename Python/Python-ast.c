@@ -3847,6 +3847,7 @@ ast2obj_mod(struct ast_state *state, void* _o)
     state->recursion_depth--;
     return result;
 failed:
+    state->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
@@ -4452,6 +4453,7 @@ ast2obj_stmt(struct ast_state *state, void* _o)
     state->recursion_depth--;
     return result;
 failed:
+    state->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
@@ -4935,6 +4937,7 @@ ast2obj_expr(struct ast_state *state, void* _o)
     state->recursion_depth--;
     return result;
 failed:
+    state->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
@@ -5074,6 +5077,7 @@ ast2obj_comprehension(struct ast_state *state, void* _o)
     state->recursion_depth--;
     return result;
 failed:
+    state->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
@@ -5139,6 +5143,7 @@ ast2obj_excepthandler(struct ast_state *state, void* _o)
     state->recursion_depth--;
     return result;
 failed:
+    state->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
@@ -5199,6 +5204,7 @@ ast2obj_arguments(struct ast_state *state, void* _o)
     state->recursion_depth--;
     return result;
 failed:
+    state->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
@@ -5259,6 +5265,7 @@ ast2obj_arg(struct ast_state *state, void* _o)
     state->recursion_depth--;
     return result;
 failed:
+    state->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
@@ -5314,6 +5321,7 @@ ast2obj_keyword(struct ast_state *state, void* _o)
     state->recursion_depth--;
     return result;
 failed:
+    state->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
@@ -5369,6 +5377,7 @@ ast2obj_alias(struct ast_state *state, void* _o)
     state->recursion_depth--;
     return result;
 failed:
+    state->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
@@ -5404,6 +5413,7 @@ ast2obj_withitem(struct ast_state *state, void* _o)
     state->recursion_depth--;
     return result;
 failed:
+    state->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
@@ -5444,6 +5454,7 @@ ast2obj_match_case(struct ast_state *state, void* _o)
     state->recursion_depth--;
     return result;
 failed:
+    state->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
@@ -5605,6 +5616,7 @@ ast2obj_pattern(struct ast_state *state, void* _o)
     state->recursion_depth--;
     return result;
 failed:
+    state->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
@@ -5644,6 +5656,7 @@ ast2obj_type_ignore(struct ast_state *state, void* _o)
     state->recursion_depth--;
     return result;
 failed:
+    state->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
@@ -5723,6 +5736,7 @@ ast2obj_type_param(struct ast_state *state, void* _o)
     state->recursion_depth--;
     return result;
 failed:
+    state->recursion_depth--;
     Py_XDECREF(value);
     Py_XDECREF(result);
     return NULL;
