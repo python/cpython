@@ -1,35 +1,38 @@
-from itertools import filterfalse
+# from more_itertools 9.0
+def only(iterable, default=None, too_long=None):
+    """If *iterable* has only one item, return it.
+    If it has zero items, return *default*.
+    If it has more than one item, raise the exception given by *too_long*,
+    which is ``ValueError`` by default.
+    >>> only([], default='missing')
+    'missing'
+    >>> only([1])
+    1
+    >>> only([1, 2])  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    ...
+    ValueError: Expected exactly one item in iterable, but got 1, 2,
+     and perhaps more.'
+    >>> only([1, 2], too_long=TypeError)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    ...
+    TypeError
+    Note that :func:`only` attempts to advance *iterable* twice to ensure there
+    is only one item.  See :func:`spy` or :func:`peekable` to check
+    iterable contents less destructively.
+    """
+    it = iter(iterable)
+    first_value = next(it, default)
 
-from typing import (
-    Callable,
-    Iterable,
-    Iterator,
-    Optional,
-    Set,
-    TypeVar,
-    Union,
-)
-
-# Type and type variable definitions
-_T = TypeVar('_T')
-_U = TypeVar('_U')
-
-
-def unique_everseen(
-    iterable: Iterable[_T], key: Optional[Callable[[_T], _U]] = None
-) -> Iterator[_T]:
-    "List unique elements, preserving order. Remember all elements ever seen."
-    # unique_everseen('AAAABBBCCDAABBB') --> A B C D
-    # unique_everseen('ABBCcAD', str.lower) --> A B C D
-    seen: Set[Union[_T, _U]] = set()
-    seen_add = seen.add
-    if key is None:
-        for element in filterfalse(seen.__contains__, iterable):
-            seen_add(element)
-            yield element
+    try:
+        second_value = next(it)
+    except StopIteration:
+        pass
     else:
-        for element in iterable:
-            k = key(element)
-            if k not in seen:
-                seen_add(k)
-                yield element
+        msg = (
+            'Expected exactly one item in iterable, but got {!r}, {!r}, '
+            'and perhaps more.'.format(first_value, second_value)
+        )
+        raise too_long or ValueError(msg)
+
+    return first_value

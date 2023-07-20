@@ -274,18 +274,17 @@ xxsubtype_exec(PyObject* m)
     if (PyType_Ready(&spamdict_type) < 0)
         return -1;
 
-    if (PyModule_AddObject(m, "spamlist",
-                           Py_NewRef(&spamlist_type)) < 0)
+    if (PyModule_AddObjectRef(m, "spamlist", (PyObject *)&spamlist_type) < 0)
         return -1;
 
-    if (PyModule_AddObject(m, "spamdict",
-                           Py_NewRef(&spamdict_type)) < 0)
+    if (PyModule_AddObjectRef(m, "spamdict", (PyObject *)&spamdict_type) < 0)
         return -1;
     return 0;
 }
 
 static struct PyModuleDef_Slot xxsubtype_slots[] = {
     {Py_mod_exec, xxsubtype_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL},
 };
 

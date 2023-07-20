@@ -63,7 +63,7 @@ Cross Platform
    string is returned if the value cannot be determined.
 
 
-.. function:: platform(aliased=0, terse=0)
+.. function:: platform(aliased=False, terse=False)
 
    Returns a single string identifying the underlying platform with as much useful
    information as possible.

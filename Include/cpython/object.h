@@ -3,6 +3,7 @@
 #endif
 
 PyAPI_FUNC(void) _Py_NewReference(PyObject *op);
+PyAPI_FUNC(void) _Py_NewReferenceNoTotal(PyObject *op);
 
 #ifdef Py_TRACE_REFS
 /* Py_TRACE_REFS is such major surgery that we call external routines. */
@@ -10,7 +11,11 @@ PyAPI_FUNC(void) _Py_ForgetReference(PyObject *);
 #endif
 
 #ifdef Py_REF_DEBUG
-PyAPI_FUNC(Py_ssize_t) _Py_GetRefTotal(void);
+/* These are useful as debugging aids when chasing down refleaks. */
+PyAPI_FUNC(Py_ssize_t) _Py_GetGlobalRefTotal(void);
+#  define _Py_GetRefTotal() _Py_GetGlobalRefTotal()
+PyAPI_FUNC(Py_ssize_t) _Py_GetLegacyRefTotal(void);
+PyAPI_FUNC(Py_ssize_t) _PyInterpreterState_GetRefTotal(PyInterpreterState *);
 #endif
 
 
@@ -226,10 +231,22 @@ struct _typeobject {
 };
 
 /* This struct is used by the specializer
- * It should should be treated as an opaque blob
+ * It should be treated as an opaque blob
  * by code other than the specializer and interpreter. */
 struct _specialization_cache {
+    // In order to avoid bloating the bytecode with lots of inline caches, the
+    // members of this structure have a somewhat unique contract. They are set
+    // by the specialization machinery, and are invalidated by PyType_Modified.
+    // The rules for using them are as follows:
+    // - If getitem is non-NULL, then it is the same Python function that
+    //   PyType_Lookup(cls, "__getitem__") would return.
+    // - If getitem is NULL, then getitem_version is meaningless.
+    // - If getitem->func_version == getitem_version, then getitem can be called
+    //   with two positional arguments and no keyword arguments, and has neither
+    //   *args nor **kwargs (as required by BINARY_SUBSCR_GETITEM):
     PyObject *getitem;
+    uint32_t getitem_version;
+    PyObject *init;
 };
 
 /* The *real* layout of a type object when allocated on the heap */
@@ -267,6 +284,7 @@ PyAPI_FUNC(PyTypeObject *) _PyType_CalculateMetaclass(PyTypeObject *, PyObject *
 PyAPI_FUNC(PyObject *) _PyType_GetDocFromInternalDoc(const char *, const char *);
 PyAPI_FUNC(PyObject *) _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);
 PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, PyModuleDef *);
+PyAPI_FUNC(PyObject *) PyType_GetDict(PyTypeObject *);
 
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
 PyAPI_FUNC(void) _Py_BreakPoint(void);
@@ -276,17 +294,6 @@ PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 PyAPI_FUNC(int) _PyObject_IsAbstract(PyObject *);
 PyAPI_FUNC(PyObject *) _PyObject_GetAttrId(PyObject *, _Py_Identifier *);
 PyAPI_FUNC(int) _PyObject_SetAttrId(PyObject *, _Py_Identifier *, PyObject *);
-/* Replacements of PyObject_GetAttr() and _PyObject_GetAttrId() which
-   don't raise AttributeError.
-
-   Return 1 and set *result != NULL if an attribute is found.
-   Return 0 and set *result == NULL if an attribute is not found;
-   an AttributeError is silenced.
-   Return -1 and set *result == NULL if an error other than AttributeError
-   is raised.
-*/
-PyAPI_FUNC(int) _PyObject_LookupAttr(PyObject *, PyObject *, PyObject **);
-PyAPI_FUNC(int) _PyObject_LookupAttrId(PyObject *, _Py_Identifier *, PyObject **);
 
 PyAPI_FUNC(int) _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
 
@@ -523,20 +530,8 @@ PyAPI_FUNC(int) _PyTrash_cond(PyObject *op, destructor dealloc);
     Py_TRASHCAN_BEGIN_CONDITION((op), \
         _PyTrash_cond(_PyObject_CAST(op), (destructor)(dealloc)))
 
-/* The following two macros, Py_TRASHCAN_SAFE_BEGIN and
- * Py_TRASHCAN_SAFE_END, are deprecated since version 3.11 and
- * will be removed in the future.
- * Use Py_TRASHCAN_BEGIN and Py_TRASHCAN_END instead.
- */
-Py_DEPRECATED(3.11) typedef int UsingDeprecatedTrashcanMacro;
-#define Py_TRASHCAN_SAFE_BEGIN(op) \
-    do { \
-        UsingDeprecatedTrashcanMacro cond=1; \
-        Py_TRASHCAN_BEGIN_CONDITION((op), cond);
-#define Py_TRASHCAN_SAFE_END(op) \
-        Py_TRASHCAN_END; \
-    } while(0);
 
+PyAPI_FUNC(void *) PyObject_GetItemData(PyObject *obj);
 
 PyAPI_FUNC(int) _PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg);
 PyAPI_FUNC(void) _PyObject_ClearManagedDict(PyObject *obj);
@@ -548,3 +543,10 @@ PyAPI_FUNC(int) PyType_AddWatcher(PyType_WatchCallback callback);
 PyAPI_FUNC(int) PyType_ClearWatcher(int watcher_id);
 PyAPI_FUNC(int) PyType_Watch(int watcher_id, PyObject *type);
 PyAPI_FUNC(int) PyType_Unwatch(int watcher_id, PyObject *type);
+
+/* Attempt to assign a version tag to the given type.
+ *
+ * Returns 1 if the type already had a valid version tag or a new one was
+ * assigned, or 0 if a new tag could not be assigned.
+ */
+PyAPI_FUNC(int) PyUnstable_Type_AssignVersionTag(PyTypeObject *type);
