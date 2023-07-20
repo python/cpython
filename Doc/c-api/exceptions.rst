@@ -9,7 +9,7 @@ Exception Handling
 
 The functions described in this chapter will let you handle and raise Python
 exceptions.  It is important to understand some of the basics of Python
-exception handling.  It works somewhat like the POSIX :c:data:`errno` variable:
+exception handling.  It works somewhat like the POSIX :c:data:`!errno` variable:
 there is a global indicator (per thread) of the last error that occurred.  Most
 C API functions don't clear this on success, but will set it to indicate the
 cause of the error on failure.  Most C API functions also return an error
@@ -161,11 +161,11 @@ For convenience, some of these functions will always return a
    .. index:: single: strerror()
 
    This is a convenience function to raise an exception when a C library function
-   has returned an error and set the C variable :c:data:`errno`.  It constructs a
-   tuple object whose first item is the integer :c:data:`errno` value and whose
+   has returned an error and set the C variable :c:data:`!errno`.  It constructs a
+   tuple object whose first item is the integer :c:data:`!errno` value and whose
    second item is the corresponding error message (gotten from :c:func:`strerror`),
    and then calls ``PyErr_SetObject(type, object)``.  On Unix, when the
-   :c:data:`errno` value is :const:`EINTR`, indicating an interrupted system call,
+   :c:data:`!errno` value is :const:`EINTR`, indicating an interrupted system call,
    this calls :c:func:`PyErr_CheckSignals`, and if that set the error indicator,
    leaves it set to that.  The function always returns ``NULL``, so a wrapper
    function around a system call can write ``return PyErr_SetFromErrno(type);``

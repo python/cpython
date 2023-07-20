@@ -1447,7 +1447,7 @@ to sockets.
    exception for errors returned by the C-level :c:func:`connect` call (other
    problems, such as "host not found," can still raise exceptions).  The error
    indicator is ``0`` if the operation succeeded, otherwise the value of the
-   :c:data:`errno` variable.  This is useful to support, for example, asynchronous
+   :c:data:`!errno` variable.  This is useful to support, for example, asynchronous
    connects.
 
    .. audit-event:: socket.connect self,address socket.socket.connect_ex

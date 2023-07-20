@@ -146,7 +146,7 @@ of the exception.
 
 Another useful function is :c:func:`PyErr_SetFromErrno`, which only takes an
 exception argument and constructs the associated value by inspection of the
-global variable :c:data:`errno`.  The most general function is
+global variable :c:data:`!errno`.  The most general function is
 :c:func:`PyErr_SetObject`, which takes two object arguments, the exception and
 its associated value.  You don't need to :c:func:`Py_INCREF` the objects passed
 to any of these functions.

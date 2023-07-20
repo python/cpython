@@ -1447,10 +1447,10 @@ ignored.  On posix systems, RTLD_NOW is always added, and is not
 configurable.
 
 The *use_errno* parameter, when set to true, enables a ctypes mechanism that
-allows accessing the system :data:`errno` error number in a safe way.
-:mod:`ctypes` maintains a thread-local copy of the systems :data:`errno`
+allows accessing the system :c:data:`!errno` error number in a safe way.
+:mod:`ctypes` maintains a thread-local copy of the systems :c:data:`!errno`
 variable; if you call foreign functions created with ``use_errno=True`` then the
-:data:`errno` value before the function call is swapped with the ctypes private
+:c:data:`!errno` value before the function call is swapped with the ctypes private
 copy, the same happens immediately after the function call.
 
 The function :func:`ctypes.get_errno` returns the value of the ctypes private
@@ -1713,7 +1713,7 @@ See :ref:`ctypes-callback-functions` for examples.
    The returned function prototype creates functions that use the standard C
    calling convention.  The function will release the GIL during the call.  If
    *use_errno* is set to true, the ctypes private copy of the system
-   :data:`errno` variable is exchanged with the real :data:`errno` value before
+   :c:data:`!errno` variable is exchanged with the real :c:data:`!errno` value before
    and after the call; *use_last_error* does the same for the Windows error
    code.
 
@@ -2001,7 +2001,7 @@ Utility functions
 .. function:: get_errno()
 
    Returns the current value of the ctypes-private copy of the system
-   :data:`errno` variable in the calling thread.
+   :c:data:`!errno` variable in the calling thread.
 
    .. audit-event:: ctypes.get_errno "" ctypes.get_errno
 
@@ -2052,7 +2052,7 @@ Utility functions
 
 .. function:: set_errno(value)
 
-   Set the current value of the ctypes-private copy of the system :data:`errno`
+   Set the current value of the ctypes-private copy of the system :c:data:`!errno`
    variable in the calling thread to *value* and return the previous value.
 
    .. audit-event:: ctypes.set_errno errno ctypes.set_errno
