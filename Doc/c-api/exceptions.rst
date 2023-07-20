@@ -754,7 +754,7 @@ Exception Objects
 
 .. c:function:: PyObject* PyException_GetCause(PyObject *ex)
 
-   Return the cause (either an exception instance, or :py:const:`None`,
+   Return the cause (either an exception instance, or ``None``,
    set by ``raise ... from ...``) associated with the exception as a new
    reference, as accessible from Python through :attr:`__cause__`.
 
@@ -763,7 +763,7 @@ Exception Objects
 
    Set the cause associated with the exception to *cause*.  Use ``NULL`` to clear
    it.  There is no type check to make sure that *cause* is either an exception
-   instance or :py:const:`None`.  This steals a reference to *cause*.
+   instance or ``None``.  This steals a reference to *cause*.
 
    :attr:`__suppress_context__` is implicitly set to ``True`` by this function.
 
