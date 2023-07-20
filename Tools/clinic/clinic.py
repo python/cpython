@@ -1442,7 +1442,7 @@ class CLanguage(Language):
             d['name'] = f.name
             d['format_units'] = "".join(p.converter.format_unit for p in subset)
 
-            parse_arguments: list[Any] = []
+            parse_arguments: list[str] = []
             for p in subset:
                 p.converter.parse_argument(parse_arguments)
             d['parse_arguments'] = ", ".join(parse_arguments)
