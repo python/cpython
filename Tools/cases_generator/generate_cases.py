@@ -17,6 +17,7 @@ import lexer as lx
 import parser
 from parser import StackEffect
 
+
 HERE = os.path.dirname(__file__)
 ROOT = os.path.join(HERE, "../..")
 THIS = os.path.relpath(__file__, ROOT).replace(os.path.sep, posixpath.sep)
@@ -1154,7 +1155,7 @@ class Analyzer:
 
     def from_source_files(self) -> str:
         paths = f"\n{self.out.comment}   ".join(
-            prettify_filename(filename)
+            prettify_filename(os.path.relpath(filename, ROOT))
             for filename in self.input_filenames
         )
         return f"{self.out.comment} from:\n{self.out.comment}   {paths}\n"
