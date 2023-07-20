@@ -697,14 +697,14 @@ dummy_func(
 
         inst(CALL_INTRINSIC_1, (value -- res)) {
             assert(oparg <= MAX_INTRINSIC_1);
-            res = _PyIntrinsics_UnaryFunctions[oparg](tstate, value);
+            res = _PyIntrinsics_UnaryFunctions[oparg].func(tstate, value);
             DECREF_INPUTS();
             ERROR_IF(res == NULL, error);
         }
 
         inst(CALL_INTRINSIC_2, (value2, value1 -- res)) {
             assert(oparg <= MAX_INTRINSIC_2);
-            res = _PyIntrinsics_BinaryFunctions[oparg](tstate, value2, value1);
+            res = _PyIntrinsics_BinaryFunctions[oparg].func(tstate, value2, value1);
             DECREF_INPUTS();
             ERROR_IF(res == NULL, error);
         }
@@ -2181,7 +2181,14 @@ dummy_func(
             JUMPBY(1-oparg);
             #if ENABLE_SPECIALIZATION
             here[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
-            if (here[1].cache > tstate->interp->optimizer_backedge_threshold) {
+            if (here[1].cache > tstate->interp->optimizer_backedge_threshold &&
+                // Double-check that the opcode isn't instrumented or something:
+                here->op.code == JUMP_BACKWARD &&
+                // _PyOptimizer_BackEdge is going to change frame->prev_instr,
+                // which breaks line event calculations:
+                next_instr->op.code != INSTRUMENTED_LINE
+                )
+            {
                 OBJECT_STAT_INC(optimization_attempts);
                 frame = _PyOptimizer_BackEdge(frame, here, next_instr, stack_pointer);
                 if (frame == NULL) {
@@ -3609,8 +3616,8 @@ dummy_func(
             STAT_INC(BINARY_OP, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
-            assert(0 <= oparg);
-            assert((unsigned)oparg < Py_ARRAY_LENGTH(_PyEval_BinaryOps));
+            assert(NB_ADD <= oparg);
+            assert(oparg <= NB_INPLACE_XOR);
             assert(_PyEval_BinaryOps[oparg]);
             res = _PyEval_BinaryOps[oparg](lhs, rhs);
             DECREF_INPUTS();

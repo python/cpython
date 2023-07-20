@@ -3,6 +3,7 @@
 #include "pycore_call.h"
 #include "pycore_ceval.h"
 #include "pycore_dict.h"
+#include "pycore_emscripten_signal.h"
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"
 #include "pycore_object.h"

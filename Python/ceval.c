@@ -96,13 +96,6 @@
     } while (0)
 #endif
 
-// GH-89279: Similar to above, force inlining by using a macro.
-#if defined(_MSC_VER) && SIZEOF_INT == 4
-#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) (assert(sizeof((ATOMIC_VAL)->_value) == 4), *((volatile int*)&((ATOMIC_VAL)->_value)))
-#else
-#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) _Py_atomic_load_relaxed(ATOMIC_VAL)
-#endif
-
 
 #ifdef LLTRACE
 static void
@@ -217,12 +210,6 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
     PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs);
 static void
 _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
-
-#define UNBOUNDLOCAL_ERROR_MSG \
-    "cannot access local variable '%s' where it is not associated with a value"
-#define UNBOUNDFREE_ERROR_MSG \
-    "cannot access free variable '%s' where it is not associated with a" \
-    " value in enclosing scope"
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
@@ -397,7 +384,7 @@ fail:
 // Extract a named attribute from the subject, with additional bookkeeping to
 // raise TypeErrors for repeated lookups. On failure, return NULL (with no
 // error set). Use _PyErr_Occurred(tstate) to disambiguate.
-static PyObject*
+static PyObject *
 match_class_attr(PyThreadState *tstate, PyObject *subject, PyObject *type,
                  PyObject *name, PyObject *seen)
 {
@@ -419,7 +406,7 @@ match_class_attr(PyThreadState *tstate, PyObject *subject, PyObject *type,
 
 // On success (match), return a tuple of extracted attributes. On failure (no
 // match), return NULL. Use _PyErr_Occurred(tstate) to disambiguate.
-PyObject *
+PyObject*
 _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
                    Py_ssize_t nargs, PyObject *kwargs)
 {
@@ -2691,110 +2678,4 @@ int Py_EnterRecursiveCall(const char *where)
 void Py_LeaveRecursiveCall(void)
 {
     _Py_LeaveRecursiveCall();
-}
-
-///////////////////// Experimental UOp Interpreter /////////////////////
-
-#undef ASSERT_KWNAMES_IS_NULL
-#define ASSERT_KWNAMES_IS_NULL() (void)0
-
-#undef DEOPT_IF
-#define DEOPT_IF(COND, INSTNAME) \
-    if ((COND)) {                \
-        goto deoptimize;         \
-    }
-
-_PyInterpreterFrame *
-_PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer, int pc)
-{
-#ifdef Py_DEBUG
-    char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
-    int lltrace = 0;
-    if (uop_debug != NULL && *uop_debug >= '0') {
-        lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
-    }
-#define DPRINTF(level, ...) \
-    if (lltrace >= (level)) { fprintf(stderr, __VA_ARGS__); }
-#else
-#define DPRINTF(level, ...)
-#endif
-
-    DPRINTF(3,
-            "Entering _PyUopExecute for %s (%s:%d) at byte offset %ld\n",
-            PyUnicode_AsUTF8(_PyFrame_GetCode(frame)->co_qualname),
-            PyUnicode_AsUTF8(_PyFrame_GetCode(frame)->co_filename),
-            _PyFrame_GetCode(frame)->co_firstlineno,
-            2 * (long)(frame->prev_instr + 1 -
-                   (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive));
-
-    PyThreadState *tstate = _PyThreadState_GET();
-    _PyUOpExecutorObject *self = (_PyUOpExecutorObject *)executor;
-
-    CHECK_EVAL_BREAKER();
-
-    OBJECT_STAT_INC(optimization_traces_executed);
-    _Py_CODEUNIT *ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
-    int opcode;
-    int oparg;
-    uint64_t operand;
-
-    for (;;) {
-        opcode = self->trace[pc].opcode;
-        oparg = self->trace[pc].oparg;
-        operand = self->trace[pc].operand;
-        DPRINTF(3,
-                "%4d: uop %s, oparg %d, operand %" PRIu64 ", stack_level %d\n",
-                pc,
-                opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode],
-                oparg,
-                operand,
-                (int)(stack_pointer - _PyFrame_Stackbase(frame)));
-        pc++;
-        OBJECT_STAT_INC(optimization_uops_executed);
-        switch (opcode) {
-
-#undef ENABLE_SPECIALIZATION
-#define ENABLE_SPECIALIZATION 0
-#include "executor_cases.c.h"
-
-            default:
-            {
-                fprintf(stderr, "Unknown uop %d, operand %" PRIu64 "\n", opcode, operand);
-                Py_FatalError("Unknown uop");
-            }
-
-        }
-    }
-
-unbound_local_error:
-    _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
-        UNBOUNDLOCAL_ERROR_MSG,
-        PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
-    );
-    goto error;
-
-pop_4_error:
-    STACK_SHRINK(1);
-pop_3_error:
-    STACK_SHRINK(1);
-pop_2_error:
-    STACK_SHRINK(1);
-pop_1_error:
-    STACK_SHRINK(1);
-error:
-    // On ERROR_IF we return NULL as the frame.
-    // The caller recovers the frame from cframe.current_frame.
-    DPRINTF(2, "Error: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
-    _PyFrame_SetStackPointer(frame, stack_pointer);
-    Py_DECREF(self);
-    return NULL;
-
-deoptimize:
-    // On DEOPT_IF we just repeat the last instruction.
-    // This presumes nothing was popped from the stack (nor pushed).
-    DPRINTF(2, "DEOPT: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
-    frame->prev_instr--;  // Back up to just before destination
-    _PyFrame_SetStackPointer(frame, stack_pointer);
-    Py_DECREF(self);
-    return frame;
 }

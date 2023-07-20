@@ -849,7 +849,7 @@
             PyObject *value = stack_pointer[-1];
             PyObject *res;
             assert(oparg <= MAX_INTRINSIC_1);
-            res = _PyIntrinsics_UnaryFunctions[oparg](tstate, value);
+            res = _PyIntrinsics_UnaryFunctions[oparg].func(tstate, value);
             Py_DECREF(value);
             if (res == NULL) goto pop_1_error;
             stack_pointer[-1] = res;
@@ -861,7 +861,7 @@
             PyObject *value2 = stack_pointer[-2];
             PyObject *res;
             assert(oparg <= MAX_INTRINSIC_2);
-            res = _PyIntrinsics_BinaryFunctions[oparg](tstate, value2, value1);
+            res = _PyIntrinsics_BinaryFunctions[oparg].func(tstate, value2, value1);
             Py_DECREF(value2);
             Py_DECREF(value1);
             if (res == NULL) goto pop_2_error;
@@ -2758,7 +2758,14 @@
             JUMPBY(1-oparg);
             #if ENABLE_SPECIALIZATION
             here[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
-            if (here[1].cache > tstate->interp->optimizer_backedge_threshold) {
+            if (here[1].cache > tstate->interp->optimizer_backedge_threshold &&
+                // Double-check that the opcode isn't instrumented or something:
+                here->op.code == JUMP_BACKWARD &&
+                // _PyOptimizer_BackEdge is going to change frame->prev_instr,
+                // which breaks line event calculations:
+                next_instr->op.code != INSTRUMENTED_LINE
+                )
+            {
                 OBJECT_STAT_INC(optimization_attempts);
                 frame = _PyOptimizer_BackEdge(frame, here, next_instr, stack_pointer);
                 if (frame == NULL) {
@@ -4457,8 +4464,8 @@
             STAT_INC(BINARY_OP, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
-            assert(0 <= oparg);
-            assert((unsigned)oparg < Py_ARRAY_LENGTH(_PyEval_BinaryOps));
+            assert(NB_ADD <= oparg);
+            assert(oparg <= NB_INPLACE_XOR);
             assert(_PyEval_BinaryOps[oparg]);
             res = _PyEval_BinaryOps[oparg](lhs, rhs);
             Py_DECREF(lhs);

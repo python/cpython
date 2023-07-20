@@ -1812,16 +1812,13 @@ add_errors_module(PyObject *mod)
         goto error;
     }
 
-    int rc = PyModule_AddObjectRef(errors_module, "codes", codes_dict);
-    Py_CLEAR(codes_dict);
-    if (rc < 0) {
-        goto error;
+    if (PyModule_Add(errors_module, "codes", codes_dict) < 0) {
+        Py_DECREF(rev_codes_dict);
+        return -1;
     }
 
-    rc = PyModule_AddObjectRef(errors_module, "messages", rev_codes_dict);
-    Py_CLEAR(rev_codes_dict);
-    if (rc < 0) {
-        goto error;
+    if (PyModule_Add(errors_module, "messages", rev_codes_dict) < 0) {
+        return -1;
     }
 
     return 0;

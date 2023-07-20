@@ -154,7 +154,7 @@ extern PyObject* _Py_MakeCoro(PyFunctionObject *func);
 
 /* Handle signals, pending calls, GIL drop request
    and asynchronous exception */
-extern int _Py_HandlePending(PyThreadState *tstate);
+PyAPI_FUNC(int) _Py_HandlePending(PyThreadState *tstate);
 
 extern PyObject * _PyEval_GetFrameLocals(void);
 
