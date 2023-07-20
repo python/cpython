@@ -474,7 +474,7 @@ class OpenerDirector:
             return dct[attr]
 
         return getattr(self.req, attr)
-    
+
     def open(self, fullurl, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
         # accept a URL or a Request object
         if isinstance(fullurl, str):
