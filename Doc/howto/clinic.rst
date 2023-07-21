@@ -1345,7 +1345,7 @@ to specify in your subclass.  Here's the current list:
 
       The C type to use for this variable.
       :attr:`!type` should be a Python string specifying the type,
-      e.g. :class:`int`.
+      e.g. ``'int'``.
       If this is a pointer type, the type string should end with ``' *'``.
 
    .. attribute:: default
