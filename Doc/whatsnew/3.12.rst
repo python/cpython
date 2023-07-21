@@ -570,14 +570,6 @@ dis
   :data:`~dis.hasarg` collection instead.
   (Contributed by Irit Katriel in :gh:`94216`.)
 
-email
------
-
-* :func:`email.utils.getaddresses` and :func:`email.utils.parseaddr` now return
-  ``('', '')`` 2-tuples in more situations where invalid email addresses are
-  encountered instead of potentially inaccurate values.
-  (Contributed by Thomas Dwyer for :gh:`102988` to ameliorate CVE-2023-27043.)
-
 fractions
 ---------
 
