@@ -1983,7 +1983,7 @@ class BufferSeries:
 
     def clear(self):
         for ta in self._array:
-            ta._text.clear()
+            ta.text.clear()
 
     def dump(self):
         texts = [ta.output() for ta in self._array]
@@ -4493,6 +4493,7 @@ class DSLParser:
 
         if command == 'clear':
             self.clinic.get_destination(name).clear()
+            return
         fail("unknown destination command", repr(command))
 
 
