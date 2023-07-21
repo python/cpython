@@ -4487,14 +4487,13 @@ class DSLParser:
             command: str,
             *args
     ) -> None:
-        if command == 'new':
-            self.clinic.add_destination(name, *args)
-            return
-
-        if command == 'clear':
-            self.clinic.get_destination(name).clear()
-            return
-        fail("unknown destination command", repr(command))
+        match command:
+            case "new":
+                self.clinic.add_destination(name, *args)
+            case "clear":
+                self.clinic.get_destination(name).clear()
+            case _:
+                fail("unknown destination command", repr(command))
 
 
     def directive_output(
