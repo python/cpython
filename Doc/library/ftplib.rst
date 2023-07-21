@@ -431,7 +431,7 @@ FTP_TLS Objects
 
 .. attribute:: FTP_TLS.ssl_version
 
-   The SSL version to use (defaults to :attr:`ssl.PROTOCOL_SSLv23`).
+   The SSL version to use (defaults to :data:`ssl.PROTOCOL_SSLv23`).
 
 .. method:: FTP_TLS.auth()
 
