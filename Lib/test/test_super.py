@@ -422,6 +422,45 @@ class TestSuper(unittest.TestCase):
         test("foo1")
         test("foo2")
 
+    def test_reassigned_new(self):
+        class A:
+            def __new__(cls):
+                pass
+
+            def __init_subclass__(cls):
+                if "__new__" not in cls.__dict__:
+                    cls.__new__ = cls.__new__
+
+        class B(A):
+            pass
+
+        class C(B):
+            def __new__(cls):
+                return super().__new__(cls)
+
+        C()
+        C()
+
+    def test_mixed_staticmethod_hierarchy(self):
+        # This test is just a desugared version of `test_reassigned_new`
+        class A:
+            @staticmethod
+            def some(cls, *args, **kwargs):
+                self.assertFalse(args)
+                self.assertFalse(kwargs)
+
+        class B(A):
+            def some(cls, *args, **kwargs):
+                return super().some(cls, *args, **kwargs)
+
+        class C(B):
+            @staticmethod
+            def some(cls):
+                return super().some(cls)
+
+        C.some(C)
+        C.some(C)
+
 
 if __name__ == "__main__":
     unittest.main()

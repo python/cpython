@@ -1406,7 +1406,7 @@
             PyTypeObject *cls = (PyTypeObject *)class;
             int method_found = 0;
             res2 = _PySuper_Lookup(cls, self, name,
-                                   cls->tp_getattro == PyObject_GenericGetAttr ? &method_found : NULL);
+                                   Py_TYPE(self)->tp_getattro == PyObject_GenericGetAttr ? &method_found : NULL);
             Py_DECREF(global_super);
             Py_DECREF(class);
             if (res2 == NULL) {
