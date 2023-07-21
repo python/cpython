@@ -81,7 +81,7 @@ The :mod:`poplib` module provides two classes:
    .. versionchanged:: 3.4
       The class now supports hostname check with
       :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
-      :data:`ssl.HAS_SNI`).
+      :const:`ssl.HAS_SNI`).
 
    .. deprecated:: 3.6
 
@@ -248,7 +248,7 @@ A :class:`POP3` instance has the following methods:
 
    This method supports hostname checking via
    :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
-   :data:`ssl.HAS_SNI`).
+   :const:`ssl.HAS_SNI`).
 
    .. versionadded:: 3.4
 

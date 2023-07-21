@@ -112,7 +112,7 @@ There's also a subclass for secure connections:
    .. versionchanged:: 3.4
       The class now supports hostname check with
       :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
-      :data:`ssl.HAS_SNI`).
+      :const:`ssl.HAS_SNI`).
 
    .. deprecated:: 3.6
 
@@ -513,7 +513,7 @@ An :class:`IMAP4` instance has the following methods:
    .. versionchanged:: 3.4
       The method now supports hostname check with
       :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
-      :data:`ssl.HAS_SNI`).
+      :const:`ssl.HAS_SNI`).
 
 
 .. method:: IMAP4.status(mailbox, names)

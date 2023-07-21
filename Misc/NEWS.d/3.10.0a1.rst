@@ -2176,7 +2176,7 @@ None.
 .. nonce: YoYoYo
 .. section: Library
 
-Add a new :data:`os.RWF_APPEND` flag for :func:`os.pwritev`.
+Add a new :const:`os.RWF_APPEND` flag for :func:`os.pwritev`.
 
 ..
 
@@ -2304,7 +2304,7 @@ Restored the deprecated :mod:`xml.etree.cElementTree` module.
 .. nonce: ZCk0_c
 .. section: Library
 
-:data:`~mmap.MAP_POPULATE` constant has now been added to the list of
+:const:`~mmap.MAP_POPULATE` constant has now been added to the list of
 exported :mod:`mmap` module flags.
 
 ..
