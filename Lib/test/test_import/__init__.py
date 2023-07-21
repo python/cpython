@@ -1962,6 +1962,20 @@ class SubinterpImportTests(unittest.TestCase):
         with self.subTest(f'{module}: strict, fresh'):
             self.check_compatible_fresh(module, strict=True, isolated=True)
 
+    @requires_subinterpreters
+    @requires_singlephase_init
+    def test_disallowed_reimport(self):
+        # See https://github.com/python/cpython/issues/104621.
+        script = textwrap.dedent('''
+            import _testsinglephase
+            print(_testsinglephase)
+            ''')
+        interpid = _interpreters.create()
+        with self.assertRaises(_interpreters.RunFailedError):
+            _interpreters.run_string(interpid, script)
+        with self.assertRaises(_interpreters.RunFailedError):
+            _interpreters.run_string(interpid, script)
+
 
 class TestSinglePhaseSnapshot(ModuleSnapshot):
 
