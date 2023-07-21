@@ -842,7 +842,7 @@ filesystem case.
 .. section: Library
 
 Improve performance of :meth:`pathlib.Path.glob` by using
-:data:`re.IGNORECASE` to implement case-insensitive matching.
+:const:`re.IGNORECASE` to implement case-insensitive matching.
 
 ..
 
@@ -1882,7 +1882,7 @@ both cases.
 .. nonce: 564i32
 .. section: Library
 
-Add :data:`~csv.QUOTE_STRINGS` and :data:`~csv.QUOTE_NOTNULL` to the suite
+Add :const:`~csv.QUOTE_STRINGS` and :const:`~csv.QUOTE_NOTNULL` to the suite
 of :mod:`csv` module quoting styles.
 
 ..

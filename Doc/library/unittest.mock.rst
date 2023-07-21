@@ -2438,7 +2438,7 @@ behaviour you can switch it off by setting the module level switch
 
 Alternatively you can just use ``vars(my_mock)`` (instance members) and
 ``dir(type(my_mock))`` (type members) to bypass the filtering irrespective of
-:data:`mock.FILTER_DIR`.
+:const:`mock.FILTER_DIR`.
 
 
 mock_open

@@ -842,7 +842,7 @@ Builtin functions and types
 
 * :func:`open` gets a new *opener* parameter: the underlying file descriptor
   for the file object is then obtained by calling *opener* with (*file*,
-  *flags*). It can be used to use custom flags like :data:`os.O_CLOEXEC` for
+  *flags*). It can be used to use custom flags like :const:`os.O_CLOEXEC` for
   example. The ``'x'`` mode was added: open for exclusive creation, failing if
   the file already exists.
 * :func:`print`: added the *flush* keyword argument. If the *flush* keyword
@@ -1127,7 +1127,7 @@ Features
 
 * If Python is compiled without threads, the C version automatically
   disables the expensive thread local context machinery. In this case,
-  the variable :data:`~decimal.HAVE_THREADS` is set to ``False``.
+  the variable :const:`~decimal.HAVE_THREADS` is set to ``False``.
 
 API changes
 ~~~~~~~~~~~
@@ -1576,8 +1576,8 @@ os
 --
 
 * The :mod:`os` module has a new :func:`~os.pipe2` function that makes it
-  possible to create a pipe with :data:`~os.O_CLOEXEC` or
-  :data:`~os.O_NONBLOCK` flags set atomically. This is especially useful to
+  possible to create a pipe with :const:`~os.O_CLOEXEC` or
+  :const:`~os.O_NONBLOCK` flags set atomically. This is especially useful to
   avoid race conditions in multi-threaded programs.
 
 * The :mod:`os` module has a new :func:`~os.sendfile` function which provides
@@ -1691,9 +1691,9 @@ os
 * Some platforms now support additional constants for the :func:`~os.lseek`
   function, such as ``os.SEEK_HOLE`` and ``os.SEEK_DATA``.
 
-* New constants :data:`~os.RTLD_LAZY`, :data:`~os.RTLD_NOW`,
-  :data:`~os.RTLD_GLOBAL`, :data:`~os.RTLD_LOCAL`, :data:`~os.RTLD_NODELETE`,
-  :data:`~os.RTLD_NOLOAD`, and :data:`~os.RTLD_DEEPBIND` are available on
+* New constants :const:`~os.RTLD_LAZY`, :const:`~os.RTLD_NOW`,
+  :const:`~os.RTLD_GLOBAL`, :const:`~os.RTLD_LOCAL`, :const:`~os.RTLD_NODELETE`,
+  :const:`~os.RTLD_NOLOAD`, and :const:`~os.RTLD_DEEPBIND` are available on
   platforms that support them.   These are for use with the
   :func:`sys.setdlopenflags` function, and supersede the similar constants
   defined in :mod:`ctypes` and :mod:`DLFCN`.  (Contributed by Victor Stinner
@@ -1995,7 +1995,7 @@ subprocess
 Command strings can now be bytes objects on posix platforms.  (Contributed by
 Victor Stinner in :issue:`8513`.)
 
-A new constant :data:`~subprocess.DEVNULL` allows suppressing output in a
+A new constant :const:`~subprocess.DEVNULL` allows suppressing output in a
 platform-independent fashion.  (Contributed by Ross Lagerwall in
 :issue:`5870`.)
 

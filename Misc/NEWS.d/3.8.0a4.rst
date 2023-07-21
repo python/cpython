@@ -955,7 +955,7 @@ Add a new :mod:`_testinternalcapi` module to test the internal C API.
 .. section: Tests
 
 Fix ``test_imap4_host_default_value()`` of ``test_imaplib``: catch also
-:data:`errno.ENETUNREACH` error.
+:const:`errno.ENETUNREACH` error.
 
 ..
 
