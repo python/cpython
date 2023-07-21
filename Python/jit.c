@@ -33,27 +33,31 @@
     #define LOOKUP(SYMBOL) dlsym(RTLD_DEFAULT, (SYMBOL))
 #endif
 
-#define JIT_POOL_SIZE  (1 << 30)
-#define JIT_ALIGN      (1 << 14)
-#define JIT_ALIGN_MASK (JIT_ALIGN - 1)
+#define MB (1 << 20)
+#define JIT_POOL_SIZE  (256 * MB)
 
 static unsigned char pool[JIT_POOL_SIZE];
 static size_t pool_head;
+static size_t page_size;
 
 static unsigned char *
 alloc(size_t size)
 {
-    size_t padding = (JIT_ALIGN - ((uintptr_t)(pool + pool_head) & JIT_ALIGN_MASK)) & JIT_ALIGN_MASK;
+    // XXX: We lose 2/3 of our memory to padding. We can probably do more than
+    // one trace per page:
+    assert(page_size);
+    assert((page_size & (page_size - 1)) == 0);
+    size_t padding = (page_size - ((uintptr_t)(pool + pool_head) & (page_size - 1))) & (page_size - 1);
     if (JIT_POOL_SIZE < pool_head + padding + size) {
         return NULL;
     }
     unsigned char *memory = pool + pool_head + padding;
-    assert(((uintptr_t)memory & JIT_ALIGN_MASK) == 0);
+    assert(((uintptr_t)memory & (page_size - 1)) == 0);
     pool_head += padding + size;
     return memory;
 }
 
-static int stencils_loaded = 0;
+static int initialized = 0;
 
 static void
 patch_one(unsigned char *location, HoleKind kind, uint64_t value, uint64_t addend)
@@ -240,11 +244,11 @@ copy_and_patch(unsigned char *memory, const Stencil *stencil, uintptr_t patches[
 _PyJITFunction
 _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
 {
-    if (stencils_loaded < 0) {
+    if (initialized < 0) {
         return NULL;
     }
-    if (stencils_loaded == 0) {
-        stencils_loaded = -1;
+    if (initialized == 0) {
+        initialized = -1;
         for (size_t i = 0; i < Py_ARRAY_LENGTH(stencils); i++) {
             if (preload_stencil(&stencils[i])) {
                 return NULL;
@@ -253,14 +257,23 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         if (preload_stencil(&trampoline_stencil)) {
             return NULL;
         }
-        stencils_loaded = 1;
+#ifdef MS_WINDOWS
+        SYSTEM_INFO si;
+        GetSystemInfo(&si);
+        page_size = si.dwPageSize;
+#else
+        page_size = sysconf(_SC_PAGESIZE);
+#endif
+        initialized = 1;
     }
-    assert(stencils_loaded > 0);
+    assert(initialized > 0);
     // First, loop over everything once to find the total compiled size:
     size_t nbytes = trampoline_stencil.nbytes;
     for (int i = 0; i < size; i++) {
         _PyUOpInstruction *instruction = &trace[i];
         const Stencil *stencil = &stencils[instruction->opcode];
+        // XXX: Assert this once we support everything, and move initialization
+        // to interpreter startup. Then we can only fail due to memory stuff:
         if (stencil->nbytes == 0) {
             return NULL;
         }
@@ -268,12 +281,15 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
     };
     unsigned char *memory = alloc(nbytes);
     if (memory == NULL) {
+        PyErr_WarnEx(PyExc_RuntimeWarning, "JIT out of memory", 0);
         return NULL;
     }
 #ifdef __APPLE__
     void *mapped = mmap(memory, nbytes, PROT_READ | PROT_WRITE,
                         MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE, -1, 0);
     if (mapped == MAP_FAILED) {
+        const char *w = "JIT unable to map fixed memory (%d)";
+        PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, errno);
         return NULL;
     }
     assert(memory == mapped);
@@ -303,13 +319,15 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
 #ifdef MS_WINDOWS
     DWORD old = PAGE_READWRITE;
     if (!VirtualProtect(memory, nbytes, PAGE_EXECUTE_READ, &old)) {
-        return NULL;
-    }
+        int code = GetLastError();
 #else
     if (mprotect(memory, nbytes, PROT_EXEC | PROT_READ)) {
+        int code = errno;
+#endif
+        const char *w = "JIT unable to map executable memory (%d)";
+        PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, code);
         return NULL;
     }
-#endif
     // Wow, done already?
     assert(memory + nbytes == head);
     return (_PyJITFunction)memory;
