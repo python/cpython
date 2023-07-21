@@ -1750,7 +1750,7 @@ methodcaller_reduce(methodcallerobject *mc, PyObject *Py_UNUSED(ignored))
 {
     if (!mc->kwds || PyDict_GET_SIZE(mc->kwds) == 0) {
         Py_ssize_t i;
-        Py_ssize_t newarg_size = PyTuple_GET_SIZE(mc->vectorcall_args);
+        Py_ssize_t newarg_size = PyTuple_GET_SIZE(mc->xargs);
         PyObject * newargs = PyTuple_New(newarg_size);
         if (newargs == NULL)
             return NULL;
