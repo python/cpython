@@ -70,10 +70,10 @@ This module defines the following constants and functions:
    there is no guarantee that the interruption will happen immediately.
 
    If given, *signum* is the number of the signal to simulate.
-   If *signum* is not given, :data:`signal.SIGINT` is simulated.
+   If *signum* is not given, :const:`signal.SIGINT` is simulated.
 
    If the given signal isn't handled by Python (it was set to
-   :data:`signal.SIG_DFL` or :data:`signal.SIG_IGN`), this function does
+   :const:`signal.SIG_DFL` or :const:`signal.SIG_IGN`), this function does
    nothing.
 
    .. versionchanged:: 3.10
