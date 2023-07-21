@@ -4948,3 +4948,31 @@ Test_meth_coexist(TestObj *self, PyObject *Py_UNUSED(ignored))
 static PyObject *
 Test_meth_coexist_impl(TestObj *self)
 /*[clinic end generated code: output=808a293d0cd27439 input=2a1d75b5e6fec6dd]*/
+
+
+/*[clinic input]
+output push
+output preset buffer
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=5bff3376ee0df0b5]*/
+
+/*[clinic input]
+Test.buffer_clear
+  a: int
+We'll call 'destination buffer clear' after this.
+
+Argument Clinic's buffer preset puts most generated code into the
+'buffer' destination, except from 'impl_definition', which is put into
+the 'block' destination, so we should expect everything but
+'impl_definition' to be cleared.
+[clinic start generated code]*/
+
+static PyObject *
+Test_buffer_clear_impl(TestObj *self, int a)
+/*[clinic end generated code: output=81e8d6b61d853f53 input=1d662d73d4164244]*/
+
+/*[clinic input]
+destination buffer clear
+output pop
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f20d06adb8252084]*/
