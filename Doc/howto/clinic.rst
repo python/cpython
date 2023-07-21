@@ -1290,9 +1290,9 @@ after ``self``, or, if ``self`` is not used, as the first argument.  The argumen
 will be of type ``PyTypeObject *``.  The argument will not appear in the
 :py:attr:`!__text_signature__`.
 
-The ``defining_class`` converter is not compatible with
-:py:meth:`!__init__` and :py:meth:`!__new__`
-methods, which cannot use the :data:`!METH_METHOD` convention.
+The ``defining_class`` converter is not compatible with :py:meth:`!__init__`
+and :py:meth:`!__new__` methods, which cannot use the :ref:`METH_METHOD
+<METH_METHOD-METH_FASTCALL-METH_KEYWORDS>` convention.
 
 It is not possible to use ``defining_class`` with slot methods.  In order to
 fetch the module state from such methods, use :c:func:`PyType_GetModuleByDef`
@@ -1435,7 +1435,7 @@ all its subclasses.
 How to convert ``METH_O`` and ``METH_NOARGS`` functions
 -------------------------------------------------------
 
-To convert a function using :data:`METH_O`, make sure the function's
+To convert a function using :c:macro:`METH_O`, make sure the function's
 single argument is using the ``object`` converter, and mark the
 arguments as positional-only::
 
@@ -1447,11 +1447,11 @@ arguments as positional-only::
     [clinic start generated code]*/
 
 
-To convert a function using :data:`METH_NOARGS`, just don't specify
+To convert a function using :c:macro:`METH_NOARGS`, just don't specify
 any arguments.
 
 You can still use a self converter, a return converter, and specify
-a *type* argument to the object converter for :data:`METH_O`.
+a *type* argument to the object converter for :c:macro:`METH_O`.
 
 
 How to convert ``tp_new`` and ``tp_init`` functions
