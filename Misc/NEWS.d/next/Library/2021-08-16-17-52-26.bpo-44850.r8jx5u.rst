@@ -1,2 +1,1 @@
-Calls to ``operator.methodcaller`` are now 25-33% faster thanks to the use of
-the vectorcall protocol.
+Improve performance of ``operator.methodcaller`` by use of the the vectorcall protocol. Patch by Anthony Lee and Pieter Eendebak.
