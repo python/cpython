@@ -4957,7 +4957,7 @@ output preset buffer
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=5bff3376ee0df0b5]*/
 
 /*[clinic input]
-Test.buffer_clear
+buffer_clear
   a: int
 We'll call 'destination buffer clear' after this.
 
@@ -4968,11 +4968,39 @@ the 'block' destination, so we should expect everything but
 [clinic start generated code]*/
 
 static PyObject *
-Test_buffer_clear_impl(TestObj *self, int a)
-/*[clinic end generated code: output=81e8d6b61d853f53 input=1d662d73d4164244]*/
+buffer_clear_impl(PyObject *module, int a)
+/*[clinic end generated code: output=f14bba74677e1846 input=a4c308a6fdab043c]*/
 
 /*[clinic input]
 destination buffer clear
 output pop
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=f20d06adb8252084]*/
+
+
+/*[clinic input]
+output push
+destination test1 new buffer
+output everything suppress
+output docstring_definition test1
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=5a77c454970992fc]*/
+
+/*[clinic input]
+new_dest
+  a: int
+Only this docstring should be outputted to test1.
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=da5af421ed8996ed]*/
+
+/*[clinic input]
+dump test1
+output pop
+[clinic start generated code]*/
+
+PyDoc_STRVAR(new_dest__doc__,
+"new_dest($module, /, a)\n"
+"--\n"
+"\n"
+"Only this docstring should be outputted to test1.");
+/*[clinic end generated code: output=9cac703f51d90e84 input=090db8df4945576d]*/
