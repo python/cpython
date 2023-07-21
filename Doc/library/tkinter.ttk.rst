@@ -102,7 +102,7 @@ themed widgets and is not supposed to be directly instantiated.
 Standard Options
 ^^^^^^^^^^^^^^^^
 
-All the :mod:`ttk` Widgets accepts the following options:
+All the :mod:`ttk` Widgets accept the following options:
 
    .. tabularcolumns:: |l|L|
 

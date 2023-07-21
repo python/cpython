@@ -139,7 +139,7 @@ purposes.
    The settings are: :data:`PROTOCOL_TLS_CLIENT` or
    :data:`PROTOCOL_TLS_SERVER`, :data:`OP_NO_SSLv2`, and :data:`OP_NO_SSLv3`
    with high encryption cipher suites without RC4 and
-   without unauthenticated cipher suites. Passing :data:`~Purpose.SERVER_AUTH`
+   without unauthenticated cipher suites. Passing :const:`~Purpose.SERVER_AUTH`
    as *purpose* sets :data:`~SSLContext.verify_mode` to :data:`CERT_REQUIRED`
    and either loads CA certificates (when at least one of *cafile*, *capath* or
    *cadata* is given) or uses :meth:`SSLContext.load_default_certs` to load
@@ -1484,9 +1484,9 @@ to speed up repeated connections from the same clients.
    load CA certificates from other locations, too.
 
    The *purpose* flag specifies what kind of CA certificates are loaded. The
-   default settings :data:`Purpose.SERVER_AUTH` loads certificates, that are
+   default settings :const:`Purpose.SERVER_AUTH` loads certificates, that are
    flagged and trusted for TLS web server authentication (client side
-   sockets). :data:`Purpose.CLIENT_AUTH` loads CA certificates for client
+   sockets). :const:`Purpose.CLIENT_AUTH` loads CA certificates for client
    certificate verification on the server side.
 
    .. versionadded:: 3.4
@@ -1729,7 +1729,7 @@ to speed up repeated connections from the same clients.
    Wrap an existing Python socket *sock* and return an instance of
    :attr:`SSLContext.sslsocket_class` (default :class:`SSLSocket`). The
    returned SSL socket is tied to the context, its settings and certificates.
-   *sock* must be a :data:`~socket.SOCK_STREAM` socket; other
+   *sock* must be a :const:`~socket.SOCK_STREAM` socket; other
    socket types are unsupported.
 
    The parameter ``server_side`` is a boolean which identifies whether

@@ -1,4 +1,4 @@
-CVE-2023-27043: Prevent :func:`email.utils.parseaddr`
-and :func:`email.utils.getaddresses` from returning the realname portion of an
-invalid RFC2822 email header in the email address portion of the 2-tuple
-returned after being parsed by :class:`email._parseaddr.AddressList`.
+Reverted the :mod:`email.utils` security improvement change released in
+3.12beta4 that unintentionally caused :mod:`email.utils.getaddresses` to fail
+to parse email addresses with a comma in the quoted name field.
+See :gh:`106669`.

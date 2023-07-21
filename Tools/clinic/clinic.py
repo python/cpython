@@ -2701,10 +2701,10 @@ class CConverter(metaclass=CConverterAutoRegister):
     """
 
     # The C name to use for this variable.
-    name: str | None = None
+    name: str
 
     # The Python name to use for this variable.
-    py_name: str | None = None
+    py_name: str
 
     # The C type to use for this variable.
     # 'type' should be a Python string specifying the type, e.g. "int".
@@ -2867,7 +2867,11 @@ class CConverter(metaclass=CConverterAutoRegister):
         if self.length:
             data.impl_parameters.append("Py_ssize_t " + self.length_name())
 
-    def _render_non_self(self, parameter, data):
+    def _render_non_self(
+            self,
+            parameter: Parameter,
+            data: CRenderData
+    ) -> None:
         self.parameter = parameter
         name = self.name
 
@@ -2920,31 +2924,30 @@ class CConverter(metaclass=CConverterAutoRegister):
         self._render_self(parameter, data)
         self._render_non_self(parameter, data)
 
-    def length_name(self):
+    def length_name(self) -> str:
         """Computes the name of the associated "length" variable."""
-        if not self.length:
-            return None
+        assert self.length is not None
         return self.parser_name + "_length"
 
     # Why is this one broken out separately?
     # For "positional-only" function parsing,
     # which generates a bunch of PyArg_ParseTuple calls.
-    def parse_argument(self, list):
+    def parse_argument(self, args: list[str]) -> None:
         assert not (self.converter and self.encoding)
         if self.format_unit == 'O&':
             assert self.converter
-            list.append(self.converter)
+            args.append(self.converter)
 
         if self.encoding:
-            list.append(c_repr(self.encoding))
+            args.append(c_repr(self.encoding))
         elif self.subclass_of:
-            list.append(self.subclass_of)
+            args.append(self.subclass_of)
 
         s = ("&" if self.parse_by_reference else "") + self.name
-        list.append(s)
+        args.append(s)
 
         if self.length:
-            list.append("&" + self.length_name())
+            args.append("&" + self.length_name())
 
     #
     # All the functions after here are intended as extension points.
@@ -3069,7 +3072,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         pass
 
     @property
-    def parser_name(self):
+    def parser_name(self) -> str:
         if self.name in CLINIC_PREFIXED_ARGS: # bpo-39741
             return CLINIC_PREFIX + self.name
         else:
@@ -4284,7 +4287,7 @@ class IndentStack:
         if not self.indents:
             fail('IndentStack expected indents, but none are defined.')
 
-    def measure(self, line):
+    def measure(self, line: str) -> int:
         """
         Returns the length of the line's margin.
         """
@@ -4298,7 +4301,7 @@ class IndentStack:
             return self.indents[-1]
         return len(line) - len(stripped)
 
-    def infer(self, line):
+    def infer(self, line: str) -> int:
         """
         Infer what is now the current margin based on this line.
         Returns:
@@ -4331,19 +4334,19 @@ class IndentStack:
         return outdent_count
 
     @property
-    def depth(self):
+    def depth(self) -> int:
         """
         Returns how many margins are currently defined.
         """
         return len(self.indents)
 
-    def indent(self, line):
+    def indent(self, line: str) -> str:
         """
         Indents a line by the currently defined margin.
         """
         return self.margin + line
 
-    def dedent(self, line):
+    def dedent(self, line: str) -> str:
         """
         Dedents a line by the currently defined margin.
         (The inverse of 'indent'.)
