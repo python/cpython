@@ -372,7 +372,7 @@ ABC hierarchy::
             The list of locations where the package's submodules will be found.
             Most of the time this is a single directory.
             The import system passes this attribute to ``__import__()`` and to finders
-            in the same way as :attr:`sys.path` but just for the package.
+            in the same way as :data:`sys.path` but just for the package.
             It is not set on non-package modules so it can be used
             as an indicator that the module is a package.
 
@@ -609,7 +609,7 @@ ABC hierarchy::
         automatically.
 
         When writing to the path fails because the path is read-only
-        (:attr:`errno.EACCES`/:exc:`PermissionError`), do not propagate the
+        (:const:`errno.EACCES`/:exc:`PermissionError`), do not propagate the
         exception.
 
         .. versionchanged:: 3.4
@@ -843,7 +843,7 @@ find and load modules.
 
    .. classmethod:: path_hook(*loader_details)
 
-      A class method which returns a closure for use on :attr:`sys.path_hooks`.
+      A class method which returns a closure for use on :data:`sys.path_hooks`.
       An instance of :class:`FileFinder` is returned by the closure using the
       path argument given to the closure directly and *loader_details*
       indirectly.
@@ -1184,10 +1184,10 @@ an :term:`importer`.
 .. function:: find_spec(name, package=None)
 
    Find the :term:`spec <module spec>` for a module, optionally relative to
-   the specified **package** name. If the module is in :attr:`sys.modules`,
+   the specified **package** name. If the module is in :data:`sys.modules`,
    then ``sys.modules[name].__spec__`` is returned (unless the spec would be
    ``None`` or is not set, in which case :exc:`ValueError` is raised).
-   Otherwise a search using :attr:`sys.meta_path` is done. ``None`` is
+   Otherwise a search using :data:`sys.meta_path` is done. ``None`` is
    returned if no spec is found.
 
    If **name** is for a submodule (contains a dot), the parent module is
@@ -1259,7 +1259,7 @@ an :term:`importer`.
    :meth:`~importlib.abc.Loader.create_module` method must return ``None`` or a
    type for which its ``__class__`` attribute can be mutated along with not
    using :term:`slots <__slots__>`. Finally, modules which substitute the object
-   placed into :attr:`sys.modules` will not work as there is no way to properly
+   placed into :data:`sys.modules` will not work as there is no way to properly
    replace the module references throughout the interpreter safely;
    :exc:`ValueError` is raised if such a substitution is detected.
 
@@ -1383,9 +1383,9 @@ For deep customizations of import, you typically want to implement an
 :term:`importer`. This means managing both the :term:`finder` and :term:`loader`
 side of things. For finders there are two flavours to choose from depending on
 your needs: a :term:`meta path finder` or a :term:`path entry finder`. The
-former is what you would put on :attr:`sys.meta_path` while the latter is what
-you create using a :term:`path entry hook` on :attr:`sys.path_hooks` which works
-with :attr:`sys.path` entries to potentially create a finder. This example will
+former is what you would put on :data:`sys.meta_path` while the latter is what
+you create using a :term:`path entry hook` on :data:`sys.path_hooks` which works
+with :data:`sys.path` entries to potentially create a finder. This example will
 show you how to register your own importers so that import will use them (for
 creating an importer for yourself, read the documentation for the appropriate
 classes defined within this package)::

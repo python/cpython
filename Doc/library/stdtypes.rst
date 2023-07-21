@@ -5629,7 +5629,7 @@ From code, you can inspect the current limit and set a new one using these
   a getter and setter for the interpreter-wide limit. Subinterpreters have
   their own limit.
 
-Information about the default and minimum can be found in :attr:`sys.int_info`:
+Information about the default and minimum can be found in :data:`sys.int_info`:
 
 * :data:`sys.int_info.default_max_str_digits <sys.int_info>` is the compiled-in
   default limit.

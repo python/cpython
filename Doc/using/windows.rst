@@ -1201,7 +1201,7 @@ non-standard paths in the registry and user site-packages.
       Modules specified in the registry under ``Modules`` (not ``PythonPath``)
       may be imported by :class:`importlib.machinery.WindowsRegistryFinder`.
       This finder is enabled on Windows in 3.6.0 and earlier, but may need to
-      be explicitly added to :attr:`sys.meta_path` in the future.
+      be explicitly added to :data:`sys.meta_path` in the future.
 
 Additional modules
 ==================

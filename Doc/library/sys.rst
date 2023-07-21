@@ -166,7 +166,7 @@ always available.
    Python interpreter.  (This information is not available in any other way ---
    ``modules.keys()`` only lists the imported modules.)
 
-   See also the :attr:`sys.stdlib_module_names` list.
+   See also the :data:`sys.stdlib_module_names` list.
 
 
 .. function:: call_tracing(func, args)
@@ -1287,20 +1287,20 @@ always available.
    ================ ===========================
 
    .. versionchanged:: 3.3
-      On Linux, :attr:`sys.platform` doesn't contain the major version anymore.
+      On Linux, :data:`sys.platform` doesn't contain the major version anymore.
       It is always ``'linux'``, instead of ``'linux2'`` or ``'linux3'``.  Since
       older Python versions include the version number, it is recommended to
       always use the ``startswith`` idiom presented above.
 
    .. versionchanged:: 3.8
-      On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
+      On AIX, :data:`sys.platform` doesn't contain the major version anymore.
       It is always ``'aix'``, instead of ``'aix5'`` or ``'aix7'``.  Since
       older Python versions include the version number, it is recommended to
       always use the ``startswith`` idiom presented above.
 
    .. seealso::
 
-      :attr:`os.name` has a coarser granularity.  :func:`os.uname` gives
+      :data:`os.name` has a coarser granularity.  :func:`os.uname` gives
       system-dependent version information.
 
       The :mod:`platform` module provides detailed checks for the
@@ -1743,7 +1743,7 @@ always available.
    ``email.mime`` sub-package and the ``email.message`` sub-module are not
    listed.
 
-   See also the :attr:`sys.builtin_module_names` list.
+   See also the :data:`sys.builtin_module_names` list.
 
    .. versionadded:: 3.10
 

@@ -60,7 +60,7 @@ Notes on the availability of these functions:
    ``'java'``.
 
    .. seealso::
-      :attr:`sys.platform` has a finer granularity.  :func:`os.uname` gives
+      :data:`sys.platform` has a finer granularity.  :func:`os.uname` gives
       system-dependent version information.
 
       The :mod:`platform` module provides detailed checks for the

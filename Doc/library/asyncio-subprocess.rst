@@ -68,7 +68,7 @@ Creating Subprocesses
 
    The *limit* argument sets the buffer limit for :class:`StreamReader`
    wrappers for :attr:`Process.stdout` and :attr:`Process.stderr`
-   (if :attr:`subprocess.PIPE` is passed to *stdout* and *stderr* arguments).
+   (if :const:`subprocess.PIPE` is passed to *stdout* and *stderr* arguments).
 
    Return a :class:`~asyncio.subprocess.Process` instance.
 
@@ -86,7 +86,7 @@ Creating Subprocesses
 
    The *limit* argument sets the buffer limit for :class:`StreamReader`
    wrappers for :attr:`Process.stdout` and :attr:`Process.stderr`
-   (if :attr:`subprocess.PIPE` is passed to *stdout* and *stderr* arguments).
+   (if :const:`subprocess.PIPE` is passed to *stdout* and *stderr* arguments).
 
    Return a :class:`~asyncio.subprocess.Process` instance.
 

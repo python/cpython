@@ -268,7 +268,7 @@ Command line options
 
 .. cmdoption:: file
 
-   If *file* is not specified, read from :attr:`sys.stdin`.
+   If *file* is not specified, read from :data:`sys.stdin`.
 
 .. cmdoption:: --fast
 
