@@ -1154,15 +1154,10 @@ class Analyzer:
         self.out.emit("")
 
     def from_source_files(self) -> str:
-        filenames = []
-        for filename in self.input_filenames:
-            try:
-                filename = os.path.relpath(filename, ROOT)
-            except ValueError:
-            # May happen on Windows if root and temp on different volumes
-                pass
-            filenames.append(filename)
-        paths = f"\n{self.out.comment}   ".join(filenames)
+        paths = f"\n{self.out.comment}   ".join(
+            prettify_filename(filename)
+            for filename in self.input_filenames
+        )
         return f"{self.out.comment} from:\n{self.out.comment}   {paths}\n"
 
     def write_provenance_header(self):
@@ -1614,7 +1609,14 @@ class Analyzer:
 
 def prettify_filename(filename: str) -> str:
     # Make filename more user-friendly and less platform-specific,
-    # it is only used for error reporting at this point.
+    # it is only used:
+    # 1. in a generated file header as a source reference
+    # 2. for error reporting
+    try:
+        filename = os.path.relpath(filename, ROOT)
+    except ValueError:
+        # May happen on Windows if root and temp on different volumes
+        pass
     filename = filename.replace("\\", "/")
     if filename.startswith("./"):
         filename = filename[2:]
