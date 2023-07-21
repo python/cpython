@@ -666,7 +666,7 @@ Signal Handling
    to interrupt an operation).
 
    If the given signal isn't handled by Python (it was set to
-   :data:`signal.SIG_DFL` or :data:`signal.SIG_IGN`), it will be ignored.
+   :py:const:`signal.SIG_DFL` or :py:const:`signal.SIG_IGN`), it will be ignored.
 
    If *signum* is outside of the allowed range of signal numbers, ``-1``
    is returned.  Otherwise, ``0`` is returned.  The error indicator is
