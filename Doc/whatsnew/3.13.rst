@@ -961,7 +961,7 @@ Removed
 Pending Removal in Python 3.14
 ------------------------------
 
-* Creating immutable types (:data:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
+* Creating immutable types (:c:macro:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
   bases using the C API.
 * Global configuration variables:
 
@@ -1017,7 +1017,7 @@ Pending Removal in Future Versions
 The following APIs were deprecated in earlier Python versions and will be
 removed, although there is currently no date scheduled for their removal.
 
-* :const:`Py_TPFLAGS_HAVE_FINALIZE`: no needed since Python 3.8.
+* :c:macro:`Py_TPFLAGS_HAVE_FINALIZE`: no needed since Python 3.8.
 * :c:func:`PyErr_Fetch`: use :c:func:`PyErr_GetRaisedException`.
 * :c:func:`PyErr_NormalizeException`: use :c:func:`PyErr_GetRaisedException`.
 * :c:func:`PyErr_Restore`: use :c:func:`PyErr_SetRaisedException`.

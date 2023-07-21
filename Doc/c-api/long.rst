@@ -142,8 +142,8 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    instance of :c:type:`PyLongObject`, first call its :meth:`~object.__index__`
    method (if present) to convert it to a :c:type:`PyLongObject`.
 
-   If the value of *obj* is greater than :const:`LONG_MAX` or less than
-   :const:`LONG_MIN`, set *\*overflow* to ``1`` or ``-1``, respectively, and
+   If the value of *obj* is greater than :c:macro:`LONG_MAX` or less than
+   :c:macro:`LONG_MIN`, set *\*overflow* to ``1`` or ``-1``, respectively, and
    return ``-1``; otherwise, set *\*overflow* to ``0``.  If any other exception
    occurs set *\*overflow* to ``0`` and return ``-1`` as usual.
 
@@ -183,8 +183,8 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    instance of :c:type:`PyLongObject`, first call its :meth:`~object.__index__` method
    (if present) to convert it to a :c:type:`PyLongObject`.
 
-   If the value of *obj* is greater than :const:`LLONG_MAX` or less than
-   :const:`LLONG_MIN`, set *\*overflow* to ``1`` or ``-1``, respectively,
+   If the value of *obj* is greater than :c:macro:`LLONG_MAX` or less than
+   :c:macro:`LLONG_MIN`, set *\*overflow* to ``1`` or ``-1``, respectively,
    and return ``-1``; otherwise, set *\*overflow* to ``0``.  If any other
    exception occurs set *\*overflow* to ``0`` and return ``-1`` as usual.
 
