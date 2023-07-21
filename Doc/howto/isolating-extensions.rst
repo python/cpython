@@ -298,10 +298,10 @@ Watch out for the following two points in particular (but note that this is not
 a comprehensive list):
 
 * Unlike static types, heap type objects are mutable by default.
-  Use the :c:data:`Py_TPFLAGS_IMMUTABLETYPE` flag to prevent mutability.
+  Use the :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` flag to prevent mutability.
 * Heap types inherit :c:member:`~PyTypeObject.tp_new` by default,
   so it may become possible to instantiate them from Python code.
-  You can prevent this with the :c:data:`Py_TPFLAGS_DISALLOW_INSTANTIATION` flag.
+  You can prevent this with the :c:macro:`Py_TPFLAGS_DISALLOW_INSTANTIATION` flag.
 
 
 Defining Heap Types
@@ -333,12 +333,12 @@ To avoid memory leaks, instances of heap types must implement the
 garbage collection protocol.
 That is, heap types should:
 
-- Have the :c:data:`Py_TPFLAGS_HAVE_GC` flag.
+- Have the :c:macro:`Py_TPFLAGS_HAVE_GC` flag.
 - Define a traverse function using ``Py_tp_traverse``, which
   visits the type (e.g. using :c:expr:`Py_VISIT(Py_TYPE(self))`).
 
 Please refer to the :ref:`the documentation <type-structs>` of
-:c:data:`Py_TPFLAGS_HAVE_GC` and :c:member:`~PyTypeObject.tp_traverse`
+:c:macro:`Py_TPFLAGS_HAVE_GC` and :c:member:`~PyTypeObject.tp_traverse`
 for additional considerations.
 
 If your traverse function delegates to the ``tp_traverse`` of its base class
@@ -411,7 +411,7 @@ that subclass, which may be defined in different module than yours.
           pass
 
 For a method to get its "defining class", it must use the
-:data:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS`
+:ref:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS <METH_METHOD-METH_FASTCALL-METH_KEYWORDS>`
 :c:type:`calling convention <PyMethodDef>`
 and the corresponding :c:type:`PyCMethod` signature::
 

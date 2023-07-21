@@ -5706,7 +5706,7 @@ and :c:func:`_PyObject_CallMethodOneArg`.
 .. nonce: qZC0N_
 .. section: C API
 
-The :const:`METH_FASTCALL` calling convention has been documented.
+The :c:macro:`METH_FASTCALL` calling convention has been documented.
 
 ..
 
