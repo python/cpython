@@ -173,7 +173,7 @@ Terminology
      The text between the :term:`start line` and the :term:`end line`.
 
   output
-     The text between the :term:`end line` and the :term`checksum line`.
+     The text between the :term:`end line` and the :term:`checksum line`.
 
   block
      All text from the :term:`start line` to the :term:`checksum line` inclusively.
