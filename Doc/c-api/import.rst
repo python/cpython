@@ -126,9 +126,9 @@ Importing Modules
    read from a Python bytecode file or obtained from the built-in function
    :func:`compile`, load the module.  Return a new reference to the module object,
    or ``NULL`` with an exception set if an error occurred.  *name*
-   is removed from :attr:`sys.modules` in error cases, even if *name* was already
-   in :attr:`sys.modules` on entry to :c:func:`PyImport_ExecCodeModule`.  Leaving
-   incompletely initialized modules in :attr:`sys.modules` is dangerous, as imports of
+   is removed from :data:`sys.modules` in error cases, even if *name* was already
+   in :data:`sys.modules` on entry to :c:func:`PyImport_ExecCodeModule`.  Leaving
+   incompletely initialized modules in :data:`sys.modules` is dangerous, as imports of
    such modules have no way to know that the module object is an unknown (and
    probably damaged with respect to the module author's intents) state.
 
