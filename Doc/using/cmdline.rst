@@ -897,11 +897,11 @@ conflict.
    * ``default``: use the :ref:`default memory allocators
      <default-memory-allocators>`.
    * ``malloc``: use the :c:func:`malloc` function of the C library
-     for all domains (:c:data:`PYMEM_DOMAIN_RAW`, :c:data:`PYMEM_DOMAIN_MEM`,
-     :c:data:`PYMEM_DOMAIN_OBJ`).
+     for all domains (:c:macro:`PYMEM_DOMAIN_RAW`, :c:macro:`PYMEM_DOMAIN_MEM`,
+     :c:macro:`PYMEM_DOMAIN_OBJ`).
    * ``pymalloc``: use the :ref:`pymalloc allocator <pymalloc>` for
-     :c:data:`PYMEM_DOMAIN_MEM` and :c:data:`PYMEM_DOMAIN_OBJ` domains and use
-     the :c:func:`malloc` function for the :c:data:`PYMEM_DOMAIN_RAW` domain.
+     :c:macro:`PYMEM_DOMAIN_MEM` and :c:macro:`PYMEM_DOMAIN_OBJ` domains and use
+     the :c:func:`malloc` function for the :c:macro:`PYMEM_DOMAIN_RAW` domain.
 
    Install :ref:`debug hooks <pymem-debug-hooks>`:
 
