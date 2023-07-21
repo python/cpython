@@ -4171,7 +4171,7 @@ Add an index_pages parameter to support using non-default index page names.
 .. nonce: qtT3CE
 .. section: Library
 
-Drop support for :class:`bytes` on :attr:`sys.path`.
+Drop support for :class:`bytes` on :data:`sys.path`.
 
 ..
 
