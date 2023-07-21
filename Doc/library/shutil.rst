@@ -431,7 +431,7 @@ Directory and files operations
    determining if the file exists and executable.
 
    When no *path* is specified, the results of :func:`os.environ` are used,
-   returning either the "PATH" value or a fallback of :attr:`os.defpath`.
+   returning either the "PATH" value or a fallback of :data:`os.defpath`.
 
    On Windows, the current directory is prepended to the *path* if *mode* does
    not include ``os.X_OK``. When the *mode* does include ``os.X_OK``, the
