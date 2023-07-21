@@ -425,7 +425,7 @@ Directory and files operations
    determining if the file exists and executable.
 
    When no *path* is specified, the results of :func:`os.environ` are used,
-   returning either the "PATH" value or a fallback of :attr:`os.defpath`.
+   returning either the "PATH" value or a fallback of :data:`os.defpath`.
 
    On Windows, the current directory is always prepended to the *path* whether
    or not you use the default or provide your own, which is the behavior the
