@@ -326,8 +326,8 @@ There are these calling conventions:
 
 :c:expr:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS`
    Extension of :ref:`METH_FASTCALL | METH_KEYWORDS <METH_FASTCALL-METH_KEYWORDS>`
-   supporting the *defining
-   class*, that is, the class that contains the method in question.
+   supporting the *defining class*, that is,
+   the class that contains the method in question.
    The defining class might be a superclass of ``Py_TYPE(self)``.
 
    The method needs to be of type :c:type:`PyCMethod`, the same as for
