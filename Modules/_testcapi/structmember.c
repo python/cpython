@@ -194,7 +194,7 @@ _PyTestCapi_Init_Structmember(PyObject *m)
     if (res < 0) {
         return -1;
     }
-    res = PyModule_AddObject(
+    res = PyModule_AddObjectRef(
         m,
         "_test_structmembersType_OldAPI",
         (PyObject *)&test_structmembersType_OldAPI);
