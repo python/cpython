@@ -1051,8 +1051,8 @@ possible, while any potentially slow operations (such as sending an email via
       occur (e.g. because a bounded queue has filled up), the
       :meth:`~logging.Handler.handleError` method is called to handle the
       error. This can result in the record silently being dropped (if
-      :attr:`logging.raiseExceptions` is ``False``) or a message printed to
-      ``sys.stderr`` (if :attr:`logging.raiseExceptions` is ``True``).
+      :data:`logging.raiseExceptions` is ``False``) or a message printed to
+      ``sys.stderr`` (if :data:`logging.raiseExceptions` is ``True``).
 
    .. method:: prepare(record)
 

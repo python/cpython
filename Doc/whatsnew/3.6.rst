@@ -1388,7 +1388,7 @@ are treated as punctuation.
 site
 ----
 
-When specifying paths to add to :attr:`sys.path` in a ``.pth`` file,
+When specifying paths to add to :data:`sys.path` in a ``.pth`` file,
 you may now specify file paths on top of directories (e.g. zip files).
 (Contributed by Wolfgang Langner in :issue:`26587`).
 
@@ -2010,7 +2010,7 @@ been deprecated in previous versions of Python in favour of
 :meth:`importlib.abc.Loader.exec_module`.
 
 The :class:`importlib.machinery.WindowsRegistryFinder` class is now
-deprecated. As of 3.6.0, it is still added to :attr:`sys.meta_path` by
+deprecated. As of 3.6.0, it is still added to :data:`sys.meta_path` by
 default (on Windows), but this may change in future releases.
 
 os
