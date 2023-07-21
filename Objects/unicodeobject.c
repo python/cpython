@@ -14818,6 +14818,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
     PyObject *s, *ignored_value;
     while (PyDict_Next(interned, &pos, &s, &ignored_value)) {
         assert(PyUnicode_IS_READY(s));
+        int shared = 0;
         switch (PyUnicode_CHECK_INTERNED(s)) {
         case SSTATE_INTERNED_IMMORTAL:
             // Skip the Immortal Instance check and restore
@@ -14829,6 +14830,14 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
 #endif
             break;
         case SSTATE_INTERNED_IMMORTAL_STATIC:
+            /* It is shared between interpreters, so we should unmark it
+               only when this is the last interpreter in which it's
+               interned.  We immortalize all the statically initialized
+               strings during startup, so we can rely on the
+               main interpreter to be the last one. */
+            if (!_Py_IsMainInterpreter(interp)) {
+                shared = 1;
+            }
             break;
         case SSTATE_INTERNED_MORTAL:
             /* fall through */
@@ -14837,7 +14846,9 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
         default:
             Py_UNREACHABLE();
         }
-        _PyUnicode_STATE(s).interned = SSTATE_NOT_INTERNED;
+        if (!shared) {
+            _PyUnicode_STATE(s).interned = SSTATE_NOT_INTERNED;
+        }
     }
 #ifdef INTERNED_STATS
     fprintf(stderr,
