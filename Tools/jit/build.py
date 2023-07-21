@@ -533,7 +533,7 @@ def handle_relocations(
                 where = slice(offset, offset + 4)
                 what = int.from_bytes(body[where], "little", signed=False)
                 assert ((what >> 5) & 0xFFFF) == 0, what
-                yield Hole("PATCH_ABS_16_A", "_jit_base", offset, addend)
+                yield Hole("PATCH_ABS_16_A", symbol, offset, addend)
             case {
                 "Addend": int(addend),
                 "Offset": int(offset),
@@ -544,7 +544,7 @@ def handle_relocations(
                 where = slice(offset, offset + 4)
                 what = int.from_bytes(body[where], "little", signed=False)
                 assert ((what >> 5) & 0xFFFF) == 0, what
-                yield Hole("PATCH_ABS_16_B", "_jit_base", offset, addend)
+                yield Hole("PATCH_ABS_16_B", symbol, offset, addend)
             case {
                 "Addend": int(addend),
                 "Offset": int(offset),
@@ -555,7 +555,7 @@ def handle_relocations(
                 where = slice(offset, offset + 4)
                 what = int.from_bytes(body[where], "little", signed=False)
                 assert ((what >> 5) & 0xFFFF) == 0, what
-                yield Hole("PATCH_ABS_16_C", "_jit_base", offset, addend)
+                yield Hole("PATCH_ABS_16_C", symbol, offset, addend)
             case {
                 "Addend": int(addend),
                 "Offset": int(offset),
@@ -566,7 +566,7 @@ def handle_relocations(
                 where = slice(offset, offset + 4)
                 what = int.from_bytes(body[where], "little", signed=False)
                 assert ((what >> 5) & 0xFFFF) == 0, what
-                yield Hole("PATCH_ABS_16_D", "_jit_base", offset, addend)
+                yield Hole("PATCH_ABS_16_D", symbol, offset, addend)
             # x86_64-unknown-linux-gnu:
             case {
                 "Addend": int(addend),

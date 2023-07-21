@@ -13,7 +13,7 @@
     #include <psapi.h>
     #include <windows.h>
     FARPROC
-    dlsym(LPCSTR symbol)
+    LOOKUP(LPCSTR symbol)
     {
         DWORD cbNeeded;
         HMODULE hMods[1024];
@@ -28,33 +28,30 @@
         }
         return NULL;
     }
-    BOOL
-    mprotect(LPVOID lpAddress, SIZE_T dwSize, DWORD flNewProtect)
-    {
-        DWORD flOldProtect = PAGE_READWRITE;
-        return !VirtualProtect(lpAddress, dwSize, flNewProtect, &flOldProtect);
-    }
-    #define DLSYM(SYMBOL) \
-        dlsym((SYMBOL))
-    #define MAP_FAILED NULL
-    #define MMAP(SIZE) \
-        VirtualAlloc(NULL, (SIZE), MEM_COMMIT, PAGE_READWRITE)
-    #define MPROTECT(MEMORY, SIZE) \
-        mprotect((MEMORY), (SIZE), PAGE_EXECUTE_READ)
-    #define MUNMAP(MEMORY, SIZE) \
-        VirtualFree((MEMORY), 0, MEM_RELEASE)
 #else
     #include <sys/mman.h>
-    #define DLSYM(SYMBOL) \
-        dlsym(RTLD_DEFAULT, (SYMBOL))
-    #define MMAP(SIZE)                             \
-        mmap(NULL, (SIZE), PROT_READ | PROT_WRITE, \
-             MAP_PRIVATE | MAP_ANONYMOUS, -1, 0)
-    #define MPROTECT(MEMORY, SIZE) \
-        mprotect((MEMORY), (SIZE), PROT_READ | PROT_EXEC)
-    #define MUNMAP(MEMORY, SIZE) \
-        munmap((MEMORY), (SIZE))
+    #define LOOKUP(SYMBOL) dlsym(RTLD_DEFAULT, (SYMBOL))
 #endif
+
+#define JIT_POOL_SIZE  (1 << 30)
+#define JIT_ALIGN      (1 << 14)
+#define JIT_ALIGN_MASK (JIT_ALIGN - 1)
+
+static unsigned char pool[JIT_POOL_SIZE];
+static size_t pool_head;
+
+static unsigned char *
+alloc(size_t size)
+{
+    size_t padding = (JIT_ALIGN - ((uintptr_t)(pool + pool_head) & JIT_ALIGN_MASK)) & JIT_ALIGN_MASK;
+    if (JIT_POOL_SIZE < pool_head + padding + size) {
+        return NULL;
+    }
+    unsigned char *memory = pool + pool_head + padding;
+    assert(((uintptr_t)memory & JIT_ALIGN_MASK) == 0);
+    pool_head += padding + size;
+    return memory;
+}
 
 static int stencils_loaded = 0;
 
@@ -213,7 +210,7 @@ preload_stencil(const Stencil *loading)
 {
     for (size_t i = 0; i < loading->nloads; i++) {
         const SymbolLoad *load = &loading->loads[i];
-        uintptr_t value = (uintptr_t)DLSYM(load->symbol);
+        uintptr_t value = (uintptr_t)LOOKUP(load->symbol);
         if (value == 0) {
             const char *w = "JIT initialization failed (can't find symbol \"%s\")";
             PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, load->symbol);
@@ -222,29 +219,6 @@ preload_stencil(const Stencil *loading)
     }
     return 0;
 }
-
-static unsigned char *
-alloc(size_t nbytes)
-{
-    nbytes += sizeof(size_t);
-    unsigned char *memory = MMAP(nbytes);
-    if (memory == MAP_FAILED) {
-        return NULL;
-    }
-    assert(memory);
-    *(size_t *)memory = nbytes;
-    return memory + sizeof(size_t);
-}
-
-
-void
-_PyJIT_Free(_PyJITFunction trace)
-{
-    unsigned char *memory = (unsigned char *)trace - sizeof(size_t);
-    size_t nbytes = *(size_t *)memory;
-    MUNMAP(memory, nbytes);
-}
-
 
 static void
 copy_and_patch(unsigned char *memory, const Stencil *stencil, uintptr_t patches[])
@@ -257,13 +231,12 @@ copy_and_patch(unsigned char *memory, const Stencil *stencil, uintptr_t patches[
     for (size_t i = 0; i < stencil->nloads; i++) {
         const SymbolLoad *load = &stencil->loads[i];
         // XXX: Cache these somehow...
-        uintptr_t value = (uintptr_t)DLSYM(load->symbol);
+        uintptr_t value = (uintptr_t)LOOKUP(load->symbol);
         patch_one(memory + load->offset, load->kind, value, load->addend);
     }
 }
 
 // The world's smallest compiler?
-// Make sure to call _PyJIT_Free on the memory when you're done with it!
 _PyJITFunction
 _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
 {
@@ -297,6 +270,14 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
     if (memory == NULL) {
         return NULL;
     }
+#ifdef __APPLE__
+    void *mapped = mmap(memory, nbytes, PROT_READ | PROT_WRITE,
+                        MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE, -1, 0);
+    if (mapped == MAP_FAILED) {
+        return NULL;
+    }
+    assert(memory == mapped);
+#endif
     unsigned char *head = memory;
     uintptr_t patches[] = GET_PATCHES();
     // First, the trampoline:
@@ -319,11 +300,17 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         copy_and_patch(head, stencil, patches);
         head += stencil->nbytes;
     };
-    // Wow, done already?
-    assert(memory + nbytes == head);
-    if (MPROTECT(memory - sizeof(size_t), nbytes + sizeof(size_t))) {
-        _PyJIT_Free((_PyJITFunction)memory);
+#ifdef MS_WINDOWS
+    DWORD old = PAGE_READWRITE;
+    if (!VirtualProtect(memory, nbytes, PAGE_EXECUTE_READ, &old)) {
         return NULL;
     }
+#else
+    if (mprotect(memory, nbytes, PROT_EXEC | PROT_READ)) {
+        return NULL;
+    }
+#endif
+    // Wow, done already?
+    assert(memory + nbytes == head);
     return (_PyJITFunction)memory;
 }

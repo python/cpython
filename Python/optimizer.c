@@ -307,7 +307,6 @@ PyUnstable_Optimizer_NewCounter(void)
 
 static void
 uop_dealloc(_PyUOpExecutorObject *self) {
-    _PyJIT_Free(self->base.execute);
     PyObject_Free(self);
 }
 
