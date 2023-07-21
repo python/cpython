@@ -2219,6 +2219,10 @@ def debug(msg, *args, **kwargs):
     """
     if len(root.handlers) == 0:
         basicConfig()
+        message = (
+            "The root logger had no handlers; basicConfig() was called"
+            " to add a console handler with a pre-defined format.")
+        root.debug(message, *args, **kwargs)
     root.debug(msg, *args, **kwargs)
 
 def log(level, msg, *args, **kwargs):

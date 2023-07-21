@@ -1,0 +1,2 @@
+:mod:`logging`: Emit a debug log message when adding console handler
+to a root logger without handlers. Patch by Bjorn Olsen.
