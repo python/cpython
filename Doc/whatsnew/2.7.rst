@@ -2231,7 +2231,7 @@ Changes to Python's build process and to the C API include:
 
 * When using the :c:type:`PyMemberDef` structure to define attributes
   of a type, Python will no longer let you try to delete or set a
-  :const:`T_STRING_INPLACE` attribute.
+  :c:macro:`T_STRING_INPLACE` attribute.
 
   .. rev 79644
 

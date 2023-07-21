@@ -470,7 +470,7 @@ Customize Memory Allocators
    The new allocator must return a distinct non-``NULL`` pointer when requesting
    zero bytes.
 
-   For the :c:data:`PYMEM_DOMAIN_RAW` domain, the allocator must be
+   For the :c:macro:`PYMEM_DOMAIN_RAW` domain, the allocator must be
    thread-safe: the :term:`GIL <global interpreter lock>` is not held when the
    allocator is called.
 
@@ -536,8 +536,8 @@ Runtime checks:
 - Detect write before the start of the buffer (buffer underflow).
 - Detect write after the end of the buffer (buffer overflow).
 - Check that the :term:`GIL <global interpreter lock>` is held when
-  allocator functions of :c:data:`PYMEM_DOMAIN_OBJ` (ex:
-  :c:func:`PyObject_Malloc`) and :c:data:`PYMEM_DOMAIN_MEM` (ex:
+  allocator functions of :c:macro:`PYMEM_DOMAIN_OBJ` (ex:
+  :c:func:`PyObject_Malloc`) and :c:macro:`PYMEM_DOMAIN_MEM` (ex:
   :c:func:`PyMem_Malloc`) domains are called.
 
 On error, the debug hooks use the :mod:`tracemalloc` module to get the
@@ -557,9 +557,9 @@ that the treatment of negative indices differs from a Python slice):
 ``p[-S]``
     API identifier (ASCII character):
 
-    * ``'r'`` for :c:data:`PYMEM_DOMAIN_RAW`.
-    * ``'m'`` for :c:data:`PYMEM_DOMAIN_MEM`.
-    * ``'o'`` for :c:data:`PYMEM_DOMAIN_OBJ`.
+    * ``'r'`` for :c:macro:`PYMEM_DOMAIN_RAW`.
+    * ``'m'`` for :c:macro:`PYMEM_DOMAIN_MEM`.
+    * ``'o'`` for :c:macro:`PYMEM_DOMAIN_OBJ`.
 
 ``p[-S+1:0]``
     Copies of PYMEM_FORBIDDENBYTE.  Used to catch under- writes and reads.
@@ -601,7 +601,7 @@ PYMEM_CLEANBYTE (meaning uninitialized memory is getting used).
    compiled in release mode.  On error, the debug hooks now use
    :mod:`tracemalloc` to get the traceback where a memory block was allocated.
    The debug hooks now also check if the GIL is held when functions of
-   :c:data:`PYMEM_DOMAIN_OBJ` and :c:data:`PYMEM_DOMAIN_MEM` domains are
+   :c:macro:`PYMEM_DOMAIN_OBJ` and :c:macro:`PYMEM_DOMAIN_MEM` domains are
    called.
 
 .. versionchanged:: 3.8
@@ -622,8 +622,8 @@ with a fixed size of 256 KiB. It falls back to :c:func:`PyMem_RawMalloc` and
 :c:func:`PyMem_RawRealloc` for allocations larger than 512 bytes.
 
 *pymalloc* is the :ref:`default allocator <default-memory-allocators>` of the
-:c:data:`PYMEM_DOMAIN_MEM` (ex: :c:func:`PyMem_Malloc`) and
-:c:data:`PYMEM_DOMAIN_OBJ` (ex: :c:func:`PyObject_Malloc`) domains.
+:c:macro:`PYMEM_DOMAIN_MEM` (ex: :c:func:`PyMem_Malloc`) and
+:c:macro:`PYMEM_DOMAIN_OBJ` (ex: :c:func:`PyObject_Malloc`) domains.
 
 The arena allocator uses the following functions:
 
