@@ -650,8 +650,8 @@ compiled in release mode using ``PYTHONMALLOC=debug``. Effects of debug hooks:
 * Detect writes before the start of a buffer (buffer underflows)
 * Detect writes after the end of a buffer (buffer overflows)
 * Check that the :term:`GIL <global interpreter lock>` is held when allocator
-  functions of :c:data:`PYMEM_DOMAIN_OBJ` (ex: :c:func:`PyObject_Malloc`) and
-  :c:data:`PYMEM_DOMAIN_MEM` (ex: :c:func:`PyMem_Malloc`) domains are called.
+  functions of :c:macro:`PYMEM_DOMAIN_OBJ` (ex: :c:func:`PyObject_Malloc`) and
+  :c:macro:`PYMEM_DOMAIN_MEM` (ex: :c:func:`PyMem_Malloc`) domains are called.
 
 Checking if the GIL is held is also a new feature of Python 3.6.
 
@@ -1822,7 +1822,7 @@ Optimizations
   up to 80% faster. (Contributed by Josh Snider in :issue:`26574`).
 
 * Allocator functions of the :c:func:`PyMem_Malloc` domain
-  (:c:data:`PYMEM_DOMAIN_MEM`) now use the :ref:`pymalloc memory allocator
+  (:c:macro:`PYMEM_DOMAIN_MEM`) now use the :ref:`pymalloc memory allocator
   <pymalloc>` instead of :c:func:`malloc` function of the C library. The
   pymalloc allocator is optimized for objects smaller or equal to 512 bytes
   with a short lifetime, and use :c:func:`malloc` for larger memory blocks.
@@ -1874,8 +1874,8 @@ Build and C API Changes
   (Original patch by Alecsandru Patrascu of Intel in :issue:`26359`.)
 
 * The :term:`GIL <global interpreter lock>` must now be held when allocator
-  functions of :c:data:`PYMEM_DOMAIN_OBJ` (ex: :c:func:`PyObject_Malloc`) and
-  :c:data:`PYMEM_DOMAIN_MEM` (ex: :c:func:`PyMem_Malloc`) domains are called.
+  functions of :c:macro:`PYMEM_DOMAIN_OBJ` (ex: :c:func:`PyObject_Malloc`) and
+  :c:macro:`PYMEM_DOMAIN_MEM` (ex: :c:func:`PyMem_Malloc`) domains are called.
 
 * New :c:func:`Py_FinalizeEx` API which indicates if flushing buffered data
   failed.

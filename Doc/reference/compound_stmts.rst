@@ -1602,7 +1602,7 @@ body of a coroutine function.
 
       * a class that inherits from :class:`collections.abc.Sequence`
       * a Python class that has been registered as :class:`collections.abc.Sequence`
-      * a builtin class that has its (CPython) :data:`Py_TPFLAGS_SEQUENCE` bit set
+      * a builtin class that has its (CPython) :c:macro:`Py_TPFLAGS_SEQUENCE` bit set
       * a class that inherits from any of the above
 
    The following standard library classes are sequences:
@@ -1621,7 +1621,7 @@ body of a coroutine function.
 
       * a class that inherits from :class:`collections.abc.Mapping`
       * a Python class that has been registered as :class:`collections.abc.Mapping`
-      * a builtin class that has its (CPython) :data:`Py_TPFLAGS_MAPPING` bit set
+      * a builtin class that has its (CPython) :c:macro:`Py_TPFLAGS_MAPPING` bit set
       * a class that inherits from any of the above
 
    The standard library classes :class:`dict` and :class:`types.MappingProxyType`
