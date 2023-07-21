@@ -5856,8 +5856,8 @@ Configuration for the :ref:`integer string conversion length limitation
 
 Extensions classes that set ``tp_dictoffset`` and ``tp_weaklistoffset`` lose
 the support for multiple inheritance, but are now safe. Extension classes
-should use :const:`Py_TPFLAGS_MANAGED_DICT` and
-:const:`Py_TPFLAGS_MANAGED_WEAKREF` instead.
+should use :c:macro:`Py_TPFLAGS_MANAGED_DICT` and
+:c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` instead.
 
 ..
 
@@ -5898,7 +5898,7 @@ Support C extensions using managed dictionaries by setting the
 .. nonce: QoDHEu
 .. section: C API
 
-API for implementing vectorcall (:c:data:`Py_TPFLAGS_HAVE_VECTORCALL`,
+API for implementing vectorcall (:c:macro:`Py_TPFLAGS_HAVE_VECTORCALL`,
 :c:func:`PyVectorcall_NARGS` and :c:func:`PyVectorcall_Call`) was added to
 the limited API and stable ABI.
 
@@ -5920,12 +5920,12 @@ Philip Georgi.
 .. nonce: -DdGEy
 .. section: C API
 
-The :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag is now removed from a class
+The :c:macro:`Py_TPFLAGS_HAVE_VECTORCALL` flag is now removed from a class
 when the class's :py:meth:`~object.__call__` method is reassigned. This
 makes vectorcall safe to use with mutable types (i.e. heap types without the
 :const:`immutable <Py_TPFLAGS_IMMUTABLETYPE>` flag). Mutable types that do
 not override :c:member:`~PyTypeObject.tp_call` now inherit the
-:const:`Py_TPFLAGS_HAVE_VECTORCALL` flag.
+:c:macro:`Py_TPFLAGS_HAVE_VECTORCALL` flag.
 
 ..
 

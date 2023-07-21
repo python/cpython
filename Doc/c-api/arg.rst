@@ -343,7 +343,7 @@ Other objects
    *items*.  Format units for sequences may be nested.
 
 It is possible to pass "long" integers (integers whose value exceeds the
-platform's :const:`LONG_MAX`) however no proper range checking is done --- the
+platform's :c:macro:`LONG_MAX`) however no proper range checking is done --- the
 most significant bits are silently truncated when the receiving field is too
 small to receive the value (actually, the semantics are inherited from downcasts
 in C --- your mileage may vary).
@@ -455,7 +455,7 @@ API Functions
 
    A simpler form of parameter retrieval which does not use a format string to
    specify the types of the arguments.  Functions which use this method to retrieve
-   their parameters should be declared as :const:`METH_VARARGS` in function or
+   their parameters should be declared as :c:macro:`METH_VARARGS` in function or
    method tables.  The tuple containing the actual parameters should be passed as
    *args*; it must actually be a tuple.  The length of the tuple must be at least
    *min* and no more than *max*; *min* and *max* may be equal.  Additional
