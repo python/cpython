@@ -871,7 +871,7 @@ assert_called_once_with) will unconditionally pass.
 .. nonce: -1XPDH
 .. section: Library
 
-Add :data:`ssl.OP_IGNORE_UNEXPECTED_EOF` constants (OpenSSL 3.0.0)
+Add :const:`ssl.OP_IGNORE_UNEXPECTED_EOF` constants (OpenSSL 3.0.0)
 
 ..
 

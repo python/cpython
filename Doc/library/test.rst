@@ -472,7 +472,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: with_pymalloc()
 
-   Return :data:`_testcapi.WITH_PYMALLOC`.
+   Return :const:`_testcapi.WITH_PYMALLOC`.
 
 
 .. function:: requires(resource, msg=None)
