@@ -686,7 +686,7 @@ always available.
    Return the current value of the flags that are used for
    :c:func:`dlopen` calls.  Symbolic names for the flag values can be
    found in the :mod:`os` module (``RTLD_xxx`` constants, e.g.
-   :data:`os.RTLD_LAZY`).
+   :const:`os.RTLD_LAZY`).
 
    .. availability:: Unix.
 
@@ -1342,7 +1342,7 @@ always available.
    ``sys.setdlopenflags(0)``.  To share symbols across extension modules, call as
    ``sys.setdlopenflags(os.RTLD_GLOBAL)``.  Symbolic names for the flag values
    can be found in the :mod:`os` module (``RTLD_xxx`` constants, e.g.
-   :data:`os.RTLD_LAZY`).
+   :const:`os.RTLD_LAZY`).
 
    .. availability:: Unix.
 

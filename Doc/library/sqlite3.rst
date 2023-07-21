@@ -1643,9 +1643,9 @@ Blob objects
    .. method:: seek(offset, origin=os.SEEK_SET, /)
 
       Set the current access position of the blob to *offset*.  The *origin*
-      argument defaults to :data:`os.SEEK_SET` (absolute blob positioning).
-      Other values for *origin* are :data:`os.SEEK_CUR` (seek relative to the
-      current position) and :data:`os.SEEK_END` (seek relative to the blob’s
+      argument defaults to :const:`os.SEEK_SET` (absolute blob positioning).
+      Other values for *origin* are :const:`os.SEEK_CUR` (seek relative to the
+      current position) and :const:`os.SEEK_END` (seek relative to the blob’s
       end).
 
 
