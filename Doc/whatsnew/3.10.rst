@@ -1253,8 +1253,8 @@ descriptors without copying between kernel address space and user
 address space, where one of the file descriptors must refer to a
 pipe. (Contributed by Pablo Galindo in :issue:`41625`.)
 
-Add :data:`~os.O_EVTONLY`, :data:`~os.O_FSYNC`, :data:`~os.O_SYMLINK`
-and :data:`~os.O_NOFOLLOW_ANY` for macOS.
+Add :const:`~os.O_EVTONLY`, :const:`~os.O_FSYNC`, :const:`~os.O_SYMLINK`
+and :const:`~os.O_NOFOLLOW_ANY` for macOS.
 (Contributed by Dong-hee Na in :issue:`43106`.)
 
 os.path
@@ -1319,7 +1319,7 @@ objects in the tree returned by :func:`pyclbr.readline` and
 shelve
 ------
 
-The :mod:`shelve` module now uses :data:`pickle.DEFAULT_PROTOCOL` by default
+The :mod:`shelve` module now uses :const:`pickle.DEFAULT_PROTOCOL` by default
 instead of :mod:`pickle` protocol ``3`` when creating shelves.
 (Contributed by Zackery Spytz in :issue:`34204`.)
 
@@ -1356,7 +1356,7 @@ The ssl module requires OpenSSL 1.1.1 or newer.
 (Contributed by Christian Heimes in :pep:`644` and :issue:`43669`.)
 
 The ssl module has preliminary support for OpenSSL 3.0.0 and new option
-:data:`~ssl.OP_IGNORE_UNEXPECTED_EOF`.
+:const:`~ssl.OP_IGNORE_UNEXPECTED_EOF`.
 (Contributed by Christian Heimes in :issue:`38820`, :issue:`43794`,
 :issue:`43788`, :issue:`43791`, :issue:`43799`, :issue:`43920`,
 :issue:`43789`, and :issue:`43811`.)
@@ -1387,7 +1387,7 @@ Add a *timeout* parameter to the :func:`ssl.get_server_certificate` function.
 The ssl module uses heap-types and multi-phase initialization.
 (Contributed by Christian Heimes in :issue:`42333`.)
 
-A new verify flag :data:`~ssl.VERIFY_X509_PARTIAL_CHAIN` has been added.
+A new verify flag :const:`~ssl.VERIFY_X509_PARTIAL_CHAIN` has been added.
 (Contributed by l0x in :issue:`40849`.)
 
 sqlite3
@@ -1413,7 +1413,7 @@ _thread
 -------
 
 :func:`_thread.interrupt_main` now takes an optional signal number to
-simulate (the default is still :data:`signal.SIGINT`).
+simulate (the default is still :const:`signal.SIGINT`).
 (Contributed by Antoine Pitrou in :issue:`43356`.)
 
 threading
@@ -1757,8 +1757,8 @@ Deprecated
   * :data:`~ssl.PROTOCOL_SSLv2`, :data:`~ssl.PROTOCOL_SSLv3`,
     :data:`~ssl.PROTOCOL_SSLv23`, :data:`~ssl.PROTOCOL_TLSv1`,
     :data:`~ssl.PROTOCOL_TLSv1_1`, :data:`~ssl.PROTOCOL_TLSv1_2`, and
-    :data:`~ssl.PROTOCOL_TLS` are deprecated in favor of
-    :data:`~ssl.PROTOCOL_TLS_CLIENT` and :data:`~ssl.PROTOCOL_TLS_SERVER`
+    :const:`~ssl.PROTOCOL_TLS` are deprecated in favor of
+    :const:`~ssl.PROTOCOL_TLS_CLIENT` and :const:`~ssl.PROTOCOL_TLS_SERVER`
 
   * :func:`~ssl.wrap_socket` is replaced by :meth:`ssl.SSLContext.wrap_socket`
 
@@ -2124,11 +2124,11 @@ New Features
   These functions allow to activate, deactivate and query the state of the garbage collector from C code without
   having to import the :mod:`gc` module.
 
-* Add a new :c:data:`Py_TPFLAGS_DISALLOW_INSTANTIATION` type flag to disallow
+* Add a new :c:macro:`Py_TPFLAGS_DISALLOW_INSTANTIATION` type flag to disallow
   creating type instances.
   (Contributed by Victor Stinner in :issue:`43916`.)
 
-* Add a new :c:data:`Py_TPFLAGS_IMMUTABLETYPE` type flag for creating immutable
+* Add a new :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` type flag for creating immutable
   type objects: type attributes cannot be set nor deleted.
   (Contributed by Victor Stinner and Erlend E. Aasland in :issue:`43908`.)
 
@@ -2187,9 +2187,9 @@ Porting to Python 3.10
   been included directly, consider including ``Python.h`` instead.
   (Contributed by Nicholas Sim in :issue:`35134`.)
 
-* Use the :c:data:`Py_TPFLAGS_IMMUTABLETYPE` type flag to create immutable type
-  objects. Do not rely on :c:data:`Py_TPFLAGS_HEAPTYPE` to decide if a type
-  object is mutable or not; check if :c:data:`Py_TPFLAGS_IMMUTABLETYPE` is set
+* Use the :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` type flag to create immutable type
+  objects. Do not rely on :c:macro:`Py_TPFLAGS_HEAPTYPE` to decide if a type
+  object is mutable or not; check if :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` is set
   instead.
   (Contributed by Victor Stinner and Erlend E. Aasland in :issue:`43908`.)
 

@@ -74,7 +74,7 @@ The :class:`dircmp` class
 
    Construct a new directory comparison object, to compare the directories *a*
    and *b*.  *ignore* is a list of names to ignore, and defaults to
-   :attr:`filecmp.DEFAULT_IGNORES`.  *hide* is a list of names to hide, and
+   :const:`filecmp.DEFAULT_IGNORES`.  *hide* is a list of names to hide, and
    defaults to ``[os.curdir, os.pardir]``.
 
    The :class:`dircmp` class compares files by doing *shallow* comparisons

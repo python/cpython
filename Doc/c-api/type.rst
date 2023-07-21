@@ -132,7 +132,7 @@ Type Objects
 .. c:function:: int PyType_IS_GC(PyTypeObject *o)
 
    Return true if the type object includes support for the cycle detector; this
-   tests the type flag :const:`Py_TPFLAGS_HAVE_GC`.
+   tests the type flag :c:macro:`Py_TPFLAGS_HAVE_GC`.
 
 
 .. c:function:: int PyType_IsSubtype(PyTypeObject *a, PyTypeObject *b)
@@ -165,10 +165,10 @@ Type Objects
 
    .. note::
        If some of the base classes implements the GC protocol and the provided
-       type does not include the :const:`Py_TPFLAGS_HAVE_GC` in its flags, then
+       type does not include the :c:macro:`Py_TPFLAGS_HAVE_GC` in its flags, then
        the GC protocol will be automatically implemented from its parents. On
        the contrary, if the type being created does include
-       :const:`Py_TPFLAGS_HAVE_GC` in its flags then it **must** implement the
+       :c:macro:`Py_TPFLAGS_HAVE_GC` in its flags then it **must** implement the
        GC protocol itself by at least implementing the
        :c:member:`~PyTypeObject.tp_traverse` handle.
 
@@ -268,7 +268,7 @@ The following functions and structs are used to create
 .. c:function:: PyObject* PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module, PyType_Spec *spec, PyObject *bases)
 
    Create and return a :ref:`heap type <heap-types>` from the *spec*
-   (see :const:`Py_TPFLAGS_HEAPTYPE`).
+   (see :c:macro:`Py_TPFLAGS_HEAPTYPE`).
 
    The metaclass *metaclass* is used to construct the resulting type object.
    When *metaclass* is ``NULL``, the metaclass is derived from *bases*
@@ -420,7 +420,7 @@ The following functions and structs are used to create
       - The requested :c:member:`PyType_Spec.basicsize` is zero,
         suggesting that the subclass does not access the instance's memory
         directly.
-      - With the :const:`Py_TPFLAGS_ITEMS_AT_END` flag.
+      - With the :c:macro:`Py_TPFLAGS_ITEMS_AT_END` flag.
 
    .. c:member:: unsigned int flags
 
@@ -471,9 +471,9 @@ The following functions and structs are used to create
       * :c:member:`~PyTypeObject.tp_weaklist`
       * :c:member:`~PyTypeObject.tp_vectorcall`
       * :c:member:`~PyTypeObject.tp_weaklistoffset`
-        (use :const:`Py_TPFLAGS_MANAGED_WEAKREF` instead)
+        (use :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` instead)
       * :c:member:`~PyTypeObject.tp_dictoffset`
-        (use :const:`Py_TPFLAGS_MANAGED_DICT` instead)
+        (use :c:macro:`Py_TPFLAGS_MANAGED_DICT` instead)
       * :c:member:`~PyTypeObject.tp_vectorcall_offset`
         (see :ref:`PyMemberDef <pymemberdef-offsets>`)
 

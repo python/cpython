@@ -2368,12 +2368,16 @@ def clear_executors(func):
 class TestOptimizerAPI(unittest.TestCase):
 
     def test_get_set_optimizer(self):
-        self.assertEqual(_testinternalcapi.get_optimizer(), None)
+        old = _testinternalcapi.get_optimizer()
         opt = _testinternalcapi.get_counter_optimizer()
-        _testinternalcapi.set_optimizer(opt)
-        self.assertEqual(_testinternalcapi.get_optimizer(), opt)
-        _testinternalcapi.set_optimizer(None)
-        self.assertEqual(_testinternalcapi.get_optimizer(), None)
+        try:
+            _testinternalcapi.set_optimizer(opt)
+            self.assertEqual(_testinternalcapi.get_optimizer(), opt)
+            _testinternalcapi.set_optimizer(None)
+            self.assertEqual(_testinternalcapi.get_optimizer(), None)
+        finally:
+            _testinternalcapi.set_optimizer(old)
+
 
     def test_counter_optimizer(self):
         # Generate a new function at each call
