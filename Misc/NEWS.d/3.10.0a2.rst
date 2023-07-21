@@ -604,7 +604,7 @@ changes the working directory.  PR by Anthony Sottile.
 .. nonce: 9wXTtY
 .. section: Library
 
-The :mod:`shelve` module now uses :data:`pickle.DEFAULT_PROTOCOL` by default
+The :mod:`shelve` module now uses :const:`pickle.DEFAULT_PROTOCOL` by default
 instead of :mod:`pickle` protocol ``3``.
 
 ..

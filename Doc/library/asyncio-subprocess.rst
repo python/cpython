@@ -249,7 +249,7 @@ their completion.
 
       Stop the child process.
 
-      On POSIX systems this method sends :py:data:`signal.SIGTERM` to the
+      On POSIX systems this method sends :py:const:`signal.SIGTERM` to the
       child process.
 
       On Windows the Win32 API function :c:func:`TerminateProcess` is
