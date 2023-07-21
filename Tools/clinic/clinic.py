@@ -1970,10 +1970,7 @@ class BufferSeries:
         self._array: list[_TextAccumulator] = []
         self._constructor = _text_accumulator
 
-    def __getitem__(
-            self,
-            i: int
-    ) -> _TextAccumulator:
+    def __getitem__(self, i: int) -> _TextAccumulator:
         i -= self._start
         if i < 0:
             self._start += i
