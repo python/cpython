@@ -1670,6 +1670,33 @@ methodcaller_traverse(methodcallerobject *mc, visitproc visit, void *arg)
 }
 
 static PyObject *
+methodcaller_call(methodcallerobject *mc, PyObject *args, PyObject *kw)
+{
+    PyObject *method, *obj, *result;
+
+    if (!_PyArg_NoKeywords("methodcaller", kw))
+        return NULL;
+    if (!_PyArg_CheckPositional("methodcaller", PyTuple_GET_SIZE(args), 1, 1))
+        return NULL;
+    obj = PyTuple_GET_ITEM(args, 0);
+    method = PyObject_GetAttr(obj, mc->name);
+    if (method == NULL)
+        return NULL;
+
+
+    PyObject *cargs = PyTuple_GetSlice(mc->xargs, 1, PyTuple_GET_SIZE(mc->xargs));
+    if (cargs == NULL) {
+        Py_DECREF(method);
+        return NULL;
+    }
+
+    result = PyObject_Call(method, cargs, mc->kwds);
+    Py_DECREF(cargs);
+    Py_DECREF(method);
+    return result;
+}
+
+static PyObject *
 methodcaller_repr(methodcallerobject *mc)
 {
     PyObject *argreprs, *repr = NULL, *sep, *joinedargreprs;
@@ -1805,6 +1832,7 @@ r.name('date', foo=1).");
 static PyType_Slot methodcaller_type_slots[] = {
     {Py_tp_doc, (void *)methodcaller_doc},
     {Py_tp_dealloc, methodcaller_dealloc},
+    {Py_tp_call, methodcaller_call},
     {Py_tp_traverse, methodcaller_traverse},
     {Py_tp_clear, methodcaller_clear},
     {Py_tp_methods, methodcaller_methods},
