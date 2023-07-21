@@ -1035,6 +1035,25 @@ class ClinicParserTest(_ParserBase):
                 Nested docstring here, goeth.
         """)
 
+    def test_indent_stack_no_tabs(self):
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.bar
+               *vararg1: object
+            \t*vararg2: object
+        """)
+        msg = "Tab characters are illegal in the Clinic DSL."
+        self.assertIn(msg, out)
+
+    def test_indent_stack_illegal_outdent(self):
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.bar
+              a: object
+             b: object
+        """)
+        self.assertIn("Illegal outdent", out)
+
     def test_directive(self):
         c = FakeClinic()
         parser = DSLParser(c)
