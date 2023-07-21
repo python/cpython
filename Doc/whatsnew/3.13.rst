@@ -786,6 +786,13 @@ New Features
   always steals a reference to the value.
   (Contributed by Serhiy Storchaka in :gh:`86493`.)
 
+* Added :c:func:`PyDict_GetItemRef` and :c:func:`PyDict_GetItemStringRef`
+  functions: similar to :c:func:`PyDict_GetItemWithError` but returning a
+  :term:`strong reference` instead of a :term:`borrowed reference`. Moreover,
+  these functions return -1 on error and so checking ``PyErr_Occurred()`` is
+  not needed.
+  (Contributed by Victor Stinner in :gh:`106004`.)
+
 Porting to Python 3.13
 ----------------------
 
