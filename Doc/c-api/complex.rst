@@ -64,7 +64,7 @@ pointers.  This is consistent throughout the API.
    representation.
 
    If *divisor* is null, this method returns zero and sets
-   :c:data:`errno` to :c:data:`EDOM`.
+   :c:data:`errno` to :c:macro:`EDOM`.
 
 
 .. c:function:: Py_complex _Py_c_pow(Py_complex num, Py_complex exp)
@@ -73,7 +73,7 @@ pointers.  This is consistent throughout the API.
    representation.
 
    If *num* is null and *exp* is not a positive real number,
-   this method returns zero and sets :c:data:`errno` to :c:data:`EDOM`.
+   this method returns zero and sets :c:data:`errno` to :c:macro:`EDOM`.
 
 
 Complex Numbers as Python Objects

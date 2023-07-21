@@ -2124,11 +2124,11 @@ New Features
   These functions allow to activate, deactivate and query the state of the garbage collector from C code without
   having to import the :mod:`gc` module.
 
-* Add a new :c:data:`Py_TPFLAGS_DISALLOW_INSTANTIATION` type flag to disallow
+* Add a new :c:macro:`Py_TPFLAGS_DISALLOW_INSTANTIATION` type flag to disallow
   creating type instances.
   (Contributed by Victor Stinner in :issue:`43916`.)
 
-* Add a new :c:data:`Py_TPFLAGS_IMMUTABLETYPE` type flag for creating immutable
+* Add a new :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` type flag for creating immutable
   type objects: type attributes cannot be set nor deleted.
   (Contributed by Victor Stinner and Erlend E. Aasland in :issue:`43908`.)
 
@@ -2187,9 +2187,9 @@ Porting to Python 3.10
   been included directly, consider including ``Python.h`` instead.
   (Contributed by Nicholas Sim in :issue:`35134`.)
 
-* Use the :c:data:`Py_TPFLAGS_IMMUTABLETYPE` type flag to create immutable type
-  objects. Do not rely on :c:data:`Py_TPFLAGS_HEAPTYPE` to decide if a type
-  object is mutable or not; check if :c:data:`Py_TPFLAGS_IMMUTABLETYPE` is set
+* Use the :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` type flag to create immutable type
+  objects. Do not rely on :c:macro:`Py_TPFLAGS_HEAPTYPE` to decide if a type
+  object is mutable or not; check if :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` is set
   instead.
   (Contributed by Victor Stinner and Erlend E. Aasland in :issue:`43908`.)
 

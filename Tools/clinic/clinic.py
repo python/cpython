@@ -530,12 +530,11 @@ class PythonLanguage(Language):
     checksum_line = "#/*[{dsl_name} end generated code: {arguments}]*/"
 
 
-ParamGroup = Iterable["Parameter"]
 ParamTuple = tuple["Parameter", ...]
 
 
 def permute_left_option_groups(
-        l: Sequence[ParamGroup]
+        l: Sequence[Iterable[Parameter]]
 ) -> Iterator[ParamTuple]:
     """
     Given [(1,), (2,), (3,)], should yield:
@@ -552,7 +551,7 @@ def permute_left_option_groups(
 
 
 def permute_right_option_groups(
-        l: Sequence[ParamGroup]
+        l: Sequence[Iterable[Parameter]]
 ) -> Iterator[ParamTuple]:
     """
     Given [(1,), (2,), (3,)], should yield:
@@ -569,9 +568,9 @@ def permute_right_option_groups(
 
 
 def permute_optional_groups(
-        left: Sequence[ParamGroup],
-        required: ParamGroup,
-        right: Sequence[ParamGroup]
+        left: Sequence[Iterable[Parameter]],
+        required: Iterable[Parameter],
+        right: Sequence[Iterable[Parameter]]
 ) -> tuple[ParamTuple, ...]:
     """
     Generator function that computes the set of acceptable
@@ -1374,7 +1373,11 @@ class CLanguage(Language):
         adjective = "left_" if group < 0 else "right_"
         return "group_" + adjective + str(abs(group))
 
-    def render_option_group_parsing(self, f, template_dict):
+    def render_option_group_parsing(
+            self,
+            f: Function,
+            template_dict: TemplateDict
+    ) -> None:
         # positional only, grouped, optional arguments!
         # can be optional on the left or right.
         # here's an example:
@@ -1398,11 +1401,11 @@ class CLanguage(Language):
         if isinstance(parameters[0].converter, self_converter):
             del parameters[0]
 
-        group = None
+        group: list[Parameter] | None = None
         left = []
         right = []
-        required = []
-        last = unspecified
+        required: list[Parameter] = []
+        last: int | Literal[Sentinels.unspecified] = unspecified
 
         for p in parameters:
             group_id = p.group
@@ -1415,6 +1418,7 @@ class CLanguage(Language):
                     group = required
                 else:
                     right.append(group)
+            assert group is not None
             group.append(p)
 
         count_min = sys.maxsize
@@ -1433,19 +1437,21 @@ class CLanguage(Language):
                 continue
 
             group_ids = {p.group for p in subset}  # eliminate duplicates
-            d = {}
+            d: dict[str, str | int] = {}
             d['count'] = count
             d['name'] = f.name
             d['format_units'] = "".join(p.converter.format_unit for p in subset)
 
-            parse_arguments = []
+            parse_arguments: list[str] = []
             for p in subset:
                 p.converter.parse_argument(parse_arguments)
             d['parse_arguments'] = ", ".join(parse_arguments)
 
             group_ids.discard(0)
-            lines = [self.group_to_variable_name(g) + " = 1;" for g in group_ids]
-            lines = "\n".join(lines)
+            lines = "\n".join([
+                self.group_to_variable_name(g) + " = 1;"
+                for g in group_ids
+            ])
 
             s = """\
     case {count}:
@@ -2692,10 +2698,10 @@ class CConverter(metaclass=CConverterAutoRegister):
     """
 
     # The C name to use for this variable.
-    name: str | None = None
+    name: str
 
     # The Python name to use for this variable.
-    py_name: str | None = None
+    py_name: str
 
     # The C type to use for this variable.
     # 'type' should be a Python string specifying the type, e.g. "int".
@@ -2858,7 +2864,11 @@ class CConverter(metaclass=CConverterAutoRegister):
         if self.length:
             data.impl_parameters.append("Py_ssize_t " + self.length_name())
 
-    def _render_non_self(self, parameter, data):
+    def _render_non_self(
+            self,
+            parameter: Parameter,
+            data: CRenderData
+    ) -> None:
         self.parameter = parameter
         name = self.name
 
@@ -2911,31 +2921,30 @@ class CConverter(metaclass=CConverterAutoRegister):
         self._render_self(parameter, data)
         self._render_non_self(parameter, data)
 
-    def length_name(self):
+    def length_name(self) -> str:
         """Computes the name of the associated "length" variable."""
-        if not self.length:
-            return None
+        assert self.length is not None
         return self.parser_name + "_length"
 
     # Why is this one broken out separately?
     # For "positional-only" function parsing,
     # which generates a bunch of PyArg_ParseTuple calls.
-    def parse_argument(self, list):
+    def parse_argument(self, args: list[str]) -> None:
         assert not (self.converter and self.encoding)
         if self.format_unit == 'O&':
             assert self.converter
-            list.append(self.converter)
+            args.append(self.converter)
 
         if self.encoding:
-            list.append(c_repr(self.encoding))
+            args.append(c_repr(self.encoding))
         elif self.subclass_of:
-            list.append(self.subclass_of)
+            args.append(self.subclass_of)
 
         s = ("&" if self.parse_by_reference else "") + self.name
-        list.append(s)
+        args.append(s)
 
         if self.length:
-            list.append("&" + self.length_name())
+            args.append("&" + self.length_name())
 
     #
     # All the functions after here are intended as extension points.
@@ -3060,7 +3069,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         pass
 
     @property
-    def parser_name(self):
+    def parser_name(self) -> str:
         if self.name in CLINIC_PREFIXED_ARGS: # bpo-39741
             return CLINIC_PREFIX + self.name
         else:
@@ -4275,7 +4284,7 @@ class IndentStack:
         if not self.indents:
             fail('IndentStack expected indents, but none are defined.')
 
-    def measure(self, line):
+    def measure(self, line: str) -> int:
         """
         Returns the length of the line's margin.
         """
@@ -4289,7 +4298,7 @@ class IndentStack:
             return self.indents[-1]
         return len(line) - len(stripped)
 
-    def infer(self, line):
+    def infer(self, line: str) -> int:
         """
         Infer what is now the current margin based on this line.
         Returns:
@@ -4322,19 +4331,19 @@ class IndentStack:
         return outdent_count
 
     @property
-    def depth(self):
+    def depth(self) -> int:
         """
         Returns how many margins are currently defined.
         """
         return len(self.indents)
 
-    def indent(self, line):
+    def indent(self, line: str) -> str:
         """
         Indents a line by the currently defined margin.
         """
         return self.margin + line
 
-    def dedent(self, line):
+    def dedent(self, line: str) -> str:
         """
         Dedents a line by the currently defined margin.
         (The inverse of 'indent'.)

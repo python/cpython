@@ -2347,11 +2347,11 @@ Porting to Python 3.11
     #endif
 
 * The :c:func:`PyType_Ready` function now raises an error if a type is defined
-  with the :const:`Py_TPFLAGS_HAVE_GC` flag set but has no traverse function
+  with the :c:macro:`Py_TPFLAGS_HAVE_GC` flag set but has no traverse function
   (:c:member:`PyTypeObject.tp_traverse`).
   (Contributed by Victor Stinner in :issue:`44263`.)
 
-* Heap types with the :const:`Py_TPFLAGS_IMMUTABLETYPE` flag can now inherit
+* Heap types with the :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` flag can now inherit
   the :pep:`590` vectorcall protocol.  Previously, this was only possible for
   :ref:`static types <static-types>`.
   (Contributed by Erlend E. Aasland in :issue:`43908`)

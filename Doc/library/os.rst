@@ -4308,7 +4308,7 @@ written in Python, such as a mail server's external command delivery program.
    specified. If the value specified is 0, the child's process group ID will be
    made the same as its process ID. If the value of *setpgroup* is not set, the
    child will inherit the parent's process group ID. This argument corresponds
-   to the C library :c:data:`POSIX_SPAWN_SETPGROUP` flag.
+   to the C library :c:macro:`POSIX_SPAWN_SETPGROUP` flag.
 
    If the *resetids* argument is ``True`` it will reset the effective UID and
    GID of the child to the real UID and GID of the parent process. If the
@@ -4316,27 +4316,27 @@ written in Python, such as a mail server's external command delivery program.
    the parent. In either case, if the set-user-ID and set-group-ID permission
    bits are enabled on the executable file, their effect will override the
    setting of the effective UID and GID. This argument corresponds to the C
-   library :c:data:`POSIX_SPAWN_RESETIDS` flag.
+   library :c:macro:`POSIX_SPAWN_RESETIDS` flag.
 
    If the *setsid* argument is ``True``, it will create a new session ID
-   for ``posix_spawn``. *setsid* requires :c:data:`POSIX_SPAWN_SETSID`
-   or :c:data:`POSIX_SPAWN_SETSID_NP` flag. Otherwise, :exc:`NotImplementedError`
+   for ``posix_spawn``. *setsid* requires :c:macro:`POSIX_SPAWN_SETSID`
+   or :c:macro:`POSIX_SPAWN_SETSID_NP` flag. Otherwise, :exc:`NotImplementedError`
    is raised.
 
    The *setsigmask* argument will set the signal mask to the signal set
    specified. If the parameter is not used, then the child inherits the
    parent's signal mask. This argument corresponds to the C library
-   :c:data:`POSIX_SPAWN_SETSIGMASK` flag.
+   :c:macro:`POSIX_SPAWN_SETSIGMASK` flag.
 
    The *sigdef* argument will reset the disposition of all signals in the set
    specified. This argument corresponds to the C library
-   :c:data:`POSIX_SPAWN_SETSIGDEF` flag.
+   :c:macro:`POSIX_SPAWN_SETSIGDEF` flag.
 
    The *scheduler* argument must be a tuple containing the (optional) scheduler
    policy and an instance of :class:`sched_param` with the scheduler parameters.
    A value of ``None`` in the place of the scheduler policy indicates that is
    not being provided. This argument is a combination of the C library
-   :c:data:`POSIX_SPAWN_SETSCHEDPARAM` and :c:data:`POSIX_SPAWN_SETSCHEDULER`
+   :c:macro:`POSIX_SPAWN_SETSCHEDPARAM` and :c:macro:`POSIX_SPAWN_SETSCHEDULER`
    flags.
 
    .. audit-event:: os.posix_spawn path,argv,env os.posix_spawn
