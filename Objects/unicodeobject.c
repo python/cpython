@@ -15189,10 +15189,13 @@ init_fs_codec(PyInterpreterState *interp)
 
     /* Set Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors
        global configuration variables. */
-    if (_Py_SetFileSystemEncoding(fs_codec->encoding,
-                                  fs_codec->errors) < 0) {
-        PyErr_NoMemory();
-        return -1;
+    if (_Py_IsMainInterpreter(interp)) {
+
+        if (_Py_SetFileSystemEncoding(fs_codec->encoding,
+                                      fs_codec->errors) < 0) {
+            PyErr_NoMemory();
+            return -1;
+        }
     }
     return 0;
 }
