@@ -302,7 +302,7 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
     unsigned char *page = (unsigned char *)((uintptr_t)memory & ~(page_size - 1));
     size_t page_nbytes = memory + nbytes - page;
 #ifdef MS_WINDOWS
-    DWORD old = PAGE_READWRITE;
+    DWORD old;
     if (!VirtualProtect(page, page_nbytes, PAGE_READWRITE, &old)) {
         int code = GetLastError();
 #else
@@ -336,7 +336,6 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         head += stencil->nbytes;
     };
 #ifdef MS_WINDOWS
-    DWORD old = PAGE_READWRITE;
     if (!VirtualProtect(page, page_nbytes, PAGE_EXECUTE_READ, &old)) {
         int code = GetLastError();
 #else
