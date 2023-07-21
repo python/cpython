@@ -1299,7 +1299,7 @@ the user settings on the machine running the codec.
 
    Encode the Unicode object using the specified code page and return a Python
    bytes object.  Return ``NULL`` if an exception was raised by the codec. Use
-   :c:data:`CP_ACP` code page to get the MBCS encoder.
+   :c:macro:`CP_ACP` code page to get the MBCS encoder.
 
    .. versionadded:: 3.3
 
@@ -1418,11 +1418,11 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    Rich compare two Unicode strings and return one of the following:
 
    * ``NULL`` in case an exception was raised
-   * :const:`Py_True` or :const:`Py_False` for successful comparisons
-   * :const:`Py_NotImplemented` in case the type combination is unknown
+   * :c:data:`Py_True` or :c:data:`Py_False` for successful comparisons
+   * :c:data:`Py_NotImplemented` in case the type combination is unknown
 
-   Possible values for *op* are :const:`Py_GT`, :const:`Py_GE`, :const:`Py_EQ`,
-   :const:`Py_NE`, :const:`Py_LT`, and :const:`Py_LE`.
+   Possible values for *op* are :c:macro:`Py_GT`, :c:macro:`Py_GE`, :c:macro:`Py_EQ`,
+   :c:macro:`Py_NE`, :c:macro:`Py_LT`, and :c:macro:`Py_LE`.
 
 
 .. c:function:: PyObject* PyUnicode_Format(PyObject *format, PyObject *args)

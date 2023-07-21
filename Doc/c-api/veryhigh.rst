@@ -12,8 +12,8 @@ file or a buffer, but they will not let you interact in a more detailed way with
 the interpreter.
 
 Several of these functions accept a start symbol from the grammar as a
-parameter.  The available start symbols are :const:`Py_eval_input`,
-:const:`Py_file_input`, and :const:`Py_single_input`.  These are described
+parameter.  The available start symbols are :c:data:`Py_eval_input`,
+:c:data:`Py_file_input`, and :c:data:`Py_single_input`.  These are described
 following the functions which accept them as parameters.
 
 Note also that several of these functions take :c:expr:`FILE*` parameters.  One
@@ -256,8 +256,8 @@ the same library that the Python runtime is using.
 
    Parse and compile the Python source code in *str*, returning the resulting code
    object.  The start token is given by *start*; this can be used to constrain the
-   code which can be compiled and should be :const:`Py_eval_input`,
-   :const:`Py_file_input`, or :const:`Py_single_input`.  The filename specified by
+   code which can be compiled and should be :c:data:`Py_eval_input`,
+   :c:data:`Py_file_input`, or :c:data:`Py_single_input`.  The filename specified by
    *filename* is used to construct the code object and may appear in tracebacks or
    :exc:`SyntaxError` exception messages.  This returns ``NULL`` if the code
    cannot be parsed or compiled.

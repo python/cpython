@@ -1396,7 +1396,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    function does not steal any references to *exc*. To prevent naive misuse, you
    must write your own C extension to call this.  Must be called with the GIL held.
    Returns the number of thread states modified; this is normally one, but will be
-   zero if the thread id isn't found.  If *exc* is :const:`NULL`, the pending
+   zero if the thread id isn't found.  If *exc* is ``NULL``, the pending
    exception (if any) for the thread is cleared. This raises no exceptions.
 
    .. versionchanged:: 3.7
@@ -1675,32 +1675,32 @@ Python-level trace functions in previous versions.
    The type of the trace function registered using :c:func:`PyEval_SetProfile` and
    :c:func:`PyEval_SetTrace`. The first parameter is the object passed to the
    registration function as *obj*, *frame* is the frame object to which the event
-   pertains, *what* is one of the constants :const:`PyTrace_CALL`,
-   :const:`PyTrace_EXCEPTION`, :const:`PyTrace_LINE`, :const:`PyTrace_RETURN`,
-   :const:`PyTrace_C_CALL`, :const:`PyTrace_C_EXCEPTION`, :const:`PyTrace_C_RETURN`,
-   or :const:`PyTrace_OPCODE`, and *arg* depends on the value of *what*:
+   pertains, *what* is one of the constants :c:data:`PyTrace_CALL`,
+   :c:data:`PyTrace_EXCEPTION`, :c:data:`PyTrace_LINE`, :c:data:`PyTrace_RETURN`,
+   :c:data:`PyTrace_C_CALL`, :c:data:`PyTrace_C_EXCEPTION`, :c:data:`PyTrace_C_RETURN`,
+   or :c:data:`PyTrace_OPCODE`, and *arg* depends on the value of *what*:
 
-   +------------------------------+----------------------------------------+
-   | Value of *what*              | Meaning of *arg*                       |
-   +==============================+========================================+
-   | :const:`PyTrace_CALL`        | Always :c:data:`Py_None`.              |
-   +------------------------------+----------------------------------------+
-   | :const:`PyTrace_EXCEPTION`   | Exception information as returned by   |
-   |                              | :func:`sys.exc_info`.                  |
-   +------------------------------+----------------------------------------+
-   | :const:`PyTrace_LINE`        | Always :c:data:`Py_None`.              |
-   +------------------------------+----------------------------------------+
-   | :const:`PyTrace_RETURN`      | Value being returned to the caller,    |
-   |                              | or ``NULL`` if caused by an exception. |
-   +------------------------------+----------------------------------------+
-   | :const:`PyTrace_C_CALL`      | Function object being called.          |
-   +------------------------------+----------------------------------------+
-   | :const:`PyTrace_C_EXCEPTION` | Function object being called.          |
-   +------------------------------+----------------------------------------+
-   | :const:`PyTrace_C_RETURN`    | Function object being called.          |
-   +------------------------------+----------------------------------------+
-   | :const:`PyTrace_OPCODE`      | Always :c:data:`Py_None`.              |
-   +------------------------------+----------------------------------------+
+   +-------------------------------+----------------------------------------+
+   | Value of *what*               | Meaning of *arg*                       |
+   +===============================+========================================+
+   | :c:data:`PyTrace_CALL`        | Always :c:data:`Py_None`.              |
+   +-------------------------------+----------------------------------------+
+   | :c:data:`PyTrace_EXCEPTION`   | Exception information as returned by   |
+   |                               | :func:`sys.exc_info`.                  |
+   +-------------------------------+----------------------------------------+
+   | :c:data:`PyTrace_LINE`        | Always :c:data:`Py_None`.              |
+   +-------------------------------+----------------------------------------+
+   | :c:data:`PyTrace_RETURN`      | Value being returned to the caller,    |
+   |                               | or ``NULL`` if caused by an exception. |
+   +-------------------------------+----------------------------------------+
+   | :c:data:`PyTrace_C_CALL`      | Function object being called.          |
+   +-------------------------------+----------------------------------------+
+   | :c:data:`PyTrace_C_EXCEPTION` | Function object being called.          |
+   +-------------------------------+----------------------------------------+
+   | :c:data:`PyTrace_C_RETURN`    | Function object being called.          |
+   +-------------------------------+----------------------------------------+
+   | :c:data:`PyTrace_OPCODE`      | Always :c:data:`Py_None`.              |
+   +-------------------------------+----------------------------------------+
 
 .. c:var:: int PyTrace_CALL
 
@@ -1767,8 +1767,8 @@ Python-level trace functions in previous versions.
    function as its first parameter, and may be any Python object, or ``NULL``.  If
    the profile function needs to maintain state, using a different value for *obj*
    for each thread provides a convenient and thread-safe place to store it.  The
-   profile function is called for all monitored events except :const:`PyTrace_LINE`
-   :const:`PyTrace_OPCODE` and :const:`PyTrace_EXCEPTION`.
+   profile function is called for all monitored events except :c:data:`PyTrace_LINE`
+   :c:data:`PyTrace_OPCODE` and :c:data:`PyTrace_EXCEPTION`.
 
    See also the :func:`sys.setprofile` function.
 
@@ -1793,8 +1793,8 @@ Python-level trace functions in previous versions.
    :c:func:`PyEval_SetProfile`, except the tracing function does receive line-number
    events and per-opcode events, but does not receive any event related to C function
    objects being called.  Any trace function registered using :c:func:`PyEval_SetTrace`
-   will not receive :const:`PyTrace_C_CALL`, :const:`PyTrace_C_EXCEPTION` or
-   :const:`PyTrace_C_RETURN` as a value for the *what* parameter.
+   will not receive :c:data:`PyTrace_C_CALL`, :c:data:`PyTrace_C_EXCEPTION` or
+   :c:data:`PyTrace_C_RETURN` as a value for the *what* parameter.
 
    See also the :func:`sys.settrace` function.
 

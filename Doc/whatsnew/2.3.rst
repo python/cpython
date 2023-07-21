@@ -1474,7 +1474,7 @@ complete list of changes, or look through the CVS logs for all the details.
 * On Windows, the :mod:`socket` module now ships with Secure  Sockets Layer
   (SSL) support.
 
-* The value of the C :const:`PYTHON_API_VERSION` macro is now exposed at the
+* The value of the C :c:macro:`PYTHON_API_VERSION` macro is now exposed at the
   Python level as ``sys.api_version``.  The current exception can be cleared by
   calling the new :func:`sys.exc_clear` function.
 
@@ -1899,10 +1899,10 @@ Changes to Python's build process and to the C API include:
 
 * The :c:func:`PyArg_NoArgs` macro is now deprecated, and code that uses it
   should be changed.  For Python 2.2 and later, the method definition table can
-  specify the :const:`METH_NOARGS` flag, signalling that there are no arguments,
+  specify the :c:macro:`METH_NOARGS` flag, signalling that there are no arguments,
   and the argument checking can then be removed.  If compatibility with pre-2.2
   versions of Python is important, the code could use ``PyArg_ParseTuple(args,
-  "")`` instead, but this will be slower than using :const:`METH_NOARGS`.
+  "")`` instead, but this will be slower than using :c:macro:`METH_NOARGS`.
 
 * :c:func:`PyArg_ParseTuple` accepts new format characters for various sizes of
   unsigned integers: ``B`` for :c:expr:`unsigned char`, ``H`` for :c:expr:`unsigned
@@ -1918,7 +1918,7 @@ Changes to Python's build process and to the C API include:
   seconds, according to one measurement).
 
 * It's now possible to define class and static methods for a C extension type by
-  setting either the :const:`METH_CLASS` or :const:`METH_STATIC` flags in a
+  setting either the :c:macro:`METH_CLASS` or :c:macro:`METH_STATIC` flags in a
   method's :c:type:`PyMethodDef` structure.
 
 * Python now includes a copy of the Expat XML parser's source code, removing any

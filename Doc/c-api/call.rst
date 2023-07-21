@@ -59,12 +59,12 @@ This bears repeating:
 
 .. versionchanged:: 3.12
 
-   The :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag is now removed from a class
+   The :c:macro:`Py_TPFLAGS_HAVE_VECTORCALL` flag is now removed from a class
    when the class's :py:meth:`~object.__call__` method is reassigned.
    (This internally sets :c:member:`~PyTypeObject.tp_call` only, and thus
    may make it behave differently than the vectorcall function.)
    In earlier Python versions, vectorcall should only be used with
-   :const:`immutable <Py_TPFLAGS_IMMUTABLETYPE>` or static types.
+   :c:macro:`immutable <Py_TPFLAGS_IMMUTABLETYPE>` or static types.
 
 A class should not implement vectorcall if that would be slower
 than *tp_call*. For example, if the callee needs to convert
@@ -72,7 +72,7 @@ the arguments to an args tuple and kwargs dict anyway, then there is no point
 in implementing vectorcall.
 
 Classes can implement the vectorcall protocol by enabling the
-:const:`Py_TPFLAGS_HAVE_VECTORCALL` flag and setting
+:c:macro:`Py_TPFLAGS_HAVE_VECTORCALL` flag and setting
 :c:member:`~PyTypeObject.tp_vectorcall_offset` to the offset inside the
 object structure where a *vectorcallfunc* appears.
 This is a pointer to a function with the following signature:
@@ -84,7 +84,7 @@ This is a pointer to a function with the following signature:
    values of the keyword arguments.
    This can be *NULL* if there are no arguments.
 - *nargsf* is the number of positional arguments plus possibly the
-   :const:`PY_VECTORCALL_ARGUMENTS_OFFSET` flag.
+   :c:macro:`PY_VECTORCALL_ARGUMENTS_OFFSET` flag.
    To get the actual number of positional arguments from *nargsf*,
    use :c:func:`PyVectorcall_NARGS`.
 - *kwnames* is a tuple containing the names of the keyword arguments;
@@ -93,7 +93,7 @@ This is a pointer to a function with the following signature:
    and they must be unique.
    If there are no keyword arguments, then *kwnames* can instead be *NULL*.
 
-.. data:: PY_VECTORCALL_ARGUMENTS_OFFSET
+.. c:macro:: PY_VECTORCALL_ARGUMENTS_OFFSET
 
    If this flag is set in a vectorcall *nargsf* argument, the callee is allowed
    to temporarily change ``args[-1]``. In other words, *args* points to
@@ -104,7 +104,7 @@ This is a pointer to a function with the following signature:
    ``args[0]`` may be changed.
 
    Whenever they can do so cheaply (without additional allocation), callers
-   are encouraged to use :const:`PY_VECTORCALL_ARGUMENTS_OFFSET`.
+   are encouraged to use :c:macro:`PY_VECTORCALL_ARGUMENTS_OFFSET`.
    Doing so will allow callables such as bound methods to make their onward
    calls (which include a prepended *self* argument) very efficiently.
 
@@ -174,7 +174,7 @@ Vectorcall Support API
 
    This is a specialized function, intended to be put in the
    :c:member:`~PyTypeObject.tp_call` slot or be used in an implementation of ``tp_call``.
-   It does not check the :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag
+   It does not check the :c:macro:`Py_TPFLAGS_HAVE_VECTORCALL` flag
    and it does not fall back to ``tp_call``.
 
    .. versionadded:: 3.8
@@ -392,11 +392,11 @@ please see individual documentation for details.
    *args[0]*, and the *args* array starting at *args[1]* represents the arguments
    of the call. There must be at least one positional argument.
    *nargsf* is the number of positional arguments including *args[0]*,
-   plus :const:`PY_VECTORCALL_ARGUMENTS_OFFSET` if the value of ``args[0]`` may
+   plus :c:macro:`PY_VECTORCALL_ARGUMENTS_OFFSET` if the value of ``args[0]`` may
    temporarily be changed. Keyword arguments can be passed just like in
    :c:func:`PyObject_Vectorcall`.
 
-   If the object has the :const:`Py_TPFLAGS_METHOD_DESCRIPTOR` feature,
+   If the object has the :c:macro:`Py_TPFLAGS_METHOD_DESCRIPTOR` feature,
    this will call the unbound method object with the full
    *args* vector as arguments.
 
