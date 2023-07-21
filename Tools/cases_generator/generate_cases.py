@@ -17,6 +17,7 @@ import lexer as lx
 import parser
 from parser import StackEffect
 
+
 HERE = os.path.dirname(__file__)
 ROOT = os.path.join(HERE, "../..")
 THIS = os.path.relpath(__file__, ROOT).replace(os.path.sep, posixpath.sep)
@@ -1153,10 +1154,15 @@ class Analyzer:
         self.out.emit("")
 
     def from_source_files(self) -> str:
-        paths = f"\n{self.out.comment}   ".join(
-            prettify_filename(filename)
-            for filename in self.input_filenames
-        )
+        filenames = []
+        for filename in self.input_filenames:
+            try:
+                filename = os.path.relpath(filename, ROOT)
+            except ValueError:
+            # May happen on Windows if root and temp on different volumes
+                pass
+            filenames.append(filename)
+        paths = f"\n{self.out.comment}   ".join(filenames)
         return f"{self.out.comment} from:\n{self.out.comment}   {paths}\n"
 
     def write_provenance_header(self):
@@ -1506,6 +1512,8 @@ class Analyzer:
                             self.out.emit("")
                             with self.out.block(f"case {thing.name}:"):
                                 instr.write(self.out, tier=TIER_TWO)
+                                if instr.check_eval_breaker:
+                                    self.out.emit("CHECK_EVAL_BREAKER();")
                                 self.out.emit("break;")
                         # elif instr.kind != "op":
                         #     print(f"NOTE: {thing.name} is not a viable uop")

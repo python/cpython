@@ -648,7 +648,7 @@ PEP 421: Adding sys.implementation
 
 A new attribute on the :mod:`sys` module exposes details specific to the
 implementation of the currently running interpreter.  The initial set of
-attributes on :attr:`sys.implementation` are ``name``, ``version``,
+attributes on :data:`sys.implementation` are ``name``, ``version``,
 ``hexversion``, and ``cache_tag``.
 
 The intention of ``sys.implementation`` is to consolidate into one namespace
@@ -719,7 +719,7 @@ and does not enforce any method requirements.
 
 In terms of finders, :class:`importlib.machinery.FileFinder` exposes the
 mechanism used to search for source and bytecode files of a module. Previously
-this class was an implicit member of :attr:`sys.path_hooks`.
+this class was an implicit member of :data:`sys.path_hooks`.
 
 For loaders, the new abstract base class :class:`importlib.abc.FileLoader` helps
 write a loader that uses the file system as the storage mechanism for a module's
@@ -735,7 +735,7 @@ provide the full name of the module now instead of just the tail end of the
 module's name.
 
 The :func:`importlib.invalidate_caches` function will now call the method with
-the same name on all finders cached in :attr:`sys.path_importer_cache` to help
+the same name on all finders cached in :data:`sys.path_importer_cache` to help
 clean up any stored state as necessary.
 
 Visible Changes
@@ -745,8 +745,8 @@ For potential required changes to code, see the `Porting Python code`_
 section.
 
 Beyond the expanse of what :mod:`importlib` now exposes, there are other
-visible changes to import. The biggest is that :attr:`sys.meta_path` and
-:attr:`sys.path_hooks` now store all of the meta path finders and path entry
+visible changes to import. The biggest is that :data:`sys.meta_path` and
+:data:`sys.path_hooks` now store all of the meta path finders and path entry
 hooks used by import.  Previously the finders were implicit and hidden within
 the C code of import instead of being directly exposed. This means that one can
 now easily remove or change the order of the various finders to fit one's needs.
@@ -761,9 +761,9 @@ Loaders are also now expected to set the ``__package__`` attribute from
 :pep:`366`. Once again, import itself is already setting this on all loaders
 from :mod:`importlib` and import itself is setting the attribute post-load.
 
-``None`` is now inserted into :attr:`sys.path_importer_cache` when no finder
-can be found on :attr:`sys.path_hooks`. Since :class:`!imp.NullImporter` is not
-directly exposed on :attr:`sys.path_hooks` it could no longer be relied upon to
+``None`` is now inserted into :data:`sys.path_importer_cache` when no finder
+can be found on :data:`sys.path_hooks`. Since :class:`!imp.NullImporter` is not
+directly exposed on :data:`sys.path_hooks` it could no longer be relied upon to
 always be available to use as a value representing no finder found.
 
 All other changes relate to semantic changes which should be taken into
@@ -842,7 +842,7 @@ Builtin functions and types
 
 * :func:`open` gets a new *opener* parameter: the underlying file descriptor
   for the file object is then obtained by calling *opener* with (*file*,
-  *flags*). It can be used to use custom flags like :data:`os.O_CLOEXEC` for
+  *flags*). It can be used to use custom flags like :const:`os.O_CLOEXEC` for
   example. The ``'x'`` mode was added: open for exclusive creation, failing if
   the file already exists.
 * :func:`print`: added the *flush* keyword argument. If the *flush* keyword
@@ -1127,7 +1127,7 @@ Features
 
 * If Python is compiled without threads, the C version automatically
   disables the expensive thread local context machinery. In this case,
-  the variable :data:`~decimal.HAVE_THREADS` is set to ``False``.
+  the variable :const:`~decimal.HAVE_THREADS` is set to ``False``.
 
 API changes
 ~~~~~~~~~~~
@@ -1576,8 +1576,8 @@ os
 --
 
 * The :mod:`os` module has a new :func:`~os.pipe2` function that makes it
-  possible to create a pipe with :data:`~os.O_CLOEXEC` or
-  :data:`~os.O_NONBLOCK` flags set atomically. This is especially useful to
+  possible to create a pipe with :const:`~os.O_CLOEXEC` or
+  :const:`~os.O_NONBLOCK` flags set atomically. This is especially useful to
   avoid race conditions in multi-threaded programs.
 
 * The :mod:`os` module has a new :func:`~os.sendfile` function which provides
@@ -1691,9 +1691,9 @@ os
 * Some platforms now support additional constants for the :func:`~os.lseek`
   function, such as ``os.SEEK_HOLE`` and ``os.SEEK_DATA``.
 
-* New constants :data:`~os.RTLD_LAZY`, :data:`~os.RTLD_NOW`,
-  :data:`~os.RTLD_GLOBAL`, :data:`~os.RTLD_LOCAL`, :data:`~os.RTLD_NODELETE`,
-  :data:`~os.RTLD_NOLOAD`, and :data:`~os.RTLD_DEEPBIND` are available on
+* New constants :const:`~os.RTLD_LAZY`, :const:`~os.RTLD_NOW`,
+  :const:`~os.RTLD_GLOBAL`, :const:`~os.RTLD_LOCAL`, :const:`~os.RTLD_NODELETE`,
+  :const:`~os.RTLD_NOLOAD`, and :const:`~os.RTLD_DEEPBIND` are available on
   platforms that support them.   These are for use with the
   :func:`sys.setdlopenflags` function, and supersede the similar constants
   defined in :mod:`ctypes` and :mod:`DLFCN`.  (Contributed by Victor Stinner
@@ -1952,7 +1952,7 @@ ssl
 
 * You can query the SSL compression algorithm used by an SSL socket, thanks
   to its new :meth:`~ssl.SSLSocket.compression` method.  The new attribute
-  :attr:`~ssl.OP_NO_COMPRESSION` can be used to disable compression.
+  :const:`~ssl.OP_NO_COMPRESSION` can be used to disable compression.
   (Contributed by Antoine Pitrou in :issue:`13634`.)
 
 * Support has been added for the Next Protocol Negotiation extension using
@@ -1966,7 +1966,7 @@ ssl
 * The :func:`~ssl.get_server_certificate` function now supports IPv6.
   (Contributed by Charles-François Natali in :issue:`11811`.)
 
-* New attribute :attr:`~ssl.OP_CIPHER_SERVER_PREFERENCE` allows setting
+* New attribute :const:`~ssl.OP_CIPHER_SERVER_PREFERENCE` allows setting
   SSLv3 server sockets to use the server's cipher ordering preference rather
   than the client's (:issue:`13635`).
 
@@ -1995,7 +1995,7 @@ subprocess
 Command strings can now be bytes objects on posix platforms.  (Contributed by
 Victor Stinner in :issue:`8513`.)
 
-A new constant :data:`~subprocess.DEVNULL` allows suppressing output in a
+A new constant :const:`~subprocess.DEVNULL` allows suppressing output in a
 platform-independent fashion.  (Contributed by Ross Lagerwall in
 :issue:`5870`.)
 
@@ -2141,7 +2141,7 @@ New attribute :attr:`zlib.Decompress.eof` makes it possible to distinguish
 between a properly formed compressed stream and an incomplete or truncated one.
 (Contributed by Nadeem Vawda in :issue:`12646`.)
 
-New attribute :attr:`zlib.ZLIB_RUNTIME_VERSION` reports the version string of
+New attribute :const:`zlib.ZLIB_RUNTIME_VERSION` reports the version string of
 the underlying ``zlib`` library that is loaded at runtime.  (Contributed by
 Torsten Landschoff in :issue:`12306`.)
 
@@ -2378,16 +2378,16 @@ Porting Python code
 * :func:`__import__` no longer allows one to use an index value other than 0
   for top-level modules. E.g. ``__import__('sys', level=1)`` is now an error.
 
-* Because :attr:`sys.meta_path` and :attr:`sys.path_hooks` now have finders on
+* Because :data:`sys.meta_path` and :data:`sys.path_hooks` now have finders on
   them by default, you will most likely want to use :meth:`list.insert` instead
   of :meth:`list.append` to add to those lists.
 
-* Because ``None`` is now inserted into :attr:`sys.path_importer_cache`, if you
+* Because ``None`` is now inserted into :data:`sys.path_importer_cache`, if you
   are clearing out entries in the dictionary of paths that do not have a
   finder, you will need to remove keys paired with values of ``None`` **and**
   :class:`!imp.NullImporter` to be backwards-compatible. This will lead to extra
   overhead on older versions of Python that re-insert ``None`` into
-  :attr:`sys.path_importer_cache` where it represents the use of implicit
+  :data:`sys.path_importer_cache` where it represents the use of implicit
   finders, but semantically it should not change anything.
 
 * :class:`!importlib.abc.Finder` no longer specifies a ``find_module()`` abstract
@@ -2445,7 +2445,7 @@ Porting Python code
   error instead of sleeping forever.  It has always raised an error on posix.
 
 * The ``ast.__version__`` constant has been removed.  If you need to
-  make decisions affected by the AST version, use :attr:`sys.version_info`
+  make decisions affected by the AST version, use :data:`sys.version_info`
   to make the decision.
 
 * Code that used to work around the fact that the :mod:`threading` module used

@@ -1305,7 +1305,7 @@ Zackery Spytz in :issue:`25451`.)
 time
 ----
 
-Added new clock :data:`~time.CLOCK_UPTIME_RAW` for macOS 10.12.
+Added new clock :const:`~time.CLOCK_UPTIME_RAW` for macOS 10.12.
 (Contributed by Joannah Nanjekye in :issue:`35702`.)
 
 
@@ -1839,7 +1839,7 @@ Changes in Python behavior
   classes will affect their string representation.
   (Contributed by Serhiy Storchaka in :issue:`36793`.)
 
-* On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
+* On AIX, :data:`sys.platform` doesn't contain the major version anymore.
   It is always ``'aix'``, instead of ``'aix3'`` .. ``'aix7'``.  Since
   older Python versions include the version number, so it is recommended to
   always use ``sys.platform.startswith('aix')``.
@@ -2116,7 +2116,7 @@ Changes in the C API
   extension types across feature releases, anymore.  A :c:type:`PyTypeObject`
   exported by a third-party extension module is supposed to have all the
   slots expected in the current Python version, including
-  :c:member:`~PyTypeObject.tp_finalize` (:const:`Py_TPFLAGS_HAVE_FINALIZE`
+  :c:member:`~PyTypeObject.tp_finalize` (:c:macro:`Py_TPFLAGS_HAVE_FINALIZE`
   is not checked anymore before reading :c:member:`~PyTypeObject.tp_finalize`).
 
   (Contributed by Antoine Pitrou in :issue:`32388`.)
