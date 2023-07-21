@@ -32,6 +32,9 @@
     #include <sys/mman.h>
     #define LOOKUP(SYMBOL) dlsym(RTLD_DEFAULT, (SYMBOL))
 #endif
+#ifdef __APPLE__
+    #include <libkern/OSCacheControl.h>
+#endif
 
 #define MB (1 << 20)
 #define JIT_POOL_SIZE  (128 * MB)
@@ -43,13 +46,14 @@ static size_t page_size;
 static unsigned char *
 alloc(size_t size)
 {
-    if (JIT_POOL_SIZE < pool_head + size) {
+    size += (16 - (size & 15)) & 15;
+    if (JIT_POOL_SIZE - page_size < pool_head + size) {
         return NULL;
     }
     unsigned char *memory = pool + pool_head;
-    pool_head += size + ((8 - (size & 7)) & 7);
-    assert(((uintptr_t)pool_head & 7) == 0);
-    assert(((uintptr_t)memory & 7) == 0);
+    pool_head += size;
+    assert(((uintptr_t)(pool + pool_head) & 15) == 0);
+    assert(((uintptr_t)memory & 15) == 0);
     return memory;
 }
 
@@ -265,7 +269,7 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         pool_head = (page_size - ((uintptr_t)pool & (page_size - 1))) & (page_size - 1);
         assert(((uintptr_t)(pool + pool_head) & (page_size - 1)) == 0);
 #ifdef __APPLE__
-        void *mapped = mmap(pool + pool_head, JIT_POOL_SIZE - pool_head,
+        void *mapped = mmap(pool + pool_head, JIT_POOL_SIZE - pool_head - page_size,
                             PROT_READ | PROT_WRITE,
                             MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE, -1, 0);
         if (mapped == MAP_FAILED) {
@@ -273,7 +277,7 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
             PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, errno);
             return NULL;
         }
-        assert(memory == mapped);
+        assert(mapped == pool + pool_head);
 #endif
         initialized = 1;
     }
@@ -343,6 +347,9 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, code);
         return NULL;
     }
+#ifdef __APPLE__
+    sys_icache_invalidate(memory, nbytes);
+#endif
     // Wow, done already?
     assert(memory + nbytes == head);
     return (_PyJITFunction)memory;
