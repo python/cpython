@@ -34,7 +34,7 @@
 #endif
 
 #define MB (1 << 20)
-#define JIT_POOL_SIZE  (256 * MB)
+#define JIT_POOL_SIZE  (128 * MB)
 
 static unsigned char pool[JIT_POOL_SIZE];
 static size_t pool_head;
@@ -43,17 +43,13 @@ static size_t page_size;
 static unsigned char *
 alloc(size_t size)
 {
-    // XXX: We lose 2/3 of our memory to padding. We can probably do more than
-    // one trace per page:
-    assert(page_size);
-    assert((page_size & (page_size - 1)) == 0);
-    size_t padding = (page_size - ((uintptr_t)(pool + pool_head) & (page_size - 1))) & (page_size - 1);
-    if (JIT_POOL_SIZE < pool_head + padding + size) {
+    if (JIT_POOL_SIZE < pool_head + size) {
         return NULL;
     }
-    unsigned char *memory = pool + pool_head + padding;
-    assert(((uintptr_t)memory & (page_size - 1)) == 0);
-    pool_head += padding + size;
+    unsigned char *memory = pool + pool_head;
+    pool_head += size + ((8 - (size & 7)) & 7);
+    assert(((uintptr_t)pool_head & 7) == 0);
+    assert(((uintptr_t)memory & 7) == 0);
     return memory;
 }
 
@@ -264,6 +260,21 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
 #else
         page_size = sysconf(_SC_PAGESIZE);
 #endif
+        assert(page_size);
+        assert((page_size & (page_size - 1)) == 0);
+        pool_head = (page_size - ((uintptr_t)pool & (page_size - 1))) & (page_size - 1);
+        assert(((uintptr_t)(pool + pool_head) & (page_size - 1)) == 0);
+#ifdef __APPLE__
+        void *mapped = mmap(pool + pool_head, JIT_POOL_SIZE - pool_head,
+                            PROT_READ | PROT_WRITE,
+                            MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE, -1, 0);
+        if (mapped == MAP_FAILED) {
+            const char *w = "JIT unable to map fixed memory (%d)";
+            PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, errno);
+            return NULL;
+        }
+        assert(memory == mapped);
+#endif
         initialized = 1;
     }
     assert(initialized > 0);
@@ -284,16 +295,20 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         PyErr_WarnEx(PyExc_RuntimeWarning, "JIT out of memory", 0);
         return NULL;
     }
-#ifdef __APPLE__
-    void *mapped = mmap(memory, nbytes, PROT_READ | PROT_WRITE,
-                        MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE, -1, 0);
-    if (mapped == MAP_FAILED) {
-        const char *w = "JIT unable to map fixed memory (%d)";
-        PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, errno);
+    unsigned char *page = (unsigned char *)((uintptr_t)memory & ~(page_size - 1));
+    size_t page_nbytes = memory + nbytes - page;
+#ifdef MS_WINDOWS
+    DWORD old = PAGE_READWRITE;
+    if (!VirtualProtect(page, page_nbytes, PAGE_READWRITE, &old)) {
+        int code = GetLastError();
+#else
+    if (mprotect(page, page_nbytes, PROT_READ | PROT_WRITE)) {
+        int code = errno;
+#endif
+        const char *w = "JIT unable to map writable memory (%d)";
+        PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, code);
         return NULL;
     }
-    assert(memory == mapped);
-#endif
     unsigned char *head = memory;
     uintptr_t patches[] = GET_PATCHES();
     // First, the trampoline:
@@ -318,10 +333,10 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
     };
 #ifdef MS_WINDOWS
     DWORD old = PAGE_READWRITE;
-    if (!VirtualProtect(memory, nbytes, PAGE_EXECUTE_READ, &old)) {
+    if (!VirtualProtect(page, page_nbytes, PAGE_EXECUTE_READ, &old)) {
         int code = GetLastError();
 #else
-    if (mprotect(memory, nbytes, PROT_EXEC | PROT_READ)) {
+    if (mprotect(page, page_nbytes, PROT_EXEC | PROT_READ)) {
         int code = errno;
 #endif
         const char *w = "JIT unable to map executable memory (%d)";
