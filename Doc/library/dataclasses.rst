@@ -233,6 +233,18 @@ Module contents
 
      @dataclass
      class C:
+         mylist: Annotated[list[int], field(default_factory=list)]
+
+     c = C()
+     c.mylist += [1, 2, 3]
+
+    .. versionchanged:: 3.12
+
+   Prior to this, `field` had to be specified as the default value of the
+   class attribute, as in::
+
+     @dataclass
+     class C:
          mylist: list[int] = field(default_factory=list)
 
      c = C()
@@ -292,7 +304,24 @@ Module contents
 
     .. versionadded:: 3.10
 
-   If the default value of a field is specified by a call to
+   When using ``Annotated`` to provide a extra information for the field,
+   a ``default`` value can be specified as usual. For example::
+
+     @dataclass
+     class C:
+         x: int
+         y: Annotated[int, field(repr=False)]
+         z: Annotated[int, field(repr=False)] = 10
+         t: int = 20
+
+   .. versionchanged:: 3.12
+
+   The class attribute ``C.z`` will be ``10``, the class attribute
+   ``C.t`` will be ``20``, and the class attributes ``C.x`` and
+   ``C.y`` will not be set.
+
+   Ussing the previous way of assigning a :func:`field` to the attribute,
+   if the default value of a field is specified by a call to
    :func:`field()`, then the class attribute for this field will be
    replaced by the specified ``default`` value.  If no ``default`` is
    provided, then the class attribute will be deleted.  The intent is
@@ -308,9 +337,7 @@ Module contents
          z: int = field(repr=False, default=10)
          t: int = 20
 
-   The class attribute ``C.z`` will be ``10``, the class attribute
-   ``C.t`` will be ``20``, and the class attributes ``C.x`` and
-   ``C.y`` will not be set.
+   The result being the same as in the ``Annotated`` version above
 
 .. class:: Field
 
@@ -526,7 +553,7 @@ Post-init processing
      class C:
          a: float
          b: float
-         c: float = field(init=False)
+         c: Annotated[float, field(init=False)]
 
          def __post_init__(self):
              self.c = self.a + self.b
@@ -663,7 +690,7 @@ fields, and ``Base.x`` and ``D.z`` are regular fields::
   @dataclass
   class D(Base):
       z: int = 10
-      t: int = field(kw_only=True, default=0)
+      t: Annotated[int, field(kw_only=True] = 0
 
 The generated :meth:`~object.__init__` method for ``D`` will look like::
 
@@ -684,7 +711,7 @@ If a :func:`field` specifies a ``default_factory``, it is called with
 zero arguments when a default value for the field is needed.  For
 example, to create a new instance of a list, use::
 
-  mylist: list = field(default_factory=list)
+  mylist: Annotated[list, field(default_factory=list)]
 
 If a field is excluded from :meth:`~object.__init__` (using ``init=False``)
 and the field also specifies ``default_factory``, then the default
@@ -748,7 +775,7 @@ mutable types as default values for fields::
 
   @dataclass
   class D:
-      x: list = field(default_factory=list)
+      x: Annotated[list, field(default_factory=list)]
 
   assert D().x is not D().x
 

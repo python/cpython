@@ -694,6 +694,13 @@ def _is_initvar(a_type, dataclasses):
     return (a_type is dataclasses.InitVar
             or type(a_type) is dataclasses.InitVar)
 
+
+def _is_annotated(a_type, typing):
+    # This test uses a typing internal class, but it's the best way to
+    # test if this is Annotated.
+    return a_type is typing.Annotated or type(a_type) is typing._AnnotatedAlias
+
+
 def _is_kw_only(a_type, dataclasses):
     return a_type is dataclasses.KW_ONLY
 
@@ -763,16 +770,47 @@ def _get_field(cls, a_name, a_type, default_kw_only):
     # default_kw_only is the value of kw_only to use if there isn't a field()
     # that defines it.
 
+    typing = sys.modules.get('typing')  # detect typing early for Annotated
+
     # If the default value isn't derived from Field, then it's only a
     # normal default value.  Convert it to a Field().
     default = getattr(cls, a_name, MISSING)
+
+    # If the Field is in an Annotated typehint, it will be in ann_a_type. It will be
+    # uaed as a flag to skip the ClassVar check later
+    ann_a_type = None
+
     if isinstance(default, Field):
         f = default
     else:
         if isinstance(default, types.MemberDescriptorType):
             # This is a field in __slots__, so it has no default value.
             default = MISSING
-        f = field(default=default)
+
+        # Look early for Annotated, because it may host a `Field` definition,
+        # to be then used instead of creating a blank Field
+        f = None
+        if typing:
+            if _is_annotated(a_type, typing):
+                ann_a_type, *ann_args = typing.get_args(a_type)
+            elif isinstance(a_type, str) and \
+                 _is_type(a_type, cls, typing, typing.Annotated, _is_annotated):
+
+                # eval annotated string
+                br0, br1 = a_type.index("["), a_type.rindex("]")
+                eval_str = a_type[br0:br1].lstrip("[ ").rstrip(" ]")
+                ann_a_type, *ann_args = eval(eval_str)
+
+            if ann_a_type is not None:  # annotated detected - look for Field
+                for ann_arg in ann_args:
+                    if isinstance(ann_arg, Field):
+                        f = ann_arg  # reuse the field
+                        f.default = default  # record fetched default
+                        a_type = ann_a_type  # record real type
+                        break  # only 1st Field considered
+
+        if f is None:  # search for Annotated was not successful
+            f = field(default=default)
 
     # Only at this point do we know the name and the type.  Set them.
     f.name = a_name
@@ -797,8 +835,8 @@ def _get_field(cls, a_name, a_type, default_kw_only):
     # annotation to be a ClassVar.  So, only look for ClassVar if
     # typing has been imported by any module (not necessarily cls's
     # module).
-    typing = sys.modules.get('typing')
-    if typing:
+    # Do only do the check if the value was not annotated with a Field
+    if ann_a_type is None and typing:
         if (_is_classvar(a_type, typing)
             or (isinstance(f.type, str)
                 and _is_type(f.type, cls, typing, typing.ClassVar,
