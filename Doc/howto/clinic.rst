@@ -410,9 +410,8 @@ Let's dive in!
         Write a pickled representation of obj to the open file.
         [clinic start generated code]*/
 
-12. Save and close the file, then run ``make clinic``
-    to regenerate the Argument Clinic code.
-    With luck everything worked---your block now has output, and
+12. Save and close the file, then run ``Tools/clinic/clinic.py`` on
+    it.  With luck everything worked---your block now has output, and
     a :file:`.c.h` file has been generated! Reopen the file in your
     text editor to see::
 
@@ -476,7 +475,7 @@ Let's dive in!
 
     If any of these items differ in *any way*,
     adjust your Argument Clinic function specification and rerun
-    ``make clinic`` until they *are* the same.
+    ``Tools/clinic/clinic.py`` until they *are* the same.
 
 
 14. Notice that the last line of its output is the declaration
@@ -902,7 +901,7 @@ negative numbers.  You just can't do that with a legacy converter!
 Argument Clinic will show you all the converters it has
 available.  For each converter it'll show you all the parameters
 it accepts, along with the default value for each parameter.
-Just run ``./Tools/clinic/clinic.py --converters`` to see the full list.
+Just run ``Tools/clinic/clinic.py --converters`` to see the full list.
 
 
 How to use the ``Py_buffer`` converter
@@ -1121,7 +1120,7 @@ For all of these, return ``-1`` to indicate error.
 
 To see all the return converters Argument Clinic supports, along with
 their parameters (if any),
-just run ``./Tools/clinic/clinic.py --converters`` for the full list.
+just run ``Tools/clinic/clinic.py --converters`` for the full list.
 
 
 How to clone existing functions
