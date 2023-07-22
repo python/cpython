@@ -137,10 +137,10 @@ If the :term:`input` hasn't changed, the output won't change either.
 
    You should never modify the output of an Argument Clinic block,
    as any change will be lost in future Argument Clinic runs;
-   Argument Clinic willl detect an output checksum mismatch and regenerate the
+   Argument Clinic will detect an output checksum mismatch and regenerate the
    correct output.
    If you are not happy with the generated output,
-   change instead the input until it produces the output you want.
+   you should instead change the input until it produces the output you want.
 
 
 .. _clinic-reference:
@@ -165,7 +165,7 @@ Terminology
      This line marks the end of Argument Clinic input.
 
   checksum line
-     A line that looks like ``/*[clinic end generated code: ... */``.
+     A line that looks like ``/*[clinic end generated code: ...]*/``.
      (The three dots will be replaced by the actual checksum(s).)
      The checksum line marks the end of Argument Clinic generated code.
 
@@ -190,7 +190,7 @@ Terminology
 Command-line interface
 ----------------------
 
-The Argument Clinic :abbr:`CLI (Command Line Interface)` is typically used to
+The Argument Clinic :abbr:`CLI (Command-Line Interface)` is typically used to
 process a single source file, like this:
 
 .. code-block:: shell-session
