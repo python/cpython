@@ -1099,7 +1099,7 @@ Accessing values exported from dlls
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Some shared libraries not only export functions, they also export variables. An
-example in the Python library itself is the :c:data:`Py_Version`, Python
+example in the Python library itself is the :c:var:`Py_Version`, Python
 runtime version number encoded in a single constant integer.
 
 :mod:`ctypes` can access values like this with the :meth:`in_dll` class methods of
