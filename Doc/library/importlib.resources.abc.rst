@@ -89,8 +89,11 @@
 
 .. class:: Traversable
 
-    An object with a subset of pathlib.Path methods suitable for
+    An object with a subset of :class:`pathlib.Path` methods suitable for
     traversing directories and opening files.
+
+    For a representation of the object on the file-system, use
+    :meth:`importlib.resources.as_file`.
 
     .. versionadded:: 3.9
 
@@ -127,7 +130,7 @@
        suitable for reading (same as :attr:`pathlib.Path.open`).
 
        When opening as text, accepts encoding parameters such as those
-       accepted by :attr:`io.TextIOWrapper`.
+       accepted by :class:`io.TextIOWrapper`.
 
     .. method:: read_bytes()
 

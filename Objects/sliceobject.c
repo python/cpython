@@ -26,7 +26,17 @@ ellipsis_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyErr_SetString(PyExc_TypeError, "EllipsisType takes no arguments");
         return NULL;
     }
-    return Py_NewRef(Py_Ellipsis);
+    return Py_Ellipsis;
+}
+
+static void
+ellipsis_dealloc(PyObject *ellipsis)
+{
+    /* This should never get called, but we also don't want to SEGV if
+     * we accidentally decref Ellipsis out of existence. Instead,
+     * since Ellipsis is an immortal object, re-set the reference count.
+     */
+    _Py_SetImmortal(ellipsis);
 }
 
 static PyObject *
@@ -51,7 +61,7 @@ PyTypeObject PyEllipsis_Type = {
     "ellipsis",                         /* tp_name */
     0,                                  /* tp_basicsize */
     0,                                  /* tp_itemsize */
-    0, /*never called*/                 /* tp_dealloc */
+    ellipsis_dealloc,                   /* tp_dealloc */
     0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -89,7 +99,8 @@ PyTypeObject PyEllipsis_Type = {
 
 PyObject _Py_EllipsisObject = {
     _PyObject_EXTRA_INIT
-    1, &PyEllipsis_Type
+    { _Py_IMMORTAL_REFCNT },
+    &PyEllipsis_Type
 };
 
 
@@ -445,7 +456,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
         if (start == NULL)
             goto error;
 
-        if (_PyLong_Sign(start) < 0) {
+        if (_PyLong_IsNegative((PyLongObject *)start)) {
             /* start += length */
             PyObject *tmp = PyNumber_Add(start, length);
             Py_SETREF(start, tmp);
@@ -478,7 +489,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
         if (stop == NULL)
             goto error;
 
-        if (_PyLong_Sign(stop) < 0) {
+        if (_PyLong_IsNegative((PyLongObject *)stop)) {
             /* stop += length */
             PyObject *tmp = PyNumber_Add(stop, length);
             Py_SETREF(stop, tmp);
@@ -533,7 +544,7 @@ slice_indices(PySliceObject* self, PyObject* len)
     if (length == NULL)
         return NULL;
 
-    if (_PyLong_Sign(length) < 0) {
+    if (_PyLong_IsNegative((PyLongObject *)length)) {
         PyErr_SetString(PyExc_ValueError,
                         "length should not be negative");
         Py_DECREF(length);
@@ -628,6 +639,42 @@ slice_traverse(PySliceObject *v, visitproc visit, void *arg)
     return 0;
 }
 
+/* code based on tuplehash() of Objects/tupleobject.c */
+#if SIZEOF_PY_UHASH_T > 4
+#define _PyHASH_XXPRIME_1 ((Py_uhash_t)11400714785074694791ULL)
+#define _PyHASH_XXPRIME_2 ((Py_uhash_t)14029467366897019727ULL)
+#define _PyHASH_XXPRIME_5 ((Py_uhash_t)2870177450012600261ULL)
+#define _PyHASH_XXROTATE(x) ((x << 31) | (x >> 33))  /* Rotate left 31 bits */
+#else
+#define _PyHASH_XXPRIME_1 ((Py_uhash_t)2654435761UL)
+#define _PyHASH_XXPRIME_2 ((Py_uhash_t)2246822519UL)
+#define _PyHASH_XXPRIME_5 ((Py_uhash_t)374761393UL)
+#define _PyHASH_XXROTATE(x) ((x << 13) | (x >> 19))  /* Rotate left 13 bits */
+#endif
+
+static Py_hash_t
+slicehash(PySliceObject *v)
+{
+    Py_uhash_t acc = _PyHASH_XXPRIME_5;
+#define _PyHASH_SLICE_PART(com) { \
+    Py_uhash_t lane = PyObject_Hash(v->com); \
+    if(lane == (Py_uhash_t)-1) { \
+        return -1; \
+    } \
+    acc += lane * _PyHASH_XXPRIME_2; \
+    acc = _PyHASH_XXROTATE(acc); \
+    acc *= _PyHASH_XXPRIME_1; \
+}
+    _PyHASH_SLICE_PART(start);
+    _PyHASH_SLICE_PART(stop);
+    _PyHASH_SLICE_PART(step);
+#undef _PyHASH_SLICE_PART
+    if(acc == (Py_uhash_t)-1) {
+        return 1546275796;
+    }
+    return acc;
+}
+
 PyTypeObject PySlice_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "slice",                    /* Name of this type */
@@ -642,7 +689,7 @@ PyTypeObject PySlice_Type = {
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
-    PyObject_HashNotImplemented,                /* tp_hash */
+    (hashfunc)slicehash,                        /* tp_hash */
     0,                                          /* tp_call */
     0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */

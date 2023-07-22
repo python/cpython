@@ -1,3 +1,0 @@
-Microoptimizations for :meth:`fractions.Fraction.__round__`,
-:meth:`fractions.Fraction.__ceil__` and
-:meth:`fractions.Fraction.__floor__`.

@@ -3,8 +3,6 @@
 
 /* Windows users:  read Python's PCbuild\readme.txt */
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
 #include "zlib.h"
@@ -1519,6 +1517,7 @@ decompress_buf(ZlibDecompressor *self, Py_ssize_t max_length)
         }
     } else if (err != Z_OK && err != Z_BUF_ERROR) {
         zlib_error(state, self->zst, err, "while decompressing data");
+        goto error;
     }
 
     self->avail_in_real += self->zst.avail_in;
@@ -1721,6 +1720,9 @@ ZlibDecompressor__new__(PyTypeObject *cls,
         return NULL;
     }
     ZlibDecompressor *self = PyObject_New(ZlibDecompressor, cls);
+    if (self == NULL) {
+        return NULL;
+    }
     self->eof = 0;
     self->needs_input = 1;
     self->avail_in_real = 0;
@@ -2108,6 +2110,7 @@ zlib_exec(PyObject *mod)
 
 static PyModuleDef_Slot zlib_slots[] = {
     {Py_mod_exec, zlib_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

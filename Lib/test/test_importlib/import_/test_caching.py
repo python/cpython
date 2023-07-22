@@ -52,12 +52,11 @@ class ImportlibUseCache(UseCache, unittest.TestCase):
     __import__ = util.__import__['Source']
 
     def create_mock(self, *names, return_=None):
-        mock = util.mock_modules(*names)
-        original_load = mock.load_module
-        def load_module(self, fullname):
-            original_load(fullname)
-            return return_
-        mock.load_module = MethodType(load_module, mock)
+        mock = util.mock_spec(*names)
+        original_spec = mock.find_spec
+        def find_spec(self, fullname, path, target=None):
+            return original_spec(fullname)
+        mock.find_spec = MethodType(find_spec, mock)
         return mock
 
     # __import__ inconsistent between loaders and built-in import when it comes
@@ -86,14 +85,12 @@ class ImportlibUseCache(UseCache, unittest.TestCase):
     # See test_using_cache_after_loader() for reasoning.
     def test_using_cache_for_fromlist(self):
         # [from cache for fromlist]
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ImportWarning)
-            with self.create_mock('pkg.__init__', 'pkg.module') as importer:
-                with util.import_state(meta_path=[importer]):
-                    module = self.__import__('pkg', fromlist=['module'])
-                    self.assertTrue(hasattr(module, 'module'))
-                    self.assertEqual(id(module.module),
-                                    id(sys.modules['pkg.module']))
+        with self.create_mock('pkg.__init__', 'pkg.module') as importer:
+            with util.import_state(meta_path=[importer]):
+                module = self.__import__('pkg', fromlist=['module'])
+                self.assertTrue(hasattr(module, 'module'))
+                self.assertEqual(id(module.module),
+                                 id(sys.modules['pkg.module']))
 
 
 if __name__ == '__main__':

@@ -68,7 +68,7 @@ Creating Subprocesses
 
    The *limit* argument sets the buffer limit for :class:`StreamReader`
    wrappers for :attr:`Process.stdout` and :attr:`Process.stderr`
-   (if :attr:`subprocess.PIPE` is passed to *stdout* and *stderr* arguments).
+   (if :const:`subprocess.PIPE` is passed to *stdout* and *stderr* arguments).
 
    Return a :class:`~asyncio.subprocess.Process` instance.
 
@@ -86,7 +86,7 @@ Creating Subprocesses
 
    The *limit* argument sets the buffer limit for :class:`StreamReader`
    wrappers for :attr:`Process.stdout` and :attr:`Process.stderr`
-   (if :attr:`subprocess.PIPE` is passed to *stdout* and *stderr* arguments).
+   (if :const:`subprocess.PIPE` is passed to *stdout* and *stderr* arguments).
 
    Return a :class:`~asyncio.subprocess.Process` instance.
 
@@ -207,8 +207,9 @@ their completion.
       Interact with process:
 
       1. send data to *stdin* (if *input* is not ``None``);
-      2. read data from *stdout* and *stderr*, until EOF is reached;
-      3. wait for process to terminate.
+      2. closes *stdin*;
+      3. read data from *stdout* and *stderr*, until EOF is reached;
+      4. wait for process to terminate.
 
       The optional *input* argument is the data (:class:`bytes` object)
       that will be sent to the child process.
@@ -229,6 +230,10 @@ their completion.
       Note, that the data read is buffered in memory, so do not use
       this method if the data size is large or unlimited.
 
+      .. versionchanged:: 3.12
+
+         *stdin* gets closed when `input=None` too.
+
    .. method:: send_signal(signal)
 
       Sends the signal *signal* to the child process.
@@ -244,7 +249,7 @@ their completion.
 
       Stop the child process.
 
-      On POSIX systems this method sends :py:data:`signal.SIGTERM` to the
+      On POSIX systems this method sends :py:const:`signal.SIGTERM` to the
       child process.
 
       On Windows the Win32 API function :c:func:`TerminateProcess` is

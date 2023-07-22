@@ -1,8 +1,0 @@
-Removed the ``--with-system-ffi`` ``configure`` option; ``libffi`` must
-now always be supplied by the system on all non-Windows platforms.  The
-option has had no effect on non-Darwin platforms for several releases, and
-in 3.11 only had the non-obvious effect of invoking ``pkg-config`` to
-find ``libffi`` and never setting ``-DUSING_APPLE_OS_LIBFFI``.  Now on
-Darwin platforms ``configure`` will first check for the OS ``libffi`` and
-then fall back to the same processing as other platforms if it is not
-found.

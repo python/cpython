@@ -1,1 +1,0 @@
-Add math.sumprod() to compute the sum of products.

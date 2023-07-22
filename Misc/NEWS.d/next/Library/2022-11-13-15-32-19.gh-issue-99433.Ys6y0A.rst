@@ -1,1 +1,0 @@
-Fix :mod:`doctest` failure on :class:`types.MethodWrapperType` in modules.

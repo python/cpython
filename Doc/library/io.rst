@@ -423,7 +423,7 @@ I/O Base Classes
 
       .. versionadded:: 3.3
          Some operating systems could support additional values, like
-         :data:`os.SEEK_HOLE` or :data:`os.SEEK_DATA`. The valid values
+         :const:`os.SEEK_HOLE` or :const:`os.SEEK_DATA`. The valid values
          for a file could depend on it being open in text or binary mode.
 
    .. method:: seekable()
@@ -1021,8 +1021,8 @@ Text I/O
 
       .. versionadded:: 3.7
 
-   .. method:: reconfigure(*[, encoding][, errors][, newline][, \
-                           line_buffering][, write_through])
+   .. method:: reconfigure(*, encoding=None, errors=None, newline=None, \
+                           line_buffering=None, write_through=None)
 
       Reconfigure this text stream using new settings for *encoding*,
       *errors*, *newline*, *line_buffering* and *write_through*.
