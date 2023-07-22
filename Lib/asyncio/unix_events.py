@@ -394,6 +394,11 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 fut.set_result(total_sent)
                 return
 
+        # On 32-bit architectures truncate to 1GiB to avoid OverflowError,
+        # see bpo-38319/gh-82500.
+        if sys.maxsize < 2 ** 32:
+            blocksize = min(blocksize, 2 ** 30)
+
         try:
             sent = os.sendfile(fd, fileno, offset, blocksize)
         except (BlockingIOError, InterruptedError):
