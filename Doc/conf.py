@@ -79,9 +79,37 @@ if venvdir is not None:
 nitpick_ignore = [
     # Standard C functions
     ('c:func', 'calloc'),
+    ('c:func', 'exec'),
     ('c:func', 'free'),
+    ('c:func', 'gmtime'),
+    ('c:func', 'localtime'),
+    ('c:func', 'lockf'),
+    ('c:func', 'main'),
     ('c:func', 'malloc'),
-    ('c:func', 'ralloc'),
+    ('c:func', 'printf'),
+    ('c:func', 'realloc'),
+    ('c:func', 'scanf'),
+    ('c:func', 'sigaction'),
+    ('c:func', 'signal'),
+    ('c:func', 'snprintf'),
+    ('c:func', 'sprintf'),
+    ('c:func', 'stat'),
+    ('c:func', 'strerror'),
+    ('c:func', 'system'),
+    ('c:func', 'vsnprintf'),
+    # OS functions and system calls
+    ('c:func', 'devpoll'),
+    ('c:func', 'dlopen'),
+    ('c:func', 'fcntl'),
+    ('c:func', 'flock'),
+    ('c:func', 'fork'),
+    ('c:func', 'function__entry'),
+    ('c:func', 'getopt'),
+    ('c:func', 'poll'),
+    ('c:func', 'select'),
+    # Curses functions
+    ('c:func', 'addstr'),
+    # Instrumentation funcsion
     # Standard C types
     ('c:type', 'FILE'),
     ('c:type', '__int'),
