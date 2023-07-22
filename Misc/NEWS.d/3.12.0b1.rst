@@ -2382,7 +2382,7 @@ Patch by Dong-hee Na.
 .. section: C API
 
 Add support of more formatting options (left aligning, octals, uppercase
-hexadecimals, :c:expr:`intmax_t`, :c:expr:`ptrdiff_t`, :c:expr:`wchar_t` C
+hexadecimals, :c:type:`intmax_t`, :c:type:`ptrdiff_t`, :c:type:`wchar_t` C
 strings, variable width and precision) in :c:func:`PyUnicode_FromFormat` and
 :c:func:`PyUnicode_FromFormatV`.
 

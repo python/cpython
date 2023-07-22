@@ -212,7 +212,7 @@ platform-dependent.
 +--------+--------------------------+--------------------+----------------+------------+
 | ``B``  | :c:expr:`unsigned char`  | integer            | 1              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``?``  | :c:expr:`_Bool`          | bool               | 1              | \(1)       |
+| ``?``  | :c:type:`_Bool`          | bool               | 1              | \(1)       |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``h``  | :c:expr:`short`          | integer            | 2              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
@@ -231,9 +231,9 @@ platform-dependent.
 | ``Q``  | :c:expr:`unsigned long   | integer            | 8              | \(2)       |
 |        | long`                    |                    |                |            |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``n``  | :c:expr:`ssize_t`        | integer            |                | \(3)       |
+| ``n``  | :c:type:`ssize_t`        | integer            |                | \(3)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``N``  | :c:expr:`size_t`         | integer            |                | \(3)       |
+| ``N``  | :c:type:`size_t`         | integer            |                | \(3)       |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``e``  | \(6)                     | float              | 2              | \(4)       |
 +--------+--------------------------+--------------------+----------------+------------+
@@ -260,7 +260,7 @@ Notes:
 (1)
    .. index:: single: ? (question mark); in struct format strings
 
-   The ``'?'`` conversion code corresponds to the :c:expr:`_Bool` type defined by
+   The ``'?'`` conversion code corresponds to the :c:type:`_Bool` type defined by
    C99. If this type is not available, it is simulated using a :c:expr:`char`. In
    standard mode, it is always represented by one byte.
 

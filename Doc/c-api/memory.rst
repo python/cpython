@@ -581,7 +581,7 @@ that the treatment of negative indices differs from a Python slice):
     default).
 
     A serial number, incremented by 1 on each call to a malloc-like or
-    realloc-like function.  Big-endian ``size_t``.  If "bad memory" is detected
+    realloc-like function.  Big-endian :c:type:`size_t`.  If "bad memory" is detected
     later, the serial number gives an excellent way to set a breakpoint on the
     next run, to capture the instant at which this block was passed out.  The
     static function bumpserialno() in obmalloc.c is the only place the serial
