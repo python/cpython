@@ -329,7 +329,7 @@ Pending Removal in Python 3.15
 Pending Removal in Python 3.16
 ------------------------------
 
-* :class:`array.array` ``'u'`` type (``wchar_t``):
+* :class:`array.array` ``'u'`` type (:c:type:`wchar_t`):
   use the ``'w'`` type instead (``Py_UCS4``).
 
 Pending Removal in Future Versions
@@ -802,8 +802,8 @@ Deprecated
 ----------
 
 * Deprecate the old ``Py_UNICODE`` and ``PY_UNICODE_TYPE`` types: use directly
-  the ``wchar_t`` type instead. Since Python 3.3, ``Py_UNICODE`` and
-  ``PY_UNICODE_TYPE`` are just aliases to ``wchar_t``.
+  the :c:type:`wchar_t` type instead. Since Python 3.3, ``Py_UNICODE`` and
+  ``PY_UNICODE_TYPE`` are just aliases to :c:type:`wchar_t`.
   (Contributed by Victor Stinner in :gh:`105156`.)
 
 * Deprecate old Python initialization functions:
@@ -1013,8 +1013,8 @@ Pending Removal in Python 3.15
 * :c:func:`PyImport_ImportModuleNoBlock`: use :c:func:`PyImport_ImportModule`.
 * :c:func:`PyWeakref_GET_OBJECT`: use :c:func:`PyWeakref_GetRef` instead.
 * :c:func:`PyWeakref_GetObject`: use :c:func:`PyWeakref_GetRef` instead.
-* :c:type:`!Py_UNICODE_WIDE` type: use ``wchar_t`` instead.
-* :c:type:`Py_UNICODE` type: use ``wchar_t`` instead.
+* :c:type:`!Py_UNICODE_WIDE` type: use :c:type:`wchar_t` instead.
+* :c:type:`Py_UNICODE` type: use :c:type:`wchar_t` instead.
 * Python initialization functions:
 
   * :c:func:`PySys_ResetWarnOptions`: clear :data:`sys.warnoptions` and
