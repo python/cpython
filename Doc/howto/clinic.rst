@@ -166,7 +166,7 @@ Terminology
 
   checksum line
      A line that looks like ``/*[clinic end generated code: ...]*/``.
-     (The three dots will be replaced by the actual checksum(s).)
+     The three dots will be replaced by the actual checksum(s).
      The checksum line marks the end of Argument Clinic generated code.
 
   input
