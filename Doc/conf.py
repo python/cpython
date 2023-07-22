@@ -99,7 +99,6 @@ nitpick_ignore = [
     ('c:data', 'errno'),
     # Standard environment variables
     ('envvar', 'BROWSER'),
-    ('envvar', 'COLS'),
     ('envvar', 'COLUMNS'),
     ('envvar', 'COMSPEC'),
     ('envvar', 'DISPLAY'),
