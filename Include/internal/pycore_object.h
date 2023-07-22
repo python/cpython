@@ -442,6 +442,9 @@ extern PyObject* _PyCFunctionWithKeywords_TrampolineCall(
 PyAPI_DATA(PyTypeObject) _PyNone_Type;
 PyAPI_DATA(PyTypeObject) _PyNotImplemented_Type;
 
+/* Maps Py_LT to Py_GT, ..., Py_GE to Py_LE.  Defined in Objects/object.c. */
+PyAPI_DATA(int) _Py_SwappedOp[];
+
 #ifdef __cplusplus
 }
 #endif
