@@ -641,7 +641,8 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: update_lines_cols()
 
-   Update :envvar:`LINES` and :envvar:`COLS`. Useful for detecting manual screen resize.
+   Update the :const:`LINES` and :const:`COLS` module variables.
+   Useful for detecting manual screen resize.
 
    .. versionadded:: 3.5
 
@@ -1342,10 +1343,27 @@ The :mod:`curses` module defines the following data members:
 .. data:: COLORS
 
    The maximum number of colors the terminal can support.
+   It is defined only after the call to :func:`start_color`.
 
 .. data:: COLOR_PAIRS
 
    The maximum number of color pairs the terminal can support.
+   It is defined only after the call to :func:`start_color`.
+
+.. data:: COLS
+
+   The width of the screen, i.e., the number of columns.
+   It is defined only after the call to :func:`initscr`.
+   Updated by :func:`update_lines_cols`, :func:`resizeterm` and
+   :func:`resize_term`.
+
+.. data:: LINES
+
+   The height of the screen, i.e., the number of lines.
+   It is defined only after the call to :func:`initscr`.
+   Updated by :func:`update_lines_cols`, :func:`resizeterm` and
+   :func:`resize_term`.
+
 
 Some constants are available to specify character cell attributes.
 The exact constants available are system dependent.
