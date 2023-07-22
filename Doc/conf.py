@@ -22,6 +22,7 @@ extensions = [
     'pyspecific',
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
+    'sphinx_copybutton',
 ]
 
 # Skip if downstream redistributors haven't installed it
@@ -327,3 +328,5 @@ ogp_custom_meta_tags = [
     '<meta property="og:image:height" content="200" />',
     '<meta name="theme-color" content="#3776ab" />',
 ]
+
+
