@@ -159,7 +159,7 @@ Terminology
   start line
      The line ``/*[clinic input]``.
      This line marks the beginning of Argument Clinic input.
-     Notice that the *start line* actually opens a C block comment.
+     Notice that the *start line* opens a C block comment.
 
   end line
      The line ``[clinic start generated code]*/``.
