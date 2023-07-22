@@ -91,7 +91,6 @@ Doc/library/codecs.rst
 Doc/library/codeop.rst
 Doc/library/collections.abc.rst
 Doc/library/collections.rst
-Doc/library/compileall.rst
 Doc/library/concurrent.futures.rst
 Doc/library/concurrent.rst
 Doc/library/configparser.rst
@@ -100,7 +99,6 @@ Doc/library/contextlib.rst
 Doc/library/copy.rst
 Doc/library/csv.rst
 Doc/library/ctypes.rst
-Doc/library/curses.rst
 Doc/library/datetime.rst
 Doc/library/dbm.rst
 Doc/library/decimal.rst
@@ -137,7 +135,6 @@ Doc/library/http.client.rst
 Doc/library/http.cookiejar.rst
 Doc/library/http.cookies.rst
 Doc/library/http.server.rst
-Doc/library/idle.rst
 Doc/library/importlib.resources.abc.rst
 Doc/library/importlib.resources.rst
 Doc/library/importlib.rst
@@ -165,16 +162,13 @@ Doc/library/pickletools.rst
 Doc/library/platform.rst
 Doc/library/plistlib.rst
 Doc/library/poplib.rst
-Doc/library/posix.rst
 Doc/library/pprint.rst
 Doc/library/profile.rst
 Doc/library/pty.rst
-Doc/library/py_compile.rst
 Doc/library/pyclbr.rst
 Doc/library/pydoc.rst
 Doc/library/pyexpat.rst
 Doc/library/random.rst
-Doc/library/re.rst
 Doc/library/readline.rst
 Doc/library/reprlib.rst
 Doc/library/resource.rst
@@ -193,7 +187,6 @@ Doc/library/ssl.rst
 Doc/library/stat.rst
 Doc/library/stdtypes.rst
 Doc/library/string.rst
-Doc/library/struct.rst
 Doc/library/subprocess.rst
 Doc/library/sys.rst
 Doc/library/sys_path_init.rst
@@ -255,7 +248,6 @@ Doc/tutorial/modules.rst
 Doc/tutorial/stdlib2.rst
 Doc/using/cmdline.rst
 Doc/using/configure.rst
-Doc/using/unix.rst
 Doc/using/windows.rst
 Doc/whatsnew/2.0.rst
 Doc/whatsnew/2.1.rst
