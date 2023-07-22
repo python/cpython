@@ -176,7 +176,7 @@ In a :keyword:`while` loop, it's executed after the loop's condition becomes fal
 In either kind of loop, the :keyword:`!else` clause is **not** executed
 if the loop was terminated by a :keyword:`break`.
 
-This is exemplified in the following :keyword:`for` loop,
+This is exemplified in the following :keyword:`!for` loop,
 which searches for prime numbers::
 
    >>> for n in range(2, 10):
