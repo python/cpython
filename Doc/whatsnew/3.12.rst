@@ -998,7 +998,7 @@ Deprecated
 * :mod:`shutil`: The *onerror* argument of :func:`shutil.rmtree` is deprecated as will be removed
   in Python 3.14. Use *onexc* instead. (Contributed by Irit Katriel in :gh:`102828`.)
 
-* :mod:`sqlite3`: 
+* :mod:`sqlite3`:
     * :ref:`default adapters and converters
       <sqlite3-default-converters>` are now deprecated.
       Instead, use the :ref:`sqlite3-adapter-converter-recipes`
@@ -1149,7 +1149,7 @@ Pending Removal in Python 3.14
 
 * :mod:`pty`: The module has two undocumented ``master_open()`` and ``slave_open()``
   functions that have been deprecated since Python 2 but only gained a
-  proper :exc:`DeprecationWarning` in 3.12. Remove them in 3.14.  
+  proper :exc:`DeprecationWarning` in 3.12. Remove them in 3.14.
 
 * :mod:`shutil`: The *onerror* argument of :func:`shutil.rmtree` is deprecated in 3.12,
   and will be removed in 3.14.
@@ -1247,7 +1247,7 @@ Removed
   :func:`hashlib.pbkdf2_hmac()`, deprecated in Python 3.10. Python 3.10 and
   newer requires OpenSSL 1.1.1 (:pep:`644`): this OpenSSL version provides
   a C implementation of :func:`~hashlib.pbkdf2_hmac()` which is faster.
-  (Contributed by Victor Stinner in :gh:`94199`.)  
+  (Contributed by Victor Stinner in :gh:`94199`.)
 
 * :mod:`importlib`: Many previously deprecated cleanups in :mod:`importlib` have now been
   completed:
@@ -1348,7 +1348,7 @@ Removed
 
   (Contributed by Erlend E. Aasland in :gh:`92548`.)
 
-* :mod:`ssl`: 
+* :mod:`ssl`:
   
     * Remove the :func:`!ssl.RAND_pseudo_bytes` function, deprecated in Python 3.6:
     use :func:`os.urandom` or :func:`ssl.RAND_bytes` instead.
