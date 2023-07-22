@@ -12,6 +12,7 @@ sphinx==6.2.0
 blurb
 
 sphinxext-opengraph==0.7.5
+sphinx-copybutton<0.6
 
 # The theme used by the documentation is stored separately, so we need
 # to install that as well.
