@@ -3712,6 +3712,16 @@ class TestParsers(TestEmailBase):
         self.assertIsInstance(msg.get_payload(), str)
         self.assertIsInstance(msg.get_payload(decode=True), bytes)
 
+    def test_header_parser_multipart_is_valid(self):
+        # Don't flag valid multipart emails as having defects
+        with openfile('msg_47.txt', encoding="utf-8") as fp:
+            msgdata = fp.read()
+
+        parser = email.parser.Parser(policy=email.policy.default)
+        parsed_msg = parser.parsestr(msgdata, headersonly=True)
+
+        self.assertEqual(parsed_msg.defects, [])
+
     def test_bytes_parser_does_not_close_file(self):
         with openfile('msg_02.txt', 'rb') as fp:
             email.parser.BytesParser().parse(fp)
