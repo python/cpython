@@ -188,7 +188,6 @@ Doc/library/ssl.rst
 Doc/library/stat.rst
 Doc/library/stdtypes.rst
 Doc/library/string.rst
-Doc/library/struct.rst
 Doc/library/subprocess.rst
 Doc/library/sys.rst
 Doc/library/sys_path_init.rst
