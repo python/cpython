@@ -4284,7 +4284,7 @@ def eval_ast_expr(
 class IndentStack:
     def __init__(self) -> None:
         self.indents: list[int] = []
-        self.margin = ""
+        self.margin: str | None = None
 
     def _ensure(self) -> None:
         if not self.indents:
@@ -4347,6 +4347,7 @@ class IndentStack:
         """
         Indents a line by the currently defined margin.
         """
+        assert self.margin is not None, "Cannot call .indent() before calling .infer()"
         return self.margin + line
 
     def dedent(self, line: str) -> str:
@@ -4354,6 +4355,7 @@ class IndentStack:
         Dedents a line by the currently defined margin.
         (The inverse of 'indent'.)
         """
+        assert self.margin is not None, "Cannot call .indent() before calling .infer()"
         margin = self.margin
         indent = self.indents[-1]
         if not line.startswith(margin):
@@ -5238,6 +5240,7 @@ class DSLParser:
             p.kind = inspect.Parameter.POSITIONAL_ONLY
 
     def state_parameter_docstring_start(self, line: str | None) -> None:
+        assert self.indent.margin is not None, "self.margin.infer() has not yet been called to set the margin"
         self.parameter_docstring_indent = len(self.indent.margin)
         assert self.indent.depth == 3
         return self.next(self.state_parameter_docstring, line)
