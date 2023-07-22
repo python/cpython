@@ -1058,12 +1058,6 @@ tempfile
 
 .. _whatsnew311-threading:
 
-string
-------
-
-* New constant :const:`ascii_alphanumerics` was added to the :mod:`string` module.
-  (Contributed by Paolo Melchiorre in :issue:`45669`.)
-
 threading
 ---------
 
