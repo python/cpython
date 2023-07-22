@@ -438,6 +438,10 @@ extern PyObject* _PyCFunctionWithKeywords_TrampolineCall(
     (meth)((self), (args), (kw))
 #endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
 
+// _pickle shared extension uses _PyNone_Type and _PyNotImplemented_Type
+PyAPI_DATA(PyTypeObject) _PyNone_Type;
+PyAPI_DATA(PyTypeObject) _PyNotImplemented_Type;
+
 #ifdef __cplusplus
 }
 #endif

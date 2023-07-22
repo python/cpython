@@ -12,6 +12,7 @@
 #include "pycore_bytesobject.h"   // _PyBytesWriter
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object.h"        // _PyNone_Type
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "structmember.h"         // PyMemberDef
