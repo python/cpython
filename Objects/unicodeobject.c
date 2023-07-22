@@ -3190,7 +3190,7 @@ PyUnicode_Decode(const char *s,
     PyObject *buffer = NULL, *unicode;
     Py_buffer info;
     char buflower[11];   /* strlen("iso-8859-1\0") == 11, longest shortcut */
-    PyObject *exc, *val, *tb, *res;
+    PyObject *res;
 
     if (unicode_check_encoding_errors(encoding, errors) < 0) {
         return NULL;
@@ -3253,9 +3253,9 @@ PyUnicode_Decode(const char *s,
     if (buffer == NULL)
         goto onError;
     unicode = _PyCodec_DecodeText(buffer, encoding, errors);
-    PyErr_Fetch(&exc, &val, &tb);
+    PyObject *exc = PyErr_GetRaisedException();
     res = PyObject_CallMethod(buffer, "release", NULL);
-    _PyErr_ChainExceptions(exc, val, tb);
+    _PyErr_ChainExceptions1(exc);
     if (res == NULL) {
         Py_XDECREF(unicode);
         goto onError;
