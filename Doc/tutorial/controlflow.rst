@@ -4,8 +4,8 @@
 More Control Flow Tools
 ***********************
 
-Besides the :keyword:`while` statement just introduced, Python uses the usual
-flow control statements known from other languages, with some twists.
+Besides the :keyword:`while` statement just introduced, Python uses a few more
+that will be introduced in this chapter.
 
 
 .. _tut-if:
@@ -166,7 +166,7 @@ arguments.  In chapter :ref:`tut-structures`, we will discuss in more detail abo
 The :keyword:`break` statement breaks out of the innermost enclosing
 :keyword:`for` or :keyword:`while` loop.
 
-Loop statements may have an :keyword:`!else` clause; it is executed when the loop
+The :keyword:`for` loop statements may have an extra :keyword:`!else` clause; it is executed when the loop
 terminates through exhaustion of the iterable (with :keyword:`for`) or when the
 condition becomes false (with :keyword:`while`), but not when the loop is
 terminated by a :keyword:`break` statement.  This is exemplified by the
