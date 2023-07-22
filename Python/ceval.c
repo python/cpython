@@ -1997,7 +1997,7 @@ static int
 do_monitor_exc(PyThreadState *tstate, _PyInterpreterFrame *frame,
                _Py_CODEUNIT *instr, int event)
 {
-    assert(event < PY_MONITORING_UNGROUPED_EVENTS);
+    assert(event < _PY_MONITORING_UNGROUPED_EVENTS);
     PyObject *exc = PyErr_GetRaisedException();
     assert(exc != NULL);
     int err = _Py_call_instrumentation_arg(tstate, event, frame, instr, exc);

@@ -25,7 +25,7 @@ extern "C" {
 #include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_global_objects.h"  // struct _Py_interp_static_objects
 #include "pycore_import.h"        // struct _import_state
-#include "pycore_instruments.h"   // PY_MONITORING_EVENTS
+#include "pycore_instruments.h"   // _PY_MONITORING_EVENTS
 #include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_object_state.h"   // struct _py_object_state
 #include "pycore_obmalloc.h"      // struct obmalloc_state
@@ -188,7 +188,7 @@ struct _is {
     bool sys_trace_initialized;
     Py_ssize_t sys_profiling_threads; /* Count of threads with c_profilefunc set */
     Py_ssize_t sys_tracing_threads; /* Count of threads with c_tracefunc set */
-    PyObject *monitoring_callables[PY_MONITORING_TOOL_IDS][PY_MONITORING_EVENTS];
+    PyObject *monitoring_callables[PY_MONITORING_TOOL_IDS][_PY_MONITORING_EVENTS];
     PyObject *monitoring_tool_names[PY_MONITORING_TOOL_IDS];
 
     struct _Py_interp_cached_objects cached_objects;
