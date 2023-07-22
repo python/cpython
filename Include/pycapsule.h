@@ -22,7 +22,7 @@ PyAPI_DATA(PyTypeObject) PyCapsule_Type;
 
 typedef void (*PyCapsule_Destructor)(PyObject *);
 
-#define PyCapsule_CheckExact(op) Py_IS_TYPE(op, &PyCapsule_Type)
+#define PyCapsule_CheckExact(op) Py_IS_TYPE((op), &PyCapsule_Type)
 
 
 PyAPI_FUNC(PyObject *) PyCapsule_New(

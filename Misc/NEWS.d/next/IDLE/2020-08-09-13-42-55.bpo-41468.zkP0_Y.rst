@@ -1,1 +1,0 @@
-Improve IDLE run crash error message (which users should never see).

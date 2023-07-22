@@ -38,6 +38,14 @@ the Unix :program:`ftp` program and other FTP clients.
       :func:`os.path.expanduser` is used to find the location of the
       :file:`.netrc` file when *file* is not passed as argument.
 
+   .. versionchanged:: 3.10
+      :class:`netrc` try UTF-8 encoding before using locale specific
+      encoding.
+      The entry in the netrc file no longer needs to contain all tokens.  The missing
+      tokens' value default to an empty string.  All the tokens and their values now
+      can contain arbitrary characters, like whitespace and non-ASCII characters.
+      If the login name is anonymous, it won't trigger the security check.
+
 
 .. exception:: NetrcParseError
 
@@ -81,10 +89,3 @@ Instances of :class:`~netrc.netrc` have public instance variables:
 .. attribute:: netrc.macros
 
    Dictionary mapping macro names to string lists.
-
-.. note::
-
-   Passwords are limited to a subset of the ASCII character set.  All ASCII
-   punctuation is allowed in passwords, however, note that whitespace and
-   non-printable characters are not allowed in passwords.  This is a limitation
-   of the way the .netrc file is parsed and may be removed in the future.

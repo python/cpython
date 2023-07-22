@@ -1,2 +1,0 @@
-:mod:`distutils` upload creates SHA2-256 and Blake2b-256 digests. MD5
-digests is skipped if platform blocks MD5.

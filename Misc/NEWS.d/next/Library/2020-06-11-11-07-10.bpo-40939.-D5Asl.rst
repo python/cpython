@@ -1,1 +1,0 @@
-Use the new PEG parser when generating the stdlib :mod:`keyword` module.

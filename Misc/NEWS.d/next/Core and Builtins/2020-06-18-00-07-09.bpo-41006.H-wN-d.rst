@@ -1,2 +1,0 @@
-The ``encodings.latin_1`` module is no longer imported at startup. Now it is
-only imported when it is the filesystem encoding or the stdio encoding.

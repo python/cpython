@@ -1,3 +1,0 @@
-Stefan Behnel reported that cf_feature_version is used even when
-PyCF_ONLY_AST is not set. This is against the intention and against the
-documented behavior, so it's been fixed.

@@ -1,3 +1,0 @@
-Correctly count control blocks in 'except' in compiler. Ensures that a
-syntax error, rather a fatal error, occurs for deeply nested, named
-exception handlers.

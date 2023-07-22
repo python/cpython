@@ -1,3 +1,0 @@
-Attributes ``start``, ``stop`` and ``step`` of the :class:`range` object now
-always has exact type :class:`int`.  Previously, they could have been an
-instance of a subclass of ``int``.

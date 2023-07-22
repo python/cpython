@@ -1,1 +1,0 @@
-Change Shipman tkinter doc link from archive.org to TkDocs. (The doc has been removed from the NMT server.)  The new link responds much faster and includes a short explanatory note.

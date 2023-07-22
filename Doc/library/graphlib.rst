@@ -17,7 +17,7 @@
 
 .. class:: TopologicalSorter(graph=None)
 
-   Provides functionality to topologically sort a graph of hashable nodes.
+   Provides functionality to topologically sort a graph of :term:`hashable` nodes.
 
    A topological order is a linear ordering of the vertices in a graph such that
    for every directed edge u -> v from vertex u to vertex v, vertex u comes
@@ -85,7 +85,7 @@
    .. method:: add(node, *predecessors)
 
       Add a new node and its predecessors to the graph. Both the *node* and all
-      elements in *predecessors* must be hashable.
+      elements in *predecessors* must be :term:`hashable`.
 
       If called multiple times with the same node argument, the set of
       dependencies will be the union of all dependencies passed in.
@@ -154,9 +154,10 @@
 
    .. method:: static_order()
 
-      Returns an iterable of nodes in a topological order. Using this method
-      does not require to call :meth:`TopologicalSorter.prepare` or
-      :meth:`TopologicalSorter.done`. This method is equivalent to::
+      Returns an iterator object which will iterate over nodes in a topological
+      order. When using this method, :meth:`~TopologicalSorter.prepare` and
+      :meth:`~TopologicalSorter.done` should not be called. This method is
+      equivalent to::
 
           def static_order(self):
               self.prepare()

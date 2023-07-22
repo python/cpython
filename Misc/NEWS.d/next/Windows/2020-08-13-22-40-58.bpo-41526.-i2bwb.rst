@@ -1,2 +1,0 @@
-Fixed layout of final page of the installer by removing the special thanks
-to Mark Hammond (with his permission).
