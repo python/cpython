@@ -917,7 +917,9 @@ should, then :meth:`flush` is expected to do the flushing.
 
    .. method:: flush()
 
-      For a :class:`BufferingHandler` instance, flushing means that it sets the buffer to an empty list. This method can be overwritten to implement more useful flushing behavior.
+      For a :class:`BufferingHandler` instance, flushing means that it sets the
+      buffer to an empty list. This method can be overwritten to implement more useful
+      flushing behavior.
 
 
    .. method:: shouldFlush(record)
