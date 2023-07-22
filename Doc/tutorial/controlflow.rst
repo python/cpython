@@ -166,11 +166,18 @@ arguments.  In chapter :ref:`tut-structures`, we will discuss in more detail abo
 The :keyword:`break` statement breaks out of the innermost enclosing
 :keyword:`for` or :keyword:`while` loop.
 
-The :keyword:`for` loop statements may have an extra :keyword:`!else` clause;
-it is executed when the loop terminates through exhaustion of the iterable
-(with :keyword:`for`) or when the condition becomes false (with :keyword:`while`),
-but not when the loop is terminated by a :keyword:`break` statement.
-This is exemplified by the following loop, which searches for prime numbers::
+A :keyword:`for` or :keyword:`while` loop can include an else clause.
+
+In a :keyword:`for` loop, the :keyword:`!else` clause is executed
+after the loop reaches its final iteration.
+
+In a :keyword:`while` loop, it's executed after the loop's condition becomes false.
+
+In either kind of loop, the :keyword:`!else` clause is **not** executed
+if the loop was terminated by a :keyword:`break`.
+
+This is exemplified in the following :keyword:`for` loop,
+which searches for prime numbers::
 
    >>> for n in range(2, 10):
    ...     for x in range(2, n):
