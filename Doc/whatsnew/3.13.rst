@@ -150,38 +150,6 @@ Optimizations
 Deprecated
 ==========
 
-wave
-------
-
-* Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()``
-  methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
-  They will be removed in Python 3.15.
-  (Contributed by Victor Stinner in :gh:`105096`.)
-
-typing
-------
-
-* Creating a :class:`typing.NamedTuple` class using keyword arguments to denote
-  the fields (``NT = NamedTuple("NT", x=int, y=int)``) is deprecated, and will
-  be disallowed in Python 3.15. Use the class-based syntax or the functional
-  syntax instead. (Contributed by Alex Waygood in :gh:`105566`.)
-
-* When using the functional syntax to create a :class:`typing.NamedTuple`
-  class or a :class:`typing.TypedDict` class, failing to pass a value to the
-  'fields' parameter (``NT = NamedTuple("NT")`` or ``TD = TypedDict("TD")``) is
-  deprecated. Passing ``None`` to the 'fields' parameter
-  (``NT = NamedTuple("NT", None)`` or ``TD = TypedDict("TD", None)``) is also
-  deprecated. Both will be disallowed in Python 3.15. To create a NamedTuple
-  class with 0 fields, use ``class NT(NamedTuple): pass`` or
-  ``NT = NamedTuple("NT", [])``. To create a TypedDict class with 0 fields, use
-  ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
-  (Contributed by Alex Waygood in :gh:`105566` and :gh:`105570`.)
-
-* :func:`typing.no_type_check_decorator` is deprecated, and scheduled for
-  removal in Python 3.15. After eight years in the :mod:`typing` module, it
-  has yet to be supported by any major type checkers.
-  (Contributed by Alex Waygood in :gh:`106309`.)
-
 array
 ------
 
@@ -208,6 +176,38 @@ getopt&optparse
   was not scheduled, and no warnings was emitted: so there is no change in
   practice.
   (Contributed by Victor Stinner in :gh:`106535`.)
+
+typing
+------
+
+* Creating a :class:`typing.NamedTuple` class using keyword arguments to denote
+  the fields (``NT = NamedTuple("NT", x=int, y=int)``) is deprecated, and will
+  be disallowed in Python 3.15. Use the class-based syntax or the functional
+  syntax instead. (Contributed by Alex Waygood in :gh:`105566`.)
+
+* When using the functional syntax to create a :class:`typing.NamedTuple`
+  class or a :class:`typing.TypedDict` class, failing to pass a value to the
+  'fields' parameter (``NT = NamedTuple("NT")`` or ``TD = TypedDict("TD")``) is
+  deprecated. Passing ``None`` to the 'fields' parameter
+  (``NT = NamedTuple("NT", None)`` or ``TD = TypedDict("TD", None)``) is also
+  deprecated. Both will be disallowed in Python 3.15. To create a NamedTuple
+  class with 0 fields, use ``class NT(NamedTuple): pass`` or
+  ``NT = NamedTuple("NT", [])``. To create a TypedDict class with 0 fields, use
+  ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
+  (Contributed by Alex Waygood in :gh:`105566` and :gh:`105570`.)
+
+* :func:`typing.no_type_check_decorator` is deprecated, and scheduled for
+  removal in Python 3.15. After eight years in the :mod:`typing` module, it
+  has yet to be supported by any major type checkers.
+  (Contributed by Alex Waygood in :gh:`106309`.)
+
+wave
+------
+
+* Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()``
+  methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
+  They will be removed in Python 3.15.
+  (Contributed by Victor Stinner in :gh:`105096`.)
 
 Pending Removal in Python 3.14
 ------------------------------
