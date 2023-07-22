@@ -4,6 +4,7 @@
 
 #include "Python.h"
 #include "pycore_import.h"        // _PyImport_SetModule()
+#include "pycore_pyhash.h"        // _Py_HashSecret
 #include <ctype.h>
 
 #include "structmember.h"         // PyMemberDef
