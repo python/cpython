@@ -478,7 +478,7 @@ not make an additional system call::
 PEP 475: Retry system calls failing with EINTR
 ----------------------------------------------
 
-An :py:data:`errno.EINTR` error code is returned whenever a system call, that
+An :py:const:`errno.EINTR` error code is returned whenever a system call, that
 is waiting for I/O, is interrupted by a signal.  Previously, Python would
 raise :exc:`InterruptedError` in such cases.  This meant that, when writing a
 Python application, the developer had two choices:
@@ -527,7 +527,7 @@ by a signal:
   :func:`~os.writev`;
 
 * special cases: :func:`os.close` and :func:`os.dup2` now ignore
-  :py:data:`~errno.EINTR` errors; the syscall is not retried (see the PEP
+  :py:const:`~errno.EINTR` errors; the syscall is not retried (see the PEP
   for the rationale);
 
 * :mod:`select` functions: :func:`devpoll.poll() <select.devpoll.poll>`,
@@ -1498,7 +1498,7 @@ use ``/dev/urandom`` and avoiding failures due to potential file descriptor
 exhaustion.  (Contributed by Victor Stinner in :issue:`22181`.)
 
 New :func:`~os.get_blocking` and :func:`~os.set_blocking` functions allow
-getting and setting a file descriptor's blocking mode (:data:`~os.O_NONBLOCK`.)
+getting and setting a file descriptor's blocking mode (:const:`~os.O_NONBLOCK`.)
 (Contributed by Victor Stinner in :issue:`22054`.)
 
 The :func:`~os.truncate` and :func:`~os.ftruncate` functions are now supported
@@ -1783,7 +1783,7 @@ the TLS handshake.
 The new
 :meth:`SSLSocket.selected_alpn_protocol() <ssl.SSLSocket.selected_alpn_protocol>`
 returns the protocol that was selected during the TLS handshake.
-The :data:`~ssl.HAS_ALPN` flag indicates whether ALPN support is present.
+The :const:`~ssl.HAS_ALPN` flag indicates whether ALPN support is present.
 
 
 Other Changes
@@ -2476,7 +2476,7 @@ Changes in the Python API
   in Python 3.5, all old ``.pyo`` files from previous versions of Python are
   invalid regardless of this PEP.
 
-* The :mod:`socket` module now exports the :data:`~socket.CAN_RAW_FD_FRAMES`
+* The :mod:`socket` module now exports the :const:`~socket.CAN_RAW_FD_FRAMES`
   constant on linux 3.6 and greater.
 
 * The :func:`ssl.cert_time_to_seconds` function now interprets the input time

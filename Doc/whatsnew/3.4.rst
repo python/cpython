@@ -775,7 +775,7 @@ of a given opcode and argument, information that is not otherwise available.
 doctest
 -------
 
-A new :ref:`option flag <doctest-options>`, :data:`~doctest.FAIL_FAST`, halts
+A new :ref:`option flag <doctest-options>`, :const:`~doctest.FAIL_FAST`, halts
 test running as soon as the first failure is detected.  (Contributed by R.
 David Murray and Daniel Urban in :issue:`16522`.)
 
@@ -841,7 +841,7 @@ for example, if the file might have been changed and re-checked in less time
 than the resolution of a particular filesystem's file modification time field.
 (Contributed by Mark Levitt in :issue:`18149`.)
 
-New module attribute :data:`~filecmp.DEFAULT_IGNORES` provides the list of
+New module attribute :const:`~filecmp.DEFAULT_IGNORES` provides the list of
 directories that are used as the default value for the *ignore* parameter of
 the :func:`~filecmp.dircmp` function.  (Contributed by Eli Bendersky in
 :issue:`15442`.)
@@ -1189,7 +1189,7 @@ Windows).  (Contributed by Brian Curtin in :issue:`11939`.)
 root on Windows.  (Contributed by Tim Golden in :issue:`9035`.)
 
 :func:`os.open` supports two new flags on platforms that provide them,
-:data:`~os.O_PATH` (un-opened file descriptor), and :data:`~os.O_TMPFILE`
+:const:`~os.O_PATH` (un-opened file descriptor), and :const:`~os.O_TMPFILE`
 (unnamed temporary file; as of 3.4.0 release available only on Linux systems
 with a kernel version of 3.11 or newer that have uapi headers).  (Contributed
 by Christian Heimes in :issue:`18673` and Benjamin Peterson, respectively.)
@@ -1238,8 +1238,8 @@ plistlib
 stdlib serialization protocols, with new :func:`~plistlib.load`,
 :func:`~plistlib.dump`, :func:`~plistlib.loads`, and :func:`~plistlib.dumps`
 functions.  (The older API is now deprecated.)  In addition to the already
-supported XML plist format (:data:`~plistlib.FMT_XML`), it also now supports
-the binary plist format (:data:`~plistlib.FMT_BINARY`).  (Contributed by Ronald
+supported XML plist format (:const:`~plistlib.FMT_XML`), it also now supports
+the binary plist format (:const:`~plistlib.FMT_BINARY`).  (Contributed by Ronald
 Oussoren and others in :issue:`14455`.)
 
 
@@ -1323,14 +1323,14 @@ ability to query or set the resource limits for processes other than the one
 making the call.  (Contributed by Christian Heimes in :issue:`16595`.)
 
 On Linux kernel version 2.6.36 or later, there are also some new
-Linux specific constants: :attr:`~resource.RLIMIT_MSGQUEUE`,
-:attr:`~resource.RLIMIT_NICE`, :attr:`~resource.RLIMIT_RTPRIO`,
-:attr:`~resource.RLIMIT_RTTIME`, and :attr:`~resource.RLIMIT_SIGPENDING`.
+Linux specific constants: :const:`~resource.RLIMIT_MSGQUEUE`,
+:const:`~resource.RLIMIT_NICE`, :const:`~resource.RLIMIT_RTPRIO`,
+:const:`~resource.RLIMIT_RTTIME`, and :const:`~resource.RLIMIT_SIGPENDING`.
 (Contributed by Christian Heimes in :issue:`19324`.)
 
 On FreeBSD version 9 and later, there some new FreeBSD specific constants:
-:attr:`~resource.RLIMIT_SBSIZE`, :attr:`~resource.RLIMIT_SWAP`, and
-:attr:`~resource.RLIMIT_NPTS`.  (Contributed by Claudiu Popa in
+:const:`~resource.RLIMIT_SBSIZE`, :const:`~resource.RLIMIT_SWAP`, and
+:const:`~resource.RLIMIT_NPTS`.  (Contributed by Claudiu Popa in
 :issue:`19343`.)
 
 
@@ -1388,7 +1388,7 @@ try/except statement by code that only cares whether or not an error occurred.
 socket
 ------
 
-The socket module now supports the :data:`~socket.CAN_BCM` protocol on
+The socket module now supports the :const:`~socket.CAN_BCM` protocol on
 platforms that support it.  (Contributed by Brian Thorne in :issue:`15359`.)
 
 Socket objects have new methods to get or set their :ref:`inheritable flag
@@ -1399,7 +1399,7 @@ The ``socket.AF_*`` and ``socket.SOCK_*`` constants are now enumeration values
 using the new :mod:`enum` module.  This allows meaningful names to be printed
 during debugging, instead of integer "magic numbers".
 
-The :data:`~socket.AF_LINK` constant is now available on BSD and OSX.
+The :const:`~socket.AF_LINK` constant is now available on BSD and OSX.
 
 :func:`~socket.inet_pton` and :func:`~socket.inet_ntop` are now supported
 on Windows.  (Contributed by Atsuo Ishimoto in :issue:`7171`.)
@@ -1460,8 +1460,8 @@ Heimes in :issue:`18147`.)
 If OpenSSL 0.9.8 or later is available, :class:`~ssl.SSLContext` has a new
 attribute :attr:`~ssl.SSLContext.verify_flags` that can be used to control the
 certificate verification process by setting it to some combination of the new
-constants :data:`~ssl.VERIFY_DEFAULT`, :data:`~ssl.VERIFY_CRL_CHECK_LEAF`,
-:data:`~ssl.VERIFY_CRL_CHECK_CHAIN`, or :data:`~ssl.VERIFY_X509_STRICT`.
+constants :const:`~ssl.VERIFY_DEFAULT`, :const:`~ssl.VERIFY_CRL_CHECK_LEAF`,
+:const:`~ssl.VERIFY_CRL_CHECK_CHAIN`, or :const:`~ssl.VERIFY_X509_STRICT`.
 OpenSSL does not do any CRL verification by default.  (Contributed by
 Christien Heimes in :issue:`8813`.)
 
@@ -1500,7 +1500,7 @@ implementation is required as most of the values aren't standardized and
 are platform-dependent.  (Contributed by Christian Heimes in :issue:`11016`.)
 
 The module supports new :mod:`~stat.ST_MODE` flags, :mod:`~stat.S_IFDOOR`,
-:attr:`~stat.S_IFPORT`, and :attr:`~stat.S_IFWHT`.  (Contributed by
+:const:`~stat.S_IFPORT`, and :const:`~stat.S_IFWHT`.  (Contributed by
 Christian Hiemes in :issue:`11016`.)
 
 
@@ -1849,7 +1849,7 @@ Python's default implementation to a SipHash implementation on platforms that
 have a 64 bit data type.  Any performance differences in comparison with the
 older FNV algorithm are trivial.
 
-The PEP adds additional fields to the :attr:`sys.hash_info` named tuple to
+The PEP adds additional fields to the :data:`sys.hash_info` named tuple to
 describe the hash algorithm in use by the currently executing binary.  Otherwise,
 the PEP does not alter any existing CPython APIs.
 

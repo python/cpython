@@ -2499,8 +2499,8 @@ through the object's keys; for sequences, it should iterate through the values.
 
    .. impl-detail::
 
-      In CPython, the length is required to be at most :attr:`sys.maxsize`.
-      If the length is larger than :attr:`!sys.maxsize` some features (such as
+      In CPython, the length is required to be at most :data:`sys.maxsize`.
+      If the length is larger than :data:`!sys.maxsize` some features (such as
       :func:`len`) may raise :exc:`OverflowError`.  To prevent raising
       :exc:`!OverflowError` by truth value testing, an object must define a
       :meth:`__bool__` method.
