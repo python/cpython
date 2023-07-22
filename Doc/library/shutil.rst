@@ -401,9 +401,9 @@ Directory and files operations
 
    .. note::
 
-      Where applicable (e.g. Unix), *path* must point to a path within a
-      **mounted** filesystem partition. On those platforms, CPython doesn't
-      attempt to retrieve disk usage information from non-mounted filesystems.
+      On Unix filesystems, *path* must point to a path within a **mounted**
+      filesystem partition. On those platforms, CPython doesn't attempt to
+      retrieve disk usage information from non-mounted filesystems.
 
    .. versionadded:: 3.3
 
