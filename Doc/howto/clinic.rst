@@ -224,11 +224,11 @@ The CLI supports the following options:
 
 .. option:: --make
 
-   Walk --srcdir to run over all relevant files.
+   Walk :option:`--srcdir` to run over all relevant files.
 
 .. option:: --srcdir SRCDIR
 
-   The directory tree to walk in --make mode.
+   The directory tree to walk in :option:`--make` mode.
 
 .. option:: filename ...
 
