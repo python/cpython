@@ -4,8 +4,8 @@
 More Control Flow Tools
 ***********************
 
-Besides the :keyword:`while` statement just introduced, Python uses a few more
-that will be introduced in this chapter.
+As well as the :keyword:`while` statement just introduced, Python uses a few more
+that will we will encounter in this chapter.
 
 
 .. _tut-if:
