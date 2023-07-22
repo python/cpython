@@ -188,7 +188,6 @@ Doc/library/pyclbr.rst
 Doc/library/pydoc.rst
 Doc/library/pyexpat.rst
 Doc/library/random.rst
-Doc/library/re.rst
 Doc/library/readline.rst
 Doc/library/reprlib.rst
 Doc/library/resource.rst
