@@ -163,7 +163,7 @@ arguments.  In chapter :ref:`tut-structures`, we will discuss in more detail abo
 :keyword:`!break` and :keyword:`!continue` Statements, and :keyword:`!else` Clauses on Loops
 ============================================================================================
 
-The :keyword:`break` statement, like in C, breaks out of the innermost enclosing
+The :keyword:`break` statement breaks out of the innermost enclosing
 :keyword:`for` or :keyword:`while` loop.
 
 Loop statements may have an :keyword:`!else` clause; it is executed when the loop
