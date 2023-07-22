@@ -103,13 +103,13 @@ When Argument Clinic is run on a file, either via the :ref:`clinic-cli`
 or via ``make clinic``, it will scan over the input files looking for
 :term:`start lines <start line>`:
 
-.. code-block:: c
+.. code-block:: none
 
     /*[clinic input]
 
 When it finds one, it reads everything up to the :term:`end line`:
 
-.. code-block:: c
+.. code-block:: none
 
     [clinic start generated code]*/
 
@@ -120,7 +120,7 @@ followed by a :term:`checksum line`.
 All of these lines, including the :term:`start line` and :term:`checksum line`,
 are collectively called an Argument Clinic :term:`block`:
 
-.. code-block:: c
+.. code-block:: none
 
     /*[clinic input]
     ... clinic input goes here ...
