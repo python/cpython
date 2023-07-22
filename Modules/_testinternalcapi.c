@@ -16,6 +16,7 @@
 #include "pycore_bytesobject.h"  // _PyBytes_Find()
 #include "pycore_ceval.h"        // _PyEval_AddPendingCall
 #include "pycore_compile.h"      // _PyCompile_CodeGen, _PyCompile_OptimizeCfg, _PyCompile_Assemble, _PyCompile_CleanDoc
+#include "pycore_cross_interp.h"  // _PyCrossInterpreterData
 #include "pycore_fileutils.h"    // _Py_normpath
 #include "pycore_frame.h"        // _PyInterpreterFrame
 #include "pycore_gc.h"           // PyGC_Head
@@ -1446,6 +1447,61 @@ test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+/* Cross-interpreter data (xid) */
+
+static void
+_xid_capsule_destructor(PyObject *capsule)
+{
+    _PyCrossInterpreterData *data = \
+            (_PyCrossInterpreterData *)PyCapsule_GetPointer(capsule, NULL);
+    if (data != NULL) {
+        assert(_PyCrossInterpreterData_Release(data) == 0);
+        PyMem_Free(data);
+    }
+}
+
+static PyObject *
+get_crossinterp_data(PyObject *self, PyObject *args)
+{
+    PyObject *obj = NULL;
+    if (!PyArg_ParseTuple(args, "O:get_crossinterp_data", &obj)) {
+        return NULL;
+    }
+
+    _PyCrossInterpreterData *data = PyMem_NEW(_PyCrossInterpreterData, 1);
+    if (data == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    if (_PyObject_GetCrossInterpreterData(obj, data) != 0) {
+        PyMem_Free(data);
+        return NULL;
+    }
+    PyObject *capsule = PyCapsule_New(data, NULL, _xid_capsule_destructor);
+    if (capsule == NULL) {
+        assert(_PyCrossInterpreterData_Release(data) == 0);
+        PyMem_Free(data);
+    }
+    return capsule;
+}
+
+static PyObject *
+restore_crossinterp_data(PyObject *self, PyObject *args)
+{
+    PyObject *capsule = NULL;
+    if (!PyArg_ParseTuple(args, "O:restore_crossinterp_data", &capsule)) {
+        return NULL;
+    }
+
+    _PyCrossInterpreterData *data = \
+            (_PyCrossInterpreterData *)PyCapsule_GetPointer(capsule, NULL);
+    if (data == NULL) {
+        return NULL;
+    }
+    return _PyCrossInterpreterData_NewObject(data);
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -1502,6 +1558,8 @@ static PyMethodDef module_functions[] = {
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {"_PyUnicode_TransformDecimalAndSpaceToASCII", unicode_transformdecimalandspacetoascii, METH_O},
     {"test_atexit", test_atexit, METH_NOARGS},
+    {"get_crossinterp_data", get_crossinterp_data, METH_VARARGS},
+    {"restore_crossinterp_data", restore_crossinterp_data, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 

@@ -39,6 +39,8 @@ to avoid the expense of doing their own locking).
 extern "C" {
 #endif
 
+// Forward declaration
+static crossinterpdatafunc _PyCrossInterpreterData_Lookup(PyObject *);
 
 /****************************************/
 /* helpers for the current thread state */
@@ -2338,7 +2340,7 @@ _xidata_clear(_PyCrossInterpreterData *data)
     Py_CLEAR(data->obj);
 }
 
-void
+static void
 _PyCrossInterpreterData_Init(_PyCrossInterpreterData *data,
                              PyInterpreterState *interp,
                              void *shared, PyObject *obj,
@@ -2410,8 +2412,6 @@ _check_xidata(PyThreadState *tstate, _PyCrossInterpreterData *data)
 
     return 0;
 }
-
-crossinterpdatafunc _PyCrossInterpreterData_Lookup(PyObject *);
 
 /* This is a separate func from _PyCrossInterpreterData_Lookup in order
    to keep the registry code separate. */
@@ -2653,7 +2653,7 @@ _PyCrossInterpreterData_UnregisterClass(PyTypeObject *cls)
    We can reassess this policy when we move from a global registry to a
    tp_* slot. */
 
-crossinterpdatafunc
+static crossinterpdatafunc
 _PyCrossInterpreterData_Lookup(PyObject *obj)
 {
     struct _xidregistry *xidregistry = &_PyRuntime.xidregistry ;

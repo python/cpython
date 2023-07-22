@@ -7,6 +7,7 @@
 
 #include "Python.h"
 #include "pycore_atexit.h"        // _Py_AtExit()
+#include "pycore_cross_interp.h"  // crossinterpdatafunc
 #include "pycore_interp_id.h"     // _PyInterpreterState_GetIDObject()
 
 

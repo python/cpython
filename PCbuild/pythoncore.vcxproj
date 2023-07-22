@@ -214,6 +214,7 @@
     <ClInclude Include="..\Include\internal\pycore_complexobject.h" />
     <ClInclude Include="..\Include\internal\pycore_condvar.h" />
     <ClInclude Include="..\Include\internal\pycore_context.h" />
+    <ClInclude Include="..\Include\internal\pycore_cross_interp.h" />
     <ClInclude Include="..\Include\internal\pycore_descrobject.h" />
     <ClInclude Include="..\Include\internal\pycore_dict.h" />
     <ClInclude Include="..\Include\internal\pycore_dict_state.h" />

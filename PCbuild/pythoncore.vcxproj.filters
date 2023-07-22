@@ -546,6 +546,9 @@
     <ClInclude Include="..\Include\internal\pycore_context.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_cross_interp.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_descrobject.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
