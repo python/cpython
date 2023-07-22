@@ -93,7 +93,7 @@ the :mod:`io` APIs instead.
    .. index:: single: Py_PRINT_RAW
 
    Write object *obj* to file object *p*.  The only supported flag for *flags* is
-   :const:`Py_PRINT_RAW`; if given, the :func:`str` of the object is written
+   :c:macro:`Py_PRINT_RAW`; if given, the :func:`str` of the object is written
    instead of the :func:`repr`.  Return ``0`` on success or ``-1`` on failure; the
    appropriate exception will be set.
 
