@@ -4,6 +4,7 @@
    All the utility functions (_Py_Hash*()) return "-1" to signify an error.
 */
 #include "Python.h"
+#include "pycore_pyhash.h"        // _Py_HashSecret_t
 
 #ifdef __APPLE__
 #  include <libkern/OSByteOrder.h>
