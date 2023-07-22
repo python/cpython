@@ -1768,7 +1768,7 @@ Porting to Python 3.12
   for example).
 
 * Add support of more formatting options (left aligning, octals, uppercase
-  hexadecimals, ``intmax_t``, ``ptrdiff_t``, ``wchar_t`` C
+  hexadecimals, :c:type:`intmax_t`, :c:type:`ptrdiff_t`, :c:type:`wchar_t` C
   strings, variable width and precision) in :c:func:`PyUnicode_FromFormat` and
   :c:func:`PyUnicode_FromFormatV`.
   (Contributed by Serhiy Storchaka in :gh:`98836`.)
