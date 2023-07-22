@@ -949,7 +949,7 @@ should, then :meth:`flush` is expected to do the flushing.
 
    .. method:: flush()
 
-      For a :class:`MemoryHandler`, flushing means just sending the buffered
+      For a :class:`MemoryHandler` instance, flushing means just sending the buffered
       records to the target, if there is one. The buffer is also cleared when
       buffered records are sent to the target. Override if you want different behavior.
 
