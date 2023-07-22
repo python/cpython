@@ -329,4 +329,4 @@ ogp_custom_meta_tags = [
     '<meta name="theme-color" content="#3776ab" />',
 ]
 
-
+copybutton_exclude = '.linenos, .gp, .go'
