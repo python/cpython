@@ -32,9 +32,6 @@
     #include <sys/mman.h>
     #define LOOKUP(SYMBOL) dlsym(RTLD_DEFAULT, (SYMBOL))
 #endif
-#ifdef __APPLE__
-    #include <libkern/OSCacheControl.h>
-#endif
 
 #define MB (1 << 20)
 #define JIT_POOL_SIZE  (128 * MB)
@@ -336,9 +333,12 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         head += stencil->nbytes;
     };
 #ifdef MS_WINDOWS
-    if (!VirtualProtect(page, page_nbytes, PAGE_EXECUTE_READ, &old)) {
+    if (!FlushInstructionCache(GetCurrentProcess(), memory, nbytes) ||
+        !VirtualProtect(page, page_nbytes, PAGE_EXECUTE_READ, &old))
+    {
         int code = GetLastError();
 #else
+    __builtin___clear_cache((char *)memory, (char *)memory + nbytes);
     if (mprotect(page, page_nbytes, PROT_EXEC | PROT_READ)) {
         int code = errno;
 #endif
@@ -346,9 +346,6 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, code);
         return NULL;
     }
-#ifdef __APPLE__
-    sys_icache_invalidate(memory, nbytes);
-#endif
     // Wow, done already?
     assert(memory + nbytes == head);
     return (_PyJITFunction)memory;
