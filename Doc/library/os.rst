@@ -4650,7 +4650,7 @@ written in Python, such as a mail server's external command delivery program.
    :data:`WNOHANG` and :data:`WNOWAIT` are additional optional flags.
 
    The return value is an object representing the data contained in the
-   :c:type:`!siginfo_t` structure with the following attributes:
+   :c:type:`siginfo_t` structure with the following attributes:
 
    * :attr:`!si_pid` (process ID)
    * :attr:`!si_uid` (real user ID of the child)

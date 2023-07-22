@@ -2192,7 +2192,7 @@ encode error with ``\N{...}`` escapes.
 (Contributed by Serhiy Storchaka in :issue:`19676`.)
 
 A new :c:func:`PyErr_FormatV` function similar to :c:func:`PyErr_Format`,
-but accepts a ``va_list`` argument.
+but accepts a :c:type:`va_list` argument.
 (Contributed by Antoine Pitrou in :issue:`18711`.)
 
 A new :c:data:`PyExc_RecursionError` exception.
