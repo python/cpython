@@ -1983,7 +1983,7 @@ class BufferSeries:
 
     def clear(self):
         for ta in self._array:
-            ta._text.clear()
+            ta.text.clear()
 
     def dump(self):
         texts = [ta.output() for ta in self._array]
@@ -4487,13 +4487,13 @@ class DSLParser:
             command: str,
             *args
     ) -> None:
-        if command == 'new':
-            self.clinic.add_destination(name, *args)
-            return
-
-        if command == 'clear':
-            self.clinic.get_destination(name).clear()
-        fail("unknown destination command", repr(command))
+        match command:
+            case "new":
+                self.clinic.add_destination(name, *args)
+            case "clear":
+                self.clinic.get_destination(name).clear()
+            case _:
+                fail("unknown destination command", repr(command))
 
 
     def directive_output(
