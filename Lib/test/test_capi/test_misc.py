@@ -85,9 +85,15 @@ class CAPITest(unittest.TestCase):
 
     @support.requires_subprocess()
     def test_no_FatalError_infinite_loop(self):
-        run_result, _cmd_line = run_python_until_end(
-            '-c', 'import _testcapi; _testcapi.crash_no_current_thread()',
-        )
+        code = textwrap.dedent("""
+            import _testcapi
+            from test import support
+
+            with support.SuppressCrashReport():
+                _testcapi.crash_no_current_thread()
+        """)
+
+        run_result, _cmd_line = run_python_until_end('-c', code)
         _rc, out, err = run_result
         self.assertEqual(out, b'')
         # This used to cause an infinite loop.

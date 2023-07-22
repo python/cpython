@@ -838,6 +838,13 @@ Deprecated
 Removed
 -------
 
+* Remove many APIs (functions, macros, variables) with names prefixed by
+  ``_Py`` or ``_PY`` (considered as private API). If your project is affected
+  by one of these removals and you consider that the removed API should remain
+  available, please open a new issue to request a public C API and
+  add ``cc @vstinner`` to the issue to notify Victor Stinner.
+  (Contributed by Victor Stinner in :gh:`106320`.)
+
 * Remove functions deprecated in Python 3.9.
 
   * ``PyEval_CallObject()``, ``PyEval_CallObjectWithKeywords()``: use

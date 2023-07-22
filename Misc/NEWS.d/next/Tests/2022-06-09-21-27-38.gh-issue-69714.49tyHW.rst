@@ -1,0 +1,1 @@
+Add additional tests to :mod:`calendar` to achieve full test coverage.
