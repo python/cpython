@@ -7,6 +7,7 @@ import time
 
 from test import support
 from test.support import import_helper
+from test.support import threading_helper
 _interpreters = import_helper.import_module('_xxsubinterpreters')
 _channels = import_helper.import_module('_xxinterpchannels')
 from test.support import interpreters
@@ -461,6 +462,27 @@ class TestInterpreterRun(TestBase):
             interp.run(b'print("spam")')
 
     # test_xxsubinterpreters covers the remaining Interpreter.run() behavior.
+
+
+class StressTests(TestBase):
+
+    # In these tests we generally want a lot of interpreters,
+    # but not so many that any test takes too long.
+
+    def test_create_many_sequential(self):
+        alive = []
+        for _ in range(100):
+            interp = interpreters.create()
+            alive.append(interp)
+
+    def test_create_many_threaded(self):
+        alive = []
+        def task():
+            interp = interpreters.create()
+            alive.append(interp)
+        threads = (threading.Thread(target=task) for _ in range(200))
+        with threading_helper.start_threads(threads):
+            pass
 
 
 class TestIsShareable(TestBase):
