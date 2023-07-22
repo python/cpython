@@ -4954,3 +4954,59 @@ Test_meth_coexist(TestObj *self, PyObject *Py_UNUSED(ignored))
 static PyObject *
 Test_meth_coexist_impl(TestObj *self)
 /*[clinic end generated code: output=808a293d0cd27439 input=2a1d75b5e6fec6dd]*/
+
+
+/*[clinic input]
+output push
+output preset buffer
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=5bff3376ee0df0b5]*/
+
+/*[clinic input]
+buffer_clear
+  a: int
+We'll call 'destination buffer clear' after this.
+
+Argument Clinic's buffer preset puts most generated code into the
+'buffer' destination, except from 'impl_definition', which is put into
+the 'block' destination, so we should expect everything but
+'impl_definition' to be cleared.
+[clinic start generated code]*/
+
+static PyObject *
+buffer_clear_impl(PyObject *module, int a)
+/*[clinic end generated code: output=f14bba74677e1846 input=a4c308a6fdab043c]*/
+
+/*[clinic input]
+destination buffer clear
+output pop
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f20d06adb8252084]*/
+
+
+/*[clinic input]
+output push
+destination test1 new buffer
+output everything suppress
+output docstring_definition test1
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=5a77c454970992fc]*/
+
+/*[clinic input]
+new_dest
+  a: int
+Only this docstring should be outputted to test1.
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=da5af421ed8996ed]*/
+
+/*[clinic input]
+dump test1
+output pop
+[clinic start generated code]*/
+
+PyDoc_STRVAR(new_dest__doc__,
+"new_dest($module, /, a)\n"
+"--\n"
+"\n"
+"Only this docstring should be outputted to test1.");
+/*[clinic end generated code: output=9cac703f51d90e84 input=090db8df4945576d]*/
