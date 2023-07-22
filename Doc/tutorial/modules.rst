@@ -526,7 +526,7 @@ would only import the two submodules ``echo`` and ``surround``, but *not* the
     ]
 
     def reverse(msg: str):  # <-- this name shadows the 'reverse.py' submodule
-        return msg[::-1]    #     in case of an 'from sound.effects import *'
+        return msg[::-1]    #     in the case of a 'from sound.effects import *'
 
 If ``__all__`` is not defined, the statement ``from sound.effects import *``
 does *not* import all submodules from the package :mod:`sound.effects` into the
