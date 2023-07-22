@@ -33,7 +33,7 @@ static inline PyObject* _PyModule_GetDict(PyObject *mod) {
     PyObject *dict = ((PyModuleObject *)mod) -> md_dict;
     // _PyModule_GetDict(mod) must not be used after calling module_clear(mod)
     assert(dict != NULL);
-    return dict;
+    return dict;  // borrowed reference
 }
 
 PyObject* _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress);

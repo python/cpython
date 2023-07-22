@@ -1077,13 +1077,45 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         expected_insts = [
             ('LOAD_CONST', 0, 1),
             ('LOAD_CONST', 1, 2),
-            ('LOAD_CONST', 2, 3),
-            ('SWAP', 3, 4),
-            ('STORE_FAST_STORE_FAST', 17, 4),
+            ('NOP', 0, 3),
+            ('STORE_FAST', 1, 4),
             ('POP_TOP', 0, 4),
             ('RETURN_VALUE', 5)
         ]
         self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
+
+    def test_dead_store_elimination_in_same_lineno(self):
+        insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('LOAD_CONST', 2, 3),
+            ('STORE_FAST', 1, 4),
+            ('STORE_FAST', 1, 4),
+            ('STORE_FAST', 1, 4),
+            ('RETURN_VALUE', 5)
+        ]
+        expected_insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('NOP', 0, 3),
+            ('POP_TOP', 0, 4),
+            ('STORE_FAST', 1, 4),
+            ('RETURN_VALUE', 5)
+        ]
+        self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
+
+    def test_no_dead_store_elimination_in_different_lineno(self):
+        insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('LOAD_CONST', 2, 3),
+            ('STORE_FAST', 1, 4),
+            ('STORE_FAST', 1, 5),
+            ('STORE_FAST', 1, 6),
+            ('RETURN_VALUE', 5)
+        ]
+        self.cfg_optimization_test(insts, insts, consts=list(range(3)), nlocals=1)
+
 
 if __name__ == "__main__":
     unittest.main()

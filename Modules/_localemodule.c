@@ -9,7 +9,6 @@ This software comes with no warranty. Use at your own risk.
 
 ******************************************************************/
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_fileutils.h"
 

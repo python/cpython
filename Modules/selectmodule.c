@@ -14,6 +14,7 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
+#include "pycore_time.h"          // _PyTime_t
 #include "structmember.h"         // PyMemberDef
 
 #ifdef HAVE_SYS_DEVPOLL_H

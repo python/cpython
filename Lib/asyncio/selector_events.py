@@ -1202,6 +1202,7 @@ class _SelectorSocketTransport(_SelectorTransport):
 
     def close(self):
         self._read_ready_cb = None
+        self._write_ready = None
         super().close()
 
 

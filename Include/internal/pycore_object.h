@@ -355,8 +355,10 @@ static inline int _PyType_SUPPORTS_WEAKREFS(PyTypeObject *type) {
 }
 
 extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
+PyObject *_PyType_NewManagedObject(PyTypeObject *type);
 
 extern int _PyObject_InitializeDict(PyObject *obj);
+int _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp);
 extern int _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
                                           PyObject *name, PyObject *value);
 PyObject * _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
@@ -435,6 +437,13 @@ extern PyObject* _PyCFunctionWithKeywords_TrampolineCall(
 #define _PyCFunctionWithKeywords_TrampolineCall(meth, self, args, kw) \
     (meth)((self), (args), (kw))
 #endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
+
+// _pickle shared extension uses _PyNone_Type and _PyNotImplemented_Type
+PyAPI_DATA(PyTypeObject) _PyNone_Type;
+PyAPI_DATA(PyTypeObject) _PyNotImplemented_Type;
+
+/* Maps Py_LT to Py_GT, ..., Py_GE to Py_LE.  Defined in Objects/object.c. */
+PyAPI_DATA(int) _Py_SwappedOp[];
 
 #ifdef __cplusplus
 }

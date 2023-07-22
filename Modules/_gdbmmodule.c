@@ -3,7 +3,6 @@
 /* Author: Anthony Baxter, after dbmmodule.c */
 /* Doc strings: Mitch Chapman */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "gdbm.h"
 

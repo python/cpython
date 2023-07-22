@@ -83,6 +83,7 @@ Objects/unicodetype_db.h
 Python/deepfreeze/*.c
 Python/frozen_modules/*.h
 Python/generated_cases.c.h
+Python/executor_cases.c.h
 
 # not actually source
 Python/bytecodes.c
@@ -226,7 +227,6 @@ Include/cpython/fileobject.h	Py_CPYTHON_FILEOBJECT_H	1
 Include/cpython/fileutils.h	Py_CPYTHON_FILEUTILS_H	1
 Include/cpython/frameobject.h	Py_CPYTHON_FRAMEOBJECT_H	1
 Include/cpython/import.h	Py_CPYTHON_IMPORT_H	1
-Include/cpython/interpreteridobject.h	Py_CPYTHON_INTERPRETERIDOBJECT_H	1
 Include/cpython/listobject.h	Py_CPYTHON_LISTOBJECT_H	1
 Include/cpython/methodobject.h	Py_CPYTHON_METHODOBJECT_H	1
 Include/cpython/object.h	Py_CPYTHON_OBJECT_H	1

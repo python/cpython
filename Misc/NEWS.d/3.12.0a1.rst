@@ -736,7 +736,7 @@ new types.
 .. nonce: 6eoc8k
 .. section: Core and Builtins
 
-On WASI :data:`~errno.ENOTCAPABLE` is now mapped to :exc:`PermissionError`.
+On WASI :const:`~errno.ENOTCAPABLE` is now mapped to :exc:`PermissionError`.
 The :mod:`errno` modules exposes the new error number. ``getpath.py`` now
 ignores :exc:`PermissionError` when it cannot open landmark files
 ``pybuilddir.txt`` and ``pyenv.cfg``.
@@ -2649,7 +2649,7 @@ calling any callbacks. Patch by Kumar Aditya.
 .. nonce: i807-g
 .. section: Library
 
-Fail gracefully if :data:`~errno.EPERM` or :data:`~errno.ENOSYS` is raised
+Fail gracefully if :const:`~errno.EPERM` or :const:`~errno.ENOSYS` is raised
 when loading :mod:`!crypt` methods. This may happen when trying to load
 ``MD5`` on a Linux kernel with :abbr:`FIPS (Federal Information Processing
 Standard)` enabled.
@@ -2698,8 +2698,8 @@ Upgrade bundled pip to 22.2.
 .. nonce: VT34A5
 .. section: Library
 
-Fix check for existence of :data:`os.EFD_CLOEXEC`, :data:`os.EFD_NONBLOCK`
-and :data:`os.EFD_SEMAPHORE` flags on older kernel versions where these
+Fix check for existence of :const:`os.EFD_CLOEXEC`, :const:`os.EFD_NONBLOCK`
+and :const:`os.EFD_SEMAPHORE` flags on older kernel versions where these
 flags are not present. Patch by Kumar Aditya.
 
 ..
@@ -3553,7 +3553,7 @@ Make :class:`multiprocessing.Pool` raise an exception if
 .. nonce: HY0Uzj
 .. section: Library
 
-Add :data:`os.PIDFD_NONBLOCK` flag to open a file descriptor for a process
+Add :const:`os.PIDFD_NONBLOCK` flag to open a file descriptor for a process
 with :func:`os.pidfd_open` in non-blocking mode. Patch by Kumar Aditya.
 
 ..
@@ -4171,7 +4171,7 @@ Add an index_pages parameter to support using non-default index page names.
 .. nonce: qtT3CE
 .. section: Library
 
-Drop support for :class:`bytes` on :attr:`sys.path`.
+Drop support for :class:`bytes` on :data:`sys.path`.
 
 ..
 
@@ -5308,7 +5308,7 @@ parameter. Patch by Kumar Aditya.
 .. section: Build
 
 Python now always use the ``%zu`` and ``%zd`` printf formats to format a
-``size_t`` or ``Py_ssize_t`` number. Building Python 3.12 requires a C11
+:c:type:`size_t` or ``Py_ssize_t`` number. Building Python 3.12 requires a C11
 compiler, so these printf formats are now always supported. Patch by Victor
 Stinner.
 
@@ -5856,8 +5856,8 @@ Configuration for the :ref:`integer string conversion length limitation
 
 Extensions classes that set ``tp_dictoffset`` and ``tp_weaklistoffset`` lose
 the support for multiple inheritance, but are now safe. Extension classes
-should use :const:`Py_TPFLAGS_MANAGED_DICT` and
-:const:`Py_TPFLAGS_MANAGED_WEAKREF` instead.
+should use :c:macro:`Py_TPFLAGS_MANAGED_DICT` and
+:c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` instead.
 
 ..
 
@@ -5898,7 +5898,7 @@ Support C extensions using managed dictionaries by setting the
 .. nonce: QoDHEu
 .. section: C API
 
-API for implementing vectorcall (:c:data:`Py_TPFLAGS_HAVE_VECTORCALL`,
+API for implementing vectorcall (:c:macro:`Py_TPFLAGS_HAVE_VECTORCALL`,
 :c:func:`PyVectorcall_NARGS` and :c:func:`PyVectorcall_Call`) was added to
 the limited API and stable ABI.
 
@@ -5920,12 +5920,12 @@ Philip Georgi.
 .. nonce: -DdGEy
 .. section: C API
 
-The :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag is now removed from a class
+The :c:macro:`Py_TPFLAGS_HAVE_VECTORCALL` flag is now removed from a class
 when the class's :py:meth:`~object.__call__` method is reassigned. This
 makes vectorcall safe to use with mutable types (i.e. heap types without the
 :const:`immutable <Py_TPFLAGS_IMMUTABLETYPE>` flag). Mutable types that do
 not override :c:member:`~PyTypeObject.tp_call` now inherit the
-:const:`Py_TPFLAGS_HAVE_VECTORCALL` flag.
+:c:macro:`Py_TPFLAGS_HAVE_VECTORCALL` flag.
 
 ..
 

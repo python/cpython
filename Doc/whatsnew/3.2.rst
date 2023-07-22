@@ -424,7 +424,7 @@ protocols, the users must to be able access the environment using native strings
 even though the underlying platform may have a different convention.  To bridge
 this gap, the :mod:`wsgiref` module has a new function,
 :func:`wsgiref.handlers.read_environ` for transcoding CGI variables from
-:attr:`os.environ` into native strings and returning a new dictionary.
+:data:`os.environ` into native strings and returning a new dictionary.
 
 .. seealso::
 
@@ -485,7 +485,7 @@ Some smaller changes made to the core Python language are:
 
 * The interpreter can now be started with a quiet option, ``-q``, to prevent
   the copyright and version information from being displayed in the interactive
-  mode.  The option can be introspected using the :attr:`sys.flags` attribute:
+  mode.  The option can be introspected using the :data:`sys.flags` attribute:
 
   .. code-block:: shell-session
 
@@ -568,7 +568,7 @@ Some smaller changes made to the core Python language are:
 
 * The internal :c:type:`structsequence` tool now creates subclasses of tuple.
   This means that C structures like those returned by :func:`os.stat`,
-  :func:`time.gmtime`, and :attr:`sys.version_info` now work like a
+  :func:`time.gmtime`, and :data:`sys.version_info` now work like a
   :term:`named tuple` and now work with functions and methods that
   expect a tuple as an argument.  This is a big step forward in making the C
   structures as flexible as their pure Python counterparts:
@@ -598,7 +598,7 @@ Some smaller changes made to the core Python language are:
   module, or on the command line.
 
   A :exc:`ResourceWarning` is issued at interpreter shutdown if the
-  :data:`gc.garbage` list isn't empty, and if :attr:`gc.DEBUG_UNCOLLECTABLE` is
+  :data:`gc.garbage` list isn't empty, and if :const:`gc.DEBUG_UNCOLLECTABLE` is
   set, all uncollectable objects are printed.  This is meant to make the
   programmer aware that their code contains object finalization issues.
 
@@ -623,7 +623,7 @@ Some smaller changes made to the core Python language are:
   :class:`collections.Sequence` :term:`abstract base class`.  As a result, the
   language will have a more uniform API.  In addition, :class:`range` objects
   now support slicing and negative indices, even with values larger than
-  :attr:`sys.maxsize`.  This makes *range* more interoperable with lists::
+  :data:`sys.maxsize`.  This makes *range* more interoperable with lists::
 
       >>> range(0, 100, 2).count(10)
       1
@@ -1007,13 +1007,13 @@ datetime and time
   after 1900.  The new supported year range is from 1000 to 9999 inclusive.
 
 * Whenever a two-digit year is used in a time tuple, the interpretation has been
-  governed by :attr:`time.accept2dyear`.  The default is ``True`` which means that
+  governed by :data:`time.accept2dyear`.  The default is ``True`` which means that
   for a two-digit year, the century is guessed according to the POSIX rules
   governing the ``%y`` strptime format.
 
   Starting with Py3.2, use of the century guessing heuristic will emit a
   :exc:`DeprecationWarning`.  Instead, it is recommended that
-  :attr:`time.accept2dyear` be set to ``False`` so that large date ranges
+  :data:`time.accept2dyear` be set to ``False`` so that large date ranges
   can be used without guesswork::
 
     >>> import time, warnings
@@ -1031,7 +1031,7 @@ datetime and time
     'Fri Jan  1 12:34:56 11'
 
   Several functions now have significantly expanded date ranges.  When
-  :attr:`time.accept2dyear` is false, the :func:`time.asctime` function will
+  :data:`time.accept2dyear` is false, the :func:`time.asctime` function will
   accept any year that fits in a C int, while the :func:`time.mktime` and
   :func:`time.strftime` functions will accept the full range supported by the
   corresponding operating system functions.
@@ -1194,11 +1194,11 @@ can be set to "$" for the shell-style formatting provided by
 
 If no configuration is set-up before a logging event occurs, there is now a
 default configuration using a :class:`~logging.StreamHandler` directed to
-:attr:`sys.stderr` for events of ``WARNING`` level or higher.  Formerly, an
+:data:`sys.stderr` for events of ``WARNING`` level or higher.  Formerly, an
 event occurring before a configuration was set-up would either raise an
 exception or silently drop the event depending on the value of
-:attr:`logging.raiseExceptions`.  The new default handler is stored in
-:attr:`logging.lastResort`.
+:data:`logging.raiseExceptions`.  The new default handler is stored in
+:data:`logging.lastResort`.
 
 The use of filters has been simplified.  Instead of creating a
 :class:`~logging.Filter` object, the predicate can be any Python callable that
@@ -1300,7 +1300,7 @@ values are equal (:issue:`8188`)::
           hash(Decimal("1.5")) == hash(complex(1.5, 0))
 
 Some of the hashing details are exposed through a new attribute,
-:attr:`sys.hash_info`, which describes the bit width of the hash value, the
+:data:`sys.hash_info`, which describes the bit width of the hash value, the
 prime modulus, the hash values for *infinity* and *nan*, and the multiplier
 used for the imaginary part of a number:
 
@@ -1388,7 +1388,7 @@ select
 ------
 
 The :mod:`select` module now exposes a new, constant attribute,
-:attr:`~select.PIPE_BUF`, which gives the minimum number of bytes which are
+:const:`~select.PIPE_BUF`, which gives the minimum number of bytes which are
 guaranteed not to block when :func:`select.select` says a pipe is ready
 for writing.
 
@@ -1529,7 +1529,7 @@ filenames:
 b'Sehensw\xc3\xbcrdigkeiten'
 
 Some operating systems allow direct access to encoded bytes in the
-environment.  If so, the :attr:`os.supports_bytes_environ` constant will be
+environment.  If so, the :const:`os.supports_bytes_environ` constant will be
 true.
 
 For direct access to encoded environment variables (if available),
@@ -1666,9 +1666,9 @@ for secure (encrypted, authenticated) internet connections:
   algorithm" error.
 
 * The version of OpenSSL being used is now accessible using the module
-  attributes :data:`ssl.OPENSSL_VERSION` (a string),
-  :data:`ssl.OPENSSL_VERSION_INFO` (a 5-tuple), and
-  :data:`ssl.OPENSSL_VERSION_NUMBER` (an integer).
+  attributes :const:`ssl.OPENSSL_VERSION` (a string),
+  :const:`ssl.OPENSSL_VERSION_INFO` (a 5-tuple), and
+  :const:`ssl.OPENSSL_VERSION_NUMBER` (an integer).
 
 (Contributed by Antoine Pitrou in :issue:`8850`, :issue:`1589`, :issue:`8322`,
 :issue:`5639`, :issue:`4870`, :issue:`8484`, and :issue:`8321`.)
@@ -2302,7 +2302,7 @@ turtledemo
 
 The demonstration code for the :mod:`turtle` module was moved from the *Demo*
 directory to main library.  It includes over a dozen sample scripts with
-lively displays.  Being on :attr:`sys.path`, it can now be run directly
+lively displays.  Being on :data:`sys.path`, it can now be run directly
 from the command-line:
 
 .. code-block:: shell-session
@@ -2566,7 +2566,7 @@ Changes to Python's build process and to the C API include:
   (:issue:`2443`).
 
 * A new C API function :c:func:`PySys_SetArgvEx` allows an embedded interpreter
-  to set :attr:`sys.argv` without also modifying :attr:`sys.path`
+  to set :data:`sys.argv` without also modifying :data:`sys.path`
   (:issue:`5753`).
 
 * :c:macro:`PyEval_CallObject` is now only available in macro form.  The

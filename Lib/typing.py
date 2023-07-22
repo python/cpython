@@ -1,9 +1,6 @@
 """
 The typing module: Support for gradual typing as defined by PEP 484 and subsequent PEPs.
 
-Any name not present in __all__ is an implementation detail
-that may be changed without notice. Use at your own risk!
-
 Among other things, the module includes the following:
 * Generic, Protocol, and internal machinery to support generic aliases.
   All subscripted types like X[int], Union[int, str] are generic aliases.
@@ -16,6 +13,9 @@ Among other things, the module includes the following:
   SupportsFloat, SupportsIndex, SupportsAbs, and others.
 * Special types: NewType, NamedTuple, TypedDict.
 * Deprecated aliases for builtin types and collections.abc ABCs.
+
+Any name not present in __all__ is an implementation detail
+that may be changed without notice. Use at your own risk!
 """
 
 from abc import abstractmethod, ABCMeta
@@ -131,7 +131,9 @@ __all__ = [
     'get_args',
     'get_origin',
     'get_overloads',
+    'get_protocol_members',
     'get_type_hints',
+    'is_protocol',
     'is_typeddict',
     'LiteralString',
     'Never',
@@ -208,10 +210,12 @@ def _should_unflatten_callable_args(typ, args):
     """Internal helper for munging collections.abc.Callable's __args__.
 
     The canonical representation for a Callable's __args__ flattens the
-    argument types, see https://bugs.python.org/issue42195. For example::
+    argument types, see https://github.com/python/cpython/issues/86361.
 
-        collections.abc.Callable[[int, int], str].__args__ == (int, int, str)
-        collections.abc.Callable[ParamSpec, str].__args__ == (ParamSpec, str)
+    For example::
+
+        assert collections.abc.Callable[[int, int], str].__args__ == (int, int, str)
+        assert collections.abc.Callable[ParamSpec, str].__args__ == (ParamSpec, str)
 
     As a result, if we need to reconstruct the Callable from its __args__,
     we need to unflatten it.
@@ -345,8 +349,9 @@ _caches = {}
 
 
 def _tp_cache(func=None, /, *, typed=False):
-    """Internal wrapper caching __getitem__ of generic types with a fallback to
-    original function for non-hashable arguments.
+    """Internal wrapper caching __getitem__ of generic types.
+
+    For non-hashable arguments, the original function is used as a fallback.
     """
     def decorator(func):
         # The callback 'inner' references the newly created lru_cache
@@ -415,17 +420,6 @@ class _Final:
     def __init_subclass__(cls, /, *args, **kwds):
         if '_root' not in kwds:
             raise TypeError("Cannot subclass special typing classes")
-
-class _Immutable:
-    """Mixin to indicate that object should not be copied."""
-
-    __slots__ = ()
-
-    def __copy__(self):
-        return self
-
-    def __deepcopy__(self, memo):
-        return self
 
 
 class _NotIterable:
@@ -569,7 +563,7 @@ def Never(self, parameters):
                 case str():
                     print("It's a str")
                 case _:
-                    never_call_me(arg)  # ok, arg is of type Never
+                    never_call_me(arg)  # OK, arg is of type Never
     """
     raise TypeError(f"{self} is not subscriptable")
 
@@ -602,13 +596,13 @@ def LiteralString(self, parameters):
 
         from typing import LiteralString
 
-        def run_query(sql: LiteralString) -> ...
+        def run_query(sql: LiteralString) -> None:
             ...
 
         def caller(arbitrary_string: str, literal_string: LiteralString) -> None:
-            run_query("SELECT * FROM students")  # ok
-            run_query(literal_string)  # ok
-            run_query("SELECT * FROM " + literal_string)  # ok
+            run_query("SELECT * FROM students")  # OK
+            run_query(literal_string)  # OK
+            run_query("SELECT * FROM " + literal_string)  # OK
             run_query(arbitrary_string)  # type checker error
             run_query(  # type checker error
                 f"SELECT * FROM students WHERE name = {arbitrary_string}"
@@ -627,10 +621,12 @@ def ClassVar(self, parameters):
 
     An annotation wrapped in ClassVar indicates that a given
     attribute is intended to be used as a class variable and
-    should not be set on instances of that class. Usage::
+    should not be set on instances of that class.
+
+    Usage::
 
         class Starship:
-            stats: ClassVar[Dict[str, int]] = {} # class variable
+            stats: ClassVar[dict[str, int]] = {} # class variable
             damage: int = 10                     # instance variable
 
     ClassVar accepts only types and cannot be further subscribed.
@@ -763,7 +759,9 @@ def TypeAlias(self, parameters):
 
     Use TypeAlias to indicate that an assignment should
     be recognized as a proper type alias definition by type
-    checkers. For example::
+    checkers.
+
+    For example::
 
         Predicate: TypeAlias = Callable[..., bool]
 
@@ -776,8 +774,8 @@ def TypeAlias(self, parameters):
 def Concatenate(self, parameters):
     """Special form for annotating higher-order functions.
 
-    ``Concatenate`` can be sed in conjunction with ``ParamSpec`` and
-    ``Callable`` to represent a higher order function which adds, removes or
+    ``Concatenate`` can be used in conjunction with ``ParamSpec`` and
+    ``Callable`` to represent a higher-order function which adds, removes or
     transforms the parameters of a callable.
 
     For example::
@@ -1593,8 +1591,9 @@ def Unpack(self, parameters):
     """Type unpack operator.
 
     The type unpack operator takes the child types from some container type,
-    such as `tuple[int, str]` or a `TypeVarTuple`, and 'pulls them out'. For
-    example::
+    such as `tuple[int, str]` or a `TypeVarTuple`, and 'pulls them out'.
+
+    For example::
 
         # For some generic class `Foo`:
         Foo[Unpack[tuple[int, str]]]  # Equivalent to Foo[int, str]
@@ -1619,7 +1618,7 @@ def Unpack(self, parameters):
         class Bar[*Ts]: ...
 
     The operator can also be used along with a `TypedDict` to annotate
-    `**kwargs` in a function signature. For instance::
+    `**kwargs` in a function signature::
 
         class Movie(TypedDict):
             name: str
@@ -1632,7 +1631,7 @@ def Unpack(self, parameters):
     Note that there is only some runtime checking of this operator. Not
     everything the runtime allows may be accepted by static type checkers.
 
-    For more information, see PEP 646.
+    For more information, see PEPs 646 and 692.
     """
     item = _type_check(parameters, f'{self} accepts only single type.')
     return _UnpackGenericAlias(origin=self, args=(item,))
@@ -1819,14 +1818,17 @@ class _ProtocolMeta(ABCMeta):
     def __subclasscheck__(cls, other):
         if cls is Protocol:
             return type.__subclasscheck__(cls, other)
-        if not isinstance(other, type):
-            # Same error message as for issubclass(1, int).
-            raise TypeError('issubclass() arg 1 must be a class')
         if (
             getattr(cls, '_is_protocol', False)
             and not _allow_reckless_class_checks()
         ):
-            if not cls.__callable_proto_members_only__:
+            if not isinstance(other, type):
+                # Same error message as for issubclass(1, int).
+                raise TypeError('issubclass() arg 1 must be a class')
+            if (
+                not cls.__callable_proto_members_only__
+                and cls.__dict__.get("__subclasshook__") is _proto_hook
+            ):
                 raise TypeError(
                     "Protocols with non-method members don't support issubclass()"
                 )
@@ -1870,6 +1872,30 @@ class _ProtocolMeta(ABCMeta):
         return False
 
 
+@classmethod
+def _proto_hook(cls, other):
+    if not cls.__dict__.get('_is_protocol', False):
+        return NotImplemented
+
+    for attr in cls.__protocol_attrs__:
+        for base in other.__mro__:
+            # Check if the members appears in the class dictionary...
+            if attr in base.__dict__:
+                if base.__dict__[attr] is None:
+                    return NotImplemented
+                break
+
+            # ...or in annotations, if it is a sub-protocol.
+            annotations = getattr(base, '__annotations__', {})
+            if (isinstance(annotations, collections.abc.Mapping) and
+                    attr in annotations and
+                    issubclass(other, Generic) and getattr(other, '_is_protocol', False)):
+                break
+        else:
+            return NotImplemented
+    return True
+
+
 class Protocol(Generic, metaclass=_ProtocolMeta):
     """Base class for protocol classes.
 
@@ -1880,7 +1906,9 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                 ...
 
     Such classes are primarily used with static type checkers that recognize
-    structural subtyping (static duck-typing), for example::
+    structural subtyping (static duck-typing).
+
+    For example::
 
         class C:
             def meth(self) -> int:
@@ -1913,37 +1941,11 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
             cls._is_protocol = any(b is Protocol for b in cls.__bases__)
 
         # Set (or override) the protocol subclass hook.
-        def _proto_hook(other):
-            if not cls.__dict__.get('_is_protocol', False):
-                return NotImplemented
-
-            for attr in cls.__protocol_attrs__:
-                for base in other.__mro__:
-                    # Check if the members appears in the class dictionary...
-                    if attr in base.__dict__:
-                        if base.__dict__[attr] is None:
-                            return NotImplemented
-                        break
-
-                    # ...or in annotations, if it is a sub-protocol.
-                    annotations = getattr(base, '__annotations__', {})
-                    if (isinstance(annotations, collections.abc.Mapping) and
-                            attr in annotations and
-                            issubclass(other, Generic) and getattr(other, '_is_protocol', False)):
-                        break
-                else:
-                    return NotImplemented
-            return True
-
         if '__subclasshook__' not in cls.__dict__:
             cls.__subclasshook__ = _proto_hook
 
-        # We have nothing more to do for non-protocols...
-        if not cls._is_protocol:
-            return
-
-        # ... otherwise prohibit instantiation.
-        if cls.__init__ is Protocol.__init__:
+        # Prohibit instantiation for protocol classes
+        if cls._is_protocol and cls.__init__ is Protocol.__init__:
             cls.__init__ = _no_init_or_replace_init
 
 
@@ -2016,7 +2018,7 @@ class Annotated:
 
         assert Annotated[int, '$'].__metadata__ == ('$',)
 
-    - Nested Annotated are flattened::
+    - Nested Annotated types are flattened::
 
         assert Annotated[Annotated[T, Ann1, Ann2], Ann3] == Annotated[T, Ann1, Ann2, Ann3]
 
@@ -2027,17 +2029,19 @@ class Annotated:
 
     - Annotated can be used as a generic type alias::
 
-        Optimized = Annotated[T, runtime.Optimize()]
-        assert Optimized[int] == Annotated[int, runtime.Optimize()]
+        type Optimized[T] = Annotated[T, runtime.Optimize()]
+        # type checker will treat Optimized[int]
+        # as equivalent to Annotated[int, runtime.Optimize()]
 
-        OptimizedList = Annotated[List[T], runtime.Optimize()]
-        assert OptimizedList[int] == Annotated[List[int], runtime.Optimize()]
+        type OptimizedList[T] = Annotated[list[T], runtime.Optimize()]
+        # type checker will treat OptimizedList[int]
+        # as equivalent to Annotated[list[int], runtime.Optimize()]
 
     - Annotated cannot be used with an unpacked TypeVarTuple::
 
-        Annotated[*Ts, Ann1]  # NOT valid
+        type Variadic[*Ts] = Annotated[*Ts, Ann1]  # NOT valid
 
-      This would be equivalent to
+      This would be equivalent to::
 
         Annotated[T1, T2, T3, ..., Ann1]
 
@@ -2117,7 +2121,7 @@ def assert_type(val, typ, /):
     emits an error if the value is not of the specified type::
 
         def greet(name: str) -> None:
-            assert_type(name, str)  # ok
+            assert_type(name, str)  # OK
             assert_type(name, int)  # type checker error
     """
     return val
@@ -2255,8 +2259,10 @@ def _strip_annotations(t):
 def get_origin(tp):
     """Get the unsubscripted version of a type.
 
-    This supports generic types, Callable, Tuple, Union, Literal, Final, ClassVar
-    Annotated, and others. Return None for unsupported types. Examples::
+    This supports generic types, Callable, Tuple, Union, Literal, Final, ClassVar,
+    Annotated, and others. Return None for unsupported types.
+
+    Examples::
 
         assert get_origin(Literal[42]) is Literal
         assert get_origin(int) is None
@@ -2389,6 +2395,8 @@ def no_type_check_decorator(decorator):
     This wraps the decorator with something that wraps the decorated
     function in @no_type_check.
     """
+    import warnings
+    warnings._deprecated("typing.no_type_check_decorator", remove=(3, 15))
     @functools.wraps(decorator)
     def wrapped_decorator(*args, **kwds):
         func = decorator(*args, **kwds)
@@ -2415,7 +2423,9 @@ def overload(func):
     """Decorator for overloaded functions/methods.
 
     In a stub file, place two or more stub definitions for the same
-    function in a row, each decorated with @overload.  For example::
+    function in a row, each decorated with @overload.
+
+    For example::
 
         @overload
         def utf8(value: None) -> None: ...
@@ -2426,7 +2436,7 @@ def overload(func):
 
     In a non-stub file (i.e. a regular .py file), do the same but
     follow it with an implementation.  The implementation should *not*
-    be decorated with @overload.  For example::
+    be decorated with @overload::
 
         @overload
         def utf8(value: None) -> None: ...
@@ -2540,11 +2550,13 @@ Callable = _CallableType(collections.abc.Callable, 2)
 Callable.__doc__ = \
     """Deprecated alias to collections.abc.Callable.
 
-    Callable[[int], str] signifies a function of (int) -> str.
+    Callable[[int], str] signifies a function that takes a single
+    parameter of type int and returns a str.
+
     The subscription syntax must always be used with exactly two
     values: the argument list and the return type.
-    The argument list must be a list of types, a ParamSpec or ellipsis.
-    The return type must be a single type.
+    The argument list must be a list of types, a ParamSpec,
+    Concatenate or ellipsis. The return type must be a single type.
 
     There is no syntax to indicate optional or keyword arguments;
     such function types are rarely used as callback types.
@@ -2746,7 +2758,16 @@ class NamedTupleMeta(type):
         return nm_tpl
 
 
-def NamedTuple(typename, fields=None, /, **kwargs):
+class _Sentinel:
+    __slots__ = ()
+    def __repr__(self):
+        return '<sentinel>'
+
+
+_sentinel = _Sentinel()
+
+
+def NamedTuple(typename, fields=_sentinel, /, **kwargs):
     """Typed version of namedtuple.
 
     Usage::
@@ -2766,11 +2787,44 @@ def NamedTuple(typename, fields=None, /, **kwargs):
 
         Employee = NamedTuple('Employee', [('name', str), ('id', int)])
     """
-    if fields is None:
-        fields = kwargs.items()
+    if fields is _sentinel:
+        if kwargs:
+            deprecated_thing = "Creating NamedTuple classes using keyword arguments"
+            deprecation_msg = (
+                "{name} is deprecated and will be disallowed in Python {remove}. "
+                "Use the class-based or functional syntax instead."
+            )
+        else:
+            deprecated_thing = "Failing to pass a value for the 'fields' parameter"
+            example = f"`{typename} = NamedTuple({typename!r}, [])`"
+            deprecation_msg = (
+                "{name} is deprecated and will be disallowed in Python {remove}. "
+                "To create a NamedTuple class with 0 fields "
+                "using the functional syntax, "
+                "pass an empty list, e.g. "
+            ) + example + "."
+    elif fields is None:
+        if kwargs:
+            raise TypeError(
+                "Cannot pass `None` as the 'fields' parameter "
+                "and also specify fields using keyword arguments"
+            )
+        else:
+            deprecated_thing = "Passing `None` as the 'fields' parameter"
+            example = f"`{typename} = NamedTuple({typename!r}, [])`"
+            deprecation_msg = (
+                "{name} is deprecated and will be disallowed in Python {remove}. "
+                "To create a NamedTuple class with 0 fields "
+                "using the functional syntax, "
+                "pass an empty list, e.g. "
+            ) + example + "."
     elif kwargs:
         raise TypeError("Either list of fields or keywords"
                         " can be provided to NamedTuple, not both")
+    if fields is _sentinel or fields is None:
+        import warnings
+        warnings._deprecated(deprecated_thing, message=deprecation_msg, remove=(3, 15))
+        fields = kwargs.items()
     nt = _make_nmtuple(typename, fields, module=_caller())
     nt.__orig_bases__ = (NamedTuple,)
     return nt
@@ -2857,7 +2911,7 @@ class _TypedDictMeta(type):
     __instancecheck__ = __subclasscheck__
 
 
-def TypedDict(typename, fields=None, /, *, total=True):
+def TypedDict(typename, fields=_sentinel, /, *, total=True):
     """A simple typed namespace. At runtime it is equivalent to a plain dict.
 
     TypedDict creates a dictionary type such that a type checker will expect all
@@ -2904,7 +2958,22 @@ def TypedDict(typename, fields=None, /, *, total=True):
 
     See PEP 655 for more details on Required and NotRequired.
     """
-    if fields is None:
+    if fields is _sentinel or fields is None:
+        import warnings
+
+        if fields is _sentinel:
+            deprecated_thing = "Failing to pass a value for the 'fields' parameter"
+        else:
+            deprecated_thing = "Passing `None` as the 'fields' parameter"
+
+        example = f"`{typename} = TypedDict({typename!r}, {{{{}}}})`"
+        deprecation_msg = (
+            "{name} is deprecated and will be disallowed in Python {remove}. "
+            "To create a TypedDict class with 0 fields "
+            "using the functional syntax, "
+            "pass an empty dictionary, e.g. "
+        ) + example + "."
+        warnings._deprecated(deprecated_thing, message=deprecation_msg, remove=(3, 15))
         fields = {}
 
     ns = {'__annotations__': dict(fields)}
@@ -2925,7 +2994,9 @@ TypedDict.__mro_entries__ = lambda bases: (_TypedDict,)
 def Required(self, parameters):
     """Special typing construct to mark a TypedDict key as required.
 
-    This is mainly useful for total=False TypedDicts. For example::
+    This is mainly useful for total=False TypedDicts.
+
+    For example::
 
         class Movie(TypedDict, total=False):
             title: Required[str]
@@ -2967,7 +3038,9 @@ class NewType:
 
     NewType(name, tp) is considered a subtype of tp
     by static type checkers. At runtime, NewType(name, tp) returns
-    a dummy callable that simply returns its argument. Usage::
+    a dummy callable that simply returns its argument.
+
+    Usage::
 
         UserId = NewType('UserId', int)
 
@@ -3326,3 +3399,43 @@ def override[F: _Func](method: F, /) -> F:
         # read-only property, TypeError if it's a builtin class.
         pass
     return method
+
+
+def is_protocol(tp: type, /) -> bool:
+    """Return True if the given type is a Protocol.
+
+    Example::
+
+        >>> from typing import Protocol, is_protocol
+        >>> class P(Protocol):
+        ...     def a(self) -> str: ...
+        ...     b: int
+        >>> is_protocol(P)
+        True
+        >>> is_protocol(int)
+        False
+    """
+    return (
+        isinstance(tp, type)
+        and getattr(tp, '_is_protocol', False)
+        and tp != Protocol
+    )
+
+
+def get_protocol_members(tp: type, /) -> frozenset[str]:
+    """Return the set of members defined in a Protocol.
+
+    Example::
+
+        >>> from typing import Protocol, get_protocol_members
+        >>> class P(Protocol):
+        ...     def a(self) -> str: ...
+        ...     b: int
+        >>> get_protocol_members(P)
+        frozenset({'a', 'b'})
+
+    Raise a TypeError for arguments that are not Protocols.
+    """
+    if not is_protocol(tp):
+        raise TypeError(f'{tp!r} is not a Protocol')
+    return frozenset(tp.__protocol_attrs__)
