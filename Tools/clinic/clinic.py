@@ -1965,12 +1965,12 @@ class BufferSeries:
     e.g. o[-1] is an element immediately preceding o[0].
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._start = 0
-        self._array = []
+        self._array: list[_TextAccumulator] = []
         self._constructor = _text_accumulator
 
-    def __getitem__(self, i):
+    def __getitem__(self, i: int) -> _TextAccumulator:
         i -= self._start
         if i < 0:
             self._start += i
@@ -1981,11 +1981,11 @@ class BufferSeries:
             self._array.append(self._constructor())
         return self._array[i]
 
-    def clear(self):
+    def clear(self) -> None:
         for ta in self._array:
             ta.text.clear()
 
-    def dump(self):
+    def dump(self) -> str:
         texts = [ta.output() for ta in self._array]
         return "".join(texts)
 
