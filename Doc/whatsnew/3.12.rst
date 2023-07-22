@@ -984,11 +984,6 @@ Deprecated
   :const:`datetime.UTC`.
   (Contributed by Paul Ganssle in :gh:`103857`.)
 
-* :mod:`exceptions`: :exc:`DeprecationWarning` is now raised when ``__package__`` on a
-  module differs from ``__spec__.parent`` (previously it was
-  :exc:`ImportWarning`).
-  (Contributed by Brett Cannon in :gh:`65961`.)
-
 * :mod:`os`: The ``st_ctime`` fields return by :func:`os.stat` and :func:`os.lstat` on
   Windows are deprecated. In a future release, they will contain the last
   metadata change time, consistent with other platforms. For now, they still
@@ -1006,11 +1001,11 @@ Deprecated
       (Contributed by Erlend E. Aasland in :gh:`90016`.)
 
     * In :meth:`~sqlite3.Cursor.execute`, :exc:`DeprecationWarning` is now emitted
-    when :ref:`named placeholders <sqlite3-placeholders>` are used together with
-    parameters supplied as a :term:`sequence` instead of as a :class:`dict`.
-    Starting from Python 3.14, using named placeholders with parameters supplied
-    as a sequence will raise a :exc:`~sqlite3.ProgrammingError`.
-    (Contributed by Erlend E. Aasland in :gh:`101698`.)
+      when :ref:`named placeholders <sqlite3-placeholders>` are used together with
+      parameters supplied as a :term:`sequence` instead of as a :class:`dict`.
+      Starting from Python 3.14, using named placeholders with parameters supplied
+      as a sequence will raise a :exc:`~sqlite3.ProgrammingError`.
+      (Contributed by Erlend E. Aasland in :gh:`101698`.)
 
 * :mod:`sys`: The :data:`sys.last_type`, :data:`sys.last_value` and :data:`sys.last_traceback`
   fields are deprecated. Use :data:`sys.last_exc` instead.
@@ -1023,7 +1018,7 @@ Deprecated
 * :mod:`typing`: :class:`typing.Hashable` and :class:`typing.Sized` aliases for :class:`collections.abc.Hashable`
   and :class:`collections.abc.Sized`. (:gh:`94309`.)
 
-* :mod:`xml.etree.elementtree`: The module now emits :exc:`DeprecationWarning`
+* :mod:`xml`: The module now emits :exc:`DeprecationWarning`
   when testing the truth value of an :class:`xml.etree.ElementTree.Element`.
   Before, the Python implementation emitted :exc:`FutureWarning`, and the C
   implementation emitted nothing.
@@ -1032,6 +1027,11 @@ Deprecated
   :meth:`~generator.throw` and :meth:`~agen.athrow` are deprecated and
   may be removed in a future version of Python. Use the single-arg versions
   of these functions instead. (Contributed by Ofey Chan in :gh:`89874`.)
+
+* :exc:`DeprecationWarning` is now raised when ``__package__`` on a
+  module differs from ``__spec__.parent`` (previously it was
+  :exc:`ImportWarning`).
+  (Contributed by Brett Cannon in :gh:`65961`.)
 
 * In accordance with :pep:`699`, the ``ma_version_tag`` field in :c:type:`PyDictObject`
   is deprecated for extension modules. Accessing this field will generate a compiler
@@ -1209,7 +1209,7 @@ Removed
   * :class:`configparser.ConfigParser` no longer has a ``readfp`` method.
     Use :meth:`~configparser.ConfigParser.read_file` instead.
 
-* :mod:`distutils`: Remove the ``distutils`` package. It was deprecated in Python 3.10 by
+* ``distutils``: Remove the ``distutils`` package. It was deprecated in Python 3.10 by
   :pep:`632` "Deprecate distutils module". For projects still using
   ``distutils`` and cannot be updated to something else, the ``setuptools``
   project can be installed: it still provides ``distutils``.
@@ -1351,23 +1351,23 @@ Removed
 * :mod:`ssl`:
 
     * Remove the :func:`!ssl.RAND_pseudo_bytes` function, deprecated in Python 3.6:
-    use :func:`os.urandom` or :func:`ssl.RAND_bytes` instead.
-    (Contributed by Victor Stinner in :gh:`94199`.)
+      use :func:`os.urandom` or :func:`ssl.RAND_bytes` instead.
+      (Contributed by Victor Stinner in :gh:`94199`.)
 
     * Remove the :func:`!ssl.match_hostname` function.
-    It was deprecated in Python 3.7. OpenSSL performs
-    hostname matching since Python 3.7, Python no longer uses the
-    :func:`!ssl.match_hostname` function.
-    (Contributed by Victor Stinner in :gh:`94199`.)
+      It was deprecated in Python 3.7. OpenSSL performs
+      hostname matching since Python 3.7, Python no longer uses the
+      :func:`!ssl.match_hostname` function.
+      (Contributed by Victor Stinner in :gh:`94199`.)
 
     * Remove the :func:`!ssl.wrap_socket` function, deprecated in Python 3.7:
-    instead, create a :class:`ssl.SSLContext` object and call its
-    :class:`ssl.SSLContext.wrap_socket` method. Any package that still uses
-    :func:`!ssl.wrap_socket` is broken and insecure. The function neither sends a
-    SNI TLS extension nor validates server hostname. Code is subject to `CWE-295
-    <https://cwe.mitre.org/data/definitions/295.html>`_: Improper Certificate
-    Validation.
-    (Contributed by Victor Stinner in :gh:`94199`.)
+      instead, create a :class:`ssl.SSLContext` object and call its
+      :class:`ssl.SSLContext.wrap_socket` method. Any package that still uses
+      :func:`!ssl.wrap_socket` is broken and insecure. The function neither sends a
+      SNI TLS extension nor validates server hostname. Code is subject to `CWE-295
+      <https://cwe.mitre.org/data/definitions/295.html>`_: Improper Certificate
+      Validation.
+      (Contributed by Victor Stinner in :gh:`94199`.)
 
 * :mod:`unittest`: Removed many old deprecated :mod:`unittest` features:
 
