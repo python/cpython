@@ -403,11 +403,11 @@ Opening network connections
    Open a streaming transport connection to a given
    address specified by *host* and *port*.
 
-   The socket family can be either :py:data:`~socket.AF_INET` or
-   :py:data:`~socket.AF_INET6` depending on *host* (or the *family*
+   The socket family can be either :py:const:`~socket.AF_INET` or
+   :py:const:`~socket.AF_INET6` depending on *host* (or the *family*
    argument, if provided).
 
-   The socket type will be :py:data:`~socket.SOCK_STREAM`.
+   The socket type will be :py:const:`~socket.SOCK_STREAM`.
 
    *protocol_factory* must be a callable returning an
    :ref:`asyncio protocol <asyncio-protocol>` implementation.
@@ -509,7 +509,7 @@ Opening network connections
 
    .. versionchanged:: 3.6
 
-      The socket option :py:data:`~socket.TCP_NODELAY` is set by default
+      The socket option :py:const:`~socket.TCP_NODELAY` is set by default
       for all TCP connections.
 
    .. versionchanged:: 3.7
@@ -552,11 +552,11 @@ Opening network connections
 
    Create a datagram connection.
 
-   The socket family can be either :py:data:`~socket.AF_INET`,
-   :py:data:`~socket.AF_INET6`, or :py:data:`~socket.AF_UNIX`,
+   The socket family can be either :py:const:`~socket.AF_INET`,
+   :py:const:`~socket.AF_INET6`, or :py:const:`~socket.AF_UNIX`,
    depending on *host* (or the *family* argument, if provided).
 
-   The socket type will be :py:data:`~socket.SOCK_DGRAM`.
+   The socket type will be :py:const:`~socket.SOCK_DGRAM`.
 
    *protocol_factory* must be a callable returning a
    :ref:`protocol <asyncio-protocol>` implementation.
@@ -581,7 +581,7 @@ Opening network connections
    * *reuse_port* tells the kernel to allow this endpoint to be bound to the
      same port as other existing endpoints are bound to, so long as they all
      set this flag when being created. This option is not supported on Windows
-     and some Unixes. If the :py:data:`~socket.SO_REUSEPORT` constant is not
+     and some Unixes. If the :py:const:`~socket.SO_REUSEPORT` constant is not
      defined then this capability is unsupported.
 
    * *allow_broadcast* tells the kernel to allow this endpoint to send
@@ -607,7 +607,7 @@ Opening network connections
 
    .. versionchanged:: 3.8.1
       The *reuse_address* parameter is no longer supported, as using
-      :py:data:`~sockets.SO_REUSEADDR` poses a significant security concern for
+      :py:const:`~sockets.SO_REUSEADDR` poses a significant security concern for
       UDP. Explicitly passing ``reuse_address=True`` will raise an exception.
 
       When multiple processes with differing UIDs assign sockets to an
@@ -616,7 +616,7 @@ Opening network connections
 
       For supported platforms, *reuse_port* can be used as a replacement for
       similar functionality. With *reuse_port*,
-      :py:data:`~sockets.SO_REUSEPORT` is used instead, which specifically
+      :py:const:`~sockets.SO_REUSEPORT` is used instead, which specifically
       prevents processes with differing UIDs from assigning sockets to the same
       socket address.
 
@@ -634,8 +634,8 @@ Opening network connections
 
    Create a Unix connection.
 
-   The socket family will be :py:data:`~socket.AF_UNIX`; socket
-   type will be :py:data:`~socket.SOCK_STREAM`.
+   The socket family will be :py:const:`~socket.AF_UNIX`; socket
+   type will be :py:const:`~socket.SOCK_STREAM`.
 
    A tuple of ``(transport, protocol)`` is returned on success.
 
@@ -671,7 +671,7 @@ Creating network servers
                         ssl_shutdown_timeout=None, \
                         start_serving=True)
 
-   Create a TCP server (socket type :data:`~socket.SOCK_STREAM`) listening
+   Create a TCP server (socket type :const:`~socket.SOCK_STREAM`) listening
    on *port* of the *host* address.
 
    Returns a :class:`Server` object.
@@ -699,10 +699,10 @@ Creating network servers
      be selected (note that if *host* resolves to multiple network interfaces,
      a different random port will be selected for each interface).
 
-   * *family* can be set to either :data:`socket.AF_INET` or
-     :data:`~socket.AF_INET6` to force the socket to use IPv4 or IPv6.
+   * *family* can be set to either :const:`socket.AF_INET` or
+     :const:`~socket.AF_INET6` to force the socket to use IPv4 or IPv6.
      If not set, the *family* will be determined from host name
-     (defaults to :data:`~socket.AF_UNSPEC`).
+     (defaults to :const:`~socket.AF_UNSPEC`).
 
    * *flags* is a bitmask for :meth:`getaddrinfo`.
 
@@ -756,7 +756,7 @@ Creating network servers
    .. versionchanged:: 3.6
 
       Added *ssl_handshake_timeout* and *start_serving* parameters.
-      The socket option :py:data:`~socket.TCP_NODELAY` is set by default
+      The socket option :py:const:`~socket.TCP_NODELAY` is set by default
       for all TCP connections.
 
    .. versionchanged:: 3.11
@@ -777,7 +777,7 @@ Creating network servers
                           start_serving=True)
 
    Similar to :meth:`loop.create_server` but works with the
-   :py:data:`~socket.AF_UNIX` socket family.
+   :py:const:`~socket.AF_UNIX` socket family.
 
    *path* is the name of a Unix domain socket, and is required,
    unless a *sock* argument is provided.  Abstract Unix sockets,

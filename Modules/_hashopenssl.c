@@ -24,8 +24,9 @@
 
 #include "Python.h"
 #include "pycore_hashtable.h"
-#include "hashlib.h"
+#include "pycore_pyhash.h"        // _Py_HashBytes()
 #include "pycore_strhex.h"        // _Py_strhex()
+#include "hashlib.h"
 
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>

@@ -165,7 +165,7 @@ For convenience, some of these functions will always return a
    tuple object whose first item is the integer :c:data:`errno` value and whose
    second item is the corresponding error message (gotten from :c:func:`strerror`),
    and then calls ``PyErr_SetObject(type, object)``.  On Unix, when the
-   :c:data:`errno` value is :const:`EINTR`, indicating an interrupted system call,
+   :c:data:`errno` value is :c:macro:`EINTR`, indicating an interrupted system call,
    this calls :c:func:`PyErr_CheckSignals`, and if that set the error indicator,
    leaves it set to that.  The function always returns ``NULL``, so a wrapper
    function around a system call can write ``return PyErr_SetFromErrno(type);``
@@ -631,7 +631,7 @@ Signal Handling
    be interruptible by user requests (such as by pressing Ctrl-C).
 
    .. note::
-      The default Python signal handler for :const:`SIGINT` raises the
+      The default Python signal handler for :c:macro:`SIGINT` raises the
       :exc:`KeyboardInterrupt` exception.
 
 
@@ -642,7 +642,7 @@ Signal Handling
       single: SIGINT
       single: KeyboardInterrupt (built-in exception)
 
-   Simulate the effect of a :const:`SIGINT` signal arriving.
+   Simulate the effect of a :c:macro:`SIGINT` signal arriving.
    This is equivalent to ``PyErr_SetInterruptEx(SIGINT)``.
 
    .. note::
@@ -666,7 +666,7 @@ Signal Handling
    to interrupt an operation).
 
    If the given signal isn't handled by Python (it was set to
-   :data:`signal.SIG_DFL` or :data:`signal.SIG_IGN`), it will be ignored.
+   :py:const:`signal.SIG_DFL` or :py:const:`signal.SIG_IGN`), it will be ignored.
 
    If *signum* is outside of the allowed range of signal numbers, ``-1``
    is returned.  Otherwise, ``0`` is returned.  The error indicator is
@@ -754,7 +754,7 @@ Exception Objects
 
 .. c:function:: PyObject* PyException_GetCause(PyObject *ex)
 
-   Return the cause (either an exception instance, or :const:`None`,
+   Return the cause (either an exception instance, or ``None``,
    set by ``raise ... from ...``) associated with the exception as a new
    reference, as accessible from Python through :attr:`__cause__`.
 
@@ -763,7 +763,7 @@ Exception Objects
 
    Set the cause associated with the exception to *cause*.  Use ``NULL`` to clear
    it.  There is no type check to make sure that *cause* is either an exception
-   instance or :const:`None`.  This steals a reference to *cause*.
+   instance or ``None``.  This steals a reference to *cause*.
 
    :attr:`__suppress_context__` is implicitly set to ``True`` by this function.
 
@@ -874,7 +874,7 @@ because the :ref:`call protocol <call>` takes care of recursion handling.
 
    Marks a point where a recursive C-level call is about to be performed.
 
-   If :const:`USE_STACKCHECK` is defined, this function checks if the OS
+   If :c:macro:`USE_STACKCHECK` is defined, this function checks if the OS
    stack overflowed using :c:func:`PyOS_CheckStack`.  In this is the case, it
    sets a :exc:`MemoryError` and returns a nonzero value.
 

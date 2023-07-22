@@ -249,6 +249,68 @@ class ClinicWholeFileTest(_ParserBase):
         out = self.expect_failure(raw)
         self.assertEqual(out, msg)
 
+    def test_directive_output_unknown_preset(self):
+        out = self.expect_failure("""
+            /*[clinic input]
+            output preset nosuchpreset
+            [clinic start generated code]*/
+        """)
+        msg = "Unknown preset 'nosuchpreset'"
+        self.assertIn(msg, out)
+
+    def test_directive_output_cant_pop(self):
+        out = self.expect_failure("""
+            /*[clinic input]
+            output pop
+            [clinic start generated code]*/
+        """)
+        msg = "Can't 'output pop', stack is empty"
+        self.assertIn(msg, out)
+
+    def test_directive_output_print(self):
+        raw = dedent("""
+            /*[clinic input]
+            output print 'I told you once.'
+            [clinic start generated code]*/
+        """)
+        out = self.clinic.parse(raw)
+        # The generated output will differ for every run, but we can check that
+        # it starts with the clinic block, we check that it contains all the
+        # expected fields, and we check that it contains the checksum line.
+        self.assertTrue(out.startswith(dedent("""
+            /*[clinic input]
+            output print 'I told you once.'
+            [clinic start generated code]*/
+        """)))
+        fields = {
+            "cpp_endif",
+            "cpp_if",
+            "docstring_definition",
+            "docstring_prototype",
+            "impl_definition",
+            "impl_prototype",
+            "methoddef_define",
+            "methoddef_ifndef",
+            "parser_definition",
+            "parser_prototype",
+        }
+        for field in fields:
+            with self.subTest(field=field):
+                self.assertIn(field, out)
+        last_line = out.rstrip().split("\n")[-1]
+        self.assertTrue(
+            last_line.startswith("/*[clinic end generated code: output=")
+        )
+
+    def test_unknown_destination_command(self):
+        out = self.expect_failure("""
+            /*[clinic input]
+            destination buffer nosuchcommand
+            [clinic start generated code]*/
+        """)
+        msg = "unknown destination command 'nosuchcommand'"
+        self.assertIn(msg, out)
+
 
 class ClinicGroupPermuterTest(TestCase):
     def _test(self, l, m, r, output):
@@ -1100,6 +1162,25 @@ class ClinicParserTest(_ParserBase):
               x
                 Nested docstring here, goeth.
         """)
+
+    def test_indent_stack_no_tabs(self):
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.bar
+               *vararg1: object
+            \t*vararg2: object
+        """)
+        msg = "Tab characters are illegal in the Clinic DSL."
+        self.assertIn(msg, out)
+
+    def test_indent_stack_illegal_outdent(self):
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.bar
+              a: object
+             b: object
+        """)
+        self.assertIn("Illegal outdent", out)
 
     def test_directive(self):
         c = FakeClinic()

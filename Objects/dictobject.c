@@ -121,6 +121,7 @@ As a consequence of this, split keys have a maximum size of 16.
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "stringlib/eq.h"         // unicode_eq()
 
 #include <stdbool.h>
@@ -1696,9 +1697,8 @@ PyDict_GetItem(PyObject *op, PyObject *key)
     /* Ignore any exception raised by the lookup */
     _PyErr_SetRaisedException(tstate, exc);
 
-
     assert(ix >= 0 || value == NULL);
-    return value;
+    return value;  // borrowed reference
 }
 
 Py_ssize_t
@@ -1737,8 +1737,45 @@ _PyDict_GetItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
 
     ix = _Py_dict_lookup(mp, key, hash, &value);
     assert(ix >= 0 || value == NULL);
-    return value;
+    return value;  // borrowed reference
 }
+
+
+int
+PyDict_GetItemRef(PyObject *op, PyObject *key, PyObject **result)
+{
+    if (!PyDict_Check(op)) {
+        PyErr_BadInternalCall();
+        *result = NULL;
+        return -1;
+    }
+    PyDictObject*mp = (PyDictObject *)op;
+
+    Py_hash_t hash;
+    if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1)
+    {
+        hash = PyObject_Hash(key);
+        if (hash == -1) {
+            *result = NULL;
+            return -1;
+        }
+    }
+
+    PyObject *value;
+    Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, &value);
+    assert(ix >= 0 || value == NULL);
+    if (ix == DKIX_ERROR) {
+        *result = NULL;
+        return -1;
+    }
+    if (value == NULL) {
+        *result = NULL;
+        return 0;  // missing key
+    }
+    *result = Py_NewRef(value);
+    return 1;  // key is present
+}
+
 
 /* Variant of PyDict_GetItem() that doesn't suppress exceptions.
    This returns NULL *with* an exception set if an exception occurred.
@@ -1766,7 +1803,7 @@ PyDict_GetItemWithError(PyObject *op, PyObject *key)
 
     ix = _Py_dict_lookup(mp, key, hash, &value);
     assert(ix >= 0 || value == NULL);
-    return value;
+    return value;  // borrowed reference
 }
 
 PyObject *
@@ -1777,7 +1814,7 @@ _PyDict_GetItemWithError(PyObject *dp, PyObject *kv)
     if (hash == -1) {
         return NULL;
     }
-    return _PyDict_GetItem_KnownHash(dp, kv, hash);
+    return _PyDict_GetItem_KnownHash(dp, kv, hash);  // borrowed reference
 }
 
 PyObject *
@@ -1789,7 +1826,7 @@ _PyDict_GetItemIdWithError(PyObject *dp, _Py_Identifier *key)
         return NULL;
     Py_hash_t hash = unicode_get_hash(kv);
     assert (hash != -1);  /* interned strings have their hash value initialised */
-    return _PyDict_GetItem_KnownHash(dp, kv, hash);
+    return _PyDict_GetItem_KnownHash(dp, kv, hash);  // borrowed reference
 }
 
 PyObject *
@@ -1802,7 +1839,7 @@ _PyDict_GetItemStringWithError(PyObject *v, const char *key)
     }
     rv = PyDict_GetItemWithError(v, kv);
     Py_DECREF(kv);
-    return rv;
+    return rv;  // borrowed reference
 }
 
 /* Fast version of global value lookup (LOAD_GLOBAL).
@@ -3894,7 +3931,20 @@ PyDict_GetItemString(PyObject *v, const char *key)
     }
     rv = PyDict_GetItem(v, kv);
     Py_DECREF(kv);
-    return rv;
+    return rv;  // borrowed reference
+}
+
+int
+PyDict_GetItemStringRef(PyObject *v, const char *key, PyObject **result)
+{
+    PyObject *key_obj = PyUnicode_FromString(key);
+    if (key_obj == NULL) {
+        *result = NULL;
+        return -1;
+    }
+    int res = PyDict_GetItemRef(v, key_obj, result);
+    Py_DECREF(key_obj);
+    return res;
 }
 
 int
@@ -5146,15 +5196,11 @@ dictitems_contains(_PyDictViewObject *dv, PyObject *obj)
         return 0;
     key = PyTuple_GET_ITEM(obj, 0);
     value = PyTuple_GET_ITEM(obj, 1);
-    found = PyDict_GetItemWithError((PyObject *)dv->dv_dict, key);
-    if (found == NULL) {
-        if (PyErr_Occurred())
-            return -1;
-        return 0;
+    result = PyDict_GetItemRef((PyObject *)dv->dv_dict, key, &found);
+    if (result == 1) {
+        result = PyObject_RichCompareBool(found, value, Py_EQ);
+        Py_DECREF(found);
     }
-    Py_INCREF(found);
-    result = PyObject_RichCompareBool(found, value, Py_EQ);
-    Py_DECREF(found);
     return result;
 }
 

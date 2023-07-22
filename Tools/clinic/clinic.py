@@ -1999,12 +1999,12 @@ class BufferSeries:
     e.g. o[-1] is an element immediately preceding o[0].
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._start = 0
-        self._array = []
+        self._array: list[_TextAccumulator] = []
         self._constructor = _text_accumulator
 
-    def __getitem__(self, i):
+    def __getitem__(self, i: int) -> _TextAccumulator:
         i -= self._start
         if i < 0:
             self._start += i
@@ -2015,11 +2015,11 @@ class BufferSeries:
             self._array.append(self._constructor())
         return self._array[i]
 
-    def clear(self):
+    def clear(self) -> None:
         for ta in self._array:
-            ta._text.clear()
+            ta.text.clear()
 
-    def dump(self):
+    def dump(self) -> str:
         texts = [ta.output() for ta in self._array]
         return "".join(texts)
 
@@ -2734,10 +2734,10 @@ class CConverter(metaclass=CConverterAutoRegister):
     """
 
     # The C name to use for this variable.
-    name: str | None = None
+    name: str
 
     # The Python name to use for this variable.
-    py_name: str | None = None
+    py_name: str
 
     # The C type to use for this variable.
     # 'type' should be a Python string specifying the type, e.g. "int".
@@ -2900,7 +2900,11 @@ class CConverter(metaclass=CConverterAutoRegister):
         if self.length:
             data.impl_parameters.append("Py_ssize_t " + self.length_name())
 
-    def _render_non_self(self, parameter, data):
+    def _render_non_self(
+            self,
+            parameter: Parameter,
+            data: CRenderData
+    ) -> None:
         self.parameter = parameter
         name = self.name
 
@@ -2953,42 +2957,47 @@ class CConverter(metaclass=CConverterAutoRegister):
         self._render_self(parameter, data)
         self._render_non_self(parameter, data)
 
-    def length_name(self):
+    def length_name(self) -> str:
         """Computes the name of the associated "length" variable."""
-        if not self.length:
-            return None
+        assert self.length is not None
         return self.parser_name + "_length"
 
     # Why is this one broken out separately?
     # For "positional-only" function parsing,
     # which generates a bunch of PyArg_ParseTuple calls.
-    def parse_argument(self, list):
+    def parse_argument(self, args: list[str]) -> None:
         assert not (self.converter and self.encoding)
         if self.format_unit == 'O&':
             assert self.converter
-            list.append(self.converter)
+            args.append(self.converter)
 
         if self.encoding:
-            list.append(c_repr(self.encoding))
+            args.append(c_repr(self.encoding))
         elif self.subclass_of:
-            list.append(self.subclass_of)
+            args.append(self.subclass_of)
 
         s = ("&" if self.parse_by_reference else "") + self.name
-        list.append(s)
+        args.append(s)
 
         if self.length:
-            list.append("&" + self.length_name())
+            args.append("&" + self.length_name())
 
     #
     # All the functions after here are intended as extension points.
     #
 
-    def simple_declaration(self, by_reference=False, *, in_parser=False):
+    def simple_declaration(
+            self,
+            by_reference: bool = False,
+            *,
+            in_parser: bool = False
+    ) -> str:
         """
         Computes the basic declaration of the variable.
         Used in computing the prototype declaration and the
         variable declaration.
         """
+        assert isinstance(self.type, str)
         prototype = [self.type]
         if by_reference or not self.type.endswith('*'):
             prototype.append(" ")
@@ -3003,7 +3012,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         prototype.append(name)
         return "".join(prototype)
 
-    def declaration(self, *, in_parser=False) -> str:
+    def declaration(self, *, in_parser: bool = False) -> str:
         """
         The C statement to declare this variable.
         """
@@ -3102,7 +3111,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         pass
 
     @property
-    def parser_name(self):
+    def parser_name(self) -> str:
         if self.name in CLINIC_PREFIXED_ARGS: # bpo-39741
             return CLINIC_PREFIX + self.name
         else:
@@ -3612,9 +3621,9 @@ class object_converter(CConverter):
 
     def converter_init(
             self, *,
-            converter=None,
-            type=None,
-            subclass_of=None
+            converter: str | None = None,
+            type: str | None = None,
+            subclass_of: str | None = None
     ) -> None:
         if converter:
             if subclass_of:
@@ -4006,7 +4015,7 @@ class self_converter(CConverter):
     type = None
     format_unit = ''
 
-    def converter_init(self, *, type=None) -> None:
+    def converter_init(self, *, type: str | None = None) -> None:
         self.specified_type = type
 
     def pre_render(self):
@@ -4080,7 +4089,7 @@ class self_converter(CConverter):
             assert data.impl_arguments[0] == self.name
             data.impl_arguments[0] = '(' + self.type + ")" + data.impl_arguments[0]
 
-    def set_template_dict(self, template_dict):
+    def set_template_dict(self, template_dict: TemplateDict) -> None:
         template_dict['self_name'] = self.name
         template_dict['self_type'] = self.parser_type
         kind = self.function.kind
@@ -4099,7 +4108,7 @@ class self_converter(CConverter):
             line = f'{type_check} &&\n        '
             template_dict['self_type_check'] = line
 
-            type_object = self.function.cls.type_object
+            type_object = cls.type_object
             type_ptr = f'PyTypeObject *base_tp = {type_object};'
             template_dict['base_type_ptr'] = type_ptr
 
@@ -4309,15 +4318,15 @@ def eval_ast_expr(
 
 
 class IndentStack:
-    def __init__(self):
-        self.indents = []
-        self.margin = None
+    def __init__(self) -> None:
+        self.indents: list[int] = []
+        self.margin: str | None = None
 
-    def _ensure(self):
+    def _ensure(self) -> None:
         if not self.indents:
             fail('IndentStack expected indents, but none are defined.')
 
-    def measure(self, line):
+    def measure(self, line: str) -> int:
         """
         Returns the length of the line's margin.
         """
@@ -4331,7 +4340,7 @@ class IndentStack:
             return self.indents[-1]
         return len(line) - len(stripped)
 
-    def infer(self, line):
+    def infer(self, line: str) -> int:
         """
         Infer what is now the current margin based on this line.
         Returns:
@@ -4364,23 +4373,25 @@ class IndentStack:
         return outdent_count
 
     @property
-    def depth(self):
+    def depth(self) -> int:
         """
         Returns how many margins are currently defined.
         """
         return len(self.indents)
 
-    def indent(self, line):
+    def indent(self, line: str) -> str:
         """
         Indents a line by the currently defined margin.
         """
+        assert self.margin is not None, "Cannot call .indent() before calling .infer()"
         return self.margin + line
 
-    def dedent(self, line):
+    def dedent(self, line: str) -> str:
         """
         Dedents a line by the currently defined margin.
         (The inverse of 'indent'.)
         """
+        assert self.margin is not None, "Cannot call .indent() before calling .infer()"
         margin = self.margin
         indent = self.indents[-1]
         if not line.startswith(margin):
@@ -4527,13 +4538,13 @@ class DSLParser:
             command: str,
             *args
     ) -> None:
-        if command == 'new':
-            self.clinic.add_destination(name, *args)
-            return
-
-        if command == 'clear':
-            self.clinic.get_destination(name).clear()
-        fail("unknown destination command", repr(command))
+        match command:
+            case "new":
+                self.clinic.add_destination(name, *args)
+            case "clear":
+                self.clinic.get_destination(name).clear()
+            case _:
+                fail("unknown destination command", repr(command))
 
 
     def directive_output(
@@ -5300,6 +5311,7 @@ class DSLParser:
             p.kind = inspect.Parameter.POSITIONAL_ONLY
 
     def state_parameter_docstring_start(self, line: str | None) -> None:
+        assert self.indent.margin is not None, "self.margin.infer() has not yet been called to set the margin"
         self.parameter_docstring_indent = len(self.indent.margin)
         assert self.indent.depth == 3
         return self.next(self.state_parameter_docstring, line)
@@ -5602,7 +5614,7 @@ class DSLParser:
 
         return docstring
 
-    def state_terminal(self, line):
+    def state_terminal(self, line: str | None) -> None:
         """
         Called when processing the block is done.
         """
