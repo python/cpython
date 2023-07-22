@@ -1158,7 +1158,7 @@ Here's the syntax for cloning a function::
     [clinic start generated code]*/
 
 (The functions can be in different modules or classes.  I wrote
-:py:class:`!module.class` in the sample just to illustrate that you must
+``module.class`` in the sample just to illustrate that you must
 use the full path to *both* functions.)
 
 Sorry, there's no syntax for partially cloning a function, or cloning a function
