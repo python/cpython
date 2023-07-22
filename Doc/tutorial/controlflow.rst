@@ -166,7 +166,7 @@ arguments.  In chapter :ref:`tut-structures`, we will discuss in more detail abo
 The :keyword:`break` statement breaks out of the innermost enclosing
 :keyword:`for` or :keyword:`while` loop.
 
-A :keyword:`for` or :keyword:`while` loop can include an else clause.
+A for or while loop can include an else clause.
 
 In a :keyword:`for` loop, the :keyword:`!else` clause is executed
 after the loop reaches its final iteration.
