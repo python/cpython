@@ -5,7 +5,7 @@ More Control Flow Tools
 ***********************
 
 As well as the :keyword:`while` statement just introduced, Python uses a few more
-that will we will encounter in this chapter.
+that we will encounter in this chapter.
 
 
 .. _tut-if:
@@ -166,11 +166,11 @@ arguments.  In chapter :ref:`tut-structures`, we will discuss in more detail abo
 The :keyword:`break` statement breaks out of the innermost enclosing
 :keyword:`for` or :keyword:`while` loop.
 
-The :keyword:`for` loop statements may have an extra :keyword:`!else` clause; it is executed when the loop
-terminates through exhaustion of the iterable (with :keyword:`for`) or when the
-condition becomes false (with :keyword:`while`), but not when the loop is
-terminated by a :keyword:`break` statement.  This is exemplified by the
-following loop, which searches for prime numbers::
+The :keyword:`for` loop statements may have an extra :keyword:`!else` clause;
+it is executed when the loop terminates through exhaustion of the iterable
+(with :keyword:`for`) or when the condition becomes false (with :keyword:`while`),
+but not when the loop is terminated by a :keyword:`break` statement.
+This is exemplified by the following loop, which searches for prime numbers::
 
    >>> for n in range(2, 10):
    ...     for x in range(2, n):
