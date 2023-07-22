@@ -14,8 +14,16 @@ import sys
 import typing
 
 import lexer as lx
-import parser
-from parser import StackEffect
+import parsing
+from parsing import StackEffect
+from formatting import (
+    Formatter,
+    UNUSED,
+    list_effect_size,
+    maybe_parenthesize,
+    prettify_filename,
+    string_effect_size,
+)
 
 
 HERE = os.path.dirname(__file__)
@@ -38,7 +46,6 @@ END_MARKER = "// END BYTECODES //"
 RE_PREDICTED = (
     r"^\s*(?:GO_TO_INSTRUCTION\(|DEOPT_IF\(.*?,\s*)(\w+)\);\s*(?://.*)?$"
 )
-UNUSED = "unused"
 BITS_PER_CODE_UNIT = 16
 
 # Constants used instead of size for macro expansions.
@@ -84,175 +91,6 @@ arg_parser.add_argument(
     default=DEFAULT_EXECUTOR_OUTPUT,
 )
 
-
-def effect_size(effect: StackEffect) -> tuple[int, str]:
-    """Return the 'size' impact of a stack effect.
-
-    Returns a tuple (numeric, symbolic) where:
-
-    - numeric is an int giving the statically analyzable size of the effect
-    - symbolic is a string representing a variable effect (e.g. 'oparg*2')
-
-    At most one of these will be non-zero / non-empty.
-    """
-    if effect.size:
-        assert not effect.cond, "Array effects cannot have a condition"
-        return 0, effect.size
-    elif effect.cond:
-        if effect.cond in ("0", "1"):
-            return int(effect.cond), ""
-        return 0, f"{maybe_parenthesize(effect.cond)} ? 1 : 0"
-    else:
-        return 1, ""
-
-
-def maybe_parenthesize(sym: str) -> str:
-    """Add parentheses around a string if it contains an operator.
-
-    An exception is made for '*' which is common and harmless
-    in the context where the symbolic size is used.
-    """
-    if re.match(r"^[\s\w*]+$", sym):
-        return sym
-    else:
-        return f"({sym})"
-
-
-def list_effect_size(effects: list[StackEffect]) -> tuple[int, str]:
-    numeric = 0
-    symbolic: list[str] = []
-    for effect in effects:
-        diff, sym = effect_size(effect)
-        numeric += diff
-        if sym:
-            symbolic.append(maybe_parenthesize(sym))
-    return numeric, " + ".join(symbolic)
-
-
-def string_effect_size(arg: tuple[int, str]) -> str:
-    numeric, symbolic = arg
-    if numeric and symbolic:
-        return f"{numeric} + {symbolic}"
-    elif symbolic:
-        return symbolic
-    else:
-        return str(numeric)
-
-
-class Formatter:
-    """Wraps an output stream with the ability to indent etc."""
-
-    stream: typing.TextIO
-    prefix: str
-    emit_line_directives: bool = False
-    lineno: int  # Next line number, 1-based
-    filename: str  # Slightly improved stream.filename
-    nominal_lineno: int
-    nominal_filename: str
-
-    def __init__(
-            self, stream: typing.TextIO, indent: int,
-                  emit_line_directives: bool = False, comment: str = "//",
-    ) -> None:
-        self.stream = stream
-        self.prefix = " " * indent
-        self.emit_line_directives = emit_line_directives
-        self.comment = comment
-        self.lineno = 1
-        self.filename = prettify_filename(self.stream.name)
-        self.nominal_lineno = 1
-        self.nominal_filename = self.filename
-
-    def write_raw(self, s: str) -> None:
-        self.stream.write(s)
-        newlines = s.count("\n")
-        self.lineno += newlines
-        self.nominal_lineno += newlines
-
-    def emit(self, arg: str) -> None:
-        if arg:
-            self.write_raw(f"{self.prefix}{arg}\n")
-        else:
-            self.write_raw("\n")
-
-    def set_lineno(self, lineno: int, filename: str) -> None:
-        if self.emit_line_directives:
-            if lineno != self.nominal_lineno or filename != self.nominal_filename:
-                self.emit(f'#line {lineno} "{filename}"')
-                self.nominal_lineno = lineno
-                self.nominal_filename = filename
-
-    def reset_lineno(self) -> None:
-        if self.lineno != self.nominal_lineno or self.filename != self.nominal_filename:
-            self.set_lineno(self.lineno + 1, self.filename)
-
-    @contextlib.contextmanager
-    def indent(self):
-        self.prefix += "    "
-        yield
-        self.prefix = self.prefix[:-4]
-
-    @contextlib.contextmanager
-    def block(self, head: str, tail: str = ""):
-        if head:
-            self.emit(head + " {")
-        else:
-            self.emit("{")
-        with self.indent():
-            yield
-        self.emit("}" + tail)
-
-    def stack_adjust(
-        self,
-        input_effects: list[StackEffect],
-        output_effects: list[StackEffect],
-    ):
-        shrink, isym = list_effect_size(input_effects)
-        grow, osym = list_effect_size(output_effects)
-        diff = grow - shrink
-        if isym and isym != osym:
-            self.emit(f"STACK_SHRINK({isym});")
-        if diff < 0:
-            self.emit(f"STACK_SHRINK({-diff});")
-        if diff > 0:
-            self.emit(f"STACK_GROW({diff});")
-        if osym and osym != isym:
-            self.emit(f"STACK_GROW({osym});")
-
-    def declare(self, dst: StackEffect, src: StackEffect | None):
-        if dst.name == UNUSED or dst.cond == "0":
-            return
-        typ = f"{dst.type}" if dst.type else "PyObject *"
-        if src:
-            cast = self.cast(dst, src)
-            init = f" = {cast}{src.name}"
-        elif dst.cond:
-            init = " = NULL"
-        else:
-            init = ""
-        sepa = "" if typ.endswith("*") else " "
-        self.emit(f"{typ}{sepa}{dst.name}{init};")
-
-    def assign(self, dst: StackEffect, src: StackEffect):
-        if src.name == UNUSED:
-            return
-        if src.size:
-            # Don't write sized arrays -- it's up to the user code.
-            return
-        cast = self.cast(dst, src)
-        if re.match(r"^REG\(oparg(\d+)\)$", dst.name):
-            self.emit(f"Py_XSETREF({dst.name}, {cast}{src.name});")
-        else:
-            stmt = f"{dst.name} = {cast}{src.name};"
-            if src.cond and src.cond != "1":
-                if src.cond == "0":
-                    # It will not be executed
-                    return
-                stmt = f"if ({src.cond}) {{ {stmt} }}"
-            self.emit(stmt)
-
-    def cast(self, dst: StackEffect, src: StackEffect) -> str:
-        return f"({dst.type or 'PyObject *'})" if src.type != dst.type else ""
 
 @dataclasses.dataclass
 class InstructionFlags:
@@ -324,7 +162,7 @@ class InstructionFlags:
 @dataclasses.dataclass
 class ActiveCacheEffect:
     """Wraps a CacheEffect that is actually used, in context."""
-    effect: parser.CacheEffect
+    effect: parsing.CacheEffect
     offset: int
 
 
@@ -355,17 +193,17 @@ class Instruction:
     """An instruction with additional data and code."""
 
     # Parts of the underlying instruction definition
-    inst: parser.InstDef
+    inst: parsing.InstDef
     kind: typing.Literal["inst", "op"]
     name: str
-    block: parser.Block
+    block: parsing.Block
     block_text: list[str]  # Block.text, less curlies, less PREDICT() calls
     block_line: int  # First line of block in original code
 
     # Computed by constructor
     always_exits: bool
     cache_offset: int
-    cache_effects: list[parser.CacheEffect]
+    cache_effects: list[parsing.CacheEffect]
     input_effects: list[StackEffect]
     output_effects: list[StackEffect]
     unmoved_names: frozenset[str]
@@ -374,10 +212,10 @@ class Instruction:
     active_caches: list[ActiveCacheEffect]
 
     # Set later
-    family: parser.Family | None = None
+    family: parsing.Family | None = None
     predicted: bool = False
 
-    def __init__(self, inst: parser.InstDef):
+    def __init__(self, inst: parsing.InstDef):
         self.inst = inst
         self.kind = inst.kind
         self.name = inst.name
@@ -386,7 +224,7 @@ class Instruction:
             extract_block_text(self.block)
         self.always_exits = always_exits(self.block_text)
         self.cache_effects = [
-            effect for effect in inst.inputs if isinstance(effect, parser.CacheEffect)
+            effect for effect in inst.inputs if isinstance(effect, parsing.CacheEffect)
         ]
         self.cache_offset = sum(c.size for c in self.cache_effects)
         self.input_effects = [
@@ -601,7 +439,7 @@ class Instruction:
         out.reset_lineno()
 
 
-InstructionOrCacheEffect = Instruction | parser.CacheEffect
+InstructionOrCacheEffect = Instruction | parsing.CacheEffect
 StackEffectMapping = list[tuple[StackEffect, StackEffect]]
 
 
@@ -627,7 +465,7 @@ class Component:
                 out.assign(var, oeffect)
 
 
-MacroParts = list[Component | parser.CacheEffect]
+MacroParts = list[Component | parsing.CacheEffect]
 
 
 @dataclasses.dataclass
@@ -640,7 +478,7 @@ class MacroInstruction:
     final_sp: int
     instr_fmt: str
     instr_flags: InstructionFlags
-    macro: parser.Macro
+    macro: parsing.Macro
     parts: MacroParts
     cache_offset: int
     predicted: bool = False
@@ -691,7 +529,7 @@ class Analyzer:
         self.pymetadata_filename = pymetadata_filename
         self.executor_filename = executor_filename
 
-    def error(self, msg: str, node: parser.Node) -> None:
+    def error(self, msg: str, node: parsing.Node) -> None:
         lineno = 0
         filename = "<unknown file>"
         if context := node.context:
@@ -705,13 +543,13 @@ class Analyzer:
         self.errors += 1
 
     everything: list[
-        parser.InstDef | parser.Macro | parser.Pseudo | OverriddenInstructionPlaceHolder
+        parsing.InstDef | parsing.Macro | parsing.Pseudo | OverriddenInstructionPlaceHolder
     ]
     instrs: dict[str, Instruction]  # Includes ops
-    macros: dict[str, parser.Macro]
+    macros: dict[str, parsing.Macro]
     macro_instrs: dict[str, MacroInstruction]
-    families: dict[str, parser.Family]
-    pseudos: dict[str, parser.Pseudo]
+    families: dict[str, parsing.Family]
+    pseudos: dict[str, parsing.Pseudo]
     pseudo_instrs: dict[str, PseudoInstruction]
 
     def parse(self) -> None:
@@ -745,7 +583,7 @@ class Analyzer:
             src = file.read()
 
 
-        psr = parser.Parser(src, filename=prettify_filename(filename))
+        psr = parsing.Parser(src, filename=prettify_filename(filename))
 
         # Skip until begin marker
         while tkn := psr.next(raw=True):
@@ -765,14 +603,14 @@ class Analyzer:
 
         # Parse from start
         psr.setpos(start)
-        thing: parser.InstDef | parser.Macro | parser.Pseudo | parser.Family | None
+        thing: parsing.InstDef | parsing.Macro | parsing.Pseudo | parsing.Family | None
         thing_first_token = psr.peek()
         while thing := psr.definition():
             if ws := [w for w in RESERVED_WORDS if variable_used(thing, w)]:
                 self.error(f"'{ws[0]}' is a reserved word. {RESERVED_WORDS[ws[0]]}", thing)
 
             match thing:
-                case parser.InstDef(name=name):
+                case parsing.InstDef(name=name):
                     if name in self.instrs:
                         if not thing.override:
                             raise psr.make_syntax_error(
@@ -790,12 +628,12 @@ class Analyzer:
                     self.instrs[name] = Instruction(thing)
                     instrs_idx[name] = len(self.everything)
                     self.everything.append(thing)
-                case parser.Macro(name):
+                case parsing.Macro(name):
                     self.macros[name] = thing
                     self.everything.append(thing)
-                case parser.Family(name):
+                case parsing.Family(name):
                     self.families[name] = thing
-                case parser.Pseudo(name):
+                case parsing.Pseudo(name):
                     self.pseudos[name] = thing
                     self.everything.append(thing)
                 case _:
@@ -915,7 +753,7 @@ class Analyzer:
         for name, pseudo in self.pseudos.items():
             self.pseudo_instrs[name] = self.analyze_pseudo(pseudo)
 
-    def analyze_macro(self, macro: parser.Macro) -> MacroInstruction:
+    def analyze_macro(self, macro: parsing.Macro) -> MacroInstruction:
         components = self.check_macro_components(macro)
         stack, initial_sp = self.stack_analysis(components)
         sp = initial_sp
@@ -924,7 +762,7 @@ class Analyzer:
         offset = 0
         for component in components:
             match component:
-                case parser.CacheEffect() as ceffect:
+                case parsing.CacheEffect() as ceffect:
                     parts.append(ceffect)
                     offset += ceffect.size
                 case Instruction() as instr:
@@ -941,7 +779,7 @@ class Analyzer:
             macro.name, stack, initial_sp, final_sp, format, flags, macro, parts, offset
         )
 
-    def analyze_pseudo(self, pseudo: parser.Pseudo) -> PseudoInstruction:
+    def analyze_pseudo(self, pseudo: parsing.Pseudo) -> PseudoInstruction:
         targets = [self.instrs[target] for target in pseudo.targets]
         assert targets
         # Make sure the targets have the same fmt
@@ -969,16 +807,16 @@ class Analyzer:
         return Component(instr, input_mapping, output_mapping, active_effects), sp, offset
 
     def check_macro_components(
-        self, macro: parser.Macro
+        self, macro: parsing.Macro
     ) -> list[InstructionOrCacheEffect]:
         components: list[InstructionOrCacheEffect] = []
         for uop in macro.uops:
             match uop:
-                case parser.OpName(name):
+                case parsing.OpName(name):
                     if name not in self.instrs:
                         self.error(f"Unknown instruction {name!r}", macro)
                     components.append(self.instrs[name])
-                case parser.CacheEffect():
+                case parsing.CacheEffect():
                     components.append(uop)
                 case _:
                     typing.assert_never(uop)
@@ -1030,7 +868,7 @@ class Analyzer:
                             conditions[current] = eff.cond
                         current += 1
                     highest = max(highest, current)
-                case parser.CacheEffect():
+                case parsing.CacheEffect():
                     pass
                 case _:
                     typing.assert_never(thing)
@@ -1044,7 +882,7 @@ class Analyzer:
         return stack, -lowest
 
     def get_stack_effect_info(
-        self, thing: parser.InstDef | parser.Macro | parser.Pseudo
+        self, thing: parsing.InstDef | parsing.Macro | parsing.Pseudo
     ) -> tuple[AnyInstruction | None, str | None, str | None]:
         def effect_str(effects: list[StackEffect]) -> str:
             n_effect, sym_effect = list_effect_size(effects)
@@ -1054,7 +892,7 @@ class Analyzer:
 
         instr: AnyInstruction | None
         match thing:
-            case parser.InstDef():
+            case parsing.InstDef():
                 if thing.kind != "op":
                     instr = self.instrs[thing.name]
                     popped = effect_str(instr.input_effects)
@@ -1063,7 +901,7 @@ class Analyzer:
                     instr = None
                     popped = ""
                     pushed = ""
-            case parser.Macro():
+            case parsing.Macro():
                 instr = self.macro_instrs[thing.name]
                 parts = [comp for comp in instr.parts if isinstance(comp, Component)]
                 # Note: stack_analysis() already verifies that macro components
@@ -1096,7 +934,7 @@ class Analyzer:
                 popped = str(-low)
                 pushed_symbolic.append(str(sp - low - len(pushed_symbolic)))
                 pushed = " + ".join(pushed_symbolic)
-            case parser.Pseudo():
+            case parsing.Pseudo():
                 instr = self.pseudo_instrs[thing.name]
                 popped = pushed = None
                 # Calculate stack effect, and check that it's the the same
@@ -1179,11 +1017,11 @@ class Analyzer:
             match thing:
                 case OverriddenInstructionPlaceHolder():
                     continue
-                case parser.InstDef():
+                case parsing.InstDef():
                     format = self.instrs[thing.name].instr_fmt
-                case parser.Macro():
+                case parsing.Macro():
                     format = self.macro_instrs[thing.name].instr_fmt
-                case parser.Pseudo():
+                case parsing.Pseudo():
                     format = None
                     for target in self.pseudos[thing.name].targets:
                         target_instr = self.instrs.get(target)
@@ -1268,12 +1106,12 @@ class Analyzer:
                 match thing:
                     case OverriddenInstructionPlaceHolder():
                         continue
-                    case parser.InstDef():
+                    case parsing.InstDef():
                         if thing.kind != "op":
                             self.write_metadata_for_inst(self.instrs[thing.name])
-                    case parser.Macro():
+                    case parsing.Macro():
                         self.write_metadata_for_macro(self.macro_instrs[thing.name])
-                    case parser.Pseudo():
+                    case parsing.Pseudo():
                         self.write_metadata_for_pseudo(self.pseudo_instrs[thing.name])
                     case _:
                         typing.assert_never(thing)
@@ -1291,7 +1129,7 @@ class Analyzer:
                     match thing:
                         case OverriddenInstructionPlaceHolder():
                             pass
-                        case parser.InstDef(name=name):
+                        case parsing.InstDef(name=name):
                             instr = self.instrs[name]
                             # Since an 'op' is not a bytecode, it has no expansion; but 'inst' is
                             if instr.kind == "inst" and instr.is_viable_uop():
@@ -1301,10 +1139,10 @@ class Analyzer:
                             elif instr.kind == "inst" and variable_used(instr.inst, "oparg1"):
                                 assert variable_used(instr.inst, "oparg2"), "Half super-instr?"
                                 self.write_super_expansions(instr.name)
-                        case parser.Macro():
+                        case parsing.Macro():
                             mac = self.macro_instrs[thing.name]
                             self.write_macro_expansions(mac.name, mac.parts)
-                        case parser.Pseudo():
+                        case parsing.Pseudo():
                             pass
                         case _:
                             typing.assert_never(thing)
@@ -1478,14 +1316,14 @@ class Analyzer:
                 match thing:
                     case OverriddenInstructionPlaceHolder():
                         self.write_overridden_instr_place_holder(thing)
-                    case parser.InstDef():
+                    case parsing.InstDef():
                         if thing.kind != "op":
                             n_instrs += 1
                             self.write_instr(self.instrs[thing.name])
-                    case parser.Macro():
+                    case parsing.Macro():
                         n_macros += 1
                         self.write_macro(self.macro_instrs[thing.name])
-                    case parser.Pseudo():
+                    case parsing.Pseudo():
                         n_pseudos += 1
                     case _:
                         typing.assert_never(thing)
@@ -1506,7 +1344,7 @@ class Analyzer:
                     case OverriddenInstructionPlaceHolder():
                         # TODO: Is this helpful?
                         self.write_overridden_instr_place_holder(thing)
-                    case parser.InstDef():
+                    case parsing.InstDef():
                         instr = self.instrs[thing.name]
                         if instr.is_viable_uop():
                             self.out.emit("")
@@ -1517,9 +1355,9 @@ class Analyzer:
                                 self.out.emit("break;")
                         # elif instr.kind != "op":
                         #     print(f"NOTE: {thing.name} is not a viable uop")
-                    case parser.Macro():
+                    case parsing.Macro():
                         pass
-                    case parser.Pseudo():
+                    case parsing.Pseudo():
                         pass
                     case _:
                         typing.assert_never(thing)
@@ -1555,7 +1393,7 @@ class Analyzer:
             cache_adjust = 0
             for part in mac.parts:
                 match part:
-                    case parser.CacheEffect(size=size):
+                    case parsing.CacheEffect(size=size):
                         cache_adjust += size
                     case Component() as comp:
                         last_instr = comp.instr
@@ -1612,18 +1450,7 @@ class Analyzer:
             self.out.emit(f"DISPATCH();")
 
 
-def prettify_filename(filename: str) -> str:
-    # Make filename more user-friendly and less platform-specific,
-    # it is only used for error reporting at this point.
-    filename = filename.replace("\\", "/")
-    if filename.startswith("./"):
-        filename = filename[2:]
-    if filename.endswith(".new"):
-        filename = filename[:-4]
-    return filename
-
-
-def extract_block_text(block: parser.Block) -> tuple[list[str], bool, int]:
+def extract_block_text(block: parsing.Block) -> tuple[list[str], bool, int]:
     # Get lines of text with proper dedent
     blocklines = block.text.splitlines(True)
     first_token: lx.Token = block.tokens[0]  # IndexError means the context is broken
@@ -1677,14 +1504,14 @@ def always_exits(lines: list[str]) -> bool:
     )
 
 
-def variable_used(node: parser.Node, name: str) -> bool:
+def variable_used(node: parsing.Node, name: str) -> bool:
     """Determine whether a variable with a given name is used in a node."""
     return any(
         token.kind == "IDENTIFIER" and token.text == name for token in node.tokens
     )
 
 
-def variable_used_unspecialized(node: parser.Node, name: str) -> bool:
+def variable_used_unspecialized(node: parsing.Node, name: str) -> bool:
     """Like variable_used(), but skips #if ENABLE_SPECIALIZATION blocks."""
     tokens: list[lx.Token] = []
     skipping = False
