@@ -237,9 +237,6 @@ tokenizeriter_next(tokenizeriterobject *it)
         if (type > DEDENT && type < OP) {
             type = OP;
         }
-        else if (type == ASYNC || type == AWAIT) {
-            type = NAME;
-        }
         else if (type == NEWLINE) {
             Py_DECREF(str);
             if (!it->tok->implicit_newline) {

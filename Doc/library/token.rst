@@ -94,3 +94,7 @@ the :mod:`tokenize` module.
    Added :data:`AWAIT` and :data:`ASYNC` tokens back (they're needed
    to support parsing older Python versions for :func:`ast.parse` with
    ``feature_version`` set to 6 or lower).
+
+.. versionchanged:: 3.13
+   Removed :data:`AWAIT` and :data:`ASYNC` tokens again.
+
