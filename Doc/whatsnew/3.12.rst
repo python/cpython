@@ -3,8 +3,7 @@
   What's New In Python 3.12
 ****************************
 
-:Release: |release|
-:Date: |today|
+:Editor: TBD
 
 .. Rules for maintenance:
 
@@ -486,7 +485,7 @@ Other Language Changes
 New Modules
 ===========
 
-* None yet.
+* None.
 
 
 Improved Modules
@@ -555,7 +554,7 @@ calendar
 csv
 ---
 
-* Add :data:`~csv.QUOTE_NOTNULL` and :data:`~csv.QUOTE_STRINGS` flags to
+* Add :const:`~csv.QUOTE_NOTNULL` and :const:`~csv.QUOTE_STRINGS` flags to
   provide finer grained control of ``None`` and empty strings by
   :class:`~csv.writer` objects.
 
@@ -612,7 +611,7 @@ math
 os
 --
 
-* Add :data:`os.PIDFD_NONBLOCK` to open a file descriptor
+* Add :const:`os.PIDFD_NONBLOCK` to open a file descriptor
   for a process with :func:`os.pidfd_open` in non-blocking mode.
   (Contributed by Kumar Aditya in :gh:`93312`.)
 
@@ -1042,7 +1041,7 @@ Deprecated
   datetimes in UTC: respectively, call
   :meth:`~datetime.datetime.now` and
   :meth:`~datetime.datetime.fromtimestamp`  with the *tz* parameter set to
-  :attr:`datetime.UTC`.
+  :const:`datetime.UTC`.
   (Contributed by Paul Ganssle in :gh:`103857`.)
 
 Pending Removal in Python 3.13
@@ -1111,7 +1110,7 @@ Pending Removal in Python 3.14
 * :class:`typing.ByteString`, deprecated since Python 3.9, now causes a
   :exc:`DeprecationWarning` to be emitted when it is used.
 
-* Creating immutable types (:data:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
+* Creating immutable types (:c:macro:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
   bases using the C API.
 
 * Deprecated the *isdst* parameter in :func:`email.utils.localtime`.
@@ -1456,7 +1455,7 @@ Changes in the Python API
 
 * Removed ``randrange()`` functionality deprecated since Python 3.10.  Formerly,
   ``randrange(10.0)`` losslessly converted to ``randrange(10)``. Now, it raises a
-  :exc:`TypeError`. Also, the exception raised for non-integral values such as
+  :exc:`TypeError`. Also, the exception raised for non-integer values such as
   ``randrange(10.5)`` or ``randrange('10')`` has been changed from :exc:`ValueError` to
   :exc:`TypeError`.  This also prevents bugs where ``randrange(1e25)`` would silently
   select from a larger range than ``randrange(10**25)``.
@@ -1622,7 +1621,7 @@ New Features
     inheriting or extending the base class size.
   - :c:func:`PyObject_GetTypeData` and :c:func:`PyType_GetTypeDataSize`
     added to allow access to subclass-specific instance data.
-  - :const:`Py_TPFLAGS_ITEMS_AT_END` and :c:func:`PyObject_GetItemData`
+  - :c:macro:`Py_TPFLAGS_ITEMS_AT_END` and :c:func:`PyObject_GetItemData`
     added to allow safely extending certain variable-sized types, including
     :c:var:`PyType_Type`.
   - :c:macro:`Py_RELATIVE_OFFSET` added to allow defining
@@ -1639,20 +1638,20 @@ New Features
   :ref:`the vectorcall protocol <vectorcall>` was added to the
   :ref:`Limited API <stable>`:
 
-  * :const:`Py_TPFLAGS_HAVE_VECTORCALL`
+  * :c:macro:`Py_TPFLAGS_HAVE_VECTORCALL`
   * :c:func:`PyVectorcall_NARGS`
   * :c:func:`PyVectorcall_Call`
   * :c:type:`vectorcallfunc`
 
-  The :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag is now removed from a class
+  The :c:macro:`Py_TPFLAGS_HAVE_VECTORCALL` flag is now removed from a class
   when the class's :py:meth:`~object.__call__` method is reassigned.
   This makes vectorcall safe to use with mutable types (i.e. heap types
-  without the immutable flag, :const:`Py_TPFLAGS_IMMUTABLETYPE`).
+  without the immutable flag, :c:macro:`Py_TPFLAGS_IMMUTABLETYPE`).
   Mutable types that do not override :c:member:`~PyTypeObject.tp_call` now
   inherit the ``Py_TPFLAGS_HAVE_VECTORCALL`` flag.
   (Contributed by Petr Viktorin in :gh:`93274`.)
 
-  The :const:`Py_TPFLAGS_MANAGED_DICT` and :const:`Py_TPFLAGS_MANAGED_WEAKREF`
+  The :c:macro:`Py_TPFLAGS_MANAGED_DICT` and :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF`
   flags have been added. This allows extensions classes to support object
   ``__dict__`` and weakrefs with less bookkeeping,
   using less memory and with faster access.
@@ -1663,7 +1662,7 @@ New Features
 
   * :c:func:`PyObject_Vectorcall`
   * :c:func:`PyObject_VectorcallMethod`
-  * :const:`PY_VECTORCALL_ARGUMENTS_OFFSET`
+  * :c:macro:`PY_VECTORCALL_ARGUMENTS_OFFSET`
 
   This means that both the incoming and outgoing ends of the vector call
   protocol are now available in the :ref:`Limited API <stable>`. (Contributed
@@ -1769,7 +1768,7 @@ Porting to Python 3.12
   for example).
 
 * Add support of more formatting options (left aligning, octals, uppercase
-  hexadecimals, ``intmax_t``, ``ptrdiff_t``, ``wchar_t`` C
+  hexadecimals, :c:type:`intmax_t`, :c:type:`ptrdiff_t`, :c:type:`wchar_t` C
   strings, variable width and precision) in :c:func:`PyUnicode_FromFormat` and
   :c:func:`PyUnicode_FromFormatV`.
   (Contributed by Serhiy Storchaka in :gh:`98836`.)
@@ -1785,13 +1784,13 @@ Porting to Python 3.12
   (Contributed by Philip Georgi in :gh:`95504`.)
 
 * Extension classes wanting to add a ``__dict__`` or weak reference slot
-  should use :const:`Py_TPFLAGS_MANAGED_DICT` and
-  :const:`Py_TPFLAGS_MANAGED_WEAKREF` instead of ``tp_dictoffset`` and
+  should use :c:macro:`Py_TPFLAGS_MANAGED_DICT` and
+  :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` instead of ``tp_dictoffset`` and
   ``tp_weaklistoffset``, respectively.
   The use of ``tp_dictoffset`` and ``tp_weaklistoffset`` is still
   supported, but does not fully support multiple inheritance
   (:gh:`95589`), and performance may be worse.
-  Classes declaring :const:`Py_TPFLAGS_MANAGED_DICT` should call
+  Classes declaring :c:macro:`Py_TPFLAGS_MANAGED_DICT` should call
   :c:func:`!_PyObject_VisitManagedDict` and :c:func:`!_PyObject_ClearManagedDict`
   to traverse and clear their instance's dictionaries.
   To clear weakrefs, call :c:func:`PyObject_ClearWeakRefs`, as before.
@@ -1829,7 +1828,31 @@ Porting to Python 3.12
   allowing incomplete initialization.
 
   Note that :c:func:`PyType_FromMetaclass` (added in Python 3.12)
-  already disallows creating classes whose metaclass overrides ``tp_new``.
+  already disallows creating classes whose metaclass overrides ``tp_new``
+  (:meth:`~object.__new__` in Python).
+
+  Since ``tp_new`` overrides almost everything ``PyType_From*`` functions do,
+  the two are incompatible with each other.
+  The existing behavior -- ignoring the metaclass for several steps
+  of type creation -- is unsafe in general, since (meta)classes assume that
+  ``tp_new`` was called.
+  There is no simple general workaround. One of the following may work for you:
+
+  - If you control the metaclass, avoid using ``tp_new`` in it:
+
+    - If initialization can be skipped, it can be done in
+      :c:member:`~PyTypeObject.tp_init` instead.
+    - If the metaclass doesn't need to be instantiated from Python,
+      set its ``tp_new`` to ``NULL`` using
+      the :c:macro:`Py_TPFLAGS_DISALLOW_INSTANTIATION` flag.
+      This makes it acceptable for ``PyType_From*`` functions.
+
+  - Avoid ``PyType_From*`` functions: if you don't need C-specific features
+    (slots or setting the instance size), create types by :ref:`calling <call>`
+    the metaclass.
+
+  - If you *know* the ``tp_new`` can be skipped safely, filter the deprecation
+    warning out using :func:`warnings.catch_warnings` from Python.
 
 * :c:var:`PyOS_InputHook` and :c:var:`PyOS_ReadlineFunctionPointer` are no
   longer called in :ref:`subinterpreters <sub-interpreter-support>`. This is
@@ -1872,7 +1895,7 @@ Deprecated
   :c:type:`PyConfig` instead.
   (Contributed by Victor Stinner in :gh:`77782`.)
 
-* Creating immutable types (:const:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
+* Creating immutable types (:c:macro:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
   bases is deprecated and will be disabled in Python 3.14.
 
 * The ``structmember.h`` header is deprecated, though it continues to be

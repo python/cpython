@@ -157,6 +157,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(__lshift__)
         STRUCT_FOR_ID(__lt__)
         STRUCT_FOR_ID(__main__)
+        STRUCT_FOR_ID(__match_args__)
         STRUCT_FOR_ID(__matmul__)
         STRUCT_FOR_ID(__missing__)
         STRUCT_FOR_ID(__mod__)

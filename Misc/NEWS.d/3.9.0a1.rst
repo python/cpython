@@ -1164,7 +1164,7 @@ defines them with eponymous methods.
 .. nonce: bmhquU
 .. section: Library
 
-Add :data:`os.P_PIDFD` constant, which may be passed to :func:`os.waitid` to
+Add :const:`os.P_PIDFD` constant, which may be passed to :func:`os.waitid` to
 wait on a Linux process file descriptor.
 
 ..
@@ -1193,8 +1193,8 @@ Expose the Linux ``pidfd_open`` syscall as :func:`os.pidfd_open`.
 .. nonce: 7jvYFA
 .. section: Library
 
-Added constants :data:`~fcntl.F_OFD_GETLK`, :data:`~fcntl.F_OFD_SETLK` and
-:data:`~fcntl.F_OFD_SETLKW` to the :mod:`fcntl` module. Patch by Dong-hee
+Added constants :const:`~fcntl.F_OFD_GETLK`, :const:`~fcntl.F_OFD_SETLK` and
+:const:`~fcntl.F_OFD_SETLKW` to the :mod:`fcntl` module. Patch by Dong-hee
 Na.
 
 ..
@@ -1283,7 +1283,7 @@ Fixed erroneous equality comparison in statistics.NormalDist().
 .. nonce: 86ExWB
 .. section: Library
 
-Added :data:`~os.CLD_KILLED` and :data:`~os.CLD_STOPPED` for
+Added :const:`~os.CLD_KILLED` and :const:`~os.CLD_STOPPED` for
 :attr:`si_code`. Patch by Dong-hee Na.
 
 ..
@@ -1355,8 +1355,8 @@ objects, patch by Samuel Colvin.
 .. nonce: 9w-IGF
 .. section: Library
 
-Add missing :data:`stat.S_IFDOOR`, :data:`stat.S_IFPORT`,
-:data:`stat.S_IFWHT`, :func:`stat.S_ISDOOR`, :func:`stat.S_ISPORT`, and
+Add missing :const:`stat.S_IFDOOR`, :const:`stat.S_IFPORT`,
+:const:`stat.S_IFWHT`, :func:`stat.S_ISDOOR`, :func:`stat.S_ISPORT`, and
 :func:`stat.S_ISWHT` values to the Python implementation of :mod:`stat`.
 
 ..
@@ -4983,7 +4983,7 @@ set to CP_UTF7 or CP_UTF8.
 .. nonce: -0g2O3
 .. section: Windows
 
-Make :data:`winreg.REG_MULTI_SZ` support zero-length strings.
+Make :const:`winreg.REG_MULTI_SZ` support zero-length strings.
 
 ..
 
@@ -5706,7 +5706,7 @@ and :c:func:`_PyObject_CallMethodOneArg`.
 .. nonce: qZC0N_
 .. section: C API
 
-The :const:`METH_FASTCALL` calling convention has been documented.
+The :c:macro:`METH_FASTCALL` calling convention has been documented.
 
 ..
 

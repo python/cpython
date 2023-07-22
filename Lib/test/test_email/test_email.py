@@ -3319,6 +3319,23 @@ Foo
            [('Al Person', 'aperson@dom.ain'),
             ('Bud Person', 'bperson@dom.ain')])
 
+    def test_getaddresses_comma_in_name(self):
+        """GH-106669 regression test."""
+        self.assertEqual(
+            utils.getaddresses(
+                [
+                    '"Bud, Person" <bperson@dom.ain>',
+                    'aperson@dom.ain (Al Person)',
+                    '"Mariusz Felisiak" <to@example.com>',
+                ]
+            ),
+            [
+                ('Bud, Person', 'bperson@dom.ain'),
+                ('Al Person', 'aperson@dom.ain'),
+                ('Mariusz Felisiak', 'to@example.com'),
+            ],
+        )
+
     def test_getaddresses_nasty(self):
         eq = self.assertEqual
         eq(utils.getaddresses(['foo: ;']), [('', '')])

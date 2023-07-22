@@ -465,10 +465,14 @@ def _get_sysconfigdata_name():
         f'_sysconfigdata_{sys.abiflags}_{sys.platform}_{multiarch}',
     )
 
+def _print_config_dict(d, stream):
+    print ("{", file=stream)
+    for k, v in sorted(d.items()):
+        print(f"    {k!r}: {v!r},", file=stream)
+    print ("}", file=stream)
 
 def _generate_posix_vars():
     """Generate the Python module containing build-time variables."""
-    import pprint
     vars = {}
     # load the installed Makefile:
     makefile = get_makefile_filename()
@@ -523,7 +527,7 @@ def _generate_posix_vars():
         f.write('# system configuration generated and used by'
                 ' the sysconfig module\n')
         f.write('build_time_vars = ')
-        pprint.pprint(vars, stream=f)
+        _print_config_dict(vars, stream=f)
 
     # Create file used for sys.path fixup -- see Modules/getpath.c
     with open('pybuilddir.txt', 'w', encoding='utf8') as f:

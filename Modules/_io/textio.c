@@ -946,7 +946,7 @@ _textiowrapper_set_encoder(textio *self, PyObject *codec_info,
         return -1;
 
     /* Get the normalized named of the codec */
-    if (_PyObject_LookupAttr(codec_info, &_Py_ID(name), &res) < 0) {
+    if (PyObject_GetOptionalAttr(codec_info, &_Py_ID(name), &res) < 0) {
         return -1;
     }
     if (res != NULL && PyUnicode_Check(res)) {
@@ -1202,7 +1202,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         Py_IS_TYPE(buffer, state->PyBufferedWriter_Type) ||
         Py_IS_TYPE(buffer, state->PyBufferedRandom_Type))
     {
-        if (_PyObject_LookupAttr(buffer, &_Py_ID(raw), &raw) < 0)
+        if (PyObject_GetOptionalAttr(buffer, &_Py_ID(raw), &raw) < 0)
             goto error;
         /* Cache the raw FileIO object to speed up 'closed' checks */
         if (raw != NULL) {
@@ -1222,7 +1222,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         goto error;
     self->seekable = self->telling = r;
 
-    r = _PyObject_LookupAttr(buffer, &_Py_ID(read1), &res);
+    r = PyObject_GetOptionalAttr(buffer, &_Py_ID(read1), &res);
     if (r < 0) {
         goto error;
     }
@@ -2897,7 +2897,7 @@ textiowrapper_repr(textio *self)
         }
         goto error;
     }
-    if (_PyObject_LookupAttr((PyObject *) self, &_Py_ID(name), &nameobj) < 0) {
+    if (PyObject_GetOptionalAttr((PyObject *) self, &_Py_ID(name), &nameobj) < 0) {
         if (!PyErr_ExceptionMatches(PyExc_ValueError)) {
             goto error;
         }
@@ -2913,7 +2913,7 @@ textiowrapper_repr(textio *self)
         if (res == NULL)
             goto error;
     }
-    if (_PyObject_LookupAttr((PyObject *) self, &_Py_ID(mode), &modeobj) < 0) {
+    if (PyObject_GetOptionalAttr((PyObject *) self, &_Py_ID(mode), &modeobj) < 0) {
         goto error;
     }
     if (modeobj != NULL) {
@@ -3130,7 +3130,7 @@ textiowrapper_newlines_get(textio *self, void *context)
     PyObject *res;
     CHECK_ATTACHED(self);
     if (self->decoder == NULL ||
-        _PyObject_LookupAttr(self->decoder, &_Py_ID(newlines), &res) == 0)
+        PyObject_GetOptionalAttr(self->decoder, &_Py_ID(newlines), &res) == 0)
     {
         Py_RETURN_NONE;
     }

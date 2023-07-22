@@ -208,7 +208,7 @@ BaseException_add_note(PyObject *self, PyObject *note)
     }
 
     PyObject *notes;
-    if (_PyObject_LookupAttr(self, &_Py_ID(__notes__), &notes) < 0) {
+    if (PyObject_GetOptionalAttr(self, &_Py_ID(__notes__), &notes) < 0) {
         return NULL;
     }
     if (notes == NULL) {
@@ -941,7 +941,7 @@ exceptiongroup_subset(
     PyException_SetCause(eg, PyException_GetCause(orig));
 
     PyObject *notes;
-    if (_PyObject_LookupAttr(orig, &_Py_ID(__notes__), &notes) < 0) {
+    if (PyObject_GetOptionalAttr(orig, &_Py_ID(__notes__), &notes) < 0) {
         goto error;
     }
     if (notes) {

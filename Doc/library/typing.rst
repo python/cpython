@@ -258,18 +258,21 @@ See :pep:`484` for more details.
    The performance of calling ``NewType`` has been restored to its level in
    Python 3.9.
 
+.. _annotating-callables:
 
-Callable
-========
+Annotating callable objects
+===========================
 
-Frameworks expecting callback functions of specific signatures might be
-type hinted using ``Callable[[Arg1Type, Arg2Type], ReturnType]``.
+Functions -- or other :term:`callable` objects -- can be annotated using
+:class:`collections.abc.Callable` or :data:`typing.Callable`.
+``Callable[[int], str]`` signifies a function that takes a single parameter
+of type :class:`int` and returns a :class:`str`.
 
 For example:
 
 .. testcode::
 
-   from collections.abc import Callable
+   from collections.abc import Callable, Awaitable
 
    def feeder(get_next_item: Callable[[], str]) -> None:
        ...  # Body
@@ -283,9 +286,49 @@ For example:
 
    callback: Callable[[str], Awaitable[None]] = on_update
 
-It is possible to declare the return type of a callable without specifying
-the call signature by substituting a literal ellipsis
-for the list of arguments in the type hint: ``Callable[..., ReturnType]``.
+The subscription syntax must always be used with exactly two values: the
+argument list and the return type.  The argument list must be a list of types,
+a :class:`ParamSpec`, :data:`Concatenate`, or an ellipsis. The return type must
+be a single type.
+
+If a literal ellipsis ``...`` is given as the argument list, it indicates that
+a callable with any arbitrary parameter list would be acceptable:
+
+.. testcode::
+
+   def concat(x: str, y: str) -> str:
+       return x + y
+
+   x: Callable[..., str]
+   x = str     # OK
+   x = concat  # Also OK
+
+``Callable`` cannot express complex signatures such as functions that take a
+variadic number of arguments, :func:`overloaded functions <overload>`, or
+functions that have keyword-only parameters. However, these signatures can be
+expressed by defining a :class:`Protocol` class with a
+:meth:`~object.__call__` method:
+
+.. testcode::
+
+   from collections.abc import Iterable
+   from typing import Protocol
+
+   class Combiner(Protocol):
+       def __call__(self, *vals: bytes, maxlen: int | None = None) -> list[bytes]: ...
+
+   def batch_proc(data: Iterable[bytes], cb_results: Combiner) -> bytes:
+       for item in data:
+           ...
+
+   def good_cb(*vals: bytes, maxlen: int | None = None) -> list[bytes]:
+       ...
+   def bad_cb(*vals: bytes, maxitems: int | None) -> list[bytes]:
+       ...
+
+   batch_proc([], good_cb)  # OK
+   batch_proc([], bad_cb)   # Error! Argument 2 has incompatible type because of
+                            # different name and kind in the callback
 
 Callables which take other callables as arguments may indicate that their
 parameter types are dependent on each other using :class:`ParamSpec`.
@@ -1043,56 +1086,16 @@ These can be used as types in annotations. They all support subscription using
       Optional can now be written as ``X | None``. See
       :ref:`union type expressions<types-union>`.
 
-.. data:: Callable
-
-   Deprecated alias to :class:`collections.abc.Callable`.
-
-   ``Callable[[int], str]`` signifies a function that takes a single parameter
-   of type :class:`int` and returns a :class:`str`.
-
-   The subscription syntax must always be used with exactly two
-   values: the argument list and the return type.  The argument list
-   must be a list of types, a :class:`ParamSpec`, :data:`Concatenate`,
-   or an ellipsis. The return type must be a single type.
-
-   There is no syntax to indicate optional or keyword arguments;
-   such function types are rarely used as callback types.
-   ``Callable[..., ReturnType]`` (literal ellipsis) can be used to
-   type hint a callable taking any number of arguments and returning
-   ``ReturnType``.  A plain :data:`Callable` is equivalent to
-   ``Callable[..., Any]``, and in turn to
-   :class:`collections.abc.Callable`.
-
-   Callables which take other callables as arguments may indicate that their
-   parameter types are dependent on each other using :class:`ParamSpec`.
-   Additionally, if that callable adds or removes arguments from other
-   callables, the :data:`Concatenate` operator may be used.  They
-   take the form ``Callable[ParamSpecVariable, ReturnType]`` and
-   ``Callable[Concatenate[Arg1Type, Arg2Type, ..., ParamSpecVariable], ReturnType]``
-   respectively.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.Callable` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-   .. versionchanged:: 3.10
-      ``Callable`` now supports :class:`ParamSpec` and :data:`Concatenate`.
-      See :pep:`612` for more details.
-
-   .. seealso::
-      The documentation for :class:`ParamSpec` and :class:`Concatenate` provide
-      examples of usage with ``Callable``.
-
 .. data:: Concatenate
 
    Special form for annotating higher-order functions.
 
-   ``Concatenate`` can be used in conjunction with :data:`Callable` and
+   ``Concatenate`` can be used in conjunction with :ref:`Callable <annotating-callables>` and
    :class:`ParamSpec` to annotate a higher-order callable which adds, removes,
    or transforms parameters of another
    callable.  Usage is in the form
    ``Concatenate[Arg1Type, Arg2Type, ..., ParamSpecVariable]``. ``Concatenate``
-   is currently only valid when used as the first argument to a :data:`Callable`.
+   is currently only valid when used as the first argument to a :ref:`Callable <annotating-callables>`.
    The last parameter to ``Concatenate`` must be a :class:`ParamSpec` or
    ellipsis (``...``).
 
@@ -1136,8 +1139,9 @@ These can be used as types in annotations. They all support subscription using
    .. seealso::
 
       * :pep:`612` -- Parameter Specification Variables (the PEP which introduced
-        ``ParamSpec`` and ``Concatenate``).
-      * :class:`ParamSpec` and :class:`Callable`.
+        ``ParamSpec`` and ``Concatenate``)
+      * :class:`ParamSpec`
+      * :ref:`annotating-callables`
 
 .. data:: Literal
 
@@ -1893,8 +1897,9 @@ without the dedicated syntax, as documented below.
 
    .. seealso::
       * :pep:`612` -- Parameter Specification Variables (the PEP which introduced
-        ``ParamSpec`` and ``Concatenate``).
-      * :class:`Callable` and :class:`Concatenate`.
+        ``ParamSpec`` and ``Concatenate``)
+      * :data:`Concatenate`
+      * :ref:`annotating-callables`
 
 .. data:: ParamSpecArgs
 .. data:: ParamSpecKwargs
@@ -2179,7 +2184,7 @@ types.
         methods or attributes, not their type signatures or types.
         For example, :class:`ssl.SSLObject`
         is a class, therefore it passes an :func:`issubclass`
-        check against :data:`Callable`.  However, the
+        check against :ref:`Callable <annotating-callables>`. However, the
         ``ssl.SSLObject.__init__`` method exists only to raise a
         :exc:`TypeError` with a more informative message, therefore making
         it impossible to call (instantiate) :class:`ssl.SSLObject`.
@@ -2844,6 +2849,9 @@ Functions and decorators
    This wraps the decorator with something that wraps the decorated
    function in :func:`no_type_check`.
 
+   .. deprecated-removed:: 3.13 3.15
+      No type checker ever added support for ``@no_type_check_decorator``. It
+      is therefore deprecated, and will be removed in Python 3.15.
 
 .. decorator:: override
 
@@ -3093,6 +3101,7 @@ Constant
    .. versionadded:: 3.5.2
 
 .. _generic-concrete-collections:
+.. _deprecated-aliases:
 
 Deprecated aliases
 ------------------
@@ -3101,16 +3110,21 @@ This module defines several deprecated aliases to pre-existing
 standard library classes. These were originally included in the typing
 module in order to support parameterizing these generic classes using ``[]``.
 However, the aliases became redundant in Python 3.9 when the
-corresponding pre-existing classes were enhanced to support ``[]``.
+corresponding pre-existing classes were enhanced to support ``[]`` (see
+:pep:`585`).
 
-The redundant types are deprecated as of Python 3.9 but no
-deprecation warnings are issued by the interpreter.
-It is expected that type checkers will flag the deprecated types
-when the checked program targets Python 3.9 or newer.
+The redundant types are deprecated as of Python 3.9. However, while the aliases
+may be removed at some point, removal of these aliases is not currently
+planned. As such, no deprecation warnings are currently issued by the
+interpreter for these aliases.
 
-The deprecated types will be removed from the :mod:`typing` module
-no sooner than the first Python version released 5 years after the release of Python 3.9.0.
-See details in :pep:`585`—*Type Hinting Generics In Standard Collections*.
+If at some point it is decided to remove these deprecated aliases, a
+deprecation warning will be issued by the interpreter for at least two releases
+prior to removal. The aliases are guaranteed to remain in the typing module
+without deprecation warnings until at least Python 3.14.
+
+Type checkers are encouraged to flag uses of the deprecated types if the
+program they are checking targets a minimum Python version of 3.9 or newer.
 
 .. _corresponding-to-built-in-types:
 
@@ -3533,6 +3547,21 @@ Aliases to other ABCs in :mod:`collections.abc`
       :class:`collections.abc.Iterator` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
+.. data:: Callable
+
+   Deprecated alias to :class:`collections.abc.Callable`.
+
+   See :ref:`annotating-callables` for details on how to use
+   :class:`collections.abc.Callable` and ``typing.Callable`` in type annotations.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Callable` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+   .. versionchanged:: 3.10
+      ``Callable`` now supports :class:`ParamSpec` and :data:`Concatenate`.
+      See :pep:`612` for more details.
+
 .. class:: Generator(Iterator[YieldType], Generic[YieldType, SendType, ReturnType])
 
    Deprecated alias to :class:`collections.abc.Generator`.
@@ -3628,18 +3657,34 @@ Certain features in ``typing`` are deprecated and may be removed in a future
 version of Python. The following table summarizes major deprecations for your
 convenience. This is subject to change, and not all deprecations are listed.
 
-+----------------------------------+---------------+-------------------+----------------+
-|  Feature                         | Deprecated in | Projected removal | PEP/issue      |
-+==================================+===============+===================+================+
-|  ``typing`` versions of standard | 3.9           | Undecided         | :pep:`585`     |
-|  collections                     |               |                   |                |
-+----------------------------------+---------------+-------------------+----------------+
-|  ``typing.ByteString``           | 3.9           | 3.14              | :gh:`91896`    |
-+----------------------------------+---------------+-------------------+----------------+
-|  ``typing.Text``                 | 3.11          | Undecided         | :gh:`92332`    |
-+----------------------------------+---------------+-------------------+----------------+
-|  ``typing.Hashable`` and         | 3.12          | Undecided         | :gh:`94309`    |
-|  ``typing.Sized``                |               |                   |                |
-+----------------------------------+---------------+-------------------+----------------+
-|  ``typing.TypeAlias``            | 3.12          | Undecided         | :pep:`695`     |
-+----------------------------------+---------------+-------------------+----------------+
+.. list-table::
+   :header-rows: 1
+
+   * - Feature
+     - Deprecated in
+     - Projected removal
+     - PEP/issue
+   * - ``typing`` versions of standard collections
+     - 3.9
+     - Undecided (see :ref:`deprecated-aliases` for more information)
+     - :pep:`585`
+   * - :class:`typing.ByteString`
+     - 3.9
+     - 3.14
+     - :gh:`91896`
+   * - :data:`typing.Text`
+     - 3.11
+     - Undecided
+     - :gh:`92332`
+   * - :class:`typing.Hashable` and :class:`typing.Sized`
+     - 3.12
+     - Undecided
+     - :gh:`94309`
+   * - :data:`typing.TypeAlias`
+     - 3.12
+     - Undecided
+     - :pep:`695`
+   * - :func:`@typing.no_type_check_decorator <no_type_check_decorator>`
+     - 3.13
+     - 3.15
+     - :gh:`106309`

@@ -516,13 +516,7 @@ static PyFunction_WatchCallback func_watcher_callbacks[NUM_TEST_FUNC_WATCHERS] =
 static int
 add_func_event(PyObject *module, const char *name, PyFunction_WatchEvent event)
 {
-    PyObject *value = PyLong_FromLong(event);
-    if (value == NULL) {
-        return -1;
-    }
-    int ok = PyModule_AddObjectRef(module, name, value);
-    Py_DECREF(value);
-    return ok;
+    return PyModule_Add(module, name, PyLong_FromLong(event));
 }
 
 static PyObject *

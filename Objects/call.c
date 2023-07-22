@@ -173,7 +173,7 @@ object_is_not_callable(PyThreadState *tstate, PyObject *callable)
             goto basic_type_error;
         }
         PyObject *attr;
-        int res = _PyObject_LookupAttr(callable, name, &attr);
+        int res = PyObject_GetOptionalAttr(callable, name, &attr);
         if (res < 0) {
             _PyErr_Clear(tstate);
         }

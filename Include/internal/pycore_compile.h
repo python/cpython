@@ -91,6 +91,8 @@ int _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj);
 
 /* Access compiler internals for unit testing */
 
+PyAPI_FUNC(PyObject*) _PyCompile_CleanDoc(PyObject *doc);
+
 PyAPI_FUNC(PyObject*) _PyCompile_CodeGen(
         PyObject *ast,
         PyObject *filename,
