@@ -788,14 +788,13 @@ but not both at the same time:
      -q, --quiet
 
 
-Internationalization support
-============================
+How to translate the argparse output
+====================================
 
 The output of the :mod:`argparse` module such as its help text and error
 messages are all made translatable using the :mod:`gettext` module. This
 allows applications to easily localize messages produced by
-:mod:`argparse`. (If you are not familiar with Internationalization and
-Localization, you can check out :ref:`i18n-howto`).
+:mod:`argparse`. See also :ref:`i18n-howto`.
 
 For instance, in this :mod:`argparse` output:
 
@@ -818,9 +817,9 @@ For instance, in this :mod:`argparse` output:
 The strings ``usage:``, ``positional arguments:``, ``options:`` and
 ``show this help message and exit`` are all translatable.
 
-In order to translate these strings, you will probably want to extract them
+In order to translate these strings, they must first be extracted
 into a ``.po`` file. For example, using `Babel <https://babel.pocoo.org/>`__,
-you can run:
+run this command:
 
 .. code-block:: shell-session
 
@@ -831,7 +830,7 @@ module and output them into a file named ``messages.po``. This command assumes
 that your Python installation is in ``/usr/lib``.
 
 You can find out the location of the :mod:`argparse` module on your system
-using this simple script::
+using this script::
 
    import argparse
    print(argparse.__file__)
