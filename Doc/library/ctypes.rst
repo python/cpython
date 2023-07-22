@@ -216,7 +216,7 @@ Fundamental data types
 +----------------------+------------------------------------------+----------------------------+
 | ctypes type          | C type                                   | Python type                |
 +======================+==========================================+============================+
-| :class:`c_bool`      | :c:texpr:`_Bool`                         | bool (1)                   |
+| :class:`c_bool`      | :c:expr:`_Bool`                          | bool (1)                   |
 +----------------------+------------------------------------------+----------------------------+
 | :class:`c_char`      | :c:expr:`char`                           | 1-character bytes object   |
 +----------------------+------------------------------------------+----------------------------+
@@ -2421,7 +2421,7 @@ These are the fundamental ctypes data types:
 
 .. class:: c_bool
 
-   Represent the C :c:texpr:`bool` datatype (more accurately, :c:texpr:`_Bool` from
+   Represent the C :c:expr:`bool` datatype (more accurately, :c:expr:`_Bool` from
    C99).  Its value can be ``True`` or ``False``, and the constructor accepts any object
    that has a truth value.
 
