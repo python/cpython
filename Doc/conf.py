@@ -78,9 +78,9 @@ if venvdir is not None:
 
 nitpick_ignore = [
     # Standard C functions
+    ('c:func', 'calloc'),
     ('c:func', 'free'),
     ('c:func', 'malloc'),
-    ('c:func', 'calloc'),
     ('c:func', 'ralloc'),
     # Standard C types
     ('c:type', 'FILE'),
