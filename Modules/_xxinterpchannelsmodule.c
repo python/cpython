@@ -6,8 +6,8 @@
 #endif
 
 #include "Python.h"
-#include "interpreteridobject.h"
 #include "pycore_atexit.h"        // _Py_AtExit()
+#include "pycore_interp_id.h"     // _PyInterpreterState_GetIDObject()
 
 
 /*
