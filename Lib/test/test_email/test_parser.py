@@ -3,7 +3,7 @@ import email
 import unittest
 from email.message import Message, EmailMessage
 from email.policy import default
-from test.test_email import TestEmailBase
+from test.test_email import openfile, TestEmailBase
 
 
 class TestCustomMessage(TestEmailBase):
@@ -66,6 +66,15 @@ class TestParserBase:
                     ("Paragraph-Separator", "not\u2029broken"),
                 ])
                 self.assertEqual(msg.get_payload(), "")
+
+    def test_headers_only_multipart(self):
+        with openfile('msg_47.txt', encoding="utf-8") as fp:
+            msgdata = fp.read()
+
+        parser = email.parser.Parser(policy=email.policy.default)
+        parsed_msg = parser.parsestr(msgdata, headersonly=True)
+
+        self.assertEqual(parsed_msg.defects, [])
 
     class MyMessage(EmailMessage):
         pass
