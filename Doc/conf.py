@@ -79,7 +79,6 @@ if venvdir is not None:
 nitpick_ignore = [
     # Standard C types
     ('c:type', 'FILE'),
-    ('c:type', '_Bool'),
     ('c:type', '__int'),
     ('c:type', 'intmax_t'),
     ('c:type', 'off_t'),
