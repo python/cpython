@@ -28,12 +28,13 @@
 #define NEED_OPCODE_TABLES
 #include "pycore_opcode_utils.h"
 #undef NEED_OPCODE_TABLES
-#include "pycore_flowgraph.h"
 #include "pycore_code.h"          // _PyCode_New()
 #include "pycore_compile.h"
+#include "pycore_flowgraph.h"
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pystate.h"       // _Py_GetConfig()
+#include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_symtable.h"      // PySTEntryObject, _PyFuture_FromAST()
 
 #define NEED_OPCODE_METADATA
