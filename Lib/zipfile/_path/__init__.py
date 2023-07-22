@@ -5,7 +5,8 @@ import itertools
 import contextlib
 import pathlib
 import re
-import fnmatch
+
+from .glob import translate
 
 
 __all__ = ['Path']
@@ -296,21 +297,24 @@ class Path:
         encoding, args, kwargs = _extract_text_encoding(*args, **kwargs)
         return io.TextIOWrapper(stream, encoding, *args, **kwargs)
 
+    def _base(self):
+        return pathlib.PurePosixPath(self.at or self.root.filename)
+
     @property
     def name(self):
-        return pathlib.Path(self.at).name or self.filename.name
+        return self._base().name
 
     @property
     def suffix(self):
-        return pathlib.Path(self.at).suffix or self.filename.suffix
+        return self._base().suffix
 
     @property
     def suffixes(self):
-        return pathlib.Path(self.at).suffixes or self.filename.suffixes
+        return self._base().suffixes
 
     @property
     def stem(self):
-        return pathlib.Path(self.at).stem or self.filename.stem
+        return self._base().stem
 
     @property
     def filename(self):
@@ -347,7 +351,7 @@ class Path:
         return filter(self._is_child, subs)
 
     def match(self, path_pattern):
-        return pathlib.Path(self.at).match(path_pattern)
+        return pathlib.PurePosixPath(self.at).match(path_pattern)
 
     def is_symlink(self):
         """
@@ -355,22 +359,13 @@ class Path:
         """
         return False
 
-    def _descendants(self):
-        for child in self.iterdir():
-            yield child
-            if child.is_dir():
-                yield from child._descendants()
-
     def glob(self, pattern):
         if not pattern:
             raise ValueError(f"Unacceptable pattern: {pattern!r}")
 
-        matches = re.compile(fnmatch.translate(pattern)).fullmatch
-        return (
-            child
-            for child in self._descendants()
-            if matches(str(child.relative_to(self)))
-        )
+        prefix = re.escape(self.at)
+        matches = re.compile(prefix + translate(pattern)).fullmatch
+        return map(self._next, filter(matches, self.root.namelist()))
 
     def rglob(self, pattern):
         return self.glob(f'**/{pattern}')

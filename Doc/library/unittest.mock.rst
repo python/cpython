@@ -1126,7 +1126,7 @@ object::
         >>> mock.wait_until_called(timeout=1)
         >>> thread.join()
 
-  .. method:: wait_until_any_call(*args, **kwargs)
+  .. method:: wait_until_any_call_with(*args, **kwargs)
 
       Waits until the the mock is called with the specified arguments.
 
@@ -1136,7 +1136,7 @@ object::
         >>> mock = ThreadingMock()
         >>> thread = threading.Thread(target=mock, args=("arg1", "arg2",), kwargs={"arg": "thing"})
         >>> thread.start()
-        >>> mock.wait_until_any_call("arg1", "arg2", arg="thing")
+        >>> mock.wait_until_any_call_with("arg1", "arg2", arg="thing")
         >>> thread.join()
 
   .. attribute:: DEFAULT_TIMEOUT
@@ -2485,7 +2485,7 @@ behaviour you can switch it off by setting the module level switch
 
 Alternatively you can just use ``vars(my_mock)`` (instance members) and
 ``dir(type(my_mock))`` (type members) to bypass the filtering irrespective of
-:data:`mock.FILTER_DIR`.
+:const:`mock.FILTER_DIR`.
 
 
 mock_open

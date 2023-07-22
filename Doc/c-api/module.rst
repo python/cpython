@@ -145,7 +145,7 @@ or request "multi-phase initialization" by returning the definition struct itsel
 
    .. c:member:: PyModuleDef_Base m_base
 
-      Always initialize this member to :const:`PyModuleDef_HEAD_INIT`.
+      Always initialize this member to :c:data:`PyModuleDef_HEAD_INIT`.
 
    .. c:member:: const char *m_name
 
@@ -256,7 +256,7 @@ of the following two module creation functions:
 
    Create a new module object, given the definition in *def*.  This behaves
    like :c:func:`PyModule_Create2` with *module_api_version* set to
-   :const:`PYTHON_API_VERSION`.
+   :c:macro:`PYTHON_API_VERSION`.
 
 
 .. c:function:: PyObject* PyModule_Create2(PyModuleDef *def, int module_api_version)
@@ -390,7 +390,7 @@ objects dynamically. Note that both ``PyModule_FromDefAndSpec`` and
 
    Create a new module object, given the definition in *def* and the
    ModuleSpec *spec*.  This behaves like :c:func:`PyModule_FromDefAndSpec2`
-   with *module_api_version* set to :const:`PYTHON_API_VERSION`.
+   with *module_api_version* set to :c:macro:`PYTHON_API_VERSION`.
 
    .. versionadded:: 3.5
 
@@ -486,12 +486,29 @@ state:
    .. versionadded:: 3.10
 
 
+.. c:function:: int PyModule_Add(PyObject *module, const char *name, PyObject *value)
+
+   Similar to :c:func:`PyModule_AddObjectRef`, but "steals" a reference
+   to *value*.
+   It can be called with a result of function that returns a new reference
+   without bothering to check its result or even saving it to a variable.
+
+   Example usage::
+
+        if (PyModule_Add(module, "spam", PyBytes_FromString(value)) < 0) {
+            goto error;
+        }
+
+   .. versionadded:: 3.13
+
+
 .. c:function:: int PyModule_AddObject(PyObject *module, const char *name, PyObject *value)
 
    Similar to :c:func:`PyModule_AddObjectRef`, but steals a reference to
    *value* on success (if it returns ``0``).
 
-   The new :c:func:`PyModule_AddObjectRef` function is recommended, since it is
+   The new :c:func:`PyModule_Add` or :c:func:`PyModule_AddObjectRef`
+   functions are recommended, since it is
    easy to introduce reference leaks by misusing the
    :c:func:`PyModule_AddObject` function.
 
@@ -501,44 +518,24 @@ state:
       only decrements the reference count of *value* **on success**.
 
       This means that its return value must be checked, and calling code must
-      :c:func:`Py_DECREF` *value* manually on error.
+      :c:func:`Py_XDECREF` *value* manually on error.
 
    Example usage::
 
-      static int
-      add_spam(PyObject *module, int value)
-      {
-          PyObject *obj = PyLong_FromLong(value);
-          if (obj == NULL) {
-              return -1;
-          }
-          if (PyModule_AddObject(module, "spam", obj) < 0) {
-              Py_DECREF(obj);
-              return -1;
-          }
-          // PyModule_AddObject() stole a reference to obj:
-          // Py_DECREF(obj) is not needed here
-          return 0;
-      }
+        PyObject *obj = PyBytes_FromString(value);
+        if (PyModule_AddObject(module, "spam", obj) < 0) {
+            // If 'obj' is not NULL and PyModule_AddObject() failed,
+            // 'obj' strong reference must be deleted with Py_XDECREF().
+            // If 'obj' is NULL, Py_XDECREF() does nothing.
+            Py_XDECREF(obj);
+            goto error;
+        }
+        // PyModule_AddObject() stole a reference to obj:
+        // Py_XDECREF(obj) is not needed here.
 
-   The example can also be written without checking explicitly if *obj* is
-   ``NULL``::
+   .. deprecated:: 3.13
 
-      static int
-      add_spam(PyObject *module, int value)
-      {
-          PyObject *obj = PyLong_FromLong(value);
-          if (PyModule_AddObject(module, "spam", obj) < 0) {
-              Py_XDECREF(obj);
-              return -1;
-          }
-          // PyModule_AddObject() stole a reference to obj:
-          // Py_DECREF(obj) is not needed here
-          return 0;
-      }
-
-   Note that ``Py_XDECREF()`` should be used instead of ``Py_DECREF()`` in
-   this case, since *obj* can be ``NULL``.
+      :c:func:`PyModule_AddObject` is :term:`soft deprecated`.
 
 
 .. c:function:: int PyModule_AddIntConstant(PyObject *module, const char *name, long value)

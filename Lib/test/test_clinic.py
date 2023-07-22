@@ -18,6 +18,19 @@ with test_tools.imports_under_tool('clinic'):
     from clinic import DSLParser
 
 
+class _ParserBase(TestCase):
+    maxDiff = None
+
+    def expect_parser_failure(self, parser, _input):
+        with support.captured_stdout() as stdout:
+            with self.assertRaises(SystemExit):
+                parser(_input)
+        return stdout.getvalue()
+
+    def parse_function_should_fail(self, _input):
+        return self.expect_parser_failure(self.parse_function, _input)
+
+
 class FakeConverter:
     def __init__(self, name, args):
         self.name = name
@@ -88,7 +101,15 @@ class FakeClinic:
 
     _module_and_class = clinic.Clinic._module_and_class
 
-class ClinicWholeFileTest(TestCase):
+
+class ClinicWholeFileTest(_ParserBase):
+    def setUp(self):
+        self.clinic = clinic.Clinic(clinic.CLanguage(None), filename="test.c")
+
+    def expect_failure(self, raw):
+        _input = dedent(raw).strip()
+        return self.expect_parser_failure(self.clinic.parse, _input)
+
     def test_eol(self):
         # regression test:
         # clinic's block parser didn't recognize
@@ -98,16 +119,144 @@ class ClinicWholeFileTest(TestCase):
         # so it would spit out an end line for you.
         # and since you really already had one,
         # the last line of the block got corrupted.
-        c = clinic.Clinic(clinic.CLanguage(None), filename="file")
         raw = "/*[clinic]\nfoo\n[clinic]*/"
-        cooked, _ = c.parse(raw)
-        lines = cooked.splitlines()
-        end_line = lines[2].rstrip()
+        cooked = self.clinic.parse(raw).splitlines()
+        end_line = cooked[2].rstrip()
         # this test is redundant, it's just here explicitly to catch
         # the regression test so we don't forget what it looked like
         self.assertNotEqual(end_line, "[clinic]*/[clinic]*/")
         self.assertEqual(end_line, "[clinic]*/")
 
+    def test_mangled_marker_line(self):
+        raw = """
+            /*[clinic input]
+            [clinic start generated code]*/
+            /*[clinic end generated code: foo]*/
+        """
+        msg = (
+            'Error in file "test.c" on line 3:\n'
+            "Mangled Argument Clinic marker line: '/*[clinic end generated code: foo]*/'\n"
+        )
+        out = self.expect_failure(raw)
+        self.assertEqual(out, msg)
+
+    def test_checksum_mismatch(self):
+        raw = """
+            /*[clinic input]
+            [clinic start generated code]*/
+            /*[clinic end generated code: output=0123456789abcdef input=fedcba9876543210]*/
+        """
+        msg = (
+            'Error in file "test.c" on line 3:\n'
+            'Checksum mismatch!\n'
+            'Expected: 0123456789abcdef\n'
+            'Computed: da39a3ee5e6b4b0d\n'
+        )
+        out = self.expect_failure(raw)
+        self.assertIn(msg, out)
+
+    def test_garbage_after_stop_line(self):
+        raw = """
+            /*[clinic input]
+            [clinic start generated code]*/foobarfoobar!
+        """
+        msg = (
+            'Error in file "test.c" on line 2:\n'
+            "Garbage after stop line: 'foobarfoobar!'\n"
+        )
+        out = self.expect_failure(raw)
+        self.assertEqual(out, msg)
+
+    def test_whitespace_before_stop_line(self):
+        raw = """
+            /*[clinic input]
+             [clinic start generated code]*/
+        """
+        msg = (
+            'Error in file "test.c" on line 2:\n'
+            "Whitespace is not allowed before the stop line: ' [clinic start generated code]*/'\n"
+        )
+        out = self.expect_failure(raw)
+        self.assertEqual(out, msg)
+
+    def test_parse_with_body_prefix(self):
+        clang = clinic.CLanguage(None)
+        clang.body_prefix = "//"
+        clang.start_line = "//[{dsl_name} start]"
+        clang.stop_line = "//[{dsl_name} stop]"
+        cl = clinic.Clinic(clang, filename="test.c")
+        raw = dedent("""
+            //[clinic start]
+            //module test
+            //[clinic stop]
+        """).strip()
+        out = cl.parse(raw)
+        expected = dedent("""
+            //[clinic start]
+            //module test
+            //
+            //[clinic stop]
+            /*[clinic end generated code: output=da39a3ee5e6b4b0d input=65fab8adff58cf08]*/
+        """).lstrip()  # Note, lstrip() because of the newline
+        self.assertEqual(out, expected)
+
+    def test_cpp_monitor_fail_nested_block_comment(self):
+        raw = """
+            /* start
+            /* nested
+            */
+            */
+        """
+        msg = (
+            'Error in file "test.c" on line 2:\n'
+            'Nested block comment!\n'
+        )
+        out = self.expect_failure(raw)
+        self.assertEqual(out, msg)
+
+    def test_cpp_monitor_fail_invalid_format_noarg(self):
+        raw = """
+            #if
+            a()
+            #endif
+        """
+        msg = (
+            'Error in file "test.c" on line 1:\n'
+            'Invalid format for #if line: no argument!\n'
+        )
+        out = self.expect_failure(raw)
+        self.assertEqual(out, msg)
+
+    def test_cpp_monitor_fail_invalid_format_toomanyargs(self):
+        raw = """
+            #ifdef A B
+            a()
+            #endif
+        """
+        msg = (
+            'Error in file "test.c" on line 1:\n'
+            'Invalid format for #ifdef line: should be exactly one argument!\n'
+        )
+        out = self.expect_failure(raw)
+        self.assertEqual(out, msg)
+
+    def test_cpp_monitor_fail_no_matching_if(self):
+        raw = '#else'
+        msg = (
+            'Error in file "test.c" on line 1:\n'
+            '#else without matching #if / #ifdef / #ifndef!\n'
+        )
+        out = self.expect_failure(raw)
+        self.assertEqual(out, msg)
+
+    def test_unknown_destination_command(self):
+        out = self.expect_failure("""
+            /*[clinic input]
+            destination buffer nosuchcommand
+            [clinic start generated code]*/
+        """)
+        msg = "unknown destination command 'nosuchcommand'"
+        self.assertIn(msg, out)
 
 
 class ClinicGroupPermuterTest(TestCase):
@@ -261,7 +410,7 @@ xyz
         c = clinic.Clinic(language, filename="file")
         c.parsers['inert'] = InertParser(c)
         c.parsers['copy'] = CopyParser(c)
-        computed, _ = c.parse(input)
+        computed = c.parse(input)
         self.assertEqual(output, computed)
 
     def test_clinic_1(self):
@@ -286,7 +435,7 @@ xyz
 """)
 
 
-class ClinicParserTest(TestCase):
+class ClinicParserTest(_ParserBase):
     def checkDocstring(self, fn, expected):
         self.assertTrue(hasattr(fn, "docstring"))
         self.assertEqual(fn.docstring.strip(),
@@ -895,6 +1044,25 @@ class ClinicParserTest(TestCase):
                 Nested docstring here, goeth.
         """)
 
+    def test_indent_stack_no_tabs(self):
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.bar
+               *vararg1: object
+            \t*vararg2: object
+        """)
+        msg = "Tab characters are illegal in the Clinic DSL."
+        self.assertIn(msg, out)
+
+    def test_indent_stack_illegal_outdent(self):
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.bar
+              a: object
+             b: object
+        """)
+        self.assertIn("Illegal outdent", out)
+
     def test_directive(self):
         c = FakeClinic()
         parser = DSLParser(c)
@@ -1014,6 +1182,43 @@ class ClinicParserTest(TestCase):
         out = self.parse_function_should_fail(block)
         self.assertEqual(out, expected_error_msg)
 
+    def test_slot_methods_cannot_access_defining_class(self):
+        block = """
+            module foo
+            class Foo "" ""
+            Foo.__init__
+                cls: defining_class
+                a: object
+        """
+        msg = "Slot methods cannot access their defining class."
+        with self.assertRaisesRegex(ValueError, msg):
+            self.parse_function(block)
+
+    def test_new_must_be_a_class_method(self):
+        expected_error_msg = (
+            "Error on line 0:\n"
+            "__new__ must be a class method!\n"
+        )
+        out = self.parse_function_should_fail("""
+            module foo
+            class Foo "" ""
+            Foo.__new__
+        """)
+        self.assertEqual(out, expected_error_msg)
+
+    def test_init_must_be_a_normal_method(self):
+        expected_error_msg = (
+            "Error on line 0:\n"
+            "__init__ must be a normal method, not a class or static method!\n"
+        )
+        out = self.parse_function_should_fail("""
+            module foo
+            class Foo "" ""
+            @classmethod
+            Foo.__init__
+        """)
+        self.assertEqual(out, expected_error_msg)
+
     def test_unused_param(self):
         block = self.parse("""
             module foo
@@ -1089,15 +1294,16 @@ class ClinicExternalTest(TestCase):
     maxDiff = None
 
     def test_external(self):
+        CLINIC_TEST = 'clinic.test.c'
         # bpo-42398: Test that the destination file is left unchanged if the
         # content does not change. Moreover, check also that the file
         # modification time does not change in this case.
-        source = support.findfile('clinic.test')
+        source = support.findfile(CLINIC_TEST)
         with open(source, 'r', encoding='utf-8') as f:
             orig_contents = f.read()
 
         with os_helper.temp_dir() as tmp_dir:
-            testfile = os.path.join(tmp_dir, 'clinic.test.c')
+            testfile = os.path.join(tmp_dir, CLINIC_TEST)
             with open(testfile, 'w', encoding='utf-8') as f:
                 f.write(orig_contents)
             old_mtime_ns = os.stat(testfile).st_mtime_ns
@@ -1690,6 +1896,170 @@ class PermutationTests(unittest.TestCase):
                 permutations = clinic.permute_optional_groups(left, required, right)
                 actual = tuple(permutations)
                 self.assertEqual(actual, expected)
+
+
+class FormatHelperTests(unittest.TestCase):
+
+    def test_strip_leading_and_trailing_blank_lines(self):
+        dataset = (
+            # Input lines, expected output.
+            ("a\nb",            "a\nb"),
+            ("a\nb\n",          "a\nb"),
+            ("a\nb ",           "a\nb"),
+            ("\na\nb\n\n",      "a\nb"),
+            ("\n\na\nb\n\n",    "a\nb"),
+            ("\n\na\n\nb\n\n",  "a\n\nb"),
+            # Note, leading whitespace is preserved:
+            (" a\nb",               " a\nb"),
+            (" a\nb ",              " a\nb"),
+            (" \n \n a\nb \n \n ",  " a\nb"),
+        )
+        for lines, expected in dataset:
+            with self.subTest(lines=lines, expected=expected):
+                out = clinic.strip_leading_and_trailing_blank_lines(lines)
+                self.assertEqual(out, expected)
+
+    def test_normalize_snippet(self):
+        snippet = """
+            one
+            two
+            three
+        """
+
+        # Expected outputs:
+        zero_indent = (
+            "one\n"
+            "two\n"
+            "three"
+        )
+        four_indent = (
+            "    one\n"
+            "    two\n"
+            "    three"
+        )
+        eight_indent = (
+            "        one\n"
+            "        two\n"
+            "        three"
+        )
+        expected_outputs = {0: zero_indent, 4: four_indent, 8: eight_indent}
+        for indent, expected in expected_outputs.items():
+            with self.subTest(indent=indent):
+                actual = clinic.normalize_snippet(snippet, indent=indent)
+                self.assertEqual(actual, expected)
+
+    def test_accumulator(self):
+        acc = clinic.text_accumulator()
+        self.assertEqual(acc.output(), "")
+        acc.append("a")
+        self.assertEqual(acc.output(), "a")
+        self.assertEqual(acc.output(), "")
+        acc.append("b")
+        self.assertEqual(acc.output(), "b")
+        self.assertEqual(acc.output(), "")
+        acc.append("c")
+        acc.append("d")
+        self.assertEqual(acc.output(), "cd")
+        self.assertEqual(acc.output(), "")
+
+    def test_quoted_for_c_string(self):
+        dataset = (
+            # input,    expected
+            (r"abc",    r"abc"),
+            (r"\abc",   r"\\abc"),
+            (r"\a\bc",  r"\\a\\bc"),
+            (r"\a\\bc", r"\\a\\\\bc"),
+            (r'"abc"',  r'\"abc\"'),
+            (r"'a'",    r"\'a\'"),
+        )
+        for line, expected in dataset:
+            with self.subTest(line=line, expected=expected):
+                out = clinic.quoted_for_c_string(line)
+                self.assertEqual(out, expected)
+
+    def test_rstrip_lines(self):
+        lines = (
+            "a \n"
+            "b\n"
+            " c\n"
+            " d \n"
+        )
+        expected = (
+            "a\n"
+            "b\n"
+            " c\n"
+            " d\n"
+        )
+        out = clinic.rstrip_lines(lines)
+        self.assertEqual(out, expected)
+
+    def test_format_escape(self):
+        line = "{}, {a}"
+        expected = "{{}}, {{a}}"
+        out = clinic.format_escape(line)
+        self.assertEqual(out, expected)
+
+    def test_indent_all_lines(self):
+        # Blank lines are expected to be unchanged.
+        self.assertEqual(clinic.indent_all_lines("", prefix="bar"), "")
+
+        lines = (
+            "one\n"
+            "two"  # The missing newline is deliberate.
+        )
+        expected = (
+            "barone\n"
+            "bartwo"
+        )
+        out = clinic.indent_all_lines(lines, prefix="bar")
+        self.assertEqual(out, expected)
+
+        # If last line is empty, expect it to be unchanged.
+        lines = (
+            "\n"
+            "one\n"
+            "two\n"
+            ""
+        )
+        expected = (
+            "bar\n"
+            "barone\n"
+            "bartwo\n"
+            ""
+        )
+        out = clinic.indent_all_lines(lines, prefix="bar")
+        self.assertEqual(out, expected)
+
+    def test_suffix_all_lines(self):
+        # Blank lines are expected to be unchanged.
+        self.assertEqual(clinic.suffix_all_lines("", suffix="foo"), "")
+
+        lines = (
+            "one\n"
+            "two"  # The missing newline is deliberate.
+        )
+        expected = (
+            "onefoo\n"
+            "twofoo"
+        )
+        out = clinic.suffix_all_lines(lines, suffix="foo")
+        self.assertEqual(out, expected)
+
+        # If last line is empty, expect it to be unchanged.
+        lines = (
+            "\n"
+            "one\n"
+            "two\n"
+            ""
+        )
+        expected = (
+            "foo\n"
+            "onefoo\n"
+            "twofoo\n"
+            ""
+        )
+        out = clinic.suffix_all_lines(lines, suffix="foo")
+        self.assertEqual(out, expected)
 
 
 if __name__ == "__main__":
