@@ -1933,7 +1933,6 @@ _bufferedwriter_raw_write(buffered *self, char *start, Py_ssize_t len)
     PyErr_Fetch(&exc, &val, &tb);
     release_res = PyObject_CallMethod(memobj, "release", NULL);
     _PyErr_ChainExceptions(exc, val, tb);
-    Py_DECREF(memobj);
     if (release_res == NULL) {
         Py_XDECREF(res);
         return -1;
