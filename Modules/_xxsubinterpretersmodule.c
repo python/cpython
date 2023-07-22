@@ -7,7 +7,7 @@
 
 #include "Python.h"
 #include "pycore_interp.h"        // _PyInterpreterState_GetMainModule()
-#include "interpreteridobject.h"
+#include "pycore_interp_id.h"     // _PyInterpreterState_GetIDObject()
 
 
 #define MODULE_NAME "_xxsubinterpreters"
