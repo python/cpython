@@ -3,7 +3,7 @@ import email
 import unittest
 from email.message import Message, EmailMessage
 from email.policy import default
-from test.test_email import openfile, TestEmailBase
+from test.test_email import TestEmailBase
 
 
 class TestCustomMessage(TestEmailBase):
@@ -66,7 +66,6 @@ class TestParserBase:
                     ("Paragraph-Separator", "not\u2029broken"),
                 ])
                 self.assertEqual(msg.get_payload(), "")
-
 
     class MyMessage(EmailMessage):
         pass
