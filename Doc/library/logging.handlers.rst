@@ -917,8 +917,7 @@ should, then :meth:`flush` is expected to do the flushing.
 
    .. method:: flush()
 
-      You can override this to implement custom flushing behavior. This version
-      just zaps the buffer to empty.
+      For a :class:`BufferHandler`, flushing means that it zaps the buffer to empty. This method can be overwritten to implement more useful flushing behavior.
 
 
    .. method:: shouldFlush(record)
@@ -952,7 +951,7 @@ should, then :meth:`flush` is expected to do the flushing.
 
       For a :class:`MemoryHandler`, flushing means just sending the buffered
       records to the target, if there is one. The buffer is also cleared when
-      this happens. Override if you want different behavior.
+      buffered records are send. Override if you want different behavior.
 
 
    .. method:: setTarget(target)
