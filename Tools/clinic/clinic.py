@@ -2950,12 +2950,18 @@ class CConverter(metaclass=CConverterAutoRegister):
     # All the functions after here are intended as extension points.
     #
 
-    def simple_declaration(self, by_reference=False, *, in_parser=False):
+    def simple_declaration(
+            self,
+            by_reference: bool = False,
+            *,
+            in_parser: bool = False
+    ) -> str:
         """
         Computes the basic declaration of the variable.
         Used in computing the prototype declaration and the
         variable declaration.
         """
+        assert isinstance(self.type, str)
         prototype = [self.type]
         if by_reference or not self.type.endswith('*'):
             prototype.append(" ")
@@ -2970,7 +2976,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         prototype.append(name)
         return "".join(prototype)
 
-    def declaration(self, *, in_parser=False) -> str:
+    def declaration(self, *, in_parser: bool = False) -> str:
         """
         The C statement to declare this variable.
         """
@@ -3579,9 +3585,9 @@ class object_converter(CConverter):
 
     def converter_init(
             self, *,
-            converter=None,
-            type=None,
-            subclass_of=None
+            converter: str | None = None,
+            type: str | None = None,
+            subclass_of: str | None = None
     ) -> None:
         if converter:
             if subclass_of:
@@ -3973,7 +3979,7 @@ class self_converter(CConverter):
     type = None
     format_unit = ''
 
-    def converter_init(self, *, type=None) -> None:
+    def converter_init(self, *, type: str | None = None) -> None:
         self.specified_type = type
 
     def pre_render(self):
@@ -4047,7 +4053,7 @@ class self_converter(CConverter):
             assert data.impl_arguments[0] == self.name
             data.impl_arguments[0] = '(' + self.type + ")" + data.impl_arguments[0]
 
-    def set_template_dict(self, template_dict):
+    def set_template_dict(self, template_dict: TemplateDict) -> None:
         template_dict['self_name'] = self.name
         template_dict['self_type'] = self.parser_type
         kind = self.function.kind
@@ -4066,7 +4072,7 @@ class self_converter(CConverter):
             line = f'{type_check} &&\n        '
             template_dict['self_type_check'] = line
 
-            type_object = self.function.cls.type_object
+            type_object = cls.type_object
             type_ptr = f'PyTypeObject *base_tp = {type_object};'
             template_dict['base_type_ptr'] = type_ptr
 
@@ -4276,11 +4282,11 @@ def eval_ast_expr(
 
 
 class IndentStack:
-    def __init__(self):
-        self.indents = []
-        self.margin = None
+    def __init__(self) -> None:
+        self.indents: list[int] = []
+        self.margin: str | None = None
 
-    def _ensure(self):
+    def _ensure(self) -> None:
         if not self.indents:
             fail('IndentStack expected indents, but none are defined.')
 
@@ -4341,6 +4347,7 @@ class IndentStack:
         """
         Indents a line by the currently defined margin.
         """
+        assert self.margin is not None, "Cannot call .indent() before calling .infer()"
         return self.margin + line
 
     def dedent(self, line: str) -> str:
@@ -4348,6 +4355,7 @@ class IndentStack:
         Dedents a line by the currently defined margin.
         (The inverse of 'indent'.)
         """
+        assert self.margin is not None, "Cannot call .indent() before calling .infer()"
         margin = self.margin
         indent = self.indents[-1]
         if not line.startswith(margin):
@@ -5232,6 +5240,7 @@ class DSLParser:
             p.kind = inspect.Parameter.POSITIONAL_ONLY
 
     def state_parameter_docstring_start(self, line: str | None) -> None:
+        assert self.indent.margin is not None, "self.margin.infer() has not yet been called to set the margin"
         self.parameter_docstring_indent = len(self.indent.margin)
         assert self.indent.depth == 3
         return self.next(self.state_parameter_docstring, line)
@@ -5534,7 +5543,7 @@ class DSLParser:
 
         return docstring
 
-    def state_terminal(self, line):
+    def state_terminal(self, line: str | None) -> None:
         """
         Called when processing the block is done.
         """
