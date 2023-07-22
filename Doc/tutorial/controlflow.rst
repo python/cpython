@@ -343,7 +343,13 @@ Dotted names (like ``foo.bar``), attribute names (the ``x=`` and ``y=`` above) o
 (recognized by the "(...)" next to them like ``Point`` above) are never assigned to.
 
 Patterns can be arbitrarily nested.  For example, if we have a short
-list of points, we could match it like this::
+list of Points, with ``__match_args__`` added, we could match it like this::
+
+    class Point:
+        __match_args__ = ('x', 'y')
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
 
     match points:
         case []:

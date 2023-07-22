@@ -3726,6 +3726,47 @@ test_preprocessor_guarded_else_impl(PyObject *module)
 /*[clinic end generated code: output=13af7670aac51b12 input=6657ab31d74c29fc]*/
 #endif
 
+#ifndef CONDITION_C
+/*[clinic input]
+test_preprocessor_guarded_ifndef_condition_c
+[clinic start generated code]*/
+
+static PyObject *
+test_preprocessor_guarded_ifndef_condition_c_impl(PyObject *module)
+/*[clinic end generated code: output=ed422e8c895bb0a5 input=e9b50491cea2b668]*/
+#else
+/*[clinic input]
+test_preprocessor_guarded_ifndef_not_condition_c
+[clinic start generated code]*/
+
+static PyObject *
+test_preprocessor_guarded_ifndef_not_condition_c_impl(PyObject *module)
+/*[clinic end generated code: output=de6f4c6a67f8c536 input=da74e30e01c6f2c5]*/
+#endif
+
+#if \
+CONDITION_D
+/*[clinic input]
+test_preprocessor_guarded_if_with_continuation
+[clinic start generated code]*/
+
+static PyObject *
+test_preprocessor_guarded_if_with_continuation_impl(PyObject *module)
+/*[clinic end generated code: output=3d0712ca9e2d15b9 input=4a956fd91be30284]*/
+#endif
+
+#if CONDITION_E || CONDITION_F
+#warning "different type of CPP directive"
+/*[clinic input]
+test_preprocessor_guarded_if_e_or_f
+Makes sure cpp.Monitor handles other directives than preprocessor conditionals.
+[clinic start generated code]*/
+
+static PyObject *
+test_preprocessor_guarded_if_e_or_f_impl(PyObject *module)
+/*[clinic end generated code: output=e49d24ff64ad88bc input=57b9c37f938bc4f1]*/
+#endif
+
 /*[clinic input]
 dump buffer
 output pop
@@ -3785,6 +3826,79 @@ test_preprocessor_guarded_else(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* !defined(CONDITION_A) && !(CONDITION_B) */
 
+#if !defined(CONDITION_C)
+
+PyDoc_STRVAR(test_preprocessor_guarded_ifndef_condition_c__doc__,
+"test_preprocessor_guarded_ifndef_condition_c($module, /)\n"
+"--\n"
+"\n");
+
+#define TEST_PREPROCESSOR_GUARDED_IFNDEF_CONDITION_C_METHODDEF    \
+    {"test_preprocessor_guarded_ifndef_condition_c", (PyCFunction)test_preprocessor_guarded_ifndef_condition_c, METH_NOARGS, test_preprocessor_guarded_ifndef_condition_c__doc__},
+
+static PyObject *
+test_preprocessor_guarded_ifndef_condition_c(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return test_preprocessor_guarded_ifndef_condition_c_impl(module);
+}
+
+#endif /* !defined(CONDITION_C) */
+
+#if defined(CONDITION_C)
+
+PyDoc_STRVAR(test_preprocessor_guarded_ifndef_not_condition_c__doc__,
+"test_preprocessor_guarded_ifndef_not_condition_c($module, /)\n"
+"--\n"
+"\n");
+
+#define TEST_PREPROCESSOR_GUARDED_IFNDEF_NOT_CONDITION_C_METHODDEF    \
+    {"test_preprocessor_guarded_ifndef_not_condition_c", (PyCFunction)test_preprocessor_guarded_ifndef_not_condition_c, METH_NOARGS, test_preprocessor_guarded_ifndef_not_condition_c__doc__},
+
+static PyObject *
+test_preprocessor_guarded_ifndef_not_condition_c(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return test_preprocessor_guarded_ifndef_not_condition_c_impl(module);
+}
+
+#endif /* defined(CONDITION_C) */
+
+#if (CONDITION_D)
+
+PyDoc_STRVAR(test_preprocessor_guarded_if_with_continuation__doc__,
+"test_preprocessor_guarded_if_with_continuation($module, /)\n"
+"--\n"
+"\n");
+
+#define TEST_PREPROCESSOR_GUARDED_IF_WITH_CONTINUATION_METHODDEF    \
+    {"test_preprocessor_guarded_if_with_continuation", (PyCFunction)test_preprocessor_guarded_if_with_continuation, METH_NOARGS, test_preprocessor_guarded_if_with_continuation__doc__},
+
+static PyObject *
+test_preprocessor_guarded_if_with_continuation(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return test_preprocessor_guarded_if_with_continuation_impl(module);
+}
+
+#endif /* (CONDITION_D) */
+
+#if (CONDITION_E || CONDITION_F)
+
+PyDoc_STRVAR(test_preprocessor_guarded_if_e_or_f__doc__,
+"test_preprocessor_guarded_if_e_or_f($module, /)\n"
+"--\n"
+"\n"
+"Makes sure cpp.Monitor handles other directives than preprocessor conditionals.");
+
+#define TEST_PREPROCESSOR_GUARDED_IF_E_OR_F_METHODDEF    \
+    {"test_preprocessor_guarded_if_e_or_f", (PyCFunction)test_preprocessor_guarded_if_e_or_f, METH_NOARGS, test_preprocessor_guarded_if_e_or_f__doc__},
+
+static PyObject *
+test_preprocessor_guarded_if_e_or_f(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return test_preprocessor_guarded_if_e_or_f_impl(module);
+}
+
+#endif /* (CONDITION_E || CONDITION_F) */
+
 #ifndef TEST_PREPROCESSOR_GUARDED_CONDITION_A_METHODDEF
     #define TEST_PREPROCESSOR_GUARDED_CONDITION_A_METHODDEF
 #endif /* !defined(TEST_PREPROCESSOR_GUARDED_CONDITION_A_METHODDEF) */
@@ -3796,7 +3910,23 @@ test_preprocessor_guarded_else(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef TEST_PREPROCESSOR_GUARDED_ELSE_METHODDEF
     #define TEST_PREPROCESSOR_GUARDED_ELSE_METHODDEF
 #endif /* !defined(TEST_PREPROCESSOR_GUARDED_ELSE_METHODDEF) */
-/*[clinic end generated code: output=3804bb18d454038c input=3fc80c9989d2f2e1]*/
+
+#ifndef TEST_PREPROCESSOR_GUARDED_IFNDEF_CONDITION_C_METHODDEF
+    #define TEST_PREPROCESSOR_GUARDED_IFNDEF_CONDITION_C_METHODDEF
+#endif /* !defined(TEST_PREPROCESSOR_GUARDED_IFNDEF_CONDITION_C_METHODDEF) */
+
+#ifndef TEST_PREPROCESSOR_GUARDED_IFNDEF_NOT_CONDITION_C_METHODDEF
+    #define TEST_PREPROCESSOR_GUARDED_IFNDEF_NOT_CONDITION_C_METHODDEF
+#endif /* !defined(TEST_PREPROCESSOR_GUARDED_IFNDEF_NOT_CONDITION_C_METHODDEF) */
+
+#ifndef TEST_PREPROCESSOR_GUARDED_IF_WITH_CONTINUATION_METHODDEF
+    #define TEST_PREPROCESSOR_GUARDED_IF_WITH_CONTINUATION_METHODDEF
+#endif /* !defined(TEST_PREPROCESSOR_GUARDED_IF_WITH_CONTINUATION_METHODDEF) */
+
+#ifndef TEST_PREPROCESSOR_GUARDED_IF_E_OR_F_METHODDEF
+    #define TEST_PREPROCESSOR_GUARDED_IF_E_OR_F_METHODDEF
+#endif /* !defined(TEST_PREPROCESSOR_GUARDED_IF_E_OR_F_METHODDEF) */
+/*[clinic end generated code: output=fcfae7cac7a99e62 input=3fc80c9989d2f2e1]*/
 
 /*[clinic input]
 test_vararg_and_posonly
@@ -4818,3 +4948,59 @@ Test_meth_coexist(TestObj *self, PyObject *Py_UNUSED(ignored))
 static PyObject *
 Test_meth_coexist_impl(TestObj *self)
 /*[clinic end generated code: output=808a293d0cd27439 input=2a1d75b5e6fec6dd]*/
+
+
+/*[clinic input]
+output push
+output preset buffer
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=5bff3376ee0df0b5]*/
+
+/*[clinic input]
+buffer_clear
+  a: int
+We'll call 'destination buffer clear' after this.
+
+Argument Clinic's buffer preset puts most generated code into the
+'buffer' destination, except from 'impl_definition', which is put into
+the 'block' destination, so we should expect everything but
+'impl_definition' to be cleared.
+[clinic start generated code]*/
+
+static PyObject *
+buffer_clear_impl(PyObject *module, int a)
+/*[clinic end generated code: output=f14bba74677e1846 input=a4c308a6fdab043c]*/
+
+/*[clinic input]
+destination buffer clear
+output pop
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f20d06adb8252084]*/
+
+
+/*[clinic input]
+output push
+destination test1 new buffer
+output everything suppress
+output docstring_definition test1
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=5a77c454970992fc]*/
+
+/*[clinic input]
+new_dest
+  a: int
+Only this docstring should be outputted to test1.
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=da5af421ed8996ed]*/
+
+/*[clinic input]
+dump test1
+output pop
+[clinic start generated code]*/
+
+PyDoc_STRVAR(new_dest__doc__,
+"new_dest($module, /, a)\n"
+"--\n"
+"\n"
+"Only this docstring should be outputted to test1.");
+/*[clinic end generated code: output=9cac703f51d90e84 input=090db8df4945576d]*/

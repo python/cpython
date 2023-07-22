@@ -3844,14 +3844,9 @@ imp_module_exec(PyObject *module)
 {
     const wchar_t *mode = _Py_GetConfig()->check_hash_pycs_mode;
     PyObject *pyc_mode = PyUnicode_FromWideChar(mode, -1);
-    if (pyc_mode == NULL) {
+    if (PyModule_Add(module, "check_hash_based_pycs", pyc_mode) < 0) {
         return -1;
     }
-    if (PyModule_AddObjectRef(module, "check_hash_based_pycs", pyc_mode) < 0) {
-        Py_DECREF(pyc_mode);
-        return -1;
-    }
-    Py_DECREF(pyc_mode);
 
     return 0;
 }

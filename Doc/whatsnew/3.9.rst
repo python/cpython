@@ -427,8 +427,8 @@ digests. It skips MD5 on platforms that block MD5 digest.
 fcntl
 -----
 
-Added constants :data:`~fcntl.F_OFD_GETLK`, :data:`~fcntl.F_OFD_SETLK`
-and :data:`~fcntl.F_OFD_SETLKW`.
+Added constants :const:`~fcntl.F_OFD_GETLK`, :const:`~fcntl.F_OFD_SETLK`
+and :const:`~fcntl.F_OFD_SETLKW`.
 (Contributed by Dong-hee Na in :issue:`38602`.)
 
 ftplib
@@ -593,11 +593,11 @@ a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
 os
 --
 
-Added :data:`~os.CLD_KILLED` and :data:`~os.CLD_STOPPED` for :attr:`si_code`.
+Added :const:`~os.CLD_KILLED` and :const:`~os.CLD_STOPPED` for :attr:`si_code`.
 (Contributed by Dong-hee Na in :issue:`38493`.)
 
 Exposed the Linux-specific :func:`os.pidfd_open` (:issue:`38692`) and
-:data:`os.P_PIDFD` (:issue:`38713`) for process management with file
+:const:`os.P_PIDFD` (:issue:`38713`) for process management with file
 descriptors.
 
 The :func:`os.unsetenv` function is now also available on Windows.
@@ -669,11 +669,11 @@ a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
 socket
 ------
 
-The :mod:`socket` module now exports the :data:`~socket.CAN_RAW_JOIN_FILTERS`
+The :mod:`socket` module now exports the :const:`~socket.CAN_RAW_JOIN_FILTERS`
 constant on Linux 4.1 and greater.
 (Contributed by Stefan Tatschner and Zackery Spytz in :issue:`25780`.)
 
-The socket module now supports the :data:`~socket.CAN_J1939` protocol on
+The socket module now supports the :const:`~socket.CAN_J1939` protocol on
 platforms that support it.  (Contributed by Karl Ding in :issue:`40291`.)
 
 The socket module now has the :func:`socket.send_fds` and
@@ -692,13 +692,13 @@ which has nanosecond resolution, rather than
 sys
 ---
 
-Added a new :attr:`sys.platlibdir` attribute: name of the platform-specific
+Added a new :data:`sys.platlibdir` attribute: name of the platform-specific
 library directory. It is used to build the path of standard library and the
 paths of installed extension modules. It is equal to ``"lib"`` on most
 platforms.  On Fedora and SuSE, it is equal to ``"lib64"`` on 64-bit platforms.
 (Contributed by Jan Matějek, Matěj Cepl, Charalampos Stratakis and Victor Stinner in :issue:`1294959`.)
 
-Previously, :attr:`sys.stderr` was block-buffered when non-interactive. Now
+Previously, :data:`sys.stderr` was block-buffered when non-interactive. Now
 ``stderr`` defaults to always being line-buffered.
 (Contributed by Jendrik Seipp in :issue:`13601`.)
 
@@ -1084,7 +1084,7 @@ Changes in the Python API
   ``__VENV_PROMPT__`` is set to ``""``.
 
 * The :meth:`select.epoll.unregister` method no longer ignores the
-  :data:`~errno.EBADF` error.
+  :const:`~errno.EBADF` error.
   (Contributed by Victor Stinner in :issue:`39239`.)
 
 * The *compresslevel* parameter of :class:`bz2.BZ2File` became keyword-only,
@@ -1226,8 +1226,8 @@ Build Changes
 =============
 
 * Added ``--with-platlibdir`` option to the ``configure`` script: name of the
-  platform-specific library directory, stored in the new :attr:`sys.platlibdir`
-  attribute. See :attr:`sys.platlibdir` attribute for more information.
+  platform-specific library directory, stored in the new :data:`sys.platlibdir`
+  attribute. See :data:`sys.platlibdir` attribute for more information.
   (Contributed by Jan Matějek, Matěj Cepl, Charalampos Stratakis
   and Victor Stinner in :issue:`1294959`.)
 
@@ -1276,7 +1276,7 @@ New Features
 * :pep:`573`: Added :c:func:`PyType_FromModuleAndSpec` to associate
   a module with a class; :c:func:`PyType_GetModule` and
   :c:func:`PyType_GetModuleState` to retrieve the module and its state; and
-  :c:data:`PyCMethod` and :c:data:`METH_METHOD` to allow a method to
+  :c:data:`PyCMethod` and :c:macro:`METH_METHOD` to allow a method to
   access the class it was defined in.
   (Contributed by Marcel Plch and Petr Viktorin in :issue:`38787`.)
 

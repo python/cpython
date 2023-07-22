@@ -46,6 +46,7 @@
 #endif
 
 struct PyDecContextObject;
+struct DecCondMap;
 
 typedef struct {
     PyTypeObject *PyDecContextManager_Type;
@@ -81,6 +82,9 @@ typedef struct {
     PyObject *Rational;
 
     PyObject *SignalTuple;
+
+    struct DecCondMap *signal_map;
+    struct DecCondMap *cond_map;
 
     /* External C-API functions */
     binaryfunc _py_long_multiply;
@@ -181,7 +185,7 @@ incr_false(void)
 #define DEC_ERR_OCCURRED (DEC_INVALID_SIGNALS<<1)
 #define DEC_ERRORS (DEC_INVALID_SIGNALS|DEC_ERR_OCCURRED)
 
-typedef struct {
+typedef struct DecCondMap {
     const char *name;   /* condition or signal name */
     const char *fqname; /* fully qualified name */
     uint32_t flag;      /* libmpdec flag */
@@ -193,7 +197,7 @@ typedef struct {
 #define INEXACT 6
 #define ROUNDED 7
 #define SIGNAL_MAP_LEN 9
-static DecCondMap signal_map[] = {
+static DecCondMap signal_map_template[] = {
   {"InvalidOperation", "decimal.InvalidOperation", MPD_IEEE_Invalid_operation, NULL},
   {"FloatOperation", "decimal.FloatOperation", MPD_Float_operation, NULL},
   {"DivisionByZero", "decimal.DivisionByZero", MPD_Division_by_zero, NULL},
@@ -207,7 +211,7 @@ static DecCondMap signal_map[] = {
 };
 
 /* Exceptions that inherit from InvalidOperation */
-static DecCondMap cond_map[] = {
+static DecCondMap cond_map_template[] = {
   {"InvalidOperation", "decimal.InvalidOperation", MPD_Invalid_operation, NULL},
   {"ConversionSyntax", "decimal.ConversionSyntax", MPD_Conversion_syntax, NULL},
   {"DivisionImpossible", "decimal.DivisionImpossible", MPD_Division_impossible, NULL},
@@ -218,6 +222,21 @@ static DecCondMap cond_map[] = {
 #endif
   {NULL}
 };
+
+/* Return a duplicate of DecCondMap template */
+static inline DecCondMap *
+dec_cond_map_init(DecCondMap *template, Py_ssize_t size)
+{
+    DecCondMap *cm;
+    cm = PyMem_Malloc(size);
+    if (cm == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    memcpy(cm, template, size);
+    return cm;
+}
 
 static const char *dec_signal_string[MPD_NUM_FLAGS] = {
     "Clamped",
@@ -312,8 +331,9 @@ static PyObject *
 flags_as_exception(uint32_t flags)
 {
     DecCondMap *cm;
+    decimal_state *state = GLOBAL_STATE();
 
-    for (cm = signal_map; cm->name != NULL; cm++) {
+    for (cm = state->signal_map; cm->name != NULL; cm++) {
         if (flags&cm->flag) {
             return cm->ex;
         }
@@ -326,8 +346,9 @@ Py_LOCAL_INLINE(uint32_t)
 exception_as_flag(PyObject *ex)
 {
     DecCondMap *cm;
+    decimal_state *state = GLOBAL_STATE();
 
-    for (cm = signal_map; cm->name != NULL; cm++) {
+    for (cm = state->signal_map; cm->name != NULL; cm++) {
         if (cm->ex == ex) {
             return cm->flag;
         }
@@ -342,20 +363,21 @@ flags_as_list(uint32_t flags)
 {
     PyObject *list;
     DecCondMap *cm;
+    decimal_state *state = GLOBAL_STATE();
 
     list = PyList_New(0);
     if (list == NULL) {
         return NULL;
     }
 
-    for (cm = cond_map; cm->name != NULL; cm++) {
+    for (cm = state->cond_map; cm->name != NULL; cm++) {
         if (flags&cm->flag) {
             if (PyList_Append(list, cm->ex) < 0) {
                 goto error;
             }
         }
     }
-    for (cm = signal_map+1; cm->name != NULL; cm++) {
+    for (cm = state->signal_map+1; cm->name != NULL; cm++) {
         if (flags&cm->flag) {
             if (PyList_Append(list, cm->ex) < 0) {
                 goto error;
@@ -375,13 +397,14 @@ signals_as_list(uint32_t flags)
 {
     PyObject *list;
     DecCondMap *cm;
+    decimal_state *state = GLOBAL_STATE();
 
     list = PyList_New(0);
     if (list == NULL) {
         return NULL;
     }
 
-    for (cm = signal_map; cm->name != NULL; cm++) {
+    for (cm = state->signal_map; cm->name != NULL; cm++) {
         if (flags&cm->flag) {
             if (PyList_Append(list, cm->ex) < 0) {
                 Py_DECREF(list);
@@ -421,13 +444,14 @@ flags_as_dict(uint32_t flags)
 {
     DecCondMap *cm;
     PyObject *dict;
+    decimal_state *state = GLOBAL_STATE();
 
     dict = PyDict_New();
     if (dict == NULL) {
         return NULL;
     }
 
-    for (cm = signal_map; cm->name != NULL; cm++) {
+    for (cm = state->signal_map; cm->name != NULL; cm++) {
         PyObject *b = flags&cm->flag ? Py_True : Py_False;
         if (PyDict_SetItem(dict, cm->ex, b) < 0) {
             Py_DECREF(dict);
@@ -445,6 +469,7 @@ dict_as_flags(PyObject *val)
     DecCondMap *cm;
     uint32_t flags = 0;
     int x;
+    decimal_state *state = GLOBAL_STATE();
 
     if (!PyDict_Check(val)) {
         PyErr_SetString(PyExc_TypeError,
@@ -458,7 +483,7 @@ dict_as_flags(PyObject *val)
         return DEC_INVALID_SIGNALS;
     }
 
-    for (cm = signal_map; cm->name != NULL; cm++) {
+    for (cm = state->signal_map; cm->name != NULL; cm++) {
         b = PyDict_GetItemWithError(val, cm->ex);
         if (b == NULL) {
             if (PyErr_Occurred()) {
@@ -652,7 +677,8 @@ signaldict_repr(PyObject *self)
 
     assert(SIGNAL_MAP_LEN == 9);
 
-    for (cm=signal_map, i=0; cm->name != NULL; cm++, i++) {
+    decimal_state *state = GLOBAL_STATE();
+    for (cm=state->signal_map, i=0; cm->name != NULL; cm++, i++) {
         n[i] = cm->fqname;
         b[i] = SdFlags(self)&cm->flag ? "True" : "False";
     }
@@ -5922,10 +5948,12 @@ PyInit__decimal(void)
     ASSIGN_PTR(state->SignalTuple, PyTuple_New(SIGNAL_MAP_LEN));
 
     /* Add exceptions that correspond to IEEE signals */
+    ASSIGN_PTR(state->signal_map, dec_cond_map_init(signal_map_template,
+                                                    sizeof(signal_map_template)));
     for (i = SIGNAL_MAP_LEN-1; i >= 0; i--) {
         PyObject *base;
 
-        cm = signal_map + i;
+        cm = state->signal_map + i;
 
         switch (cm->flag) {
         case MPD_Float_operation:
@@ -5936,13 +5964,13 @@ PyInit__decimal(void)
                                 PyExc_ZeroDivisionError);
             break;
         case MPD_Overflow:
-            base = PyTuple_Pack(2, signal_map[INEXACT].ex,
-                                   signal_map[ROUNDED].ex);
+            base = PyTuple_Pack(2, state->signal_map[INEXACT].ex,
+                                   state->signal_map[ROUNDED].ex);
             break;
         case MPD_Underflow:
-            base = PyTuple_Pack(3, signal_map[INEXACT].ex,
-                                   signal_map[ROUNDED].ex,
-                                   signal_map[SUBNORMAL].ex);
+            base = PyTuple_Pack(3, state->signal_map[INEXACT].ex,
+                                   state->signal_map[ROUNDED].ex,
+                                   state->signal_map[SUBNORMAL].ex);
             break;
         default:
             base = PyTuple_Pack(1, state->DecimalException);
@@ -5957,7 +5985,7 @@ PyInit__decimal(void)
         Py_DECREF(base);
 
         /* add to module */
-        CHECK_INT(PyModule_AddObject(m, cm->name, Py_NewRef(cm->ex)));
+        CHECK_INT(PyModule_AddObjectRef(m, cm->name, cm->ex));
 
         /* add to signal tuple */
         PyTuple_SET_ITEM(state->SignalTuple, i, Py_NewRef(cm->ex));
@@ -5968,16 +5996,18 @@ PyInit__decimal(void)
      * several conditions, including InvalidOperation! Naming the
      * signal IEEEInvalidOperation would prevent the confusion.
      */
-    cond_map[0].ex = signal_map[0].ex;
+    ASSIGN_PTR(state->cond_map, dec_cond_map_init(cond_map_template,
+                                                  sizeof(cond_map_template)));
+    state->cond_map[0].ex = state->signal_map[0].ex;
 
     /* Add remaining exceptions, inherit from InvalidOperation */
-    for (cm = cond_map+1; cm->name != NULL; cm++) {
+    for (cm = state->cond_map+1; cm->name != NULL; cm++) {
         PyObject *base;
         if (cm->flag == MPD_Division_undefined) {
-            base = PyTuple_Pack(2, signal_map[0].ex, PyExc_ZeroDivisionError);
+            base = PyTuple_Pack(2, state->signal_map[0].ex, PyExc_ZeroDivisionError);
         }
         else {
-            base = PyTuple_Pack(1, signal_map[0].ex);
+            base = PyTuple_Pack(1, state->signal_map[0].ex);
         }
         if (base == NULL) {
             goto error; /* GCOV_NOT_REACHED */
@@ -5986,39 +6016,39 @@ PyInit__decimal(void)
         ASSIGN_PTR(cm->ex, PyErr_NewException(cm->fqname, base, NULL));
         Py_DECREF(base);
 
-        CHECK_INT(PyModule_AddObject(m, cm->name, Py_NewRef(cm->ex)));
+        CHECK_INT(PyModule_AddObjectRef(m, cm->name, cm->ex));
     }
 
 
     /* Init default context template first */
     ASSIGN_PTR(state->default_context_template,
                PyObject_CallObject((PyObject *)state->PyDecContext_Type, NULL));
-    CHECK_INT(PyModule_AddObject(m, "DefaultContext",
-                                 Py_NewRef(state->default_context_template)));
+    CHECK_INT(PyModule_AddObjectRef(m, "DefaultContext",
+                                    state->default_context_template));
 
 #ifndef WITH_DECIMAL_CONTEXTVAR
     ASSIGN_PTR(state->tls_context_key,
                PyUnicode_FromString("___DECIMAL_CTX__"));
-    CHECK_INT(PyModule_AddObject(m, "HAVE_CONTEXTVAR", Py_NewRef(Py_False)));
+    CHECK_INT(PyModule_AddObjectRef(m, "HAVE_CONTEXTVAR", Py_False));
 #else
     ASSIGN_PTR(state->current_context_var, PyContextVar_New("decimal_context", NULL));
-    CHECK_INT(PyModule_AddObject(m, "HAVE_CONTEXTVAR", Py_NewRef(Py_True)));
+    CHECK_INT(PyModule_AddObjectRef(m, "HAVE_CONTEXTVAR", Py_True));
 #endif
-    CHECK_INT(PyModule_AddObject(m, "HAVE_THREADS", Py_NewRef(Py_True)));
+    CHECK_INT(PyModule_AddObjectRef(m, "HAVE_THREADS", Py_True));
 
     /* Init basic context template */
     ASSIGN_PTR(state->basic_context_template,
                PyObject_CallObject((PyObject *)state->PyDecContext_Type, NULL));
     init_basic_context(state->basic_context_template);
-    CHECK_INT(PyModule_AddObject(m, "BasicContext",
-                                 Py_NewRef(state->basic_context_template)));
+    CHECK_INT(PyModule_AddObjectRef(m, "BasicContext",
+                                    state->basic_context_template));
 
     /* Init extended context template */
     ASSIGN_PTR(state->extended_context_template,
                PyObject_CallObject((PyObject *)state->PyDecContext_Type, NULL));
     init_extended_context(state->extended_context_template);
-    CHECK_INT(PyModule_AddObject(m, "ExtendedContext",
-                                 Py_NewRef(state->extended_context_template)));
+    CHECK_INT(PyModule_AddObjectRef(m, "ExtendedContext",
+                                    state->extended_context_template));
 
 
     /* Init mpd_ssize_t constants */
@@ -6037,7 +6067,7 @@ PyInit__decimal(void)
     /* Init string constants */
     for (i = 0; i < _PY_DEC_ROUND_GUARD; i++) {
         ASSIGN_PTR(state->round_map[i], PyUnicode_InternFromString(mpd_round_string[i]));
-        CHECK_INT(PyModule_AddObject(m, mpd_round_string[i], Py_NewRef(state->round_map[i])));
+        CHECK_INT(PyModule_AddObjectRef(m, mpd_round_string[i], state->round_map[i]));
     }
 
     /* Add specification version number */
@@ -6057,6 +6087,8 @@ error:
     Py_CLEAR(collections_abc); /* GCOV_NOT_REACHED */
     Py_CLEAR(MutableMapping); /* GCOV_NOT_REACHED */
     Py_CLEAR(state->SignalTuple); /* GCOV_NOT_REACHED */
+    PyMem_Free(state->signal_map); /* GCOV_NOT_REACHED */
+    PyMem_Free(state->cond_map); /* GCOV_NOT_REACHED */
     Py_CLEAR(state->DecimalTuple); /* GCOV_NOT_REACHED */
     Py_CLEAR(state->default_context_template); /* GCOV_NOT_REACHED */
 #ifndef WITH_DECIMAL_CONTEXTVAR
