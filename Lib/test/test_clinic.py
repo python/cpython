@@ -249,6 +249,15 @@ class ClinicWholeFileTest(_ParserBase):
         out = self.expect_failure(raw)
         self.assertEqual(out, msg)
 
+    def test_unknown_destination_command(self):
+        out = self.expect_failure("""
+            /*[clinic input]
+            destination buffer nosuchcommand
+            [clinic start generated code]*/
+        """)
+        msg = "unknown destination command 'nosuchcommand'"
+        self.assertIn(msg, out)
+
 
 class ClinicGroupPermuterTest(TestCase):
     def _test(self, l, m, r, output):
