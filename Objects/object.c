@@ -5,6 +5,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_context.h"       // _PyContextTokenMissing_Type
+#include "pycore_descrobject.h"   // _PyMethodWrapper_Type
 #include "pycore_dict.h"          // _PyObject_MakeDictFromInstanceAttributes()
 #include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
