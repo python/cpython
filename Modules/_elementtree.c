@@ -17,6 +17,7 @@
 
 #include "Python.h"
 #include "pycore_import.h"        // _PyImport_GetModuleAttrString()
+#include "pycore_pyhash.h"        // _Py_HashSecret
 #include "structmember.h"         // PyMemberDef
 #include "expat.h"
 #include "pyexpat.h"

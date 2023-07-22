@@ -501,6 +501,8 @@ The special characters are:
       in the ASCII range (``b'\x00'``-``b'\x7f'``).
 
 
+.. _re-special-sequences:
+
 The special sequences consist of ``'\'`` and a character from the list below.
 If the ordinary character is not an ASCII digit or an ASCII letter, then the
 resulting RE will match the second character.  For example, ``\$`` matches the
@@ -778,6 +780,17 @@ Flags
    newline; without this flag, ``'.'`` will match anything *except* a newline.
    Corresponds to the inline flag ``(?s)``.
 
+
+.. data:: U
+          UNICODE
+
+   In Python 2, this flag made :ref:`special sequences <re-special-sequences>`
+   include Unicode characters in matches. Since Python 3, Unicode characters
+   are matched by default.
+
+   See :const:`A` for restricting matching on ASCII characters instead.
+
+   This flag is only kept for backward compatibility.
 
 .. data:: X
           VERBOSE
@@ -1520,14 +1533,14 @@ Simulating scanf()
 
 .. index:: single: scanf()
 
-Python does not currently have an equivalent to :c:func:`scanf`.  Regular
+Python does not currently have an equivalent to :c:func:`!scanf`.  Regular
 expressions are generally more powerful, though also more verbose, than
-:c:func:`scanf` format strings.  The table below offers some more-or-less
-equivalent mappings between :c:func:`scanf` format tokens and regular
+:c:func:`!scanf` format strings.  The table below offers some more-or-less
+equivalent mappings between :c:func:`!scanf` format tokens and regular
 expressions.
 
 +--------------------------------+---------------------------------------------+
-| :c:func:`scanf` Token          | Regular Expression                          |
+| :c:func:`!scanf` Token         | Regular Expression                          |
 +================================+=============================================+
 | ``%c``                         | ``.``                                       |
 +--------------------------------+---------------------------------------------+
@@ -1552,7 +1565,7 @@ To extract the filename and numbers from a string like ::
 
    /usr/sbin/sendmail - 0 errors, 4 warnings
 
-you would use a :c:func:`scanf` format like ::
+you would use a :c:func:`!scanf` format like ::
 
    %s - %d errors, %d warnings
 

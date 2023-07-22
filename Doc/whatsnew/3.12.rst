@@ -3,8 +3,7 @@
   What's New In Python 3.12
 ****************************
 
-:Release: |release|
-:Date: |today|
+:Editor: TBD
 
 .. Rules for maintenance:
 
@@ -486,7 +485,7 @@ Other Language Changes
 New Modules
 ===========
 
-* None yet.
+* None.
 
 
 Improved Modules
