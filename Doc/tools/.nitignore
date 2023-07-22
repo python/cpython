@@ -1,12 +1,10 @@
 # All RST files under Doc/ -- except these -- must pass Sphinx nit-picky mode,
-# as tested on the CI via touch-clean-files.py in doc.yml.
-# Add blank lines between files and keep them sorted lexicographically
-# to help avoid merge conflicts.
+# as tested on the CI via check-warnings.py in reusable-docs.yml.
+# Keep lines sorted lexicographically to help avoid merge conflicts.
 
 Doc/c-api/arg.rst
 Doc/c-api/datetime.rst
 Doc/c-api/descriptor.rst
-Doc/c-api/dict.rst
 Doc/c-api/exceptions.rst
 Doc/c-api/file.rst
 Doc/c-api/float.rst
@@ -57,8 +55,6 @@ Doc/library/bisect.rst
 Doc/library/bz2.rst
 Doc/library/calendar.rst
 Doc/library/cgi.rst
-Doc/library/chunk.rst
-Doc/library/cmath.rst
 Doc/library/cmd.rst
 Doc/library/codecs.rst
 Doc/library/collections.abc.rst
@@ -89,7 +85,6 @@ Doc/library/fcntl.rst
 Doc/library/ftplib.rst
 Doc/library/functions.rst
 Doc/library/functools.rst
-Doc/library/getopt.rst
 Doc/library/getpass.rst
 Doc/library/gettext.rst
 Doc/library/gzip.rst
