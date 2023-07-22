@@ -632,8 +632,8 @@ character ``'$'``.
    single: \x; in regular expressions
    single: \\; in regular expressions
 
-Most of the standard escapes supported by Python string literals are also
-accepted by the regular expression parser::
+Most of the :ref:`standard escapes <escape-sequences>` supported by Python
+string literals are also accepted by the regular expression parser::
 
    \a      \b      \f      \n
    \N      \r      \t      \u
