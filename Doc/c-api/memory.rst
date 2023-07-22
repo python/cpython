@@ -47,8 +47,8 @@ API functions listed in this document.
    single: free()
 
 To avoid memory corruption, extension writers should never try to operate on
-Python objects with the functions exported by the C library: :c:func:`malloc`,
-:c:func:`calloc`, :c:func:`realloc` and :c:func:`free`.  This will result in  mixed
+Python objects with the functions exported by the C library: :c:func:`!malloc`,
+:c:func:`!calloc`, :c:func:`!realloc` and :c:func:`!free`.  This will result in  mixed
 calls between the C allocator and the Python memory manager with fatal
 consequences, because they implement different algorithms and operate on
 different heaps.  However, one may safely allocate and release memory blocks

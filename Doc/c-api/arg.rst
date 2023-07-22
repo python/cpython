@@ -477,7 +477,7 @@ API Functions
    will be set if there was a failure.
 
    This is an example of the use of this function, taken from the sources for the
-   :mod:`_weakref` helper module for weak references::
+   :mod:`!_weakref` helper module for weak references::
 
       static PyObject *
       weakref_ref(PyObject *self, PyObject *args)
@@ -518,9 +518,9 @@ Building values
    When memory buffers are passed as parameters to supply data to build objects, as
    for the ``s`` and ``s#`` formats, the required data is copied.  Buffers provided
    by the caller are never referenced by the objects created by
-   :c:func:`Py_BuildValue`.  In other words, if your code invokes :c:func:`malloc`
+   :c:func:`Py_BuildValue`.  In other words, if your code invokes :c:func:`!malloc`
    and passes the allocated memory to :c:func:`Py_BuildValue`, your code is
-   responsible for calling :c:func:`free` for that memory once
+   responsible for calling :c:func:`!free` for that memory once
    :c:func:`Py_BuildValue` returns.
 
    In the following description, the quoted form is the format unit; the entry in
