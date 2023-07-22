@@ -1045,8 +1045,8 @@ not just sequences.  (Contributed by Serhiy Storchaka in :issue:`23171`.)
 curses
 ------
 
-The new :func:`~curses.update_lines_cols` function updates the :envvar:`LINES`
-and :envvar:`COLS` environment variables.  This is useful for detecting
+The new :func:`~curses.update_lines_cols` function updates the :data:`LINES`
+and :data:`COLS` module variables.  This is useful for detecting
 manual screen resizing.  (Contributed by Arnon Yaari in :issue:`4254`.)
 
 
