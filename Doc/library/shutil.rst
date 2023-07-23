@@ -399,6 +399,12 @@ Directory and files operations
    total, used and free space, in bytes. *path* may be a file or a
    directory.
 
+   .. note::
+
+      On Unix filesystems, *path* must point to a path within a **mounted**
+      filesystem partition. On those platforms, CPython doesn't attempt to
+      retrieve disk usage information from non-mounted filesystems.
+
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.8

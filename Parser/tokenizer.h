@@ -128,7 +128,6 @@ struct tok_state {
     // TODO: Factor this into its own thing
     tokenizer_mode tok_mode_stack[MAXFSTRINGLEVEL];
     int tok_mode_stack_index;
-    int tok_report_warnings;
     int tok_extra_tokens;
     int comment_newline;
     int implicit_newline;
