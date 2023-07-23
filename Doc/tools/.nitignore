@@ -56,7 +56,6 @@ Doc/glossary.rst
 Doc/howto/curses.rst
 Doc/howto/descriptor.rst
 Doc/howto/enum.rst
-Doc/howto/instrumentation.rst
 Doc/howto/isolating-extensions.rst
 Doc/howto/logging-cookbook.rst
 Doc/howto/logging.rst
