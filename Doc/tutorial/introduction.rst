@@ -566,7 +566,7 @@ as they are written.::
    >>> print(group, 'Who Say', say_what)
    Knights Who Say "Ni!"
 
-The `print()` function also offers a useful keyword argument called *end*,
+The ``print()`` function also offers a useful keyword argument called *end*,
 which can be used to avoid the newline after the output, or end the output
 with a different string::
 
