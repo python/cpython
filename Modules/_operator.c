@@ -1618,14 +1618,16 @@ methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
            nargs * sizeof(PyObject *));
     }
     if (kwds) {
-        mc->vectorcall_kwnames = PySequence_Tuple(kwds);
+        const Py_ssize_t nkwds = PyDict_Size(kwds);
+
+        mc->vectorcall_kwnames = PyTuple_New(nkwds);
         if (!mc->vectorcall_kwnames) {
             return NULL;
         }
-        Py_ssize_t i = 0;
-        Py_ssize_t ppos = 0;
+        Py_ssize_t i = 0, ppos = 0;
         while (PyDict_Next(kwds, &ppos, &key, &value)) {
-            mc->vectorcall_args[ nargs + i] = value;
+            PyTuple_SET_ITEM(mc->vectorcall_kwnames, i, Py_NewRef(key));
+            mc->vectorcall_args[nargs + i] = value; // borrowed reference
             ++i;
         }
     }
