@@ -75,6 +75,12 @@ class StackEffect(Node):
     size: str = ""  # Optional `[size]`
     # Note: size cannot be combined with type or cond
 
+    def __repr__(self):
+        items = [self.name, self.type, self.cond, self.size]
+        while items and items[-1] == "":
+            del items[-1]
+        return f"StackEffect({', '.join(repr(item) for item in items)})"
+
 
 @dataclass
 class Expression(Node):
