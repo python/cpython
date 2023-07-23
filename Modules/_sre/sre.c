@@ -455,7 +455,7 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     /* adjust boundaries */
     if (start < 0) {
         PyErr_WarnEx(PyExc_FutureWarning,
-                     "Negative start index will not be truncated to zero in the future",
+                     "Negative start index will not be truncated to zero in Python 3.15",
                      1);
         start = 0;
     }
@@ -465,7 +465,7 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
 
     if (end < 0) {
         PyErr_WarnEx(PyExc_FutureWarning,
-                     "Negative end index will not be truncated to zero in the future",
+                     "Negative end index will not be truncated to zero in Python 3.15",
                      1);
         end = 0;
     }
