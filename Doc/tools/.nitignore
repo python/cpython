@@ -1,7 +1,6 @@
 # All RST files under Doc/ -- except these -- must pass Sphinx nit-picky mode,
-# as tested on the CI via touch-clean-files.py in doc.yml.
-# Add blank lines between files and keep them sorted lexicographically
-# to help avoid merge conflicts.
+# as tested on the CI via check-warnings.py in reusable-docs.yml.
+# Keep lines sorted lexicographically to help avoid merge conflicts.
 
 Doc/c-api/allocation.rst
 Doc/c-api/apiabiversion.rst
@@ -18,7 +17,6 @@ Doc/c-api/complex.rst
 Doc/c-api/conversion.rst
 Doc/c-api/datetime.rst
 Doc/c-api/descriptor.rst
-Doc/c-api/dict.rst
 Doc/c-api/exceptions.rst
 Doc/c-api/file.rst
 Doc/c-api/float.rst
@@ -29,15 +27,12 @@ Doc/c-api/init_config.rst
 Doc/c-api/intro.rst
 Doc/c-api/iterator.rst
 Doc/c-api/long.rst
-Doc/c-api/mapping.rst
 Doc/c-api/marshal.rst
 Doc/c-api/memory.rst
 Doc/c-api/memoryview.rst
 Doc/c-api/module.rst
 Doc/c-api/none.rst
 Doc/c-api/object.rst
-Doc/c-api/refcounting.rst
-Doc/c-api/sequence.rst
 Doc/c-api/set.rst
 Doc/c-api/stable.rst
 Doc/c-api/structures.rst
@@ -48,7 +43,6 @@ Doc/c-api/typehints.rst
 Doc/c-api/typeobj.rst
 Doc/c-api/unicode.rst
 Doc/c-api/veryhigh.rst
-Doc/c-api/weakref.rst
 Doc/extending/embedding.rst
 Doc/extending/extending.rst
 Doc/extending/newtypes.rst
@@ -62,18 +56,13 @@ Doc/glossary.rst
 Doc/howto/curses.rst
 Doc/howto/descriptor.rst
 Doc/howto/enum.rst
-Doc/howto/functional.rst
 Doc/howto/instrumentation.rst
 Doc/howto/isolating-extensions.rst
 Doc/howto/logging-cookbook.rst
 Doc/howto/logging.rst
-Doc/howto/regex.rst
-Doc/howto/sorting.rst
-Doc/howto/unicode.rst
 Doc/howto/urllib2.rst
 Doc/install/index.rst
 Doc/library/__future__.rst
-Doc/library/_thread.rst
 Doc/library/abc.rst
 Doc/library/ast.rst
 Doc/library/asyncio-dev.rst
@@ -88,25 +77,18 @@ Doc/library/bdb.rst
 Doc/library/bisect.rst
 Doc/library/bz2.rst
 Doc/library/calendar.rst
-Doc/library/cgi.rst
-Doc/library/cmath.rst
 Doc/library/cmd.rst
 Doc/library/code.rst
 Doc/library/codecs.rst
-Doc/library/codeop.rst
 Doc/library/collections.abc.rst
 Doc/library/collections.rst
-Doc/library/compileall.rst
 Doc/library/concurrent.futures.rst
 Doc/library/concurrent.rst
 Doc/library/configparser.rst
-Doc/library/constants.rst
 Doc/library/contextlib.rst
 Doc/library/copy.rst
 Doc/library/csv.rst
 Doc/library/ctypes.rst
-Doc/library/curses.ascii.rst
-Doc/library/curses.rst
 Doc/library/datetime.rst
 Doc/library/dbm.rst
 Doc/library/decimal.rst
@@ -134,7 +116,6 @@ Doc/library/fractions.rst
 Doc/library/ftplib.rst
 Doc/library/functions.rst
 Doc/library/functools.rst
-Doc/library/getopt.rst
 Doc/library/getpass.rst
 Doc/library/gettext.rst
 Doc/library/graphlib.rst
@@ -144,7 +125,6 @@ Doc/library/http.client.rst
 Doc/library/http.cookiejar.rst
 Doc/library/http.cookies.rst
 Doc/library/http.server.rst
-Doc/library/idle.rst
 Doc/library/importlib.resources.abc.rst
 Doc/library/importlib.resources.rst
 Doc/library/importlib.rst
@@ -172,16 +152,13 @@ Doc/library/pickletools.rst
 Doc/library/platform.rst
 Doc/library/plistlib.rst
 Doc/library/poplib.rst
-Doc/library/posix.rst
 Doc/library/pprint.rst
 Doc/library/profile.rst
 Doc/library/pty.rst
-Doc/library/py_compile.rst
 Doc/library/pyclbr.rst
 Doc/library/pydoc.rst
 Doc/library/pyexpat.rst
 Doc/library/random.rst
-Doc/library/re.rst
 Doc/library/readline.rst
 Doc/library/reprlib.rst
 Doc/library/resource.rst
@@ -200,7 +177,6 @@ Doc/library/ssl.rst
 Doc/library/stat.rst
 Doc/library/stdtypes.rst
 Doc/library/string.rst
-Doc/library/struct.rst
 Doc/library/subprocess.rst
 Doc/library/sys.rst
 Doc/library/sys_path_init.rst
@@ -262,7 +238,6 @@ Doc/tutorial/modules.rst
 Doc/tutorial/stdlib2.rst
 Doc/using/cmdline.rst
 Doc/using/configure.rst
-Doc/using/unix.rst
 Doc/using/windows.rst
 Doc/whatsnew/2.0.rst
 Doc/whatsnew/2.1.rst

@@ -7425,9 +7425,7 @@ socket_exec(PyObject *m)
         sock_free_api(capi);
         goto error;
     }
-    int rc = PyModule_AddObjectRef(m, PySocket_CAPI_NAME, capsule);
-    Py_DECREF(capsule);
-    if (rc < 0) {
+    if (PyModule_Add(m, PySocket_CAPI_NAME, capsule) < 0) {
         goto error;
     }
 
@@ -8818,13 +8816,7 @@ socket_exec(PyObject *m)
         };
         int i;
         for (i = 0; i < Py_ARRAY_LENGTH(codes); ++i) {
-            PyObject *tmp = PyLong_FromUnsignedLong(codes[i]);
-            if (tmp == NULL) {
-                goto error;
-            }
-            int rc = PyModule_AddObjectRef(m, names[i], tmp);
-            Py_DECREF(tmp);
-            if (rc < 0) {
+            if (PyModule_Add(m, names[i], PyLong_FromUnsignedLong(codes[i])) < 0) {
                 goto error;
             }
         }

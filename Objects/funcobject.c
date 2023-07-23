@@ -942,17 +942,12 @@ PyTypeObject PyFunction_Type = {
 static int
 functools_copy_attr(PyObject *wrapper, PyObject *wrapped, PyObject *name)
 {
-    PyObject *value = PyObject_GetAttr(wrapped, name);
-    if (value == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
-            return 0;
-        }
-        return -1;
+    PyObject *value;
+    int res = PyObject_GetOptionalAttr(wrapped, name, &value);
+    if (value != NULL) {
+        res = PyObject_SetAttr(wrapper, name, value);
+        Py_DECREF(value);
     }
-
-    int res = PyObject_SetAttr(wrapper, name, value);
-    Py_DECREF(value);
     return res;
 }
 

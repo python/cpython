@@ -1244,10 +1244,14 @@ class DisTests(DisTestBase):
     @cpython_only
     @requires_specialization
     def test_loop_quicken(self):
+        import _testinternalcapi
         # Loop can trigger a quicken where the loop is located
         self.code_quicken(loop_test, 1)
         got = self.get_disassembly(loop_test, adaptive=True)
-        self.do_disassembly_compare(got, dis_loop_test_quickened_code)
+        expected = dis_loop_test_quickened_code
+        if _testinternalcapi.get_optimizer():
+            expected = expected.replace("JUMP_BACKWARD ", "ENTER_EXECUTOR")
+        self.do_disassembly_compare(got, expected)
 
     @cpython_only
     def test_extended_arg_quick(self):
