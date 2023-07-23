@@ -2474,7 +2474,7 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertTrue(A.t(''))
         self.assertEqual(A.t(0.0), 0.0)
 
-    def test_staticmethod__slotted_class(self):
+    def test_staticmethod_slotted_class(self):
         class A:
             __slots__ = ['a']
             @functools.singledispatchmethod
@@ -2493,6 +2493,19 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertTrue(A.t(0))
         self.assertTrue(A.t(''))
         self.assertEqual(A.t(0.0), 0.0)
+
+    def test_assignment_behavior(self):
+        # see gh-106448
+        class A:
+            @functools.singledispatchmethod
+            def t(arg):
+                return arg
+
+        a = A()
+        a.t.foo = 'bar'
+        a2 = A()
+        self.assertRaises(AttributeError)
+            a2.t.foo
 
     def test_classmethod_register(self):
         class A:
