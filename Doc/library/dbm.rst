@@ -246,6 +246,7 @@ supported.
       Close the ``gdbm`` database.
 
    .. method:: gdbm.clear()
+
       Remove all items from the ``gdbm`` database.
 
       .. versionadded:: 3.13
