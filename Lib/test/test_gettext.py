@@ -320,6 +320,8 @@ class PluralFormsTestCase(GettextBaseTest):
         eq(x, 'Hay %s fichero')
         x = gettext.ngettext('There is %s file', 'There are %s files', 2)
         eq(x, 'Hay %s ficheros')
+        x = gettext.gettext('There is %s file')
+        eq(x, 'Hay %s fichero')
 
     def test_plural_context_forms1(self):
         eq = self.assertEqual
@@ -338,6 +340,8 @@ class PluralFormsTestCase(GettextBaseTest):
         eq(x, 'Hay %s fichero')
         x = t.ngettext('There is %s file', 'There are %s files', 2)
         eq(x, 'Hay %s ficheros')
+        x = t.gettext('There is %s file')
+        eq(x, 'Hay %s fichero')
 
     def test_plural_context_forms2(self):
         eq = self.assertEqual
