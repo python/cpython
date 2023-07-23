@@ -3,8 +3,7 @@
   What's New In Python 3.13
 ****************************
 
-:Release: |release|
-:Date: |today|
+:Editor: TBD
 
 .. Rules for maintenance:
 
@@ -330,7 +329,7 @@ Pending Removal in Python 3.15
 Pending Removal in Python 3.16
 ------------------------------
 
-* :class:`array.array` ``'u'`` type (``wchar_t``):
+* :class:`array.array` ``'u'`` type (:c:type:`wchar_t`):
   use the ``'w'`` type instead (``Py_UCS4``).
 
 Pending Removal in Future Versions
@@ -803,8 +802,8 @@ Deprecated
 ----------
 
 * Deprecate the old ``Py_UNICODE`` and ``PY_UNICODE_TYPE`` types: use directly
-  the ``wchar_t`` type instead. Since Python 3.3, ``Py_UNICODE`` and
-  ``PY_UNICODE_TYPE`` are just aliases to ``wchar_t``.
+  the :c:type:`wchar_t` type instead. Since Python 3.3, ``Py_UNICODE`` and
+  ``PY_UNICODE_TYPE`` are just aliases to :c:type:`wchar_t`.
   (Contributed by Victor Stinner in :gh:`105156`.)
 
 * Deprecate old Python initialization functions:
@@ -837,6 +836,13 @@ Deprecated
 
 Removed
 -------
+
+* Remove many APIs (functions, macros, variables) with names prefixed by
+  ``_Py`` or ``_PY`` (considered as private API). If your project is affected
+  by one of these removals and you consider that the removed API should remain
+  available, please open a new issue to request a public C API and
+  add ``cc @vstinner`` to the issue to notify Victor Stinner.
+  (Contributed by Victor Stinner in :gh:`106320`.)
 
 * Remove functions deprecated in Python 3.9.
 
@@ -1007,8 +1013,8 @@ Pending Removal in Python 3.15
 * :c:func:`PyImport_ImportModuleNoBlock`: use :c:func:`PyImport_ImportModule`.
 * :c:func:`PyWeakref_GET_OBJECT`: use :c:func:`PyWeakref_GetRef` instead.
 * :c:func:`PyWeakref_GetObject`: use :c:func:`PyWeakref_GetRef` instead.
-* :c:type:`!Py_UNICODE_WIDE` type: use ``wchar_t`` instead.
-* :c:type:`Py_UNICODE` type: use ``wchar_t`` instead.
+* :c:type:`!Py_UNICODE_WIDE` type: use :c:type:`wchar_t` instead.
+* :c:type:`Py_UNICODE` type: use :c:type:`wchar_t` instead.
 * Python initialization functions:
 
   * :c:func:`PySys_ResetWarnOptions`: clear :data:`sys.warnoptions` and

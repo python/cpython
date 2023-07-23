@@ -377,14 +377,6 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
 #endif
 
 
-PyAPI_DATA(PyTypeObject) _PyNone_Type;
-PyAPI_DATA(PyTypeObject) _PyNotImplemented_Type;
-
-/* Maps Py_LT to Py_GT, ..., Py_GE to Py_LE.
- * Defined in object.c.
- */
-PyAPI_DATA(int) _Py_SwappedOp[];
-
 PyAPI_FUNC(void)
 _PyDebugAllocatorStats(FILE *out, const char *block_name, int num_blocks,
                        size_t sizeof_block);
