@@ -933,7 +933,6 @@ class singledispatchmethod:
 
         self.dispatcher = singledispatch(func)
         self.func = func
-        self.attrname = None
 
     def register(self, cls, method=None):
         """generic_method.register(cls, func) -> func
