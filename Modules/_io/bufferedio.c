@@ -8,8 +8,9 @@
 */
 
 #include "Python.h"
+#include "pycore_bytesobject.h"   // _PyBytes_Join()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_object.h"
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _Py_FatalErrorFormat()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "structmember.h"         // PyMemberDef
