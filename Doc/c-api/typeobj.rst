@@ -163,9 +163,9 @@ Quick Reference
 
 .. [#cols] Columns:
 
-   **"O"**:  set on :c:type:`PyBaseObject_Type`
+   **"O"**:  set on :c:data:`PyBaseObject_Type`
 
-   **"T"**:  set on :c:type:`PyType_Type`
+   **"T"**:  set on :c:data:`PyType_Type`
 
    **"D"**:  default (if slot is set to ``NULL``)
 
@@ -569,8 +569,8 @@ PyTypeObject Slots
 
 Each slot has a section describing inheritance.  If :c:func:`PyType_Ready`
 may set a value when the field is set to ``NULL`` then there will also be
-a "Default" section.  (Note that many fields set on :c:type:`PyBaseObject_Type`
-and :c:type:`PyType_Type` effectively act as defaults.)
+a "Default" section.  (Note that many fields set on :c:data:`PyBaseObject_Type`
+and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: const char* PyTypeObject.tp_name
 
@@ -964,7 +964,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    **Default:**
 
-   :c:type:`PyBaseObject_Type` uses :c:func:`PyObject_GenericGetAttr`.
+   :c:data:`PyBaseObject_Type` uses :c:func:`PyObject_GenericGetAttr`.
 
 
 .. c:member:: setattrofunc PyTypeObject.tp_setattro
@@ -990,7 +990,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    **Default:**
 
-   :c:type:`PyBaseObject_Type` uses :c:func:`PyObject_GenericSetAttr`.
+   :c:data:`PyBaseObject_Type` uses :c:func:`PyObject_GenericSetAttr`.
 
 
 .. c:member:: PyBufferProcs* PyTypeObject.tp_as_buffer
@@ -1031,7 +1031,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    **Default:**
 
-   :c:type:`PyBaseObject_Type` uses
+   :c:data:`PyBaseObject_Type` uses
    ``Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE``.
 
    **Bit Masks:**
@@ -1556,7 +1556,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    **Default:**
 
-   :c:type:`PyBaseObject_Type` provides a :attr:`tp_richcompare`
+   :c:data:`PyBaseObject_Type` provides a :attr:`tp_richcompare`
    implementation, which may be inherited.  However, if only
    :attr:`tp_hash` is defined, not even the inherited function is used
    and instances of the type will not be able to participate in any
@@ -1878,7 +1878,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    :c:func:`PyType_GenericAlloc`, to force a standard heap
    allocation strategy.
 
-   For static subtypes, :c:type:`PyBaseObject_Type` uses
+   For static subtypes, :c:data:`PyBaseObject_Type` uses
    :c:func:`PyType_GenericAlloc`.  That is the recommended value
    for all statically defined types.
 
@@ -1941,7 +1941,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    match :c:func:`PyType_GenericAlloc` and the value of the
    :c:macro:`Py_TPFLAGS_HAVE_GC` flag bit.
 
-   For static subtypes, :c:type:`PyBaseObject_Type` uses PyObject_Del.
+   For static subtypes, :c:data:`PyBaseObject_Type` uses :c:func:`PyObject_Del`.
 
 
 .. c:member:: inquiry PyTypeObject.tp_is_gc
