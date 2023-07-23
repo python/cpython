@@ -849,15 +849,11 @@ using ``[]``.
       concat(b"foo", b"bar")  # OK, output has type 'bytes'
       concat("foo", b"bar")   # Error, cannot mix str and bytes
 
-   Note that ``AnyStr`` and ``str | bytes`` are different from each other and
-   have different use cases. ``str | bytes`` does allow you to mix str and bytes::
-
-      def concat(a: str | bytes, b: str | bytes) -> str | bytes:
-          return a + b
-
-      concat("foo", b"bar")  # Passes typecheck but raises an error at runtime
-
-   As a type variable, ``AnyStr`` is only used if it's at least part of the input arguments::
+   Note that, despite its name, ``AnyStr`` has nothing to do with the
+   :class:`Any` type, nor does it mean "any string". In particular, ``AnyStr``
+   and ``str | bytes`` are different from each other and have different use
+   cases. If ``AnyStr`` is not part of the input arguments it should not be
+   used::
 
       def greet_bad(cond: bool) -> AnyStr:
           return "hi there!" if cond else b"greetings!"  # Error
