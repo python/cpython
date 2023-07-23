@@ -656,5 +656,30 @@ class OtherTest(unittest.TestCase):
             m[0] = MyBool()
         self.assertEqual(ba[:8], b'\0'*8)
 
+
+    def test_gh60198(self):
+        global view
+
+        class File(io.RawIOBase):
+            def readinto(self, buf):
+                global view
+                view = buf
+
+            def readable(self):
+                return True
+
+        f = io.BufferedReader(File())
+        # get view of buffer used by BufferedReader
+        f.read(1)
+        # deallocate buffer
+        del f
+
+        with self.assertRaises(ValueError):
+            view = view.cast('P')
+            L = [None] * len(view)
+            # overwrite first item with NULL
+            view[0] = 0
+            print(L[0])
+
 if __name__ == "__main__":
     unittest.main()
