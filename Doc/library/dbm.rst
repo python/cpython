@@ -320,6 +320,12 @@ to locate the appropriate header file to simplify building this module.
 
       Close the ``ndbm`` database.
 
+   .. method:: ndbm.clear()
+
+      Remove all items from the ``ndbm`` database.
+
+      .. versionadded:: 3.13
+
 
 :mod:`dbm.dumb` --- Portable DBM implementation
 -----------------------------------------------
