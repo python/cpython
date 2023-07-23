@@ -1,4 +1,3 @@
-
 """Generate the main interpreter switch.
 Reads the instruction definitions from bytecodes.c.
 Writes the cases to generated_cases.c.h, which is #included in ceval.c.
@@ -66,10 +65,18 @@ arg_parser.add_argument(
     "-o", "--output", type=str, help="Generated code", default=DEFAULT_OUTPUT
 )
 arg_parser.add_argument(
-    "-m", "--metadata", type=str, help="Generated C metadata", default=DEFAULT_METADATA_OUTPUT
+    "-m",
+    "--metadata",
+    type=str,
+    help="Generated C metadata",
+    default=DEFAULT_METADATA_OUTPUT,
 )
 arg_parser.add_argument(
-    "-p", "--pymetadata", type=str, help="Generated Python metadata", default=DEFAULT_PYMETADATA_OUTPUT
+    "-p",
+    "--pymetadata",
+    type=str,
+    help="Generated Python metadata",
+    default=DEFAULT_PYMETADATA_OUTPUT,
 )
 arg_parser.add_argument(
     "-l", "--emit-line-directives", help="Emit #line directives", action="store_true"
@@ -205,10 +212,14 @@ class Generator(Analyzer):
         ) -> None:
             self.out.emit("")
             self.out.emit("#ifndef NEED_OPCODE_METADATA")
-            self.out.emit(f"extern int _PyOpcode_num_{direction}(int opcode, int oparg, bool jump);")
+            self.out.emit(
+                f"extern int _PyOpcode_num_{direction}(int opcode, int oparg, bool jump);"
+            )
             self.out.emit("#else")
             self.out.emit("int")
-            self.out.emit(f"_PyOpcode_num_{direction}(int opcode, int oparg, bool jump) {{")
+            self.out.emit(
+                f"_PyOpcode_num_{direction}(int opcode, int oparg, bool jump) {{"
+            )
             self.out.emit("    switch(opcode) {")
             for instr, effect in data:
                 self.out.emit(f"        case {instr.name}:")
@@ -229,7 +240,7 @@ class Generator(Analyzer):
             try:
                 filename = os.path.relpath(filename, ROOT)
             except ValueError:
-            # May happen on Windows if root and temp on different volumes
+                # May happen on Windows if root and temp on different volumes
                 pass
             filenames.append(filename)
         paths = f"\n{self.out.comment}   ".join(filenames)
@@ -292,7 +303,8 @@ class Generator(Analyzer):
             self.out.emit(
                 "#define IS_VALID_OPCODE(OP) \\\n"
                 "    (((OP) >= 0) && ((OP) < OPCODE_METADATA_SIZE) && \\\n"
-                "     (_PyOpcode_opcode_metadata[(OP)].valid_entry))")
+                "     (_PyOpcode_opcode_metadata[(OP)].valid_entry))"
+            )
 
             self.out.emit("")
             InstructionFlags.emit_macros(self.out)
@@ -306,17 +318,23 @@ class Generator(Analyzer):
 
             with self.out.block("struct opcode_macro_expansion", ";"):
                 self.out.emit("int nuops;")
-                self.out.emit("struct { int16_t uop; int8_t size; int8_t offset; } uops[8];")
+                self.out.emit(
+                    "struct { int16_t uop; int8_t size; int8_t offset; } uops[8];"
+                )
             self.out.emit("")
 
             for key, value in OPARG_SIZES.items():
                 self.out.emit(f"#define {key} {value}")
             self.out.emit("")
 
-            self.out.emit("#define OPCODE_METADATA_FMT(OP) "
-                          "(_PyOpcode_opcode_metadata[(OP)].instr_format)")
+            self.out.emit(
+                "#define OPCODE_METADATA_FMT(OP) "
+                "(_PyOpcode_opcode_metadata[(OP)].instr_format)"
+            )
             self.out.emit("#define SAME_OPCODE_METADATA(OP1, OP2) \\")
-            self.out.emit("        (OPCODE_METADATA_FMT(OP1) == OPCODE_METADATA_FMT(OP2))")
+            self.out.emit(
+                "        (OPCODE_METADATA_FMT(OP1) == OPCODE_METADATA_FMT(OP2))"
+            )
             self.out.emit("")
 
             # Write metadata array declaration
@@ -325,15 +343,23 @@ class Generator(Analyzer):
             self.out.emit("#define OPCODE_MACRO_EXPANSION_SIZE 256")
             self.out.emit("")
             self.out.emit("#ifndef NEED_OPCODE_METADATA")
-            self.out.emit("extern const struct opcode_metadata "
-                          "_PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE];")
-            self.out.emit("extern const struct opcode_macro_expansion "
-                          "_PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE];")
-            self.out.emit("extern const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE];")
+            self.out.emit(
+                "extern const struct opcode_metadata "
+                "_PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE];"
+            )
+            self.out.emit(
+                "extern const struct opcode_macro_expansion "
+                "_PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE];"
+            )
+            self.out.emit(
+                "extern const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE];"
+            )
             self.out.emit("#else // if NEED_OPCODE_METADATA")
 
-            self.out.emit("const struct opcode_metadata "
-                          "_PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {")
+            self.out.emit(
+                "const struct opcode_metadata "
+                "_PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {"
+            )
 
             # Write metadata for each instruction
             for thing in self.everything:
@@ -370,8 +396,12 @@ class Generator(Analyzer):
                                 # Construct a dummy Component -- input/output mappings are not used
                                 part = Component(instr, [], [], instr.active_caches)
                                 self.write_macro_expansions(instr.name, [part])
-                            elif instr.kind == "inst" and variable_used(instr.inst, "oparg1"):
-                                assert variable_used(instr.inst, "oparg2"), "Half super-instr?"
+                            elif instr.kind == "inst" and variable_used(
+                                instr.inst, "oparg1"
+                            ):
+                                assert variable_used(
+                                    instr.inst, "oparg2"
+                                ), "Half super-instr?"
                                 self.write_super_expansions(instr.name)
                         case parsing.Macro():
                             mac = self.macro_instrs[thing.name]
@@ -381,14 +411,16 @@ class Generator(Analyzer):
                         case _:
                             typing.assert_never(thing)
 
-            with self.out.block("const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] =", ";"):
-                self.write_uop_items(lambda name, counter: f"[{name}] = \"{name}\",")
+            with self.out.block(
+                "const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] =", ";"
+            ):
+                self.write_uop_items(lambda name, counter: f'[{name}] = "{name}",')
 
             self.out.emit("#endif // NEED_OPCODE_METADATA")
 
         with open(self.pymetadata_filename, "w") as f:
             # Create formatter
-            self.out = Formatter(f, 0, comment = "#")
+            self.out = Formatter(f, 0, comment="#")
 
             self.write_provenance_header()
 
@@ -396,10 +428,10 @@ class Generator(Analyzer):
             self.out.emit("_specializations = {")
             for name, family in self.families.items():
                 with self.out.indent():
-                    self.out.emit(f"\"{family.name}\": [")
+                    self.out.emit(f'"{family.name}": [')
                     with self.out.indent():
                         for m in family.members:
-                            self.out.emit(f"\"{m}\",")
+                            self.out.emit(f'"{m}",')
                     self.out.emit(f"],")
             self.out.emit("}")
 
@@ -407,15 +439,17 @@ class Generator(Analyzer):
             self.out.emit("")
             self.out.emit("# An irregular case:")
             self.out.emit(
-                "_specializations[\"BINARY_OP\"].append("
-                    "\"BINARY_OP_INPLACE_ADD_UNICODE\")")
+                '_specializations["BINARY_OP"].append('
+                '"BINARY_OP_INPLACE_ADD_UNICODE")'
+            )
 
             # Make list of specialized instructions
             self.out.emit("")
             self.out.emit(
                 "_specialized_instructions = ["
-                    "opcode for family in _specializations.values() for opcode in family"
-                "]")
+                "opcode for family in _specializations.values() for opcode in family"
+                "]"
+            )
 
     def write_pseudo_instrs(self) -> None:
         """Write the IS_PSEUDO_INSTR macro"""
@@ -504,16 +538,18 @@ class Generator(Analyzer):
         ]
         self.write_expansions(name, expansions)
 
-    def write_expansions(self, name: str, expansions: list[tuple[str, int, int]]) -> None:
-        pieces = [f"{{ {name}, {size}, {offset} }}" for name, size, offset in expansions]
+    def write_expansions(
+        self, name: str, expansions: list[tuple[str, int, int]]
+    ) -> None:
+        pieces = [
+            f"{{ {name}, {size}, {offset} }}" for name, size, offset in expansions
+        ]
         self.out.emit(
             f"[{name}] = "
             f"{{ .nuops = {len(pieces)}, .uops = {{ {', '.join(pieces)} }} }},"
         )
 
-    def emit_metadata_entry(
-        self, name: str, fmt: str, flags: InstructionFlags
-    ) -> None:
+    def emit_metadata_entry(self, name: str, fmt: str, flags: InstructionFlags) -> None:
         flag_names = flags.names(value=True)
         if not flag_names:
             flag_names.append("0")
@@ -600,11 +636,13 @@ class Generator(Analyzer):
             file=sys.stderr,
         )
 
-    def write_overridden_instr_place_holder(self,
-            place_holder: OverriddenInstructionPlaceHolder) -> None:
+    def write_overridden_instr_place_holder(
+        self, place_holder: OverriddenInstructionPlaceHolder
+    ) -> None:
         self.out.emit("")
         self.out.emit(
-            f"{self.out.comment} TARGET({place_holder.name}) overridden by later definition")
+            f"{self.out.comment} TARGET({place_holder.name}) overridden by later definition"
+        )
 
     def write_instr(self, instr: Instruction) -> None:
         name = instr.name
@@ -675,7 +713,7 @@ class Generator(Analyzer):
 
             yield
 
-            self.out.stack_adjust(ieffects[:mac.initial_sp], mac.stack[:mac.final_sp])
+            self.out.stack_adjust(ieffects[: mac.initial_sp], mac.stack[: mac.final_sp])
 
             for i, var in enumerate(reversed(mac.stack[: mac.final_sp]), 1):
                 dst = StackEffect(f"stack_pointer[-{i}]", "")
@@ -691,7 +729,9 @@ def main():
         args.input.append(DEFAULT_INPUT)
 
     # Raises OSError if input unreadable
-    a = Generator(args.input, args.output, args.metadata, args.pymetadata, args.executor_cases)
+    a = Generator(
+        args.input, args.output, args.metadata, args.pymetadata, args.executor_cases
+    )
 
     if args.emit_line_directives:
         a.emit_line_directives = True
