@@ -93,7 +93,7 @@ class Instruction:
         self.output_effects = inst.outputs  # For consistency/completeness
         unmoved_names: set[str] = set()
         for ieffect, oeffect in zip(self.input_effects, self.output_effects):
-            if ieffect.name == oeffect.name:
+            if ieffect == oeffect and ieffect.name == oeffect.name:
                 unmoved_names.add(ieffect.name)
             else:
                 break
@@ -274,7 +274,12 @@ class Instruction:
                 # These aren't DECREF'ed so they can stay.
                 ieffs = list(self.input_effects)
                 oeffs = list(self.output_effects)
-                while ieffs and oeffs and ieffs[0] == oeffs[0]:
+                while (
+                    ieffs
+                    and oeffs
+                    and ieffs[0] == oeffs[0]
+                    and ieffs[0].name == oeffs[0].name
+                ):
                     ieffs.pop(0)
                     oeffs.pop(0)
                 ninputs, symbolic = list_effect_size(ieffs)

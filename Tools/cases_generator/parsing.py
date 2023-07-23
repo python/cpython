@@ -69,7 +69,7 @@ class Block(Node):
 
 @dataclass
 class StackEffect(Node):
-    name: str
+    name: str = field(compare=False)  # __eq__ only uses type, cond, size
     type: str = ""  # Optional `:type`
     cond: str = ""  # Optional `if (cond)`
     size: str = ""  # Optional `[size]`
