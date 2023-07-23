@@ -1379,31 +1379,38 @@ class ClinicExternalTest(TestCase):
 
     def test_external(self):
         CLINIC_TEST = 'clinic.test.c'
-        # bpo-42398: Test that the destination file is left unchanged if the
-        # content does not change. Moreover, check also that the file
-        # modification time does not change in this case.
         source = support.findfile(CLINIC_TEST)
         with open(source, 'r', encoding='utf-8') as f:
             orig_contents = f.read()
 
-        with os_helper.temp_dir() as tmp_dir:
-            testfile = os.path.join(tmp_dir, CLINIC_TEST)
-            with open(testfile, 'w', encoding='utf-8') as f:
-                f.write(orig_contents)
-            old_mtime_ns = os.stat(testfile).st_mtime_ns
+        # Run clinic CLI and verify that it does not complain.
+        out = self.expect_success("-f", "-o", TESTFN, source)
+        self.assertEqual(out, "")
 
-            # Run clinic CLI and verify that it does not complain.
-            out = self.expect_success("-f", testfile)
-            self.assertEqual(out, "")
-
-            with open(testfile, 'r', encoding='utf-8') as f:
-                new_contents = f.read()
-            new_mtime_ns = os.stat(testfile).st_mtime_ns
+        with open(TESTFN, 'r', encoding='utf-8') as f:
+            new_contents = f.read()
 
         self.assertEqual(new_contents, orig_contents)
+
+    def test_no_change(self):
+        # bpo-42398: Test that the destination file is left unchanged if the
+        # content does not change. Moreover, check also that the file
+        # modification time does not change in this case.
+        code = dedent("""
+            /*[clinic input]
+            [clinic start generated code]*/
+            /*[clinic end generated code: output=da39a3ee5e6b4b0d input=da39a3ee5e6b4b0d]*/
+        """)
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write(code)
+            pre_mtime = os.stat(fn).st_mtime_ns
+            self.expect_success(fn)
+            post_mtime = os.stat(fn).st_mtime_ns
         # Don't change the file modification time
         # if the content does not change
-        self.assertEqual(new_mtime_ns, old_mtime_ns)
+        self.assertEqual(pre_mtime, post_mtime)
 
     def test_cli_help(self):
         out = self.expect_success("-h")
