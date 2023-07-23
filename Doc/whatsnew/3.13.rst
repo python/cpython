@@ -189,8 +189,8 @@ Deprecated
     (Contributed by Alex Waygood in :gh:`106309`.)
 
   * :class:`typing.AnyStr` is deprecated in docs since Python 3.13. The intention
-    is to remove `AnyStr` from `__all__` and emit a :exc:`DeprecationWarning` 
-    in Python 3.16, and to remove `AnyStr` entirely in Python 3.18.
+    is to remove :class:`AnyStr` from ``__all__`` and emit a :exc:`DeprecationWarning`
+    in Python 3.16, and to remove :class:`AnyStr` entirely in Python 3.18.
     (Contributed by Michael The in :gh:`107116`.)
 
 * :mod:`wave`: Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()``
