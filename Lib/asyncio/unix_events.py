@@ -395,8 +395,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 return
 
         # On 32-bit architectures truncate to 1GiB to avoid OverflowError
-        if sys.maxsize < 2 ** 32:
-            blocksize = min(blocksize, 2 ** 30)
+        blocksize = min(blocksize, sys.maxsize//2 + 1)
 
         try:
             sent = os.sendfile(fd, fileno, offset, blocksize)
