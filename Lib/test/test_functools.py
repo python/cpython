@@ -2504,7 +2504,7 @@ class TestSingleDispatch(unittest.TestCase):
         a = A()
         a.t.foo = 'bar'
         a2 = A()
-        self.assertRaises(AttributeError)
+        with self.assertRaises(AttributeError):
             a2.t.foo
 
     def test_classmethod_register(self):
