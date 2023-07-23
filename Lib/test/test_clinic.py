@@ -4,11 +4,14 @@
 
 from test import support, test_tools
 from test.support import os_helper
+from test.support import SHORT_TIMEOUT, requires_subprocess
+from test.support.os_helper import TESTFN, unlink
 from textwrap import dedent
 from unittest import TestCase
 import collections
 import inspect
 import os.path
+import subprocess
 import sys
 import unittest
 
@@ -1346,6 +1349,34 @@ class ClinicParserTest(_ParserBase):
 class ClinicExternalTest(TestCase):
     maxDiff = None
 
+    def _do_test(self, *args, expect_success=True):
+        clinic_py = os.path.join(test_tools.toolsdir, "clinic", "clinic.py")
+        with subprocess.Popen(
+            [sys.executable, "-Xutf8", clinic_py, *args],
+            encoding="utf-8",
+            bufsize=0,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        ) as proc:
+            proc.wait()
+            if expect_success == bool(proc.returncode):
+                self.fail("".join(proc.stderr))
+            stdout = proc.stdout.read()
+            stderr = proc.stderr.read()
+            if expect_success:
+                self.assertEqual(stderr, "")
+            else:
+                self.assertEqual(stdout, "")
+            return stdout, stderr
+
+    def expect_success(self, *args):
+        out, _ = self._do_test(*args)
+        return out
+
+    def expect_failure(self, *args):
+        _, err = self._do_test(*args, expect_success=False)
+        return err
+
     def test_external(self):
         CLINIC_TEST = 'clinic.test.c'
         # bpo-42398: Test that the destination file is left unchanged if the
@@ -1361,7 +1392,9 @@ class ClinicExternalTest(TestCase):
                 f.write(orig_contents)
             old_mtime_ns = os.stat(testfile).st_mtime_ns
 
-            clinic.parse_file(testfile)
+            # Run clinic CLI and verify that it does not complain.
+            out = self.expect_success("-f", testfile)
+            self.assertEqual(out, "")
 
             with open(testfile, 'r', encoding='utf-8') as f:
                 new_contents = f.read()
@@ -1371,6 +1404,10 @@ class ClinicExternalTest(TestCase):
         # Don't change the file modification time
         # if the content does not change
         self.assertEqual(new_mtime_ns, old_mtime_ns)
+
+    def test_cli_help(self):
+        out = self.expect_success("-h")
+        self.assertIn("usage: clinic.py", out)
 
 
 try:
