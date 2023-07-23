@@ -1410,58 +1410,69 @@ class ClinicExternalTest(TestCase):
         self.assertIn("usage: clinic.py", out)
 
     def test_cli_converters(self):
-        expected = dedent("""
-        Legacy converters:
-            B C D L O S U Y Z Z#
-            b c d f h i l p s s# s* u u# w* y y# y* z z# z*
+        prelude = dedent("""
+            Legacy converters:
+                B C D L O S U Y Z Z#
+                b c d f h i l p s s# s* u u# w* y y# y* z z# z*
 
-        Converters:
-            bool(accept={<class 'object'>})
-            byte(bitwise=False)
-            char()
-            defining_class(type=None)
-            double()
-            fildes()
-            float()
-            int(accept={<class 'int'>}, type=None)
-            long()
-            long_long()
-            object(converter=None, type=None, subclass_of=None)
-            Py_buffer(accept={<class '__main__.buffer'>})
-            Py_complex()
-            Py_ssize_t(accept={<class 'int'>})
-            Py_UNICODE(accept={<class 'str'>}, zeroes=False)
-            PyByteArrayObject()
-            PyBytesObject()
-            self(type=None)
-            short()
-            size_t()
-            slice_index(accept={<class 'int'>, <class 'NoneType'>})
-            str(accept={<class 'str'>}, encoding=None, zeroes=False)
-            unicode()
-            unsigned_char(bitwise=False)
-            unsigned_int(bitwise=False)
-            unsigned_long(bitwise=False)
-            unsigned_long_long(bitwise=False)
-            unsigned_short(bitwise=False)
+            Converters:
+        """)
+        expected_converters = (
+            "bool",
+            "byte",
+            "char",
+            "defining_class",
+            "double",
+            "fildes",
+            "float",
+            "int",
+            "long",
+            "long_long",
+            "object",
+            "Py_buffer",
+            "Py_complex",
+            "Py_ssize_t",
+            "Py_UNICODE",
+            "PyByteArrayObject",
+            "PyBytesObject",
+            "self",
+            "short",
+            "size_t",
+            "slice_index",
+            "str",
+            "unicode",
+            "unsigned_char",
+            "unsigned_int",
+            "unsigned_long",
+            "unsigned_long_long",
+            "unsigned_short",
+        )
+        finale = dedent("""
+            Return converters:
+                bool()
+                double()
+                float()
+                init()
+                int()
+                long()
+                Py_ssize_t()
+                size_t()
+                unsigned_int()
+                unsigned_long()
 
-        Return converters:
-            bool()
-            double()
-            float()
-            init()
-            int()
-            long()
-            Py_ssize_t()
-            size_t()
-            unsigned_int()
-            unsigned_long()
-
-        All converters also accept (c_default=None, py_default=None, annotation=None).
-        All return converters also accept (py_default=None).
+            All converters also accept (c_default=None, py_default=None, annotation=None).
+            All return converters also accept (py_default=None).
         """)
         out = self.expect_success("--converters")
-        self.assertEqual(out, expected)
+        # We cannot simply compare the output, because the repr of the *accept*
+        # param may change (it's a set, thus unordered). So, let's compare the
+        # start and end of the expected output, and then assert we've got a
+        # line for each converter.
+        self.assertTrue(out.startswith(prelude))
+        for converter in expected_converters:
+            with self.subTest(converter=converter):
+                self.assertIn(converter, out)
+        self.assertTrue(out.endswith(finale))
 
 
 try:
