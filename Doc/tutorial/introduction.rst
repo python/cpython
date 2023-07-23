@@ -582,14 +582,14 @@ Fibonacci series
 ----------------
 
 Great!  Now that we have the knowledge, let's write code to print all numbers
-from the Fibonacci series that are lower than 1000.
+from the Fibonacci series that are lower than 150.
 
    >>> a, b = 0, 1
-   >>> while a < 1000:
-   ...      print(a, end=', ')
+   >>> while a < 150:
+   ...      print('', a, '', end='->')
    ...      a, b = b, a+b
    ...
-   0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987,
+    0 -> 1 -> 1 -> 2 -> 3 -> 5 -> 8 -> 13 -> 21 -> 34 -> 55 -> 89 -> 144 ->
 
 .. rubric:: Footnotes
 
