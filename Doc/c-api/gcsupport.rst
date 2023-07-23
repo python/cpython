@@ -13,14 +13,12 @@ or strings), do not need to provide any explicit support for garbage
 collection.
 
 To create a container type, the :c:member:`~PyTypeObject.tp_flags` field of the type object must
-include the :const:`Py_TPFLAGS_HAVE_GC` and provide an implementation of the
+include the :c:macro:`Py_TPFLAGS_HAVE_GC` and provide an implementation of the
 :c:member:`~PyTypeObject.tp_traverse` handler.  If instances of the type are mutable, a
 :c:member:`~PyTypeObject.tp_clear` implementation must also be provided.
 
 
-.. data:: Py_TPFLAGS_HAVE_GC
-   :noindex:
-
+:c:macro:`Py_TPFLAGS_HAVE_GC`
    Objects with a type with this flag set must conform with the rules
    documented here.  For convenience these objects will be referred to as
    container objects.
@@ -52,18 +50,37 @@ rules:
       :c:member:`~PyTypeObject.tp_flags`, :c:member:`~PyTypeObject.tp_traverse`
       and :c:member:`~PyTypeObject.tp_clear` fields if the type inherits from a
       class that implements the garbage collector protocol and the child class
-      does *not* include the :const:`Py_TPFLAGS_HAVE_GC` flag.
+      does *not* include the :c:macro:`Py_TPFLAGS_HAVE_GC` flag.
 
 .. c:function:: TYPE* PyObject_GC_New(TYPE, PyTypeObject *type)
 
    Analogous to :c:func:`PyObject_New` but for container objects with the
-   :const:`Py_TPFLAGS_HAVE_GC` flag set.
-
+   :c:macro:`Py_TPFLAGS_HAVE_GC` flag set.
 
 .. c:function:: TYPE* PyObject_GC_NewVar(TYPE, PyTypeObject *type, Py_ssize_t size)
 
    Analogous to :c:func:`PyObject_NewVar` but for container objects with the
-   :const:`Py_TPFLAGS_HAVE_GC` flag set.
+   :c:macro:`Py_TPFLAGS_HAVE_GC` flag set.
+
+.. c:function:: PyObject* PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *type, size_t extra_size)
+
+   Analogous to :c:func:`PyObject_GC_New` but allocates *extra_size*
+   bytes at the end of the object (at offset
+   :c:member:`~PyTypeObject.tp_basicsize`).
+   The allocated memory is initialized to zeros,
+   except for the :c:type:`Python object header <PyObject>`.
+
+   The extra data will be deallocated with the object, but otherwise it is
+   not managed by Python.
+
+   .. warning::
+      The function is marked as unstable because the final mechanism
+      for reserving extra data after an instance is not yet decided.
+      For allocating a variable number of fields, prefer using
+      :c:type:`PyVarObject` and :c:member:`~PyTypeObject.tp_itemsize`
+      instead.
+
+   .. versionadded:: 3.12
 
 
 .. c:function:: TYPE* PyObject_GC_Resize(TYPE, PyVarObject *op, Py_ssize_t newsize)

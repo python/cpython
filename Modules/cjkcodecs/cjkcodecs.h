@@ -7,9 +7,13 @@
 #ifndef _CJKCODECS_H_
 #define _CJKCODECS_H_
 
-#define PY_SSIZE_T_CLEAN
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "multibytecodec.h"
+#include "pycore_import.h"        // _PyImport_GetModuleAttrString()
 
 
 /* a unicode "undefined" code point */
@@ -502,6 +506,7 @@ static struct PyMethodDef _cjk_methods[] = {
 
 static PyModuleDef_Slot _cjk_slots[] = {
     {Py_mod_exec, _cjk_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

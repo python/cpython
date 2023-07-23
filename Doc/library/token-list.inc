@@ -223,6 +223,10 @@
 
 .. data:: FSTRING_END
 
+.. data:: COMMENT
+
+.. data:: NL
+
 .. data:: ERRORTOKEN
 
 .. data:: N_TOKENS

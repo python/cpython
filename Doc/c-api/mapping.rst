@@ -20,7 +20,7 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 .. c:function:: Py_ssize_t PyMapping_Size(PyObject *o)
                Py_ssize_t PyMapping_Length(PyObject *o)
 
-   .. index:: builtin: len
+   .. index:: pair: built-in function; len
 
    Returns the number of keys in object *o* on success, and ``-1`` on failure.
    This is equivalent to the Python expression ``len(o)``.
@@ -31,6 +31,36 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
    Return element of *o* corresponding to the string *key* or ``NULL`` on failure.
    This is the equivalent of the Python expression ``o[key]``.
    See also :c:func:`PyObject_GetItem`.
+
+
+.. c:function:: int PyMapping_GetOptionalItem(PyObject *obj, PyObject *key, PyObject **result)
+
+   Variant of :c:func:`PyObject_GetItem` which doesn't raise
+   :exc:`KeyError` if the key is not found.
+
+   If the key is found, return ``1`` and set *\*result* to a new
+   :term:`strong reference` to the corresponding value.
+   If the key is not found, return ``0`` and set *\*result* to ``NULL``;
+   the :exc:`KeyError` is silenced.
+   If an error other than :exc:`KeyError` is raised, return ``-1`` and
+   set *\*result* to ``NULL``.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: int PyMapping_GetOptionalItemString(PyObject *obj, const char *key, PyObject **result)
+
+   Variant of :c:func:`PyMapping_GetItemString` which doesn't raise
+   :exc:`KeyError` if the key is not found.
+
+   If the key is found, return ``1`` and set *\*result* to a new
+   :term:`strong reference` to the corresponding value.
+   If the key is not found, return ``0`` and set *\*result* to ``NULL``;
+   the :exc:`KeyError` is silenced.
+   If an error other than :exc:`KeyError` is raised, return ``-1`` and
+   set *\*result* to ``NULL``.
+
+   .. versionadded:: 3.13
 
 
 .. c:function:: int PyMapping_SetItemString(PyObject *o, const char *key, PyObject *v)

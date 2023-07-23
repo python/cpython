@@ -38,10 +38,13 @@ Importing Modules
       to per-module locks for most purposes, so this function's special
       behaviour isn't needed anymore.
 
+   .. deprecated-removed:: 3.13 3.15
+      Use :c:func:`PyImport_ImportModule` instead.
+
 
 .. c:function:: PyObject* PyImport_ImportModuleEx(const char *name, PyObject *globals, PyObject *locals, PyObject *fromlist)
 
-   .. index:: builtin: __import__
+   .. index:: pair: built-in function; __import__
 
    Import a module.  This is best described by referring to the built-in Python
    function :func:`__import__`.
@@ -95,40 +98,53 @@ Importing Modules
    an exception set on failure (the module still exists in this case).
 
 
+.. c:function:: PyObject* PyImport_AddModuleRef(const char *name)
+
+   Return the module object corresponding to a module name.
+
+   The *name* argument may be of the form ``package.module``. First check the
+   modules dictionary if there's one there, and if not, create a new one and
+   insert it in the modules dictionary.
+
+   Return a :term:`strong reference` to the module on success. Return ``NULL``
+   with an exception set on failure.
+
+   The module name *name* is decoded from UTF-8.
+
+   This function does not load or import the module; if the module wasn't
+   already loaded, you will get an empty module object. Use
+   :c:func:`PyImport_ImportModule` or one of its variants to import a module.
+   Package structures implied by a dotted name for *name* are not created if
+   not already present.
+
+   .. versionadded:: 3.13
+
+
 .. c:function:: PyObject* PyImport_AddModuleObject(PyObject *name)
 
-   Return the module object corresponding to a module name.  The *name* argument
-   may be of the form ``package.module``. First check the modules dictionary if
-   there's one there, and if not, create a new one and insert it in the modules
-   dictionary. Return ``NULL`` with an exception set on failure.
-
-   .. note::
-
-      This function does not load or import the module; if the module wasn't already
-      loaded, you will get an empty module object. Use :c:func:`PyImport_ImportModule`
-      or one of its variants to import a module.  Package structures implied by a
-      dotted name for *name* are not created if not already present.
+   Similar to :c:func:`PyImport_AddModuleRef`, but return a :term:`borrowed
+   reference` and *name* is a Python :class:`str` object.
 
    .. versionadded:: 3.3
 
 
 .. c:function:: PyObject* PyImport_AddModule(const char *name)
 
-   Similar to :c:func:`PyImport_AddModuleObject`, but the name is a UTF-8
-   encoded string instead of a Unicode object.
+   Similar to :c:func:`PyImport_AddModuleRef`, but return a :term:`borrowed
+   reference`.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModule(const char *name, PyObject *co)
 
-   .. index:: builtin: compile
+   .. index:: pair: built-in function; compile
 
    Given a module name (possibly of the form ``package.module``) and a code object
    read from a Python bytecode file or obtained from the built-in function
    :func:`compile`, load the module.  Return a new reference to the module object,
    or ``NULL`` with an exception set if an error occurred.  *name*
-   is removed from :attr:`sys.modules` in error cases, even if *name* was already
-   in :attr:`sys.modules` on entry to :c:func:`PyImport_ExecCodeModule`.  Leaving
-   incompletely initialized modules in :attr:`sys.modules` is dangerous, as imports of
+   is removed from :data:`sys.modules` in error cases, even if *name* was already
+   in :data:`sys.modules` on entry to :c:func:`PyImport_ExecCodeModule`.  Leaving
+   incompletely initialized modules in :data:`sys.modules` is dangerous, as imports of
    such modules have no way to know that the module object is an unknown (and
    probably damaged with respect to the module author's intents) state.
 
@@ -186,10 +202,10 @@ Importing Modules
 
    .. versionadded:: 3.2
    .. versionchanged:: 3.3
-      Uses :func:`imp.source_from_cache()` in calculating the source path if
+      Uses :func:`!imp.source_from_cache()` in calculating the source path if
       only the bytecode path is provided.
    .. versionchanged:: 3.12
-      No longer uses the removed ``imp`` module.
+      No longer uses the removed :mod:`!imp` module.
 
 
 .. c:function:: long PyImport_GetMagicNumber()

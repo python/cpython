@@ -324,14 +324,17 @@ modules, and one that knows how to import modules from an :term:`import path`
 
 .. versionchanged:: 3.4
    The :meth:`~importlib.abc.MetaPathFinder.find_spec` method of meta path
-   finders replaced :meth:`~importlib.abc.MetaPathFinder.find_module`, which
+   finders replaced :meth:`!find_module`, which
    is now deprecated.  While it will continue to work without change, the
    import machinery will try it only if the finder does not implement
    ``find_spec()``.
 
 .. versionchanged:: 3.10
-   Use of :meth:`~importlib.abc.MetaPathFinder.find_module` by the import system
+   Use of :meth:`!find_module` by the import system
    now raises :exc:`ImportWarning`.
+
+.. versionchanged:: 3.12
+   ``find_module()`` has been removed.  Use :meth:`find_spec` instead.
 
 
 Loading
@@ -703,7 +706,7 @@ Here are the exact rules used:
  * Otherwise, just use the module's ``__name__`` in the repr.
 
 .. versionchanged:: 3.12
-   Use of :meth:`module_repr`, having been deprecated since Python 3.4, was
+   Use of :meth:`!module_repr`, having been deprecated since Python 3.4, was
    removed in Python 3.12 and is no longer called during the resolution of a
    module's repr.
 
@@ -837,7 +840,7 @@ stores finder objects rather than being limited to :term:`importer` objects).
 In this way, the expensive search for a particular :term:`path entry`
 location's :term:`path entry finder` need only be done once.  User code is
 free to remove cache entries from :data:`sys.path_importer_cache` forcing
-the path based finder to perform the path entry search again [#fnpic]_.
+the path based finder to perform the path entry search again.
 
 If the path entry is not present in the cache, the path based finder iterates
 over every callable in :data:`sys.path_hooks`.  Each of the :term:`path entry
@@ -887,13 +890,13 @@ module.  ``find_spec()`` returns a fully populated spec for the module.
 This spec will always have "loader" set (with one exception).
 
 To indicate to the import machinery that the spec represents a namespace
-:term:`portion`, the path entry finder sets "submodule_search_locations" to
+:term:`portion`, the path entry finder sets ``submodule_search_locations`` to
 a list containing the portion.
 
 .. versionchanged:: 3.4
    :meth:`~importlib.abc.PathEntryFinder.find_spec` replaced
-   :meth:`~importlib.abc.PathEntryFinder.find_loader` and
-   :meth:`~importlib.abc.PathEntryFinder.find_module`, both of which
+   :meth:`!find_loader` and
+   :meth:`!find_module`, both of which
    are now deprecated, but will be used if ``find_spec()`` is not defined.
 
    Older path entry finders may implement one of these two deprecated methods
@@ -901,7 +904,7 @@ a list containing the portion.
    sake of backward compatibility.  However, if ``find_spec()`` is
    implemented on the path entry finder, the legacy methods are ignored.
 
-   :meth:`~importlib.abc.PathEntryFinder.find_loader` takes one argument, the
+   :meth:`!find_loader` takes one argument, the
    fully qualified name of the module being imported.  ``find_loader()``
    returns a 2-tuple where the first item is the loader and the second item
    is a namespace :term:`portion`.
@@ -920,9 +923,12 @@ a list containing the portion.
    ``find_loader()`` in preference to ``find_module()``.
 
 .. versionchanged:: 3.10
-    Calls to :meth:`~importlib.abc.PathEntryFinder.find_module` and
-    :meth:`~importlib.abc.PathEntryFinder.find_loader` by the import
+    Calls to :meth:`!find_module` and
+    :meth:`!find_loader` by the import
     system will raise :exc:`ImportWarning`.
+
+.. versionchanged:: 3.12
+    ``find_module()`` and ``find_loader()`` have been removed.
 
 
 Replacing the standard import system
@@ -1045,8 +1051,8 @@ The original specification for :data:`sys.meta_path` was :pep:`302`, with
 subsequent extension in :pep:`420`.
 
 :pep:`420` introduced :term:`namespace packages <namespace package>` for
-Python 3.3.  :pep:`420` also introduced the :meth:`find_loader` protocol as an
-alternative to :meth:`find_module`.
+Python 3.3.  :pep:`420` also introduced the :meth:`!find_loader` protocol as an
+alternative to :meth:`!find_module`.
 
 :pep:`366` describes the addition of the ``__package__`` attribute for
 explicit relative imports in main modules.
@@ -1073,9 +1079,3 @@ methods to finders and loaders.
    module may replace itself in :data:`sys.modules`.  This is
    implementation-specific behavior that is not guaranteed to work in other
    Python implementations.
-
-.. [#fnpic] In legacy code, it is possible to find instances of
-   :class:`imp.NullImporter` in the :data:`sys.path_importer_cache`.  It
-   is recommended that code be changed to use ``None`` instead.  See
-   :ref:`portingpythoncode` for more details.  Note that the ``imp`` module
-   was removed in Python 3.12.

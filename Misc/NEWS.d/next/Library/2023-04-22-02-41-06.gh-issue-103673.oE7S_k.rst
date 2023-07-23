@@ -1,2 +1,0 @@
-:mod:`socketserver` gains ``ForkingUnixStreamServer`` and
-``ForkingUnixDatagramServer`` classes. Patch by Jay Berry.

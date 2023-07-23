@@ -128,7 +128,7 @@ The module defines the following items:
       Documentation on the ZIP file format by Phil Katz, the creator of the format and
       algorithms used.
 
-   `Info-ZIP Home Page <http://www.info-zip.org/>`_
+   `Info-ZIP Home Page <https://infozip.sourceforge.net/>`_
       Information about the Info-ZIP project's ZIP archive programs and development
       libraries.
 
@@ -577,7 +577,8 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
 
 .. data:: Path.suffix
 
-   The file extension of the final component.
+   The last dot-separated portion of the final component, if any.
+   This is commonly called the file extension.
 
    .. versionadded:: 3.11
       Added :data:`Path.suffix` property.
@@ -591,7 +592,7 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
 
 .. data:: Path.suffixes
 
-   A list of the path’s file extensions.
+   A list of the path’s suffixes, commonly called file extensions.
 
    .. versionadded:: 3.11
       Added :data:`Path.suffixes` property.
