@@ -483,14 +483,14 @@ to get the state::
         return NULL;
     }
 
-``PyType_GetModuleByDef`` works by searching the
+:c:func:`!PyType_GetModuleByDef` works by searching the
 :term:`method resolution order` (i.e. all superclasses) for the first
 superclass that has a corresponding module.
 
 .. note::
 
    In very exotic cases (inheritance chains spanning multiple modules
-   created from the same definition), ``PyType_GetModuleByDef`` might not
+   created from the same definition), :c:func:`!PyType_GetModuleByDef` might not
    return the module of the true defining class. However, it will always
    return a module with the same definition, ensuring a compatible
    C memory layout.
