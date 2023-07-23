@@ -4,8 +4,8 @@
 More Control Flow Tools
 ***********************
 
-Besides the :keyword:`while` statement just introduced, Python uses the usual
-flow control statements known from other languages, with some twists.
+As well as the :keyword:`while` statement just introduced, Python uses a few more
+that we will encounter in this chapter.
 
 
 .. _tut-if:
@@ -163,14 +163,21 @@ arguments.  In chapter :ref:`tut-structures`, we will discuss in more detail abo
 :keyword:`!break` and :keyword:`!continue` Statements, and :keyword:`!else` Clauses on Loops
 ============================================================================================
 
-The :keyword:`break` statement, like in C, breaks out of the innermost enclosing
+The :keyword:`break` statement breaks out of the innermost enclosing
 :keyword:`for` or :keyword:`while` loop.
 
-Loop statements may have an :keyword:`!else` clause; it is executed when the loop
-terminates through exhaustion of the iterable (with :keyword:`for`) or when the
-condition becomes false (with :keyword:`while`), but not when the loop is
-terminated by a :keyword:`break` statement.  This is exemplified by the
-following loop, which searches for prime numbers::
+A :keyword:`!for` or :keyword:`!while` loop can include an :keyword:`!else` clause.
+
+In a :keyword:`for` loop, the :keyword:`!else` clause is executed
+after the loop reaches its final iteration.
+
+In a :keyword:`while` loop, it's executed after the loop's condition becomes false.
+
+In either kind of loop, the :keyword:`!else` clause is **not** executed
+if the loop was terminated by a :keyword:`break`.
+
+This is exemplified in the following :keyword:`!for` loop,
+which searches for prime numbers::
 
    >>> for n in range(2, 10):
    ...     for x in range(2, n):
