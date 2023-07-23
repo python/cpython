@@ -151,7 +151,7 @@ quotes (``"..."``) with the same result [#]_.
    'spam eggs'
    >>> "Paris rabbit got your back :)! Yay!" # double quotes
    'Paris rabbit got your back :)! Yay!'
-   >>> '1975' # digits and numerals enclosed in quotes are also strings
+   >>> '1975'  # digits and numerals enclosed in quotes are also strings
    '1975'
 
 To quote a quote, we need to "escape" it, by preceding it with ``\``.
