@@ -713,7 +713,7 @@ this situation.  Also ensures that the :func:`tempfile.gettempdir()` and
 .. section: Library
 
 Expose ``X509_V_FLAG_ALLOW_PROXY_CERTS`` as
-:data:`~ssl.VERIFY_ALLOW_PROXY_CERTS` to allow proxy certificate validation
+:const:`~ssl.VERIFY_ALLOW_PROXY_CERTS` to allow proxy certificate validation
 as explained in
 https://www.openssl.org/docs/man1.1.1/man7/proxy-certificates.html.
 

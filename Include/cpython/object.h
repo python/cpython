@@ -289,7 +289,6 @@ PyAPI_FUNC(PyObject *) PyType_GetDict(PyTypeObject *);
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
 PyAPI_FUNC(void) _Py_BreakPoint(void);
 PyAPI_FUNC(void) _PyObject_Dump(PyObject *);
-PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 
 PyAPI_FUNC(int) _PyObject_IsAbstract(PyObject *);
 PyAPI_FUNC(PyObject *) _PyObject_GetAttrId(PyObject *, _Py_Identifier *);
@@ -377,20 +376,6 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
 #endif
 
 
-PyAPI_DATA(PyTypeObject) _PyNone_Type;
-PyAPI_DATA(PyTypeObject) _PyNotImplemented_Type;
-
-/* Maps Py_LT to Py_GT, ..., Py_GE to Py_LE.
- * Defined in object.c.
- */
-PyAPI_DATA(int) _Py_SwappedOp[];
-
-PyAPI_FUNC(void)
-_PyDebugAllocatorStats(FILE *out, const char *block_name, int num_blocks,
-                       size_t sizeof_block);
-PyAPI_FUNC(void)
-_PyObject_DebugTypeStats(FILE *out);
-
 /* Define a pair of assertion macros:
    _PyObject_ASSERT_FROM(), _PyObject_ASSERT_WITH_MSG() and _PyObject_ASSERT().
 
@@ -438,21 +423,6 @@ PyAPI_FUNC(void) _Py_NO_RETURN _PyObject_AssertFailed(
     const char *file,
     int line,
     const char *function);
-
-/* Check if an object is consistent. For example, ensure that the reference
-   counter is greater than or equal to 1, and ensure that ob_type is not NULL.
-
-   Call _PyObject_AssertFailed() if the object is inconsistent.
-
-   If check_content is zero, only check header fields: reduce the overhead.
-
-   The function always return 1. The return value is just here to be able to
-   write:
-
-   assert(_PyObject_CheckConsistency(obj, 1)); */
-PyAPI_FUNC(int) _PyObject_CheckConsistency(
-    PyObject *op,
-    int check_content);
 
 
 /* Trashcan mechanism, thanks to Christian Tismer.

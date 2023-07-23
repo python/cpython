@@ -34,6 +34,7 @@
 #include "Python.h"
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_setobject.h"     // _PySet_NextEntry() definition
 #include <stddef.h>               // offsetof()
 
 /* Object used as dummy key to fill deleted entries */
