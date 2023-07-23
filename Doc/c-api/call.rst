@@ -140,7 +140,7 @@ Vectorcall Support API
    However, the function ``PyVectorcall_NARGS`` should be used to allow
    for future extensions.
 
-   .. versionadded:: 3.8
+   .. versionadded:: 3.9
 
 .. c:function:: vectorcallfunc PyVectorcall_Function(PyObject *op)
 
@@ -152,7 +152,7 @@ Vectorcall Support API
    This is mostly useful to check whether or not *op* supports vectorcall,
    which can be done by checking ``PyVectorcall_Function(op) != NULL``.
 
-   .. versionadded:: 3.8
+   .. versionadded:: 3.9
 
 .. c:function:: PyObject* PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *dict)
 
@@ -164,7 +164,7 @@ Vectorcall Support API
    It does not check the :c:macro:`Py_TPFLAGS_HAVE_VECTORCALL` flag
    and it does not fall back to ``tp_call``.
 
-   .. versionadded:: 3.8
+   .. versionadded:: 3.9
 
 
 .. _capi-call:
