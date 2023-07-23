@@ -519,12 +519,14 @@ condition have the value False.::
 
 In Python, the following comparison operators are used:
 
-  * `<`: Less than
-  * `>`: Greater than
-  * `==`: Equal to
-  * `<=`: Less than or equal to
-  * `>=`: Greater than or equal to
-  * `!=`: Not equal to::
+  * ``<``: Less than
+  * ``>``: Greater than
+  * ``==``: Equal to
+  * ``<=``: Less than or equal to
+  * ``>=``: Greater than or equal to
+  * ``!=``: Not equal to
+
+::
 
    >>> count = 0;  # define variable to which we will be adding 1 in a loop
    >>> while count < 5: count = count + 1  # hit enter one more time to start the loop
