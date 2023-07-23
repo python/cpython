@@ -577,6 +577,8 @@ _gdbm_gdbm_clear_impl(gdbmobject *self, PyTypeObject *cls)
     assert(state != NULL);
     check_gdbmobject_open(self, state->gdbm_error);
     datum key;
+    // Invalidate cache
+    self->di_size = -1;
     while (1) {
         key = gdbm_firstkey(self->di_dbm);
         if (key.dptr == NULL) {
@@ -585,9 +587,6 @@ _gdbm_gdbm_clear_impl(gdbmobject *self, PyTypeObject *cls)
         if (gdbm_delete(self->di_dbm, key) < 0) {
             PyErr_SetString(state->gdbm_error, "cannot delete item from database");
             return NULL;
-        }
-        if (self->di_size > 0) {
-            self->di_size--;
         }
     }
     Py_RETURN_NONE;
