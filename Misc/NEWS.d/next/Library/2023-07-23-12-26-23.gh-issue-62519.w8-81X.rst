@@ -1,0 +1,2 @@
+Make pgettext :func:`gettext.pgettext` search plural definitions when
+translation is not found.
