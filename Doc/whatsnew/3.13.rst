@@ -188,6 +188,11 @@ Deprecated
     has yet to be supported by any major type checkers.
     (Contributed by Alex Waygood in :gh:`106309`.)
 
+  * :class:`typing.AnyStr` is deprecated in docs since Python 3.13. The intention
+    is to remove `AnyStr` from `__all__` and emit a :exc:`DeprecationWarning` 
+    in Python 3.16, and to remove `AnyStr` entirely in Python 3.18.
+    (Contributed by Michael The in :gh:`107116`.)
+
 * :mod:`wave`: Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()``
   methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
   They will be removed in Python 3.15.
@@ -331,6 +336,11 @@ Pending Removal in Python 3.16
 
 * :class:`array.array` ``'u'`` type (:c:type:`wchar_t`):
   use the ``'w'`` type instead (``Py_UCS4``).
+
+Pending Removal in Python 3.18
+------------------------------
+
+* :class:`typing.AnyStr` (:gh:`105578`)
 
 Pending Removal in Future Versions
 ----------------------------------
