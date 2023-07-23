@@ -21,7 +21,7 @@ command-line and writes the result to a file::
         '--log', default=sys.stdout, type=argparse.FileType('w'),
         help='the file where the sum should be written')
     args = parser.parse_args()
-    args.log.write('%s' % sum(args.integers))
+    args.log.write(f'{sum(args.integers)}')
     args.log.close()
 
 The module contains the following public classes:
@@ -123,12 +123,12 @@ class _AttributeHolder(object):
             arg_strings.append(repr(arg))
         for name, value in self._get_kwargs():
             if name.isidentifier():
-                arg_strings.append('%s=%r' % (name, value))
+                arg_strings.append(f'{name}={value!r}')
             else:
                 star_args[name] = value
         if star_args:
-            arg_strings.append('**%s' % repr(star_args))
-        return '%s(%s)' % (type_name, ', '.join(arg_strings))
+            arg_strings.append(f'**{star_args!r}')
+        return f'{type_name}({", ".join(arg_strings)})'
 
     def _get_kwargs(self):
         return list(self.__dict__.items())
@@ -225,7 +225,7 @@ class HelpFormatter(object):
             # add the heading if the section was non-empty
             if self.heading is not SUPPRESS and self.heading is not None:
                 current_indent = self.formatter._current_indent
-                heading = '%*s%s:\n' % (current_indent, '', self.heading)
+                heading = f'{"":{current_indent}}{self.heading}:\n'
             else:
                 heading = ''
 
@@ -304,11 +304,11 @@ class HelpFormatter(object):
 
         # if no optionals or positionals are available, usage is just prog
         elif usage is None and not actions:
-            usage = '%(prog)s' % dict(prog=self._prog)
+            usage = f'{self._prog}'
 
         # if optionals and positionals are available, calculate usage
         elif usage is None:
-            prog = '%(prog)s' % dict(prog=self._prog)
+            prog = f'{self._prog}'
 
             # split optionals from positionals
             optionals = []
@@ -389,7 +389,7 @@ class HelpFormatter(object):
                 usage = '\n'.join(lines)
 
         # prefix with 'usage:'
-        return '%s%s\n\n' % (prefix, usage)
+        return f'{prefix}{usage}\n\n'
 
     def _format_actions_usage(self, actions, groups):
         # find group indices and identify actions in groups
@@ -477,11 +477,11 @@ class HelpFormatter(object):
                 else:
                     default = self._get_default_metavar_for_optional(action)
                     args_string = self._format_args(action, default)
-                    part = '%s %s' % (option_string, args_string)
+                    part = f'{option_string} {args_string}'
 
                 # make it look optional if it's not required or in a group
                 if not action.required and action not in group_actions:
-                    part = '[%s]' % part
+                    part = f'[{part}]'
 
                 # add the action string to the list
                 parts.append(part)
@@ -496,9 +496,9 @@ class HelpFormatter(object):
         # clean up separators for mutually exclusive groups
         open = r'[\[(]'
         close = r'[\])]'
-        text = _re.sub(r'(%s) ' % open, r'\1', text)
-        text = _re.sub(r' (%s)' % close, r'\1', text)
-        text = _re.sub(r'%s *%s' % (open, close), r'', text)
+        text = _re.sub(rf'({open}) ', r'\1', text)
+        text = _re.sub(rf' ({close})', r'\1', text)
+        text = _re.sub(rf'{open} *{close}', r'', text)
         text = text.strip()
 
         # return the text
@@ -521,19 +521,16 @@ class HelpFormatter(object):
 
         # no help; start on same line and add a final newline
         if not action.help:
-            tup = self._current_indent, '', action_header
-            action_header = '%*s%s\n' % tup
+            action_header = f'{"":{self._current_indent}}{action_header}'
 
         # short action name; start on the same line and pad two spaces
         elif len(action_header) <= action_width:
-            tup = self._current_indent, '', action_width, action_header
-            action_header = '%*s%-*s  ' % tup
+            action_header = f'{"":{self._current_indent}}{action_header:{action_width}}  '
             indent_first = 0
 
         # long action name; start on the next line
         else:
-            tup = self._current_indent, '', action_header
-            action_header = '%*s%s\n' % tup
+            action_header = f'{"":{self._current_indent}}{action_header}\n'
             indent_first = help_position
 
         # collect the pieces of the action help
@@ -544,9 +541,9 @@ class HelpFormatter(object):
             help_text = self._expand_help(action)
             if help_text:
                 help_lines = self._split_lines(help_text, help_width)
-                parts.append('%*s%s\n' % (indent_first, '', help_lines[0]))
+                parts.append(f'{"":{indent_first}}{help_lines[0]}\n')
                 for line in help_lines[1:]:
-                    parts.append('%*s%s\n' % (help_position, '', line))
+                    parts.append(f'{"":{help_position}}{line}\n')
 
         # or add a newline if the description doesn't end with one
         elif not action_header.endswith('\n'):
@@ -579,7 +576,7 @@ class HelpFormatter(object):
                 default = self._get_default_metavar_for_optional(action)
                 args_string = self._format_args(action, default)
                 for option_string in action.option_strings:
-                    parts.append('%s %s' % (option_string, args_string))
+                    parts.append(f'{option_string} {args_string}')
 
             return ', '.join(parts)
 
@@ -588,7 +585,7 @@ class HelpFormatter(object):
             result = action.metavar
         elif action.choices is not None:
             choice_strs = [str(choice) for choice in action.choices]
-            result = '{%s}' % ','.join(choice_strs)
+            result = f'{{{",".join(choice_strs)}}}'
         else:
             result = default_metavar
 
@@ -772,11 +769,11 @@ class ArgumentError(Exception):
 
     def __str__(self):
         if self.argument_name is None:
-            format = '%(message)s'
+            return f'{self.message}'
         else:
-            format = _('argument %(argument_name)s: %(message)s')
-        return format % dict(message=self.message,
-                             argument_name=self.argument_name)
+            error_msg = _('argument %(argument_name)s: %(message)s')
+            return error_msg % dict(message=self.message,
+                              argument_name=self.argument_name)
 
 
 class ArgumentTypeError(Exception):
@@ -961,7 +958,7 @@ class _StoreAction(Action):
                              'have nothing to store, actions such as store '
                              'true or store const may be more appropriate')
         if const is not None and nargs != OPTIONAL:
-            raise ValueError('nargs must be %r to supply const' % OPTIONAL)
+            raise ValueError(f'nargs must be {OPTIONAL!r} to supply const')
         super(_StoreAction, self).__init__(
             option_strings=option_strings,
             dest=dest,
@@ -1053,7 +1050,7 @@ class _AppendAction(Action):
                              'strings are not supplying the value to append, '
                              'the append const action may be more appropriate')
         if const is not None and nargs != OPTIONAL:
-            raise ValueError('nargs must be %r to supply const' % OPTIONAL)
+            raise ValueError(f'nargs must be {OPTIONAL!r} to supply const')
         super(_AppendAction, self).__init__(
             option_strings=option_strings,
             dest=dest,
@@ -1175,7 +1172,7 @@ class _SubParsersAction(Action):
         def __init__(self, name, aliases, help):
             metavar = dest = name
             if aliases:
-                metavar += ' (%s)' % ', '.join(aliases)
+                metavar += f' ({", ".join(aliases)})'
             sup = super(_SubParsersAction._ChoicesPseudoAction, self)
             sup.__init__(option_strings=[], dest=dest, help=help,
                          metavar=metavar)
@@ -1206,7 +1203,7 @@ class _SubParsersAction(Action):
     def add_parser(self, name, **kwargs):
         # set prog from the existing prefix
         if kwargs.get('prog') is None:
-            kwargs['prog'] = '%s %s' % (self._prog_prefix, name)
+            kwargs['prog'] = f'{self._prog_prefix} {name}'
 
         aliases = kwargs.pop('aliases', ())
 
@@ -1326,9 +1323,9 @@ class FileType(object):
         args = self._mode, self._bufsize
         kwargs = [('encoding', self._encoding), ('errors', self._errors)]
         args_str = ', '.join([repr(arg) for arg in args if arg != -1] +
-                             ['%s=%r' % (kw, arg) for kw, arg in kwargs
+                             [f'{kw}={arg!r}' for kw, arg in kwargs
                               if arg is not None])
-        return '%s(%s)' % (type(self).__name__, args_str)
+        return f'{type(self).__name__}({args_str})'
 
 # ===========================
 # Optional and Positional Parsing
@@ -1468,17 +1465,17 @@ class _ActionsContainer(object):
         # create the action object, and add it to the parser
         action_class = self._pop_action_class(kwargs)
         if not callable(action_class):
-            raise ValueError('unknown action "%s"' % (action_class,))
+            raise ValueError(f'unknown action "{action_class}"')
         action = action_class(**kwargs)
 
         # raise an error if the action type is not callable
         type_func = self._registry_get('type', action.type, action.type)
         if not callable(type_func):
-            raise ValueError('%r is not callable' % (type_func,))
+            raise ValueError(f'{type_func!r} is not callable')
 
         if type_func is FileType:
-            raise ValueError('%r is a FileType class object, instance of it'
-                             ' must be passed' % (type_func,))
+            raise ValueError(f'{type_func!r} is a FileType class object, instance of it'
+                             ' must be passed')
 
         # raise an error if the metavar does not match the type
         if hasattr(self, "_get_formatter"):
@@ -1531,7 +1528,7 @@ class _ActionsContainer(object):
                 # This branch could happen if a derived class added
                 # groups with duplicated titles in __init__
                 msg = _('cannot merge actions - two groups are named %r')
-                raise ValueError(msg % (group.title))
+                raise ValueError(msg % group.title)
             title_group_map[group.title] = group
 
         # map each action to its group
@@ -1621,7 +1618,7 @@ class _ActionsContainer(object):
 
     def _get_handler(self):
         # determine function from conflict handler string
-        handler_func_name = '_handle_conflict_%s' % self.conflict_handler
+        handler_func_name = f'_handle_conflict_{self.conflict_handler}'
         try:
             return getattr(self, handler_func_name)
         except AttributeError:
@@ -2388,7 +2385,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
         # all others should be integers
         else:
-            nargs_pattern = '(-*%s-*)' % '-*'.join('A' * nargs)
+            nargs_pattern = f'(-*{"-*".join("A" * nargs)}-*)'
 
         # if this is an optional action, -- is not allowed
         if action.option_strings:
@@ -2427,7 +2424,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
              if action.nargs in [PARSER, REMAINDER]]
         if a:
             raise TypeError('parse_intermixed_args: positional arg'
-                            ' with nargs=%s'%a[0].nargs)
+                            f' with nargs={a[0].nargs}')
 
         if [action.dest for group in self._mutually_exclusive_groups
             for action in group._group_actions if action in positionals]:
@@ -2454,7 +2451,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                     if (hasattr(namespace, action.dest)
                             and getattr(namespace, action.dest)==[]):
                         from warnings import warn
-                        warn('Do not expect %s in %s' % (action.dest, namespace))
+                        warn(f'Do not expect {action.dest} in {namespace}')
                         delattr(namespace, action.dest)
             finally:
                 # restore nargs and usage before exiting
