@@ -1984,7 +1984,7 @@ the form '-rwxrwxrwx'.
 struct
 ------
 
-The :mod:`struct` module now supports ``ssize_t`` and ``size_t`` via the
+The :mod:`struct` module now supports :c:type:`ssize_t` and :c:type:`size_t` via the
 new codes ``n`` and ``N``, respectively.  (Contributed by Antoine Pitrou
 in :issue:`3163`.)
 
