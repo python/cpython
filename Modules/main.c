@@ -7,6 +7,7 @@
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromPyArgv()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_bytesobject.h"   // _PyBytesWriter, _PyBytes_Dedent()
 
 /* Includes for exit_sigint() */
 #include <stdio.h>                // perror()
@@ -229,150 +230,35 @@ pymain_import_readline(const PyConfig *config)
 }
 
 /* Strip common leading whitespace, just as textwrap.dedent.
-   It steals 1 reference from bytes if succeeded, else it will return NULL. */
+   It returns a new reference. */
 static PyObject *
 dedent_utf8_bytes(PyObject *bytes)
 {
-    if (bytes == NULL || !PyBytes_CheckExact(bytes)) {
-        return NULL;
-    }
+    assert(bytes == NULL || !PyBytes_CheckExact(bytes->ob_type));
 
-    char *start;
     Py_ssize_t nchars;
-
+    char *start;
     if (PyBytes_AsStringAndSize(bytes, &start, &nchars) != 0) {
         return NULL;
     }
 
-    char *end = start + nchars;
-    assert(start < end);
-
-    char *candidate_start = NULL;
-    Py_ssize_t candidate_len = 0;
-
-    for (char *iter = start; iter < end; ++iter) {
-        char *line_start = iter;
-        char *leading_whitespace_end = NULL;
-
-        // scan the whole line
-        while (iter < end && *iter != '\n') {
-            if (!leading_whitespace_end && *iter != ' ' && *iter != '\t') {
-                if (iter == line_start) {
-                    // some line has no indent, fast exit!
-                    return bytes;
-                }
-                leading_whitespace_end = iter;
-            }
-            ++iter;
-        }
-
-        // if this line has all white space, skip it
-        if (!leading_whitespace_end) {
-            continue;
-        }
-
-        if (!candidate_start) {
-            candidate_start = line_start;
-            candidate_len = leading_whitespace_end - line_start;
-            assert(candidate_len > 0);
-        } else {
-            /* We then compare with the current longest leading whitespace.
-
-               [line_start, leading_whitespace_end) is the leading whitespace of
-               this line,
-
-               [candidate_start, candidate_start + candidate_len)
-               is the leading whitespace of the current longest leading
-               whitespace. */
-            Py_ssize_t new_candidate_len = 0;
-
-            for (char *candidate_iter = candidate_start,
-                      *line_iter = line_start;
-                 candidate_iter < candidate_start + candidate_len &&
-                 line_iter < leading_whitespace_end;
-                 ++candidate_iter, ++line_iter) {
-                if (*candidate_iter != *line_iter) {
-                    break;
-                }
-                ++new_candidate_len;
-            }
-
-            candidate_len = new_candidate_len;
-            if (candidate_len == 0) {
-                return bytes;
-            }
-        }
+    _PyBytesWriter writer;
+    _PyBytesWriter_Init(&writer);
+    char *p = _PyBytesWriter_Alloc(&writer, nchars);
+    if (p == NULL) {
+        return NULL;
     }
 
-    if (candidate_len == 0) {
+    int ret = _PyBytes_Dedent(start, nchars, &writer, &p);
+    if (ret < 0) {
+        return NULL;
+    }
+    if (ret == 0) {
+        Py_INCREF(bytes);
+        _PyBytesWriter_Dealloc(&writer);
         return bytes;
     }
-    assert(candidate_len > 0);
-
-    // trigger a dedent
-    char *p;
-    PyObject *new_bytes;
-    char *line_start;
-    Py_ssize_t new_line_len;
-    bool in_leading_space;
-    _PyBytesWriter writer;
-
-    _PyBytesWriter_Init(&writer);
-    p = _PyBytesWriter_Alloc(&writer, nchars);
-    if (p == NULL) {
-        goto error;
-    }
-
-    for (char *iter = start; iter < end; ++iter) {
-        line_start = iter;
-        in_leading_space = true;
-
-        // iterate over a line
-        while (iter < end && *iter != '\n') {
-            if (in_leading_space && *iter != ' ' && *iter != '\t') {
-                in_leading_space = false;
-            }
-            ++iter;
-        }
-
-        // invariant: *iter == '\n' or iter == end
-
-        // if this line has all white space, write '\n'
-        if (in_leading_space) {
-            p = _PyBytesWriter_Prepare(&writer, p, 1);
-            if (p == NULL) {
-                goto error;
-            }
-            *p++ = '\n';
-            continue;
-        }
-
-        // copy [new_line_start + candidate_len, iter) to buffer, then append
-        // '\n'
-        new_line_len = iter - line_start - candidate_len;
-        assert(new_line_len >= 0);
-        p = _PyBytesWriter_Prepare(&writer, p, new_line_len + 1);
-        if (p == NULL) {
-            goto error;
-        }
-        memcpy(p, line_start + candidate_len, new_line_len);
-
-        p += new_line_len;
-
-        // this may always append '\n' at the end of `new_bytes`
-        *p++ = '\n';
-    }
-
-    new_bytes = _PyBytesWriter_Finish(&writer, p);
-    if (new_bytes == NULL) {
-        goto error;
-    }
-    Py_DECREF(bytes);
-    return new_bytes;
-
-error:
-    _PyBytesWriter_Dealloc(&writer);
-    return NULL;
+    return _PyBytesWriter_Finish(&writer, p);
 }
 
 static int
@@ -396,10 +282,12 @@ pymain_run_command(wchar_t *command)
         goto error;
     }
 
-    bytes = dedent_utf8_bytes(bytes);
-    if (bytes == NULL) {
+    PyObject *new_bytes = dedent_utf8_bytes(bytes);
+    if (new_bytes == NULL) {
+        Py_DECREF(bytes);
         goto error;
     }
+    Py_SETREF(bytes, new_bytes);
 
     PyCompilerFlags cf = _PyCompilerFlags_INIT;
     cf.cf_flags |= PyCF_IGNORE_COOKIE;

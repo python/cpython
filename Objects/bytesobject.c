@@ -3535,6 +3535,8 @@ _PyBytesWriter_WriteBytes(_PyBytesWriter *writer, void *ptr,
 }
 
 
+/* Algorithms on bytes */
+
 void
 _PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
     const char* src, Py_ssize_t len_src)
@@ -3558,3 +3560,148 @@ _PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
     }
 }
 
+/** Dedent a UTF-8 encoded string.
+ * behavior is expected to match `textwrap.dedent`
+ *
+ * return value:
+ * 0, no need to dedent, writer untouched
+ * 1, success
+ * -1, failure
+ *
+ * str is the beginning of the string to dedent.
+ * expecting (str != NULL)
+ *
+ * len is the length of the string to dedent.
+ * expecting (len >= 0)
+ * 
+ * writer is a _PyBytesWriter object to write the dedented string.
+ * expecting (writer != NULL)
+ *
+ * p points to a char* indicating the current position in the _PyBytesWriter.
+ * It is updated to the new position after writing the dedented string on exit.
+ * expecting (p != NULL && *p != NULL)
+ */
+int
+_PyBytes_Dedent(const char *str, Py_ssize_t len, _PyBytesWriter *writer,
+                char **p)
+{   
+    assert(str);
+    assert(p != NULL && *p != NULL);
+    assert(writer);
+
+    if (len <= 0)
+        return 0;
+
+    const char *end = str + len;
+    assert(str < end); // prevent overflow when len is too large
+
+    const char *candidate_start = NULL;
+    Py_ssize_t candidate_len = 0;
+
+    for (const char *iter = str; iter < end; ++iter) {
+        const char *line_start = iter;
+        const char *leading_whitespace_end = NULL;
+
+        // scan the whole line
+        while (iter < end && *iter != '\n') {
+            if (!leading_whitespace_end && *iter != ' ' && *iter != '\t') {
+                if (iter == line_start) {
+                    // some line has no indent, fast exit!
+                    return 0;
+                }
+                leading_whitespace_end = iter;
+            }
+            ++iter;
+        }
+
+        // if this line has all white space, skip it
+        if (!leading_whitespace_end) {
+            continue;
+        }
+
+        if (!candidate_start) {
+            candidate_start = line_start;
+            candidate_len = leading_whitespace_end - line_start;
+            assert(candidate_len > 0);
+        } else {
+            /* We then compare with the current longest leading whitespace.
+
+               [line_start, leading_whitespace_end) is the leading whitespace of
+               this line,
+
+               [candidate_start, candidate_start + candidate_len)
+               is the leading whitespace of the current longest leading
+               whitespace. */
+            Py_ssize_t new_candidate_len = 0;
+
+            for (const char *candidate_iter = candidate_start,
+                            *line_iter = line_start;
+                 candidate_iter < candidate_start + candidate_len &&
+                 line_iter < leading_whitespace_end;
+                 ++candidate_iter, ++line_iter) {
+                if (*candidate_iter != *line_iter) {
+                    break;
+                }
+                ++new_candidate_len;
+            }
+
+            candidate_len = new_candidate_len;
+            if (candidate_len == 0) {
+                return 0;
+            }
+        }
+    }
+
+    assert(candidate_len >= 0);
+    if (candidate_len == 0) {
+        return 0;
+    }
+
+    // trigger a dedent
+
+    // prepare the writer
+    char *p_ = _PyBytesWriter_Prepare(writer, *p, len);
+    if (p_ == NULL) {
+        *p = NULL;
+        return -1;
+    }
+
+    for (const char *iter = str; iter < end; ++iter) {
+        const char *line_start = iter;
+        bool in_leading_space = true;
+
+        // iterate over a line to find the end of a line
+        while (iter < end && *iter != '\n') {
+            if (in_leading_space && *iter != ' ' && *iter != '\t') {
+                in_leading_space = false;
+            }
+            ++iter;
+        }
+
+        // invariant: *iter == '\n' or iter == end
+        bool append_newline = iter < end;
+
+        // if this line has all white space, write '\n'
+        if (in_leading_space && append_newline) {
+            *p_++ = '\n';
+            continue;
+        }
+
+        /* copy [new_line_start + candidate_len, iter) to buffer, then
+            conditionally append '\n' */
+
+        Py_ssize_t new_line_len = iter - line_start - candidate_len;
+        assert(new_line_len >= 0);
+
+        memcpy(p_, line_start + candidate_len, new_line_len);
+
+        p_ += new_line_len;
+
+        if (append_newline) {
+            *p_++ = '\n';
+        }
+    }
+
+    *p = p_;
+    return 1;
+}

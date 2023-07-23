@@ -122,6 +122,31 @@ PyAPI_FUNC(void*) _PyBytesWriter_WriteBytes(_PyBytesWriter *writer,
     const void *bytes,
     Py_ssize_t size);
 
+
+/** Dedent a UTF-8 encoded string.
+ * behavior is expected to match `textwrap.dedent`
+ *
+ * return value:
+ * 0, no need to dedent, writer untouched
+ * 1, success
+ * -1, failure
+ *
+ * str is the beginning of the string to dedent.
+ * expecting (str != NULL)
+ *
+ * len is the length of the string to dedent.
+ * expecting (len >= 0)
+ * 
+ * writer is a _PyBytesWriter object to write the dedented string.
+ * expecting (writer != NULL)
+ *
+ * p points to a char* indicating the current position in the _PyBytesWriter.
+ * It is updated to the new position after writing the dedented string on exit.
+ * expecting (p != NULL && *p != NULL)
+ */
+PyAPI_FUNC(int)
+_PyBytes_Dedent(const char *str, Py_ssize_t len, _PyBytesWriter *writer,
+                char **p);
 #ifdef __cplusplus
 }
 #endif
