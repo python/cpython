@@ -138,13 +138,14 @@ and uses the ``j`` or ``J`` suffix to indicate the imaginary part
 
 .. _tut-strings:
 
-Strings
+Texts
 -------
 
-Besides numbers, Python can also manipulate strings, which can be expressed
-in several ways.  They can be enclosed in single quotes (``'...'``) or
-double quotes (``"..."``) with the same result [#]_.  ``\`` can be used
-to escape quotes::
+Different kinds of text have the type :class:`str`.  This includes
+characters "``!``", words "``rabbit``", names "``Paris``", sentences
+"``Got your back.``", etc. "``Yay! :)``".  They can be enclosed in single
+quotes (``'...'``) or double quotes (``"..."``) with the same result [#]_.
+``\`` can be used to escape quotes::
 
    >>> 'spam eggs'  # single quotes
    'spam eggs'
