@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "errcode.h"
+#include "pycore_errcode.h"       // E_TOKEN
 #include "../Parser/tokenizer.h"
 #include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 #include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()

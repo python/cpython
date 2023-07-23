@@ -1,7 +1,7 @@
 #include <Python.h>
 #include "pycore_ast.h"           // _PyAST_Validate(),
+#include "pycore_errcode.h"       // E_BADSINGLE
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include <errcode.h>
 
 #include "tokenizer.h"
 #include "pegen.h"

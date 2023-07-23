@@ -1,6 +1,5 @@
 #include <Python.h>
-#include <errcode.h>
-
+#include "pycore_errcode.h"       // E_TOKEN
 #include "pycore_pyerrors.h"      // _PyErr_ProgramDecodedTextObject()
 #include "tokenizer.h"
 #include "pegen.h"

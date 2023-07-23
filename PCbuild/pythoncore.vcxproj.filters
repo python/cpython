@@ -81,9 +81,6 @@
     <ClInclude Include="..\Include\enumobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\errcode.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\fileobject.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -556,6 +553,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_dtoa.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_errcode.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_exceptions.h">

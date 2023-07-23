@@ -981,6 +981,11 @@ Removed
   be used instead.
   (Contributed by Serhiy Storchaka in :gh:`86493`.)
 
+* Remove the ``errcode.h`` header file. There was never any public tokenizer C
+  API. The ``errcode.h`` header file was only designed to be used by Python
+  internals.
+  (Contributed by Victor Stinner in :gh:`107162`.)
+
 Pending Removal in Python 3.14
 ------------------------------
 

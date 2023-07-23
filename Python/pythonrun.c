@@ -11,10 +11,10 @@
 #include <stdbool.h>
 
 #include "Python.h"
-
 #include "pycore_ast.h"           // PyAST_mod2obj
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
 #include "pycore_compile.h"       // _PyAST_Compile()
+#include "pycore_errcode.h"       // E_EOF
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
@@ -24,7 +24,6 @@
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_traceback.h"     // _PyTraceBack_Print_Indented()
 
-#include "errcode.h"              // E_EOF
 #include "marshal.h"              // PyMarshal_ReadLongFromFile()
 
 #ifdef MS_WINDOWS

@@ -3,12 +3,12 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_errcode.h"       // E_OK
 
 #include <ctype.h>
 #include <assert.h>
 
 #include "tokenizer.h"
-#include "errcode.h"
 
 /* Alternate tab spacing */
 #define ALTTABSIZE 1
