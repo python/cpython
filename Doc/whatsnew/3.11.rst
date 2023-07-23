@@ -2227,7 +2227,7 @@ New Features
 
   (Contributed by Christian Heimes in :issue:`45459`.)
 
-* Added the :c:data:`PyType_GetModuleByDef` function, used to get the module
+* Added the :c:func:`PyType_GetModuleByDef` function, used to get the module
   in which a method was defined, in cases where this information is not
   available directly (via :c:type:`PyCMethod`).
   (Contributed by Petr Viktorin in :issue:`46613`.)

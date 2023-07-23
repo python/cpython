@@ -235,10 +235,10 @@ Note that the Python name for the exception object is :exc:`spam.error`.  The
 being :exc:`Exception` (unless another class is passed in instead of ``NULL``),
 described in :ref:`bltin-exceptions`.
 
-Note also that the :c:data:`SpamError` variable retains a reference to the newly
+Note also that the :c:data:`!SpamError` variable retains a reference to the newly
 created exception class; this is intentional!  Since the exception could be
 removed from the module by external code, an owned reference to the class is
-needed to ensure that it will not be discarded, causing :c:data:`SpamError` to
+needed to ensure that it will not be discarded, causing :c:data:`!SpamError` to
 become a dangling pointer. Should it become a dangling pointer, C code which
 raises the exception could cause a core dump or other unintended side effects.
 
@@ -279,9 +279,9 @@ statement::
 It returns ``NULL`` (the error indicator for functions returning object pointers)
 if an error is detected in the argument list, relying on the exception set by
 :c:func:`PyArg_ParseTuple`.  Otherwise the string value of the argument has been
-copied to the local variable :c:data:`command`.  This is a pointer assignment and
+copied to the local variable :c:data:`!command`.  This is a pointer assignment and
 you are not supposed to modify the string to which it points (so in Standard C,
-the variable :c:data:`command` should properly be declared as ``const char
+the variable :c:data:`!command` should properly be declared as ``const char
 *command``).
 
 The next statement is a call to the Unix function :c:func:`system`, passing it
@@ -289,7 +289,7 @@ the string we just got from :c:func:`PyArg_ParseTuple`::
 
    sts = system(command);
 
-Our :func:`spam.system` function must return the value of :c:data:`sts` as a
+Our :func:`!spam.system` function must return the value of :c:data:`!sts` as a
 Python object.  This is done using the function :c:func:`PyLong_FromLong`. ::
 
    return PyLong_FromLong(sts);

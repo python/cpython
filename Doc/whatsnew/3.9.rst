@@ -1276,7 +1276,7 @@ New Features
 * :pep:`573`: Added :c:func:`PyType_FromModuleAndSpec` to associate
   a module with a class; :c:func:`PyType_GetModule` and
   :c:func:`PyType_GetModuleState` to retrieve the module and its state; and
-  :c:data:`PyCMethod` and :c:macro:`METH_METHOD` to allow a method to
+  :c:type:`PyCMethod` and :c:macro:`METH_METHOD` to allow a method to
   access the class it was defined in.
   (Contributed by Marcel Plch and Petr Viktorin in :issue:`38787`.)
 
