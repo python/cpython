@@ -1363,19 +1363,15 @@ class ClinicExternalTest(TestCase):
                 self.fail("".join(proc.stderr))
             stdout = proc.stdout.read()
             stderr = proc.stderr.read()
-            if expect_success:
-                self.assertEqual(stderr, "")
-            else:
-                self.assertEqual(stdout, "")
-            return stdout, stderr
+            # Clinic never writes to stderr.
+            self.assertEqual(stderr, "")
+            return stdout
 
     def expect_success(self, *args):
-        out, _ = self._do_test(*args)
-        return out
+        return self._do_test(*args)
 
     def expect_failure(self, *args):
-        _, err = self._do_test(*args, expect_success=False)
-        return err
+        return self._do_test(*args, expect_success=False)
 
     def test_external(self):
         CLINIC_TEST = 'clinic.test.c'
@@ -1411,6 +1407,46 @@ class ClinicExternalTest(TestCase):
         # Don't change the file modification time
         # if the content does not change
         self.assertEqual(pre_mtime, post_mtime)
+
+    def test_cli_force(self):
+        invalid_input = dedent("""
+            /*[clinic input]
+            output preset block
+            module test
+            test.fn
+                a: int
+            [clinic start generated code]*/
+
+            const char *hand_edited = "output block is overwritten";
+            /*[clinic end generated code: output=bogus input=bogus]*/
+        """)
+        fail_msg = dedent("""
+            Checksum mismatch!
+            Expected: bogus
+            Computed: 2ed19
+            Suggested fix: remove all generated code including the end marker,
+            or use the '-f' option.
+        """)
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write(invalid_input)
+            # First, run the CLI without -f and expect failure.
+            # Note, we cannot check the entire fail msg, because the path to
+            # the tmp file will change for every run.
+            out = self.expect_failure(fn)
+            self.assertTrue(out.endswith(fail_msg))
+            # Then, force regeneration; success expected.
+            out = self.expect_success("-f", fn)
+            self.assertEqual(out, "")
+            # Verify by checking the checksum.
+            checksum = (
+                "/*[clinic end generated code: "
+                "output=2124c291eb067d76 input=9543a8d2da235301]*/\n"
+            )
+            with open(fn, 'r', encoding='utf-8') as f:
+                generated = f.read()
+            self.assertTrue(generated.endswith(checksum))
 
     def test_cli_help(self):
         out = self.expect_success("-h")
