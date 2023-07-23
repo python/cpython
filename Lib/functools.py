@@ -941,7 +941,7 @@ class singledispatchmethod:
         """
         return self.dispatcher.register(cls, func=method)
 
-    def __set_name__(self, _, name):
+    def __set_name__(self, owner, name):
         self.attrname = name
 
     def __get__(self, obj, cls=None):
