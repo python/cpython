@@ -782,6 +782,7 @@ class _mboxMMDF(_singlefileMailbox):
         string = self._file.read(stop - self._file.tell())
         msg = self._message_factory(string.replace(linesep, b'\n'))
         msg.set_from(from_line[5:].decode('ascii'))
+        msg.set_unixfrom(from_line.decode('ascii'))
         return msg
 
     def get_string(self, key, from_=False):

@@ -1027,12 +1027,14 @@ class _TestMboxMMDF(_TestSingleFile):
         # Add a string starting with 'From ' to the mailbox
         key = self._box.add('From foo@bar blah\nFrom: foo\n\n0\n')
         self.assertEqual(self._box[key].get_from(), 'foo@bar blah')
+        self.assertEqual(self._box[key].get_unixfrom(), 'From foo@bar blah')
         self.assertEqual(self._box[key].get_payload(), '0\n')
 
     def test_add_from_bytes(self):
         # Add a byte string starting with 'From ' to the mailbox
         key = self._box.add(b'From foo@bar blah\nFrom: foo\n\n0\n')
         self.assertEqual(self._box[key].get_from(), 'foo@bar blah')
+        self.assertEqual(self._box[key].get_unixfrom(), 'From foo@bar blah')
         self.assertEqual(self._box[key].get_payload(), '0\n')
 
     def test_add_mbox_or_mmdf_message(self):
