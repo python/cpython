@@ -94,26 +94,6 @@ arg_parser.add_argument(
 
 
 class Generator(Analyzer):
-    output_filename: str
-    metadata_filename: str
-    pymetadata_filename: str
-    executor_filename: str
-    emit_line_directives: bool = False
-
-    def __init__(
-        self,
-        input_filenames: list[str],
-        output_filename: str,
-        metadata_filename: str,
-        pymetadata_filename: str,
-        executor_filename: str,
-    ):
-        super().__init__(input_filenames)
-        self.output_filename = output_filename
-        self.metadata_filename = metadata_filename
-        self.pymetadata_filename = pymetadata_filename
-        self.executor_filename = executor_filename
-
     def get_stack_effect_info(
         self, thing: parsing.InstDef | parsing.Macro | parsing.Pseudo
     ) -> tuple[AnyInstruction | None, str | None, str | None]:
@@ -251,7 +231,7 @@ class Generator(Analyzer):
         self.out.write_raw(self.from_source_files())
         self.out.write_raw(f"{self.out.comment} Do not edit!\n")
 
-    def write_metadata(self) -> None:
+    def write_metadata(self, metadata_filename: str, pymetadata_filename: str) -> None:
         """Write instruction metadata to output file."""
 
         # Compute the set of all instruction formats.
@@ -281,7 +261,7 @@ class Generator(Analyzer):
         # Turn it into a list of enum definitions.
         format_enums = [INSTR_FMT_PREFIX + format for format in sorted(all_formats)]
 
-        with open(self.metadata_filename, "w") as f:
+        with open(metadata_filename, "w") as f:
             # Create formatter
             self.out = Formatter(f, 0)
 
@@ -418,7 +398,7 @@ class Generator(Analyzer):
 
             self.out.emit("#endif // NEED_OPCODE_METADATA")
 
-        with open(self.pymetadata_filename, "w") as f:
+        with open(pymetadata_filename, "w") as f:
             # Create formatter
             self.out = Formatter(f, 0, comment="#")
 
@@ -570,11 +550,13 @@ class Generator(Analyzer):
         """Write metadata for a macro-instruction."""
         self.emit_metadata_entry(ps.name, ps.instr_fmt, ps.instr_flags)
 
-    def write_instructions(self) -> None:
+    def write_instructions(
+        self, output_filename: str, emit_line_directives: bool
+    ) -> None:
         """Write instructions to output file."""
-        with open(self.output_filename, "w") as f:
+        with open(output_filename, "w") as f:
             # Create formatter
-            self.out = Formatter(f, 8, self.emit_line_directives)
+            self.out = Formatter(f, 8, emit_line_directives)
 
             self.write_provenance_header()
 
@@ -600,14 +582,16 @@ class Generator(Analyzer):
 
         print(
             f"Wrote {n_instrs} instructions, {n_macros} macros, "
-            f"and {n_pseudos} pseudos to {self.output_filename}",
+            f"and {n_pseudos} pseudos to {output_filename}",
             file=sys.stderr,
         )
 
-    def write_executor_instructions(self) -> None:
+    def write_executor_instructions(
+        self, executor_filename: str, emit_line_directives: bool
+    ) -> None:
         """Generate cases for the Tier 2 interpreter."""
-        with open(self.executor_filename, "w") as f:
-            self.out = Formatter(f, 8, self.emit_line_directives)
+        with open(executor_filename, "w") as f:
+            self.out = Formatter(f, 8, emit_line_directives)
             self.write_provenance_header()
             for thing in self.everything:
                 match thing:
@@ -632,7 +616,7 @@ class Generator(Analyzer):
                     case _:
                         typing.assert_never(thing)
         print(
-            f"Wrote some stuff to {self.executor_filename}",
+            f"Wrote some stuff to {executor_filename}",
             file=sys.stderr,
         )
 
@@ -729,19 +713,17 @@ def main():
         args.input.append(DEFAULT_INPUT)
 
     # Raises OSError if input unreadable
-    a = Generator(
-        args.input, args.output, args.metadata, args.pymetadata, args.executor_cases
-    )
+    a = Generator(args.input)
 
-    if args.emit_line_directives:
-        a.emit_line_directives = True
     a.parse()  # Raises SyntaxError on failure
     a.analyze()  # Prints messages and sets a.errors on failure
     if a.errors:
         sys.exit(f"Found {a.errors} errors")
-    a.write_instructions()  # Raises OSError if output can't be written
-    a.write_metadata()
-    a.write_executor_instructions()
+
+    # These raise OSError if output can't be written
+    a.write_instructions(args.output, args.emit_line_directives)
+    a.write_metadata(args.metadata, args.pymetadata)
+    a.write_executor_instructions(args.executor_cases, args.emit_line_directives)
 
 
 if __name__ == "__main__":
