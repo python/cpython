@@ -83,7 +83,9 @@ Important deprecations, removals or restrictions:
 
 * :pep:`623`: Remove wstr from Unicode
 
-* :pep:`632`: Remove the ``distutils`` package
+* :pep:`632`: Remove the ``distutils`` package. See
+  `the migration guide <https://peps.python.org/pep-0632/#migration-advice>`_
+  for advice on its replacement.
 
 Improved Error Messages
 =======================
