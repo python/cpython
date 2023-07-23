@@ -3791,7 +3791,7 @@ tzinfo_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
     PyObject *args, *state;
     PyObject *getinitargs;
 
-    if (_PyObject_LookupAttr(self, &_Py_ID(__getinitargs__), &getinitargs) < 0) {
+    if (PyObject_GetOptionalAttr(self, &_Py_ID(__getinitargs__), &getinitargs) < 0) {
         return NULL;
     }
     if (getinitargs != NULL) {

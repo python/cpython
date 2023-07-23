@@ -108,7 +108,7 @@ _Py_EnsureFuncTstateNotNULL(const char *func, PyThreadState *tstate)
 
    The caller must hold the GIL.
 
-   See also _PyInterpreterState_Get()
+   See also PyInterpreterState_Get()
    and _PyGILState_GetInterpreterStateUnsafe(). */
 static inline PyInterpreterState* _PyInterpreterState_GET(void) {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -123,15 +123,24 @@ static inline PyInterpreterState* _PyInterpreterState_GET(void) {
 
 PyAPI_FUNC(PyThreadState *) _PyThreadState_New(PyInterpreterState *interp);
 PyAPI_FUNC(void) _PyThreadState_Bind(PyThreadState *tstate);
-// We keep this around exclusively for stable ABI compatibility.
-PyAPI_FUNC(void) _PyThreadState_Init(
-    PyThreadState *tstate);
 PyAPI_FUNC(void) _PyThreadState_DeleteExcept(PyThreadState *tstate);
 
 extern void _PyThreadState_InitDetached(PyThreadState *, PyInterpreterState *);
 extern void _PyThreadState_ClearDetached(PyThreadState *);
 extern void _PyThreadState_BindDetached(PyThreadState *);
 extern void _PyThreadState_UnbindDetached(PyThreadState *);
+
+PyAPI_FUNC(PyObject*) _PyThreadState_GetDict(PyThreadState *tstate);
+
+/* The implementation of sys._current_frames()  Returns a dict mapping
+   thread id to that thread's current frame.
+*/
+extern PyObject* _PyThread_CurrentFrames(void);
+
+/* The implementation of sys._current_exceptions()  Returns a dict mapping
+   thread id to that thread's current exception.
+*/
+extern PyObject* _PyThread_CurrentExceptions(void);
 
 
 /* Other */
@@ -160,6 +169,10 @@ PyAPI_FUNC(int) _PyOS_InterruptOccurred(PyThreadState *tstate);
     PyThread_acquire_lock((runtime)->interpreters.mutex, WAIT_LOCK)
 #define HEAD_UNLOCK(runtime) \
     PyThread_release_lock((runtime)->interpreters.mutex)
+
+// Get the configuration of the current interpreter.
+// The caller must hold the GIL.
+PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 
 
 #ifdef __cplusplus

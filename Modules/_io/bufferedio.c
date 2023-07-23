@@ -7,10 +7,11 @@
     Written by Amaury Forgeot d'Arc and Antoine Pitrou
 */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_object.h"
+#include "pycore_pyerrors.h"      // _Py_FatalErrorFormat()
+#include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "structmember.h"         // PyMemberDef
 #include "_iomodule.h"
 
@@ -293,7 +294,7 @@ _enter_buffered_busy(buffered *self)
                      "reentrant call inside %R", self);
         return 0;
     }
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     relax_locking = _Py_IsInterpreterFinalizing(interp);
     Py_BEGIN_ALLOW_THREADS
     if (!relax_locking)
@@ -1462,7 +1463,7 @@ buffered_repr(buffered *self)
 {
     PyObject *nameobj, *res;
 
-    if (_PyObject_LookupAttr((PyObject *) self, &_Py_ID(name), &nameobj) < 0) {
+    if (PyObject_GetOptionalAttr((PyObject *) self, &_Py_ID(name), &nameobj) < 0) {
         if (!PyErr_ExceptionMatches(PyExc_ValueError)) {
             return NULL;
         }
@@ -1629,7 +1630,7 @@ _bufferedreader_read_all(buffered *self)
     }
     _bufferedreader_reset_buf(self);
 
-    if (_PyObject_LookupAttr(self->raw, &_Py_ID(readall), &readall) < 0) {
+    if (PyObject_GetOptionalAttr(self->raw, &_Py_ID(readall), &readall) < 0) {
         goto cleanup;
     }
     if (readall) {

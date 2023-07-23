@@ -57,8 +57,6 @@
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_DigitValue
 #include "pycore_strhex.h"        // _Py_strhex_bytes_with_sep()

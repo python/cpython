@@ -2,10 +2,12 @@
 
 #include "Python.h"
 
+#include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
+#include "pycore_codecs.h"        // _PyCodec_Lookup()
 #include "pycore_context.h"       // _PyContext_Init()
-#include "pycore_exceptions.h"    // _PyExc_InitTypes()
 #include "pycore_dict.h"          // _PyDict_Fini()
+#include "pycore_exceptions.h"    // _PyExc_InitTypes()
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
 #include "pycore_floatobject.h"   // _PyFloat_InitTypes()
 #include "pycore_genobject.h"     // _PyAsyncGen_Fini()
@@ -22,6 +24,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
+#include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_sliceobject.h"   // _PySlice_Fini()
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
@@ -1179,6 +1182,23 @@ init_interp_main(PyThreadState *tstate)
 #ifndef MS_WINDOWS
         emit_stderr_warning_for_legacy_locale(interp->runtime);
 #endif
+    }
+
+    // Turn on experimental tier 2 (uops-based) optimizer
+    if (is_main_interp) {
+        char *envvar = Py_GETENV("PYTHONUOPS");
+        int enabled = envvar != NULL && *envvar > '0';
+        if (_Py_get_xoption(&config->xoptions, L"uops") != NULL) {
+            enabled = 1;
+        }
+        if (enabled) {
+            PyObject *opt = PyUnstable_Optimizer_NewUOpOptimizer();
+            if (opt == NULL) {
+                return _PyStatus_ERR("can't initialize optimizer");
+            }
+            PyUnstable_SetOptimizer((_PyOptimizerObject *)opt);
+            Py_DECREF(opt);
+        }
     }
 
     assert(!_PyErr_Occurred(tstate));

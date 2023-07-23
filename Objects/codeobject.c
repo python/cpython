@@ -8,6 +8,7 @@
 #include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
 #include "pycore_opcode.h"        // _PyOpcode_Deopt
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "clinic/codeobject.c.h"
 
@@ -2035,6 +2036,7 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
                     co_code, co_filename, co_name, co_argcount,
                     co_posonlyargcount, co_kwonlyargcount, co_nlocals,
                     co_stacksize, co_flags) < 0) {
+        Py_XDECREF(code);
         return NULL;
     }
 

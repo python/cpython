@@ -22,12 +22,11 @@
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #include "pycore_hashtable.h"
-#include "hashlib.h"
+#include "pycore_pyhash.h"        // _Py_HashBytes()
 #include "pycore_strhex.h"        // _Py_strhex()
+#include "hashlib.h"
 
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
@@ -2191,7 +2190,6 @@ hashlib_init_constructors(PyObject *module)
      */
     PyModuleDef *mdef;
     PyMethodDef *fdef;
-    PyObject *proxy;
     PyObject *func, *name_obj;
     _hashlibstate *state = get_hashlib_state(module);
 
@@ -2226,17 +2224,8 @@ hashlib_init_constructors(PyObject *module)
         }
     }
 
-    proxy = PyDictProxy_New(state->constructs);
-    if (proxy == NULL) {
-        return -1;
-    }
-
-    int rc = PyModule_AddObjectRef(module, "_constructors", proxy);
-    Py_DECREF(proxy);
-    if (rc < 0) {
-        return -1;
-    }
-    return 0;
+    return PyModule_Add(module, "_constructors",
+                        PyDictProxy_New(state->constructs));
 }
 
 static int

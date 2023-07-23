@@ -1104,7 +1104,7 @@ thread_run(void *boot_raw)
 static PyObject *
 thread_daemon_threads_allowed(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->feature_flags & Py_RTFLAGS_DAEMON_THREADS) {
         Py_RETURN_TRUE;
     }
@@ -1438,7 +1438,7 @@ thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
 
     PyObject *name = NULL;
     if (thread != Py_None) {
-        if (_PyObject_LookupAttr(thread, &_Py_ID(name), &name) < 0) {
+        if (PyObject_GetOptionalAttr(thread, &_Py_ID(name), &name) < 0) {
             return -1;
         }
     }
@@ -1671,8 +1671,8 @@ thread_module_exec(PyObject *module)
     // Round towards minus infinity
     timeout_max = floor(timeout_max);
 
-    if (PyModule_AddObject(module, "TIMEOUT_MAX",
-                           PyFloat_FromDouble(timeout_max)) < 0) {
+    if (PyModule_Add(module, "TIMEOUT_MAX",
+                        PyFloat_FromDouble(timeout_max)) < 0) {
         return -1;
     }
 

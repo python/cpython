@@ -2656,6 +2656,9 @@ yes)
 esac
 
 case "$CC" in
+*mpicc*)
+    CFLAGS_NODIST="$CFLAGS_NODIST"
+    ;;
 *icc*)
     # ICC needs -fp-model strict or floats behave badly
     CFLAGS_NODIST="$CFLAGS_NODIST -fp-model strict"
@@ -6643,7 +6646,6 @@ SRCDIRS="\
   Modules/_hacl \
   Modules/_io \
   Modules/_multiprocessing \
-  Modules/_sha3 \
   Modules/_sqlite \
   Modules/_sre \
   Modules/_testcapi \

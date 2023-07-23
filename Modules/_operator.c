@@ -1,7 +1,9 @@
 #include "Python.h"
+#include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "structmember.h"         // PyMemberDef
 #include "pycore_runtime.h"       // _Py_ID()
+
+#include "structmember.h"         // PyMemberDef
 #include "clinic/_operator.c.h"
 
 typedef struct {
