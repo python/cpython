@@ -106,7 +106,7 @@ Operating System Utilities
 .. c:function:: PyOS_sighandler_t PyOS_getsig(int i)
 
    Return the current signal handler for signal *i*.  This is a thin wrapper around
-   either :c:func:`sigaction` or :c:func:`signal`.  Do not call those functions
+   either :c:func:`!sigaction` or :c:func:`!signal`.  Do not call those functions
    directly! :c:type:`PyOS_sighandler_t` is a typedef alias for :c:expr:`void
    (\*)(int)`.
 
@@ -114,7 +114,7 @@ Operating System Utilities
 .. c:function:: PyOS_sighandler_t PyOS_setsig(int i, PyOS_sighandler_t h)
 
    Set the signal handler for signal *i* to be *h*; return the old signal handler.
-   This is a thin wrapper around either :c:func:`sigaction` or :c:func:`signal`.  Do
+   This is a thin wrapper around either :c:func:`!sigaction` or :c:func:`!signal`.  Do
    not call those functions directly!  :c:type:`PyOS_sighandler_t` is a typedef
    alias for :c:expr:`void (\*)(int)`.
 
