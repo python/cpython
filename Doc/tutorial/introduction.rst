@@ -139,7 +139,7 @@ and uses the ``j`` or ``J`` suffix to indicate the imaginary part
 .. _tut-strings:
 
 Text
--------
+----
 
 Python can manipulate text (represented by type :class:`str`, so called
 "strings") as well as numbers.  This includes characters "``!``", words
