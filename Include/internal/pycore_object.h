@@ -14,6 +14,27 @@ extern "C" {
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_runtime.h"       // _PyRuntime
 
+/* Check if an object is consistent. For example, ensure that the reference
+   counter is greater than or equal to 1, and ensure that ob_type is not NULL.
+
+   Call _PyObject_AssertFailed() if the object is inconsistent.
+
+   If check_content is zero, only check header fields: reduce the overhead.
+
+   The function always return 1. The return value is just here to be able to
+   write:
+
+   assert(_PyObject_CheckConsistency(obj, 1)); */
+extern int _PyObject_CheckConsistency(PyObject *op, int check_content);
+
+extern void _PyDebugAllocatorStats(FILE *out, const char *block_name,
+                                   int num_blocks, size_t sizeof_block);
+
+extern void _PyObject_DebugTypeStats(FILE *out);
+
+// Export for shared _testinternalcapi extension
+PyAPI_DATA(int) _PyObject_IsFreed(PyObject *);
+
 /* We need to maintain an internal copy of Py{Var}Object_HEAD_INIT to avoid
    designated initializer conflicts in C++20. If we use the deinition in
    object.h, we will be mixing designated and non-designated initializers in
@@ -75,6 +96,21 @@ static inline void _Py_SetImmortal(PyObject *op)
     }
 }
 #define _Py_SetImmortal(op) _Py_SetImmortal(_PyObject_CAST(op))
+
+/* _Py_ClearImmortal() should only be used during runtime finalization. */
+static inline void _Py_ClearImmortal(PyObject *op)
+{
+    if (op) {
+        assert(op->ob_refcnt == _Py_IMMORTAL_REFCNT);
+        op->ob_refcnt = 1;
+        Py_DECREF(op);
+    }
+}
+#define _Py_ClearImmortal(op) \
+    do { \
+        _Py_ClearImmortal(_PyObject_CAST(op)); \
+        op = NULL; \
+    } while (0)
 
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
@@ -311,9 +347,9 @@ _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(PyObject *op)
 static inline int
 _PyObject_IS_GC(PyObject *obj)
 {
-    return (PyType_IS_GC(Py_TYPE(obj))
-            && (Py_TYPE(obj)->tp_is_gc == NULL
-                || Py_TYPE(obj)->tp_is_gc(obj)));
+    PyTypeObject *type = Py_TYPE(obj);
+    return (PyType_IS_GC(type)
+            && (type->tp_is_gc == NULL || type->tp_is_gc(obj)));
 }
 
 // Fast inlined version of PyType_IS_GC()
@@ -340,8 +376,10 @@ static inline int _PyType_SUPPORTS_WEAKREFS(PyTypeObject *type) {
 }
 
 extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
+PyObject *_PyType_NewManagedObject(PyTypeObject *type);
 
 extern int _PyObject_InitializeDict(PyObject *obj);
+int _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp);
 extern int _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
                                           PyObject *name, PyObject *value);
 PyObject * _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
@@ -420,6 +458,13 @@ extern PyObject* _PyCFunctionWithKeywords_TrampolineCall(
 #define _PyCFunctionWithKeywords_TrampolineCall(meth, self, args, kw) \
     (meth)((self), (args), (kw))
 #endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
+
+// _pickle shared extension uses _PyNone_Type and _PyNotImplemented_Type
+PyAPI_DATA(PyTypeObject) _PyNone_Type;
+PyAPI_DATA(PyTypeObject) _PyNotImplemented_Type;
+
+/* Maps Py_LT to Py_GT, ..., Py_GE to Py_LE.  Defined in Objects/object.c. */
+PyAPI_DATA(int) _Py_SwappedOp[];
 
 #ifdef __cplusplus
 }

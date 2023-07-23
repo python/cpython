@@ -2,6 +2,7 @@
 /* Method object implementation */
 
 #include "Python.h"
+#include "pycore_call.h"          // _Py_CheckFunctionResult()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"

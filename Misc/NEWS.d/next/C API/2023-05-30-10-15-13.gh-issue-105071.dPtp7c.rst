@@ -1,0 +1,1 @@
+Add ``PyUnstable_Exc_PrepReraiseStar`` to the unstable C api to expose the implementation of :keyword:`except* <except_star>`.

@@ -8,13 +8,8 @@
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
 #include "structmember.h"
 
-/* ABCs */
-extern PyTypeObject PyIOBase_Type;
-extern PyTypeObject PyRawIOBase_Type;
-extern PyTypeObject PyBufferedIOBase_Type;
-extern PyTypeObject PyTextIOBase_Type;
-
 /* Type specs */
+extern PyType_Spec bufferediobase_spec;
 extern PyType_Spec bufferedrandom_spec;
 extern PyType_Spec bufferedreader_spec;
 extern PyType_Spec bufferedrwpair_spec;
@@ -22,8 +17,11 @@ extern PyType_Spec bufferedwriter_spec;
 extern PyType_Spec bytesio_spec;
 extern PyType_Spec bytesiobuf_spec;
 extern PyType_Spec fileio_spec;
+extern PyType_Spec iobase_spec;
 extern PyType_Spec nldecoder_spec;
+extern PyType_Spec rawiobase_spec;
 extern PyType_Spec stringio_spec;
+extern PyType_Spec textiobase_spec;
 extern PyType_Spec textiowrapper_spec;
 
 #ifdef HAVE_WINDOWS_CONSOLE_IO
@@ -168,9 +166,6 @@ struct _io_state {
 #endif
 };
 
-#define IO_MOD_STATE(mod) ((_PyIO_State *)PyModule_GetState(mod))
-#define IO_STATE() _PyIO_get_module_state()
-
 static inline _PyIO_State *
 get_io_state(PyObject *module)
 {
@@ -195,7 +190,7 @@ find_io_state_by_def(PyTypeObject *type)
     return get_io_state(mod);
 }
 
-extern _PyIO_State *_PyIO_get_module_state(void);
+extern PyObject *_PyIOBase_cannot_pickle(PyObject *self, PyObject *args);
 
 #ifdef HAVE_WINDOWS_CONSOLE_IO
 extern char _PyIO_get_console_type(PyObject *);

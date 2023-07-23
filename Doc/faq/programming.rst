@@ -924,12 +924,12 @@ module::
    'Hello, there!'
 
    >>> import array
-   >>> a = array.array('u', s)
+   >>> a = array.array('w', s)
    >>> print(a)
-   array('u', 'Hello, world')
+   array('w', 'Hello, world')
    >>> a[0] = 'y'
    >>> print(a)
-   array('u', 'yello, world')
+   array('w', 'yello, world')
    >>> a.tounicode()
    'yello, world'
 

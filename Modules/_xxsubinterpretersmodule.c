@@ -1,15 +1,13 @@
-
 /* interpreters module */
 /* low-level access to interpreter primitives */
+
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
 #include "Python.h"
-// XXX This module should not rely on internal API.
-#include "pycore_frame.h"
-#include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_interpreteridobject.h"
+#include "pycore_interp.h"        // _PyInterpreterState_GetMainModule()
+#include "pycore_interp_id.h"     // _PyInterpreterState_GetIDObject()
 
 
 #define MODULE_NAME "_xxsubinterpreters"
@@ -275,7 +273,7 @@ _sharedexception_bind(PyObject *exc, _sharedexception *sharedexc)
     assert(exc != NULL);
     const char *failure = NULL;
 
-    PyObject *nameobj = PyUnicode_FromFormat("%S", Py_TYPE(exc));
+    PyObject *nameobj = PyUnicode_FromString(Py_TYPE(exc)->tp_name);
     if (nameobj == NULL) {
         failure = "unable to format exception type name";
         goto error;
@@ -376,7 +374,7 @@ _is_running(PyInterpreterState *interp)
     }
 
     assert(!PyErr_Occurred());
-    _PyInterpreterFrame *frame = tstate->cframe->current_frame;
+    struct _PyInterpreterFrame *frame = tstate->cframe->current_frame;
     if (frame == NULL) {
         return 0;
     }
@@ -512,7 +510,7 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Create and initialize the new interpreter.
-    PyThreadState *save_tstate = _PyThreadState_GET();
+    PyThreadState *save_tstate = PyThreadState_Get();
     assert(save_tstate != NULL);
     const PyInterpreterConfig config = isolated
         ? (PyInterpreterConfig)_PyInterpreterConfig_INIT

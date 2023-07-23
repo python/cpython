@@ -1449,7 +1449,7 @@ class SizeofTest(unittest.TestCase):
         check(x, size('3Pi3c7P2ic??2P'))
         # function
         def func(): pass
-        check(func, size('14Pi'))
+        check(func, size('15Pi'))
         class c():
             @staticmethod
             def foo():
@@ -1557,7 +1557,7 @@ class SizeofTest(unittest.TestCase):
                   '10P'                 # PySequenceMethods
                   '2P'                  # PyBufferProcs
                   '6P'
-                  '1PI'                 # Specializer cache
+                  '1PIP'                 # Specializer cache
                   )
         class newstyleclass(object): pass
         # Separate block for PyDictKeysObject with 8 keys and 5 entries

@@ -105,7 +105,6 @@ Local naming conventions:
 # pragma weak inet_aton
 #endif
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_moduleobject.h"  // _PyModule_GetState
@@ -1339,8 +1338,6 @@ setbdaddr(const char *name, bdaddr_t *bdaddr)
 static PyObject *
 makebdaddr(bdaddr_t *bdaddr)
 {
-    char buf[(6 * 2) + 5 + 1];
-
 #ifdef MS_WINDOWS
     int i;
     unsigned int octets[6];
@@ -1349,16 +1346,14 @@ makebdaddr(bdaddr_t *bdaddr)
         octets[i] = ((*bdaddr) >> (8 * i)) & 0xFF;
     }
 
-    sprintf(buf, "%02X:%02X:%02X:%02X:%02X:%02X",
+    return PyUnicode_FromFormat("%02X:%02X:%02X:%02X:%02X:%02X",
         octets[5], octets[4], octets[3],
         octets[2], octets[1], octets[0]);
 #else
-    sprintf(buf, "%02X:%02X:%02X:%02X:%02X:%02X",
+    return PyUnicode_FromFormat("%02X:%02X:%02X:%02X:%02X:%02X",
         bdaddr->b[5], bdaddr->b[4], bdaddr->b[3],
         bdaddr->b[2], bdaddr->b[1], bdaddr->b[0]);
 #endif
-
-    return PyUnicode_FromString(buf);
 }
 #endif
 
@@ -1721,9 +1716,6 @@ idna_converter(PyObject *obj, struct maybe_idna *data)
         len = PyByteArray_Size(obj);
     }
     else if (PyUnicode_Check(obj)) {
-        if (PyUnicode_READY(obj) == -1) {
-            return 0;
-        }
         if (PyUnicode_IS_COMPACT_ASCII(obj)) {
             data->buf = PyUnicode_DATA(obj);
             len = PyUnicode_GET_LENGTH(obj);
@@ -7445,9 +7437,7 @@ socket_exec(PyObject *m)
         sock_free_api(capi);
         goto error;
     }
-    int rc = PyModule_AddObjectRef(m, PySocket_CAPI_NAME, capsule);
-    Py_DECREF(capsule);
-    if (rc < 0) {
+    if (PyModule_Add(m, PySocket_CAPI_NAME, capsule) < 0) {
         goto error;
     }
 
@@ -8838,13 +8828,7 @@ socket_exec(PyObject *m)
         };
         int i;
         for (i = 0; i < Py_ARRAY_LENGTH(codes); ++i) {
-            PyObject *tmp = PyLong_FromUnsignedLong(codes[i]);
-            if (tmp == NULL) {
-                goto error;
-            }
-            int rc = PyModule_AddObjectRef(m, names[i], tmp);
-            Py_DECREF(tmp);
-            if (rc < 0) {
+            if (PyModule_Add(m, names[i], PyLong_FromUnsignedLong(codes[i])) < 0) {
                 goto error;
             }
         }

@@ -81,6 +81,9 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
                 self._stdin_closed.set_result(None)
             else:
                 self._stdin_closed.set_exception(exc)
+                # Since calling `wait_closed()` is not mandatory,
+                # we shouldn't log the traceback if this is not awaited.
+                self._stdin_closed._log_traceback = False
             return
         if fd == 1:
             reader = self.stdout

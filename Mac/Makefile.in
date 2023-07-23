@@ -63,7 +63,6 @@ installunixtools:
 	fi
 	cd "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" && \
 	for fn in \
-			2to3 \
 			idle3 \
 			pydoc3 \
 			python3 \
@@ -123,7 +122,6 @@ altinstallunixtools:
 	fi
 	cd "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" && \
 	for fn in \
-			2to3-$(VERSION) \
 			idle$(VERSION) \
 			pydoc$(VERSION) \
 			python$(VERSION) \

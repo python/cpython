@@ -57,8 +57,6 @@
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_DigitValue
 #include "pycore_strhex.h"        // _Py_strhex_bytes_with_sep()
@@ -170,8 +168,6 @@ ascii_buffer_converter(PyObject *arg, Py_buffer *buf)
         return 1;
     }
     if (PyUnicode_Check(arg)) {
-        if (PyUnicode_READY(arg) < 0)
-            return 0;
         if (!PyUnicode_IS_ASCII(arg)) {
             PyErr_SetString(PyExc_ValueError,
                             "string argument should contain only ASCII characters");

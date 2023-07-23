@@ -6,7 +6,6 @@
     Written by Steve Dower
 */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
@@ -1096,7 +1095,7 @@ _io__WindowsConsoleIO_isatty_impl(winconsoleio *self)
     Py_RETURN_TRUE;
 }
 
-#define clinic_state() (IO_STATE())
+#define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
 #include "clinic/winconsoleio.c.h"
 #undef clinic_state
 

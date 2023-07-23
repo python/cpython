@@ -661,8 +661,11 @@ heapctypesubclasswithfinalizer_finalize(PyObject *self)
         goto cleanup_finalize;
     }
     oldtype = PyObject_GetAttrString(m, "HeapCTypeSubclassWithFinalizer");
+    if (oldtype == NULL) {
+        goto cleanup_finalize;
+    }
     newtype = PyObject_GetAttrString(m, "HeapCTypeSubclass");
-    if (oldtype == NULL || newtype == NULL) {
+    if (newtype == NULL) {
         goto cleanup_finalize;
     }
 
@@ -739,6 +742,12 @@ static PyType_Spec HeapCTypeMetaclassCustomNew_spec = {
     sizeof(PyMemberDef),
     Py_TPFLAGS_DEFAULT,
     HeapCTypeMetaclassCustomNew_slots
+};
+
+static PyType_Spec HeapCTypeMetaclassNullNew_spec = {
+    .name = "_testcapi.HeapCTypeMetaclassNullNew",
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .slots = empty_type_slots
 };
 
 
@@ -1227,6 +1236,13 @@ _PyTestCapi_Init_Heaptype(PyObject *m) {
         return -1;
     }
     PyModule_AddObject(m, "HeapCTypeMetaclassCustomNew", HeapCTypeMetaclassCustomNew);
+
+    PyObject *HeapCTypeMetaclassNullNew = PyType_FromMetaclass(
+        &PyType_Type, m, &HeapCTypeMetaclassNullNew_spec, (PyObject *) &PyType_Type);
+    if (HeapCTypeMetaclassNullNew == NULL) {
+        return -1;
+    }
+    PyModule_AddObject(m, "HeapCTypeMetaclassNullNew", HeapCTypeMetaclassNullNew);
 
     PyObject *HeapCCollection = PyType_FromMetaclass(
         NULL, m, &HeapCCollection_spec, NULL);
