@@ -158,6 +158,18 @@ extern int _Py_HandlePending(PyThreadState *tstate);
 
 extern PyObject * _PyEval_GetFrameLocals(void);
 
+extern const binaryfunc _PyEval_BinaryOps[];
+int _PyEval_CheckExceptStarTypeValid(PyThreadState *tstate, PyObject* right);
+int _PyEval_CheckExceptTypeValid(PyThreadState *tstate, PyObject* right);
+int _PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type, PyObject **match, PyObject **rest);
+void _PyEval_FormatAwaitableError(PyThreadState *tstate, PyTypeObject *type, int oparg);
+void _PyEval_FormatExcCheckArg(PyThreadState *tstate, PyObject *exc, const char *format_str, PyObject *obj);
+void _PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *co, int oparg);
+void _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwargs);
+PyObject *_PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t nargs, PyObject *kwargs);
+PyObject *_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys);
+int _PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v, int argcnt, int argcntafter, PyObject **sp);
+
 
 #ifdef __cplusplus
 }

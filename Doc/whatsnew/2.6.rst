@@ -1138,11 +1138,11 @@ indicate that the external caller is done.
 The *flags* argument to :c:func:`PyObject_GetBuffer` specifies
 constraints upon the memory returned.  Some examples are:
 
- * :const:`PyBUF_WRITABLE` indicates that the memory must be writable.
+ * :c:macro:`PyBUF_WRITABLE` indicates that the memory must be writable.
 
- * :const:`PyBUF_LOCK` requests a read-only or exclusive lock on the memory.
+ * :c:macro:`PyBUF_LOCK` requests a read-only or exclusive lock on the memory.
 
- * :const:`PyBUF_C_CONTIGUOUS` and :const:`PyBUF_F_CONTIGUOUS`
+ * :c:macro:`PyBUF_C_CONTIGUOUS` and :c:macro:`PyBUF_F_CONTIGUOUS`
    requests a C-contiguous (last dimension varies the fastest) or
    Fortran-contiguous (first dimension varies the fastest) array layout.
 

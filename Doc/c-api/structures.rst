@@ -179,7 +179,7 @@ Implementing functions and methods
 .. c:type:: PyCFunctionWithKeywords
 
    Type of the functions used to implement Python callables in C
-   with signature :const:`METH_VARARGS | METH_KEYWORDS`.
+   with signature :ref:`METH_VARARGS | METH_KEYWORDS <METH_VARARGS-METH_KEYWORDS>`.
    The function signature is::
 
       PyObject *PyCFunctionWithKeywords(PyObject *self,
@@ -190,7 +190,7 @@ Implementing functions and methods
 .. c:type:: _PyCFunctionFast
 
    Type of the functions used to implement Python callables in C
-   with signature :const:`METH_FASTCALL`.
+   with signature :c:macro:`METH_FASTCALL`.
    The function signature is::
 
       PyObject *_PyCFunctionFast(PyObject *self,
@@ -200,7 +200,7 @@ Implementing functions and methods
 .. c:type:: _PyCFunctionFastWithKeywords
 
    Type of the functions used to implement Python callables in C
-   with signature :const:`METH_FASTCALL | METH_KEYWORDS`.
+   with signature :ref:`METH_FASTCALL | METH_KEYWORDS <METH_FASTCALL-METH_KEYWORDS>`.
    The function signature is::
 
       PyObject *_PyCFunctionFastWithKeywords(PyObject *self,
@@ -211,7 +211,7 @@ Implementing functions and methods
 .. c:type:: PyCMethod
 
    Type of the functions used to implement Python callables in C
-   with signature :const:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS`.
+   with signature :ref:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS <METH_METHOD-METH_FASTCALL-METH_KEYWORDS>`.
    The function signature is::
 
       PyObject *PyCMethod(PyObject *self,
@@ -257,7 +257,7 @@ convention.
 
 There are these calling conventions:
 
-.. data:: METH_VARARGS
+.. c:macro:: METH_VARARGS
 
    This is the typical calling convention, where the methods have the type
    :c:type:`PyCFunction`. The function expects two :c:expr:`PyObject*` values.
@@ -267,8 +267,17 @@ There are these calling conventions:
    using :c:func:`PyArg_ParseTuple` or :c:func:`PyArg_UnpackTuple`.
 
 
-.. data:: METH_VARARGS | METH_KEYWORDS
+.. c:macro:: METH_KEYWORDS
 
+   Can only be used in certain combinations with other flags:
+   :ref:`METH_VARARGS | METH_KEYWORDS <METH_VARARGS-METH_KEYWORDS>`,
+   :ref:`METH_FASTCALL | METH_KEYWORDS <METH_FASTCALL-METH_KEYWORDS>` and
+   :ref:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS <METH_METHOD-METH_FASTCALL-METH_KEYWORDS>`.
+
+
+.. _METH_VARARGS-METH_KEYWORDS:
+
+:c:expr:`METH_VARARGS | METH_KEYWORDS`
    Methods with these flags must be of type :c:type:`PyCFunctionWithKeywords`.
    The function expects three parameters: *self*, *args*, *kwargs* where
    *kwargs* is a dictionary of all the keyword arguments or possibly ``NULL``
@@ -276,7 +285,7 @@ There are these calling conventions:
    using :c:func:`PyArg_ParseTupleAndKeywords`.
 
 
-.. data:: METH_FASTCALL
+.. c:macro:: METH_FASTCALL
 
    Fast calling convention supporting only positional arguments.
    The methods have the type :c:type:`_PyCFunctionFast`.
@@ -291,9 +300,10 @@ There are these calling conventions:
       ``METH_FASTCALL`` is now part of the :ref:`stable ABI <stable-abi>`.
 
 
-.. data:: METH_FASTCALL | METH_KEYWORDS
+.. _METH_FASTCALL-METH_KEYWORDS:
 
-   Extension of :const:`METH_FASTCALL` supporting also keyword arguments,
+:c:expr:`METH_FASTCALL | METH_KEYWORDS`
+   Extension of :c:macro:`METH_FASTCALL` supporting also keyword arguments,
    with methods of type :c:type:`_PyCFunctionFastWithKeywords`.
    Keyword arguments are passed the same way as in the
    :ref:`vectorcall protocol <vectorcall>`:
@@ -306,10 +316,18 @@ There are these calling conventions:
    .. versionadded:: 3.7
 
 
-.. data:: METH_METHOD | METH_FASTCALL | METH_KEYWORDS
+.. c:macro:: METH_METHOD
 
-   Extension of :const:`METH_FASTCALL | METH_KEYWORDS` supporting the *defining
-   class*, that is, the class that contains the method in question.
+   Can only be used in the combination with other flags:
+   :ref:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS <METH_METHOD-METH_FASTCALL-METH_KEYWORDS>`.
+
+
+.. _METH_METHOD-METH_FASTCALL-METH_KEYWORDS:
+
+:c:expr:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS`
+   Extension of :ref:`METH_FASTCALL | METH_KEYWORDS <METH_FASTCALL-METH_KEYWORDS>`
+   supporting the *defining class*, that is,
+   the class that contains the method in question.
    The defining class might be a superclass of ``Py_TYPE(self)``.
 
    The method needs to be of type :c:type:`PyCMethod`, the same as for
@@ -319,10 +337,10 @@ There are these calling conventions:
    .. versionadded:: 3.9
 
 
-.. data:: METH_NOARGS
+.. c:macro:: METH_NOARGS
 
    Methods without parameters don't need to check whether arguments are given if
-   they are listed with the :const:`METH_NOARGS` flag.  They need to be of type
+   they are listed with the :c:macro:`METH_NOARGS` flag.  They need to be of type
    :c:type:`PyCFunction`.  The first parameter is typically named *self* and will
    hold a reference to the module or object instance.  In all cases the second
    parameter will be ``NULL``.
@@ -331,9 +349,9 @@ There are these calling conventions:
    :c:macro:`Py_UNUSED` can be used to prevent a compiler warning.
 
 
-.. data:: METH_O
+.. c:macro:: METH_O
 
-   Methods with a single object argument can be listed with the :const:`METH_O`
+   Methods with a single object argument can be listed with the :c:macro:`METH_O`
    flag, instead of invoking :c:func:`PyArg_ParseTuple` with a ``"O"`` argument.
    They have the type :c:type:`PyCFunction`, with the *self* parameter, and a
    :c:expr:`PyObject*` parameter representing the single argument.
@@ -345,7 +363,7 @@ defined for modules.  At most one of these flags may be set for any given
 method.
 
 
-.. data:: METH_CLASS
+.. c:macro:: METH_CLASS
 
    .. index:: pair: built-in function; classmethod
 
@@ -355,7 +373,7 @@ method.
    function.
 
 
-.. data:: METH_STATIC
+.. c:macro:: METH_STATIC
 
    .. index:: pair: built-in function; staticmethod
 
@@ -367,7 +385,7 @@ One other constant controls whether a method is loaded in place of another
 definition with the same method name.
 
 
-.. data:: METH_COEXIST
+.. c:macro:: METH_COEXIST
 
    The method will be loaded in place of existing definitions.  Without
    *METH_COEXIST*, the default is to skip repeated definitions.  Since slot
@@ -440,8 +458,8 @@ Accessing attributes of extension types
    The legacy offsets :c:member:`~PyTypeObject.tp_dictoffset` and
    :c:member:`~PyTypeObject.tp_weaklistoffset` can be defined similarly using
    ``"__dictoffset__"`` and ``"__weaklistoffset__"`` members, but extensions
-   are strongly encouraged to use :const:`Py_TPFLAGS_MANAGED_DICT` and
-   :const:`Py_TPFLAGS_MANAGED_WEAKREF` instead.
+   are strongly encouraged to use :c:macro:`Py_TPFLAGS_MANAGED_DICT` and
+   :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` instead.
 
    .. versionchanged:: 3.12
 
@@ -509,19 +527,19 @@ The following flags can be used with :c:member:`PyMemberDef.flags`:
 
 .. versionchanged:: 3.10
 
-   The :const:`!RESTRICTED`, :const:`!READ_RESTRICTED` and
-   :const:`!WRITE_RESTRICTED` macros available with
+   The :c:macro:`!RESTRICTED`, :c:macro:`!READ_RESTRICTED` and
+   :c:macro:`!WRITE_RESTRICTED` macros available with
    ``#include "structmember.h"`` are deprecated.
-   :const:`!READ_RESTRICTED` and :const:`!RESTRICTED` are equivalent to
-   :const:`Py_AUDIT_READ`; :const:`!WRITE_RESTRICTED` does nothing.
+   :c:macro:`!READ_RESTRICTED` and :c:macro:`!RESTRICTED` are equivalent to
+   :c:macro:`Py_AUDIT_READ`; :c:macro:`!WRITE_RESTRICTED` does nothing.
 
 .. index::
    single: READONLY
 
 .. versionchanged:: 3.12
 
-   The :const:`!READONLY` macro was renamed to :const:`Py_READONLY`.
-   The :const:`!PY_AUDIT_READ` macro was renamed with the ``Py_`` prefix.
+   The :c:macro:`!READONLY` macro was renamed to :c:macro:`Py_READONLY`.
+   The :c:macro:`!PY_AUDIT_READ` macro was renamed with the ``Py_`` prefix.
    The new names are now always available.
    Previously, these required ``#include "structmember.h"``.
    The header is still available and it provides the old names.

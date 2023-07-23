@@ -13,12 +13,20 @@ Argument Clinic How-To
 
   Argument Clinic is a preprocessor for CPython C files.
   Its purpose is to automate all the boilerplate involved
-  with writing argument parsing code for "builtins".
-  This document shows you how to convert your first C
-  function to work with Argument Clinic, and then introduces
-  some advanced topics on Argument Clinic usage.
+  with writing argument parsing code for "builtins",
+  module level functions, and class methods.
+  This document is divided in three major sections:
 
-  Currently Argument Clinic is considered internal-only
+  * :ref:`clinic-background` talks about the basic concepts and goals of
+    Argument Clinic.
+  * :ref:`clinic-tutorial` guides you through all the steps required to
+    adapt an existing C function to Argument Clinic.
+  * :ref:`clinic-howtos` details how to handle specific tasks.
+
+
+.. note::
+
+  Argument Clinic is considered internal-only
   for CPython.  Its use is not supported for files outside
   CPython, and no guarantees are made regarding backwards
   compatibility for future versions.  In other words: if you
@@ -28,8 +36,14 @@ Argument Clinic How-To
   of CPython *could* be totally incompatible and break all your code.
 
 
+.. _clinic-background:
+
+Background
+==========
+
+
 The goals of Argument Clinic
-============================
+----------------------------
 
 Argument Clinic's primary goal
 is to take over responsibility for all argument parsing code
@@ -80,7 +94,7 @@ things with all the information you give it.
 
 
 Basic concepts and usage
-========================
+------------------------
 
 Argument Clinic ships with CPython; you'll find it in ``Tools/clinic/clinic.py``.
 If you run that script, specifying a C file as an argument:
@@ -142,8 +156,10 @@ For the sake of clarity, here's the terminology we'll use with Argument Clinic:
   a block.)
 
 
-Converting your first function
-==============================
+.. _clinic-tutorial:
+
+Tutorial
+========
 
 The best way to get a sense of how Argument Clinic works is to
 convert a function to work with it.  Here, then, are the bare
@@ -559,6 +575,8 @@ Let's dive in!
 
     Congratulations, you've ported your first function to work with Argument Clinic!
 
+
+.. _clinic-howtos:
 
 How-to guides
 =============

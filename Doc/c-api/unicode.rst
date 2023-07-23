@@ -44,7 +44,7 @@ Python:
 
 .. c:type:: Py_UNICODE
 
-   This is a typedef of :c:expr:`wchar_t`, which is a 16-bit type or 32-bit type
+   This is a typedef of :c:type:`wchar_t`, which is a 16-bit type or 32-bit type
    depending on the platform.
 
    .. versionchanged:: 3.3
@@ -437,11 +437,11 @@ APIs:
    +----------+-----------------------------------------------------+
    | ``ll``   | :c:expr:`long long` or :c:expr:`unsigned long long` |
    +----------+-----------------------------------------------------+
-   | ``j``    | :c:expr:`intmax_t` or :c:expr:`uintmax_t`           |
+   | ``j``    | :c:type:`intmax_t` or :c:type:`uintmax_t`           |
    +----------+-----------------------------------------------------+
-   | ``z``    | :c:expr:`size_t` or :c:expr:`ssize_t`               |
+   | ``z``    | :c:type:`size_t` or :c:type:`ssize_t`               |
    +----------+-----------------------------------------------------+
-   | ``t``    | :c:expr:`ptrdiff_t`                                 |
+   | ``t``    | :c:type:`ptrdiff_t`                                 |
    +----------+-----------------------------------------------------+
 
    The length modifier ``l`` for following conversions ``s`` or ``V`` specify
@@ -520,7 +520,7 @@ APIs:
 
    .. note::
       The width formatter unit is number of characters rather than bytes.
-      The precision formatter unit is number of bytes or :c:expr:`wchar_t`
+      The precision formatter unit is number of bytes or :c:type:`wchar_t`
       items (if the length modifier ``l`` is used) for ``"%s"`` and
       ``"%V"`` (if the ``PyObject*`` argument is ``NULL``), and a number of
       characters for ``"%A"``, ``"%U"``, ``"%S"``, ``"%R"`` and ``"%V"``
@@ -839,11 +839,11 @@ conversion function:
 wchar_t Support
 """""""""""""""
 
-:c:expr:`wchar_t` support for platforms which support it:
+:c:type:`wchar_t` support for platforms which support it:
 
 .. c:function:: PyObject* PyUnicode_FromWideChar(const wchar_t *w, Py_ssize_t size)
 
-   Create a Unicode object from the :c:expr:`wchar_t` buffer *w* of the given *size*.
+   Create a Unicode object from the :c:type:`wchar_t` buffer *w* of the given *size*.
    Passing ``-1`` as the *size* indicates that the function must itself compute the length,
    using wcslen.
    Return ``NULL`` on failure.
@@ -851,9 +851,9 @@ wchar_t Support
 
 .. c:function:: Py_ssize_t PyUnicode_AsWideChar(PyObject *unicode, wchar_t *w, Py_ssize_t size)
 
-   Copy the Unicode object contents into the :c:expr:`wchar_t` buffer *w*.  At most
-   *size* :c:expr:`wchar_t` characters are copied (excluding a possibly trailing
-   null termination character).  Return the number of :c:expr:`wchar_t` characters
+   Copy the Unicode object contents into the :c:type:`wchar_t` buffer *w*.  At most
+   *size* :c:type:`wchar_t` characters are copied (excluding a possibly trailing
+   null termination character).  Return the number of :c:type:`wchar_t` characters
    copied or ``-1`` in case of an error.  Note that the resulting :c:expr:`wchar_t*`
    string may or may not be null-terminated.  It is the responsibility of the caller
    to make sure that the :c:expr:`wchar_t*` string is null-terminated in case this is
@@ -867,7 +867,7 @@ wchar_t Support
    Convert the Unicode object to a wide character string. The output string
    always ends with a null character. If *size* is not ``NULL``, write the number
    of wide characters (excluding the trailing null termination character) into
-   *\*size*. Note that the resulting :c:expr:`wchar_t` string might contain
+   *\*size*. Note that the resulting :c:type:`wchar_t` string might contain
    null characters, which would cause the string to be truncated when used with
    most C functions. If *size* is ``NULL`` and the :c:expr:`wchar_t*` string
    contains null characters a :exc:`ValueError` is raised.
@@ -1292,7 +1292,7 @@ the user settings on the machine running the codec.
 
    Encode the Unicode object using the specified code page and return a Python
    bytes object.  Return ``NULL`` if an exception was raised by the codec. Use
-   :c:data:`CP_ACP` code page to get the MBCS encoder.
+   :c:macro:`CP_ACP` code page to get the MBCS encoder.
 
    .. versionadded:: 3.3
 
@@ -1411,11 +1411,11 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    Rich compare two Unicode strings and return one of the following:
 
    * ``NULL`` in case an exception was raised
-   * :const:`Py_True` or :const:`Py_False` for successful comparisons
-   * :const:`Py_NotImplemented` in case the type combination is unknown
+   * :c:data:`Py_True` or :c:data:`Py_False` for successful comparisons
+   * :c:data:`Py_NotImplemented` in case the type combination is unknown
 
-   Possible values for *op* are :const:`Py_GT`, :const:`Py_GE`, :const:`Py_EQ`,
-   :const:`Py_NE`, :const:`Py_LT`, and :const:`Py_LE`.
+   Possible values for *op* are :c:macro:`Py_GT`, :c:macro:`Py_GE`, :c:macro:`Py_EQ`,
+   :c:macro:`Py_NE`, :c:macro:`Py_LT`, and :c:macro:`Py_LE`.
 
 
 .. c:function:: PyObject* PyUnicode_Format(PyObject *format, PyObject *args)

@@ -85,9 +85,15 @@ class CAPITest(unittest.TestCase):
 
     @support.requires_subprocess()
     def test_no_FatalError_infinite_loop(self):
-        run_result, _cmd_line = run_python_until_end(
-            '-c', 'import _testcapi; _testcapi.crash_no_current_thread()',
-        )
+        code = textwrap.dedent("""
+            import _testcapi
+            from test import support
+
+            with support.SuppressCrashReport():
+                _testcapi.crash_no_current_thread()
+        """)
+
+        run_result, _cmd_line = run_python_until_end('-c', code)
         _rc, out, err = run_result
         self.assertEqual(out, b'')
         # This used to cause an infinite loop.
@@ -2368,12 +2374,16 @@ def clear_executors(func):
 class TestOptimizerAPI(unittest.TestCase):
 
     def test_get_set_optimizer(self):
-        self.assertEqual(_testinternalcapi.get_optimizer(), None)
+        old = _testinternalcapi.get_optimizer()
         opt = _testinternalcapi.get_counter_optimizer()
-        _testinternalcapi.set_optimizer(opt)
-        self.assertEqual(_testinternalcapi.get_optimizer(), opt)
-        _testinternalcapi.set_optimizer(None)
-        self.assertEqual(_testinternalcapi.get_optimizer(), None)
+        try:
+            _testinternalcapi.set_optimizer(opt)
+            self.assertEqual(_testinternalcapi.get_optimizer(), opt)
+            _testinternalcapi.set_optimizer(None)
+            self.assertEqual(_testinternalcapi.get_optimizer(), None)
+        finally:
+            _testinternalcapi.set_optimizer(old)
+
 
     def test_counter_optimizer(self):
         # Generate a new function at each call
@@ -2426,7 +2436,7 @@ def get_first_executor(func):
     co_code = code.co_code
     JUMP_BACKWARD = opcode.opmap["JUMP_BACKWARD"]
     for i in range(0, len(co_code), 2):
-        if co_code[i] == JUMP_BACKWARD or 1:
+        if co_code[i] == JUMP_BACKWARD:
             try:
                 return _testinternalcapi.get_executor(code, i)
             except ValueError:
