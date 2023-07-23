@@ -168,10 +168,9 @@ Alternatively, we can use the other type of quotation marks::
    >>> '"Isn\'t," they said.'
    '"Isn\'t," they said.'
 
-In the interactive interpreter, the string definition and output string
-can look different.  The :func:`print` function produces a more
-readable output, by omitting the enclosing quotes and by printing escaped
-and special characters::
+In the Python shell, the string definition and output string can look
+different.  The :func:`print` function produces a more readable output, by
+omitting the enclosing quotes and by printing escaped and special characters::
 
    >>> s = 'First line.\nSecond line.'  # \n means newline
    >>> s  # without print(), special characters are included in the string
