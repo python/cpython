@@ -435,9 +435,9 @@ _dbm_dbm_clear_impl(dbmobject *self, PyTypeObject *cls)
             PyErr_SetString(state->dbm_error, "cannot delete item from database");
             return NULL;
         }
-    }
-    if (self->di_size > 0) {
-        self->di_size = 0;
+        if (self->di_size > 0) {
+            self->di_size--;
+        }
     }
     Py_RETURN_NONE;
 }
