@@ -234,7 +234,7 @@ pymain_import_readline(const PyConfig *config)
 static PyObject *
 dedent_utf8_bytes(PyObject *bytes)
 {
-    assert(bytes == NULL || !PyBytes_CheckExact(bytes->ob_type));
+    assert(bytes != NULL && PyBytes_CheckExact(bytes));
 
     Py_ssize_t nchars;
     char *start;
@@ -242,23 +242,23 @@ dedent_utf8_bytes(PyObject *bytes)
         return NULL;
     }
 
-    _PyBytesWriter writer;
-    _PyBytesWriter_Init(&writer);
-    char *p = _PyBytesWriter_Alloc(&writer, nchars);
+    char* p = PyMem_Malloc(nchars);
     if (p == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
 
-    int ret = _PyBytes_Dedent(start, nchars, &writer, &p);
-    if (ret < 0) {
-        return NULL;
-    }
+    int ret = _PyBytes_Dedent(start, nchars, p, &nchars);
+
     if (ret == 0) {
         Py_INCREF(bytes);
-        _PyBytesWriter_Dealloc(&writer);
+        PyMem_Free(p);
         return bytes;
     }
-    return _PyBytesWriter_Finish(&writer, p);
+
+    PyObject* new_bytes = PyBytes_FromStringAndSize(p, nchars);
+    PyMem_Free(p);
+    return new_bytes;
 }
 
 static int

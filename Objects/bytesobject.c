@@ -3564,41 +3564,37 @@ _PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
  * behavior is expected to match `textwrap.dedent`
  *
  * return value:
- * 0, no need to dedent, writer untouched
+ * 0, no need to dedent, `out_len` untouched
  * 1, success
- * -1, failure
  *
- * str is the beginning of the string to dedent.
- * expecting (str != NULL)
+ * `src` is the string to dedent.
+ * expecting `(src != NULL)`
  *
- * len is the length of the string to dedent.
- * expecting (len >= 0)
+ * `src_len` is the length of `src`.
  *
- * writer is a _PyBytesWriter object to write the dedented string.
- * expecting (writer != NULL)
+ * `out` is a buffer for the result.
+ * expecting `(out != NULL)`
  *
- * p points to a char* indicating the current position in the _PyBytesWriter.
- * It is updated to the new position after writing the dedented string on exit.
- * expecting (p != NULL && *p != NULL)
+ * `out_len` points to the length of `out`, and is updated to the length of the
+ * result upon success. Output buffer should be large enough to hold the result.
+ * expecting `(out_len != NULL && *out_len >= src_len)`
  */
 int
-_PyBytes_Dedent(const char *str, Py_ssize_t len, _PyBytesWriter *writer,
-                char **p)
-{
-    assert(str);
-    assert(p != NULL && *p != NULL);
-    assert(writer);
+_PyBytes_Dedent(const char *src, Py_ssize_t src_len, char *out,
+                Py_ssize_t *out_len) {
+    assert(src && out && out_len);
+    assert(*out_len >= src_len);
 
-    if (len <= 0)
+    if (src_len <= 0)
         return 0;
 
-    const char *end = str + len;
-    assert(str < end); // prevent overflow when len is too large
+    const char *end = src + src_len;
+    assert(src < end); // prevent overflow when src_len is too large
 
     const char *candidate_start = NULL;
     Py_ssize_t candidate_len = 0;
 
-    for (const char *iter = str; iter < end; ++iter) {
+    for (const char *iter = src; iter < end; ++iter) {
         const char *line_start = iter;
         const char *leading_whitespace_end = NULL;
 
@@ -3658,15 +3654,9 @@ _PyBytes_Dedent(const char *str, Py_ssize_t len, _PyBytesWriter *writer,
     }
 
     // trigger a dedent
+    char *out_start = out;
 
-    // prepare the writer
-    char *p_ = _PyBytesWriter_Prepare(writer, *p, len);
-    if (p_ == NULL) {
-        *p = NULL;
-        return -1;
-    }
-
-    for (const char *iter = str; iter < end; ++iter) {
+    for (const char *iter = src; iter < end; ++iter) {
         const char *line_start = iter;
         bool in_leading_space = true;
 
@@ -3683,7 +3673,7 @@ _PyBytes_Dedent(const char *str, Py_ssize_t len, _PyBytesWriter *writer,
 
         // if this line has all white space, write '\n'
         if (in_leading_space && append_newline) {
-            *p_++ = '\n';
+            *out++ = '\n';
             continue;
         }
 
@@ -3693,15 +3683,14 @@ _PyBytes_Dedent(const char *str, Py_ssize_t len, _PyBytesWriter *writer,
         Py_ssize_t new_line_len = iter - line_start - candidate_len;
         assert(new_line_len >= 0);
 
-        memcpy(p_, line_start + candidate_len, new_line_len);
+        memcpy(out, line_start + candidate_len, new_line_len);
 
-        p_ += new_line_len;
+        out += new_line_len;
 
         if (append_newline) {
-            *p_++ = '\n';
+            *out++ = '\n';
         }
     }
-
-    *p = p_;
+    *out_len = out - out_start;
     return 1;
 }
