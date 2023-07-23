@@ -430,6 +430,8 @@ _dbm_dbm_clear_impl(dbmobject *self, PyTypeObject *cls)
     assert(state != NULL);
     check_dbmobject_open(self, state->dbm_error);
     datum key;
+    // Invalidate cache
+    self->di_size = -1;
     while (1) {
         key = dbm_firstkey(self->di_dbm);
         if (key.dptr == NULL) {
@@ -439,9 +441,6 @@ _dbm_dbm_clear_impl(dbmobject *self, PyTypeObject *cls)
             dbm_clearerr(self->di_dbm);
             PyErr_SetString(state->dbm_error, "cannot delete item from database");
             return NULL;
-        }
-        if (self->di_size > 0) {
-            self->di_size--;
         }
     }
     Py_RETURN_NONE;
