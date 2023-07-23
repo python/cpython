@@ -376,7 +376,11 @@ static inline int _PyType_SUPPORTS_WEAKREFS(PyTypeObject *type) {
 }
 
 extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
-PyObject *_PyType_NewManagedObject(PyTypeObject *type);
+extern PyObject *_PyType_NewManagedObject(PyTypeObject *type);
+
+extern PyTypeObject* _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
+extern PyObject* _PyType_GetDocFromInternalDoc(const char *, const char *);
+extern PyObject* _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);
 
 extern int _PyObject_InitializeDict(PyObject *obj);
 int _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp);
@@ -431,6 +435,11 @@ extern void _PyObject_FreeInstanceAttributes(PyObject *obj);
 extern int _PyObject_IsInstanceDictEmpty(PyObject *);
 
 PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
+
+extern int _PyObject_IsAbstract(PyObject *);
+
+extern int _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
+extern PyObject* _PyObject_NextNotImplemented(PyObject *);
 
 /* C function call trampolines to mitigate bad function pointer casts.
  *
