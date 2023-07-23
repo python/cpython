@@ -479,23 +479,23 @@ First Steps Towards Programming
 ===============================
 
 We can use Python for more complex tasks than adding two and two together.
-For instance, we can compute some of initial numbers of the
-`Fibonacci series <https://en.wikipedia.org/wiki/Fibonacci_number>`_
-To do that we need to use four more concepts.¨
+For instance, we can compute the numbers of the
+`Fibonacci series <https://en.wikipedia.org/wiki/Fibonacci_number>`_.
+To do that we need to utilize three following concepts.
 
 Multiple Assignment
 -------------------
 
-A *multiple assignment* of variables allows to set values of multiple
-variables on a single line. Notice that if the value assignment is a
-expression, it is first evaluated and only after that it is assigned.::
+A *multiple assignment* of variables us allows to set values of more than one
+variable on a single line.  Notice that if the value assignment is a
+expression, it is first evaluated and then assigned.::
 
-   >>> a, b = 1, 5 # multiple assignment of two variables
+   >>> a, b = 1, 5  # multiple assignment of two variables
    >>> a
    0
    >>> b
    5
-   >>> a, b = b, a + b # first a is set to value of b, then b is set to sum of a and b
+   >>> a, b = b, a + b  # first a is set to value of b, then b is set to sum of a and b
    >>> a
    5
    >>> b
@@ -504,33 +504,46 @@ expression, it is first evaluated and only after that it is assigned.::
 Repeating our code
 ------------------
 
-The :keyword:`while` loop is example of a loop. It repeats a block of code
-as long as the condition (in example: ``a < 10``) remains true. The test
-used in the example is a simple comparison you might know from arithmetics.
-In Python, ``<`` stands for less than, ``>`` greater than, ``==``
-equal to, ``<=`` less than or equal to, ``>=`` greater than or equal to
-and ``!=`` not equal to.::
+The :keyword:`while` loop is example of a repeating cycle.  It performs
+a block of code over as long as the condition (in example: ``a < 10``) is
+fulfilled.  The test used in the example is a simple comparison you might
+know from arithmetics.  Fulfilled condition have the value True.  Unfulfilled
+condition have the value False.::
+
+   >>> 1 < 3  # 1 is less than 3
+   True
+   >>> 'king' == "king"  # the strings are equal
+   True
+   >>> 4 >= 6  # 4 is not greater than or equal to 6
+   False
+
+In Python, the following comparison operators are used:
+
+  * `<`: Less than
+  * `>`: Greater than
+  * `==`: Equal to
+  * `<=`: Less than or equal to
+  * `>=`: Greater than or equal to
+  * `!=`: Not equal to::
 
    >>> count = 0;  # define variable to which we will be adding 1 in a loop
-   >>> while count < 5: count = count + 1 # hit enter one more time to start the loop
+   >>> while count < 5: count = count + 1  # hit enter one more time to start the loop
    ...
-   >>> count # when count reached value of 5, while loop finished
+   >>> count  # when count reached value of 5, while loop finished
    5
 
 Note that block inside the while loop, or *body* of the loop is *indented*.
-Indentation is Python's way of grouping statements.  At the interactive
-prompt, you have to type a tab or space(s) for each indented line.
-In practice you will prepare more complex Python code with a text editor.
-Suitable text editors usually have an auto-indent functionality.  When
-we want to exit the indented block of code in the Python shell, we must
-follow it by a blank line to indicate completion (since the parser cannot
-guess when you have typed the last line).  Note that each line within a basic
-block must be indented by the same amount.::
+Indentation is Python's way of grouping statements together.  When you use
+the Python shell, you need to type a tab or space(s) for each indented line.
+Each line within a block must be indented by the same amount.
+When we want to exit the indented block of code in the Python shell, we must
+follow it by a blank line to indicate its completion.  This way, parser knows
+we have finished typing the last line).::
 
    >>> number = 1
    >>> while number < 5:
    ...     print(number)
-   ...     number = number + 1
+   ...     number = number + 1  # increase the value by one with each repetition
    ...
    1
    2
@@ -541,39 +554,40 @@ Function argumets
 -----------------
 
 We already know :func:`print` function, that writes the value of the
-argument(s) it is given on screen.  The arguments are specified inside
-parentheses ``()``. In simplest form, f.e. ``print(a, b)`` the arguments
-are positional.  That means function process them in same order we wrote
-them.::
+argument(s) it receives on screen.  The arguments are enclosed within
+parentheses ``()``. In simplest form, like ``print(a, b)`` the arguments
+are positional,  meaning the function processes them in the same order
+as they are written.::
 
    >>> group = "Knights"
    >>> say_what = '"Ni!"'
    >>> print(group, 'Who Say', say_what)
    Knights Who Say "Ni!"
 
-The keyword argument *end* can be used to avoid the newline after the output,
-or end the output with a different string::
+The `print()` function also offers a useful keyword argument called *end*,
+which can be used to avoid the newline after the output, or end the output
+with a different string::
 
    >>> count = 0
    >>> count = 10
    >>> while count > 5:
-   ...     print(count, end=' ')
-   ...     count = count - 1
+   ...     print(count, end=' ')  # end the output of print() with a whitespace
+   ...     count = count - 1  # lower the value by one with each repetition
    ...
    10 9 8 7 6
 
 Fibonacci series
 ----------------
 
-We now know all we need to write code that will print all numbers from the
-Fibonacci series! Let's check what nubers in it are lower than 1000.
+Great!  Now that we have the knowledge, let's write code to print all numbers
+from the Fibonacci series that are lower than 1000.
 
-     >>> a, b = 0, 1
-     >>> while a < 1000:
-     ...     print(a, end=', ')
-     ...     a, b = b, a+b
-     ...
-     0,1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,
+   >>> a, b = 0, 1
+   >>> while a < 1000:
+   ...      print(a, end=', ')
+   ...      a, b = b, a+b
+   ...
+   0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987,
 
 .. rubric:: Footnotes
 
