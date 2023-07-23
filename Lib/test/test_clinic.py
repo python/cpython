@@ -1448,6 +1448,14 @@ class ClinicExternalTest(TestCase):
                 generated = f.read()
             self.assertTrue(generated.endswith(checksum))
 
+    def test_cli_verbose(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write("")
+            out = self.expect_success("-v", fn)
+            self.assertEqual(out.strip(), fn)
+
     def test_cli_help(self):
         out = self.expect_success("-h")
         self.assertIn("usage: clinic.py", out)
