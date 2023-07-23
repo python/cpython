@@ -430,7 +430,11 @@ _dbm_dbm_clear_impl(dbmobject *self, PyTypeObject *cls)
     assert(state != NULL);
     check_dbmobject_open(self, state->dbm_error);
     datum key;
-    while (key = dbm_firstkey(self->di_dbm), key.dptr) {
+    while (1) {
+        key = dbm_firstkey(self->di_dbm);
+        if (key.dptr == NULL) {
+            break;
+        }
         if (dbm_delete(self->di_dbm, key) < 0) {
             dbm_clearerr(self->di_dbm);
             PyErr_SetString(state->dbm_error, "cannot delete item from database");
