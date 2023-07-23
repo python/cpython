@@ -267,6 +267,10 @@ Data Types
          appropriate value will be chosen for you.  See :class:`auto` for the
          details.
 
+         If the value is not hashable, the enum creation will take quadratic time
+         relative to the number of members.
+
+
    .. attribute:: Enum._ignore_
 
       ``_ignore_`` is only used during creation and is removed from the
