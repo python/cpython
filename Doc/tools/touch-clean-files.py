@@ -3,7 +3,9 @@
 Touch files that must pass Sphinx nit-picky mode
 so they are rebuilt and we can catch regressions.
 """
-
+import argparse
+import csv
+import sys
 from pathlib import Path
 
 wrong_directory_msg = "Must run this script from the repo root"
@@ -28,14 +30,33 @@ ALL_RST = {
     rst for rst in Path("Doc/").rglob("*.rst") if rst.parts[1] not in EXCLUDE_SUBDIRS
 }
 
-with Path("Doc/tools/.nitignore").open() as clean_files:
-    DIRTY = {
+
+parser = argparse.ArgumentParser(
+    description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+)
+parser.add_argument("-c", "--clean", help="Comma-separated list of clean files")
+args = parser.parse_args()
+
+if args.clean:
+    clean_files = next(csv.reader([args.clean]))
+    CLEAN = {
         Path(filename.strip())
         for filename in clean_files
-        if filename.strip() and not filename.startswith("#")
+        if Path(filename.strip()).is_file()
     }
-
-CLEAN = ALL_RST - DIRTY - EXCLUDE_FILES
+elif args.clean is not None:
+    print(
+        "Not touching any files: an empty string `--clean` arg value passed.",
+    )
+    sys.exit(0)
+else:
+    with Path("Doc/tools/.nitignore").open() as ignored_files:
+        IGNORED = {
+            Path(filename.strip())
+            for filename in ignored_files
+            if filename.strip() and not filename.startswith("#")
+        }
+    CLEAN = ALL_RST - IGNORED - EXCLUDE_FILES
 
 print("Touching:")
 for filename in sorted(CLEAN):
