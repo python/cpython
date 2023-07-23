@@ -2289,7 +2289,7 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Raymond Hettinger; :issue:`1861`.)
 
 * The :mod:`select` module now has wrapper functions
-  for the Linux :c:func:`epoll` and BSD :c:func:`kqueue` system calls.
+  for the Linux :c:func:`!epoll` and BSD :c:func:`!kqueue` system calls.
   :meth:`modify` method was added to the existing :class:`poll`
   objects; ``pollobj.modify(fd, eventmask)`` takes a file descriptor
   or file object and an event mask, modifying the recorded event mask
@@ -2328,7 +2328,7 @@ changes, or look through the Subversion logs for all the details.
   one for reading and one for writing.  The writable descriptor
   will be passed to :func:`set_wakeup_fd`, and the readable descriptor
   will be added to the list of descriptors monitored by the event loop via
-  :c:func:`select` or :c:func:`poll`.
+  :c:func:`!select` or :c:func:`!poll`.
   On receiving a signal, a byte will be written and the main event loop
   will be woken up, avoiding the need to poll.
 
@@ -2982,7 +2982,7 @@ Changes to Python's build process and to the C API include:
 
 * Python now must be compiled with C89 compilers (after 19
   years!).  This means that the Python source tree has dropped its
-  own implementations of :c:func:`memmove` and :c:func:`strerror`, which
+  own implementations of :c:func:`!memmove` and :c:func:`!strerror`, which
   are in the C89 standard library.
 
 * Python 2.6 can be built with Microsoft Visual Studio 2008 (version
