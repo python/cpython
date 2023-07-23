@@ -1380,6 +1380,7 @@ class ClinicExternalTest(TestCase):
             orig_contents = f.read()
 
         # Run clinic CLI and verify that it does not complain.
+        self.addCleanup(unlink, TESTFN)
         out = self.expect_success("-f", "-o", TESTFN, source)
         self.assertEqual(out, "")
 
