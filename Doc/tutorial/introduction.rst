@@ -138,17 +138,24 @@ and uses the ``j`` or ``J`` suffix to indicate the imaginary part
 
 .. _tut-strings:
 
-Texts
+Text
 -------
 
-Different kinds of text have the type :class:`str`.  This includes
-characters "``!``", words "``rabbit``", names "``Paris``", sentences
-"``Got your back.``", etc. "``Yay! :)``".  They can be enclosed in single
-quotes (``'...'``) or double quotes (``"..."``) with the same result [#]_.
-``\`` can be used to escape quotes::
+Python can manipulate text (represented by type :class:`str`, so called
+"strings") as well as numbers.  This includes characters "``!``", words
+"``rabbit``", names "``Paris``", sentences "``Got your back.``", etc.
+"``Yay! :)``". They can be enclosed in single quotes (``'...'``) or double
+quotes (``"..."``) with the same result [#]_. 
 
    >>> 'spam eggs'  # single quotes
    'spam eggs'
+   >>> "Paris rabbit got your back :)! Yay!" # double quotes
+   'Paris rabbit got your back :)! Yay!'
+   >>> '1975' # digits and numerals enclosed in quotes are also strings
+   '1975'
+
+To quote a quote, we need to "escape" it, by preceding it with ``\``::
+
    >>> 'doesn\'t'  # use \' to escape the single quote...
    "doesn't"
    >>> "doesn't"  # ...or use double quotes instead
