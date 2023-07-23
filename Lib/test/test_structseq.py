@@ -122,5 +122,17 @@ class StructSeqTest(unittest.TestCase):
                     self.assertEqual(list(t[start:stop:step]),
                                      L[start:stop:step])
 
+    def test_match_args(self):
+        expected_args = ('tm_year', 'tm_mon', 'tm_mday', 'tm_hour', 'tm_min',
+                         'tm_sec', 'tm_wday', 'tm_yday', 'tm_isdst')
+        self.assertEqual(time.struct_time.__match_args__, expected_args)
+
+    def test_match_args_with_unnamed_fields(self):
+        expected_args = ('st_mode', 'st_ino', 'st_dev', 'st_nlink', 'st_uid',
+                         'st_gid', 'st_size')
+        self.assertEqual(os.stat_result.n_unnamed_fields, 3)
+        self.assertEqual(os.stat_result.__match_args__, expected_args)
+
+
 if __name__ == "__main__":
     unittest.main()

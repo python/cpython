@@ -1,4 +1,5 @@
 import linecache
+import reprlib
 import traceback
 
 from . import base_futures
@@ -8,18 +9,26 @@ from . import coroutines
 def _task_repr_info(task):
     info = base_futures._future_repr_info(task)
 
-    if task._must_cancel:
+    if task.cancelling() and not task.done():
         # replace status
         info[0] = 'cancelling'
 
     info.insert(1, 'name=%r' % task.get_name())
 
-    coro = coroutines._format_coroutine(task._coro)
-    info.insert(2, f'coro=<{coro}>')
-
     if task._fut_waiter is not None:
-        info.insert(3, f'wait_for={task._fut_waiter!r}')
+        info.insert(2, f'wait_for={task._fut_waiter!r}')
+
+    if task._coro:
+        coro = coroutines._format_coroutine(task._coro)
+        info.insert(2, f'coro=<{coro}>')
+
     return info
+
+
+@reprlib.recursive_repr()
+def _task_repr(task):
+    info = ' '.join(_task_repr_info(task))
+    return f'<{task.__class__.__name__} {info}>'
 
 
 def _task_get_stack(task, limit):

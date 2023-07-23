@@ -1,8 +1,8 @@
 import sys
 import unittest
-from test import support
+from test.support import import_helper
 
-pwd = support.import_module('pwd')
+pwd = import_helper.import_module('pwd')
 
 @unittest.skipUnless(hasattr(pwd, 'getpwall'), 'Does not have getpwall()')
 class PwdTest(unittest.TestCase):
@@ -59,6 +59,8 @@ class PwdTest(unittest.TestCase):
         self.assertRaises(TypeError, pwd.getpwnam)
         self.assertRaises(TypeError, pwd.getpwnam, 42)
         self.assertRaises(TypeError, pwd.getpwall, 42)
+        # embedded null character
+        self.assertRaisesRegex(ValueError, 'null', pwd.getpwnam, 'a\x00b')
 
         # try to get some errors
         bynames = {}
@@ -69,7 +71,7 @@ class PwdTest(unittest.TestCase):
 
         allnames = list(bynames.keys())
         namei = 0
-        fakename = allnames[namei]
+        fakename = allnames[namei] if allnames else "invaliduser"
         while fakename in bynames:
             chars = list(fakename)
             for i in range(len(chars)):

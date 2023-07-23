@@ -7,8 +7,7 @@ from test import string_tests
 from collections import UserString
 
 class UserStringTest(
-    string_tests.CommonTest,
-    string_tests.MixinStrUnicodeUserStringTest,
+    string_tests.StringLikeTest,
     unittest.TestCase
     ):
 
@@ -27,12 +26,14 @@ class UserStringTest(
             realresult
         )
 
-    def checkraises(self, exc, obj, methodname, *args):
+    def checkraises(self, exc, obj, methodname, *args, expected_msg=None):
         obj = self.fixtype(obj)
         # we don't fix the arguments, because UserString can't cope with it
         with self.assertRaises(exc) as cm:
             getattr(obj, methodname)(*args)
         self.assertNotEqual(str(cm.exception), '')
+        if expected_msg is not None:
+            self.assertEqual(str(cm.exception), expected_msg)
 
     def checkcall(self, object, methodname, *args):
         object = self.fixtype(object)

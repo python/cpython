@@ -33,6 +33,10 @@
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM64">
+      <Configuration>Release</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B5FD6F1D-129E-4BFF-9340-03606FAC7283}</ProjectGuid>
@@ -59,8 +63,8 @@
     <NMakeBuildCommandLine>setlocal
 set VCINSTALLDIR=$(VCInstallDir)
 cd /D "$(tclDir)win"
-nmake -f makefile.vc MACHINE=$(TclMachine) OPTS=$(TclOpts) $(TclDirs) $(DebugFlags) $(WarningsFlags) core shell dlls
-nmake -f makefile.vc MACHINE=$(TclMachine) OPTS=$(TclOpts) $(TclDirs) $(DebugFlags) $(WarningsFlags) install-binaries install-libraries
+nmake -f makefile.vc MACHINE=$(TclMachine) OPTS=$(TclOpts) $(TclDirs) $(DebugFlags) $(WarningsFlags) TCLSH_NATIVE="$(tclWin32Exe)" core shell dlls
+nmake -f makefile.vc MACHINE=$(TclMachine) OPTS=$(TclOpts) $(TclDirs) $(DebugFlags) $(WarningsFlags) TCLSH_NATIVE="$(tclWin32Exe)" install-binaries install-libraries
 copy /Y ..\license.terms "$(OutDir)\tcllicense.terms"
 </NMakeBuildCommandLine>
   </PropertyGroup>

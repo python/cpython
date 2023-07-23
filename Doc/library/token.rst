@@ -11,7 +11,7 @@
 --------------
 
 This module provides constants which represent the numeric values of leaf nodes
-of the parse tree (terminal tokens).  Refer to the file :file:`Grammar/Grammar`
+of the parse tree (terminal tokens).  Refer to the file :file:`Grammar/Tokens`
 in the Python distribution for the definitions of the names in the context of
 the language grammar.  The specific numeric values which the names map to may
 change between Python versions.
@@ -50,11 +50,13 @@ The following token type values aren't used by the C tokenizer but are needed fo
 the :mod:`tokenize` module.
 
 .. data:: COMMENT
+   :noindex:
 
    Token value used to indicate a comment.
 
 
 .. data:: NL
+   :noindex:
 
    Token value used to indicate a non-terminating newline.  The
    :data:`NEWLINE` token indicates the end of a logical line of Python code;
@@ -70,6 +72,7 @@ the :mod:`tokenize` module.
 
 
 .. data:: TYPE_COMMENT
+   :noindex:
 
    Token value indicating that a type comment was recognized.  Such
    tokens are only produced when :func:`ast.parse()` is invoked with

@@ -126,7 +126,7 @@ implementations do nothing (except for :meth:`~HTMLParser.handle_startendtag`):
 
 .. method:: HTMLParser.handle_starttag(tag, attrs)
 
-   This method is called to handle the start of a tag (e.g. ``<div id="main">``).
+   This method is called to handle the start tag of an element (e.g. ``<div id="main">``).
 
    The *tag* argument is the name of the tag converted to lower case. The *attrs*
    argument is a list of ``(name, value)`` pairs containing the attributes found
