@@ -46,7 +46,7 @@ _PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
  * behavior is expected to match `textwrap.dedent`
  *
  * return value:
- * 0, no need to dedent, `out_len` untouched
+ * 0, no need to dedent, `dest` buffer and `*dest_len` untouched
  * 1, success
  *
  * `src` is the string to dedent.
@@ -54,16 +54,17 @@ _PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
  *
  * `src_len` is the length of `src`.
  *
- * `out` is a buffer for the result.
- * expecting `(out != NULL)`
+ * `dest` is a buffer for the result.
+ * expecting `(dest != NULL)`
  *
- * `out_len` points to the length of `out`, and is updated to the length of the
- * result upon success. Output buffer should be large enough to hold the result.
- * expecting `(out_len != NULL && *out_len >= src_len)`
+ * `*dest_len` stores the length of `dest` on entry, and is updated to the
+ * length of the dedent result upon success. Output buffer should be large
+ * enough to hold the result.
+ * expecting `(dest_len != NULL && *dest_len >= src_len)`
  */
 PyAPI_FUNC(int)
-_PyBytes_Dedent(const char *src, Py_ssize_t src_len, char* out,
-                Py_ssize_t* out_len);
+_PyBytes_Dedent(const char *src, Py_ssize_t src_len, char* dest,
+                Py_ssize_t* dest_len);
 
 /* --- _PyBytesWriter ----------------------------------------------------- */
 

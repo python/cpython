@@ -3564,7 +3564,7 @@ _PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
  * behavior is expected to match `textwrap.dedent`
  *
  * return value:
- * 0, no need to dedent, `out_len` untouched
+ * 0, no need to dedent, `dest` buffer and `*dest_len` untouched
  * 1, success
  *
  * `src` is the string to dedent.
@@ -3572,18 +3572,19 @@ _PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
  *
  * `src_len` is the length of `src`.
  *
- * `out` is a buffer for the result.
- * expecting `(out != NULL)`
+ * `dest` is a buffer for the result.
+ * expecting `(dest != NULL)`
  *
- * `out_len` points to the length of `out`, and is updated to the length of the
- * result upon success. Output buffer should be large enough to hold the result.
- * expecting `(out_len != NULL && *out_len >= src_len)`
+ * `*dest_len` stores the length of `dest` on entry, and is updated to the
+ * length of the dedent result upon success. Output buffer should be large
+ * enough to hold the result.
+ * expecting `(dest_len != NULL && *dest_len >= src_len)`
  */
 int
-_PyBytes_Dedent(const char *src, Py_ssize_t src_len, char *out,
-                Py_ssize_t *out_len) {
-    assert(src && out && out_len);
-    assert(*out_len >= src_len);
+_PyBytes_Dedent(const char *src, Py_ssize_t src_len, char *dest,
+                Py_ssize_t *dest_len) {
+    assert(src && dest && dest_len);
+    assert(*dest_len >= src_len);
 
     if (src_len <= 0)
         return 0;
@@ -3654,7 +3655,7 @@ _PyBytes_Dedent(const char *src, Py_ssize_t src_len, char *out,
     }
 
     // trigger a dedent
-    char *out_start = out;
+    char *dest_start = dest;
 
     for (const char *iter = src; iter < end; ++iter) {
         const char *line_start = iter;
@@ -3673,7 +3674,7 @@ _PyBytes_Dedent(const char *src, Py_ssize_t src_len, char *out,
 
         // if this line has all white space, write '\n'
         if (in_leading_space && append_newline) {
-            *out++ = '\n';
+            *dest++ = '\n';
             continue;
         }
 
@@ -3683,14 +3684,14 @@ _PyBytes_Dedent(const char *src, Py_ssize_t src_len, char *out,
         Py_ssize_t new_line_len = iter - line_start - candidate_len;
         assert(new_line_len >= 0);
 
-        memcpy(out, line_start + candidate_len, new_line_len);
+        memcpy(dest, line_start + candidate_len, new_line_len);
 
-        out += new_line_len;
+        dest += new_line_len;
 
         if (append_newline) {
-            *out++ = '\n';
+            *dest++ = '\n';
         }
     }
-    *out_len = out - out_start;
+    *dest_len = dest - dest_start;
     return 1;
 }
