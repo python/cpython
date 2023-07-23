@@ -478,73 +478,102 @@ example::
 First Steps Towards Programming
 ===============================
 
-Of course, we can use Python for more complicated tasks than adding two and two
-together.  For instance, we can write an initial sub-sequence of the
+We can use Python for more complex tasks than adding two and two together.
+For instance, we can compute some of initial numbers of the
 `Fibonacci series <https://en.wikipedia.org/wiki/Fibonacci_number>`_
-as follows::
+To do that we need to use four more concepts.¨
 
-   >>> # Fibonacci series:
-   ... # the sum of two elements defines the next
-   ... a, b = 0, 1
-   >>> while a < 10:
-   ...     print(a)
-   ...     a, b = b, a+b
-   ...
+Multiple Assignment
+-------------------
+
+A *multiple assignment* of variables allows to set values of multiple
+variables on a single line. Notice that if the value assignment is a
+expression, it is first evaluated and only after that it is assigned.::
+
+   >>> a, b = 1, 5 # multiple assignment of two variables
+   >>> a
    0
-   1
+   >>> b
+   5
+   >>> a, b = b, a + b # first a is set to value of b, then b is set to sum of a and b
+   >>> a
+   5
+   >>> b
+   6
+
+Repeating our code
+------------------
+
+The :keyword:`while` loop is example of a loop. It repeats a block of code
+as long as the condition (in example: ``a < 10``) remains true. The test
+used in the example is a simple comparison you might know from arithmetics.
+In Python, ``<`` stands for less than, ``>`` greater than, ``==``
+equal to, ``<=`` less than or equal to, ``>=`` greater than or equal to
+and ``!=`` not equal to.::
+
+   >>> count = 0;  # define variable to which we will be adding 1 in a loop
+   >>> while count < 5: count = count + 1 # hit enter one more time to start the loop
+   ...
+   >>> count # when count reached value of 5, while loop finished
+   5
+
+Note that block inside the while loop, or *body* of the loop is *indented*.
+Indentation is Python's way of grouping statements.  At the interactive
+prompt, you have to type a tab or space(s) for each indented line.
+In practice you will prepare more complex Python code with a text editor.
+Suitable text editors usually have an auto-indent functionality.  When
+we want to exit the indented block of code in the Python shell, we must
+follow it by a blank line to indicate completion (since the parser cannot
+guess when you have typed the last line).  Note that each line within a basic
+block must be indented by the same amount.::
+
+   >>> number = 1
+   >>> while number < 5:
+   ...     print(number)
+   ...     number = number + 1
+   ...
    1
    2
    3
-   5
-   8
+   4
 
-This example introduces several new features.
+Function argumets
+-----------------
 
-* The first line contains a *multiple assignment*: the variables ``a`` and ``b``
-  simultaneously get the new values 0 and 1.  On the last line this is used again,
-  demonstrating that the expressions on the right-hand side are all evaluated
-  first before any of the assignments take place.  The right-hand side expressions
-  are evaluated  from the left to the right.
+We already know :func:`print` function, that writes the value of the
+argument(s) it is given on screen.  The arguments are specified inside
+parentheses ``()``. In simplest form, f.e. ``print(a, b)`` the arguments
+are positional.  That means function process them in same order we wrote
+them.::
 
-* The :keyword:`while` loop executes as long as the condition (here: ``a < 10``)
-  remains true.  In Python, like in C, any non-zero integer value is true; zero is
-  false.  The condition may also be a string or list value, in fact any sequence;
-  anything with a non-zero length is true, empty sequences are false.  The test
-  used in the example is a simple comparison.  The standard comparison operators
-  are written the same as in C: ``<`` (less than), ``>`` (greater than), ``==``
-  (equal to), ``<=`` (less than or equal to), ``>=`` (greater than or equal to)
-  and ``!=`` (not equal to).
+   >>> group = "Knights"
+   >>> say_what = '"Ni!"'
+   >>> print(group, 'Who Say', say_what)
+   Knights Who Say "Ni!"
 
-* The *body* of the loop is *indented*: indentation is Python's way of grouping
-  statements.  At the interactive prompt, you have to type a tab or space(s) for
-  each indented line.  In practice you will prepare more complicated input
-  for Python with a text editor; all decent text editors have an auto-indent
-  facility.  When a compound statement is entered interactively, it must be
-  followed by a blank line to indicate completion (since the parser cannot
-  guess when you have typed the last line).  Note that each line within a basic
-  block must be indented by the same amount.
+The keyword argument *end* can be used to avoid the newline after the output,
+or end the output with a different string::
 
-* The :func:`print` function writes the value of the argument(s) it is given.
-  It differs from just writing the expression you want to write (as we did
-  earlier in the calculator examples) in the way it handles multiple arguments,
-  floating point quantities, and strings.  Strings are printed without quotes,
-  and a space is inserted between items, so you can format things nicely, like
-  this::
+   >>> count = 0
+   >>> count = 10
+   >>> while count > 5:
+   ...     print(count, end=' ')
+   ...     count = count - 1
+   ...
+   10 9 8 7 6
 
-     >>> i = 256*256
-     >>> print('The value of i is', i)
-     The value of i is 65536
+Fibonacci series
+----------------
 
-  The keyword argument *end* can be used to avoid the newline after the output,
-  or end the output with a different string::
+We now know all we need to write code that will print all numbers from the
+Fibonacci series! Let's check what nubers in it are lower than 1000.
 
      >>> a, b = 0, 1
      >>> while a < 1000:
-     ...     print(a, end=',')
+     ...     print(a, end=', ')
      ...     a, b = b, a+b
      ...
      0,1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,
-
 
 .. rubric:: Footnotes
 
