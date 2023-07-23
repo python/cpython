@@ -839,6 +839,7 @@ Once the messages in the ``.po`` file are translated and the translations are
 installed using :mod:`gettext`, :mod:`argparse` will be able to display the
 translated messages.
 
+To translate your own strings in the :mod:`argparse` output, use :mod:`gettext`.
 
 Conclusion
 ==========
