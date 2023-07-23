@@ -1017,7 +1017,7 @@ Deprecated
 * :mod:`typing`: :class:`typing.Hashable` and :class:`typing.Sized` aliases for :class:`collections.abc.Hashable`
   and :class:`collections.abc.Sized`. (:gh:`94309`.)
 
-* :mod:`xml`: The module now emits :exc:`DeprecationWarning`
+* :mod:`xml.etree.ElementTree`: The module now emits :exc:`DeprecationWarning`
   when testing the truth value of an :class:`xml.etree.ElementTree.Element`.
   Before, the Python implementation emitted :exc:`FutureWarning`, and the C
   implementation emitted nothing.
