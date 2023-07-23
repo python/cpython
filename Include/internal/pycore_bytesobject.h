@@ -18,9 +18,10 @@ extern PyObject* _PyBytes_FromHex(
     PyObject *string,
     int use_bytearray);
 
-/* Helper for PyBytes_DecodeEscape that detects invalid escape chars. */
-extern PyObject * _PyBytes_DecodeEscape(const char *, Py_ssize_t,
-                                        const char *, const char **);
+// Helper for PyBytes_DecodeEscape that detects invalid escape chars.
+// Export for test_peg_generator.
+PyAPI_FUNC(PyObject*) _PyBytes_DecodeEscape(const char *, Py_ssize_t,
+                                            const char *, const char **);
 
 /* _PyBytes_Join(sep, x) is like sep.join(x).  sep must be PyBytesObject*,
    x must be an iterable object. */
