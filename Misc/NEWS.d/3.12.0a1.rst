@@ -5934,7 +5934,7 @@ not override :c:member:`~PyTypeObject.tp_call` now inherit the
 .. nonce: aiRSgr
 .. section: C API
 
-Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
+Creating :c:macro:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
 bases is deprecated and is planned to be disabled in Python 3.14.
 
 ..
