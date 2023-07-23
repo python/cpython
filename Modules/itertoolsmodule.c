@@ -4,7 +4,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
-#include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_tuple.h"         // _PyTupleBuilder
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 
@@ -193,47 +193,42 @@ batched_traverse(batchedobject *bo, visitproc visit, void *arg)
 static PyObject *
 batched_next(batchedobject *bo)
 {
-    Py_ssize_t i;
-    Py_ssize_t n = bo->batch_size;
     PyObject *it = bo->it;
-    PyObject *item;
-    PyObject *result;
-
     if (it == NULL) {
         return NULL;
     }
-    result = PyTuple_New(n);
-    if (result == NULL) {
-        return NULL;
-    }
-    iternextfunc iternext = *Py_TYPE(it)->tp_iternext;
-    PyObject **items = _PyTuple_ITEMS(result);
-    for (i=0 ; i < n ; i++) {
-        item = iternext(it);
-        if (item == NULL) {
-            goto null_item;
-        }
-        items[i] = item;
-    }
-    return result;
 
- null_item:
-    if (PyErr_Occurred()) {
-        if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
-            /* Input raised an exception other than StopIteration */
-            Py_CLEAR(bo->it);
-            Py_DECREF(result);
-            return NULL;
-        }
-        PyErr_Clear();
-    }
-    if (i == 0) {
-        Py_CLEAR(bo->it);
-        Py_DECREF(result);
+    _PyTupleBuilder builder;
+    Py_ssize_t n = bo->batch_size;
+    if (_PyTupleBuilder_Init(&builder, n) < 0) {
         return NULL;
     }
-    _PyTuple_Resize(&result, i);
-    return result;
+
+    iternextfunc iternext = *Py_TYPE(it)->tp_iternext;
+    for (Py_ssize_t i=0 ; i < n; i++) {
+        PyObject *item = iternext(it);
+        if (item == NULL) {
+            if (PyErr_Occurred()) {
+                if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
+                    /* Input raised an exception other than StopIteration */
+                    goto error;
+                }
+                PyErr_Clear();
+                // StopIteration was raised
+            }
+            if (i == 0) {
+                goto error;
+            }
+            break;
+        }
+        _PyTupleBuilder_AppendUnsafe(&builder, item);
+    }
+    return _PyTupleBuilder_Finish(&builder);
+
+error:
+    _PyTupleBuilder_Dealloc(&builder);
+    Py_CLEAR(bo->it);
+    return NULL;
 }
 
 static PyType_Slot batched_slots[] = {

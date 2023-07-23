@@ -2074,11 +2074,6 @@ PySequence_DelSlice(PyObject *s, Py_ssize_t i1, Py_ssize_t i2)
 PyObject *
 PySequence_Tuple(PyObject *v)
 {
-    PyObject *it;  /* iter(v) */
-    Py_ssize_t n;             /* guess for result tuple size */
-    PyObject *result = NULL;
-    Py_ssize_t j;
-
     if (v == NULL) {
         return null_error();
     }
@@ -2091,66 +2086,53 @@ PySequence_Tuple(PyObject *v)
            a copy, so there's no need for exactness below. */
         return Py_NewRef(v);
     }
-    if (PyList_CheckExact(v))
+    if (PyList_CheckExact(v)) {
         return PyList_AsTuple(v);
+    }
+
+    _PyTupleBuilder builder;
+    if (_PyTupleBuilder_Init(&builder, 0) < 0) {
+        return NULL;
+    }
 
     /* Get iterator. */
-    it = PyObject_GetIter(v);
-    if (it == NULL)
-        return NULL;
+    PyObject *it = PyObject_GetIter(v);  // iter(v)
+    if (it == NULL) {
+        goto Fail;
+    }
 
     /* Guess result size and allocate space. */
-    n = PyObject_LengthHint(v, 10);
-    if (n == -1)
+    Py_ssize_t n = PyObject_LengthHint(v, 10);  // Guess for result tuple size
+    if (n == -1) {
         goto Fail;
-    result = PyTuple_New(n);
-    if (result == NULL)
+    }
+    if (_PyTupleBuilder_Alloc(&builder, n) < 0) {
         goto Fail;
+    }
 
     /* Fill the tuple. */
+    Py_ssize_t j;
     for (j = 0; ; ++j) {
         PyObject *item = PyIter_Next(it);
         if (item == NULL) {
-            if (PyErr_Occurred())
+            if (PyErr_Occurred()) {
                 goto Fail;
+            }
             break;
         }
-        if (j >= n) {
-            size_t newn = (size_t)n;
-            /* The over-allocation strategy can grow a bit faster
-               than for lists because unlike lists the
-               over-allocation isn't permanent -- we reclaim
-               the excess before the end of this routine.
-               So, grow by ten and then add 25%.
-            */
-            newn += 10u;
-            newn += newn >> 2;
-            if (newn > PY_SSIZE_T_MAX) {
-                /* Check for overflow */
-                PyErr_NoMemory();
-                Py_DECREF(item);
-                goto Fail;
-            }
-            n = (Py_ssize_t)newn;
-            if (_PyTuple_Resize(&result, n) != 0) {
-                Py_DECREF(item);
-                goto Fail;
-            }
+
+        if (_PyTupleBuilder_Append(&builder, item) < 0) {
+            Py_DECREF(item);
+            goto Fail;
         }
-        PyTuple_SET_ITEM(result, j, item);
     }
 
-    /* Cut tuple back if guess was too large. */
-    if (j < n &&
-        _PyTuple_Resize(&result, j) != 0)
-        goto Fail;
-
     Py_DECREF(it);
-    return result;
+    return _PyTupleBuilder_Finish(&builder);
 
 Fail:
-    Py_XDECREF(result);
-    Py_DECREF(it);
+    _PyTupleBuilder_Dealloc(&builder);
+    Py_XDECREF(it);
     return NULL;
 }
 

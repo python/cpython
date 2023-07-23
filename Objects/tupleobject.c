@@ -66,21 +66,33 @@ tuple_get_empty(void)
 }
 
 PyObject *
-PyTuple_New(Py_ssize_t size)
+_PyTuple_NewNoTrack(Py_ssize_t size)
 {
-    PyTupleObject *op;
     if (size == 0) {
         return tuple_get_empty();
     }
-    op = tuple_alloc(size);
+    PyTupleObject *op = tuple_alloc(size);
     if (op == NULL) {
         return NULL;
     }
     for (Py_ssize_t i = 0; i < size; i++) {
         op->ob_item[i] = NULL;
     }
-    _PyObject_GC_TRACK(op);
     return (PyObject *) op;
+}
+
+PyObject *
+PyTuple_New(Py_ssize_t size)
+{
+    if (size == 0) {
+        return tuple_get_empty();
+    }
+    PyObject *op = _PyTuple_NewNoTrack(size);
+    if (op == NULL) {
+        return NULL;
+    }
+    _PyObject_GC_TRACK(op);
+    return op;
 }
 
 Py_ssize_t
@@ -894,8 +906,8 @@ PyTypeObject PyTuple_Type = {
    efficiently.  In any case, don't use this if the tuple may already be
    known to some other part of the code. */
 
-int
-_PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
+static int
+tuple_resize(PyObject **pv, Py_ssize_t newsize, int track)
 {
     PyTupleObject *v;
     PyTupleObject *sv;
@@ -927,7 +939,12 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
         /* The empty tuple is statically allocated so we never
            resize it in-place. */
         Py_DECREF(v);
-        *pv = PyTuple_New(newsize);
+        if (track) {
+            *pv = PyTuple_New(newsize);
+        }
+        else {
+            *pv = _PyTuple_NewNoTrack(newsize);
+        }
         return *pv == NULL ? -1 : 0;
     }
 
@@ -952,12 +969,27 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     }
     _Py_NewReferenceNoTotal((PyObject *) sv);
     /* Zero out items added by growing */
-    if (newsize > oldsize)
+    if (newsize > oldsize) {
         memset(&sv->ob_item[oldsize], 0,
                sizeof(*sv->ob_item) * (newsize - oldsize));
+    }
     *pv = (PyObject *) sv;
-    _PyObject_GC_TRACK(sv);
+    if (track) {
+        _PyObject_GC_TRACK(*pv);
+    }
     return 0;
+}
+
+int
+_PyTuple_ResizeNoTrack(PyObject **pv, Py_ssize_t newsize)
+{
+    return tuple_resize(pv, newsize, 0);
+}
+
+int
+_PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
+{
+    return tuple_resize(pv, newsize, 1);
 }
 
 

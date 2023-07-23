@@ -390,11 +390,9 @@ count_members(PyStructSequence_Desc *desc, Py_ssize_t *n_unnamed_members) {
 static int
 initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
                           Py_ssize_t n_members, Py_ssize_t n_unnamed_members) {
-    PyObject *v;
-
 #define SET_DICT_FROM_SIZE(key, value)                                         \
     do {                                                                       \
-        v = PyLong_FromSsize_t(value);                                         \
+        PyObject *v = PyLong_FromSsize_t(value);                                         \
         if (v == NULL) {                                                       \
             return -1;                                                         \
         }                                                                      \
@@ -410,13 +408,12 @@ initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
     SET_DICT_FROM_SIZE(unnamed_fields_key, n_unnamed_members);
 
     // Prepare and set __match_args__
-    Py_ssize_t i, k;
-    PyObject* keys = PyTuple_New(desc->n_in_sequence);
-    if (keys == NULL) {
+    _PyTupleBuilder keys_builder;
+    if (_PyTupleBuilder_Init(&keys_builder, desc->n_in_sequence) < 0) {
         return -1;
     }
 
-    for (i = k = 0; i < desc->n_in_sequence; ++i) {
+    for (Py_ssize_t i = 0; i < desc->n_in_sequence; ++i) {
         if (desc->fields[i].name == PyStructSequence_UnnamedField) {
             continue;
         }
@@ -424,23 +421,23 @@ initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
         if (new_member == NULL) {
             goto error;
         }
-        PyTuple_SET_ITEM(keys, k, new_member);
-        k++;
+        _PyTupleBuilder_AppendUnsafe(&keys_builder, new_member);
     }
 
-    if (_PyTuple_Resize(&keys, k) == -1) {
+    PyObject *keys = _PyTupleBuilder_Finish(&keys_builder);
+    if (keys == NULL) {
         goto error;
     }
-
     if (PyDict_SetItemString(dict, match_args_key, keys) < 0) {
+        Py_DECREF(keys);
         goto error;
     }
-
     Py_DECREF(keys);
+
     return 0;
 
 error:
-    Py_DECREF(keys);
+    _PyTupleBuilder_Dealloc(&keys_builder);
     return -1;
 }
 
