@@ -95,6 +95,8 @@ for the I/O buffer escapes completely the Python memory manager.
 Allocator Domains
 =================
 
+.. _allocator-domains:
+
 All allocating functions belong to one of three different "domains" (see also
 :c:type:`PyMemAllocatorDomain`). These domains represent different allocation
 strategies and are optimized for different purposes. The specific details on
@@ -141,7 +143,7 @@ zero bytes.
 
 .. c:function:: void* PyMem_RawMalloc(size_t n)
 
-   Allocates *n* bytes and returns a pointer of type :c:type:`void*` to the
+   Allocates *n* bytes and returns a pointer of type :c:expr:`void*` to the
    allocated memory, or ``NULL`` if the request fails.
 
    Requesting zero bytes returns a distinct non-``NULL`` pointer if possible, as
@@ -152,7 +154,7 @@ zero bytes.
 .. c:function:: void* PyMem_RawCalloc(size_t nelem, size_t elsize)
 
    Allocates *nelem* elements each whose size in bytes is *elsize* and returns
-   a pointer of type :c:type:`void*` to the allocated memory, or ``NULL`` if the
+   a pointer of type :c:expr:`void*` to the allocated memory, or ``NULL`` if the
    request fails. The memory is initialized to zeros.
 
    Requesting zero elements or elements of size zero bytes returns a distinct
@@ -212,7 +214,7 @@ The :ref:`default memory allocator <default-memory-allocators>` uses the
 
 .. c:function:: void* PyMem_Malloc(size_t n)
 
-   Allocates *n* bytes and returns a pointer of type :c:type:`void*` to the
+   Allocates *n* bytes and returns a pointer of type :c:expr:`void*` to the
    allocated memory, or ``NULL`` if the request fails.
 
    Requesting zero bytes returns a distinct non-``NULL`` pointer if possible, as
@@ -223,7 +225,7 @@ The :ref:`default memory allocator <default-memory-allocators>` uses the
 .. c:function:: void* PyMem_Calloc(size_t nelem, size_t elsize)
 
    Allocates *nelem* elements each whose size in bytes is *elsize* and returns
-   a pointer of type :c:type:`void*` to the allocated memory, or ``NULL`` if the
+   a pointer of type :c:expr:`void*` to the allocated memory, or ``NULL`` if the
    request fails. The memory is initialized to zeros.
 
    Requesting zero elements or elements of size zero bytes returns a distinct
@@ -265,14 +267,14 @@ The following type-oriented macros are provided for convenience.  Note  that
 .. c:function:: TYPE* PyMem_New(TYPE, size_t n)
 
    Same as :c:func:`PyMem_Malloc`, but allocates ``(n * sizeof(TYPE))`` bytes of
-   memory.  Returns a pointer cast to :c:type:`TYPE*`.  The memory will not have
+   memory.  Returns a pointer cast to :c:expr:`TYPE*`.  The memory will not have
    been initialized in any way.
 
 
 .. c:function:: TYPE* PyMem_Resize(void *p, TYPE, size_t n)
 
    Same as :c:func:`PyMem_Realloc`, but the memory block is resized to ``(n *
-   sizeof(TYPE))`` bytes.  Returns a pointer cast to :c:type:`TYPE*`. On return,
+   sizeof(TYPE))`` bytes.  Returns a pointer cast to :c:expr:`TYPE*`. On return,
    *p* will be a pointer to the new memory area, or ``NULL`` in the event of
    failure.
 
@@ -320,7 +322,7 @@ The :ref:`default object allocator <default-memory-allocators>` uses the
 
 .. c:function:: void* PyObject_Malloc(size_t n)
 
-   Allocates *n* bytes and returns a pointer of type :c:type:`void*` to the
+   Allocates *n* bytes and returns a pointer of type :c:expr:`void*` to the
    allocated memory, or ``NULL`` if the request fails.
 
    Requesting zero bytes returns a distinct non-``NULL`` pointer if possible, as
@@ -331,7 +333,7 @@ The :ref:`default object allocator <default-memory-allocators>` uses the
 .. c:function:: void* PyObject_Calloc(size_t nelem, size_t elsize)
 
    Allocates *nelem* elements each whose size in bytes is *elsize* and returns
-   a pointer of type :c:type:`void*` to the allocated memory, or ``NULL`` if the
+   a pointer of type :c:expr:`void*` to the allocated memory, or ``NULL`` if the
    request fails. The memory is initialized to zeros.
 
    Requesting zero elements or elements of size zero bytes returns a distinct
@@ -468,7 +470,7 @@ Customize Memory Allocators
    The new allocator must return a distinct non-``NULL`` pointer when requesting
    zero bytes.
 
-   For the :c:data:`PYMEM_DOMAIN_RAW` domain, the allocator must be
+   For the :c:macro:`PYMEM_DOMAIN_RAW` domain, the allocator must be
    thread-safe: the :term:`GIL <global interpreter lock>` is not held when the
    allocator is called.
 
@@ -478,6 +480,25 @@ Customize Memory Allocators
 
    See also :c:member:`PyPreConfig.allocator` and :ref:`Preinitialize Python
    with PyPreConfig <c-preinit>`.
+
+   .. warning::
+
+       :c:func:`PyMem_SetAllocator` does have the following contract:
+
+        * It can be called after :c:func:`Py_PreInitialize` and before
+          :c:func:`Py_InitializeFromConfig` to install a custom memory
+          allocator. There are no restrictions over the installed allocator
+          other than the ones imposed by the domain (for instance, the Raw
+          Domain allows the allocator to be called without the GIL held). See
+          :ref:`the section on allocator domains <allocator-domains>` for more
+          information.
+
+        * If called after Python has finish initializing (after
+          :c:func:`Py_InitializeFromConfig` has been called) the allocator
+          **must** wrap the existing allocator. Substituting the current
+          allocator for some other arbitrary one is **not supported**.
+
+
 
 .. c:function:: void PyMem_SetupDebugHooks(void)
 
@@ -515,8 +536,8 @@ Runtime checks:
 - Detect write before the start of the buffer (buffer underflow).
 - Detect write after the end of the buffer (buffer overflow).
 - Check that the :term:`GIL <global interpreter lock>` is held when
-  allocator functions of :c:data:`PYMEM_DOMAIN_OBJ` (ex:
-  :c:func:`PyObject_Malloc`) and :c:data:`PYMEM_DOMAIN_MEM` (ex:
+  allocator functions of :c:macro:`PYMEM_DOMAIN_OBJ` (ex:
+  :c:func:`PyObject_Malloc`) and :c:macro:`PYMEM_DOMAIN_MEM` (ex:
   :c:func:`PyMem_Malloc`) domains are called.
 
 On error, the debug hooks use the :mod:`tracemalloc` module to get the
@@ -536,9 +557,9 @@ that the treatment of negative indices differs from a Python slice):
 ``p[-S]``
     API identifier (ASCII character):
 
-    * ``'r'`` for :c:data:`PYMEM_DOMAIN_RAW`.
-    * ``'m'`` for :c:data:`PYMEM_DOMAIN_MEM`.
-    * ``'o'`` for :c:data:`PYMEM_DOMAIN_OBJ`.
+    * ``'r'`` for :c:macro:`PYMEM_DOMAIN_RAW`.
+    * ``'m'`` for :c:macro:`PYMEM_DOMAIN_MEM`.
+    * ``'o'`` for :c:macro:`PYMEM_DOMAIN_OBJ`.
 
 ``p[-S+1:0]``
     Copies of PYMEM_FORBIDDENBYTE.  Used to catch under- writes and reads.
@@ -560,7 +581,7 @@ that the treatment of negative indices differs from a Python slice):
     default).
 
     A serial number, incremented by 1 on each call to a malloc-like or
-    realloc-like function.  Big-endian ``size_t``.  If "bad memory" is detected
+    realloc-like function.  Big-endian :c:type:`size_t`.  If "bad memory" is detected
     later, the serial number gives an excellent way to set a breakpoint on the
     next run, to capture the instant at which this block was passed out.  The
     static function bumpserialno() in obmalloc.c is the only place the serial
@@ -580,7 +601,7 @@ PYMEM_CLEANBYTE (meaning uninitialized memory is getting used).
    compiled in release mode.  On error, the debug hooks now use
    :mod:`tracemalloc` to get the traceback where a memory block was allocated.
    The debug hooks now also check if the GIL is held when functions of
-   :c:data:`PYMEM_DOMAIN_OBJ` and :c:data:`PYMEM_DOMAIN_MEM` domains are
+   :c:macro:`PYMEM_DOMAIN_OBJ` and :c:macro:`PYMEM_DOMAIN_MEM` domains are
    called.
 
 .. versionchanged:: 3.8
@@ -601,8 +622,8 @@ with a fixed size of 256 KiB. It falls back to :c:func:`PyMem_RawMalloc` and
 :c:func:`PyMem_RawRealloc` for allocations larger than 512 bytes.
 
 *pymalloc* is the :ref:`default allocator <default-memory-allocators>` of the
-:c:data:`PYMEM_DOMAIN_MEM` (ex: :c:func:`PyMem_Malloc`) and
-:c:data:`PYMEM_DOMAIN_OBJ` (ex: :c:func:`PyObject_Malloc`) domains.
+:c:macro:`PYMEM_DOMAIN_MEM` (ex: :c:func:`PyMem_Malloc`) and
+:c:macro:`PYMEM_DOMAIN_OBJ` (ex: :c:func:`PyObject_Malloc`) domains.
 
 The arena allocator uses the following functions:
 

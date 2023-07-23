@@ -34,10 +34,10 @@ A Cookbook Approach
 ===================
 
 There are two approaches to building extension modules on Windows, just as there
-are on Unix: use the :mod:`distutils` package to control the build process, or
-do things manually.  The distutils approach works well for most extensions;
-documentation on using :mod:`distutils` to build and package extension modules
-is available in :ref:`distutils-index`.  If you find you really need to do
+are on Unix: use the ``setuptools`` package to control the build process, or
+do things manually.  The setuptools approach works well for most extensions;
+documentation on using ``setuptools`` to build and package extension modules
+is available in :ref:`setuptools-index`.  If you find you really need to do
 things manually, it may be instructive to study the project file for the
 :source:`winsound <PCbuild/winsound.vcxproj>` standard library module.
 

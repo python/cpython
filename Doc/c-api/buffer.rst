@@ -99,7 +99,7 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
       For :term:`contiguous` arrays, the value points to the beginning of
       the memory block.
 
-   .. c:member:: void *obj
+   .. c:member:: PyObject *obj
 
       A new reference to the exporting object. The reference is owned by
       the consumer and automatically decremented and set to ``NULL`` by
@@ -225,7 +225,7 @@ object via :c:func:`PyObject_GetBuffer`. Since the complexity of the logical
 structure of the memory can vary drastically, the consumer uses the *flags*
 argument to specify the exact buffer type it can handle.
 
-All :c:data:`Py_buffer` fields are unambiguously defined by the request
+All :c:type:`Py_buffer` fields are unambiguously defined by the request
 type.
 
 request-independent fields
@@ -464,7 +464,7 @@ Buffer-related functions
 
 .. c:function:: Py_ssize_t PyBuffer_SizeFromFormat(const char *format)
 
-   Return the implied :c:data:`~Py_buffer.itemsize` from :c:data:`~Py_buffer.format`.
+   Return the implied :c:member:`~Py_buffer.itemsize` from :c:member:`~Py_buffer.format`.
    On error, raise an exception and return -1.
 
    .. versionadded:: 3.9
@@ -499,7 +499,7 @@ Buffer-related functions
    This function fails if *len* != *src->len*.
 
 
-.. c:function:: int PyObject_CopyData(Py_buffer *dest, Py_buffer *src)
+.. c:function:: int PyObject_CopyData(PyObject *dest, PyObject *src)
 
    Copy data from *src* to *dest* buffer. Can convert between C-style and
    or Fortran-style buffers.

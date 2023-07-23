@@ -298,10 +298,10 @@ Watch out for the following two points in particular (but note that this is not
 a comprehensive list):
 
 * Unlike static types, heap type objects are mutable by default.
-  Use the :c:data:`Py_TPFLAGS_IMMUTABLETYPE` flag to prevent mutability.
+  Use the :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` flag to prevent mutability.
 * Heap types inherit :c:member:`~PyTypeObject.tp_new` by default,
   so it may become possible to instantiate them from Python code.
-  You can prevent this with the :c:data:`Py_TPFLAGS_DISALLOW_INSTANTIATION` flag.
+  You can prevent this with the :c:macro:`Py_TPFLAGS_DISALLOW_INSTANTIATION` flag.
 
 
 Defining Heap Types
@@ -333,12 +333,12 @@ To avoid memory leaks, instances of heap types must implement the
 garbage collection protocol.
 That is, heap types should:
 
-- Have the :c:data:`Py_TPFLAGS_HAVE_GC` flag.
+- Have the :c:macro:`Py_TPFLAGS_HAVE_GC` flag.
 - Define a traverse function using ``Py_tp_traverse``, which
   visits the type (e.g. using :c:expr:`Py_VISIT(Py_TYPE(self))`).
 
 Please refer to the :ref:`the documentation <type-structs>` of
-:c:data:`Py_TPFLAGS_HAVE_GC` and :c:member:`~PyTypeObject.tp_traverse`
+:c:macro:`Py_TPFLAGS_HAVE_GC` and :c:member:`~PyTypeObject.tp_traverse`
 for additional considerations.
 
 If your traverse function delegates to the ``tp_traverse`` of its base class
@@ -372,7 +372,7 @@ To save a some tedious error-handling boilerplate code, you can combine
 these two steps with :c:func:`PyType_GetModuleState`, resulting in::
 
    my_struct *state = (my_struct*)PyType_GetModuleState(type);
-   if (state === NULL) {
+   if (state == NULL) {
        return NULL;
    }
 
@@ -411,7 +411,7 @@ that subclass, which may be defined in different module than yours.
           pass
 
 For a method to get its "defining class", it must use the
-:c:data:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS`
+:ref:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS <METH_METHOD-METH_FASTCALL-METH_KEYWORDS>`
 :c:type:`calling convention <PyMethodDef>`
 and the corresponding :c:type:`PyCMethod` signature::
 
@@ -435,7 +435,7 @@ For example::
            PyObject *kwnames)
    {
        my_struct *state = (my_struct*)PyType_GetModuleState(defining_class);
-       if (state === NULL) {
+       if (state == NULL) {
            return NULL;
        }
        ... // rest of logic
@@ -461,7 +461,7 @@ Module State Access from Slot Methods, Getters and Setters
 
    .. After adding to limited API:
 
-      If you use the `limited API <https://docs.python.org/3/c-api/stable.html>__,
+      If you use the :ref:`limited API <limited-c-api>`,
       you must update ``Py_LIMITED_API`` to ``0x030b0000``, losing ABI
       compatibility with earlier versions.
 
@@ -479,18 +479,18 @@ to get the state::
 
     PyObject *module = PyType_GetModuleByDef(Py_TYPE(self), &module_def);
     my_struct *state = (my_struct*)PyModule_GetState(module);
-    if (state === NULL) {
+    if (state == NULL) {
         return NULL;
     }
 
-``PyType_GetModuleByDef`` works by searching the
+:c:func:`!PyType_GetModuleByDef` works by searching the
 :term:`method resolution order` (i.e. all superclasses) for the first
 superclass that has a corresponding module.
 
 .. note::
 
    In very exotic cases (inheritance chains spanning multiple modules
-   created from the same definition), ``PyType_GetModuleByDef`` might not
+   created from the same definition), :c:func:`!PyType_GetModuleByDef` might not
    return the module of the true defining class. However, it will always
    return a module with the same definition, ensuring a compatible
    C memory layout.

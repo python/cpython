@@ -1,1 +1,0 @@
-:mod:`ctypes` dependency ``libffi`` is now detected with ``pkg-config``.

@@ -1,3 +1,0 @@
-:mod:`zipimport`: Remove ``find_loader()`` and ``find_module()`` methods,
-deprecated in Python 3.10: use the ``find_spec()`` method instead. See
-:pep:`451` for the rationale. Patch by Victor Stinner.

@@ -18,6 +18,11 @@ is a lightweight data interchange format inspired by
 `JavaScript <https://en.wikipedia.org/wiki/JavaScript>`_ object literal syntax
 (although it is not a strict subset of JavaScript [#rfc-errata]_ ).
 
+.. warning::
+   Be cautious when parsing JSON data from untrusted sources. A malicious
+   JSON string may cause the decoder to consume considerable CPU and memory
+   resources. Limiting the size of data to be parsed is recommended.
+
 :mod:`json` exposes an API familiar to users of the standard library
 :mod:`marshal` and :mod:`pickle` modules.
 
@@ -115,7 +120,7 @@ See :ref:`json-commandline` for detailed documentation.
 
 .. note::
 
-   JSON is a subset of `YAML <http://yaml.org/>`_ 1.2.  The JSON produced by
+   JSON is a subset of `YAML <https://yaml.org/>`_ 1.2.  The JSON produced by
    this module's default settings (in particular, the default *separators*
    value) is also a subset of YAML 1.0 and 1.1.  This module can thus also be
    used as a YAML serializer.
@@ -226,7 +231,7 @@ Basic Usage
    *object_hook* is an optional function that will be called with the result of
    any object literal decoded (a :class:`dict`).  The return value of
    *object_hook* will be used instead of the :class:`dict`.  This feature can be used
-   to implement custom decoders (e.g. `JSON-RPC <http://www.jsonrpc.org>`_
+   to implement custom decoders (e.g. `JSON-RPC <https://www.jsonrpc.org>`_
    class hinting).
 
    *object_pairs_hook* is an optional function that will be called with the
@@ -247,6 +252,12 @@ Basic Usage
    to be decoded.  By default, this is equivalent to ``int(num_str)``.  This can
    be used to use another datatype or parser for JSON integers
    (e.g. :class:`float`).
+
+   .. versionchanged:: 3.11
+      The default *parse_int* of :func:`int` now limits the maximum length of
+      the integer string via the interpreter's :ref:`integer string
+      conversion length limitation <int_max_str_digits>` to help avoid denial
+      of service attacks.
 
    *parse_constant*, if specified, will be called with one of the following
    strings: ``'-Infinity'``, ``'Infinity'``, ``'NaN'``.
@@ -326,7 +337,7 @@ Encoders and Decoders
    *object_hook*, if specified, will be called with the result of every JSON
    object decoded and its return value will be used in place of the given
    :class:`dict`.  This can be used to provide custom deserializations (e.g. to
-   support `JSON-RPC <http://www.jsonrpc.org>`_ class hinting).
+   support `JSON-RPC <https://www.jsonrpc.org>`_ class hinting).
 
    *object_pairs_hook*, if specified will be called with the result of every
    JSON object decoded with an ordered list of pairs.  The return value of
@@ -672,7 +683,7 @@ The :mod:`json.tool` module provides a simple command line interface to validate
 and pretty-print JSON objects.
 
 If the optional ``infile`` and ``outfile`` arguments are not
-specified, :attr:`sys.stdin` and :attr:`sys.stdout` will be used respectively:
+specified, :data:`sys.stdin` and :data:`sys.stdout` will be used respectively:
 
 .. code-block:: shell-session
 
@@ -710,12 +721,12 @@ Command line options
           }
       ]
 
-   If *infile* is not specified, read from :attr:`sys.stdin`.
+   If *infile* is not specified, read from :data:`sys.stdin`.
 
 .. cmdoption:: outfile
 
    Write the output of the *infile* to the given *outfile*. Otherwise, write it
-   to :attr:`sys.stdout`.
+   to :data:`sys.stdout`.
 
 .. cmdoption:: --sort-keys
 

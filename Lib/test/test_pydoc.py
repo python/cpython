@@ -24,7 +24,8 @@ from collections import namedtuple
 from urllib.request import urlopen, urlcleanup
 from test.support import import_helper
 from test.support import os_helper
-from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support.script_helper import (assert_python_ok,
+                                        assert_python_failure, spawn_python)
 from test.support import threading_helper
 from test.support import (reap_children, captured_output, captured_stdout,
                           captured_stderr, is_emscripten, is_wasi,
@@ -631,6 +632,21 @@ class PydocDocTest(unittest.TestCase):
         # Testing that the subclasses section does not appear
         self.assertNotIn('Built-in subclasses', text)
 
+    def test_fail_help_cli(self):
+        elines = (missing_pattern % 'abd').splitlines()
+        with spawn_python("-c" "help()") as proc:
+            out, _ = proc.communicate(b"abd")
+            olines = out.decode().splitlines()[-9:-6]
+            olines[0] = olines[0].removeprefix('help> ')
+            self.assertEqual(elines, olines)
+
+    def test_fail_help_output_redirect(self):
+        with StringIO() as buf:
+            helper = pydoc.Helper(output=buf)
+            helper.help("abd")
+            expected = missing_pattern % "abd"
+            self.assertEqual(expected, buf.getvalue().strip().replace('\n', os.linesep))
+
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
     @requires_docstrings
@@ -702,7 +718,7 @@ class PydocDocTest(unittest.TestCase):
     def test_synopsis_sourceless(self):
         os = import_helper.import_fresh_module('os')
         expected = os.__doc__.splitlines()[0]
-        filename = os.__cached__
+        filename = os.__spec__.cached
         synopsis = pydoc.synopsis(filename)
 
         self.assertEqual(synopsis, expected)

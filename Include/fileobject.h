@@ -23,7 +23,7 @@ Py_DEPRECATED(3.12) PyAPI_DATA(const char *) Py_FileSystemDefaultEncoding;
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03060000
 Py_DEPRECATED(3.12) PyAPI_DATA(const char *) Py_FileSystemDefaultEncodeErrors;
 #endif
-PyAPI_DATA(int) Py_HasFileSystemDefaultEncoding;
+Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_HasFileSystemDefaultEncoding;
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
 Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_UTF8Mode;

@@ -5,6 +5,7 @@ from test import support
 from test.support import threading_helper
 import _thread as thread
 import time
+import warnings
 import weakref
 
 from test import lock_tests
@@ -238,11 +239,13 @@ class TestForkInThread(unittest.TestCase):
         def fork_thread(read_fd, write_fd):
             nonlocal pid
 
-            # fork in a thread
-            pid = os.fork()
-            if pid:
-                # parent process
-                return
+            # Ignore the warning about fork with threads.
+            with warnings.catch_warnings(category=DeprecationWarning,
+                                         action="ignore"):
+                # fork in a thread (DANGER, undefined per POSIX)
+                if (pid := os.fork()):
+                    # parent process
+                    return
 
             # child process
             try:

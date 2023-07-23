@@ -6,7 +6,6 @@ import sys
 import traceback
 import types
 import functools
-import warnings
 
 from fnmatch import fnmatch, fnmatchcase
 
@@ -57,9 +56,7 @@ def _make_skipped_test(methodname, exception, suiteClass):
     TestClass = type("ModuleSkipped", (case.TestCase,), attrs)
     return suiteClass((TestClass(methodname),))
 
-def _jython_aware_splitext(path):
-    if path.lower().endswith('$py.class'):
-        return path[:-9]
+def _splitext(path):
     return os.path.splitext(path)[0]
 
 
@@ -315,7 +312,7 @@ class TestLoader(object):
     def _get_name_from_path(self, path):
         if path == self._top_level_dir:
             return '.'
-        path = _jython_aware_splitext(os.path.normpath(path))
+        path = _splitext(os.path.normpath(path))
 
         _relpath = os.path.relpath(path, self._top_level_dir)
         assert not os.path.isabs(_relpath), "Path must be within the project"
@@ -393,13 +390,13 @@ class TestLoader(object):
             else:
                 mod_file = os.path.abspath(
                     getattr(module, '__file__', full_path))
-                realpath = _jython_aware_splitext(
+                realpath = _splitext(
                     os.path.realpath(mod_file))
-                fullpath_noext = _jython_aware_splitext(
+                fullpath_noext = _splitext(
                     os.path.realpath(full_path))
                 if realpath.lower() != fullpath_noext.lower():
                     module_dir = os.path.dirname(realpath)
-                    mod_name = _jython_aware_splitext(
+                    mod_name = _splitext(
                         os.path.basename(full_path))
                     expected_dir = os.path.dirname(full_path)
                     msg = ("%r module incorrectly imported from %r. Expected "
@@ -440,47 +437,3 @@ class TestLoader(object):
 
 
 defaultTestLoader = TestLoader()
-
-
-# These functions are considered obsolete for long time.
-# They will be removed in Python 3.13.
-
-def _makeLoader(prefix, sortUsing, suiteClass=None, testNamePatterns=None):
-    loader = TestLoader()
-    loader.sortTestMethodsUsing = sortUsing
-    loader.testMethodPrefix = prefix
-    loader.testNamePatterns = testNamePatterns
-    if suiteClass:
-        loader.suiteClass = suiteClass
-    return loader
-
-def getTestCaseNames(testCaseClass, prefix, sortUsing=util.three_way_cmp, testNamePatterns=None):
-    import warnings
-    warnings.warn(
-        "unittest.getTestCaseNames() is deprecated and will be removed in Python 3.13. "
-        "Please use unittest.TestLoader.getTestCaseNames() instead.",
-        DeprecationWarning, stacklevel=2
-    )
-    return _makeLoader(prefix, sortUsing, testNamePatterns=testNamePatterns).getTestCaseNames(testCaseClass)
-
-def makeSuite(testCaseClass, prefix='test', sortUsing=util.three_way_cmp,
-              suiteClass=suite.TestSuite):
-    import warnings
-    warnings.warn(
-        "unittest.makeSuite() is deprecated and will be removed in Python 3.13. "
-        "Please use unittest.TestLoader.loadTestsFromTestCase() instead.",
-        DeprecationWarning, stacklevel=2
-    )
-    return _makeLoader(prefix, sortUsing, suiteClass).loadTestsFromTestCase(
-        testCaseClass)
-
-def findTestCases(module, prefix='test', sortUsing=util.three_way_cmp,
-                  suiteClass=suite.TestSuite):
-    import warnings
-    warnings.warn(
-        "unittest.findTestCases() is deprecated and will be removed in Python 3.13. "
-        "Please use unittest.TestLoader.loadTestsFromModule() instead.",
-        DeprecationWarning, stacklevel=2
-    )
-    return _makeLoader(prefix, sortUsing, suiteClass).loadTestsFromModule(\
-        module)

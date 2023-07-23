@@ -1,5 +1,6 @@
 # gh-91321: Build a basic C++ test extension to check that the Python C API is
 # compatible with C++ and does not emit C++ compiler warnings.
+import os
 import sys
 from test import support
 
@@ -17,8 +18,6 @@ if not MS_WINDOWS:
         # a C++ extension using the Python C API does not emit C++ compiler
         # warnings
         '-Werror',
-        # Warn on old-style cast (C cast) like: (PyObject*)op
-        '-Wold-style-cast',
     ]
 else:
     # Don't pass any compiler flag to MSVC
@@ -27,26 +26,17 @@ else:
 
 def main():
     cppflags = list(CPPFLAGS)
-    if '-std=c++03' in sys.argv:
-        sys.argv.remove('-std=c++03')
-        std = 'c++03'
-        name = '_testcpp03ext'
-    else:
-        # Python currently targets C++11
-        std = 'c++11'
-        name = '_testcpp11ext'
+    std = os.environ["CPYTHON_TEST_CPP_STD"]
+    name = os.environ["CPYTHON_TEST_EXT_NAME"]
 
     cppflags = [*CPPFLAGS, f'-std={std}']
-    if std == 'c++11':
-        # Warn when using NULL rather than _Py_NULL in static inline functions
-        cppflags.append('-Wzero-as-null-pointer-constant')
 
     cpp_ext = Extension(
         name,
         sources=[SOURCE],
         language='c++',
         extra_compile_args=cppflags)
-    setup(name=name, ext_modules=[cpp_ext])
+    setup(name='internal' + name, version='0.0', ext_modules=[cpp_ext])
 
 
 if __name__ == "__main__":

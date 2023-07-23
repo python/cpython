@@ -1,3 +1,0 @@
-When built with ``-enable-pystats``, ``sys._stats_on()``,
-``sys._stats_off()``, ``sys._stats_clear()`` and ``sys._stats_dump()``
-functions have been added to enable gathering stats for parts of programs.

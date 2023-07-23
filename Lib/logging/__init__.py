@@ -37,7 +37,7 @@ __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'captureWarnings', 'critical', 'debug', 'disable', 'error',
            'exception', 'fatal', 'getLevelName', 'getLogger', 'getLoggerClass',
            'info', 'log', 'makeLogRecord', 'setLoggerClass', 'shutdown',
-           'warn', 'warning', 'getLogRecordFactory', 'setLogRecordFactory',
+           'warning', 'getLogRecordFactory', 'setLogRecordFactory',
            'lastResort', 'raiseExceptions', 'getLevelNamesMapping',
            'getHandlerByName', 'getHandlerNames']
 
@@ -173,8 +173,8 @@ else: #pragma: no cover
         """Return the frame object for the caller's stack frame."""
         try:
             raise Exception
-        except Exception:
-            return sys.exc_info()[2].tb_frame.f_back
+        except Exception as exc:
+            return exc.__traceback__.tb_frame.f_back
 
 #
 # _srcfile is used when walking the stack to check when we've got the first
@@ -238,7 +238,11 @@ def _acquireLock():
     This should be released with _releaseLock().
     """
     if _lock:
-        _lock.acquire()
+        try:
+            _lock.acquire()
+        except BaseException:
+            _lock.release()
+            raise
 
 def _releaseLock():
     """
@@ -340,7 +344,7 @@ class LogRecord(object):
         self.lineno = lineno
         self.funcName = func
         self.created = ct
-        self.msecs = (ct - int(ct)) * 1000
+        self.msecs = int((ct - int(ct)) * 1000) + 0.0  # see gh-89047
         self.relativeCreated = (self.created - _startTime) * 1000
         if logThreads:
             self.thread = threading.get_ident()
@@ -511,7 +515,7 @@ class StringTemplateStyle(PercentStyle):
 
     def usesTime(self):
         fmt = self._fmt
-        return fmt.find('$asctime') >= 0 or fmt.find(self.asctime_format) >= 0
+        return fmt.find('$asctime') >= 0 or fmt.find(self.asctime_search) >= 0
 
     def validate(self):
         pattern = Template.pattern
@@ -658,7 +662,7 @@ class Formatter(object):
         # See issues #9427, #1553375. Commented out for now.
         #if getattr(self, 'fullstack', False):
         #    traceback.print_stack(tb.tb_frame.f_back, file=sio)
-        traceback.print_exception(ei[0], ei[1], tb, None, sio)
+        traceback.print_exception(ei[0], ei[1], tb, limit=None, file=sio)
         s = sio.getvalue()
         sio.close()
         if s[-1:] == "\n":
@@ -833,17 +837,17 @@ class Filterer(object):
         Determine if a record is loggable by consulting all the filters.
 
         The default is to allow the record to be logged; any filter can veto
-        this by returning a falsy value.
+        this by returning a false value.
         If a filter attached to a handler returns a log record instance,
         then that instance is used in place of the original log record in
         any further processing of the event by that handler.
-        If a filter returns any other truthy value, the original log record
+        If a filter returns any other true value, the original log record
         is used in any further processing of the event by that handler.
 
-        If none of the filters return falsy values, this method returns
+        If none of the filters return false values, this method returns
         a log record.
-        If any of the filters return a falsy value, this method returns
-        a falsy value.
+        If any of the filters return a false value, this method returns
+        a false value.
 
         .. versionchanged:: 3.2
 
@@ -1017,7 +1021,7 @@ class Handler(Filterer):
         the I/O thread lock.
 
         Returns an instance of the log record that was emitted
-        if it passed all filters, otherwise a falsy value is returned.
+        if it passed all filters, otherwise a false value is returned.
         """
         rv = self.filter(record)
         if isinstance(rv, LogRecord):
@@ -1076,14 +1080,14 @@ class Handler(Filterer):
         The record which was being processed is passed in to this method.
         """
         if raiseExceptions and sys.stderr:  # see issue 13807
-            t, v, tb = sys.exc_info()
+            exc = sys.exception()
             try:
                 sys.stderr.write('--- Logging error ---\n')
-                traceback.print_exception(t, v, tb, None, sys.stderr)
+                traceback.print_exception(exc, limit=None, file=sys.stderr)
                 sys.stderr.write('Call stack:\n')
                 # Walk the stack frame up until we're out of logging,
                 # so as to print the calling context.
-                frame = tb.tb_frame
+                frame = exc.__traceback__.tb_frame
                 while (frame and os.path.dirname(frame.f_code.co_filename) ==
                        __path__[0]):
                     frame = frame.f_back
@@ -1108,7 +1112,7 @@ class Handler(Filterer):
             except OSError: #pragma: no cover
                 pass    # see issue 5971
             finally:
-                del t, v, tb
+                del exc
 
     def __repr__(self):
         level = getLevelName(self.level)
@@ -1550,11 +1554,6 @@ class Logger(Filterer):
         if self.isEnabledFor(WARNING):
             self._log(WARNING, msg, args, **kwargs)
 
-    def warn(self, msg, *args, **kwargs):
-        warnings.warn("The 'warn' method is deprecated, "
-            "use 'warning' instead", DeprecationWarning, 2)
-        self.warning(msg, *args, **kwargs)
-
     def error(self, msg, *args, **kwargs):
         """
         Log 'msg % args' with severity 'ERROR'.
@@ -1828,6 +1827,25 @@ class Logger(Filterer):
             suffix = '.'.join((self.name, suffix))
         return self.manager.getLogger(suffix)
 
+    def getChildren(self):
+
+        def _hierlevel(logger):
+            if logger is logger.manager.root:
+                return 0
+            return 1 + logger.name.count('.')
+
+        d = self.manager.loggerDict
+        _acquireLock()
+        try:
+            # exclude PlaceHolders - the last check is to ensure that lower-level
+            # descendants aren't returned - if there are placeholders, a logger's
+            # parent field might point to a grandparent or ancestor thereof.
+            return set(item for item in d.values()
+                       if isinstance(item, Logger) and item.parent is self and
+                       _hierlevel(item) == 1 + _hierlevel(item.parent))
+        finally:
+            _releaseLock()
+
     def __repr__(self):
         level = getLevelName(self.getEffectiveLevel())
         return '<%s %s (%s)>' % (self.__class__.__name__, self.name, level)
@@ -1909,11 +1927,6 @@ class LoggerAdapter(object):
         Delegate a warning call to the underlying logger.
         """
         self.log(WARNING, msg, *args, **kwargs)
-
-    def warn(self, msg, *args, **kwargs):
-        warnings.warn("The 'warn' method is deprecated, "
-            "use 'warning' instead", DeprecationWarning, 2)
-        self.warning(msg, *args, **kwargs)
 
     def error(self, msg, *args, **kwargs):
         """
@@ -2188,11 +2201,6 @@ def warning(msg, *args, **kwargs):
         basicConfig()
     root.warning(msg, *args, **kwargs)
 
-def warn(msg, *args, **kwargs):
-    warnings.warn("The 'warn' function is deprecated, "
-        "use 'warning' instead", DeprecationWarning, 2)
-    warning(msg, *args, **kwargs)
-
 def info(msg, *args, **kwargs):
     """
     Log a message with severity 'INFO' on the root logger. If the logger has
@@ -2245,7 +2253,11 @@ def shutdown(handlerList=_handlerList):
             if h:
                 try:
                     h.acquire()
-                    h.flush()
+                    # MemoryHandlers might not want to be flushed on close,
+                    # but circular imports prevent us scoping this to just
+                    # those handlers.  hence the default to True.
+                    if getattr(h, 'flushOnClose', True):
+                        h.flush()
                     h.close()
                 except (OSError, ValueError):
                     # Ignore errors which might be caused

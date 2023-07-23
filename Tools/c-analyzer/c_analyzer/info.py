@@ -1,4 +1,3 @@
-from collections import namedtuple
 import os.path
 
 from c_common import fsutil
@@ -12,9 +11,6 @@ from c_parser.info import (
 )
 from c_parser.match import (
     is_type_decl,
-)
-from .match import (
-    is_process_global,
 )
 
 

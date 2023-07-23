@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(_gdbm_gdbm_get__doc__,
 "get($self, key, default=None, /)\n"
 "--\n"
@@ -162,8 +168,19 @@ static PyObject *
 _gdbm_gdbm_nextkey(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
     static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {"s#:nextkey", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .format = "s#:nextkey",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     const char *key;
     Py_ssize_t key_length;
 
@@ -228,6 +245,28 @@ _gdbm_gdbm_sync(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_s
         return NULL;
     }
     return _gdbm_gdbm_sync_impl(self, cls);
+}
+
+PyDoc_STRVAR(_gdbm_gdbm_clear__doc__,
+"clear($self, /)\n"
+"--\n"
+"\n"
+"Remove all items from the database.");
+
+#define _GDBM_GDBM_CLEAR_METHODDEF    \
+    {"clear", _PyCFunction_CAST(_gdbm_gdbm_clear), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_clear__doc__},
+
+static PyObject *
+_gdbm_gdbm_clear_impl(gdbmobject *self, PyTypeObject *cls);
+
+static PyObject *
+_gdbm_gdbm_clear(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "clear() takes no arguments");
+        return NULL;
+    }
+    return _gdbm_gdbm_clear_impl(self, cls);
 }
 
 PyDoc_STRVAR(dbmopen__doc__,
@@ -305,4 +344,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=617117d16956ac4d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8c613cbd88e57480 input=a9049054013a1b77]*/

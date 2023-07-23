@@ -1,11 +1,12 @@
-# A lot of failures in these tests on Mac OS X.
-# Byte order related?
-
-import unittest
-from ctypes import *
-from test.test_ctypes import need_symbol
-
 import _ctypes_test
+import ctypes
+import unittest
+from ctypes import (CDLL,
+                    c_byte, c_ubyte, c_char,
+                    c_short, c_ushort, c_int, c_uint,
+                    c_long, c_ulong, c_longlong, c_ulonglong,
+                    c_float, c_double, c_longdouble)
+
 
 class CFunctions(unittest.TestCase):
     _dll = CDLL(_ctypes_test.__file__)
@@ -111,28 +112,24 @@ class CFunctions(unittest.TestCase):
         self.assertEqual(self._dll.tf_bL(b' ', 4294967295), 1431655765)
         self.assertEqual(self.U(), 4294967295)
 
-    @need_symbol('c_longlong')
     def test_longlong(self):
         self._dll.tf_q.restype = c_longlong
         self._dll.tf_q.argtypes = (c_longlong, )
         self.assertEqual(self._dll.tf_q(-9223372036854775806), -3074457345618258602)
         self.assertEqual(self.S(), -9223372036854775806)
 
-    @need_symbol('c_longlong')
     def test_longlong_plus(self):
         self._dll.tf_bq.restype = c_longlong
         self._dll.tf_bq.argtypes = (c_byte, c_longlong)
         self.assertEqual(self._dll.tf_bq(0, -9223372036854775806), -3074457345618258602)
         self.assertEqual(self.S(), -9223372036854775806)
 
-    @need_symbol('c_ulonglong')
     def test_ulonglong(self):
         self._dll.tf_Q.restype = c_ulonglong
         self._dll.tf_Q.argtypes = (c_ulonglong, )
         self.assertEqual(self._dll.tf_Q(18446744073709551615), 6148914691236517205)
         self.assertEqual(self.U(), 18446744073709551615)
 
-    @need_symbol('c_ulonglong')
     def test_ulonglong_plus(self):
         self._dll.tf_bQ.restype = c_ulonglong
         self._dll.tf_bQ.argtypes = (c_byte, c_ulonglong)
@@ -163,14 +160,12 @@ class CFunctions(unittest.TestCase):
         self.assertEqual(self._dll.tf_bd(0, 42.), 14.)
         self.assertEqual(self.S(), 42)
 
-    @need_symbol('c_longdouble')
     def test_longdouble(self):
         self._dll.tf_D.restype = c_longdouble
         self._dll.tf_D.argtypes = (c_longdouble,)
         self.assertEqual(self._dll.tf_D(42.), 14.)
         self.assertEqual(self.S(), 42)
 
-    @need_symbol('c_longdouble')
     def test_longdouble_plus(self):
         self._dll.tf_bD.restype = c_longdouble
         self._dll.tf_bD.argtypes = (c_byte, c_longdouble)
@@ -195,14 +190,11 @@ class CFunctions(unittest.TestCase):
         self.assertEqual(self._dll.tv_i(-42), None)
         self.assertEqual(self.S(), -42)
 
+
 # The following repeats the above tests with stdcall functions (where
 # they are available)
-try:
-    WinDLL
-except NameError:
-    def stdcall_dll(*_): pass
-else:
-    class stdcall_dll(WinDLL):
+if hasattr(ctypes, 'WinDLL'):
+    class stdcall_dll(ctypes.WinDLL):
         def __getattr__(self, name):
             if name[:2] == '__' and name[-2:] == '__':
                 raise AttributeError(name)
@@ -210,9 +202,9 @@ else:
             setattr(self, name, func)
             return func
 
-@need_symbol('WinDLL')
-class stdcallCFunctions(CFunctions):
-    _dll = stdcall_dll(_ctypes_test.__file__)
+    class stdcallCFunctions(CFunctions):
+        _dll = stdcall_dll(_ctypes_test.__file__)
+
 
 if __name__ == '__main__':
     unittest.main()

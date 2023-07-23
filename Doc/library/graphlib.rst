@@ -17,7 +17,7 @@
 
 .. class:: TopologicalSorter(graph=None)
 
-   Provides functionality to topologically sort a graph of hashable nodes.
+   Provides functionality to topologically sort a graph of :term:`hashable` nodes.
 
    A topological order is a linear ordering of the vertices in a graph such that
    for every directed edge u -> v from vertex u to vertex v, vertex u comes
@@ -85,7 +85,7 @@
    .. method:: add(node, *predecessors)
 
       Add a new node and its predecessors to the graph. Both the *node* and all
-      elements in *predecessors* must be hashable.
+      elements in *predecessors* must be :term:`hashable`.
 
       If called multiple times with the same node argument, the set of
       dependencies will be the union of all dependencies passed in.

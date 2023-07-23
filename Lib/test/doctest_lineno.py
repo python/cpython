@@ -48,3 +48,6 @@ class MethodWrapper:
         >>> MethodWrapper.method_with_doctest.__name__
         'method_with_doctest'
         """
+
+# https://github.com/python/cpython/issues/99433
+str_wrapper = object().__str__
