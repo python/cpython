@@ -399,6 +399,18 @@ class BaseTaskTests:
         self.loop.run_until_complete(t1)
         self.loop.run_until_complete(t2)
 
+    def test_task_set_name_pylong(self):
+        # test that setting the task name to a PyLong explicitly doesn't
+        # incorrectly trigger the deferred name formatting logic
+        async def notmuch():
+            return 123
+
+        t = self.new_task(self.loop, notmuch(), name=987654321)
+        self.assertEqual(t.get_name(), '987654321')
+        t.set_name(123456789)
+        self.assertEqual(t.get_name(), '123456789')
+        self.loop.run_until_complete(t)
+
     def test_task_repr_name_not_str(self):
         async def notmuch():
             return 123
@@ -1596,6 +1608,21 @@ class BaseTaskTests:
         self.assertTrue(t.done())
         self.assertEqual(t.result(), 'yeah')
         self.assertAlmostEqual(0.1, loop.time())
+
+    def test_sleep_when_delay_is_nan(self):
+
+        def gen():
+            yield
+
+        loop = self.new_test_loop(gen)
+
+        async def sleeper():
+            await asyncio.sleep(float("nan"))
+
+        t = self.new_task(loop, sleeper())
+
+        with self.assertRaises(ValueError):
+            loop.run_until_complete(t)
 
     def test_sleep_cancel(self):
 

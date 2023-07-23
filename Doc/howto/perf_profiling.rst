@@ -24,7 +24,7 @@ functions to appear in the output of the ``perf`` profiler. When this mode is
 enabled, the interpreter will interpose a small piece of code compiled on the
 fly before the execution of every Python function and it will teach ``perf`` the
 relationship between this piece of code and the associated Python function using
-`perf map files`_.
+:doc:`perf map files <../c-api/perfmaps>`.
 
 .. note::
 
@@ -206,5 +206,3 @@ You can check if your system has been compiled with this flag by running::
 If you don't see any output it means that your interpreter has not been compiled with
 frame pointers and therefore it may not be able to show Python functions in the output
 of ``perf``.
-
-.. _perf map files: https://github.com/torvalds/linux/blob/0513e464f9007b70b96740271a948ca5ab6e7dd7/tools/perf/Documentation/jit-interface.txt

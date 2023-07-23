@@ -19,9 +19,14 @@
 Introduction
 ============
 
-Turtle graphics is a popular way for introducing programming to kids.  It was
-part of the original Logo programming language developed by Wally Feurzeig,
-Seymour Papert and Cynthia Solomon in 1967.
+Turtle graphics is an implementation of `the popular geometric drawing tools
+introduced in Logo <https://en.wikipedia.org/wiki/Turtle_
+(robot)>`_, developed by Wally Feurzeig, Seymour Papert and Cynthia Solomon
+in 1967.
+
+
+Get started
+===========
 
 Imagine a robotic turtle starting at (0, 0) in the x-y plane.  After an ``import turtle``, give it the
 command ``turtle.forward(15)``, and it moves (on-screen!) 15 pixels in the
@@ -36,10 +41,141 @@ direction it is facing, drawing a line as it moves.  Give it the command
    .. image:: turtle-star.*
       :align: center
 
-   .. literalinclude:: ../includes/turtle-star.py
+In Python, turtle graphics provides a representation of a physical "turtle"
+(a little robot with a pen) that draws on a sheet of paper on the floor.
 
-By combining together these and similar commands, intricate shapes and pictures
-can easily be drawn.
+It's an effective and well-proven way for learners to encounter
+programming concepts and interaction with software, as it provides instant,
+visible feedback. It also provides convenient access to graphical output
+in general.
+
+Turtle drawing was originally created as an educational tool, to be used by
+teachers in the classroom. For the programmer who needs to produce some
+graphical output it can be a way to do that without the overhead of
+introducing more complex or external libraries into their work.
+
+
+Tutorial
+========
+
+New users should start here. In this tutorial we'll explore some of the
+basics of turtle drawing.
+
+
+Starting a turtle environment
+-----------------------------
+
+In a Python shell, import all the objects of the ``turtle`` module::
+
+    from turtle import *
+
+If you run into a ``No module named '_tkinter'`` error, you'll have to
+install the :mod:`Tk interface package <tkinter>` on your system.
+
+
+Basic drawing
+-------------
+
+Send the turtle forward 100 steps::
+
+   forward(100)
+
+You should see (most likely, in a new window on your display) a line
+drawn by the turtle, heading East. Change the direction of the turtle,
+so that it turns 120 degrees left (anti-clockwise)::
+
+   left(120)
+
+Let's continue by drawing a triangle::
+
+   forward(100)
+   left(120)
+   forward(100)
+
+Notice how the turtle, represented by an arrow, points in different
+directions as you steer it.
+
+Experiment with those commands, and also with ``backward()`` and
+``right()``.
+
+
+Pen control
+~~~~~~~~~~~
+
+Try changing the color - for example, ``color('blue')`` - and
+width of the line - for example, ``width(3)`` - and then drawing again.
+
+You can also move the turtle around without drawing, by lifting up the pen:
+``up()`` before moving. To start drawing again, use ``down()``.
+
+
+The turtle's position
+~~~~~~~~~~~~~~~~~~~~~
+
+Send your turtle back to its starting-point (useful if it has disappeared
+off-screen)::
+
+   home()
+
+The home position is at the center of the turtle's screen. If you ever need to
+know them, get the turtle's x-y co-ordinates with::
+
+    pos()
+
+Home is at ``(0, 0)``.
+
+And after a while, it will probably help to clear the window so we can start
+anew::
+
+   clearscreen()
+
+
+Making algorithmic patterns
+---------------------------
+
+Using loops, it's possible to build up geometric patterns::
+
+    for steps in range(100):
+        for c in ('blue', 'red', 'green'):
+            color(c)
+            forward(steps)
+            right(30)
+
+
+\ - which of course, are limited only by the imagination!
+
+Let's draw the star shape at the top of this page. We want red lines,
+filled in with yellow::
+
+    color('red')
+    fillcolor('yellow')
+
+Just as ``up()`` and ``down()`` determine whether lines will be drawn,
+filling can be turned on and off::
+
+    begin_fill()
+
+Next we'll create a loop::
+
+    while True:
+        forward(200)
+        left(170)
+        if abs(pos()) < 1:
+            break
+
+``abs(pos()) < 1`` is a good way to know when the turtle is back at its
+home position.
+
+Finally, complete the filling::
+
+    end_fill()
+
+(Note that filling only actually takes place when you give the
+``end_fill()`` command.)
+
+
+Explanation
+===========
 
 The :mod:`turtle` module is an extended reimplementation of the same-named
 module from the Python standard distribution up to version Python 2.5.
@@ -94,8 +230,8 @@ To use multiple turtles on a screen one has to use the object-oriented interface
    omitted here.
 
 
-Overview of available Turtle and Screen methods
-=================================================
+Turtle graphics reference
+=========================
 
 Turtle methods
 --------------
@@ -107,6 +243,7 @@ Turtle motion
       | :func:`right` | :func:`rt`
       | :func:`left` | :func:`lt`
       | :func:`goto` | :func:`setpos` | :func:`setposition`
+      | :func:`teleport`
       | :func:`setx`
       | :func:`sety`
       | :func:`setheading` | :func:`seth`
@@ -165,7 +302,6 @@ Turtle state
       | :func:`resizemode`
       | :func:`shapesize` | :func:`turtlesize`
       | :func:`shearfactor`
-      | :func:`settiltangle`
       | :func:`tiltangle`
       | :func:`tilt`
       | :func:`shapetransform`
@@ -358,18 +494,56 @@ Turtle motion
    .. doctest::
       :skipif: _tkinter is None
 
-       >>> tp = turtle.pos()
-       >>> tp
-       (0.00,0.00)
-       >>> turtle.setpos(60,30)
-       >>> turtle.pos()
-       (60.00,30.00)
-       >>> turtle.setpos((20,80))
-       >>> turtle.pos()
-       (20.00,80.00)
-       >>> turtle.setpos(tp)
-       >>> turtle.pos()
-       (0.00,0.00)
+      >>> tp = turtle.pos()
+      >>> tp
+      (0.00,0.00)
+      >>> turtle.setpos(60,30)
+      >>> turtle.pos()
+      (60.00,30.00)
+      >>> turtle.setpos((20,80))
+      >>> turtle.pos()
+      (20.00,80.00)
+      >>> turtle.setpos(tp)
+      >>> turtle.pos()
+      (0.00,0.00)
+
+
+.. function:: teleport(x, y=None, *, fill_gap=False)
+
+   :param x: a number or ``None``
+   :param y: a number or ``None``
+   :param fill_gap: a boolean
+
+   Move turtle to an absolute position. Unlike goto(x, y), a line will not
+   be drawn. The turtle's orientation does not change. If currently
+   filling, the polygon(s) teleported from will be filled after leaving,
+   and filling will begin again after teleporting. This can be disabled
+   with fill_gap=True, which makes the imaginary line traveled during
+   teleporting act as a fill barrier like in goto(x, y).
+
+   .. doctest::
+      :skipif: _tkinter is None
+      :hide:
+
+      >>> turtle.goto(0, 0)
+
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> tp = turtle.pos()
+      >>> tp
+      (0.00,0.00)
+      >>> turtle.teleport(60)
+      >>> turtle.pos()
+      (60.00,0.00)
+      >>> turtle.teleport(y=10)
+      >>> turtle.pos()
+      (60.00,10.00)
+      >>> turtle.teleport(20, 30)
+      >>> turtle.pos()
+      (20.00,30.00)
+
+   .. versionadded: 3.12
 
 
 .. function:: setx(x)
@@ -537,8 +711,7 @@ Turtle motion
       :skipif: _tkinter is None
 
       >>> turtle.color("blue")
-      >>> turtle.stamp()
-      11
+      >>> stamp_id = turtle.stamp()
       >>> turtle.fd(50)
 
 
@@ -575,15 +748,8 @@ Turtle motion
    .. doctest::
 
       >>> for i in range(8):
-      ...     turtle.stamp(); turtle.fd(30)
-      13
-      14
-      15
-      16
-      17
-      18
-      19
-      20
+      ...     unused_stamp_id = turtle.stamp()
+      ...     turtle.fd(30)
       >>> turtle.clearstamps(2)
       >>> turtle.clearstamps(-2)
       >>> turtle.clearstamps()
@@ -919,23 +1085,23 @@ Color control
    .. doctest::
       :skipif: _tkinter is None
 
-       >>> colormode()
-       1.0
-       >>> turtle.pencolor()
-       'red'
-       >>> turtle.pencolor("brown")
-       >>> turtle.pencolor()
-       'brown'
-       >>> tup = (0.2, 0.8, 0.55)
-       >>> turtle.pencolor(tup)
-       >>> turtle.pencolor()
-       (0.2, 0.8, 0.5490196078431373)
-       >>> colormode(255)
-       >>> turtle.pencolor()
-       (51.0, 204.0, 140.0)
-       >>> turtle.pencolor('#32c18f')
-       >>> turtle.pencolor()
-       (50.0, 193.0, 143.0)
+      >>> colormode()
+      1.0
+      >>> turtle.pencolor()
+      'red'
+      >>> turtle.pencolor("brown")
+      >>> turtle.pencolor()
+      'brown'
+      >>> tup = (0.2, 0.8, 0.55)
+      >>> turtle.pencolor(tup)
+      >>> turtle.pencolor()
+      (0.2, 0.8, 0.5490196078431373)
+      >>> colormode(255)
+      >>> turtle.pencolor()
+      (51.0, 204.0, 140.0)
+      >>> turtle.pencolor('#32c18f')
+      >>> turtle.pencolor()
+      (50.0, 193.0, 143.0)
 
 
 .. function:: fillcolor(*args)
@@ -968,17 +1134,17 @@ Color control
    .. doctest::
       :skipif: _tkinter is None
 
-       >>> turtle.fillcolor("violet")
-       >>> turtle.fillcolor()
-       'violet'
-       >>> turtle.pencolor()
-       (50.0, 193.0, 143.0)
-       >>> turtle.fillcolor((50, 193, 143))  # Integers, not floats
-       >>> turtle.fillcolor()
-       (50.0, 193.0, 143.0)
-       >>> turtle.fillcolor('#ffffff')
-       >>> turtle.fillcolor()
-       (255.0, 255.0, 255.0)
+      >>> turtle.fillcolor("violet")
+      >>> turtle.fillcolor()
+      'violet'
+      >>> turtle.pencolor()
+      (50.0, 193.0, 143.0)
+      >>> turtle.fillcolor((50, 193, 143))  # Integers, not floats
+      >>> turtle.fillcolor()
+      (50.0, 193.0, 143.0)
+      >>> turtle.fillcolor('#ffffff')
+      >>> turtle.fillcolor()
+      (255.0, 255.0, 255.0)
 
 
 .. function:: color(*args)
@@ -1007,12 +1173,12 @@ Color control
    .. doctest::
       :skipif: _tkinter is None
 
-       >>> turtle.color("red", "green")
-       >>> turtle.color()
-       ('red', 'green')
-       >>> color("#285078", "#a0c8f0")
-       >>> color()
-       ((40.0, 80.0, 120.0), (160.0, 200.0, 240.0))
+      >>> turtle.color("red", "green")
+      >>> turtle.color()
+      ('red', 'green')
+      >>> color("#285078", "#a0c8f0")
+      >>> color()
+      ((40.0, 80.0, 120.0), (160.0, 200.0, 240.0))
 
 
 See also: Screen method :func:`colormode`.
@@ -1034,11 +1200,11 @@ Filling
    .. doctest::
       :skipif: _tkinter is None
 
-       >>> turtle.begin_fill()
-       >>> if turtle.filling():
-       ...    turtle.pensize(5)
-       ... else:
-       ...    turtle.pensize(3)
+      >>> turtle.begin_fill()
+      >>> if turtle.filling():
+      ...    turtle.pensize(5)
+      ... else:
+      ...    turtle.pensize(3)
 
 
 
@@ -1244,11 +1410,11 @@ Appearance
    .. doctest::
       :skipif: _tkinter is None
 
-       >>> turtle.shape("circle")
-       >>> turtle.shapesize(5,2)
-       >>> turtle.shearfactor(0.5)
-       >>> turtle.shearfactor()
-       0.5
+      >>> turtle.shape("circle")
+      >>> turtle.shapesize(5,2)
+      >>> turtle.shearfactor(0.5)
+      >>> turtle.shearfactor()
+      0.5
 
 
 .. function:: tilt(angle)
@@ -1268,28 +1434,6 @@ Appearance
       >>> turtle.fd(50)
       >>> turtle.tilt(30)
       >>> turtle.fd(50)
-
-
-.. function:: settiltangle(angle)
-
-   :param angle: a number
-
-   Rotate the turtleshape to point in the direction specified by *angle*,
-   regardless of its current tilt-angle.  *Do not* change the turtle's heading
-   (direction of movement).
-
-   .. doctest::
-      :skipif: _tkinter is None or 'always; deprecated method'
-
-      >>> turtle.reset()
-      >>> turtle.shape("circle")
-      >>> turtle.shapesize(5,2)
-      >>> turtle.settiltangle(45)
-      >>> turtle.fd(50)
-      >>> turtle.settiltangle(-45)
-      >>> turtle.fd(50)
-
-   .. deprecated:: 3.1
 
 
 .. function:: tiltangle(angle=None)
@@ -1617,11 +1761,11 @@ Window control
    ``"nopic"``, delete background image, if present.  If *picname* is ``None``,
    return the filename of the current backgroundimage. ::
 
-       >>> screen.bgpic()
-       'nopic'
-       >>> screen.bgpic("landscape.gif")
-       >>> screen.bgpic()
-       "landscape.gif"
+      >>> screen.bgpic()
+      'nopic'
+      >>> screen.bgpic("landscape.gif")
+      >>> screen.bgpic()
+      "landscape.gif"
 
 
 .. function:: clear()
@@ -2028,16 +2172,16 @@ Settings and special methods
 
    Return the height of the turtle window. ::
 
-       >>> screen.window_height()
-       480
+      >>> screen.window_height()
+      480
 
 
 .. function:: window_width()
 
    Return the width of the turtle window. ::
 
-       >>> screen.window_width()
-       640
+      >>> screen.window_width()
+      640
 
 
 .. _screenspecific:
@@ -2218,12 +2362,12 @@ facilities:
          in the range 0..colormode or a 3-tuple of such numbers.
 
 
-           >>> screen.bgcolor("orange")
-           >>> screen.bgcolor()
-           "orange"
-           >>> screen.bgcolor(0.5,0,0.5)
-           >>> screen.bgcolor()
-           "#800080"
+         >>> screen.bgcolor("orange")
+         >>> screen.bgcolor()
+         "orange"
+         >>> screen.bgcolor(0.5,0,0.5)
+         >>> screen.bgcolor()
+         "#800080"
 
      >>> help(Turtle.penup)
      Help on method penup in module turtle:
@@ -2498,8 +2642,7 @@ Changes since Python 3.0
   :func:`get_shapepoly` have been added. Thus the full range of
   regular linear transforms is now available for transforming turtle shapes.
   :func:`tiltangle` has been enhanced in functionality: it now can
-  be used to get or set the tilt angle. :func:`settiltangle` has been
-  deprecated.
+  be used to get or set the tilt angle.
 
 - The :class:`Screen` method :func:`onkeypress` has been added as a complement to
   :func:`onkey`. As the latter binds actions to the key release event,

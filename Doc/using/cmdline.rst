@@ -109,7 +109,7 @@ source.
    Many standard library modules contain code that is invoked on their execution
    as a script.  An example is the :mod:`timeit` module::
 
-       python -m timeit -s 'setup here' 'benchmarked code here'
+       python -m timeit -s "setup here" "benchmarked code here"
        python -m timeit -h # for details
 
    .. audit-event:: cpython.run_module module-name cmdoption-m
@@ -370,7 +370,7 @@ Miscellaneous options
    Hash randomization is intended to provide protection against a
    denial-of-service caused by carefully chosen inputs that exploit the worst
    case performance of a dict construction, O(n\ :sup:`2`) complexity.  See
-   http://www.ocert.org/advisories/ocert-2011-003.html for details.
+   http://ocert.org/advisories/ocert-2011-003.html for details.
 
    :envvar:`PYTHONHASHSEED` allows you to set a fixed value for the hash
    seed secret.
@@ -897,11 +897,11 @@ conflict.
    * ``default``: use the :ref:`default memory allocators
      <default-memory-allocators>`.
    * ``malloc``: use the :c:func:`malloc` function of the C library
-     for all domains (:c:data:`PYMEM_DOMAIN_RAW`, :c:data:`PYMEM_DOMAIN_MEM`,
-     :c:data:`PYMEM_DOMAIN_OBJ`).
+     for all domains (:c:macro:`PYMEM_DOMAIN_RAW`, :c:macro:`PYMEM_DOMAIN_MEM`,
+     :c:macro:`PYMEM_DOMAIN_OBJ`).
    * ``pymalloc``: use the :ref:`pymalloc allocator <pymalloc>` for
-     :c:data:`PYMEM_DOMAIN_MEM` and :c:data:`PYMEM_DOMAIN_OBJ` domains and use
-     the :c:func:`malloc` function for the :c:data:`PYMEM_DOMAIN_RAW` domain.
+     :c:macro:`PYMEM_DOMAIN_MEM` and :c:macro:`PYMEM_DOMAIN_OBJ` domains and use
+     the :c:func:`malloc` function for the :c:macro:`PYMEM_DOMAIN_RAW` domain.
 
    Install :ref:`debug hooks <pymem-debug-hooks>`:
 

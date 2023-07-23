@@ -19,9 +19,9 @@ extern "C" {
 
 typedef struct {
     uint16_t counter;
-    uint16_t index;
     uint16_t module_keys_version;
     uint16_t builtin_keys_version;
+    uint16_t index;
 } _PyLoadGlobalCache;
 
 #define INLINE_CACHE_ENTRIES_LOAD_GLOBAL CACHE_ENTRIES(_PyLoadGlobalCache)
@@ -53,9 +53,6 @@ typedef struct {
 
 typedef struct {
     uint16_t counter;
-    uint16_t class_version[2];
-    uint16_t self_type_version[2];
-    uint16_t method[4];
 } _PySuperAttrCache;
 
 #define INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR CACHE_ENTRIES(_PySuperAttrCache)
@@ -104,6 +101,13 @@ typedef struct {
 
 #define INLINE_CACHE_ENTRIES_SEND CACHE_ENTRIES(_PySendCache)
 
+typedef struct {
+    uint16_t counter;
+    uint16_t version[2];
+} _PyToBoolCache;
+
+#define INLINE_CACHE_ENTRIES_TO_BOOL CACHE_ENTRIES(_PyToBoolCache)
+
 // Borrowed references to common callables:
 struct callable_cache {
     PyObject *isinstance;
@@ -131,6 +135,7 @@ struct callable_cache {
 // Note that these all fit within a byte, as do combinations.
 // Later, we will use the smaller numbers to differentiate the different
 // kinds of locals (e.g. pos-only arg, varkwargs, local-only).
+#define CO_FAST_HIDDEN  0x10
 #define CO_FAST_LOCAL   0x20
 #define CO_FAST_CELL    0x40
 #define CO_FAST_FREE    0x80
@@ -226,8 +231,8 @@ extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 
 /* Specialization functions */
 
-extern void _Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *class, PyObject *self,
-                                         _Py_CODEUNIT *instr, PyObject *name, int load_method);
+extern void _Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *cls,
+                                         _Py_CODEUNIT *instr, int load_method);
 extern void _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr,
                                     PyObject *name);
 extern void _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr,
@@ -248,6 +253,7 @@ extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
                                           int oparg);
 extern void _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg);
 extern void _Py_Specialize_Send(PyObject *receiver, _Py_CODEUNIT *instr);
+extern void _Py_Specialize_ToBool(PyObject *value, _Py_CODEUNIT *instr);
 
 /* Finalizer function for static codeobjects used in deepfreeze.py */
 extern void _PyStaticCode_Fini(PyCodeObject *co);
@@ -449,19 +455,6 @@ adaptive_counter_backoff(uint16_t counter) {
     return adaptive_counter_bits(value, backoff);
 }
 
-
-/* Line array cache for tracing */
-
-typedef struct _PyShimCodeDef {
-    const uint8_t *code;
-    int codelen;
-    int stacksize;
-    const char *cname;
-} _PyShimCodeDef;
-
-extern PyCodeObject *
-_Py_MakeShimCode(const _PyShimCodeDef *code);
-
 extern uint32_t _Py_next_func_version;
 
 
@@ -489,6 +482,7 @@ extern int _Py_Instrument(PyCodeObject *co, PyInterpreterState *interp);
 
 extern int _Py_GetBaseOpcode(PyCodeObject *code, int offset);
 
+extern int _PyInstruction_GetLength(PyCodeObject *code, int offset);
 
 #ifdef __cplusplus
 }

@@ -22,7 +22,7 @@ This module provides functions for calculating mathematical statistics of
 numeric (:class:`~numbers.Real`-valued) data.
 
 The module is not intended to be a competitor to third-party libraries such
-as `NumPy <https://numpy.org>`_, `SciPy <https://www.scipy.org/>`_, or
+as `NumPy <https://numpy.org>`_, `SciPy <https://scipy.org/>`_, or
 proprietary full-featured statistics packages aimed at professional
 statisticians such as Minitab, SAS and Matlab. It is aimed at the level of
 graphing and scientific calculators.

@@ -112,7 +112,7 @@ class OutputWindow(EditorWindow):
         assert isinstance(s, str)
         self.text.insert(mark, s, tags)
         self.text.see(mark)
-        self.text.update()
+        self.text.update_idletasks()
         return len(s)
 
     def writelines(self, lines):

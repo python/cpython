@@ -69,8 +69,10 @@ the module and a copyright notice if you like).
    headers on some systems, you *must* include :file:`Python.h` before any standard
    headers are included.
 
-   It is recommended to always define ``PY_SSIZE_T_CLEAN`` before including
-   ``Python.h``.  See :ref:`parsetuple` for a description of this macro.
+   ``#define PY_SSIZE_T_CLEAN`` was used to indicate that ``Py_ssize_t`` should be
+   used in some APIs instead of ``int``.
+   It is not necessary since Python 3.13, but we keep it here for backward compatibility.
+   See :ref:`arg-parsing-string-and-buffers` for a description of this macro.
 
 All user-visible symbols defined by :file:`Python.h` have a prefix of ``Py`` or
 ``PY``, except those defined in standard header files. For convenience, and
@@ -235,10 +237,10 @@ Note that the Python name for the exception object is :exc:`spam.error`.  The
 being :exc:`Exception` (unless another class is passed in instead of ``NULL``),
 described in :ref:`bltin-exceptions`.
 
-Note also that the :c:data:`SpamError` variable retains a reference to the newly
+Note also that the :c:data:`!SpamError` variable retains a reference to the newly
 created exception class; this is intentional!  Since the exception could be
 removed from the module by external code, an owned reference to the class is
-needed to ensure that it will not be discarded, causing :c:data:`SpamError` to
+needed to ensure that it will not be discarded, causing :c:data:`!SpamError` to
 become a dangling pointer. Should it become a dangling pointer, C code which
 raises the exception could cause a core dump or other unintended side effects.
 
@@ -279,9 +281,9 @@ statement::
 It returns ``NULL`` (the error indicator for functions returning object pointers)
 if an error is detected in the argument list, relying on the exception set by
 :c:func:`PyArg_ParseTuple`.  Otherwise the string value of the argument has been
-copied to the local variable :c:data:`command`.  This is a pointer assignment and
+copied to the local variable :c:data:`!command`.  This is a pointer assignment and
 you are not supposed to modify the string to which it points (so in Standard C,
-the variable :c:data:`command` should properly be declared as ``const char
+the variable :c:data:`!command` should properly be declared as ``const char
 *command``).
 
 The next statement is a call to the Unix function :c:func:`system`, passing it
@@ -289,7 +291,7 @@ the string we just got from :c:func:`PyArg_ParseTuple`::
 
    sts = system(command);
 
-Our :func:`spam.system` function must return the value of :c:data:`sts` as a
+Our :func:`!spam.system` function must return the value of :c:data:`!sts` as a
 Python object.  This is done using the function :c:func:`PyLong_FromLong`. ::
 
    return PyLong_FromLong(sts);
@@ -335,7 +337,7 @@ When using only ``METH_VARARGS``, the function should expect the Python-level
 parameters to be passed in as a tuple acceptable for parsing via
 :c:func:`PyArg_ParseTuple`; more information on this function is provided below.
 
-The :const:`METH_KEYWORDS` bit may be set in the third field if keyword
+The :c:macro:`METH_KEYWORDS` bit may be set in the third field if keyword
 arguments should be passed to the function.  In this case, the C function should
 accept a third ``PyObject *`` parameter which will be a dictionary of keywords.
 Use :c:func:`PyArg_ParseTupleAndKeywords` to parse the arguments to such a
@@ -383,14 +385,15 @@ automatically unless there's an entry in the :c:data:`PyImport_Inittab` table.
 To add the module to the initialization table, use :c:func:`PyImport_AppendInittab`,
 optionally followed by an import of the module::
 
+   #define PY_SSIZE_T_CLEAN
+   #include <Python.h>
+
    int
    main(int argc, char *argv[])
    {
-       wchar_t *program = Py_DecodeLocale(argv[0], NULL);
-       if (program == NULL) {
-           fprintf(stderr, "Fatal error: cannot decode argv[0]\n");
-           exit(1);
-       }
+       PyStatus status;
+       PyConfig config;
+       PyConfig_InitPythonConfig(&config);
 
        /* Add a built-in module, before Py_Initialize */
        if (PyImport_AppendInittab("spam", PyInit_spam) == -1) {
@@ -399,11 +402,18 @@ optionally followed by an import of the module::
        }
 
        /* Pass argv[0] to the Python interpreter */
-       Py_SetProgramName(program);
+       status = PyConfig_SetBytesString(&config, &config.program_name, argv[0]);
+       if (PyStatus_Exception(status)) {
+           goto exception;
+       }
 
        /* Initialize the Python interpreter.  Required.
           If this step fails, it will be a fatal error. */
-       Py_Initialize();
+       status = Py_InitializeFromConfig(&config);
+       if (PyStatus_Exception(status)) {
+           goto exception;
+       }
+       PyConfig_Clear(&config);
 
        /* Optionally import the module; alternatively,
           import can be deferred until the embedded script
@@ -414,10 +424,13 @@ optionally followed by an import of the module::
            fprintf(stderr, "Error: could not import module 'spam'\n");
        }
 
-       ...
+       // ... use Python C API here ...
 
-       PyMem_RawFree(program);
        return 0;
+
+     exception:
+        PyConfig_Clear(&config);
+        Py_ExitStatusException(status);
    }
 
 .. note::
@@ -527,7 +540,7 @@ be part of a module definition::
    }
 
 This function must be registered with the interpreter using the
-:const:`METH_VARARGS` flag; this is described in section :ref:`methodtable`.  The
+:c:macro:`METH_VARARGS` flag; this is described in section :ref:`methodtable`.  The
 :c:func:`PyArg_ParseTuple` function and its arguments are documented in section
 :ref:`parsetuple`.
 
@@ -649,7 +662,7 @@ Note that any Python object references which are provided to the caller are
 
 Some example calls::
 
-   #define PY_SSIZE_T_CLEAN  /* Make "s#" use Py_ssize_t rather than int. */
+   #define PY_SSIZE_T_CLEAN
    #include <Python.h>
 
 ::
@@ -745,7 +758,7 @@ it returns false and raises an appropriate exception.
 Here is an example module which uses keywords, based on an example by Geoff
 Philbrick (philbrick@hks.com)::
 
-   #define PY_SSIZE_T_CLEAN  /* Make "s#" use Py_ssize_t rather than int. */
+   #define PY_SSIZE_T_CLEAN
    #include <Python.h>
 
    static PyObject *

@@ -5,17 +5,20 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_context.h"       // _PyContextTokenMissing_Type
+#include "pycore_descrobject.h"   // _PyMethodWrapper_Type
 #include "pycore_dict.h"          // _PyObject_MakeDictFromInstanceAttributes()
 #include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_interp_id.h"     // _PyInterpreterID_Type
 #include "pycore_namespace.h"     // _PyNamespace_Type
-#include "pycore_object.h"        // _PyType_CheckConsistency(), _Py_FatalRefcountError()
+#include "pycore_object.h"        // PyAPI_DATA() _Py_SwappedOp definition
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntry_Type
+#include "pycore_typeobject.h"    // _PyBufferWrapper_Type
+#include "pycore_typevarobject.h" // _PyTypeAlias_Type, _Py_initialize_generic
 #include "pycore_unionobject.h"   // _PyUnion_Type
-#include "pycore_interpreteridobject.h"  // _PyInterpreterID_Type
 
 #ifdef Py_LIMITED_API
    // Prevent recursive call _Py_IncRef() <=> Py_INCREF()
@@ -558,11 +561,6 @@ PyObject_Repr(PyObject *v)
         Py_DECREF(res);
         return NULL;
     }
-#ifndef Py_DEBUG
-    if (PyUnicode_READY(res) < 0) {
-        return NULL;
-    }
-#endif
     return res;
 }
 
@@ -581,10 +579,6 @@ PyObject_Str(PyObject *v)
     if (v == NULL)
         return PyUnicode_FromString("<NULL>");
     if (PyUnicode_CheckExact(v)) {
-#ifndef Py_DEBUG
-        if (PyUnicode_READY(v) < 0)
-            return NULL;
-#endif
         return Py_NewRef(v);
     }
     if (Py_TYPE(v)->tp_str == NULL)
@@ -616,11 +610,6 @@ PyObject_Str(PyObject *v)
         Py_DECREF(res);
         return NULL;
     }
-#ifndef Py_DEBUG
-    if (PyUnicode_READY(res) < 0) {
-        return NULL;
-    }
-#endif
     assert(_PyUnicode_CheckConsistency(res, 1));
     return res;
 }
@@ -704,7 +693,7 @@ _PyObject_FunctionStr(PyObject *x)
 {
     assert(!PyErr_Occurred());
     PyObject *qualname;
-    int ret = _PyObject_LookupAttr(x, &_Py_ID(__qualname__), &qualname);
+    int ret = PyObject_GetOptionalAttr(x, &_Py_ID(__qualname__), &qualname);
     if (qualname == NULL) {
         if (ret < 0) {
             return NULL;
@@ -713,7 +702,7 @@ _PyObject_FunctionStr(PyObject *x)
     }
     PyObject *module;
     PyObject *result = NULL;
-    ret = _PyObject_LookupAttr(x, &_Py_ID(__module__), &module);
+    ret = PyObject_GetOptionalAttr(x, &_Py_ID(__module__), &module);
     if (module != NULL && module != Py_None) {
         ret = PyObject_RichCompareBool(module, &_Py_ID(builtins), Py_NE);
         if (ret < 0) {
@@ -890,7 +879,7 @@ PyObject_Hash(PyObject *v)
      * an explicit call to PyType_Ready, we implicitly call
      * PyType_Ready here and then check the tp_hash slot again
      */
-    if (tp->tp_dict == NULL) {
+    if (!_PyType_IsReady(tp)) {
         if (PyType_Ready(tp) < 0)
             return -1;
         if (tp->tp_hash != NULL)
@@ -918,13 +907,24 @@ PyObject_GetAttrString(PyObject *v, const char *name)
 int
 PyObject_HasAttrString(PyObject *v, const char *name)
 {
-    PyObject *res = PyObject_GetAttrString(v, name);
-    if (res != NULL) {
-        Py_DECREF(res);
-        return 1;
+    if (Py_TYPE(v)->tp_getattr != NULL) {
+        PyObject *res = (*Py_TYPE(v)->tp_getattr)(v, (char*)name);
+        if (res != NULL) {
+            Py_DECREF(res);
+            return 1;
+        }
+        PyErr_Clear();
+        return 0;
     }
-    PyErr_Clear();
-    return 0;
+
+    PyObject *attr_name = PyUnicode_FromString(name);
+    if (attr_name == NULL) {
+        PyErr_Clear();
+        return 0;
+    }
+    int ok = PyObject_HasAttr(v, attr_name);
+    Py_DECREF(attr_name);
+    return ok;
 }
 
 int
@@ -944,6 +944,12 @@ PyObject_SetAttrString(PyObject *v, const char *name, PyObject *w)
 }
 
 int
+PyObject_DelAttrString(PyObject *v, const char *name)
+{
+    return PyObject_SetAttrString(v, name, NULL);
+}
+
+int
 _PyObject_IsAbstract(PyObject *obj)
 {
     int res;
@@ -952,7 +958,7 @@ _PyObject_IsAbstract(PyObject *obj)
     if (obj == NULL)
         return 0;
 
-    res = _PyObject_LookupAttr(obj, &_Py_ID(__isabstractmethod__), &isabstract);
+    res = PyObject_GetOptionalAttr(obj, &_Py_ID(__isabstractmethod__), &isabstract);
     if (res > 0) {
         res = PyObject_IsTrue(isabstract);
         Py_DECREF(isabstract);
@@ -1044,7 +1050,7 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
 }
 
 int
-_PyObject_LookupAttr(PyObject *v, PyObject *name, PyObject **result)
+PyObject_GetOptionalAttr(PyObject *v, PyObject *name, PyObject **result)
 {
     PyTypeObject *tp = Py_TYPE(v);
 
@@ -1074,6 +1080,17 @@ _PyObject_LookupAttr(PyObject *v, PyObject *name, PyObject **result)
             return 0;
         }
     }
+    else if (tp->tp_getattro == (getattrofunc)_Py_module_getattro) {
+        // optimization: suppress attribute error from module getattro method
+        *result = _Py_module_getattro_impl((PyModuleObject*)v, name, 1);
+        if (*result != NULL) {
+            return 1;
+        }
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+        return 0;
+    }
     else if (tp->tp_getattro != NULL) {
         *result = (*tp->tp_getattro)(v, name);
     }
@@ -1101,21 +1118,35 @@ _PyObject_LookupAttr(PyObject *v, PyObject *name, PyObject **result)
 }
 
 int
-_PyObject_LookupAttrId(PyObject *v, _Py_Identifier *name, PyObject **result)
+PyObject_GetOptionalAttrString(PyObject *obj, const char *name, PyObject **result)
 {
-    PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
-    if (!oname) {
-        *result = NULL;
+    if (Py_TYPE(obj)->tp_getattr == NULL) {
+        PyObject *oname = PyUnicode_FromString(name);
+        if (oname == NULL) {
+            *result = NULL;
+            return -1;
+        }
+        int rc = PyObject_GetOptionalAttr(obj, oname, result);
+        Py_DECREF(oname);
+        return rc;
+    }
+
+    *result = (*Py_TYPE(obj)->tp_getattr)(obj, (char*)name);
+    if (*result != NULL) {
+        return 1;
+    }
+    if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
         return -1;
     }
-    return  _PyObject_LookupAttr(v, oname, result);
+    PyErr_Clear();
+    return 0;
 }
 
 int
 PyObject_HasAttr(PyObject *v, PyObject *name)
 {
     PyObject *res;
-    if (_PyObject_LookupAttr(v, name, &res) < 0) {
+    if (PyObject_GetOptionalAttr(v, name, &res) < 0) {
         PyErr_Clear();
         return 0;
     }
@@ -1173,6 +1204,12 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
                      value==NULL ? "del" : "assign to",
                      name);
     return -1;
+}
+
+int
+PyObject_DelAttr(PyObject *v, PyObject *name)
+{
+    return PyObject_SetAttr(v, name, NULL);
 }
 
 PyObject **
@@ -1385,7 +1422,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     }
     Py_INCREF(name);
 
-    if (tp->tp_dict == NULL) {
+    if (!_PyType_IsReady(tp)) {
         if (PyType_Ready(tp) < 0)
             goto done;
     }
@@ -1507,8 +1544,9 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
         return -1;
     }
 
-    if (tp->tp_dict == NULL && PyType_Ready(tp) < 0)
+    if (!_PyType_IsReady(tp) && PyType_Ready(tp) < 0) {
         return -1;
+    }
 
     Py_INCREF(name);
     Py_INCREF(tp);
@@ -1539,9 +1577,18 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
         }
         if (dictptr == NULL) {
             if (descr == NULL) {
-                PyErr_Format(PyExc_AttributeError,
-                            "'%.100s' object has no attribute '%U'",
-                            tp->tp_name, name);
+                if (tp->tp_setattro == PyObject_GenericSetAttr) {
+                    PyErr_Format(PyExc_AttributeError,
+                                "'%.100s' object has no attribute '%U' and no "
+                                "__dict__ for setting new attributes",
+                                tp->tp_name, name);
+                }
+                else {
+                    PyErr_Format(PyExc_AttributeError,
+                                "'%.100s' object has no attribute '%U'",
+                                tp->tp_name, name);
+                }
+                set_attribute_error_context(obj, name);
             }
             else {
                 PyErr_Format(PyExc_AttributeError,
@@ -1574,6 +1621,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
                          "'%.100s' object has no attribute '%U'",
                          tp->tp_name, name);
         }
+        set_attribute_error_context(obj, name);
     }
   done:
     Py_XDECREF(descr);
@@ -1679,13 +1727,15 @@ _dir_locals(void)
     PyObject *names;
     PyObject *locals;
 
-    locals = PyEval_GetLocals();
+    locals = _PyEval_GetFrameLocals();
     if (locals == NULL)
         return NULL;
 
     names = PyMapping_Keys(locals);
-    if (!names)
+    Py_DECREF(locals);
+    if (!names) {
         return NULL;
+    }
     if (!PyList_Check(names)) {
         PyErr_Format(PyExc_TypeError,
             "dir(): expected keys() of locals to be a list, "
@@ -1697,7 +1747,6 @@ _dir_locals(void)
         Py_DECREF(names);
         return NULL;
     }
-    /* the locals don't need to be DECREF'd */
     return names;
 }
 
@@ -2061,6 +2110,7 @@ static PyTypeObject* static_types[] = {
     &_PyAsyncGenASend_Type,
     &_PyAsyncGenAThrow_Type,
     &_PyAsyncGenWrappedValue_Type,
+    &_PyBufferWrapper_Type,
     &_PyContextTokenMissing_Type,
     &_PyCoroWrapper_Type,
     &_Py_GenericAliasIterType,
@@ -2086,6 +2136,7 @@ static PyTypeObject* static_types[] = {
     &_PyWeakref_CallableProxyType,
     &_PyWeakref_ProxyType,
     &_PyWeakref_RefType,
+    &_PyTypeAlias_Type,
 
     // subclasses: _PyTypes_FiniTypes() deallocates them before their base
     // class
@@ -2101,14 +2152,10 @@ static PyTypeObject* static_types[] = {
 PyStatus
 _PyTypes_InitTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
     // All other static types (unless initialized elsewhere)
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
         PyTypeObject *type = static_types[i];
-        if (_PyStaticType_InitBuiltin(type) < 0) {
+        if (_PyStaticType_InitBuiltin(interp, type) < 0) {
             return _PyStatus_ERR("Can't initialize builtin type");
         }
         if (type == &PyType_Type) {
@@ -2116,6 +2163,11 @@ _PyTypes_InitTypes(PyInterpreterState *interp)
             assert(PyBaseObject_Type.tp_base == NULL);
             assert(PyType_Type.tp_base == &PyBaseObject_Type);
         }
+    }
+
+    // Must be after static types are initialized
+    if (_Py_initialize_generic(interp) < 0) {
+        return _PyStatus_ERR("Can't initialize generic types");
     }
 
     return _PyStatus_OK();
@@ -2131,15 +2183,11 @@ _PyTypes_InitTypes(PyInterpreterState *interp)
 void
 _PyTypes_FiniTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-
     // Deallocate types in the reverse order to deallocate subclasses before
     // their base classes.
     for (Py_ssize_t i=Py_ARRAY_LENGTH(static_types)-1; i>=0; i--) {
         PyTypeObject *type = static_types[i];
-        _PyStaticType_Dealloc(type);
+        _PyStaticType_Dealloc(interp, type);
     }
 }
 

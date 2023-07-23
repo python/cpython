@@ -66,10 +66,6 @@ else:
     class EmptyStruct(ctypes.Structure):
         pass
 
-# Does io.IOBase finalizer log the exception if the close() method fails?
-# The exception is ignored silently by default in release build.
-IOBASE_EMITS_UNRAISABLE = (support.Py_DEBUG or sys.flags.dev_mode)
-
 
 def _default_chunk_size():
     """Get the default TextIOWrapper chunk size"""
@@ -1218,10 +1214,7 @@ class CommonBufferedTests:
             with self.assertRaises(AttributeError):
                 self.tp(rawio).xyzzy
 
-            if not IOBASE_EMITS_UNRAISABLE:
-                self.assertIsNone(cm.unraisable)
-            elif cm.unraisable is not None:
-                self.assertEqual(cm.unraisable.exc_type, OSError)
+            self.assertEqual(cm.unraisable.exc_type, OSError)
 
     def test_repr(self):
         raw = self.MockRawIO()
@@ -3022,10 +3015,7 @@ class TextIOWrapperTest(unittest.TestCase):
             with self.assertRaises(AttributeError):
                 self.TextIOWrapper(rawio, encoding="utf-8").xyzzy
 
-            if not IOBASE_EMITS_UNRAISABLE:
-                self.assertIsNone(cm.unraisable)
-            elif cm.unraisable is not None:
-                self.assertEqual(cm.unraisable.exc_type, OSError)
+            self.assertEqual(cm.unraisable.exc_type, OSError)
 
     # Systematic tests of the text I/O API
 
@@ -4242,6 +4232,7 @@ class MiscIOTest(unittest.TestCase):
 
     def test_pickling(self):
         # Pickling file objects is forbidden
+        msg = "cannot pickle"
         for kwargs in [
                 {"mode": "w"},
                 {"mode": "wb"},
@@ -4256,8 +4247,10 @@ class MiscIOTest(unittest.TestCase):
             if "b" not in kwargs["mode"]:
                 kwargs["encoding"] = "utf-8"
             for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
-                with self.open(os_helper.TESTFN, **kwargs) as f:
-                    self.assertRaises(TypeError, pickle.dumps, f, protocol)
+                with self.subTest(protocol=protocol, kwargs=kwargs):
+                    with self.open(os_helper.TESTFN, **kwargs) as f:
+                        with self.assertRaisesRegex(TypeError, msg):
+                            pickle.dumps(f, protocol)
 
     @unittest.skipIf(
         support.is_emscripten, "fstat() of a pipe fd is not supported"

@@ -181,7 +181,7 @@ method_getattro(PyObject *obj, PyObject *name)
     PyObject *descr = NULL;
 
     {
-        if (tp->tp_dict == NULL) {
+        if (!_PyType_IsReady(tp)) {
             if (PyType_Ready(tp) < 0)
                 return NULL;
         }
@@ -275,9 +275,9 @@ method_repr(PyMethodObject *a)
     PyObject *funcname, *result;
     const char *defname = "?";
 
-    if (_PyObject_LookupAttr(func, &_Py_ID(__qualname__), &funcname) < 0 ||
+    if (PyObject_GetOptionalAttr(func, &_Py_ID(__qualname__), &funcname) < 0 ||
         (funcname == NULL &&
-         _PyObject_LookupAttr(func, &_Py_ID(__name__), &funcname) < 0))
+         PyObject_GetOptionalAttr(func, &_Py_ID(__name__), &funcname) < 0))
     {
         return NULL;
     }
@@ -395,7 +395,7 @@ instancemethod_getattro(PyObject *self, PyObject *name)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject *descr = NULL;
 
-    if (tp->tp_dict == NULL) {
+    if (!_PyType_IsReady(tp)) {
         if (PyType_Ready(tp) < 0)
             return NULL;
     }
@@ -479,7 +479,7 @@ instancemethod_repr(PyObject *self)
         return NULL;
     }
 
-    if (_PyObject_LookupAttr(func, &_Py_ID(__name__), &funcname) < 0) {
+    if (PyObject_GetOptionalAttr(func, &_Py_ID(__name__), &funcname) < 0) {
         return NULL;
     }
     if (funcname != NULL && !PyUnicode_Check(funcname)) {
