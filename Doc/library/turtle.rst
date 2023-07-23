@@ -86,7 +86,7 @@ You should see (most likely, in a new window on your display) a line
 drawn by the turtle, heading East. Change the direction of the turtle,
 so that it turns 120 degrees left (anti-clockwise)::
 
-   left(120)
+left(120)
 
 Let's continue by drawing a triangle::
 

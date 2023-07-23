@@ -14,6 +14,27 @@ extern "C" {
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_runtime.h"       // _PyRuntime
 
+/* Check if an object is consistent. For example, ensure that the reference
+   counter is greater than or equal to 1, and ensure that ob_type is not NULL.
+
+   Call _PyObject_AssertFailed() if the object is inconsistent.
+
+   If check_content is zero, only check header fields: reduce the overhead.
+
+   The function always return 1. The return value is just here to be able to
+   write:
+
+   assert(_PyObject_CheckConsistency(obj, 1)); */
+extern int _PyObject_CheckConsistency(PyObject *op, int check_content);
+
+extern void _PyDebugAllocatorStats(FILE *out, const char *block_name,
+                                   int num_blocks, size_t sizeof_block);
+
+extern void _PyObject_DebugTypeStats(FILE *out);
+
+// Export for shared _testinternalcapi extension
+PyAPI_DATA(int) _PyObject_IsFreed(PyObject *);
+
 /* We need to maintain an internal copy of Py{Var}Object_HEAD_INIT to avoid
    designated initializer conflicts in C++20. If we use the deinition in
    object.h, we will be mixing designated and non-designated initializers in
