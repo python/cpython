@@ -831,6 +831,11 @@ using ``[]``.
 
 .. data:: AnyStr
 
+   .. deprecated:: 3.13
+      Deprecated in favor of the new type parameter syntax. Use
+      ``class A[T: (str, bytes)]: ...`` instead of importing ``AnyStr``. See
+      :pep:`695` for more details.
+
    A :ref:`constrained type variable <typing-constrained-typevar>`.
 
    Definition::
