@@ -136,7 +136,7 @@ PyAPI_FUNC(void*) _PyBytesWriter_WriteBytes(_PyBytesWriter *writer,
  *
  * len is the length of the string to dedent.
  * expecting (len >= 0)
- * 
+ *
  * writer is a _PyBytesWriter object to write the dedented string.
  * expecting (writer != NULL)
  *
