@@ -6,6 +6,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_Vector()
 #include "pycore_compile.h"       // _PyAST_Compile()
+#include "pycore_dict.h"          // _PyDict_GetItemWithError()
 #include "pycore_long.h"          // _PyLong_CompactValue
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _Py_AddToAllObjects()
