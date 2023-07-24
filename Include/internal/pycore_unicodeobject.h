@@ -11,6 +11,19 @@ extern "C" {
 #include "pycore_fileutils.h"     // _Py_error_handler
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
+/* --- Characters Type APIs ----------------------------------------------- */
+
+extern int _PyUnicode_IsXidStart(Py_UCS4 ch);
+extern int _PyUnicode_IsXidContinue(Py_UCS4 ch);
+extern int _PyUnicode_ToLowerFull(Py_UCS4 ch, Py_UCS4 *res);
+extern int _PyUnicode_ToTitleFull(Py_UCS4 ch, Py_UCS4 *res);
+extern int _PyUnicode_ToUpperFull(Py_UCS4 ch, Py_UCS4 *res);
+extern int _PyUnicode_ToFoldedFull(Py_UCS4 ch, Py_UCS4 *res);
+extern int _PyUnicode_IsCaseIgnorable(Py_UCS4 ch);
+extern int _PyUnicode_IsCased(Py_UCS4 ch);
+
+/* --- Unicode API -------------------------------------------------------- */
+
 PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
     PyObject *op,
     int check_content);

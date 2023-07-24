@@ -1,7 +1,7 @@
 """Parser for bytecodes.inst."""
 
 from dataclasses import dataclass, field
-from typing import NamedTuple, Callable, TypeVar, Literal
+from typing import NamedTuple, Callable, TypeVar, Literal, cast
 
 import lexer as lx
 from plexer import PLexer
@@ -19,7 +19,7 @@ def contextual(func: Callable[[P], N | None]) -> Callable[[P], N | None]:
         res = func(self)
         if res is None:
             self.setpos(begin)
-            return
+            return None
         end = self.getpos()
         res.context = Context(begin, end, self)
         return res
@@ -147,6 +147,7 @@ class Parser(PLexer):
             return family
         if pseudo := self.pseudo_def():
             return pseudo
+        return None
 
     @contextual
     def inst_def(self) -> InstDef | None:
@@ -166,7 +167,8 @@ class Parser(PLexer):
         # TODO: Make INST a keyword in the lexer.
         override = bool(self.expect(lx.OVERRIDE))
         register = bool(self.expect(lx.REGISTER))
-        if (tkn := self.expect(lx.IDENTIFIER)) and (kind := tkn.text) in ("inst", "op"):
+        if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text in ("inst", "op"):
+            kind = cast(Literal["inst", "op"], tkn.text)
             if self.expect(lx.LPAREN) and (tkn := self.expect(lx.IDENTIFIER)):
                 name = tkn.text
                 if self.expect(lx.COMMA):
@@ -190,6 +192,7 @@ class Parser(PLexer):
         # input (',' input)*
         here = self.getpos()
         if inp := self.input():
+            inp = cast(InputEffect, inp)
             near = self.getpos()
             if self.expect(lx.COMMA):
                 if rest := self.inputs():
@@ -232,6 +235,7 @@ class Parser(PLexer):
                     raise self.make_syntax_error(f"Expected integer, got {num!r}")
                 else:
                     return CacheEffect(tkn.text, size)
+        return None
 
     @contextual
     def stack_effect(self) -> StackEffect | None:
@@ -258,6 +262,7 @@ class Parser(PLexer):
                 type_text = "PyObject **"
                 size_text = size.text.strip()
             return StackEffect(tkn.text, type_text, cond_text, size_text)
+        return None
 
     @contextual
     def expression(self) -> Expression | None:
@@ -288,6 +293,7 @@ class Parser(PLexer):
     def op(self) -> OpName | None:
         if tkn := self.expect(lx.IDENTIFIER):
             return OpName(tkn.text)
+        return None
 
     @contextual
     def macro_def(self) -> Macro | None:
@@ -300,16 +306,20 @@ class Parser(PLexer):
                                 self.require(lx.SEMI)
                                 res = Macro(tkn.text, uops)
                                 return res
+        return None
 
     def uops(self) -> list[UOp] | None:
         if uop := self.uop():
+            uop = cast(UOp, uop)
             uops = [uop]
             while self.expect(lx.PLUS):
                 if uop := self.uop():
+                    uop = cast(UOp, uop)
                     uops.append(uop)
                 else:
                     raise self.make_syntax_error("Expected op name or cache effect")
             return uops
+        return None
 
     @contextual
     def uop(self) -> UOp | None:
@@ -327,6 +337,7 @@ class Parser(PLexer):
                 raise self.make_syntax_error("Expected integer")
             else:
                 return OpName(tkn.text)
+        return None
 
     @contextual
     def family_def(self) -> Family | None:
@@ -385,6 +396,7 @@ class Parser(PLexer):
     def block(self) -> Block | None:
         if self.c_blob():
             return Block()
+        return None
 
     def c_blob(self) -> list[lx.Token]:
         tokens: list[lx.Token] = []

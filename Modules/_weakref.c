@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_dict.h"          // _PyDict_DelItemIf()
 #include "pycore_object.h"        // _PyObject_GET_WEAKREFS_LISTPTR
 #include "pycore_weakref.h"       // _PyWeakref_IS_DEAD()
 

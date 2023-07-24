@@ -8,8 +8,20 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pymem.h"      // PyMemAllocatorName
+// Try to get the allocators name set by _PyMem_SetupAllocators().
+// Return NULL if unknown.
+// Export for shared _testinternalcapi extension.
+PyAPI_FUNC(const char*) _PyMem_GetCurrentAllocatorName(void);
 
+// strdup() using PyMem_RawMalloc()
+extern char* _PyMem_RawStrdup(const char *str);
+
+// strdup() using PyMem_Malloc().
+// Export for shared _pickle extension.
+PyAPI_FUNC(char*) _PyMem_Strdup(const char *str);
+
+// wcsdup() using PyMem_RawMalloc()
+extern wchar_t* _PyMem_RawWcsdup(const wchar_t *str);
 
 typedef struct {
     /* We tag each block with an API ID in order to tag API violations */
