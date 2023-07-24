@@ -1520,7 +1520,7 @@ class ClinicExternalTest(TestCase):
         # param may change (it's a set, thus unordered). So, let's compare the
         # start and end of the expected output, and then assert we've got a
         # line for each converter.
-        self.assertTrue(out.startswith(prelude))
+        self.assertTrue(out.startswith(prelude), out)
         for converter in expected_converters:
             with self.subTest(converter=converter):
                 self.assertIn(converter, out)
