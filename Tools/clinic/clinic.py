@@ -5591,7 +5591,7 @@ parsers: dict[str, Callable[[Clinic], Parser]] = {
 clinic = None
 
 
-def main(argv):
+def main(argv: list[str]) -> None:
     import sys
     import argparse
     cmdline = argparse.ArgumentParser(
@@ -5619,8 +5619,8 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
             print()
             cmdline.print_usage()
             sys.exit(-1)
-        converters = []
-        return_converters = []
+        converters: list[tuple[str, str]] = []
+        return_converters: list[tuple[str, str]] = []
         ignored = set("""
             add_c_converter
             add_c_return_converter
@@ -5716,4 +5716,5 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    main(sys.argv[1:])
+    sys.exit(0)
