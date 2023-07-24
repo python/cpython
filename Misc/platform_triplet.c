@@ -67,45 +67,59 @@
 #  endif
 # elif defined(__m68k__) && !defined(__mcoldfire__)
         m68k-linux-gnu
-# elif defined(__mips_hard_float) && defined(__mips_isa_rev) && (__mips_isa_rev >=6) && defined(_MIPSEL)
-#  if _MIPS_SIM == _ABIO32
-        mipsisa32r6el-linux-gnu
-#  elif _MIPS_SIM == _ABIN32
-        mipsisa64r6el-linux-gnuabin32
-#  elif _MIPS_SIM == _ABI64
-        mipsisa64r6el-linux-gnuabi64
-#  else
-#   error unknown platform triplet
-#  endif
-# elif defined(__mips_hard_float) && defined(__mips_isa_rev) && (__mips_isa_rev >=6)
-#  if _MIPS_SIM == _ABIO32
-        mipsisa32r6-linux-gnu
-#  elif _MIPS_SIM == _ABIN32
-        mipsisa64r6-linux-gnuabin32
-#  elif _MIPS_SIM == _ABI64
-        mipsisa64r6-linux-gnuabi64
-#  else
-#   error unknown platform triplet
-#  endif
-# elif defined(__mips_hard_float) && defined(_MIPSEL)
-#  if _MIPS_SIM == _ABIO32
-        mipsel-linux-gnu
-#  elif _MIPS_SIM == _ABIN32
-        mips64el-linux-gnuabin32
-#  elif _MIPS_SIM == _ABI64
-        mips64el-linux-gnuabi64
-#  else
-#   error unknown platform triplet
-#  endif
 # elif defined(__mips_hard_float)
-#  if _MIPS_SIM == _ABIO32
-        mips-linux-gnu
-#  elif _MIPS_SIM == _ABIN32
-        mips64-linux-gnuabin32
-#  elif _MIPS_SIM == _ABI64
-        mips64-linux-gnuabi64
+#  if defined(__mips_isa_rev) && (__mips_isa_rev >=6)
+#   if defined(_MIPSEL) && defined(__mips64)
+#    if _MIPS_SIM == _ABIO32
+        mipsisa64r6el-linux-gnu
+#    elif _MIPS_SIM == _ABIN32
+        mipsisa64r6el-linux-gnuabin32
+#    elif _MIPS_SIM == _ABI64
+        mipsisa64r6el-linux-gnuabi64
+#    else
+#     error unknown platform triplet
+#    endif
+#   elif defined(_MIPSEL)
+        mipsisa32r6el-linux-gnu
+#   elif defined(__mips64)
+#    if _MIPS_SIM == _ABIO32
+        mipsisa64r6-linux-gnu
+#    elif _MIPS_SIM == _ABIN32
+        mipsisa64r6-linux-gnuabin32
+#    elif _MIPS_SIM == _ABI64
+        mipsisa64r6-linux-gnuabi64
+#    else
+#     error unknown platform triplet
+#    endif
+#   else
+        mipsisa32r6-linux-gnu
+#   endif
 #  else
-#   error unknown platform triplet
+#   if defined(_MIPSEL) && defined(__mips64)
+#    if _MIPS_SIM == _ABIO32
+        mips64el-linux-gnu
+#    elif _MIPS_SIM == _ABIN32
+        mips64el-linux-gnuabin32
+#    elif _MIPS_SIM == _ABI64
+        mips64el-linux-gnuabi64
+#    else
+#     error unknown platform triplet
+#    endif
+#   elif defined(_MIPSEL)
+        mipsel-linux-gnu
+#   elif defined(__mips64)
+#    if _MIPS_SIM == _ABIO32
+        mips64-linux-gnu
+#    elif _MIPS_SIM == _ABIN32
+        mips64-linux-gnuabin32
+#    elif _MIPS_SIM == _ABI64
+        mips64-linux-gnuabi64
+#    else
+#     error unknown platform triplet
+#    endif
+#   else
+        mips-linux-gnu
+#   endif
 #  endif
 # elif defined(__or1k__)
         or1k-linux-gnu
