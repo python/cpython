@@ -224,7 +224,7 @@ class DbfilenameShelf(Shelf):
     def __init__(self, filename, flag='c', protocol=None, writeback=False):
         import dbm
         Shelf.__init__(self, dbm.open(filename, flag), protocol, writeback)
-    
+
     def clear(self):
         """Remove all items from the shelf."""
         # Call through to the clear method on dbm-backed shelves.
