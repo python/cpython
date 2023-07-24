@@ -19,6 +19,13 @@ labels: "type-crash"
 <!--
   Tell us what happened. Ideally, include a minimal, reproducible example.
   (https://stackoverflow.com/help/minimal-reproducible-example)
+
+  Put any code blocks inside triple backticks:
+
+  ```py
+  your code here
+  ```
+
 -->
 
 

@@ -29,6 +29,13 @@ labels: "type-bug"
 <!--
   Include a minimal, reproducible example if possible.
   (https://stackoverflow.com/help/minimal-reproducible-example)
+
+  Put any code blocks inside triple backticks:
+
+  ```py
+  your code here
+  ```
+
 -->
 
 
