@@ -213,7 +213,7 @@ process a single source file, like this:
 The CLI supports the following options:
 
 .. program:: ./Tools/clinic/clinic.py [-h] [-f] [-o OUTPUT] [-v] \
-             [--converters] [--make] [--srcdir SRCDIR] [filename ...]
+             [--converters] [--make] [--srcdir SRCDIR] [FILE ...]
 
 .. option:: -h, --help
 
@@ -221,7 +221,7 @@ The CLI supports the following options:
 
 .. option:: -f, --force
 
-   Force clinic regeneration.
+   Force output regeneration.
 
 .. option:: -o, --output OUTPUT
 
@@ -243,7 +243,7 @@ The CLI supports the following options:
 
    The directory tree to walk in :option:`--make` mode.
 
-.. option:: filename ...
+.. option:: FILE ...
 
    The list of files to process.
 
