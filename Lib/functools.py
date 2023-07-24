@@ -942,7 +942,7 @@ class singledispatchmethod:
         return self.dispatcher.register(cls, func=method)
 
     def __set_name__(self, owner, name):
-        self.attrname = name
+        self._attrname = name
 
     def __get__(self, obj, cls=None):
         def _method(*args, **kwargs):
@@ -955,7 +955,7 @@ class singledispatchmethod:
 
         # not all objects have __dict__ (e.g. classes with __slots__)
         if hasattr(obj, '__dict__'):
-            obj.__dict__[self.attrname] = _method
+            obj.__dict__[self._attrname] = _method
 
         return _method
 
