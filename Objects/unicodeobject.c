@@ -1223,6 +1223,7 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
     _PyUnicode_STATE(unicode).kind = kind;
     _PyUnicode_STATE(unicode).compact = 1;
     _PyUnicode_STATE(unicode).ascii = is_ascii;
+    _PyUnicode_STATE(unicode).statically_allocated = 0;
     if (is_ascii) {
         ((char*)data)[size] = 0;
     }
@@ -1553,7 +1554,9 @@ unicode_dealloc(PyObject *unicode)
      * we accidentally decref an immortal string out of existence. Since
      * the string is an immortal object, just re-set the reference count.
      */
-    if (PyUnicode_CHECK_INTERNED(unicode)) {
+    if (PyUnicode_CHECK_INTERNED(unicode)
+        || _PyUnicode_STATE(unicode).statically_allocated)
+    {
         _Py_SetImmortal(unicode);
         return;
     }
@@ -14503,6 +14506,7 @@ unicode_subtype_new(PyTypeObject *type, PyObject *unicode)
     _PyUnicode_STATE(self).kind = kind;
     _PyUnicode_STATE(self).compact = 0;
     _PyUnicode_STATE(self).ascii = _PyUnicode_STATE(unicode).ascii;
+    _PyUnicode_STATE(self).statically_allocated = 0;
     _PyUnicode_UTF8_LENGTH(self) = 0;
     _PyUnicode_UTF8(self) = NULL;
     _PyUnicode_DATA_ANY(self) = NULL;

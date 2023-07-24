@@ -214,6 +214,7 @@ extern PyTypeObject _PyExc_MemoryError;
             .kind = 1, \
             .compact = 1, \
             .ascii = (ASCII), \
+            .statically_allocated = 1, \
         }, \
     }
 #define _PyASCIIObject_INIT(LITERAL) \
