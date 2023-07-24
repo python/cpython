@@ -1518,13 +1518,21 @@ class ClinicExternalTest(TestCase):
         out = self.expect_success("--converters")
         # We cannot simply compare the output, because the repr of the *accept*
         # param may change (it's a set, thus unordered). So, let's compare the
-        # start and end of the expected output, and then assert we've got a
-        # line for each converter.
+        # start and end of the expected output, and then assert that the
+        # converters appear lined up in alphabetical order.
         self.assertTrue(out.startswith(prelude), out)
-        for converter in expected_converters:
-            with self.subTest(converter=converter):
-                self.assertIn(converter, out)
         self.assertTrue(out.endswith(finale), out)
+
+        out = out.removeprefix(prelude)
+        out = out.removesuffix(finale)
+        lines = out.split("\n")
+        for converter, line in zip(expected_converters, lines):
+            line = line.lstrip()
+            with self.subTest(converter=converter):
+                self.assertTrue(
+                    line.startswith(converter),
+                    f"expected converter {converter!r}, got {line!r}"
+                )
 
 
 try:
