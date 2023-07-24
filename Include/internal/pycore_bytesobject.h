@@ -41,31 +41,6 @@ PyAPI_FUNC(void)
 _PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
     const char* src, Py_ssize_t len_src);
 
-
-/** Dedent a UTF-8 encoded string.
- * behavior is expected to match `textwrap.dedent`
- *
- * return value:
- * 0, no need to dedent, `dest` buffer and `*dest_len` untouched
- * 1, success
- *
- * `src` is the string to dedent.
- * expecting `(src != NULL)`
- *
- * `src_len` is the length of `src`.
- *
- * `dest` is a buffer for the result.
- * expecting `(dest != NULL)`
- *
- * `*dest_len` stores the length of `dest` on entry, and is updated to the
- * length of the dedent result upon success. Output buffer should be large
- * enough to hold the result.
- * expecting `(dest_len != NULL && *dest_len >= src_len)`
- */
-PyAPI_FUNC(int)
-_PyBytes_Dedent(const char *src, Py_ssize_t src_len, char* dest,
-                Py_ssize_t* dest_len);
-
 /* --- _PyBytesWriter ----------------------------------------------------- */
 
 /* The _PyBytesWriter structure is big: it contains an embedded "stack buffer".

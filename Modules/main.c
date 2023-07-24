@@ -229,37 +229,6 @@ pymain_import_readline(const PyConfig *config)
     }
 }
 
-/* Strip common leading whitespace, just as textwrap.dedent.
-   It returns a new reference. */
-static PyObject *
-dedent_utf8_bytes(PyObject *bytes)
-{
-    assert(bytes != NULL && PyBytes_CheckExact(bytes));
-
-    Py_ssize_t nchars;
-    char *start;
-    if (PyBytes_AsStringAndSize(bytes, &start, &nchars) != 0) {
-        return NULL;
-    }
-
-    char* p = PyMem_Malloc(nchars);
-    if (p == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-
-    int ret = _PyBytes_Dedent(start, nchars, p, &nchars);
-
-    if (ret == 0) {
-        Py_INCREF(bytes);
-        PyMem_Free(p);
-        return bytes;
-    }
-
-    PyObject* new_bytes = PyBytes_FromStringAndSize(p, nchars);
-    PyMem_Free(p);
-    return new_bytes;
-}
 
 static int
 pymain_run_command(wchar_t *command)
@@ -276,18 +245,16 @@ pymain_run_command(wchar_t *command)
         return pymain_exit_err_print();
     }
 
+    Py_SETREF(unicode, _PyUnicode_Dedent(unicode));
+    if (unicode == NULL) {
+        goto error;
+    }
+
     bytes = PyUnicode_AsUTF8String(unicode);
     Py_DECREF(unicode);
     if (bytes == NULL) {
         goto error;
     }
-
-    PyObject *new_bytes = dedent_utf8_bytes(bytes);
-    if (new_bytes == NULL) {
-        Py_DECREF(bytes);
-        goto error;
-    }
-    Py_SETREF(bytes, new_bytes);
 
     PyCompilerFlags cf = _PyCompilerFlags_INIT;
     cf.cf_flags |= PyCF_IGNORE_COOKIE;
