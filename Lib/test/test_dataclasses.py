@@ -1277,6 +1277,25 @@ class TestCase(unittest.TestCase):
         c = C(init_param=10)
         self.assertEqual(c.x, 20)
 
+    def test_init_var_order(self):
+        @dataclass
+        class C:
+            expected_field_42: int = None
+            init_var_24: InitVar[int] = None
+
+            expected_field_24: int = None
+            init_var_42: InitVar[int] = None
+
+
+            def __post_init__(self, init_var_42, init_var_24):
+                self.expected_field_42 = init_var_42
+                self.expected_field_24 = init_var_24
+
+        c = C(init_var_24=24, init_var_42=42)
+        self.assertEqual(c.expected_field_42, 42)
+        self.assertEqual(c.expected_field_24, 24)
+
+
     def test_init_var_preserve_type(self):
         self.assertEqual(InitVar[int].type, int)
 
