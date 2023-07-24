@@ -744,12 +744,6 @@ statistics
   for computing the Spearman correlation of ranked data.
   (Contributed by Raymond Hettinger in :gh:`95861`.)
 
-string
-------
-
-* New constant :const:`ascii_alphanumerics` was added to the :mod:`string` module.
-  (Contributed by Paolo Melchiorre in :issue:`45669`.)
-
 sys
 ---
 

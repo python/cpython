@@ -126,6 +126,12 @@ pathlib
   :meth:`~pathlib.Path.is_dir`.
   (Contributed by Barney Gale in :gh:`77609` and :gh:`105793`.)
 
+string
+------
+
+* New constant :const:`ascii_alphanumerics` was added to the :mod:`string` module.
+  (Contributed by Paolo Melchiorre in :issue:`45669`.)
+
 traceback
 ---------
 
