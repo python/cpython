@@ -137,6 +137,27 @@ basicblock_append_instructions(basicblock *target, basicblock *source)
     return SUCCESS;
 }
 
+static cfg_instr *
+basicblock_last_instr(const basicblock *b) {
+    assert(b->b_iused >= 0);
+    if (b->b_iused > 0) {
+        assert(b->b_instr != NULL);
+        return &b->b_instr[b->b_iused - 1];
+    }
+    return NULL;
+}
+
+static inline int
+basicblock_nofallthrough(const _PyCfgBasicblock *b) {
+    _PyCfgInstruction *last = basicblock_last_instr(b);
+    return (last &&
+            (IS_SCOPE_EXIT_OPCODE(last->i_opcode) ||
+             IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)));
+}
+
+#define BB_NO_FALLTHROUGH(B) (basicblock_nofallthrough(B))
+#define BB_HAS_FALLTHROUGH(B) (!basicblock_nofallthrough(B))
+
 static basicblock *
 copy_basicblock(cfg_builder *g, basicblock *block)
 {
@@ -186,7 +207,7 @@ dump_instr(cfg_instr *i)
 
 static inline int
 basicblock_returns(const basicblock *b) {
-    cfg_instr *last = _PyCfg_BasicblockLastInstr(b);
+    cfg_instr *last = basicblock_last_instr(b);
     return last && (last->i_opcode == RETURN_VALUE || last->i_opcode == RETURN_CONST);
 }
 
@@ -228,26 +249,16 @@ cfg_builder_use_next_block(cfg_builder *g, basicblock *block)
     return block;
 }
 
-cfg_instr *
-_PyCfg_BasicblockLastInstr(const basicblock *b) {
-    assert(b->b_iused >= 0);
-    if (b->b_iused > 0) {
-        assert(b->b_instr != NULL);
-        return &b->b_instr[b->b_iused - 1];
-    }
-    return NULL;
-}
-
 static inline int
 basicblock_exits_scope(const basicblock *b) {
-    cfg_instr *last = _PyCfg_BasicblockLastInstr(b);
+    cfg_instr *last = basicblock_last_instr(b);
     return last && IS_SCOPE_EXIT_OPCODE(last->i_opcode);
 }
 
 static bool
 cfg_builder_current_block_is_terminated(cfg_builder *g)
 {
-    cfg_instr *last = _PyCfg_BasicblockLastInstr(g->g_curblock);
+    cfg_instr *last = basicblock_last_instr(g->g_curblock);
     if (last && IS_TERMINATOR_OPCODE(last->i_opcode)) {
         return true;
     }
@@ -371,7 +382,7 @@ no_empty_basic_blocks(cfg_builder *g) {
 static bool
 no_redundant_jumps(cfg_builder *g) {
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        cfg_instr *last = _PyCfg_BasicblockLastInstr(b);
+        cfg_instr *last = basicblock_last_instr(b);
         if (last != NULL) {
             if (IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)) {
                 assert(last->i_target != b->b_next);
@@ -390,7 +401,7 @@ no_redundant_jumps(cfg_builder *g) {
 
 static int
 normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
-    cfg_instr *last = _PyCfg_BasicblockLastInstr(b);
+    cfg_instr *last = basicblock_last_instr(b);
     if (last == NULL || !is_jump(last) ||
         IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)) {
         return SUCCESS;
@@ -953,7 +964,7 @@ remove_redundant_jumps(cfg_builder *g) {
      */
     assert(no_empty_basic_blocks(g));
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        cfg_instr *last = _PyCfg_BasicblockLastInstr(b);
+        cfg_instr *last = basicblock_last_instr(b);
         assert(last != NULL);
         assert(!IS_ASSEMBLER_OPCODE(last->i_opcode));
         if (IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)) {
@@ -979,7 +990,7 @@ remove_redundant_jumps(cfg_builder *g) {
  */
 static int
 inline_small_exit_blocks(basicblock *bb) {
-    cfg_instr *last = _PyCfg_BasicblockLastInstr(bb);
+    cfg_instr *last = basicblock_last_instr(bb);
     if (last == NULL) {
         return 0;
     }
@@ -1715,7 +1726,7 @@ scan_block_for_locals(basicblock *b, basicblock ***sp)
     if (b->b_next && BB_HAS_FALLTHROUGH(b)) {
         maybe_push(b->b_next, unsafe_mask, sp);
     }
-    cfg_instr *last = _PyCfg_BasicblockLastInstr(b);
+    cfg_instr *last = basicblock_last_instr(b);
     if (last && is_jump(last)) {
         assert(last->i_target != NULL);
         maybe_push(last->i_target, unsafe_mask, sp);
@@ -2020,7 +2031,7 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
             b->b_next = explicit_jump;
 
             /* set target */
-            cfg_instr *last = _PyCfg_BasicblockLastInstr(explicit_jump);
+            cfg_instr *last = basicblock_last_instr(explicit_jump);
             last->i_target = explicit_jump->b_next;
         }
     }
@@ -2126,7 +2137,7 @@ duplicate_exits_without_lineno(cfg_builder *g)
      */
     basicblock *entryblock = g->g_entryblock;
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        cfg_instr *last = _PyCfg_BasicblockLastInstr(b);
+        cfg_instr *last = basicblock_last_instr(b);
         assert(last != NULL);
         if (is_jump(last)) {
             basicblock *target = last->i_target;
@@ -2150,7 +2161,7 @@ duplicate_exits_without_lineno(cfg_builder *g)
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         if (BB_HAS_FALLTHROUGH(b) && b->b_next && b->b_iused > 0) {
             if (is_exit_without_lineno(b->b_next)) {
-                cfg_instr *last = _PyCfg_BasicblockLastInstr(b);
+                cfg_instr *last = basicblock_last_instr(b);
                 assert(last != NULL);
                 b->b_next->b_instr[0].i_loc = last->i_loc;
             }
@@ -2170,7 +2181,7 @@ duplicate_exits_without_lineno(cfg_builder *g)
 static void
 propagate_line_numbers(basicblock *entryblock) {
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        cfg_instr *last = _PyCfg_BasicblockLastInstr(b);
+        cfg_instr *last = basicblock_last_instr(b);
         if (last == NULL) {
             continue;
         }
@@ -2210,7 +2221,7 @@ guarantee_lineno_for_exits(basicblock *entryblock, int firstlineno) {
     int lineno = firstlineno;
     assert(lineno > 0);
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        cfg_instr *last = _PyCfg_BasicblockLastInstr(b);
+        cfg_instr *last = basicblock_last_instr(b);
         if (last == NULL) {
             continue;
         }
