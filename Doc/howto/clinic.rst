@@ -156,40 +156,40 @@ Terminology
 
 .. glossary::
 
-  start line
-     The line ``/*[clinic input]``.
-     This line marks the beginning of Argument Clinic input.
-     Note that the *start line* opens a C block comment.
+   start line
+      The line ``/*[clinic input]``.
+      This line marks the beginning of Argument Clinic input.
+      Note that the *start line* opens a C block comment.
 
-  end line
-     The line ``[clinic start generated code]*/``.
-     This line marks the end of Argument Clinic input.
-     Note that the *end line* closes the C block comment opened
-     by the *start line*.
+   end line
+      The line ``[clinic start generated code]*/``.
+      This line marks the end of Argument Clinic input.
+      Note that the *end line* closes the C block comment opened
+      by the *start line*.
 
-  checksum
-     The 16 first hex digits of a :py:meth:`~hashlib.sha1` hash.
-     Argument Clinic generates checksums of the :term:`intput`
-     and the :term:`output` as part of the :term:`checksum line`.
+   checksum
+      The 16 first hex digits of a :py:meth:`~hashlib.sha1` hash.
+      Argument Clinic generates checksums of the :term:`intput`
+      and the :term:`output` as part of the :term:`checksum line`.
 
-  checksum line
-     A line that looks like ``/*[clinic end generated code: ...]*/``.
-     The three dots will be replaced by a :term:`checksum` generated from the
-     :term:`input`, and a :term:`checksum` generated from the :term:`output`.
-     The checksum line marks the end of Argument Clinic generated code,
-     and is used by Argument Clinic to determine if it needs to regenerate
-     output.
+   checksum line
+      A line that looks like ``/*[clinic end generated code: ...]*/``.
+      The three dots will be replaced by a :term:`checksum` generated from the
+      :term:`input`, and a :term:`checksum` generated from the :term:`output`.
+      The checksum line marks the end of Argument Clinic generated code,
+      and is used by Argument Clinic to determine if it needs to regenerate
+      output.
 
-  input
-     The text between the :term:`start line` and the :term:`end line`.
-     Note that the start and end lines open and close a C block comment;
-     the *input* is thus a part of that same C block comment.
+   input
+      The text between the :term:`start line` and the :term:`end line`.
+      Note that the start and end lines open and close a C block comment;
+      the *input* is thus a part of that same C block comment.
 
-  output
-     The text between the :term:`end line` and the :term:`checksum line`.
+   output
+      The text between the :term:`end line` and the :term:`checksum line`.
 
-  block
-     All text from the :term:`start line` to the :term:`checksum line` inclusively.
+   block
+      All text from the :term:`start line` to the :term:`checksum line` inclusively.
 
 .. note::
 
