@@ -2255,8 +2255,8 @@ Number Object Structures
 
    .. note::
 
-      The :c:data:`nb_reserved` field should always be ``NULL``.  It
-      was previously called :c:data:`nb_long`, and was renamed in
+      The :c:member:`~PyNumberMethods.nb_reserved` field should always be ``NULL``.  It
+      was previously called :c:member:`!nb_long`, and was renamed in
       Python 3.0.1.
 
 .. c:member:: binaryfunc PyNumberMethods.nb_add

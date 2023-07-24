@@ -14,6 +14,27 @@ extern "C" {
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_runtime.h"       // _PyRuntime
 
+/* Check if an object is consistent. For example, ensure that the reference
+   counter is greater than or equal to 1, and ensure that ob_type is not NULL.
+
+   Call _PyObject_AssertFailed() if the object is inconsistent.
+
+   If check_content is zero, only check header fields: reduce the overhead.
+
+   The function always return 1. The return value is just here to be able to
+   write:
+
+   assert(_PyObject_CheckConsistency(obj, 1)); */
+extern int _PyObject_CheckConsistency(PyObject *op, int check_content);
+
+extern void _PyDebugAllocatorStats(FILE *out, const char *block_name,
+                                   int num_blocks, size_t sizeof_block);
+
+extern void _PyObject_DebugTypeStats(FILE *out);
+
+// Export for shared _testinternalcapi extension
+PyAPI_DATA(int) _PyObject_IsFreed(PyObject *);
+
 /* We need to maintain an internal copy of Py{Var}Object_HEAD_INIT to avoid
    designated initializer conflicts in C++20. If we use the deinition in
    object.h, we will be mixing designated and non-designated initializers in
@@ -355,7 +376,11 @@ static inline int _PyType_SUPPORTS_WEAKREFS(PyTypeObject *type) {
 }
 
 extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
-PyObject *_PyType_NewManagedObject(PyTypeObject *type);
+extern PyObject *_PyType_NewManagedObject(PyTypeObject *type);
+
+extern PyTypeObject* _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
+extern PyObject* _PyType_GetDocFromInternalDoc(const char *, const char *);
+extern PyObject* _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);
 
 extern int _PyObject_InitializeDict(PyObject *obj);
 int _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp);
@@ -410,6 +435,11 @@ extern void _PyObject_FreeInstanceAttributes(PyObject *obj);
 extern int _PyObject_IsInstanceDictEmpty(PyObject *);
 
 PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
+
+extern int _PyObject_IsAbstract(PyObject *);
+
+extern int _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
+extern PyObject* _PyObject_NextNotImplemented(PyObject *);
 
 /* C function call trampolines to mitigate bad function pointer casts.
  *

@@ -32,6 +32,7 @@
 */
 
 #include "Python.h"
+#include "pycore_dict.h"          // _PyDict_Contains_KnownHash()
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_setobject.h"     // _PySet_NextEntry() definition
