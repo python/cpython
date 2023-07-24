@@ -953,10 +953,9 @@ class singledispatchmethod:
         _method.register = self.register
         update_wrapper(_method, self.func)
 
-        try:
+        # not all objects have __dict__ (e.g. classes with __slots__)
+        if hasattr(obj, '__dict__'):
             obj.__dict__[self.attrname] = _method
-        except AttributeError:
-            pass  # not all objects have __dict__ (e.g. classes with __slots__)
 
         return _method
 
