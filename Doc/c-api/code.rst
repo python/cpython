@@ -66,7 +66,7 @@ bound into a function.
    .. versionadded:: 3.8 as ``PyCode_NewWithPosOnlyArgs``
 
    .. versionchanged:: 3.11
-      Added ``qualname`` and  ``exceptiontable`` parameter.
+      Added ``qualname`` and  ``exceptiontable`` parameters.
 
    .. versionchanged:: 3.12
 
