@@ -1290,8 +1290,8 @@ will be of type ``PyTypeObject *``.  The argument will not appear in the
 :py:attr:`!__text_signature__`.
 
 The ``defining_class`` converter is not compatible with :py:meth:`!__init__`
-and :py:meth:`!__new__` methods, which cannot use the :ref:`METH_METHOD
-<METH_METHOD-METH_FASTCALL-METH_KEYWORDS>` convention.
+and :py:meth:`!__new__` methods, which cannot use the :c:macro:`METH_METHOD`
+convention.
 
 It is not possible to use ``defining_class`` with slot methods.  In order to
 fetch the module state from such methods, use :c:func:`PyType_GetModuleByDef`
