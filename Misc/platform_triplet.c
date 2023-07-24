@@ -37,14 +37,26 @@
 #  endif
 # endif
 # if defined(_MIPS_SIM)
-#  if _MIPS_SIM == _ABIO32
-#   define LIBC_MIPS gnu
-#  elif _MIPS_SIM == _ABIN32
-#   define LIBC_MIPS gnuabin32
-#  elif _MIPS_SIM == _ABI64
-#   define LIBC_MIPS gnuabi64
+#  if defined(__mips_hard_float)
+#   if _MIPS_SIM == _ABIO32
+#    define LIBC_MIPS gnu
+#   elif _MIPS_SIM == _ABIN32
+#    define LIBC_MIPS gnuabin32
+#   elif _MIPS_SIM == _ABI64
+#    define LIBC_MIPS gnuabi64
+#   else
+#    error unknown mips sim value
+#   endif
 #  else
-#   error unknown mips sim value
+#   if _MIPS_SIM == _ABIO32
+#    define LIBC_MIPS gnusf
+#   elif _MIPS_SIM == _ABIN32
+#    define LIBC_MIPS gnuabin32sf
+#   elif _MIPS_SIM == _ABI64
+#    define LIBC_MIPS gnuabi64sf
+#   else
+#    error unknown mips sim value
+#   endif
 #  endif
 # endif
 # if defined(__SPE__)
@@ -87,7 +99,7 @@
         loongarch64-linux-LIBC_LA
 # elif defined(__m68k__) && !defined(__mcoldfire__)
         m68k-linux-LIBC
-# elif defined(__mips_hard_float)
+# elif defined(__mips__)
 #  if defined(__mips_isa_rev) && (__mips_isa_rev >=6)
 #   if defined(_MIPSEL) && defined(__mips64)
         mipsisa64r6el-linux-LIBC_MIPS
