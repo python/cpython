@@ -3535,8 +3535,6 @@ _PyBytesWriter_WriteBytes(_PyBytesWriter *writer, void *ptr,
 }
 
 
-/* Algorithms on bytes */
-
 void
 _PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
     const char* src, Py_ssize_t len_src)
