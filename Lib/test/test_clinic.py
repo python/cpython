@@ -1524,7 +1524,7 @@ class ClinicExternalTest(TestCase):
         for converter in expected_converters:
             with self.subTest(converter=converter):
                 self.assertIn(converter, out)
-        self.assertTrue(out.endswith(finale))
+        self.assertTrue(out.endswith(finale), out)
 
 
 try:
