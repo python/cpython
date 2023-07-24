@@ -13,6 +13,8 @@ labels: "type-bug"
   - emailing https://mail.python.org/mailman/listinfo/python-list
 -->
 
+# Bug report
+
 ## Checklist
 
 <!-- Bugs in third-party projects (e.g. `requests`) do not belong in the CPython issue tracker -->
@@ -21,8 +23,6 @@ labels: "type-bug"
       not a bug in a third-party project
 - [ ] I have searched the CPython issue tracker,
       and am confident this bug has not been reported before
-
-# Bug report
 
 ## A clear and concise description of the bug
 
