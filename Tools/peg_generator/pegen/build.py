@@ -5,6 +5,7 @@ import sys
 import sysconfig
 import tempfile
 import tokenize
+from io import StringIO
 from typing import IO, Dict, List, Optional, Set, Tuple
 
 from pegen.c_generator import CParserGenerator
@@ -293,9 +294,26 @@ def build_python_generator(
     output_file: str,
     skip_actions: bool = False,
 ) -> ParserGenerator:
+    # Generate the parser and write it to a StringIO object
+    result = StringIO()
+    gen: ParserGenerator = PythonParserGenerator(grammar, result)  # TODO: skip_actions
+    gen.generate(grammar_file)
+
+    # Validate the output
+    new_result = StringIO()
+    try:
+        exec(result.getvalue())
+        generated_parser = globals()['GeneratedParser']
+        gen = generated_parser(new_result)
+        gen.parse('')  # Parse an empty string to trigger initialization
+    except Exception:
+        # Validation failed, do not write the output file
+        return None
+
+    # Validation succeeded, write the output to a file
     with open(output_file, "w") as file:
-        gen: ParserGenerator = PythonParserGenerator(grammar, file)  # TODO: skip_actions
-        gen.generate(grammar_file)
+        file.write(result.getvalue())
+
     return gen
 
 
