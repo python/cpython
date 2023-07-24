@@ -968,7 +968,7 @@ class TestBuggyCases(GetSourceBase):
         with tempfile.TemporaryDirectory() as tempdir:
             with open(os.path.join(tempdir, 'inspect_actual%spy' % os.extsep),
                       'w', encoding='utf-8') as f:
-                f.write(textwrap.dedent("""\
+                f.write(textwrap.dedent("""
                     import inspect_other
                     class A:
                         def f(self):
@@ -981,7 +981,7 @@ class TestBuggyCases(GetSourceBase):
 
             with open(os.path.join(tempdir, 'inspect_other%spy' % os.extsep),
                       'w', encoding='utf-8') as f:
-                f.write(textwrap.dedent("""\
+                f.write(textwrap.dedent("""
                     class A:
                         def f(self):
                             pass
