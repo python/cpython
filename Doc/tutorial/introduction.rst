@@ -138,16 +138,25 @@ and uses the ``j`` or ``J`` suffix to indicate the imaginary part
 
 .. _tut-strings:
 
-Strings
--------
+Text
+----
 
-Besides numbers, Python can also manipulate strings, which can be expressed
-in several ways.  They can be enclosed in single quotes (``'...'``) or
-double quotes (``"..."``) with the same result [#]_.  ``\`` can be used
-to escape quotes::
+Python can manipulate text (represented by type :class:`str`, so-called
+"strings") as well as numbers.  This includes characters "``!``", words
+"``rabbit``", names "``Paris``", sentences "``Got your back.``", etc.
+"``Yay! :)``". They can be enclosed in single quotes (``'...'``) or double
+quotes (``"..."``) with the same result [#]_.
 
    >>> 'spam eggs'  # single quotes
    'spam eggs'
+   >>> "Paris rabbit got your back :)! Yay!"  # double quotes
+   'Paris rabbit got your back :)! Yay!'
+   >>> '1975'  # digits and numerals enclosed in quotes are also strings
+   '1975'
+
+To quote a quote, we need to "escape" it, by preceding it with ``\``.
+Alternatively, we can use the other type of quotation marks::
+
    >>> 'doesn\'t'  # use \' to escape the single quote...
    "doesn't"
    >>> "doesn't"  # ...or use double quotes instead
@@ -159,23 +168,14 @@ to escape quotes::
    >>> '"Isn\'t," they said.'
    '"Isn\'t," they said.'
 
-In the interactive interpreter, the output string is enclosed in quotes and
-special characters are escaped with backslashes.  While this might sometimes
-look different from the input (the enclosing quotes could change), the two
-strings are equivalent.  The string is enclosed in double quotes if
-the string contains a single quote and no double quotes, otherwise it is
-enclosed in single quotes.  The :func:`print` function produces a more
-readable output, by omitting the enclosing quotes and by printing escaped
-and special characters::
+In the Python shell, the string definition and output string can look
+different.  The :func:`print` function produces a more readable output, by
+omitting the enclosing quotes and by printing escaped and special characters::
 
-   >>> '"Isn\'t," they said.'
-   '"Isn\'t," they said.'
-   >>> print('"Isn\'t," they said.')
-   "Isn't," they said.
    >>> s = 'First line.\nSecond line.'  # \n means newline
-   >>> s  # without print(), \n is included in the output
+   >>> s  # without print(), special characters are included in the string
    'First line.\nSecond line.'
-   >>> print(s)  # with print(), \n produces a new line
+   >>> print(s)  # with print(), special characters are interpreted, so \n produces new line
    First line.
    Second line.
 
