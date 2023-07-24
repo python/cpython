@@ -15,6 +15,7 @@ import pickle
 import shutil
 import sys
 import types
+import tempfile
 import textwrap
 import unicodedata
 import unittest
@@ -962,6 +963,33 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(mod2.func212(), 213, 214)
         self.assertSourceEqual(mod2.cls213, 218, 222)
         self.assertSourceEqual(mod2.cls213().func219(), 220, 221)
+
+    def test_class_with_method_from_other_module(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            with open(os.path.join(tempdir, 'inspect_actual%spy' % os.extsep),
+                      'w', encoding='utf-8') as f:
+                f.write(textwrap.dedent("""
+                    import inspect_other
+                    class A:
+                        def f(self):
+                            pass
+                    class A:
+                        def f(self):
+                            pass  # correct one
+                    A.f = inspect_other.A.f
+                    """))
+
+            with open(os.path.join(tempdir, 'inspect_other%spy' % os.extsep),
+                      'w', encoding='utf-8') as f:
+                f.write(textwrap.dedent("""
+                    class A:
+                        def f(self):
+                            pass
+                    """))
+
+            with DirsOnSysPath(tempdir):
+                import inspect_actual
+                self.assertIn("correct", inspect.getsource(inspect_actual.A))
 
     @unittest.skipIf(
         support.is_emscripten or support.is_wasi,
