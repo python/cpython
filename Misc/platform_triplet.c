@@ -1,5 +1,5 @@
 /* Detect platform triplet from builtin defines
- * cc -E Misc/platform_triplet.c | grep -v '^#' | grep -v '^ *$' | tr -d ' 	'
+ * cc -E Misc/platform_triplet.c | grep -v '^#' | grep -v '^ *$' | grep -v '^typedef' | tr -d ' 	'
  */
 #undef bfin
 #undef cris
@@ -18,51 +18,114 @@
 /*
  * BEGIN of Linux block
  */
-# define LIBC gnu
-# define LIBC_X32 gnux32
-# if defined(__ARM_PCS_VFP)
-#  define LIBC_ARM gnueabihf
-# else
-#  define LIBC_ARM gnueabi
-# endif
-# if defined(__loongarch__)
-#  if defined(__loongarch_soft_float)
-#   define LIBC_LA gnusf
-#  elif defined(__loongarch_single_float)
-#   define LIBC_LA gnuf32
-#  elif defined(__loongarch_double_float)
-#   define LIBC_LA gnu
+// Detect libc (based on config.guess)
+# include <features.h>
+# if defined(__UCLIBC__)
+#  error uclibc not supported
+# elif defined(__dietlibc__)
+#  error dietlibc not supported
+# elif defined(__GLIBC__)
+#  define LIBC gnu
+#  define LIBC_X32 gnux32
+#  if defined(__ARM_PCS_VFP)
+#   define LIBC_ARM gnueabihf
 #  else
-#   error unknown loongarch floating-point base abi
+#   define LIBC_ARM gnueabi
 #  endif
-# endif
-# if defined(_MIPS_SIM)
-#  if defined(__mips_hard_float)
-#   if _MIPS_SIM == _ABIO32
-#    define LIBC_MIPS gnu
-#   elif _MIPS_SIM == _ABIN32
-#    define LIBC_MIPS gnuabin32
-#   elif _MIPS_SIM == _ABI64
-#    define LIBC_MIPS gnuabi64
+#  if defined(__loongarch__)
+#   if defined(__loongarch_soft_float)
+#    define LIBC_LA gnusf
+#   elif defined(__loongarch_single_float)
+#    define LIBC_LA gnuf32
+#   elif defined(__loongarch_double_float)
+#    define LIBC_LA gnu
 #   else
-#    error unknown mips sim value
-#   endif
-#  else
-#   if _MIPS_SIM == _ABIO32
-#    define LIBC_MIPS gnusf
-#   elif _MIPS_SIM == _ABIN32
-#    define LIBC_MIPS gnuabin32sf
-#   elif _MIPS_SIM == _ABI64
-#    define LIBC_MIPS gnuabi64sf
-#   else
-#    error unknown mips sim value
+#    error unknown loongarch floating-point base abi
 #   endif
 #  endif
-# endif
-# if defined(__SPE__)
-#  define LIBC_PPC gnuspe
+#  if defined(_MIPS_SIM)
+#   if defined(__mips_hard_float)
+#    if _MIPS_SIM == _ABIO32
+#     define LIBC_MIPS gnu
+#    elif _MIPS_SIM == _ABIN32
+#     define LIBC_MIPS gnuabin32
+#    elif _MIPS_SIM == _ABI64
+#     define LIBC_MIPS gnuabi64
+#    else
+#     error unknown mips sim value
+#    endif
+#   else
+#    if _MIPS_SIM == _ABIO32
+#     define LIBC_MIPS gnusf
+#    elif _MIPS_SIM == _ABIN32
+#     define LIBC_MIPS gnuabin32sf
+#    elif _MIPS_SIM == _ABI64
+#     define LIBC_MIPS gnuabi64sf
+#    else
+#     error unknown mips sim value
+#    endif
+#   endif
+#  endif
+#  if defined(__SPE__)
+#   define LIBC_PPC gnuspe
+#  else
+#   define LIBC_PPC gnu
+#  endif
 # else
-#  define LIBC_PPC gnu
+/* Heuristic to detect musl libc
+ * Adds "typedef __builtin_va_list va_list;" to output
+ */
+#  include <stdarg.h>
+#  ifdef __DEFINED_va_list
+#   define LIBC musl
+#   define LIBC_X32 muslx32
+#   if defined(__ARM_PCS_VFP)
+#    define LIBC_ARM musleabihf
+#   else
+#    define LIBC_ARM musleabi
+#   endif
+#   if defined(__loongarch__)
+#    if defined(__loongarch_soft_float)
+#     define LIBC_LA muslsf
+#    elif defined(__loongarch_single_float)
+#     define LIBC_LA muslf32
+#    elif defined(__loongarch_double_float)
+#     define LIBC_LA musl
+#    else
+#     error unknown loongarch floating-point base abi
+#    endif
+#   endif
+#   if defined(_MIPS_SIM)
+#    if defined(__mips_hard_float)
+#     if _MIPS_SIM == _ABIO32
+#      define LIBC_MIPS musl
+#     elif _MIPS_SIM == _ABIN32
+#      define LIBC_MIPS musln32
+#     elif _MIPS_SIM == _ABI64
+#      define LIBC_MIPS musl
+#     else
+#      error unknown mips sim value
+#     endif
+#    else
+#     if _MIPS_SIM == _ABIO32
+#      define LIBC_MIPS muslsf
+#     elif _MIPS_SIM == _ABIN32
+#      define LIBC_MIPS musln32sf
+#     elif _MIPS_SIM == _ABI64
+#      define LIBC_MIPS muslsf
+#     else
+#      error unknown mips sim value
+#     endif
+#    endif
+#   endif
+#   if defined(_SOFT_FLOAT) || defined(__NO_FPRS__)
+#    define LIBC_PPC muslsf
+#   else
+#    define LIBC_PPC musl
+#   endif
+#  else
+#   error unknown libc
+#  endif
 # endif
 
 # if defined(__x86_64__) && defined(__LP64__)

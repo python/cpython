@@ -922,12 +922,7 @@ fi
 
 AC_MSG_CHECKING([for the platform triplet based on compiler characteristics])
 if $CPP $CPPFLAGS $srcdir/Misc/platform_triplet.c >conftest.out 2>/dev/null; then
-  PLATFORM_TRIPLET=`grep -v '^#' conftest.out | grep -v '^ *$' | tr -d ' 	'`
-  case "$build_os" in
-  linux-musl*)
-    PLATFORM_TRIPLET=`echo "$PLATFORM_TRIPLET" | sed 's/linux-gnu/linux-musl/'`
-    ;;
-  esac
+  PLATFORM_TRIPLET=`grep -v '^#' conftest.out | grep -v '^ *$' | grep -v '^typedef' | tr -d ' 	'`
   AC_MSG_RESULT([$PLATFORM_TRIPLET])
 else
   AC_MSG_RESULT([none])
