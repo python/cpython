@@ -3725,6 +3725,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     PyThreadState *tstate = _PyThreadState_GET();
     mod = import_find_extension(tstate, name, path);
     if (mod != NULL || _PyErr_Occurred(tstate)) {
+        assert(mod == NULL || !_PyErr_Occurred(tstate));
         goto finally;
     }
 
