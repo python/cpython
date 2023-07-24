@@ -436,7 +436,9 @@ class FormatCounterFormatter(string.Formatter):
     def __init__(self) -> None:
         self.counts = collections.Counter[str]()
 
-    def get_value(self, key: str, args, kwargs) -> str:  # type: ignore[override]
+    def get_value(
+        self, key: str, args: object, kwargs: object  # type: ignore[override]
+    ) -> Literal['']:
         self.counts[key] += 1
         return ''
 
@@ -2791,7 +2793,7 @@ class CConverter(metaclass=CConverterAutoRegister):
     # This lets the self_converter overrule the user-settable
     # name, *just* for the text signature.
     # Only set by self_converter.
-    signature_name = None
+    signature_name: str | None = None
 
     # keep in sync with self_converter.__init__!
     def __init__(self,
@@ -2805,8 +2807,8 @@ class CConverter(metaclass=CConverterAutoRegister):
              py_default: str | None = None,
              annotation: str | Literal[Sentinels.unspecified] = unspecified,
              unused: bool = False,
-             **kwargs
-    ):
+             **kwargs: Any
+    ) -> None:
         self.name = ensure_legal_c_identifier(name)
         self.py_name = py_name
         self.unused = unused
@@ -2843,7 +2845,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         self.converter_init(**kwargs)
         self.function = function
 
-    def converter_init(self):
+    def converter_init(self) -> None:
         pass
 
     def is_optional(self) -> bool:
@@ -3026,7 +3028,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         """
         return ""
 
-    def pre_render(self):
+    def pre_render(self) -> None:
         """
         A second initialization function, like converter_init,
         called just before rendering.
@@ -3163,7 +3165,7 @@ class defining_class_converter(CConverter):
     format_unit = ''
     show_in_signature = False
 
-    def converter_init(self, *, type=None) -> None:
+    def converter_init(self, *, type: str | None = None) -> None:
         self.specified_type = type
 
     def render(self, parameter, data) -> None:
@@ -3315,7 +3317,9 @@ class int_converter(CConverter):
     format_unit = 'i'
     c_ignored_default = "0"
 
-    def converter_init(self, *, accept: TypeSet = {int}, type=None) -> None:
+    def converter_init(
+        self, *, accept: TypeSet = {int}, type: str | None = None
+    ) -> None:
         if accept == {str}:
             self.format_unit = 'C'
         elif accept != {int}:
@@ -3976,14 +3980,15 @@ class self_converter(CConverter):
     A special-case converter:
     this is the default converter used for "self".
     """
-    type = None
+    type: str | None = None
     format_unit = ''
 
     def converter_init(self, *, type: str | None = None) -> None:
         self.specified_type = type
 
-    def pre_render(self):
+    def pre_render(self) -> None:
         f = self.function
+        assert isinstance(f, Function)
         default_type, default_name = correct_name_for_self(f)
         self.signature_name = default_name
         self.type = self.specified_type or self.type or default_type
@@ -4032,7 +4037,9 @@ class self_converter(CConverter):
     #     in the impl call.
 
     @property
-    def parser_type(self):
+    def parser_type(self) -> str:
+        assert self.type is not None
+        assert isinstance(self.function, Function)
         return required_type_for_self_for_parser(self.function) or self.type
 
     def render(self, parameter, data):
