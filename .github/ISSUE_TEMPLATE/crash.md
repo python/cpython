@@ -11,7 +11,7 @@ labels: "type-crash"
   count as bugs rather than crashes.
 
   The CPython interpreter is written in a different programming language, C.
-  A " CPython crash" is when Python itself fails, leading to a traceback in the C stack.
+  A "CPython crash" is when Python itself fails, leading to a traceback in the C stack.
 -->
 
 # Crash report
