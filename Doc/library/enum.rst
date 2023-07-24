@@ -267,8 +267,9 @@ Data Types
          appropriate value will be chosen for you.  See :class:`auto` for the
          details.
 
-         If the values are not hashable, be warned that the time required for enum
-         creation will grow quadratically with the number of members.
+         While mutable/unhashable values, such as :class:`dict` or :class:`list`, can
+         be used, they will have a quadratic performance impact relative to the total
+         number of mutable/unhashable values in the enum.
 
 
    .. attribute:: Enum._ignore_
