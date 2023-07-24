@@ -1017,8 +1017,9 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
         }
     }
     else {
+        byname = (_Py_hashtable_t *)entry->value;
         _Py_hashtable_entry_t *subentry = _Py_hashtable_get_entry(
-                (_Py_hashtable_t *)entry->value, PyUnicode_AsUTF8(name));
+                byname, PyUnicode_AsUTF8(name));
         if (subentry != NULL) {
             if (subentry->value == NULL) {
                 subentry->value = Py_NewRef(def);
