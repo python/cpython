@@ -1519,6 +1519,18 @@ check_pyobject_freed_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject *
+test_pymem_getallocatorsname(PyObject *self, PyObject *args)
+{
+    const char *name = _PyMem_GetCurrentAllocatorName();
+    if (name == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "cannot get allocators name");
+        return NULL;
+    }
+    return PyUnicode_FromString(name);
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -1581,6 +1593,7 @@ static PyMethodDef module_functions[] = {
     {"check_pyobject_null_is_freed",  check_pyobject_null_is_freed,  METH_NOARGS},
     {"check_pyobject_uninitialized_is_freed",
                               check_pyobject_uninitialized_is_freed, METH_NOARGS},
+    {"pymem_getallocatorsname", test_pymem_getallocatorsname, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
