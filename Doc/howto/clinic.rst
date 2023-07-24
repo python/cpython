@@ -163,7 +163,9 @@ Terminology
 
    end line
       The line ``[clinic start generated code]*/``.
-      This line marks the end of Argument Clinic input.
+      The *end line* marks the _end_ of Argument Clinic :term:`input`,
+      but at the same time marks the _start_ of Argument Clinic :term:`output`,
+      thus the text *"clinic start start generated code"*
       Note that the *end line* closes the C block comment opened
       by the *start line*.
 
