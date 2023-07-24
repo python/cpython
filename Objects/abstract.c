@@ -8,6 +8,7 @@
 #include "pycore_long.h"          // _Py_IsNegative
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_tuple.h"         // _PyTuple_NewNoTrack()
 #include "pycore_unionobject.h"   // _PyUnion_Check()
 #include <ctype.h>
 #include <stddef.h>               // offsetof()
@@ -2074,11 +2075,6 @@ PySequence_DelSlice(PyObject *s, Py_ssize_t i1, Py_ssize_t i2)
 PyObject *
 PySequence_Tuple(PyObject *v)
 {
-    PyObject *it;  /* iter(v) */
-    Py_ssize_t n;             /* guess for result tuple size */
-    PyObject *result = NULL;
-    Py_ssize_t j;
-
     if (v == NULL) {
         return null_error();
     }
@@ -2091,28 +2087,36 @@ PySequence_Tuple(PyObject *v)
            a copy, so there's no need for exactness below. */
         return Py_NewRef(v);
     }
-    if (PyList_CheckExact(v))
+    if (PyList_CheckExact(v)) {
         return PyList_AsTuple(v);
+    }
 
     /* Get iterator. */
-    it = PyObject_GetIter(v);
-    if (it == NULL)
+    PyObject *it = PyObject_GetIter(v);  // iter(v)
+    if (it == NULL) {
         return NULL;
+    }
 
     /* Guess result size and allocate space. */
-    n = PyObject_LengthHint(v, 10);
-    if (n == -1)
+    Py_ssize_t n = PyObject_LengthHint(v, 10);  // guess for result tuple size
+    if (n == -1) {
+        Py_DECREF(it);
+        return NULL;
+    }
+
+    PyObject *result = _PyTuple_NewNoTrack(n);
+    if (result == NULL) {
         goto Fail;
-    result = PyTuple_New(n);
-    if (result == NULL)
-        goto Fail;
+    }
 
     /* Fill the tuple. */
-    for (j = 0; ; ++j) {
+    Py_ssize_t j = 0;
+    for (; ; ++j) {
         PyObject *item = PyIter_Next(it);
         if (item == NULL) {
-            if (PyErr_Occurred())
+            if (PyErr_Occurred()) {
                 goto Fail;
+            }
             break;
         }
         if (j >= n) {
@@ -2132,7 +2136,7 @@ PySequence_Tuple(PyObject *v)
                 goto Fail;
             }
             n = (Py_ssize_t)newn;
-            if (_PyTuple_Resize(&result, n) != 0) {
+            if (_PyTuple_ResizeNoTrack(&result, n) != 0) {
                 Py_DECREF(item);
                 goto Fail;
             }
@@ -2141,11 +2145,15 @@ PySequence_Tuple(PyObject *v)
     }
 
     /* Cut tuple back if guess was too large. */
-    if (j < n &&
-        _PyTuple_Resize(&result, j) != 0)
+    if (j < n && _PyTuple_ResizeNoTrack(&result, j) != 0) {
         goto Fail;
-
+    }
     Py_DECREF(it);
+
+    // No need to track the empty tuple singleton
+    if (j != 0) {
+        PyObject_GC_Track(result);
+    }
     return result;
 
 Fail:

@@ -11,6 +11,11 @@ extern "C" {
 extern void _PyTuple_MaybeUntrack(PyObject *);
 extern void _PyTuple_DebugMallocStats(FILE *out);
 
+// Similar to PyTuple_New() and _PyTuple_Resize(), but don't track the tuple
+// by the GC.
+extern PyObject* _PyTuple_NewNoTrack(Py_ssize_t size);
+extern int _PyTuple_ResizeNoTrack(PyObject **pv, Py_ssize_t newsize);
+
 /* runtime lifecycle */
 
 extern PyStatus _PyTuple_InitGlobalObjects(PyInterpreterState *);

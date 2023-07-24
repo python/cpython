@@ -416,6 +416,29 @@ class TupleTest(seq_tests.CommonTest):
         self.assertLess(a, b)
         self.assertLess(b, c)
 
+    def test_sequence_tuple(self):
+        # gh-39117, gh-59313, gh-107137: PySequence_Tuple() must not track
+        # the tuple by the GC before it's fully initialized.
+
+        # TAG object used to find the tuple in objects tracked by the GC
+        TAG = object()
+
+        def my_iter():
+            yield TAG
+
+            for ref in gc.get_referrers(TAG):
+                if isinstance(ref, tuple):
+                    raise Exception("PySequence_Tuple() leaks the tuple")
+
+            # Add 100 items to trigger _PyTuple_Resize() calls.
+            # PySequence_Tuple() started by allocating a tuple of 10 items.
+            for num in range(100):
+                yield num
+
+        seq = tuple(my_iter())
+        self.assertEqual(seq, (TAG, *range(100)))
+
+
 # Notes on testing hash codes.  The primary thing is that Python doesn't
 # care about "random" hash codes.  To the contrary, we like them to be
 # very regular when possible, so that the low-order bits are as evenly

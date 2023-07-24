@@ -1,0 +1,4 @@
+Fix a crash in :c:func:`PySequence_Tuple` when the tuple which is being
+initialized was accessed via GC introspection, like the
+:func:`gc.get_referrers` function. Now the function only tracks the tuple by
+the GC once it's fully initialized. Patch by Victor Stinner.
