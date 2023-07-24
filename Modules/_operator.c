@@ -1556,6 +1556,52 @@ typedef struct {
     vectorcallfunc vectorcall;
 } methodcallerobject;
 
+static void * _methodcaller_initialize_vectorcall(methodcallerobject* mc)
+{
+    PyObject* args = mc->xargs;
+    PyObject* kwds = mc->kwds;
+
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    mc->vectorcall_args = PyMem_Calloc(
+        nargs + (kwds ? PyDict_Size(kwds) : 0),
+        sizeof(PyObject*));
+    if (!mc->vectorcall_args) {
+        return PyErr_NoMemory();
+    }
+    /* The first item of vectorcall_args will be filled with obj later */
+    if (nargs > 1) {
+        memcpy(mc->vectorcall_args, PySequence_Fast_ITEMS(args),
+            nargs * sizeof(PyObject*));
+    }
+    if (kwds) {
+        const Py_ssize_t nkwds = PyDict_Size(kwds);
+
+        mc->vectorcall_kwnames = PyTuple_New(nkwds);
+        if (!mc->vectorcall_kwnames) {
+            return NULL;
+        }
+        Py_ssize_t i = 0, ppos = 0;
+        PyObject* key, * value;
+        while (PyDict_Next(kwds, &ppos, &key, &value)) {
+            PyTuple_SET_ITEM(mc->vectorcall_kwnames, i, Py_NewRef(key));
+            mc->vectorcall_args[nargs + i] = value; // borrowed reference
+            ++i;
+        }
+    }
+    else {
+        mc->vectorcall_kwnames = NULL;
+    }
+    return (void *)1;
+}
+
+static _methodcaller_clear_vectorcall(methodcallerobject* mc)
+{
+    if (mc->vectorcall_args != NULL) {
+        PyMem_Free(mc->vectorcall_args);
+        Py_CLEAR(mc->vectorcall_kwnames);
+    }
+}
+
 static PyObject *
 methodcaller_vectorcall(
         methodcallerobject *mc, PyObject *const *args, size_t nargsf, PyObject* kwnames)
@@ -1564,6 +1610,14 @@ methodcaller_vectorcall(
         || !_PyArg_NoKwnames("methodcaller", kwnames)) {
         return NULL;
     }
+    if (mc->vectorcall_args == NULL) {
+        void *ret = _methodcaller_initialize_vectorcall(mc);
+        if (ret == NULL) {
+            return NULL;
+        }
+    }
+
+    assert(mc->vectorcall_args != 0);
     mc->vectorcall_args[0] = args[0];
     return PyObject_VectorcallMethod(
             mc->name, mc->vectorcall_args,
@@ -1571,12 +1625,13 @@ methodcaller_vectorcall(
             mc->vectorcall_kwnames);
 }
 
+
 /* AC 3.5: variable number of arguments, not currently support by AC */
 static PyObject *
 methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     methodcallerobject *mc;
-    PyObject *name, *key, *value;
+    PyObject* name;
 
     if (PyTuple_GET_SIZE(args) < 1) {
         PyErr_SetString(PyExc_TypeError, "methodcaller needs at least "
@@ -1604,36 +1659,9 @@ methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     mc->xargs = Py_XNewRef(args); // allows us to use borrowed references
     mc->kwds = Py_XNewRef(kwds);
+    mc->vectorcall_args = 0;
 
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    mc->vectorcall_args = PyMem_Calloc(
-            nargs + (kwds ? PyDict_Size(kwds) : 0),
-            sizeof(PyObject *));
-    if (!mc->vectorcall_args) {
-        return PyErr_NoMemory();
-    }
-    /* The first item of vectorcall_args will be filled with obj later */
-    if (nargs>1) {
-        memcpy(mc->vectorcall_args, PySequence_Fast_ITEMS(args),
-           nargs * sizeof(PyObject *));
-    }
-    if (kwds) {
-        const Py_ssize_t nkwds = PyDict_Size(kwds);
 
-        mc->vectorcall_kwnames = PyTuple_New(nkwds);
-        if (!mc->vectorcall_kwnames) {
-            return NULL;
-        }
-        Py_ssize_t i = 0, ppos = 0;
-        while (PyDict_Next(kwds, &ppos, &key, &value)) {
-            PyTuple_SET_ITEM(mc->vectorcall_kwnames, i, Py_NewRef(key));
-            mc->vectorcall_args[nargs + i] = value; // borrowed reference
-            ++i;
-        }
-    }
-    else {
-        mc->vectorcall_kwnames = NULL;
-    }
     mc->vectorcall = (vectorcallfunc)methodcaller_vectorcall;
 
     PyObject_GC_Track(mc);
@@ -1646,7 +1674,9 @@ methodcaller_clear(methodcallerobject *mc)
     Py_CLEAR(mc->name);
     Py_CLEAR(mc->xargs);
     Py_CLEAR(mc->kwds);
-    Py_CLEAR(mc->vectorcall_kwnames);
+
+    _methodcaller_clear_vectorcall(mc);
+
     return 0;
 }
 
