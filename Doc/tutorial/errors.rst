@@ -535,11 +535,20 @@ of a certain type while letting all other exceptions propagate to
 other clauses and eventually to be reraised. ::
 
    >>> def f():
-   ...     raise ExceptionGroup("group1",
-   ...                          [OSError(1),
-   ...                           SystemError(2),
-   ...                           ExceptionGroup("group2",
-   ...                                          [OSError(3), RecursionError(4)])])
+   ...     raise ExceptionGroup(
+   ...         "group1",
+   ...         [
+   ...             OSError(1),
+   ...             SystemError(2),
+   ...             ExceptionGroup(
+   ...                 "group2",
+   ...                 [
+   ...                     OSError(3),
+   ...                     RecursionError(4)
+   ...                 ]
+   ...             )
+   ...         ]
+   ...     )
    ...
    >>> try:
    ...     f()
