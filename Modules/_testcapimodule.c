@@ -1982,7 +1982,7 @@ return_result_with_error(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static PyObject*
+static PyObject *
 getitem_with_error(PyObject *self, PyObject *args)
 {
     PyObject *map, *key;
@@ -2058,90 +2058,6 @@ py_w_stopcode(PyObject *self, PyObject *args)
 }
 #endif
 
-
-static PyObject *
-get_mapping_keys(PyObject* self, PyObject *obj)
-{
-    return PyMapping_Keys(obj);
-}
-
-static PyObject *
-get_mapping_values(PyObject* self, PyObject *obj)
-{
-    return PyMapping_Values(obj);
-}
-
-static PyObject *
-get_mapping_items(PyObject* self, PyObject *obj)
-{
-    return PyMapping_Items(obj);
-}
-
-static PyObject *
-test_mapping_has_key_string(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    PyObject *context = PyDict_New();
-    PyObject *val = PyLong_FromLong(1);
-
-    // Since this uses `const char*` it is easier to test this in C:
-    PyDict_SetItemString(context, "a", val);
-    if (!PyMapping_HasKeyString(context, "a")) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "Existing mapping key does not exist");
-        return NULL;
-    }
-    if (PyMapping_HasKeyString(context, "b")) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "Missing mapping key exists");
-        return NULL;
-    }
-
-    Py_DECREF(val);
-    Py_DECREF(context);
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-mapping_has_key(PyObject* self, PyObject *args)
-{
-    PyObject *context, *key;
-    if (!PyArg_ParseTuple(args, "OO", &context, &key)) {
-        return NULL;
-    }
-    return PyLong_FromLong(PyMapping_HasKey(context, key));
-}
-
-static PyObject *
-sequence_set_slice(PyObject* self, PyObject *args)
-{
-    PyObject *sequence, *obj;
-    Py_ssize_t i1, i2;
-    if (!PyArg_ParseTuple(args, "OnnO", &sequence, &i1, &i2, &obj)) {
-        return NULL;
-    }
-
-    int res = PySequence_SetSlice(sequence, i1, i2, obj);
-    if (res == -1) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-sequence_del_slice(PyObject* self, PyObject *args)
-{
-    PyObject *sequence;
-    Py_ssize_t i1, i2;
-    if (!PyArg_ParseTuple(args, "Onn", &sequence, &i1, &i2)) {
-        return NULL;
-    }
-
-    int res = PySequence_DelSlice(sequence, i1, i2);
-    if (res == -1) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
 
 static PyObject *
 test_pythread_tss_key_state(PyObject *self, PyObject *args)
@@ -2244,72 +2160,6 @@ negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 #endif
-
-
-static PyObject *
-sequence_getitem(PyObject *self, PyObject *args)
-{
-    PyObject *seq;
-    Py_ssize_t i;
-    if (!PyArg_ParseTuple(args, "On", &seq, &i)) {
-        return NULL;
-    }
-    return PySequence_GetItem(seq, i);
-}
-
-
-static PyObject *
-sequence_setitem(PyObject *self, PyObject *args)
-{
-    Py_ssize_t i;
-    PyObject *seq, *val;
-    if (!PyArg_ParseTuple(args, "OnO", &seq, &i, &val)) {
-        return NULL;
-    }
-    if (PySequence_SetItem(seq, i, val)) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-
-static PyObject *
-sequence_delitem(PyObject *self, PyObject *args)
-{
-    Py_ssize_t i;
-    PyObject *seq;
-    if (!PyArg_ParseTuple(args, "On", &seq, &i)) {
-        return NULL;
-    }
-    if (PySequence_DelItem(seq, i)) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-hasattr_string(PyObject *self, PyObject* args)
-{
-    PyObject* obj;
-    PyObject* attr_name;
-
-    if (!PyArg_UnpackTuple(args, "hasattr_string", 2, 2, &obj, &attr_name)) {
-        return NULL;
-    }
-
-    if (!PyUnicode_Check(attr_name)) {
-        PyErr_SetString(PyExc_TypeError, "attribute name must a be string");
-        return PyErr_Occurred();
-    }
-
-    const char *name_str = PyUnicode_AsUTF8(attr_name);
-    if (PyObject_HasAttrString(obj, name_str)) {
-        Py_RETURN_TRUE;
-    }
-    else {
-        Py_RETURN_FALSE;
-    }
-}
 
 
 /* Functions for testing C calling conventions (METH_*) are named meth_*,
@@ -3735,23 +3585,12 @@ static PyMethodDef TestMethods[] = {
 #ifdef W_STOPCODE
     {"W_STOPCODE", py_w_stopcode, METH_VARARGS},
 #endif
-    {"get_mapping_keys", get_mapping_keys, METH_O},
-    {"get_mapping_values", get_mapping_values, METH_O},
-    {"get_mapping_items", get_mapping_items, METH_O},
-    {"test_mapping_has_key_string", test_mapping_has_key_string, METH_NOARGS},
-    {"mapping_has_key", mapping_has_key, METH_VARARGS},
-    {"sequence_set_slice", sequence_set_slice, METH_VARARGS},
-    {"sequence_del_slice", sequence_del_slice, METH_VARARGS},
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
     {"hamt", new_hamt, METH_NOARGS},
     {"bad_get", _PyCFunction_CAST(bad_get), METH_FASTCALL},
 #ifdef Py_REF_DEBUG
     {"negative_refcount", negative_refcount, METH_NOARGS},
 #endif
-    {"sequence_getitem", sequence_getitem, METH_VARARGS},
-    {"sequence_setitem", sequence_setitem, METH_VARARGS},
-    {"sequence_delitem", sequence_delitem, METH_VARARGS},
-    {"hasattr_string", hasattr_string, METH_VARARGS},
     {"meth_varargs", meth_varargs, METH_VARARGS},
     {"meth_varargs_keywords", _PyCFunction_CAST(meth_varargs_keywords), METH_VARARGS|METH_KEYWORDS},
     {"meth_o", meth_o, METH_O},
@@ -4391,6 +4230,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Heaptype(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Abstract(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Unicode(m) < 0) {
