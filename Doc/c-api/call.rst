@@ -165,7 +165,7 @@ Vectorcall Support API
    This is mostly useful to check whether or not *op* supports vectorcall,
    which can be done by checking ``PyVectorcall_Function(op) != NULL``.
 
-   .. versionadded:: 3.8
+   .. versionadded:: 3.9
 
 .. c:function:: PyObject* PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *dict)
 

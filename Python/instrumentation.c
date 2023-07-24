@@ -138,7 +138,7 @@ is_instrumented(int opcode)
 static inline bool
 monitors_equals(_Py_Monitors a, _Py_Monitors b)
 {
-    for (int i = 0; i < PY_MONITORING_UNGROUPED_EVENTS; i++) {
+    for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         if (a.tools[i] != b.tools[i]) {
             return false;
         }
@@ -151,7 +151,7 @@ static inline _Py_Monitors
 monitors_sub(_Py_Monitors a, _Py_Monitors b)
 {
     _Py_Monitors res;
-    for (int i = 0; i < PY_MONITORING_UNGROUPED_EVENTS; i++) {
+    for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         res.tools[i] = a.tools[i] & ~b.tools[i];
     }
     return res;
@@ -162,7 +162,7 @@ static inline _Py_Monitors
 monitors_and(_Py_Monitors a, _Py_Monitors b)
 {
     _Py_Monitors res;
-    for (int i = 0; i < PY_MONITORING_UNGROUPED_EVENTS; i++) {
+    for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         res.tools[i] = a.tools[i] & b.tools[i];
     }
     return res;
@@ -173,7 +173,7 @@ static inline _Py_Monitors
 monitors_or(_Py_Monitors a, _Py_Monitors b)
 {
     _Py_Monitors res;
-    for (int i = 0; i < PY_MONITORING_UNGROUPED_EVENTS; i++) {
+    for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         res.tools[i] = a.tools[i] | b.tools[i];
     }
     return res;
@@ -182,7 +182,7 @@ monitors_or(_Py_Monitors a, _Py_Monitors b)
 static inline bool
 monitors_are_empty(_Py_Monitors m)
 {
-    for (int i = 0; i < PY_MONITORING_UNGROUPED_EVENTS; i++) {
+    for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         if (m.tools[i]) {
             return false;
         }
@@ -193,7 +193,7 @@ monitors_are_empty(_Py_Monitors m)
 static inline bool
 multiple_tools(_Py_Monitors *m)
 {
-    for (int i = 0; i < PY_MONITORING_UNGROUPED_EVENTS; i++) {
+    for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         if (_Py_popcount32(m->tools[i]) > 1) {
             return true;
         }
@@ -205,7 +205,7 @@ static inline _PyMonitoringEventSet
 get_events(_Py_Monitors *m, int tool_id)
 {
     _PyMonitoringEventSet result = 0;
-    for (int e = 0; e < PY_MONITORING_UNGROUPED_EVENTS; e++) {
+    for (int e = 0; e < _PY_MONITORING_UNGROUPED_EVENTS; e++) {
         if ((m->tools[e] >> tool_id) & 1) {
             result |= (1 << e);
         }
@@ -340,7 +340,7 @@ static void
 dump_monitors(const char *prefix, _Py_Monitors monitors, FILE*out)
 {
     fprintf(out, "%s monitors:\n", prefix);
-    for (int event = 0; event < PY_MONITORING_UNGROUPED_EVENTS; event++) {
+    for (int event = 0; event < _PY_MONITORING_UNGROUPED_EVENTS; event++) {
         fprintf(out, "    Event %d: Tools %x\n", event, monitors.tools[event]);
     }
 }
@@ -910,7 +910,7 @@ get_tools_for_instruction(PyCodeObject * code, int i, int event)
     assert(event != PY_MONITORING_EVENT_INSTRUCTION);
     assert(instrumentation_cross_checks(PyThreadState_GET()->interp, code));
     _PyCoMonitoringData *monitoring = code->_co_monitoring;
-    if (event >= PY_MONITORING_UNGROUPED_EVENTS) {
+    if (event >= _PY_MONITORING_UNGROUPED_EVENTS) {
         assert(event == PY_MONITORING_EVENT_C_RAISE ||
                 event == PY_MONITORING_EVENT_C_RETURN);
         event = PY_MONITORING_EVENT_CALL;
@@ -1216,7 +1216,7 @@ _PyMonitoring_RegisterCallback(int tool_id, int event_id, PyObject *obj)
 {
     PyInterpreterState *is = _PyInterpreterState_Get();
     assert(0 <= tool_id && tool_id < PY_MONITORING_TOOL_IDS);
-    assert(0 <= event_id && event_id < PY_MONITORING_EVENTS);
+    assert(0 <= event_id && event_id < _PY_MONITORING_EVENTS);
     PyObject *callback = is->monitoring_callables[tool_id][event_id];
     is->monitoring_callables[tool_id][event_id] = Py_XNewRef(obj);
     return callback;
@@ -1667,7 +1667,7 @@ static void
 set_events(_Py_Monitors *m, int tool_id, _PyMonitoringEventSet events)
 {
     assert(0 <= tool_id && tool_id < PY_MONITORING_TOOL_IDS);
-    for (int e = 0; e < PY_MONITORING_UNGROUPED_EVENTS; e++) {
+    for (int e = 0; e < _PY_MONITORING_UNGROUPED_EVENTS; e++) {
         uint8_t *tools = &m->tools[e];
         int val = (events >> e) & 1;
         *tools &= ~(1 << tool_id);
@@ -1692,7 +1692,7 @@ _PyMonitoring_SetEvents(int tool_id, _PyMonitoringEventSet events)
 {
     assert(0 <= tool_id && tool_id < PY_MONITORING_TOOL_IDS);
     PyInterpreterState *interp = _PyInterpreterState_Get();
-    assert(events < (1 << PY_MONITORING_UNGROUPED_EVENTS));
+    assert(events < (1 << _PY_MONITORING_UNGROUPED_EVENTS));
     if (check_tool(interp, tool_id)) {
         return -1;
     }
@@ -1710,7 +1710,7 @@ _PyMonitoring_SetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEvent
 {
     assert(0 <= tool_id && tool_id < PY_MONITORING_TOOL_IDS);
     PyInterpreterState *interp = _PyInterpreterState_Get();
-    assert(events < (1 << PY_MONITORING_UNGROUPED_EVENTS));
+    assert(events < (1 << _PY_MONITORING_UNGROUPED_EVENTS));
     if (check_tool(interp, tool_id)) {
         return -1;
     }
@@ -1849,7 +1849,7 @@ monitoring_register_callback_impl(PyObject *module, int tool_id, int event,
         return NULL;
     }
     int event_id = _Py_bit_length(event)-1;
-    if (event_id < 0 || event_id >= PY_MONITORING_EVENTS) {
+    if (event_id < 0 || event_id >= _PY_MONITORING_EVENTS) {
         PyErr_Format(PyExc_ValueError, "invalid event %d", event);
         return NULL;
     }
@@ -1899,7 +1899,7 @@ monitoring_set_events_impl(PyObject *module, int tool_id, int event_set)
     if (check_valid_tool(tool_id))  {
         return NULL;
     }
-    if (event_set < 0 || event_set >= (1 << PY_MONITORING_EVENTS)) {
+    if (event_set < 0 || event_set >= (1 << _PY_MONITORING_EVENTS)) {
         PyErr_Format(PyExc_ValueError, "invalid event set 0x%x", event_set);
         return NULL;
     }
@@ -1941,7 +1941,7 @@ monitoring_get_local_events_impl(PyObject *module, int tool_id,
     _PyMonitoringEventSet event_set = 0;
     _PyCoMonitoringData *data = ((PyCodeObject *)code)->_co_monitoring;
     if (data != NULL) {
-        for (int e = 0; e < PY_MONITORING_UNGROUPED_EVENTS; e++) {
+        for (int e = 0; e < _PY_MONITORING_UNGROUPED_EVENTS; e++) {
             if ((data->local_monitors.tools[e] >> tool_id) & 1) {
                 event_set |= (1 << e);
             }
@@ -1975,7 +1975,7 @@ monitoring_set_local_events_impl(PyObject *module, int tool_id,
     if (check_valid_tool(tool_id))  {
         return NULL;
     }
-    if (event_set < 0 || event_set >= (1 << PY_MONITORING_EVENTS)) {
+    if (event_set < 0 || event_set >= (1 << _PY_MONITORING_EVENTS)) {
         PyErr_Format(PyExc_ValueError, "invalid event set 0x%x", event_set);
         return NULL;
     }
@@ -2056,7 +2056,7 @@ monitoring__all_events_impl(PyObject *module)
     if (res == NULL) {
         return NULL;
     }
-    for (int e = 0; e < PY_MONITORING_UNGROUPED_EVENTS; e++) {
+    for (int e = 0; e < _PY_MONITORING_UNGROUPED_EVENTS; e++) {
         uint8_t tools = interp->monitors.tools[e];
         if (tools == 0) {
             continue;
@@ -2115,7 +2115,7 @@ PyObject *_Py_CreateMonitoringObject(void)
     if (err) {
         goto error;
     }
-    for (int i = 0; i < PY_MONITORING_EVENTS; i++) {
+    for (int i = 0; i < _PY_MONITORING_EVENTS; i++) {
         if (add_power2_constant(events, event_names[i], i)) {
             goto error;
         }

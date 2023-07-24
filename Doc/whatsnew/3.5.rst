@@ -1045,8 +1045,8 @@ not just sequences.  (Contributed by Serhiy Storchaka in :issue:`23171`.)
 curses
 ------
 
-The new :func:`~curses.update_lines_cols` function updates the :envvar:`LINES`
-and :envvar:`COLS` environment variables.  This is useful for detecting
+The new :func:`~curses.update_lines_cols` function updates the :data:`LINES`
+and :data:`COLS` module variables.  This is useful for detecting
 manual screen resizing.  (Contributed by Arnon Yaari in :issue:`4254`.)
 
 
@@ -2192,7 +2192,7 @@ encode error with ``\N{...}`` escapes.
 (Contributed by Serhiy Storchaka in :issue:`19676`.)
 
 A new :c:func:`PyErr_FormatV` function similar to :c:func:`PyErr_Format`,
-but accepts a ``va_list`` argument.
+but accepts a :c:type:`va_list` argument.
 (Contributed by Antoine Pitrou in :issue:`18711`.)
 
 A new :c:data:`PyExc_RecursionError` exception.

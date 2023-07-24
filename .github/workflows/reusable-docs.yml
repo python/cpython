@@ -1,31 +1,8 @@
 name: Docs
 
 on:
+  workflow_call:
   workflow_dispatch:
-  #push:
-  #  branches:
-  #  - 'main'
-  #  - '3.12'
-  #  - '3.11'
-  #  - '3.10'
-  #  - '3.9'
-  #  - '3.8'
-  #  - '3.7'
-  #  paths:
-  #  - 'Doc/**'
-  pull_request:
-    branches:
-    - 'main'
-    - '3.12'
-    - '3.11'
-    - '3.10'
-    - '3.9'
-    - '3.8'
-    - '3.7'
-    paths:
-    - 'Doc/**'
-    - 'Misc/**'
-    - '.github/workflows/doc.yml'
 
 permissions:
   contents: read
@@ -61,12 +38,14 @@ jobs:
       uses: Ana06/get-changed-files@v2.2.0
       with:
         filter: "Doc/**"
+        format: csv  # works for paths with spaces
     - name: 'Build changed files in nit-picky mode'
       if: github.event_name == 'pull_request'
       continue-on-error: true
       run: |
+        set -Eeuo pipefail
         # Mark files the pull request modified
-        touch ${{ steps.changed_files.outputs.added_modified }}
+        python Doc/tools/touch-clean-files.py --clean '${{ steps.changed_files.outputs.added_modified }}'
         # Build docs with the '-n' (nit-picky) option; convert warnings to annotations
         make -C Doc/ PYTHON=../python SPHINXOPTS="-q -n --keep-going" html 2>&1 |
             python Doc/tools/warnings-to-gh-actions.py

@@ -515,27 +515,28 @@ always available.
    The :term:`named tuple` *flags* exposes the status of command line
    flags. The attributes are read only.
 
-   ============================= ==============================================================================================================
-   attribute                     flag
-   ============================= ==============================================================================================================
-   :const:`debug`                :option:`-d`
-   :const:`inspect`              :option:`-i`
-   :const:`interactive`          :option:`-i`
-   :const:`isolated`             :option:`-I`
-   :const:`optimize`             :option:`-O` or :option:`-OO`
-   :const:`dont_write_bytecode`  :option:`-B`
-   :const:`no_user_site`         :option:`-s`
-   :const:`no_site`              :option:`-S`
-   :const:`ignore_environment`   :option:`-E`
-   :const:`verbose`              :option:`-v`
-   :const:`bytes_warning`        :option:`-b`
-   :const:`quiet`                :option:`-q`
-   :const:`hash_randomization`   :option:`-R`
-   :const:`dev_mode`             :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
-   :const:`utf8_mode`            :option:`-X utf8 <-X>`
-   :const:`safe_path`            :option:`-P`
-   :const:`int_max_str_digits`   :option:`-X int_max_str_digits <-X>` (:ref:`integer string conversion length limitation <int_max_str_digits>`)
-   ============================= ==============================================================================================================
+   ==============================  ==============================================================================================================
+   attribute                       flag
+   ==============================  ==============================================================================================================
+   :const:`debug`                  :option:`-d`
+   :const:`inspect`                :option:`-i`
+   :const:`interactive`            :option:`-i`
+   :const:`isolated`               :option:`-I`
+   :const:`optimize`               :option:`-O` or :option:`-OO`
+   :const:`dont_write_bytecode`    :option:`-B`
+   :const:`no_user_site`           :option:`-s`
+   :const:`no_site`                :option:`-S`
+   :const:`ignore_environment`     :option:`-E`
+   :const:`verbose`                :option:`-v`
+   :const:`bytes_warning`          :option:`-b`
+   :const:`quiet`                  :option:`-q`
+   :const:`hash_randomization`     :option:`-R`
+   :const:`dev_mode`               :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
+   :const:`utf8_mode`              :option:`-X utf8 <-X>`
+   :const:`safe_path`              :option:`-P`
+   :const:`int_max_str_digits`     :option:`-X int_max_str_digits <-X>` (:ref:`integer string conversion length limitation <int_max_str_digits>`)
+   :const:`warn_default_encoding`  :option:`-X warn_default_encoding <-X>`
+   ==============================  ==============================================================================================================
 
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
@@ -553,6 +554,9 @@ always available.
       Added the ``dev_mode`` attribute for the new :ref:`Python Development
       Mode <devmode>` and the ``utf8_mode`` attribute for the new  :option:`-X`
       ``utf8`` flag.
+
+   .. versionchanged:: 3.10
+      Added ``warn_default_encoding`` attribute for :option:`-X` ``warn_default_encoding`` flag.
 
    .. versionchanged:: 3.11
       Added the ``safe_path`` attribute for :option:`-P` option.

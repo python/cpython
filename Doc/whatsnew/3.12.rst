@@ -84,7 +84,9 @@ Important deprecations, removals or restrictions:
 
 * :pep:`623`: Remove wstr from Unicode
 
-* :pep:`632`: Remove the ``distutils`` package
+* :pep:`632`: Remove the ``distutils`` package. See
+  `the migration guide <https://peps.python.org/pep-0632/#migration-advice>`_
+  for advice on its replacement.
 
 Improved Error Messages
 =======================
@@ -486,7 +488,7 @@ Other Language Changes
 New Modules
 ===========
 
-* None yet.
+* None.
 
 
 Improved Modules
@@ -967,21 +969,61 @@ Demos and Tools
 Deprecated
 ==========
 
-* :class:`typing.Hashable` and :class:`typing.Sized` aliases for :class:`collections.abc.Hashable`
+* :mod:`asyncio`: The :meth:`~asyncio.get_event_loop` method of the
+  default event loop policy now emits a :exc:`DeprecationWarning` if there
+  is no current event loop set and it decides to create one.
+  (Contributed by Serhiy Storchaka and Guido van Rossum in :gh:`100160`.)
+
+* :mod:`calendar`: ``calendar.January`` and ``calendar.February`` constants are deprecated and
+  replaced by :data:`calendar.Month.JANUARY` and :data:`calendar.Month.FEBRUARY`.
+  (Contributed by Prince Roshan in :gh:`103636`.)
+
+* :mod:`datetime`: :class:`datetime.datetime`'s :meth:`~datetime.datetime.utcnow` and
+  :meth:`~datetime.datetime.utcfromtimestamp` are deprecated and will be
+  removed in a future version. Instead, use timezone-aware objects to represent
+  datetimes in UTC: respectively, call :meth:`~datetime.datetime.now` and
+  :meth:`~datetime.datetime.fromtimestamp`  with the *tz* parameter set to
+  :const:`datetime.UTC`.
+  (Contributed by Paul Ganssle in :gh:`103857`.)
+
+* :mod:`os`: The ``st_ctime`` fields return by :func:`os.stat` and :func:`os.lstat` on
+  Windows are deprecated. In a future release, they will contain the last
+  metadata change time, consistent with other platforms. For now, they still
+  contain the creation time, which is also available in the new ``st_birthtime``
+  field. (Contributed by Steve Dower in :gh:`99726`.)
+
+* :mod:`shutil`: The *onerror* argument of :func:`shutil.rmtree` is deprecated as will be removed
+  in Python 3.14. Use *onexc* instead. (Contributed by Irit Katriel in :gh:`102828`.)
+
+* :mod:`sqlite3`:
+    * :ref:`default adapters and converters
+      <sqlite3-default-converters>` are now deprecated.
+      Instead, use the :ref:`sqlite3-adapter-converter-recipes`
+      and tailor them to your needs.
+      (Contributed by Erlend E. Aasland in :gh:`90016`.)
+
+    * In :meth:`~sqlite3.Cursor.execute`, :exc:`DeprecationWarning` is now emitted
+      when :ref:`named placeholders <sqlite3-placeholders>` are used together with
+      parameters supplied as a :term:`sequence` instead of as a :class:`dict`.
+      Starting from Python 3.14, using named placeholders with parameters supplied
+      as a sequence will raise a :exc:`~sqlite3.ProgrammingError`.
+      (Contributed by Erlend E. Aasland in :gh:`101698`.)
+
+* :mod:`sys`: The :data:`sys.last_type`, :data:`sys.last_value` and :data:`sys.last_traceback`
+  fields are deprecated. Use :data:`sys.last_exc` instead.
+  (Contributed by Irit Katriel in :gh:`102778`.)
+
+* :mod:`tarfile`: Extracting tar archives without specifying *filter* is deprecated until
+  Python 3.14, when ``'data'`` filter will become the default.
+  See :ref:`tarfile-extraction-filter` for details.
+
+* :mod:`typing`: :class:`typing.Hashable` and :class:`typing.Sized` aliases for :class:`collections.abc.Hashable`
   and :class:`collections.abc.Sized`. (:gh:`94309`.)
 
-* The :mod:`sqlite3` :ref:`default adapters and converters
-  <sqlite3-default-converters>` are now deprecated.
-  Instead, use the :ref:`sqlite3-adapter-converter-recipes`
-  and tailor them to your needs.
-  (Contributed by Erlend E. Aasland in :gh:`90016`.)
-
-* In :meth:`~sqlite3.Cursor.execute`, :exc:`DeprecationWarning` is now emitted
-  when :ref:`named placeholders <sqlite3-placeholders>` are used together with
-  parameters supplied as a :term:`sequence` instead of as a :class:`dict`.
-  Starting from Python 3.14, using named placeholders with parameters supplied
-  as a sequence will raise a :exc:`~sqlite3.ProgrammingError`.
-  (Contributed by Erlend E. Aasland in :gh:`101698`.)
+* :mod:`xml.etree.ElementTree`: The module now emits :exc:`DeprecationWarning`
+  when testing the truth value of an :class:`xml.etree.ElementTree.Element`.
+  Before, the Python implementation emitted :exc:`FutureWarning`, and the C
+  implementation emitted nothing.
 
 * The 3-arg signatures (type, value, traceback) of :meth:`~coroutine.throw`,
   :meth:`~generator.throw` and :meth:`~agen.athrow` are deprecated and
@@ -993,57 +1035,16 @@ Deprecated
   :exc:`ImportWarning`).
   (Contributed by Brett Cannon in :gh:`65961`.)
 
-* The :meth:`~asyncio.get_event_loop` method of the
-  default event loop policy now emits a :exc:`DeprecationWarning` if there
-  is no current event loop set and it decides to create one.
-  (Contributed by Serhiy Storchaka and Guido van Rossum in :gh:`100160`.)
-
-* The :mod:`xml.etree.ElementTree` module now emits :exc:`DeprecationWarning`
-  when testing the truth value of an :class:`xml.etree.ElementTree.Element`.
-  Before, the Python implementation emitted :exc:`FutureWarning`, and the C
-  implementation emitted nothing.
-
 * In accordance with :pep:`699`, the ``ma_version_tag`` field in :c:type:`PyDictObject`
   is deprecated for extension modules. Accessing this field will generate a compiler
   warning at compile time. This field will be removed in Python 3.14.
   (Contributed by Ramvikrams and Kumar Aditya in :gh:`101193`. PEP by Ken Jin.)
-
-* The ``st_ctime`` fields return by :func:`os.stat` and :func:`os.lstat` on
-  Windows are deprecated. In a future release, they will contain the last
-  metadata change time, consistent with other platforms. For now, they still
-  contain the creation time, which is also available in the new ``st_birthtime``
-  field. (Contributed by Steve Dower in :gh:`99726`.)
-
-* The :data:`sys.last_type`, :data:`sys.last_value` and :data:`sys.last_traceback`
-  fields are deprecated. Use :data:`sys.last_exc` instead.
-  (Contributed by Irit Katriel in :gh:`102778`.)
-
-* The *onerror* argument of :func:`shutil.rmtree` is deprecated as will be removed
-  in Python 3.14. Use *onexc* instead. (Contributed by Irit Katriel in :gh:`102828`.)
-
-* Extracting tar archives without specifying *filter* is deprecated until
-  Python 3.14, when ``'data'`` filter will become the default.
-  See :ref:`tarfile-extraction-filter` for details.
-
-* ``calendar.January`` and ``calendar.February`` constants are deprecated and
-  replaced by :data:`calendar.Month.JANUARY` and :data:`calendar.Month.FEBRUARY`.
-  (Contributed by Prince Roshan in :gh:`103636`.)
 
 * The bitwise inversion operator (``~``) on bool is deprecated. It will throw an
   error in Python 3.14. Use ``not`` for logical negation of bools instead.
   In the rare case that you really need the bitwise inversion of the underlying
   ``int``, convert to int explicitly with ``~int(x)``. (Contributed by Tim Hoffmann
   in :gh:`103487`.)
-
-* :class:`datetime.datetime`'s
-  :meth:`~datetime.datetime.utcnow` and
-  :meth:`~datetime.datetime.utcfromtimestamp` are deprecated and will be
-  removed in a future version. Instead, use timezone-aware objects to represent
-  datetimes in UTC: respectively, call
-  :meth:`~datetime.datetime.now` and
-  :meth:`~datetime.datetime.fromtimestamp`  with the *tz* parameter set to
-  :const:`datetime.UTC`.
-  (Contributed by Paul Ganssle in :gh:`103857`.)
 
 Pending Removal in Python 3.13
 ------------------------------
@@ -1088,7 +1089,33 @@ APIs:
 Pending Removal in Python 3.14
 ------------------------------
 
-* Deprecated the following :mod:`importlib.abc` classes, scheduled for removal in
+* :mod:`argparse`: The *type*, *choices*, and *metavar* parameters
+  of :class:`!argparse.BooleanOptionalAction` are deprecated
+  and will be removed in 3.14.
+  (Contributed by Nikita Sobolev in :gh:`92248`.)
+
+* :mod:`ast`: The following :mod:`ast` features have been deprecated in documentation since
+  Python 3.8, now cause a :exc:`DeprecationWarning` to be emitted at runtime
+  when they are accessed or used, and will be removed in Python 3.14:
+
+  * :class:`!ast.Num`
+  * :class:`!ast.Str`
+  * :class:`!ast.Bytes`
+  * :class:`!ast.NameConstant`
+  * :class:`!ast.Ellipsis`
+
+  Use :class:`ast.Constant` instead.
+  (Contributed by Serhiy Storchaka in :gh:`90953`.)
+
+* :mod:`collections.abc`: Deprecated :class:`collections.abc.ByteString`.
+  Prefer :class:`Sequence` or :class:`collections.abc.Buffer`.
+  For use in typing, prefer a union, like ``bytes | bytearray``, or :class:`collections.abc.Buffer`.
+  (Contributed by Shantanu Jain in :gh:`91896`.)
+
+* :mod:`email`: Deprecated the *isdst* parameter in :func:`email.utils.localtime`.
+  (Contributed by Alan Williams in :gh:`72346`.)
+
+* :mod:`importlib.abc`: Deprecated the following classes, scheduled for removal in
   Python 3.14:
 
   * :class:`!importlib.abc.ResourceReader`
@@ -1102,27 +1129,13 @@ Pending Removal in Python 3.14
 
   (Contributed by Jason R. Coombs and Hugo van Kemenade in :gh:`93963`.)
 
-* Deprecated :class:`collections.abc.ByteString`.
-  Prefer :class:`Sequence` or :class:`collections.abc.Buffer`.
-  For use in typing, prefer a union, like ``bytes | bytearray``, or :class:`collections.abc.Buffer`.
-  (Contributed by Shantanu Jain in :gh:`91896`.)
+* :mod:`itertools`: The module had undocumented, inefficient, historically buggy,
+  and inconsistent support for copy, deepcopy, and pickle operations.
+  This will be removed in 3.14 for a significant reduction in code
+  volume and maintenance burden.
+  (Contributed by Raymond Hettinger in :gh:`101588`.)
 
-* :class:`typing.ByteString`, deprecated since Python 3.9, now causes a
-  :exc:`DeprecationWarning` to be emitted when it is used.
-
-* Creating immutable types (:c:macro:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
-  bases using the C API.
-
-* Deprecated the *isdst* parameter in :func:`email.utils.localtime`.
-  (Contributed by Alan Williams in :gh:`72346`.)
-
-* ``__package__`` and ``__cached__`` will cease to be set or taken
-  into consideration by the import system (:gh:`97879`).
-
-* Testing the truth value of an :class:`xml.etree.ElementTree.Element`
-  is deprecated and will raise an exception in Python 3.14.
-
-* The default :mod:`multiprocessing` start method will change to a safer one on
+* :mod:`multiprocessing`: The default :mod:`multiprocessing` start method will change to a safer one on
   Linux, BSDs, and other non-macOS POSIX platforms where ``'fork'`` is currently
   the default (:gh:`84559`). Adding a runtime warning about this was deemed too
   disruptive as the majority of code is not expected to care. Use the
@@ -1130,47 +1143,35 @@ Pending Removal in Python 3.14
   :func:`~multiprocessing.set_start_method` APIs to explicitly specify when
   your code *requires* ``'fork'``.  See :ref:`multiprocessing-start-methods`.
 
-* :mod:`pty` has two undocumented ``master_open()`` and ``slave_open()``
+* :mod:`pkgutil`: :func:`pkgutil.find_loader` and :func:`pkgutil.get_loader`
+  now raise :exc:`DeprecationWarning`;
+  use :func:`importlib.util.find_spec` instead.
+  (Contributed by Nikita Sobolev in :gh:`97850`.)
+
+* :mod:`pty`: The module has two undocumented ``master_open()`` and ``slave_open()``
   functions that have been deprecated since Python 2 but only gained a
   proper :exc:`DeprecationWarning` in 3.12. Remove them in 3.14.
 
-* :mod:`itertools` had undocumented, inefficient, historically buggy,
-  and inconsistent support for copy, deepcopy, and pickle operations.
-  This will be removed in 3.14 for a significant reduction in code
-  volume and maintenance burden.
-  (Contributed by Raymond Hettinger in :gh:`101588`.)
+* :mod:`shutil`: The *onerror* argument of :func:`shutil.rmtree` is deprecated in 3.12,
+  and will be removed in 3.14.
+
+* :mod:`typing`: :class:`typing.ByteString`, deprecated since Python 3.9, now causes a
+  :exc:`DeprecationWarning` to be emitted when it is used.
+
+* :mod:`xml.etree.ElementTree`: Testing the truth value of an :class:`xml.etree.ElementTree.Element`
+  is deprecated and will raise an exception in Python 3.14.
+
+* Creating immutable types (:c:macro:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
+  bases using the C API.
+
+* ``__package__`` and ``__cached__`` will cease to be set or taken
+  into consideration by the import system (:gh:`97879`).
 
 * Accessing ``co_lnotab`` was deprecated in :pep:`626` since 3.10
   and was planned to be removed in 3.12
   but it only got a proper :exc:`DeprecationWarning` in 3.12.
   May be removed in 3.14.
   (Contributed by Nikita Sobolev in :gh:`101866`.)
-
-* The *onerror* argument of :func:`shutil.rmtree` is deprecated in 3.12,
-  and will be removed in 3.14.
-
-* The *type*, *choices*, and *metavar* parameters
-  of :class:`!argparse.BooleanOptionalAction` are deprecated
-  and will be removed in 3.14.
-  (Contributed by Nikita Sobolev in :gh:`92248`.)
-
-* :func:`pkgutil.find_loader` and :func:`pkgutil.get_loader`
-  now raise :exc:`DeprecationWarning`;
-  use :func:`importlib.util.find_spec` instead.
-  (Contributed by Nikita Sobolev in :gh:`97850`.)
-
-* The following :mod:`ast` features have been deprecated in documentation since
-  Python 3.8, now cause a :exc:`DeprecationWarning` to be emitted at runtime
-  when they are accessed or used, and will be removed in Python 3.14:
-
-  * :class:`!ast.Num`
-  * :class:`!ast.Str`
-  * :class:`!ast.Bytes`
-  * :class:`!ast.NameConstant`
-  * :class:`!ast.Ellipsis`
-
-  Use :class:`ast.Constant` instead.
-  (Contributed by Serhiy Storchaka in :gh:`90953`.)
 
 Pending Removal in Future Versions
 ----------------------------------
@@ -1193,13 +1194,29 @@ although there is currently no date scheduled for their removal.
 Removed
 =======
 
-* Remove the ``distutils`` package. It was deprecated in Python 3.10 by
+* ``asynchat`` and ``asyncore``: These two modules have been removed
+  according to the schedule in :pep:`594`,
+  having been deprecated in Python 3.6.
+  Use :mod:`asyncio` instead.
+  (Contributed by Nikita Sobolev in :gh:`96580`.)
+
+* :mod:`configparser`: Several names deprecated in the :mod:`configparser` way back in 3.2 have
+  been removed per :gh:`89336`:
+
+  * :class:`configparser.ParsingError` no longer has a ``filename`` attribute
+    or argument. Use the ``source`` attribute and argument instead.
+  * :mod:`configparser` no longer has a ``SafeConfigParser`` class. Use the
+    shorter :class:`~configparser.ConfigParser` name instead.
+  * :class:`configparser.ConfigParser` no longer has a ``readfp`` method.
+    Use :meth:`~configparser.ConfigParser.read_file` instead.
+
+* ``distutils``: Remove the ``distutils`` package. It was deprecated in Python 3.10 by
   :pep:`632` "Deprecate distutils module". For projects still using
   ``distutils`` and cannot be updated to something else, the ``setuptools``
   project can be installed: it still provides ``distutils``.
   (Contributed by Victor Stinner in :gh:`92584`.)
 
-* Remove the bundled setuptools wheel from :mod:`ensurepip`,
+* :mod:`ensurepip`: Remove the bundled setuptools wheel from :mod:`ensurepip`,
   and stop installing setuptools in environments created by :mod:`venv`.
 
   ``pip (>= 22.1)`` does not require setuptools to be installed in the
@@ -1217,94 +1234,9 @@ Removed
 
   (Contributed by Pradyun Gedam in :gh:`95299`.)
 
-* Removed many old deprecated :mod:`unittest` features:
-
-  - A number of :class:`~unittest.TestCase` method aliases:
-
-    ============================ =============================== ===============
-       Deprecated alias           Method Name                     Deprecated in
-    ============================ =============================== ===============
-     ``failUnless``               :meth:`.assertTrue`             3.1
-     ``failIf``                   :meth:`.assertFalse`            3.1
-     ``failUnlessEqual``          :meth:`.assertEqual`            3.1
-     ``failIfEqual``              :meth:`.assertNotEqual`         3.1
-     ``failUnlessAlmostEqual``    :meth:`.assertAlmostEqual`      3.1
-     ``failIfAlmostEqual``        :meth:`.assertNotAlmostEqual`   3.1
-     ``failUnlessRaises``         :meth:`.assertRaises`           3.1
-     ``assert_``                  :meth:`.assertTrue`             3.2
-     ``assertEquals``             :meth:`.assertEqual`            3.2
-     ``assertNotEquals``          :meth:`.assertNotEqual`         3.2
-     ``assertAlmostEquals``       :meth:`.assertAlmostEqual`      3.2
-     ``assertNotAlmostEquals``    :meth:`.assertNotAlmostEqual`   3.2
-     ``assertRegexpMatches``      :meth:`.assertRegex`            3.2
-     ``assertRaisesRegexp``       :meth:`.assertRaisesRegex`      3.2
-     ``assertNotRegexpMatches``   :meth:`.assertNotRegex`         3.5
-    ============================ =============================== ===============
-
-    You can use https://github.com/isidentical/teyit to automatically modernise
-    your unit tests.
-
-  - Undocumented and broken :class:`~unittest.TestCase` method
-    ``assertDictContainsSubset`` (deprecated in Python 3.2).
-
-  - Undocumented :meth:`TestLoader.loadTestsFromModule
-    <unittest.TestLoader.loadTestsFromModule>` parameter *use_load_tests*
-    (deprecated and ignored since Python 3.2).
-
-  - An alias of the :class:`~unittest.TextTestResult` class:
-    ``_TextTestResult`` (deprecated in Python 3.2).
-
-  (Contributed by Serhiy Storchaka in :issue:`45162`.)
-
-* Several names deprecated in the :mod:`configparser` way back in 3.2 have
-  been removed per :gh:`89336`:
-
-  * :class:`configparser.ParsingError` no longer has a ``filename`` attribute
-    or argument. Use the ``source`` attribute and argument instead.
-  * :mod:`configparser` no longer has a ``SafeConfigParser`` class. Use the
-    shorter :class:`~configparser.ConfigParser` name instead.
-  * :class:`configparser.ConfigParser` no longer has a ``readfp`` method.
-    Use :meth:`~configparser.ConfigParser.read_file` instead.
-
-* The following undocumented :mod:`sqlite3` features, deprecated in Python
-  3.10, are now removed:
-
-  * ``sqlite3.enable_shared_cache()``
-  * ``sqlite3.OptimizedUnicode``
-
-  If a shared cache must be used, open the database in URI mode using the
-  ``cache=shared`` query parameter.
-
-  The ``sqlite3.OptimizedUnicode`` text factory has been an alias for
-  :class:`str` since Python 3.3. Code that previously set the text factory to
-  ``OptimizedUnicode`` can either use ``str`` explicitly, or rely on the
-  default value which is also ``str``.
-
-  (Contributed by Erlend E. Aasland in :gh:`92548`.)
-
-* ``smtpd`` has been removed according to the schedule in :pep:`594`,
-  having been deprecated in Python 3.4.7 and 3.5.4.
-  Use aiosmtpd_ PyPI module or any other
-  :mod:`asyncio`-based server instead.
-  (Contributed by Oleg Iarygin in :gh:`93243`.)
-
-.. _aiosmtpd: https://pypi.org/project/aiosmtpd/
-
-* ``asynchat`` and ``asyncore`` have been removed
-  according to the schedule in :pep:`594`,
-  having been deprecated in Python 3.6.
-  Use :mod:`asyncio` instead.
-  (Contributed by Nikita Sobolev in :gh:`96580`.)
-
-* Remove ``io.OpenWrapper`` and ``_pyio.OpenWrapper``, deprecated in Python
-  3.10: just use :func:`open` instead. The :func:`open` (:func:`io.open`)
-  function is a built-in function. Since Python 3.10, :func:`!_pyio.open` is
-  also a static method.
-  (Contributed by Victor Stinner in :gh:`94169`.)
-
-* Remove the :func:`!ssl.RAND_pseudo_bytes` function, deprecated in Python 3.6:
-  use :func:`os.urandom` or :func:`ssl.RAND_bytes` instead.
-  (Contributed by Victor Stinner in :gh:`94199`.)
+* :mod:`ftplib`: Remove the ``FTP_TLS.ssl_version`` class attribute: use the
+  *context* parameter instead.
+  (Contributed by Victor Stinner in :gh:`94172`.)
 
 * :mod:`gzip`: Remove the ``filename`` attribute of :class:`gzip.GzipFile`,
   deprecated since Python 2.6, use the :attr:`~gzip.GzipFile.name` attribute
@@ -1312,43 +1244,13 @@ Removed
   extension if it was not present.
   (Contributed by Victor Stinner in :gh:`94196`.)
 
-* Remove the :func:`!ssl.match_hostname` function.
-  It was deprecated in Python 3.7. OpenSSL performs
-  hostname matching since Python 3.7, Python no longer uses the
-  :func:`!ssl.match_hostname` function.
-  (Contributed by Victor Stinner in :gh:`94199`.)
-
-* Remove the :func:`!locale.format` function, deprecated in Python 3.7:
-  use :func:`locale.format_string` instead.
-  (Contributed by Victor Stinner in :gh:`94226`.)
-
 * :mod:`hashlib`: Remove the pure Python implementation of
   :func:`hashlib.pbkdf2_hmac()`, deprecated in Python 3.10. Python 3.10 and
   newer requires OpenSSL 1.1.1 (:pep:`644`): this OpenSSL version provides
   a C implementation of :func:`~hashlib.pbkdf2_hmac()` which is faster.
   (Contributed by Victor Stinner in :gh:`94199`.)
 
-* :mod:`xml.etree.ElementTree`: Remove the ``ElementTree.Element.copy()`` method of the
-  pure Python implementation, deprecated in Python 3.10, use the
-  :func:`copy.copy` function instead.  The C implementation of :mod:`xml.etree.ElementTree`
-  has no ``copy()`` method, only a ``__copy__()`` method.
-  (Contributed by Victor Stinner in :gh:`94383`.)
-
-* :mod:`zipimport`: Remove ``find_loader()`` and ``find_module()`` methods,
-  deprecated in Python 3.10: use the ``find_spec()`` method instead.  See
-  :pep:`451` for the rationale.
-  (Contributed by Victor Stinner in :gh:`94379`.)
-
-* Remove the :func:`!ssl.wrap_socket` function, deprecated in Python 3.7:
-  instead, create a :class:`ssl.SSLContext` object and call its
-  :class:`ssl.SSLContext.wrap_socket` method. Any package that still uses
-  :func:`!ssl.wrap_socket` is broken and insecure. The function neither sends a
-  SNI TLS extension nor validates server hostname. Code is subject to `CWE-295
-  <https://cwe.mitre.org/data/definitions/295.html>`_: Improper Certificate
-  Validation.
-  (Contributed by Victor Stinner in :gh:`94199`.)
-
-* Many previously deprecated cleanups in :mod:`importlib` have now been
+* :mod:`importlib`: Many previously deprecated cleanups in :mod:`importlib` have now been
   completed:
 
   * References to, and support for :meth:`!module_repr()` has been removed.
@@ -1413,6 +1315,115 @@ Removed
       ``PY_COMPILED``, ``C_EXTENSION``, ``PY_RESOURCE``, ``PKG_DIRECTORY``,
       ``C_BUILTIN``, ``PY_FROZEN``, ``PY_CODERESOURCE``, ``IMP_HOOK``.
 
+* :mod:`io`: Remove ``io.OpenWrapper`` and ``_pyio.OpenWrapper``, deprecated in Python
+  3.10: just use :func:`open` instead. The :func:`open` (:func:`io.open`)
+  function is a built-in function. Since Python 3.10, :func:`!_pyio.open` is
+  also a static method.
+  (Contributed by Victor Stinner in :gh:`94169`.)
+
+* :mod:`locale`: Remove the :func:`!locale.format` function, deprecated in Python 3.7:
+  use :func:`locale.format_string` instead.
+  (Contributed by Victor Stinner in :gh:`94226`.)
+
+* ``smtpd``: The module has been removed according to the schedule in :pep:`594`,
+  having been deprecated in Python 3.4.7 and 3.5.4.
+  Use aiosmtpd_ PyPI module or any other
+  :mod:`asyncio`-based server instead.
+  (Contributed by Oleg Iarygin in :gh:`93243`.)
+
+.. _aiosmtpd: https://pypi.org/project/aiosmtpd/
+
+* :mod:`sqlite3`: The following undocumented :mod:`sqlite3` features, deprecated in Python
+  3.10, are now removed:
+
+  * ``sqlite3.enable_shared_cache()``
+  * ``sqlite3.OptimizedUnicode``
+
+  If a shared cache must be used, open the database in URI mode using the
+  ``cache=shared`` query parameter.
+
+  The ``sqlite3.OptimizedUnicode`` text factory has been an alias for
+  :class:`str` since Python 3.3. Code that previously set the text factory to
+  ``OptimizedUnicode`` can either use ``str`` explicitly, or rely on the
+  default value which is also ``str``.
+
+  (Contributed by Erlend E. Aasland in :gh:`92548`.)
+
+* :mod:`ssl`:
+
+    * Remove the :func:`!ssl.RAND_pseudo_bytes` function, deprecated in Python 3.6:
+      use :func:`os.urandom` or :func:`ssl.RAND_bytes` instead.
+      (Contributed by Victor Stinner in :gh:`94199`.)
+
+    * Remove the :func:`!ssl.match_hostname` function.
+      It was deprecated in Python 3.7. OpenSSL performs
+      hostname matching since Python 3.7, Python no longer uses the
+      :func:`!ssl.match_hostname` function.
+      (Contributed by Victor Stinner in :gh:`94199`.)
+
+    * Remove the :func:`!ssl.wrap_socket` function, deprecated in Python 3.7:
+      instead, create a :class:`ssl.SSLContext` object and call its
+      :class:`ssl.SSLContext.wrap_socket` method. Any package that still uses
+      :func:`!ssl.wrap_socket` is broken and insecure. The function neither sends a
+      SNI TLS extension nor validates server hostname. Code is subject to `CWE-295
+      <https://cwe.mitre.org/data/definitions/295.html>`_: Improper Certificate
+      Validation.
+      (Contributed by Victor Stinner in :gh:`94199`.)
+
+* :mod:`unittest`: Removed many old deprecated :mod:`unittest` features:
+
+  - A number of :class:`~unittest.TestCase` method aliases:
+
+    ============================ =============================== ===============
+       Deprecated alias           Method Name                     Deprecated in
+    ============================ =============================== ===============
+     ``failUnless``               :meth:`.assertTrue`             3.1
+     ``failIf``                   :meth:`.assertFalse`            3.1
+     ``failUnlessEqual``          :meth:`.assertEqual`            3.1
+     ``failIfEqual``              :meth:`.assertNotEqual`         3.1
+     ``failUnlessAlmostEqual``    :meth:`.assertAlmostEqual`      3.1
+     ``failIfAlmostEqual``        :meth:`.assertNotAlmostEqual`   3.1
+     ``failUnlessRaises``         :meth:`.assertRaises`           3.1
+     ``assert_``                  :meth:`.assertTrue`             3.2
+     ``assertEquals``             :meth:`.assertEqual`            3.2
+     ``assertNotEquals``          :meth:`.assertNotEqual`         3.2
+     ``assertAlmostEquals``       :meth:`.assertAlmostEqual`      3.2
+     ``assertNotAlmostEquals``    :meth:`.assertNotAlmostEqual`   3.2
+     ``assertRegexpMatches``      :meth:`.assertRegex`            3.2
+     ``assertRaisesRegexp``       :meth:`.assertRaisesRegex`      3.2
+     ``assertNotRegexpMatches``   :meth:`.assertNotRegex`         3.5
+    ============================ =============================== ===============
+
+    You can use https://github.com/isidentical/teyit to automatically modernise
+    your unit tests.
+
+  - Undocumented and broken :class:`~unittest.TestCase` method
+    ``assertDictContainsSubset`` (deprecated in Python 3.2).
+
+  - Undocumented :meth:`TestLoader.loadTestsFromModule
+    <unittest.TestLoader.loadTestsFromModule>` parameter *use_load_tests*
+    (deprecated and ignored since Python 3.2).
+
+  - An alias of the :class:`~unittest.TextTestResult` class:
+    ``_TextTestResult`` (deprecated in Python 3.2).
+
+  (Contributed by Serhiy Storchaka in :issue:`45162`.)
+
+* :mod:`webbrowser`: Remove support for obsolete browsers from :mod:`webbrowser`.
+  Removed browsers include: Grail, Mosaic, Netscape, Galeon, Skipstone,
+  Iceape, Firebird, and Firefox versions 35 and below (:gh:`102871`).
+
+* :mod:`xml.etree.ElementTree`: Remove the ``ElementTree.Element.copy()`` method of the
+  pure Python implementation, deprecated in Python 3.10, use the
+  :func:`copy.copy` function instead.  The C implementation of :mod:`xml.etree.ElementTree`
+  has no ``copy()`` method, only a ``__copy__()`` method.
+  (Contributed by Victor Stinner in :gh:`94383`.)
+
+* :mod:`zipimport`: Remove ``find_loader()`` and ``find_module()`` methods,
+  deprecated in Python 3.10: use the ``find_spec()`` method instead.  See
+  :pep:`451` for the rationale.
+  (Contributed by Victor Stinner in :gh:`94379`.)
+
 * Removed the ``suspicious`` rule from the documentation Makefile, and
   removed ``Doc/tools/rstlint.py``, both in favor of `sphinx-lint
   <https://github.com/sphinx-contrib/sphinx-lint>`_.
@@ -1425,15 +1436,6 @@ Removed
   all deprecated since Python 3.6. Use the *context* parameter
   (*ssl_context* in :mod:`imaplib`) instead.
   (Contributed by Victor Stinner in :gh:`94172`.)
-
-* :mod:`ftplib`: Remove the ``FTP_TLS.ssl_version`` class attribute: use the
-  *context* parameter instead.
-  (Contributed by Victor Stinner in :gh:`94172`.)
-
-* Remove support for obsolete browsers from :mod:`webbrowser`.
-  Removed browsers include: Grail, Mosaic, Netscape, Galeon, Skipstone,
-  Iceape, Firebird, and Firefox versions 35 and below (:gh:`102871`).
-
 
 .. _whatsnew312-porting-to-python312:
 
@@ -1768,7 +1770,7 @@ Porting to Python 3.12
   for example).
 
 * Add support of more formatting options (left aligning, octals, uppercase
-  hexadecimals, ``intmax_t``, ``ptrdiff_t``, ``wchar_t`` C
+  hexadecimals, :c:type:`intmax_t`, :c:type:`ptrdiff_t`, :c:type:`wchar_t` C
   strings, variable width and precision) in :c:func:`PyUnicode_FromFormat` and
   :c:func:`PyUnicode_FromFormatV`.
   (Contributed by Serhiy Storchaka in :gh:`98836`.)

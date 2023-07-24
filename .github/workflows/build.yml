@@ -28,7 +28,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}-reusable
   cancel-in-progress: true
 
 jobs:
@@ -37,6 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
+      run-docs: ${{ steps.docs-changes.outputs.run-docs || false }}
       run_tests: ${{ steps.check.outputs.run_tests }}
       run_hypothesis: ${{ steps.check.outputs.run_hypothesis }}
       config_hash: ${{ steps.config_hash.outputs.hash }}
@@ -79,6 +80,29 @@ jobs:
         id: config_hash
         run: |
           echo "hash=${{ hashFiles('configure', 'configure.ac', '.github/workflows/build.yml') }}" >> $GITHUB_OUTPUT
+      - name: Get a list of the changed documentation-related files
+        if: github.event_name == 'pull_request'
+        id: changed-docs-files
+        uses: Ana06/get-changed-files@v2.2.0
+        with:
+          filter: |
+            Doc/**
+            Misc/**
+            .github/workflows/reusable-docs.yml
+          format: csv  # works for paths with spaces
+      - name: Check for docs changes
+        if: >-
+          github.event_name == 'pull_request'
+          && steps.changed-docs-files.outputs.added_modified_renamed != ''
+        id: docs-changes
+        run: |
+          echo "run-docs=true" >> "${GITHUB_OUTPUT}"
+
+  check-docs:
+    name: Docs
+    needs: check_source
+    if: fromJSON(needs.check_source.outputs.run-docs)
+    uses: ./.github/workflows/reusable-docs.yml
 
   check_abi:
     name: 'Check if the ABI has changed'
@@ -538,3 +562,60 @@ jobs:
       run: make pythoninfo
     - name: Tests
       run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
+
+  all-required-green:  # This job does nothing and is only used for the branch protection
+    name: All required checks pass
+    if: always()
+
+    needs:
+    - check_source  # Transitive dependency, needed to access `run_tests` value
+    - check-docs
+    - check_generated_files
+    - build_win32
+    - build_win_amd64
+    - build_macos
+    - build_ubuntu
+    - build_ubuntu_ssltests
+    - test_hypothesis
+    - build_asan
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check whether the needed jobs succeeded or failed
+      uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe
+      with:
+        allowed-failures: >-
+          build_macos,
+          build_ubuntu_ssltests,
+          build_win32,
+          test_hypothesis,
+        allowed-skips: >-
+          ${{
+            !fromJSON(needs.check_source.outputs.run-docs)
+            && '
+            check-docs,
+            '
+            || ''
+          }}
+          ${{
+            needs.check_source.outputs.run_tests != 'true'
+            && '
+            check_generated_files,
+            build_win32,
+            build_win_amd64,
+            build_macos,
+            build_ubuntu,
+            build_ubuntu_ssltests,
+            build_asan,
+            '
+            || ''
+          }}
+          ${{
+            !fromJSON(needs.check_source.outputs.run_hypothesis)
+            && '
+            test_hypothesis,
+            '
+            || ''
+          }}
+        jobs: ${{ toJSON(needs) }}

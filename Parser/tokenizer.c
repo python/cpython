@@ -117,7 +117,6 @@ tok_new(void)
     tok->implicit_newline = 0;
     tok->tok_mode_stack[0] = (tokenizer_mode){.kind =TOK_REGULAR_MODE, .f_string_quote='\0', .f_string_quote_size = 0, .f_string_debug=0};
     tok->tok_mode_stack_index = 0;
-    tok->tok_report_warnings = 1;
 #ifdef Py_DEBUG
     tok->debug = _Py_GetConfig()->parser_debug;
 #endif
@@ -1545,10 +1544,6 @@ error:
 static int
 warn_invalid_escape_sequence(struct tok_state *tok, int first_invalid_escape_char)
 {
-
-    if (!tok->tok_report_warnings) {
-        return 0;
-    }
 
     PyObject *msg = PyUnicode_FromFormat(
         "invalid escape sequence '\\%c'",

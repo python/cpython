@@ -2656,6 +2656,9 @@ yes)
 esac
 
 case "$CC" in
+*mpicc*)
+    CFLAGS_NODIST="$CFLAGS_NODIST"
+    ;;
 *icc*)
     # ICC needs -fp-model strict or floats behave badly
     CFLAGS_NODIST="$CFLAGS_NODIST -fp-model strict"
