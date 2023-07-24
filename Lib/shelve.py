@@ -171,26 +171,6 @@ class Shelf(collections.abc.MutableMapping):
         if hasattr(self.dict, 'sync'):
             self.dict.sync()
 
-    def clear(self):
-        """Remove all items from the shelf."""
-        self.cache.clear()
-        try:
-            self.dict.clear()
-        except AttributeError:
-            # dbm objects don't have a clear method, so we need to do
-            # the clearing here.
-            keys = self.dict.keys()
-            if not isinstance(keys, list):
-                # The keys method on dbm objects returns a list.
-                # Typically, the keys method on a mapping returns a
-                # lazy iterator, so we need to watch out for that in
-                # case someone passes in a backing object that behaves
-                # that way.
-                keys = list(keys)
-            for k in keys:
-                del self.dict[k]
-
-
 class BsdDbShelf(Shelf):
     """Shelf implementation using the "BSD" db interface.
 
@@ -244,6 +224,13 @@ class DbfilenameShelf(Shelf):
     def __init__(self, filename, flag='c', protocol=None, writeback=False):
         import dbm
         Shelf.__init__(self, dbm.open(filename, flag), protocol, writeback)
+    
+    def clear(self):
+        """Remove all items from the shelf."""
+        # Call through to the clear method on dbm-backed shelves.
+        # see https://github.com/python/cpython/issues/107089
+        self.cache.clear()
+        self.dict.clear()
 
 
 def open(filename, flag='c', protocol=None, writeback=False):

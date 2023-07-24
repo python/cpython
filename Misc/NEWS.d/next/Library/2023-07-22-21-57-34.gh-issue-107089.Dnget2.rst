@@ -1,2 +1,2 @@
-The :meth:`Shelf.clear` method in the :mod:`shelve` module is much faster.
-Patch by James Cave.
+Shelves opened with :func:`shelve.open` have a much faster :meth:`clear`
+method. Patch by James Cave.
