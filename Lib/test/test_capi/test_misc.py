@@ -2436,7 +2436,7 @@ def get_first_executor(func):
     co_code = code.co_code
     JUMP_BACKWARD = opcode.opmap["JUMP_BACKWARD"]
     for i in range(0, len(co_code), 2):
-        if co_code[i] == JUMP_BACKWARD or 1:
+        if co_code[i] == JUMP_BACKWARD:
             try:
                 return _testinternalcapi.get_executor(code, i)
             except ValueError:

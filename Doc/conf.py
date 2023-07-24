@@ -77,6 +77,24 @@ if venvdir is not None:
     exclude_patterns.append(venvdir + '/*')
 
 nitpick_ignore = [
+    # Standard C functions
+    ('c:func', 'calloc'),
+    ('c:func', 'dlopen'),
+    ('c:func', 'exec'),
+    ('c:func', 'fcntl'),
+    ('c:func', 'fork'),
+    ('c:func', 'free'),
+    ('c:func', 'gmtime'),
+    ('c:func', 'localtime'),
+    ('c:func', 'main'),
+    ('c:func', 'malloc'),
+    ('c:func', 'printf'),
+    ('c:func', 'realloc'),
+    ('c:func', 'snprintf'),
+    ('c:func', 'sprintf'),
+    ('c:func', 'stat'),
+    ('c:func', 'system'),
+    ('c:func', 'vsnprintf'),
     # Standard C types
     ('c:type', 'FILE'),
     ('c:type', '__int'),

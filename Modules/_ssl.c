@@ -26,6 +26,7 @@
 #define OPENSSL_NO_DEPRECATED 1
 
 #include "Python.h"
+#include "pycore_fileutils.h"     // _PyIsSelectable_fd()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 /* Include symbols from _socket module */

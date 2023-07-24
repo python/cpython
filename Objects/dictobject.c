@@ -118,7 +118,7 @@ As a consequence of this, split keys have a maximum size of 16.
 #include "pycore_code.h"          // stats
 #include "pycore_dict.h"          // PyDictKeysObject
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
-#include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_object.h"        // _PyObject_GC_TRACK(), _PyDebugAllocatorStats()
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
