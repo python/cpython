@@ -267,9 +267,10 @@ Data Types
          appropriate value will be chosen for you.  See :class:`auto` for the
          details.
 
-         While mutable/unhashable values, such as :class:`dict` or :class:`list`, can
-         be used, they will have a quadratic performance impact relative to the total
-         number of mutable/unhashable values in the enum.
+         While mutable/unhashable values, such as :class:`dict`, :class:`list` or
+         a mutable :class:`dataclass`, can be used, they will have a quadratic
+         performance impact relative to the total number of mutable/unhashable
+         values in the enum.
 
 
    .. attribute:: Enum._ignore_
