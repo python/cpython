@@ -955,6 +955,8 @@ class singledispatchmethod:
 
         # not all objects have __dict__ (e.g. classes with __slots__)
         if hasattr(obj, '__dict__'):
+            # for performance we assign the generated _method to the __dict__
+            # the _attrname has been set after the instance creation (PEP487)
             obj.__dict__[self._attrname] = _method
 
         return _method
