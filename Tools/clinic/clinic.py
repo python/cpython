@@ -5294,8 +5294,10 @@ class DSLParser:
         new_docstring += line
         self.function.docstring = new_docstring
 
-    def format_docstring(self):
+    def format_docstring(self) -> str:
         f = self.function
+        assert f is not None
+        assert f.full_name is not None
 
         new_or_init = f.kind.new_or_init
         if new_or_init and not f.docstring:
@@ -5338,7 +5340,7 @@ class DSLParser:
 
         right_bracket_count = 0
 
-        def fix_right_bracket_count(desired):
+        def fix_right_bracket_count(desired: int) -> str:
             nonlocal right_bracket_count
             s = ''
             while right_bracket_count < desired:
@@ -5372,7 +5374,7 @@ class DSLParser:
         last_p = parameters[-1]
         line_length = len(''.join(text))
         indent = " " * line_length
-        def add_parameter(text):
+        def add_parameter(text: str) -> None:
             nonlocal line_length
             nonlocal first_parameter
             if first_parameter:
@@ -5488,9 +5490,9 @@ class DSLParser:
             add(p.name)
             add('\n')
             add(textwrap.indent(rstrip_lines(p.docstring.rstrip()), "    "))
-        parameters = output()
-        if parameters:
-            parameters += '\n'
+        parameters_output = output()
+        if parameters_output:
+            parameters_output += '\n'
 
         ##
         ## docstring body
@@ -5538,7 +5540,7 @@ class DSLParser:
         add(docstring)
         docstring = output()
 
-        docstring = linear_format(docstring, parameters=parameters)
+        docstring = linear_format(docstring, parameters=parameters_output)
         docstring = docstring.rstrip()
 
         return docstring
