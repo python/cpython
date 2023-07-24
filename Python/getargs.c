@@ -2,8 +2,9 @@
 /* New getargs implementation */
 
 #include "Python.h"
-#include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_dict.h"          // _PyDict_HasOnlyStringKeys()
 #include "pycore_pylifecycle.h"   // _PyArg_Fini
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
 #include <ctype.h>
 #include <float.h>

@@ -714,14 +714,14 @@ process and user.
 
 .. function:: getsid(pid, /)
 
-   Call the system call :c:func:`getsid`.  See the Unix manual for the semantics.
+   Call the system call :c:func:`!getsid`.  See the Unix manual for the semantics.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. function:: setsid()
 
-   Call the system call :c:func:`setsid`.  See the Unix manual for the semantics.
+   Call the system call :c:func:`!setsid`.  See the Unix manual for the semantics.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
@@ -739,7 +739,7 @@ process and user.
 .. function:: strerror(code, /)
 
    Return the error message corresponding to the error code in *code*.
-   On platforms where :c:func:`strerror` returns ``NULL`` when given an unknown
+   On platforms where :c:func:`!strerror` returns ``NULL`` when given an unknown
    error number, :exc:`ValueError` is raised.
 
 
@@ -4650,7 +4650,7 @@ written in Python, such as a mail server's external command delivery program.
    :data:`WNOHANG` and :data:`WNOWAIT` are additional optional flags.
 
    The return value is an object representing the data contained in the
-   :c:type:`!siginfo_t` structure with the following attributes:
+   :c:type:`siginfo_t` structure with the following attributes:
 
    * :attr:`!si_pid` (process ID)
    * :attr:`!si_uid` (real user ID of the child)

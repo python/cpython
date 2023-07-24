@@ -1115,9 +1115,9 @@ Changes in the Python API
   ``PyCF_ALLOW_TOP_LEVEL_AWAIT`` was clashing with ``CO_FUTURE_DIVISION``.
   (Contributed by Batuhan Taskaya in :issue:`39562`)
 
-* ``array('u')`` now uses ``wchar_t`` as C type instead of ``Py_UNICODE``.
+* ``array('u')`` now uses :c:type:`wchar_t` as C type instead of ``Py_UNICODE``.
   This change doesn't affect to its behavior because ``Py_UNICODE`` is alias
-  of ``wchar_t`` since Python 3.3.
+  of :c:type:`wchar_t` since Python 3.3.
   (Contributed by Inada Naoki in :issue:`34538`.)
 
 * The :func:`logging.getLogger` API now returns the root logger when passed
@@ -1276,7 +1276,7 @@ New Features
 * :pep:`573`: Added :c:func:`PyType_FromModuleAndSpec` to associate
   a module with a class; :c:func:`PyType_GetModule` and
   :c:func:`PyType_GetModuleState` to retrieve the module and its state; and
-  :c:data:`PyCMethod` and :c:macro:`METH_METHOD` to allow a method to
+  :c:type:`PyCMethod` and :c:macro:`METH_METHOD` to allow a method to
   access the class it was defined in.
   (Contributed by Marcel Plch and Petr Viktorin in :issue:`38787`.)
 
