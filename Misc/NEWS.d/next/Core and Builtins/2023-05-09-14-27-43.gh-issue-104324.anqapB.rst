@@ -1,0 +1,1 @@
+Ensure that the GIL is correctly finalized during calls to ``Py_Finalize()``.
