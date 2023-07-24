@@ -9,6 +9,54 @@ extern "C" {
 #endif
 
 
+/* Error handling definitions */
+
+PyAPI_FUNC(_PyErr_StackItem*) _PyErr_GetTopmostException(PyThreadState *tstate);
+PyAPI_FUNC(PyObject*) _PyErr_GetHandledException(PyThreadState *);
+PyAPI_FUNC(void) _PyErr_SetHandledException(PyThreadState *, PyObject *);
+PyAPI_FUNC(void) _PyErr_GetExcInfo(PyThreadState *, PyObject **, PyObject **, PyObject **);
+
+/* Like PyErr_Format(), but saves current exception as __context__ and
+   __cause__.
+ */
+PyAPI_FUNC(PyObject *) _PyErr_FormatFromCause(
+    PyObject *exception,
+    const char *format,   /* ASCII-encoded string  */
+    ...
+    );
+
+PyAPI_FUNC(int) _PyException_AddNote(
+     PyObject *exc,
+     PyObject *note);
+
+PyAPI_FUNC(int) _PyErr_CheckSignals(void);
+
+/* Support for adding program text to SyntaxErrors */
+
+PyAPI_FUNC(PyObject *) _PyErr_ProgramDecodedTextObject(
+    PyObject *filename,
+    int lineno,
+    const char* encoding);
+
+PyAPI_FUNC(PyObject *) _PyUnicodeTranslateError_Create(
+    PyObject *object,
+    Py_ssize_t start,
+    Py_ssize_t end,
+    const char *reason          /* UTF-8 encoded string */
+    );
+
+PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalErrorFormat(
+    const char *func,
+    const char *format,
+    ...);
+
+extern PyObject *_PyErr_SetImportErrorWithNameFrom(
+        PyObject *,
+        PyObject *,
+        PyObject *,
+        PyObject *);
+
+
 /* runtime lifecycle */
 
 extern PyStatus _PyErr_InitTypes(PyInterpreterState *);

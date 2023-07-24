@@ -785,7 +785,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     }
 
     int code_offset = tb->tb_lasti;
-    PyCodeObject* code = frame->f_frame->f_code;
+    PyCodeObject* code = _PyFrame_GetCode(frame->f_frame);
     const Py_ssize_t source_line_len = PyUnicode_GET_LENGTH(source_line);
 
     int start_line;
@@ -1164,7 +1164,7 @@ done:
 static void
 dump_frame(int fd, _PyInterpreterFrame *frame)
 {
-    PyCodeObject *code = frame->f_code;
+    PyCodeObject *code =_PyFrame_GetCode(frame);
     PUTS(fd, "  File ");
     if (code->co_filename != NULL
         && PyUnicode_Check(code->co_filename))

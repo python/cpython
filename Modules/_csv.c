@@ -1450,7 +1450,7 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
         Py_DECREF(self);
         return NULL;
     }
-    if (_PyObject_LookupAttr(output_file,
+    if (PyObject_GetOptionalAttr(output_file,
                              module_state->str_write,
                              &self->write) < 0) {
         Py_DECREF(self);

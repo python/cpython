@@ -10,6 +10,13 @@ extern "C" {
 
 #include <locale.h>   /* struct lconv */
 
+/* A routine to check if a file descriptor can be select()-ed. */
+#ifdef _MSC_VER
+    /* On Windows, any socket fd can be select()-ed, no matter how high */
+    #define _PyIsSelectable_fd(FD) (1)
+#else
+    #define _PyIsSelectable_fd(FD) ((unsigned int)(FD) < (unsigned int)FD_SETSIZE)
+#endif
 
 struct _fileutils_state {
     int force_ascii;

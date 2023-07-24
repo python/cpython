@@ -1293,7 +1293,7 @@ invalid_group:
     | '(' a='**' expression ')' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use double starred expression here") }
 invalid_import:
-    | a='import' dotted_name 'from' dotted_name {
+    | a='import' ','.dotted_name+ 'from' dotted_name {
         RAISE_SYNTAX_ERROR_STARTING_FROM(a, "Did you mean to use 'from ... import ...' instead?") }
 
 invalid_import_from_targets:

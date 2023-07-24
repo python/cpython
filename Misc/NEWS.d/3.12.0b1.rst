@@ -842,7 +842,7 @@ filesystem case.
 .. section: Library
 
 Improve performance of :meth:`pathlib.Path.glob` by using
-:data:`re.IGNORECASE` to implement case-insensitive matching.
+:const:`re.IGNORECASE` to implement case-insensitive matching.
 
 ..
 
@@ -1882,7 +1882,7 @@ both cases.
 .. nonce: 564i32
 .. section: Library
 
-Add :data:`~csv.QUOTE_STRINGS` and :data:`~csv.QUOTE_NOTNULL` to the suite
+Add :const:`~csv.QUOTE_STRINGS` and :const:`~csv.QUOTE_NOTNULL` to the suite
 of :mod:`csv` module quoting styles.
 
 ..
@@ -1955,7 +1955,7 @@ introduced in :pep:`692`.
 .. section: Documentation
 
 Clarifying documentation about the url parameter to urllib.request.urlopen
-and urllib.request.Requst needing to be encoded properly.
+and urllib.request.Request needing to be encoded properly.
 
 ..
 
@@ -2382,7 +2382,7 @@ Patch by Dong-hee Na.
 .. section: C API
 
 Add support of more formatting options (left aligning, octals, uppercase
-hexadecimals, :c:expr:`intmax_t`, :c:expr:`ptrdiff_t`, :c:expr:`wchar_t` C
+hexadecimals, :c:type:`intmax_t`, :c:type:`ptrdiff_t`, :c:type:`wchar_t` C
 strings, variable width and precision) in :c:func:`PyUnicode_FromFormat` and
 :c:func:`PyUnicode_FromFormatV`.
 

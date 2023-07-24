@@ -21,10 +21,16 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "cursor.h"
 #include "microprotocols.h"
 #include "module.h"
 #include "util.h"
+
+#include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 
 typedef enum {
     TYPE_LONG,

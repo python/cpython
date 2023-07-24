@@ -244,7 +244,7 @@ sys_trace_line_func(
                         "Missing frame when calling trace function.");
         return NULL;
     }
-    assert(args[0] == (PyObject *)frame->f_frame->f_code);
+    assert(args[0] == (PyObject *)_PyFrame_GetCode(frame->f_frame));
     return trace_line(tstate, self, frame, line);
 }
 
@@ -286,7 +286,6 @@ sys_trace_jump_func(
                         "Missing frame when calling trace function.");
         return NULL;
     }
-    assert(code == frame->f_frame->f_code);
     if (!frame->f_trace_lines) {
         Py_RETURN_NONE;
     }

@@ -1,7 +1,6 @@
 
 /* Tokenizer implementation */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 
@@ -117,7 +116,6 @@ tok_new(void)
     tok->implicit_newline = 0;
     tok->tok_mode_stack[0] = (tokenizer_mode){.kind =TOK_REGULAR_MODE, .f_string_quote='\0', .f_string_quote_size = 0, .f_string_debug=0};
     tok->tok_mode_stack_index = 0;
-    tok->tok_report_warnings = 1;
 #ifdef Py_DEBUG
     tok->debug = _Py_GetConfig()->parser_debug;
 #endif
@@ -1039,9 +1037,6 @@ tok_readline_raw(struct tok_state *tok)
         if (line == NULL) {
             return 1;
         }
-        if (tok->tok_mode_stack_index && !update_fstring_expr(tok, 0)) {
-            return 0;
-        }
         if (tok->fp_interactive &&
             tok_concatenate_interactive_new_line(tok, line) == -1) {
             return 0;
@@ -1106,11 +1101,7 @@ tok_readline_string(struct tok_state* tok) {
     tok->inp += buflen;
     *tok->inp = '\0';
 
-    if (tok->start == NULL) {
-        tok->buf = tok->cur;
-    }
     tok->line_start = tok->cur;
-
     Py_DECREF(line);
     return 1;
 error:
@@ -1274,6 +1265,10 @@ tok_underflow_file(struct tok_state *tok) {
         tok->implicit_newline = 1;
     }
 
+    if (tok->tok_mode_stack_index && !update_fstring_expr(tok, 0)) {
+        return 0;
+    }
+
     ADVANCE_LINENO();
     if (tok->decoding_state != STATE_NORMAL) {
         if (tok->lineno > 2) {
@@ -1316,6 +1311,10 @@ tok_underflow_readline(struct tok_state* tok) {
         *tok->inp++ = '\n';
         *tok->inp = '\0';
         tok->implicit_newline = 1;
+    }
+
+    if (tok->tok_mode_stack_index && !update_fstring_expr(tok, 0)) {
+        return 0;
     }
 
     ADVANCE_LINENO();
@@ -1545,10 +1544,6 @@ static int
 warn_invalid_escape_sequence(struct tok_state *tok, int first_invalid_escape_char)
 {
 
-    if (!tok->tok_report_warnings) {
-        return 0;
-    }
-
     PyObject *msg = PyUnicode_FromFormat(
         "invalid escape sequence '\\%c'",
         (char) first_invalid_escape_char
@@ -1558,12 +1553,12 @@ warn_invalid_escape_sequence(struct tok_state *tok, int first_invalid_escape_cha
         return -1;
     }
 
-    if (PyErr_WarnExplicitObject(PyExc_DeprecationWarning, msg, tok->filename,
+    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg, tok->filename,
                                  tok->lineno, NULL, NULL) < 0) {
         Py_DECREF(msg);
 
-        if (PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
-            /* Replace the DeprecationWarning exception with a SyntaxError
+        if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
+            /* Replace the SyntaxWarning exception with a SyntaxError
                to get a more accurate error report */
             PyErr_Clear();
             return syntaxerror(tok, "invalid escape sequence '\\%c'", (char) first_invalid_escape_char);
@@ -1600,8 +1595,12 @@ lookahead(struct tok_state *tok, const char *test)
 }
 
 static int
-verify_end_of_number(struct tok_state *tok, int c, const char *kind)
-{
+verify_end_of_number(struct tok_state *tok, int c, const char *kind) {
+    if (tok->tok_extra_tokens) {
+        // When we are parsing extra tokens, we don't want to emit warnings
+        // about invalid literals, because we want to be a bit more liberal.
+        return 1;
+    }
     /* Emit a deprecation warning only if the numeric literal is immediately
      * followed by one of keywords which can occur after a numeric literal
      * in valid code: "and", "else", "for", "if", "in", "is" and "or".
@@ -1659,6 +1658,9 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind)
 static int
 verify_identifier(struct tok_state *tok)
 {
+    if (tok->tok_extra_tokens) {
+        return 1;
+    }
     PyObject *s;
     if (tok->decoding_erred)
         return 0;
@@ -2318,7 +2320,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                 else if (c == 'j' || c == 'J') {
                     goto imaginary;
                 }
-                else if (nonzero) {
+                else if (nonzero && !tok->tok_extra_tokens) {
                     /* Old-style octal: now disallowed. */
                     tok_backup(tok, c);
                     return MAKE_TOKEN(syntaxerror_known_range(

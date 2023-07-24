@@ -238,7 +238,7 @@ All current PEPs, as well as guidelines for submitting a new PEP, are listed at
 Release Schedule
 ----------------
 
-See :pep:`XXX` for Python 3.13 release details.
+See :pep:`719` for Python 3.13 release details.
 
 
 Copyright and License Information

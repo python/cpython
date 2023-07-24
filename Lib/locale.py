@@ -618,9 +618,8 @@ try:
 except ImportError:
     # When _locale.getencoding() is missing, locale.getencoding() uses the
     # Python filesystem encoding.
-    _encoding = sys.getfilesystemencoding()
     def getencoding():
-        return _encoding
+        return sys.getfilesystemencoding()
 
 
 try:

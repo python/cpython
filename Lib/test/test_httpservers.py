@@ -442,10 +442,10 @@ class SimpleHTTPServerTestCase(BaseTestCase):
     def test_undecodable_parameter(self):
         # sanity check using a valid parameter
         response = self.request(self.base_url + '/?x=123').read()
-        self.assertRegex(response, f'listing for {self.base_url}/\?x=123'.encode('latin1'))
+        self.assertRegex(response, rf'listing for {self.base_url}/\?x=123'.encode('latin1'))
         # now the bogus encoding
         response = self.request(self.base_url + '/?x=%bb').read()
-        self.assertRegex(response, f'listing for {self.base_url}/\?x=\xef\xbf\xbd'.encode('latin1'))
+        self.assertRegex(response, rf'listing for {self.base_url}/\?x=\xef\xbf\xbd'.encode('latin1'))
 
     def test_get_dir_redirect_location_domain_injection_bug(self):
         """Ensure //evil.co/..%2f../../X does not put //evil.co/ in Location.

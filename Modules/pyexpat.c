@@ -1,4 +1,10 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
+#include "pycore_import.h"        // _PyImport_SetModule()
+#include "pycore_pyhash.h"        // _Py_HashSecret
 #include <ctype.h>
 
 #include "structmember.h"         // PyMemberDef
@@ -827,7 +833,7 @@ pyexpat_xmlparser_ParseFile_impl(xmlparseobject *self, PyTypeObject *cls,
 
     pyexpat_state *state = PyType_GetModuleState(cls);
 
-    if (_PyObject_LookupAttr(file, state->str_read, &readmethod) < 0) {
+    if (PyObject_GetOptionalAttr(file, state->str_read, &readmethod) < 0) {
         return NULL;
     }
     if (readmethod == NULL) {
@@ -1775,14 +1781,18 @@ add_error(PyObject *errors_module, PyObject *codes_dict,
 static int
 add_errors_module(PyObject *mod)
 {
+    // add_submodule() returns a borrowed ref.
     PyObject *errors_module = add_submodule(mod, MODULE_NAME ".errors");
     if (errors_module == NULL) {
         return -1;
     }
 
     PyObject *codes_dict = PyDict_New();
+    if (codes_dict == NULL) {
+        return -1;
+    }
     PyObject *rev_codes_dict = PyDict_New();
-    if (codes_dict == NULL || rev_codes_dict == NULL) {
+    if (rev_codes_dict == NULL) {
         goto error;
     }
 
@@ -1803,17 +1813,14 @@ add_errors_module(PyObject *mod)
         goto error;
     }
 
-    if (PyModule_AddObject(errors_module, "codes", Py_NewRef(codes_dict)) < 0) {
-        Py_DECREF(codes_dict);
-        goto error;
-    }
-    Py_CLEAR(codes_dict);
-
-    if (PyModule_AddObject(errors_module, "messages", Py_NewRef(rev_codes_dict)) < 0) {
+    if (PyModule_Add(errors_module, "codes", codes_dict) < 0) {
         Py_DECREF(rev_codes_dict);
-        goto error;
+        return -1;
     }
-    Py_CLEAR(rev_codes_dict);
+
+    if (PyModule_Add(errors_module, "messages", rev_codes_dict) < 0) {
+        return -1;
+    }
 
     return 0;
 

@@ -244,6 +244,10 @@ PyAPI_FUNC(PyStatus) PyConfig_SetWideStringList(PyConfig *config,
 
 /* --- PyInterpreterConfig ------------------------------------ */
 
+#define PyInterpreterConfig_DEFAULT_GIL (0)
+#define PyInterpreterConfig_SHARED_GIL (1)
+#define PyInterpreterConfig_OWN_GIL (2)
+
 typedef struct {
     // XXX "allow_object_sharing"?  "own_objects"?
     int use_main_obmalloc;
@@ -252,7 +256,7 @@ typedef struct {
     int allow_threads;
     int allow_daemon_threads;
     int check_multi_interp_extensions;
-    int own_gil;
+    int gil;
 } PyInterpreterConfig;
 
 #define _PyInterpreterConfig_INIT \
@@ -263,7 +267,7 @@ typedef struct {
         .allow_threads = 1, \
         .allow_daemon_threads = 0, \
         .check_multi_interp_extensions = 1, \
-        .own_gil = 1, \
+        .gil = PyInterpreterConfig_OWN_GIL, \
     }
 
 #define _PyInterpreterConfig_LEGACY_INIT \
@@ -274,7 +278,7 @@ typedef struct {
         .allow_threads = 1, \
         .allow_daemon_threads = 1, \
         .check_multi_interp_extensions = 0, \
-        .own_gil = 0, \
+        .gil = PyInterpreterConfig_SHARED_GIL, \
     }
 
 /* --- Helper functions --------------------------------------- */

@@ -97,7 +97,7 @@ General Options
 
 .. cmdoption:: --with-tzpath=<list of absolute paths separated by pathsep>
 
-   Select the default time zone search path for :data:`zoneinfo.TZPATH`.
+   Select the default time zone search path for :const:`zoneinfo.TZPATH`.
    See the :ref:`Compile-time configuration
    <zoneinfo_data_compile_time_config>` of the :mod:`zoneinfo` module.
 
@@ -112,7 +112,7 @@ General Options
    Build the ``_decimal`` extension module using a thread-local context rather
    than a coroutine-local context (default), see the :mod:`decimal` module.
 
-   See :data:`decimal.HAVE_CONTEXTVAR` and the :mod:`contextvars` module.
+   See :const:`decimal.HAVE_CONTEXTVAR` and the :mod:`contextvars` module.
 
    .. versionadded:: 3.9
 

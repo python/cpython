@@ -1,4 +1,3 @@
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include <stddef.h>               // offsetof()
 #include "pycore_object.h"

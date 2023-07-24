@@ -101,7 +101,8 @@ class AllTest(unittest.TestCase):
         ])
 
         # In case _socket fails to build, make this test fail more gracefully
-        # than an AttributeError somewhere deep in CGIHTTPServer.
+        # than an AttributeError somewhere deep in concurrent.futures, email
+        # or unittest.
         import _socket
 
         ignored = []
