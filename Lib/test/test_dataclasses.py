@@ -525,7 +525,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(C(5).x, 5)
 
         with self.assertRaisesRegex(TypeError,
-                                    r"__init__\(\) missing 1 required "
+                                    r"__main_init__\(\) missing 1 required "
                                     "positional argument: 'x'"):
             C()
 
@@ -926,7 +926,7 @@ class TestCase(unittest.TestCase):
         class C:
             x: int=field(default=MISSING)
         with self.assertRaisesRegex(TypeError,
-                                    r'__init__\(\) missing 1 required '
+                                    r'__main_init__\(\) missing 1 required '
                                     'positional argument'):
             C()
         self.assertNotIn('x', C.__dict__)
@@ -935,7 +935,7 @@ class TestCase(unittest.TestCase):
         class D:
             x: int
         with self.assertRaisesRegex(TypeError,
-                                    r'__init__\(\) missing 1 required '
+                                    r'__main_init__\(\) missing 1 required '
                                     'positional argument'):
             D()
         self.assertNotIn('x', D.__dict__)
@@ -948,7 +948,7 @@ class TestCase(unittest.TestCase):
         class C:
             x: int=field(default_factory=MISSING)
         with self.assertRaisesRegex(TypeError,
-                                    r'__init__\(\) missing 1 required '
+                                    r'__main_init__\(\) missing 1 required '
                                     'positional argument'):
             C()
         self.assertNotIn('x', C.__dict__)
@@ -957,7 +957,7 @@ class TestCase(unittest.TestCase):
         class D:
             x: int=field(default=MISSING, default_factory=MISSING)
         with self.assertRaisesRegex(TypeError,
-                                    r'__init__\(\) missing 1 required '
+                                    r'__main_init__\(\) missing 1 required '
                                     'positional argument'):
             D()
         self.assertNotIn('x', D.__dict__)
@@ -2189,7 +2189,7 @@ class TestCase(unittest.TestCase):
         ):
             self.assertEqual(getattr(A, function).__qualname__, f"TestCase.test_dataclasses_qualnames.<locals>.A.{function}")
 
-        with self.assertRaisesRegex(TypeError, r"A\.__init__\(\) missing"):
+        with self.assertRaisesRegex(TypeError, r"A\.__main_init__\(\) missing"):
             A()
 
 
@@ -3058,7 +3058,7 @@ class TestSlots(unittest.TestCase):
         #  also have a default value (of type
         #  types.MemberDescriptorType).
         with self.assertRaisesRegex(TypeError,
-                                    r"__init__\(\) missing 1 required positional argument: 'x'"):
+                                    r"__main_init__\(\) missing 1 required positional argument: 'x'"):
             C()
 
         # We can create an instance, and assign to x.
@@ -3998,7 +3998,7 @@ class TestReplace(unittest.TestCase):
         #  if we're also replacing one that does exist.  Test this
         #  here, because setting attributes on frozen instances is
         #  handled slightly differently from non-frozen ones.
-        with self.assertRaisesRegex(TypeError, r"__init__\(\) got an unexpected "
+        with self.assertRaisesRegex(TypeError, r"__main_init__\(\) got an unexpected "
                                              "keyword argument 'a'"):
             c1 = replace(c, x=20, a=5)
 
@@ -4009,7 +4009,7 @@ class TestReplace(unittest.TestCase):
             y: int
 
         c = C(1, 2)
-        with self.assertRaisesRegex(TypeError, r"__init__\(\) got an unexpected "
+        with self.assertRaisesRegex(TypeError, r"__main_init__\(\) got an unexpected "
                                     "keyword argument 'z'"):
             c1 = replace(c, z=3)
 
@@ -4058,7 +4058,7 @@ class TestReplace(unittest.TestCase):
         self.assertEqual(c.y, 1000)
 
         # Trying to replace y is an error: can't replace ClassVars.
-        with self.assertRaisesRegex(TypeError, r"__init__\(\) got an "
+        with self.assertRaisesRegex(TypeError, r"__main_init__\(\) got an "
                                     "unexpected keyword argument 'y'"):
             replace(c, y=30)
 
@@ -4379,7 +4379,7 @@ class TestKeywordArgs(unittest.TestCase):
             b: int
             c: int
         A(3, c=5, b=4)
-        msg = "takes 2 positional arguments but 4 were given"
+        msg = "takes 4 positional arguments but 6 were given"
         with self.assertRaisesRegex(TypeError, msg):
             A(3, 4, 5)
 
@@ -4391,7 +4391,7 @@ class TestKeywordArgs(unittest.TestCase):
             b: int
             c: int
         B(a=3, b=4, c=5)
-        msg = "takes 1 positional argument but 4 were given"
+        msg = "takes 3 positional argument but 6 were given"
         with self.assertRaisesRegex(TypeError, msg):
             B(3, 4, 5)
 
@@ -4427,7 +4427,7 @@ class TestKeywordArgs(unittest.TestCase):
             b: int
             c: int
         A(3, c=5, b=4)
-        msg = "takes 2 positional arguments but 4 were given"
+        msg = "takes 4 positional arguments but 6 were given"
         with self.assertRaisesRegex(TypeError, msg):
             A(3, 4, 5)
 
