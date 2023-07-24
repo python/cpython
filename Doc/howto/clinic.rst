@@ -159,12 +159,12 @@ Terminology
   start line
      The line ``/*[clinic input]``.
      This line marks the beginning of Argument Clinic input.
-     Notice that the *start line* opens a C block comment.
+     Note that the *start line* opens a C block comment.
 
   end line
      The line ``[clinic start generated code]*/``.
      This line marks the end of Argument Clinic input.
-     Notice that the *end line* closes the C block comment opened
+     Note that the *end line* closes the C block comment opened
      by the *start line*.
 
   checksum
@@ -182,7 +182,7 @@ Terminology
 
   input
      The text between the :term:`start line` and the :term:`end line`.
-     Notice that the start and end lines open and close a C block comment;
+     Note that the start and end lines open and close a C block comment;
      the *input* is thus a part of that same C block comment.
 
   output
