@@ -15,145 +15,134 @@
 #if defined(__ANDROID__)
     # Android is not a multiarch system.
 #elif defined(__linux__)
+/*
+ * BEGIN of Linux block
+ */
+# define LIBC gnu
+# define LIBC_X32 gnux32
+# if defined(__ARM_PCS_VFP)
+#  define LIBC_ARM gnueabihf
+# else
+#  define LIBC_ARM gnueabi
+# endif
+# if defined(__loongarch__)
+#  if defined(__loongarch_soft_float)
+#   define LIBC_LA gnusf
+#  elif defined(__loongarch_single_float)
+#   define LIBC_LA gnuf32
+#  elif defined(__loongarch_double_float)
+#   define LIBC_LA gnu
+#  else
+#   error unknown loongarch floating-point base abi
+#  endif
+# endif
+# if defined(_MIPS_SIM)
+#  if _MIPS_SIM == _ABIO32
+#   define LIBC_MIPS gnu
+#  elif _MIPS_SIM == _ABIN32
+#   define LIBC_MIPS gnuabin32
+#  elif _MIPS_SIM == _ABI64
+#   define LIBC_MIPS gnuabi64
+#  else
+#   error unknown mips sim value
+#  endif
+# endif
+# if defined(__SPE__)
+#  define LIBC_PPC gnuspe
+# else
+#  define LIBC_PPC gnu
+# endif
+
 # if defined(__x86_64__) && defined(__LP64__)
-        x86_64-linux-gnu
+        x86_64-linux-LIBC
 # elif defined(__x86_64__) && defined(__ILP32__)
-        x86_64-linux-gnux32
+        x86_64-linux-LIBC_X32
 # elif defined(__i386__)
-        i386-linux-gnu
+        i386-linux-LIBC
 # elif defined(__aarch64__) && defined(__AARCH64EL__)
 #  if defined(__ILP32__)
-        aarch64_ilp32-linux-gnu
+        aarch64_ilp32-linux-LIBC
 #  else
-        aarch64-linux-gnu
+        aarch64-linux-LIBC
 #  endif
 # elif defined(__aarch64__) && defined(__AARCH64EB__)
 #  if defined(__ILP32__)
-        aarch64_be_ilp32-linux-gnu
+        aarch64_be_ilp32-linux-LIBC
 #  else
-        aarch64_be-linux-gnu
+        aarch64_be-linux-LIBC
 #  endif
 # elif defined(__alpha__)
-        alpha-linux-gnu
-# elif defined(__ARM_EABI__) && defined(__ARM_PCS_VFP)
+        alpha-linux-LIBC
+# elif defined(__ARM_EABI__)
 #  if defined(__ARMEL__)
-        arm-linux-gnueabihf
+        arm-linux-LIBC_ARM
 #  else
-        armeb-linux-gnueabihf
-#  endif
-# elif defined(__ARM_EABI__) && !defined(__ARM_PCS_VFP)
-#  if defined(__ARMEL__)
-        arm-linux-gnueabi
-#  else
-        armeb-linux-gnueabi
+        armeb-linux-LIBC_ARM
 #  endif
 # elif defined(__hppa__)
-        hppa-linux-gnu
+        hppa-linux-LIBC
 # elif defined(__ia64__)
-        ia64-linux-gnu
-# elif defined(__loongarch__)
-#  if defined(__loongarch_lp64)
-#   if defined(__loongarch_soft_float)
-        loongarch64-linux-gnusf
-#   elif defined(__loongarch_single_float)
-        loongarch64-linux-gnuf32
-#   elif defined(__loongarch_double_float)
-        loongarch64-linux-gnu
-#   else
-#    error unknown platform triplet
-#   endif
-#  else
-#   error unknown platform triplet
-#  endif
+        ia64-linux-LIBC
+# elif defined(__loongarch__) && defined(__loongarch_lp64)
+        loongarch64-linux-LIBC_LA
 # elif defined(__m68k__) && !defined(__mcoldfire__)
-        m68k-linux-gnu
+        m68k-linux-LIBC
 # elif defined(__mips_hard_float)
 #  if defined(__mips_isa_rev) && (__mips_isa_rev >=6)
 #   if defined(_MIPSEL) && defined(__mips64)
-#    if _MIPS_SIM == _ABIO32
-        mipsisa64r6el-linux-gnu
-#    elif _MIPS_SIM == _ABIN32
-        mipsisa64r6el-linux-gnuabin32
-#    elif _MIPS_SIM == _ABI64
-        mipsisa64r6el-linux-gnuabi64
-#    else
-#     error unknown platform triplet
-#    endif
+        mipsisa64r6el-linux-LIBC_MIPS
 #   elif defined(_MIPSEL)
-        mipsisa32r6el-linux-gnu
+        mipsisa32r6el-linux-LIBC_MIPS
 #   elif defined(__mips64)
-#    if _MIPS_SIM == _ABIO32
-        mipsisa64r6-linux-gnu
-#    elif _MIPS_SIM == _ABIN32
-        mipsisa64r6-linux-gnuabin32
-#    elif _MIPS_SIM == _ABI64
-        mipsisa64r6-linux-gnuabi64
-#    else
-#     error unknown platform triplet
-#    endif
+        mipsisa64r6-linux-LIBC_MIPS
 #   else
-        mipsisa32r6-linux-gnu
+        mipsisa32r6-linux-LIBC_MIPS
 #   endif
 #  else
 #   if defined(_MIPSEL) && defined(__mips64)
-#    if _MIPS_SIM == _ABIO32
-        mips64el-linux-gnu
-#    elif _MIPS_SIM == _ABIN32
-        mips64el-linux-gnuabin32
-#    elif _MIPS_SIM == _ABI64
-        mips64el-linux-gnuabi64
-#    else
-#     error unknown platform triplet
-#    endif
+        mips64el-linux-LIBC_MIPS
 #   elif defined(_MIPSEL)
-        mipsel-linux-gnu
+        mipsel-linux-LIBC_MIPS
 #   elif defined(__mips64)
-#    if _MIPS_SIM == _ABIO32
-        mips64-linux-gnu
-#    elif _MIPS_SIM == _ABIN32
-        mips64-linux-gnuabin32
-#    elif _MIPS_SIM == _ABI64
-        mips64-linux-gnuabi64
-#    else
-#     error unknown platform triplet
-#    endif
+        mips64-linux-LIBC_MIPS
 #   else
-        mips-linux-gnu
+        mips-linux-LIBC_MIPS
 #   endif
 #  endif
 # elif defined(__or1k__)
-        or1k-linux-gnu
-# elif defined(__powerpc__) && defined(__SPE__)
-        powerpc-linux-gnuspe
+        or1k-linux-LIBC
+# elif defined(__powerpc__)
+        powerpc-linux-LIBC_PPC
 # elif defined(__powerpc64__)
 #  if defined(__LITTLE_ENDIAN__)
-        powerpc64le-linux-gnu
+        powerpc64le-linux-LIBC
 #  else
-        powerpc64-linux-gnu
+        powerpc64-linux-LIBC
 #  endif
-# elif defined(__powerpc__)
-        powerpc-linux-gnu
 # elif defined(__s390x__)
-        s390x-linux-gnu
+        s390x-linux-LIBC
 # elif defined(__s390__)
-        s390-linux-gnu
+        s390-linux-LIBC
 # elif defined(__sh__) && defined(__LITTLE_ENDIAN__)
-        sh4-linux-gnu
+        sh4-linux-LIBC
 # elif defined(__sparc__) && defined(__arch64__)
-        sparc64-linux-gnu
+        sparc64-linux-LIBC
 # elif defined(__sparc__)
-        sparc-linux-gnu
+        sparc-linux-LIBC
 # elif defined(__riscv)
 #  if __riscv_xlen == 32
-        riscv32-linux-gnu
+        riscv32-linux-LIBC
 #  elif __riscv_xlen == 64
-        riscv64-linux-gnu
+        riscv64-linux-LIBC
 #  else
 #   error unknown platform triplet
 #  endif
 # else
 #   error unknown platform triplet
 # endif
+/*
+ * END of Linux block
+ */
 #elif defined(__FreeBSD_kernel__)
 # if defined(__LP64__)
         x86_64-kfreebsd-gnu
