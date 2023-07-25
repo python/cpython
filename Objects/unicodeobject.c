@@ -236,15 +236,50 @@ static inline PyObject *get_interned_dict(PyInterpreterState *interp)
     return _Py_INTERP_CACHED_OBJECT(interp, interned_strings);
 }
 
+#define INTERNED_STRINGS _PyRuntime.cached_objects.interned_strings
+
 Py_ssize_t
 _PyUnicode_InternedSize(void)
 {
-    return PyObject_Length(get_interned_dict(_PyInterpreterState_GET()));
+    PyObject *dict = get_interned_dict(_PyInterpreterState_GET());
+    return _Py_hashtable_len(INTERNED_STRINGS) + PyObject_Length(dict);
+}
+
+static Py_hash_t unicode_hash(PyObject *);
+static int unicode_compare_eq(PyObject *, PyObject *);
+
+static Py_uhash_t
+hashtable_unicode_hash(const void *key)
+{
+    return unicode_hash((PyObject *)key);
+}
+
+static int
+hashtable_unicode_compare(const void *key1, const void *key2)
+{
+    PyObject *obj1 = (PyObject *)key1;
+    PyObject *obj2 = (PyObject *)key2;
+    if (obj1 != NULL && obj2 != NULL) {
+        return unicode_compare_eq(obj1, obj2);
+    }
+    else {
+        return obj1 == obj2;
+    }
 }
 
 static int
 init_interned_dict(PyInterpreterState *interp)
 {
+    if (_Py_IsMainInterpreter(interp)) {
+        assert(INTERNED_STRINGS == NULL);
+        INTERNED_STRINGS = _Py_hashtable_new(
+            hashtable_unicode_hash,
+            hashtable_unicode_compare
+        );
+        if (INTERNED_STRINGS == NULL) {
+            return -1;
+        }
+    }
     assert(get_interned_dict(interp) == NULL);
     PyObject *interned = interned = PyDict_New();
     if (interned == NULL) {
@@ -262,6 +297,10 @@ clear_interned_dict(PyInterpreterState *interp)
         PyDict_Clear(interned);
         Py_DECREF(interned);
         _Py_INTERP_CACHED_OBJECT(interp, interned_strings) = NULL;
+    }
+    if (_Py_IsMainInterpreter(interp) && INTERNED_STRINGS != NULL) {
+        _Py_hashtable_destroy(INTERNED_STRINGS);
+        INTERNED_STRINGS = NULL;
     }
 }
 
