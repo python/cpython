@@ -41,7 +41,7 @@ static const char copyright[] =
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "structmember.h"         // PyMemberDef
+
 
 #include "sre.h"
 
@@ -2994,13 +2994,13 @@ static PyGetSetDef pattern_getset[] = {
 
 #define PAT_OFF(x) offsetof(PatternObject, x)
 static PyMemberDef pattern_members[] = {
-    {"pattern",    T_OBJECT,    PAT_OFF(pattern),       READONLY,
+    {"pattern",    _Py_T_OBJECT,    PAT_OFF(pattern),       Py_READONLY,
      "The pattern string from which the RE object was compiled."},
-    {"flags",      T_INT,       PAT_OFF(flags),         READONLY,
+    {"flags",      Py_T_INT,       PAT_OFF(flags),         Py_READONLY,
      "The regex matching flags."},
-    {"groups",     T_PYSSIZET,  PAT_OFF(groups),        READONLY,
+    {"groups",     Py_T_PYSSIZET,  PAT_OFF(groups),        Py_READONLY,
      "The number of capturing groups in the pattern."},
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(PatternObject, weakreflist), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(PatternObject, weakreflist), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -3053,13 +3053,13 @@ static PyGetSetDef match_getset[] = {
 
 #define MATCH_OFF(x) offsetof(MatchObject, x)
 static PyMemberDef match_members[] = {
-    {"string",  T_OBJECT,   MATCH_OFF(string),  READONLY,
+    {"string",  _Py_T_OBJECT,   MATCH_OFF(string),  Py_READONLY,
      "The string passed to match() or search()."},
-    {"re",      T_OBJECT,   MATCH_OFF(pattern), READONLY,
+    {"re",      _Py_T_OBJECT,   MATCH_OFF(pattern), Py_READONLY,
      "The regular expression object."},
-    {"pos",     T_PYSSIZET, MATCH_OFF(pos),     READONLY,
+    {"pos",     Py_T_PYSSIZET, MATCH_OFF(pos),     Py_READONLY,
      "The index into the string at which the RE engine started looking for a match."},
-    {"endpos",  T_PYSSIZET, MATCH_OFF(endpos),  READONLY,
+    {"endpos",  Py_T_PYSSIZET, MATCH_OFF(endpos),  Py_READONLY,
      "The index into the string beyond which the RE engine will not go."},
     {NULL}
 };
@@ -3103,7 +3103,7 @@ static PyMethodDef scanner_methods[] = {
 
 #define SCAN_OFF(x) offsetof(ScannerObject, x)
 static PyMemberDef scanner_members[] = {
-    {"pattern", T_OBJECT, SCAN_OFF(pattern), READONLY},
+    {"pattern", _Py_T_OBJECT, SCAN_OFF(pattern), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 

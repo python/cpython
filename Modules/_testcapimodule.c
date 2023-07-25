@@ -20,15 +20,16 @@
 #include "Python.h"
 #include "frameobject.h"          // PyFrame_New
 #include "marshal.h"              // PyMarshal_WriteLongToFile
-#include "structmember.h"         // for offsetof(), T_OBJECT
+
 #include <float.h>                // FLT_MAX
 #include <signal.h>
+#include <stddef.h>               // offsetof()
 #ifndef MS_WINDOWS
-#include <unistd.h>
+#  include <unistd.h>
 #endif
 
 #ifdef HAVE_SYS_WAIT_H
-#include <sys/wait.h>             // W_STOPCODE
+#  include <sys/wait.h>           // W_STOPCODE
 #endif
 
 #ifdef Py_BUILD_CORE
@@ -4257,7 +4258,7 @@ ContainerNoGC_dealloc(ContainerNoGCobject *self)
 }
 
 static PyMemberDef ContainerNoGC_members[] = {
-    {"value", T_OBJECT, offsetof(ContainerNoGCobject, value), READONLY,
+    {"value", _Py_T_OBJECT, offsetof(ContainerNoGCobject, value), Py_READONLY,
      PyDoc_STR("a container value for test purposes")},
     {0}
 };
