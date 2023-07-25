@@ -12,6 +12,7 @@ extern "C" {
 
 extern PyTypeObject _PyNamespace_Type;
 
+// Export for '_testmultiphase' shared extension
 PyAPI_FUNC(PyObject*) _PyNamespace_New(PyObject *kwds);
 
 #ifdef __cplusplus
