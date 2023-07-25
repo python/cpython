@@ -2054,7 +2054,7 @@ static PyMethodDef defdict_methods[] = {
 };
 
 static PyMemberDef defdict_members[] = {
-    {"default_factory", _Py_T_OBJECT,
+    {"default_factory", Py_T_OBJECT_EX,
      offsetof(defdictobject, default_factory), 0,
      PyDoc_STR("Factory for default value called by __missing__().")},
     {NULL}
@@ -2466,7 +2466,7 @@ tuplegetter_repr(_tuplegetterobject *self)
 
 
 static PyMemberDef tuplegetter_members[] = {
-    {"__doc__",  _Py_T_OBJECT, offsetof(_tuplegetterobject, doc), 0},
+    {"__doc__",  Py_T_OBJECT_EX, offsetof(_tuplegetterobject, doc), 0},
     {0}
 };
 

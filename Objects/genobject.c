@@ -1144,7 +1144,7 @@ static PyGetSetDef coro_getsetlist[] = {
 };
 
 static PyMemberDef coro_memberlist[] = {
-    {"cr_origin",    _Py_T_OBJECT, offsetof(PyCoroObject, cr_origin_or_finalizer),   Py_READONLY},
+    {"cr_origin",    Py_T_OBJECT_EX, offsetof(PyCoroObject, cr_origin_or_finalizer),   Py_READONLY},
     {NULL}      /* Sentinel */
 };
 

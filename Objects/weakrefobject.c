@@ -351,7 +351,7 @@ weakref___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 
 
 static PyMemberDef weakref_members[] = {
-    {"__callback__", _Py_T_OBJECT, offsetof(PyWeakReference, wr_callback), Py_READONLY},
+    {"__callback__", Py_T_OBJECT_EX, offsetof(PyWeakReference, wr_callback), Py_READONLY},
     {NULL} /* Sentinel */
 };
 

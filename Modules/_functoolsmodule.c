@@ -340,11 +340,11 @@ PyDoc_STRVAR(partial_doc,
 
 #define OFF(x) offsetof(partialobject, x)
 static PyMemberDef partial_memberlist[] = {
-    {"func",            _Py_T_OBJECT,       OFF(fn),        Py_READONLY,
+    {"func",            Py_T_OBJECT_EX,       OFF(fn),        Py_READONLY,
      "function object to use in future partial calls"},
-    {"args",            _Py_T_OBJECT,       OFF(args),      Py_READONLY,
+    {"args",            Py_T_OBJECT_EX,       OFF(args),      Py_READONLY,
      "tuple of arguments to future partial calls"},
-    {"keywords",        _Py_T_OBJECT,       OFF(kw),        Py_READONLY,
+    {"keywords",        Py_T_OBJECT_EX,       OFF(kw),        Py_READONLY,
      "dictionary of keyword arguments to future partial calls"},
     {"__weaklistoffset__", Py_T_PYSSIZET,
      offsetof(partialobject, weakreflist), Py_READONLY},
@@ -540,7 +540,7 @@ keyobject_traverse(keyobject *ko, visitproc visit, void *arg)
 }
 
 static PyMemberDef keyobject_members[] = {
-    {"obj", _Py_T_OBJECT,
+    {"obj", Py_T_OBJECT_EX,
      offsetof(keyobject, object), 0,
      PyDoc_STR("Value wrapped by a key function.")},
     {NULL}

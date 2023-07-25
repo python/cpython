@@ -4135,8 +4135,8 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
 }
 
 static PyMemberDef xmlparser_members[] = {
-    {"entity", _Py_T_OBJECT, offsetof(XMLParserObject, entity), Py_READONLY, NULL},
-    {"target", _Py_T_OBJECT, offsetof(XMLParserObject, target), Py_READONLY, NULL},
+    {"entity", Py_T_OBJECT_EX, offsetof(XMLParserObject, entity), Py_READONLY, NULL},
+    {"target", Py_T_OBJECT_EX, offsetof(XMLParserObject, target), Py_READONLY, NULL},
     {NULL}
 };
 
