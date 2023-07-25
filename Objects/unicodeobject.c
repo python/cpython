@@ -14769,6 +14769,23 @@ _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p)
         return;
     }
 
+    /* Look in the global cache first. */
+    PyObject *r = (PyObject *)_Py_hashtable_get(INTERNED_STRINGS, s);
+    if (r != NULL && r != s) {
+        Py_SETREF(*p, Py_NewRef(r));
+        return;
+    }
+
+    /* Handle statically allocated strings. */
+    if (_PyUnicode_STATE(s).statically_allocated) {
+        assert(_Py_IsImmortal(s));
+        if (_Py_hashtable_set(INTERNED_STRINGS, s, s) == 0) {
+            _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL_STATIC;
+        }
+        return;
+    }
+
+    /* Look in the per-interpreter cache. */
     PyObject *interned = get_interned_dict(interp);
     assert(interned != NULL);
 
@@ -14783,14 +14800,6 @@ _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p)
         return;
     }
 
-    if (_PyUnicode_STATE(s).statically_allocated) {
-        if (!_Py_IsImmortal(s)) {
-            printf("\"%s\"\n", PyUnicode_AsUTF8(s));
-        }
-        assert(_Py_IsImmortal(s));
-        _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL_STATIC;
-        return;
-    }
     if (_Py_IsImmortal(s)) {
         // XXX Restrict this to the main interpreter?
         _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL_STATIC;
