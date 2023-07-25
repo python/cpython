@@ -83,8 +83,8 @@ extern PyObject *_PyLong_Add(PyLongObject *left, PyLongObject *right);
 extern PyObject *_PyLong_Multiply(PyLongObject *left, PyLongObject *right);
 extern PyObject *_PyLong_Subtract(PyLongObject *left, PyLongObject *right);
 
-/* Used by Python/mystrtoul.c, _PyBytes_FromHex(),
-   _PyBytes_DecodeEscape(), etc. */
+// Used by _PyBytes_FromHex(), _PyBytes_DecodeEscape(), Python/mystrtoul.c.
+// Export for 'binascii' shared extension.
 PyAPI_DATA(unsigned char) _PyLong_DigitValue[256];
 
 /* Format the object based on the format_spec, as defined in PEP 3101
