@@ -7528,15 +7528,17 @@ build_cellfixedoffsets(_PyCompile_CodeUnitMetadata *umd)
 }
 
 static int
-insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, cfg_builder *g,
+insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entryblock,
                            int *fixed, int nfreevars, int code_flags)
 {
-    basicblock *entryblock = g->g_entryblock;
     assert(umd->u_firstlineno > 0);
 
     /* Add the generator prefix instructions. */
     if (code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
-        g->g_maxdepth++;  /* make space for the value pushed by RETURN_GENERATOR */
+        /* Note that RETURN_GENERATOR + POP_TOP have a net stack effect
+         * of 0. This is because RETURN_GENERATOR pushes an element
+         * with _PyFrame_StackPush before switching stacks.
+         */
         cfg_instr make_gen = {
             .i_opcode = RETURN_GENERATOR,
             .i_oparg = 0,
@@ -7667,7 +7669,7 @@ prepare_localsplus(_PyCompile_CodeUnitMetadata *umd, cfg_builder *g, int code_fl
 
 
     // This must be called before fix_cell_offsets().
-    if (insert_prefix_instructions(umd, g, cellfixedoffsets, nfreevars, code_flags)) {
+    if (insert_prefix_instructions(umd, g->g_entryblock, cellfixedoffsets, nfreevars, code_flags)) {
         PyMem_Free(cellfixedoffsets);
         return ERROR;
     }
