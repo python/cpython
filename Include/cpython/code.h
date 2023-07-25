@@ -31,8 +31,13 @@ typedef struct _Py_Monitors {
 typedef union {
     uint16_t cache;
     struct {
+#if PY_LITTLE_ENDIAN == 1
         uint8_t code;
         uint8_t arg;
+#else
+        uint8_t arg;
+        uint8_t code;
+#endif
     } op;
 } _Py_CODEUNIT;
 
