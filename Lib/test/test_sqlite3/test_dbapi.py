@@ -165,6 +165,7 @@ class ModuleTests(unittest.TestCase):
             "SQLITE_INTERNAL",
             "SQLITE_INTERRUPT",
             "SQLITE_IOERR",
+            "SQLITE_LIMIT_WORKER_THREADS",
             "SQLITE_LOCKED",
             "SQLITE_MISMATCH",
             "SQLITE_MISUSE",
@@ -172,6 +173,7 @@ class ModuleTests(unittest.TestCase):
             "SQLITE_NOMEM",
             "SQLITE_NOTADB",
             "SQLITE_NOTFOUND",
+            "SQLITE_NOTICE",
             "SQLITE_OK",
             "SQLITE_PERM",
             "SQLITE_PRAGMA",
@@ -179,6 +181,7 @@ class ModuleTests(unittest.TestCase):
             "SQLITE_RANGE",
             "SQLITE_READ",
             "SQLITE_READONLY",
+            "SQLITE_RECURSIVE",
             "SQLITE_REINDEX",
             "SQLITE_ROW",
             "SQLITE_SAVEPOINT",
@@ -187,6 +190,7 @@ class ModuleTests(unittest.TestCase):
             "SQLITE_TOOBIG",
             "SQLITE_TRANSACTION",
             "SQLITE_UPDATE",
+            "SQLITE_WARNING",
             # Run-time limit categories
             "SQLITE_LIMIT_LENGTH",
             "SQLITE_LIMIT_SQL_LENGTH",
@@ -200,32 +204,43 @@ class ModuleTests(unittest.TestCase):
             "SQLITE_LIMIT_VARIABLE_NUMBER",
             "SQLITE_LIMIT_TRIGGER_DEPTH",
         ]
-        if sqlite.sqlite_version_info >= (3, 7, 17):
-            consts += ["SQLITE_NOTICE", "SQLITE_WARNING"]
-        if sqlite.sqlite_version_info >= (3, 8, 3):
-            consts.append("SQLITE_RECURSIVE")
-        if sqlite.sqlite_version_info >= (3, 8, 7):
-            consts.append("SQLITE_LIMIT_WORKER_THREADS")
         consts += ["PARSE_DECLTYPES", "PARSE_COLNAMES"]
         # Extended result codes
         consts += [
             "SQLITE_ABORT_ROLLBACK",
+            "SQLITE_AUTH_USER",
             "SQLITE_BUSY_RECOVERY",
+            "SQLITE_BUSY_SNAPSHOT",
+            "SQLITE_CANTOPEN_CONVPATH",
             "SQLITE_CANTOPEN_FULLPATH",
             "SQLITE_CANTOPEN_ISDIR",
             "SQLITE_CANTOPEN_NOTEMPDIR",
+            "SQLITE_CONSTRAINT_CHECK",
+            "SQLITE_CONSTRAINT_COMMITHOOK",
+            "SQLITE_CONSTRAINT_FOREIGNKEY",
+            "SQLITE_CONSTRAINT_FUNCTION",
+            "SQLITE_CONSTRAINT_NOTNULL",
+            "SQLITE_CONSTRAINT_PRIMARYKEY",
+            "SQLITE_CONSTRAINT_ROWID",
+            "SQLITE_CONSTRAINT_TRIGGER",
+            "SQLITE_CONSTRAINT_UNIQUE",
+            "SQLITE_CONSTRAINT_VTAB",
             "SQLITE_CORRUPT_VTAB",
             "SQLITE_IOERR_ACCESS",
+            "SQLITE_IOERR_AUTH",
             "SQLITE_IOERR_BLOCKED",
             "SQLITE_IOERR_CHECKRESERVEDLOCK",
             "SQLITE_IOERR_CLOSE",
+            "SQLITE_IOERR_CONVPATH",
             "SQLITE_IOERR_DELETE",
             "SQLITE_IOERR_DELETE_NOENT",
             "SQLITE_IOERR_DIR_CLOSE",
             "SQLITE_IOERR_DIR_FSYNC",
             "SQLITE_IOERR_FSTAT",
             "SQLITE_IOERR_FSYNC",
+            "SQLITE_IOERR_GETTEMPPATH",
             "SQLITE_IOERR_LOCK",
+            "SQLITE_IOERR_MMAP",
             "SQLITE_IOERR_NOMEM",
             "SQLITE_IOERR_RDLOCK",
             "SQLITE_IOERR_READ",
@@ -237,50 +252,18 @@ class ModuleTests(unittest.TestCase):
             "SQLITE_IOERR_SHORT_READ",
             "SQLITE_IOERR_TRUNCATE",
             "SQLITE_IOERR_UNLOCK",
+            "SQLITE_IOERR_VNODE",
             "SQLITE_IOERR_WRITE",
             "SQLITE_LOCKED_SHAREDCACHE",
+            "SQLITE_NOTICE_RECOVER_ROLLBACK",
+            "SQLITE_NOTICE_RECOVER_WAL",
+            "SQLITE_OK_LOAD_PERMANENTLY",
             "SQLITE_READONLY_CANTLOCK",
+            "SQLITE_READONLY_DBMOVED",
             "SQLITE_READONLY_RECOVERY",
+            "SQLITE_READONLY_ROLLBACK",
+            "SQLITE_WARNING_AUTOINDEX",
         ]
-        if sqlite.sqlite_version_info >= (3, 7, 16):
-            consts += [
-                "SQLITE_CONSTRAINT_CHECK",
-                "SQLITE_CONSTRAINT_COMMITHOOK",
-                "SQLITE_CONSTRAINT_FOREIGNKEY",
-                "SQLITE_CONSTRAINT_FUNCTION",
-                "SQLITE_CONSTRAINT_NOTNULL",
-                "SQLITE_CONSTRAINT_PRIMARYKEY",
-                "SQLITE_CONSTRAINT_TRIGGER",
-                "SQLITE_CONSTRAINT_UNIQUE",
-                "SQLITE_CONSTRAINT_VTAB",
-                "SQLITE_READONLY_ROLLBACK",
-            ]
-        if sqlite.sqlite_version_info >= (3, 7, 17):
-            consts += [
-                "SQLITE_IOERR_MMAP",
-                "SQLITE_NOTICE_RECOVER_ROLLBACK",
-                "SQLITE_NOTICE_RECOVER_WAL",
-            ]
-        if sqlite.sqlite_version_info >= (3, 8, 0):
-            consts += [
-                "SQLITE_BUSY_SNAPSHOT",
-                "SQLITE_IOERR_GETTEMPPATH",
-                "SQLITE_WARNING_AUTOINDEX",
-            ]
-        if sqlite.sqlite_version_info >= (3, 8, 1):
-            consts += ["SQLITE_CANTOPEN_CONVPATH", "SQLITE_IOERR_CONVPATH"]
-        if sqlite.sqlite_version_info >= (3, 8, 2):
-            consts.append("SQLITE_CONSTRAINT_ROWID")
-        if sqlite.sqlite_version_info >= (3, 8, 3):
-            consts.append("SQLITE_READONLY_DBMOVED")
-        if sqlite.sqlite_version_info >= (3, 8, 7):
-            consts.append("SQLITE_AUTH_USER")
-        if sqlite.sqlite_version_info >= (3, 9, 0):
-            consts.append("SQLITE_IOERR_VNODE")
-        if sqlite.sqlite_version_info >= (3, 10, 0):
-            consts.append("SQLITE_IOERR_AUTH")
-        if sqlite.sqlite_version_info >= (3, 14, 1):
-            consts.append("SQLITE_OK_LOAD_PERMANENTLY")
         if sqlite.sqlite_version_info >= (3, 21, 0):
             consts += [
                 "SQLITE_IOERR_BEGIN_ATOMIC",
@@ -330,8 +313,6 @@ class ModuleTests(unittest.TestCase):
             self.assertEqual(e.sqlite_errorcode, err_code)
             self.assertTrue(e.sqlite_errorname.startswith("SQLITE_CANTOPEN"))
 
-    @unittest.skipIf(sqlite.sqlite_version_info <= (3, 7, 16),
-                     "Requires SQLite 3.7.16 or newer")
     def test_extended_error_code_on_exception(self):
         with memory_database() as con:
             with con:

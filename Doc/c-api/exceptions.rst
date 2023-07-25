@@ -60,9 +60,14 @@ Printing and clearing
    Call this function **only** when the error indicator is set.  Otherwise it
    will cause a fatal error!
 
-   If *set_sys_last_vars* is nonzero, the variables :data:`sys.last_type`,
-   :data:`sys.last_value` and :data:`sys.last_traceback` will be set to the
-   type, value and traceback of the printed exception, respectively.
+   If *set_sys_last_vars* is nonzero, the variable :data:`sys.last_exc` is
+   set to the printed exception. For backwards compatibility, the
+   deprecated variables :data:`sys.last_type`, :data:`sys.last_value` and
+   :data:`sys.last_traceback` are also set to the type, value and traceback
+   of this exception, respectively.
+
+   .. versionchanged:: 3.12
+      The setting of :data:`sys.last_exc` was added.
 
 
 .. c:function:: void PyErr_Print()
@@ -158,9 +163,9 @@ For convenience, some of these functions will always return a
    This is a convenience function to raise an exception when a C library function
    has returned an error and set the C variable :c:data:`errno`.  It constructs a
    tuple object whose first item is the integer :c:data:`errno` value and whose
-   second item is the corresponding error message (gotten from :c:func:`strerror`),
+   second item is the corresponding error message (gotten from :c:func:`!strerror`),
    and then calls ``PyErr_SetObject(type, object)``.  On Unix, when the
-   :c:data:`errno` value is :const:`EINTR`, indicating an interrupted system call,
+   :c:data:`errno` value is :c:macro:`EINTR`, indicating an interrupted system call,
    this calls :c:func:`PyErr_CheckSignals`, and if that set the error indicator,
    leaves it set to that.  The function always returns ``NULL``, so a wrapper
    function around a system call can write ``return PyErr_SetFromErrno(type);``
@@ -626,7 +631,7 @@ Signal Handling
    be interruptible by user requests (such as by pressing Ctrl-C).
 
    .. note::
-      The default Python signal handler for :const:`SIGINT` raises the
+      The default Python signal handler for :c:macro:`SIGINT` raises the
       :exc:`KeyboardInterrupt` exception.
 
 
@@ -637,7 +642,7 @@ Signal Handling
       single: SIGINT
       single: KeyboardInterrupt (built-in exception)
 
-   Simulate the effect of a :const:`SIGINT` signal arriving.
+   Simulate the effect of a :c:macro:`SIGINT` signal arriving.
    This is equivalent to ``PyErr_SetInterruptEx(SIGINT)``.
 
    .. note::
@@ -661,7 +666,7 @@ Signal Handling
    to interrupt an operation).
 
    If the given signal isn't handled by Python (it was set to
-   :data:`signal.SIG_DFL` or :data:`signal.SIG_IGN`), it will be ignored.
+   :py:const:`signal.SIG_DFL` or :py:const:`signal.SIG_IGN`), it will be ignored.
 
    If *signum* is outside of the allowed range of signal numbers, ``-1``
    is returned.  Otherwise, ``0`` is returned.  The error indicator is
@@ -749,7 +754,7 @@ Exception Objects
 
 .. c:function:: PyObject* PyException_GetCause(PyObject *ex)
 
-   Return the cause (either an exception instance, or :const:`None`,
+   Return the cause (either an exception instance, or ``None``,
    set by ``raise ... from ...``) associated with the exception as a new
    reference, as accessible from Python through :attr:`__cause__`.
 
@@ -758,7 +763,7 @@ Exception Objects
 
    Set the cause associated with the exception to *cause*.  Use ``NULL`` to clear
    it.  There is no type check to make sure that *cause* is either an exception
-   instance or :const:`None`.  This steals a reference to *cause*.
+   instance or ``None``.  This steals a reference to *cause*.
 
    :attr:`__suppress_context__` is implicitly set to ``True`` by this function.
 
@@ -772,6 +777,18 @@ Exception Objects
 
    Set :attr:`~BaseException.args` of exception *ex* to *args*.
 
+.. c:function:: PyObject* PyUnstable_Exc_PrepReraiseStar(PyObject *orig, PyObject *excs)
+
+   Implement part of the interpreter's implementation of :keyword:`!except*`.
+   *orig* is the original exception that was caught, and *excs* is the list of
+   the exceptions that need to be raised. This list contains the the unhandled
+   part of *orig*, if any, as well as the exceptions that were raised from the
+   :keyword:`!except*` clauses (so they have a different traceback from *orig*) and
+   those that were reraised (and have the same traceback as *orig*).
+   Return the :exc:`ExceptionGroup` that needs to be reraised in the end, or
+   ``None`` if there is nothing to reraise.
+
+   .. versionadded:: 3.12
 
 .. _unicodeexceptions:
 
@@ -857,7 +874,7 @@ because the :ref:`call protocol <call>` takes care of recursion handling.
 
    Marks a point where a recursive C-level call is about to be performed.
 
-   If :const:`USE_STACKCHECK` is defined, this function checks if the OS
+   If :c:macro:`USE_STACKCHECK` is defined, this function checks if the OS
    stack overflowed using :c:func:`PyOS_CheckStack`.  In this is the case, it
    sets a :exc:`MemoryError` and returns a nonzero value.
 
@@ -870,7 +887,7 @@ because the :ref:`call protocol <call>` takes care of recursion handling.
    depth limit.
 
    .. versionchanged:: 3.9
-      This function is now also available in the limited API.
+      This function is now also available in the :ref:`limited API <limited-c-api>`.
 
 .. c:function:: void Py_LeaveRecursiveCall(void)
 
@@ -878,7 +895,7 @@ because the :ref:`call protocol <call>` takes care of recursion handling.
    *successful* invocation of :c:func:`Py_EnterRecursiveCall`.
 
    .. versionchanged:: 3.9
-      This function is now also available in the limited API.
+      This function is now also available in the :ref:`limited API <limited-c-api>`.
 
 Properly implementing :c:member:`~PyTypeObject.tp_repr` for container types requires
 special recursion handling.  In addition to protecting the stack,

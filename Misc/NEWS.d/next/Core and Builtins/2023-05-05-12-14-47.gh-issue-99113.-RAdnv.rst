@@ -1,6 +1,0 @@
-The GIL is now (optionally) per-interpreter.  This is the fundamental change
-for PEP 684.  This is all made possible by virtue of the isolated state of
-each interpreter in the process.  The behavior of the main interpreter
-remains unchanged.  Likewise, interpreters created using
-``Py_NewInterpreter()`` are not affected.  To get an interpreter with its
-own GIL, call ``Py_NewInterpreterFromConfig()``.

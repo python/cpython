@@ -917,8 +917,9 @@ should, then :meth:`flush` is expected to do the flushing.
 
    .. method:: flush()
 
-      You can override this to implement custom flushing behavior. This version
-      just zaps the buffer to empty.
+      For a :class:`BufferingHandler` instance, flushing means that it sets the
+      buffer to an empty list. This method can be overwritten to implement more useful
+      flushing behavior.
 
 
    .. method:: shouldFlush(record)
@@ -950,9 +951,9 @@ should, then :meth:`flush` is expected to do the flushing.
 
    .. method:: flush()
 
-      For a :class:`MemoryHandler`, flushing means just sending the buffered
+      For a :class:`MemoryHandler` instance, flushing means just sending the buffered
       records to the target, if there is one. The buffer is also cleared when
-      this happens. Override if you want different behavior.
+      buffered records are sent to the target. Override if you want different behavior.
 
 
    .. method:: setTarget(target)
@@ -1051,8 +1052,8 @@ possible, while any potentially slow operations (such as sending an email via
       occur (e.g. because a bounded queue has filled up), the
       :meth:`~logging.Handler.handleError` method is called to handle the
       error. This can result in the record silently being dropped (if
-      :attr:`logging.raiseExceptions` is ``False``) or a message printed to
-      ``sys.stderr`` (if :attr:`logging.raiseExceptions` is ``True``).
+      :data:`logging.raiseExceptions` is ``False``) or a message printed to
+      ``sys.stderr`` (if :data:`logging.raiseExceptions` is ``True``).
 
    .. method:: prepare(record)
 

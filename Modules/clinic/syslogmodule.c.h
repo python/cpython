@@ -69,9 +69,6 @@ syslog_openlog(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
             _PyArg_BadArgument("openlog", "argument 'ident'", "str", args[0]);
             goto exit;
         }
-        if (PyUnicode_READY(args[0]) == -1) {
-            goto exit;
-        }
         ident = args[0];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -254,4 +251,4 @@ syslog_LOG_UPTO(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3b1bdb16565b8fda input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b8124c0977ed6177 input=a9049054013a1b77]*/

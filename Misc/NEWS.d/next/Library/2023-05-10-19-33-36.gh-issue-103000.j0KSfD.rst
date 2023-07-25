@@ -1,2 +1,0 @@
-Improve performance of :func:`dataclasses.asdict` for the common case where
-*dict_factory* is ``dict``. Patch by David C Ellis.

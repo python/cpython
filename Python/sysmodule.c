@@ -17,11 +17,13 @@ Data members:
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_SetAsyncGenFinalizer()
+#include "pycore_dict.h"          // _PyDict_GetItemWithError()
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_long.h"          // _PY_LONG_MAX_STR_DIGITS_THRESHOLD
+#include "pycore_modsupport.h"    // _PyModule_CreateInitialized()
 #include "pycore_namespace.h"     // _PyNamespace_New()
-#include "pycore_object.h"        // _PyObject_IS_GC()
+#include "pycore_object.h"        // _PyObject_IS_GC(), _PyObject_DebugTypeStats()
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pylifecycle.h"   // _PyErr_WriteUnraisableDefaultHook()
@@ -50,6 +52,10 @@ extern const char *PyWin_DLLVersionString;
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+#endif
+
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
 #endif
 
 /*[clinic input]
@@ -164,7 +170,7 @@ should_audit(PyInterpreterState *interp)
     if (!interp) {
         return 0;
     }
-    return (interp->runtime->audit_hook_head
+    return (interp->runtime->audit_hooks.head
             || interp->audit_hooks
             || PyDTrace_AUDIT_ENABLED());
 }
@@ -207,7 +213,7 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
 
     /* Initialize event args now */
     if (argFormat && argFormat[0]) {
-        eventArgs = _Py_VaBuildValue_SizeT(argFormat, vargs);
+        eventArgs = Py_VaBuildValue(argFormat, vargs);
         if (eventArgs && !PyTuple_Check(eventArgs)) {
             PyObject *argTuple = PyTuple_Pack(1, eventArgs);
             Py_SETREF(eventArgs, argTuple);
@@ -220,8 +226,11 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
         goto exit;
     }
 
-    /* Call global hooks */
-    _Py_AuditHookEntry *e = is->runtime->audit_hook_head;
+    /* Call global hooks
+     *
+     * We don't worry about any races on hooks getting added,
+     * since that would not leave is in an inconsistent state. */
+    _Py_AuditHookEntry *e = is->runtime->audit_hooks.head;
     for (; e; e = e->next) {
         if (e->hookCFunction(event, eventArgs, e->userData) < 0) {
             goto exit;
@@ -249,7 +258,7 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
         PyThreadState_EnterTracing(ts);
         while ((hook = PyIter_Next(hooks)) != NULL) {
             PyObject *o;
-            int canTrace = _PyObject_LookupAttr(hook, &_Py_ID(__cantrace__), &o);
+            int canTrace = PyObject_GetOptionalAttr(hook, &_Py_ID(__cantrace__), &o);
             if (o) {
                 canTrace = PyObject_IsTrue(o);
                 Py_DECREF(o);
@@ -261,7 +270,7 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
                 PyThreadState_LeaveTracing(ts);
             }
             PyObject* args[2] = {eventName, eventArgs};
-            o = _PyObject_FastCallTstate(ts, hook, args, 2);
+            o = _PyObject_VectorcallTstate(ts, hook, args, 2, NULL);
             if (canTrace) {
                 PyThreadState_EnterTracing(ts);
             }
@@ -332,6 +341,7 @@ _PySys_ClearAuditHooks(PyThreadState *ts)
     }
 
     _PyRuntimeState *runtime = ts->interp->runtime;
+    /* The hooks are global so we have to check for runtime finalization. */
     PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(runtime);
     assert(finalizing == ts);
     if (finalizing != ts) {
@@ -348,12 +358,32 @@ _PySys_ClearAuditHooks(PyThreadState *ts)
     _PySys_Audit(ts, "cpython._PySys_ClearAuditHooks", NULL);
     _PyErr_Clear(ts);
 
-    _Py_AuditHookEntry *e = runtime->audit_hook_head, *n;
-    runtime->audit_hook_head = NULL;
+    /* We don't worry about the very unlikely race right here,
+     * since it's entirely benign.  Nothing else removes entries
+     * from the list and adding an entry right now would not cause
+     * any trouble. */
+    _Py_AuditHookEntry *e = runtime->audit_hooks.head, *n;
+    runtime->audit_hooks.head = NULL;
     while (e) {
         n = e->next;
         PyMem_RawFree(e);
         e = n;
+    }
+}
+
+static void
+add_audit_hook_entry_unlocked(_PyRuntimeState *runtime,
+                              _Py_AuditHookEntry *entry)
+{
+    if (runtime->audit_hooks.head == NULL) {
+        runtime->audit_hooks.head = entry;
+    }
+    else {
+        _Py_AuditHookEntry *last = runtime->audit_hooks.head;
+        while (last->next) {
+            last = last->next;
+        }
+        last->next = entry;
     }
 }
 
@@ -384,28 +414,27 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
         }
     }
 
-    _Py_AuditHookEntry *e = runtime->audit_hook_head;
-    if (!e) {
-        e = (_Py_AuditHookEntry*)PyMem_RawMalloc(sizeof(_Py_AuditHookEntry));
-        runtime->audit_hook_head = e;
-    } else {
-        while (e->next) {
-            e = e->next;
-        }
-        e = e->next = (_Py_AuditHookEntry*)PyMem_RawMalloc(
+    _Py_AuditHookEntry *e = (_Py_AuditHookEntry*)PyMem_RawMalloc(
             sizeof(_Py_AuditHookEntry));
-    }
-
     if (!e) {
         if (tstate != NULL) {
             _PyErr_NoMemory(tstate);
         }
         return -1;
     }
-
     e->next = NULL;
     e->hookCFunction = (Py_AuditHookFunction)hook;
     e->userData = userData;
+
+    if (runtime->audit_hooks.mutex == NULL) {
+        /* The runtime must not be initialized yet. */
+        add_audit_hook_entry_unlocked(runtime, e);
+    }
+    else {
+        PyThread_acquire_lock(runtime->audit_hooks.mutex, WAIT_LOCK);
+        add_audit_hook_entry_unlocked(runtime, e);
+        PyThread_release_lock(runtime->audit_hooks.mutex);
+    }
 
     return 0;
 }
@@ -629,7 +658,7 @@ sys_displayhook_unencodable(PyObject *outf, PyObject *o)
     if (encoded == NULL)
         goto error;
 
-    if (_PyObject_LookupAttr(outf, &_Py_ID(buffer), &buffer) < 0) {
+    if (PyObject_GetOptionalAttr(outf, &_Py_ID(buffer), &buffer) < 0) {
         Py_DECREF(encoded);
         goto error;
     }
@@ -836,6 +865,13 @@ sys_exit_impl(PyObject *module, PyObject *status)
 }
 
 
+static PyObject *
+get_utf8_unicode(void)
+{
+    _Py_DECLARE_STR(utf_8, "utf-8");
+    PyObject *ret = &_Py_STR(utf_8);
+    return Py_NewRef(ret);
+}
 
 /*[clinic input]
 sys.getdefaultencoding
@@ -847,9 +883,7 @@ static PyObject *
 sys_getdefaultencoding_impl(PyObject *module)
 /*[clinic end generated code: output=256d19dfcc0711e6 input=d416856ddbef6909]*/
 {
-    _Py_DECLARE_STR(utf_8, "utf-8");
-    PyObject *ret = &_Py_STR(utf_8);
-    return Py_NewRef(ret);
+    return get_utf8_unicode();
 }
 
 /*[clinic input]
@@ -864,7 +898,17 @@ sys_getfilesystemencoding_impl(PyObject *module)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
-    return PyUnicode_FromWideChar(config->filesystem_encoding, -1);
+
+    if (wcscmp(config->filesystem_encoding, L"utf-8") == 0) {
+        return get_utf8_unicode();
+    }
+
+    PyObject *u = PyUnicode_FromWideChar(config->filesystem_encoding, -1);
+    if (u == NULL) {
+        return NULL;
+    }
+    _PyUnicode_InternInPlace(interp, &u);
+    return u;
 }
 
 /*[clinic input]
@@ -879,7 +923,12 @@ sys_getfilesystemencodeerrors_impl(PyObject *module)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
-    return PyUnicode_FromWideChar(config->filesystem_errors, -1);
+    PyObject *u = PyUnicode_FromWideChar(config->filesystem_errors, -1);
+    if (u == NULL) {
+        return NULL;
+    }
+    _PyUnicode_InternInPlace(interp, &u);
+    return u;
 }
 
 /*[clinic input]
@@ -932,12 +981,6 @@ static PyObject *
 call_trampoline(PyThreadState *tstate, PyObject* callback,
                 PyFrameObject *frame, int what, PyObject *arg)
 {
-
-    PyObject *stack[3];
-    stack[0] = (PyObject *)frame;
-    stack[1] = whatstrings[what];
-    stack[2] = (arg != NULL) ? arg : Py_None;
-
     /* Discard any previous modifications the frame's fast locals */
     if (frame->f_fast_as_locals) {
         if (PyFrame_FastToLocalsWithError(frame) < 0) {
@@ -946,13 +989,13 @@ call_trampoline(PyThreadState *tstate, PyObject* callback,
     }
 
     /* call the Python-level function */
-    PyObject *result = _PyObject_FastCallTstate(tstate, callback, stack, 3);
+    if (arg == NULL) {
+        arg = Py_None;
+    }
+    PyObject *args[3] = {(PyObject *)frame, whatstrings[what], arg};
+    PyObject *result = _PyObject_VectorcallTstate(tstate, callback, args, 3, NULL);
 
     PyFrame_LocalsToFast(frame, 1);
-    if (result == NULL) {
-        PyTraceBack_Here(frame);
-    }
-
     return result;
 }
 
@@ -2039,6 +2082,9 @@ sys__clear_type_cache_impl(PyObject *module)
     Py_RETURN_NONE;
 }
 
+/* Note that, for now, we do not have a per-interpreter equivalent
+  for sys.is_finalizing(). */
+
 /*[clinic input]
 sys.is_finalizing
 
@@ -2144,7 +2190,7 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
     if (strcmp(backend, "perf") == 0) {
         _PyPerf_Callbacks cur_cb;
         _PyPerfTrampoline_GetCallbacks(&cur_cb);
-        if (cur_cb.init_state != _Py_perfmap_callbacks.init_state) {
+        if (cur_cb.write_state != _Py_perfmap_callbacks.write_state) {
             if (_PyPerfTrampoline_SetCallbacks(&_Py_perfmap_callbacks) < 0 ) {
                 PyErr_SetString(PyExc_ValueError, "can't activate perf trampoline");
                 return NULL;
@@ -2238,6 +2284,83 @@ sys__getframemodulename_impl(PyObject *module, int depth)
     }
     return Py_NewRef(r);
 }
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+static PerfMapState perf_map_state;
+
+PyAPI_FUNC(int) PyUnstable_PerfMapState_Init(void) {
+#ifndef MS_WINDOWS
+    char filename[100];
+    pid_t pid = getpid();
+    // Use nofollow flag to prevent symlink attacks.
+    int flags = O_WRONLY | O_CREAT | O_APPEND | O_NOFOLLOW;
+#ifdef O_CLOEXEC
+    flags |= O_CLOEXEC;
+#endif
+    snprintf(filename, sizeof(filename) - 1, "/tmp/perf-%jd.map",
+                (intmax_t)pid);
+    int fd = open(filename, flags, 0600);
+    if (fd == -1) {
+        return -1;
+    }
+    else{
+        perf_map_state.perf_map = fdopen(fd, "a");
+        if (perf_map_state.perf_map == NULL) {
+            close(fd);
+            return -1;
+        }
+    }
+    perf_map_state.map_lock = PyThread_allocate_lock();
+    if (perf_map_state.map_lock == NULL) {
+        fclose(perf_map_state.perf_map);
+        return -2;
+    }
+#endif
+    return 0;
+}
+
+PyAPI_FUNC(int) PyUnstable_WritePerfMapEntry(
+    const void *code_addr,
+    unsigned int code_size,
+    const char *entry_name
+) {
+#ifndef MS_WINDOWS
+    if (perf_map_state.perf_map == NULL) {
+        int ret = PyUnstable_PerfMapState_Init();
+        if(ret != 0){
+            return ret;
+        }
+    }
+    PyThread_acquire_lock(perf_map_state.map_lock, 1);
+    fprintf(perf_map_state.perf_map, "%" PRIxPTR " %x %s\n", (uintptr_t) code_addr, code_size, entry_name);
+    fflush(perf_map_state.perf_map);
+    PyThread_release_lock(perf_map_state.map_lock);
+#endif
+    return 0;
+}
+
+PyAPI_FUNC(void) PyUnstable_PerfMapState_Fini(void) {
+#ifndef MS_WINDOWS
+    if (perf_map_state.perf_map != NULL) {
+        // close the file
+        PyThread_acquire_lock(perf_map_state.map_lock, 1);
+        fclose(perf_map_state.perf_map);
+        PyThread_release_lock(perf_map_state.map_lock);
+
+        // clean up the lock and state
+        PyThread_free_lock(perf_map_state.map_lock);
+        perf_map_state.perf_map = NULL;
+    }
+#endif
+}
+
+#ifdef __cplusplus
+}
+#endif
 
 
 static PyMethodDef sys_methods[] = {
@@ -2536,7 +2659,8 @@ _PySys_AddWarnOptionWithError(PyThreadState *tstate, PyObject *option)
     return 0;
 }
 
-void
+// Removed in Python 3.13 API, but kept for the stable ABI
+PyAPI_FUNC(void)
 PySys_AddWarnOptionUnicode(PyObject *option)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -2548,7 +2672,8 @@ PySys_AddWarnOptionUnicode(PyObject *option)
     }
 }
 
-void
+// Removed in Python 3.13 API, but kept for the stable ABI
+PyAPI_FUNC(void)
 PySys_AddWarnOption(const wchar_t *s)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -2567,7 +2692,8 @@ _Py_COMP_DIAG_POP
     Py_DECREF(unicode);
 }
 
-int
+// Removed in Python 3.13 API, but kept for the stable ABI
+PyAPI_FUNC(int)
 PySys_HasWarnOptions(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -2618,14 +2744,20 @@ _PySys_AddXOptionWithError(const wchar_t *s)
     const wchar_t *name_end = wcschr(s, L'=');
     if (!name_end) {
         name = PyUnicode_FromWideChar(s, -1);
+        if (name == NULL) {
+            goto error;
+        }
         value = Py_NewRef(Py_True);
     }
     else {
         name = PyUnicode_FromWideChar(s, name_end - s);
+        if (name == NULL) {
+            goto error;
+        }
         value = PyUnicode_FromWideChar(name_end + 1, -1);
-    }
-    if (name == NULL || value == NULL) {
-        goto error;
+        if (value == NULL) {
+            goto error;
+        }
     }
     if (PyDict_SetItem(opts, name, value) < 0) {
         goto error;
@@ -2640,7 +2772,8 @@ error:
     return -1;
 }
 
-void
+// Removed in Python 3.13 API, but kept for the stable ABI
+PyAPI_FUNC(void)
 PySys_AddXOption(const wchar_t *s)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -3265,19 +3398,25 @@ err_occurred:
 static int
 sys_add_xoption(PyObject *opts, const wchar_t *s)
 {
-    PyObject *name, *value;
+    PyObject *name, *value = NULL;
 
     const wchar_t *name_end = wcschr(s, L'=');
     if (!name_end) {
         name = PyUnicode_FromWideChar(s, -1);
+        if (name == NULL) {
+            goto error;
+        }
         value = Py_NewRef(Py_True);
     }
     else {
         name = PyUnicode_FromWideChar(s, name_end - s);
+        if (name == NULL) {
+            goto error;
+        }
         value = PyUnicode_FromWideChar(name_end + 1, -1);
-    }
-    if (name == NULL || value == NULL) {
-        goto error;
+        if (value == NULL) {
+            goto error;
+        }
     }
     if (PyDict_SetItem(opts, name, value) < 0) {
         goto error;
@@ -3543,7 +3682,8 @@ makepathobject(const wchar_t *path, wchar_t delim)
     return v;
 }
 
-void
+// Removed in Python 3.13 API, but kept for the stable ABI
+PyAPI_FUNC(void)
 PySys_SetPath(const wchar_t *path)
 {
     PyObject *v;
@@ -3575,7 +3715,8 @@ make_sys_argv(int argc, wchar_t * const * argv)
     return list;
 }
 
-void
+// Removed in Python 3.13 API, but kept for the stable ABI
+PyAPI_FUNC(void)
 PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
 {
     wchar_t* empty_argv[1] = {L""};
@@ -3619,7 +3760,8 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
     }
 }
 
-void
+// Removed in Python 3.13 API, but kept for the stable ABI
+PyAPI_FUNC(void)
 PySys_SetArgv(int argc, wchar_t **argv)
 {
 _Py_COMP_DIAG_PUSH
@@ -3637,7 +3779,7 @@ sys_pyfile_write_unicode(PyObject *unicode, PyObject *file)
     if (file == NULL)
         return -1;
     assert(unicode != NULL);
-    PyObject *result = _PyObject_CallMethodOneArg(file, &_Py_ID(write), unicode);
+    PyObject *result = PyObject_CallMethodOneArg(file, &_Py_ID(write), unicode);
     if (result == NULL) {
         return -1;
     }

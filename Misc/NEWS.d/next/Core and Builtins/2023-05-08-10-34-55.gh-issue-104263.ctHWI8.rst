@@ -1,6 +1,0 @@
-Fix ``float("nan")`` to produce a quiet NaN on platforms (like MIPS) where
-the meaning of the signalling / quiet bit is inverted from its usual
-meaning. Also introduce a new macro ``Py_INFINITY`` matching C99's
-``INFINITY``, and refactor internals to rely on C99's ``NAN`` and
-``INFINITY`` macros instead of hard-coding bit patterns for infinities and
-NaNs. Thanks Sebastian Berg.

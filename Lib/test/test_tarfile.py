@@ -100,6 +100,14 @@ class ReadTest(TarTest):
     def tearDown(self):
         self.tar.close()
 
+class StreamModeTest(ReadTest):
+
+    # Only needs to change how the tarfile is opened to set
+    # stream mode
+    def setUp(self):
+        self.tar = tarfile.open(self.tarname, mode=self.mode,
+                                encoding="iso8859-1",
+                                stream=True)
 
 class UstarReadTest(ReadTest, unittest.TestCase):
 
@@ -852,6 +860,21 @@ class Bz2StreamReadTest(Bz2Test, StreamReadTest):
 class LzmaStreamReadTest(LzmaTest, StreamReadTest):
     pass
 
+class TarStreamModeReadTest(StreamModeTest, unittest.TestCase):
+
+    def test_stream_mode_no_cache(self):
+        for _ in self.tar:
+            pass
+        self.assertEqual(self.tar.members, [])
+
+class GzipStreamModeReadTest(GzipTest, TarStreamModeReadTest):
+    pass
+
+class Bz2StreamModeReadTest(Bz2Test, TarStreamModeReadTest):
+    pass
+
+class LzmaStreamModeReadTest(LzmaTest, TarStreamModeReadTest):
+    pass
 
 class DetectReadTest(TarTest, unittest.TestCase):
     def _testfunc_file(self, name, mode):

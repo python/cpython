@@ -130,3 +130,38 @@ See also :ref:`Reflection <reflection>`.
 .. c:function:: int PyFrame_GetLineNumber(PyFrameObject *frame)
 
    Return the line number that *frame* is currently executing.
+
+
+
+Internal Frames
+^^^^^^^^^^^^^^^
+
+Unless using :pep:`523`, you will not need this.
+
+.. c:struct:: _PyInterpreterFrame
+
+   The interpreter's internal frame representation.
+
+   .. versionadded:: 3.11
+
+.. c:function:: PyObject* PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame);
+
+    Return a :term:`strong reference` to the code object for the frame.
+
+   .. versionadded:: 3.12
+
+
+.. c:function:: int PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame);
+
+   Return the byte offset into the last executed instruction.
+
+   .. versionadded:: 3.12
+
+
+.. c:function:: int PyUnstable_InterpreterFrame_GetLine(struct _PyInterpreterFrame *frame);
+
+   Return the currently executing line number, or -1 if there is no line number.
+
+   .. versionadded:: 3.12
+
+

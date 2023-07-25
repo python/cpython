@@ -298,27 +298,27 @@ Dictionary displays
 .. index::
    pair: dictionary; display
    pair: dictionary; comprehensions
-   key, datum, key/datum pair
+   key, value, key/value pair
    pair: object; dictionary
    single: {} (curly brackets); dictionary expression
    single: : (colon); in dictionary expressions
    single: , (comma); in dictionary displays
 
-A dictionary display is a possibly empty series of key/datum pairs enclosed in
-curly braces:
+A dictionary display is a possibly empty series of dict items (key/value pairs)
+enclosed in curly braces:
 
 .. productionlist:: python-grammar
-   dict_display: "{" [`key_datum_list` | `dict_comprehension`] "}"
-   key_datum_list: `key_datum` ("," `key_datum`)* [","]
-   key_datum: `expression` ":" `expression` | "**" `or_expr`
+   dict_display: "{" [`dict_item_list` | `dict_comprehension`] "}"
+   dict_item_list: `dict_item` ("," `dict_item`)* [","]
+   dict_item: `expression` ":" `expression` | "**" `or_expr`
    dict_comprehension: `expression` ":" `expression` `comp_for`
 
 A dictionary display yields a new dictionary object.
 
-If a comma-separated sequence of key/datum pairs is given, they are evaluated
+If a comma-separated sequence of dict items is given, they are evaluated
 from left to right to define the entries of the dictionary: each key object is
-used as a key into the dictionary to store the corresponding datum.  This means
-that you can specify the same key multiple times in the key/datum list, and the
+used as a key into the dictionary to store the corresponding value.  This means
+that you can specify the same key multiple times in the dict item list, and the
 final dictionary's value for that key will be the last one given.
 
 .. index::
@@ -328,7 +328,7 @@ final dictionary's value for that key will be the last one given.
 A double asterisk ``**`` denotes :dfn:`dictionary unpacking`.
 Its operand must be a :term:`mapping`.  Each mapping item is added
 to the new dictionary.  Later values replace values already set by
-earlier key/datum pairs and earlier dictionary unpackings.
+earlier dict items and earlier dictionary unpackings.
 
 .. versionadded:: 3.5
    Unpacking into dictionary displays, originally proposed by :pep:`448`.
@@ -344,7 +344,7 @@ in the new dictionary in the order they are produced.
 Restrictions on the types of the key values are listed earlier in section
 :ref:`types`.  (To summarize, the key type should be :term:`hashable`, which excludes
 all mutable objects.)  Clashes between duplicate keys are not detected; the last
-datum (textually rightmost in the display) stored for a given key value
+value (textually rightmost in the display) stored for a given key value
 prevails.
 
 .. versionchanged:: 3.8
@@ -595,12 +595,19 @@ is already executing raises a :exc:`ValueError` exception.
 .. method:: generator.close()
 
    Raises a :exc:`GeneratorExit` at the point where the generator function was
-   paused.  If the generator function then exits gracefully, is already closed,
-   or raises :exc:`GeneratorExit` (by not catching the exception), close
-   returns to its caller.  If the generator yields a value, a
-   :exc:`RuntimeError` is raised.  If the generator raises any other exception,
-   it is propagated to the caller.  :meth:`close` does nothing if the generator
-   has already exited due to an exception or normal exit.
+   paused.  If the generator function catches the exception and returns a
+   value, this value is returned from :meth:`close`.  If the generator function
+   is already closed, or raises :exc:`GeneratorExit` (by not catching the
+   exception), :meth:`close` returns :const:`None`.  If the generator yields a
+   value, a :exc:`RuntimeError` is raised.  If the generator raises any other
+   exception, it is propagated to the caller.  If the generator has already
+   exited due to an exception or normal exit, :meth:`close` returns
+   :const:`None` and has no other effect.
+
+   .. versionchanged:: 3.13
+
+      If a generator returns a value upon being closed, the value is returned
+      by :meth:`close`.
 
 .. index:: single: yield; examples
 

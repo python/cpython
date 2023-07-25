@@ -1,4 +1,0 @@
-:c:func:`PyType_FromSpec` and its variants now allow creating classes whose
-metaclass overrides :c:member:`~PyTypeObject.tp_new`. The ``tp_new`` is
-ignored. This behavior is deprecated and will be disallowed in 3.14+. The
-new :c:func:`PyType_FromMetaclass` already disallows it.

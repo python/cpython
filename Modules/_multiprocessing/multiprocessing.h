@@ -1,8 +1,6 @@
 #ifndef MULTIPROCESSING_H
 #define MULTIPROCESSING_H
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #include "structmember.h"
 #include "pythread.h"
