@@ -205,6 +205,24 @@ _opcode_has_exc_impl(PyObject *module, int opcode)
 
 /*[clinic input]
 
+_opcode.is_instrumented -> bool
+
+  opcode: int
+
+Return True if the opcode is instrumented, False otherwise.
+[clinic start generated code]*/
+
+static int
+_opcode_is_instrumented_impl(PyObject *module, int opcode)
+/*[clinic end generated code: output=dbfb4dce2bef87c8 input=5122645f4009417a]*/
+{
+    return PyUnstable_OpcodeIsValid(opcode) &&
+           PyUnstable_OpcodeIsInstrumented(opcode);
+}
+
+
+/*[clinic input]
+
 _opcode.get_specialization_stats
 
 Return the specialization stats
@@ -286,6 +304,7 @@ opcode_functions[] =  {
     _OPCODE_HAS_FREE_METHODDEF
     _OPCODE_HAS_LOCAL_METHODDEF
     _OPCODE_HAS_EXC_METHODDEF
+    _OPCODE_IS_INSTRUMENTED_METHODDEF
     _OPCODE_GET_SPECIALIZATION_STATS_METHODDEF
     _OPCODE_GET_INTRINSIC1_DESCS_METHODDEF
     _OPCODE_GET_INTRINSIC2_DESCS_METHODDEF

@@ -18,6 +18,7 @@ class OpListTests(unittest.TestCase):
         self.check_bool_function_result(_opcode.has_free, invalid, False)
         self.check_bool_function_result(_opcode.has_local, invalid, False)
         self.check_bool_function_result(_opcode.has_exc, invalid, False)
+        self.check_bool_function_result(_opcode.is_instrumented, invalid, False)
 
     def test_is_valid(self):
         names = [

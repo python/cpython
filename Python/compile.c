@@ -915,6 +915,12 @@ PyUnstable_OpcodeHasExc(int opcode)
     return IS_BLOCK_PUSH_OPCODE(opcode);
 }
 
+int
+PyUnstable_OpcodeIsInstrumented(int opcode)
+{
+    return OPCODE_IS_INSTRUMENTED(opcode);
+}
+
 static int
 codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
 {

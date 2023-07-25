@@ -192,7 +192,6 @@ def_op('SET_FUNCTION_ATTRIBUTE', 177)    # Attribute
 def_op('ENTER_EXECUTOR', 230)
 
 # Instrumented instructions
-MIN_INSTRUMENTED_OPCODE = 237
 
 def_op('INSTRUMENTED_LOAD_SUPER_ATTR', 237)
 def_op('INSTRUMENTED_POP_JUMP_IF_NONE', 238)

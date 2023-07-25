@@ -15,6 +15,7 @@ class InstructionFlags:
     HAS_JUMP_FLAG: bool
     HAS_FREE_FLAG: bool
     HAS_LOCAL_FLAG: bool
+    IS_INSTRUMENTED_FLAG: bool
 
     def __post_init__(self):
         self.bitmask = {name: (1 << i) for i, name in enumerate(self.names())}
@@ -38,11 +39,12 @@ class InstructionFlags:
                 variable_used(instr, "GETLOCAL") or variable_used(instr, "SETLOCAL")
             )
             and not has_free,
+            IS_INSTRUMENTED_FLAG=instr.name.startswith("INSTRUMENTED_"),
         )
 
     @staticmethod
     def newEmpty():
-        return InstructionFlags(False, False, False, False, False, False)
+        return InstructionFlags(False, False, False, False, False, False, False)
 
     def add(self, other: "InstructionFlags") -> None:
         for name, value in dataclasses.asdict(other).items():

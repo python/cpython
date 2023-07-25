@@ -3,12 +3,13 @@
 #include "pycore_frame.h"
 #include "pycore_interp.h"
 #include "pycore_long.h"
-#include "pycore_modsupport.h"    // _PyModule_CreateInitialized()
+#include "pycore_modsupport.h"       // _PyModule_CreateInitialized()
 #include "pycore_namespace.h"
 #include "pycore_object.h"
 #include "pycore_opcode.h"
+#include "pycore_opcode_metadata.h"  // OPCODE_IS_INSTRUMENTED
 #include "pycore_pyerrors.h"
-#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_pystate.h"          // _PyInterpreterState_GET()
 
 /* Uncomment this to dump debugging output when assertions fail */
 // #define INSTRUMENT_DEBUG 1
@@ -130,7 +131,7 @@ is_instrumented(int opcode)
 {
     assert(opcode != 0);
     assert(opcode != RESERVED);
-    return opcode >= MIN_INSTRUMENTED_OPCODE;
+    return OPCODE_IS_INSTRUMENTED(opcode);
 }
 
 #ifndef NDEBUG

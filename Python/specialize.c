@@ -7,8 +7,9 @@
 #include "pycore_long.h"
 #include "pycore_moduleobject.h"
 #include "pycore_object.h"
-#include "pycore_opcode.h"        // _PyOpcode_Caches
-#include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
+#include "pycore_opcode.h"          // _PyOpcode_Caches
+#include "pycore_opcode_metadata.h" // OPCODE_IS_INSTRUMENTED
+#include "pycore_pylifecycle.h"     // _PyOS_URandomNonblock()
 
 
 #include <stdlib.h> // rand()
@@ -279,7 +280,7 @@ _PyCode_Quicken(PyCodeObject *code)
     _Py_CODEUNIT *instructions = _PyCode_CODE(code);
     for (int i = 0; i < Py_SIZE(code); i++) {
         opcode = _Py_GetBaseOpcode(code, i);
-        assert(opcode < MIN_INSTRUMENTED_OPCODE);
+        assert(!OPCODE_IS_INSTRUMENTED(opcode));
         int caches = _PyOpcode_Caches[opcode];
         if (caches) {
             instructions[i + 1].cache = adaptive_counter_warmup();

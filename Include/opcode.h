@@ -127,7 +127,6 @@ extern "C" {
 #define LOAD_FROM_DICT_OR_DEREF                176
 #define SET_FUNCTION_ATTRIBUTE                 177
 #define ENTER_EXECUTOR                         230
-#define MIN_INSTRUMENTED_OPCODE                237
 #define INSTRUMENTED_LOAD_SUPER_ATTR           237
 #define INSTRUMENTED_POP_JUMP_IF_NONE          238
 #define INSTRUMENTED_POP_JUMP_IF_NOT_NONE      239

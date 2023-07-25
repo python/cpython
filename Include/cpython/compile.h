@@ -76,6 +76,7 @@ PyAPI_FUNC(int) PyUnstable_OpcodeHasJump(int opcode);
 PyAPI_FUNC(int) PyUnstable_OpcodeHasFree(int opcode);
 PyAPI_FUNC(int) PyUnstable_OpcodeHasLocal(int opcode);
 PyAPI_FUNC(int) PyUnstable_OpcodeHasExc(int opcode);
+PyAPI_FUNC(int) PyUnstable_OpcodeIsInstrumented(int opcode);
 
 PyAPI_FUNC(PyObject*) _PyUnstable_GetUnaryIntrinsicName(int index);
 PyAPI_FUNC(PyObject*) _PyUnstable_GetBinaryIntrinsicName(int index);
