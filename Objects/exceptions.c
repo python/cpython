@@ -2112,7 +2112,7 @@ static PyMemberDef OSError_members[] = {
     {"filename2", _Py_T_OBJECT, offsetof(PyOSErrorObject, filename2), 0,
         PyDoc_STR("second exception filename")},
 #ifdef MS_WINDOWS
-    {"winerror", Py_T_OBJECT_EX, offsetof(PyOSErrorObject, winerror), 0,
+    {"winerror", _Py_T_OBJECT, offsetof(PyOSErrorObject, winerror), 0,
         PyDoc_STR("Win32 exception code")},
 #endif
     {NULL}  /* Sentinel */
