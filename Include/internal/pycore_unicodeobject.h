@@ -187,7 +187,7 @@ _PyUnicodeWriter_Dealloc(_PyUnicodeWriter *writer);
 
 /* Format the object based on the format_spec, as defined in PEP 3101
    (Advanced String Formatting). */
-PyAPI_FUNC(int) _PyUnicode_FormatAdvancedWriter(
+extern int _PyUnicode_FormatAdvancedWriter(
     _PyUnicodeWriter *writer,
     PyObject *obj,
     PyObject *format_spec,
@@ -245,8 +245,9 @@ extern PyObject* _PyUnicode_DecodeUnicodeEscapeStateful(
     const char *errors,     /* error handling */
     Py_ssize_t *consumed);  /* bytes consumed */
 
-/* Helper for PyUnicode_DecodeUnicodeEscape that detects invalid escape
-   chars. */
+// Helper for PyUnicode_DecodeUnicodeEscape that detects invalid escape
+// chars.
+// Export for test_peg_generator.
 PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscapeInternal(
     const char *string,     /* Unicode-Escape encoded string */
     Py_ssize_t length,      /* size of string */
@@ -369,6 +370,7 @@ PyAPI_FUNC(int) _PyUnicode_Equal(PyObject *, PyObject *);
 extern int _PyUnicode_WideCharString_Converter(PyObject *, void *);
 extern int _PyUnicode_WideCharString_Opt_Converter(PyObject *, void *);
 
+// Export for test_peg_generator
 PyAPI_FUNC(Py_ssize_t) _PyUnicode_ScanIdentifier(PyObject *);
 
 /* --- Runtime lifecycle -------------------------------------------------- */
