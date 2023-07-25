@@ -10,7 +10,7 @@
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "structmember.h"         // PyMemberDef
+
 #include "opcode.h"               // SEND
 #include "frameobject.h"          // _PyInterpreterFrame_GetLine
 #include "pystats.h"
@@ -1144,7 +1144,7 @@ static PyGetSetDef coro_getsetlist[] = {
 };
 
 static PyMemberDef coro_memberlist[] = {
-    {"cr_origin",    T_OBJECT, offsetof(PyCoroObject, cr_origin_or_finalizer),   READONLY},
+    {"cr_origin",    _Py_T_OBJECT, offsetof(PyCoroObject, cr_origin_or_finalizer),   Py_READONLY},
     {NULL}      /* Sentinel */
 };
 
@@ -1558,8 +1558,8 @@ static PyGetSetDef async_gen_getsetlist[] = {
 };
 
 static PyMemberDef async_gen_memberlist[] = {
-    {"ag_running", T_BOOL,   offsetof(PyAsyncGenObject, ag_running_async),
-        READONLY},
+    {"ag_running", Py_T_BOOL,   offsetof(PyAsyncGenObject, ag_running_async),
+        Py_READONLY},
     {NULL}      /* Sentinel */
 };
 

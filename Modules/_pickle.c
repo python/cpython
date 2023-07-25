@@ -16,7 +16,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
-#include "structmember.h"         // PyMemberDef
+
 
 #include <stdlib.h>               // strtol()
 
@@ -5074,9 +5074,9 @@ Pickler_set_persid(PicklerObject *self, PyObject *value, void *Py_UNUSED(ignored
 }
 
 static PyMemberDef Pickler_members[] = {
-    {"bin", T_INT, offsetof(PicklerObject, bin)},
-    {"fast", T_INT, offsetof(PicklerObject, fast)},
-    {"dispatch_table", T_OBJECT_EX, offsetof(PicklerObject, dispatch_table)},
+    {"bin", Py_T_INT, offsetof(PicklerObject, bin)},
+    {"fast", Py_T_INT, offsetof(PicklerObject, fast)},
+    {"dispatch_table", Py_T_OBJECT_EX, offsetof(PicklerObject, dispatch_table)},
     {NULL}
 };
 
