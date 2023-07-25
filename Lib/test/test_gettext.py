@@ -329,6 +329,8 @@ class PluralFormsTestCase(GettextBaseTest):
         x = gettext.npgettext('With context',
                               'There is %s file', 'There are %s files', 2)
         eq(x, 'Hay %s ficheros (context)')
+        x = gettext.pgettext('With context', 'There is %s file')
+        eq(x, 'Hay %s fichero (context)')
 
     def test_plural_forms2(self):
         eq = self.assertEqual
@@ -349,6 +351,8 @@ class PluralFormsTestCase(GettextBaseTest):
         x = t.npgettext('With context',
                         'There is %s file', 'There are %s files', 2)
         eq(x, 'Hay %s ficheros (context)')
+        x = gettext.pgettext('With context', 'There is %s file')
+        eq(x, 'Hay %s fichero (context)')
 
     # Examples from http://www.gnu.org/software/gettext/manual/gettext.html
 
