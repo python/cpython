@@ -255,16 +255,17 @@ shared memory blocks created using that manager are all released when the
 :keyword:`with` statement's code block finishes execution.
 
 
-.. class:: ShareableList(sequence=None, *, name=None)
+.. class:: ShareableList(sequence=None, \*, name=None)
 
    Provides a mutable list-like object where all values stored within are
    stored in a shared memory block.  This constrains storable values to
-   only the ``int``, ``float``, ``bool``, ``str`` (less than 10M bytes each),
-   ``bytes`` (less than 10M bytes each), and ``None`` built-in data types.
-   It also notably differs from the built-in ``list`` type in that these
-   lists can not change their overall length (i.e. no append, insert, etc.)
-   and do not support the dynamic creation of new :class:`ShareableList`
-   instances via slicing.
+   only the ``int`` (signed 64-bit), ``float``, ``bool``, ``str`` (less
+   than 10M bytes each when encoded as utf-8), ``bytes`` (less than 10M
+   bytes each), and ``None`` built-in data types.  It also notably
+   differs from the built-in ``list`` type in that these lists can not
+   change their overall length (i.e. no append, insert, etc.) and do not
+   support the dynamic creation of new :class:`ShareableList` instances
+   via slicing.
 
    *sequence* is used in populating a new ``ShareableList`` full of values.
    Set to ``None`` to instead attach to an already existing
