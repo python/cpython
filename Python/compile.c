@@ -7527,6 +7527,9 @@ build_cellfixedoffsets(_PyCompile_CodeUnitMetadata *umd)
     return fixed;
 }
 
+#define IS_GENERATOR(CF) \
+    ((CF) & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR))
+
 static int
 insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entryblock,
                            int *fixed, int nfreevars, int code_flags)
@@ -7534,7 +7537,7 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
     assert(umd->u_firstlineno > 0);
 
     /* Add the generator prefix instructions. */
-    if (code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
+    if (IS_GENERATOR(code_flags)) {
         /* Note that RETURN_GENERATOR + POP_TOP have a net stack effect
          * of 0. This is because RETURN_GENERATOR pushes an element
          * with _PyFrame_StackPush before switching stacks.
@@ -7729,6 +7732,7 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
         goto error;
     }
     assert(stackdepth >= 0);
+    assert(!(IS_GENERATOR(code_flags) && stackdepth == 0));
 
     /** Assembly **/
     int nlocalsplus = prepare_localsplus(&u->u_metadata, &g, code_flags);
