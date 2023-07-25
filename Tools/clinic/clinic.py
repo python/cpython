@@ -45,6 +45,7 @@ from typing import (
     Protocol,
     TypeGuard,
     TypeVar,
+    cast,
     overload,
 )
 
@@ -2694,9 +2695,12 @@ def add_legacy_c_converter(
     return closure
 
 class CConverterAutoRegister(type):
-    def __init__(cls, name, bases, classdict):
-        add_c_converter(cls)
-        add_default_legacy_c_converter(cls)
+    def __init__(
+        cls, name: str, bases: tuple[type, ...], classdict: dict[str, Any]
+    ) -> None:
+        converter_cls = cast(type["CConverter"], cls)
+        add_c_converter(converter_cls)
+        add_default_legacy_c_converter(converter_cls)
 
 class CConverter(metaclass=CConverterAutoRegister):
     """
@@ -3174,10 +3178,10 @@ class defining_class_converter(CConverter):
     def converter_init(self, *, type: str | None = None) -> None:
         self.specified_type = type
 
-    def render(self, parameter, data) -> None:
+    def render(self, parameter: Parameter, data: CRenderData) -> None:
         self._render_self(parameter, data)
 
-    def set_template_dict(self, template_dict):
+    def set_template_dict(self, template_dict: TemplateDict) -> None:
         template_dict['defining_class_name'] = self.name
 
 
@@ -4048,7 +4052,7 @@ class self_converter(CConverter):
         assert isinstance(self.function, Function)
         return required_type_for_self_for_parser(self.function) or self.type
 
-    def render(self, parameter, data):
+    def render(self, parameter: Parameter, data: CRenderData) -> None:
         """
         parameter is a clinic.Parameter instance.
         data is a CRenderData instance.
@@ -4064,6 +4068,7 @@ class self_converter(CConverter):
             # because we render parameters in order, and self is always first.
             assert len(data.impl_arguments) == 1
             assert data.impl_arguments[0] == self.name
+            assert self.type is not None
             data.impl_arguments[0] = '(' + self.type + ")" + data.impl_arguments[0]
 
     def set_template_dict(self, template_dict: TemplateDict) -> None:
