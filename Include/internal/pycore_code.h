@@ -262,7 +262,6 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 
 #ifdef Py_STATS
 
-
 #define STAT_INC(opname, name) do { if (_py_stats) _py_stats->opcode_stats[opname].specialization.name++; } while (0)
 #define STAT_DEC(opname, name) do { if (_py_stats) _py_stats->opcode_stats[opname].specialization.name--; } while (0)
 #define OPCODE_EXE_INC(opname) do { if (_py_stats) _py_stats->opcode_stats[opname].execution_count++; } while (0)
@@ -274,7 +273,7 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 #define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) \
     do { if (_py_stats && PyFunction_Check(callable)) _py_stats->call_stats.eval_calls[name]++; } while (0)
 
-// Export for stdlib '_opcode' shared extension
+// Export for '_opcode' shared extension
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 
 #else

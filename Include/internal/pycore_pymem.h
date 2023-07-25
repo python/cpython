@@ -10,14 +10,14 @@ extern "C" {
 
 // Try to get the allocators name set by _PyMem_SetupAllocators().
 // Return NULL if unknown.
-// Export for shared _testinternalcapi extension.
+// Export for '_testinternalcapi' shared extension.
 PyAPI_FUNC(const char*) _PyMem_GetCurrentAllocatorName(void);
 
 // strdup() using PyMem_RawMalloc()
 extern char* _PyMem_RawStrdup(const char *str);
 
 // strdup() using PyMem_Malloc().
-// Export for shared _pickle extension.
+// Export for '_pickle ' shared extension.
 PyAPI_FUNC(char*) _PyMem_Strdup(const char *str);
 
 // wcsdup() using PyMem_RawMalloc()

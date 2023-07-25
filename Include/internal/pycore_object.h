@@ -434,7 +434,8 @@ extern PyObject ** _PyObject_ComputedDictPointer(PyObject *);
 extern void _PyObject_FreeInstanceAttributes(PyObject *obj);
 extern int _PyObject_IsInstanceDictEmpty(PyObject *);
 
-PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
+// Export for 'math' shared extension
+PyAPI_FUNC(PyObject*) _PyObject_LookupSpecial(PyObject *, PyObject *);
 
 extern int _PyObject_IsAbstract(PyObject *);
 
