@@ -855,9 +855,13 @@ using ``[]``.
    cases. If ``AnyStr`` is not part of the input arguments it should not be
    used::
 
+      # Invalid use of AnyStr:
+      # The type variable is used only once in the function signature,
+      # so cannot be "solved" by the type checker
       def greet_bad(cond: bool) -> AnyStr:
-          return "hi there!" if cond else b"greetings!"  # Error
+          return "hi there!" if cond else b"greetings!"
 
+      # The better way of annotating this function:
       def greet_proper(cond: bool) -> str | bytes:
           return "hi there!" if cond else b"greetings!"  # OK
 
