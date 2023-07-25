@@ -3660,10 +3660,12 @@ class str_converter(CConverter):
         if NoneType in accept and self.c_default == "Py_None":
             self.c_default = "NULL"
 
-    def post_parsing(self):
+    def post_parsing(self) -> str:
         if self.encoding:
             name = self.name
             return f"PyMem_FREE({name});\n"
+        else:
+            return ""
 
     def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 's':
@@ -3841,8 +3843,10 @@ class Py_UNICODE_converter(CConverter):
                 fail("Py_UNICODE_converter: illegal 'accept' argument " + repr(accept))
         self.c_default = "NULL"
 
-    def cleanup(self):
-        if not self.length:
+    def cleanup(self) -> str:
+        if self.length:
+            return ""
+        else:
             return """\
 PyMem_Free((void *){name});
 """.format(name=self.name)
