@@ -5,7 +5,7 @@
 Capsules
 --------
 
-.. index:: object: Capsule
+.. index:: pair: object; Capsule
 
 Refer to :ref:`using-capsules` for more information on using these objects.
 

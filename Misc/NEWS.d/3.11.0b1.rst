@@ -796,7 +796,7 @@ Patch by Kabir Kwatra.
 .. nonce: roapI2
 .. section: Library
 
-The :mod:`mailcap` module is now deprecated and will be removed in Python
+The :mod:`!mailcap` module is now deprecated and will be removed in Python
 3.13. See :pep:`594` for the rationale and the :mod:`mimetypes` module for
 an alternative. Patch by Victor Stinner.
 
@@ -817,8 +817,8 @@ it is ever needed and document the existing mechanism for ``posix_spawn()``.
 .. nonce: HFtERN
 .. section: Library
 
-Fix :data:`signal.NSIG` value on FreeBSD to accept signal numbers greater
-than 32, like :data:`signal.SIGRTMIN` and :data:`signal.SIGRTMAX`. Patch by
+Fix :const:`signal.NSIG` value on FreeBSD to accept signal numbers greater
+than 32, like :const:`signal.SIGRTMIN` and :const:`signal.SIGRTMAX`. Patch by
 Victor Stinner.
 
 ..

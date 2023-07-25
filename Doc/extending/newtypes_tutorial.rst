@@ -88,7 +88,7 @@ standard Python floats::
 The second bit is the definition of the type object. ::
 
    static PyTypeObject CustomType = {
-       PyVarObject_HEAD_INIT(NULL, 0)
+       .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
        .tp_name = "custom.Custom",
        .tp_doc = PyDoc_STR("Custom objects"),
        .tp_basicsize = sizeof(CustomObject),
@@ -109,7 +109,7 @@ common practice to not specify them explicitly unless you need them.
 
 We're going to pick it apart, one field at a time::
 
-   PyVarObject_HEAD_INIT(NULL, 0)
+   .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
 
 This line is mandatory boilerplate to initialize the ``ob_base``
 field mentioned above. ::
@@ -151,7 +151,7 @@ only used for variable-sized objects and should otherwise be zero.
    base type will be :class:`object`, or else you will be adding data members to
    your base type, and therefore increasing its size.
 
-We set the class flags to :const:`Py_TPFLAGS_DEFAULT`. ::
+We set the class flags to :c:macro:`Py_TPFLAGS_DEFAULT`. ::
 
    .tp_flags = Py_TPFLAGS_DEFAULT,
 
@@ -180,9 +180,7 @@ This initializes the :class:`Custom` type, filling in a number of members
 to the appropriate default values, including :attr:`ob_type` that we initially
 set to ``NULL``. ::
 
-   Py_INCREF(&CustomType);
-   if (PyModule_AddObject(m, "Custom", (PyObject *) &CustomType) < 0) {
-       Py_DECREF(&CustomType);
+   if (PyModule_AddObjectRef(m, "Custom", (PyObject *) &CustomType) < 0) {
        Py_DECREF(m);
        return NULL;
    }
@@ -498,7 +496,7 @@ definitions::
        {NULL}  /* Sentinel */
    };
 
-(note that we used the :const:`METH_NOARGS` flag to indicate that the method
+(note that we used the :c:macro:`METH_NOARGS` flag to indicate that the method
 is expecting no arguments other than *self*)
 
 and assign it to the :c:member:`~PyTypeObject.tp_methods` slot::
@@ -508,7 +506,7 @@ and assign it to the :c:member:`~PyTypeObject.tp_methods` slot::
 Finally, we'll make our type usable as a base class for subclassing.  We've
 written our methods carefully so far so that they don't make any assumptions
 about the type of the object being created or used, so all we need to do is
-to add the :const:`Py_TPFLAGS_BASETYPE` to our class flag definition::
+to add the :c:macro:`Py_TPFLAGS_BASETYPE` to our class flag definition::
 
    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
 
@@ -774,7 +772,7 @@ and ``Custom_clear``::
        Py_TYPE(self)->tp_free((PyObject *) self);
    }
 
-Finally, we add the :const:`Py_TPFLAGS_HAVE_GC` flag to the class flags::
+Finally, we add the :c:macro:`Py_TPFLAGS_HAVE_GC` flag to the class flags::
 
    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
 
@@ -862,9 +860,7 @@ function::
        if (m == NULL)
            return NULL;
 
-       Py_INCREF(&SubListType);
-       if (PyModule_AddObject(m, "SubList", (PyObject *) &SubListType) < 0) {
-           Py_DECREF(&SubListType);
+       if (PyModule_AddObjectRef(m, "SubList", (PyObject *) &SubListType) < 0) {
            Py_DECREF(m);
            return NULL;
        }
