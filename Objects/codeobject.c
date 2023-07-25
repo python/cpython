@@ -2,7 +2,7 @@
 
 #include "Python.h"
 #include "opcode.h"
-#include "structmember.h"         // PyMemberDef
+
 #include "pycore_code.h"          // _PyCodeConstructor
 #include "pycore_frame.h"         // FRAME_SPECIALS_SIZE
 #include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
@@ -1877,20 +1877,20 @@ code_hash(PyCodeObject *co)
 #define OFF(x) offsetof(PyCodeObject, x)
 
 static PyMemberDef code_memberlist[] = {
-    {"co_argcount",        T_INT,    OFF(co_argcount),        READONLY},
-    {"co_posonlyargcount", T_INT,    OFF(co_posonlyargcount), READONLY},
-    {"co_kwonlyargcount",  T_INT,    OFF(co_kwonlyargcount),  READONLY},
-    {"co_stacksize",       T_INT,    OFF(co_stacksize),       READONLY},
-    {"co_flags",           T_INT,    OFF(co_flags),           READONLY},
-    {"co_nlocals",         T_INT,    OFF(co_nlocals),         READONLY},
-    {"co_consts",          T_OBJECT, OFF(co_consts),          READONLY},
-    {"co_names",           T_OBJECT, OFF(co_names),           READONLY},
-    {"co_filename",        T_OBJECT, OFF(co_filename),        READONLY},
-    {"co_name",            T_OBJECT, OFF(co_name),            READONLY},
-    {"co_qualname",        T_OBJECT, OFF(co_qualname),        READONLY},
-    {"co_firstlineno",     T_INT,    OFF(co_firstlineno),     READONLY},
-    {"co_linetable",       T_OBJECT, OFF(co_linetable),       READONLY},
-    {"co_exceptiontable",  T_OBJECT, OFF(co_exceptiontable),  READONLY},
+    {"co_argcount",        Py_T_INT,     OFF(co_argcount),        Py_READONLY},
+    {"co_posonlyargcount", Py_T_INT,     OFF(co_posonlyargcount), Py_READONLY},
+    {"co_kwonlyargcount",  Py_T_INT,     OFF(co_kwonlyargcount),  Py_READONLY},
+    {"co_stacksize",       Py_T_INT,     OFF(co_stacksize),       Py_READONLY},
+    {"co_flags",           Py_T_INT,     OFF(co_flags),           Py_READONLY},
+    {"co_nlocals",         Py_T_INT,     OFF(co_nlocals),         Py_READONLY},
+    {"co_consts",          _Py_T_OBJECT, OFF(co_consts),          Py_READONLY},
+    {"co_names",           _Py_T_OBJECT, OFF(co_names),           Py_READONLY},
+    {"co_filename",        _Py_T_OBJECT, OFF(co_filename),        Py_READONLY},
+    {"co_name",            _Py_T_OBJECT, OFF(co_name),            Py_READONLY},
+    {"co_qualname",        _Py_T_OBJECT, OFF(co_qualname),        Py_READONLY},
+    {"co_firstlineno",     Py_T_INT,     OFF(co_firstlineno),     Py_READONLY},
+    {"co_linetable",       _Py_T_OBJECT, OFF(co_linetable),       Py_READONLY},
+    {"co_exceptiontable",  _Py_T_OBJECT, OFF(co_exceptiontable),  Py_READONLY},
     {NULL}      /* Sentinel */
 };
 

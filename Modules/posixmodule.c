@@ -36,7 +36,7 @@
 #  endif /* MS_WINDOWS_DESKTOP | MS_WINDOWS_SYSTEM */
 #endif
 
-#include "structmember.h"         // PyMemberDef
+
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"
 #else
@@ -14822,9 +14822,9 @@ os_DirEntry___fspath___impl(DirEntry *self)
 }
 
 static PyMemberDef DirEntry_members[] = {
-    {"name", T_OBJECT_EX, offsetof(DirEntry, name), READONLY,
+    {"name", Py_T_OBJECT_EX, offsetof(DirEntry, name), Py_READONLY,
      "the entry's base filename, relative to scandir() \"path\" argument"},
-    {"path", T_OBJECT_EX, offsetof(DirEntry, path), READONLY,
+    {"path", Py_T_OBJECT_EX, offsetof(DirEntry, path), Py_READONLY,
      "the entry's full path name; equivalent to os.path.join(scandir_path, entry.name)"},
     {NULL}
 };
