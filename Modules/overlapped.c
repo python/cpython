@@ -1996,12 +1996,7 @@ static PyMethodDef overlapped_functions[] = {
 
 #define WINAPI_CONSTANT(fmt, con) \
     do { \
-        PyObject *value = Py_BuildValue(fmt, con); \
-        if (value == NULL) { \
-            return -1; \
-        } \
-        if (PyModule_AddObject(module, #con, value) < 0 ) { \
-            Py_DECREF(value); \
+        if (PyModule_Add(module, #con, Py_BuildValue(fmt, con)) < 0 ) { \
             return -1; \
         } \
     } while (0)
