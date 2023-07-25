@@ -5986,7 +5986,7 @@ sslmodule_init_constants(PyObject *m)
 #define addbool(m, key, value) \
     do { \
         PyObject *bool_obj = (value) ? Py_True : Py_False; \
-        PyModule_AddObject((m), (key), Py_NewRef(bool_obj)); \
+        PyModule_AddObjectRef((m), (key), bool_obj); \
     } while (0)
 
     addbool(m, "HAS_SNI", 1);

@@ -276,6 +276,13 @@ _PyInstruction_GetLength(PyCodeObject *code, int offset)
     }
     assert(opcode != 0);
     assert(!is_instrumented(opcode));
+    if (opcode == ENTER_EXECUTOR) {
+        int exec_index = _PyCode_CODE(code)[offset].op.arg;
+        _PyExecutorObject *exec = code->co_executors->executors[exec_index];
+        opcode = exec->vm_data.opcode;
+
+    }
+    assert(opcode != ENTER_EXECUTOR);
     assert(opcode == _PyOpcode_Deopt[opcode]);
     return 1 + _PyOpcode_Caches[opcode];
 }
