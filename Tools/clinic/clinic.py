@@ -2393,10 +2393,10 @@ class Module:
 @dc.dataclass(repr=False)
 class Class:
     name: str
-    module: Module | None = None
-    cls: Class | None = None
-    typedef: str | None = None
-    type_object: str | None = None
+    module: Module
+    cls: Class | None
+    typedef: str
+    type_object: str
 
     def __post_init__(self) -> None:
         self.parent = self.cls or self.module
