@@ -1236,7 +1236,7 @@ date.resolution = timedelta(days=1)
 class tzinfo:
     """Abstract base class for time zone info classes.
 
-    Subclasses must override the name(), utcoffset() and dst() methods.
+    Subclasses must override the tzname(), utcoffset() and dst() methods.
     """
     __slots__ = ()
 
