@@ -187,9 +187,13 @@ struct _module_alias {
     const char *orig;                 /* ASCII encoded string */
 };
 
-PyAPI_DATA(const struct _frozen *) _PyImport_FrozenBootstrap;
-PyAPI_DATA(const struct _frozen *) _PyImport_FrozenStdlib;
-PyAPI_DATA(const struct _frozen *) _PyImport_FrozenTest;
+// Export for test_ctypes
+PyAPI_DATA(const struct _frozen*) _PyImport_FrozenBootstrap;
+// Export for test_ctypes
+PyAPI_DATA(const struct _frozen*) _PyImport_FrozenStdlib;
+// Export for test_ctypes
+PyAPI_DATA(const struct _frozen*) _PyImport_FrozenTest;
+
 extern const struct _module_alias * _PyImport_FrozenAliases;
 
 extern int _PyImport_CheckSubinterpIncompatibleExtensionAllowed(
@@ -197,7 +201,7 @@ extern int _PyImport_CheckSubinterpIncompatibleExtensionAllowed(
 
 
 // Export for '_testinternalcapi' shared extension
-PyAPI_DATA(int) _PyImport_ClearExtension(PyObject *name, PyObject *filename);
+PyAPI_FUNC(int) _PyImport_ClearExtension(PyObject *name, PyObject *filename);
 
 #ifdef __cplusplus
 }
