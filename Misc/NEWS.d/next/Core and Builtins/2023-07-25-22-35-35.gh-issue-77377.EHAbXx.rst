@@ -1,0 +1,1 @@
+Ensure that multiprocessing SemLock object created in a fork context are not send to a different process created in a spawn context. This changes changes a segfault into an actionable RuntimeError in the parent process.
