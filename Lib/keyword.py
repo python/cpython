@@ -23,8 +23,6 @@ kwlist = [
     'as',
     'assert',
     'async',
-    'async',
-    'await',
     'await',
     'break',
     'class',
