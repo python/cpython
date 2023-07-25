@@ -1324,7 +1324,6 @@ class CLanguage(Language):
             cpp_endif = "#endif /* " + conditional + " */"
 
             assert clinic is not None
-            assert f.full_name is not None
             if methoddef_define and f.full_name not in clinic.ifndef_symbols:
                 clinic.ifndef_symbols.add(f.full_name)
                 methoddef_ifndef = normalize_snippet("""
@@ -1540,11 +1539,8 @@ class CLanguage(Language):
             '{impl_parameters}' in templates['parser_prototype']):
             data.declarations.pop(0)
 
-        template_dict = {}
-
-        assert isinstance(f.full_name, str)
         full_name = f.full_name
-        template_dict['full_name'] = full_name
+        template_dict = {'full_name': full_name}
 
         if new_or_init:
             assert isinstance(f.cls, Class)
@@ -2526,14 +2522,14 @@ class Function:
     _: dc.KW_ONLY
     name: str
     module: Module
-    cls: Class | None = None
-    c_basename: str | None = None
-    full_name: str | None = None
+    cls: Class | None
+    c_basename: str | None
+    full_name: str
     return_converter: CReturnConverter
+    kind: FunctionKind
+    coexist: bool
     return_annotation: object = inspect.Signature.empty
     docstring: str = ''
-    kind: FunctionKind = CALLABLE
-    coexist: bool = False
     # docstring_only means "don't generate a machine-readable
     # signature, just a normal docstring".  it's True for
     # functions with optional groups because we can't represent
@@ -5316,7 +5312,6 @@ class DSLParser:
     def format_docstring(self) -> str:
         f = self.function
         assert f is not None
-        assert f.full_name is not None
 
         new_or_init = f.kind.new_or_init
         if new_or_init and not f.docstring:
