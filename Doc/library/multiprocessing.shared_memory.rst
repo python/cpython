@@ -297,13 +297,13 @@ shared memory blocks created using that manager are all released when the
        '?'
        >>> nul_bug_demo[1]
        b'\x03\x02\x01'
-       >>> nul_bug_demo.shm.shutdown()
+       >>> nul_bug_demo.shm.unlink()
        >>> padded = shared_memory.ShareableList(['?\x00\x07', b'\x03\x02\x01\x00\x00\x00\x07'])
        >>> padded[0][:-1]
        '?\x00'
        >>> padded[1][:-1]
        b'\x03\x02\x01\x00\x00\x00'
-       >>> padded.shm.shutdown()
+       >>> padded.shm.unlink()
 
    .. method:: count(value)
 
