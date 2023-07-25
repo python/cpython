@@ -236,13 +236,13 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(getitem(dct, '\U0001f40d'), 2)
 
         dct2 = ProxyGetItem(dct)
-        self.assertEqual(getitem(dct, 'a'), 1)
-        self.assertRaises(KeyError, getitem, dct, 'b')
+        self.assertEqual(getitem(dct2, 'a'), 1)
+        self.assertRaises(KeyError, getitem, dct2, 'b')
 
         self.assertEqual(getitem(['a', 'b', 'c'], 1), 'b')
 
         self.assertRaises(TypeError, getitem, 42, 'a')
-        self.assertRaises(TypeError, getitem, {}, [])
+        self.assertRaises(TypeError, getitem, {}, [])  # unhashable
         self.assertRaises(SystemError, getitem, {}, NULL)
         self.assertRaises(IndexError, getitem, [], 1)
         self.assertRaises(TypeError, getitem, [], 'a')
@@ -279,7 +279,7 @@ class CAPITest(unittest.TestCase):
         self.assertTrue(haskey(['a', 'b', 'c'], 1))
 
         self.assertFalse(haskey(42, 'a'))
-        self.assertFalse(haskey({}, []))
+        self.assertFalse(haskey({}, []))  # unhashable
         self.assertFalse(haskey({}, NULL))
         self.assertFalse(haskey([], 1))
         self.assertFalse(haskey([], 'a'))
@@ -320,7 +320,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(lst, ['a', 'x', 'c'])
 
         self.assertRaises(TypeError, setitem, 42, 'a', 5)
-        self.assertRaises(TypeError, setitem, {}, [], 5)
+        self.assertRaises(TypeError, setitem, {}, [], 5)  # unhashable
         self.assertRaises(SystemError, setitem, {}, NULL, 5)
         self.assertRaises(SystemError, setitem, {}, 'a', NULL)
         self.assertRaises(IndexError, setitem, [], 1, 5)
@@ -361,14 +361,14 @@ class CAPITest(unittest.TestCase):
             dct2 = ProxyDelItem(dct)
             delitem(dct2, 'a')
             self.assertEqual(dct, {'c': 2})
-            self.assertRaises(KeyError, delitem, dct, 'b')
+            self.assertRaises(KeyError, delitem, dct2, 'b')
 
             lst = ['a', 'b', 'c']
             delitem(lst, 1)
             self.assertEqual(lst, ['a', 'c'])
 
             self.assertRaises(TypeError, delitem, 42, 'a')
-            self.assertRaises(TypeError, delitem, {}, [])
+            self.assertRaises(TypeError, delitem, {}, [])  # unhashable
             self.assertRaises(SystemError, delitem, {}, NULL)
             self.assertRaises(IndexError, delitem, [], 1)
             self.assertRaises(TypeError, delitem, [], 'a')
@@ -387,7 +387,7 @@ class CAPITest(unittest.TestCase):
         dct2 = ProxyDelItem(dct)
         delitemstring(dct2, b'a')
         self.assertEqual(dct, {'c': 2})
-        self.assertRaises(KeyError, delitemstring, dct, b'b')
+        self.assertRaises(KeyError, delitemstring, dct2, b'b')
 
         self.assertRaises(TypeError, delitemstring, 42, b'a')
         self.assertRaises(UnicodeDecodeError, delitemstring, {}, b'\xff')
