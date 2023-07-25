@@ -44,6 +44,7 @@ from typing import (
     NoReturn,
     Protocol,
     TypeGuard,
+    TypeVar,
     overload,
 )
 
@@ -372,36 +373,36 @@ def version_comparitor(version1: str, version2: str) -> Literal[-1, 0, 1]:
 
 
 class CRenderData:
-    def __init__(self):
+    def __init__(self) -> None:
 
         # The C statements to declare variables.
         # Should be full lines with \n eol characters.
-        self.declarations = []
+        self.declarations: list[str] = []
 
         # The C statements required to initialize the variables before the parse call.
         # Should be full lines with \n eol characters.
-        self.initializers = []
+        self.initializers: list[str] = []
 
         # The C statements needed to dynamically modify the values
         # parsed by the parse call, before calling the impl.
-        self.modifications = []
+        self.modifications: list[str] = []
 
         # The entries for the "keywords" array for PyArg_ParseTuple.
         # Should be individual strings representing the names.
-        self.keywords = []
+        self.keywords: list[str] = []
 
         # The "format units" for PyArg_ParseTuple.
         # Should be individual strings that will get
-        self.format_units = []
+        self.format_units: list[str] = []
 
         # The varargs arguments for PyArg_ParseTuple.
-        self.parse_arguments = []
+        self.parse_arguments: list[str] = []
 
         # The parameter declarations for the impl function.
-        self.impl_parameters = []
+        self.impl_parameters: list[str] = []
 
         # The arguments to the impl function at the time it's called.
-        self.impl_arguments = []
+        self.impl_arguments: list[str] = []
 
         # For return converters: the name of the variable that
         # should receive the value returned by the impl.
@@ -411,17 +412,17 @@ class CRenderData:
         # value from the parse function.  This is also where
         # you should check the _return_value for errors, and
         # "goto exit" if there are any.
-        self.return_conversion = []
+        self.return_conversion: list[str] = []
         self.converter_retval = "_return_value"
 
         # The C statements required to do some operations
         # after the end of parsing but before cleaning up.
         # These operations may be, for example, memory deallocations which
         # can only be done without any error happening during argument parsing.
-        self.post_parsing = []
+        self.post_parsing: list[str] = []
 
         # The C statements required to clean up after the impl call.
-        self.cleanup = []
+        self.cleanup: list[str] = []
 
 
 class FormatCounterFormatter(string.Formatter):
@@ -436,7 +437,9 @@ class FormatCounterFormatter(string.Formatter):
     def __init__(self) -> None:
         self.counts = collections.Counter[str]()
 
-    def get_value(self, key: str, args, kwargs) -> str:  # type: ignore[override]
+    def get_value(
+        self, key: str, args: object, kwargs: object  # type: ignore[override]
+    ) -> Literal['']:
         self.counts[key] += 1
         return ''
 
@@ -2640,17 +2643,19 @@ class LandMine:
     # try to access any
     __message__: str
 
-    def __getattribute__(self, name: str):
+    def __getattribute__(self, name: str) -> Any:
         if name in ('__repr__', '__message__'):
             return super().__getattribute__(name)
         # raise RuntimeError(repr(name))
         fail("Stepped on a land mine, trying to access attribute " + repr(name) + ":\n" + self.__message__)
 
 
+CConverterClassT = TypeVar("CConverterClassT", bound=type["CConverter"])
+
 def add_c_converter(
-        f: type[CConverter],
+        f: CConverterClassT,
         name: str | None = None
-) -> type[CConverter]:
+) -> CConverterClassT:
     if not name:
         name = f.__name__
         if not name.endswith('_converter'):
@@ -2659,7 +2664,7 @@ def add_c_converter(
     converters[name] = f
     return f
 
-def add_default_legacy_c_converter(cls):
+def add_default_legacy_c_converter(cls: CConverterClassT) -> CConverterClassT:
     # automatically add converter for default format unit
     # (but without stomping on the existing one if it's already
     # set, in case you subclass)
@@ -2670,16 +2675,19 @@ def add_default_legacy_c_converter(cls):
 
 def add_legacy_c_converter(
         format_unit: str,
-        **kwargs
-) -> Callable[[ConverterType], ConverterType]:
+        **kwargs: Any
+) -> Callable[[CConverterClassT], CConverterClassT]:
     """
     Adds a legacy converter.
     """
-    def closure(f):
+    def closure(f: CConverterClassT) -> CConverterClassT:
+        added_f: Callable[..., CConverter]
         if not kwargs:
             added_f = f
         else:
-            added_f = functools.partial(f, **kwargs)
+            # mypy's special-casing for functools.partial
+            # can't quite grapple with this code here
+            added_f = functools.partial(f, **kwargs)  # type: ignore[arg-type]
         if format_unit:
             legacy_converters[format_unit] = added_f
         return f
@@ -2791,7 +2799,7 @@ class CConverter(metaclass=CConverterAutoRegister):
     # This lets the self_converter overrule the user-settable
     # name, *just* for the text signature.
     # Only set by self_converter.
-    signature_name = None
+    signature_name: str | None = None
 
     # keep in sync with self_converter.__init__!
     def __init__(self,
@@ -2805,8 +2813,8 @@ class CConverter(metaclass=CConverterAutoRegister):
              py_default: str | None = None,
              annotation: str | Literal[Sentinels.unspecified] = unspecified,
              unused: bool = False,
-             **kwargs
-    ):
+             **kwargs: Any
+    ) -> None:
         self.name = ensure_legal_c_identifier(name)
         self.py_name = py_name
         self.unused = unused
@@ -2843,7 +2851,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         self.converter_init(**kwargs)
         self.function = function
 
-    def converter_init(self):
+    def converter_init(self) -> None:
         pass
 
     def is_optional(self) -> bool:
@@ -3026,7 +3034,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         """
         return ""
 
-    def pre_render(self):
+    def pre_render(self) -> None:
         """
         A second initialization function, like converter_init,
         called just before rendering.
@@ -3163,7 +3171,7 @@ class defining_class_converter(CConverter):
     format_unit = ''
     show_in_signature = False
 
-    def converter_init(self, *, type=None) -> None:
+    def converter_init(self, *, type: str | None = None) -> None:
         self.specified_type = type
 
     def render(self, parameter, data) -> None:
@@ -3315,7 +3323,9 @@ class int_converter(CConverter):
     format_unit = 'i'
     c_ignored_default = "0"
 
-    def converter_init(self, *, accept: TypeSet = {int}, type=None) -> None:
+    def converter_init(
+        self, *, accept: TypeSet = {int}, type: str | None = None
+    ) -> None:
         if accept == {str}:
             self.format_unit = 'C'
         elif accept != {int}:
@@ -3896,7 +3906,7 @@ class Py_buffer_converter(CConverter):
 
         self.format_unit = format_unit
 
-    def cleanup(self):
+    def cleanup(self) -> str:
         name = self.name
         return "".join(["if (", name, ".obj) {\n   PyBuffer_Release(&", name, ");\n}\n"])
 
@@ -3976,14 +3986,15 @@ class self_converter(CConverter):
     A special-case converter:
     this is the default converter used for "self".
     """
-    type = None
+    type: str | None = None
     format_unit = ''
 
     def converter_init(self, *, type: str | None = None) -> None:
         self.specified_type = type
 
-    def pre_render(self):
+    def pre_render(self) -> None:
         f = self.function
+        assert isinstance(f, Function)
         default_type, default_name = correct_name_for_self(f)
         self.signature_name = default_name
         self.type = self.specified_type or self.type or default_type
@@ -4032,7 +4043,9 @@ class self_converter(CConverter):
     #     in the impl call.
 
     @property
-    def parser_type(self):
+    def parser_type(self) -> str:
+        assert self.type is not None
+        assert isinstance(self.function, Function)
         return required_type_for_self_for_parser(self.function) or self.type
 
     def render(self, parameter, data):
@@ -4115,7 +4128,7 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
             self,
             *,
             py_default: str | None = None,
-            **kwargs
+            **kwargs: Any
     ) -> None:
         self.py_default = py_default
         try:
@@ -4493,7 +4506,7 @@ class DSLParser:
             self,
             name: str,
             command: str,
-            *args
+            *args: str
     ) -> None:
         match command:
             case "new":
@@ -4847,12 +4860,13 @@ class DSLParser:
         return self.next(self.state_parameter, line)
 
 
-    def to_required(self):
+    def to_required(self) -> None:
         """
         Transition to the "required" parameter state.
         """
         if self.parameter_state is not ParamState.REQUIRED:
             self.parameter_state = ParamState.REQUIRED
+            assert self.function is not None
             for p in self.function.parameters.values():
                 p.group = -p.group
 
@@ -5000,7 +5014,7 @@ class DSLParser:
                     # of disallowed ast nodes.
                     class DetectBadNodes(ast.NodeVisitor):
                         bad = False
-                        def bad_node(self, node):
+                        def bad_node(self, node: ast.AST) -> None:
                             self.bad = True
 
                         # inline function call
@@ -5248,7 +5262,9 @@ class DSLParser:
     # every line of the docstring must start with at least F spaces,
     # where F > P.
     # these F spaces will be stripped.
-    def state_parameter_docstring(self, line):
+    def state_parameter_docstring(self, line: str | None) -> None:
+        assert line is not None
+
         stripped = line.strip()
         if stripped.startswith('#'):
             return
@@ -5263,7 +5279,7 @@ class DSLParser:
             assert self.indent.depth == 1
             return self.next(self.state_function_docstring, line)
 
-        assert self.function.parameters
+        assert self.function and self.function.parameters
         last_parameter = next(reversed(list(self.function.parameters.values())))
 
         new_docstring = last_parameter.docstring
@@ -5276,7 +5292,10 @@ class DSLParser:
         last_parameter.docstring = new_docstring
 
     # the final stanza of the DSL is the docstring.
-    def state_function_docstring(self, line):
+    def state_function_docstring(self, line: str | None) -> None:
+        assert self.function is not None
+        assert line is not None
+
         if self.group:
             fail("Function " + self.function.name + " has a ] without a matching [.")
 
@@ -5294,8 +5313,10 @@ class DSLParser:
         new_docstring += line
         self.function.docstring = new_docstring
 
-    def format_docstring(self):
+    def format_docstring(self) -> str:
         f = self.function
+        assert f is not None
+        assert f.full_name is not None
 
         new_or_init = f.kind.new_or_init
         if new_or_init and not f.docstring:
@@ -5338,7 +5359,7 @@ class DSLParser:
 
         right_bracket_count = 0
 
-        def fix_right_bracket_count(desired):
+        def fix_right_bracket_count(desired: int) -> str:
             nonlocal right_bracket_count
             s = ''
             while right_bracket_count < desired:
@@ -5372,7 +5393,7 @@ class DSLParser:
         last_p = parameters[-1]
         line_length = len(''.join(text))
         indent = " " * line_length
-        def add_parameter(text):
+        def add_parameter(text: str) -> None:
             nonlocal line_length
             nonlocal first_parameter
             if first_parameter:
@@ -5488,9 +5509,9 @@ class DSLParser:
             add(p.name)
             add('\n')
             add(textwrap.indent(rstrip_lines(p.docstring.rstrip()), "    "))
-        parameters = output()
-        if parameters:
-            parameters += '\n'
+        parameters_output = output()
+        if parameters_output:
+            parameters_output += '\n'
 
         ##
         ## docstring body
@@ -5538,7 +5559,7 @@ class DSLParser:
         add(docstring)
         docstring = output()
 
-        docstring = linear_format(docstring, parameters=parameters)
+        docstring = linear_format(docstring, parameters=parameters_output)
         docstring = docstring.rstrip()
 
         return docstring
@@ -5591,7 +5612,7 @@ parsers: dict[str, Callable[[Clinic], Parser]] = {
 clinic = None
 
 
-def main(argv):
+def main(argv: list[str]) -> None:
     import sys
     import argparse
     cmdline = argparse.ArgumentParser(
@@ -5619,8 +5640,8 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
             print()
             cmdline.print_usage()
             sys.exit(-1)
-        converters = []
-        return_converters = []
+        converters: list[tuple[str, str]] = []
+        return_converters: list[tuple[str, str]] = []
         ignored = set("""
             add_c_converter
             add_c_return_converter
@@ -5716,4 +5737,5 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    main(sys.argv[1:])
+    sys.exit(0)

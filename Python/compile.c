@@ -1280,7 +1280,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     u->u_metadata.u_argcount = 0;
     u->u_metadata.u_posonlyargcount = 0;
     u->u_metadata.u_kwonlyargcount = 0;
-    u->u_ste = PySymtable_Lookup(c->c_st, key);
+    u->u_ste = _PySymtable_Lookup(c->c_st, key);
     if (!u->u_ste) {
         compiler_unit_free(u);
         return ERROR;
@@ -5685,7 +5685,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     comprehension_ty outermost;
     int scope_type = c->u->u_scope_type;
     int is_top_level_await = IS_TOP_LEVEL_AWAIT(c);
-    PySTEntryObject *entry = PySymtable_Lookup(c->c_st, (void *)e);
+    PySTEntryObject *entry = _PySymtable_Lookup(c->c_st, (void *)e);
     if (entry == NULL) {
         goto error;
     }

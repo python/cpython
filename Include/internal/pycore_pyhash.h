@@ -74,7 +74,7 @@ typedef union {
     } expat;
 } _Py_HashSecret_t;
 
-// _elementtree shared extension uses _Py_HashSecret.expat
+// Export for '_elementtree' shared extension
 PyAPI_DATA(_Py_HashSecret_t) _Py_HashSecret;
 
 #ifdef Py_DEBUG

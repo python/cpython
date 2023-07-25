@@ -79,30 +79,30 @@ static inline PyObject* _PyLong_FromUnsignedChar(unsigned char i)
     return Py_NewRef((PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+i]);
 }
 
-PyObject *_PyLong_Add(PyLongObject *left, PyLongObject *right);
-PyObject *_PyLong_Multiply(PyLongObject *left, PyLongObject *right);
-PyObject *_PyLong_Subtract(PyLongObject *left, PyLongObject *right);
+extern PyObject *_PyLong_Add(PyLongObject *left, PyLongObject *right);
+extern PyObject *_PyLong_Multiply(PyLongObject *left, PyLongObject *right);
+extern PyObject *_PyLong_Subtract(PyLongObject *left, PyLongObject *right);
 
-/* Used by Python/mystrtoul.c, _PyBytes_FromHex(),
-   _PyBytes_DecodeEscape(), etc. */
+// Used by _PyBytes_FromHex(), _PyBytes_DecodeEscape(), Python/mystrtoul.c.
+// Export for 'binascii' shared extension.
 PyAPI_DATA(unsigned char) _PyLong_DigitValue[256];
 
 /* Format the object based on the format_spec, as defined in PEP 3101
    (Advanced String Formatting). */
-PyAPI_FUNC(int) _PyLong_FormatAdvancedWriter(
+extern int _PyLong_FormatAdvancedWriter(
     _PyUnicodeWriter *writer,
     PyObject *obj,
     PyObject *format_spec,
     Py_ssize_t start,
     Py_ssize_t end);
 
-PyAPI_FUNC(int) _PyLong_FormatWriter(
+extern int _PyLong_FormatWriter(
     _PyUnicodeWriter *writer,
     PyObject *obj,
     int base,
     int alternate);
 
-PyAPI_FUNC(char*) _PyLong_FormatBytesWriter(
+extern char* _PyLong_FormatBytesWriter(
     _PyBytesWriter *writer,
     char *str,
     PyObject *obj,
