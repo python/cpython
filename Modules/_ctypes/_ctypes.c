@@ -2765,7 +2765,7 @@ static PyMemberDef PyCData_members[] = {
     { "_b_needsfree_", Py_T_INT,
       offsetof(CDataObject, b_needsfree), Py_READONLY,
       "whether the object owns the memory or not" },
-    { "_objects", Py_T_OBJECT_EX,
+    { "_objects", _Py_T_OBJECT,
       offsetof(CDataObject, b_objects), Py_READONLY,
       "internal objects tree (NEVER CHANGE THIS OBJECT!)"},
     { NULL },

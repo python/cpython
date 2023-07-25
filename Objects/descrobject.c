@@ -1516,9 +1516,9 @@ static PyObject * property_copy(PyObject *, PyObject *, PyObject *,
 
 static PyMemberDef property_members[] = {
     {"fget", Py_T_OBJECT_EX, offsetof(propertyobject, prop_get), Py_READONLY},
-    {"fset", Py_T_OBJECT_EX, offsetof(propertyobject, prop_set), Py_READONLY},
-    {"fdel", Py_T_OBJECT_EX, offsetof(propertyobject, prop_del), Py_READONLY},
-    {"__doc__",  Py_T_OBJECT_EX, offsetof(propertyobject, prop_doc), 0},
+    {"fset", _Py_T_OBJECT, offsetof(propertyobject, prop_set), Py_READONLY},
+    {"fdel", _Py_T_OBJECT, offsetof(propertyobject, prop_del), Py_READONLY},
+    {"__doc__",  _Py_T_OBJECT, offsetof(propertyobject, prop_doc), 0},
     {0}
 };
 

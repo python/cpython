@@ -2054,7 +2054,7 @@ static PyMethodDef defdict_methods[] = {
 };
 
 static PyMemberDef defdict_members[] = {
-    {"default_factory", Py_T_OBJECT_EX,
+    {"default_factory", _Py_T_OBJECT,
      offsetof(defdictobject, default_factory), 0,
      PyDoc_STR("Factory for default value called by __missing__().")},
     {NULL}

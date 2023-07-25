@@ -451,10 +451,10 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
 #define OFF(x) offsetof(PyFunctionObject, x)
 
 static PyMemberDef func_memberlist[] = {
-    {"__closure__",   Py_T_OBJECT_EX,     OFF(func_closure), Py_READONLY},
-    {"__doc__",       Py_T_OBJECT_EX,     OFF(func_doc), 0},
+    {"__closure__",   _Py_T_OBJECT,     OFF(func_closure), Py_READONLY},
+    {"__doc__",       _Py_T_OBJECT,     OFF(func_doc), 0},
     {"__globals__",   Py_T_OBJECT_EX,     OFF(func_globals), Py_READONLY},
-    {"__module__",    Py_T_OBJECT_EX,     OFF(func_module), 0},
+    {"__module__",    _Py_T_OBJECT,     OFF(func_module), 0},
     {"__builtins__",  Py_T_OBJECT_EX,     OFF(func_builtins), Py_READONLY},
     {NULL}  /* Sentinel */
 };
