@@ -1487,11 +1487,7 @@ unicodedata_exec(PyObject *module)
     v = new_previous_version(ucd_type, "3.2.0",
                              get_change_3_2_0, normalization_3_2_0);
     Py_DECREF(ucd_type);
-    if (v == NULL) {
-        return -1;
-    }
-    if (PyModule_AddObject(module, "ucd_3_2_0", v) < 0) {
-        Py_DECREF(v);
+    if (PyModule_Add(module, "ucd_3_2_0", v) < 0) {
         return -1;
     }
 

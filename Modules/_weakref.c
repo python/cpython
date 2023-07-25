@@ -144,27 +144,19 @@ weakref_functions[] =  {
 static int
 weakref_exec(PyObject *module)
 {
-    Py_INCREF(&_PyWeakref_RefType);
-    if (PyModule_AddObject(module, "ref", (PyObject *) &_PyWeakref_RefType) < 0) {
-        Py_DECREF(&_PyWeakref_RefType);
+    if (PyModule_AddObjectRef(module, "ref", (PyObject *) &_PyWeakref_RefType) < 0) {
         return -1;
     }
-    Py_INCREF(&_PyWeakref_RefType);
-    if (PyModule_AddObject(module, "ReferenceType",
+    if (PyModule_AddObjectRef(module, "ReferenceType",
                            (PyObject *) &_PyWeakref_RefType) < 0) {
-        Py_DECREF(&_PyWeakref_RefType);
         return -1;
     }
-    Py_INCREF(&_PyWeakref_ProxyType);
-    if (PyModule_AddObject(module, "ProxyType",
+    if (PyModule_AddObjectRef(module, "ProxyType",
                            (PyObject *) &_PyWeakref_ProxyType) < 0) {
-        Py_DECREF(&_PyWeakref_ProxyType);
         return -1;
     }
-    Py_INCREF(&_PyWeakref_CallableProxyType);
-    if (PyModule_AddObject(module, "CallableProxyType",
+    if (PyModule_AddObjectRef(module, "CallableProxyType",
                            (PyObject *) &_PyWeakref_CallableProxyType) < 0) {
-        Py_DECREF(&_PyWeakref_CallableProxyType);
         return -1;
     }
 

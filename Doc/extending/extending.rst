@@ -221,9 +221,7 @@ with an exception object::
            return NULL;
 
        SpamError = PyErr_NewException("spam.error", NULL, NULL);
-       Py_XINCREF(SpamError);
-       if (PyModule_AddObject(m, "error", SpamError) < 0) {
-           Py_XDECREF(SpamError);
+       if (PyModule_AddObjectRef(m, "error", SpamError) < 0) {
            Py_CLEAR(SpamError);
            Py_DECREF(m);
            return NULL;
@@ -1281,8 +1279,7 @@ function must take care of initializing the C API pointer array::
        /* Create a Capsule containing the API pointer array's address */
        c_api_object = PyCapsule_New((void *)PySpam_API, "spam._C_API", NULL);
 
-       if (PyModule_AddObject(m, "_C_API", c_api_object) < 0) {
-           Py_XDECREF(c_api_object);
+       if (PyModule_Add(m, "_C_API", c_api_object) < 0) {
            Py_DECREF(m);
            return NULL;
        }
