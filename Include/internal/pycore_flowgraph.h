@@ -80,6 +80,8 @@ typedef struct cfg_builder_ {
     _PyCfgBasicblock *g_curblock;
     /* label for the next instruction to be placed */
     _PyCfgJumpTargetLabel g_current_label;
+    /* size of stack required to execute the code */
+    int g_maxdepth;
 } _PyCfgBuilder;
 
 int _PyCfgBuilder_UseLabel(_PyCfgBuilder *g, _PyCfgJumpTargetLabel lbl);
@@ -89,8 +91,8 @@ int _PyCfgBuilder_Init(_PyCfgBuilder *g);
 void _PyCfgBuilder_Fini(_PyCfgBuilder *g);
 
 int _PyCfg_OptimizeCodeUnit(_PyCfgBuilder *g, PyObject *consts, PyObject *const_cache,
-                            int code_flags, int nlocals, int nparams, int firstlineno);
-int _PyCfg_Stackdepth(_PyCfgBasicblock *entryblock, int code_flags);
+                            int nlocals, int nparams, int firstlineno);
+int _PyCfg_Stackdepth(_PyCfgBuilder *g);
 void _PyCfg_ConvertPseudoOps(_PyCfgBasicblock *entryblock);
 int _PyCfg_ResolveJumps(_PyCfgBuilder *g);
 

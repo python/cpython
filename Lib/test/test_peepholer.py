@@ -986,11 +986,35 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         self.assertInstructionsMatch(opt_insts, expected_insts)
         self.assertEqual(opt_consts, expected_consts)
 
+    def test_invalid_cfg_inconsistent_stackdepth(self):
+        insts = [
+            ('LOAD_NAME', 1, 11),
+            ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
+            ('LOAD_CONST', 2, 13),  # stackdepth=1
+            lbl,
+            ('LOAD_CONST', 3, 14),  # stackdepth=0
+            ('RETURN_VALUE', 14),
+        ]
+        with self.assertRaisesRegex(ValueError, "inconsistent stackdepth"):
+            self.get_optimized(insts, [0, 1, 2, 3, 4], 0)
+
+    def test_invalid_cfg_stack_underflow(self):
+        insts = [
+            ('LOAD_CONST', 0, 1),
+            ('POP_TOP', 0, 2),
+            ('POP_TOP', 0, 3),
+            ('LOAD_CONST', 0, 4),
+            ('RETURN_VALUE', 4),
+        ]
+        with self.assertRaisesRegex(ValueError, "stack underflow"):
+            self.get_optimized(insts, [0, 1, 2, 3, 4], 0)
+
     def test_conditional_jump_forward_non_const_condition(self):
         insts = [
             ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
             ('LOAD_CONST', 2, 13),
+            ('RETURN_VALUE', 13),
             lbl,
             ('LOAD_CONST', 3, 14),
             ('RETURN_VALUE', 14),
@@ -998,7 +1022,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         expected_insts = [
             ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
-            ('LOAD_CONST', 1, 13),
+            ('RETURN_CONST', 1, 13),
             lbl,
             ('RETURN_CONST', 2, 14),
         ]
@@ -1072,6 +1096,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('STORE_FAST', 1, 4),
             ('STORE_FAST', 1, 4),
             ('POP_TOP', 0, 4),
+            ('LOAD_CONST', 0, 5),
             ('RETURN_VALUE', 5)
         ]
         expected_insts = [
@@ -1080,7 +1105,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('NOP', 0, 3),
             ('STORE_FAST', 1, 4),
             ('POP_TOP', 0, 4),
-            ('RETURN_VALUE', 5)
+            ('RETURN_CONST', 0)
         ]
         self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
 
@@ -1092,6 +1117,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('STORE_FAST', 1, 4),
             ('STORE_FAST', 1, 4),
             ('STORE_FAST', 1, 4),
+            ('LOAD_CONST', 0, 5),
             ('RETURN_VALUE', 5)
         ]
         expected_insts = [
@@ -1100,7 +1126,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('NOP', 0, 3),
             ('POP_TOP', 0, 4),
             ('STORE_FAST', 1, 4),
-            ('RETURN_VALUE', 5)
+            ('RETURN_CONST', 0, 5)
         ]
         self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
 
@@ -1112,9 +1138,19 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('STORE_FAST', 1, 4),
             ('STORE_FAST', 1, 5),
             ('STORE_FAST', 1, 6),
+            ('LOAD_CONST', 0, 5),
             ('RETURN_VALUE', 5)
         ]
-        self.cfg_optimization_test(insts, insts, consts=list(range(3)), nlocals=1)
+        expected_insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('LOAD_CONST', 2, 3),
+            ('STORE_FAST', 1, 4),
+            ('STORE_FAST', 1, 5),
+            ('STORE_FAST', 1, 6),
+            ('RETURN_CONST', 0, 5)
+        ]
+        self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
 
 
 if __name__ == "__main__":
