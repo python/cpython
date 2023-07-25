@@ -11,7 +11,7 @@
 #include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_bytesobject.h"   // _PyBytes_Repeat
-#include "structmember.h"         // PyMemberDef
+
 #include <stddef.h>               // offsetof()
 #include <stdbool.h>
 
@@ -2895,7 +2895,7 @@ itemsize -- the length in bytes of one array item\n\
 static PyObject *array_iter(arrayobject *ao);
 
 static struct PyMemberDef array_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(arrayobject, weakreflist), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(arrayobject, weakreflist), Py_READONLY},
     {NULL},
 };
 

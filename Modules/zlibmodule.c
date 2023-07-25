@@ -4,7 +4,7 @@
 /* Windows users:  read Python's PCbuild\readme.txt */
 
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
+
 #include "zlib.h"
 #include "stdbool.h"
 
@@ -1344,7 +1344,7 @@ typedef struct {
        decompress_buf() */
     Py_ssize_t avail_in_real;
     bool is_initialised;
-    char eof;           /* T_BOOL expects a char */
+    char eof;           /* Py_T_BOOL expects a char */
     char needs_input;
 } ZlibDecompressor;
 
@@ -1801,9 +1801,9 @@ static PyMethodDef ZlibDecompressor_methods[] = {
 
 #define COMP_OFF(x) offsetof(compobject, x)
 static PyMemberDef Decomp_members[] = {
-    {"unused_data",     T_OBJECT, COMP_OFF(unused_data), READONLY},
-    {"unconsumed_tail", T_OBJECT, COMP_OFF(unconsumed_tail), READONLY},
-    {"eof",             T_BOOL,   COMP_OFF(eof), READONLY},
+    {"unused_data",     _Py_T_OBJECT, COMP_OFF(unused_data), Py_READONLY},
+    {"unconsumed_tail", _Py_T_OBJECT, COMP_OFF(unconsumed_tail), Py_READONLY},
+    {"eof",             Py_T_BOOL,   COMP_OFF(eof), Py_READONLY},
     {NULL},
 };
 
@@ -1817,11 +1817,11 @@ PyDoc_STRVAR(ZlibDecompressor_needs_input_doc,
 "True if more input is needed before more decompressed data can be produced.");
 
 static PyMemberDef ZlibDecompressor_members[] = {
-    {"eof", T_BOOL, offsetof(ZlibDecompressor, eof),
-     READONLY, ZlibDecompressor_eof__doc__},
-    {"unused_data", T_OBJECT_EX, offsetof(ZlibDecompressor, unused_data),
-     READONLY, ZlibDecompressor_unused_data__doc__},
-    {"needs_input", T_BOOL, offsetof(ZlibDecompressor, needs_input), READONLY,
+    {"eof", Py_T_BOOL, offsetof(ZlibDecompressor, eof),
+     Py_READONLY, ZlibDecompressor_eof__doc__},
+    {"unused_data", Py_T_OBJECT_EX, offsetof(ZlibDecompressor, unused_data),
+     Py_READONLY, ZlibDecompressor_unused_data__doc__},
+    {"needs_input", Py_T_BOOL, offsetof(ZlibDecompressor, needs_input), Py_READONLY,
      ZlibDecompressor_needs_input_doc},
     {NULL},
 };

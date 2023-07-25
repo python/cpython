@@ -36,7 +36,7 @@
 #include "optimizer.h"
 #include "pydtrace.h"
 #include "setobject.h"
-#include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
+
 
 #define USE_COMPUTED_GOTOS 0
 #include "ceval_macros.h"

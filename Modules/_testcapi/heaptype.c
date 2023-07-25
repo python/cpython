@@ -1,5 +1,6 @@
 #include "parts.h"
-#include "structmember.h"         // PyMemberDef
+#include <stddef.h>               // offsetof()
+
 
 static struct PyModuleDef *_testcapimodule = NULL;  // set at initialization
 
@@ -332,7 +333,7 @@ typedef struct {
 
 
 static struct PyMemberDef members_to_repeat[] = {
-    {"T_INT", T_INT, offsetof(HeapCTypeWithDataObject, data), 0, NULL},
+    {"Py_T_INT", Py_T_INT, offsetof(HeapCTypeWithDataObject, data), 0, NULL},
     {NULL}
 };
 
@@ -477,7 +478,7 @@ typedef struct {
 } HeapCTypeObject;
 
 static struct PyMemberDef heapctype_members[] = {
-    {"value", T_INT, offsetof(HeapCTypeObject, value)},
+    {"value", Py_T_INT, offsetof(HeapCTypeObject, value)},
     {NULL} /* Sentinel */
 };
 
@@ -571,7 +572,7 @@ heapctypesubclass_init(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 static struct PyMemberDef heapctypesubclass_members[] = {
-    {"value2", T_INT, offsetof(HeapCTypeSubclassObject, value2)},
+    {"value2", Py_T_INT, offsetof(HeapCTypeSubclassObject, value2)},
     {NULL} /* Sentinel */
 };
 
@@ -772,8 +773,8 @@ static PyGetSetDef heapctypewithdict_getsetlist[] = {
 };
 
 static struct PyMemberDef heapctypewithdict_members[] = {
-    {"dictobj", T_OBJECT, offsetof(HeapCTypeWithDictObject, dict)},
-    {"__dictoffset__", T_PYSSIZET, offsetof(HeapCTypeWithDictObject, dict), READONLY},
+    {"dictobj", _Py_T_OBJECT, offsetof(HeapCTypeWithDictObject, dict)},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(HeapCTypeWithDictObject, dict), Py_READONLY},
     {NULL} /* Sentinel */
 };
 
@@ -867,8 +868,8 @@ static PyType_Spec  HeapCTypeWithManagedWeakref_spec = {
 };
 
 static struct PyMemberDef heapctypewithnegativedict_members[] = {
-    {"dictobj", T_OBJECT, offsetof(HeapCTypeWithDictObject, dict)},
-    {"__dictoffset__", T_PYSSIZET, -(Py_ssize_t)sizeof(void*), READONLY},
+    {"dictobj", _Py_T_OBJECT, offsetof(HeapCTypeWithDictObject, dict)},
+    {"__dictoffset__", Py_T_PYSSIZET, -(Py_ssize_t)sizeof(void*), Py_READONLY},
     {NULL} /* Sentinel */
 };
 
@@ -893,9 +894,9 @@ typedef struct {
 } HeapCTypeWithWeakrefObject;
 
 static struct PyMemberDef heapctypewithweakref_members[] = {
-    {"weakreflist", T_OBJECT, offsetof(HeapCTypeWithWeakrefObject, weakreflist)},
-    {"__weaklistoffset__", T_PYSSIZET,
-      offsetof(HeapCTypeWithWeakrefObject, weakreflist), READONLY},
+    {"weakreflist", _Py_T_OBJECT, offsetof(HeapCTypeWithWeakrefObject, weakreflist)},
+    {"__weaklistoffset__", Py_T_PYSSIZET,
+      offsetof(HeapCTypeWithWeakrefObject, weakreflist), Py_READONLY},
     {NULL} /* Sentinel */
 };
 
@@ -943,7 +944,7 @@ typedef struct {
 } HeapCTypeSetattrObject;
 
 static struct PyMemberDef heapctypesetattr_members[] = {
-    {"pvalue", T_LONG, offsetof(HeapCTypeSetattrObject, value)},
+    {"pvalue", Py_T_LONG, offsetof(HeapCTypeSetattrObject, value)},
     {NULL} /* Sentinel */
 };
 
