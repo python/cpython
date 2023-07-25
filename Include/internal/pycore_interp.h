@@ -232,11 +232,11 @@ struct _xidregitem {
     crossinterpdatafunc getdata;
 };
 
-PyAPI_FUNC(PyInterpreterState*) _PyInterpreterState_LookUpID(int64_t);
+extern PyInterpreterState* _PyInterpreterState_LookUpID(int64_t);
 
-PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
-PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
-PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
+extern int _PyInterpreterState_IDInitref(PyInterpreterState *);
+extern int _PyInterpreterState_IDIncref(PyInterpreterState *);
+extern void _PyInterpreterState_IDDecref(PyInterpreterState *);
 
 PyAPI_FUNC(PyObject*) _PyInterpreterState_GetMainModule(PyInterpreterState *);
 

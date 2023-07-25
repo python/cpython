@@ -11,7 +11,7 @@ extern "C" {
 struct _arena;   // Type defined in pycore_pyarena.h
 struct _mod;     // Type defined in pycore_ast.h
 
-// Export the symbol for test_peg_generator (built as a library)
+// Export for 'test_peg_generator' shared extension
 PyAPI_FUNC(PyCodeObject*) _PyAST_Compile(
     struct _mod *mod,
     PyObject *filename,
@@ -91,6 +91,7 @@ int _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj);
 
 /* Access compiler internals for unit testing */
 
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyObject*) _PyCompile_CleanDoc(PyObject *doc);
 
 PyAPI_FUNC(PyObject*) _PyCompile_CodeGen(
