@@ -129,18 +129,17 @@ _PyType_IsReady(PyTypeObject *type)
     return _PyType_GetDict(type) != NULL;
 }
 
-PyObject *
-_Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int *suppress_missing_attribute);
-PyObject *
-_Py_type_getattro(PyTypeObject *type, PyObject *name);
+extern PyObject* _Py_type_getattro_impl(PyTypeObject *type, PyObject *name,
+                                        int *suppress_missing_attribute);
+extern PyObject* _Py_type_getattro(PyTypeObject *type, PyObject *name);
 
-PyObject *_Py_slot_tp_getattro(PyObject *self, PyObject *name);
-PyObject *_Py_slot_tp_getattr_hook(PyObject *self, PyObject *name);
+extern PyObject* _Py_slot_tp_getattro(PyObject *self, PyObject *name);
+extern PyObject* _Py_slot_tp_getattr_hook(PyObject *self, PyObject *name);
 
-PyAPI_DATA(PyTypeObject) _PyBufferWrapper_Type;
+extern PyTypeObject _PyBufferWrapper_Type;
 
-PyObject *
-_PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj, PyObject *name, int *meth_found);
+extern PyObject* _PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj,
+                                 PyObject *name, int *meth_found);
 
 #ifdef __cplusplus
 }

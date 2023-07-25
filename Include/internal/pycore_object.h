@@ -33,7 +33,7 @@ extern void _PyDebugAllocatorStats(FILE *out, const char *block_name,
 extern void _PyObject_DebugTypeStats(FILE *out);
 
 // Export for shared _testinternalcapi extension
-PyAPI_DATA(int) _PyObject_IsFreed(PyObject *);
+PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 
 /* We need to maintain an internal copy of Py{Var}Object_HEAD_INIT to avoid
    designated initializer conflicts in C++20. If we use the deinition in
@@ -468,11 +468,14 @@ extern PyObject* _PyCFunctionWithKeywords_TrampolineCall(
     (meth)((self), (args), (kw))
 #endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
 
-// _pickle shared extension uses _PyNone_Type and _PyNotImplemented_Type
+// Export for '_pickle' shared extension
 PyAPI_DATA(PyTypeObject) _PyNone_Type;
+// Export for '_pickle' shared extension
 PyAPI_DATA(PyTypeObject) _PyNotImplemented_Type;
 
-/* Maps Py_LT to Py_GT, ..., Py_GE to Py_LE.  Defined in Objects/object.c. */
+// Maps Py_LT to Py_GT, ..., Py_GE to Py_LE.
+// Defined in Objects/object.c.
+// Export for the stable ABI.
 PyAPI_DATA(int) _Py_SwappedOp[];
 
 #ifdef __cplusplus
