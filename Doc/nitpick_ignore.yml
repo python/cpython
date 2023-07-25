@@ -1,0 +1,81 @@
+# nitpick_ignore of Sphinx conf.py
+
+# Standard C functions
+functions:
+  - calloc
+  - dlopen
+  - exec
+  - fcntl
+  - fork
+  - free
+  - gmtime
+  - localtime
+  - main
+  - malloc
+  - printf
+  - realloc
+  - snprintf
+  - sprintf
+  - stat
+  - system
+  - vsnprintf
+
+# Standard C types
+types:
+  - FILE
+  - __int
+  - intmax_t
+  - off_t
+  - ptrdiff_t
+  - siginfo_t
+  - size_t
+  - ssize_t
+  - time_t
+  - uintmax_t
+  - va_list
+  - wchar_t
+
+# Standard C macros
+macros:
+  - LLONG_MAX
+  - LLONG_MIN
+  - LONG_MAX
+  - LONG_MIN
+
+# Standard C variables
+variables:
+  - errno
+
+# Standard environment variables
+envvars:
+  - BROWSER
+  - COLUMNS
+  - COMSPEC
+  - DISPLAY
+  - HOME
+  - HOMEDRIVE
+  - HOMEPATH
+  - IDLESTARTUP
+  - LANG
+  - LANGUAGE
+  - LC_ALL
+  - LC_COLLATE
+  - LC_CTYPE
+  - LC_MESSAGES
+  - LC_MONETARY
+  - LC_NUMERIC
+  - LC_TIME
+  - LINES
+  - LOGNAME
+  - PAGER
+  - PATH
+  - PATHEXT
+  - SOURCE_DATE_EPOCH
+  - TEMP
+  - TERM
+  - TMP
+  - TMPDIR
+  - TZ
+  - USER
+  - USERNAME
+  - USERPROFILE

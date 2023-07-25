@@ -17,4 +17,7 @@ sphinxext-opengraph==0.7.5
 # to install that as well.
 python-docs-theme>=2022.1
 
+# Parse Doc/nitpick_ignore.yml
+PyYAML
+
 -c constraints.txt
