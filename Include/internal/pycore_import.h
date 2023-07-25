@@ -9,7 +9,6 @@ extern "C" {
 
 extern int _PyImport_IsInitialized(PyInterpreterState *);
 
-extern PyObject* _PyImport_GetModuleId(_Py_Identifier *name);
 PyAPI_FUNC(int) _PyImport_SetModule(PyObject *name, PyObject *module);
 extern int _PyImport_SetModuleString(const char *name, PyObject* module);
 
