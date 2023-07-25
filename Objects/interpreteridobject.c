@@ -3,7 +3,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"   // _PyIndex_Check()
 #include "pycore_interp.h"     // _PyInterpreterState_LookUpID()
-#include "interpreteridobject.h"
+#include "pycore_interp_id.h"  // _PyInterpreterID_Type
 
 
 typedef struct interpid {

@@ -11,7 +11,13 @@
  *--------------------------------------------------------------------
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
+#include "pycore_import.h"        // _PyImport_GetModuleAttrString()
+#include "pycore_pyhash.h"        // _Py_HashSecret
 #include "structmember.h"         // PyMemberDef
 #include "expat.h"
 #include "pyexpat.h"
@@ -3525,7 +3531,7 @@ expat_start_doctype_handler(XMLParserObject *self,
                                            sysid_obj, NULL);
         Py_XDECREF(res);
     }
-    else if (_PyObject_LookupAttr((PyObject *)self, st->str_doctype, &res) > 0) {
+    else if (PyObject_GetOptionalAttr((PyObject *)self, st->str_doctype, &res) > 0) {
         (void)PyErr_WarnEx(PyExc_RuntimeWarning,
                 "The doctype() method of XMLParser is ignored.  "
                 "Define doctype() method on the TreeBuilder target.",

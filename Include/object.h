@@ -391,9 +391,15 @@ PyAPI_FUNC(PyObject *) PyObject_RichCompare(PyObject *, PyObject *, int);
 PyAPI_FUNC(int) PyObject_RichCompareBool(PyObject *, PyObject *, int);
 PyAPI_FUNC(PyObject *) PyObject_GetAttrString(PyObject *, const char *);
 PyAPI_FUNC(int) PyObject_SetAttrString(PyObject *, const char *, PyObject *);
+PyAPI_FUNC(int) PyObject_DelAttrString(PyObject *v, const char *name);
 PyAPI_FUNC(int) PyObject_HasAttrString(PyObject *, const char *);
 PyAPI_FUNC(PyObject *) PyObject_GetAttr(PyObject *, PyObject *);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+PyAPI_FUNC(int) PyObject_GetOptionalAttr(PyObject *, PyObject *, PyObject **);
+PyAPI_FUNC(int) PyObject_GetOptionalAttrString(PyObject *, const char *, PyObject **);
+#endif
 PyAPI_FUNC(int) PyObject_SetAttr(PyObject *, PyObject *, PyObject *);
+PyAPI_FUNC(int) PyObject_DelAttr(PyObject *v, PyObject *name);
 PyAPI_FUNC(int) PyObject_HasAttr(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyObject_SelfIter(PyObject *);
 PyAPI_FUNC(PyObject *) PyObject_GenericGetAttr(PyObject *, PyObject *);
@@ -588,10 +594,8 @@ you can count such references to the type object.)
 #if defined(Py_REF_DEBUG) && !defined(Py_LIMITED_API)
 PyAPI_FUNC(void) _Py_NegativeRefcount(const char *filename, int lineno,
                                       PyObject *op);
-PyAPI_FUNC(void) _Py_IncRefTotal_DO_NOT_USE_THIS(void);
-PyAPI_FUNC(void) _Py_DecRefTotal_DO_NOT_USE_THIS(void);
-#    define _Py_INC_REFTOTAL() _Py_IncRefTotal_DO_NOT_USE_THIS()
-#    define _Py_DEC_REFTOTAL() _Py_DecRefTotal_DO_NOT_USE_THIS()
+PyAPI_FUNC(void) _Py_INCREF_IncRefTotal(void);
+PyAPI_FUNC(void) _Py_DECREF_DecRefTotal(void);
 #endif  // Py_REF_DEBUG && !Py_LIMITED_API
 
 PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
@@ -640,7 +644,7 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 #endif
     _Py_INCREF_STAT_INC();
 #ifdef Py_REF_DEBUG
-    _Py_INC_REFTOTAL();
+    _Py_INCREF_IncRefTotal();
 #endif
 #endif
 }
@@ -669,7 +673,7 @@ static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
         return;
     }
     _Py_DECREF_STAT_INC();
-    _Py_DEC_REFTOTAL();
+    _Py_DECREF_DecRefTotal();
     if (--op->ob_refcnt != 0) {
         if (op->ob_refcnt < 0) {
             _Py_NegativeRefcount(filename, lineno, op);
@@ -696,9 +700,6 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
 }
 #define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
 #endif
-
-#undef _Py_INC_REFTOTAL
-#undef _Py_DEC_REFTOTAL
 
 
 /* Safely decref `op` and set `op` to NULL, especially useful in tp_clear

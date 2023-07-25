@@ -500,7 +500,7 @@ PyType_Spec typevar_spec = {
     .name = "typing.TypeVar",
     .basicsize = sizeof(typevarobject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE
-        | Py_TPFLAGS_MANAGED_DICT,
+        | Py_TPFLAGS_MANAGED_DICT | Py_TPFLAGS_MANAGED_WEAKREF,
     .slots = typevar_slots,
 };
 
@@ -647,7 +647,8 @@ static PyType_Slot paramspecargs_slots[] = {
 PyType_Spec paramspecargs_spec = {
     .name = "typing.ParamSpecArgs",
     .basicsize = sizeof(paramspecattrobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_MANAGED_WEAKREF,
     .slots = paramspecargs_slots,
 };
 
@@ -726,7 +727,8 @@ static PyType_Slot paramspeckwargs_slots[] = {
 PyType_Spec paramspeckwargs_spec = {
     .name = "typing.ParamSpecKwargs",
     .basicsize = sizeof(paramspecattrobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_MANAGED_WEAKREF,
     .slots = paramspeckwargs_slots,
 };
 
@@ -1007,7 +1009,7 @@ PyType_Spec paramspec_spec = {
     .name = "typing.ParamSpec",
     .basicsize = sizeof(paramspecobject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE
-        | Py_TPFLAGS_MANAGED_DICT,
+        | Py_TPFLAGS_MANAGED_DICT | Py_TPFLAGS_MANAGED_WEAKREF,
     .slots = paramspec_slots,
 };
 
@@ -1228,7 +1230,7 @@ PyType_Spec typevartuple_spec = {
     .name = "typing.TypeVarTuple",
     .basicsize = sizeof(typevartupleobject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_MANAGED_DICT
-        | Py_TPFLAGS_HAVE_GC,
+        | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_MANAGED_WEAKREF,
     .slots = typevartuple_slots,
 };
 

@@ -25,7 +25,7 @@ extern "C" {
 #include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_global_objects.h"  // struct _Py_interp_static_objects
 #include "pycore_import.h"        // struct _import_state
-#include "pycore_instruments.h"   // PY_MONITORING_EVENTS
+#include "pycore_instruments.h"   // _PY_MONITORING_EVENTS
 #include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_object_state.h"   // struct _py_object_state
 #include "pycore_obmalloc.h"      // struct obmalloc_state
@@ -190,7 +190,7 @@ struct _is {
     bool sys_trace_initialized;
     Py_ssize_t sys_profiling_threads; /* Count of threads with c_profilefunc set */
     Py_ssize_t sys_tracing_threads; /* Count of threads with c_tracefunc set */
-    PyObject *monitoring_callables[PY_MONITORING_TOOL_IDS][PY_MONITORING_EVENTS];
+    PyObject *monitoring_callables[PY_MONITORING_TOOL_IDS][_PY_MONITORING_EVENTS];
     PyObject *monitoring_tool_names[PY_MONITORING_TOOL_IDS];
 
     struct _Py_interp_cached_objects cached_objects;
@@ -232,12 +232,13 @@ struct _xidregitem {
     crossinterpdatafunc getdata;
 };
 
-PyAPI_FUNC(PyInterpreterState*) _PyInterpreterState_LookUpID(int64_t);
+extern PyInterpreterState* _PyInterpreterState_LookUpID(int64_t);
 
-PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
-PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
-PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
+extern int _PyInterpreterState_IDInitref(PyInterpreterState *);
+extern int _PyInterpreterState_IDIncref(PyInterpreterState *);
+extern void _PyInterpreterState_IDDecref(PyInterpreterState *);
 
+// Export for '_xxsubinterpreters' shared extension
 PyAPI_FUNC(PyObject*) _PyInterpreterState_GetMainModule(PyInterpreterState *);
 
 extern const PyConfig* _PyInterpreterState_GetConfig(PyInterpreterState *interp);
@@ -253,7 +254,9 @@ extern const PyConfig* _PyInterpreterState_GetConfig(PyInterpreterState *interp)
    The caller must hold the GIL.
 
    Once done with the configuration, PyConfig_Clear() must be called to clear
-   it. */
+   it.
+
+   Export for '_testinternalcapi' shared extension. */
 PyAPI_FUNC(int) _PyInterpreterState_GetConfigCopy(
     struct PyConfig *config);
 
@@ -271,9 +274,43 @@ PyAPI_FUNC(int) _PyInterpreterState_GetConfigCopy(
 
    Return 0 on success. Raise an exception and return -1 on error.
 
-   The configuration should come from _PyInterpreterState_GetConfigCopy(). */
+   The configuration should come from _PyInterpreterState_GetConfigCopy().
+
+   Export for '_testinternalcapi' shared extension. */
 PyAPI_FUNC(int) _PyInterpreterState_SetConfig(
     const struct PyConfig *config);
+
+
+/*
+Runtime Feature Flags
+
+Each flag indicate whether or not a specific runtime feature
+is available in a given context.  For example, forking the process
+might not be allowed in the current interpreter (i.e. os.fork() would fail).
+*/
+
+/* Set if the interpreter share obmalloc runtime state
+   with the main interpreter. */
+#define Py_RTFLAGS_USE_MAIN_OBMALLOC (1UL << 5)
+
+/* Set if import should check a module for subinterpreter support. */
+#define Py_RTFLAGS_MULTI_INTERP_EXTENSIONS (1UL << 8)
+
+/* Set if threads are allowed. */
+#define Py_RTFLAGS_THREADS (1UL << 10)
+
+/* Set if daemon threads are allowed. */
+#define Py_RTFLAGS_DAEMON_THREADS (1UL << 11)
+
+/* Set if os.fork() is allowed. */
+#define Py_RTFLAGS_FORK (1UL << 15)
+
+/* Set if os.exec*() is allowed. */
+#define Py_RTFLAGS_EXEC (1UL << 16)
+
+extern int _PyInterpreterState_HasFeature(PyInterpreterState *interp,
+                                          unsigned long feature);
+
 
 #ifdef __cplusplus
 }

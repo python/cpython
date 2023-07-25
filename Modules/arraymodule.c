@@ -2268,7 +2268,7 @@ array_array___reduce_ex___impl(arrayobject *self, PyTypeObject *cls,
     if (protocol == -1 && PyErr_Occurred())
         return NULL;
 
-    if (_PyObject_LookupAttr((PyObject *)self, state->str___dict__, &dict) < 0) {
+    if (PyObject_GetOptionalAttr((PyObject *)self, state->str___dict__, &dict) < 0) {
         return NULL;
     }
     if (dict == NULL) {
@@ -3163,9 +3163,8 @@ array_modexec(PyObject *m)
     CREATE_TYPE(m, state->ArrayIterType, &arrayiter_spec);
     Py_SET_TYPE(state->ArrayIterType, &PyType_Type);
 
-    if (PyModule_AddObject(m, "ArrayType",
-                           Py_NewRef((PyObject *)state->ArrayType)) < 0) {
-        Py_DECREF((PyObject *)state->ArrayType);
+    if (PyModule_AddObjectRef(m, "ArrayType",
+                              (PyObject *)state->ArrayType) < 0) {
         return -1;
     }
 
@@ -3193,8 +3192,7 @@ array_modexec(PyObject *m)
         *p++ = (char)descr->typecode;
     }
     typecodes = PyUnicode_DecodeASCII(buffer, p - buffer, NULL);
-    if (PyModule_AddObject(m, "typecodes", typecodes) < 0) {
-        Py_XDECREF(typecodes);
+    if (PyModule_Add(m, "typecodes", typecodes) < 0) {
         return -1;
     }
 

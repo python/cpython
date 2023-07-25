@@ -399,6 +399,12 @@ Directory and files operations
    total, used and free space, in bytes. *path* may be a file or a
    directory.
 
+   .. note::
+
+      On Unix filesystems, *path* must point to a path within a **mounted**
+      filesystem partition. On those platforms, CPython doesn't attempt to
+      retrieve disk usage information from non-mounted filesystems.
+
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.8
@@ -431,7 +437,7 @@ Directory and files operations
    determining if the file exists and executable.
 
    When no *path* is specified, the results of :func:`os.environ` are used,
-   returning either the "PATH" value or a fallback of :attr:`os.defpath`.
+   returning either the "PATH" value or a fallback of :data:`os.defpath`.
 
    On Windows, the current directory is prepended to the *path* if *mode* does
    not include ``os.X_OK``. When the *mode* does include ``os.X_OK``, the

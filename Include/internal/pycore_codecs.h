@@ -6,8 +6,6 @@ extern "C" {
 
 extern PyObject* _PyCodec_Lookup(const char *encoding);
 
-extern int _PyCodec_Forget(const char *encoding);
-
 /* Text codec specific encoding and decoding API.
 
    Checks the encoding against a list of codecs which do not

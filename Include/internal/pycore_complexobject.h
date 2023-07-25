@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_unicodeobject.h" // _PyUnicodeWriter
+
 /* Operations on complex numbers from complexmodule.c */
 
 PyAPI_FUNC(Py_complex) _Py_c_sum(Py_complex, Py_complex);

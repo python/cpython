@@ -63,12 +63,12 @@ ga_repr_item(_PyUnicodeWriter *writer, PyObject *p)
         goto done;
     }
 
-    if (_PyObject_LookupAttr(p, &_Py_ID(__origin__), &tmp) < 0) {
+    if (PyObject_GetOptionalAttr(p, &_Py_ID(__origin__), &tmp) < 0) {
         goto done;
     }
     if (tmp != NULL) {
         Py_DECREF(tmp);
-        if (_PyObject_LookupAttr(p, &_Py_ID(__args__), &tmp) < 0) {
+        if (PyObject_GetOptionalAttr(p, &_Py_ID(__args__), &tmp) < 0) {
             goto done;
         }
         if (tmp != NULL) {
@@ -78,13 +78,13 @@ ga_repr_item(_PyUnicodeWriter *writer, PyObject *p)
         }
     }
 
-    if (_PyObject_LookupAttr(p, &_Py_ID(__qualname__), &qualname) < 0) {
+    if (PyObject_GetOptionalAttr(p, &_Py_ID(__qualname__), &qualname) < 0) {
         goto done;
     }
     if (qualname == NULL) {
         goto use_repr;
     }
-    if (_PyObject_LookupAttr(p, &_Py_ID(__module__), &module) < 0) {
+    if (PyObject_GetOptionalAttr(p, &_Py_ID(__module__), &module) < 0) {
         goto done;
     }
     if (module == NULL || module == Py_None) {
@@ -257,7 +257,7 @@ _Py_make_parameters(PyObject *args)
         if (PyType_Check(t)) {
             continue;
         }
-        if (_PyObject_LookupAttr(t, &_Py_ID(__typing_subst__), &subst) < 0) {
+        if (PyObject_GetOptionalAttr(t, &_Py_ID(__typing_subst__), &subst) < 0) {
             Py_DECREF(parameters);
             return NULL;
         }
@@ -267,7 +267,7 @@ _Py_make_parameters(PyObject *args)
         }
         else {
             PyObject *subparams;
-            if (_PyObject_LookupAttr(t, &_Py_ID(__parameters__),
+            if (PyObject_GetOptionalAttr(t, &_Py_ID(__parameters__),
                                      &subparams) < 0) {
                 Py_DECREF(parameters);
                 return NULL;
@@ -310,7 +310,7 @@ subs_tvars(PyObject *obj, PyObject *params,
            PyObject **argitems, Py_ssize_t nargs)
 {
     PyObject *subparams;
-    if (_PyObject_LookupAttr(obj, &_Py_ID(__parameters__), &subparams) < 0) {
+    if (PyObject_GetOptionalAttr(obj, &_Py_ID(__parameters__), &subparams) < 0) {
         return NULL;
     }
     if (subparams && PyTuple_Check(subparams) && PyTuple_GET_SIZE(subparams)) {
@@ -361,7 +361,7 @@ _is_unpacked_typevartuple(PyObject *arg)
     if (PyType_Check(arg)) { // TODO: Add test
         return 0;
     }
-    int res = _PyObject_LookupAttr(arg, &_Py_ID(__typing_is_unpacked_typevartuple__), &tmp);
+    int res = PyObject_GetOptionalAttr(arg, &_Py_ID(__typing_is_unpacked_typevartuple__), &tmp);
     if (res > 0) {
         res = PyObject_IsTrue(tmp);
         Py_DECREF(tmp);
@@ -383,7 +383,7 @@ _unpacked_tuple_args(PyObject *arg)
         return Py_NewRef(result);
     }
 
-    if (_PyObject_LookupAttr(arg, &_Py_ID(__typing_unpacked_tuple_args__), &result) > 0) {
+    if (PyObject_GetOptionalAttr(arg, &_Py_ID(__typing_unpacked_tuple_args__), &result) > 0) {
         if (result == Py_None) {
             Py_DECREF(result);
             return NULL;
@@ -448,7 +448,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
     for (Py_ssize_t i = 0; i < nparams; i++) {
         PyObject *param = PyTuple_GET_ITEM(parameters, i);
         PyObject *prepare, *tmp;
-        if (_PyObject_LookupAttr(param, &_Py_ID(__typing_prepare_subst__), &prepare) < 0) {
+        if (PyObject_GetOptionalAttr(param, &_Py_ID(__typing_prepare_subst__), &prepare) < 0) {
             Py_DECREF(item);
             return NULL;
         }
@@ -503,7 +503,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
             return NULL;
         }
         PyObject *subst;
-        if (_PyObject_LookupAttr(arg, &_Py_ID(__typing_subst__), &subst) < 0) {
+        if (PyObject_GetOptionalAttr(arg, &_Py_ID(__typing_subst__), &subst) < 0) {
             Py_DECREF(newargs);
             Py_DECREF(item);
             return NULL;

@@ -2030,17 +2030,11 @@ zlib_exec(PyObject *mod)
     }
 
     state->ZlibError = PyErr_NewException("zlib.error", NULL, NULL);
-    if (state->ZlibError == NULL) {
+    if (PyModule_AddObjectRef(mod, "error", state->ZlibError) < 0) {
         return -1;
     }
-
-    if (PyModule_AddObject(mod, "error", Py_NewRef(state->ZlibError)) < 0) {
-        Py_DECREF(state->ZlibError);
-        return -1;
-    }
-    if (PyModule_AddObject(mod, "_ZlibDecompressor",
-                           Py_NewRef(state->ZlibDecompressorType)) < 0) {
-        Py_DECREF(state->ZlibDecompressorType);
+    if (PyModule_AddObjectRef(mod, "_ZlibDecompressor",
+                              (PyObject *)state->ZlibDecompressorType) < 0) {
         return -1;
     }
 
@@ -2082,26 +2076,14 @@ zlib_exec(PyObject *mod)
 #ifdef Z_TREES // 1.2.3.4, only for inflate
     ZLIB_ADD_INT_MACRO(Z_TREES);
 #endif
-    PyObject *ver = PyUnicode_FromString(ZLIB_VERSION);
-    if (ver == NULL) {
+    if (PyModule_Add(mod, "ZLIB_VERSION",
+                     PyUnicode_FromString(ZLIB_VERSION)) < 0) {
         return -1;
     }
-
-    if (PyModule_AddObject(mod, "ZLIB_VERSION", ver) < 0) {
-        Py_DECREF(ver);
+    if (PyModule_Add(mod, "ZLIB_RUNTIME_VERSION",
+                     PyUnicode_FromString(zlibVersion())) < 0) {
         return -1;
     }
-
-    ver = PyUnicode_FromString(zlibVersion());
-    if (ver == NULL) {
-        return -1;
-    }
-
-    if (PyModule_AddObject(mod, "ZLIB_RUNTIME_VERSION", ver) < 0) {
-        Py_DECREF(ver);
-        return -1;
-    }
-
     if (PyModule_AddStringConstant(mod, "__version__", "1.0") < 0) {
         return -1;
     }

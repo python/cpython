@@ -66,7 +66,7 @@ _Py_ThreadCanHandleSignals(PyInterpreterState *interp)
 #if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
 extern _Py_thread_local PyThreadState *_Py_tss_tstate;
 #endif
-PyAPI_DATA(PyThreadState *) _PyThreadState_GetCurrent(void);
+PyAPI_FUNC(PyThreadState *) _PyThreadState_GetCurrent(void);
 
 /* Get the current Python thread state.
 
@@ -121,15 +121,16 @@ static inline PyInterpreterState* _PyInterpreterState_GET(void) {
 
 // PyThreadState functions
 
-PyAPI_FUNC(PyThreadState *) _PyThreadState_New(PyInterpreterState *interp);
-PyAPI_FUNC(void) _PyThreadState_Bind(PyThreadState *tstate);
-PyAPI_FUNC(void) _PyThreadState_DeleteExcept(PyThreadState *tstate);
+extern PyThreadState * _PyThreadState_New(PyInterpreterState *interp);
+extern void _PyThreadState_Bind(PyThreadState *tstate);
+extern void _PyThreadState_DeleteExcept(PyThreadState *tstate);
 
 extern void _PyThreadState_InitDetached(PyThreadState *, PyInterpreterState *);
 extern void _PyThreadState_ClearDetached(PyThreadState *);
 extern void _PyThreadState_BindDetached(PyThreadState *);
 extern void _PyThreadState_UnbindDetached(PyThreadState *);
 
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyObject*) _PyThreadState_GetDict(PyThreadState *tstate);
 
 /* The implementation of sys._current_frames()  Returns a dict mapping
@@ -145,25 +146,25 @@ extern PyObject* _PyThread_CurrentExceptions(void);
 
 /* Other */
 
-PyAPI_FUNC(PyThreadState *) _PyThreadState_Swap(
+extern PyThreadState * _PyThreadState_Swap(
     _PyRuntimeState *runtime,
     PyThreadState *newts);
 
-PyAPI_FUNC(PyStatus) _PyInterpreterState_Enable(_PyRuntimeState *runtime);
+extern PyStatus _PyInterpreterState_Enable(_PyRuntimeState *runtime);
 
 #ifdef HAVE_FORK
 extern PyStatus _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime);
 extern void _PySignal_AfterFork(void);
 #endif
 
-
+// Export for the stable ABI
 PyAPI_FUNC(int) _PyState_AddModule(
     PyThreadState *tstate,
     PyObject* module,
     PyModuleDef* def);
 
 
-PyAPI_FUNC(int) _PyOS_InterruptOccurred(PyThreadState *tstate);
+extern int _PyOS_InterruptOccurred(PyThreadState *tstate);
 
 #define HEAD_LOCK(runtime) \
     PyThread_acquire_lock((runtime)->interpreters.mutex, WAIT_LOCK)
@@ -172,6 +173,7 @@ PyAPI_FUNC(int) _PyOS_InterruptOccurred(PyThreadState *tstate);
 
 // Get the configuration of the current interpreter.
 // The caller must hold the GIL.
+// Export for test_peg_generator.
 PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 
 

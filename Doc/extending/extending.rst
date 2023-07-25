@@ -221,9 +221,7 @@ with an exception object::
            return NULL;
 
        SpamError = PyErr_NewException("spam.error", NULL, NULL);
-       Py_XINCREF(SpamError);
-       if (PyModule_AddObject(m, "error", SpamError) < 0) {
-           Py_XDECREF(SpamError);
+       if (PyModule_AddObjectRef(m, "error", SpamError) < 0) {
            Py_CLEAR(SpamError);
            Py_DECREF(m);
            return NULL;
@@ -237,10 +235,10 @@ Note that the Python name for the exception object is :exc:`spam.error`.  The
 being :exc:`Exception` (unless another class is passed in instead of ``NULL``),
 described in :ref:`bltin-exceptions`.
 
-Note also that the :c:data:`SpamError` variable retains a reference to the newly
+Note also that the :c:data:`!SpamError` variable retains a reference to the newly
 created exception class; this is intentional!  Since the exception could be
 removed from the module by external code, an owned reference to the class is
-needed to ensure that it will not be discarded, causing :c:data:`SpamError` to
+needed to ensure that it will not be discarded, causing :c:data:`!SpamError` to
 become a dangling pointer. Should it become a dangling pointer, C code which
 raises the exception could cause a core dump or other unintended side effects.
 
@@ -281,9 +279,9 @@ statement::
 It returns ``NULL`` (the error indicator for functions returning object pointers)
 if an error is detected in the argument list, relying on the exception set by
 :c:func:`PyArg_ParseTuple`.  Otherwise the string value of the argument has been
-copied to the local variable :c:data:`command`.  This is a pointer assignment and
+copied to the local variable :c:data:`!command`.  This is a pointer assignment and
 you are not supposed to modify the string to which it points (so in Standard C,
-the variable :c:data:`command` should properly be declared as ``const char
+the variable :c:data:`!command` should properly be declared as ``const char
 *command``).
 
 The next statement is a call to the Unix function :c:func:`system`, passing it
@@ -291,7 +289,7 @@ the string we just got from :c:func:`PyArg_ParseTuple`::
 
    sts = system(command);
 
-Our :func:`spam.system` function must return the value of :c:data:`sts` as a
+Our :func:`!spam.system` function must return the value of :c:data:`!sts` as a
 Python object.  This is done using the function :c:func:`PyLong_FromLong`. ::
 
    return PyLong_FromLong(sts);
@@ -337,7 +335,7 @@ When using only ``METH_VARARGS``, the function should expect the Python-level
 parameters to be passed in as a tuple acceptable for parsing via
 :c:func:`PyArg_ParseTuple`; more information on this function is provided below.
 
-The :const:`METH_KEYWORDS` bit may be set in the third field if keyword
+The :c:macro:`METH_KEYWORDS` bit may be set in the third field if keyword
 arguments should be passed to the function.  In this case, the C function should
 accept a third ``PyObject *`` parameter which will be a dictionary of keywords.
 Use :c:func:`PyArg_ParseTupleAndKeywords` to parse the arguments to such a
@@ -540,7 +538,7 @@ be part of a module definition::
    }
 
 This function must be registered with the interpreter using the
-:const:`METH_VARARGS` flag; this is described in section :ref:`methodtable`.  The
+:c:macro:`METH_VARARGS` flag; this is described in section :ref:`methodtable`.  The
 :c:func:`PyArg_ParseTuple` function and its arguments are documented in section
 :ref:`parsetuple`.
 
@@ -1281,8 +1279,7 @@ function must take care of initializing the C API pointer array::
        /* Create a Capsule containing the API pointer array's address */
        c_api_object = PyCapsule_New((void *)PySpam_API, "spam._C_API", NULL);
 
-       if (PyModule_AddObject(m, "_C_API", c_api_object) < 0) {
-           Py_XDECREF(c_api_object);
+       if (PyModule_Add(m, "_C_API", c_api_object) < 0) {
            Py_DECREF(m);
            return NULL;
        }

@@ -2079,15 +2079,9 @@ static struct PyMethodDef winreg_methods[] = {
 } while (0)
 
 static int
-inskey(PyObject *mod, char *name, HKEY key)
+inskey(PyObject *mod, const char *name, HKEY key)
 {
-    PyObject *v = PyLong_FromVoidPtr(key);
-    if (v == NULL) {
-        return -1;
-    }
-    int rc = PyModule_AddObjectRef(mod, name, v);
-    Py_DECREF(v);
-    return rc;
+    return PyModule_Add(mod, name, PyLong_FromVoidPtr(key));
 }
 
 #define ADD_KEY(VAL) do {           \

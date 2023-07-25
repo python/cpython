@@ -387,9 +387,13 @@ class FilterTests(BaseTest):
             with self.module.catch_warnings(
                 module=self.module, action="error", category=FutureWarning
             ):
-                self.module.warn("Other types of warnings are not errors")
-                self.assertRaises(FutureWarning,
-                                  self.module.warn, FutureWarning("msg"))
+                with support.captured_stderr() as stderr:
+                    error_msg = "Other types of warnings are not errors"
+                    self.module.warn(error_msg)
+                    self.assertRaises(FutureWarning,
+                                      self.module.warn, FutureWarning("msg"))
+                    stderr = stderr.getvalue()
+                    self.assertIn(error_msg, stderr)
 
 class CFilterTests(FilterTests, unittest.TestCase):
     module = c_warnings

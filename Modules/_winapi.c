@@ -36,6 +36,7 @@
 
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET
 #include "structmember.h"         // PyMemberDef
 

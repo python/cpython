@@ -3,38 +3,6 @@
 #endif
 
 
-/*
-Runtime Feature Flags
-
-Each flag indicate whether or not a specific runtime feature
-is available in a given context.  For example, forking the process
-might not be allowed in the current interpreter (i.e. os.fork() would fail).
-*/
-
-/* Set if the interpreter share obmalloc runtime state
-   with the main interpreter. */
-#define Py_RTFLAGS_USE_MAIN_OBMALLOC (1UL << 5)
-
-/* Set if import should check a module for subinterpreter support. */
-#define Py_RTFLAGS_MULTI_INTERP_EXTENSIONS (1UL << 8)
-
-/* Set if threads are allowed. */
-#define Py_RTFLAGS_THREADS (1UL << 10)
-
-/* Set if daemon threads are allowed. */
-#define Py_RTFLAGS_DAEMON_THREADS (1UL << 11)
-
-/* Set if os.fork() is allowed. */
-#define Py_RTFLAGS_FORK (1UL << 15)
-
-/* Set if os.exec*() is allowed. */
-#define Py_RTFLAGS_EXEC (1UL << 16)
-
-
-PyAPI_FUNC(int) _PyInterpreterState_HasFeature(PyInterpreterState *interp,
-                                               unsigned long feature);
-
-
 /* private interpreter helpers */
 
 PyAPI_FUNC(int) _PyInterpreterState_RequiresIDRef(PyInterpreterState *);

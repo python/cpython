@@ -148,7 +148,7 @@ iobase_is_closed(PyObject *self)
     int ret;
     /* This gets the derived attribute, which is *not* __IOBase_closed
        in most cases! */
-    ret = _PyObject_LookupAttr(self, &_Py_ID(__IOBase_closed), &res);
+    ret = PyObject_GetOptionalAttr(self, &_Py_ID(__IOBase_closed), &res);
     Py_XDECREF(res);
     return ret;
 }
@@ -196,7 +196,7 @@ iobase_check_closed(PyObject *self)
     int closed;
     /* This gets the derived attribute, which is *not* __IOBase_closed
        in most cases! */
-    closed = _PyObject_LookupAttr(self, &_Py_ID(closed), &res);
+    closed = PyObject_GetOptionalAttr(self, &_Py_ID(closed), &res);
     if (closed > 0) {
         closed = PyObject_IsTrue(res);
         Py_DECREF(res);
@@ -303,7 +303,7 @@ iobase_finalize(PyObject *self)
 
     /* If `closed` doesn't exist or can't be evaluated as bool, then the
        object is probably in an unusable state, so ignore. */
-    if (_PyObject_LookupAttr(self, &_Py_ID(closed), &res) <= 0) {
+    if (PyObject_GetOptionalAttr(self, &_Py_ID(closed), &res) <= 0) {
         PyErr_Clear();
         closed = -1;
     }
@@ -571,7 +571,7 @@ _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
     PyObject *peek, *buffer, *result;
     Py_ssize_t old_size = -1;
 
-    if (_PyObject_LookupAttr(self, &_Py_ID(peek), &peek) < 0) {
+    if (PyObject_GetOptionalAttr(self, &_Py_ID(peek), &peek) < 0) {
         return NULL;
     }
 

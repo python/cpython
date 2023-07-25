@@ -389,7 +389,7 @@ _PySymtable_Free(struct symtable *st)
 }
 
 PySTEntryObject *
-PySymtable_Lookup(struct symtable *st, void *key)
+_PySymtable_Lookup(struct symtable *st, void *key)
 {
     PyObject *k, *v;
 

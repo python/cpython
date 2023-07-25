@@ -1487,22 +1487,12 @@ unicodedata_exec(PyObject *module)
     v = new_previous_version(ucd_type, "3.2.0",
                              get_change_3_2_0, normalization_3_2_0);
     Py_DECREF(ucd_type);
-    if (v == NULL) {
-        return -1;
-    }
-    if (PyModule_AddObject(module, "ucd_3_2_0", v) < 0) {
-        Py_DECREF(v);
+    if (PyModule_Add(module, "ucd_3_2_0", v) < 0) {
         return -1;
     }
 
     /* Export C API */
-    PyObject *capsule = unicodedata_create_capi();
-    if (capsule == NULL) {
-        return -1;
-    }
-    int rc = PyModule_AddObjectRef(module, "_ucnhash_CAPI", capsule);
-    Py_DECREF(capsule);
-    if (rc < 0) {
+    if (PyModule_Add(module, "_ucnhash_CAPI", unicodedata_create_capi()) < 0) {
         return -1;
     }
     return 0;

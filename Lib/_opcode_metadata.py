@@ -63,6 +63,8 @@ _specializations = {
         "LOAD_ATTR_METHOD_WITH_VALUES",
         "LOAD_ATTR_METHOD_NO_DICT",
         "LOAD_ATTR_METHOD_LAZY_DICT",
+        "LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES",
+        "LOAD_ATTR_NONDESCRIPTOR_NO_DICT",
     ],
     "COMPARE_OP": [
         "COMPARE_OP_FLOAT",

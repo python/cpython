@@ -25,12 +25,13 @@
 
 #include "Python.h"
 #include "pycore_context.h"
+#include "pycore_dict.h"          // _PyDict_MaybeUntrack()
 #include "pycore_initconfig.h"
-#include "pycore_interp.h"      // PyInterpreterState.gc
+#include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
-#include "pycore_pystate.h"     // _PyThreadState_GET()
-#include "pycore_weakref.h"     // _PyWeakref_ClearRef()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_weakref.h"       // _PyWeakref_ClearRef()
 #include "pydtrace.h"
 
 typedef struct _gc_runtime_state GCState;

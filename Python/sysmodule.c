@@ -17,11 +17,13 @@ Data members:
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_SetAsyncGenFinalizer()
+#include "pycore_dict.h"          // _PyDict_GetItemWithError()
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_long.h"          // _PY_LONG_MAX_STR_DIGITS_THRESHOLD
+#include "pycore_modsupport.h"    // _PyModule_CreateInitialized()
 #include "pycore_namespace.h"     // _PyNamespace_New()
-#include "pycore_object.h"        // _PyObject_IS_GC()
+#include "pycore_object.h"        // _PyObject_IS_GC(), _PyObject_DebugTypeStats()
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pylifecycle.h"   // _PyErr_WriteUnraisableDefaultHook()
@@ -256,7 +258,7 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
         PyThreadState_EnterTracing(ts);
         while ((hook = PyIter_Next(hooks)) != NULL) {
             PyObject *o;
-            int canTrace = _PyObject_LookupAttr(hook, &_Py_ID(__cantrace__), &o);
+            int canTrace = PyObject_GetOptionalAttr(hook, &_Py_ID(__cantrace__), &o);
             if (o) {
                 canTrace = PyObject_IsTrue(o);
                 Py_DECREF(o);
@@ -656,7 +658,7 @@ sys_displayhook_unencodable(PyObject *outf, PyObject *o)
     if (encoded == NULL)
         goto error;
 
-    if (_PyObject_LookupAttr(outf, &_Py_ID(buffer), &buffer) < 0) {
+    if (PyObject_GetOptionalAttr(outf, &_Py_ID(buffer), &buffer) < 0) {
         Py_DECREF(encoded);
         goto error;
     }
