@@ -23,13 +23,14 @@ struct _ceval_runtime_state;
 extern void _Py_FinishPendingCalls(PyThreadState *tstate);
 extern void _PyEval_InitState(PyInterpreterState *, PyThread_type_lock);
 extern void _PyEval_FiniState(struct _ceval_state *ceval);
-PyAPI_FUNC(void) _PyEval_SignalReceived(PyInterpreterState *interp);
+extern void _PyEval_SignalReceived(PyInterpreterState *interp);
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(int) _PyEval_AddPendingCall(
     PyInterpreterState *interp,
     int (*func)(void *),
     void *arg,
     int mainthreadonly);
-PyAPI_FUNC(void) _PyEval_SignalAsyncExc(PyInterpreterState *interp);
+extern void _PyEval_SignalAsyncExc(PyInterpreterState *interp);
 #ifdef HAVE_FORK
 extern PyStatus _PyEval_ReInitThreads(PyThreadState *tstate);
 #endif
@@ -122,6 +123,7 @@ static inline int _Py_MakeRecCheck(PyThreadState *tstate) {
 }
 #endif
 
+// Export for _Py_EnterRecursiveCall()
 PyAPI_FUNC(int) _Py_CheckRecursiveCall(
     PyThreadState *tstate,
     const char *where);
@@ -157,6 +159,18 @@ extern PyObject* _Py_MakeCoro(PyFunctionObject *func);
 extern int _Py_HandlePending(PyThreadState *tstate);
 
 extern PyObject * _PyEval_GetFrameLocals(void);
+
+extern const binaryfunc _PyEval_BinaryOps[];
+int _PyEval_CheckExceptStarTypeValid(PyThreadState *tstate, PyObject* right);
+int _PyEval_CheckExceptTypeValid(PyThreadState *tstate, PyObject* right);
+int _PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type, PyObject **match, PyObject **rest);
+void _PyEval_FormatAwaitableError(PyThreadState *tstate, PyTypeObject *type, int oparg);
+void _PyEval_FormatExcCheckArg(PyThreadState *tstate, PyObject *exc, const char *format_str, PyObject *obj);
+void _PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *co, int oparg);
+void _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwargs);
+PyObject *_PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t nargs, PyObject *kwargs);
+PyObject *_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys);
+int _PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v, int argcnt, int argcntafter, PyObject **sp);
 
 
 #ifdef __cplusplus

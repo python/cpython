@@ -28,12 +28,13 @@
 #define NEED_OPCODE_TABLES
 #include "pycore_opcode_utils.h"
 #undef NEED_OPCODE_TABLES
-#include "pycore_flowgraph.h"
 #include "pycore_code.h"          // _PyCode_New()
 #include "pycore_compile.h"
+#include "pycore_flowgraph.h"
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pystate.h"       // _Py_GetConfig()
+#include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_symtable.h"      // PySTEntryObject, _PyFuture_FromAST()
 
 #define NEED_OPCODE_METADATA
@@ -896,6 +897,24 @@ PyUnstable_OpcodeHasJump(int opcode)
     return OPCODE_HAS_JUMP(opcode);
 }
 
+int
+PyUnstable_OpcodeHasFree(int opcode)
+{
+    return OPCODE_HAS_FREE(opcode);
+}
+
+int
+PyUnstable_OpcodeHasLocal(int opcode)
+{
+    return OPCODE_HAS_LOCAL(opcode);
+}
+
+int
+PyUnstable_OpcodeHasExc(int opcode)
+{
+    return IS_BLOCK_PUSH_OPCODE(opcode);
+}
+
 static int
 codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
 {
@@ -1261,7 +1280,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     u->u_metadata.u_argcount = 0;
     u->u_metadata.u_posonlyargcount = 0;
     u->u_metadata.u_kwonlyargcount = 0;
-    u->u_ste = PySymtable_Lookup(c->c_st, key);
+    u->u_ste = _PySymtable_Lookup(c->c_st, key);
     if (!u->u_ste) {
         compiler_unit_free(u);
         return ERROR;
@@ -5666,7 +5685,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     comprehension_ty outermost;
     int scope_type = c->u->u_scope_type;
     int is_top_level_await = IS_TOP_LEVEL_AWAIT(c);
-    PySTEntryObject *entry = PySymtable_Lookup(c->c_st, (void *)e);
+    PySTEntryObject *entry = _PySymtable_Lookup(c->c_st, (void *)e);
     if (entry == NULL) {
         goto error;
     }
@@ -8035,6 +8054,12 @@ _PyCompile_CleanDoc(PyObject *doc)
     }
 
     char *buff = PyMem_Malloc(doc_size);
+    if (buff == NULL){
+        Py_DECREF(doc);
+        PyErr_NoMemory();
+        return NULL;
+    }
+
     char *w = buff;
 
     while (p < pend) {

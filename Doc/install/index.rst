@@ -313,9 +313,9 @@ install into it.  It is enabled with a simple option::
 
    python setup.py install --user
 
-Files will be installed into subdirectories of :data:`site.USER_BASE` (written
+Files will be installed into subdirectories of :const:`site.USER_BASE` (written
 as :file:`{userbase}` hereafter).  This scheme installs pure Python modules and
-extension modules in the same location (also known as :data:`site.USER_SITE`).
+extension modules in the same location (also known as :const:`site.USER_SITE`).
 Here are the values for UNIX, including macOS:
 
 =============== ===========================================================

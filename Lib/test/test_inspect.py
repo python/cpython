@@ -15,6 +15,7 @@ import pickle
 import shutil
 import sys
 import types
+import tempfile
 import textwrap
 import unicodedata
 import unittest
@@ -949,7 +950,6 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(mod2.cls196.cls200, 198, 201)
 
     def test_class_inside_conditional(self):
-        self.assertSourceEqual(mod2.cls238, 238, 240)
         self.assertSourceEqual(mod2.cls238.cls239, 239, 240)
 
     def test_multiple_children_classes(self):
@@ -964,6 +964,33 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(mod2.cls213, 218, 222)
         self.assertSourceEqual(mod2.cls213().func219(), 220, 221)
 
+    def test_class_with_method_from_other_module(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            with open(os.path.join(tempdir, 'inspect_actual%spy' % os.extsep),
+                      'w', encoding='utf-8') as f:
+                f.write(textwrap.dedent("""
+                    import inspect_other
+                    class A:
+                        def f(self):
+                            pass
+                    class A:
+                        def f(self):
+                            pass  # correct one
+                    A.f = inspect_other.A.f
+                    """))
+
+            with open(os.path.join(tempdir, 'inspect_other%spy' % os.extsep),
+                      'w', encoding='utf-8') as f:
+                f.write(textwrap.dedent("""
+                    class A:
+                        def f(self):
+                            pass
+                    """))
+
+            with DirsOnSysPath(tempdir):
+                import inspect_actual
+                self.assertIn("correct", inspect.getsource(inspect_actual.A))
+
     @unittest.skipIf(
         support.is_emscripten or support.is_wasi,
         "socket.accept is broken"
@@ -974,6 +1001,10 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(asyncio.run(mod2.func225()), 226, 227)
         self.assertSourceEqual(mod2.cls226, 231, 235)
         self.assertSourceEqual(asyncio.run(mod2.cls226().func232()), 233, 234)
+
+    def test_class_definition_same_name_diff_methods(self):
+        self.assertSourceEqual(mod2.cls296, 296, 298)
+        self.assertSourceEqual(mod2.cls310, 310, 312)
 
 class TestNoEOL(GetSourceBase):
     def setUp(self):

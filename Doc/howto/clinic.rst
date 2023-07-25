@@ -13,12 +13,20 @@ Argument Clinic How-To
 
   Argument Clinic is a preprocessor for CPython C files.
   Its purpose is to automate all the boilerplate involved
-  with writing argument parsing code for "builtins".
-  This document shows you how to convert your first C
-  function to work with Argument Clinic, and then introduces
-  some advanced topics on Argument Clinic usage.
+  with writing argument parsing code for "builtins",
+  module level functions, and class methods.
+  This document is divided in three major sections:
 
-  Currently Argument Clinic is considered internal-only
+  * :ref:`clinic-background` talks about the basic concepts and goals of
+    Argument Clinic.
+  * :ref:`clinic-tutorial` guides you through all the steps required to
+    adapt an existing C function to Argument Clinic.
+  * :ref:`clinic-howtos` details how to handle specific tasks.
+
+
+.. note::
+
+  Argument Clinic is considered internal-only
   for CPython.  Its use is not supported for files outside
   CPython, and no guarantees are made regarding backwards
   compatibility for future versions.  In other words: if you
@@ -28,8 +36,14 @@ Argument Clinic How-To
   of CPython *could* be totally incompatible and break all your code.
 
 
+.. _clinic-background:
+
+Background
+==========
+
+
 The goals of Argument Clinic
-============================
+----------------------------
 
 Argument Clinic's primary goal
 is to take over responsibility for all argument parsing code
@@ -80,9 +94,10 @@ things with all the information you give it.
 
 
 Basic concepts and usage
-========================
+------------------------
 
-Argument Clinic ships with CPython; you'll find it in ``Tools/clinic/clinic.py``.
+Argument Clinic ships with CPython; you'll find it in
+:source:`Tools/clinic/clinic.py`.
 If you run that script, specifying a C file as an argument:
 
 .. code-block:: shell-session
@@ -142,8 +157,10 @@ For the sake of clarity, here's the terminology we'll use with Argument Clinic:
   a block.)
 
 
-Converting your first function
-==============================
+.. _clinic-tutorial:
+
+Tutorial
+========
 
 The best way to get a sense of how Argument Clinic works is to
 convert a function to work with it.  Here, then, are the bare
@@ -162,9 +179,10 @@ Let's dive in!
 1. Find a Python builtin that calls either :c:func:`PyArg_ParseTuple`
    or :c:func:`PyArg_ParseTupleAndKeywords`, and hasn't been converted
    to work with Argument Clinic yet.
-   For my example I'm using ``_pickle.Pickler.dump()``.
+   For my example I'm using
+   :py:meth:`_pickle.Pickler.dump <pickle.Pickler.dump>`.
 
-2. If the call to the ``PyArg_Parse`` function uses any of the
+2. If the call to the :c:func:`!PyArg_Parse*` function uses any of the
    following format units:
 
    .. code-block:: none
@@ -181,10 +199,10 @@ Let's dive in!
    support all of these scenarios.  But these are advanced
    topics—let's do something simpler for your first function.
 
-   Also, if the function has multiple calls to :c:func:`PyArg_ParseTuple`
+   Also, if the function has multiple calls to :c:func:`!PyArg_ParseTuple`
    or :c:func:`PyArg_ParseTupleAndKeywords` where it supports different
    types for the same argument, or if the function uses something besides
-   PyArg_Parse functions to parse its arguments, it probably
+   :c:func:`!PyArg_Parse*` functions to parse its arguments, it probably
    isn't suitable for conversion to Argument Clinic.  Argument Clinic
    doesn't support generic functions or polymorphic parameters.
 
@@ -201,7 +219,7 @@ Let's dive in!
 
    If the old docstring had a first line that looked like a function
    signature, throw that line away.  (The docstring doesn't need it
-   anymore—when you use ``help()`` on your builtin in the future,
+   anymore—when you use :py:func:`help` on your builtin in the future,
    the first line will be built automatically based on the function's
    signature.)
 
@@ -248,7 +266,7 @@ Let's dive in!
 
    When you declare a class, you must also specify two aspects of its type
    in C: the type declaration you'd use for a pointer to an instance of
-   this class, and a pointer to the :c:type:`PyTypeObject` for this class.
+   this class, and a pointer to the :c:type:`!PyTypeObject` for this class.
 
    Sample::
 
@@ -297,10 +315,10 @@ Let's dive in!
    Clinic easier.
 
    For each parameter, copy the "format unit" for that
-   parameter from the ``PyArg_Parse()`` format argument and
+   parameter from the :c:func:`PyArg_Parse` format argument and
    specify *that* as its converter, as a quoted
    string.  ("format unit" is the formal name for the one-to-three
-   character substring of the ``format`` parameter that tells
+   character substring of the *format* parameter that tells
    the argument parsing function what the type of the variable
    is and how to convert it.  For more on format units please
    see :ref:`arg-parsing`.)
@@ -333,7 +351,7 @@ Let's dive in!
    itself before the first keyword-only argument, indented the
    same as the parameter lines.
 
-   (``_pickle.Pickler.dump`` has neither, so our sample is unchanged.)
+   (:py:meth:`!_pickle.Pickler.dump` has neither, so our sample is unchanged.)
 
 
 10. If the existing C function calls :c:func:`PyArg_ParseTuple`
@@ -394,7 +412,7 @@ Let's dive in!
 
 12. Save and close the file, then run ``Tools/clinic/clinic.py`` on
     it.  With luck everything worked---your block now has output, and
-    a ``.c.h`` file has been generated! Reopen the file in your
+    a :file:`.c.h` file has been generated! Reopen the file in your
     text editor to see::
 
        /*[clinic input]
@@ -415,8 +433,8 @@ Let's dive in!
     it found an error in your input.  Keep fixing your errors and retrying
     until Argument Clinic processes your file without complaint.
 
-    For readability, most of the glue code has been generated to a ``.c.h``
-    file.  You'll need to include that in your original ``.c`` file,
+    For readability, most of the glue code has been generated to a :file:`.c.h`
+    file.  You'll need to include that in your original :file:`.c` file,
     typically right after the clinic module block::
 
        #include "clinic/_pickle.c.h"
@@ -430,8 +448,8 @@ Let's dive in!
     ensure that the code generated by Argument Clinic calls the
     *exact* same function.
 
-    Second, the format string passed in to :c:func:`PyArg_ParseTuple` or
-    :c:func:`PyArg_ParseTupleAndKeywords` should be *exactly* the same
+    Second, the format string passed in to :c:func:`!PyArg_ParseTuple` or
+    :c:func:`!PyArg_ParseTupleAndKeywords` should be *exactly* the same
     as the hand-written one in the existing function, up to the colon
     or semi-colon.
 
@@ -453,7 +471,7 @@ Let's dive in!
         {"dump", (PyCFunction)__pickle_Pickler_dump, METH_O, __pickle_Pickler_dump__doc__},
 
     This static structure should be *exactly* the same as the existing static
-    :c:type:`PyMethodDef` structure for this builtin.
+    :c:type:`!PyMethodDef` structure for this builtin.
 
     If any of these items differ in *any way*,
     adjust your Argument Clinic function specification and rerun
@@ -523,14 +541,14 @@ Let's dive in!
             ...
 
 15. Remember the macro with the :c:type:`PyMethodDef` structure for this
-    function?  Find the existing :c:type:`PyMethodDef` structure for this
+    function?  Find the existing :c:type:`!PyMethodDef` structure for this
     function and replace it with a reference to the macro.  (If the builtin
     is at module scope, this will probably be very near the end of the file;
     if the builtin is a class method, this will probably be below but relatively
     near to the implementation.)
 
     Note that the body of the macro contains a trailing comma.  So when you
-    replace the existing static :c:type:`PyMethodDef` structure with the macro,
+    replace the existing static :c:type:`!PyMethodDef` structure with the macro,
     *don't* add a comma to the end.
 
     Sample::
@@ -546,7 +564,7 @@ Let's dive in!
 
         &_Py_ID(new_unique_py_id)
 
-    If it does, you'll have to run ``Tools/scripts/generate_global_objects.py``
+    If it does, you'll have to run ``make regen-global-objects``
     to regenerate the list of precompiled identifiers at this point.
 
 
@@ -554,37 +572,20 @@ Let's dive in!
     This change should not introduce any new compile-time warnings or errors,
     and there should be no externally visible change to Python's behavior.
 
-    Well, except for one difference: ``inspect.signature()`` run on your function
+    Well, except for one difference: :py:func:`inspect.signature` run on your function
     should now provide a valid signature!
 
     Congratulations, you've ported your first function to work with Argument Clinic!
 
 
-Advanced topics
-===============
+.. _clinic-howtos:
 
-Now that you've had some experience working with Argument Clinic, it's time
-for some advanced topics.
-
-
-Symbolic default values
------------------------
-
-The default value you provide for a parameter can't be any arbitrary
-expression.  Currently the following are explicitly supported:
-
-* Numeric constants (integer and float)
-* String constants
-* ``True``, ``False``, and ``None``
-* Simple symbolic constants like ``sys.maxsize``, which must
-  start with the name of the module
-
-(In the future, this may need to get even more elaborate,
-to allow full expressions like ``CONSTANT - 1``.)
+How-to guides
+=============
 
 
-Renaming the C functions and variables generated by Argument Clinic
--------------------------------------------------------------------
+How to rename C functions and variables generated by Argument Clinic
+--------------------------------------------------------------------
 
 Argument Clinic automatically names the functions it generates for you.
 Occasionally this may cause a problem, if the generated name collides with
@@ -595,15 +596,15 @@ Argument Clinic will use that function name for the base (generated) function,
 then add ``"_impl"`` to the end and use that for the name of the impl function.
 
 For example, if we wanted to rename the C function names generated for
-``pickle.Pickler.dump``, it'd look like this::
+:py:meth:`pickle.Pickler.dump`, it'd look like this::
 
     /*[clinic input]
     pickle.Pickler.dump as pickler_dumper
 
     ...
 
-The base function would now be named ``pickler_dumper()``,
-and the impl function would now be named ``pickler_dumper_impl()``.
+The base function would now be named :c:func:`!pickler_dumper`,
+and the impl function would now be named :c:func:`!pickler_dumper_impl`.
 
 
 Similarly, you may have a problem where you want to give a parameter
@@ -621,17 +622,17 @@ using the same ``"as"`` syntax::
         fix_imports: bool = True
 
 Here, the name used in Python (in the signature and the ``keywords``
-array) would be ``file``, but the C variable would be named ``file_obj``.
+array) would be *file*, but the C variable would be named ``file_obj``.
 
-You can use this to rename the ``self`` parameter too!
+You can use this to rename the *self* parameter too!
 
 
-Converting functions using PyArg_UnpackTuple
---------------------------------------------
+How to convert functions using ``PyArg_UnpackTuple``
+----------------------------------------------------
 
 To convert a function parsing its arguments with :c:func:`PyArg_UnpackTuple`,
 simply write out all the arguments, specifying each as an ``object``.  You
-may specify the ``type`` argument to cast the type as appropriate.  All
+may specify the *type* argument to cast the type as appropriate.  All
 arguments should be marked positional-only (add a ``/`` on a line by itself
 after the last argument).
 
@@ -639,8 +640,8 @@ Currently the generated code will use :c:func:`PyArg_ParseTuple`, but this
 will change soon.
 
 
-Optional groups
----------------
+How to use optional groups
+--------------------------
 
 Some legacy functions have a tricky approach to parsing their arguments:
 they count the number of positional arguments, then use a ``switch`` statement
@@ -650,16 +651,16 @@ keyword-only arguments.)  This approach was used to simulate optional
 arguments back before :c:func:`PyArg_ParseTupleAndKeywords` was created.
 
 While functions using this approach can often be converted to
-use :c:func:`PyArg_ParseTupleAndKeywords`, optional arguments, and default values,
+use :c:func:`!PyArg_ParseTupleAndKeywords`, optional arguments, and default values,
 it's not always possible.  Some of these legacy functions have
-behaviors :c:func:`PyArg_ParseTupleAndKeywords` doesn't directly support.
-The most obvious example is the builtin function ``range()``, which has
+behaviors :c:func:`!PyArg_ParseTupleAndKeywords` doesn't directly support.
+The most obvious example is the builtin function :py:func:`range`, which has
 an optional argument on the *left* side of its required argument!
-Another example is ``curses.window.addch()``, which has a group of two
+Another example is :py:meth:`curses.window.addch`, which has a group of two
 arguments that must always be specified together.  (The arguments are
-called ``x`` and ``y``; if you call the function passing in ``x``,
-you must also pass in ``y``—and if you don't pass in ``x`` you may not
-pass in ``y`` either.)
+called *x* and *y*; if you call the function passing in *x*,
+you must also pass in *y* — and if you don't pass in *x* you may not
+pass in *y* either.)
 
 In any case, the goal of Argument Clinic is to support argument parsing
 for all existing CPython builtins without changing their semantics.
@@ -680,7 +681,7 @@ can *only* be used with positional-only parameters.
 
 To specify an optional group, add a ``[`` on a line by itself before
 the parameters you wish to group together, and a ``]`` on a line by itself
-after these parameters.  As an example, here's how ``curses.window.addch``
+after these parameters.  As an example, here's how :py:meth:`curses.window.addch`
 uses optional groups to make the first two parameters and the last
 parameter optional::
 
@@ -732,8 +733,8 @@ Notes:
   use optional groups for new code.
 
 
-Using real Argument Clinic converters, instead of "legacy converters"
----------------------------------------------------------------------
+How to use real Argument Clinic converters, instead of "legacy converters"
+--------------------------------------------------------------------------
 
 To save time, and to minimize how much you need to learn
 to achieve your first port to Argument Clinic, the walkthrough above tells
@@ -766,25 +767,25 @@ the same converters.
 All arguments to Argument Clinic converters are keyword-only.
 All Argument Clinic converters accept the following arguments:
 
-  ``c_default``
+  *c_default*
     The default value for this parameter when defined in C.
     Specifically, this will be the initializer for the variable declared
     in the "parse function".  See :ref:`the section on default values <default_values>`
     for how to use this.
     Specified as a string.
 
-  ``annotation``
+  *annotation*
     The annotation value for this parameter.  Not currently supported,
     because :pep:`8` mandates that the Python library may not use
     annotations.
 
-  ``unused``
+  *unused*
     Wrap the argument with :c:macro:`Py_UNUSED` in the impl function signature.
 
 In addition, some converters accept additional arguments.  Here is a list
 of these arguments, along with their meanings:
 
-  ``accept``
+  *accept*
     A set of Python types (and possibly pseudo-types);
     this restricts the allowable Python argument to values of these types.
     (This is not a general-purpose facility; as a rule it only supports
@@ -792,38 +793,38 @@ of these arguments, along with their meanings:
 
     To accept ``None``, add ``NoneType`` to this set.
 
-  ``bitwise``
+  *bitwise*
     Only supported for unsigned integers.  The native integer value of this
     Python argument will be written to the parameter without any range checking,
     even for negative values.
 
-  ``converter``
+  *converter*
     Only supported by the ``object`` converter.  Specifies the name of a
     :ref:`C "converter function" <o_ampersand>`
     to use to convert this object to a native type.
 
-  ``encoding``
+  *encoding*
     Only supported for strings.  Specifies the encoding to use when converting
     this string from a Python str (Unicode) value into a C ``char *`` value.
 
 
-  ``subclass_of``
+  *subclass_of*
     Only supported for the ``object`` converter.  Requires that the Python
     value be a subclass of a Python type, as expressed in C.
 
-  ``type``
+  *type*
     Only supported for the ``object`` and ``self`` converters.  Specifies
     the C type that will be used to declare the variable.  Default value is
     ``"PyObject *"``.
 
-  ``zeroes``
+  *zeroes*
     Only supported for strings.  If true, embedded NUL bytes (``'\\0'``) are
     permitted inside the value.  The length of the string will be passed in
     to the impl function, just after the string parameter, as a parameter named
     ``<parameter_name>_length``.
 
 Please note, not every possible combination of arguments will work.
-Usually these arguments are implemented by specific ``PyArg_ParseTuple``
+Usually these arguments are implemented by specific :c:func:`PyArg_ParseTuple`
 *format units*, with specific behavior.  For example, currently you cannot
 call ``unsigned_short`` without also specifying ``bitwise=True``.
 Although it's perfectly reasonable to think this would work, these semantics don't
@@ -903,8 +904,8 @@ it accepts, along with the default value for each parameter.
 Just run ``Tools/clinic/clinic.py --converters`` to see the full list.
 
 
-Py_buffer
----------
+How to use the ``Py_buffer`` converter
+--------------------------------------
 
 When using the ``Py_buffer`` converter
 (or the ``'s*'``, ``'w*'``, ``'*y'``, or ``'z*'`` legacy converters),
@@ -912,8 +913,8 @@ you *must* not call :c:func:`PyBuffer_Release` on the provided buffer.
 Argument Clinic generates code that does it for you (in the parsing function).
 
 
-Advanced converters
--------------------
+How to use advanced converters
+------------------------------
 
 Remember those format units you skipped for your first
 time because they were advanced?  Here's how to handle those too.
@@ -923,19 +924,19 @@ conversion functions, or types, or strings specifying an encoding.
 (But "legacy converters" don't support arguments.  That's why we
 skipped them for your first function.)  The argument you specified
 to the format unit is now an argument to the converter; this
-argument is either ``converter`` (for ``O&``), ``subclass_of`` (for ``O!``),
-or ``encoding`` (for all the format units that start with ``e``).
+argument is either *converter* (for ``O&``), *subclass_of* (for ``O!``),
+or *encoding* (for all the format units that start with ``e``).
 
-When using ``subclass_of``, you may also want to use the other
-custom argument for ``object()``: ``type``, which lets you set the type
+When using *subclass_of*, you may also want to use the other
+custom argument for ``object()``: *type*, which lets you set the type
 actually used for the parameter.  For example, if you want to ensure
-that the object is a subclass of ``PyUnicode_Type``, you probably want
+that the object is a subclass of :c:var:`PyUnicode_Type`, you probably want
 to use the converter ``object(type='PyUnicodeObject *', subclass_of='&PyUnicode_Type')``.
 
 One possible problem with using Argument Clinic: it takes away some possible
 flexibility for the format units starting with ``e``.  When writing a
-``PyArg_Parse`` call by hand, you could theoretically decide at runtime what
-encoding string to pass in to :c:func:`PyArg_ParseTuple`.   But now this string must
+:c:func:`!PyArg_Parse*` call by hand, you could theoretically decide at runtime what
+encoding string to pass to that call.   But now this string must
 be hard-coded at Argument-Clinic-preprocessing-time.  This limitation is deliberate;
 it made supporting this format unit much easier, and may allow for future optimizations.
 This restriction doesn't seem unreasonable; CPython itself always passes in static
@@ -944,8 +945,8 @@ hard-coded encoding strings for parameters whose format units start with ``e``.
 
 .. _default_values:
 
-Parameter default values
-------------------------
+How to assign default values to parameter
+-----------------------------------------
 
 Default values for parameters can be any of a number of values.
 At their simplest, they can be string, int, or float literals:
@@ -969,7 +970,7 @@ for simple expressions, documented in the following sections.
 
 
 The ``NULL`` default value
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For string and object parameters, you can set them to ``None`` to indicate
 that there's no default.  However, that means the C variable will be
@@ -979,8 +980,24 @@ behaves like a default value of ``None``, but the C variable is initialized
 with ``NULL``.
 
 
-Expressions specified as default values
----------------------------------------
+Symbolic default values
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The default value you provide for a parameter can't be any arbitrary
+expression.  Currently the following are explicitly supported:
+
+* Numeric constants (integer and float)
+* String constants
+* ``True``, ``False``, and ``None``
+* Simple symbolic constants like :py:data:`sys.maxsize`, which must
+  start with the name of the module
+
+(In the future, this may need to get even more elaborate,
+to allow full expressions like ``CONSTANT - 1``.)
+
+
+Expressions as default values
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The default value for a parameter can be more than just a literal value.
 It can be an entire expression, using math operators and looking up attributes
@@ -993,28 +1010,28 @@ Consider the following example:
 
     foo: Py_ssize_t = sys.maxsize - 1
 
-``sys.maxsize`` can have different values on different platforms.  Therefore
+:py:data:`sys.maxsize` can have different values on different platforms.  Therefore
 Argument Clinic can't simply evaluate that expression locally and hard-code it
 in C.  So it stores the default in such a way that it will get evaluated at
 runtime, when the user asks for the function's signature.
 
 What namespace is available when the expression is evaluated?  It's evaluated
 in the context of the module the builtin came from.  So, if your module has an
-attribute called "``max_widgets``", you may simply use it:
+attribute called :py:attr:`!max_widgets`, you may simply use it:
 
 .. code-block:: none
 
     foo: Py_ssize_t = max_widgets
 
 If the symbol isn't found in the current module, it fails over to looking in
-``sys.modules``.  That's how it can find ``sys.maxsize`` for example.  (Since you
-don't know in advance what modules the user will load into their interpreter,
+:py:data:`sys.modules`.  That's how it can find :py:data:`sys.maxsize` for example.
+(Since you don't know in advance what modules the user will load into their interpreter,
 it's best to restrict yourself to modules that are preloaded by Python itself.)
 
 Evaluating default values only at runtime means Argument Clinic can't compute
 the correct equivalent C default value.  So you need to tell it explicitly.
 When you use an expression, you must also specify the equivalent expression
-in C, using the ``c_default`` parameter to the converter:
+in C, using the *c_default* parameter to the converter:
 
 .. code-block:: none
 
@@ -1036,8 +1053,8 @@ you're not permitted to use:
 * Tuple/list/set/dict literals.
 
 
-Using a return converter
-------------------------
+How to use return converters
+----------------------------
 
 By default, the impl function Argument Clinic generates for you returns
 :c:type:`PyObject * <PyObject>`.
@@ -1080,7 +1097,7 @@ indicate an error has occurred?  Normally, a function returns a valid (non-``NUL
 pointer for success, and ``NULL`` for failure.  But if you use an integer return converter,
 all integers are valid.  How can Argument Clinic detect an error?  Its solution: each return
 converter implicitly looks for a special value that indicates an error.  If you return
-that value, and an error has been set (``PyErr_Occurred()`` returns a true
+that value, and an error has been set (c:func:`PyErr_Occurred` returns a true
 value), then the generated code will propagate the error.  Otherwise it will
 encode the value you return like normal.
 
@@ -1106,8 +1123,8 @@ their parameters (if any),
 just run ``Tools/clinic/clinic.py --converters`` for the full list.
 
 
-Cloning existing functions
---------------------------
+How to clone existing functions
+-------------------------------
 
 If you have a number of functions that look similar, you may be able to
 use Clinic's "clone" feature.  When you clone an existing function,
@@ -1150,8 +1167,8 @@ Also, the function you are cloning from must have been previously defined
 in the current file.
 
 
-Calling Python code
--------------------
+How to call Python code
+-----------------------
 
 The rest of the advanced topics require you to write Python code
 which lives inside your C file and modifies Argument Clinic's
@@ -1178,17 +1195,17 @@ variable to the C code::
     /*[python checksum:...]*/
 
 
-Using a "self converter"
-------------------------
+How to use the "self converter"
+-------------------------------
 
 Argument Clinic automatically adds a "self" parameter for you
 using a default converter.  It automatically sets the ``type``
 of this parameter to the "pointer to an instance" you specified
 when you declared the type.  However, you can override
 Argument Clinic's converter and specify one yourself.
-Just add your own ``self`` parameter as the first parameter in a
+Just add your own *self* parameter as the first parameter in a
 block, and ensure that its converter is an instance of
-``self_converter`` or a subclass thereof.
+:class:`!self_converter` or a subclass thereof.
 
 What's the point?  This lets you override the type of ``self``,
 or give it a different default name.
@@ -1196,7 +1213,7 @@ or give it a different default name.
 How do you specify the custom type you want to cast ``self`` to?
 If you only have one or two functions with the same type for ``self``,
 you can directly use Argument Clinic's existing ``self`` converter,
-passing in the type you want to use as the ``type`` parameter::
+passing in the type you want to use as the *type* parameter::
 
     /*[clinic input]
 
@@ -1211,7 +1228,7 @@ passing in the type you want to use as the ``type`` parameter::
 
 On the other hand, if you have a lot of functions that will use the same
 type for ``self``, it's best to create your own converter, subclassing
-``self_converter`` but overwriting the ``type`` member::
+:class:`!self_converter` but overwriting the :py:attr:`!type` member::
 
     /*[python input]
     class PicklerObject_converter(self_converter):
@@ -1230,8 +1247,8 @@ type for ``self``, it's best to create your own converter, subclassing
     [clinic start generated code]*/
 
 
-Using a "defining class" converter
-----------------------------------
+How to use the "defining class" converter
+-----------------------------------------
 
 Argument Clinic facilitates gaining access to the defining class of a method.
 This is useful for :ref:`heap type <heap-types>` methods that need to fetch
@@ -1239,8 +1256,8 @@ module level state.  Use :c:func:`PyType_FromModuleAndSpec` to associate a new
 heap type with a module.  You can now use :c:func:`PyType_GetModuleState` on
 the defining class to fetch the module state, for example from a module method.
 
-Example from ``Modules/zlibmodule.c``.  First, ``defining_class`` is added to
-the clinic input::
+Example from :source:`Modules/zlibmodule.c`.
+First, ``defining_class`` is added to the clinic input::
 
     /*[clinic input]
     zlib.Compress.compress
@@ -1270,16 +1287,17 @@ module state::
 Each method may only have one argument using this converter, and it must appear
 after ``self``, or, if ``self`` is not used, as the first argument.  The argument
 will be of type ``PyTypeObject *``.  The argument will not appear in the
-``__text_signature__``.
+:py:attr:`!__text_signature__`.
 
-The ``defining_class`` converter is not compatible with ``__init__`` and ``__new__``
-methods, which cannot use the ``METH_METHOD`` convention.
+The ``defining_class`` converter is not compatible with :py:meth:`!__init__`
+and :py:meth:`!__new__` methods, which cannot use the :c:macro:`METH_METHOD`
+convention.
 
 It is not possible to use ``defining_class`` with slot methods.  In order to
 fetch the module state from such methods, use :c:func:`PyType_GetModuleByDef`
 to look up the module and then :c:func:`PyModule_GetState` to fetch the module
 state.  Example from the ``setattro`` slot method in
-``Modules/_threadmodule.c``::
+:source:`Modules/_threadmodule.c`::
 
     static int
     local_setattro(localobject *self, PyObject *name, PyObject *v)
@@ -1293,11 +1311,11 @@ state.  Example from the ``setattro`` slot method in
 See also :pep:`573`.
 
 
-Writing a custom converter
---------------------------
+How to write a custom converter
+-------------------------------
 
 As we hinted at in the previous section... you can write your own converters!
-A converter is simply a Python class that inherits from ``CConverter``.
+A converter is simply a Python class that inherits from :py:class:`!CConverter`.
 The main purpose of a custom converter is if you have a parameter using
 the ``O&`` format unit—parsing this parameter means calling
 a :c:func:`PyArg_ParseTuple` "converter function".
@@ -1308,61 +1326,74 @@ will be automatically registered with Argument Clinic; its name
 will be the name of your class with the ``_converter`` suffix
 stripped off.  (This is accomplished with a metaclass.)
 
-You shouldn't subclass ``CConverter.__init__``.  Instead, you should
-write a ``converter_init()`` function.  ``converter_init()``
-always accepts a ``self`` parameter; after that, all additional
+You shouldn't subclass :py:meth:`!CConverter.__init__`.  Instead, you should
+write a :py:meth:`!converter_init` function. :py:meth:`!converter_init`
+always accepts a *self* parameter; after that, all additional
 parameters *must* be keyword-only.  Any arguments passed in to
 the converter in Argument Clinic will be passed along to your
-``converter_init()``.
+:py:meth:`!converter_init`.
 
-There are some additional members of ``CConverter`` you may wish
+There are some additional members of :py:class:`!CConverter` you may wish
 to specify in your subclass.  Here's the current list:
 
-``type``
-    The C type to use for this variable.
-    ``type`` should be a Python string specifying the type, e.g. ``int``.
-    If this is a pointer type, the type string should end with ``' *'``.
+.. module:: clinic
 
-``default``
-    The Python default value for this parameter, as a Python value.
-    Or the magic value ``unspecified`` if there is no default.
+.. class:: CConverter
 
-``py_default``
-    ``default`` as it should appear in Python code,
-    as a string.
-    Or ``None`` if there is no default.
+   .. attribute:: type
 
-``c_default``
-    ``default`` as it should appear in C code,
-    as a string.
-    Or ``None`` if there is no default.
+      The C type to use for this variable.
+      :attr:`!type` should be a Python string specifying the type,
+      e.g. ``'int'``.
+      If this is a pointer type, the type string should end with ``' *'``.
 
-``c_ignored_default``
-    The default value used to initialize the C variable when
-    there is no default, but not specifying a default may
-    result in an "uninitialized variable" warning.  This can
-    easily happen when using option groups—although
-    properly written code will never actually use this value,
-    the variable does get passed in to the impl, and the
-    C compiler will complain about the "use" of the
-    uninitialized value.  This value should always be a
-    non-empty string.
+   .. attribute:: default
 
-``converter``
-    The name of the C converter function, as a string.
+      The Python default value for this parameter, as a Python value.
+      Or the magic value ``unspecified`` if there is no default.
 
-``impl_by_reference``
-    A boolean value.  If true,
-    Argument Clinic will add a ``&`` in front of the name of
-    the variable when passing it into the impl function.
+   .. attribute:: py_default
 
-``parse_by_reference``
-    A boolean value.  If true,
-    Argument Clinic will add a ``&`` in front of the name of
-    the variable when passing it into :c:func:`PyArg_ParseTuple`.
+      :attr:`!default` as it should appear in Python code,
+      as a string.
+      Or ``None`` if there is no default.
+
+   .. attribute:: c_default
+
+      :attr:`!default` as it should appear in C code,
+      as a string.
+      Or ``None`` if there is no default.
+
+   .. attribute:: c_ignored_default
+
+      The default value used to initialize the C variable when
+      there is no default, but not specifying a default may
+      result in an "uninitialized variable" warning.  This can
+      easily happen when using option groups—although
+      properly written code will never actually use this value,
+      the variable does get passed in to the impl, and the
+      C compiler will complain about the "use" of the
+      uninitialized value.  This value should always be a
+      non-empty string.
+
+   .. attribute:: converter
+
+      The name of the C converter function, as a string.
+
+   .. attribute:: impl_by_reference
+
+      A boolean value.  If true,
+      Argument Clinic will add a ``&`` in front of the name of
+      the variable when passing it into the impl function.
+
+   .. attribute:: parse_by_reference
+
+      A boolean value.  If true,
+      Argument Clinic will add a ``&`` in front of the name of
+      the variable when passing it into :c:func:`PyArg_ParseTuple`.
 
 
-Here's the simplest example of a custom converter, from ``Modules/zlibmodule.c``::
+Here's the simplest example of a custom converter, from :source:`Modules/zlibmodule.c`::
 
     /*[python input]
 
@@ -1382,28 +1413,28 @@ automatically support default values.
 More sophisticated custom converters can insert custom C code to
 handle initialization and cleanup.
 You can see more examples of custom converters in the CPython
-source tree; grep the C files for the string ``CConverter``.
+source tree; grep the C files for the string :py:class:`!CConverter`.
 
 
-Writing a custom return converter
----------------------------------
+How to write a custom return converter
+--------------------------------------
 
 Writing a custom return converter is much like writing
 a custom converter.  Except it's somewhat simpler, because return
 converters are themselves much simpler.
 
-Return converters must subclass ``CReturnConverter``.
+Return converters must subclass :py:class:`!CReturnConverter`.
 There are no examples yet of custom return converters,
 because they are not widely used yet.  If you wish to
-write your own return converter, please read ``Tools/clinic/clinic.py``,
-specifically the implementation of ``CReturnConverter`` and
+write your own return converter, please read :source:`Tools/clinic/clinic.py`,
+specifically the implementation of :py:class:`!CReturnConverter` and
 all its subclasses.
 
 
-METH_O and METH_NOARGS
-----------------------
+How to convert ``METH_O`` and ``METH_NOARGS`` functions
+-------------------------------------------------------
 
-To convert a function using ``METH_O``, make sure the function's
+To convert a function using :c:macro:`METH_O`, make sure the function's
 single argument is using the ``object`` converter, and mark the
 arguments as positional-only::
 
@@ -1415,24 +1446,25 @@ arguments as positional-only::
     [clinic start generated code]*/
 
 
-To convert a function using ``METH_NOARGS``, just don't specify
+To convert a function using :c:macro:`METH_NOARGS`, just don't specify
 any arguments.
 
 You can still use a self converter, a return converter, and specify
-a ``type`` argument to the object converter for ``METH_O``.
+a *type* argument to the object converter for :c:macro:`METH_O`.
 
 
-tp_new and tp_init functions
-----------------------------
+How to convert ``tp_new`` and ``tp_init`` functions
+---------------------------------------------------
 
-You can convert ``tp_new`` and ``tp_init`` functions.  Just name
-them ``__new__`` or ``__init__`` as appropriate.  Notes:
+You can convert :c:member:`~PyTypeObject.tp_new` and
+:c:member:`~PyTypeObject.tp_init` functions.
+Just name them ``__new__`` or ``__init__`` as appropriate.  Notes:
 
 * The function name generated for ``__new__`` doesn't end in ``__new__``
   like it would by default.  It's just the name of the class, converted
   into a valid C identifier.
 
-* No ``PyMethodDef`` ``#define`` is generated for these functions.
+* No :c:type:`PyMethodDef` ``#define`` is generated for these functions.
 
 * ``__init__`` functions return ``int``, not ``PyObject *``.
 
@@ -1445,8 +1477,8 @@ them ``__new__`` or ``__init__`` as appropriate.  Notes:
   generated will throw an exception if it receives any.)
 
 
-Changing and redirecting Clinic's output
-----------------------------------------
+How to change and redirect Clinic's output
+------------------------------------------
 
 It can be inconvenient to have Clinic's output interspersed with
 your conventional hand-edited C code.  Luckily, Clinic is configurable:
@@ -1467,7 +1499,7 @@ Let's start with defining some terminology:
 
 *field*
   A field, in this context, is a subsection of Clinic's output.
-  For example, the ``#define`` for the ``PyMethodDef`` structure
+  For example, the ``#define`` for the :c:type:`PyMethodDef` structure
   is a field, called ``methoddef_define``.  Clinic has seven
   different fields it can output per function definition:
 
@@ -1511,8 +1543,8 @@ Let's start with defining some terminology:
     The filename chosen for the file is ``{basename}.clinic{extension}``,
     where ``basename`` and ``extension`` were assigned the output
     from ``os.path.splitext()`` run on the current file.  (Example:
-    the ``file`` destination for ``_pickle.c`` would be written to
-    ``_pickle.clinic.c``.)
+    the ``file`` destination for :file:`_pickle.c` would be written to
+    :file:`_pickle.clinic.c`.)
 
     **Important: When using a** ``file`` **destination, you**
     *must check in* **the generated file!**
@@ -1728,8 +1760,8 @@ it in a Clinic block lets Clinic use its existing checksum functionality to ensu
 the file was not modified by hand before it gets overwritten.
 
 
-The #ifdef trick
-----------------
+How to use the ``#ifdef`` trick
+-------------------------------
 
 If you're converting a function that isn't available on all platforms,
 there's a trick you can use to make life a little easier.  The existing
@@ -1765,7 +1797,7 @@ like so::
     }
     #endif /* HAVE_FUNCTIONNAME */
 
-Then, remove those three lines from the ``PyMethodDef`` structure,
+Then, remove those three lines from the :c:type:`PyMethodDef` structure,
 replacing them with the macro Argument Clinic generated:
 
 .. code-block:: none
@@ -1806,11 +1838,11 @@ This may mean that you get a complaint from Argument Clinic:
 
 When this happens, just open your file, find the ``dump buffer`` block that
 Argument Clinic added to your file (it'll be at the very bottom), then
-move it above the ``PyMethodDef`` structure where that macro is used.
+move it above the :c:type:`PyMethodDef` structure where that macro is used.
 
 
-Using Argument Clinic in Python files
--------------------------------------
+How to use Argument Clinic in Python files
+------------------------------------------
 
 It's actually possible to use Argument Clinic to preprocess Python files.
 There's no point to using Argument Clinic blocks, of course, as the output

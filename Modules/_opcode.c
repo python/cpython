@@ -2,6 +2,7 @@
 #include "compile.h"
 #include "opcode.h"
 #include "internal/pycore_code.h"
+#include "internal/pycore_intrinsics.h"
 
 /*[clinic input]
 module _opcode
@@ -147,6 +148,63 @@ _opcode_has_jump_impl(PyObject *module, int opcode)
 
 /*[clinic input]
 
+_opcode.has_free -> bool
+
+  opcode: int
+
+Return True if the opcode accesses a free variable, False otherwise.
+
+Note that 'free' in this context refers to names in the current scope
+that are referenced by inner scopes or names in outer scopes that are
+referenced from this scope. It does not include references to global
+or builtin scopes.
+[clinic start generated code]*/
+
+static int
+_opcode_has_free_impl(PyObject *module, int opcode)
+/*[clinic end generated code: output=d81ae4d79af0ee26 input=117dcd5c19c1139b]*/
+{
+    return PyUnstable_OpcodeIsValid(opcode) &&
+           PyUnstable_OpcodeHasFree(opcode);
+
+}
+
+/*[clinic input]
+
+_opcode.has_local -> bool
+
+  opcode: int
+
+Return True if the opcode accesses a local variable, False otherwise.
+[clinic start generated code]*/
+
+static int
+_opcode_has_local_impl(PyObject *module, int opcode)
+/*[clinic end generated code: output=da5a8616b7a5097b input=9a798ee24aaef49d]*/
+{
+    return PyUnstable_OpcodeIsValid(opcode) &&
+           PyUnstable_OpcodeHasLocal(opcode);
+}
+
+/*[clinic input]
+
+_opcode.has_exc -> bool
+
+  opcode: int
+
+Return True if the opcode sets an exception handler, False otherwise.
+[clinic start generated code]*/
+
+static int
+_opcode_has_exc_impl(PyObject *module, int opcode)
+/*[clinic end generated code: output=41b68dff0ec82a52 input=db0e4bdb9bf13fa5]*/
+{
+    return PyUnstable_OpcodeIsValid(opcode) &&
+           PyUnstable_OpcodeHasExc(opcode);
+}
+
+/*[clinic input]
+
 _opcode.get_specialization_stats
 
 Return the specialization stats
@@ -163,6 +221,60 @@ _opcode_get_specialization_stats_impl(PyObject *module)
 #endif
 }
 
+/*[clinic input]
+
+_opcode.get_intrinsic1_descs
+
+Return a list of names of the unary intrinsics.
+[clinic start generated code]*/
+
+static PyObject *
+_opcode_get_intrinsic1_descs_impl(PyObject *module)
+/*[clinic end generated code: output=bd1ddb6b4447d18b input=13b51c712618459b]*/
+{
+    PyObject *list = PyList_New(MAX_INTRINSIC_1 + 1);
+    if (list == NULL) {
+        return NULL;
+    }
+    for (int i=0; i <= MAX_INTRINSIC_1; i++) {
+        PyObject *name = _PyUnstable_GetUnaryIntrinsicName(i);
+        if (name == NULL) {
+            Py_DECREF(list);
+            return NULL;
+        }
+        PyList_SET_ITEM(list, i, name);
+    }
+    return list;
+}
+
+
+/*[clinic input]
+
+_opcode.get_intrinsic2_descs
+
+Return a list of names of the binary intrinsics.
+[clinic start generated code]*/
+
+static PyObject *
+_opcode_get_intrinsic2_descs_impl(PyObject *module)
+/*[clinic end generated code: output=40e62bc27584c8a0 input=e83068f249f5471b]*/
+{
+    PyObject *list = PyList_New(MAX_INTRINSIC_2 + 1);
+    if (list == NULL) {
+        return NULL;
+    }
+    for (int i=0; i <= MAX_INTRINSIC_2; i++) {
+        PyObject *name = _PyUnstable_GetBinaryIntrinsicName(i);
+        if (name == NULL) {
+            Py_DECREF(list);
+            return NULL;
+        }
+        PyList_SET_ITEM(list, i, name);
+    }
+    return list;
+}
+
+
 static PyMethodDef
 opcode_functions[] =  {
     _OPCODE_STACK_EFFECT_METHODDEF
@@ -171,7 +283,12 @@ opcode_functions[] =  {
     _OPCODE_HAS_CONST_METHODDEF
     _OPCODE_HAS_NAME_METHODDEF
     _OPCODE_HAS_JUMP_METHODDEF
+    _OPCODE_HAS_FREE_METHODDEF
+    _OPCODE_HAS_LOCAL_METHODDEF
+    _OPCODE_HAS_EXC_METHODDEF
     _OPCODE_GET_SPECIALIZATION_STATS_METHODDEF
+    _OPCODE_GET_INTRINSIC1_DESCS_METHODDEF
+    _OPCODE_GET_INTRINSIC2_DESCS_METHODDEF
     {NULL, NULL, 0, NULL}
 };
 

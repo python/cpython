@@ -1756,22 +1756,12 @@ static int
 _json_exec(PyObject *module)
 {
     PyObject *PyScannerType = PyType_FromSpec(&PyScannerType_spec);
-    if (PyScannerType == NULL) {
-        return -1;
-    }
-    int rc = PyModule_AddObjectRef(module, "make_scanner", PyScannerType);
-    Py_DECREF(PyScannerType);
-    if (rc < 0) {
+    if (PyModule_Add(module, "make_scanner", PyScannerType) < 0) {
         return -1;
     }
 
     PyObject *PyEncoderType = PyType_FromSpec(&PyEncoderType_spec);
-    if (PyEncoderType == NULL) {
-        return -1;
-    }
-    rc = PyModule_AddObjectRef(module, "make_encoder", PyEncoderType);
-    Py_DECREF(PyEncoderType);
-    if (rc < 0) {
+    if (PyModule_Add(module, "make_encoder", PyEncoderType) < 0) {
         return -1;
     }
 

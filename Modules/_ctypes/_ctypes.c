@@ -5740,15 +5740,9 @@ _ctypes_add_objects(PyObject *mod)
 {
 #define MOD_ADD(name, expr) \
     do { \
-        PyObject *obj = (expr); \
-        if (obj == NULL) { \
+        if (PyModule_Add(mod, name, (expr)) < 0) { \
             return -1; \
         } \
-        if (PyModule_AddObjectRef(mod, name, obj) < 0) { \
-            Py_DECREF(obj); \
-            return -1; \
-        } \
-        Py_DECREF(obj); \
     } while (0)
 
     MOD_ADD("_pointer_type_cache", Py_NewRef(_ctypes_ptrtype_cache));

@@ -4,10 +4,12 @@ opcode module - potentially shared between dis and other modules which
 operate on bytecodes (e.g. peephole optimizers).
 """
 
-__all__ = ["cmp_op", "hasarg", "hasconst", "hasname", "hasjrel", "hasjabs",
-           "haslocal", "hascompare", "hasfree", "hasexc", "opname", "opmap",
-           "stack_effect", "HAVE_ARGUMENT", "EXTENDED_ARG"]
 
+# Note that __all__ is further extended below
+__all__ = ["cmp_op", "opname", "opmap", "stack_effect", "hascompare",
+           "HAVE_ARGUMENT", "EXTENDED_ARG"]
+
+import _opcode
 from _opcode import stack_effect
 
 import sys
@@ -17,55 +19,24 @@ if sys.version_info[:2] >= (3, 13):
 
 cmp_op = ('<', '<=', '==', '!=', '>', '>=')
 
-hasarg = []
-hasconst = []
-hasname = []
-hasjrel = []
-hasjabs = []
-haslocal = []
-hascompare = []
-hasfree = []
-hasexc = []
-
 
 ENABLE_SPECIALIZATION = True
 
 def is_pseudo(op):
     return op >= MIN_PSEUDO_OPCODE and op <= MAX_PSEUDO_OPCODE
 
-oplists = [hasarg, hasconst, hasname, hasjrel, hasjabs,
-           haslocal, hascompare, hasfree, hasexc]
-
 opmap = {}
 
-## pseudo opcodes (used in the compiler) mapped to the values
-## they can become in the actual code.
+# pseudo opcodes (used in the compiler) mapped to the values
+# they can become in the actual code.
 _pseudo_ops = {}
 
 def def_op(name, op):
     opmap[name] = op
 
-def name_op(name, op):
-    def_op(name, op)
-    hasname.append(op)
-
-def jrel_op(name, op):
-    def_op(name, op)
-    hasjrel.append(op)
-
-def jabs_op(name, op):
-    def_op(name, op)
-    hasjabs.append(op)
-
 def pseudo_op(name, op, real_ops):
     def_op(name, op)
     _pseudo_ops[name] = real_ops
-    # add the pseudo opcode to the lists its targets are in
-    for oplist in oplists:
-        res = [opmap[rop] in oplist for rop in real_ops]
-        if any(res):
-            assert all(res)
-            oplist.append(op)
 
 
 # Instruction opcodes for compiled code
@@ -137,74 +108,61 @@ def_op('POP_EXCEPT', 89)
 
 HAVE_ARGUMENT = 90             # real opcodes from here have an argument:
 
-name_op('STORE_NAME', 90)       # Index in name list
-name_op('DELETE_NAME', 91)      # ""
+def_op('STORE_NAME', 90)       # Index in name list
+def_op('DELETE_NAME', 91)      # ""
 def_op('UNPACK_SEQUENCE', 92)   # Number of tuple items
-jrel_op('FOR_ITER', 93)
+def_op('FOR_ITER', 93)
 def_op('UNPACK_EX', 94)
-name_op('STORE_ATTR', 95)       # Index in name list
-name_op('DELETE_ATTR', 96)      # ""
-name_op('STORE_GLOBAL', 97)     # ""
-name_op('DELETE_GLOBAL', 98)    # ""
+def_op('STORE_ATTR', 95)       # Index in name list
+def_op('DELETE_ATTR', 96)      # ""
+def_op('STORE_GLOBAL', 97)     # ""
+def_op('DELETE_GLOBAL', 98)    # ""
 def_op('SWAP', 99)
 def_op('LOAD_CONST', 100)       # Index in const list
-hasconst.append(100)
-name_op('LOAD_NAME', 101)       # Index in name list
+def_op('LOAD_NAME', 101)       # Index in name list
 def_op('BUILD_TUPLE', 102)      # Number of tuple items
 def_op('BUILD_LIST', 103)       # Number of list items
 def_op('BUILD_SET', 104)        # Number of set items
 def_op('BUILD_MAP', 105)        # Number of dict entries
-name_op('LOAD_ATTR', 106)       # Index in name list
+def_op('LOAD_ATTR', 106)       # Index in name list
 def_op('COMPARE_OP', 107)       # Comparison operator
-hascompare.append(107)
-name_op('IMPORT_NAME', 108)     # Index in name list
-name_op('IMPORT_FROM', 109)     # Index in name list
-jrel_op('JUMP_FORWARD', 110)    # Number of words to skip
+def_op('IMPORT_NAME', 108)     # Index in name list
+def_op('IMPORT_FROM', 109)     # Index in name list
+def_op('JUMP_FORWARD', 110)    # Number of words to skip
 
-jrel_op('POP_JUMP_IF_FALSE', 114)
-jrel_op('POP_JUMP_IF_TRUE', 115)
-name_op('LOAD_GLOBAL', 116)     # Index in name list
+def_op('POP_JUMP_IF_FALSE', 114)
+def_op('POP_JUMP_IF_TRUE', 115)
+def_op('LOAD_GLOBAL', 116)     # Index in name list
 def_op('IS_OP', 117)
 def_op('CONTAINS_OP', 118)
 def_op('RERAISE', 119)
 def_op('COPY', 120)
 def_op('RETURN_CONST', 121)
-hasconst.append(121)
 def_op('BINARY_OP', 122)
-jrel_op('SEND', 123)            # Number of words to skip
+def_op('SEND', 123)            # Number of words to skip
 def_op('LOAD_FAST', 124)        # Local variable number, no null check
-haslocal.append(124)
 def_op('STORE_FAST', 125)       # Local variable number
-haslocal.append(125)
 def_op('DELETE_FAST', 126)      # Local variable number
-haslocal.append(126)
 def_op('LOAD_FAST_CHECK', 127)  # Local variable number
-haslocal.append(127)
-jrel_op('POP_JUMP_IF_NOT_NONE', 128)
-jrel_op('POP_JUMP_IF_NONE', 129)
+def_op('POP_JUMP_IF_NOT_NONE', 128)
+def_op('POP_JUMP_IF_NONE', 129)
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
 def_op('GET_AWAITABLE', 131)
 def_op('BUILD_SLICE', 133)      # Number of items
-jrel_op('JUMP_BACKWARD_NO_INTERRUPT', 134) # Number of words to skip (backwards)
+def_op('JUMP_BACKWARD_NO_INTERRUPT', 134) # Number of words to skip (backwards)
 def_op('MAKE_CELL', 135)
-hasfree.append(135)
 def_op('LOAD_DEREF', 137)
-hasfree.append(137)
 def_op('STORE_DEREF', 138)
-hasfree.append(138)
 def_op('DELETE_DEREF', 139)
-hasfree.append(139)
-jrel_op('JUMP_BACKWARD', 140)    # Number of words to skip (backwards)
-name_op('LOAD_SUPER_ATTR', 141)
+def_op('JUMP_BACKWARD', 140)    # Number of words to skip (backwards)
+def_op('LOAD_SUPER_ATTR', 141)
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 def_op('LOAD_FAST_AND_CLEAR', 143)  # Local variable number
-haslocal.append(143)
 def_op('EXTENDED_ARG', 144)
-EXTENDED_ARG = 144
+EXTENDED_ARG = opmap['EXTENDED_ARG']
 def_op('LIST_APPEND', 145)
 def_op('SET_ADD', 146)
 def_op('MAP_ADD', 147)
-hasfree.append(148)
 def_op('COPY_FREE_VARS', 149)
 def_op('YIELD_VALUE', 150)
 def_op('RESUME', 151)   # This must be kept in sync with deepfreeze.py
@@ -224,12 +182,10 @@ def_op('STORE_FAST_LOAD_FAST', 169)
 def_op('STORE_FAST_STORE_FAST', 170)
 def_op('CALL', 171)
 def_op('KW_NAMES', 172)
-hasconst.append(172)
 def_op('CALL_INTRINSIC_1', 173)
 def_op('CALL_INTRINSIC_2', 174)
-name_op('LOAD_FROM_DICT_OR_GLOBALS', 175)
+def_op('LOAD_FROM_DICT_OR_GLOBALS', 175)
 def_op('LOAD_FROM_DICT_OR_DEREF', 176)
-hasfree.append(176)
 def_op('SET_FUNCTION_ATTRIBUTE', 177)    # Attribute
 
 # Optimizer hook
@@ -258,16 +214,12 @@ def_op('INSTRUMENTED_INSTRUCTION', 253)
 def_op('INSTRUMENTED_LINE', 254)
 # 255 is reserved
 
-hasarg.extend([op for op in opmap.values() if op >= HAVE_ARGUMENT])
 
 MIN_PSEUDO_OPCODE = 256
 
 pseudo_op('SETUP_FINALLY', 256, ['NOP'])
-hasexc.append(256)
 pseudo_op('SETUP_CLEANUP', 257, ['NOP'])
-hasexc.append(257)
 pseudo_op('SETUP_WITH', 258, ['NOP'])
-hasexc.append(258)
 pseudo_op('POP_BLOCK', 259, ['NOP'])
 
 pseudo_op('JUMP', 260, ['JUMP_FORWARD', 'JUMP_BACKWARD'])
@@ -283,12 +235,32 @@ pseudo_op('LOAD_CLOSURE', 267, ['LOAD_FAST'])
 
 MAX_PSEUDO_OPCODE = MIN_PSEUDO_OPCODE + len(_pseudo_ops) - 1
 
-del def_op, name_op, jrel_op, jabs_op, pseudo_op
+del def_op, pseudo_op
 
 opname = ['<%r>' % (op,) for op in range(MAX_PSEUDO_OPCODE + 1)]
 for op, i in opmap.items():
     opname[i] = op
 
+# The build uses older versions of Python which do not have _opcode.has_* functions
+if sys.version_info[:2] >= (3, 13):
+    # These lists are documented as part of the dis module's API
+    hasarg = [op for op in opmap.values() if _opcode.has_arg(op)]
+    hasconst = [op for op in opmap.values() if _opcode.has_const(op)]
+    hasname = [op for op in opmap.values() if _opcode.has_name(op)]
+    hasjump = [op for op in opmap.values() if _opcode.has_jump(op)]
+    hasjrel = hasjump  # for backward compatibility
+    hasjabs = []
+    hasfree = [op for op in opmap.values() if _opcode.has_free(op)]
+    haslocal = [op for op in opmap.values() if _opcode.has_local(op)]
+    hasexc = [op for op in opmap.values() if _opcode.has_exc(op)]
+
+    __all__.extend(["hasarg", "hasconst", "hasname", "hasjump", "hasjrel",
+                    "hasjabs", "hasfree", "haslocal", "hasexc"])
+
+    _intrinsic_1_descs = _opcode.get_intrinsic1_descs()
+    _intrinsic_2_descs = _opcode.get_intrinsic2_descs()
+
+hascompare = [opmap["COMPARE_OP"]]
 
 _nb_ops = [
     ("NB_ADD", "+"),
@@ -317,29 +289,6 @@ _nb_ops = [
     ("NB_INPLACE_SUBTRACT", "-="),
     ("NB_INPLACE_TRUE_DIVIDE", "/="),
     ("NB_INPLACE_XOR", "^="),
-]
-
-_intrinsic_1_descs = [
-    "INTRINSIC_1_INVALID",
-    "INTRINSIC_PRINT",
-    "INTRINSIC_IMPORT_STAR",
-    "INTRINSIC_STOPITERATION_ERROR",
-    "INTRINSIC_ASYNC_GEN_WRAP",
-    "INTRINSIC_UNARY_POSITIVE",
-    "INTRINSIC_LIST_TO_TUPLE",
-    "INTRINSIC_TYPEVAR",
-    "INTRINSIC_PARAMSPEC",
-    "INTRINSIC_TYPEVARTUPLE",
-    "INTRINSIC_SUBSCRIPT_GENERIC",
-    "INTRINSIC_TYPEALIAS",
-]
-
-_intrinsic_2_descs = [
-    "INTRINSIC_2_INVALID",
-    "INTRINSIC_PREP_RERAISE_STAR",
-    "INTRINSIC_TYPEVAR_WITH_BOUND",
-    "INTRINSIC_TYPEVAR_WITH_CONSTRAINTS",
-    "INTRINSIC_SET_FUNCTION_TYPE_PARAMS",
 ]
 
 
