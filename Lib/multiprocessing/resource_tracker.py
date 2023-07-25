@@ -223,7 +223,7 @@ def main(fd):
                 try:
                     warnings.warn(
                         f'resource_tracker: There appear to be {len(rtype_cache)} '
-                        'leaked {rtype} objects to clean up at shutdown: {rtype_cache}'
+                        f'leaked {rtype} objects to clean up at shutdown: {rtype_cache}'
                     )
                 except Exception:
                     pass
