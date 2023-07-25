@@ -214,7 +214,7 @@ Return True if the opcode is instrumented, False otherwise.
 
 static int
 _opcode_is_instrumented_impl(PyObject *module, int opcode)
-/*[clinic end generated code: output=dbfb4dce2bef87c8 input=5122645f4009417a]*/
+/*[clinic end generated code: output=dbfb4dce2bef87c8 input=f4bcce48607a9266]*/
 {
     return PyUnstable_OpcodeIsValid(opcode) &&
            PyUnstable_OpcodeIsInstrumented(opcode);
