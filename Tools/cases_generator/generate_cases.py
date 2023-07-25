@@ -563,7 +563,6 @@ class Generator(Analyzer):
             # Write and count instructions of all kinds
             n_instrs = 0
             n_macros = 0
-            n_pseudos = 0
             for thing in self.everything:
                 match thing:
                     case OverriddenInstructionPlaceHolder():
@@ -576,13 +575,13 @@ class Generator(Analyzer):
                         n_macros += 1
                         self.write_macro(self.macro_instrs[thing.name])
                     case parsing.Pseudo():
-                        n_pseudos += 1
+                        pass
                     case _:
                         typing.assert_never(thing)
 
         print(
-            f"Wrote {n_instrs} instructions, {n_macros} macros, "
-            f"and {n_pseudos} pseudos to {output_filename}",
+            f"Wrote {n_instrs} instructions and {n_macros} macros "
+            f"to {output_filename}",
             file=sys.stderr,
         )
 
@@ -590,6 +589,8 @@ class Generator(Analyzer):
         self, executor_filename: str, emit_line_directives: bool
     ) -> None:
         """Generate cases for the Tier 2 interpreter."""
+        n_instrs = 0
+        n_uops = 0
         with open(executor_filename, "w") as f:
             self.out = Formatter(f, 8, emit_line_directives)
             self.write_provenance_header()
@@ -601,6 +602,10 @@ class Generator(Analyzer):
                     case parsing.InstDef():
                         instr = self.instrs[thing.name]
                         if instr.is_viable_uop():
+                            if instr.kind == "op":
+                                n_uops += 1
+                            else:
+                                n_instrs += 1
                             self.out.emit("")
                             with self.out.block(f"case {thing.name}:"):
                                 instr.write(self.out, tier=TIER_TWO)
@@ -616,7 +621,7 @@ class Generator(Analyzer):
                     case _:
                         typing.assert_never(thing)
         print(
-            f"Wrote some stuff to {executor_filename}",
+            f"Wrote {n_instrs} instructions and {n_uops} ops to {executor_filename}",
             file=sys.stderr,
         )
 

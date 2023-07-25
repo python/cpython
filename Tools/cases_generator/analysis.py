@@ -83,8 +83,15 @@ class Analyzer:
             self.parse_file(filename, instrs_idx)
 
         files = " + ".join(self.input_filenames)
+        n_instrs = 0
+        n_ops = 0
+        for instr in self.instrs.values():
+            if instr.kind == "op":
+                n_ops += 1
+            else:
+                n_instrs += 1
         print(
-            f"Read {len(self.instrs)} instructions/ops, "
+            f"Read {n_instrs} instructions, {n_ops} ops, "
             f"{len(self.macros)} macros, {len(self.pseudos)} pseudos, "
             f"and {len(self.families)} families from {files}",
             file=sys.stderr,
