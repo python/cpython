@@ -21,6 +21,10 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "connection.h"
 #include "statement.h"
 #include "cursor.h"
@@ -28,6 +32,8 @@
 #include "microprotocols.h"
 #include "row.h"
 #include "blob.h"
+
+#include "pycore_import.h"        // _PyImport_GetModuleAttrString()
 
 #if SQLITE_VERSION_NUMBER < 3015002
 #error "SQLite 3.15.2 or higher required"

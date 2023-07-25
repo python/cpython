@@ -89,6 +89,9 @@ Tuple Objects
    Like :c:func:`PyTuple_SetItem`, but does no error checking, and should *only* be
    used to fill in brand new tuples.
 
+   Bounds checking is performed as an assertion if Python is built in
+   :ref:`debug mode <debug-build>` or :option:`with assertions <--with-assertions>`.
+
    .. note::
 
       This function "steals" a reference to *o*, and, unlike
@@ -194,12 +197,17 @@ type.
 .. c:function:: PyObject* PyStructSequence_GetItem(PyObject *p, Py_ssize_t pos)
 
    Return the object at position *pos* in the struct sequence pointed to by *p*.
-   No bounds checking is performed.
+
+   Bounds checking is performed as an assertion if Python is built in
+   :ref:`debug mode <debug-build>` or :option:`with assertions <--with-assertions>`.
 
 
 .. c:function:: PyObject* PyStructSequence_GET_ITEM(PyObject *p, Py_ssize_t pos)
 
-   Macro equivalent of :c:func:`PyStructSequence_GetItem`.
+   Alias to :c:func:`PyStructSequence_GetItem`.
+
+   .. versionchanged:: 3.13
+      Now implemented as an alias to :c:func:`PyStructSequence_GetItem`.
 
 
 .. c:function:: void PyStructSequence_SetItem(PyObject *p, Py_ssize_t pos, PyObject *o)
@@ -208,6 +216,9 @@ type.
    :c:func:`PyTuple_SET_ITEM`, this should only be used to fill in brand new
    instances.
 
+   Bounds checking is performed as an assertion if Python is built in
+   :ref:`debug mode <debug-build>` or :option:`with assertions <--with-assertions>`.
+
    .. note::
 
       This function "steals" a reference to *o*.
@@ -215,9 +226,7 @@ type.
 
 .. c:function:: void PyStructSequence_SET_ITEM(PyObject *p, Py_ssize_t *pos, PyObject *o)
 
-   Similar to :c:func:`PyStructSequence_SetItem`, but implemented as a static
-   inlined function.
+   Alias to :c:func:`PyStructSequence_SetItem`.
 
-   .. note::
-
-      This function "steals" a reference to *o*.
+   .. versionchanged:: 3.13
+      Now implemented as an alias to :c:func:`PyStructSequence_SetItem`.

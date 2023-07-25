@@ -38,18 +38,19 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_atomic_funcs.h"  // _Py_atomic_size_get()
-#include "pycore_bytesobject.h"   // _PyBytes_Repeat()
 #include "pycore_bytes_methods.h" // _Py_bytes_lower()
+#include "pycore_bytesobject.h"   // _PyBytes_Repeat()
+#include "pycore_codecs.h"        // _PyCodec_Lookup()
 #include "pycore_format.h"        // F_LJUST
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // PyInterpreterState.fs_codec
 #include "pycore_long.h"          // _PyLong_FormatWriter()
 #include "pycore_object.h"        // _PyObject_GC_TRACK(), _Py_FatalRefcountError()
 #include "pycore_pathconfig.h"    // _Py_DumpPathConfig()
+#include "pycore_pyerrors.h"      // _PyUnicodeTranslateError_Create()
 #include "pycore_pylifecycle.h"   // _Py_SetFileSystemEncoding()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
@@ -5830,7 +5831,7 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
     _PyUnicode_Name_CAPI *ucnhash_capi;
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     // so we can remember if we've seen an invalid escape char or not
     *first_invalid_escape = NULL;
@@ -12024,10 +12025,10 @@ str.replace as unicode_replace
 
     old: unicode
     new: unicode
+    /
     count: Py_ssize_t = -1
         Maximum number of occurrences to replace.
         -1 (the default value) means replace all occurrences.
-    /
 
 Return a copy with all occurrences of substring old replaced by new.
 
@@ -12038,7 +12039,7 @@ replaced.
 static PyObject *
 unicode_replace_impl(PyObject *self, PyObject *old, PyObject *new,
                      Py_ssize_t count)
-/*[clinic end generated code: output=b63f1a8b5eebf448 input=147d12206276ebeb]*/
+/*[clinic end generated code: output=b63f1a8b5eebf448 input=3345c455d60a5499]*/
 {
     return replace(self, old, new, count);
 }
@@ -14817,6 +14818,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
     PyObject *s, *ignored_value;
     while (PyDict_Next(interned, &pos, &s, &ignored_value)) {
         assert(PyUnicode_IS_READY(s));
+        int shared = 0;
         switch (PyUnicode_CHECK_INTERNED(s)) {
         case SSTATE_INTERNED_IMMORTAL:
             // Skip the Immortal Instance check and restore
@@ -14828,6 +14830,14 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
 #endif
             break;
         case SSTATE_INTERNED_IMMORTAL_STATIC:
+            /* It is shared between interpreters, so we should unmark it
+               only when this is the last interpreter in which it's
+               interned.  We immortalize all the statically initialized
+               strings during startup, so we can rely on the
+               main interpreter to be the last one. */
+            if (!_Py_IsMainInterpreter(interp)) {
+                shared = 1;
+            }
             break;
         case SSTATE_INTERNED_MORTAL:
             /* fall through */
@@ -14836,7 +14846,9 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
         default:
             Py_UNREACHABLE();
         }
-        _PyUnicode_STATE(s).interned = SSTATE_NOT_INTERNED;
+        if (!shared) {
+            _PyUnicode_STATE(s).interned = SSTATE_NOT_INTERNED;
+        }
     }
 #ifdef INTERNED_STATS
     fprintf(stderr,
@@ -15177,10 +15189,13 @@ init_fs_codec(PyInterpreterState *interp)
 
     /* Set Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors
        global configuration variables. */
-    if (_Py_SetFileSystemEncoding(fs_codec->encoding,
-                                  fs_codec->errors) < 0) {
-        PyErr_NoMemory();
-        return -1;
+    if (_Py_IsMainInterpreter(interp)) {
+
+        if (_Py_SetFileSystemEncoding(fs_codec->encoding,
+                                      fs_codec->errors) < 0) {
+            PyErr_NoMemory();
+            return -1;
+        }
     }
     return 0;
 }

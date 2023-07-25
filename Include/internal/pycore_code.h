@@ -19,9 +19,9 @@ extern "C" {
 
 typedef struct {
     uint16_t counter;
-    uint16_t index;
     uint16_t module_keys_version;
     uint16_t builtin_keys_version;
+    uint16_t index;
 } _PyLoadGlobalCache;
 
 #define INLINE_CACHE_ENTRIES_LOAD_GLOBAL CACHE_ENTRIES(_PyLoadGlobalCache)
@@ -100,6 +100,13 @@ typedef struct {
 } _PySendCache;
 
 #define INLINE_CACHE_ENTRIES_SEND CACHE_ENTRIES(_PySendCache)
+
+typedef struct {
+    uint16_t counter;
+    uint16_t version[2];
+} _PyToBoolCache;
+
+#define INLINE_CACHE_ENTRIES_TO_BOOL CACHE_ENTRIES(_PyToBoolCache)
 
 // Borrowed references to common callables:
 struct callable_cache {
@@ -196,8 +203,8 @@ struct _PyCodeConstructor {
 // back to a regular function signature.  Regardless, this approach
 // wouldn't be appropriate if this weren't a strictly internal API.
 // (See the comments in https://github.com/python/cpython/pull/26258.)
-PyAPI_FUNC(int) _PyCode_Validate(struct _PyCodeConstructor *);
-PyAPI_FUNC(PyCodeObject *) _PyCode_New(struct _PyCodeConstructor *);
+extern int _PyCode_Validate(struct _PyCodeConstructor *);
+extern PyCodeObject* _PyCode_New(struct _PyCodeConstructor *);
 
 
 /* Private API */
@@ -246,6 +253,7 @@ extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
                                           int oparg);
 extern void _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg);
 extern void _Py_Specialize_Send(PyObject *receiver, _Py_CODEUNIT *instr);
+extern void _Py_Specialize_ToBool(PyObject *value, _Py_CODEUNIT *instr);
 
 /* Finalizer function for static codeobjects used in deepfreeze.py */
 extern void _PyStaticCode_Fini(PyCodeObject *co);
@@ -253,7 +261,6 @@ extern void _PyStaticCode_Fini(PyCodeObject *co);
 extern int _PyStaticCode_Init(PyCodeObject *co);
 
 #ifdef Py_STATS
-
 
 #define STAT_INC(opname, name) do { if (_py_stats) _py_stats->opcode_stats[opname].specialization.name++; } while (0)
 #define STAT_DEC(opname, name) do { if (_py_stats) _py_stats->opcode_stats[opname].specialization.name--; } while (0)
@@ -266,7 +273,7 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 #define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) \
     do { if (_py_stats && PyFunction_Check(callable)) _py_stats->call_stats.eval_calls[name]++; } while (0)
 
-// Used by the _opcode extension which is built as a shared library
+// Export for '_opcode' shared extension
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 
 #else

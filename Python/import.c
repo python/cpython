@@ -210,17 +210,6 @@ PyImport_GetModuleDict(void)
     return MODULES(interp);
 }
 
-// This is only kept around for extensions that use _Py_IDENTIFIER.
-PyObject *
-_PyImport_GetModuleId(_Py_Identifier *nameid)
-{
-    PyObject *name = _PyUnicode_FromId(nameid); /* borrowed */
-    if (name == NULL) {
-        return NULL;
-    }
-    return PyImport_GetModule(name);
-}
-
 int
 _PyImport_SetModule(PyObject *name, PyObject *m)
 {
@@ -249,16 +238,7 @@ import_get_module(PyThreadState *tstate, PyObject *name)
 
     PyObject *m;
     Py_INCREF(modules);
-    if (PyDict_CheckExact(modules)) {
-        m = PyDict_GetItemWithError(modules, name);  /* borrowed */
-        Py_XINCREF(m);
-    }
-    else {
-        m = PyObject_GetItem(modules, name);
-        if (m == NULL && _PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-            _PyErr_Clear(tstate);
-        }
-    }
+    (void)PyMapping_GetOptionalItem(modules, name, &m);
     Py_DECREF(modules);
     return m;
 }
@@ -322,18 +302,7 @@ import_add_module(PyThreadState *tstate, PyObject *name)
     }
 
     PyObject *m;
-    if (PyDict_CheckExact(modules)) {
-        m = Py_XNewRef(PyDict_GetItemWithError(modules, name));
-    }
-    else {
-        m = PyObject_GetItem(modules, name);
-        // For backward-compatibility we copy the behavior
-        // of PyDict_GetItemWithError().
-        if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-            _PyErr_Clear(tstate);
-        }
-    }
-    if (_PyErr_Occurred(tstate)) {
+    if (PyMapping_GetOptionalItem(modules, name, &m) < 0) {
         return NULL;
     }
     if (m != NULL && PyModule_Check(m)) {
@@ -839,16 +808,6 @@ _PyImport_ClearExtension(PyObject *name, PyObject *filename)
 }
 
 
-/*******************/
-
-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-#include <emscripten.h>
-EM_JS(PyObject*, _PyImport_InitFunc_TrampolineCall, (PyModInitFunction func), {
-    return wasmTable.get(func)();
-});
-#endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
-
-
 /*****************************/
 /* single-phase init modules */
 /*****************************/
@@ -1133,7 +1092,7 @@ check_multi_interp_extensions(PyInterpreterState *interp)
 int
 _PyImport_CheckSubinterpIncompatibleExtensionAllowed(const char *name)
 {
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (check_multi_interp_extensions(interp)) {
         assert(!_Py_IsMainInterpreter(interp));
         PyErr_Format(PyExc_ImportError,
@@ -1285,7 +1244,7 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
     else {
         if (def->m_base.m_init == NULL)
             return NULL;
-        mod = _PyImport_InitFunc_TrampolineCall(def->m_base.m_init);
+        mod = def->m_base.m_init();
         if (mod == NULL)
             return NULL;
         if (PyObject_SetItem(modules, name, mod) == -1) {
@@ -1400,7 +1359,7 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
                 /* Cannot re-init internal module ("sys" or "builtins") */
                 return import_add_module(tstate, name);
             }
-            mod = _PyImport_InitFunc_TrampolineCall(*p->initfunc);
+            mod = (*p->initfunc)();
             if (mod == NULL) {
                 return NULL;
             }
@@ -2908,7 +2867,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     }
     else {
         PyObject *path;
-        if (_PyObject_LookupAttr(mod, &_Py_ID(__path__), &path) < 0) {
+        if (PyObject_GetOptionalAttr(mod, &_Py_ID(__path__), &path) < 0) {
             goto error;
         }
         if (path) {
@@ -3874,14 +3833,9 @@ imp_module_exec(PyObject *module)
 {
     const wchar_t *mode = _Py_GetConfig()->check_hash_pycs_mode;
     PyObject *pyc_mode = PyUnicode_FromWideChar(mode, -1);
-    if (pyc_mode == NULL) {
+    if (PyModule_Add(module, "check_hash_based_pycs", pyc_mode) < 0) {
         return -1;
     }
-    if (PyModule_AddObjectRef(module, "check_hash_based_pycs", pyc_mode) < 0) {
-        Py_DECREF(pyc_mode);
-        return -1;
-    }
-    Py_DECREF(pyc_mode);
 
     return 0;
 }

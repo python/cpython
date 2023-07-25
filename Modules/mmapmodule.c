@@ -22,11 +22,10 @@
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
-#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_fileutils.h"     // _Py_stat_struct
-#include "structmember.h"         // PyMemberDef
+
 #include <stddef.h>               // offsetof()
 
 // to support MS_WINDOWS_SYSTEM OpenFileMappingA / CreateFileMappingA
@@ -343,12 +342,17 @@ mmap_gfind(mmap_object *self,
 
         Py_ssize_t res;
         CHECK_VALID_OR_RELEASE(NULL, view);
-        if (reverse) {
+        if (end < start) {
+            res = -1;
+        }
+        else if (reverse) {
+            assert(0 <= start && start <= end && end <= self->size);
             res = _PyBytes_ReverseFind(
                 self->data + start, end - start,
                 view.buf, view.len, start);
         }
         else {
+            assert(0 <= start && start <= end && end <= self->size);
             res = _PyBytes_Find(
                 self->data + start, end - start,
                 view.buf, view.len, start);
@@ -879,7 +883,7 @@ mmap_madvise_method(mmap_object *self, PyObject *args)
 #endif // HAVE_MADVISE
 
 static struct PyMemberDef mmap_object_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(mmap_object, weakreflist), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(mmap_object, weakreflist), Py_READONLY},
     {NULL},
 };
 
@@ -1575,9 +1579,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 static int
 mmap_exec(PyObject *module)
 {
-    Py_INCREF(PyExc_OSError);
-    if (PyModule_AddObject(module, "error", PyExc_OSError) < 0) {
-        Py_DECREF(PyExc_OSError);
+    if (PyModule_AddObjectRef(module, "error", PyExc_OSError) < 0) {
         return -1;
     }
 

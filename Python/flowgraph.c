@@ -7,9 +7,7 @@
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 
 #include "pycore_opcode_utils.h"
-#define NEED_OPCODE_METADATA
-#include "opcode_metadata.h"      // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
-#undef NEED_OPCODE_METADATA
+#include "pycore_opcode_metadata.h" // OPCODE_HAS_ARG, etc
 
 
 #undef SUCCESS
@@ -139,6 +137,27 @@ basicblock_append_instructions(basicblock *target, basicblock *source)
     return SUCCESS;
 }
 
+static cfg_instr *
+basicblock_last_instr(const basicblock *b) {
+    assert(b->b_iused >= 0);
+    if (b->b_iused > 0) {
+        assert(b->b_instr != NULL);
+        return &b->b_instr[b->b_iused - 1];
+    }
+    return NULL;
+}
+
+static inline int
+basicblock_nofallthrough(const _PyCfgBasicblock *b) {
+    _PyCfgInstruction *last = basicblock_last_instr(b);
+    return (last &&
+            (IS_SCOPE_EXIT_OPCODE(last->i_opcode) ||
+             IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)));
+}
+
+#define BB_NO_FALLTHROUGH(B) (basicblock_nofallthrough(B))
+#define BB_HAS_FALLTHROUGH(B) (!basicblock_nofallthrough(B))
+
 static basicblock *
 copy_basicblock(cfg_builder *g, basicblock *block)
 {
@@ -166,22 +185,6 @@ _PyBasicblock_InsertInstruction(basicblock *block, int pos, cfg_instr *instr) {
     return SUCCESS;
 }
 
-static int
-instr_size(cfg_instr *instruction)
-{
-    return _PyCompile_InstrSize(instruction->i_opcode, instruction->i_oparg);
-}
-
-static int
-blocksize(basicblock *b)
-{
-    int size = 0;
-    for (int i = 0; i < b->b_iused; i++) {
-        size += instr_size(&b->b_instr[i]);
-    }
-    return size;
-}
-
 /* For debugging purposes only */
 #if 0
 static void
@@ -204,7 +207,7 @@ dump_instr(cfg_instr *i)
 
 static inline int
 basicblock_returns(const basicblock *b) {
-    cfg_instr *last = _PyCfg_BasicblockLastInstr(b);
+    cfg_instr *last = basicblock_last_instr(b);
     return last && (last->i_opcode == RETURN_VALUE || last->i_opcode == RETURN_CONST);
 }
 
@@ -212,9 +215,9 @@ static void
 dump_basicblock(const basicblock *b)
 {
     const char *b_return = basicblock_returns(b) ? "return " : "";
-    fprintf(stderr, "%d: [EH=%d CLD=%d WRM=%d NO_FT=%d %p] used: %d, depth: %d, offset: %d %s\n",
+    fprintf(stderr, "%d: [EH=%d CLD=%d WRM=%d NO_FT=%d %p] used: %d, depth: %d, %s\n",
         b->b_label.id, b->b_except_handler, b->b_cold, b->b_warm, BB_NO_FALLTHROUGH(b), b, b->b_iused,
-        b->b_startdepth, b->b_offset, b_return);
+        b->b_startdepth, b_return);
     if (b->b_instr) {
         int i;
         for (i = 0; i < b->b_iused; i++) {
@@ -246,26 +249,16 @@ cfg_builder_use_next_block(cfg_builder *g, basicblock *block)
     return block;
 }
 
-cfg_instr *
-_PyCfg_BasicblockLastInstr(const basicblock *b) {
-    assert(b->b_iused >= 0);
-    if (b->b_iused > 0) {
-        assert(b->b_instr != NULL);
-        return &b->b_instr[b->b_iused - 1];
-    }
-    return NULL;
-}
-
 static inline int
 basicblock_exits_scope(const basicblock *b) {
-    cfg_instr *last = _PyCfg_BasicblockLastInstr(b);
+    cfg_instr *last = basicblock_last_instr(b);
     return last && IS_SCOPE_EXIT_OPCODE(last->i_opcode);
 }
 
 static bool
 cfg_builder_current_block_is_terminated(cfg_builder *g)
 {
-    cfg_instr *last = _PyCfg_BasicblockLastInstr(g->g_curblock);
+    cfg_instr *last = basicblock_last_instr(g->g_curblock);
     if (last && IS_TERMINATOR_OPCODE(last->i_opcode)) {
         return true;
     }
@@ -389,7 +382,7 @@ no_empty_basic_blocks(cfg_builder *g) {
 static bool
 no_redundant_jumps(cfg_builder *g) {
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        cfg_instr *last = _PyCfg_BasicblockLastInstr(b);
+        cfg_instr *last = basicblock_last_instr(b);
         if (last != NULL) {
             if (IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)) {
                 assert(last->i_target != b->b_next);
@@ -408,25 +401,18 @@ no_redundant_jumps(cfg_builder *g) {
 
 static int
 normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
-    cfg_instr *last = _PyCfg_BasicblockLastInstr(b);
-    if (last == NULL || !is_jump(last)) {
+    cfg_instr *last = basicblock_last_instr(b);
+    if (last == NULL || !is_jump(last) ||
+        IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)) {
         return SUCCESS;
     }
     assert(!IS_ASSEMBLER_OPCODE(last->i_opcode));
+
     bool is_forward = last->i_target->b_visited == 0;
-    switch(last->i_opcode) {
-        case JUMP:
-            assert(SAME_OPCODE_METADATA(JUMP, JUMP_FORWARD));
-            assert(SAME_OPCODE_METADATA(JUMP, JUMP_BACKWARD));
-            last->i_opcode = is_forward ? JUMP_FORWARD : JUMP_BACKWARD;
-            return SUCCESS;
-        case JUMP_NO_INTERRUPT:
-            assert(SAME_OPCODE_METADATA(JUMP_NO_INTERRUPT, JUMP_FORWARD));
-            assert(SAME_OPCODE_METADATA(JUMP_NO_INTERRUPT, JUMP_BACKWARD_NO_INTERRUPT));
-            last->i_opcode = is_forward ?
-                JUMP_FORWARD : JUMP_BACKWARD_NO_INTERRUPT;
-            return SUCCESS;
+    if (is_forward) {
+        return SUCCESS;
     }
+
     int reversed_opcode = 0;
     switch(last->i_opcode) {
         case POP_JUMP_IF_NOT_NONE:
@@ -441,9 +427,6 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
         case POP_JUMP_IF_TRUE:
             reversed_opcode = POP_JUMP_IF_FALSE;
             break;
-    }
-    if (is_forward) {
-        return SUCCESS;
     }
     /* transform 'conditional jump T' to
      * 'reversed_jump b_next' followed by 'jump_backwards T'
@@ -480,71 +463,11 @@ normalize_jumps(_PyCfgBuilder *g)
     return SUCCESS;
 }
 
-static void
-resolve_jump_offsets(basicblock *entryblock)
-{
-    int bsize, totsize, extended_arg_recompile;
-
-    /* Compute the size of each block and fixup jump args.
-       Replace block pointer with position in bytecode. */
-    do {
-        totsize = 0;
-        for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-            bsize = blocksize(b);
-            b->b_offset = totsize;
-            totsize += bsize;
-        }
-        extended_arg_recompile = 0;
-        for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-            bsize = b->b_offset;
-            for (int i = 0; i < b->b_iused; i++) {
-                cfg_instr *instr = &b->b_instr[i];
-                int isize = instr_size(instr);
-                /* jump offsets are computed relative to
-                 * the instruction pointer after fetching
-                 * the jump instruction.
-                 */
-                bsize += isize;
-                if (is_jump(instr)) {
-                    instr->i_oparg = instr->i_target->b_offset;
-                    if (instr->i_oparg < bsize) {
-                        assert(IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
-                        instr->i_oparg = bsize - instr->i_oparg;
-                    }
-                    else {
-                        assert(!IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
-                        instr->i_oparg -= bsize;
-                    }
-                    if (instr_size(instr) != isize) {
-                        extended_arg_recompile = 1;
-                    }
-                }
-            }
-        }
-
-    /* XXX: This is an awful hack that could hurt performance, but
-        on the bright side it should work until we come up
-        with a better solution.
-
-        The issue is that in the first loop blocksize() is called
-        which calls instr_size() which requires i_oparg be set
-        appropriately. There is a bootstrap problem because
-        i_oparg is calculated in the second loop above.
-
-        So we loop until we stop seeing new EXTENDED_ARGs.
-        The only EXTENDED_ARGs that could be popping up are
-        ones in jump instructions.  So this should converge
-        fairly quickly.
-    */
-    } while (extended_arg_recompile);
-}
-
 int
 _PyCfg_ResolveJumps(_PyCfgBuilder *g)
 {
     RETURN_IF_ERROR(normalize_jumps(g));
     assert(no_redundant_jumps(g));
-    resolve_jump_offsets(g->g_entryblock);
     return SUCCESS;
 }
 
@@ -1041,7 +964,7 @@ remove_redundant_jumps(cfg_builder *g) {
      */
     assert(no_empty_basic_blocks(g));
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        cfg_instr *last = _PyCfg_BasicblockLastInstr(b);
+        cfg_instr *last = basicblock_last_instr(b);
         assert(last != NULL);
         assert(!IS_ASSEMBLER_OPCODE(last->i_opcode));
         if (IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)) {
@@ -1067,7 +990,7 @@ remove_redundant_jumps(cfg_builder *g) {
  */
 static int
 inline_small_exit_blocks(basicblock *bb) {
-    cfg_instr *last = _PyCfg_BasicblockLastInstr(bb);
+    cfg_instr *last = basicblock_last_instr(bb);
     if (last == NULL) {
         return 0;
     }
@@ -1120,6 +1043,36 @@ get_const_value(int opcode, int oparg, PyObject *co_consts)
     return Py_NewRef(constant);
 }
 
+// Steals a reference to newconst.
+static int
+add_const(PyObject *newconst, PyObject *consts, PyObject *const_cache)
+{
+    if (_PyCompile_ConstCacheMergeOne(const_cache, &newconst) < 0) {
+        Py_DECREF(newconst);
+        return -1;
+    }
+
+    Py_ssize_t index;
+    for (index = 0; index < PyList_GET_SIZE(consts); index++) {
+        if (PyList_GET_ITEM(consts, index) == newconst) {
+            break;
+        }
+    }
+    if (index == PyList_GET_SIZE(consts)) {
+        if ((size_t)index >= (size_t)INT_MAX - 1) {
+            PyErr_SetString(PyExc_OverflowError, "too many constants");
+            Py_DECREF(newconst);
+            return -1;
+        }
+        if (PyList_Append(consts, newconst)) {
+            Py_DECREF(newconst);
+            return -1;
+        }
+    }
+    Py_DECREF(newconst);
+    return (int)index;
+}
+
 /* Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cn, BUILD_TUPLE n
    with    LOAD_CONST (c1, c2, ... cn).
    The consts table must still be in list form so that the
@@ -1157,33 +1110,14 @@ fold_tuple_on_constants(PyObject *const_cache,
         }
         PyTuple_SET_ITEM(newconst, i, constant);
     }
-    if (_PyCompile_ConstCacheMergeOne(const_cache, &newconst) < 0) {
-        Py_DECREF(newconst);
+    int index = add_const(newconst, consts, const_cache);
+    if (index < 0) {
         return ERROR;
     }
-
-    Py_ssize_t index;
-    for (index = 0; index < PyList_GET_SIZE(consts); index++) {
-        if (PyList_GET_ITEM(consts, index) == newconst) {
-            break;
-        }
-    }
-    if (index == PyList_GET_SIZE(consts)) {
-        if ((size_t)index >= (size_t)INT_MAX - 1) {
-            Py_DECREF(newconst);
-            PyErr_SetString(PyExc_OverflowError, "too many constants");
-            return ERROR;
-        }
-        if (PyList_Append(consts, newconst)) {
-            Py_DECREF(newconst);
-            return ERROR;
-        }
-    }
-    Py_DECREF(newconst);
     for (int i = 0; i < n; i++) {
         INSTR_SET_OP0(&inst[i], NOP);
     }
-    INSTR_SET_OP1(&inst[n], LOAD_CONST, (int)index);
+    INSTR_SET_OP1(&inst[n], LOAD_CONST, index);
     return SUCCESS;
 }
 
@@ -1437,23 +1371,70 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                         }
                         break;
                     case IS_OP:
+                        // Fold to POP_JUMP_IF_NONE:
+                        // - LOAD_CONST(None) IS_OP(0) POP_JUMP_IF_TRUE
+                        // - LOAD_CONST(None) IS_OP(1) POP_JUMP_IF_FALSE
+                        // - LOAD_CONST(None) IS_OP(0) TO_BOOL POP_JUMP_IF_TRUE
+                        // - LOAD_CONST(None) IS_OP(1) TO_BOOL POP_JUMP_IF_FALSE
+                        // Fold to POP_JUMP_IF_NOT_NONE:
+                        // - LOAD_CONST(None) IS_OP(0) POP_JUMP_IF_FALSE
+                        // - LOAD_CONST(None) IS_OP(1) POP_JUMP_IF_TRUE
+                        // - LOAD_CONST(None) IS_OP(0) TO_BOOL POP_JUMP_IF_FALSE
+                        // - LOAD_CONST(None) IS_OP(1) TO_BOOL POP_JUMP_IF_TRUE
                         cnt = get_const_value(opcode, oparg, consts);
                         if (cnt == NULL) {
                             goto error;
                         }
-                        int jump_op = i+2 < bb->b_iused ? bb->b_instr[i+2].i_opcode : 0;
-                        if (Py_IsNone(cnt) && (jump_op == POP_JUMP_IF_FALSE || jump_op == POP_JUMP_IF_TRUE)) {
-                            unsigned char nextarg = bb->b_instr[i+1].i_oparg;
-                            INSTR_SET_OP0(inst, NOP);
-                            INSTR_SET_OP0(&bb->b_instr[i + 1], NOP);
-                            bb->b_instr[i+2].i_opcode = nextarg ^ (jump_op == POP_JUMP_IF_FALSE) ?
-                                    POP_JUMP_IF_NOT_NONE : POP_JUMP_IF_NONE;
+                        if (!Py_IsNone(cnt)) {
+                            Py_DECREF(cnt);
+                            break;
                         }
-                        Py_DECREF(cnt);
+                        if (bb->b_iused <= i + 2) {
+                            break;
+                        }
+                        cfg_instr *is_instr = &bb->b_instr[i + 1];
+                        cfg_instr *jump_instr = &bb->b_instr[i + 2];
+                        // Get rid of TO_BOOL regardless:
+                        if (jump_instr->i_opcode == TO_BOOL) {
+                            INSTR_SET_OP0(jump_instr, NOP);
+                            if (bb->b_iused <= i + 3) {
+                                break;
+                            }
+                            jump_instr = &bb->b_instr[i + 3];
+                        }
+                        bool invert = is_instr->i_oparg;
+                        if (jump_instr->i_opcode == POP_JUMP_IF_FALSE) {
+                            invert = !invert;
+                        }
+                        else if (jump_instr->i_opcode != POP_JUMP_IF_TRUE) {
+                            break;
+                        }
+                        INSTR_SET_OP0(inst, NOP);
+                        INSTR_SET_OP0(is_instr, NOP);
+                        jump_instr->i_opcode = invert ? POP_JUMP_IF_NOT_NONE
+                                                      : POP_JUMP_IF_NONE;
                         break;
                     case RETURN_VALUE:
                         INSTR_SET_OP0(inst, NOP);
                         INSTR_SET_OP1(&bb->b_instr[++i], RETURN_CONST, oparg);
+                        break;
+                    case TO_BOOL:
+                        cnt = get_const_value(opcode, oparg, consts);
+                        if (cnt == NULL) {
+                            goto error;
+                        }
+                        is_true = PyObject_IsTrue(cnt);
+                        Py_DECREF(cnt);
+                        if (is_true == -1) {
+                            goto error;
+                        }
+                        cnt = PyBool_FromLong(is_true);
+                        int index = add_const(cnt, consts, const_cache);
+                        if (index < 0) {
+                            return ERROR;
+                        }
+                        INSTR_SET_OP0(inst, NOP);
+                        INSTR_SET_OP1(&bb->b_instr[i + 1], LOAD_CONST, index);
                         break;
                 }
                 break;
@@ -1538,6 +1519,39 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 if (nextop == LOAD_GLOBAL && (inst[1].i_opcode & 1) == 0) {
                     INSTR_SET_OP0(inst, NOP);
                     inst[1].i_oparg |= 1;
+                }
+                break;
+            case COMPARE_OP:
+                if (nextop == TO_BOOL) {
+                    INSTR_SET_OP0(inst, NOP);
+                    INSTR_SET_OP1(&bb->b_instr[i + 1], COMPARE_OP, oparg | 16);
+                    continue;
+                }
+                break;
+            case CONTAINS_OP:
+            case IS_OP:
+                if (nextop == TO_BOOL) {
+                    INSTR_SET_OP0(inst, NOP);
+                    INSTR_SET_OP1(&bb->b_instr[i + 1], opcode, oparg);
+                    continue;
+                }
+                break;
+            case TO_BOOL:
+                if (nextop == TO_BOOL) {
+                    INSTR_SET_OP0(inst, NOP);
+                    continue;
+                }
+                break;
+            case UNARY_NOT:
+                if (nextop == TO_BOOL) {
+                    INSTR_SET_OP0(inst, NOP);
+                    INSTR_SET_OP0(&bb->b_instr[i + 1], UNARY_NOT);
+                    continue;
+                }
+                if (nextop == UNARY_NOT) {
+                    INSTR_SET_OP0(inst, NOP);
+                    INSTR_SET_OP0(&bb->b_instr[i + 1], NOP);
+                    continue;
                 }
                 break;
             default:
@@ -1712,7 +1726,7 @@ scan_block_for_locals(basicblock *b, basicblock ***sp)
     if (b->b_next && BB_HAS_FALLTHROUGH(b)) {
         maybe_push(b->b_next, unsafe_mask, sp);
     }
-    cfg_instr *last = _PyCfg_BasicblockLastInstr(b);
+    cfg_instr *last = basicblock_last_instr(b);
     if (last && is_jump(last)) {
         assert(last->i_target != NULL);
         maybe_push(last->i_target, unsafe_mask, sp);
@@ -2017,7 +2031,7 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
             b->b_next = explicit_jump;
 
             /* set target */
-            cfg_instr *last = _PyCfg_BasicblockLastInstr(explicit_jump);
+            cfg_instr *last = basicblock_last_instr(explicit_jump);
             last->i_target = explicit_jump->b_next;
         }
     }
@@ -2078,6 +2092,10 @@ _PyCfg_ConvertPseudoOps(basicblock *entryblock)
                 assert(SAME_OPCODE_METADATA(instr->i_opcode, NOP));
                 INSTR_SET_OP0(instr, NOP);
             }
+            else if (instr->i_opcode == LOAD_CLOSURE) {
+                assert(SAME_OPCODE_METADATA(LOAD_CLOSURE, LOAD_FAST));
+                instr->i_opcode = LOAD_FAST;
+            }
             else if (instr->i_opcode == STORE_FAST_MAYBE_NULL) {
                 assert(SAME_OPCODE_METADATA(STORE_FAST_MAYBE_NULL, STORE_FAST));
                 instr->i_opcode = STORE_FAST;
@@ -2119,7 +2137,7 @@ duplicate_exits_without_lineno(cfg_builder *g)
      */
     basicblock *entryblock = g->g_entryblock;
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        cfg_instr *last = _PyCfg_BasicblockLastInstr(b);
+        cfg_instr *last = basicblock_last_instr(b);
         assert(last != NULL);
         if (is_jump(last)) {
             basicblock *target = last->i_target;
@@ -2143,7 +2161,7 @@ duplicate_exits_without_lineno(cfg_builder *g)
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         if (BB_HAS_FALLTHROUGH(b) && b->b_next && b->b_iused > 0) {
             if (is_exit_without_lineno(b->b_next)) {
-                cfg_instr *last = _PyCfg_BasicblockLastInstr(b);
+                cfg_instr *last = basicblock_last_instr(b);
                 assert(last != NULL);
                 b->b_next->b_instr[0].i_loc = last->i_loc;
             }
@@ -2163,7 +2181,7 @@ duplicate_exits_without_lineno(cfg_builder *g)
 static void
 propagate_line_numbers(basicblock *entryblock) {
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        cfg_instr *last = _PyCfg_BasicblockLastInstr(b);
+        cfg_instr *last = basicblock_last_instr(b);
         if (last == NULL) {
             continue;
         }
@@ -2203,7 +2221,7 @@ guarantee_lineno_for_exits(basicblock *entryblock, int firstlineno) {
     int lineno = firstlineno;
     assert(lineno > 0);
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        cfg_instr *last = _PyCfg_BasicblockLastInstr(b);
+        cfg_instr *last = basicblock_last_instr(b);
         if (last == NULL) {
             continue;
         }
