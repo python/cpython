@@ -221,9 +221,10 @@ def main(fd):
         for rtype, rtype_cache in cache.items():
             if rtype_cache:
                 try:
-                    warnings.warn('resource_tracker: There appear to be %d '
-                                  'leaked %s objects to clean up at shutdown: %s' %
-                                  (len(rtype_cache), rtype, rtype_cache))
+                    warnings.warn(
+                        f'resource_tracker: There appear to be {len(rtype_cache)} '
+                        'leaked {rtype} objects to clean up at shutdown: {rtype_cache}'
+                    )
                 except Exception:
                     pass
             for name in rtype_cache:
