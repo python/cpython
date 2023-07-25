@@ -6201,3 +6201,9 @@ class SemLockTests(unittest.TestCase):
         name = f'test_semlock_subclass-{os.getpid()}'
         s = SemLock(1, 0, 10, name, False)
         _multiprocessing.sem_unlink(name)
+
+    def test_semlock_mixed_context(self):
+        queue = multiprocessing.get_context("fork").Queue()
+        p = multiprocessing.get_context("spawn").Process(target=close_queue, args=(queue,))
+        with self.assertRaisesRegex(RuntimeError, "A SemLock created in a fork"):
+            p.start()
