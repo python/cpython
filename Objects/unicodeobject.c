@@ -14744,10 +14744,20 @@ _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p)
         return;
     }
 
-    if (_Py_IsImmortal(s)) {
+    if (_PyUnicode_STATE(s).statically_allocated) {
+        if (!_Py_IsImmortal(s)) {
+            printf("\"%s\"\n", PyUnicode_AsUTF8(s));
+        }
+        assert(_Py_IsImmortal(s));
         _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL_STATIC;
-       return;
+        return;
     }
+    if (_Py_IsImmortal(s)) {
+        // XXX Restrict this to the main interpreter?
+        _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL_STATIC;
+        return;
+    }
+
 #ifdef Py_REF_DEBUG
     /* The reference count value excluding the 2 references from the
        interned dictionary should be excluded from the RefTotal. The
