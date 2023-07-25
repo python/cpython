@@ -1987,6 +1987,40 @@ unicode_asutf8andsize(PyObject *self, PyObject *args)
     return Py_BuildValue("(Nn)", result, utf8_len);
 }
 
+/* Test PyUnicode_DecodeUTF8() */
+static PyObject *
+unicode_decodeutf8(PyObject *self, PyObject *args)
+{
+    const char *data;
+    Py_ssize_t size;
+    const char *errors = NULL;
+
+    if (!PyArg_ParseTuple(args, "y#|z", &data, &size, &errors))
+        return NULL;
+
+    return PyUnicode_DecodeUTF8(data, size, errors);
+}
+
+/* Test PyUnicode_DecodeUTF8Stateful() */
+static PyObject *
+unicode_decodeutf8stateful(PyObject *self, PyObject *args)
+{
+    const char *data;
+    Py_ssize_t size;
+    const char *errors = NULL;
+    Py_ssize_t consumed = 123456789;
+    PyObject *result;
+
+    if (!PyArg_ParseTuple(args, "y#|z", &data, &size, &errors))
+        return NULL;
+
+    result = PyUnicode_DecodeUTF8Stateful(data, size, errors, &consumed);
+    if (!result) {
+        return NULL;
+    }
+    return Py_BuildValue("(Nn)", result, consumed);
+}
+
 static PyObject *
 unicode_findchar(PyObject *self, PyObject *args)
 {
@@ -5502,7 +5536,8 @@ static PyMethodDef TestMethods[] = {
     {"unicode_asucs4",          unicode_asucs4,                  METH_VARARGS},
     {"unicode_asutf8",          unicode_asutf8,                  METH_VARARGS},
     {"unicode_asutf8andsize",   unicode_asutf8andsize,           METH_VARARGS},
-    {"unicode_findchar",        unicode_findchar,                METH_VARARGS},
+    {"unicode_decodeutf8",       unicode_decodeutf8,             METH_VARARGS},
+    {"unicode_decodeutf8stateful",unicode_decodeutf8stateful,    METH_VARARGS},    {"unicode_findchar",        unicode_findchar,                METH_VARARGS},
     {"unicode_copycharacters",  unicode_copycharacters,          METH_VARARGS},
     {"unicode_encodedecimal",   unicode_encodedecimal,           METH_VARARGS},
     {"unicode_transformdecimaltoascii", unicode_transformdecimaltoascii, METH_VARARGS},
