@@ -1,5 +1,5 @@
 /* Detect platform triplet from builtin defines
- * cc -E Misc/platform_triplet.c | grep -v '^#' | grep -v '^ *$' | grep -v '^typedef' | tr -d ' 	'
+ * cc -E Misc/platform_triplet.c | grep -v '^#' | grep -v '^ *$' | grep -v '^typedef' | tr -d ' '
  */
 #undef bfin
 #undef cris
@@ -234,21 +234,21 @@
         vxworks
 #elif defined(__wasm32__)
 #  if defined(__EMSCRIPTEN__)
-	wasm32-emscripten
+        wasm32-emscripten
 #  elif defined(__wasi__)
 #    if defined(_REENTRANT)
-	wasm32-wasi-threads
+        wasm32-wasi-threads
 #    else
-	wasm32-wasi
+        wasm32-wasi
 #    endif
 #  else
 #    error unknown wasm32 platform
 #  endif
 #elif defined(__wasm64__)
 #  if defined(__EMSCRIPTEN__)
-	wasm64-emscripten
+        wasm64-emscripten
 #  elif defined(__wasi__)
-	wasm64-wasi
+        wasm64-wasi
 #  else
 #    error unknown wasm64 platform
 #  endif
