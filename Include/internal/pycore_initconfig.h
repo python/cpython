@@ -122,6 +122,7 @@ extern PyStatus _PyPreCmdline_Read(_PyPreCmdline *cmdline,
 
 /* --- PyPreConfig ----------------------------------------------- */
 
+// Export for '_testembed' program
 PyAPI_FUNC(void) _PyPreConfig_InitCompatConfig(PyPreConfig *preconfig);
 extern void _PyPreConfig_InitFromConfig(
     PyPreConfig *preconfig,
@@ -146,6 +147,7 @@ typedef enum {
     _PyConfig_INIT_ISOLATED = 3
 } _PyConfigInitEnum;
 
+// Export for '_testembed' program
 PyAPI_FUNC(void) _PyConfig_InitCompatConfig(PyConfig *config);
 extern PyStatus _PyConfig_Copy(
     PyConfig *config,
