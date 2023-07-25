@@ -165,6 +165,11 @@ check by comparing the reference count field to the immortality reference count.
  */
 struct _object {
     _PyObject_HEAD_EXTRA
+#if (defined(__GNUC__) || defined(__clang__)) \
+        && !(defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L)
+    // On C99 and older, anonymous union is a GCC and clang extension
+    __extension__
+#endif
     union {
        Py_ssize_t ob_refcnt;
 #if SIZEOF_VOID_P > 4
