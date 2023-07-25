@@ -44,6 +44,7 @@ from typing import (
     NoReturn,
     Protocol,
     TypeGuard,
+    TypeVar,
     overload,
 )
 
@@ -2647,10 +2648,12 @@ class LandMine:
         fail("Stepped on a land mine, trying to access attribute " + repr(name) + ":\n" + self.__message__)
 
 
+CConverterClassT = TypeVar("CConverterClassT", bound=type["CConverter"])
+
 def add_c_converter(
-        f: type[CConverter],
+        f: CConverterClassT,
         name: str | None = None
-) -> type[CConverter]:
+) -> CConverterClassT:
     if not name:
         name = f.__name__
         if not name.endswith('_converter'):
@@ -2659,7 +2662,7 @@ def add_c_converter(
     converters[name] = f
     return f
 
-def add_default_legacy_c_converter(cls):
+def add_default_legacy_c_converter(cls: CConverterClassT) -> CConverterClassT:
     # automatically add converter for default format unit
     # (but without stomping on the existing one if it's already
     # set, in case you subclass)
@@ -2670,16 +2673,19 @@ def add_default_legacy_c_converter(cls):
 
 def add_legacy_c_converter(
         format_unit: str,
-        **kwargs
-) -> Callable[[ConverterType], ConverterType]:
+        **kwargs: Any
+) -> Callable[[CConverterClassT], CConverterClassT]:
     """
     Adds a legacy converter.
     """
-    def closure(f):
+    def closure(f: CConverterClassT) -> CConverterClassT:
+        added_f: Callable[..., CConverter]
         if not kwargs:
             added_f = f
         else:
-            added_f = functools.partial(f, **kwargs)
+            # mypy's special-casing for functools.partial
+            # can't quite grapple with this code here
+            added_f = functools.partial(f, **kwargs)  # type: ignore[arg-type]
         if format_unit:
             legacy_converters[format_unit] = added_f
         return f
