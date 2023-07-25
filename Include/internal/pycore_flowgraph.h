@@ -80,8 +80,6 @@ typedef struct cfg_builder_ {
     _PyCfgBasicblock *g_curblock;
     /* label for the next instruction to be placed */
     _PyCfgJumpTargetLabel g_current_label;
-    /* size of stack required to execute the code */
-    int g_maxdepth;
 } _PyCfgBuilder;
 
 int _PyCfgBuilder_UseLabel(_PyCfgBuilder *g, _PyCfgJumpTargetLabel lbl);

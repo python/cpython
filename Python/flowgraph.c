@@ -636,7 +636,6 @@ stackdepth_push(basicblock ***sp, basicblock *b, int depth)
 int
 _PyCfg_Stackdepth(cfg_builder *g)
 {
-    g->g_maxdepth = -1;
     basicblock *entryblock = g->g_entryblock;
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         b->b_startdepth = INT_MIN;
@@ -647,6 +646,7 @@ _PyCfg_Stackdepth(cfg_builder *g)
     }
 
 
+    int stackdepth = -1;
     int maxdepth = 0;
     basicblock **sp = stack;
     if (stackdepth_push(&sp, entryblock, 0) < 0) {
@@ -711,10 +711,10 @@ _PyCfg_Stackdepth(cfg_builder *g)
             }
         }
     }
-    g->g_maxdepth = maxdepth;
+    stackdepth = maxdepth;
 error:
     PyMem_Free(stack);
-    return g->g_maxdepth;
+    return stackdepth;
 }
 
 static int
@@ -2291,6 +2291,5 @@ _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
 
     RETURN_IF_ERROR(push_cold_blocks_to_end(g));
     RETURN_IF_ERROR(resolve_line_numbers(g, firstlineno));
-    RETURN_IF_ERROR(_PyCfg_Stackdepth(g));
     return SUCCESS;
 }

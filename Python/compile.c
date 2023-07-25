@@ -7724,14 +7724,17 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
         goto error;
     }
 
+    int stackdepth = _PyCfg_Stackdepth(&g);
+    if (stackdepth < 0) {
+        goto error;
+    }
+    assert(stackdepth >= 0);
+
     /** Assembly **/
     int nlocalsplus = prepare_localsplus(&u->u_metadata, &g, code_flags);
     if (nlocalsplus < 0) {
         goto error;
     }
-
-    assert(g.g_maxdepth >= 0);
-    int maxdepth = g.g_maxdepth;
 
     _PyCfg_ConvertPseudoOps(g.g_entryblock);
 
@@ -7748,7 +7751,7 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     }
 
     co = _PyAssemble_MakeCodeObject(&u->u_metadata, const_cache, consts,
-                                    maxdepth, &optimized_instrs, nlocalsplus,
+                                    stackdepth, &optimized_instrs, nlocalsplus,
                                     code_flags, filename);
 
 error:
@@ -8227,7 +8230,9 @@ _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
     if (_PyCfg_JumpLabelsToTargets(g.g_entryblock) < 0) {
         goto error;
     }
-    if (_PyCfg_Stackdepth(&g) < 0) {
+
+    int stackdepth = _PyCfg_Stackdepth(&g);
+    if (stackdepth < 0) {
         goto error;
     }
 
@@ -8256,7 +8261,7 @@ _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
         goto error;
     }
     co = _PyAssemble_MakeCodeObject(umd, const_cache,
-                                    consts, g.g_maxdepth, &optimized_instrs,
+                                    consts, stackdepth, &optimized_instrs,
                                     nlocalsplus, code_flags, filename);
     Py_DECREF(consts);
 
