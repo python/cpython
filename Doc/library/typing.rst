@@ -3698,3 +3698,7 @@ convenience. This is subject to change, and not all deprecations are listed.
      - 3.13
      - 3.15
      - :gh:`106309`
+   * - :data:`typing.AnyStr`
+     - 3.13
+     - 3.18
+     - :gh:`105578`
