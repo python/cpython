@@ -34,7 +34,7 @@
 #include "opcode.h"
 #include "pydtrace.h"
 #include "setobject.h"
-#include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
+
 
 #include <ctype.h>
 #include <stdbool.h>

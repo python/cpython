@@ -232,12 +232,13 @@ struct _xidregitem {
     crossinterpdatafunc getdata;
 };
 
-PyAPI_FUNC(PyInterpreterState*) _PyInterpreterState_LookUpID(int64_t);
+extern PyInterpreterState* _PyInterpreterState_LookUpID(int64_t);
 
-PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
-PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
-PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
+extern int _PyInterpreterState_IDInitref(PyInterpreterState *);
+extern int _PyInterpreterState_IDIncref(PyInterpreterState *);
+extern void _PyInterpreterState_IDDecref(PyInterpreterState *);
 
+// Export for '_xxsubinterpreters' shared extension
 PyAPI_FUNC(PyObject*) _PyInterpreterState_GetMainModule(PyInterpreterState *);
 
 extern const PyConfig* _PyInterpreterState_GetConfig(PyInterpreterState *interp);
@@ -253,7 +254,9 @@ extern const PyConfig* _PyInterpreterState_GetConfig(PyInterpreterState *interp)
    The caller must hold the GIL.
 
    Once done with the configuration, PyConfig_Clear() must be called to clear
-   it. */
+   it.
+
+   Export for '_testinternalcapi' shared extension. */
 PyAPI_FUNC(int) _PyInterpreterState_GetConfigCopy(
     struct PyConfig *config);
 
@@ -271,7 +274,9 @@ PyAPI_FUNC(int) _PyInterpreterState_GetConfigCopy(
 
    Return 0 on success. Raise an exception and return -1 on error.
 
-   The configuration should come from _PyInterpreterState_GetConfigCopy(). */
+   The configuration should come from _PyInterpreterState_GetConfigCopy().
+
+   Export for '_testinternalcapi' shared extension. */
 PyAPI_FUNC(int) _PyInterpreterState_SetConfig(
     const struct PyConfig *config);
 

@@ -221,9 +221,7 @@ with an exception object::
            return NULL;
 
        SpamError = PyErr_NewException("spam.error", NULL, NULL);
-       Py_XINCREF(SpamError);
-       if (PyModule_AddObject(m, "error", SpamError) < 0) {
-           Py_XDECREF(SpamError);
+       if (PyModule_AddObjectRef(m, "error", SpamError) < 0) {
            Py_CLEAR(SpamError);
            Py_DECREF(m);
            return NULL;
@@ -369,7 +367,7 @@ Note that PyMODINIT_FUNC declares the function as ``PyObject *`` return type,
 declares any special linkage declarations required by the platform, and for C++
 declares the function as ``extern "C"``.
 
-When the Python program imports module :mod:`spam` for the first time,
+When the Python program imports module :mod:`!spam` for the first time,
 :c:func:`PyInit_spam` is called. (See below for comments about embedding Python.)
 It calls :c:func:`PyModule_Create`, which returns a module object, and
 inserts built-in function objects into the newly created module based upon the
@@ -1221,7 +1219,7 @@ file corresponding to the module provides a macro that takes care of importing
 the module and retrieving its C API pointers; client modules only have to call
 this macro before accessing the C API.
 
-The exporting module is a modification of the :mod:`spam` module from section
+The exporting module is a modification of the :mod:`!spam` module from section
 :ref:`extending-simpleexample`. The function :func:`spam.system` does not call
 the C library function :c:func:`system` directly, but a function
 :c:func:`PySpam_System`, which would of course do something more complicated in
@@ -1281,8 +1279,7 @@ function must take care of initializing the C API pointer array::
        /* Create a Capsule containing the API pointer array's address */
        c_api_object = PyCapsule_New((void *)PySpam_API, "spam._C_API", NULL);
 
-       if (PyModule_AddObject(m, "_C_API", c_api_object) < 0) {
-           Py_XDECREF(c_api_object);
+       if (PyModule_Add(m, "_C_API", c_api_object) < 0) {
            Py_DECREF(m);
            return NULL;
        }

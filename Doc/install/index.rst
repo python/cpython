@@ -374,7 +374,7 @@ will expand this to your home directory::
 
 To make Python find the distributions installed with this scheme, you may have
 to :ref:`modify Python's search path <inst-search-path>` or edit
-:mod:`sitecustomize` (see :mod:`site`) to call :func:`site.addsitedir` or edit
+:mod:`!sitecustomize` (see :mod:`site`) to call :func:`site.addsitedir` or edit
 :data:`sys.path`.
 
 The :option:`!--home` option defines the installation base directory.  Files are

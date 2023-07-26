@@ -4,15 +4,12 @@
 
 Doc/c-api/allocation.rst
 Doc/c-api/apiabiversion.rst
-Doc/c-api/arg.rst
 Doc/c-api/bool.rst
 Doc/c-api/buffer.rst
 Doc/c-api/bytes.rst
-Doc/c-api/call.rst
 Doc/c-api/capsule.rst
 Doc/c-api/cell.rst
 Doc/c-api/code.rst
-Doc/c-api/codec.rst
 Doc/c-api/complex.rst
 Doc/c-api/conversion.rst
 Doc/c-api/datetime.rst
@@ -26,8 +23,6 @@ Doc/c-api/init.rst
 Doc/c-api/init_config.rst
 Doc/c-api/intro.rst
 Doc/c-api/iterator.rst
-Doc/c-api/long.rst
-Doc/c-api/marshal.rst
 Doc/c-api/memory.rst
 Doc/c-api/memoryview.rst
 Doc/c-api/module.rst
