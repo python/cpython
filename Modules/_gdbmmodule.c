@@ -787,11 +787,7 @@ _gdbm_exec(PyObject *module)
     defined(GDBM_VERSION_PATCH)
     PyObject *obj = Py_BuildValue("iii", GDBM_VERSION_MAJOR,
                                   GDBM_VERSION_MINOR, GDBM_VERSION_PATCH);
-    if (obj == NULL) {
-        return -1;
-    }
-    if (PyModule_AddObject(module, "_GDBM_VERSION", obj) < 0) {
-        Py_DECREF(obj);
+    if (PyModule_Add(module, "_GDBM_VERSION", obj) < 0) {
         return -1;
     }
 #endif

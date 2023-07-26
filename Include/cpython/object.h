@@ -275,30 +275,17 @@ PyAPI_FUNC(const char *) _PyType_Name(PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyType_Lookup(PyTypeObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyType_LookupId(PyTypeObject *, _Py_Identifier *);
 PyAPI_FUNC(PyObject *) _PyObject_LookupSpecialId(PyObject *, _Py_Identifier *);
-#ifndef Py_BUILD_CORE
-// Backward compatibility for 3rd-party extensions
-// that may be using the old name.
-#define _PyObject_LookupSpecial _PyObject_LookupSpecialId
-#endif
-PyAPI_FUNC(PyTypeObject *) _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
-PyAPI_FUNC(PyObject *) _PyType_GetDocFromInternalDoc(const char *, const char *);
-PyAPI_FUNC(PyObject *) _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);
 PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, PyModuleDef *);
 PyAPI_FUNC(PyObject *) PyType_GetDict(PyTypeObject *);
 
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
 PyAPI_FUNC(void) _Py_BreakPoint(void);
 PyAPI_FUNC(void) _PyObject_Dump(PyObject *);
-PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 
-PyAPI_FUNC(int) _PyObject_IsAbstract(PyObject *);
 PyAPI_FUNC(PyObject *) _PyObject_GetAttrId(PyObject *, _Py_Identifier *);
 PyAPI_FUNC(int) _PyObject_SetAttrId(PyObject *, _Py_Identifier *, PyObject *);
 
-PyAPI_FUNC(int) _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
-
 PyAPI_FUNC(PyObject **) _PyObject_GetDictPtr(PyObject *);
-PyAPI_FUNC(PyObject *) _PyObject_NextNotImplemented(PyObject *);
 PyAPI_FUNC(void) PyObject_CallFinalizer(PyObject *);
 PyAPI_FUNC(int) PyObject_CallFinalizerFromDealloc(PyObject *);
 
@@ -377,12 +364,6 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
 #endif
 
 
-PyAPI_FUNC(void)
-_PyDebugAllocatorStats(FILE *out, const char *block_name, int num_blocks,
-                       size_t sizeof_block);
-PyAPI_FUNC(void)
-_PyObject_DebugTypeStats(FILE *out);
-
 /* Define a pair of assertion macros:
    _PyObject_ASSERT_FROM(), _PyObject_ASSERT_WITH_MSG() and _PyObject_ASSERT().
 
@@ -430,21 +411,6 @@ PyAPI_FUNC(void) _Py_NO_RETURN _PyObject_AssertFailed(
     const char *file,
     int line,
     const char *function);
-
-/* Check if an object is consistent. For example, ensure that the reference
-   counter is greater than or equal to 1, and ensure that ob_type is not NULL.
-
-   Call _PyObject_AssertFailed() if the object is inconsistent.
-
-   If check_content is zero, only check header fields: reduce the overhead.
-
-   The function always return 1. The return value is just here to be able to
-   write:
-
-   assert(_PyObject_CheckConsistency(obj, 1)); */
-PyAPI_FUNC(int) _PyObject_CheckConsistency(
-    PyObject *op,
-    int check_content);
 
 
 /* Trashcan mechanism, thanks to Christian Tismer.

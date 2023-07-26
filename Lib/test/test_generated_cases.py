@@ -6,8 +6,10 @@ from test import test_tools
 
 test_tools.skip_if_missing('cases_generator')
 with test_tools.imports_under_tool('cases_generator'):
+    import analysis
+    import formatting
     import generate_cases
-    from parser import StackEffect
+    from parsing import StackEffect
 
 
 class TestEffects(unittest.TestCase):
@@ -27,37 +29,37 @@ class TestEffects(unittest.TestCase):
             StackEffect("q", "", "", ""),
             StackEffect("r", "", "", ""),
         ]
-        self.assertEqual(generate_cases.effect_size(x), (1, ""))
-        self.assertEqual(generate_cases.effect_size(y), (0, "oparg"))
-        self.assertEqual(generate_cases.effect_size(z), (0, "oparg*2"))
+        self.assertEqual(formatting.effect_size(x), (1, ""))
+        self.assertEqual(formatting.effect_size(y), (0, "oparg"))
+        self.assertEqual(formatting.effect_size(z), (0, "oparg*2"))
 
         self.assertEqual(
-            generate_cases.list_effect_size(input_effects),
+            formatting.list_effect_size(input_effects),
             (1, "oparg + oparg*2"),
         )
         self.assertEqual(
-            generate_cases.list_effect_size(output_effects),
+            formatting.list_effect_size(output_effects),
             (2, "oparg*4"),
         )
         self.assertEqual(
-            generate_cases.list_effect_size(other_effects),
+            formatting.list_effect_size(other_effects),
             (2, "(oparg<<1)"),
         )
 
         self.assertEqual(
-            generate_cases.string_effect_size(
-                generate_cases.list_effect_size(input_effects),
+            formatting.string_effect_size(
+                formatting.list_effect_size(input_effects),
             ), "1 + oparg + oparg*2",
         )
         self.assertEqual(
-            generate_cases.string_effect_size(
-                generate_cases.list_effect_size(output_effects),
+            formatting.string_effect_size(
+                formatting.list_effect_size(output_effects),
             ),
             "2 + oparg*4",
         )
         self.assertEqual(
-            generate_cases.string_effect_size(
-                generate_cases.list_effect_size(other_effects),
+            formatting.string_effect_size(
+                formatting.list_effect_size(other_effects),
             ),
             "2 + (oparg<<1)",
         )
@@ -90,23 +92,17 @@ class TestGeneratedCases(unittest.TestCase):
 
     def run_cases_test(self, input: str, expected: str):
         with open(self.temp_input_filename, "w+") as temp_input:
-            temp_input.write(generate_cases.BEGIN_MARKER)
+            temp_input.write(analysis.BEGIN_MARKER)
             temp_input.write(input)
-            temp_input.write(generate_cases.END_MARKER)
+            temp_input.write(analysis.END_MARKER)
             temp_input.flush()
 
-        a = generate_cases.Analyzer(
-            [self.temp_input_filename],
-            self.temp_output_filename,
-            self.temp_metadata_filename,
-            self.temp_pymetadata_filename,
-            self.temp_executor_filename,
-        )
+        a = generate_cases.Generator([self.temp_input_filename])
         a.parse()
         a.analyze()
         if a.errors:
             raise RuntimeError(f"Found {a.errors} errors")
-        a.write_instructions()
+        a.write_instructions(self.temp_output_filename, False)
 
         with open(self.temp_output_filename) as temp_output:
             lines = temp_output.readlines()

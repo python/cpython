@@ -88,24 +88,11 @@ int _PyCfgBuilder_Addop(_PyCfgBuilder *g, int opcode, int oparg, _PyCompilerSrcL
 int _PyCfgBuilder_Init(_PyCfgBuilder *g);
 void _PyCfgBuilder_Fini(_PyCfgBuilder *g);
 
-_PyCfgInstruction* _PyCfg_BasicblockLastInstr(const _PyCfgBasicblock *b);
 int _PyCfg_OptimizeCodeUnit(_PyCfgBuilder *g, PyObject *consts, PyObject *const_cache,
                             int code_flags, int nlocals, int nparams, int firstlineno);
 int _PyCfg_Stackdepth(_PyCfgBasicblock *entryblock, int code_flags);
 void _PyCfg_ConvertPseudoOps(_PyCfgBasicblock *entryblock);
 int _PyCfg_ResolveJumps(_PyCfgBuilder *g);
-
-
-static inline int
-basicblock_nofallthrough(const _PyCfgBasicblock *b) {
-    _PyCfgInstruction *last = _PyCfg_BasicblockLastInstr(b);
-    return (last &&
-            (IS_SCOPE_EXIT_OPCODE(last->i_opcode) ||
-             IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)));
-}
-
-#define BB_NO_FALLTHROUGH(B) (basicblock_nofallthrough(B))
-#define BB_HAS_FALLTHROUGH(B) (!basicblock_nofallthrough(B))
 
 PyCodeObject *
 _PyAssemble_MakeCodeObject(_PyCompile_CodeUnitMetadata *u, PyObject *const_cache,
