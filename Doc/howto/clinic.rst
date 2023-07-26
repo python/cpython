@@ -8,6 +8,7 @@ Argument Clinic How-To
 
 :author: Larry Hastings
 
+**Source code:** :source:`Tools/clinic/clinic.py`.
 
 .. topic:: Abstract
 
@@ -15,10 +16,12 @@ Argument Clinic How-To
   Its purpose is to automate all the boilerplate involved
   with writing argument parsing code for "builtins",
   module level functions, and class methods.
-  This document is divided in three major sections:
+  This document is divided in four major sections:
 
   * :ref:`clinic-background` talks about the basic concepts and goals of
     Argument Clinic.
+  * :ref:`clinic-reference` describes the command-line interface and Argument
+    Clinic terminology.
   * :ref:`clinic-tutorial` guides you through all the steps required to
     adapt an existing C function to Argument Clinic.
   * :ref:`clinic-howtos` details how to handle specific tasks.
@@ -93,39 +96,29 @@ and it should be able to do many interesting and smart
 things with all the information you give it.
 
 
-Basic concepts and usage
-------------------------
+Basic concepts
+--------------
 
-Argument Clinic ships with CPython; you'll find it in
-:source:`Tools/clinic/clinic.py`.
-If you run that script, specifying a C file as an argument:
-
-.. code-block:: shell-session
-
-    $ python Tools/clinic/clinic.py foo.c
-
-Argument Clinic will scan over the file looking for lines that
-look exactly like this:
+When Argument Clinic is run on a file, either via the :ref:`clinic-cli`
+or via ``make clinic``, it will scan over the input files looking for
+:term:`start lines <start line>`:
 
 .. code-block:: none
 
     /*[clinic input]
 
-When it finds one, it reads everything up to a line that looks
-exactly like this:
+When it finds one, it reads everything up to the :term:`end line`:
 
 .. code-block:: none
 
     [clinic start generated code]*/
 
-Everything in between these two lines is input for Argument Clinic.
-All of these lines, including the beginning and ending comment
-lines, are collectively called an Argument Clinic "block".
-
-When Argument Clinic parses one of these blocks, it
-generates output.  This output is rewritten into the C file
-immediately after the block, followed by a comment containing a checksum.
-The Argument Clinic block now looks like this:
+Everything in between these two lines is Argument Clinic :term:`input`.
+When Argument Clinic parses input, it generates :term:`output`.
+The output is rewritten into the C file immediately after the input,
+followed by a :term:`checksum line`.
+All of these lines, including the :term:`start line` and :term:`checksum line`,
+are collectively called an Argument Clinic :term:`block`:
 
 .. code-block:: none
 
@@ -133,28 +126,121 @@ The Argument Clinic block now looks like this:
     ... clinic input goes here ...
     [clinic start generated code]*/
     ... clinic output goes here ...
-    /*[clinic end generated code: checksum=...]*/
+    /*[clinic end generated code: ...]*/
 
 If you run Argument Clinic on the same file a second time, Argument Clinic
-will discard the old output and write out the new output with a fresh checksum
-line.  However, if the input hasn't changed, the output won't change either.
+will discard the old :term:`output` and write out the new output with a fresh
+:term:`checksum line`.
+If the :term:`input` hasn't changed, the output won't change either.
 
-You should never modify the output portion of an Argument Clinic block.  Instead,
-change the input until it produces the output you want.  (That's the purpose of the
-checksum—to detect if someone changed the output, as these edits would be lost
-the next time Argument Clinic writes out fresh output.)
+.. note::
 
-For the sake of clarity, here's the terminology we'll use with Argument Clinic:
+   You should never modify the output of an Argument Clinic block,
+   as any change will be lost in future Argument Clinic runs;
+   Argument Clinic will detect an output checksum mismatch and regenerate the
+   correct output.
+   If you are not happy with the generated output,
+   you should instead change the input until it produces the output you want.
 
-* The first line of the comment (``/*[clinic input]``) is the *start line*.
-* The last line of the initial comment (``[clinic start generated code]*/``) is the *end line*.
-* The last line (``/*[clinic end generated code: checksum=...]*/``) is the *checksum line*.
-* In between the start line and the end line is the *input*.
-* In between the end line and the checksum line is the *output*.
-* All the text collectively, from the start line to the checksum line inclusively,
-  is the *block*.  (A block that hasn't been successfully processed by Argument
-  Clinic yet doesn't have output or a checksum line, but it's still considered
-  a block.)
+
+.. _clinic-reference:
+
+Reference
+=========
+
+
+.. _clinic-terminology:
+
+Terminology
+-----------
+
+.. glossary::
+
+   start line
+      The line ``/*[clinic input]``.
+      This line marks the beginning of Argument Clinic input.
+      Note that the *start line* opens a C block comment.
+
+   end line
+      The line ``[clinic start generated code]*/``.
+      The *end line* marks the _end_ of Argument Clinic :term:`input`,
+      but at the same time marks the _start_ of Argument Clinic :term:`output`,
+      thus the text *"clinic start start generated code"*
+      Note that the *end line* closes the C block comment opened
+      by the *start line*.
+
+   checksum
+      A hash to distinguish unique :term:`inputs <input>`
+      and :term:`outputs <output>`.
+
+   checksum line
+      A line that looks like ``/*[clinic end generated code: ...]*/``.
+      The three dots will be replaced by a :term:`checksum` generated from the
+      :term:`input`, and a :term:`checksum` generated from the :term:`output`.
+      The checksum line marks the end of Argument Clinic generated code,
+      and is used by Argument Clinic to determine if it needs to regenerate
+      output.
+
+   input
+      The text between the :term:`start line` and the :term:`end line`.
+      Note that the start and end lines open and close a C block comment;
+      the *input* is thus a part of that same C block comment.
+
+   output
+      The text between the :term:`end line` and the :term:`checksum line`.
+
+   block
+      All text from the :term:`start line` to the :term:`checksum line` inclusively.
+
+
+.. _clinic-cli:
+
+Command-line interface
+----------------------
+
+The Argument Clinic :abbr:`CLI (Command-Line Interface)` is typically used to
+process a single source file, like this:
+
+.. code-block:: shell-session
+
+    $ python3 ./Tools/clinic/clinic.py foo.c
+
+The CLI supports the following options:
+
+.. program:: ./Tools/clinic/clinic.py [-h] [-f] [-o OUTPUT] [-v] \
+             [--converters] [--make] [--srcdir SRCDIR] [FILE ...]
+
+.. option:: -h, --help
+
+   Print CLI usage.
+
+.. option:: -f, --force
+
+   Force output regeneration.
+
+.. option:: -o, --output OUTPUT
+
+   Redirect file output to OUTPUT
+
+.. option:: -v, --verbose
+
+   Enable verbose mode.
+
+.. option:: --converters
+
+   Print a list of all supported converters and return converters.
+
+.. option:: --make
+
+   Walk :option:`--srcdir` to run over all relevant files.
+
+.. option:: --srcdir SRCDIR
+
+   The directory tree to walk in :option:`--make` mode.
+
+.. option:: FILE ...
+
+   The list of files to process.
 
 
 .. _clinic-tutorial:
