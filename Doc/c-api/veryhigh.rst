@@ -353,7 +353,7 @@ the same library that the Python runtime is using.
    executed, it is passed as ``PyCompilerFlags *flags``.  In this case, ``from
    __future__ import`` can modify *flags*.
 
-   Whenever ``PyCompilerFlags *flags`` is ``NULL``, :attr:`cf_flags` is treated as
+   Whenever ``PyCompilerFlags *flags`` is ``NULL``, :c:member:`cf_flags` is treated as
    equal to ``0``, and any modification due to ``from __future__ import`` is
    discarded.
 
