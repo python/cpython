@@ -2501,6 +2501,16 @@ _ssl__SSLSocket_sendfile_impl(PySSLSocket *self, int fd, Py_off_t offset,
     } while (err.ssl == SSL_ERROR_WANT_READ ||
              err.ssl == SSL_ERROR_WANT_WRITE);
 
+    if (err.ssl == SSL_ERROR_SSL
+        && ERR_GET_REASON(ERR_peek_error()) == SSL_R_UNINITIALIZED) {
+        /* OpenSSL fails to return SSL_ERROR_SYSCALL if an error
+         * happens in sendfile(), and returns SSL_ERROR_SSL with
+         * SSL_R_UNINITIALIZED reason instead. */
+        _setSSLError(get_state_sock(self),
+                     "Some I/O error occurred in sendfile()",
+                     PY_SSL_ERROR_SYSCALL, __FILE__, __LINE__);
+        goto error;
+    }
     Py_XDECREF(sock);
     if (retval < 0)
         return PySSL_SetError(self, retval, __FILE__, __LINE__);
