@@ -1333,11 +1333,16 @@ function. You can create and destroy them using the following functions:
    Note that no actual thread is created; see the discussion of thread states
    below.  If creation of the new interpreter is unsuccessful, ``NULL`` is
    returned; no exception is set since the exception state is stored in the
-   current thread state and there may not be a current thread state.  (Like all
-   other Python/C API functions, the global interpreter lock must be held before
-   calling this function and is still held when it returns; however, unlike most
-   other Python/C API functions, there needn't be a current thread state on
-   entry.)
+   current thread state and there may not be a current thread state.
+
+   Like all other Python/C API functions, the global interpreter lock
+   must be held before calling this function and is still held when it
+   returns.  Likewise a current thread state must be set on entry.  On
+   success, the returned thread state will be set as current.  If the
+   sub-interpreter is created with its own GIL then the GIL of the
+   calling interpreter will be released.  When the function returns,
+   the new interpreter's GIL will be held by the current thread and
+   the previously interpreter's GIL will remain released here.
 
    .. versionadded:: 3.12
 
@@ -1415,12 +1420,15 @@ function. You can create and destroy them using the following functions:
 
    .. index:: single: Py_FinalizeEx()
 
-   Destroy the (sub-)interpreter represented by the given thread state. The given
-   thread state must be the current thread state.  See the discussion of thread
-   states below.  When the call returns, the current thread state is ``NULL``.  All
-   thread states associated with this interpreter are destroyed.  (The global
-   interpreter lock must be held before calling this function and is still held
-   when it returns.)  :c:func:`Py_FinalizeEx` will destroy all sub-interpreters that
+   Destroy the (sub-)interpreter represented by the given thread state.
+   The given thread state must be the current thread state.  See the
+   discussion of thread states below.  When the call returns,
+   the current thread state is ``NULL``.  All thread states associated
+   with this interpreter are destroyed.  The global interpreter lock
+   used by the target interpreter must be held before calling this
+   function.  No GIL is held when it returns.
+
+   :c:func:`Py_FinalizeEx` will destroy all sub-interpreters that
    haven't been explicitly destroyed at that point.
 
 
