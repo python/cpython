@@ -4106,26 +4106,27 @@ class ThreadedTests(unittest.TestCase):
             self.assertRaises(ValueError, s.write, b'hello')
 
     def test_sendfile(self):
-        host = "www.python.org"
-        TEST_DATA = b"GET / HTTP/1.1\r\nHost: %b\r\n\r\n" % host.encode()
+        """Try to send a file using kTLS if possible."""
+        TEST_DATA = b"x" * 512
         with open(os_helper.TESTFN, 'wb') as f:
             f.write(TEST_DATA)
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
-        client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        client_context.options |= getattr(ssl, "OP_ENABLE_KTLS", 0)
-        client_context.check_hostname = False
-        client_context.verify_mode = ssl.CERT_NONE
-        with socket.create_connection((host, 443)) as sock:
-            with client_context.wrap_socket(sock) as ssock:
-                if support.verbose:
-                    ktls_used = ssock._sslobj.uses_ktls_for_send()
-                    print(
-                        "kTLS is",
-                        "available" if ktls_used else "unavailable",
-                    )
-                with open(os_helper.TESTFN, 'rb') as file:
-                    ssock.sendfile(file)
-                    self.assertEqual(ssock.recv(9), b"HTTP/1.1 ")
+        client_context, server_context, hostname = testing_context()
+        client_context.options |= getattr(ssl, 'OP_ENABLE_KTLS', 0)
+        server = ThreadedEchoServer(context=server_context, chatty=False)
+        with server:
+            with socket.create_connection((HOST, server.port)) as sock:
+                with client_context.wrap_socket(sock,
+                                                server_hostname=hostname) as s:
+                    if support.verbose:
+                        ktls_used = s._sslobj.uses_ktls_for_send()
+                        print(
+                            'kTLS is',
+                            'available' if ktls_used else 'unavailable',
+                        )
+                    with open(os_helper.TESTFN, 'rb') as file:
+                        s.sendfile(file)
+                    self.assertEqual(s.recv(1024), TEST_DATA)
 
     def test_session(self):
         client_context, server_context, hostname = testing_context()
