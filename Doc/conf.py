@@ -148,6 +148,15 @@ nitpick_ignore = [
     ('py:meth', '_SubParsersAction.add_parser'),
 ]
 
+# gh-106948: Copy standard C types declared in the "c:type" domain to the
+# "c:identifier" domain, since "c:function" markup looks for types in the
+# "c:identifier" domain. Use list() to not iterate on items which are being
+# added
+for role, name in list(nitpick_ignore):
+    if role == 'c:type':
+        nitpick_ignore.append(('c:identifier', name))
+del role, name
+
 # Disable Docutils smartquotes for several translations
 smartquotes_excludes = {
     'languages': ['ja', 'fr', 'zh_TW', 'zh_CN'], 'builders': ['man', 'text'],
