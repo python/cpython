@@ -104,10 +104,6 @@ tok_new(void)
     tok->decoding_buffer = NULL;
     tok->readline = NULL;
     tok->type_comments = 0;
-    tok->async_hacks = 0;
-    tok->async_def = 0;
-    tok->async_def_indent = 0;
-    tok->async_def_nl = 0;
     tok->interactive_underflow = IUNDERFLOW_NORMAL;
     tok->str = NULL;
     tok->report_warnings = 1;
@@ -1925,27 +1921,6 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     /* Peek ahead at the next character */
     c = tok_nextc(tok);
     tok_backup(tok, c);
-    /* Check if we are closing an async function */
-    if (tok->async_def
-        && !blankline
-        /* Due to some implementation artifacts of type comments,
-         * a TYPE_COMMENT at the start of a function won't set an
-         * indentation level and it will produce a NEWLINE after it.
-         * To avoid spuriously ending an async function due to this,
-         * wait until we have some non-newline char in front of us. */
-        && c != '\n'
-        && tok->level == 0
-        /* There was a NEWLINE after ASYNC DEF,
-           so we're past the signature. */
-        && tok->async_def_nl
-        /* Current indentation level is less than where
-           the async function was defined */
-        && tok->async_def_indent >= tok->indent)
-    {
-        tok->async_def = 0;
-        tok->async_def_indent = 0;
-        tok->async_def_nl = 0;
-    }
 
  again:
     tok->start = NULL;
@@ -2094,54 +2069,6 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         p_start = tok->start;
         p_end = tok->cur;
 
-        /* async/await parsing block. */
-        if (tok->cur - tok->start == 5 && tok->start[0] == 'a') {
-            /* May be an 'async' or 'await' token.  For Python 3.7 or
-               later we recognize them unconditionally.  For Python
-               3.5 or 3.6 we recognize 'async' in front of 'def', and
-               either one inside of 'async def'.  (Technically we
-               shouldn't recognize these at all for 3.4 or earlier,
-               but there's no *valid* Python 3.4 code that would be
-               rejected, and async functions will be rejected in a
-               later phase.) */
-            if (!tok->async_hacks || tok->async_def) {
-                /* Always recognize the keywords. */
-                if (memcmp(tok->start, "async", 5) == 0) {
-                    return MAKE_TOKEN(ASYNC);
-                }
-                if (memcmp(tok->start, "await", 5) == 0) {
-                    return MAKE_TOKEN(AWAIT);
-                }
-            }
-            else if (memcmp(tok->start, "async", 5) == 0) {
-                /* The current token is 'async'.
-                   Look ahead one token to see if that is 'def'. */
-
-                struct tok_state ahead_tok;
-                struct token ahead_token;
-                _PyToken_Init(&ahead_token);
-                int ahead_tok_kind;
-
-                memcpy(&ahead_tok, tok, sizeof(ahead_tok));
-                ahead_tok_kind = tok_get_normal_mode(&ahead_tok,
-                                                     current_tok,
-                                                     &ahead_token);
-
-                if (ahead_tok_kind == NAME
-                    && ahead_tok.cur - ahead_tok.start == 3
-                    && memcmp(ahead_tok.start, "def", 3) == 0)
-                {
-                    /* The next token is going to be 'def', so instead of
-                       returning a plain NAME token, return ASYNC. */
-                    tok->async_def_indent = tok->indent;
-                    tok->async_def = 1;
-                    _PyToken_Free(&ahead_token);
-                    return MAKE_TOKEN(ASYNC);
-                }
-                _PyToken_Free(&ahead_token);
-            }
-        }
-
         return MAKE_TOKEN(NAME);
     }
 
@@ -2172,11 +2099,6 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         p_start = tok->start;
         p_end = tok->cur - 1; /* Leave '\n' out of the string */
         tok->cont_line = 0;
-        if (tok->async_def) {
-            /* We're somewhere inside an 'async def' function, and
-               we've encountered a NEWLINE after its signature. */
-            tok->async_def_nl = 1;
-        }
         return MAKE_TOKEN(NEWLINE);
     }
 
