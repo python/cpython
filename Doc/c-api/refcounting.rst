@@ -101,7 +101,7 @@ of Python objects.
    .. warning::
 
       The deallocation function can cause arbitrary Python code to be invoked (e.g.
-      when a class instance with a :meth:`__del__` method is deallocated).  While
+      when a class instance with a :meth:`~object.__del__` method is deallocated).  While
       exceptions in such code are not propagated, the executed code has free access to
       all Python global variables.  This means that any object that is reachable from
       a global variable should be in a consistent state before :c:func:`Py_DECREF` is

@@ -19,9 +19,14 @@
 Introduction
 ============
 
-Turtle graphics is a popular way for introducing programming to kids.  It was
-part of the original Logo programming language developed by Wally Feurzeig,
-Seymour Papert and Cynthia Solomon in 1967.
+Turtle graphics is an implementation of `the popular geometric drawing tools
+introduced in Logo <https://en.wikipedia.org/wiki/Turtle_
+(robot)>`_, developed by Wally Feurzeig, Seymour Papert and Cynthia Solomon
+in 1967.
+
+
+Get started
+===========
 
 Imagine a robotic turtle starting at (0, 0) in the x-y plane.  After an ``import turtle``, give it the
 command ``turtle.forward(15)``, and it moves (on-screen!) 15 pixels in the
@@ -36,10 +41,255 @@ direction it is facing, drawing a line as it moves.  Give it the command
    .. image:: turtle-star.*
       :align: center
 
-   .. literalinclude:: ../includes/turtle-star.py
+In Python, turtle graphics provides a representation of a physical "turtle"
+(a little robot with a pen) that draws on a sheet of paper on the floor.
 
-By combining together these and similar commands, intricate shapes and pictures
-can easily be drawn.
+It's an effective and well-proven way for learners to encounter
+programming concepts and interaction with software, as it provides instant,
+visible feedback. It also provides convenient access to graphical output
+in general.
+
+Turtle drawing was originally created as an educational tool, to be used by
+teachers in the classroom. For the programmer who needs to produce some
+graphical output it can be a way to do that without the overhead of
+introducing more complex or external libraries into their work.
+
+
+.. _turtle-tutorial:
+
+Tutorial
+========
+
+New users should start here. In this tutorial we'll explore some of the
+basics of turtle drawing.
+
+
+Starting a turtle environment
+-----------------------------
+
+In a Python shell, import all the objects of the ``turtle`` module::
+
+    from turtle import *
+
+If you run into a ``No module named '_tkinter'`` error, you'll have to
+install the :mod:`Tk interface package <tkinter>` on your system.
+
+
+Basic drawing
+-------------
+
+Send the turtle forward 100 steps::
+
+   forward(100)
+
+You should see (most likely, in a new window on your display) a line
+drawn by the turtle, heading East. Change the direction of the turtle,
+so that it turns 120 degrees left (anti-clockwise)::
+
+   left(120)
+
+Let's continue by drawing a triangle::
+
+   forward(100)
+   left(120)
+   forward(100)
+
+Notice how the turtle, represented by an arrow, points in different
+directions as you steer it.
+
+Experiment with those commands, and also with ``backward()`` and
+``right()``.
+
+
+Pen control
+~~~~~~~~~~~
+
+Try changing the color - for example, ``color('blue')`` - and
+width of the line - for example, ``width(3)`` - and then drawing again.
+
+You can also move the turtle around without drawing, by lifting up the pen:
+``up()`` before moving. To start drawing again, use ``down()``.
+
+
+The turtle's position
+~~~~~~~~~~~~~~~~~~~~~
+
+Send your turtle back to its starting-point (useful if it has disappeared
+off-screen)::
+
+   home()
+
+The home position is at the center of the turtle's screen. If you ever need to
+know them, get the turtle's x-y co-ordinates with::
+
+    pos()
+
+Home is at ``(0, 0)``.
+
+And after a while, it will probably help to clear the window so we can start
+anew::
+
+   clearscreen()
+
+
+Making algorithmic patterns
+---------------------------
+
+Using loops, it's possible to build up geometric patterns::
+
+    for steps in range(100):
+        for c in ('blue', 'red', 'green'):
+            color(c)
+            forward(steps)
+            right(30)
+
+
+\ - which of course, are limited only by the imagination!
+
+Let's draw the star shape at the top of this page. We want red lines,
+filled in with yellow::
+
+    color('red')
+    fillcolor('yellow')
+
+Just as ``up()`` and ``down()`` determine whether lines will be drawn,
+filling can be turned on and off::
+
+    begin_fill()
+
+Next we'll create a loop::
+
+    while True:
+        forward(200)
+        left(170)
+        if abs(pos()) < 1:
+            break
+
+``abs(pos()) < 1`` is a good way to know when the turtle is back at its
+home position.
+
+Finally, complete the filling::
+
+    end_fill()
+
+(Note that filling only actually takes place when you give the
+``end_fill()`` command.)
+
+
+.. _turtle-how-to:
+
+How to...
+=========
+
+This section covers some typical turtle use-cases and approaches.
+
+
+Get started as quickly as possible
+----------------------------------
+
+One of the joys of turtle graphics is the immediate, visual feedback that's
+available from simple commands - it's an excellent way to introduce children
+to programming ideas, with a minimum of overhead (not just children, of
+course).
+
+The turtle module makes this possible by exposing all its basic functionality
+as functions, available with ``from turtle import *``. The :ref:`turtle
+graphics tutorial <turtle-tutorial>` covers this approach.
+
+It's worth noting that many of the turtle commands also have even more terse
+equivalents, such as ``fd()`` for :func:`forward`. These are especially
+useful when working with learners for whom typing is not a skill.
+
+.. _note:
+
+    You'll need to have the :mod:`Tk interface package <tkinter>` installed on
+    your system for turtle graphics to work. Be warned that this is not
+    always straightforward, so check this in advance if you're planning to
+    use turtle graphics with a learner.
+
+
+Use the ``turtle`` module namespace
+-----------------------------------
+
+Using ``from turtle import *`` is convenient - but be warned that it imports a
+rather large collection of objects, and if you're doing anything but turtle
+graphics you run the risk of a name conflict (this becomes even more an issue
+if you're using turtle graphics in a script where other modules might be
+imported).
+
+The solution is to use ``import turtle`` - ``fd()`` becomes
+``turtle.fd()``, ``width()`` becomes ``turtle.width()`` and so on. (If typing
+"turtle" over and over again becomes tedious, use for example ``import turtle
+as t`` instead.)
+
+
+Use turtle graphics in a script
+-------------------------------
+
+It's recommended to use the ``turtle`` module namespace as described
+immediately above, for example::
+
+    import turtle as t
+    from random import random
+
+    for i in range(100):
+        steps = int(random() * 100)
+        angle = int(random() * 360)
+        t.right(angle)
+        t.fd(steps)
+
+Another step is also required though - as soon as the script ends, Python
+will also close the turtle's window. Add::
+
+    t.mainloop()
+
+to the end of the script. The script will now wait to be dismissed and
+will not exit until it is terminated, for example by closing the turtle
+graphics window.
+
+
+Use object-oriented turtle graphics
+-----------------------------------
+
+.. seealso:: :ref:`Explanation of the object-oriented interface <turtle-explanation>`
+
+Other than for very basic introductory purposes, or for trying things out
+as quickly as possible, it's more usual and much more powerful to use the
+object-oriented approach to turtle graphics. For example, this allows
+multiple turtles on screen at once.
+
+In this approach, the various turtle commands are methods of objects (mostly of
+``Turtle`` objects). You *can* use the object-oriented approach in the shell,
+but it would be more typical in a Python script.
+
+The example above then becomes::
+
+    from turtle import Turtle
+    from random import random
+
+    t = Turtle()
+    for i in range(100):
+        steps = int(random() * 100)
+        angle = int(random() * 360)
+        t.right(angle)
+        t.fd(steps)
+
+    t.screen.mainloop()
+
+Note the last line. ``t.screen`` is an instance of the :class:`Screen`
+that a Turtle instance exists on; it's created automatically along with
+the turtle.
+
+The turtle's screen can be customised, for example::
+
+    t.screen.title('Object-oriented turtle demo')
+    t.screen.bgcolor("orange")
+
+
+.. _turtle-explanation:
+
+Explanation
+===========
 
 The :mod:`turtle` module is an extended reimplementation of the same-named
 module from the Python standard distribution up to version Python 2.5.
@@ -94,8 +344,8 @@ To use multiple turtles on a screen one has to use the object-oriented interface
    omitted here.
 
 
-Overview of available Turtle and Screen methods
-=================================================
+Turtle graphics reference
+=========================
 
 Turtle methods
 --------------

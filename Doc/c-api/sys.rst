@@ -97,16 +97,16 @@ Operating System Utilities
 .. c:function:: int PyOS_CheckStack()
 
    Return true when the interpreter runs out of stack space.  This is a reliable
-   check, but is only available when :const:`USE_STACKCHECK` is defined (currently
+   check, but is only available when :c:macro:`USE_STACKCHECK` is defined (currently
    on certain versions of Windows using the Microsoft Visual C++ compiler).
-   :const:`USE_STACKCHECK` will be defined automatically; you should never
+   :c:macro:`USE_STACKCHECK` will be defined automatically; you should never
    change the definition in your own code.
 
 
 .. c:function:: PyOS_sighandler_t PyOS_getsig(int i)
 
    Return the current signal handler for signal *i*.  This is a thin wrapper around
-   either :c:func:`sigaction` or :c:func:`signal`.  Do not call those functions
+   either :c:func:`!sigaction` or :c:func:`!signal`.  Do not call those functions
    directly! :c:type:`PyOS_sighandler_t` is a typedef alias for :c:expr:`void
    (\*)(int)`.
 
@@ -114,7 +114,7 @@ Operating System Utilities
 .. c:function:: PyOS_sighandler_t PyOS_setsig(int i, PyOS_sighandler_t h)
 
    Set the signal handler for signal *i* to be *h*; return the old signal handler.
-   This is a thin wrapper around either :c:func:`sigaction` or :c:func:`signal`.  Do
+   This is a thin wrapper around either :c:func:`!sigaction` or :c:func:`!signal`.  Do
    not call those functions directly!  :c:type:`PyOS_sighandler_t` is a typedef
    alias for :c:expr:`void (\*)(int)`.
 
