@@ -3624,10 +3624,14 @@ class buffer: pass
 class rwbuffer: pass
 class robuffer: pass
 
-def str_converter_key(types, encoding, zeroes):
+StrConverterKeyType = tuple[frozenset[type], bool, bool]
+
+def str_converter_key(
+    types: TypeSet, encoding: bool | str | None, zeroes: bool
+) -> StrConverterKeyType:
     return (frozenset(types), bool(encoding), bool(zeroes))
 
-str_converter_argument_map: dict[str, str] = {}
+str_converter_argument_map: dict[StrConverterKeyType, str] = {}
 
 class str_converter(CConverter):
     type = 'const char *'
