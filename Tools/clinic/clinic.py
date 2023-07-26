@@ -3046,7 +3046,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         """
         pass
 
-    def parse_arg(self, argname: str, displayname: str):
+    def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'O&':
             return """
                 if (!{converter}({argname}, &{paramname})) {{{{
@@ -3149,7 +3149,7 @@ class bool_converter(CConverter):
             self.default = bool(self.default)
             self.c_default = str(int(self.default))
 
-    def parse_arg(self, argname: str, displayname: str) -> str:
+    def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'i':
             return """
                 {paramname} = _PyLong_AsInt({argname});
@@ -3200,7 +3200,7 @@ class char_converter(CConverter):
             if self.c_default == '"\'"':
                 self.c_default = r"'\''"
 
-    def parse_arg(self, argname: str, displayname: str) -> str:
+    def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'c':
             return """
                 if (PyBytes_Check({argname}) && PyBytes_GET_SIZE({argname}) == 1) {{{{
@@ -3229,7 +3229,7 @@ class unsigned_char_converter(CConverter):
         if bitwise:
             self.format_unit = 'B'
 
-    def parse_arg(self, argname: str, displayname: str) -> str:
+    def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'b':
             return """
                 {{{{
@@ -3274,7 +3274,7 @@ class short_converter(CConverter):
     format_unit = 'h'
     c_ignored_default = "0"
 
-    def parse_arg(self, argname: str, displayname: str) -> str:
+    def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'h':
             return """
                 {{{{
@@ -3310,7 +3310,7 @@ class unsigned_short_converter(CConverter):
         else:
             self.converter = '_PyLong_UnsignedShort_Converter'
 
-    def parse_arg(self, argname: str, displayname: str) -> str:
+    def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'H':
             return """
                 {paramname} = (unsigned short)PyLong_AsUnsignedLongMask({argname});
@@ -3337,7 +3337,7 @@ class int_converter(CConverter):
         if type is not None:
             self.type = type
 
-    def parse_arg(self, argname: str, displayname: str) -> str:
+    def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'i':
             return """
                 {paramname} = _PyLong_AsInt({argname});
@@ -3371,7 +3371,7 @@ class unsigned_int_converter(CConverter):
         else:
             self.converter = '_PyLong_UnsignedInt_Converter'
 
-    def parse_arg(self, argname: str, displayname: str) -> str:
+    def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'I':
             return """
                 {paramname} = (unsigned int)PyLong_AsUnsignedLongMask({argname});
@@ -3387,7 +3387,7 @@ class long_converter(CConverter):
     format_unit = 'l'
     c_ignored_default = "0"
 
-    def parse_arg(self, argname: str, displayname: str) -> str:
+    def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'l':
             return """
                 {paramname} = PyLong_AsLong({argname});
@@ -3408,7 +3408,7 @@ class unsigned_long_converter(CConverter):
         else:
             self.converter = '_PyLong_UnsignedLong_Converter'
 
-    def parse_arg(self, argname: str, displayname: str) -> str:
+    def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'k':
             return """
                 if (!PyLong_Check({argname})) {{{{
@@ -3426,7 +3426,7 @@ class long_long_converter(CConverter):
     format_unit = 'L'
     c_ignored_default = "0"
 
-    def parse_arg(self, argname: str, displayname: str) -> str:
+    def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'L':
             return """
                 {paramname} = PyLong_AsLongLong({argname});
@@ -3447,7 +3447,7 @@ class unsigned_long_long_converter(CConverter):
         else:
             self.converter = '_PyLong_UnsignedLongLong_Converter'
 
-    def parse_arg(self, argname: str, displayname: str) -> str:
+    def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'K':
             return """
                 if (!PyLong_Check({argname})) {{{{
@@ -3472,7 +3472,7 @@ class Py_ssize_t_converter(CConverter):
         else:
             fail("Py_ssize_t_converter: illegal 'accept' argument " + repr(accept))
 
-    def parse_arg(self, argname: str, displayname: str) -> str:
+    def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'n':
             return """
                 {{{{
@@ -3507,7 +3507,7 @@ class size_t_converter(CConverter):
     converter = '_PyLong_Size_t_Converter'
     c_ignored_default = "0"
 
-    def parse_arg(self, argname: str, displayname: str) -> str:
+    def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'n':
             return """
                 {paramname} = PyNumber_AsSsize_t({argname}, PyExc_OverflowError);
@@ -3522,7 +3522,7 @@ class fildes_converter(CConverter):
     type = 'int'
     converter = '_PyLong_FileDescriptor_Converter'
 
-    def _parse_arg(self, argname: str, displayname: str) -> str:
+    def _parse_arg(self, argname: str, displayname: str) -> str | None:
         return """
             {paramname} = PyObject_AsFileDescriptor({argname});
             if ({paramname} == -1) {{{{
@@ -3537,7 +3537,7 @@ class float_converter(CConverter):
     format_unit = 'f'
     c_ignored_default = "0.0"
 
-    def parse_arg(self, argname: str, displayname: str) -> str:
+    def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'f':
             return """
                 if (PyFloat_CheckExact({argname})) {{{{
@@ -3559,7 +3559,7 @@ class double_converter(CConverter):
     format_unit = 'd'
     c_ignored_default = "0.0"
 
-    def parse_arg(self, argname: str, displayname: str) -> str:
+    def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'd':
             return """
                 if (PyFloat_CheckExact({argname})) {{{{
@@ -3582,7 +3582,7 @@ class Py_complex_converter(CConverter):
     format_unit = 'D'
     c_ignored_default = "{0.0, 0.0}"
 
-    def parse_arg(self, argname: str, displayname: str) -> str:
+    def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'D':
             return """
                 {paramname} = PyComplex_AsCComplex({argname});
@@ -3671,7 +3671,7 @@ class str_converter(CConverter):
         else:
             return ""
 
-    def parse_arg(self, argname: str, displayname: str) -> str:
+    def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 's':
             return """
                 if (!PyUnicode_Check({argname})) {{{{
@@ -3773,7 +3773,7 @@ class PyBytesObject_converter(CConverter):
     format_unit = 'S'
     # accept = {bytes}
 
-    def parse_arg(self, argname: str, displayname: str) -> str:
+    def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'S':
             return """
                 if (!PyBytes_Check({argname})) {{{{
@@ -3790,7 +3790,7 @@ class PyByteArrayObject_converter(CConverter):
     format_unit = 'Y'
     # accept = {bytearray}
 
-    def parse_arg(self, argname: str, displayname: str) -> str:
+    def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'Y':
             return """
                 if (!PyByteArray_Check({argname})) {{{{
@@ -3807,7 +3807,7 @@ class unicode_converter(CConverter):
     default_type = (str, Null, NoneType)
     format_unit = 'U'
 
-    def parse_arg(self, argname: str, displayname: str) -> str:
+    def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'U':
             return """
                 if (!PyUnicode_Check({argname})) {{{{
@@ -3855,7 +3855,7 @@ class Py_UNICODE_converter(CConverter):
 PyMem_Free((void *){name});
 """.format(name=self.name)
 
-    def parse_arg(self, argname: str, argnum: str) -> str:
+    def parse_arg(self, argname: str, argnum: str) -> str | None:
         if not self.length:
             if self.accept == {str}:
                 return """
@@ -3918,7 +3918,7 @@ class Py_buffer_converter(CConverter):
         name = self.name
         return "".join(["if (", name, ".obj) {\n   PyBuffer_Release(&", name, ");\n}\n"])
 
-    def parse_arg(self, argname: str, displayname: str) -> str:
+    def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'y*':
             return """
                 if (PyObject_GetBuffer({argname}, &{paramname}, PyBUF_SIMPLE) != 0) {{{{
