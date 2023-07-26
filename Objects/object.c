@@ -2701,6 +2701,8 @@ void PyResource_Close(PyResource *res)
         return;
     }
     res->close_func(res->data);
+    res->close_func = NULL;
+    res->data = NULL;
 }
 
 #ifdef __cplusplus
