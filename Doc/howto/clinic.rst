@@ -193,12 +193,6 @@ Terminology
    block
       All text from the :term:`start line` to the :term:`checksum line` inclusively.
 
-.. note::
-
-   A block that hasn't been successfully processed by Argument Clinic yet
-   doesn't have *output* or a *checksum line*,
-   but it's still considered a *block*.
-
 
 .. _clinic-cli:
 
