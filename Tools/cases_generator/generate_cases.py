@@ -283,7 +283,8 @@ class Generator(Analyzer):
             self.out.emit(
                 "#define IS_VALID_OPCODE(OP) \\\n"
                 "    (((OP) >= 0) && ((OP) < OPCODE_METADATA_SIZE) && \\\n"
-                "     (_PyOpcode_opcode_metadata[(OP)].valid_entry))"
+                "     (_PyOpcode_opcode_metadata[(OP)].valid_entry)) || \\\n"
+                "     ((OP) == INSTRUMENTED_LINE)"   # implemented in ceval.c, not bytecodes.c
             )
 
             self.out.emit("")

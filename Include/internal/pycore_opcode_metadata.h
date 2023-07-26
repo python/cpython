@@ -949,7 +949,8 @@ enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT
 
 #define IS_VALID_OPCODE(OP) \
     (((OP) >= 0) && ((OP) < OPCODE_METADATA_SIZE) && \
-     (_PyOpcode_opcode_metadata[(OP)].valid_entry))
+     (_PyOpcode_opcode_metadata[(OP)].valid_entry)) || \
+     ((OP) == INSTRUMENTED_LINE)
 
 #define HAS_ARG_FLAG (1)
 #define HAS_CONST_FLAG (2)
@@ -964,7 +965,7 @@ enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT
 #define OPCODE_HAS_JUMP(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_JUMP_FLAG))
 #define OPCODE_HAS_FREE(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_FREE_FLAG))
 #define OPCODE_HAS_LOCAL(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_LOCAL_FLAG))
-#define OPCODE_IS_INSTRUMENTED(OP) (_PyOpcode_opcode_metadata[OP].flags & (IS_INSTRUMENTED_FLAG))
+#define OPCODE_IS_INSTRUMENTED(OP) (_PyOpcode_opcode_metadata[OP].flags & (IS_INSTRUMENTED_FLAG)) || ((OP) == INSTRUMENTED_LINE)
 
 struct opcode_metadata {
     bool valid_entry;

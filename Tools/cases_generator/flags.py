@@ -70,9 +70,13 @@ class InstructionFlags:
             out.emit(f"#define {name} ({value})")
 
         for name, value in flags.bitmask.items():
+            if name == 'IS_INSTRUMENTED_FLAG':
+                or_special_case = " || ((OP) == INSTRUMENTED_LINE)"
+            else:
+                or_special_case = ""
             out.emit(
                 f"#define OPCODE_{name[:-len('_FLAG')]}(OP) "
-                f"(_PyOpcode_opcode_metadata[OP].flags & ({name}))"
+                f"(_PyOpcode_opcode_metadata[OP].flags & ({name})){or_special_case}"
             )
 
 
