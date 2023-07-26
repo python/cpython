@@ -244,14 +244,16 @@ Implementing functions and methods
 
       points to the contents of the docstring
 
-The :c:member:`ml_meth` is a C function pointer.  The functions may be of different
+The :c:member:`~PyMethodDef.ml_meth` is a C function pointer.
+The functions may be of different
 types, but they always return :c:expr:`PyObject*`.  If the function is not of
 the :c:type:`PyCFunction`, the compiler will require a cast in the method table.
 Even though :c:type:`PyCFunction` defines the first parameter as
 :c:expr:`PyObject*`, it is common that the method implementation uses the
 specific C type of the *self* object.
 
-The :c:member:`ml_flags` field is a bitfield which can include the following flags.
+The :c:member:`~PyMethodDef.ml_flags` field is a bitfield which can include
+the following flags.
 The individual flags indicate either a calling convention or a binding
 convention.
 
@@ -432,7 +434,7 @@ Accessing attributes of extension types
       The string should be static, no copy is made of it.
       Typically, it is defined using :c:macro:`PyDoc_STR`.
 
-   By default (when :c:member:`flags` is ``0``), members allow
+   By default (when :c:member:`~PyMemberDef.flags` is ``0``), members allow
    both read and write access.
    Use the :c:macro:`Py_READONLY` flag for read-only access.
    Certain types, like :c:macro:`Py_T_STRING`, imply :c:macro:`Py_READONLY`.
@@ -512,7 +514,7 @@ The following flags can be used with :c:member:`PyMemberDef.flags`:
 
    Can only be used as part of :c:member:`Py_tp_members <PyTypeObject.tp_members>`
    :c:type:`slot <PyTypeSlot>` when creating a class using negative
-   :c:member:`~PyTypeDef.basicsize`.
+   :c:member:`~PyType_Spec.basicsize`.
    It is mandatory in that case.
 
    This flag is only used in :c:type:`PyTypeSlot`.
