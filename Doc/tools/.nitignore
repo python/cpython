@@ -4,14 +4,12 @@
 
 Doc/c-api/allocation.rst
 Doc/c-api/apiabiversion.rst
-Doc/c-api/arg.rst
 Doc/c-api/bool.rst
 Doc/c-api/buffer.rst
 Doc/c-api/bytes.rst
 Doc/c-api/capsule.rst
 Doc/c-api/cell.rst
 Doc/c-api/code.rst
-Doc/c-api/codec.rst
 Doc/c-api/complex.rst
 Doc/c-api/conversion.rst
 Doc/c-api/datetime.rst
