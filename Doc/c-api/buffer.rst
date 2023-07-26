@@ -44,7 +44,7 @@ the elements exposed by an :class:`array.array` can be multi-byte values.
 
 An example consumer of the buffer interface is the :meth:`~io.BufferedIOBase.write`
 method of file objects: any object that can export a series of bytes through
-the buffer interface can be written to a file.  While :meth:`write` only
+the buffer interface can be written to a file.  While :meth:`!write` only
 needs read-only access to the internal contents of the object passed to it,
 other methods such as :meth:`~io.BufferedIOBase.readinto` need write access
 to the contents of their argument.  The buffer interface allows objects to

@@ -122,7 +122,7 @@ or :class:`frozenset` or instances of their subtypes.
 .. c:function:: int PySet_Contains(PyObject *anyset, PyObject *key)
 
    Return ``1`` if found, ``0`` if not found, and ``-1`` if an error is encountered.  Unlike
-   the Python :meth:`__contains__` method, this function does not automatically
+   the Python :meth:`~object.__contains__` method, this function does not automatically
    convert unhashable sets into temporary frozensets.  Raise a :exc:`TypeError` if
    the *key* is unhashable. Raise :exc:`PyExc_SystemError` if *anyset* is not a
    :class:`set`, :class:`frozenset`, or an instance of a subtype.
