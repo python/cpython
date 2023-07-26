@@ -184,6 +184,9 @@ lltrace_resume_frame(_PyInterpreterFrame *frame)
 static void monitor_raise(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr);
+static void monitor_reraise(PyThreadState *tstate,
+                 _PyInterpreterFrame *frame,
+                 _Py_CODEUNIT *instr);
 static int monitor_stop_iteration(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr);
@@ -840,7 +843,6 @@ error:
             }
         }
         monitor_raise(tstate, frame, next_instr-1);
-
 exception_unwind:
         {
             /* We can't use frame->f_lasti here, as RERAISE may have set it */
@@ -1952,6 +1954,16 @@ monitor_raise(PyThreadState *tstate, _PyInterpreterFrame *frame,
         return;
     }
     do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_RAISE);
+}
+
+static void
+monitor_reraise(PyThreadState *tstate, _PyInterpreterFrame *frame,
+              _Py_CODEUNIT *instr)
+{
+    if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_RERAISE)) {
+        return;
+    }
+    do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_RERAISE);
 }
 
 static int

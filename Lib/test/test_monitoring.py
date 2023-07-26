@@ -656,9 +656,21 @@ class StopiterationRecorder(ExceptionRecorder):
 
     event_type = E.STOP_ITERATION
 
-class ExceptionMontoringTest(CheckEvents):
+class ReraiseRecorder(ExceptionRecorder):
 
-    recorder = ExceptionRecorder
+    event_type = E.RERAISE
+
+    def __call__(self, code, offset, exc):
+        self.events.append(("reraise", type(exc)))
+
+class ExceptionHandledRecorder(ExceptionRecorder):
+
+    event_type = E.EXCEPTION_HANDLED
+
+    def __call__(self, code, offset, exc):
+        self.events.append(("handled", type(exc)))
+
+class ExceptionMontoringTest(CheckEvents):
 
     def test_simple_try_except(self):
 
@@ -672,6 +684,8 @@ class ExceptionMontoringTest(CheckEvents):
 
         self.check_events(func1, [("raise", KeyError)])
 
+    def test_implicit_stop_iteration(self):
+
         def gen():
             yield 1
             return 2
@@ -681,6 +695,104 @@ class ExceptionMontoringTest(CheckEvents):
                 pass
 
         self.check_events(implicit_stop_iteration, [("raise", StopIteration)], recorders=(StopiterationRecorder,))
+
+    initial = [
+        ("raise", ZeroDivisionError),
+        ("handled", ZeroDivisionError)
+    ]
+
+    reraise = [
+        ("reraise", ZeroDivisionError),
+        ("handled", ZeroDivisionError)
+    ]
+
+    exception_recorders = (
+        ExceptionRecorder,
+        ReraiseRecorder,
+        ExceptionHandledRecorder
+    )
+
+    def test_explicit_reraise(self):
+
+        def func():
+            try:
+                try:
+                    1/0
+                except:
+                    raise
+            except:
+                pass
+
+        self.check_events(
+            func,
+            self.initial + self.reraise*2,
+            recorders = self.exception_recorders)
+
+    def test_explicit_reraise_named(self):
+
+        def func():
+            try:
+                try:
+                    1/0
+                except Exception as ex:
+                    raise
+            except:
+                pass
+
+        self.check_events(
+            func,
+            self.initial + self.reraise*3,
+            recorders = self.exception_recorders)
+
+    def test_implicit_reraise(self):
+
+        def func():
+            try:
+                try:
+                    1/0
+                except ValueError:
+                    pass
+            except:
+                pass
+
+        self.check_events(
+            func,
+            self.initial + self.reraise*2,
+            recorders = self.exception_recorders)
+
+
+    def test_implicit_reraise_named(self):
+
+        def func():
+            try:
+                try:
+                    1/0
+                except ValueError as ex:
+                    pass
+            except:
+                pass
+
+        self.check_events(
+            func,
+            self.initial + self.reraise*2,
+            recorders = self.exception_recorders)
+
+    def test_try_finally(self):
+
+        def func():
+            try:
+                try:
+                    1/0
+                finally:
+                    pass
+            except:
+                pass
+
+        self.check_events(
+            func,
+            self.initial + self.reraise*2,
+            recorders = self.exception_recorders)
+
 
 class LineRecorder:
 
