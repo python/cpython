@@ -863,7 +863,7 @@ using ``[]``.
 
       # The better way of annotating this function:
       def greet_proper(cond: bool) -> str | bytes:
-          return "hi there!" if cond else b"greetings!"  # OK
+          return "hi there!" if cond else b"greetings!"
 
 .. data:: LiteralString
 
