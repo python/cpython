@@ -1256,6 +1256,7 @@
             else {
                 Py_INCREF(exc);
                 _PyErr_SetRaisedException(tstate, exc);
+                monitor_reraise(tstate, frame, next_instr-1);
                 goto exception_unwind;
             }
             STACK_SHRINK(2);
