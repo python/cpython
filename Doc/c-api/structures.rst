@@ -263,14 +263,16 @@ Implementing functions and methods
 
       points to the contents of the docstring
 
-The :c:member:`ml_meth` is a C function pointer.  The functions may be of different
+The :c:member:`~PyMethodDef.ml_meth` is a C function pointer.
+The functions may be of different
 types, but they always return :c:expr:`PyObject*`.  If the function is not of
 the :c:type:`PyCFunction`, the compiler will require a cast in the method table.
 Even though :c:type:`PyCFunction` defines the first parameter as
 :c:expr:`PyObject*`, it is common that the method implementation uses the
 specific C type of the *self* object.
 
-The :c:member:`ml_flags` field is a bitfield which can include the following flags.
+The :c:member:`~PyMethodDef.ml_flags` field is a bitfield which can include
+the following flags.
 The individual flags indicate either a calling convention or a binding
 convention.
 
