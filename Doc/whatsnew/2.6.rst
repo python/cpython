@@ -2982,7 +2982,7 @@ Changes to Python's build process and to the C API include:
 
 * Python now must be compiled with C89 compilers (after 19
   years!).  This means that the Python source tree has dropped its
-  own implementations of :c:func:`!memmove` and :c:func:`!strerror`, which
+  own implementations of :c:func:`memmove` and :c:func:`strerror`, which
   are in the C89 standard library.
 
 * Python 2.6 can be built with Microsoft Visual Studio 2008 (version

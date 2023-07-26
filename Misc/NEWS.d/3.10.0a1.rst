@@ -229,7 +229,7 @@ format string in f-string and :meth:`str.format`.
 
 The implementation of :func:`signal.siginterrupt` now uses
 :c:func:`!sigaction` (if it is available in the system) instead of the
-deprecated :c:func:`!siginterrupt`. Patch by Pablo Galindo.
+deprecated :c:func:`siginterrupt`. Patch by Pablo Galindo.
 
 ..
 
