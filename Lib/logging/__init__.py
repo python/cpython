@@ -1880,7 +1880,9 @@ class LoggerAdapter(object):
     information in logging output.
     """
 
-    def __init__(self, logger, extra=None):
+    merge_extras = False
+
+    def __init__(self, logger, extra=None, merge_extras=None):
         """
         Initialize the adapter with a logger and a dict-like object which
         provides contextual information. This constructor signature allows
@@ -1890,9 +1892,21 @@ class LoggerAdapter(object):
         following example:
 
         adapter = LoggerAdapter(someLogger, dict(p1=v1, p2="v2"))
+
+        By default, LoggerAdapter objects will drop the "extra" argument
+        passed on the individual log calls to use its own instead.
+
+        Initializing it with merge_extras=True will instead merge both
+        maps when logging, the indivicual call extra taking precedence
+        over the LoggerAdapter instance extra
+
+        .. versionchanged:: 3.13
+           Added the ``merge_extras`` parameter.
         """
         self.logger = logger
         self.extra = extra
+        if merge_extras is not None:
+            self.merge_extras = merge_extras
 
     def process(self, msg, kwargs):
         """
@@ -1904,7 +1918,10 @@ class LoggerAdapter(object):
         Normally, you'll only need to override this one method in a
         LoggerAdapter subclass for your specific needs.
         """
-        kwargs["extra"] = self.extra
+        if self.merge_extras and "extra" in kwargs:
+            kwargs["extra"] = {**self.extra, **kwargs["extra"]}
+        else:
+            kwargs["extra"] = self.extra
         return msg, kwargs
 
     #
