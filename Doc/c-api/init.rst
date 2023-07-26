@@ -1223,6 +1223,87 @@ You can switch between sub-interpreters using the :c:func:`PyThreadState_Swap`
 function. You can create and destroy them using the following functions:
 
 
+.. c:type:: PyInterpreterConfig
+
+   Structure containing most parameters to configure a sub-interpreter.
+   Its values are used only in :c:func:`Py_NewInterpreterFromConfig` and
+   never modified by the runtime.
+
+   .. versionadded:: 3.12
+
+   Structure fields:
+
+   .. c:member:: int use_main_obmalloc
+
+      If this is ``0`` then the sub-interpreter will use its own
+      "object" allocator state.
+      Otherwise it will use (share) the main interpreter's.
+
+      If this is ``0`` then
+      :c:member:`PyInterpreterConfig.check_multi_interp_extensions`
+      must be ``1`` (non-zero).
+      If this is ``1`` then :c:member:`PyInterpreterConfig.gil`
+      must not be ``PyInterpreterConfig_OWN_GIL``.
+
+   .. c:member:: int allow_fork
+
+      If this is ``0`` then the runtime will not support forking the
+      process in any thread where the sub-interpreter is currently active.
+      Otherwise fork is unrestricted.
+
+      Note that the :mod:`subprocess` module still works
+      when fork is disallowed.
+
+   .. c:member:: int allow_exec
+
+      If this is ``0`` then the runtime will not support replacing the
+      current process via exec (e.g. :func:`os.execv`) in any thread
+      where the sub-interpreter is currently active.
+      Otherwise exec is unrestricted.
+
+      Note that the :mod:`subprocess` module still works
+      when exec is disallowed.
+
+   .. c:member:: int allow_threads
+
+      If this is ``0`` then the sub-interpreter's :mod:`threading` module
+      won't create threads.
+      Otherwise threads are allowed.
+
+   .. c:member:: int allow_daemon_threads
+
+      If this is ``0`` then the sub-interpreter's :mod:`threading` module
+      won't create daemon threads.
+      Otherwise daemon threads are allowed (as long as
+      :c:member:`PyInterpreterConfig.allow_threads` is non-zero).
+
+   .. c:member:: int check_multi_interp_extensions
+
+      If this is ``0`` then all extension modules may be imported,
+      including legacy (single-phase init) modules,
+      in any thread where the sub-interpreter is currently active.
+      Otherwise only multi-phase init extension modules
+      (see :ref:`Isolating Extension Modules`) may be imported.
+
+      This must be ``1`` (non-zero) if
+      :c:member:`PyInterpreterConfig.use_main_obmalloc` is ``0``.
+
+   .. c:member:: int gil
+
+      This determines the operation of the GIL for the sub-interpreter.
+      It may be one of the following:
+
+      - ``PyInterpreterConfig_DEFAULT_GIL``: use the default selection
+        (``PyInterpreterConfig_SHARED_GIL``)
+      - ``PyInterpreterConfig_SHARED_GIL``: use (share) the main
+        interpreter's GIL
+      - ``PyInterpreterConfig_OWN_GIL``: use the sub-interpreter's
+        own GIL
+
+      If this is ``PyInterpreterConfig_OWN_GIL`` then
+      :c:member:`PyInterpreterConfig.use_main_obmalloc` must be ``0``.
+
+
 .. c:function:: PyThreadState* Py_NewInterpreter()
 
    .. index::
