@@ -579,7 +579,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    name, followed by a dot, followed by the type name; for built-in types, it
    should be just the type name.  If the module is a submodule of a package, the
    full package name is part of the full module name.  For example, a type named
-   :class:`T` defined in module :mod:`M` in subpackage :mod:`Q` in package :mod:`P`
+   :class:`T` defined in module :mod:`!M` in subpackage :mod:`!Q` in package :mod:`!P`
    should have the :c:member:`~PyTypeObject.tp_name` initializer ``"P.Q.M.T"``.
 
    For :ref:`dynamically allocated type objects <heap-types>`,
