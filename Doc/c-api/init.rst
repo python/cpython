@@ -1424,6 +1424,45 @@ function. You can create and destroy them using the following functions:
    haven't been explicitly destroyed at that point.
 
 
+A Per-Interpreter GIL
+---------------------
+
+Using :c:func:`Py_NewInterpreterFromConfig` you can create
+a sub-interpreter that is completely isolated from other interpreters,
+including having its own GIL.  The most important benefit of this
+isolation is that such an interpreter can execute Python code without
+being blocked by other interpreters or blocking any others.  Thus a
+single Python process can truly take advantage of multiple CPU cores
+when running Python code.  The isolation also encourages a different
+approach to concurrency than that of just using threads.
+(See :pep:`554`.)
+
+Using an isolated interpreter requires vigilance in preserving that
+isolation.  That especially means not sharing any objects or mutable
+state without guarantees about thread-safety.  Even objects that are
+otherwise immutable (e.g. ``None``, ``(1, 5)``) can't normally be shared
+because of the refcount.  One simple but less-efficient approach around
+this is to use a global lock around all use of some state (or object).
+Alternately, effectively immutable objects (like integers or strings)
+can be made safe in spite of their refcounts by making them "immortal".
+In fact, this has been done for the builtin singletons, small integers,
+and a number of other builtin objects.
+
+If you preserve isolation then you will have access to proper multi-core
+computing without the complications that come with free-threading.
+Failure to preserve isolation will expose you to the full consequences
+of free-threading, including races and hard-to-debug crashes.
+
+Aside from that, one of the main challenges of using multiple isolated
+interpreters is how to communicate between them safely (not break
+isolation) and efficiently.  The runtime and stdlib do not provide
+any standard approach to this yet.  A future stdlib module would help
+mitigate the effort of preserving isolation and expose effective tools
+for communicating (and sharing) data between interpreters.
+
+.. versionadded:: 3.12
+
+
 Bugs and caveats
 ----------------
 
