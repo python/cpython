@@ -1,0 +1,2 @@
+Fix signature for the new :meth:`~object.__release_buffer__` slot. Patch by Jelle
+Zijlstra.

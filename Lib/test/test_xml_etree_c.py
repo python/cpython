@@ -2,7 +2,7 @@
 import io
 import struct
 from test import support
-from test.support import import_fresh_module
+from test.support.import_helper import import_fresh_module
 import types
 import unittest
 
@@ -168,6 +168,38 @@ class MiscTests(unittest.TestCase):
         parser.feed(XML)
         del parser
         support.gc_collect()
+
+    def test_dict_disappearing_during_get_item(self):
+        # test fix for seg fault reported in issue 27946
+        class X:
+            def __hash__(self):
+                e.attrib = {} # this frees e->extra->attrib
+                [{i: i} for i in range(1000)] # exhaust the dict keys cache
+                return 13
+
+        e = cET.Element("elem", {1: 2})
+        r = e.get(X())
+        self.assertIsNone(r)
+
+    @support.cpython_only
+    def test_immutable_types(self):
+        root = cET.fromstring('<a></a>')
+        dataset = (
+            cET.Element,
+            cET.TreeBuilder,
+            cET.XMLParser,
+            type(root.iter()),
+        )
+        for tp in dataset:
+            with self.subTest(tp=tp):
+                with self.assertRaisesRegex(TypeError, "immutable"):
+                    tp.foo = 1
+
+    @support.cpython_only
+    def test_disallow_instantiation(self):
+        root = cET.fromstring('<a></a>')
+        iter_type = type(root.iter())
+        support.check_disallow_instantiation(self, iter_type)
 
 
 @unittest.skipUnless(cET, 'requires _elementtree')

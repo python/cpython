@@ -50,6 +50,9 @@ The :mod:`gc` module provides the following functions:
    is run.  Not all items in some free lists may be freed due to the
    particular implementation, in particular :class:`float`.
 
+   The effect of calling ``gc.collect()`` while the interpreter is already
+   performing a collection is undefined.
+
 
 .. function:: set_debug(flags)
 
@@ -71,6 +74,8 @@ The :mod:`gc` module provides the following functions:
 
    .. versionchanged:: 3.8
       New *generation* parameter.
+
+   .. audit-event:: gc.get_objects generation gc.get_objects
 
 .. function:: get_stats()
 
@@ -106,9 +111,9 @@ The :mod:`gc` module provides the following functions:
    allocations minus the number of deallocations exceeds *threshold0*, collection
    starts.  Initially only generation ``0`` is examined.  If generation ``0`` has
    been examined more than *threshold1* times since generation ``1`` has been
-   examined, then generation ``1`` is examined as well.  Similarly, *threshold2*
-   controls the number of collections of generation ``1`` before collecting
-   generation ``2``.
+   examined, then generation ``1`` is examined as well.
+   With the third generation, things are a bit more complicated,
+   see `Collecting the oldest generation <https://devguide.python.org/garbage_collector/#collecting-the-oldest-generation>`_ for more information.
 
 
 .. function:: get_count()
@@ -135,10 +140,13 @@ The :mod:`gc` module provides the following functions:
    resulting referrers.  To get only currently live objects, call :func:`collect`
    before calling :func:`get_referrers`.
 
-   Care must be taken when using objects returned by :func:`get_referrers` because
-   some of them could still be under construction and hence in a temporarily
-   invalid state. Avoid using :func:`get_referrers` for any purpose other than
-   debugging.
+   .. warning::
+      Care must be taken when using objects returned by :func:`get_referrers` because
+      some of them could still be under construction and hence in a temporarily
+      invalid state. Avoid using :func:`get_referrers` for any purpose other than
+      debugging.
+
+   .. audit-event:: gc.get_referrers objs gc.get_referrers
 
 
 .. function:: get_referents(*objs)
@@ -151,6 +159,7 @@ The :mod:`gc` module provides the following functions:
    be involved in a cycle.  So, for example, if an integer is directly reachable
    from an argument, that integer object may or may not appear in the result list.
 
+   .. audit-event:: gc.get_referents objs gc.get_referents
 
 .. function:: is_tracked(obj)
 
@@ -200,12 +209,17 @@ The :mod:`gc` module provides the following functions:
 
 .. function:: freeze()
 
-   Freeze all the objects tracked by gc - move them to a permanent generation
-   and ignore all the future collections. This can be used before a POSIX
-   fork() call to make the gc copy-on-write friendly or to speed up collection.
-   Also collection before a POSIX fork() call may free pages for future
-   allocation which can cause copy-on-write too so it's advised to disable gc
-   in parent process and freeze before fork and enable gc in child process.
+   Freeze all the objects tracked by the garbage collector; move them to a
+   permanent generation and ignore them in all the future collections.
+
+   If a process will ``fork()`` without ``exec()``, avoiding unnecessary
+   copy-on-write in child processes will maximize memory sharing and reduce
+   overall memory usage. This requires both avoiding creation of freed "holes"
+   in memory pages in the parent process and ensuring that GC collections in
+   child processes won't touch the ``gc_refs`` counter of long-lived objects
+   originating in the parent process. To accomplish both, call ``gc.disable()``
+   early in the parent process, ``gc.freeze()`` right before ``fork()``, and
+   ``gc.enable()`` early in child processes.
 
    .. versionadded:: 3.7
 
@@ -245,8 +259,8 @@ values but should not rebind them):
       are printed.
 
    .. versionchanged:: 3.4
-      Following :pep:`442`, objects with a :meth:`__del__` method don't end
-      up in :attr:`gc.garbage` anymore.
+      Following :pep:`442`, objects with a :meth:`~object.__del__` method don't end
+      up in :data:`gc.garbage` anymore.
 
 .. data:: callbacks
 

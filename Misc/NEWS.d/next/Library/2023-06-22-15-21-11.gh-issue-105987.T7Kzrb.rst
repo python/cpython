@@ -1,0 +1,1 @@
+Fix crash due to improper reference counting in :mod:`asyncio` eager task factory internal routines.

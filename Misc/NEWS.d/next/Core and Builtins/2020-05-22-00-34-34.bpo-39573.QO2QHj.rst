@@ -1,2 +1,0 @@
-:c:func:`Py_TYPE()` is changed to the inline static function. Patch by
-Dong-hee Na.

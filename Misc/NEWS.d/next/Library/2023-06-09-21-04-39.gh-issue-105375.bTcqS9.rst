@@ -1,0 +1,1 @@
+Fix bugs in :mod:`pickle` where exceptions could be overwritten.

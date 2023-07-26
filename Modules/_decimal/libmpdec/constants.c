@@ -27,6 +27,7 @@
 
 
 #include "mpdecimal.h"
+#include "basearith.h"
 #include "constants.h"
 
 
@@ -111,7 +112,7 @@
   #error "CONFIG_64 or CONFIG_32 must be defined."
 #endif
 
-const char *mpd_round_string[MPD_ROUND_GUARD] = {
+const char * const mpd_round_string[MPD_ROUND_GUARD] = {
     "ROUND_UP",          /* round away from 0               */
     "ROUND_DOWN",        /* round toward 0 (truncate)       */
     "ROUND_CEILING",     /* round toward +infinity          */
@@ -123,7 +124,7 @@ const char *mpd_round_string[MPD_ROUND_GUARD] = {
     "ROUND_TRUNC",       /* truncate, but set infinity      */
 };
 
-const char *mpd_clamp_string[MPD_CLAMP_GUARD] = {
+const char * const mpd_clamp_string[MPD_CLAMP_GUARD] = {
     "CLAMP_DEFAULT",
     "CLAMP_IEEE_754"
 };

@@ -6,6 +6,7 @@ Original by Michael Schneider
 
 import cmd
 import sys
+import doctest
 import unittest
 import io
 from test import support
@@ -69,7 +70,7 @@ class samplecmdclass(cmd.Cmd):
     >>> mycmd.complete_help("12")
     []
     >>> sorted(mycmd.complete_help(""))
-    ['add', 'exit', 'help', 'shell']
+    ['add', 'exit', 'help', 'life', 'meaning', 'shell']
 
     Test for the function do_help():
     >>> mycmd.do_help("testet")
@@ -78,11 +79,19 @@ class samplecmdclass(cmd.Cmd):
     help text for add
     >>> mycmd.onecmd("help add")
     help text for add
+    >>> mycmd.onecmd("help meaning")  # doctest: +NORMALIZE_WHITESPACE
+    Try and be nice to people, avoid eating fat, read a good book every
+    now and then, get some walking in, and try to live together in peace
+    and harmony with people of all creeds and nations.
     >>> mycmd.do_help("")
     <BLANKLINE>
     Documented commands (type help <topic>):
     ========================================
     add  help
+    <BLANKLINE>
+    Miscellaneous help topics:
+    ==========================
+    life  meaning
     <BLANKLINE>
     Undocumented commands:
     ======================
@@ -114,16 +123,21 @@ class samplecmdclass(cmd.Cmd):
     This test includes the preloop(), postloop(), default(), emptyline(),
     parseline(), do_help() functions
     >>> mycmd.use_rawinput=0
-    >>> mycmd.cmdqueue=["", "add", "add 4 5", "help", "help add","exit"]
-    >>> mycmd.cmdloop()
+
+    >>> mycmd.cmdqueue=["add", "add 4 5", "", "help", "help add", "exit"]
+    >>> mycmd.cmdloop()  # doctest: +REPORT_NDIFF
     Hello from preloop
-    help text for add
     *** invalid number of arguments
+    9
     9
     <BLANKLINE>
     Documented commands (type help <topic>):
     ========================================
     add  help
+    <BLANKLINE>
+    Miscellaneous help topics:
+    ==========================
+    life  meaning
     <BLANKLINE>
     Undocumented commands:
     ======================
@@ -162,6 +176,17 @@ class samplecmdclass(cmd.Cmd):
 
     def help_add(self):
         print("help text for add")
+        return
+
+    def help_meaning(self):
+        print("Try and be nice to people, avoid eating fat, read a "
+              "good book every now and then, get some walking in, "
+              "and try to live together in peace and harmony with "
+              "people of all creeds and nations.")
+        return
+
+    def help_life(self):
+        print("Always look on the bright side of life")
         return
 
     def do_exit(self, arg):
@@ -219,10 +244,9 @@ class TestAlternateInput(unittest.TestCase):
              "(Cmd) *** Unknown syntax: EOF\n"))
 
 
-def test_main(verbose=None):
-    from test import test_cmd
-    support.run_doctest(test_cmd, verbose)
-    support.run_unittest(TestAlternateInput)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
 def test_coverage(coverdir):
     trace = support.import_module('trace')
@@ -239,4 +263,4 @@ if __name__ == "__main__":
     elif "-i" in sys.argv:
         samplecmdclass().cmdloop()
     else:
-        test_main()
+        unittest.main()

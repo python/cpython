@@ -69,8 +69,10 @@ the module and a copyright notice if you like).
    headers on some systems, you *must* include :file:`Python.h` before any standard
    headers are included.
 
-   It is recommended to always define ``PY_SSIZE_T_CLEAN`` before including
-   ``Python.h``.  See :ref:`parsetuple` for a description of this macro.
+   ``#define PY_SSIZE_T_CLEAN`` was used to indicate that ``Py_ssize_t`` should be
+   used in some APIs instead of ``int``.
+   It is not necessary since Python 3.13, but we keep it here for backward compatibility.
+   See :ref:`arg-parsing-string-and-buffers` for a description of this macro.
 
 All user-visible symbols defined by :file:`Python.h` have a prefix of ``Py`` or
 ``PY``, except those defined in standard header files. For convenience, and
@@ -127,13 +129,11 @@ Intermezzo: Errors and Exceptions
 
 An important convention throughout the Python interpreter is the following: when
 a function fails, it should set an exception condition and return an error value
-(usually a ``NULL`` pointer).  Exceptions are stored in a static global variable
-inside the interpreter; if this variable is ``NULL`` no exception has occurred.  A
-second global variable stores the "associated value" of the exception (the
-second argument to :keyword:`raise`).  A third variable contains the stack
-traceback in case the error originated in Python code.  These three variables
-are the C equivalents of the result in Python of :meth:`sys.exc_info` (see the
-section on module :mod:`sys` in the Python Library Reference).  It is important
+(usually ``-1`` or a ``NULL`` pointer).  Exception information is stored in
+three members of the interpreter's thread state.  These are ``NULL`` if
+there is no exception.  Otherwise they are the C equivalents of the members
+of the Python tuple returned by :meth:`sys.exc_info`.  These are the
+exception type, exception instance, and a traceback object.  It is important
 to know about them to understand how errors are passed around.
 
 The Python API defines a number of functions to set various types of exceptions.
@@ -159,16 +159,16 @@ since you should be able to tell from the return value.
 
 When a function *f* that calls another function *g* detects that the latter
 fails, *f* should itself return an error value (usually ``NULL`` or ``-1``).  It
-should *not* call one of the :c:func:`PyErr_\*` functions --- one has already
+should *not* call one of the ``PyErr_*`` functions --- one has already
 been called by *g*. *f*'s caller is then supposed to also return an error
-indication to *its* caller, again *without* calling :c:func:`PyErr_\*`, and so on
+indication to *its* caller, again *without* calling ``PyErr_*``, and so on
 --- the most detailed cause of the error was already reported by the function
 that first detected it.  Once the error reaches the Python interpreter's main
 loop, this aborts the currently executing Python code and tries to find an
 exception handler specified by the Python programmer.
 
 (There are situations where a module can actually give a more detailed error
-message by calling another :c:func:`PyErr_\*` function, and in such cases it is
+message by calling another ``PyErr_*`` function, and in such cases it is
 fine to do so.  As a general rule, however, this is not necessary, and can cause
 information about the cause of the error to be lost: most operations can fail
 for a variety of reasons.)
@@ -221,9 +221,7 @@ with an exception object::
            return NULL;
 
        SpamError = PyErr_NewException("spam.error", NULL, NULL);
-       Py_XINCREF(SpamError);
-       if (PyModule_AddObject(m, "error", SpamError) < 0) {
-           Py_XDECREF(SpamError);
+       if (PyModule_AddObjectRef(m, "error", SpamError) < 0) {
            Py_CLEAR(SpamError);
            Py_DECREF(m);
            return NULL;
@@ -237,10 +235,10 @@ Note that the Python name for the exception object is :exc:`spam.error`.  The
 being :exc:`Exception` (unless another class is passed in instead of ``NULL``),
 described in :ref:`bltin-exceptions`.
 
-Note also that the :c:data:`SpamError` variable retains a reference to the newly
+Note also that the :c:data:`!SpamError` variable retains a reference to the newly
 created exception class; this is intentional!  Since the exception could be
 removed from the module by external code, an owned reference to the class is
-needed to ensure that it will not be discarded, causing :c:data:`SpamError` to
+needed to ensure that it will not be discarded, causing :c:data:`!SpamError` to
 become a dangling pointer. Should it become a dangling pointer, C code which
 raises the exception could cause a core dump or other unintended side effects.
 
@@ -281,9 +279,9 @@ statement::
 It returns ``NULL`` (the error indicator for functions returning object pointers)
 if an error is detected in the argument list, relying on the exception set by
 :c:func:`PyArg_ParseTuple`.  Otherwise the string value of the argument has been
-copied to the local variable :c:data:`command`.  This is a pointer assignment and
+copied to the local variable :c:data:`!command`.  This is a pointer assignment and
 you are not supposed to modify the string to which it points (so in Standard C,
-the variable :c:data:`command` should properly be declared as ``const char
+the variable :c:data:`!command` should properly be declared as ``const char
 *command``).
 
 The next statement is a call to the Unix function :c:func:`system`, passing it
@@ -291,7 +289,7 @@ the string we just got from :c:func:`PyArg_ParseTuple`::
 
    sts = system(command);
 
-Our :func:`spam.system` function must return the value of :c:data:`sts` as a
+Our :func:`!spam.system` function must return the value of :c:data:`!sts` as a
 Python object.  This is done using the function :c:func:`PyLong_FromLong`. ::
 
    return PyLong_FromLong(sts);
@@ -300,7 +298,7 @@ In this case, it will return an integer object.  (Yes, even integers are objects
 on the heap in Python!)
 
 If you have a C function that returns no useful argument (a function returning
-:c:type:`void`), the corresponding Python function must return ``None``.   You
+:c:expr:`void`), the corresponding Python function must return ``None``.   You
 need this idiom to do so (which is implemented by the :c:macro:`Py_RETURN_NONE`
 macro)::
 
@@ -337,7 +335,7 @@ When using only ``METH_VARARGS``, the function should expect the Python-level
 parameters to be passed in as a tuple acceptable for parsing via
 :c:func:`PyArg_ParseTuple`; more information on this function is provided below.
 
-The :const:`METH_KEYWORDS` bit may be set in the third field if keyword
+The :c:macro:`METH_KEYWORDS` bit may be set in the third field if keyword
 arguments should be passed to the function.  In this case, the C function should
 accept a third ``PyObject *`` parameter which will be a dictionary of keywords.
 Use :c:func:`PyArg_ParseTupleAndKeywords` to parse the arguments to such a
@@ -385,14 +383,15 @@ automatically unless there's an entry in the :c:data:`PyImport_Inittab` table.
 To add the module to the initialization table, use :c:func:`PyImport_AppendInittab`,
 optionally followed by an import of the module::
 
+   #define PY_SSIZE_T_CLEAN
+   #include <Python.h>
+
    int
    main(int argc, char *argv[])
    {
-       wchar_t *program = Py_DecodeLocale(argv[0], NULL);
-       if (program == NULL) {
-           fprintf(stderr, "Fatal error: cannot decode argv[0]\n");
-           exit(1);
-       }
+       PyStatus status;
+       PyConfig config;
+       PyConfig_InitPythonConfig(&config);
 
        /* Add a built-in module, before Py_Initialize */
        if (PyImport_AppendInittab("spam", PyInit_spam) == -1) {
@@ -401,25 +400,35 @@ optionally followed by an import of the module::
        }
 
        /* Pass argv[0] to the Python interpreter */
-       Py_SetProgramName(program);
+       status = PyConfig_SetBytesString(&config, &config.program_name, argv[0]);
+       if (PyStatus_Exception(status)) {
+           goto exception;
+       }
 
        /* Initialize the Python interpreter.  Required.
           If this step fails, it will be a fatal error. */
-       Py_Initialize();
+       status = Py_InitializeFromConfig(&config);
+       if (PyStatus_Exception(status)) {
+           goto exception;
+       }
+       PyConfig_Clear(&config);
 
        /* Optionally import the module; alternatively,
           import can be deferred until the embedded script
           imports it. */
-       pmodule = PyImport_ImportModule("spam");
+       PyObject *pmodule = PyImport_ImportModule("spam");
        if (!pmodule) {
            PyErr_Print();
            fprintf(stderr, "Error: could not import module 'spam'\n");
        }
 
-       ...
+       // ... use Python C API here ...
 
-       PyMem_RawFree(program);
        return 0;
+
+     exception:
+        PyConfig_Clear(&config);
+        Py_ExitStatusException(status);
    }
 
 .. note::
@@ -529,7 +538,7 @@ be part of a module definition::
    }
 
 This function must be registered with the interpreter using the
-:const:`METH_VARARGS` flag; this is described in section :ref:`methodtable`.  The
+:c:macro:`METH_VARARGS` flag; this is described in section :ref:`methodtable`.  The
 :c:func:`PyArg_ParseTuple` function and its arguments are documented in section
 :ref:`parsetuple`.
 
@@ -651,7 +660,7 @@ Note that any Python object references which are provided to the caller are
 
 Some example calls::
 
-   #define PY_SSIZE_T_CLEAN  /* Make "s#" use Py_ssize_t rather than int. */
+   #define PY_SSIZE_T_CLEAN
    #include <Python.h>
 
 ::
@@ -747,7 +756,7 @@ it returns false and raises an appropriate exception.
 Here is an example module which uses keywords, based on an example by Geoff
 Philbrick (philbrick@hks.com)::
 
-   #define PY_SSIZE_T_CLEAN  /* Make "s#" use Py_ssize_t rather than int. */
+   #define PY_SSIZE_T_CLEAN
    #include <Python.h>
 
    static PyObject *
@@ -911,12 +920,7 @@ the cycle itself.
 The cycle detector is able to detect garbage cycles and can reclaim them.
 The :mod:`gc` module exposes a way to run the detector (the
 :func:`~gc.collect` function), as well as configuration
-interfaces and the ability to disable the detector at runtime.  The cycle
-detector is considered an optional component; though it is included by default,
-it can be disabled at build time using the :option:`!--without-cycle-gc` option
-to the :program:`configure` script on Unix platforms (including Mac OS X).  If
-the cycle detector is disabled in this way, the :mod:`gc` module will not be
-available.
+interfaces and the ability to disable the detector at runtime.
 
 
 .. _refcountsinpython:
@@ -1178,7 +1182,7 @@ other extension modules must be exported in a different way.
 
 Python provides a special mechanism to pass C-level information (pointers) from
 one extension module to another one: Capsules. A Capsule is a Python data type
-which stores a pointer (:c:type:`void \*`).  Capsules can only be created and
+which stores a pointer (:c:expr:`void \*`).  Capsules can only be created and
 accessed via their C API, but they can be passed around like any other Python
 object. In particular,  they can be assigned to a name in an extension module's
 namespace. Other extension modules can then import this module, retrieve the
@@ -1192,7 +1196,7 @@ different ways between the module providing the code and the client modules.
 
 Whichever method you choose, it's important to name your Capsules properly.
 The function :c:func:`PyCapsule_New` takes a name parameter
-(:c:type:`const char \*`); you're permitted to pass in a ``NULL`` name, but
+(:c:expr:`const char \*`); you're permitted to pass in a ``NULL`` name, but
 we strongly encourage you to specify a name.  Properly named Capsules provide
 a degree of runtime type-safety; there is no feasible way to tell one unnamed
 Capsule from another.
@@ -1210,7 +1214,7 @@ of certainty that the Capsule they load contains the correct C API.
 The following example demonstrates an approach that puts most of the burden on
 the writer of the exporting module, which is appropriate for commonly used
 library modules. It stores all C API pointers (just one in the example!) in an
-array of :c:type:`void` pointers which becomes the value of a Capsule. The header
+array of :c:expr:`void` pointers which becomes the value of a Capsule. The header
 file corresponding to the module provides a macro that takes care of importing
 the module and retrieving its C API pointers; client modules only have to call
 this macro before accessing the C API.
@@ -1275,8 +1279,7 @@ function must take care of initializing the C API pointer array::
        /* Create a Capsule containing the API pointer array's address */
        c_api_object = PyCapsule_New((void *)PySpam_API, "spam._C_API", NULL);
 
-       if (PyModule_AddObject(m, "_C_API", c_api_object) < 0) {
-           Py_XDECREF(c_api_object);
+       if (PyModule_Add(m, "_C_API", c_api_object) < 0) {
            Py_DECREF(m);
            return NULL;
        }

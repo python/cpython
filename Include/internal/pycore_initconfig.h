@@ -36,27 +36,27 @@ struct pyruntimestate;
         ._type = _PyStatus_TYPE_EXIT, \
         .exitcode = (EXITCODE)}
 #define _PyStatus_IS_ERROR(err) \
-    (err._type == _PyStatus_TYPE_ERROR)
+    ((err)._type == _PyStatus_TYPE_ERROR)
 #define _PyStatus_IS_EXIT(err) \
-    (err._type == _PyStatus_TYPE_EXIT)
+    ((err)._type == _PyStatus_TYPE_EXIT)
 #define _PyStatus_EXCEPTION(err) \
-    (err._type != _PyStatus_TYPE_OK)
+    ((err)._type != _PyStatus_TYPE_OK)
 #define _PyStatus_UPDATE_FUNC(err) \
-    do { err.func = _PyStatus_GET_FUNC(); } while (0)
+    do { (err).func = _PyStatus_GET_FUNC(); } while (0)
 
 /* --- PyWideStringList ------------------------------------------------ */
 
 #define _PyWideStringList_INIT (PyWideStringList){.length = 0, .items = NULL}
 
 #ifndef NDEBUG
-PyAPI_FUNC(int) _PyWideStringList_CheckConsistency(const PyWideStringList *list);
+extern int _PyWideStringList_CheckConsistency(const PyWideStringList *list);
 #endif
-PyAPI_FUNC(void) _PyWideStringList_Clear(PyWideStringList *list);
-PyAPI_FUNC(int) _PyWideStringList_Copy(PyWideStringList *list,
+extern void _PyWideStringList_Clear(PyWideStringList *list);
+extern int _PyWideStringList_Copy(PyWideStringList *list,
     const PyWideStringList *list2);
-PyAPI_FUNC(PyStatus) _PyWideStringList_Extend(PyWideStringList *list,
+extern PyStatus _PyWideStringList_Extend(PyWideStringList *list,
     const PyWideStringList *list2);
-PyAPI_FUNC(PyObject*) _PyWideStringList_AsList(const PyWideStringList *list);
+extern PyObject* _PyWideStringList_AsList(const PyWideStringList *list);
 
 
 /* --- _PyArgv ---------------------------------------------------- */
@@ -68,28 +68,28 @@ typedef struct _PyArgv {
     wchar_t * const *wchar_argv;
 } _PyArgv;
 
-PyAPI_FUNC(PyStatus) _PyArgv_AsWstrList(const _PyArgv *args,
+extern PyStatus _PyArgv_AsWstrList(const _PyArgv *args,
     PyWideStringList *list);
 
 
 /* --- Helper functions ------------------------------------------- */
 
-PyAPI_FUNC(int) _Py_str_to_int(
+extern int _Py_str_to_int(
     const char *str,
     int *result);
-PyAPI_FUNC(const wchar_t*) _Py_get_xoption(
+extern const wchar_t* _Py_get_xoption(
     const PyWideStringList *xoptions,
     const wchar_t *name);
-PyAPI_FUNC(const char*) _Py_GetEnv(
+extern const char* _Py_GetEnv(
     int use_environment,
     const char *name);
-PyAPI_FUNC(void) _Py_get_env_flag(
+extern void _Py_get_env_flag(
     int use_environment,
     int *flag,
     const char *name);
 
 /* Py_GetArgcArgv() helper */
-PyAPI_FUNC(void) _Py_ClearArgcArgv(void);
+extern void _Py_ClearArgcArgv(void);
 
 
 /* --- _PyPreCmdline ------------------------------------------------- */
@@ -100,6 +100,7 @@ typedef struct {
     int isolated;             /* -I option */
     int use_environment;      /* -E option */
     int dev_mode;             /* -X dev and PYTHONDEVMODE */
+    int warn_default_encoding;     /* -X warn_default_encoding and PYTHONWARNDEFAULTENCODING */
 } _PyPreCmdline;
 
 #define _PyPreCmdline_INIT \
@@ -121,6 +122,7 @@ extern PyStatus _PyPreCmdline_Read(_PyPreCmdline *cmdline,
 
 /* --- PyPreConfig ----------------------------------------------- */
 
+// Export for '_testembed' program
 PyAPI_FUNC(void) _PyPreConfig_InitCompatConfig(PyPreConfig *preconfig);
 extern void _PyPreConfig_InitFromConfig(
     PyPreConfig *preconfig,
@@ -145,16 +147,28 @@ typedef enum {
     _PyConfig_INIT_ISOLATED = 3
 } _PyConfigInitEnum;
 
+// Export for '_testembed' program
 PyAPI_FUNC(void) _PyConfig_InitCompatConfig(PyConfig *config);
 extern PyStatus _PyConfig_Copy(
     PyConfig *config,
     const PyConfig *config2);
-extern PyStatus _PyConfig_InitPathConfig(PyConfig *config);
+extern PyStatus _PyConfig_InitPathConfig(
+    PyConfig *config,
+    int compute_path_config);
+extern PyStatus _PyConfig_InitImportConfig(PyConfig *config);
+extern PyStatus _PyConfig_Read(PyConfig *config, int compute_path_config);
 extern PyStatus _PyConfig_Write(const PyConfig *config,
     struct pyruntimestate *runtime);
 extern PyStatus _PyConfig_SetPyArgv(
     PyConfig *config,
     const _PyArgv *args);
+
+PyAPI_FUNC(PyObject*) _PyConfig_AsDict(const PyConfig *config);
+PyAPI_FUNC(int) _PyConfig_FromDict(PyConfig *config, PyObject *dict);
+
+extern void _Py_DumpPathConfig(PyThreadState *tstate);
+
+PyAPI_FUNC(PyObject*) _Py_Get_Getpath_CodeObject(void);
 
 
 /* --- Function used for testing ---------------------------------- */

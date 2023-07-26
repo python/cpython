@@ -11,7 +11,7 @@ from idlelib.searchbase import SearchDialogBase
 from idlelib import searchengine
 
 
-def replace(text):
+def replace(text, insert_tags=None):
     """Create or reuse a singleton ReplaceDialog instance.
 
     The singleton dialog saves user entries and preferences
@@ -25,7 +25,7 @@ def replace(text):
     if not hasattr(engine, "_replacedialog"):
         engine._replacedialog = ReplaceDialog(root, engine)
     dialog = engine._replacedialog
-    dialog.open(text)
+    dialog.open(text, insert_tags=insert_tags)
 
 
 class ReplaceDialog(SearchDialogBase):
@@ -49,8 +49,9 @@ class ReplaceDialog(SearchDialogBase):
         """
         super().__init__(root, engine)
         self.replvar = StringVar(root)
+        self.insert_tags = None
 
-    def open(self, text):
+    def open(self, text, insert_tags=None):
         """Make dialog visible on top of others and ready to use.
 
         Also, highlight the currently selected text and set the
@@ -72,6 +73,7 @@ class ReplaceDialog(SearchDialogBase):
         last = last or first
         self.show_hit(first, last)
         self.ok = True
+        self.insert_tags = insert_tags
 
     def create_entries(self):
         "Create base and additional label and text entry widgets."
@@ -156,11 +158,8 @@ class ReplaceDialog(SearchDialogBase):
         first = last = None
         # XXX ought to replace circular instead of top-to-bottom when wrapping
         text.undo_block_start()
-        while True:
-            res = self.engine.search_forward(text, prog, line, col,
-                                             wrap=False, ok=ok)
-            if not res:
-                break
+        while res := self.engine.search_forward(
+                text, prog, line, col, wrap=False, ok=ok):
             line, m = res
             chars = text.get("%d.0" % line, "%d.0" % (line+1))
             orig = m.group()
@@ -177,7 +176,7 @@ class ReplaceDialog(SearchDialogBase):
                 if first != last:
                     text.delete(first, last)
                 if new:
-                    text.insert(first, new)
+                    text.insert(first, new, self.insert_tags)
             col = i + len(new)
             ok = False
         text.undo_block_stop()
@@ -231,7 +230,7 @@ class ReplaceDialog(SearchDialogBase):
         if m.group():
             text.delete(first, last)
         if new:
-            text.insert(first, new)
+            text.insert(first, new, self.insert_tags)
         text.undo_block_stop()
         self.show_hit(first, text.index("insert"))
         self.ok = False
@@ -264,6 +263,7 @@ class ReplaceDialog(SearchDialogBase):
         "Close the dialog and remove hit tags."
         SearchDialogBase.close(self, event)
         self.text.tag_remove("hit", "1.0", "end")
+        self.insert_tags = None
 
 
 def _replace_dialog(parent):  # htest #

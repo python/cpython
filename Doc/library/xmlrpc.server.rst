@@ -23,6 +23,7 @@ servers written in Python.  Servers can either be free standing, using
    constructed data.  If you need to parse untrusted or unauthenticated data see
    :ref:`xml-vulnerabilities`.
 
+.. include:: ../includes/wasm-notavail.rst
 
 .. class:: SimpleXMLRPCServer(addr, requestHandler=SimpleXMLRPCRequestHandler,\
                logRequests=True, allow_none=False, encoding=None,\
@@ -262,7 +263,7 @@ This ExampleService demo can be invoked from the command line::
 
 
 The client that interacts with the above server is included in
-`Lib/xmlrpc/client.py`::
+``Lib/xmlrpc/client.py``::
 
     server = ServerProxy("http://localhost:8000")
 

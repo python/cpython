@@ -1,8 +1,10 @@
 import unittest
 from test import support
+from test.support import import_helper
 import builtins
 import contextlib
 import copy
+import enum
 import io
 import os
 import pickle
@@ -10,8 +12,8 @@ import sys
 import weakref
 from unittest import mock
 
-py_uuid = support.import_fresh_module('uuid', blocked=['_uuid'])
-c_uuid = support.import_fresh_module('uuid', fresh=['_uuid'])
+py_uuid = import_helper.import_fresh_module('uuid', blocked=['_uuid'])
+c_uuid = import_helper.import_fresh_module('uuid', fresh=['_uuid'])
 
 def importable(name):
     try:
@@ -29,6 +31,13 @@ def mock_get_command_stdout(data):
 
 class BaseTestUUID:
     uuid = None
+
+    def test_safe_uuid_enum(self):
+        class CheckedSafeUUID(enum.Enum):
+            safe = 0
+            unsafe = -1
+            unknown = None
+        enum._test_simple_enum(CheckedSafeUUID, py_uuid.SafeUUID)
 
     def test_UUID(self):
         equal = self.assertEqual
@@ -591,7 +600,22 @@ class BaseTestUUID:
     def test_uuid3(self):
         equal = self.assertEqual
 
-        # Test some known version-3 UUIDs.
+        # Test some known version-3 UUIDs with name passed as a byte object
+        for u, v in [(self.uuid.uuid3(self.uuid.NAMESPACE_DNS, b'python.org'),
+                      '6fa459ea-ee8a-3ca4-894e-db77e160355e'),
+                     (self.uuid.uuid3(self.uuid.NAMESPACE_URL, b'http://python.org/'),
+                      '9fe8e8c4-aaa8-32a9-a55c-4535a88b748d'),
+                     (self.uuid.uuid3(self.uuid.NAMESPACE_OID, b'1.3.6.1'),
+                      'dd1a1cef-13d5-368a-ad82-eca71acd4cd1'),
+                     (self.uuid.uuid3(self.uuid.NAMESPACE_X500, b'c=ca'),
+                      '658d3002-db6b-3040-a1d1-8ddd7d189a4d'),
+                    ]:
+            equal(u.variant, self.uuid.RFC_4122)
+            equal(u.version, 3)
+            equal(u, self.uuid.UUID(v))
+            equal(str(u), v)
+
+        # Test some known version-3 UUIDs with name passed as a string
         for u, v in [(self.uuid.uuid3(self.uuid.NAMESPACE_DNS, 'python.org'),
                       '6fa459ea-ee8a-3ca4-894e-db77e160355e'),
                      (self.uuid.uuid3(self.uuid.NAMESPACE_URL, 'http://python.org/'),
@@ -623,7 +647,22 @@ class BaseTestUUID:
     def test_uuid5(self):
         equal = self.assertEqual
 
-        # Test some known version-5 UUIDs.
+        # Test some known version-5 UUIDs with names given as byte objects
+        for u, v in [(self.uuid.uuid5(self.uuid.NAMESPACE_DNS, b'python.org'),
+                      '886313e1-3b8a-5372-9b90-0c9aee199e5d'),
+                     (self.uuid.uuid5(self.uuid.NAMESPACE_URL, b'http://python.org/'),
+                      '4c565f0d-3f5a-5890-b41b-20cf47701c5e'),
+                     (self.uuid.uuid5(self.uuid.NAMESPACE_OID, b'1.3.6.1'),
+                      '1447fa61-5277-5fef-a9b3-fbc6e44f4af3'),
+                     (self.uuid.uuid5(self.uuid.NAMESPACE_X500, b'c=ca'),
+                      'cc957dd1-a972-5349-98cd-874190002798'),
+                    ]:
+            equal(u.variant, self.uuid.RFC_4122)
+            equal(u.version, 5)
+            equal(u, self.uuid.UUID(v))
+            equal(str(u), v)
+
+        # Test some known version-5 UUIDs with names given as strings
         for u, v in [(self.uuid.uuid5(self.uuid.NAMESPACE_DNS, 'python.org'),
                       '886313e1-3b8a-5372-9b90-0c9aee199e5d'),
                      (self.uuid.uuid5(self.uuid.NAMESPACE_URL, 'http://python.org/'),
@@ -638,7 +677,7 @@ class BaseTestUUID:
             equal(u, self.uuid.UUID(v))
             equal(str(u), v)
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @support.requires_fork()
     def testIssue8621(self):
         # On at least some versions of OSX self.uuid.uuid4 generates
         # the same sequence of UUIDs in the parent and any
@@ -665,6 +704,67 @@ class BaseTestUUID:
         strong = self.uuid.uuid4()
         weak = weakref.ref(strong)
         self.assertIs(strong, weak())
+
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid3", "-n", "@dns"])
+    @mock.patch('sys.stderr', new_callable=io.StringIO)
+    def test_cli_namespace_required_for_uuid3(self, mock_err):
+        with self.assertRaises(SystemExit) as cm:
+            self.uuid.main()
+
+        # Check that exception code is the same as argparse.ArgumentParser.error
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("error: Incorrect number of arguments", mock_err.getvalue())
+
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid3", "-N", "python.org"])
+    @mock.patch('sys.stderr', new_callable=io.StringIO)
+    def test_cli_name_required_for_uuid3(self, mock_err):
+        with self.assertRaises(SystemExit) as cm:
+            self.uuid.main()
+        # Check that exception code is the same as argparse.ArgumentParser.error
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("error: Incorrect number of arguments", mock_err.getvalue())
+
+    @mock.patch.object(sys, "argv", [""])
+    def test_cli_uuid4_outputted_with_no_args(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+
+        output = stdout.getvalue().strip()
+        uuid_output = self.uuid.UUID(output)
+
+        # Output uuid should be in the format of uuid4
+        self.assertEqual(output, str(uuid_output))
+        self.assertEqual(uuid_output.version, 4)
+
+    @mock.patch.object(sys, "argv",
+                       ["", "-u", "uuid3", "-n", "@dns", "-N", "python.org"])
+    def test_cli_uuid3_ouputted_with_valid_namespace_and_name(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+
+        output = stdout.getvalue().strip()
+        uuid_output = self.uuid.UUID(output)
+
+        # Output should be in the form of uuid5
+        self.assertEqual(output, str(uuid_output))
+        self.assertEqual(uuid_output.version, 3)
+
+    @mock.patch.object(sys, "argv",
+                       ["", "-u", "uuid5", "-n", "@dns", "-N", "python.org"])
+    def test_cli_uuid5_ouputted_with_valid_namespace_and_name(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+
+        output = stdout.getvalue().strip()
+        uuid_output = self.uuid.UUID(output)
+
+        # Output should be in the form of uuid5
+        self.assertEqual(output, str(uuid_output))
+        self.assertEqual(uuid_output.version, 5)
+
 
 class TestUUIDWithoutExtModule(BaseTestUUID, unittest.TestCase):
     uuid = py_uuid

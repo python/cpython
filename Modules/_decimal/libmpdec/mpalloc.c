@@ -61,13 +61,6 @@ mpd_callocfunc_em(size_t nmemb, size_t size)
     size_t req;
     mpd_size_t overflow;
 
-#if MPD_SIZE_MAX < SIZE_MAX
-    /* full_coverage test only */
-    if (nmemb > MPD_SIZE_MAX || size > MPD_SIZE_MAX) {
-        return NULL;
-    }
-#endif
-
     req = mul_size_t_overflow((mpd_size_t)nmemb, (mpd_size_t)size,
                               &overflow);
     if (overflow) {

@@ -1,1 +1,0 @@
-Allow overriding :data:`sys.platlibdir` via a new :envvar:`PYTHONPLATLIBDIR` environment variable.

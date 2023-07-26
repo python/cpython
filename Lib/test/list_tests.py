@@ -3,10 +3,9 @@ Tests common to list and UserList.UserList
 """
 
 import sys
-import os
 from functools import cmp_to_key
 
-from test import support, seq_tests
+from test import seq_tests
 from test.support import ALWAYS_EQ, NEVER_EQ
 
 
@@ -65,20 +64,6 @@ class CommonTest(seq_tests.CommonTest):
         for i in range(sys.getrecursionlimit() + 100):
             a = self.type2test([a])
         self.assertRaises(RecursionError, repr, a)
-
-    def test_print(self):
-        d = self.type2test(range(200))
-        d.append(d)
-        d.extend(range(200,400))
-        d.append(d)
-        d.append(400)
-        try:
-            with open(support.TESTFN, "w") as fo:
-                fo.write(str(d))
-            with open(support.TESTFN, "r") as fo:
-                self.assertEqual(fo.read(), repr(d))
-        finally:
-            os.remove(support.TESTFN)
 
     def test_set_subscript(self):
         a = self.type2test(range(20))
