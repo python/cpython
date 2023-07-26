@@ -170,9 +170,8 @@ Terminology
       by the *start line*.
 
    checksum
-      The 16 first hex digits of a :py:meth:`~hashlib.sha1` hash.
-      Argument Clinic generates checksums of the :term:`input`
-      and the :term:`output` as part of the :term:`checksum line`.
+      A hash to distinguish unique :term:`inputs <input>`
+      and :term:`outputs <output>`.
 
    checksum line
       A line that looks like ``/*[clinic end generated code: ...]*/``.
