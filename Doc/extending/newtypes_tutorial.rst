@@ -37,7 +37,7 @@ object.
 
 This sort of thing can only be explained by example, so here's a minimal, but
 complete, module that defines a new type named :class:`Custom` inside a C
-extension module :mod:`custom`:
+extension module :mod:`!custom`:
 
 .. note::
    What we're showing here is the traditional way of defining *static*
@@ -55,7 +55,7 @@ from the previous chapter.  This file defines three things:
 #. How the :class:`Custom` **type** behaves: this is the ``CustomType`` struct,
    which defines a set of flags and function pointers that the interpreter
    inspects when specific operations are requested.
-#. How to initialize the :mod:`custom` module: this is the ``PyInit_custom``
+#. How to initialize the :mod:`!custom` module: this is the ``PyInit_custom``
    function and the associated ``custommodule`` struct.
 
 The first bit is::
@@ -127,7 +127,7 @@ our objects and in some error messages, for example:
    TypeError: can only concatenate str (not "custom.Custom") to str
 
 Note that the name is a dotted name that includes both the module name and the
-name of the type within the module. The module in this case is :mod:`custom` and
+name of the type within the module. The module in this case is :mod:`!custom` and
 the type is :class:`Custom`, so we set the type name to :class:`custom.Custom`.
 Using the real dotted import path is important to make your type compatible
 with the :mod:`pydoc` and :mod:`pickle` modules. ::
@@ -229,7 +229,7 @@ Adding data and methods to the Basic example
 ============================================
 
 Let's extend the basic example to add some data and methods.  Let's also make
-the type usable as a base class. We'll create a new module, :mod:`custom2` that
+the type usable as a base class. We'll create a new module, :mod:`!custom2` that
 adds these capabilities:
 
 .. literalinclude:: ../includes/custom2.c
