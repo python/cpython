@@ -3,6 +3,7 @@ import os.path
 import re
 import subprocess
 import sys
+import sysconfig
 import types
 import unittest
 
@@ -173,13 +174,16 @@ class SystemTapOptimizedTests(TraceTests, unittest.TestCase):
     backend = SystemTapBackend()
     optimize_python = 2
 
-
 class CheckDtraceProbes(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        readelf_major_version, readelf_minor_version = cls.get_readelf_version()
-        if support.verbose:
-            print(f"readelf version: {readelf_major_version}.{readelf_minor_version}")
+        if sysconfig.get_config_var('WITH_DTRACE'):
+            readelf_major_version, readelf_minor_version = cls.get_readelf_version()
+            if support.verbose:
+                print(f"readelf version: {readelf_major_version}.{readelf_minor_version}")
+        else:
+            raise unittest.SkipTest("CPython must be configured with the --with-dtrace option.")
+
 
     @staticmethod
     def get_readelf_version():
