@@ -82,7 +82,7 @@ cache the compiled regex patterns in the following functions: :func:`fnmatch`,
    ``[n for n in names if fnmatch(n, pattern)]``, but implemented more efficiently.
 
 
-.. function:: translate(pattern, seps=None)
+.. function:: translate(pattern, sep=None)
 
    Return the shell-style *pattern* converted to a regular expression for
    using with :func:`re.match`.
@@ -98,9 +98,8 @@ cache the compiled regex patterns in the following functions: :func:`fnmatch`,
       >>> reobj.match('foobar.txt')
       <re.Match object; span=(0, 10), match='foobar.txt'>
 
-   A sequence of path separator characters may be supplied to the *seps*
-   argument. If given, the separators are used to split the pattern into
-   segments, where:
+   A path separator character may be supplied to the *sep* argument. If given,
+   the separator is sed to split the pattern into segments, where:
 
    - A ``*`` pattern segment matches precisely one path segment.
    - A ``**`` pattern segment matches any number of path segments.
@@ -109,11 +108,11 @@ cache the compiled regex patterns in the following functions: :func:`fnmatch`,
    - ``*`` and ``?`` wildcards in other positions don't match path separators.
 
    These rules approximate shell recursive globbing. The :mod:`pathlib` module
-   calls this function and supplies *seps* to implement
+   calls this function and supplies *sep* to implement
    :meth:`~pathlib.PurePath.match` and :meth:`~pathlib.Path.glob`.
 
    .. versionchanged:: 3.13
-      The *seps* parameter was added.
+      The *sep* parameter was added.
 
 
 .. seealso::

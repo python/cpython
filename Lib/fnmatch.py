@@ -71,24 +71,23 @@ def fnmatchcase(name, pat):
     return match(name) is not None
 
 
-def translate(pat, seps=None):
+def translate(pat, sep=None):
     """Translate a shell PATTERN to a regular expression.
 
-    A sequence of path separator characters may be supplied to the *seps*
-    argument. If given, '*' and '?' wildcards will not match separators.
-    '*' wildcards in standalone pattern segments match precisely one path
-    segment; '**' wildcards in standalone segments match any number of path
-    segments.
+    A path separator character may be supplied to the *sep* argument. If
+    given, '*' and '?' wildcards will not match separators; '*' wildcards in
+    standalone pattern segments match precisely one path segment; and  '**'
+    wildcards in standalone segments match any number of path segments.
 
     There is no way to quote meta-characters.
     """
 
     STAR = object()
-    if seps:
-        SEPS = re.escape(''.join(seps))
-        DOT = f'[^{SEPS}]'
+    if sep:
+        SEP = re.escape(sep)
+        DOT = f'[^{SEP}]'
     else:
-        SEPS = None
+        SEP = None
         DOT = '.'
     res = []
     add = res.append
@@ -101,9 +100,9 @@ def translate(pat, seps=None):
             h = i-1
             while i < n and pat[i] == '*':
                 i = i+1
-            if seps:
+            if sep:
                 star_count = i-h
-                is_segment = (h == 0 or pat[h-1] in seps) and (i == n or pat[i] in seps)
+                is_segment = (h == 0 or pat[h-1] == sep) and (i == n or pat[i] == sep)
                 if star_count == 1:
                     if is_segment:
                         add(f'{DOT}+')
@@ -113,7 +112,7 @@ def translate(pat, seps=None):
                     if i == n:
                         add('.*')
                     else:
-                        add(f'(.*[{SEPS}])?')
+                        add(f'(.*{SEP})?')
                         i = i+1
                 else:
                     raise ValueError("Invalid pattern: '**' can only be an entire path component")

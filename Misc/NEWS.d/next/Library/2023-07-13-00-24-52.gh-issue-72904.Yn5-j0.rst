@@ -1,3 +1,4 @@
-Add optional *seps* argument to :func:`fnmatch.translate`. If a sequence of
-path separators is given, the resulting pattern matches paths similarly to
-:func:`glob.glob`.
+Add optional *sep* argument to :func:`fnmatch.translate`. If a path separator
+character is given, the resulting pattern matches paths like
+:meth:`pathlib.PurePath.match` and :meth:`pathlib.Path.glob`. For example, the
+``*`` wildcard will not match path separators.
