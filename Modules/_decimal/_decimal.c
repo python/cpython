@@ -355,10 +355,9 @@ dec_traphandler(mpd_context_t *ctx UNUSED) /* GCOV_NOT_REACHED */
 }
 
 static PyObject *
-flags_as_exception(uint32_t flags)
+flags_as_exception(decimal_state *state, uint32_t flags)
 {
     DecCondMap *cm;
-    decimal_state *state = GLOBAL_STATE();
 
     for (cm = state->signal_map; cm->name != NULL; cm++) {
         if (flags&cm->flag) {
@@ -370,10 +369,9 @@ flags_as_exception(uint32_t flags)
 }
 
 Py_LOCAL_INLINE(uint32_t)
-exception_as_flag(PyObject *ex)
+exception_as_flag(decimal_state *state, PyObject *ex)
 {
     DecCondMap *cm;
-    decimal_state *state = GLOBAL_STATE();
 
     for (cm = state->signal_map; cm->name != NULL; cm++) {
         if (cm->ex == ex) {
@@ -386,11 +384,10 @@ exception_as_flag(PyObject *ex)
 }
 
 static PyObject *
-flags_as_list(uint32_t flags)
+flags_as_list(decimal_state *state, uint32_t flags)
 {
     PyObject *list;
     DecCondMap *cm;
-    decimal_state *state = GLOBAL_STATE();
 
     list = PyList_New(0);
     if (list == NULL) {
@@ -420,11 +417,10 @@ error:
 }
 
 static PyObject *
-signals_as_list(uint32_t flags)
+signals_as_list(decimal_state *state, uint32_t flags)
 {
     PyObject *list;
     DecCondMap *cm;
-    decimal_state *state = GLOBAL_STATE();
 
     list = PyList_New(0);
     if (list == NULL) {
@@ -444,7 +440,7 @@ signals_as_list(uint32_t flags)
 }
 
 static uint32_t
-list_as_flags(PyObject *list)
+list_as_flags(decimal_state *state, PyObject *list)
 {
     PyObject *item;
     uint32_t flags, x;
@@ -456,7 +452,7 @@ list_as_flags(PyObject *list)
     flags = 0;
     for (j = 0; j < n; j++) {
         item = PyList_GetItem(list, j);
-        x = exception_as_flag(item);
+        x = exception_as_flag(state, item);
         if (x & DEC_ERRORS) {
             return x;
         }
@@ -467,11 +463,10 @@ list_as_flags(PyObject *list)
 }
 
 static PyObject *
-flags_as_dict(uint32_t flags)
+flags_as_dict(decimal_state *state, uint32_t flags)
 {
     DecCondMap *cm;
     PyObject *dict;
-    decimal_state *state = GLOBAL_STATE();
 
     dict = PyDict_New();
     if (dict == NULL) {
@@ -490,13 +485,12 @@ flags_as_dict(uint32_t flags)
 }
 
 static uint32_t
-dict_as_flags(PyObject *val)
+dict_as_flags(decimal_state *state, PyObject *val)
 {
     PyObject *b;
     DecCondMap *cm;
     uint32_t flags = 0;
     int x;
-    decimal_state *state = GLOBAL_STATE();
 
     if (!PyDict_Check(val)) {
         PyErr_SetString(PyExc_TypeError,
@@ -556,6 +550,7 @@ static int
 dec_addstatus(PyObject *context, uint32_t status)
 {
     mpd_context_t *ctx = CTX(context);
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
 
     ctx->status |= status;
     if (status & (ctx->traps|MPD_Malloc_error)) {
@@ -566,11 +561,11 @@ dec_addstatus(PyObject *context, uint32_t status)
             return 1;
         }
 
-        ex = flags_as_exception(ctx->traps&status);
+        ex = flags_as_exception(state, ctx->traps&status);
         if (ex == NULL) {
             return 1; /* GCOV_NOT_REACHED */
         }
-        siglist = flags_as_list(ctx->traps&status);
+        siglist = flags_as_list(state, ctx->traps&status);
         if (siglist == NULL) {
             return 1;
         }
@@ -637,8 +632,9 @@ static PyObject *
 signaldict_getitem(PyObject *self, PyObject *key)
 {
     uint32_t flag;
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
 
-    flag = exception_as_flag(key);
+    flag = exception_as_flag(state, key);
     if (flag & DEC_ERRORS) {
         return NULL;
     }
@@ -652,11 +648,12 @@ signaldict_setitem(PyObject *self, PyObject *key, PyObject *value)
     uint32_t flag;
     int x;
 
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     if (value == NULL) {
         return value_error_int("signal keys cannot be deleted");
     }
 
-    flag = exception_as_flag(key);
+    flag = exception_as_flag(state, key);
     if (flag & DEC_ERRORS) {
         return -1;
     }
@@ -702,7 +699,7 @@ signaldict_repr(PyObject *self)
 
     assert(SIGNAL_MAP_LEN == 9);
 
-    decimal_state *state = GLOBAL_STATE();
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     for (cm=state->signal_map, i=0; cm->name != NULL; cm++, i++) {
         n[i] = cm->fqname;
         b[i] = SdFlags(self)&cm->flag ? "True" : "False";
@@ -729,7 +726,7 @@ signaldict_richcompare(PyObject *v, PyObject *w, int op)
             res = (SdFlags(v)==SdFlags(w)) ^ (op==Py_NE) ? Py_True : Py_False;
         }
         else if (PyDict_Check(w)) {
-            uint32_t flags = dict_as_flags(w);
+            uint32_t flags = dict_as_flags(state, w);
             if (flags & DEC_ERRORS) {
                 if (flags & DEC_INVALID_SIGNALS) {
                     /* non-comparable: Py_NotImplemented */
@@ -751,7 +748,8 @@ signaldict_richcompare(PyObject *v, PyObject *w, int op)
 static PyObject *
 signaldict_copy(PyObject *self, PyObject *args UNUSED)
 {
-    return flags_as_dict(SdFlags(self));
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    return flags_as_dict(state, SdFlags(self));
 }
 
 
@@ -1038,8 +1036,8 @@ context_settraps_list(PyObject *self, PyObject *value)
 {
     mpd_context_t *ctx;
     uint32_t flags;
-
-    flags = list_as_flags(value);
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    flags = list_as_flags(state, value);
     if (flags & DEC_ERRORS) {
         return -1;
     }
@@ -1063,7 +1061,7 @@ context_settraps_dict(PyObject *self, PyObject *value)
         flags = SdFlags(value);
     }
     else {
-        flags = dict_as_flags(value);
+        flags = dict_as_flags(state, value);
         if (flags & DEC_ERRORS) {
             return -1;
         }
@@ -1103,8 +1101,9 @@ context_setstatus_list(PyObject *self, PyObject *value)
 {
     mpd_context_t *ctx;
     uint32_t flags;
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
 
-    flags = list_as_flags(value);
+    flags = list_as_flags(state, value);
     if (flags & DEC_ERRORS) {
         return -1;
     }
@@ -1128,7 +1127,7 @@ context_setstatus_dict(PyObject *self, PyObject *value)
         flags = SdFlags(value);
     }
     else {
-        flags = dict_as_flags(value);
+        flags = dict_as_flags(state, value);
         if (flags & DEC_ERRORS) {
             return -1;
         }
@@ -1542,14 +1541,15 @@ context_reduce(PyObject *self, PyObject *args UNUSED)
     PyObject *traps;
     PyObject *ret;
     mpd_context_t *ctx;
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
 
     ctx = CTX(self);
 
-    flags = signals_as_list(ctx->status);
+    flags = signals_as_list(state, ctx->status);
     if (flags == NULL) {
         return NULL;
     }
-    traps = signals_as_list(ctx->traps);
+    traps = signals_as_list(state, ctx->traps);
     if (traps == NULL) {
         Py_DECREF(flags);
         return NULL;
@@ -6098,10 +6098,8 @@ error:
     Py_CLEAR(collections); /* GCOV_NOT_REACHED */
     Py_CLEAR(collections_abc); /* GCOV_NOT_REACHED */
     Py_CLEAR(MutableMapping); /* GCOV_NOT_REACHED */
-    PyMem_Free(state->signal_map); /* GCOV_NOT_REACHED */
-    PyMem_Free(state->cond_map); /* GCOV_NOT_REACHED */
 
-    return -1; /* GCOV_NOT_REACHED */
+    return -1;
 }
 
 static int
@@ -6128,6 +6126,7 @@ decimal_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->extended_context_template);
     Py_VISIT(state->Rational);
     Py_VISIT(state->SignalTuple);
+
     return 0;
 }
 
@@ -6155,6 +6154,9 @@ decimal_clear(PyObject *module)
     Py_CLEAR(state->extended_context_template);
     Py_CLEAR(state->Rational);
     Py_CLEAR(state->SignalTuple);
+
+    PyMem_Free(state->signal_map);
+    PyMem_Free(state->cond_map);
     return 0;
 }
 
