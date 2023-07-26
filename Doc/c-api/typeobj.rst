@@ -1176,7 +1176,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    .. c:macro:: Py_TPFLAGS_ITEMS_AT_END
 
       Only usable with variable-size types, i.e. ones with non-zero
-      :c:member:`~PyObject.tp_itemsize`.
+      :c:member:`~PyTypeObject.tp_itemsize`.
 
       Indicates that the variable-sized portion of an instance of this type is
       at the end of the instance's memory area, at an offset of
