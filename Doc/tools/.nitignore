@@ -37,7 +37,6 @@ Doc/c-api/type.rst
 Doc/c-api/typehints.rst
 Doc/c-api/typeobj.rst
 Doc/c-api/unicode.rst
-Doc/c-api/veryhigh.rst
 Doc/extending/embedding.rst
 Doc/extending/extending.rst
 Doc/extending/newtypes.rst
