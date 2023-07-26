@@ -23,7 +23,7 @@ any other object.
 .. c:function:: PyObject *PyMemoryView_FromMemory(char *mem, Py_ssize_t size, int flags)
 
    Create a memoryview object using *mem* as the underlying buffer.
-   *flags* can be one of :c:macro:`PyBUF_READ` or :c:macro:`PyBUF_WRITE`.
+   *flags* can be one of :c:macro:`!PyBUF_READ` or :c:macro:`!PyBUF_WRITE`.
 
    .. versionadded:: 3.3
 

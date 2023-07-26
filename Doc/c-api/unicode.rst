@@ -1414,8 +1414,8 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    * :c:data:`Py_True` or :c:data:`Py_False` for successful comparisons
    * :c:data:`Py_NotImplemented` in case the type combination is unknown
 
-   Possible values for *op* are :c:macro:`Py_GT`, :c:macro:`Py_GE`, :c:macro:`Py_EQ`,
-   :c:macro:`Py_NE`, :c:macro:`Py_LT`, and :c:macro:`Py_LE`.
+   Possible values for *op* are :c:macro:`!Py_GT`, :c:macro:`!Py_GE`, :c:macro:`!Py_EQ`,
+   :c:macro:`!Py_NE`, :c:macro:`!Py_LT`, and :c:macro:`!Py_LE`.
 
 
 .. c:function:: PyObject* PyUnicode_Format(PyObject *format, PyObject *args)
