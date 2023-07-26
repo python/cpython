@@ -884,7 +884,7 @@ exception_unwind:
             PyObject *exc = _PyErr_GetRaisedException(tstate);
             PUSH(exc);
             JUMPTO(handler);
-            if (monitor_handled(tstate, frame, next_instr, exc)) {
+            if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
                 goto exception_unwind;
             }
             /* Resume normal execution */
@@ -1925,9 +1925,6 @@ do_monitor_exc(PyThreadState *tstate, _PyInterpreterFrame *frame,
     }
     else {
         assert(PyErr_Occurred());
-        // Discard new exception.
-        // Py_DECREF(PyErr_GetRaisedException());
-        // PyErr_SetRaisedException(exc);
         Py_DECREF(exc);
     }
     return err;

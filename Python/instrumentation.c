@@ -707,8 +707,8 @@ remove_tools(PyCodeObject * code, int offset, int event, int tools)
 {
     assert(event != PY_MONITORING_EVENT_LINE);
     assert(event != PY_MONITORING_EVENT_INSTRUCTION);
-    assert (event < PY_MONITORING_INSTRUMENTED_EVENTS);
-    assert(opcode_has_event( _Py_GetBaseOpcode(code, offset)));
+    assert(PY_MONITORING_IS_INSTRUMENTED_EVENT(event));
+    assert(opcode_has_event(_Py_GetBaseOpcode(code, offset)));
     _PyCoMonitoringData *monitoring = code->_co_monitoring;
     if (monitoring && monitoring->tools) {
         monitoring->tools[offset] &= ~tools;
@@ -763,7 +763,7 @@ add_tools(PyCodeObject * code, int offset, int event, int tools)
 {
     assert(event != PY_MONITORING_EVENT_LINE);
     assert(event != PY_MONITORING_EVENT_INSTRUCTION);
-    assert(event < PY_MONITORING_INSTRUMENTED_EVENTS);
+    assert(PY_MONITORING_IS_INSTRUMENTED_EVENT(event));
     assert(code->_co_monitoring);
     if (code->_co_monitoring &&
         code->_co_monitoring->tools
@@ -903,7 +903,7 @@ get_tools_for_instruction(PyCodeObject *code, PyInterpreterState *interp, int i,
                 event == PY_MONITORING_EVENT_C_RETURN);
         event = PY_MONITORING_EVENT_CALL;
     }
-    if (event < PY_MONITORING_INSTRUMENTED_EVENTS) {
+    if (PY_MONITORING_IS_INSTRUMENTED_EVENT(event)) {
         CHECK(is_version_up_to_date(code, interp));
         CHECK(instrumentation_cross_checks(interp, code));
         if (code->_co_monitoring->tools) {
@@ -987,7 +987,7 @@ call_instrumentation_vector(
         }
         else {
             /* DISABLE */
-            if (event >= PY_MONITORING_INSTRUMENTED_EVENTS) {
+            if (!PY_MONITORING_IS_INSTRUMENTED_EVENT(event)) {
                 PyErr_Format(PyExc_ValueError,
                               "Cannot disable %s events. Callback removed.",
                              event_names[event]);
@@ -1276,7 +1276,7 @@ initialize_tools(PyCodeObject *code)
                     assert(event > 0);
                 }
                 assert(event >= 0);
-                assert(event < PY_MONITORING_INSTRUMENTED_EVENTS);
+                assert(PY_MONITORING_IS_INSTRUMENTED_EVENT(event));
                 tools[i] = code->_co_monitoring->active_monitors.tools[event];
                 CHECK(tools[i] != 0);
             }
