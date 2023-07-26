@@ -1491,7 +1491,7 @@ Some of the changes to Python's build process and to the C API are:
   though that processor architecture doesn't call that register "the TSC
   register".  (Contributed by Jeremy Hylton.)
 
-* The :c:type:`tracebackobject` type has been renamed to
+* The :c:type:`!tracebackobject` type has been renamed to
   :c:type:`PyTracebackObject`.
 
 .. ======================================================================

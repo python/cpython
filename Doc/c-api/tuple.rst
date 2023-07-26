@@ -111,6 +111,8 @@ Tuple Objects
    raises :exc:`MemoryError` or :exc:`SystemError`.
 
 
+.. _struct-sequence-objects:
+
 Struct Sequence Objects
 -----------------------
 

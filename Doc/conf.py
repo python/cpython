@@ -108,6 +108,10 @@ nitpick_ignore = [
     ('c:type', 'uintmax_t'),
     ('c:type', 'va_list'),
     ('c:type', 'wchar_t'),
+    ('c:struct', 'in6_addr'),
+    ('c:struct', 'in_addr'),
+    ('c:struct', 'stat'),
+    ('c:struct', 'statvfs'),
     # Standard C macros
     ('c:macro', 'LLONG_MAX'),
     ('c:macro', 'LLONG_MIN'),
