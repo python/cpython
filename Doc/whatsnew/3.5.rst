@@ -2533,7 +2533,7 @@ Changes in the C API
 
 * As part of the :pep:`492` implementation, the ``tp_reserved`` slot of
   :c:type:`PyTypeObject` was replaced with a
-  :c:member:`tp_as_async` slot.  Refer to :ref:`coro-objects` for
+  :c:member:`~PyTypeObject.tp_as_async` slot.  Refer to :ref:`coro-objects` for
   new types, structures and functions.
 
 
