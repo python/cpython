@@ -243,6 +243,11 @@ The CLI supports the following options:
    The list of files to process.
 
 
+.. _clinic-classes:
+
+Classes for extending Argument Clinic
+-------------------------------------
+
 .. module:: clinic
 
 .. class:: CConverter
