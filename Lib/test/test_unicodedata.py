@@ -97,12 +97,57 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         result = h.hexdigest()
         self.assertEqual(result, self.expectedchecksum)
 
+    @requires_resource('network')
+    def test_name(self):
+        TESTBASEURL = "https://www.unicode.org/Public"
+        TESTDATAFILE = "extracted/DerivedName.txt"
+        TESTDATAURL = f"{TESTBASEURL}/{unicodedata.unidata_version}/ucd/{TESTDATAFILE}"
+
+        # Hit the exception early
+        try:
+            testdata = open_urlresource(TESTDATAURL, encoding="utf-8")
+        except PermissionError:
+            self.skipTest(f"Permission error when downloading {TESTDATAURL} "
+                          f"into the test data directory")
+        except (OSError, HTTPException) as exc:
+            self.skipTest(f"Failed to download {TESTDATAURL}: {exc}")
+
+        with testdata:
+            self.run_name_tests(testdata)
+
+    def run_name_tests(self, testdata):
+        names_ref = {}
+
+        def parse_cp(s):
+            return int(s, 16)
+
+        # Parse data
+        for line in testdata:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            raw_cp, name = line.split("; ")
+            # Check for a range
+            if ".." in raw_cp:
+                cp1, cp2 = map(parse_cp, raw_cp.split(".."))
+                # remove ‘*’ at the end
+                name = name[:-1]
+                for cp in range(cp1, cp2 + 1):
+                    names_ref[cp] = f"{name}{cp:0>4X}"
+            else:
+                cp = parse_cp(raw_cp)
+                names_ref[cp] = name
+
+        for cp in range(0, sys.maxunicode + 1):
+            self.assertEqual(self.db.name(chr(cp), None), names_ref.get(cp))
+
     @requires_resource('cpu')
     def test_name_inverse_lookup(self):
         for i in range(sys.maxunicode + 1):
             char = chr(i)
             if looked_name := self.db.name(char, None):
                 self.assertEqual(self.db.lookup(looked_name), char)
+
 
     def test_digit(self):
         self.assertEqual(self.db.digit('A', None), None)
