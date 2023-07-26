@@ -1304,7 +1304,7 @@ function. You can create and destroy them using the following functions:
       :c:member:`PyInterpreterConfig.use_main_obmalloc` must be ``0``.
 
 
-.. c:function:: PyThreadState* Py_NewInterpreter()
+.. c:function:: PyThreadState* Py_NewInterpreterFromConfig(PyInterpreterConfig *config)
 
    .. index::
       pair: module; builtins
@@ -1313,6 +1313,10 @@ function. You can create and destroy them using the following functions:
       single: stdout (in module sys)
       single: stderr (in module sys)
       single: stdin (in module sys)
+
+   Create a new sub-interpreter using the given config.  This is like
+   :c:func:`Py_NewInterpreter` except you control the options with which
+   the interpreter is initialized.
 
    Create a new sub-interpreter.  This is an (almost) totally separate environment
    for the execution of Python code.  In particular, the new interpreter has
@@ -1334,6 +1338,27 @@ function. You can create and destroy them using the following functions:
    calling this function and is still held when it returns; however, unlike most
    other Python/C API functions, there needn't be a current thread state on
    entry.)
+
+   .. versionadded:: 3.12
+
+   Sub-interpreters are most effective when isolated from each other,
+   with certain functionality restricted::
+
+      PyInterpreterConfig config = {
+          .use_main_obmalloc = 0,
+          .allow_fork = 0,
+          .allow_exec = 0,
+          .allow_threads = 1,
+          .allow_daemon_threads = 0,
+          .check_multi_interp_extensions = 1,
+          .gil = PyInterpreterConfig_OWN_GIL,
+      };
+      PyThreadState *tstate = Py_NewInterpreterFromConfig(&config);
+
+   Note that the config is used only briefly and does not get modified.
+   During initialization the config's values are converted into various
+   :c:type:`PyInterpreterState` values.  A read-only copy of the config
+   may be stored internally on the :c:type:`PyInterpreterState`.
 
    .. index::
       single: Py_FinalizeEx()
@@ -1366,6 +1391,24 @@ function. You can create and destroy them using the following functions:
       and global variables are shared between these modules.
 
    .. index:: single: close() (in module os)
+
+
+.. c:function:: PyThreadState* Py_NewInterpreter()
+
+   .. index::
+      pair: module; builtins
+      pair: module; __main__
+      pair: module; sys
+      single: stdout (in module sys)
+      single: stderr (in module sys)
+      single: stdin (in module sys)
+
+   Create a new sub-interpreter.  This is essentially just a wrapper
+   around :c:func:`Py_NewInterpreterFromConfig` with a config that
+   preserves the existing behavior.  The result is an unisolated
+   sub-interpreter that shares the main interpreter's GIL, allows
+   fork/exec, allows daemon threads, and allows single-phase init
+   modules.
 
 
 .. c:function:: void Py_EndInterpreter(PyThreadState *tstate)
