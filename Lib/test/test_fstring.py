@@ -13,9 +13,10 @@ import re
 import types
 import decimal
 import unittest
+import warnings
 from test import support
 from test.support.os_helper import temp_cwd
-from test.support.script_helper import assert_python_failure
+from test.support.script_helper import assert_python_failure, assert_python_ok
 
 a_global = 'global variable'
 
@@ -495,6 +496,24 @@ x = (
         self.assertEqual(wat2.end_col_offset, 17)
         self.assertEqual(fstring.end_col_offset, 18)
 
+    def test_ast_fstring_empty_format_spec(self):
+        expr = "f'{expr:}'"
+
+        mod = ast.parse(expr)
+        self.assertEqual(type(mod), ast.Module)
+        self.assertEqual(len(mod.body), 1)
+
+        fstring = mod.body[0].value
+        self.assertEqual(type(fstring), ast.JoinedStr)
+        self.assertEqual(len(fstring.values), 1)
+
+        fv = fstring.values[0]
+        self.assertEqual(type(fv), ast.FormattedValue)
+
+        format_spec = fv.format_spec
+        self.assertEqual(type(format_spec), ast.JoinedStr)
+        self.assertEqual(len(format_spec.values), 0)
+
     def test_docstring(self):
         def f():
             f'''Not a docstring'''
@@ -772,7 +791,7 @@ x = (
         self.assertEqual(f'{CustomFormat():\n}', '\n')
         self.assertEqual(f'{CustomFormat():\u2603}', '☃')
         with self.assertWarns(SyntaxWarning):
-            exec('f"{F():¯\_(ツ)_/¯}"', {'F': CustomFormat})
+            exec(r'f"{F():¯\_(ツ)_/¯}"', {'F': CustomFormat})
 
     def test_side_effect_order(self):
         class X:
@@ -904,9 +923,12 @@ x = (
         self.assertEqual(f'2\x203', '2 3')
         self.assertEqual(f'\x203', ' 3')
 
-        with self.assertWarns(DeprecationWarning):  # invalid escape sequence
+        with self.assertWarns(SyntaxWarning):  # invalid escape sequence
             value = eval(r"f'\{6*7}'")
         self.assertEqual(value, '\\42')
+        with self.assertWarns(SyntaxWarning):  # invalid escape sequence
+            value = eval(r"f'\g'")
+        self.assertEqual(value, '\\g')
         self.assertEqual(f'\\{6*7}', '\\42')
         self.assertEqual(fr'\{6*7}', '\\42')
 
@@ -1034,7 +1056,7 @@ x = (
         ]
         for case, expected_result in deprecated_cases:
             with self.subTest(case=case, expected_result=expected_result):
-                with self.assertWarns(DeprecationWarning):
+                with self.assertWarns(SyntaxWarning):
                     result = eval(case)
                 self.assertEqual(result, expected_result)
         self.assertEqual(fr'\{{\}}', '\\{\\}')
@@ -1042,6 +1064,12 @@ x = (
         self.assertEqual(fr'\{{{1+1}', '\\{2')
         self.assertEqual(fr'\}}{1+1}', '\\}2')
         self.assertEqual(fr'{1+1}\}}', '2\\}')
+
+    def test_fstring_backslash_before_double_bracket_warns_once(self):
+        with self.assertWarns(SyntaxWarning) as w:
+            eval(r"f'\{{'")
+        self.assertEqual(len(w.warnings), 1)
+        self.assertEqual(w.warnings[0].category, SyntaxWarning)
 
     def test_fstring_backslash_prefix_raw(self):
         self.assertEqual(f'\\', '\\')
@@ -1631,6 +1659,19 @@ sdfsdfs{1+
                                 "f'{1=}{1;'",
                                 "f'{1=}{1;}'",
                             ])
+
+    def test_debug_in_file(self):
+        with temp_cwd():
+            script = 'script.py'
+            with open('script.py', 'w') as f:
+                f.write(f"""\
+print(f'''{{
+3
+=}}''')""")
+
+            _, stdout, _ = assert_python_ok(script)
+        self.assertEqual(stdout.decode('utf-8').strip().replace('\r\n', '\n').replace('\r', '\n'),
+                         "3\n=3")
 
 if __name__ == '__main__':
     unittest.main()

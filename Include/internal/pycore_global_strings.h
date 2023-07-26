@@ -51,7 +51,6 @@ struct _Py_global_strings {
         STRUCT_FOR_STR(newline, "\n")
         STRUCT_FOR_STR(open_br, "{")
         STRUCT_FOR_STR(percent, "%")
-        STRUCT_FOR_STR(shim_name, "<shim>")
         STRUCT_FOR_STR(type_params, ".type_params")
         STRUCT_FOR_STR(utf_8, "utf-8")
     } literals;
@@ -158,6 +157,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(__lshift__)
         STRUCT_FOR_ID(__lt__)
         STRUCT_FOR_ID(__main__)
+        STRUCT_FOR_ID(__match_args__)
         STRUCT_FOR_ID(__matmul__)
         STRUCT_FOR_ID(__missing__)
         STRUCT_FOR_ID(__mod__)

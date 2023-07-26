@@ -1813,13 +1813,16 @@ def run_in_subinterp(code):
     return _testcapi.run_in_subinterp(code)
 
 
-def run_in_subinterp_with_config(code, **config):
+def run_in_subinterp_with_config(code, *, own_gil=None, **config):
     """
     Run code in a subinterpreter. Raise unittest.SkipTest if the tracemalloc
     module is enabled.
     """
     _check_tracemalloc()
     import _testcapi
+    if own_gil is not None:
+        assert 'gil' not in config, (own_gil, config)
+        config['gil'] = 2 if own_gil else 1
     return _testcapi.run_in_subinterp_with_config(code, **config)
 
 
