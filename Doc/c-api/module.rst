@@ -164,7 +164,7 @@ or request "multi-phase initialization" by returning the definition struct itsel
 
       This memory area is allocated based on *m_size* on module creation,
       and freed when the module object is deallocated, after the
-      :c:member:`m_free` function has been called, if present.
+      :c:member:`~PyModuleDef.m_free` function has been called, if present.
 
       Setting ``m_size`` to ``-1`` means that the module does not support
       sub-interpreters, because it has global state.
@@ -202,7 +202,7 @@ or request "multi-phase initialization" by returning the definition struct itsel
       This function is not called if the module state was requested but is not
       allocated yet. This is the case immediately after the module is created
       and before the module is executed (:c:data:`Py_mod_exec` function). More
-      precisely, this function is not called if :c:member:`m_size` is greater
+      precisely, this function is not called if :c:member:`~PyModuleDef.m_size` is greater
       than 0 and the module state (as returned by :c:func:`PyModule_GetState`)
       is ``NULL``.
 
@@ -217,7 +217,7 @@ or request "multi-phase initialization" by returning the definition struct itsel
       This function is not called if the module state was requested but is not
       allocated yet. This is the case immediately after the module is created
       and before the module is executed (:c:data:`Py_mod_exec` function). More
-      precisely, this function is not called if :c:member:`m_size` is greater
+      precisely, this function is not called if :c:member:`~PyModuleDef.m_size` is greater
       than 0 and the module state (as returned by :c:func:`PyModule_GetState`)
       is ``NULL``.
 
@@ -238,7 +238,7 @@ or request "multi-phase initialization" by returning the definition struct itsel
       This function is not called if the module state was requested but is not
       allocated yet. This is the case immediately after the module is created
       and before the module is executed (:c:data:`Py_mod_exec` function). More
-      precisely, this function is not called if :c:member:`m_size` is greater
+      precisely, this function is not called if :c:member:`~PyModuleDef.m_size` is greater
       than 0 and the module state (as returned by :c:func:`PyModule_GetState`)
       is ``NULL``.
 
