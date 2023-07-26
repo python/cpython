@@ -25,7 +25,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
 #include "pycore_strhex.h"        // _Py_strhex()
-#include "structmember.h"         // PyMemberDef
+
 #include "hashlib.h"
 
 /*[clinic input]
@@ -45,7 +45,7 @@ class SHA512Type "SHA512object *" "&PyType_Type"
 
 /* Our SHA2 implementations defer to the HACL* verified library. */
 
-#include "_hacl/Hacl_Streaming_SHA2.h"
+#include "_hacl/Hacl_Hash_SHA2.h"
 
 // TODO: Get rid of int digestsize in favor of Hacl state info?
 

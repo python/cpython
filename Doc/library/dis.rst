@@ -188,9 +188,9 @@ operation is being performed, so the intermediate analysis object isn't useful:
    For a module, it disassembles all functions. For a class, it disassembles
    all methods (including class and static methods). For a code object or
    sequence of raw bytecode, it prints one line per bytecode instruction.
-   It also recursively disassembles nested code objects (the code of
-   comprehensions, generator expressions and nested functions, and the code
-   used for building nested classes).
+   It also recursively disassembles nested code objects. These can include
+   generator expressions, nested functions, the bodies of nested classes,
+   and the code objects used for :ref:`annotation scopes <annotation-scopes>`.
    Strings are first compiled to code objects with the :func:`compile`
    built-in function before being disassembled.  If no object is provided, this
    function disassembles the last traceback.
@@ -318,6 +318,12 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.8
       Added *jump* parameter.
 
+   .. versionchanged:: 3.13
+      If ``oparg`` is omitted (or ``None``), the stack effect is now returned
+      for ``oparg=0``. Previously this was an error for opcodes that use their
+      arg. It is also no longer an error to pass an integer ``oparg`` when
+      the ``opcode`` does not use it; the ``oparg`` in this case is ignored.
+
 
 .. _bytecodes:
 
@@ -342,10 +348,25 @@ details of bytecode instructions as :class:`Instruction` instances:
       human readable name for operation
 
 
+   .. data:: baseopcode
+
+      numeric code for the base operation if operation is specialized;
+      otherwise equal to :data:`opcode`
+
+
+   .. data:: baseopname
+
+      human readable name for the base operation if operation is specialized;
+      otherwise equal to :data:`opname`
+
+
    .. data:: arg
 
       numeric argument to operation (if any), otherwise ``None``
 
+   .. data:: oparg
+
+      alias for :data:`arg`
 
    .. data:: argval
 
@@ -363,6 +384,22 @@ details of bytecode instructions as :class:`Instruction` instances:
       start index of operation within bytecode sequence
 
 
+   .. data:: start_offset
+
+      start index of operation within bytecode sequence, including prefixed
+      ``EXTENDED_ARG`` operations if present; otherwise equal to :data:`offset`
+
+
+   .. data:: cache_offset
+
+      start index of the cache entries following the operation
+
+
+   .. data:: end_offset
+
+      end index of the cache entries following the operation
+
+
    .. data:: starts_line
 
       line started by this opcode (if any), otherwise ``None``
@@ -371,6 +408,12 @@ details of bytecode instructions as :class:`Instruction` instances:
    .. data:: is_jump_target
 
       ``True`` if other code jumps to here, otherwise ``False``
+
+
+   .. data:: jump_target
+
+      bytecode index of the jump target if this is a jump operation,
+      otherwise ``None``
 
 
    .. data:: positions
@@ -383,6 +426,11 @@ details of bytecode instructions as :class:`Instruction` instances:
    .. versionchanged:: 3.11
 
       Field ``positions`` is added.
+
+   .. versionchanged:: 3.13
+
+      Added fields ``start_offset``, ``cache_offset``, ``end_offset``,
+      ``baseopname``, ``baseopcode``, ``jump_target`` and ``oparg``.
 
 
 .. class:: Positions
@@ -481,6 +529,9 @@ result back on the stack.
 
    Implements ``STACK[-1] = not STACK[-1]``.
 
+   .. versionchanged:: 3.13
+      This instruction now requires an exact :class:`bool` operand.
+
 
 .. opcode:: UNARY_INVERT
 
@@ -498,6 +549,13 @@ result back on the stack.
    it is left as is.  Otherwise, implements ``STACK[-1] = iter(STACK[-1])``.
 
    .. versionadded:: 3.5
+
+
+.. opcode:: TO_BOOL
+
+   Implements ``STACK[-1] = bool(STACK[-1])``.
+
+   .. versionadded:: 3.13
 
 
 **Binary and in-place operations**
@@ -818,7 +876,7 @@ iterations of the loop.
 .. opcode:: MATCH_MAPPING
 
    If ``STACK[-1]`` is an instance of :class:`collections.abc.Mapping` (or, more
-   technically: if it has the :const:`Py_TPFLAGS_MAPPING` flag set in its
+   technically: if it has the :c:macro:`Py_TPFLAGS_MAPPING` flag set in its
    :c:member:`~PyTypeObject.tp_flags`), push ``True`` onto the stack.  Otherwise,
    push ``False``.
 
@@ -829,7 +887,7 @@ iterations of the loop.
 
    If ``STACK[-1]`` is an instance of :class:`collections.abc.Sequence` and is *not* an instance
    of :class:`str`/:class:`bytes`/:class:`bytearray` (or, more technically: if it has
-   the :const:`Py_TPFLAGS_SEQUENCE` flag set in its :c:member:`~PyTypeObject.tp_flags`),
+   the :c:macro:`Py_TPFLAGS_SEQUENCE` flag set in its :c:member:`~PyTypeObject.tp_flags`),
    push ``True`` onto the stack.  Otherwise, push ``False``.
 
    .. versionadded:: 3.10
@@ -926,6 +984,27 @@ iterations of the loop.
 .. opcode:: LOAD_NAME (namei)
 
    Pushes the value associated with ``co_names[namei]`` onto the stack.
+   The name is looked up within the locals, then the globals, then the builtins.
+
+
+.. opcode:: LOAD_LOCALS
+
+   Pushes a reference to the locals dictionary onto the stack.  This is used
+   to prepare namespace dictionaries for :opcode:`LOAD_FROM_DICT_OR_DEREF`
+   and :opcode:`LOAD_FROM_DICT_OR_GLOBALS`.
+
+   .. versionadded:: 3.12
+
+
+.. opcode:: LOAD_FROM_DICT_OR_GLOBALS (i)
+
+   Pops a mapping off the stack and looks up the value for ``co_names[namei]``.
+   If the name is not found there, looks it up in the globals and then the builtins,
+   similar to :opcode:`LOAD_GLOBAL`.
+   This is used for loading global variables in
+   :ref:`annotation scopes <annotation-scopes>` within class bodies.
+
+   .. versionadded:: 3.12
 
 
 .. opcode:: BUILD_TUPLE (count)
@@ -1058,7 +1137,12 @@ iterations of the loop.
 .. opcode:: COMPARE_OP (opname)
 
    Performs a Boolean operation.  The operation name can be found in
-   ``cmp_op[opname]``.
+   ``cmp_op[opname >> 5]``. If the fifth-lowest bit of ``opname`` is set
+   (``opname & 16``), the result should be coerced to ``bool``.
+
+   .. versionchanged:: 3.13
+      The fifth-lowest bit of the oparg now indicates a forced conversion to
+      :class:`bool`.
 
 
 .. opcode:: IS_OP (invert)
@@ -1122,6 +1206,9 @@ iterations of the loop.
    .. versionchanged:: 3.12
       This is no longer a pseudo-instruction.
 
+   .. versionchanged:: 3.13
+      This instruction now requires an exact :class:`bool` operand.
+
 .. opcode:: POP_JUMP_IF_FALSE (delta)
 
    If ``STACK[-1]`` is false, increments the bytecode counter by *delta*.
@@ -1134,6 +1221,9 @@ iterations of the loop.
 
    .. versionchanged:: 3.12
       This is no longer a pseudo-instruction.
+
+   .. versionchanged:: 3.13
+      This instruction now requires an exact :class:`bool` operand.
 
 .. opcode:: POP_JUMP_IF_NOT_NONE (delta)
 
@@ -1222,18 +1312,6 @@ iterations of the loop.
    .. versionadded:: 3.11
 
 
-.. opcode:: LOAD_CLOSURE (i)
-
-   Pushes a reference to the cell contained in slot ``i`` of the "fast locals"
-   storage.  The name of the variable is ``co_fastlocalnames[i]``.
-
-   Note that ``LOAD_CLOSURE`` is effectively an alias for ``LOAD_FAST``.
-   It exists to keep bytecode a little more readable.
-
-   .. versionchanged:: 3.11
-      ``i`` is no longer offset by the length of ``co_varnames``.
-
-
 .. opcode:: LOAD_DEREF (i)
 
    Loads the cell contained in slot ``i`` of the "fast locals" storage.
@@ -1243,16 +1321,17 @@ iterations of the loop.
       ``i`` is no longer offset by the length of ``co_varnames``.
 
 
-.. opcode:: LOAD_CLASSDEREF (i)
+.. opcode:: LOAD_FROM_DICT_OR_DEREF (i)
 
-   Much like :opcode:`LOAD_DEREF` but first checks the locals dictionary before
-   consulting the cell.  This is used for loading free variables in class
-   bodies.
+   Pops a mapping off the stack and looks up the name associated with
+   slot ``i`` of the "fast locals" storage in this mapping.
+   If the name is not found there, loads it from the cell contained in
+   slot ``i``, similar to :opcode:`LOAD_DEREF`. This is used for loading
+   free variables in class bodies (which previously used
+   :opcode:`!LOAD_CLASSDEREF`) and in
+   :ref:`annotation scopes <annotation-scopes>` within class bodies.
 
-   .. versionadded:: 3.4
-
-   .. versionchanged:: 3.11
-      ``i`` is no longer offset by the length of ``co_varnames``.
+   .. versionadded:: 3.12
 
 
 .. opcode:: STORE_DEREF (i)
@@ -1357,21 +1436,35 @@ iterations of the loop.
    .. versionadded:: 3.11
 
 
-.. opcode:: MAKE_FUNCTION (flags)
+.. opcode:: MAKE_FUNCTION
 
-   Pushes a new function object on the stack.  From bottom to top, the consumed
-   stack must consist of values if the argument carries a specified flag value
+   Pushes a new function object on the stack built from the code object at ``STACK[1]``.
+
+   .. versionchanged:: 3.10
+      Flag value ``0x04`` is a tuple of strings instead of dictionary
+
+   .. versionchanged:: 3.11
+      Qualified name at ``STACK[-1]`` was removed.
+
+   .. versionchanged:: 3.13
+      Extra function attributes on the stack, signaled by oparg flags, were
+      removed. They now use :opcode:`SET_FUNCTION_ATTRIBUTE`.
+
+
+.. opcode:: SET_FUNCTION_ATTRIBUTE (flag)
+
+   Sets an attribute on a function object. Expects the function at ``STACK[-1]``
+   and the attribute value to set at ``STACK[-2]``; consumes both and leaves the
+   function at ``STACK[-1]``. The flag determines which attribute to set:
 
    * ``0x01`` a tuple of default values for positional-only and
      positional-or-keyword parameters in positional order
    * ``0x02`` a dictionary of keyword-only parameters' default values
    * ``0x04`` a tuple of strings containing parameters' annotations
    * ``0x08`` a tuple containing cells for free variables, making a closure
-   * the code associated with the function (at ``STACK[-2]``)
-   * the :term:`qualified name` of the function (at ``STACK[-1]``)
 
-   .. versionchanged:: 3.10
-      Flag value ``0x04`` is a tuple of strings instead of dictionary
+   .. versionadded:: 3.13
+
 
 .. opcode:: BUILD_SLICE (argc)
 
@@ -1401,26 +1494,47 @@ iterations of the loop.
    an argument from two-byte to four-byte.
 
 
-.. opcode:: FORMAT_VALUE (flags)
+.. opcode:: CONVERT_VALUE (oparg)
 
-   Used for implementing formatted literal strings (f-strings).  Pops
-   an optional *fmt_spec* from the stack, then a required *value*.
-   *flags* is interpreted as follows:
+   Convert value to a string, depending on ``oparg``::
 
-   * ``(flags & 0x03) == 0x00``: *value* is formatted as-is.
-   * ``(flags & 0x03) == 0x01``: call :func:`str` on *value* before
-     formatting it.
-   * ``(flags & 0x03) == 0x02``: call :func:`repr` on *value* before
-     formatting it.
-   * ``(flags & 0x03) == 0x03``: call :func:`ascii` on *value* before
-     formatting it.
-   * ``(flags & 0x04) == 0x04``: pop *fmt_spec* from the stack and use
-     it, else use an empty *fmt_spec*.
+      value = STACK.pop()
+      result = func(value)
+      STACK.push(result)
 
-   Formatting is performed using :c:func:`PyObject_Format`.  The
-   result is pushed on the stack.
+   * ``oparg == 1``: call :func:`str` on *value*
+   * ``oparg == 2``: call :func:`repr` on *value*
+   * ``oparg == 3``: call :func:`ascii` on *value*
 
-   .. versionadded:: 3.6
+   Used for implementing formatted literal strings (f-strings).
+
+   .. versionadded:: 3.13
+
+
+.. opcode:: FORMAT_SIMPLE
+
+   Formats the value on top of stack::
+
+      value = STACK.pop()
+      result = value.__format__("")
+      STACK.push(result)
+
+   Used for implementing formatted literal strings (f-strings).
+
+   .. versionadded:: 3.13
+
+.. opcode:: FORMAT_SPEC
+
+   Formats the given value with the given format spec::
+
+      spec = STACK.pop()
+      value = STACK.pop()
+      result = value.__format__(spec)
+      STACK.push(result)
+
+   Used for implementing formatted literal strings (f-strings).
+
+   .. versionadded:: 3.13
 
 
 .. opcode:: MATCH_CLASS (count)
@@ -1504,13 +1618,45 @@ iterations of the loop.
 
    The operand determines which intrinsic function is called:
 
-   * ``0`` Not valid
-   * ``1`` Prints the argument to standard out. Used in the REPL.
-   * ``2`` Performs ``import *`` for the named module.
-   * ``3`` Extracts the return value from a ``StopIteration`` exception.
-   * ``4`` Wraps an aync generator value
-   * ``5`` Performs the unary ``+`` operation
-   * ``6`` Converts a list to a tuple
+   +-----------------------------------+-----------------------------------+
+   | Operand                           | Description                       |
+   +===================================+===================================+
+   | ``INTRINSIC_1_INVALID``           | Not valid                         |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_PRINT``               | Prints the argument to standard   |
+   |                                   | out. Used in the REPL.            |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_IMPORT_STAR``         | Performs ``import *`` for the     |
+   |                                   | named module.                     |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_STOPITERATION_ERROR`` | Extracts the return value from a  |
+   |                                   | ``StopIteration`` exception.      |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_ASYNC_GEN_WRAP``      | Wraps an aync generator value     |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_UNARY_POSITIVE``      | Performs the unary ``+``          |
+   |                                   | operation                         |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_LIST_TO_TUPLE``       | Converts a list to a tuple        |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_TYPEVAR``             | Creates a :class:`typing.TypeVar` |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_PARAMSPEC``           | Creates a                         |
+   |                                   | :class:`typing.ParamSpec`         |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_TYPEVARTUPLE``        | Creates a                         |
+   |                                   | :class:`typing.TypeVarTuple`      |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_SUBSCRIPT_GENERIC``   | Returns :class:`typing.Generic`   |
+   |                                   | subscripted with the argument     |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_TYPEALIAS``           | Creates a                         |
+   |                                   | :class:`typing.TypeAliasType`;    |
+   |                                   | used in the :keyword:`type`       |
+   |                                   | statement. The argument is a tuple|
+   |                                   | of the type alias's name,         |
+   |                                   | type parameters, and value.       |
+   +-----------------------------------+-----------------------------------+
 
    .. versionadded:: 3.12
 
@@ -1522,8 +1668,25 @@ iterations of the loop.
 
    The operand determines which intrinsic function is called:
 
-   * ``0`` Not valid
-   * ``1`` Calculates the :exc:`ExceptionGroup` to raise from a ``try-except*``.
+   +----------------------------------------+-----------------------------------+
+   | Operand                                | Description                       |
+   +========================================+===================================+
+   | ``INTRINSIC_2_INVALID``                | Not valid                         |
+   +----------------------------------------+-----------------------------------+
+   | ``INTRINSIC_PREP_RERAISE_STAR``        | Calculates the                    |
+   |                                        | :exc:`ExceptionGroup` to raise    |
+   |                                        | from a ``try-except*``.           |
+   +----------------------------------------+-----------------------------------+
+   | ``INTRINSIC_TYPEVAR_WITH_BOUND``       | Creates a :class:`typing.TypeVar` |
+   |                                        | with a bound.                     |
+   +----------------------------------------+-----------------------------------+
+   | ``INTRINSIC_TYPEVAR_WITH_CONSTRAINTS`` | Creates a                         |
+   |                                        | :class:`typing.TypeVar` with      |
+   |                                        | constraints.                      |
+   +----------------------------------------+-----------------------------------+
+   | ``INTRINSIC_SET_FUNCTION_TYPE_PARAMS`` | Sets the ``__type_params__``      |
+   |                                        | attribute of a function.          |
+   +----------------------------------------+-----------------------------------+
 
    .. versionadded:: 3.12
 
@@ -1570,6 +1733,17 @@ but are replaced by real opcodes or removed before bytecode is generated.
 
    Undirected relative jump instructions which are replaced by their
    directed (forward/backward) counterparts by the assembler.
+
+.. opcode:: LOAD_CLOSURE (i)
+
+   Pushes a reference to the cell contained in slot ``i`` of the "fast locals"
+   storage.
+
+   Note that ``LOAD_CLOSURE`` is replaced with ``LOAD_FAST`` in the assembler.
+
+   .. versionchanged:: 3.13
+      This opcode is now a pseudo-instruction.
+
 
 .. opcode:: LOAD_METHOD
 
@@ -1629,15 +1803,12 @@ instructions:
    Sequence of bytecodes that access an attribute by name.
 
 
-.. data:: hasjrel
+.. data:: hasjump
 
-   Sequence of bytecodes that have a relative jump target.
+   Sequence of bytecodes that have a jump target. All jumps
+   are relative.
 
-
-.. data:: hasjabs
-
-   Sequence of bytecodes that have an absolute jump target.
-
+   .. versionadded:: 3.13
 
 .. data:: haslocal
 
@@ -1653,3 +1824,20 @@ instructions:
    Sequence of bytecodes that set an exception handler.
 
    .. versionadded:: 3.12
+
+
+.. data:: hasjrel
+
+   Sequence of bytecodes that have a relative jump target.
+
+   .. deprecated:: 3.13
+      All jumps are now relative. Use :data:`hasjump`.
+
+
+.. data:: hasjabs
+
+   Sequence of bytecodes that have an absolute jump target.
+
+   .. deprecated:: 3.13
+      All jumps are now relative. This list is empty.
+

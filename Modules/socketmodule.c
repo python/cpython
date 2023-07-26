@@ -105,11 +105,10 @@ Local naming conventions:
 # pragma weak inet_aton
 #endif
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_moduleobject.h"  // _PyModule_GetState
-#include "structmember.h"         // PyMemberDef
+
 
 #ifdef _Py_MEMORY_SANITIZER
 # include <sanitizer/msan_interface.h>
@@ -1717,9 +1716,6 @@ idna_converter(PyObject *obj, struct maybe_idna *data)
         len = PyByteArray_Size(obj);
     }
     else if (PyUnicode_Check(obj)) {
-        if (PyUnicode_READY(obj) == -1) {
-            return 0;
-        }
         if (PyUnicode_IS_COMPACT_ASCII(obj)) {
             data->buf = PyUnicode_DATA(obj);
             len = PyUnicode_GET_LENGTH(obj);
@@ -5209,9 +5205,9 @@ static PyMethodDef sock_methods[] = {
 
 /* SockObject members */
 static PyMemberDef sock_memberlist[] = {
-       {"family", T_INT, offsetof(PySocketSockObject, sock_family), READONLY, "the socket family"},
-       {"type", T_INT, offsetof(PySocketSockObject, sock_type), READONLY, "the socket type"},
-       {"proto", T_INT, offsetof(PySocketSockObject, sock_proto), READONLY, "the socket protocol"},
+       {"family", Py_T_INT, offsetof(PySocketSockObject, sock_family), Py_READONLY, "the socket family"},
+       {"type", Py_T_INT, offsetof(PySocketSockObject, sock_type), Py_READONLY, "the socket type"},
+       {"proto", Py_T_INT, offsetof(PySocketSockObject, sock_proto), Py_READONLY, "the socket protocol"},
        {0},
 };
 
@@ -7429,9 +7425,7 @@ socket_exec(PyObject *m)
         sock_free_api(capi);
         goto error;
     }
-    int rc = PyModule_AddObjectRef(m, PySocket_CAPI_NAME, capsule);
-    Py_DECREF(capsule);
-    if (rc < 0) {
+    if (PyModule_Add(m, PySocket_CAPI_NAME, capsule) < 0) {
         goto error;
     }
 
@@ -8822,13 +8816,7 @@ socket_exec(PyObject *m)
         };
         int i;
         for (i = 0; i < Py_ARRAY_LENGTH(codes); ++i) {
-            PyObject *tmp = PyLong_FromUnsignedLong(codes[i]);
-            if (tmp == NULL) {
-                goto error;
-            }
-            int rc = PyModule_AddObjectRef(m, names[i], tmp);
-            Py_DECREF(tmp);
-            if (rc < 0) {
+            if (PyModule_Add(m, names[i], PyLong_FromUnsignedLong(codes[i])) < 0) {
                 goto error;
             }
         }

@@ -100,7 +100,6 @@
     <ClCompile Include="..\Modules\_testcapi\heaptype.c" />
     <ClCompile Include="..\Modules\_testcapi\heaptype_relative.c" />
     <ClCompile Include="..\Modules\_testcapi\unicode.c" />
-    <ClCompile Include="..\Modules\_testcapi\pytime.c" />
     <ClCompile Include="..\Modules\_testcapi\datetime.c" />
     <ClCompile Include="..\Modules\_testcapi\docstring.c" />
     <ClCompile Include="..\Modules\_testcapi\mem.c" />

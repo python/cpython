@@ -15,6 +15,7 @@ import pickle
 import shutil
 import sys
 import types
+import tempfile
 import textwrap
 import unicodedata
 import unittest
@@ -557,7 +558,8 @@ class TestRetrievingSourceCode(GetSourceBase):
 
     def test_getfunctions(self):
         functions = inspect.getmembers(mod, inspect.isfunction)
-        self.assertEqual(functions, [('eggs', mod.eggs),
+        self.assertEqual(functions, [('after_closing', mod.after_closing),
+                                     ('eggs', mod.eggs),
                                      ('lobbest', mod.lobbest),
                                      ('spam', mod.spam)])
 
@@ -595,9 +597,40 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertEqual(finddoc(int.from_bytes), int.from_bytes.__doc__)
         self.assertEqual(finddoc(int.real), int.real.__doc__)
 
+    cleandoc_testdata = [
+        # first line should have different margin
+        (' An\n  indented\n   docstring.', 'An\nindented\n docstring.'),
+        # trailing whitespace are not removed.
+        (' An \n   \n  indented \n   docstring. ',
+         'An \n \nindented \n docstring. '),
+        # NUL is not termination.
+        ('doc\0string\n\n  second\0line\n  third\0line\0',
+         'doc\0string\n\nsecond\0line\nthird\0line\0'),
+        # first line is lstrip()-ped. other lines are kept when no margin.[w:
+        ('   ', ''),
+        # compiler.cleandoc() doesn't strip leading/trailing newlines
+        # to keep maximum backward compatibility.
+        # inspect.cleandoc() removes them.
+        ('\n\n\n  first paragraph\n\n   second paragraph\n\n',
+         '\n\n\nfirst paragraph\n\n second paragraph\n\n'),
+        ('   \n \n  \n   ', '\n \n  \n   '),
+    ]
+
     def test_cleandoc(self):
-        self.assertEqual(inspect.cleandoc('An\n    indented\n    docstring.'),
-                         'An\nindented\ndocstring.')
+        func = inspect.cleandoc
+        for i, (input, expected) in enumerate(self.cleandoc_testdata):
+            # only inspect.cleandoc() strip \n
+            expected = expected.strip('\n')
+            with self.subTest(i=i):
+                self.assertEqual(func(input), expected)
+
+    @cpython_only
+    def test_c_cleandoc(self):
+        import _testinternalcapi
+        func = _testinternalcapi.compiler_cleandoc
+        for i, (input, expected) in enumerate(self.cleandoc_testdata):
+            with self.subTest(i=i):
+                self.assertEqual(func(input), expected)
 
     def test_getcomments(self):
         self.assertEqual(inspect.getcomments(mod), '# line 1\n')
@@ -641,6 +674,7 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertSourceEqual(git.abuse, 29, 39)
         self.assertSourceEqual(mod.StupidGit, 21, 51)
         self.assertSourceEqual(mod.lobbest, 75, 76)
+        self.assertSourceEqual(mod.after_closing, 120, 120)
 
     def test_getsourcefile(self):
         self.assertEqual(normcase(inspect.getsourcefile(mod.spam)), modfile)
@@ -776,6 +810,22 @@ class TestOneliners(GetSourceBase):
         # where the second line _is_ indented.
         self.assertSourceEqual(mod2.tlli, 33, 34)
 
+    def test_parenthesized_multiline_lambda(self):
+        # Test inspect.getsource with a parenthesized multi-line lambda
+        # function.
+        self.assertSourceEqual(mod2.parenthesized_lambda, 279, 279)
+        self.assertSourceEqual(mod2.parenthesized_lambda2, 281, 281)
+        self.assertSourceEqual(mod2.parenthesized_lambda3, 283, 283)
+
+    def test_post_line_parenthesized_lambda(self):
+        # Test inspect.getsource with a parenthesized multi-line lambda
+        # function.
+        self.assertSourceEqual(mod2.post_line_parenthesized_lambda1, 286, 287)
+
+    def test_nested_lambda(self):
+        # Test inspect.getsource with a nested lambda function.
+        self.assertSourceEqual(mod2.nested_lambda, 291, 292)
+
     def test_onelinefunc(self):
         # Test inspect.getsource with a regular one-line function.
         self.assertSourceEqual(mod2.onelinefunc, 37, 37)
@@ -900,7 +950,6 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(mod2.cls196.cls200, 198, 201)
 
     def test_class_inside_conditional(self):
-        self.assertSourceEqual(mod2.cls238, 238, 240)
         self.assertSourceEqual(mod2.cls238.cls239, 239, 240)
 
     def test_multiple_children_classes(self):
@@ -915,6 +964,33 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(mod2.cls213, 218, 222)
         self.assertSourceEqual(mod2.cls213().func219(), 220, 221)
 
+    def test_class_with_method_from_other_module(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            with open(os.path.join(tempdir, 'inspect_actual%spy' % os.extsep),
+                      'w', encoding='utf-8') as f:
+                f.write(textwrap.dedent("""
+                    import inspect_other
+                    class A:
+                        def f(self):
+                            pass
+                    class A:
+                        def f(self):
+                            pass  # correct one
+                    A.f = inspect_other.A.f
+                    """))
+
+            with open(os.path.join(tempdir, 'inspect_other%spy' % os.extsep),
+                      'w', encoding='utf-8') as f:
+                f.write(textwrap.dedent("""
+                    class A:
+                        def f(self):
+                            pass
+                    """))
+
+            with DirsOnSysPath(tempdir):
+                import inspect_actual
+                self.assertIn("correct", inspect.getsource(inspect_actual.A))
+
     @unittest.skipIf(
         support.is_emscripten or support.is_wasi,
         "socket.accept is broken"
@@ -925,6 +1001,10 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(asyncio.run(mod2.func225()), 226, 227)
         self.assertSourceEqual(mod2.cls226, 231, 235)
         self.assertSourceEqual(asyncio.run(mod2.cls226().func232()), 233, 234)
+
+    def test_class_definition_same_name_diff_methods(self):
+        self.assertSourceEqual(mod2.cls296, 296, 298)
+        self.assertSourceEqual(mod2.cls310, 310, 312)
 
 class TestNoEOL(GetSourceBase):
     def setUp(self):
@@ -2766,6 +2846,11 @@ class TestSignatureObject(unittest.TestCase):
         # Regression test for issue #20586
         test_callable(_testcapi.docstring_with_signature_but_no_doc)
 
+        # Regression test for gh-104955
+        method = bytearray.__release_buffer__
+        sig = test_unbound_method(method)
+        self.assertEqual(list(sig.parameters), ['self', 'buffer'])
+
     @cpython_only
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
@@ -3903,6 +3988,24 @@ class TestSignatureObject(unittest.TestCase):
                          ((('a', ..., ..., 'positional_or_keyword'),
                            ('b', 2, ..., 'positional_or_keyword')),
                           ...))
+
+    def test_signature_on_derived_classes(self):
+        # gh-105080: Make sure that signatures are consistent on derived classes
+
+        class B:
+            def __new__(self, *args, **kwargs):
+                return super().__new__(self)
+            def __init__(self, value):
+                self.value = value
+
+        class D1(B):
+            def __init__(self, value):
+                super().__init__(value)
+
+        class D2(D1):
+            pass
+
+        self.assertEqual(inspect.signature(D2), inspect.signature(D1))
 
 
 class TestParameterObject(unittest.TestCase):

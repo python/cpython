@@ -3037,6 +3037,25 @@ class TestCachedProperty(unittest.TestCase):
     def test_doc(self):
         self.assertEqual(CachedCostItem.cost.__doc__, "The cost of the item.")
 
+    def test_subclass_with___set__(self):
+        """Caching still works for a subclass defining __set__."""
+        class readonly_cached_property(py_functools.cached_property):
+            def __set__(self, obj, value):
+                raise AttributeError("read only property")
+
+        class Test:
+            def __init__(self, prop):
+                self._prop = prop
+
+            @readonly_cached_property
+            def prop(self):
+                return self._prop
+
+        t = Test(1)
+        self.assertEqual(t.prop, 1)
+        t._prop = 999
+        self.assertEqual(t.prop, 1)
+
 
 if __name__ == '__main__':
     unittest.main()

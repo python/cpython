@@ -59,7 +59,7 @@ The module defines the following user-callable items:
    platforms, it is a file-like object whose :attr:`!file` attribute is the
    underlying true file object.
 
-   The :py:data:`os.O_TMPFILE` flag is used if it is available and works
+   The :py:const:`os.O_TMPFILE` flag is used if it is available and works
    (Linux-specific, requires Linux kernel 3.11 or later).
 
    On platforms that are neither Posix nor Cygwin, TemporaryFile is an alias
@@ -69,7 +69,7 @@ The module defines the following user-callable items:
 
    .. versionchanged:: 3.5
 
-      The :py:data:`os.O_TMPFILE` flag is now used if available.
+      The :py:const:`os.O_TMPFILE` flag is now used if available.
 
    .. versionchanged:: 3.8
       Added *errors* parameter.
