@@ -2150,7 +2150,7 @@ features:
 
    .. audit-event:: os.link src,dst,src_dir_fd,dst_dir_fd os.link
 
-   .. availability:: Unix, Windows.
+   .. availability:: Unix, Windows, not Emscripten.
 
    .. versionchanged:: 3.2
       Added Windows support.
@@ -2420,13 +2420,13 @@ features:
 .. function:: major(device, /)
 
    Extract the device major number from a raw device number (usually the
-   :attr:`st_dev` or :attr:`st_rdev` field from :c:type:`stat`).
+   :attr:`st_dev` or :attr:`st_rdev` field from :c:struct:`stat`).
 
 
 .. function:: minor(device, /)
 
    Extract the device minor number from a raw device number (usually the
-   :attr:`st_dev` or :attr:`st_rdev` field from :c:type:`stat`).
+   :attr:`st_dev` or :attr:`st_rdev` field from :c:struct:`stat`).
 
 
 .. function:: makedev(major, minor, /)
@@ -2937,7 +2937,7 @@ features:
 .. class:: stat_result
 
    Object whose attributes correspond roughly to the members of the
-   :c:type:`stat` structure. It is used for the result of :func:`os.stat`,
+   :c:struct:`stat` structure. It is used for the result of :func:`os.stat`,
    :func:`os.fstat` and :func:`os.lstat`.
 
    Attributes:
@@ -3117,12 +3117,12 @@ features:
       See the ``IO_REPARSE_TAG_*`` constants in the :mod:`stat` module.
 
    The standard module :mod:`stat` defines functions and constants that are
-   useful for extracting information from a :c:type:`stat` structure. (On
+   useful for extracting information from a :c:struct:`stat` structure. (On
    Windows, some items are filled with dummy values.)
 
    For backward compatibility, a :class:`stat_result` instance is also
    accessible as a tuple of at least 10 integers giving the most important (and
-   portable) members of the :c:type:`stat` structure, in the order
+   portable) members of the :c:struct:`stat` structure, in the order
    :attr:`st_mode`, :attr:`st_ino`, :attr:`st_dev`, :attr:`st_nlink`,
    :attr:`st_uid`, :attr:`st_gid`, :attr:`st_size`, :attr:`st_atime`,
    :attr:`st_mtime`, :attr:`st_ctime`. More items may be added at the end by
@@ -3174,7 +3174,7 @@ features:
 
    Perform a :c:func:`statvfs` system call on the given path.  The return value is
    an object whose attributes describe the filesystem on the given path, and
-   correspond to the members of the :c:type:`statvfs` structure, namely:
+   correspond to the members of the :c:struct:`statvfs` structure, namely:
    :attr:`f_bsize`, :attr:`f_frsize`, :attr:`f_blocks`, :attr:`f_bfree`,
    :attr:`f_bavail`, :attr:`f_files`, :attr:`f_ffree`, :attr:`f_favail`,
    :attr:`f_flag`, :attr:`f_namemax`, :attr:`f_fsid`.
