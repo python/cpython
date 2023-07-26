@@ -1214,7 +1214,7 @@ This codec is special in that it can be used to implement many different codecs
 (and this is in fact what was done to obtain most of the standard codecs
 included in the :mod:`encodings` package). The codec uses mappings to encode and
 decode characters.  The mapping objects provided must support the
-:meth:`__getitem__` mapping interface; dictionaries and sequences work well.
+:meth:`~object.__getitem__` mapping interface; dictionaries and sequences work well.
 
 These are the mapping codec APIs:
 
@@ -1257,7 +1257,7 @@ The following codec API is special in that maps Unicode to Unicode.
    The mapping table must map Unicode ordinal integers to Unicode ordinal integers
    or ``None`` (causing deletion of the character).
 
-   Mapping tables need only provide the :meth:`__getitem__` interface; dictionaries
+   Mapping tables need only provide the :meth:`~object.__getitem__` interface; dictionaries
    and sequences work well.  Unmapped character ordinals (ones which cause a
    :exc:`LookupError`) are left untouched and are copied as-is.
 

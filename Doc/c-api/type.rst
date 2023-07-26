@@ -480,7 +480,7 @@ The following functions and structs are used to create
       Setting :c:data:`Py_tp_bases` or :c:data:`Py_tp_base` may be
       problematic on some platforms.
       To avoid issues, use the *bases* argument of
-      :py:func:`PyType_FromSpecWithBases` instead.
+      :c:func:`PyType_FromSpecWithBases` instead.
 
      .. versionchanged:: 3.9
 
