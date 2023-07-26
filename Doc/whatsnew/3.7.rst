@@ -1677,7 +1677,7 @@ module imports.
 The fields :c:member:`!name` and :c:member:`!doc` of structures
 :c:type:`PyMemberDef`, :c:type:`PyGetSetDef`,
 :c:type:`PyStructSequence_Field`, :c:type:`PyStructSequence_Desc`,
-and :c:type:`wrapperbase` are now of type ``const char *`` rather of
+and :c:struct:`wrapperbase` are now of type ``const char *`` rather of
 ``char *``.  (Contributed by Serhiy Storchaka in :issue:`28761`.)
 
 The result of :c:func:`PyUnicode_AsUTF8AndSize` and :c:func:`PyUnicode_AsUTF8`

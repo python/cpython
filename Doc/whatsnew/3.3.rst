@@ -2195,7 +2195,7 @@ Changes to Python's build process and to the C API include:
     * :c:func:`PyUnicode_AsUCS4`, :c:func:`PyUnicode_AsUCS4Copy`
     * :c:macro:`PyUnicode_DATA`, :c:macro:`PyUnicode_1BYTE_DATA`,
       :c:macro:`PyUnicode_2BYTE_DATA`, :c:macro:`PyUnicode_4BYTE_DATA`
-    * :c:macro:`PyUnicode_KIND` with :c:type:`PyUnicode_Kind` enum:
+    * :c:macro:`PyUnicode_KIND` with :c:enum:`PyUnicode_Kind` enum:
       :c:data:`PyUnicode_WCHAR_KIND`, :c:data:`PyUnicode_1BYTE_KIND`,
       :c:data:`PyUnicode_2BYTE_KIND`, :c:data:`PyUnicode_4BYTE_KIND`
     * :c:macro:`PyUnicode_READ`, :c:macro:`PyUnicode_READ_CHAR`, :c:macro:`PyUnicode_WRITE`
