@@ -1025,7 +1025,7 @@ static const char * const hangul_syllables[][3] = {
 
 /* These ranges need to match makeunicodedata.py:cjk_ranges. */
 static int
-is_unified_ideograph(Py_UCS4 code)
+is_cjk_unified_ideograph(Py_UCS4 code)
 {
     return
         (0x3400 <= code && code <= 0x4DBF)   || /* CJK Ideograph Extension A */
@@ -1037,6 +1037,15 @@ is_unified_ideograph(Py_UCS4 code)
         (0x2CEB0 <= code && code <= 0x2EBE0) || /* CJK Ideograph Extension F */
         (0x30000 <= code && code <= 0x3134A) || /* CJK Ideograph Extension G */
         (0x31350 <= code && code <= 0x323AF);   /* CJK Ideograph Extension H */
+}
+
+/* These ranges need to match makeunicodedata.py:tangut_ranges. */
+static int
+is_tangut_ideograph(Py_UCS4 code)
+{
+    return
+        (0x17000 <= code && code <= 0x187F7) || /* Tangut */
+        (0x18D00 <= code && code <= 0x18D08);   /* Tangut Supplement */
 }
 
 /* macros used to determine if the given code point is in the PUA range that
@@ -1098,11 +1107,19 @@ _getucname(PyObject *self,
         return 1;
     }
 
-    if (is_unified_ideograph(code)) {
+    if (is_cjk_unified_ideograph(code)) {
         if (buflen < 28)
             /* Worst case: CJK UNIFIED IDEOGRAPH-20000 */
             return 0;
         sprintf(buffer, "CJK UNIFIED IDEOGRAPH-%X", code);
+        return 1;
+    }
+
+    if (is_tangut_ideograph(code)) {
+        if (buflen < 23)
+            /* Worst case: TANGUT IDEOGRAPH-18D08 */
+            return 0;
+        sprintf(buffer, "TANGUT IDEOGRAPH-%X", code);
         return 1;
     }
 
@@ -1236,7 +1253,7 @@ _getcode(PyObject* self,
         return 0;
     }
 
-    /* Check for unified ideographs. */
+    /* Check for CJK unified ideographs. */
     if (strncmp(name, "CJK UNIFIED IDEOGRAPH-", 22) == 0) {
         /* Four or five hexdigits must follow. */
         v = 0;
@@ -1254,11 +1271,37 @@ _getcode(PyObject* self,
                 return 0;
             name++;
         }
-        if (!is_unified_ideograph(v))
+        if (!is_cjk_unified_ideograph(v))
             return 0;
         *code = v;
         return 1;
     }
+
+
+    /* Check for Tangut ideographs. */
+    if (strncmp(name, "TANGUT IDEOGRAPH-", 17) == 0) {
+        /* Five hexdigits must follow. */
+        v = 0;
+        name += 17;
+        namelen -= 17;
+        if (namelen != 5)
+            return 0;
+        while (namelen--) {
+            v *= 16;
+            if (*name >= '0' && *name <= '9')
+                v += *name - '0';
+            else if (*name >= 'A' && *name <= 'F')
+                v += *name - 'A' + 10;
+            else
+                return 0;
+            name++;
+        }
+        if (!is_tangut_ideograph(v))
+            return 0;
+        *code = v;
+        return 1;
+    }
+
 
     /* the following is the same as python's dictionary lookup, with
        only minor changes.  see the makeunicodedata script for more

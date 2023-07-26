@@ -99,7 +99,7 @@ CASE_IGNORABLE_MASK = 0x1000
 CASED_MASK = 0x2000
 EXTENDED_CASE_MASK = 0x4000
 
-# these ranges need to match unicodedata.c:is_unified_ideograph
+# these ranges need to match unicodedata.c:is_cjk_unified_ideograph
 cjk_ranges = [
     ('3400', '4DBF'),
     ('4E00', '9FFF'),
@@ -110,6 +110,12 @@ cjk_ranges = [
     ('2CEB0', '2EBE0'),
     ('30000', '3134A'),
     ('31350', '323AF'),
+]
+
+# these ranges need to match unicodedata.c:is_tangut_ideograph
+tangut_ranges = [
+    ('17000', '187F7'),
+    ('18D00', '18D08')
 ]
 
 
@@ -123,7 +129,7 @@ def maketables(trace=0):
 
     for version in old_versions:
         print("--- Reading", UNICODE_DATA % ("-"+version), "...")
-        old_unicode = UnicodeData(version, cjk_check=False)
+        old_unicode = UnicodeData(version, ideograph_check=False)
         print(len(list(filter(None, old_unicode.table))), "characters")
         merge_old_version(version, unicode, old_unicode)
 
@@ -1020,7 +1026,7 @@ def from_row(row: List[str]) -> UcdRecord:
 class UnicodeData:
     # table: List[Optional[UcdRecord]]  # index is codepoint; None means unassigned
 
-    def __init__(self, version, cjk_check=True):
+    def __init__(self, version, ideograph_check=True):
         self.changed = []
         table = [None] * 0x110000
         for s in UcdFile(UNICODE_DATA, version):
@@ -1028,6 +1034,7 @@ class UnicodeData:
             table[char] = from_row(s)
 
         cjk_ranges_found = []
+        tangut_ranges_found = []
 
         # expand first-last ranges
         field = None
@@ -1044,12 +1051,17 @@ class UnicodeData:
                     if s.name.startswith("<CJK Ideograph"):
                         cjk_ranges_found.append((field[0],
                                                  s.codepoint))
+                    elif s.name.startswith("<Tangut Ideograph"):
+                        tangut_ranges_found.append((field[0],
+                                                    s.codepoint))
                     s.name = ""
                     field = None
             elif field:
                 table[i] = from_row(('%X' % i,) + field[1:])
-        if cjk_check and cjk_ranges != cjk_ranges_found:
+        if ideograph_check and cjk_ranges != cjk_ranges_found:
             raise ValueError("CJK ranges deviate: have %r" % cjk_ranges_found)
+        if ideograph_check and tangut_ranges != tangut_ranges_found:
+            raise ValueError("Tangut ranges deviate: have %r" % tangut_ranges_found)
 
         # public attributes
         self.filename = UNICODE_DATA % ''
