@@ -1453,6 +1453,7 @@ class ClinicExternalTest(TestCase):
                 init()
                 int()
                 long()
+                NoneType()
                 Py_ssize_t()
                 size_t()
                 unsigned_int()
