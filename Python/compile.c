@@ -7735,8 +7735,9 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     /* prepare_localsplus adds instructions for generators that push
      * and pop an item on the stack. This assertion makes sure there
      * is space on the stack for that.
-     * It should always be true, because at least one expression is
-     * required to turn a function into a generator.
+     * It should always be true, because a generator must have at
+     * least one expression or call to INTRINSIC_STOPITERATION_ERROR,
+     * which requires stackspace.
      */
     assert(!(IS_GENERATOR(code_flags) && stackdepth == 0));
 
