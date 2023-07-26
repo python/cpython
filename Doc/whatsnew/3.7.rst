@@ -1280,13 +1280,13 @@ This function should be used instead of :func:`os.close` for better
 compatibility across platforms.
 (Contributed by Christian Heimes in :issue:`32454`.)
 
-The :mod:`socket` module now exposes the :data:`socket.TCP_CONGESTION`
-(Linux 2.6.13), :data:`socket.TCP_USER_TIMEOUT` (Linux 2.6.37), and
-:data:`socket.TCP_NOTSENT_LOWAT` (Linux 3.12) constants.
+The :mod:`socket` module now exposes the :const:`socket.TCP_CONGESTION`
+(Linux 2.6.13), :const:`socket.TCP_USER_TIMEOUT` (Linux 2.6.37), and
+:const:`socket.TCP_NOTSENT_LOWAT` (Linux 3.12) constants.
 (Contributed by Omar Sandoval in :issue:`26273` and
 Nathaniel J. Smith in :issue:`29728`.)
 
-Support for :data:`socket.AF_VSOCK` sockets has been added to allow
+Support for :const:`socket.AF_VSOCK` sockets has been added to allow
 communication between virtual machines and their hosts.
 (Contributed by Cathy Avery in :issue:`27584`.)
 
@@ -1394,7 +1394,7 @@ subprocess
 
 The :func:`subprocess.run` function accepts the new *capture_output*
 keyword argument.  When true, stdout and stderr will be captured.
-This is equivalent to passing :data:`subprocess.PIPE` as *stdout* and
+This is equivalent to passing :const:`subprocess.PIPE` as *stdout* and
 *stderr* arguments.
 (Contributed by Bo Bayles in :issue:`32102`.)
 
@@ -1453,12 +1453,12 @@ time
 
 New clock identifiers have been added:
 
-* :data:`time.CLOCK_BOOTTIME` (Linux): Identical to
-  :data:`time.CLOCK_MONOTONIC`, except it also includes any time that the
+* :const:`time.CLOCK_BOOTTIME` (Linux): Identical to
+  :const:`time.CLOCK_MONOTONIC`, except it also includes any time that the
   system is suspended.
-* :data:`time.CLOCK_PROF` (FreeBSD, NetBSD and OpenBSD): High-resolution
+* :const:`time.CLOCK_PROF` (FreeBSD, NetBSD and OpenBSD): High-resolution
   per-process CPU timer.
-* :data:`time.CLOCK_UPTIME` (FreeBSD, OpenBSD): Time whose absolute value is
+* :const:`time.CLOCK_UPTIME` (FreeBSD, OpenBSD): Time whose absolute value is
   the time the system has been running and not suspended, providing accurate
   uptime measurement.
 

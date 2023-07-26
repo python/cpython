@@ -3,7 +3,7 @@
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntryObject
-#include "structmember.h"         // PyMemberDef
+
 
 /* error strings used for warnings */
 #define GLOBAL_PARAM \
@@ -171,14 +171,14 @@ ste_dealloc(PySTEntryObject *ste)
 #define OFF(x) offsetof(PySTEntryObject, x)
 
 static PyMemberDef ste_memberlist[] = {
-    {"id",       T_OBJECT, OFF(ste_id), READONLY},
-    {"name",     T_OBJECT, OFF(ste_name), READONLY},
-    {"symbols",  T_OBJECT, OFF(ste_symbols), READONLY},
-    {"varnames", T_OBJECT, OFF(ste_varnames), READONLY},
-    {"children", T_OBJECT, OFF(ste_children), READONLY},
-    {"nested",   T_INT,    OFF(ste_nested), READONLY},
-    {"type",     T_INT,    OFF(ste_type), READONLY},
-    {"lineno",   T_INT,    OFF(ste_lineno), READONLY},
+    {"id",       _Py_T_OBJECT, OFF(ste_id), Py_READONLY},
+    {"name",     _Py_T_OBJECT, OFF(ste_name), Py_READONLY},
+    {"symbols",  _Py_T_OBJECT, OFF(ste_symbols), Py_READONLY},
+    {"varnames", _Py_T_OBJECT, OFF(ste_varnames), Py_READONLY},
+    {"children", _Py_T_OBJECT, OFF(ste_children), Py_READONLY},
+    {"nested",   Py_T_INT,    OFF(ste_nested), Py_READONLY},
+    {"type",     Py_T_INT,    OFF(ste_type), Py_READONLY},
+    {"lineno",   Py_T_INT,    OFF(ste_lineno), Py_READONLY},
     {NULL}
 };
 
@@ -389,7 +389,7 @@ _PySymtable_Free(struct symtable *st)
 }
 
 PySTEntryObject *
-PySymtable_Lookup(struct symtable *st, void *key)
+_PySymtable_Lookup(struct symtable *st, void *key)
 {
     PyObject *k, *v;
 

@@ -565,15 +565,9 @@ static struct PyMethodDef msvcrt_functions[] = {
 };
 
 static int
-insertptr(PyObject *mod, char *name, void *value)
+insertptr(PyObject *mod, const char *name, void *value)
 {
-    PyObject *v = PyLong_FromVoidPtr(value);
-    if (v == NULL) {
-        return -1;
-    }
-    int rc = PyModule_AddObjectRef(mod, name, v);
-    Py_DECREF(v);
-    return rc;
+    return PyModule_Add(mod, name, PyLong_FromVoidPtr(value));
 }
 
 #define INSERTINT(MOD, NAME, VAL) do {                  \
@@ -646,12 +640,7 @@ exec_module(PyObject* m)
                                              _VC_CRT_MINOR_VERSION,
                                              _VC_CRT_BUILD_VERSION,
                                              _VC_CRT_RBUILD_VERSION);
-    if (version == NULL) {
-        return -1;
-    }
-    int st = PyModule_AddObjectRef(m, "CRT_ASSEMBLY_VERSION", version);
-    Py_DECREF(version);
-    if (st < 0) {
+    if (PyModule_Add(m, "CRT_ASSEMBLY_VERSION", version) < 0) {
         return -1;
     }
 #endif

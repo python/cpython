@@ -1,12 +1,14 @@
 /* Descriptors -- a new, flexible way to describe attributes */
 
 #include "Python.h"
+#include "pycore_abstract.h"      // _PyObject_RealIsSubclass()
+#include "pycore_call.h"          // _PyStack_AsDict()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
+#include "pycore_descrobject.h"   // _PyMethodWrapper_Type
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
-#include "structmember.h"         // PyMemberDef
-#include "pycore_descrobject.h"
+
 
 /*[clinic input]
 class mappingproxy "mappingproxyobject *" "&PyDictProxy_Type"
@@ -180,7 +182,7 @@ member_get(PyMemberDescrObject *descr, PyObject *obj, PyObject *type)
         return NULL;
     }
 
-    if (descr->d_member->flags & PY_AUDIT_READ) {
+    if (descr->d_member->flags & Py_AUDIT_READ) {
         if (PySys_Audit("object.__getattr__", "Os",
             obj ? obj : Py_None, descr->d_member->name) < 0) {
             return NULL;
@@ -638,8 +640,8 @@ static PyMethodDef descr_methods[] = {
 };
 
 static PyMemberDef descr_members[] = {
-    {"__objclass__", T_OBJECT, offsetof(PyDescrObject, d_type), READONLY},
-    {"__name__", T_OBJECT, offsetof(PyDescrObject, d_name), READONLY},
+    {"__objclass__", _Py_T_OBJECT, offsetof(PyDescrObject, d_type), Py_READONLY},
+    {"__name__", _Py_T_OBJECT, offsetof(PyDescrObject, d_name), Py_READONLY},
     {0}
 };
 
@@ -1110,9 +1112,9 @@ mappingproxy_get(mappingproxyobject *pp, PyObject *const *args, Py_ssize_t nargs
     {
         return NULL;
     }
-    return _PyObject_VectorcallMethod(&_Py_ID(get), newargs,
-                                        3 | PY_VECTORCALL_ARGUMENTS_OFFSET,
-                                        NULL);
+    return PyObject_VectorcallMethod(&_Py_ID(get), newargs,
+                                     3 | PY_VECTORCALL_ARGUMENTS_OFFSET,
+                                     NULL);
 }
 
 static PyObject *
@@ -1353,7 +1355,7 @@ static PyMethodDef wrapper_methods[] = {
 };
 
 static PyMemberDef wrapper_members[] = {
-    {"__self__", T_OBJECT, offsetof(wrapperobject, self), READONLY},
+    {"__self__", _Py_T_OBJECT, offsetof(wrapperobject, self), Py_READONLY},
     {0}
 };
 
@@ -1513,10 +1515,10 @@ static PyObject * property_copy(PyObject *, PyObject *, PyObject *,
                                   PyObject *);
 
 static PyMemberDef property_members[] = {
-    {"fget", T_OBJECT, offsetof(propertyobject, prop_get), READONLY},
-    {"fset", T_OBJECT, offsetof(propertyobject, prop_set), READONLY},
-    {"fdel", T_OBJECT, offsetof(propertyobject, prop_del), READONLY},
-    {"__doc__",  T_OBJECT, offsetof(propertyobject, prop_doc), 0},
+    {"fget", _Py_T_OBJECT, offsetof(propertyobject, prop_get), Py_READONLY},
+    {"fset", _Py_T_OBJECT, offsetof(propertyobject, prop_set), Py_READONLY},
+    {"fdel", _Py_T_OBJECT, offsetof(propertyobject, prop_del), Py_READONLY},
+    {"__doc__",  _Py_T_OBJECT, offsetof(propertyobject, prop_doc), 0},
     {0}
 };
 
@@ -1790,7 +1792,7 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
     }
     /* if no docstring given and the getter has one, use that one */
     else if (fget != NULL) {
-        int rc = _PyObject_LookupAttr(fget, &_Py_ID(__doc__), &prop_doc);
+        int rc = PyObject_GetOptionalAttr(fget, &_Py_ID(__doc__), &prop_doc);
         if (rc <= 0) {
             return rc;
         }

@@ -539,6 +539,28 @@ class ListComprehensionTest(unittest.TestCase):
         self._check_in_scopes(code, {"x": True, "y": ["b"]}, scopes=["function"])
         self._check_in_scopes(code, raises=NameError, scopes=["class"])
 
+    def test_iter_var_available_in_locals(self):
+        code = """
+            l = [1, 2]
+            y = 0
+            items = [locals()["x"] for x in l]
+            items2 = [vars()["x"] for x in l]
+            items3 = [("x" in dir()) for x in l]
+            items4 = [eval("x") for x in l]
+            # x is available, and does not overwrite y
+            [exec("y = x") for x in l]
+        """
+        self._check_in_scopes(
+            code,
+            {
+                "items": [1, 2],
+                "items2": [1, 2],
+                "items3": [True, True],
+                "items4": [1, 2],
+                "y": 0
+            }
+        )
+
 
 __test__ = {'doctests' : doctests}
 

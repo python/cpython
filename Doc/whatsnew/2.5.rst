@@ -1448,10 +1448,10 @@ complete list of changes, or look through the SVN logs for all the details.
   return times that are precise to fractions of a second; not all systems support
   such precision.)
 
-  Constants named :attr:`os.SEEK_SET`, :attr:`os.SEEK_CUR`, and
-  :attr:`os.SEEK_END` have been added; these are the parameters to the
+  Constants named :const:`os.SEEK_SET`, :const:`os.SEEK_CUR`, and
+  :const:`os.SEEK_END` have been added; these are the parameters to the
   :func:`os.lseek` function.  Two new constants for locking are
-  :attr:`os.O_SHLOCK` and :attr:`os.O_EXLOCK`.
+  :const:`os.O_SHLOCK` and :const:`os.O_EXLOCK`.
 
   Two new functions, :func:`wait3` and :func:`wait4`, were added.  They're similar
   the :func:`waitpid` function which waits for a child process to exit and returns
@@ -1602,7 +1602,7 @@ complete list of changes, or look through the SVN logs for all the details.
 
 * The :mod:`unicodedata` module has been updated to use version 4.1.0 of the
   Unicode character database.  Version 3.2.0 is required  by some specifications,
-  so it's still available as  :attr:`unicodedata.ucd_3_2_0`.
+  so it's still available as  :data:`unicodedata.ucd_3_2_0`.
 
 * New module: the  :mod:`uuid` module generates  universally unique identifiers
   (UUIDs) according to :rfc:`4122`.  The RFC defines several different UUID

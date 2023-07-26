@@ -1,0 +1,1 @@
+Add :meth:`dbm.ndbm.ndbm.clear` to :mod:`dbm.ndbm`. Patch By Dong-hee Na.

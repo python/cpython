@@ -477,7 +477,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
                unlock()
 
       Three locking mechanisms are used---dot locking and, if available, the
-      :c:func:`flock` and :c:func:`lockf` system calls.
+      :c:func:`!flock` and :c:func:`!lockf` system calls.
 
 
 .. seealso::
@@ -588,7 +588,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
                unlock()
 
       Three locking mechanisms are used---dot locking and, if available, the
-      :c:func:`flock` and :c:func:`lockf` system calls. For MH mailboxes, locking
+      :c:func:`!flock` and :c:func:`!lockf` system calls. For MH mailboxes, locking
       the mailbox means locking the :file:`.mh_sequences` file and, only for the
       duration of any operations that affect them, locking individual message
       files.
@@ -686,7 +686,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
                unlock()
 
       Three locking mechanisms are used---dot locking and, if available, the
-      :c:func:`flock` and :c:func:`lockf` system calls.
+      :c:func:`!flock` and :c:func:`!lockf` system calls.
 
 
 .. seealso::
@@ -737,7 +737,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
                unlock()
 
       Three locking mechanisms are used---dot locking and, if available, the
-      :c:func:`flock` and :c:func:`lockf` system calls.
+      :c:func:`!flock` and :c:func:`!lockf` system calls.
 
 
 .. seealso::
