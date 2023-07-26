@@ -918,7 +918,7 @@ class CPythonTracebackErrorCaretTests(
 
 @cpython_only
 @requires_debug_ranges()
-class CPythonTracebackErrorCaretTests(
+class CPythonTracebackLegacyErrorCaretTests(
     CAPIExceptionFormattingLegacyMixin,
     TracebackErrorLocationCaretTestBase,
     unittest.TestCase,
@@ -2789,6 +2789,20 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
         teg = traceback.TracebackException.from_exception(self.eg)
         formatted = ''.join(teg.format_exception_only()).split('\n')
         expected = "ExceptionGroup: eg2 (2 sub-exceptions)\n".split('\n')
+
+        self.assertEqual(formatted, expected)
+
+    def test_exception_group_format_exception_onlyi_recursive(self):
+        teg = traceback.TracebackException.from_exception(self.eg)
+        formatted = ''.join(teg.format_exception_only(show_group=True)).split('\n')
+        expected = [
+                     'ExceptionGroup: eg2 (2 sub-exceptions)',
+                     '   ExceptionGroup: eg1 (2 sub-exceptions)',
+                     '      ZeroDivisionError: division by zero',
+                     '      ValueError: 42',
+                     '   ValueError: 24',
+                     ''
+                   ]
 
         self.assertEqual(formatted, expected)
 

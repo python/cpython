@@ -37,7 +37,7 @@ object.
 
 This sort of thing can only be explained by example, so here's a minimal, but
 complete, module that defines a new type named :class:`Custom` inside a C
-extension module :mod:`custom`:
+extension module :mod:`!custom`:
 
 .. note::
    What we're showing here is the traditional way of defining *static*
@@ -55,7 +55,7 @@ from the previous chapter.  This file defines three things:
 #. How the :class:`Custom` **type** behaves: this is the ``CustomType`` struct,
    which defines a set of flags and function pointers that the interpreter
    inspects when specific operations are requested.
-#. How to initialize the :mod:`custom` module: this is the ``PyInit_custom``
+#. How to initialize the :mod:`!custom` module: this is the ``PyInit_custom``
    function and the associated ``custommodule`` struct.
 
 The first bit is::
@@ -127,7 +127,7 @@ our objects and in some error messages, for example:
    TypeError: can only concatenate str (not "custom.Custom") to str
 
 Note that the name is a dotted name that includes both the module name and the
-name of the type within the module. The module in this case is :mod:`custom` and
+name of the type within the module. The module in this case is :mod:`!custom` and
 the type is :class:`Custom`, so we set the type name to :class:`custom.Custom`.
 Using the real dotted import path is important to make your type compatible
 with the :mod:`pydoc` and :mod:`pickle` modules. ::
@@ -151,7 +151,7 @@ only used for variable-sized objects and should otherwise be zero.
    base type will be :class:`object`, or else you will be adding data members to
    your base type, and therefore increasing its size.
 
-We set the class flags to :const:`Py_TPFLAGS_DEFAULT`. ::
+We set the class flags to :c:macro:`Py_TPFLAGS_DEFAULT`. ::
 
    .tp_flags = Py_TPFLAGS_DEFAULT,
 
@@ -180,9 +180,7 @@ This initializes the :class:`Custom` type, filling in a number of members
 to the appropriate default values, including :attr:`ob_type` that we initially
 set to ``NULL``. ::
 
-   Py_INCREF(&CustomType);
-   if (PyModule_AddObject(m, "Custom", (PyObject *) &CustomType) < 0) {
-       Py_DECREF(&CustomType);
+   if (PyModule_AddObjectRef(m, "Custom", (PyObject *) &CustomType) < 0) {
        Py_DECREF(m);
        return NULL;
    }
@@ -231,7 +229,7 @@ Adding data and methods to the Basic example
 ============================================
 
 Let's extend the basic example to add some data and methods.  Let's also make
-the type usable as a base class. We'll create a new module, :mod:`custom2` that
+the type usable as a base class. We'll create a new module, :mod:`!custom2` that
 adds these capabilities:
 
 .. literalinclude:: ../includes/custom2.c
@@ -498,7 +496,7 @@ definitions::
        {NULL}  /* Sentinel */
    };
 
-(note that we used the :const:`METH_NOARGS` flag to indicate that the method
+(note that we used the :c:macro:`METH_NOARGS` flag to indicate that the method
 is expecting no arguments other than *self*)
 
 and assign it to the :c:member:`~PyTypeObject.tp_methods` slot::
@@ -508,7 +506,7 @@ and assign it to the :c:member:`~PyTypeObject.tp_methods` slot::
 Finally, we'll make our type usable as a base class for subclassing.  We've
 written our methods carefully so far so that they don't make any assumptions
 about the type of the object being created or used, so all we need to do is
-to add the :const:`Py_TPFLAGS_BASETYPE` to our class flag definition::
+to add the :c:macro:`Py_TPFLAGS_BASETYPE` to our class flag definition::
 
    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
 
@@ -774,7 +772,7 @@ and ``Custom_clear``::
        Py_TYPE(self)->tp_free((PyObject *) self);
    }
 
-Finally, we add the :const:`Py_TPFLAGS_HAVE_GC` flag to the class flags::
+Finally, we add the :c:macro:`Py_TPFLAGS_HAVE_GC` flag to the class flags::
 
    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
 
@@ -862,9 +860,7 @@ function::
        if (m == NULL)
            return NULL;
 
-       Py_INCREF(&SubListType);
-       if (PyModule_AddObject(m, "SubList", (PyObject *) &SubListType) < 0) {
-           Py_DECREF(&SubListType);
+       if (PyModule_AddObjectRef(m, "SubList", (PyObject *) &SubListType) < 0) {
            Py_DECREF(m);
            return NULL;
        }

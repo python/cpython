@@ -57,10 +57,13 @@ underlying :class:`Popen` interface can be used directly.
    and combine both streams into one, use ``stdout=PIPE`` and ``stderr=STDOUT``
    instead of *capture_output*.
 
-   The *timeout* argument is passed to :meth:`Popen.communicate`. If the timeout
-   expires, the child process will be killed and waited for.  The
-   :exc:`TimeoutExpired` exception will be re-raised after the child process
-   has terminated.
+   A *timeout* may be specified in seconds, it is internally passed on to
+   :meth:`Popen.communicate`. If the timeout expires, the child process will be
+   killed and waited for. The :exc:`TimeoutExpired` exception will be
+   re-raised after the child process has terminated. The initial process
+   creation itself cannot be interrupted on many platform APIs so you are not
+   guaranteed to see a timeout exception until at least after however long
+   process creation takes.
 
    The *input* argument is passed to :meth:`Popen.communicate` and thus to the
    subprocess's stdin.  If used it must be a byte sequence, or a string if
@@ -734,7 +737,7 @@ arguments.
 code.
 
 All of the functions and methods that accept a *timeout* parameter, such as
-:func:`call` and :meth:`Popen.communicate` will raise :exc:`TimeoutExpired` if
+:func:`run` and :meth:`Popen.communicate` will raise :exc:`TimeoutExpired` if
 the timeout expires before the process exits.
 
 Exceptions defined in this module all inherit from :exc:`SubprocessError`.
@@ -1607,7 +1610,7 @@ improves performance.
 
 If you ever encounter a presumed highly unusual situation where you need to
 prevent ``vfork()`` from being used by Python, you can set the
-:attr:`subprocess._USE_VFORK` attribute to a false value.
+:const:`subprocess._USE_VFORK` attribute to a false value.
 
 ::
 
@@ -1615,7 +1618,7 @@ prevent ``vfork()`` from being used by Python, you can set the
 
 Setting this has no impact on use of ``posix_spawn()`` which could use
 ``vfork()`` internally within its libc implementation.  There is a similar
-:attr:`subprocess._USE_POSIX_SPAWN` attribute if you need to prevent use of
+:const:`subprocess._USE_POSIX_SPAWN` attribute if you need to prevent use of
 that.
 
 ::

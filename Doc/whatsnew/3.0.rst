@@ -911,7 +911,7 @@ best strategy is the following:
    tests still pass.
 
 3. Run the ``2to3`` source-to-source translator over your source code
-   tree.  (See :ref:`2to3-reference` for more on this tool.)  Run the
+   tree.  Run the
    result of the translation under Python 3.0.  Manually fix up any
    remaining issues, fixing problems until all tests pass again.
 

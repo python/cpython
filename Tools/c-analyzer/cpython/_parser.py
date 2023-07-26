@@ -71,6 +71,7 @@ Python/thread_pthread_stubs.h
 
 # only huge constants (safe but parsing is slow)
 Modules/_ssl_data.h
+Modules/_ssl_data_31.h
 Modules/_ssl_data_300.h
 Modules/_ssl_data_111.h
 Modules/cjkcodecs/mappings_*.h
@@ -82,6 +83,7 @@ Objects/unicodetype_db.h
 Python/deepfreeze/*.c
 Python/frozen_modules/*.h
 Python/generated_cases.c.h
+Python/executor_cases.c.h
 
 # not actually source
 Python/bytecodes.c
@@ -120,7 +122,6 @@ Objects/stringlib/*.h	Objects
 # possible system-installed headers, just in case
 Modules/_tkinter.c	/usr/include/tcl8.6
 Modules/_uuidmodule.c	/usr/include/uuid
-Modules/nismodule.c	/usr/include/tirpc
 Modules/tkappinit.c	/usr/include/tcl
 
 # @end=tsv@

@@ -5,9 +5,8 @@
 /* Always enable assertions */
 #undef NDEBUG
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
+#include "pycore_object.h"        // _PyObject_IsFreed()
 
 
 // Used for clone_with_conv_f1 and clone_with_conv_v2
