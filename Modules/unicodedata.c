@@ -1246,10 +1246,11 @@ _getcode(PyObject* self,
             return 0;
         while (namelen--) {
             v *= 16;
-            if (*name >= '0' && *name <= '9')
-                v += *name - '0';
-            else if (*name >= 'A' && *name <= 'F')
-                v += *name - 'A' + 10;
+            Py_UCS1 c = Py_TOUPPER(*name);
+            if (c >= '0' && c <= '9')
+                v += c - '0';
+            else if (c >= 'A' && c <= 'F')
+                v += c - 'A' + 10;
             else
                 return 0;
             name++;
