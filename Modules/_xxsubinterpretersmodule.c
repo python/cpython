@@ -6,7 +6,6 @@
 #endif
 
 #include "Python.h"
-#include "pycore_interp.h"        // _PyInterpreterState_GetMainModule()
 #include "pycore_interp_id.h"     // _PyInterpreterState_GetIDObject()
 
 
@@ -400,7 +399,7 @@ _run_script(PyInterpreterState *interp, const char *codestr,
             _sharedns *shared, _sharedexception *sharedexc)
 {
     PyObject *excval = NULL;
-    PyObject *main_mod = _PyInterpreterState_GetMainModule(interp);
+    PyObject *main_mod = PyUnstable_InterpreterState_GetMainModule(interp);
     if (main_mod == NULL) {
         goto error;
     }

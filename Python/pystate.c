@@ -1133,7 +1133,7 @@ _PyInterpreterState_RequireIDRef(PyInterpreterState *interp, int required)
 }
 
 PyObject *
-_PyInterpreterState_GetMainModule(PyInterpreterState *interp)
+PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *interp)
 {
     PyObject *modules = _PyImport_GetModules(interp);
     if (modules == NULL) {
