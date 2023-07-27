@@ -1824,7 +1824,7 @@ PyDec_SetCurrentContext(PyObject *self, PyObject *v)
  * owns one reference to the global (outer) context and one
  * to the local (inner) context. */
 static PyObject *
-ctxmanager_new(PyObject *m, PyObject *args, PyObject *kwds)  // TODO: check params
+ctxmanager_new(PyObject *m, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {
       "ctx", "prec", "rounding",
