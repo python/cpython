@@ -47,7 +47,7 @@ API functions listed in this document.
    single: free()
 
 To avoid memory corruption, extension writers should never try to operate on
-Python objects with the functions exported by the C library: :c:func:`!malloc`,
+Python objects with the functions exported by the C library: :c:func:`malloc`,
 :c:func:`calloc`, :c:func:`realloc` and :c:func:`free`.  This will result in  mixed
 calls between the C allocator and the Python memory manager with fatal
 consequences, because they implement different algorithms and operate on
@@ -135,7 +135,7 @@ functions are thread-safe, the :term:`GIL <global interpreter lock>` does not
 need to be held.
 
 The :ref:`default raw memory allocator <default-memory-allocators>` uses
-the following functions: :c:func:`!malloc`, :c:func:`!calloc`, :c:func:`!realloc`
+the following functions: :c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc`
 and :c:func:`!free`; call ``malloc(1)`` (or ``calloc(1, 1)``) when requesting
 zero bytes.
 
