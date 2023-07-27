@@ -836,8 +836,8 @@ and if they define :meth:`__set_name__`, that method is called with two
 arguments.  The *owner* is the class where the descriptor is used, and the
 *name* is the class variable the descriptor was assigned to.
 
-The implementation details are in :c:func:`type_new()` and
-:c:func:`set_names()` in :source:`Objects/typeobject.c`.
+The implementation details are in :c:func:`!type_new` and
+:c:func:`!set_names` in :source:`Objects/typeobject.c`.
 
 Since the update logic is in :meth:`type.__new__`, notifications only take
 place at the time of class creation.  If descriptors are added to the class

@@ -167,7 +167,7 @@ Operating System Utilities
 
    .. versionchanged:: 3.8
       The function now uses the UTF-8 encoding on Windows if
-      :c:member:`PyConfig.legacy_windows_fs_encoding` is zero;
+      :c:member:`PyPreConfig.legacy_windows_fs_encoding` is zero;
 
 
 .. c:function:: char* Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
@@ -209,7 +209,7 @@ Operating System Utilities
 
    .. versionchanged:: 3.8
       The function now uses the UTF-8 encoding on Windows if
-      :c:member:`PyConfig.legacy_windows_fs_encoding` is zero.
+      :c:member:`PyPreConfig.legacy_windows_fs_encoding` is zero.
 
 
 .. _systemfunctions:
