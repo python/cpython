@@ -393,7 +393,7 @@ definition with the same method name.
    *METH_COEXIST*, the default is to skip repeated definitions.  Since slot
    wrappers are loaded before the method table, the existence of a
    *sq_contains* slot, for example, would generate a wrapped method named
-   :meth:`__contains__` and preclude the loading of a corresponding
+   :meth:`~object.__contains__` and preclude the loading of a corresponding
    PyCFunction with the same name.  With the flag defined, the PyCFunction
    will be loaded in place of the wrapper object and will co-exist with the
    slot.  This is helpful because calls to PyCFunctions are optimized more

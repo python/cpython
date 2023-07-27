@@ -2,16 +2,9 @@
 # as tested on the CI via check-warnings.py in reusable-docs.yml.
 # Keep lines sorted lexicographically to help avoid merge conflicts.
 
-Doc/c-api/allocation.rst
-Doc/c-api/apiabiversion.rst
 Doc/c-api/bool.rst
 Doc/c-api/buffer.rst
-Doc/c-api/bytes.rst
 Doc/c-api/capsule.rst
-Doc/c-api/cell.rst
-Doc/c-api/code.rst
-Doc/c-api/complex.rst
-Doc/c-api/conversion.rst
 Doc/c-api/datetime.rst
 Doc/c-api/descriptor.rst
 Doc/c-api/exceptions.rst
@@ -22,7 +15,6 @@ Doc/c-api/import.rst
 Doc/c-api/init.rst
 Doc/c-api/init_config.rst
 Doc/c-api/intro.rst
-Doc/c-api/iterator.rst
 Doc/c-api/memory.rst
 Doc/c-api/memoryview.rst
 Doc/c-api/module.rst
@@ -34,7 +26,6 @@ Doc/c-api/structures.rst
 Doc/c-api/sys.rst
 Doc/c-api/tuple.rst
 Doc/c-api/type.rst
-Doc/c-api/typehints.rst
 Doc/c-api/typeobj.rst
 Doc/c-api/unicode.rst
 Doc/extending/embedding.rst
