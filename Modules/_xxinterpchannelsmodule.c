@@ -2139,7 +2139,7 @@ channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
             goto except;
         }
         if (res) {
-            id_obj = _PyInterpreterState_GetIDObject(interp);
+            id_obj = PyInterpreterState_GetIDObject(interp);
             if (id_obj == NULL) {
                 goto except;
             }

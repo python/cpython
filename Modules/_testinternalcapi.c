@@ -27,7 +27,7 @@
 #include "pycore_pystate.h"      // _PyThreadState_GET()
 
 #include "frameobject.h"
-#include "interpreteridobject.h" // _PyInterpreterID_LookUp()
+#include "interpreteridobject.h" // PyInterpreterID_LookUp()
 #include "osdefs.h"              // MAXPATHLEN
 
 #include "clinic/_testinternalcapi.c.h"
@@ -1083,7 +1083,7 @@ pending_identify(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O:pending_identify", &interpid)) {
         return NULL;
     }
-    PyInterpreterState *interp = _PyInterpreterID_LookUp(interpid);
+    PyInterpreterState *interp = PyInterpreterID_LookUp(interpid);
     if (interp == NULL) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError, "interpreter not found");
