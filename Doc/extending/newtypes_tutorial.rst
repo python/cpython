@@ -177,7 +177,7 @@ Everything else in the file should be familiar, except for some code in
        return;
 
 This initializes the :class:`!Custom` type, filling in a number of members
-to the appropriate default values, including :attr:`ob_type` that we initially
+to the appropriate default values, including :c:member:`~PyObject.ob_type` that we initially
 set to ``NULL``. ::
 
    if (PyModule_AddObjectRef(m, "Custom", (PyObject *) &CustomType) < 0) {
