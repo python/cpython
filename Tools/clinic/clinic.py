@@ -4746,7 +4746,7 @@ class DSLParser:
             try:
                 module_node = ast.parse(ast_input)
             except SyntaxError:
-                fail("Badly-formed annotation for " + full_name + ": " + returns)
+                fail(f"Badly-formed annotation for {full_name}: {returns}")
             function_node = module_node.body[0]
             assert isinstance(function_node, ast.FunctionDef)
             try:
