@@ -6,7 +6,6 @@
 #endif
 
 #include "Python.h"
-#include "pycore_atexit.h"        // _Py_AtExit()
 #include "pycore_interp_id.h"     // _PyInterpreterState_GetIDObject()
 
 
@@ -2407,7 +2406,7 @@ module_exec(PyObject *mod)
 
     // Make sure chnnels drop objects owned by this interpreter
     PyInterpreterState *interp = _get_current_interp();
-    _Py_AtExit(interp, clear_interpreter, (void *)interp);
+    PyUnstable_AtExit(interp, clear_interpreter, (void *)interp);
 
     return 0;
 

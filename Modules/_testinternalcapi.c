@@ -1433,7 +1433,7 @@ test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
     PyThreadState *tstate = Py_NewInterpreter();
 
     struct atexit_data data = {0};
-    int res = _Py_AtExit(tstate->interp, callback, (void *)&data);
+    int res = PyUnstable_AtExit(tstate->interp, callback, (void *)&data);
     Py_EndInterpreter(tstate);
     PyThreadState_Swap(oldts);
     if (res < 0) {
