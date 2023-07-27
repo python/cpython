@@ -272,9 +272,13 @@ init_interned_dict(PyInterpreterState *interp)
 {
     if (_Py_IsMainInterpreter(interp)) {
         assert(INTERNED_STRINGS == NULL);
-        INTERNED_STRINGS = _Py_hashtable_new(
+        _Py_hashtable_allocator_t hashtable_alloc = {PyMem_RawMalloc, PyMem_RawFree};
+        INTERNED_STRINGS = _Py_hashtable_new_full(
             hashtable_unicode_hash,
-            hashtable_unicode_compare
+            hashtable_unicode_compare,
+            NULL,
+            NULL,
+            &hashtable_alloc
         );
         if (INTERNED_STRINGS == NULL) {
             return -1;
