@@ -1449,21 +1449,23 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    The following constants are defined to be used as the third argument for
    :c:member:`~PyTypeObject.tp_richcompare` and for :c:func:`PyObject_RichCompare`:
 
-   +------------------+------------+
-   | Constant         | Comparison |
-   +==================+============+
-   | :c:macro:`Py_LT` | ``<``      |
-   +------------------+------------+
-   | :c:macro:`Py_LE` | ``<=``     |
-   +------------------+------------+
-   | :c:macro:`Py_EQ` | ``==``     |
-   +------------------+------------+
-   | :c:macro:`Py_NE` | ``!=``     |
-   +------------------+------------+
-   | :c:macro:`Py_GT` | ``>``      |
-   +------------------+------------+
-   | :c:macro:`Py_GE` | ``>=``     |
-   +------------------+------------+
+   .. c:namespace:: NULL
+
+   +--------------------+------------+
+   | Constant           | Comparison |
+   +====================+============+
+   | .. c:macro:: Py_LT | ``<``      |
+   +--------------------+------------+
+   | .. c:macro:: Py_LE | ``<=``     |
+   +--------------------+------------+
+   | .. c:macro:: Py_EQ | ``==``     |
+   +--------------------+------------+
+   | .. c:macro:: Py_NE | ``!=``     |
+   +--------------------+------------+
+   | .. c:macro:: Py_GT | ``>``      |
+   +--------------------+------------+
+   | .. c:macro:: Py_GE | ``>=``     |
+   +--------------------+------------+
 
    The following macro is defined to ease writing rich comparison functions:
 

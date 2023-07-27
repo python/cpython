@@ -144,20 +144,21 @@ type.
 
    Contains the meta information of a struct sequence type to create.
 
-   +-------------------+------------------------------+--------------------------------------+
-   | Field             | C Type                       | Meaning                              |
-   +===================+==============================+======================================+
-   | ``name``          | ``const char *``             | name of the struct sequence type     |
-   +-------------------+------------------------------+--------------------------------------+
-   | ``doc``           | ``const char *``             | pointer to docstring for the type    |
-   |                   |                              | or ``NULL`` to omit                  |
-   +-------------------+------------------------------+--------------------------------------+
-   | ``fields``        | ``PyStructSequence_Field *`` | pointer to ``NULL``-terminated array |
-   |                   |                              | with field names of the new type     |
-   +-------------------+------------------------------+--------------------------------------+
-   | ``n_in_sequence`` | ``int``                      | number of fields visible to the      |
-   |                   |                              | Python side (if used as tuple)       |
-   +-------------------+------------------------------+--------------------------------------+
+   .. c:member:: const char *name
+
+      Name of the struct sequence type.
+
+   .. c:member:: const char *doc
+
+      Pointer to docstring for the type or ``NULL`` to omit.
+
+   .. c:member:: PyStructSequence_Field *fields
+
+      Pointer to ``NULL``-terminated array with field names of the new type.
+
+   .. c:member:: int n_in_sequence
+
+      Number of fields visible to the Python side (if used as tuple).
 
 
 .. c:type:: PyStructSequence_Field
@@ -168,16 +169,14 @@ type.
    the :c:type:`PyStructSequence_Desc` determines which
    field of the struct sequence is described.
 
-   +-----------+------------------+-----------------------------------------+
-   | Field     | C Type           | Meaning                                 |
-   +===========+==================+=========================================+
-   | ``name``  | ``const char *`` | name for the field or ``NULL`` to end   |
-   |           |                  | the list of named fields, set to        |
-   |           |                  | :c:data:`PyStructSequence_UnnamedField` |
-   |           |                  | to leave unnamed                        |
-   +-----------+------------------+-----------------------------------------+
-   | ``doc``   | ``const char *`` | field docstring or ``NULL`` to omit     |
-   +-----------+------------------+-----------------------------------------+
+   .. c:member:: const char *name
+
+      Name for the field or ``NULL`` to end the list of named fields,
+      set to :c:data:`PyStructSequence_UnnamedField` to leave unnamed.
+
+   .. c:member:: const char *doc
+
+      Field docstring or ``NULL`` to omit.
 
 
 .. c:var:: const char * const PyStructSequence_UnnamedField
