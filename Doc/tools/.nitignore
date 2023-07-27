@@ -4,7 +4,6 @@
 
 Doc/c-api/bool.rst
 Doc/c-api/buffer.rst
-Doc/c-api/capsule.rst
 Doc/c-api/datetime.rst
 Doc/c-api/descriptor.rst
 Doc/c-api/exceptions.rst
@@ -17,7 +16,6 @@ Doc/c-api/intro.rst
 Doc/c-api/memory.rst
 Doc/c-api/memoryview.rst
 Doc/c-api/module.rst
-Doc/c-api/none.rst
 Doc/c-api/object.rst
 Doc/c-api/set.rst
 Doc/c-api/stable.rst
@@ -26,10 +24,8 @@ Doc/c-api/sys.rst
 Doc/c-api/type.rst
 Doc/c-api/typeobj.rst
 Doc/c-api/unicode.rst
-Doc/extending/embedding.rst
 Doc/extending/extending.rst
 Doc/extending/newtypes.rst
-Doc/extending/newtypes_tutorial.rst
 Doc/faq/design.rst
 Doc/faq/extending.rst
 Doc/faq/gui.rst
