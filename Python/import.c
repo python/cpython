@@ -980,12 +980,13 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
     extensions_lock_acquire();
 
     if (EXTENSIONS.hashtable == NULL) {
+        _Py_hashtable_allocator_t alloc = {PyMem_RawMalloc, PyMem_RawFree};
         EXTENSIONS.hashtable = _Py_hashtable_new_full(
             hashtable_hash_str,
             hashtable_compare_str,
             hashtable_destroy_str,  // key
             NULL,  // value
-            NULL
+            &alloc
         );
         if (EXTENSIONS.hashtable == NULL) {
             goto finally;
