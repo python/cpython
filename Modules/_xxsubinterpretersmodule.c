@@ -6,7 +6,7 @@
 #endif
 
 #include "Python.h"
-#include "pycore_interp_id.h"     // _PyInterpreterState_GetIDObject()
+#include "interpreteridobject.h"
 
 
 #define MODULE_NAME "_xxsubinterpreters"
