@@ -171,6 +171,7 @@ class Shelf(collections.abc.MutableMapping):
         if hasattr(self.dict, 'sync'):
             self.dict.sync()
 
+
 class BsdDbShelf(Shelf):
     """Shelf implementation using the "BSD" db interface.
 
