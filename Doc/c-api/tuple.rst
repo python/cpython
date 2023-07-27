@@ -174,7 +174,7 @@ type.
 
    .. c:member:: const char *name
 
-      name for the field or ``NULL`` to end the list of named fields,
+      Name for the field or ``NULL`` to end the list of named fields,
       set to :c:data:`PyStructSequence_UnnamedField` to leave unnamed
 
    .. c:member:: const char *doc
