@@ -2427,7 +2427,7 @@ constructor needs a :class:`tkinter.Canvas` or a
 
 The functional interface for turtle graphics uses the various methods of
 ``Turtle`` and ``TurtleScreen``/``Screen``. Behind the scenes, a screen
-object is automatically created whenever a function derived from a Screen
+object is automatically created whenever a function derived from a ``Screen``
 method is called. Similarly, a turtle object is automatically created
 whenever any of the functions derived from a Turtle method is called.
 
