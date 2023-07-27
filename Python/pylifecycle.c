@@ -619,11 +619,18 @@ init_interp_create_gil(PyThreadState *tstate, int gil)
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+
     HEAD_LOCK(runtime);
-    runtime->allocators.num_gils++;
+    if (runtime->allocators.num_gils == INT_MAX) {
+        status = _PyStatus_ERR("allocators GIL overflow");
+    }
+    else {
+        status =_PyStatus_OK();
+        runtime->allocators.num_gils++;
+    }
     HEAD_UNLOCK(runtime);
 
-    return _PyStatus_OK();
+    return status;
 }
 
 
@@ -1748,6 +1755,7 @@ finalize_interp_delete(PyInterpreterState *interp)
 
     _PyRuntimeState *runtime = interp->runtime;
     HEAD_LOCK(runtime);
+    assert(runtime->allocators.num_gils > 0);
     runtime->allocators.num_gils--;
     HEAD_UNLOCK(runtime);
 
