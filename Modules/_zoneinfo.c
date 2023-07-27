@@ -4,7 +4,7 @@
 
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetOne()
-#include "structmember.h"
+
 
 #include <ctype.h>
 #include <stddef.h>
@@ -694,14 +694,19 @@ zoneinfo_fromutc(PyObject *obj_self, PyObject *dt)
         }
         else {
             PyObject *replace = PyObject_GetAttrString(tmp, "replace");
-            PyObject *args = PyTuple_New(0);
-            PyObject *kwargs = PyDict_New();
-
             Py_DECREF(tmp);
-            if (args == NULL || kwargs == NULL || replace == NULL) {
-                Py_XDECREF(args);
-                Py_XDECREF(kwargs);
-                Py_XDECREF(replace);
+            if (replace == NULL) {
+                return NULL;
+            }
+            PyObject *args = PyTuple_New(0);
+            if (args == NULL) {
+                Py_DECREF(replace);
+                return NULL;
+            }
+            PyObject *kwargs = PyDict_New();
+            if (kwargs == NULL) {
+                Py_DECREF(replace);
+                Py_DECREF(args);
                 return NULL;
             }
 
@@ -2687,13 +2692,13 @@ static PyMethodDef zoneinfo_methods[] = {
 static PyMemberDef zoneinfo_members[] = {
     {.name = "key",
      .offset = offsetof(PyZoneInfo_ZoneInfo, key),
-     .type = T_OBJECT_EX,
-     .flags = READONLY,
+     .type = Py_T_OBJECT_EX,
+     .flags = Py_READONLY,
      .doc = NULL},
     {.name = "__weaklistoffset__",
      .offset = offsetof(PyZoneInfo_ZoneInfo, weakreflist),
-     .type = T_PYSSIZET,
-     .flags = READONLY},
+     .type = Py_T_PYSSIZET,
+     .flags = Py_READONLY},
     {NULL}, /* Sentinel */
 };
 

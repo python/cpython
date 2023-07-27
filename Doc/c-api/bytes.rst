@@ -64,39 +64,39 @@ called with a non-bytes parameter.
    +-------------------+---------------+--------------------------------+
    | Format Characters | Type          | Comment                        |
    +===================+===============+================================+
-   | :attr:`%%`        | *n/a*         | The literal % character.       |
+   | ``%%``            | *n/a*         | The literal % character.       |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%c`        | int           | A single byte,                 |
+   | ``%c``            | int           | A single byte,                 |
    |                   |               | represented as a C int.        |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%d`        | int           | Equivalent to                  |
+   | ``%d``            | int           | Equivalent to                  |
    |                   |               | ``printf("%d")``. [1]_         |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%u`        | unsigned int  | Equivalent to                  |
+   | ``%u``            | unsigned int  | Equivalent to                  |
    |                   |               | ``printf("%u")``. [1]_         |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%ld`       | long          | Equivalent to                  |
+   | ``%ld``           | long          | Equivalent to                  |
    |                   |               | ``printf("%ld")``. [1]_        |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%lu`       | unsigned long | Equivalent to                  |
+   | ``%lu``           | unsigned long | Equivalent to                  |
    |                   |               | ``printf("%lu")``. [1]_        |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%zd`       | :c:type:`\    | Equivalent to                  |
+   | ``%zd``           | :c:type:`\    | Equivalent to                  |
    |                   | Py_ssize_t`   | ``printf("%zd")``. [1]_        |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%zu`       | size_t        | Equivalent to                  |
+   | ``%zu``           | size_t        | Equivalent to                  |
    |                   |               | ``printf("%zu")``. [1]_        |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%i`        | int           | Equivalent to                  |
+   | ``%i``            | int           | Equivalent to                  |
    |                   |               | ``printf("%i")``. [1]_         |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%x`        | int           | Equivalent to                  |
+   | ``%x``            | int           | Equivalent to                  |
    |                   |               | ``printf("%x")``. [1]_         |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%s`        | const char\*  | A null-terminated C character  |
+   | ``%s``            | const char\*  | A null-terminated C character  |
    |                   |               | array.                         |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%p`        | const void\*  | The hex representation of a C  |
+   | ``%p``            | const void\*  | The hex representation of a C  |
    |                   |               | pointer. Mostly equivalent to  |
    |                   |               | ``printf("%p")`` except that   |
    |                   |               | it is guaranteed to start with |

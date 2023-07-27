@@ -1218,6 +1218,12 @@ class Enum(metaclass=EnumType):
     def __reduce_ex__(self, proto):
         return self.__class__, (self._value_, )
 
+    def __deepcopy__(self,memo):
+        return self
+
+    def __copy__(self):
+        return self
+
     # enum.property is used to provide access to the `name` and
     # `value` attributes of enum members while keeping some measure of
     # protection from modification, while still allowing for an enumeration
@@ -1439,12 +1445,11 @@ class Flag(Enum, boundary=STRICT):
         else:
             pseudo_member._name_ = None
         # use setdefault in case another thread already created a composite
-        # with this value, but only if all members are known
-        # note: zero is a special case -- add it
-        if not unknown:
-            pseudo_member = cls._value2member_map_.setdefault(value, pseudo_member)
-            if neg_value is not None:
-                cls._value2member_map_[neg_value] = pseudo_member
+        # with this value
+        # note: zero is a special case -- always add it
+        pseudo_member = cls._value2member_map_.setdefault(value, pseudo_member)
+        if neg_value is not None:
+            cls._value2member_map_[neg_value] = pseudo_member
         return pseudo_member
 
     def __contains__(self, other):
@@ -1516,14 +1521,10 @@ class Flag(Enum, boundary=STRICT):
 
     def __invert__(self):
         if self._inverted_ is None:
-            if self._boundary_ is KEEP:
-                # use all bits
+            if self._boundary_ in (EJECT, KEEP):
                 self._inverted_ = self.__class__(~self._value_)
             else:
-                # calculate flags not in this member
-                self._inverted_ = self.__class__(self._flag_mask_ ^ self._value_)
-            if isinstance(self._inverted_, self.__class__):
-                self._inverted_._inverted_ = self
+                self._inverted_ = self.__class__(self._singles_mask_ & ~self._value_)
         return self._inverted_
 
     __rand__ = __and__

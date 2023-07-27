@@ -71,6 +71,9 @@ typedef struct _object_stats {
     uint64_t type_cache_dunder_misses;
     uint64_t type_cache_collisions;
     uint64_t optimization_attempts;
+    uint64_t optimization_traces_created;
+    uint64_t optimization_traces_executed;
+    uint64_t optimization_uops_executed;
 } ObjectStats;
 
 typedef struct _stats {

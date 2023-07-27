@@ -25,12 +25,13 @@ def write_contents(f):
     """Write C code contents to the target file object.
     """
     opcode = find_module('opcode')
+    _opcode_metadata = find_module('_opcode_metadata')
     targets = ['_unknown_opcode'] * 256
     for opname, op in opcode.opmap.items():
         if not opcode.is_pseudo(op):
             targets[op] = "TARGET_%s" % opname
     next_op = 1
-    for opname in opcode._specialized_instructions:
+    for opname in _opcode_metadata._specialized_instructions:
         while targets[next_op] != '_unknown_opcode':
             next_op += 1
         targets[next_op] = "TARGET_%s" % opname

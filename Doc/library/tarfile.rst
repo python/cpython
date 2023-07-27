@@ -908,7 +908,7 @@ can be:
   path to where the archive is extracted (i.e. the same path is used for all
   members)::
 
-      filter(/, member: TarInfo, path: str) -> TarInfo | None
+      filter(member: TarInfo, path: str, /) -> TarInfo | None
 
   The callable is called just before each member is extracted, so it can
   take the current state of the disk into account.
@@ -928,17 +928,17 @@ Default named filters
 The pre-defined, named filters are available as functions, so they can be
 reused in custom filters:
 
-.. function:: fully_trusted_filter(/, member, path)
+.. function:: fully_trusted_filter(member, path)
 
    Return *member* unchanged.
 
    This implements the ``'fully_trusted'`` filter.
 
-.. function:: tar_filter(/, member, path)
+.. function:: tar_filter(member, path)
 
   Implements the ``'tar'`` filter.
 
-  - Strip leading slashes (``/`` and :attr:`os.sep`) from filenames.
+  - Strip leading slashes (``/`` and :data:`os.sep`) from filenames.
   - :ref:`Refuse <tarfile-extraction-refuse>` to extract files with absolute
     paths (in case the name is absolute
     even after stripping slashes, e.g. ``C:/foo`` on Windows).
@@ -947,11 +947,11 @@ reused in custom filters:
     path (after following symlinks) would end up outside the destination.
     This raises :class:`~tarfile.OutsideDestinationError`.
   - Clear high mode bits (setuid, setgid, sticky) and group/other write bits
-    (:attr:`~stat.S_IWGRP`|:attr:`~stat.S_IWOTH`).
+    (:const:`~stat.S_IWGRP`|:const:`~stat.S_IWOTH`).
 
   Return the modified ``TarInfo`` member.
 
-.. function:: data_filter(/, member, path)
+.. function:: data_filter(member, path)
 
   Implements the ``'data'`` filter.
   In addition to what ``tar_filter`` does:
@@ -972,10 +972,10 @@ reused in custom filters:
   - For regular files, including hard links:
 
     - Set the owner read and write permissions
-      (:attr:`~stat.S_IRUSR`|:attr:`~stat.S_IWUSR`).
+      (:const:`~stat.S_IRUSR`|:const:`~stat.S_IWUSR`).
     - Remove the group & other executable permission
-      (:attr:`~stat.S_IXGRP`|:attr:`~stat.S_IXOTH`)
-      if the owner doesn’t have it (:attr:`~stat.S_IXUSR`).
+      (:const:`~stat.S_IXGRP`|:const:`~stat.S_IXOTH`)
+      if the owner doesn’t have it (:const:`~stat.S_IXUSR`).
 
   - For other files (directories), set ``mode`` to ``None``, so
     that extraction methods skip applying permission bits.

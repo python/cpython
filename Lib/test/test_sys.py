@@ -14,6 +14,7 @@ from test.support import os_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import threading_helper
 from test.support import import_helper
+from test.support import interpreters
 import textwrap
 import unittest
 import warnings
@@ -699,6 +700,35 @@ class SysModuleTest(unittest.TestCase):
 
         self.assertRaises(TypeError, sys.intern, S("abc"))
 
+    def test_subinterp_intern_dynamically_allocated(self):
+        global INTERN_NUMRUNS
+        INTERN_NUMRUNS += 1
+        s = "never interned before" + str(INTERN_NUMRUNS)
+        t = sys.intern(s)
+        self.assertIs(t, s)
+
+        interp = interpreters.create()
+        interp.run(textwrap.dedent(f'''
+            import sys
+            t = sys.intern({s!r})
+            assert id(t) != {id(s)}, (id(t), {id(s)})
+            assert id(t) != {id(t)}, (id(t), {id(t)})
+            '''))
+
+    def test_subinterp_intern_statically_allocated(self):
+        # See Tools/build/generate_global_objects.py for the list
+        # of strings that are always statically allocated.
+        s = '__init__'
+        t = sys.intern(s)
+
+        print('------------------------')
+        interp = interpreters.create()
+        interp.run(textwrap.dedent(f'''
+            import sys
+            t = sys.intern({s!r})
+            assert id(t) == {id(t)}, (id(t), {id(t)})
+            '''))
+
     def test_sys_flags(self):
         self.assertTrue(sys.flags)
         attrs = ("debug",
@@ -960,12 +990,12 @@ class SysModuleTest(unittest.TestCase):
                          "sys.getallocatedblocks unavailable on this build")
     def test_getallocatedblocks(self):
         try:
-            import _testcapi
+            import _testinternalcapi
         except ImportError:
             with_pymalloc = support.with_pymalloc()
         else:
             try:
-                alloc_name = _testcapi.pymem_getallocatorsname()
+                alloc_name = _testinternalcapi.pymem_getallocatorsname()
             except RuntimeError as exc:
                 # "cannot get allocators name" (ex: tracemalloc is used)
                 with_pymalloc = True
@@ -1557,7 +1587,7 @@ class SizeofTest(unittest.TestCase):
                   '10P'                 # PySequenceMethods
                   '2P'                  # PyBufferProcs
                   '6P'
-                  '1PI'                 # Specializer cache
+                  '1PIP'                 # Specializer cache
                   )
         class newstyleclass(object): pass
         # Separate block for PyDictKeysObject with 8 keys and 5 entries

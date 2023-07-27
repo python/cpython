@@ -1934,7 +1934,7 @@ failure.
 .. nonce: _ct_0H
 .. section: Library
 
-The :data:`time.CLOCK_UPTIME_RAW` constant is now available for macOS 10.12.
+The :const:`time.CLOCK_UPTIME_RAW` constant is now available for macOS 10.12.
 
 ..
 
