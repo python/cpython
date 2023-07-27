@@ -2405,8 +2405,8 @@ Public classes
 Explanation
 ===========
 
-A tutle object draws on a screen object, and there a number of key classes in
-the turtle object-oriented interface that be used to create them and relate
+A turtle object draws on a screen object, and there a number of key classes in
+the turtle object-oriented interface that can be used to create them and relate
 them to each other.
 
 A :class:`Turtle` instance will automatically create a :class:`Screen`
