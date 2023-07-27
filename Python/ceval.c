@@ -1987,7 +1987,7 @@ monitor_unwind(PyThreadState *tstate,
     if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_PY_UNWIND)) {
         return;
     }
-    _Py_call_instrumentation_exc0(tstate, PY_MONITORING_EVENT_PY_UNWIND, frame, instr);
+    do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_PY_UNWIND);
 }
 
 
