@@ -1,5 +1,5 @@
 /* Detect platform triplet from builtin defines
- * cc -E Misc/platform_triplet.c | grep -v '^#' | grep -v '^ *$' | grep -v '^typedef' | tr -d ' '
+ * cc -E Misc/platform_triplet.c | grep '^PLATFORM_TRIPLET=' | tr -d ' '
  */
 #undef bfin
 #undef cris
@@ -72,9 +72,7 @@
 #   define LIBC_PPC gnu
 #  endif
 # else
-/* Heuristic to detect musl libc
- * Adds "typedef __builtin_va_list va_list;" to output
- */
+// Heuristic to detect musl libc
 #  include <stdarg.h>
 #  ifdef __DEFINED_va_list
 #   define LIBC musl
@@ -129,86 +127,86 @@
 # endif
 
 # if defined(__x86_64__) && defined(__LP64__)
-        x86_64-linux-LIBC
+PLATFORM_TRIPLET=x86_64-linux-LIBC
 # elif defined(__x86_64__) && defined(__ILP32__)
-        x86_64-linux-LIBC_X32
+PLATFORM_TRIPLET=x86_64-linux-LIBC_X32
 # elif defined(__i386__)
-        i386-linux-LIBC
+PLATFORM_TRIPLET=i386-linux-LIBC
 # elif defined(__aarch64__) && defined(__AARCH64EL__)
 #  if defined(__ILP32__)
-        aarch64_ilp32-linux-LIBC
+PLATFORM_TRIPLET=aarch64_ilp32-linux-LIBC
 #  else
-        aarch64-linux-LIBC
+PLATFORM_TRIPLET=aarch64-linux-LIBC
 #  endif
 # elif defined(__aarch64__) && defined(__AARCH64EB__)
 #  if defined(__ILP32__)
-        aarch64_be_ilp32-linux-LIBC
+PLATFORM_TRIPLET=aarch64_be_ilp32-linux-LIBC
 #  else
-        aarch64_be-linux-LIBC
+PLATFORM_TRIPLET=aarch64_be-linux-LIBC
 #  endif
 # elif defined(__alpha__)
-        alpha-linux-LIBC
+PLATFORM_TRIPLET=alpha-linux-LIBC
 # elif defined(__ARM_EABI__)
 #  if defined(__ARMEL__)
-        arm-linux-LIBC_ARM
+PLATFORM_TRIPLET=arm-linux-LIBC_ARM
 #  else
-        armeb-linux-LIBC_ARM
+PLATFORM_TRIPLET=armeb-linux-LIBC_ARM
 #  endif
 # elif defined(__hppa__)
-        hppa-linux-LIBC
+PLATFORM_TRIPLET=hppa-linux-LIBC
 # elif defined(__ia64__)
-        ia64-linux-LIBC
+PLATFORM_TRIPLET=ia64-linux-LIBC
 # elif defined(__loongarch__) && defined(__loongarch_lp64)
-        loongarch64-linux-LIBC_LA
+PLATFORM_TRIPLET=loongarch64-linux-LIBC_LA
 # elif defined(__m68k__) && !defined(__mcoldfire__)
-        m68k-linux-LIBC
+PLATFORM_TRIPLET=m68k-linux-LIBC
 # elif defined(__mips__)
 #  if defined(__mips_isa_rev) && (__mips_isa_rev >=6)
 #   if defined(_MIPSEL) && defined(__mips64)
-        mipsisa64r6el-linux-LIBC_MIPS
+PLATFORM_TRIPLET=mipsisa64r6el-linux-LIBC_MIPS
 #   elif defined(_MIPSEL)
-        mipsisa32r6el-linux-LIBC_MIPS
+PLATFORM_TRIPLET=mipsisa32r6el-linux-LIBC_MIPS
 #   elif defined(__mips64)
-        mipsisa64r6-linux-LIBC_MIPS
+PLATFORM_TRIPLET=mipsisa64r6-linux-LIBC_MIPS
 #   else
-        mipsisa32r6-linux-LIBC_MIPS
+PLATFORM_TRIPLET=mipsisa32r6-linux-LIBC_MIPS
 #   endif
 #  else
 #   if defined(_MIPSEL) && defined(__mips64)
-        mips64el-linux-LIBC_MIPS
+PLATFORM_TRIPLET=mips64el-linux-LIBC_MIPS
 #   elif defined(_MIPSEL)
-        mipsel-linux-LIBC_MIPS
+PLATFORM_TRIPLET=mipsel-linux-LIBC_MIPS
 #   elif defined(__mips64)
-        mips64-linux-LIBC_MIPS
+PLATFORM_TRIPLET=mips64-linux-LIBC_MIPS
 #   else
-        mips-linux-LIBC_MIPS
+PLATFORM_TRIPLET=mips-linux-LIBC_MIPS
 #   endif
 #  endif
 # elif defined(__or1k__)
-        or1k-linux-LIBC
+PLATFORM_TRIPLET=or1k-linux-LIBC
 # elif defined(__powerpc__)
-        powerpc-linux-LIBC_PPC
+PLATFORM_TRIPLET=powerpc-linux-LIBC_PPC
 # elif defined(__powerpc64__)
 #  if defined(__LITTLE_ENDIAN__)
-        powerpc64le-linux-LIBC
+PLATFORM_TRIPLET=powerpc64le-linux-LIBC
 #  else
-        powerpc64-linux-LIBC
+PLATFORM_TRIPLET=powerpc64-linux-LIBC
 #  endif
 # elif defined(__s390x__)
-        s390x-linux-LIBC
+PLATFORM_TRIPLET=s390x-linux-LIBC
 # elif defined(__s390__)
-        s390-linux-LIBC
+PLATFORM_TRIPLET=s390-linux-LIBC
 # elif defined(__sh__) && defined(__LITTLE_ENDIAN__)
-        sh4-linux-LIBC
+PLATFORM_TRIPLET=sh4-linux-LIBC
 # elif defined(__sparc__) && defined(__arch64__)
-        sparc64-linux-LIBC
+PLATFORM_TRIPLET=sparc64-linux-LIBC
 # elif defined(__sparc__)
-        sparc-linux-LIBC
+PLATFORM_TRIPLET=sparc-linux-LIBC
 # elif defined(__riscv)
 #  if __riscv_xlen == 32
-        riscv32-linux-LIBC
+PLATFORM_TRIPLET=riscv32-linux-LIBC
 #  elif __riscv_xlen == 64
-        riscv64-linux-LIBC
+PLATFORM_TRIPLET=riscv64-linux-LIBC
 #  else
 #   error unknown platform triplet
 #  endif
@@ -220,35 +218,35 @@
  */
 #elif defined(__FreeBSD_kernel__)
 # if defined(__LP64__)
-        x86_64-kfreebsd-gnu
+PLATFORM_TRIPLET=x86_64-kfreebsd-gnu
 # elif defined(__i386__)
-        i386-kfreebsd-gnu
+PLATFORM_TRIPLET=i386-kfreebsd-gnu
 # else
 #   error unknown platform triplet
 # endif
 #elif defined(__gnu_hurd__)
-        i386-gnu
+PLATFORM_TRIPLET=i386-gnu
 #elif defined(__APPLE__)
-        darwin
+PLATFORM_TRIPLET=darwin
 #elif defined(__VXWORKS__)
-        vxworks
+PLATFORM_TRIPLET=vxworks
 #elif defined(__wasm32__)
 #  if defined(__EMSCRIPTEN__)
-        wasm32-emscripten
+PLATFORM_TRIPLET=wasm32-emscripten
 #  elif defined(__wasi__)
 #    if defined(_REENTRANT)
-        wasm32-wasi-threads
+PLATFORM_TRIPLET=wasm32-wasi-threads
 #    else
-        wasm32-wasi
+PLATFORM_TRIPLET=wasm32-wasi
 #    endif
 #  else
 #    error unknown wasm32 platform
 #  endif
 #elif defined(__wasm64__)
 #  if defined(__EMSCRIPTEN__)
-        wasm64-emscripten
+PLATFORM_TRIPLET=wasm64-emscripten
 #  elif defined(__wasi__)
-        wasm64-wasi
+PLATFORM_TRIPLET=wasm64-wasi
 #  else
 #    error unknown wasm64 platform
 #  endif
