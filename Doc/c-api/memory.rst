@@ -431,6 +431,8 @@ Customize Memory Allocators
 
    Enum used to identify an allocator domain. Domains:
 
+   .. c:namespace:: NULL
+
    .. c:macro:: PYMEM_DOMAIN_RAW
 
       Functions:
