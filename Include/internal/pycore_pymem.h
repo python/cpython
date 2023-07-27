@@ -42,7 +42,7 @@ struct _pymem_allocators {
         debug_alloc_api_t obj;
     } debug;
     PyObjectArenaAllocator obj_arena;
-    int num_gils;
+    unsigned int num_gils;
     struct {
         PyMemAllocatorEx mem;
         PyMemAllocatorEx obj;
