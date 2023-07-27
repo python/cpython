@@ -228,21 +228,21 @@ Implementing functions and methods
    Structure used to describe a method of an extension type.  This structure has
    four fields:
 
-   .. c:member:: const char* ml_name
+   .. c:member:: const char *ml_name
 
-      name of the method
+      Name of the method.
 
    .. c:member:: PyCFunction ml_meth
 
-      pointer to the C implementation
+      Pointer to the C implementation.
 
    .. c:member:: int ml_flags
 
-      flags bits indicating how the call should be constructed
+      Flags bits indicating how the call should be constructed.
 
-   .. c:member:: const char* ml_doc
+   .. c:member:: const char *ml_doc
 
-      points to the contents of the docstring
+      Points to the contents of the docstring.
 
 The :c:member:`~PyMethodDef.ml_meth` is a C function pointer.
 The functions may be of different
