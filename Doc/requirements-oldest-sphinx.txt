@@ -27,7 +27,6 @@ MarkupSafe==1.1.1
 packaging==23.1
 Pygments==2.15.1
 requests==2.31.0
-setuptools==68.0.0
 snowballstemmer==2.2.0
 Sphinx==3.2.1
 sphinxcontrib-applehelp==1.0.4
