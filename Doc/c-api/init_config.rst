@@ -850,7 +850,7 @@ PyConfig
    .. c:member:: int legacy_windows_stdio
 
       If non-zero, use :class:`io.FileIO` instead of
-      :class:`io.WindowsConsoleIO` for :data:`sys.stdin`, :data:`sys.stdout`
+      :class:`!io._WindowsConsoleIO` for :data:`sys.stdin`, :data:`sys.stdout`
       and :data:`sys.stderr`.
 
       Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSSTDIO` environment
@@ -1096,7 +1096,7 @@ PyConfig
 
       Set to ``0`` by the :option:`-S` command line option.
 
-      :data:`sys.flags.no_site` is set to the inverted value of
+      :data:`sys.flags.no_site <sys.flags>` is set to the inverted value of
       :c:member:`~PyConfig.site_import`.
 
       Default: ``1``.

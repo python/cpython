@@ -230,7 +230,7 @@ with an exception object::
        return m;
    }
 
-Note that the Python name for the exception object is :exc:`spam.error`.  The
+Note that the Python name for the exception object is :exc:`!spam.error`.  The
 :c:func:`PyErr_NewException` function may create a class with the base class
 being :exc:`Exception` (unless another class is passed in instead of ``NULL``),
 described in :ref:`bltin-exceptions`.
@@ -245,7 +245,7 @@ raises the exception could cause a core dump or other unintended side effects.
 We discuss the use of ``PyMODINIT_FUNC`` as a function return type later in this
 sample.
 
-The :exc:`spam.error` exception can be raised in your extension module using a
+The :exc:`!spam.error` exception can be raised in your extension module using a
 call to :c:func:`PyErr_SetString` as shown below::
 
    static PyObject *
@@ -315,7 +315,7 @@ contexts, as we have seen.
 The Module's Method Table and Initialization Function
 =====================================================
 
-I promised to show how :c:func:`spam_system` is called from Python programs.
+I promised to show how :c:func:`!spam_system` is called from Python programs.
 First, we need to list its name and address in a "method table"::
 
    static PyMethodDef SpamMethods[] = {
@@ -1030,13 +1030,13 @@ Let's follow the control flow into :c:func:`PyList_SetItem`.  The list owns
 references to all its items, so when item 1 is replaced, it has to dispose of
 the original item 1.  Now let's suppose the original item 1 was an instance of a
 user-defined class, and let's further suppose that the class defined a
-:meth:`__del__` method.  If this class instance has a reference count of 1,
-disposing of it will call its :meth:`__del__` method.
+:meth:`!__del__` method.  If this class instance has a reference count of 1,
+disposing of it will call its :meth:`!__del__` method.
 
-Since it is written in Python, the :meth:`__del__` method can execute arbitrary
+Since it is written in Python, the :meth:`!__del__` method can execute arbitrary
 Python code.  Could it perhaps do something to invalidate the reference to
-``item`` in :c:func:`bug`?  You bet!  Assuming that the list passed into
-:c:func:`bug` is accessible to the :meth:`__del__` method, it could execute a
+``item`` in :c:func:`!bug`?  You bet!  Assuming that the list passed into
+:c:func:`!bug` is accessible to the :meth:`!__del__` method, it could execute a
 statement to the effect of ``del list[0]``, and assuming this was the last
 reference to that object, it would free the memory associated with it, thereby
 invalidating ``item``.
@@ -1057,7 +1057,7 @@ increment the reference count.  The correct version of the function reads::
 
 This is a true story.  An older version of Python contained variants of this bug
 and someone spent a considerable amount of time in a C debugger to figure out
-why his :meth:`__del__` methods would fail...
+why his :meth:`!__del__` methods would fail...
 
 The second case of problems with a borrowed reference is a variant involving
 threads.  Normally, multiple threads in the Python interpreter can't get in each
@@ -1224,7 +1224,7 @@ The function :c:func:`PySpam_System` is a plain C function, declared
        return system(command);
    }
 
-The function :c:func:`spam_system` is modified in a trivial way::
+The function :c:func:`!spam_system` is modified in a trivial way::
 
    static PyObject *
    spam_system(PyObject *self, PyObject *args)
