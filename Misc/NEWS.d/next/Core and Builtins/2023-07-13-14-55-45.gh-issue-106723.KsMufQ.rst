@@ -1,1 +1,1 @@
-Fix -Xfrozen_modules=off passing to multiprocessing subinterpreters.
+Propagate ``frozen_modules`` to multiprocessing subinterpreters.
