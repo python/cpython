@@ -242,7 +242,7 @@ Py_ssize_t
 _PyUnicode_InternedSize(void)
 {
     PyObject *dict = get_interned_dict(_PyInterpreterState_GET());
-    return _Py_hashtable_len(INTERNED_STRINGS) + PyObject_Length(dict);
+    return _Py_hashtable_len(INTERNED_STRINGS) + PyDict_GET_SIZE(dict);
 }
 
 static Py_hash_t unicode_hash(PyObject *);
