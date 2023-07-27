@@ -270,7 +270,7 @@ structure::
 One entry should be defined for each method provided by the type; no entries are
 needed for methods inherited from a base type.  One additional entry is needed
 at the end; it is a sentinel that marks the end of the array.  The
-:attr:`ml_name` field of the sentinel must be ``NULL``.
+:c:member:`~PyMethodDef.ml_name` field of the sentinel must be ``NULL``.
 
 The second table is used to define attributes which map directly to data stored
 in the instance.  A variety of primitive C types are supported, and access may

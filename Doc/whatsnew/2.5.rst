@@ -954,7 +954,7 @@ The return value must be either a Python integer or long integer. The
 interpreter will check that the type returned is correct, and raises a
 :exc:`TypeError` if this requirement isn't met.
 
-A corresponding :attr:`nb_index` slot was added to the C-level
+A corresponding :c:member:`~PyNumberMethods.nb_index` slot was added to the C-level
 :c:type:`PyNumberMethods` structure to let C extensions implement this protocol.
 ``PyNumber_Index(obj)`` can be used in extension code to call the
 :meth:`__index__` function and retrieve its result.
