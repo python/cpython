@@ -413,10 +413,9 @@ _Py_WriteIndentedMargin(int indent, const char *margin, PyObject *f)
     return 0;
 }
 
+
 static int
-display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int indent,
-                                int margin_indent, const char *margin,
-                                int *truncation, PyObject **line)
+get_source_lines(PyObject *filename, int lineno, int end_lineno, PyObject **lines)
 {
     int fd;
     int i;
@@ -428,11 +427,12 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
     PyObject *lineobj = NULL;
     PyObject *res;
     char buf[MAXPATHLEN+1];
-    int kind;
-    const void *data;
 
     /* open the file */
     if (filename == NULL)
+        return 0;
+
+    if (lines == NULL)
         return 0;
 
     /* Do not attempt to open things like <string> or <stdin> */
@@ -496,15 +496,30 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
     }
     Py_DECREF(binary);
 
-    /* get the line number lineno */
-    for (i = 0; i < lineno; i++) {
-        Py_XDECREF(lineobj);
+    /* get lines between lineno and end_lineno, inclusive */
+    PyObject *lines_accum = PyUnicode_FromString("");
+    if (!lines_accum) {
+        goto cleanup_fob;
+    }
+    for (i = 1; i <= end_lineno; i++) {
         lineobj = PyFile_GetLine(fob, -1);
-        if (!lineobj) {
-            PyErr_Clear();
-            break;
+        if (i >= lineno) {
+            if (!lineobj || !PyUnicode_Check(lineobj)) {
+                Py_XSETREF(lineobj, PyUnicode_FromString("\n"));
+                if (!lineobj) {
+                    goto cleanup_fob;
+                }
+            }
+            Py_SETREF(lines_accum, PyUnicode_Concat(lines_accum, lineobj));
+            if (!lines_accum) {
+                goto cleanup_fob;
+            }
         }
     }
+    *lines = Py_NewRef(lines_accum);
+cleanup_fob:
+    Py_XDECREF(lines_accum);
+    PyErr_Clear();
     res = PyObject_CallMethodNoArgs(fob, &_Py_ID(close));
     if (res) {
         Py_DECREF(res);
@@ -513,9 +528,25 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
         PyErr_Clear();
     }
     Py_DECREF(fob);
-    if (!lineobj || !PyUnicode_Check(lineobj)) {
+
+    return 0;
+}
+
+static int
+display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int indent,
+                                int margin_indent, const char *margin,
+                                int *truncation, PyObject **line)
+{
+    PyObject *lineobj = NULL;
+    int i;
+    int result;
+    int kind;
+    const void *data;
+
+    result = get_source_lines(filename, lineno, lineno, &lineobj);
+    if (result || lineobj == NULL) {
         Py_XDECREF(lineobj);
-        return -1;
+        return result;
     }
 
     if (line) {
@@ -562,10 +593,10 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
         goto error;
     }
 
-    Py_DECREF(lineobj);
+    Py_XDECREF(lineobj);
     return 0;
 error:
-    Py_DECREF(lineobj);
+    Py_XDECREF(lineobj);
     return -1;
 }
 
@@ -1356,4 +1387,3 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
 
     return NULL;
 }
-
