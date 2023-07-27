@@ -136,19 +136,26 @@ class MonitoringCountTest(MonitoringTestBase, unittest.TestCase):
 
 E = sys.monitoring.events
 
-SIMPLE_EVENTS = [
+INSTRUMENTED_EVENTS = [
     (E.PY_START, "start"),
     (E.PY_RESUME, "resume"),
     (E.PY_RETURN, "return"),
     (E.PY_YIELD, "yield"),
     (E.JUMP, "jump"),
     (E.BRANCH, "branch"),
+]
+
+EXCEPT_EVENTS = [
     (E.RAISE, "raise"),
     (E.PY_UNWIND, "unwind"),
     (E.EXCEPTION_HANDLED, "exception_handled"),
+]
+
+SIMPLE_EVENTS = INSTRUMENTED_EVENTS + EXCEPT_EVENTS + [
     (E.C_RAISE, "c_raise"),
     (E.C_RETURN, "c_return"),
 ]
+
 
 SIMPLE_EVENT_SET = functools.reduce(operator.or_, [ev for (ev, _) in SIMPLE_EVENTS], 0) | E.CALL
 
@@ -617,6 +624,49 @@ class LineMonitoringTest(MonitoringTestBase, unittest.TestCase):
             line = 6
 
         self.check_lines(func2, [1,2,3,4,5,6])
+
+class TestDisable(MonitoringTestBase, unittest.TestCase):
+
+    def gen(self, cond):
+        for i in range(10):
+            if cond:
+                yield 1
+            else:
+                yield 2
+
+    def raise_handle_reraise(self):
+        try:
+            1/0
+        except:
+            raise
+
+    def test_disable_legal_events(self):
+        for event, name in INSTRUMENTED_EVENTS:
+            try:
+                counter = CounterWithDisable()
+                counter.disable = True
+                sys.monitoring.register_callback(TEST_TOOL, event, counter)
+                sys.monitoring.set_events(TEST_TOOL, event)
+                for _ in self.gen(1):
+                    pass
+                self.assertLess(counter.count, 4)
+            finally:
+                sys.monitoring.set_events(TEST_TOOL, 0)
+                sys.monitoring.register_callback(TEST_TOOL, event, None)
+
+
+    def test_disable_illegal_events(self):
+        for event, name in EXCEPT_EVENTS:
+            try:
+                counter = CounterWithDisable()
+                counter.disable = True
+                sys.monitoring.register_callback(TEST_TOOL, event, counter)
+                sys.monitoring.set_events(TEST_TOOL, event)
+                with self.assertRaises(ValueError):
+                    self.raise_handle_reraise()
+            finally:
+                sys.monitoring.set_events(TEST_TOOL, 0)
+                sys.monitoring.register_callback(TEST_TOOL, event, None)
 
 
 class ExceptionRecorder:
