@@ -356,13 +356,7 @@ md5_exec(PyObject *m)
     st->md5_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         m, &md5_type_spec, NULL);
 
-    if (st->md5_type == NULL) {
-        return -1;
-    }
-
-    Py_INCREF((PyObject *)st->md5_type);
-    if (PyModule_AddObject(m, "MD5Type", (PyObject *)st->md5_type) < 0) {
-         Py_DECREF(st->md5_type);
+    if (PyModule_AddObjectRef(m, "MD5Type", (PyObject *)st->md5_type) < 0) {
         return -1;
     }
 

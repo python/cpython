@@ -10,7 +10,6 @@
 #undef NDEBUG
 
 #include "Python.h"
-#include "frameobject.h"
 #include "pycore_atomic_funcs.h" // _Py_atomic_int_get()
 #include "pycore_bitutils.h"     // _Py_bswap32()
 #include "pycore_bytesobject.h"  // _PyBytes_Find()
@@ -23,9 +22,12 @@
 #include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
 #include "pycore_interp.h"       // _PyInterpreterState_GetConfigCopy()
 #include "pycore_interp_id.h"    // _PyInterpreterID_LookUp()
+#include "pycore_object.h"        // _PyObject_IsFreed()
 #include "pycore_pathconfig.h"   // _PyPathConfig_ClearGlobal()
 #include "pycore_pyerrors.h"     // _Py_UTF8_Edit_Cost()
 #include "pycore_pystate.h"      // _PyThreadState_GET()
+
+#include "frameobject.h"
 #include "osdefs.h"              // MAXPATHLEN
 
 #include "clinic/_testinternalcapi.c.h"
@@ -1446,6 +1448,89 @@ test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject *
+test_pyobject_is_freed(const char *test_name, PyObject *op)
+{
+    if (!_PyObject_IsFreed(op)) {
+        PyErr_SetString(PyExc_AssertionError,
+                        "object is not seen as freed");
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+check_pyobject_null_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyObject *op = NULL;
+    return test_pyobject_is_freed("check_pyobject_null_is_freed", op);
+}
+
+
+static PyObject *
+check_pyobject_uninitialized_is_freed(PyObject *self,
+                                      PyObject *Py_UNUSED(args))
+{
+    PyObject *op = (PyObject *)PyObject_Malloc(sizeof(PyObject));
+    if (op == NULL) {
+        return NULL;
+    }
+    /* Initialize reference count to avoid early crash in ceval or GC */
+    Py_SET_REFCNT(op, 1);
+    /* object fields like ob_type are uninitialized! */
+    return test_pyobject_is_freed("check_pyobject_uninitialized_is_freed", op);
+}
+
+
+static PyObject *
+check_pyobject_forbidden_bytes_is_freed(PyObject *self,
+                                        PyObject *Py_UNUSED(args))
+{
+    /* Allocate an incomplete PyObject structure: truncate 'ob_type' field */
+    PyObject *op = (PyObject *)PyObject_Malloc(offsetof(PyObject, ob_type));
+    if (op == NULL) {
+        return NULL;
+    }
+    /* Initialize reference count to avoid early crash in ceval or GC */
+    Py_SET_REFCNT(op, 1);
+    /* ob_type field is after the memory block: part of "forbidden bytes"
+       when using debug hooks on memory allocators! */
+    return test_pyobject_is_freed("check_pyobject_forbidden_bytes_is_freed", op);
+}
+
+
+static PyObject *
+check_pyobject_freed_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    /* This test would fail if run with the address sanitizer */
+#ifdef _Py_ADDRESS_SANITIZER
+    Py_RETURN_NONE;
+#else
+    PyObject *op = PyObject_CallNoArgs((PyObject *)&PyBaseObject_Type);
+    if (op == NULL) {
+        return NULL;
+    }
+    Py_TYPE(op)->tp_dealloc(op);
+    /* Reset reference count to avoid early crash in ceval or GC */
+    Py_SET_REFCNT(op, 1);
+    /* object memory is freed! */
+    return test_pyobject_is_freed("check_pyobject_freed_is_freed", op);
+#endif
+}
+
+
+static PyObject *
+test_pymem_getallocatorsname(PyObject *self, PyObject *args)
+{
+    const char *name = _PyMem_GetCurrentAllocatorName();
+    if (name == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "cannot get allocators name");
+        return NULL;
+    }
+    return PyUnicode_FromString(name);
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -1502,6 +1587,13 @@ static PyMethodDef module_functions[] = {
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {"_PyUnicode_TransformDecimalAndSpaceToASCII", unicode_transformdecimalandspacetoascii, METH_O},
     {"test_atexit", test_atexit, METH_NOARGS},
+    {"check_pyobject_forbidden_bytes_is_freed",
+                            check_pyobject_forbidden_bytes_is_freed, METH_NOARGS},
+    {"check_pyobject_freed_is_freed", check_pyobject_freed_is_freed, METH_NOARGS},
+    {"check_pyobject_null_is_freed",  check_pyobject_null_is_freed,  METH_NOARGS},
+    {"check_pyobject_uninitialized_is_freed",
+                              check_pyobject_uninitialized_is_freed, METH_NOARGS},
+    {"pymem_getallocatorsname", test_pymem_getallocatorsname, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

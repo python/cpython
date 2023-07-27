@@ -274,8 +274,8 @@ typedef struct pyruntimestate {
 
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
 
-PyAPI_FUNC(PyStatus) _PyRuntimeState_Init(_PyRuntimeState *runtime);
-PyAPI_FUNC(void) _PyRuntimeState_Fini(_PyRuntimeState *runtime);
+extern PyStatus _PyRuntimeState_Init(_PyRuntimeState *runtime);
+extern void _PyRuntimeState_Fini(_PyRuntimeState *runtime);
 
 #ifdef HAVE_FORK
 extern PyStatus _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime);
@@ -283,9 +283,9 @@ extern PyStatus _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime);
 
 /* Initialize _PyRuntimeState.
    Return NULL on success, or return an error message on failure. */
-PyAPI_FUNC(PyStatus) _PyRuntime_Initialize(void);
+extern PyStatus _PyRuntime_Initialize(void);
 
-PyAPI_FUNC(void) _PyRuntime_Finalize(void);
+extern void _PyRuntime_Finalize(void);
 
 
 static inline PyThreadState*
