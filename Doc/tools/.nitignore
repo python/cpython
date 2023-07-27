@@ -3,13 +3,10 @@
 # Add blank lines between files and keep them sorted lexicographically
 # to help avoid merge conflicts.
 
-Doc/c-api/allocation.rst
 Doc/c-api/arg.rst
 Doc/c-api/bool.rst
 Doc/c-api/buffer.rst
 Doc/c-api/capsule.rst
-Doc/c-api/complex.rst
-Doc/c-api/conversion.rst
 Doc/c-api/datetime.rst
 Doc/c-api/descriptor.rst
 Doc/c-api/dict.rst

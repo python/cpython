@@ -608,7 +608,7 @@ APIs:
                                                     Py_ssize_t how_many)
 
    Copy characters from one Unicode object into another.  This function performs
-   character conversion when necessary and falls back to :c:func:`memcpy` if
+   character conversion when necessary and falls back to :c:func:`!memcpy` if
    possible.  Returns ``-1`` and sets an exception on error, otherwise returns
    the number of copied characters.
 
@@ -721,7 +721,7 @@ system.
 .. c:function:: PyObject* PyUnicode_DecodeLocale(const char *str, const char *errors)
 
    Similar to :c:func:`PyUnicode_DecodeLocaleAndSize`, but compute the string
-   length using :c:func:`strlen`.
+   length using :c:func:`!strlen`.
 
    .. versionadded:: 3.3
 
@@ -879,7 +879,7 @@ wchar_t Support
    most C functions. If *size* is ``NULL`` and the :c:expr:`wchar_t*` string
    contains null characters a :exc:`ValueError` is raised.
 
-   Returns a buffer allocated by :c:func:`PyMem_New` (use
+   Returns a buffer allocated by :c:macro:`PyMem_New` (use
    :c:func:`PyMem_Free` to free it) on success. On error, returns ``NULL``
    and *\*size* is undefined. Raises a :exc:`MemoryError` if memory allocation
    is failed.

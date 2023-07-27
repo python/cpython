@@ -135,10 +135,10 @@ Importing Modules
    The module's :attr:`__spec__` and :attr:`__loader__` will be set, if
    not set already, with the appropriate values.  The spec's loader will
    be set to the module's ``__loader__`` (if set) and to an instance of
-   :class:`SourceFileLoader` otherwise.
+   :class:`~importlib.machinery.SourceFileLoader` otherwise.
 
    The module's :attr:`__file__` attribute will be set to the code object's
-   :attr:`co_filename`.  If applicable, :attr:`__cached__` will also
+   :attr:`!co_filename`.  If applicable, :attr:`__cached__` will also
    be set.
 
    This function will reload the module if it was already imported.  See
@@ -225,7 +225,7 @@ Importing Modules
 
 .. c:function:: PyObject* PyImport_GetImporter(PyObject *path)
 
-   Return a finder object for a :data:`sys.path`/:attr:`pkg.__path__` item
+   Return a finder object for a :data:`sys.path`/:attr:`!pkg.__path__` item
    *path*, possibly by fetching it from the :data:`sys.path_importer_cache`
    dict.  If it wasn't yet cached, traverse :data:`sys.path_hooks` until a hook
    is found that can handle the path item.  Return ``None`` if no hook could;

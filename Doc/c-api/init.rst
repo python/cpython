@@ -25,7 +25,7 @@ The following functions can be safely called before Python is initialized:
 
   * :c:func:`PyImport_AppendInittab`
   * :c:func:`PyImport_ExtendInittab`
-  * :c:func:`PyInitFrozenExtensions`
+  * :c:func:`!PyInitFrozenExtensions`
   * :c:func:`PyMem_SetAllocator`
   * :c:func:`PyMem_SetupDebugHooks`
   * :c:func:`PyObject_SetArenaAllocator`
@@ -157,7 +157,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    :c:member:`PyConfig.use_environment` should be used instead, see
    :ref:`Python Initialization Configuration <init-config>`.
 
-   Ignore all :envvar:`PYTHON*` environment variables, e.g.
+   Ignore all :envvar:`!PYTHON*` environment variables, e.g.
    :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`, that might be set.
 
    Set by the :option:`-E` and :option:`-I` options.
@@ -230,7 +230,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    :ref:`Python Initialization Configuration <init-config>`.
 
    If the flag is non-zero, use :class:`io.FileIO` instead of
-   :class:`WindowsConsoleIO` for :mod:`sys` standard streams.
+   :class:`!io._WindowsConsoleIO` for :mod:`sys` standard streams.
 
    Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSSTDIO` environment
    variable is set to a non-empty string.
@@ -401,7 +401,7 @@ Initializing and finalizing the interpreter
    the application.
 
    **Bugs and caveats:** The destruction of modules and objects in modules is done
-   in random order; this may cause destructors (:meth:`__del__` methods) to fail
+   in random order; this may cause destructors (:meth:`~object.__del__` methods) to fail
    when they depend on other objects (even functions) or modules.  Dynamically
    loaded extension modules loaded by Python are not unloaded.  Small amounts of
    memory allocated by the Python interpreter may not be freed (if you find a leak,
@@ -485,12 +485,12 @@ Process-wide parameters
    interpreter will change the contents of this storage.
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_*` string.
+   :c:expr:`wchar_t *` string.
 
    .. deprecated:: 3.11
 
 
-.. c:function:: wchar* Py_GetProgramName()
+.. c:function:: wchar_t* Py_GetProgramName()
 
    .. index:: single: Py_SetProgramName()
 
@@ -981,7 +981,7 @@ the fork, and releasing them afterwards. In addition, it resets any
 :ref:`lock-objects` in the child. When extending or embedding Python, there
 is no way to inform Python of additional (non-Python) locks that need to be
 acquired before or reset after a fork. OS facilities such as
-:c:func:`pthread_atfork` would need to be used to accomplish the same thing.
+:c:func:`!pthread_atfork` would need to be used to accomplish the same thing.
 Additionally, when extending or embedding Python, calling :c:func:`fork`
 directly rather than through :func:`os.fork` (and returning to or calling
 into Python) may result in a deadlock by one of Python's internal locks
@@ -1087,7 +1087,7 @@ code, or when embedding the Python interpreter:
    .. note::
       Calling this function from a thread when the runtime is finalizing
       will terminate the thread, even if the thread was not created by Python.
-      You can use :c:func:`_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      You can use :c:func:`!_Py_IsFinalizing` or :func:`sys.is_finalizing` to
       check if the interpreter is in process of being finalized before calling
       this function to avoid unwanted termination.
 
@@ -1133,7 +1133,7 @@ with sub-interpreters:
    .. note::
       Calling this function from a thread when the runtime is finalizing
       will terminate the thread, even if the thread was not created by Python.
-      You can use :c:func:`_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      You can use :c:func:`!_Py_IsFinalizing` or :func:`sys.is_finalizing` to
       check if the interpreter is in process of being finalized before calling
       this function to avoid unwanted termination.
 
@@ -1415,7 +1415,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    .. note::
       Calling this function from a thread when the runtime is finalizing
       will terminate the thread, even if the thread was not created by Python.
-      You can use :c:func:`_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      You can use :c:func:`!_Py_IsFinalizing` or :func:`sys.is_finalizing` to
       check if the interpreter is in process of being finalized before calling
       this function to avoid unwanted termination.
 

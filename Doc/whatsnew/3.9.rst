@@ -1389,8 +1389,8 @@ Porting to Python 3.9
   * :c:func:`PyObject_IS_GC` macro was converted to a function.
 
   * The :c:func:`PyObject_NEW` macro becomes an alias to the
-    :c:func:`PyObject_New` macro, and the :c:func:`PyObject_NEW_VAR` macro
-    becomes an alias to the :c:func:`PyObject_NewVar` macro. They no longer
+    :c:macro:`PyObject_New` macro, and the :c:func:`PyObject_NEW_VAR` macro
+    becomes an alias to the :c:macro:`PyObject_NewVar` macro. They no longer
     access directly the :c:member:`PyTypeObject.tp_basicsize` member.
 
   * :c:func:`PyObject_GET_WEAKREFS_LISTPTR` macro was converted to a function:
