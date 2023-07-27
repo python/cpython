@@ -525,7 +525,7 @@ class HelpFormatter(object):
 
         # short action name; start on the same line and pad two spaces
         elif len(action_header) <= action_width:
-            action_header = f'{"":{self._current_indent}}{action_header:{action_width}}  '
+            action_header = f'{"":{self._current_indent}}{action_header:<{action_width}}  '
             indent_first = 0
 
         # long action name; start on the next line
