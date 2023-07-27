@@ -1313,6 +1313,9 @@ rlhandler(char *text)
 static char *
 readline_until_enter_or_signal(const char *prompt, int *signal)
 {
+    // Defined in Parser/myreadline.c
+    extern PyThreadState *_PyOS_ReadlineTState;
+
     char * not_done_reading = "";
     fd_set selectset;
 

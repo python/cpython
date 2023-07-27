@@ -11,12 +11,12 @@
 #include "frameobject.h"          // PyFrameObject
 #include "pycore_frame.h"
 #include "opcode.h"               // EXTENDED_ARG
-#include "structmember.h"         // PyMemberDef
+
 
 #define OFF(x) offsetof(PyFrameObject, x)
 
 static PyMemberDef frame_memberlist[] = {
-    {"f_trace_lines",   T_BOOL,         OFF(f_trace_lines), 0},
+    {"f_trace_lines",   Py_T_BOOL,         OFF(f_trace_lines), 0},
     {NULL}      /* Sentinel */
 };
 

@@ -116,19 +116,12 @@ struct tok_state {
 
     int type_comments;      /* Whether to look for type comments */
 
-    /* async/await related fields (still needed depending on feature_version) */
-    int async_hacks;     /* =1 if async/await aren't always keywords */
-    int async_def;        /* =1 if tokens are inside an 'async def' body. */
-    int async_def_indent; /* Indentation level of the outermost 'async def'. */
-    int async_def_nl;     /* =1 if the outermost 'async def' had at least one
-                             NEWLINE token after it. */
     /* How to proceed when asked for a new token in interactive mode */
     enum interactive_underflow_t interactive_underflow;
     int report_warnings;
     // TODO: Factor this into its own thing
     tokenizer_mode tok_mode_stack[MAXFSTRINGLEVEL];
     int tok_mode_stack_index;
-    int tok_report_warnings;
     int tok_extra_tokens;
     int comment_newline;
     int implicit_newline;

@@ -12,9 +12,11 @@
 #include "pycore_bytesobject.h"   // _PyBytesWriter
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object.h"        // _PyNone_Type
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime.h"       // _Py_ID()
-#include "structmember.h"         // PyMemberDef
+#include "pycore_setobject.h"     // _PySet_NextEntry()
+
 
 #include <stdlib.h>               // strtol()
 
@@ -5072,9 +5074,9 @@ Pickler_set_persid(PicklerObject *self, PyObject *value, void *Py_UNUSED(ignored
 }
 
 static PyMemberDef Pickler_members[] = {
-    {"bin", T_INT, offsetof(PicklerObject, bin)},
-    {"fast", T_INT, offsetof(PicklerObject, fast)},
-    {"dispatch_table", T_OBJECT_EX, offsetof(PicklerObject, dispatch_table)},
+    {"bin", Py_T_INT, offsetof(PicklerObject, bin)},
+    {"fast", Py_T_INT, offsetof(PicklerObject, fast)},
+    {"dispatch_table", Py_T_OBJECT_EX, offsetof(PicklerObject, dispatch_table)},
     {NULL}
 };
 
