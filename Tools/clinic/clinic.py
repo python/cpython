@@ -4730,6 +4730,7 @@ class DSLParser:
                 return
 
         line, _, returns = line.partition('->')
+        returns = returns.strip()
 
         full_name, _, c_basename = line.partition(' as ')
         full_name = full_name.strip()
@@ -4746,7 +4747,7 @@ class DSLParser:
             try:
                 module_node = ast.parse(ast_input)
             except SyntaxError:
-                fail(f"Badly-formed annotation for {full_name}: {returns}")
+                fail(f"Badly formed annotation for {full_name}: {returns!r}")
             function_node = module_node.body[0]
             assert isinstance(function_node, ast.FunctionDef)
             try:
@@ -4757,7 +4758,7 @@ class DSLParser:
                     fail(f"No available return converter called {name!r}")
                 return_converter = return_converters[name](**kwargs)
             except ValueError:
-                fail(f"Badly-formed annotation for {full_name}: {returns}")
+                fail(f"Badly formed annotation for {full_name}: {returns!r}")
 
         fields = [x.strip() for x in full_name.split('.')]
         function_name = fields.pop()
