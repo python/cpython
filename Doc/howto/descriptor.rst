@@ -779,8 +779,8 @@ by a search through the class's :term:`method resolution order`.
 
 If a descriptor is found, it is invoked with ``desc.__get__(None, A)``.
 
-The full C implementation can be found in :c:func:`type_getattro()` and
-:c:func:`_PyType_Lookup()` in :source:`Objects/typeobject.c`.
+The full C implementation can be found in :c:func:`!type_getattro` and
+:c:func:`!_PyType_Lookup` in :source:`Objects/typeobject.c`.
 
 
 Invocation from super
@@ -794,7 +794,7 @@ for the base class ``B`` immediately following ``A`` and then returns
 ``B.__dict__['m'].__get__(obj, A)``.  If not a descriptor, ``m`` is returned
 unchanged.
 
-The full C implementation can be found in :c:func:`super_getattro()` in
+The full C implementation can be found in :c:func:`!super_getattro` in
 :source:`Objects/typeobject.c`.  A pure Python equivalent can be found in
 `Guido's Tutorial
 <https://www.python.org/download/releases/2.2.3/descrintro/#cooperation>`_.

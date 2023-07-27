@@ -286,9 +286,9 @@ be read-only or read-write.  The structures in the table are defined as::
 
 For each entry in the table, a :term:`descriptor` will be constructed and added to the
 type which will be able to extract a value from the instance structure.  The
-:attr:`type` field should contain a type code like :c:macro:`Py_T_INT` or
+:c:member:`~PyMemberDef.type` field should contain a type code like :c:macro:`Py_T_INT` or
 :c:macro:`Py_T_DOUBLE`; the value will be used to determine how to
-convert Python values to and from C values.  The :attr:`flags` field is used to
+convert Python values to and from C values.  The :c:member:`~PyMemberDef.flags` field is used to
 store flags which control how the attribute can be accessed: you can set it to
 :c:macro:`Py_READONLY` to prevent Python code from setting it.
 
@@ -298,7 +298,7 @@ have an associated doc string simply by providing the text in the table.  An
 application can use the introspection API to retrieve the descriptor from the
 class object, and get the doc string using its :attr:`__doc__` attribute.
 
-As with the :c:member:`~PyTypeObject.tp_methods` table, a sentinel entry with a :attr:`name` value
+As with the :c:member:`~PyTypeObject.tp_methods` table, a sentinel entry with a :c:member:`~PyMethodDef.name` value
 of ``NULL`` is required.
 
 .. XXX Descriptors need to be explained in more detail somewhere, but not here.
@@ -323,7 +323,7 @@ called, so that if you do need to extend their functionality, you'll understand
 what needs to be done.
 
 The :c:member:`~PyTypeObject.tp_getattr` handler is called when the object requires an attribute
-look-up.  It is called in the same situations where the :meth:`__getattr__`
+look-up.  It is called in the same situations where the :meth:`~object.__getattr__`
 method of a class would be called.
 
 Here is an example::
@@ -342,8 +342,8 @@ Here is an example::
        return NULL;
    }
 
-The :c:member:`~PyTypeObject.tp_setattr` handler is called when the :meth:`__setattr__` or
-:meth:`__delattr__` method of a class instance would be called.  When an
+The :c:member:`~PyTypeObject.tp_setattr` handler is called when the :meth:`~object.__setattr__` or
+:meth:`~object.__delattr__` method of a class instance would be called.  When an
 attribute should be deleted, the third parameter will be ``NULL``.  Here is an
 example that simply raises an exception; if this were really all you wanted, the
 :c:member:`~PyTypeObject.tp_setattr` handler should be set to ``NULL``. ::
@@ -364,7 +364,7 @@ Object Comparison
 
 The :c:member:`~PyTypeObject.tp_richcompare` handler is called when comparisons are needed.  It is
 analogous to the :ref:`rich comparison methods <richcmpfuncs>`, like
-:meth:`__lt__`, and also called by :c:func:`PyObject_RichCompare` and
+:meth:`!__lt__`, and also called by :c:func:`PyObject_RichCompare` and
 :c:func:`PyObject_RichCompareBool`.
 
 This function is called with two Python objects and the operator as arguments,
@@ -505,7 +505,7 @@ These functions provide support for the iterator protocol.  Both handlers
 take exactly one parameter, the instance for which they are being called,
 and return a new reference.  In the case of an error, they should set an
 exception and return ``NULL``.  :c:member:`~PyTypeObject.tp_iter` corresponds
-to the Python :meth:`__iter__` method, while :c:member:`~PyTypeObject.tp_iternext`
+to the Python :meth:`~object.__iter__` method, while :c:member:`~PyTypeObject.tp_iternext`
 corresponds to the Python :meth:`~iterator.__next__` method.
 
 Any :term:`iterable` object must implement the :c:member:`~PyTypeObject.tp_iter`
