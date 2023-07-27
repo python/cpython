@@ -411,6 +411,7 @@ One difference between this module and Henstridge's: his catalog objects
 supported access through a mapping API, but this appears to be unused and so is
 not currently supported.
 
+.. _i18n-howto:
 
 Internationalizing your programs and modules
 --------------------------------------------

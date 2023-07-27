@@ -1,0 +1,1 @@
+Remove kwargs-based :class:`typing.TypedDict` creation

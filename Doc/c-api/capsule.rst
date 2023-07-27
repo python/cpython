@@ -5,7 +5,7 @@
 Capsules
 --------
 
-.. index:: object: Capsule
+.. index:: pair: object; Capsule
 
 Refer to :ref:`using-capsules` for more information on using these objects.
 
@@ -64,7 +64,7 @@ Refer to :ref:`using-capsules` for more information on using these objects.
 
    The *name* parameter must compare exactly to the name stored in the capsule.
    If the name stored in the capsule is ``NULL``, the *name* passed in must also
-   be ``NULL``.  Python uses the C function :c:func:`strcmp` to compare capsule
+   be ``NULL``.  Python uses the C function :c:func:`!strcmp` to compare capsule
    names.
 
 

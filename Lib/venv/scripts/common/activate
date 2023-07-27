@@ -1,5 +1,5 @@
 # This file must be used with "source bin/activate" *from bash*
-# you cannot run it directly
+# You cannot run it directly
 
 deactivate () {
     # reset old environment variables
@@ -52,6 +52,9 @@ _OLD_VIRTUAL_PATH="$PATH"
 PATH="$VIRTUAL_ENV/__VENV_BIN_NAME__:$PATH"
 export PATH
 
+VIRTUAL_ENV_PROMPT="__VENV_PROMPT__"
+export VIRTUAL_ENV_PROMPT
+
 # unset PYTHONHOME if set
 # this will fail if PYTHONHOME is set to the empty string (which is bad anyway)
 # could use `if (set -u; : $PYTHONHOME) ;` in bash
@@ -64,8 +67,6 @@ if [ -z "${VIRTUAL_ENV_DISABLE_PROMPT:-}" ] ; then
     _OLD_VIRTUAL_PS1="${PS1:-}"
     PS1="__VENV_PROMPT__${PS1:-}"
     export PS1
-    VIRTUAL_ENV_PROMPT="__VENV_PROMPT__"
-    export VIRTUAL_ENV_PROMPT
 fi
 
 # This should detect bash and zsh, which have a hash command that must

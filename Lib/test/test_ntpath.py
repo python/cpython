@@ -169,6 +169,7 @@ class TestNtpath(NtpathTestCase):
 
         # gh-81790: support device namespace, including UNC drives.
         tester('ntpath.splitroot("//?/c:")', ("//?/c:", "", ""))
+        tester('ntpath.splitroot("//./c:")', ("//./c:", "", ""))
         tester('ntpath.splitroot("//?/c:/")', ("//?/c:", "/", ""))
         tester('ntpath.splitroot("//?/c:/dir")', ("//?/c:", "/", "dir"))
         tester('ntpath.splitroot("//?/UNC")', ("//?/UNC", "", ""))
@@ -179,8 +180,12 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.splitroot("//?/VOLUME{00000000-0000-0000-0000-000000000000}/spam")',
                ('//?/VOLUME{00000000-0000-0000-0000-000000000000}', '/', 'spam'))
         tester('ntpath.splitroot("//?/BootPartition/")', ("//?/BootPartition", "/", ""))
+        tester('ntpath.splitroot("//./BootPartition/")', ("//./BootPartition", "/", ""))
+        tester('ntpath.splitroot("//./PhysicalDrive0")', ("//./PhysicalDrive0", "", ""))
+        tester('ntpath.splitroot("//./nul")', ("//./nul", "", ""))
 
         tester('ntpath.splitroot("\\\\?\\c:")', ("\\\\?\\c:", "", ""))
+        tester('ntpath.splitroot("\\\\.\\c:")', ("\\\\.\\c:", "", ""))
         tester('ntpath.splitroot("\\\\?\\c:\\")', ("\\\\?\\c:", "\\", ""))
         tester('ntpath.splitroot("\\\\?\\c:\\dir")', ("\\\\?\\c:", "\\", "dir"))
         tester('ntpath.splitroot("\\\\?\\UNC")', ("\\\\?\\UNC", "", ""))
@@ -193,6 +198,9 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.splitroot("\\\\?\\VOLUME{00000000-0000-0000-0000-000000000000}\\spam")',
                ('\\\\?\\VOLUME{00000000-0000-0000-0000-000000000000}', '\\', 'spam'))
         tester('ntpath.splitroot("\\\\?\\BootPartition\\")', ("\\\\?\\BootPartition", "\\", ""))
+        tester('ntpath.splitroot("\\\\.\\BootPartition\\")', ("\\\\.\\BootPartition", "\\", ""))
+        tester('ntpath.splitroot("\\\\.\\PhysicalDrive0")', ("\\\\.\\PhysicalDrive0", "", ""))
+        tester('ntpath.splitroot("\\\\.\\nul")', ("\\\\.\\nul", "", ""))
 
         # gh-96290: support partial/invalid UNC drives
         tester('ntpath.splitroot("//")', ("//", "", ""))  # empty server & missing share
@@ -983,6 +991,26 @@ class TestNtpath(NtpathTestCase):
         self.assertFalse(inspect.isfunction(os.path.islink))
         self.assertTrue(os.path.exists is nt._path_exists)
         self.assertFalse(inspect.isfunction(os.path.exists))
+
+    @unittest.skipIf(os.name != 'nt', "Dev Drives only exist on Win32")
+    def test_isdevdrive(self):
+        # Result may be True or False, but shouldn't raise
+        self.assertIn(ntpath.isdevdrive(os_helper.TESTFN), (True, False))
+        # ntpath.isdevdrive can handle relative paths
+        self.assertIn(ntpath.isdevdrive("."), (True, False))
+        self.assertIn(ntpath.isdevdrive(b"."), (True, False))
+        # Volume syntax is supported
+        self.assertIn(ntpath.isdevdrive(os.listvolumes()[0]), (True, False))
+        # Invalid volume returns False from os.path method
+        self.assertFalse(ntpath.isdevdrive(r"\\?\Volume{00000000-0000-0000-0000-000000000000}\\"))
+        # Invalid volume raises from underlying helper
+        with self.assertRaises(OSError):
+            nt._path_isdevdrive(r"\\?\Volume{00000000-0000-0000-0000-000000000000}\\")
+
+    @unittest.skipIf(os.name == 'nt', "isdevdrive fallback only used off Win32")
+    def test_isdevdrive_fallback(self):
+        # Fallback always returns False
+        self.assertFalse(ntpath.isdevdrive(os_helper.TESTFN))
 
 
 class NtCommonTest(test_genericpath.CommonTest, unittest.TestCase):

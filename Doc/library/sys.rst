@@ -166,7 +166,7 @@ always available.
    Python interpreter.  (This information is not available in any other way ---
    ``modules.keys()`` only lists the imported modules.)
 
-   See also the :attr:`sys.stdlib_module_names` list.
+   See also the :data:`sys.stdlib_module_names` list.
 
 
 .. function:: call_tracing(func, args)
@@ -444,7 +444,7 @@ always available.
    object <traceback-objects>` which typically encapsulates the call
    stack at the point where the exception last occurred.
 
-   .. index:: object: traceback
+   .. index:: pair: object; traceback
 
    If no exception is being handled anywhere on the stack, this function
    return a tuple containing three ``None`` values.
@@ -515,27 +515,28 @@ always available.
    The :term:`named tuple` *flags* exposes the status of command line
    flags. The attributes are read only.
 
-   ============================= ==============================================================================================================
-   attribute                     flag
-   ============================= ==============================================================================================================
-   :const:`debug`                :option:`-d`
-   :const:`inspect`              :option:`-i`
-   :const:`interactive`          :option:`-i`
-   :const:`isolated`             :option:`-I`
-   :const:`optimize`             :option:`-O` or :option:`-OO`
-   :const:`dont_write_bytecode`  :option:`-B`
-   :const:`no_user_site`         :option:`-s`
-   :const:`no_site`              :option:`-S`
-   :const:`ignore_environment`   :option:`-E`
-   :const:`verbose`              :option:`-v`
-   :const:`bytes_warning`        :option:`-b`
-   :const:`quiet`                :option:`-q`
-   :const:`hash_randomization`   :option:`-R`
-   :const:`dev_mode`             :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
-   :const:`utf8_mode`            :option:`-X utf8 <-X>`
-   :const:`safe_path`            :option:`-P`
-   :const:`int_max_str_digits`   :option:`-X int_max_str_digits <-X>` (:ref:`integer string conversion length limitation <int_max_str_digits>`)
-   ============================= ==============================================================================================================
+   ==============================  ==============================================================================================================
+   attribute                       flag
+   ==============================  ==============================================================================================================
+   :const:`debug`                  :option:`-d`
+   :const:`inspect`                :option:`-i`
+   :const:`interactive`            :option:`-i`
+   :const:`isolated`               :option:`-I`
+   :const:`optimize`               :option:`-O` or :option:`-OO`
+   :const:`dont_write_bytecode`    :option:`-B`
+   :const:`no_user_site`           :option:`-s`
+   :const:`no_site`                :option:`-S`
+   :const:`ignore_environment`     :option:`-E`
+   :const:`verbose`                :option:`-v`
+   :const:`bytes_warning`          :option:`-b`
+   :const:`quiet`                  :option:`-q`
+   :const:`hash_randomization`     :option:`-R`
+   :const:`dev_mode`               :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
+   :const:`utf8_mode`              :option:`-X utf8 <-X>`
+   :const:`safe_path`              :option:`-P`
+   :const:`int_max_str_digits`     :option:`-X int_max_str_digits <-X>` (:ref:`integer string conversion length limitation <int_max_str_digits>`)
+   :const:`warn_default_encoding`  :option:`-X warn_default_encoding <-X>`
+   ==============================  ==============================================================================================================
 
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
@@ -553,6 +554,9 @@ always available.
       Added the ``dev_mode`` attribute for the new :ref:`Python Development
       Mode <devmode>` and the ``utf8_mode`` attribute for the new  :option:`-X`
       ``utf8`` flag.
+
+   .. versionchanged:: 3.10
+      Added ``warn_default_encoding`` attribute for :option:`-X` ``warn_default_encoding`` flag.
 
    .. versionchanged:: 3.11
       Added the ``safe_path`` attribute for :option:`-P` option.
@@ -670,6 +674,13 @@ always available.
    .. versionadded:: 3.4
 
 
+.. function:: getunicodeinternedsize()
+
+   Return the number of unicode objects that have been interned.
+
+   .. versionadded:: 3.12
+
+
 .. function:: getandroidapilevel()
 
    Return the build time API version of Android as an integer.
@@ -690,7 +701,7 @@ always available.
    Return the current value of the flags that are used for
    :c:func:`dlopen` calls.  Symbolic names for the flag values can be
    found in the :mod:`os` module (``RTLD_xxx`` constants, e.g.
-   :data:`os.RTLD_LAZY`).
+   :const:`os.RTLD_LAZY`).
 
    .. availability:: Unix.
 
@@ -785,7 +796,7 @@ always available.
    additional garbage collector overhead if the object is managed by the garbage
    collector.
 
-   See `recursive sizeof recipe <https://code.activestate.com/recipes/577504>`_
+   See `recursive sizeof recipe <https://code.activestate.com/recipes/577504/>`_
    for an example of using :func:`getsizeof` recursively to find the size of
    containers and all their contents.
 
@@ -1170,7 +1181,7 @@ always available.
 
         :term:`Module specs <module spec>` were introduced in Python 3.4, by
         :pep:`451`. Earlier versions of Python looked for a method called
-        :meth:`~importlib.abc.MetaPathFinder.find_module`.
+        :meth:`!find_module`.
         This is still called as a fallback if a :data:`meta_path` entry doesn't
         have a :meth:`~importlib.abc.MetaPathFinder.find_spec` method.
 
@@ -1246,10 +1257,6 @@ always available.
 
     Originally specified in :pep:`302`.
 
-    .. versionchanged:: 3.3
-       ``None`` is stored instead of :class:`imp.NullImporter` when no finder
-       is found.
-
 
 .. data:: platform
 
@@ -1284,20 +1291,20 @@ always available.
    ================ ===========================
 
    .. versionchanged:: 3.3
-      On Linux, :attr:`sys.platform` doesn't contain the major version anymore.
+      On Linux, :data:`sys.platform` doesn't contain the major version anymore.
       It is always ``'linux'``, instead of ``'linux2'`` or ``'linux3'``.  Since
       older Python versions include the version number, it is recommended to
       always use the ``startswith`` idiom presented above.
 
    .. versionchanged:: 3.8
-      On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
+      On AIX, :data:`sys.platform` doesn't contain the major version anymore.
       It is always ``'aix'``, instead of ``'aix5'`` or ``'aix7'``.  Since
       older Python versions include the version number, it is recommended to
       always use the ``startswith`` idiom presented above.
 
    .. seealso::
 
-      :attr:`os.name` has a coarser granularity.  :func:`os.uname` gives
+      :data:`os.name` has a coarser granularity.  :func:`os.uname` gives
       system-dependent version information.
 
       The :mod:`platform` module provides detailed checks for the
@@ -1365,7 +1372,7 @@ always available.
    ``sys.setdlopenflags(0)``.  To share symbols across extension modules, call as
    ``sys.setdlopenflags(os.RTLD_GLOBAL)``.  Symbolic names for the flag values
    can be found in the :mod:`os` module (``RTLD_xxx`` constants, e.g.
-   :data:`os.RTLD_LAZY`).
+   :const:`os.RTLD_LAZY`).
 
    .. availability:: Unix.
 
@@ -1740,7 +1747,7 @@ always available.
    ``email.mime`` sub-package and the ``email.message`` sub-module are not
    listed.
 
-   See also the :attr:`sys.builtin_module_names` list.
+   See also the :data:`sys.builtin_module_names` list.
 
    .. versionadded:: 3.10
 

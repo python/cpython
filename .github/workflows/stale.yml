@@ -12,6 +12,7 @@ jobs:
     if: github.repository_owner == 'python'
 
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
     - name: "Check PRs"

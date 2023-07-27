@@ -385,7 +385,8 @@ class SysModuleTest(unittest.TestCase):
         self.assertRaises(TypeError, sys.getrefcount)
         c = sys.getrefcount(None)
         n = None
-        self.assertEqual(sys.getrefcount(None), c+1)
+        # Singleton refcnts don't change
+        self.assertEqual(sys.getrefcount(None), c)
         del n
         self.assertEqual(sys.getrefcount(None), c)
         if hasattr(sys, "gettotalrefcount"):
@@ -959,12 +960,12 @@ class SysModuleTest(unittest.TestCase):
                          "sys.getallocatedblocks unavailable on this build")
     def test_getallocatedblocks(self):
         try:
-            import _testcapi
+            import _testinternalcapi
         except ImportError:
             with_pymalloc = support.with_pymalloc()
         else:
             try:
-                alloc_name = _testcapi.pymem_getallocatorsname()
+                alloc_name = _testinternalcapi.pymem_getallocatorsname()
             except RuntimeError as exc:
                 # "cannot get allocators name" (ex: tracemalloc is used)
                 with_pymalloc = True
@@ -1445,10 +1446,10 @@ class SizeofTest(unittest.TestCase):
         def func():
             return sys._getframe()
         x = func()
-        check(x, size('3Pii3c7P2ic??2P'))
+        check(x, size('3Pi3c7P2ic??2P'))
         # function
         def func(): pass
-        check(func, size('14Pi'))
+        check(func, size('15Pi'))
         class c():
             @staticmethod
             def foo():
@@ -1556,7 +1557,7 @@ class SizeofTest(unittest.TestCase):
                   '10P'                 # PySequenceMethods
                   '2P'                  # PyBufferProcs
                   '6P'
-                  '1PI'                 # Specializer cache
+                  '1PIP'                 # Specializer cache
                   )
         class newstyleclass(object): pass
         # Separate block for PyDictKeysObject with 8 keys and 5 entries
