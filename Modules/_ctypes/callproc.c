@@ -59,7 +59,7 @@
 #endif
 
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
+
 
 #include <stdbool.h>
 
@@ -581,8 +581,8 @@ PyCArg_repr(PyCArgObject *self)
 }
 
 static PyMemberDef PyCArgType_members[] = {
-    { "_obj", T_OBJECT,
-      offsetof(PyCArgObject, obj), READONLY,
+    { "_obj", _Py_T_OBJECT,
+      offsetof(PyCArgObject, obj), Py_READONLY,
       "the wrapped object" },
     { NULL },
 };
@@ -727,7 +727,7 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
 
     {
         PyObject *arg;
-        if (_PyObject_LookupAttr(obj, &_Py_ID(_as_parameter_), &arg) < 0) {
+        if (PyObject_GetOptionalAttr(obj, &_Py_ID(_as_parameter_), &arg) < 0) {
             return -1;
         }
         /* Which types should we exactly allow here?

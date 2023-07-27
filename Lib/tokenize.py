@@ -41,7 +41,7 @@ blank_re = re.compile(br'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
 
 import token
 __all__ = token.__all__ + ["tokenize", "generate_tokens", "detect_encoding",
-                           "untokenize", "TokenInfo"]
+                           "untokenize", "TokenInfo", "open", "TokenError"]
 del token
 
 class TokenInfo(collections.namedtuple('TokenInfo', 'type string start end line')):
@@ -161,8 +161,6 @@ tabsize = 8
 
 class TokenError(Exception): pass
 
-
-class StopTokenizing(Exception): pass
 
 class Untokenizer:
 
@@ -490,8 +488,7 @@ def main():
         else:
             filename = "<stdin>"
             tokens = _generate_tokens_from_c_tokenizer(
-                (x.encode('utf-8') for x in iter(sys.stdin.readline, "")
-            ), "utf-8", extra_tokens=True)
+                sys.stdin.readline, extra_tokens=True)
 
 
         # Output the tokenization
@@ -518,14 +515,30 @@ def main():
         perror("unexpected error: %s" % err)
         raise
 
+def _transform_msg(msg):
+    """Transform error messages from the C tokenizer into the Python tokenize
+
+    The C tokenizer is more picky than the Python one, so we need to massage
+    the error messages a bit for backwards compatibility.
+    """
+    if "unterminated triple-quoted string literal" in msg:
+        return "EOF in multi-line string"
+    return msg
+
 def _generate_tokens_from_c_tokenizer(source, encoding=None, extra_tokens=False):
     """Tokenize a source reading Python code as unicode strings using the internal C tokenizer"""
     if encoding is None:
         it = _tokenize.TokenizerIter(source, extra_tokens=extra_tokens)
     else:
         it = _tokenize.TokenizerIter(source, encoding=encoding, extra_tokens=extra_tokens)
-    for info in it:
-        yield TokenInfo._make(info)
+    try:
+        for info in it:
+            yield TokenInfo._make(info)
+    except SyntaxError as e:
+        if type(e) != SyntaxError:
+            raise e from None
+        msg = _transform_msg(e.msg)
+        raise TokenError(msg, (e.lineno, e.offset)) from None
 
 
 if __name__ == "__main__":

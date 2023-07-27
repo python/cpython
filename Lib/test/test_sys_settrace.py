@@ -1614,8 +1614,30 @@ class TraceTestCase(unittest.TestCase):
 
         self.run_and_compare(func, EXPECTED_EVENTS)
 
-    def test_settrace_error(self):
+    def test_correct_tracing_quickened_call_class_init(self):
 
+        class C:
+            def __init__(self):
+                self
+
+        def func():
+            C()
+
+        EXPECTED_EVENTS = [
+            (0, 'call'),
+            (1, 'line'),
+            (-3, 'call'),
+            (-2, 'line'),
+            (-2, 'return'),
+            (1, 'return')]
+
+        self.run_and_compare(func, EXPECTED_EVENTS)
+        # Quicken
+        for _ in range(100):
+            func()
+        self.run_and_compare(func, EXPECTED_EVENTS)
+
+    def test_settrace_error(self):
         raised = False
         def error_once(frame, event, arg):
             nonlocal raised

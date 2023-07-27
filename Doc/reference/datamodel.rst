@@ -1625,7 +1625,7 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
    :meth:`__getattr__` and :meth:`__setattr__`.) This is done both for efficiency
    reasons and because otherwise :meth:`__getattr__` would have no way to access
    other attributes of the instance.  Note that at least for instance variables,
-   you can fake total control by not inserting any values in the instance attribute
+   you can take total control by not inserting any values in the instance attribute
    dictionary (but instead inserting them in another object).  See the
    :meth:`__getattribute__` method below for a way to actually get total control
    over attribute access.
@@ -2499,8 +2499,8 @@ through the object's keys; for sequences, it should iterate through the values.
 
    .. impl-detail::
 
-      In CPython, the length is required to be at most :attr:`sys.maxsize`.
-      If the length is larger than :attr:`!sys.maxsize` some features (such as
+      In CPython, the length is required to be at most :data:`sys.maxsize`.
+      If the length is larger than :data:`!sys.maxsize` some features (such as
       :func:`len`) may raise :exc:`OverflowError`.  To prevent raising
       :exc:`!OverflowError` by truth value testing, an object must define a
       :meth:`__bool__` method.
@@ -3179,8 +3179,9 @@ An example of an asynchronous context manager class::
    lead to some very strange behaviour if it is handled incorrectly.
 
 .. [#] The :meth:`~object.__hash__`, :meth:`~object.__iter__`,
-   :meth:`~object.__reversed__`, and :meth:`~object.__contains__` methods have
-   special handling for this; others
+   :meth:`~object.__reversed__`, :meth:`~object.__contains__`,
+   :meth:`~object.__class_getitem__` and :meth:`~os.PathLike.__fspath__`
+   methods have special handling for this. Others
    will still raise a :exc:`TypeError`, but may do so by relying on
    the behavior that ``None`` is not callable.
 

@@ -5,7 +5,6 @@ import os
 import pathlib
 import textwrap
 import unittest
-import warnings
 
 from test import support
 from test.support import os_helper

@@ -997,6 +997,18 @@ _PyPegen_setup_full_format_spec(Parser *p, Token *colon, asdl_expr_seq *spec, in
     if (!spec) {
         return NULL;
     }
+
+    // This is needed to keep compatibility with 3.11, where an empty format spec is parsed
+    // as an *empty* JoinedStr node, instead of having an empty constant in it.
+    if (asdl_seq_LEN(spec) == 1) {
+        expr_ty e = asdl_seq_GET(spec, 0);
+        if (e->kind == Constant_kind
+                && PyUnicode_Check(e->v.Constant.value)
+                && PyUnicode_GetLength(e->v.Constant.value) == 0) {
+            spec = _Py_asdl_expr_seq_new(0, arena);
+        }
+    }
+
     expr_ty res = _PyAST_JoinedStr(spec, lineno, col_offset, end_lineno, end_col_offset, p->arena);
     if (!res) {
         return NULL;
@@ -1225,7 +1237,7 @@ _PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args, asdl_comprehension_seq
 // Fstring stuff
 
 static expr_ty
-_PyPegen_decode_fstring_part(Parser* p, int is_raw, expr_ty constant) {
+_PyPegen_decode_fstring_part(Parser* p, int is_raw, expr_ty constant, Token* token) {
     assert(PyUnicode_CheckExact(constant->v.Constant.value));
 
     const char* bstr = PyUnicode_AsUTF8(constant->v.Constant.value);
@@ -1241,7 +1253,7 @@ _PyPegen_decode_fstring_part(Parser* p, int is_raw, expr_ty constant) {
     }
 
     is_raw = is_raw || strchr(bstr, '\\') == NULL;
-    PyObject *str = _PyPegen_decode_string(p, is_raw, bstr, len, NULL);
+    PyObject *str = _PyPegen_decode_string(p, is_raw, bstr, len, token);
     if (str == NULL) {
         _Pypegen_raise_decode_error(p);
         return NULL;
@@ -1315,7 +1327,7 @@ _PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* raw_expressions, Token*b
     for (Py_ssize_t i = 0; i < n_items; i++) {
         expr_ty item = asdl_seq_GET(expr, i);
         if (item->kind == Constant_kind) {
-            item = _PyPegen_decode_fstring_part(p, is_raw, item);
+            item = _PyPegen_decode_fstring_part(p, is_raw, item, b);
             if (item == NULL) {
                 return NULL;
             }
@@ -1348,6 +1360,25 @@ _PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* raw_expressions, Token*b
     return _PyAST_JoinedStr(resized_exprs, a->lineno, a->col_offset,
                             b->end_lineno, b->end_col_offset,
                             p->arena);
+}
+
+expr_ty _PyPegen_decoded_constant_from_token(Parser* p, Token* tok) {
+    Py_ssize_t bsize;
+    char* bstr;
+    if (PyBytes_AsStringAndSize(tok->bytes, &bstr, &bsize) == -1) {
+        return NULL;
+    }
+    PyObject* str = _PyPegen_decode_string(p, 0, bstr, bsize, tok);
+    if (str == NULL) {
+        return NULL;
+    }
+    if (_PyArena_AddPyObject(p->arena, str) < 0) {
+        Py_DECREF(str);
+        return NULL;
+    }
+    return _PyAST_Constant(str, NULL, tok->lineno, tok->col_offset,
+                           tok->end_lineno, tok->end_col_offset,
+                           p->arena);
 }
 
 expr_ty _PyPegen_constant_from_token(Parser* p, Token* tok) {

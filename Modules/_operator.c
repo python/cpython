@@ -1,7 +1,9 @@
 #include "Python.h"
+#include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "structmember.h"         // PyMemberDef
 #include "pycore_runtime.h"       // _Py_ID()
+
+
 #include "clinic/_operator.c.h"
 
 typedef struct {
@@ -1151,7 +1153,7 @@ static PyMethodDef itemgetter_methods[] = {
 };
 
 static PyMemberDef itemgetter_members[] = {
-    {"__vectorcalloffset__", T_PYSSIZET, offsetof(itemgetterobject, vectorcall), READONLY},
+    {"__vectorcalloffset__", Py_T_PYSSIZET, offsetof(itemgetterobject, vectorcall), Py_READONLY},
     {NULL} /* Sentinel */
 };
 
@@ -1506,7 +1508,7 @@ static PyMethodDef attrgetter_methods[] = {
 };
 
 static PyMemberDef attrgetter_members[] = {
-    {"__vectorcalloffset__", T_PYSSIZET, offsetof(attrgetterobject, vectorcall), READONLY},
+    {"__vectorcalloffset__", Py_T_PYSSIZET, offsetof(attrgetterobject, vectorcall), Py_READONLY},
     {NULL} /* Sentinel*/
 };
 
