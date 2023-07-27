@@ -264,7 +264,7 @@ The following type-oriented macros are provided for convenience.  Note  that
 *TYPE* refers to any C type.
 
 
-.. c:mcaro:: PyMem_New(TYPE, n)
+.. c:macro:: PyMem_New(TYPE, n)
 
    Same as :c:func:`PyMem_Malloc`, but allocates ``(n * sizeof(TYPE))`` bytes of
    memory.  Returns a pointer cast to :c:expr:`TYPE*`.  The memory will not have
