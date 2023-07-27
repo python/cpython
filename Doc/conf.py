@@ -97,7 +97,7 @@ nitpick_ignore = [
     ('c:func', 'vsnprintf'),
     # Standard C types
     ('c:type', 'FILE'),
-    ('c:type', '__int'),
+    ('c:type', 'int64_t'),
     ('c:type', 'intmax_t'),
     ('c:type', 'off_t'),
     ('c:type', 'ptrdiff_t'),
@@ -105,9 +105,12 @@ nitpick_ignore = [
     ('c:type', 'size_t'),
     ('c:type', 'ssize_t'),
     ('c:type', 'time_t'),
+    ('c:type', 'uint64_t'),
     ('c:type', 'uintmax_t'),
+    ('c:type', 'uintptr_t'),
     ('c:type', 'va_list'),
     ('c:type', 'wchar_t'),
+    # Standard C structures
     ('c:struct', 'in6_addr'),
     ('c:struct', 'in_addr'),
     ('c:struct', 'stat'),
