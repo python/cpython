@@ -23,7 +23,6 @@ Doc/c-api/set.rst
 Doc/c-api/stable.rst
 Doc/c-api/structures.rst
 Doc/c-api/sys.rst
-Doc/c-api/tuple.rst
 Doc/c-api/type.rst
 Doc/c-api/typeobj.rst
 Doc/c-api/unicode.rst
