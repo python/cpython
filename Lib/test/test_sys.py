@@ -14,10 +14,19 @@ from test.support import os_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import threading_helper
 from test.support import import_helper
-from test.support import interpreters
+try:
+    from test.support import interpreters
+except ImportError:
+    interpreters = None
 import textwrap
 import unittest
 import warnings
+
+
+def requires_subinterpreters(meth):
+    """Decorator to skip a test if subinterpreters are not supported."""
+    return unittest.skipIf(interpreters is None,
+                           'subinterpreters required')(meth)
 
 
 # count the number of test runs, used to create unique
@@ -700,6 +709,7 @@ class SysModuleTest(unittest.TestCase):
 
         self.assertRaises(TypeError, sys.intern, S("abc"))
 
+    @requires_subinterpreters
     def test_subinterp_intern_dynamically_allocated(self):
         global INTERN_NUMRUNS
         INTERN_NUMRUNS += 1
@@ -715,6 +725,7 @@ class SysModuleTest(unittest.TestCase):
             assert id(t) != {id(t)}, (id(t), {id(t)})
             '''))
 
+    @requires_subinterpreters
     def test_subinterp_intern_statically_allocated(self):
         # See Tools/build/generate_global_objects.py for the list
         # of strings that are always statically allocated.
