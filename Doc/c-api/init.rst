@@ -831,7 +831,7 @@ code, or when embedding the Python interpreter:
 
    .. c:member:: PyInterpreterState *interp
 
-      this thread's interpreter state
+      This thread's interpreter state.
 
 
 .. c:function:: PyThreadState* PyEval_SaveThread()

@@ -318,11 +318,11 @@ Importing Modules
 
    .. c:member:: const char *name
 
-      the module name, as an ASCII encoded string
+      The module name, as an ASCII encoded string.
 
    .. c: member:: PyObject* (*initfunc)(void)
 
-      initialization function for a module built into the interpreter
+      Initialization function for a module built into the interpreter.
 
 
 .. c:function:: int PyImport_ExtendInittab(struct _inittab *newtab)
