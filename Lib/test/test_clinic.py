@@ -10,7 +10,6 @@ from textwrap import dedent
 from unittest import TestCase
 import collections
 import inspect
-import itertools
 import os.path
 import subprocess
 import sys
@@ -1387,7 +1386,7 @@ class ClinicExternalTest(TestCase):
         ) as proc:
             proc.wait()
             if expect_success and proc.returncode:
-                self.fail("".join(itertools.chain(proc.stdout, proc.stderr)))
+                self.fail("".join([*proc.stdout, *proc.stderr]))
             stdout = proc.stdout.read()
             stderr = proc.stderr.read()
             # Clinic never writes to stderr.
