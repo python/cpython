@@ -579,7 +579,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    name, followed by a dot, followed by the type name; for built-in types, it
    should be just the type name.  If the module is a submodule of a package, the
    full package name is part of the full module name.  For example, a type named
-   :class:`T` defined in module :mod:`!M` in subpackage :mod:`!Q` in package :mod:`!P`
+   :class:`!T` defined in module :mod:`!M` in subpackage :mod:`!Q` in package :mod:`!P`
    should have the :c:member:`~PyTypeObject.tp_name` initializer ``"P.Q.M.T"``.
 
    For :ref:`dynamically allocated type objects <heap-types>`,
@@ -673,9 +673,9 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    permissible to call the object deallocator directly instead of via
    :c:member:`~PyTypeObject.tp_free`.  The object deallocator should be the one used to allocate the
    instance; this is normally :c:func:`PyObject_Del` if the instance was allocated
-   using :c:func:`PyObject_New` or :c:func:`PyObject_VarNew`, or
+   using :c:macro:`PyObject_New` or :c:macro:`PyObject_NewVar`, or
    :c:func:`PyObject_GC_Del` if the instance was allocated using
-   :c:func:`PyObject_GC_New` or :c:func:`PyObject_GC_NewVar`.
+   :c:macro:`PyObject_GC_New` or :c:macro:`PyObject_GC_NewVar`.
 
    If the type supports garbage collection (has the :c:macro:`Py_TPFLAGS_HAVE_GC`
    flag bit set), the destructor should call :c:func:`PyObject_GC_UnTrack`
@@ -1092,7 +1092,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    .. c:macro:: Py_TPFLAGS_HAVE_GC
 
       This bit is set when the object supports garbage collection.  If this bit
-      is set, instances must be created using :c:func:`PyObject_GC_New` and
+      is set, instances must be created using :c:macro:`PyObject_GC_New` and
       destroyed using :c:func:`PyObject_GC_Del`.  More information in section
       :ref:`supporting-cycle-detection`.  This bit also implies that the
       GC-related fields :c:member:`~PyTypeObject.tp_traverse` and :c:member:`~PyTypeObject.tp_clear` are present in
@@ -1180,7 +1180,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
       Indicates that the variable-sized portion of an instance of this type is
       at the end of the instance's memory area, at an offset of
-      :c:expr:`Py_TYPE(obj)->tp_basicsize` (which may be different in each
+      ``Py_TYPE(obj)->tp_basicsize`` (which may be different in each
       subclass).
 
       When setting this flag, be sure that all superclasses either
