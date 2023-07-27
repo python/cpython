@@ -165,7 +165,8 @@ type.
 
    Describes a field of a struct sequence. As a struct sequence is modeled as a
    tuple, all fields are typed as :c:expr:`PyObject*`.  The index in the
-   :attr:`fields` array of the :c:type:`PyStructSequence_Desc` determines which
+   :c:member:`~PyStructSequence_Desc.fields` array of
+   the :c:type:`PyStructSequence_Desc` determines which
    field of the struct sequence is described.
 
    .. c:member:: const char *name

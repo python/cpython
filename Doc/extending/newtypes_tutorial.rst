@@ -176,8 +176,8 @@ Everything else in the file should be familiar, except for some code in
    if (PyType_Ready(&CustomType) < 0)
        return;
 
-This initializes the :class:`Custom` type, filling in a number of members
-to the appropriate default values, including :attr:`ob_type` that we initially
+This initializes the :class:`!Custom` type, filling in a number of members
+to the appropriate default values, including :c:member:`~PyObject.ob_type` that we initially
 set to ``NULL``. ::
 
    Py_INCREF(&CustomType);
