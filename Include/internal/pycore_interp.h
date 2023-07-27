@@ -238,9 +238,6 @@ extern int _PyInterpreterState_IDInitref(PyInterpreterState *);
 extern int _PyInterpreterState_IDIncref(PyInterpreterState *);
 extern void _PyInterpreterState_IDDecref(PyInterpreterState *);
 
-// Export for '_xxsubinterpreters' shared extension
-PyAPI_FUNC(PyObject*) _PyInterpreterState_GetMainModule(PyInterpreterState *);
-
 extern const PyConfig* _PyInterpreterState_GetConfig(PyInterpreterState *interp);
 
 /* Get a copy of the current interpreter configuration.
