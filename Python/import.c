@@ -917,6 +917,25 @@ extensions_lock_release(void)
    dictionary, to avoid loading shared libraries twice.
 */
 
+static void *
+hashtable_key_from_2_strings(PyObject *str1, PyObject *str2, const char sep)
+{
+    Py_ssize_t str1_len = strlen(PyUnicode_AsUTF8(str1));
+    Py_ssize_t str2_len = strlen(PyUnicode_AsUTF8(str2));
+    assert(SIZE_MAX - str1_len - 1 - str2_len > 0);
+    size_t size = str1_len + 1 + str2_len + 1;
+
+    char *key = PyMem_RawMalloc(size);
+    if (key == NULL) {
+        return NULL;
+    }
+
+    strncpy(key, PyUnicode_AsUTF8(str1), str1_len);
+    key[str1_len] = sep;
+    strncpy(key + str1_len + 1, PyUnicode_AsUTF8(str2), str2_len + 1);
+    return key;
+}
+
 static Py_uhash_t
 hashtable_hash_str(const void *key)
 {
@@ -935,30 +954,23 @@ hashtable_destroy_str(void *ptr)
     PyMem_RawFree(ptr);
 }
 
-static void
-hashtable_destroy_str_table(void *ptr)
-{
-    _Py_hashtable_destroy((_Py_hashtable_t *)ptr);
-}
-
 static PyModuleDef *
 _extensions_cache_get(PyObject *filename, PyObject *name)
 {
     PyModuleDef *def = NULL;
+    void *key = NULL;
     extensions_lock_acquire();
 
     if (EXTENSIONS.hashtable == NULL) {
         goto finally;
     }
 
-    _Py_hashtable_entry_t *entry;
-    entry = _Py_hashtable_get_entry(EXTENSIONS.hashtable,
-                                    PyUnicode_AsUTF8(filename));
-    if (entry == NULL) {
+    key = hashtable_key_from_2_strings(filename, name, ':');
+    if (key == NULL) {
         goto finally;
     }
-    entry = _Py_hashtable_get_entry((_Py_hashtable_t *)entry->value,
-                                    PyUnicode_AsUTF8(name));
+    _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(
+            EXTENSIONS.hashtable, key);
     if (entry == NULL) {
         goto finally;
     }
@@ -966,6 +978,9 @@ _extensions_cache_get(PyObject *filename, PyObject *name)
 
 finally:
     extensions_lock_release();
+    if (key != NULL) {
+        PyMem_RawFree(key);
+    }
     return def;
 }
 
@@ -979,8 +994,8 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
         EXTENSIONS.hashtable = _Py_hashtable_new_full(
             hashtable_hash_str,
             hashtable_compare_str,
-            hashtable_destroy_str,
-            hashtable_destroy_str_table,
+            hashtable_destroy_str,  // key
+            NULL,  // value
             NULL
         );
         if (EXTENSIONS.hashtable == NULL) {
@@ -988,59 +1003,28 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
         }
     }
 
-    _Py_hashtable_t *byname;
+    void *key = hashtable_key_from_2_strings(filename, name, ':');
+    if (key == NULL) {
+        goto finally;
+    }
+
     _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(
-            EXTENSIONS.hashtable, PyUnicode_AsUTF8(filename));
+            EXTENSIONS.hashtable, key);
     if (entry == NULL) {
-        byname = _Py_hashtable_new_full(
-            hashtable_hash_str,
-            hashtable_compare_str,
-            hashtable_destroy_str,
-            NULL,
-            NULL
-        );
-        if (byname == NULL) {
-            goto finally;
-        }
-        char *filenamestr = PyMem_RawMalloc(
-                strlen(PyUnicode_AsUTF8(filename)) + 1);
-        if (filenamestr == NULL) {
-            _Py_hashtable_destroy(byname);
-            goto finally;
-        }
-        strncpy(filenamestr, PyUnicode_AsUTF8(filename),
-                strlen(PyUnicode_AsUTF8(filename)) + 1);
-        if (_Py_hashtable_set(EXTENSIONS.hashtable, filenamestr, byname) < 0) {
-            _Py_hashtable_destroy(byname);
-            PyMem_RawFree(filenamestr);
+        if (_Py_hashtable_set(EXTENSIONS.hashtable, key, Py_NewRef(def)) < 0) {
+            PyMem_RawFree(key);
             goto finally;
         }
     }
     else {
-        byname = (_Py_hashtable_t *)entry->value;
-        _Py_hashtable_entry_t *subentry = _Py_hashtable_get_entry(
-                byname, PyUnicode_AsUTF8(name));
-        if (subentry != NULL) {
-            if (subentry->value == NULL) {
-                subentry->value = Py_NewRef(def);
-            }
-            else {
-                /* We expect it to be static, so it must be the same pointer. */
-                assert((PyModuleDef *)subentry->value == def);
-            }
-            res = 0;
-            goto finally;
+        if (entry->value == NULL) {
+            entry->value = Py_NewRef(def);
         }
-    }
-
-    char *namestr = PyMem_RawMalloc(strlen(PyUnicode_AsUTF8(name)) + 1);
-    if (namestr == NULL) {
-        goto finally;
-    }
-    strncpy(namestr, PyUnicode_AsUTF8(name), strlen(PyUnicode_AsUTF8(name)) + 1);
-    if (_Py_hashtable_set(byname, namestr, Py_NewRef(def)) < 0) {
-        PyMem_RawFree(namestr);
-        goto finally;
+        else {
+            /* We expect it to be static, so it must be the same pointer. */
+            assert((PyModuleDef *)entry->value == def);
+        }
+        PyMem_RawFree(key);
     }
     res = 0;
 
@@ -1052,6 +1036,7 @@ finally:
 static void
 _extensions_cache_delete(PyObject *filename, PyObject *name)
 {
+    void *key = NULL;
     extensions_lock_acquire();
 
     if (EXTENSIONS.hashtable == NULL) {
@@ -1059,30 +1044,32 @@ _extensions_cache_delete(PyObject *filename, PyObject *name)
         goto finally;
     }
 
+    key = hashtable_key_from_2_strings(filename, name, ':');
+    if (key == NULL) {
+        goto finally;
+    }
+
     _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(
-            EXTENSIONS.hashtable, PyUnicode_AsUTF8(filename));
+            EXTENSIONS.hashtable, key);
     if (entry == NULL) {
         /* It was never added. */
         goto finally;
     }
-    _Py_hashtable_entry_t *subentry = _Py_hashtable_get_entry(
-            (_Py_hashtable_t *)entry->value, PyUnicode_AsUTF8(name));
-    if (subentry == NULL) {
-        /* It never added. */
-        goto finally;
-    }
-    if (subentry->value == NULL) {
+    if (entry->value == NULL) {
         /* It was already removed. */
         goto finally;
     }
     /* This decref would be problematic if the module def were
        dynamically allocated, it were the last ref, and this function
        were called with an interpreter other than the def's owner. */
-    Py_DECREF(subentry->value);
-    subentry->value = NULL;
+    Py_DECREF(entry->value);
+    entry->value = NULL;
 
 finally:
     extensions_lock_release();
+    if (key != NULL) {
+        PyMem_RawFree(key);
+    }
 }
 
 static void
