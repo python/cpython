@@ -149,19 +149,19 @@ type.
 
    .. c:member:: const char *name
 
-      name of the struct sequence type
+      Name of the struct sequence type.
 
    .. c:member:: const char *doc
 
-      pointer to docstring for the type or ``NULL`` to omit
+      Pointer to docstring for the type or ``NULL`` to omit.
 
    .. c:member:: PyStructSequence_Field *fields
 
-      pointer to ``NULL``-terminated array with field names of the new type
+      Pointer to ``NULL``-terminated array with field names of the new type.
 
    .. c:member:: int n_in_sequence
 
-      number of fields visible to the Python side (if used as tuple)
+      Number of fields visible to the Python side (if used as tuple).
 
 
 .. c:type:: PyStructSequence_Field
@@ -175,11 +175,11 @@ type.
    .. c:member:: const char *name
 
       Name for the field or ``NULL`` to end the list of named fields,
-      set to :c:data:`PyStructSequence_UnnamedField` to leave unnamed
+      set to :c:data:`PyStructSequence_UnnamedField` to leave unnamed.
 
    .. c:member:: const char *doc
 
-      field docstring or ``NULL`` to omit
+      Field docstring or ``NULL`` to omit.
 
 
 .. c:var:: const char * const PyStructSequence_UnnamedField
