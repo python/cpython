@@ -1023,8 +1023,11 @@ code, or when embedding the Python interpreter:
 .. c:type:: PyThreadState
 
    This data structure represents the state of a single thread.  The only public
-   data member is :attr:`interp` (:c:expr:`PyInterpreterState *`), which points to
-   this thread's interpreter state.
+   data member is:
+
+   .. c:member:: PyInterpreterState *interp
+
+      This thread's interpreter state.
 
 
 .. c:function:: void PyEval_InitThreads()
