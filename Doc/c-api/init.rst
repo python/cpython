@@ -1246,7 +1246,7 @@ function. You can create and destroy them using the following functions:
       :c:member:`PyInterpreterConfig.check_multi_interp_extensions`
       must be ``1`` (non-zero).
       If this is ``1`` then :c:member:`PyInterpreterConfig.gil`
-      must not be ``PyInterpreterConfig_OWN_GIL``.
+      must not be :c:macro:`PyInterpreterConfig_OWN_GIL`.
 
    .. c:member:: int allow_fork
 
@@ -1296,14 +1296,21 @@ function. You can create and destroy them using the following functions:
       This determines the operation of the GIL for the sub-interpreter.
       It may be one of the following:
 
-      - ``PyInterpreterConfig_DEFAULT_GIL``: use the default selection
-        (``PyInterpreterConfig_SHARED_GIL``)
-      - ``PyInterpreterConfig_SHARED_GIL``: use (share) the main
-        interpreter's GIL
-      - ``PyInterpreterConfig_OWN_GIL``: use the sub-interpreter's
-        own GIL
+      .. c:namespace:: NULL
 
-      If this is ``PyInterpreterConfig_OWN_GIL`` then
+      .. c:macro:: PyInterpreterConfig_DEFAULT_GIL
+
+         Use the default selection (:c:macro:`PyInterpreterConfig_SHARED_GIL`).
+
+      .. c:macro:: PyInterpreterConfig_SHARED_GIL
+
+         Use (share) the main interpreter's GIL.
+
+      .. c:macro:: PyInterpreterConfig_OWN_GIL
+
+         Use the sub-interpreter's own GIL.
+
+      If this is :c:macro:`PyInterpreterConfig_OWN_GIL` then
       :c:member:`PyInterpreterConfig.use_main_obmalloc` must be ``0``.
 
 
