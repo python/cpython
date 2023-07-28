@@ -476,13 +476,16 @@ def indent(text, prefix, predicate=None):
     consist solely of whitespace characters.
     """
     if predicate is None:
-        def predicate(line):
-            return line.strip()
+        predicate = str.strip
 
-    def prefixed_lines():
-        for line in text.splitlines(True):
-            yield (prefix + line if predicate(line) else line)
-    return ''.join(prefixed_lines())
+    prefixed_lines = []
+    for line in text.splitlines(True):
+        if predicate(line):
+            prefixed_lines.extend((prefix, line))
+        else:
+            prefixed_lines.append(line)
+
+    return ''.join(prefixed_lines)
 
 
 if __name__ == "__main__":
