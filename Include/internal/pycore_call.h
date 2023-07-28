@@ -22,8 +22,8 @@ extern "C" {
 #define _PY_FASTCALL_SMALL_STACK 5
 
 
-// Export for shared stdlib extensions like the math extension,
-// function used via inlined _PyObject_VectorcallTstate() function.
+// Export for 'math' shared extension, function used
+// via inlined _PyObject_VectorcallTstate() function.
 PyAPI_FUNC(PyObject*) _Py_CheckFunctionResult(
     PyThreadState *tstate,
     PyObject *callable,
@@ -49,7 +49,7 @@ extern PyObject* _PyObject_Call_Prepend(
     PyObject *args,
     PyObject *kwargs);
 
-extern PyObject* _PyObject_FastCallDictTstate(
+extern PyObject* _PyObject_VectorcallDictTstate(
     PyThreadState *tstate,
     PyObject *callable,
     PyObject *const *args,
@@ -68,7 +68,7 @@ extern PyObject * _PyObject_CallMethodFormat(
     const char *format,
     ...);
 
-// Export for shared stdlib extensions like the array extension
+// Export for 'array' shared extension
 PyAPI_FUNC(PyObject*) _PyObject_CallMethod(
     PyObject *obj,
     PyObject *name,
@@ -117,12 +117,11 @@ _PyObject_CallMethodIdOneArg(PyObject *self, _Py_Identifier *name, PyObject *arg
 
 /* === Vectorcall protocol (PEP 590) ============================= */
 
-// Call callable using tp_call. Arguments are like PyObject_Vectorcall()
-// or PyObject_FastCallDict() (both forms are supported),
+// Call callable using tp_call. Arguments are like PyObject_Vectorcall(),
 // except that nargs is plainly the number of arguments without flags.
 //
-// Export for shared stdlib extensions like the math extension,
-// function used via inlined _PyObject_VectorcallTstate() function.
+// Export for 'math' shared extension, function used
+// via inlined _PyObject_VectorcallTstate() function.
 PyAPI_FUNC(PyObject*) _PyObject_MakeTpCall(
     PyThreadState *tstate,
     PyObject *callable,
@@ -203,14 +202,6 @@ _PyObject_CallNoArgs(PyObject *func) {
     return _PyObject_VectorcallTstate(tstate, func, NULL, 0, NULL);
 }
 
-
-static inline PyObject *
-_PyObject_FastCallTstate(PyThreadState *tstate, PyObject *func,
-                         PyObject *const *args, Py_ssize_t nargs)
-{
-    EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, func);
-    return _PyObject_VectorcallTstate(tstate, func, args, (size_t)nargs, NULL);
-}
 
 extern PyObject *const *
 _PyStack_UnpackDict(PyThreadState *tstate,

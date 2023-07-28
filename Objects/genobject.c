@@ -10,7 +10,7 @@
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "structmember.h"         // PyMemberDef
+
 #include "opcode.h"               // SEND
 #include "frameobject.h"          // _PyInterpreterFrame_GetLine
 #include "pystats.h"
@@ -317,7 +317,7 @@ gen_close_iter(PyObject *yf)
     }
     else {
         PyObject *meth;
-        if (_PyObject_LookupAttr(yf, &_Py_ID(close), &meth) < 0) {
+        if (PyObject_GetOptionalAttr(yf, &_Py_ID(close), &meth) < 0) {
             PyErr_WriteUnraisable(yf);
         }
         if (meth) {
@@ -492,7 +492,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
         } else {
             /* `yf` is an iterator or a coroutine-like object. */
             PyObject *meth;
-            if (_PyObject_LookupAttr(yf, &_Py_ID(throw), &meth) < 0) {
+            if (PyObject_GetOptionalAttr(yf, &_Py_ID(throw), &meth) < 0) {
                 Py_DECREF(yf);
                 return NULL;
             }
@@ -1144,7 +1144,7 @@ static PyGetSetDef coro_getsetlist[] = {
 };
 
 static PyMemberDef coro_memberlist[] = {
-    {"cr_origin",    T_OBJECT, offsetof(PyCoroObject, cr_origin_or_finalizer),   READONLY},
+    {"cr_origin",    _Py_T_OBJECT, offsetof(PyCoroObject, cr_origin_or_finalizer),   Py_READONLY},
     {NULL}      /* Sentinel */
 };
 
@@ -1558,8 +1558,8 @@ static PyGetSetDef async_gen_getsetlist[] = {
 };
 
 static PyMemberDef async_gen_memberlist[] = {
-    {"ag_running", T_BOOL,   offsetof(PyAsyncGenObject, ag_running_async),
-        READONLY},
+    {"ag_running", Py_T_BOOL,   offsetof(PyAsyncGenObject, ag_running_async),
+        Py_READONLY},
     {NULL}      /* Sentinel */
 };
 

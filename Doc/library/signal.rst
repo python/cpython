@@ -562,7 +562,7 @@ The :mod:`signal` module defines the following functions:
 
    Note that installing a signal handler with :func:`signal` will reset the
    restart behaviour to interruptible by implicitly calling
-   :c:func:`siginterrupt` with a true *flag* value for the given signal.
+   :c:func:`!siginterrupt` with a true *flag* value for the given signal.
 
 
 .. function:: signal(signalnum, handler)

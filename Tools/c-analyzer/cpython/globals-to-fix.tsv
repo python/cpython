@@ -54,7 +54,7 @@ Objects/genobject.c	-	_PyAsyncGenASend_Type	-
 Objects/genobject.c	-	_PyAsyncGenAThrow_Type	-
 Objects/genobject.c	-	_PyAsyncGenWrappedValue_Type	-
 Objects/genobject.c	-	_PyCoroWrapper_Type	-
-Objects/interpreteridobject.c	-	_PyInterpreterID_Type	-
+Objects/interpreteridobject.c	-	PyInterpreterID_Type	-
 Objects/iterobject.c	-	PyCallIter_Type	-
 Objects/iterobject.c	-	PySeqIter_Type	-
 Objects/listobject.c	-	PyListIter_Type	-
@@ -393,7 +393,6 @@ Modules/xxlimited_35.c	-	Xxo_Type	-
 ## exception types
 Modules/_ctypes/_ctypes.c	-	PyExc_ArgError	-
 Modules/_cursesmodule.c	-	PyCursesError	-
-Modules/_decimal/_decimal.c	-	DecimalException	-
 Modules/_tkinter.c	-	Tkinter_TclError	-
 Modules/xxlimited_35.c	-	ErrorObject	-
 Modules/xxmodule.c	-	ErrorObject	-
@@ -422,18 +421,8 @@ Modules/_datetimemodule.c	-	us_per_hour	-
 Modules/_datetimemodule.c	-	us_per_day	-
 Modules/_datetimemodule.c	-	us_per_week	-
 Modules/_datetimemodule.c	-	seconds_per_day	-
-Modules/_decimal/_decimal.c	-	global_state	-
-Modules/_decimal/_decimal.c	-	basic_context_template	-
-Modules/_decimal/_decimal.c	-	current_context_var	-
-Modules/_decimal/_decimal.c	-	default_context_template	-
-Modules/_decimal/_decimal.c	-	extended_context_template	-
-Modules/_decimal/_decimal.c	-	round_map	-
-Modules/_decimal/_decimal.c	-	Rational	-
-Modules/_decimal/_decimal.c	-	SignalTuple	-
 
 ## state
-Modules/_asynciomodule.c	-	fi_freelist	-
-Modules/_asynciomodule.c	-	fi_freelist_len	-
 Modules/_ctypes/_ctypes.c	-	_ctypes_ptrtype_cache	-
 Modules/_ctypes/_ctypes.c	-	global_state	-
 Modules/_ctypes/ctypes.h	-	global_state	-
@@ -457,12 +446,6 @@ Modules/_cursesmodule.c	-	initialised	-
 Modules/_cursesmodule.c	-	initialised_setupterm	-
 Modules/_cursesmodule.c	-	initialisedcolors	-
 Modules/_cursesmodule.c	-	screen_encoding	-
-Modules/_decimal/_decimal.c	-	_py_long_multiply	-
-Modules/_decimal/_decimal.c	-	_py_long_floor_divide	-
-Modules/_decimal/_decimal.c	-	_py_long_power	-
-Modules/_decimal/_decimal.c	-	_py_float_abs	-
-Modules/_decimal/_decimal.c	-	_py_long_bit_length	-
-Modules/_decimal/_decimal.c	-	_py_float_as_integer_ratio	-
 Modules/_elementtree.c	-	expat_capi	-
 Modules/readline.c	-	libedit_append_replace_history_offset	-
 Modules/readline.c	-	using_libedit_emulation	-

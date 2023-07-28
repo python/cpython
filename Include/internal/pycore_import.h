@@ -5,6 +5,27 @@
 extern "C" {
 #endif
 
+#include "pycore_time.h"          // _PyTime_t
+
+extern int _PyImport_IsInitialized(PyInterpreterState *);
+
+PyAPI_FUNC(int) _PyImport_SetModule(PyObject *name, PyObject *module);
+extern int _PyImport_SetModuleString(const char *name, PyObject* module);
+
+extern void _PyImport_AcquireLock(PyInterpreterState *interp);
+extern int _PyImport_ReleaseLock(PyInterpreterState *interp);
+
+extern int _PyImport_FixupBuiltin(
+    PyObject *mod,
+    const char *name,            /* UTF-8 encoded string */
+    PyObject *modules
+    );
+extern int _PyImport_FixupExtensionObject(PyObject*, PyObject *,
+                                          PyObject *, PyObject *);
+
+PyAPI_FUNC(PyObject*) _PyImport_GetModuleAttr(PyObject *, PyObject *);
+PyAPI_FUNC(PyObject*) _PyImport_GetModuleAttrString(const char *, const char *);
+
 
 struct _import_runtime_state {
     /* The builtin modules (defined in config.c). */
@@ -165,16 +186,20 @@ struct _module_alias {
     const char *orig;                 /* ASCII encoded string */
 };
 
-PyAPI_DATA(const struct _frozen *) _PyImport_FrozenBootstrap;
-PyAPI_DATA(const struct _frozen *) _PyImport_FrozenStdlib;
-PyAPI_DATA(const struct _frozen *) _PyImport_FrozenTest;
+// Export for test_ctypes
+PyAPI_DATA(const struct _frozen*) _PyImport_FrozenBootstrap;
+// Export for test_ctypes
+PyAPI_DATA(const struct _frozen*) _PyImport_FrozenStdlib;
+// Export for test_ctypes
+PyAPI_DATA(const struct _frozen*) _PyImport_FrozenTest;
+
 extern const struct _module_alias * _PyImport_FrozenAliases;
 
-PyAPI_FUNC(int) _PyImport_CheckSubinterpIncompatibleExtensionAllowed(
+extern int _PyImport_CheckSubinterpIncompatibleExtensionAllowed(
     const char *name);
 
 
-// for testing
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(int) _PyImport_ClearExtension(PyObject *name, PyObject *filename);
 
 #ifdef __cplusplus

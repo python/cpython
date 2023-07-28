@@ -679,11 +679,11 @@ init_interpreter(PyInterpreterState *interp,
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
     _PyType_InitCache(interp);
-    for (int i = 0; i < PY_MONITORING_UNGROUPED_EVENTS; i++) {
+    for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
     }
     for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
-        for (int e = 0; e < PY_MONITORING_EVENTS; e++) {
+        for (int e = 0; e < _PY_MONITORING_EVENTS; e++) {
             interp->monitoring_callables[t][e] = NULL;
 
         }
@@ -841,11 +841,11 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     Py_CLEAR(interp->audit_hooks);
 
-    for (int i = 0; i < PY_MONITORING_UNGROUPED_EVENTS; i++) {
+    for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
     }
     for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
-        for (int e = 0; e < PY_MONITORING_EVENTS; e++) {
+        for (int e = 0; e < _PY_MONITORING_EVENTS; e++) {
             Py_CLEAR(interp->monitoring_callables[t][e]);
         }
     }
@@ -1133,7 +1133,7 @@ _PyInterpreterState_RequireIDRef(PyInterpreterState *interp, int required)
 }
 
 PyObject *
-_PyInterpreterState_GetMainModule(PyInterpreterState *interp)
+PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *interp)
 {
     PyObject *modules = _PyImport_GetModules(interp);
     if (modules == NULL) {
@@ -1166,7 +1166,7 @@ PyInterpreterState_GetDict(PyInterpreterState *interp)
    The GIL must be held.
   */
 
-PyInterpreterState *
+PyInterpreterState*
 PyInterpreterState_Get(void)
 {
     PyThreadState *tstate = current_fast_get(&_PyRuntime);
@@ -1408,7 +1408,7 @@ _PyThreadState_New(PyInterpreterState *interp)
 }
 
 // We keep this for stable ABI compabibility.
-PyThreadState *
+PyAPI_FUNC(PyThreadState*)
 _PyThreadState_Prealloc(PyInterpreterState *interp)
 {
     return _PyThreadState_New(interp);
@@ -1416,7 +1416,7 @@ _PyThreadState_Prealloc(PyInterpreterState *interp)
 
 // We keep this around for (accidental) stable ABI compatibility.
 // Realistically, no extensions are using it.
-void
+PyAPI_FUNC(void)
 _PyThreadState_Init(PyThreadState *tstate)
 {
     Py_FatalError("_PyThreadState_Init() is for internal use only");
@@ -2835,7 +2835,7 @@ _PyInterpreterState_GetConfig(PyInterpreterState *interp)
 int
 _PyInterpreterState_GetConfigCopy(PyConfig *config)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     PyStatus status = _PyConfig_Copy(config, &interp->config);
     if (PyStatus_Exception(status)) {

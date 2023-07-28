@@ -24,12 +24,6 @@ PyAPI_FUNC(PyObject *) PyObject_VectorcallDict(
     size_t nargsf,
     PyObject *kwargs);
 
-// Same as PyObject_Vectorcall(), except without keyword arguments
-PyAPI_FUNC(PyObject *) _PyObject_FastCall(
-    PyObject *func,
-    PyObject *const *args,
-    Py_ssize_t nargs);
-
 PyAPI_FUNC(PyObject *) PyObject_CallOneArg(PyObject *func, PyObject *arg);
 
 static inline PyObject *

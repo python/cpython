@@ -706,20 +706,23 @@ class BaseTestUUID:
         self.assertIs(strong, weak())
 
     @mock.patch.object(sys, "argv", ["", "-u", "uuid3", "-n", "@dns"])
-    def test_cli_namespace_required_for_uuid3(self):
+    @mock.patch('sys.stderr', new_callable=io.StringIO)
+    def test_cli_namespace_required_for_uuid3(self, mock_err):
         with self.assertRaises(SystemExit) as cm:
             self.uuid.main()
 
         # Check that exception code is the same as argparse.ArgumentParser.error
         self.assertEqual(cm.exception.code, 2)
+        self.assertIn("error: Incorrect number of arguments", mock_err.getvalue())
 
     @mock.patch.object(sys, "argv", ["", "-u", "uuid3", "-N", "python.org"])
-    def test_cli_name_required_for_uuid3(self):
+    @mock.patch('sys.stderr', new_callable=io.StringIO)
+    def test_cli_name_required_for_uuid3(self, mock_err):
         with self.assertRaises(SystemExit) as cm:
             self.uuid.main()
-
         # Check that exception code is the same as argparse.ArgumentParser.error
         self.assertEqual(cm.exception.code, 2)
+        self.assertIn("error: Incorrect number of arguments", mock_err.getvalue())
 
     @mock.patch.object(sys, "argv", [""])
     def test_cli_uuid4_outputted_with_no_args(self):
