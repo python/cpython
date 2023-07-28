@@ -915,6 +915,7 @@ hashtable_key_from_2_strings(PyObject *str1, PyObject *str2, const char sep)
     if (str1_data == NULL || str2_data == NULL) {
         return NULL;
     }
+    /* Make sure sep and the NULL byte won't cause an overflow. */
     assert(SIZE_MAX - str1_len - str2_len > 2);
     size_t size = str1_len + 1 + str2_len + 1;
 
