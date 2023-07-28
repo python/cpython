@@ -7,6 +7,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // struct _import_runtime_state
 #include "pycore_namespace.h"     // _PyNamespace_Type
+#include "pycore_object.h"        // _Py_SetImmortal()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pyhash.h"        // _Py_KeyedHash()
 #include "pycore_pylifecycle.h"
@@ -950,12 +951,6 @@ hashtable_destroy_str(void *ptr)
     PyMem_RawFree(ptr);
 }
 
-static void
-hashtable_destroy_module_def(void *ptr)
-{
-    Py_XDECREF((PyObject *)ptr);
-}
-
 #define HTSEP ':'
 
 static PyModuleDef *
@@ -1000,7 +995,8 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
             hashtable_hash_str,
             hashtable_compare_str,
             hashtable_destroy_str,  // key
-            hashtable_destroy_module_def,  // value
+            /* There's no need to decref the def since it's immortal. */
+            NULL,  // value
             &alloc
         );
         if (EXTENSIONS.hashtable == NULL) {
@@ -1014,10 +1010,11 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
         goto finally;
     }
 
+    int already_set = 0;
     _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(
             EXTENSIONS.hashtable, key);
     if (entry == NULL) {
-        if (_Py_hashtable_set(EXTENSIONS.hashtable, key, Py_NewRef(def)) < 0) {
+        if (_Py_hashtable_set(EXTENSIONS.hashtable, key, def) < 0) {
             PyMem_RawFree(key);
             PyErr_NoMemory();
             goto finally;
@@ -1025,13 +1022,19 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
     }
     else {
         if (entry->value == NULL) {
-            entry->value = Py_NewRef(def);
+            entry->value = def;
         }
         else {
             /* We expect it to be static, so it must be the same pointer. */
             assert((PyModuleDef *)entry->value == def);
+            already_set = 1;
         }
         PyMem_RawFree(key);
+    }
+    if (!already_set) {
+        /* We assume that all module defs are statically allocated
+           and will never be freed.  Otherwise, we would incref here. */
+        _Py_SetImmortal(def);
     }
     res = 0;
 
@@ -1066,10 +1069,10 @@ _extensions_cache_delete(PyObject *filename, PyObject *name)
         /* It was already removed. */
         goto finally;
     }
-    /* This decref would be problematic if the module def were
+    /* If we hadn't made the stored defs immortal, we would decref here.
+       However, this decref would be problematic if the module def were
        dynamically allocated, it were the last ref, and this function
        were called with an interpreter other than the def's owner. */
-    Py_DECREF(entry->value);
     entry->value = NULL;
 
 finally:
