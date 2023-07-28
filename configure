@@ -10581,6 +10581,12 @@ then :
   printf "%s\n" "#define HAVE_LINUX_FS_H 1" >>confdefs.h
 
 fi
+ac_fn_c_check_header_compile "$LINENO" "linux/limits.h" "ac_cv_header_linux_limits_h" "$ac_includes_default"
+if test "x$ac_cv_header_linux_limits_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_LINUX_LIMITS_H 1" >>confdefs.h
+
+fi
 ac_fn_c_check_header_compile "$LINENO" "linux/memfd.h" "ac_cv_header_linux_memfd_h" "$ac_includes_default"
 if test "x$ac_cv_header_linux_memfd_h" = xyes
 then :
