@@ -2601,7 +2601,7 @@ through the object's keys; for sequences, it should iterate through the values.
 
       In CPython, the method is used by the ``**expression`` syntax in
       :ref:`function calls <calls>`, as well as in the implementation of the
-      :meth:`dict.update` method of the native dictionary class.
+      :meth:`~dict.update` method of the native :class:`dict` class.
 
 
 .. method:: object.__reversed__(self)
