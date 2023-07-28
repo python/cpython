@@ -696,29 +696,13 @@ instrument_per_instruction(PyCodeObject *code, int i)
     *opcode_ptr = INSTRUMENTED_INSTRUCTION;
 }
 
-#ifndef NDEBUG
-static bool
-instruction_has_event(PyCodeObject *code, int offset)
-{
-    _Py_CODEUNIT instr = _PyCode_CODE(code)[offset];
-    int opcode = instr.op.code;
-    if (opcode == INSTRUMENTED_LINE) {
-        opcode = code->_co_monitoring->lines[offset].original_opcode;
-    }
-    if (opcode == INSTRUMENTED_INSTRUCTION) {
-        opcode = code->_co_monitoring->per_instruction_opcodes[offset];
-    }
-    return opcode_has_event(opcode);
-}
-#endif
-
 static void
 remove_tools(PyCodeObject * code, int offset, int event, int tools)
 {
     assert(event != PY_MONITORING_EVENT_LINE);
     assert(event != PY_MONITORING_EVENT_INSTRUCTION);
-    assert(event < PY_MONITORING_INSTRUMENTED_EVENTS);
-    assert(instruction_has_event(code, offset));
+    assert(PY_MONITORING_IS_INSTRUMENTED_EVENT(event));
+    assert(opcode_has_event(_Py_GetBaseOpcode(code, offset)));
     _PyCoMonitoringData *monitoring = code->_co_monitoring;
     if (monitoring && monitoring->tools) {
         monitoring->tools[offset] &= ~tools;
@@ -773,7 +757,7 @@ add_tools(PyCodeObject * code, int offset, int event, int tools)
 {
     assert(event != PY_MONITORING_EVENT_LINE);
     assert(event != PY_MONITORING_EVENT_INSTRUCTION);
-    assert(event < PY_MONITORING_INSTRUMENTED_EVENTS);
+    assert(PY_MONITORING_IS_INSTRUMENTED_EVENT(event));
     assert(code->_co_monitoring);
     if (code->_co_monitoring &&
         code->_co_monitoring->tools
@@ -915,7 +899,7 @@ get_tools_for_instruction(PyCodeObject * code, int i, int event)
                 event == PY_MONITORING_EVENT_C_RETURN);
         event = PY_MONITORING_EVENT_CALL;
     }
-    if (event < PY_MONITORING_INSTRUMENTED_EVENTS && monitoring->tools) {
+    if (PY_MONITORING_IS_INSTRUMENTED_EVENT(event) && monitoring->tools) {
         tools = monitoring->tools[i];
     }
     else {
@@ -925,6 +909,26 @@ get_tools_for_instruction(PyCodeObject * code, int i, int event)
     CHECK((tools & code->_co_monitoring->active_monitors.tools[event]) == tools);
     return tools;
 }
+
+static const char *const event_names [] = {
+    [PY_MONITORING_EVENT_PY_START] = "PY_START",
+    [PY_MONITORING_EVENT_PY_RESUME] = "PY_RESUME",
+    [PY_MONITORING_EVENT_PY_RETURN] = "PY_RETURN",
+    [PY_MONITORING_EVENT_PY_YIELD] = "PY_YIELD",
+    [PY_MONITORING_EVENT_CALL] = "CALL",
+    [PY_MONITORING_EVENT_LINE] = "LINE",
+    [PY_MONITORING_EVENT_INSTRUCTION] = "INSTRUCTION",
+    [PY_MONITORING_EVENT_JUMP] = "JUMP",
+    [PY_MONITORING_EVENT_BRANCH] = "BRANCH",
+    [PY_MONITORING_EVENT_C_RETURN] = "C_RETURN",
+    [PY_MONITORING_EVENT_PY_THROW] = "PY_THROW",
+    [PY_MONITORING_EVENT_RAISE] = "RAISE",
+    [PY_MONITORING_EVENT_RERAISE] = "RERAISE",
+    [PY_MONITORING_EVENT_EXCEPTION_HANDLED] = "EXCEPTION_HANDLED",
+    [PY_MONITORING_EVENT_C_RAISE] = "C_RAISE",
+    [PY_MONITORING_EVENT_PY_UNWIND] = "PY_UNWIND",
+    [PY_MONITORING_EVENT_STOP_ITERATION] = "STOP_ITERATION",
+};
 
 static int
 call_instrumentation_vector(
@@ -973,7 +977,18 @@ call_instrumentation_vector(
         }
         else {
             /* DISABLE */
-            remove_tools(code, offset, event, 1 << tool);
+            if (!PY_MONITORING_IS_INSTRUMENTED_EVENT(event)) {
+                PyErr_Format(PyExc_ValueError,
+                              "Cannot disable %s events. Callback removed.",
+                             event_names[event]);
+                /* Clear tool to prevent infinite loop */
+                Py_CLEAR(interp->monitoring_callables[tool][event]);
+                err = -1;
+                break;
+            }
+            else {
+                remove_tools(code, offset, event, 1 << tool);
+            }
         }
     }
     Py_DECREF(offset_obj);
@@ -1251,7 +1266,7 @@ initialize_tools(PyCodeObject *code)
                     assert(event > 0);
                 }
                 assert(event >= 0);
-                assert(event < PY_MONITORING_INSTRUMENTED_EVENTS);
+                assert(PY_MONITORING_IS_INSTRUMENTED_EVENT(event));
                 tools[i] = code->_co_monitoring->active_monitors.tools[event];
                 CHECK(tools[i] != 0);
             }
@@ -2023,26 +2038,6 @@ add_power2_constant(PyObject *obj, const char *name, int i)
     Py_DECREF(val);
     return err;
 }
-
-static const char *const event_names [] = {
-    [PY_MONITORING_EVENT_PY_START] = "PY_START",
-    [PY_MONITORING_EVENT_PY_RESUME] = "PY_RESUME",
-    [PY_MONITORING_EVENT_PY_RETURN] = "PY_RETURN",
-    [PY_MONITORING_EVENT_PY_YIELD] = "PY_YIELD",
-    [PY_MONITORING_EVENT_CALL] = "CALL",
-    [PY_MONITORING_EVENT_LINE] = "LINE",
-    [PY_MONITORING_EVENT_INSTRUCTION] = "INSTRUCTION",
-    [PY_MONITORING_EVENT_JUMP] = "JUMP",
-    [PY_MONITORING_EVENT_BRANCH] = "BRANCH",
-    [PY_MONITORING_EVENT_C_RETURN] = "C_RETURN",
-    [PY_MONITORING_EVENT_PY_THROW] = "PY_THROW",
-    [PY_MONITORING_EVENT_RAISE] = "RAISE",
-    [PY_MONITORING_EVENT_RERAISE] = "RERAISE",
-    [PY_MONITORING_EVENT_EXCEPTION_HANDLED] = "EXCEPTION_HANDLED",
-    [PY_MONITORING_EVENT_C_RAISE] = "C_RAISE",
-    [PY_MONITORING_EVENT_PY_UNWIND] = "PY_UNWIND",
-    [PY_MONITORING_EVENT_STOP_ITERATION] = "STOP_ITERATION",
-};
 
 /*[clinic input]
 monitoring._all_events
