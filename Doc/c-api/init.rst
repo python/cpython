@@ -1408,7 +1408,7 @@ function. You can create and destroy them using the following functions:
    .. index:: single: close() (in module os)
 
 
-.. c:function:: PyThreadState* Py_NewInterpreter()
+.. c:function:: PyThreadState* Py_NewInterpreter(void)
 
    .. index::
       pair: module; builtins
