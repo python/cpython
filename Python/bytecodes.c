@@ -612,7 +612,11 @@ dummy_func(
                 exc = args[0];
                 /* fall through */
             case 0:
-                ERROR_IF(do_raise(tstate, exc, cause), exception_unwind);
+                if (do_raise(tstate, exc, cause)) {
+                    assert(oparg == 0);
+                    monitor_reraise(tstate, frame, next_instr-1);
+                    goto exception_unwind;
+                }
                 break;
             default:
                 _PyErr_SetString(tstate, PyExc_SystemError,
@@ -944,6 +948,7 @@ dummy_func(
             assert(exc && PyExceptionInstance_Check(exc));
             Py_INCREF(exc);
             _PyErr_SetRaisedException(tstate, exc);
+            monitor_reraise(tstate, frame, next_instr-1);
             goto exception_unwind;
         }
 
@@ -955,6 +960,7 @@ dummy_func(
             else {
                 Py_INCREF(exc);
                 _PyErr_SetRaisedException(tstate, exc);
+                monitor_reraise(tstate, frame, next_instr-1);
                 goto exception_unwind;
             }
         }
@@ -969,6 +975,7 @@ dummy_func(
             }
             else {
                 _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
+                monitor_reraise(tstate, frame, next_instr-1);
                 goto exception_unwind;
             }
         }
