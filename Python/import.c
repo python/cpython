@@ -950,6 +950,8 @@ hashtable_destroy_str(void *ptr)
     PyMem_RawFree(ptr);
 }
 
+#define HTSEP ':'
+
 static PyModuleDef *
 _extensions_cache_get(PyObject *filename, PyObject *name)
 {
@@ -961,7 +963,7 @@ _extensions_cache_get(PyObject *filename, PyObject *name)
         goto finally;
     }
 
-    key = hashtable_key_from_2_strings(filename, name, ':');
+    key = hashtable_key_from_2_strings(filename, name, HTSEP);
     if (key == NULL) {
         goto finally;
     }
@@ -1001,7 +1003,7 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
         }
     }
 
-    void *key = hashtable_key_from_2_strings(filename, name, ':');
+    void *key = hashtable_key_from_2_strings(filename, name, HTSEP);
     if (key == NULL) {
         goto finally;
     }
@@ -1043,7 +1045,7 @@ _extensions_cache_delete(PyObject *filename, PyObject *name)
         goto finally;
     }
 
-    key = hashtable_key_from_2_strings(filename, name, ':');
+    key = hashtable_key_from_2_strings(filename, name, HTSEP);
     if (key == NULL) {
         goto finally;
     }
@@ -1079,6 +1081,8 @@ _extensions_cache_clear_all(void)
     _Py_hashtable_destroy(EXTENSIONS.hashtable);
     EXTENSIONS.hashtable = NULL;
 }
+
+#undef HTSEP
 
 
 static bool
