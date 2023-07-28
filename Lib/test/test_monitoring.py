@@ -715,7 +715,7 @@ class CheckEvents(MonitoringTestBase, unittest.TestCase):
             self.assertIn(r0, ("raise", "reraise"))
             h0 = h[0]
             self.assertIn(h0, ("handled", "unwind"))
-
+            self.assertEqual(r[1], h[1])
 
 
 class StopiterationRecorder(ExceptionRecorder):
@@ -733,8 +733,8 @@ class UnwindRecorder(ExceptionRecorder):
 
     event_type = E.PY_UNWIND
 
-    def __call__(self, *args):
-        self.events.append(("unwind", None))
+    def __call__(self, code, offset, exc):
+        self.events.append(("unwind", type(exc)))
 
 class ExceptionHandledRecorder(ExceptionRecorder):
 
