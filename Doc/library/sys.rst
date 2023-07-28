@@ -877,19 +877,19 @@ always available.
    ``sys.getwindowsversion().major``. For compatibility with prior
    versions, only the first 5 elements are retrievable by indexing.
 
-   *platform* will be :const:`2 (VER_PLATFORM_WIN32_NT)`.
+   *platform* will be ``2`` (VER_PLATFORM_WIN32_NT).
 
    *product_type* may be one of the following values:
 
    +---------------------------------------+---------------------------------+
    | Constant                              | Meaning                         |
    +=======================================+=================================+
-   | :const:`1 (VER_NT_WORKSTATION)`       | The system is a workstation.    |
+   | ``1`` (VER_NT_WORKSTATION)            | The system is a workstation.    |
    +---------------------------------------+---------------------------------+
-   | :const:`2 (VER_NT_DOMAIN_CONTROLLER)` | The system is a domain          |
+   | ``2`` (VER_NT_DOMAIN_CONTROLLER)      | The system is a domain          |
    |                                       | controller.                     |
    +---------------------------------------+---------------------------------+
-   | :const:`3 (VER_NT_SERVER)`            | The system is a server, but not |
+   | ``3`` (VER_NT_SERVER)                 | The system is a server, but not |
    |                                       | a domain controller.            |
    +---------------------------------------+---------------------------------+
 
