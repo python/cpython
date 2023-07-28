@@ -48,6 +48,11 @@ struct _Py_long_state {
    */
 struct _is {
 
+    /* This struct countains the eval_breaker,
+     * which is by far the hottest field in this struct
+     * and should be placed at the beginning. */
+    struct _ceval_state ceval;
+
     PyInterpreterState *next;
 
     int64_t id;
@@ -108,8 +113,6 @@ struct _is {
 
     // Dictionary of the builtins module
     PyObject *builtins;
-
-    struct _ceval_state ceval;
 
     struct _import_state imports;
 
