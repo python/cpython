@@ -2167,12 +2167,12 @@ s_sizeof(PyStructObject *self, void *unused)
 static PyObject *
 s_repr(PyStructObject *self)
 {
-    PyObject* fmt;
-    PyObject* s;
-
-    fmt = PyUnicode_FromStringAndSize(PyBytes_AS_STRING(self->s_format),
-                                      PyBytes_GET_SIZE(self->s_format));
-    s = PyUnicode_FromFormat("%s(%R)", _PyType_Name(Py_TYPE(self)), fmt);
+    PyObject* fmt = PyUnicode_FromStringAndSize(
+        PyBytes_AS_STRING(self->s_format), PyBytes_GET_SIZE(self->s_format));
+    if (fmt == NULL) {
+        return NULL;
+    }
+    PyObject* s = PyUnicode_FromFormat("%s(%R)", _PyType_Name(Py_TYPE(self)), fmt);
     Py_DECREF(fmt);
     return s;
 }
