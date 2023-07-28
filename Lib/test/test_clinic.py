@@ -679,6 +679,32 @@ class ClinicParserTest(_ParserBase):
         """)
         self.assertIsInstance(function.return_converter, clinic.int_return_converter)
 
+    def test_return_converter_invalid_syntax(self):
+        stdout = self.parse_function_should_fail("""
+            module os
+            os.stat -> invalid syntax
+        """)
+        expected_error = "Badly formed annotation for os.stat: 'invalid syntax'"
+        self.assertIn(expected_error, stdout)
+
+    def test_legacy_converter_disallowed_in_return_annotation(self):
+        stdout = self.parse_function_should_fail("""
+            module os
+            os.stat -> "s"
+        """)
+        expected_error = "Legacy converter 's' not allowed as a return converter"
+        self.assertIn(expected_error, stdout)
+
+    def test_unknown_return_converter(self):
+        stdout = self.parse_function_should_fail("""
+            module os
+            os.stat -> foooooooooooooooooooooooo
+        """)
+        expected_error = (
+            "No available return converter called 'foooooooooooooooooooooooo'"
+        )
+        self.assertIn(expected_error, stdout)
+
     def test_star(self):
         function = self.parse_function("""
             module os
@@ -1360,7 +1386,7 @@ class ClinicExternalTest(TestCase):
         ) as proc:
             proc.wait()
             if expect_success and proc.returncode:
-                self.fail("".join(proc.stderr))
+                self.fail("".join([*proc.stdout, *proc.stderr]))
             stdout = proc.stdout.read()
             stderr = proc.stderr.read()
             # Clinic never writes to stderr.

@@ -136,7 +136,7 @@ need to be held.
 
 The :ref:`default raw memory allocator <default-memory-allocators>` uses
 the following functions: :c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc`
-and :c:func:`free`; call ``malloc(1)`` (or ``calloc(1, 1)``) when requesting
+and :c:func:`!free`; call ``malloc(1)`` (or ``calloc(1, 1)``) when requesting
 zero bytes.
 
 .. versionadded:: 3.4
@@ -264,14 +264,14 @@ The following type-oriented macros are provided for convenience.  Note  that
 *TYPE* refers to any C type.
 
 
-.. c:function:: TYPE* PyMem_New(TYPE, size_t n)
+.. c:macro:: PyMem_New(TYPE, n)
 
    Same as :c:func:`PyMem_Malloc`, but allocates ``(n * sizeof(TYPE))`` bytes of
    memory.  Returns a pointer cast to :c:expr:`TYPE*`.  The memory will not have
    been initialized in any way.
 
 
-.. c:function:: TYPE* PyMem_Resize(void *p, TYPE, size_t n)
+.. c:macro:: PyMem_Resize(p, TYPE, n)
 
    Same as :c:func:`PyMem_Realloc`, but the memory block is resized to ``(n *
    sizeof(TYPE))`` bytes.  Returns a pointer cast to :c:expr:`TYPE*`. On return,
@@ -423,13 +423,15 @@ Customize Memory Allocators
    +----------------------------------------------------------+---------------------------------------+
 
    .. versionchanged:: 3.5
-      The :c:type:`PyMemAllocator` structure was renamed to
+      The :c:type:`!PyMemAllocator` structure was renamed to
       :c:type:`PyMemAllocatorEx` and a new ``calloc`` field was added.
 
 
 .. c:type:: PyMemAllocatorDomain
 
    Enum used to identify an allocator domain. Domains:
+
+   .. c:namespace:: NULL
 
    .. c:macro:: PYMEM_DOMAIN_RAW
 
@@ -627,8 +629,8 @@ with a fixed size of 256 KiB. It falls back to :c:func:`PyMem_RawMalloc` and
 
 The arena allocator uses the following functions:
 
-* :c:func:`VirtualAlloc` and :c:func:`VirtualFree` on Windows,
-* :c:func:`mmap` and :c:func:`munmap` if available,
+* :c:func:`!VirtualAlloc` and :c:func:`!VirtualFree` on Windows,
+* :c:func:`!mmap` and :c:func:`!munmap` if available,
 * :c:func:`malloc` and :c:func:`free` otherwise.
 
 This allocator is disabled if Python is configured with the
@@ -732,8 +734,8 @@ allocators operating on different heaps. ::
    free(buf1);       /* Fatal -- should be PyMem_Del()  */
 
 In addition to the functions aimed at handling raw memory blocks from the Python
-heap, objects in Python are allocated and released with :c:func:`PyObject_New`,
-:c:func:`PyObject_NewVar` and :c:func:`PyObject_Del`.
+heap, objects in Python are allocated and released with :c:macro:`PyObject_New`,
+:c:macro:`PyObject_NewVar` and :c:func:`PyObject_Del`.
 
 These will be explained in the next chapter on defining and implementing new
 object types in C.
