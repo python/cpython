@@ -10,23 +10,24 @@
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_ceval.h"         // _PyEval_SignalAsyncExc()
 #include "pycore_code.h"
+#include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 #include "pycore_function.h"
+#include "pycore_instruments.h"
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_instruments.h"
-#include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_moduleobject.h"  // PyModuleObject
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_opcode.h"        // EXTRA_CASES
 #include "pycore_opcode_metadata.h"  // uop names
 #include "pycore_opcode_utils.h"  // MAKE_FUNCTION_*
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_range.h"         // _PyRangeIterObject
+#include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
-#include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 
 #include "pycore_dict.h"
 #include "dictobject.h"
@@ -35,7 +36,7 @@
 #include "optimizer.h"
 #include "pydtrace.h"
 #include "setobject.h"
-#include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
+
 
 #define USE_COMPUTED_GOTOS 0
 #include "ceval_macros.h"
@@ -719,7 +720,11 @@ dummy_func(
                 exc = args[0];
                 /* fall through */
             case 0:
-                ERROR_IF(do_raise(tstate, exc, cause), exception_unwind);
+                if (do_raise(tstate, exc, cause)) {
+                    assert(oparg == 0);
+                    monitor_reraise(tstate, frame, next_instr-1);
+                    goto exception_unwind;
+                }
                 break;
             default:
                 _PyErr_SetString(tstate, PyExc_SystemError,
@@ -1046,6 +1051,7 @@ dummy_func(
             assert(exc && PyExceptionInstance_Check(exc));
             Py_INCREF(exc);
             _PyErr_SetRaisedException(tstate, exc);
+            monitor_reraise(tstate, frame, next_instr-1);
             goto exception_unwind;
         }
 
@@ -1057,6 +1063,7 @@ dummy_func(
             else {
                 Py_INCREF(exc);
                 _PyErr_SetRaisedException(tstate, exc);
+                monitor_reraise(tstate, frame, next_instr-1);
                 goto exception_unwind;
             }
         }
@@ -1071,6 +1078,7 @@ dummy_func(
             }
             else {
                 _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
+                monitor_reraise(tstate, frame, next_instr-1);
                 goto exception_unwind;
             }
         }
@@ -1720,7 +1728,7 @@ dummy_func(
             PyTypeObject *cls = (PyTypeObject *)class;
             int method_found = 0;
             res2 = _PySuper_Lookup(cls, self, name,
-                                   cls->tp_getattro == PyObject_GenericGetAttr ? &method_found : NULL);
+                                   Py_TYPE(self)->tp_getattro == PyObject_GenericGetAttr ? &method_found : NULL);
             Py_DECREF(global_super);
             Py_DECREF(class);
             if (res2 == NULL) {
@@ -2664,7 +2672,12 @@ dummy_func(
             assert(val && PyExceptionInstance_Check(val));
             exc = PyExceptionInstance_Class(val);
             tb = PyException_GetTraceback(val);
-            Py_XDECREF(tb);
+            if (tb == NULL) {
+                tb = Py_None;
+            }
+            else {
+                Py_DECREF(tb);
+            }
             assert(PyLong_Check(lasti));
             (void)lasti; // Shut up compiler warning if asserts are off
             PyObject *stack[4] = {NULL, exc, val, tb};

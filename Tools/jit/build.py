@@ -667,13 +667,6 @@ def handle_relocations(
                 assert symbol.startswith("_")
                 symbol = symbol.removeprefix("_")
                 yield Hole("PATCH_ABS_64", symbol, offset, addend)
-            case {
-                "Addend": int(addend),
-                "Offset": int(offset),
-                "Symbol": {"Value": "_Py_tss_tstate"},
-                "Type": {"Value": "R_X86_64_GOTTPOFF"},
-            }:
-                raise NotImplementedError('Please use "PyThreadState_GET()" instead of "_PyThreadState_GET()" here... note the leading underscore!')
             case _:
                 raise NotImplementedError(relocation)
 

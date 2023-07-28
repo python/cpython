@@ -18,7 +18,7 @@ this type and there is exactly one in existence.
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_sliceobject.h"
-#include "structmember.h"         // PyMemberDef
+
 
 static PyObject *
 ellipsis_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
@@ -378,9 +378,9 @@ slice_repr(PySliceObject *r)
 }
 
 static PyMemberDef slice_members[] = {
-    {"start", T_OBJECT, offsetof(PySliceObject, start), READONLY},
-    {"stop", T_OBJECT, offsetof(PySliceObject, stop), READONLY},
-    {"step", T_OBJECT, offsetof(PySliceObject, step), READONLY},
+    {"start", _Py_T_OBJECT, offsetof(PySliceObject, start), Py_READONLY},
+    {"stop", _Py_T_OBJECT, offsetof(PySliceObject, stop), Py_READONLY},
+    {"step", _Py_T_OBJECT, offsetof(PySliceObject, step), Py_READONLY},
     {0}
 };
 

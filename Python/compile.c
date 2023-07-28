@@ -28,12 +28,13 @@
 #define NEED_OPCODE_TABLES
 #include "pycore_opcode_utils.h"
 #undef NEED_OPCODE_TABLES
-#include "pycore_flowgraph.h"
 #include "pycore_code.h"          // _PyCode_New()
 #include "pycore_compile.h"
+#include "pycore_flowgraph.h"
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pystate.h"       // _Py_GetConfig()
+#include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_symtable.h"      // PySTEntryObject, _PyFuture_FromAST()
 
 #define NEED_OPCODE_METADATA
@@ -1279,7 +1280,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     u->u_metadata.u_argcount = 0;
     u->u_metadata.u_posonlyargcount = 0;
     u->u_metadata.u_kwonlyargcount = 0;
-    u->u_ste = PySymtable_Lookup(c->c_st, key);
+    u->u_ste = _PySymtable_Lookup(c->c_st, key);
     if (!u->u_ste) {
         compiler_unit_free(u);
         return ERROR;
@@ -5684,7 +5685,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     comprehension_ty outermost;
     int scope_type = c->u->u_scope_type;
     int is_top_level_await = IS_TOP_LEVEL_AWAIT(c);
-    PySTEntryObject *entry = PySymtable_Lookup(c->c_st, (void *)e);
+    PySTEntryObject *entry = _PySymtable_Lookup(c->c_st, (void *)e);
     if (entry == NULL) {
         goto error;
     }
@@ -7526,6 +7527,9 @@ build_cellfixedoffsets(_PyCompile_CodeUnitMetadata *umd)
     return fixed;
 }
 
+#define IS_GENERATOR(CF) \
+    ((CF) & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR))
+
 static int
 insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entryblock,
                            int *fixed, int nfreevars, int code_flags)
@@ -7533,7 +7537,11 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
     assert(umd->u_firstlineno > 0);
 
     /* Add the generator prefix instructions. */
-    if (code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
+    if (IS_GENERATOR(code_flags)) {
+        /* Note that RETURN_GENERATOR + POP_TOP have a net stack effect
+         * of 0. This is because RETURN_GENERATOR pushes an element
+         * with _PyFrame_StackPush before switching stacks.
+         */
         cfg_instr make_gen = {
             .i_opcode = RETURN_GENERATOR,
             .i_oparg = 0,
@@ -7714,19 +7722,28 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     int nparams = (int)PyList_GET_SIZE(u->u_ste->ste_varnames);
     int nlocals = (int)PyDict_GET_SIZE(u->u_metadata.u_varnames);
     assert(u->u_metadata.u_firstlineno);
-    if (_PyCfg_OptimizeCodeUnit(&g, consts, const_cache, code_flags, nlocals,
+    if (_PyCfg_OptimizeCodeUnit(&g, consts, const_cache, nlocals,
                                 nparams, u->u_metadata.u_firstlineno) < 0) {
         goto error;
     }
 
-    /** Assembly **/
-    int nlocalsplus = prepare_localsplus(&u->u_metadata, &g, code_flags);
-    if (nlocalsplus < 0) {
+    int stackdepth = _PyCfg_Stackdepth(&g);
+    if (stackdepth < 0) {
         goto error;
     }
 
-    int maxdepth = _PyCfg_Stackdepth(g.g_entryblock, code_flags);
-    if (maxdepth < 0) {
+    /* prepare_localsplus adds instructions for generators that push
+     * and pop an item on the stack. This assertion makes sure there
+     * is space on the stack for that.
+     * It should always be true, because a generator must have at
+     * least one expression or call to INTRINSIC_STOPITERATION_ERROR,
+     * which requires stackspace.
+     */
+    assert(!(IS_GENERATOR(code_flags) && stackdepth == 0));
+
+    /** Assembly **/
+    int nlocalsplus = prepare_localsplus(&u->u_metadata, &g, code_flags);
+    if (nlocalsplus < 0) {
         goto error;
     }
 
@@ -7745,7 +7762,7 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     }
 
     co = _PyAssemble_MakeCodeObject(&u->u_metadata, const_cache, consts,
-                                    maxdepth, &optimized_instrs, nlocalsplus,
+                                    stackdepth, &optimized_instrs, nlocalsplus,
                                     code_flags, filename);
 
 error:
@@ -8053,6 +8070,12 @@ _PyCompile_CleanDoc(PyObject *doc)
     }
 
     char *buff = PyMem_Malloc(doc_size);
+    if (buff == NULL){
+        Py_DECREF(doc);
+        PyErr_NoMemory();
+        return NULL;
+    }
+
     char *w = buff;
 
     while (p < pend) {
@@ -8183,8 +8206,8 @@ _PyCompile_OptimizeCfg(PyObject *instructions, PyObject *consts, int nlocals)
     if (instructions_to_cfg(instructions, &g) < 0) {
         goto error;
     }
-    int code_flags = 0, nparams = 0, firstlineno = 1;
-    if (_PyCfg_OptimizeCodeUnit(&g, consts, const_cache, code_flags, nlocals,
+    int nparams = 0, firstlineno = 1;
+    if (_PyCfg_OptimizeCodeUnit(&g, consts, const_cache, nlocals,
                                 nparams, firstlineno) < 0) {
         goto error;
     }
@@ -8219,14 +8242,14 @@ _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
         goto error;
     }
 
-    int code_flags = 0;
-    int nlocalsplus = prepare_localsplus(umd, &g, code_flags);
-    if (nlocalsplus < 0) {
+    int stackdepth = _PyCfg_Stackdepth(&g);
+    if (stackdepth < 0) {
         goto error;
     }
 
-    int maxdepth = _PyCfg_Stackdepth(g.g_entryblock, code_flags);
-    if (maxdepth < 0) {
+    int code_flags = 0;
+    int nlocalsplus = prepare_localsplus(umd, &g, code_flags);
+    if (nlocalsplus < 0) {
         goto error;
     }
 
@@ -8249,7 +8272,7 @@ _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
         goto error;
     }
     co = _PyAssemble_MakeCodeObject(umd, const_cache,
-                                    consts, maxdepth, &optimized_instrs,
+                                    consts, stackdepth, &optimized_instrs,
                                     nlocalsplus, code_flags, filename);
     Py_DECREF(consts);
 

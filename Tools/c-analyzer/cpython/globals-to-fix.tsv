@@ -54,7 +54,7 @@ Objects/genobject.c	-	_PyAsyncGenASend_Type	-
 Objects/genobject.c	-	_PyAsyncGenAThrow_Type	-
 Objects/genobject.c	-	_PyAsyncGenWrappedValue_Type	-
 Objects/genobject.c	-	_PyCoroWrapper_Type	-
-Objects/interpreteridobject.c	-	_PyInterpreterID_Type	-
+Objects/interpreteridobject.c	-	PyInterpreterID_Type	-
 Objects/iterobject.c	-	PyCallIter_Type	-
 Objects/iterobject.c	-	PySeqIter_Type	-
 Objects/listobject.c	-	PyListIter_Type	-
@@ -421,11 +421,8 @@ Modules/_datetimemodule.c	-	us_per_hour	-
 Modules/_datetimemodule.c	-	us_per_day	-
 Modules/_datetimemodule.c	-	us_per_week	-
 Modules/_datetimemodule.c	-	seconds_per_day	-
-Modules/_decimal/_decimal.c	-	global_state	-
 
 ## state
-Modules/_asynciomodule.c	-	fi_freelist	-
-Modules/_asynciomodule.c	-	fi_freelist_len	-
 Modules/_ctypes/_ctypes.c	-	_ctypes_ptrtype_cache	-
 Modules/_ctypes/_ctypes.c	-	global_state	-
 Modules/_ctypes/ctypes.h	-	global_state	-

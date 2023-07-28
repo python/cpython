@@ -210,17 +210,6 @@ PyImport_GetModuleDict(void)
     return MODULES(interp);
 }
 
-// This is only kept around for extensions that use _Py_IDENTIFIER.
-PyObject *
-_PyImport_GetModuleId(_Py_Identifier *nameid)
-{
-    PyObject *name = _PyUnicode_FromId(nameid); /* borrowed */
-    if (name == NULL) {
-        return NULL;
-    }
-    return PyImport_GetModule(name);
-}
-
 int
 _PyImport_SetModule(PyObject *name, PyObject *m)
 {
@@ -1223,6 +1212,15 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
     /* Only single-phase init modules will be in the cache. */
     PyModuleDef *def = _extensions_cache_get(filename, name);
     if (def == NULL) {
+        return NULL;
+    }
+
+    /* It may have been successfully imported previously
+       in an interpreter that allows legacy modules
+       but is not allowed in the current interpreter. */
+    const char *name_buf = PyUnicode_AsUTF8(name);
+    assert(name_buf != NULL);
+    if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
         return NULL;
     }
 
@@ -3715,16 +3713,8 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 
     PyThreadState *tstate = _PyThreadState_GET();
     mod = import_find_extension(tstate, name, path);
-    if (mod != NULL) {
-        const char *name_buf = PyUnicode_AsUTF8(name);
-        assert(name_buf != NULL);
-        if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
-            Py_DECREF(mod);
-            mod = NULL;
-        }
-        goto finally;
-    }
-    else if (PyErr_Occurred()) {
+    if (mod != NULL || _PyErr_Occurred(tstate)) {
+        assert(mod == NULL || !_PyErr_Occurred(tstate));
         goto finally;
     }
 

@@ -25,7 +25,7 @@ The following functions can be safely called before Python is initialized:
 
   * :c:func:`PyImport_AppendInittab`
   * :c:func:`PyImport_ExtendInittab`
-  * :c:func:`PyInitFrozenExtensions`
+  * :c:func:`!PyInitFrozenExtensions`
   * :c:func:`PyMem_SetAllocator`
   * :c:func:`PyMem_SetupDebugHooks`
   * :c:func:`PyObject_SetArenaAllocator`
@@ -151,7 +151,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    :c:member:`PyConfig.use_environment` should be used instead, see
    :ref:`Python Initialization Configuration <init-config>`.
 
-   Ignore all :envvar:`PYTHON*` environment variables, e.g.
+   Ignore all :envvar:`!PYTHON*` environment variables, e.g.
    :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`, that might be set.
 
    Set by the :option:`-E` and :option:`-I` options.
@@ -224,7 +224,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    :ref:`Python Initialization Configuration <init-config>`.
 
    If the flag is non-zero, use :class:`io.FileIO` instead of
-   :class:`WindowsConsoleIO` for :mod:`sys` standard streams.
+   :class:`!io._WindowsConsoleIO` for :mod:`sys` standard streams.
 
    Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSSTDIO` environment
    variable is set to a non-empty string.
@@ -393,7 +393,7 @@ Initializing and finalizing the interpreter
    the application.
 
    **Bugs and caveats:** The destruction of modules and objects in modules is done
-   in random order; this may cause destructors (:meth:`__del__` methods) to fail
+   in random order; this may cause destructors (:meth:`~object.__del__` methods) to fail
    when they depend on other objects (even functions) or modules.  Dynamically
    loaded extension modules loaded by Python are not unloaded.  Small amounts of
    memory allocated by the Python interpreter may not be freed (if you find a leak,
@@ -417,7 +417,7 @@ Process-wide parameters
 =======================
 
 
-.. c:function:: wchar* Py_GetProgramName()
+.. c:function:: wchar_t* Py_GetProgramName()
 
    Return the program name set with :c:member:`PyConfig.program_name`, or the default.
    The returned string points into static storage; the caller should not modify its
@@ -785,7 +785,7 @@ the fork, and releasing them afterwards. In addition, it resets any
 :ref:`lock-objects` in the child. When extending or embedding Python, there
 is no way to inform Python of additional (non-Python) locks that need to be
 acquired before or reset after a fork. OS facilities such as
-:c:func:`pthread_atfork` would need to be used to accomplish the same thing.
+:c:func:`!pthread_atfork` would need to be used to accomplish the same thing.
 Additionally, when extending or embedding Python, calling :c:func:`fork`
 directly rather than through :func:`os.fork` (and returning to or calling
 into Python) may result in a deadlock by one of Python's internal locks
@@ -827,8 +827,11 @@ code, or when embedding the Python interpreter:
 .. c:type:: PyThreadState
 
    This data structure represents the state of a single thread.  The only public
-   data member is :attr:`interp` (:c:expr:`PyInterpreterState *`), which points to
-   this thread's interpreter state.
+   data member is:
+
+   .. c:member:: PyInterpreterState *interp
+
+      This thread's interpreter state.
 
 
 .. c:function:: PyThreadState* PyEval_SaveThread()
@@ -849,7 +852,7 @@ code, or when embedding the Python interpreter:
    .. note::
       Calling this function from a thread when the runtime is finalizing
       will terminate the thread, even if the thread was not created by Python.
-      You can use :c:func:`_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      You can use :c:func:`!_Py_IsFinalizing` or :func:`sys.is_finalizing` to
       check if the interpreter is in process of being finalized before calling
       this function to avoid unwanted termination.
 
@@ -895,7 +898,7 @@ with sub-interpreters:
    .. note::
       Calling this function from a thread when the runtime is finalizing
       will terminate the thread, even if the thread was not created by Python.
-      You can use :c:func:`_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      You can use :c:func:`!_Py_IsFinalizing` or :func:`sys.is_finalizing` to
       check if the interpreter is in process of being finalized before calling
       this function to avoid unwanted termination.
 
@@ -1161,7 +1164,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    function does not steal any references to *exc*. To prevent naive misuse, you
    must write your own C extension to call this.  Must be called with the GIL held.
    Returns the number of thread states modified; this is normally one, but will be
-   zero if the thread id isn't found.  If *exc* is :const:`NULL`, the pending
+   zero if the thread id isn't found.  If *exc* is ``NULL``, the pending
    exception (if any) for the thread is cleared. This raises no exceptions.
 
    .. versionchanged:: 3.7
@@ -1177,7 +1180,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    .. note::
       Calling this function from a thread when the runtime is finalizing
       will terminate the thread, even if the thread was not created by Python.
-      You can use :c:func:`_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      You can use :c:func:`!_Py_IsFinalizing` or :func:`sys.is_finalizing` to
       check if the interpreter is in process of being finalized before calling
       this function to avoid unwanted termination.
 
@@ -1407,32 +1410,32 @@ Python-level trace functions in previous versions.
    The type of the trace function registered using :c:func:`PyEval_SetProfile` and
    :c:func:`PyEval_SetTrace`. The first parameter is the object passed to the
    registration function as *obj*, *frame* is the frame object to which the event
-   pertains, *what* is one of the constants :const:`PyTrace_CALL`,
-   :const:`PyTrace_EXCEPTION`, :const:`PyTrace_LINE`, :const:`PyTrace_RETURN`,
-   :const:`PyTrace_C_CALL`, :const:`PyTrace_C_EXCEPTION`, :const:`PyTrace_C_RETURN`,
-   or :const:`PyTrace_OPCODE`, and *arg* depends on the value of *what*:
+   pertains, *what* is one of the constants :c:data:`PyTrace_CALL`,
+   :c:data:`PyTrace_EXCEPTION`, :c:data:`PyTrace_LINE`, :c:data:`PyTrace_RETURN`,
+   :c:data:`PyTrace_C_CALL`, :c:data:`PyTrace_C_EXCEPTION`, :c:data:`PyTrace_C_RETURN`,
+   or :c:data:`PyTrace_OPCODE`, and *arg* depends on the value of *what*:
 
-   +------------------------------+----------------------------------------+
-   | Value of *what*              | Meaning of *arg*                       |
-   +==============================+========================================+
-   | :const:`PyTrace_CALL`        | Always :c:data:`Py_None`.              |
-   +------------------------------+----------------------------------------+
-   | :const:`PyTrace_EXCEPTION`   | Exception information as returned by   |
-   |                              | :func:`sys.exc_info`.                  |
-   +------------------------------+----------------------------------------+
-   | :const:`PyTrace_LINE`        | Always :c:data:`Py_None`.              |
-   +------------------------------+----------------------------------------+
-   | :const:`PyTrace_RETURN`      | Value being returned to the caller,    |
-   |                              | or ``NULL`` if caused by an exception. |
-   +------------------------------+----------------------------------------+
-   | :const:`PyTrace_C_CALL`      | Function object being called.          |
-   +------------------------------+----------------------------------------+
-   | :const:`PyTrace_C_EXCEPTION` | Function object being called.          |
-   +------------------------------+----------------------------------------+
-   | :const:`PyTrace_C_RETURN`    | Function object being called.          |
-   +------------------------------+----------------------------------------+
-   | :const:`PyTrace_OPCODE`      | Always :c:data:`Py_None`.              |
-   +------------------------------+----------------------------------------+
+   +-------------------------------+----------------------------------------+
+   | Value of *what*               | Meaning of *arg*                       |
+   +===============================+========================================+
+   | :c:data:`PyTrace_CALL`        | Always :c:data:`Py_None`.              |
+   +-------------------------------+----------------------------------------+
+   | :c:data:`PyTrace_EXCEPTION`   | Exception information as returned by   |
+   |                               | :func:`sys.exc_info`.                  |
+   +-------------------------------+----------------------------------------+
+   | :c:data:`PyTrace_LINE`        | Always :c:data:`Py_None`.              |
+   +-------------------------------+----------------------------------------+
+   | :c:data:`PyTrace_RETURN`      | Value being returned to the caller,    |
+   |                               | or ``NULL`` if caused by an exception. |
+   +-------------------------------+----------------------------------------+
+   | :c:data:`PyTrace_C_CALL`      | Function object being called.          |
+   +-------------------------------+----------------------------------------+
+   | :c:data:`PyTrace_C_EXCEPTION` | Function object being called.          |
+   +-------------------------------+----------------------------------------+
+   | :c:data:`PyTrace_C_RETURN`    | Function object being called.          |
+   +-------------------------------+----------------------------------------+
+   | :c:data:`PyTrace_OPCODE`      | Always :c:data:`Py_None`.              |
+   +-------------------------------+----------------------------------------+
 
 .. c:var:: int PyTrace_CALL
 
@@ -1499,8 +1502,8 @@ Python-level trace functions in previous versions.
    function as its first parameter, and may be any Python object, or ``NULL``.  If
    the profile function needs to maintain state, using a different value for *obj*
    for each thread provides a convenient and thread-safe place to store it.  The
-   profile function is called for all monitored events except :const:`PyTrace_LINE`
-   :const:`PyTrace_OPCODE` and :const:`PyTrace_EXCEPTION`.
+   profile function is called for all monitored events except :c:data:`PyTrace_LINE`
+   :c:data:`PyTrace_OPCODE` and :c:data:`PyTrace_EXCEPTION`.
 
    See also the :func:`sys.setprofile` function.
 
@@ -1525,8 +1528,8 @@ Python-level trace functions in previous versions.
    :c:func:`PyEval_SetProfile`, except the tracing function does receive line-number
    events and per-opcode events, but does not receive any event related to C function
    objects being called.  Any trace function registered using :c:func:`PyEval_SetTrace`
-   will not receive :const:`PyTrace_C_CALL`, :const:`PyTrace_C_EXCEPTION` or
-   :const:`PyTrace_C_RETURN` as a value for the *what* parameter.
+   will not receive :c:data:`PyTrace_C_CALL`, :c:data:`PyTrace_C_EXCEPTION` or
+   :c:data:`PyTrace_C_RETURN` as a value for the *what* parameter.
 
    See also the :func:`sys.settrace` function.
 

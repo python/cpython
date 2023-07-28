@@ -11,6 +11,19 @@ extern "C" {
 #include "pycore_fileutils.h"     // _Py_error_handler
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
+/* --- Characters Type APIs ----------------------------------------------- */
+
+extern int _PyUnicode_IsXidStart(Py_UCS4 ch);
+extern int _PyUnicode_IsXidContinue(Py_UCS4 ch);
+extern int _PyUnicode_ToLowerFull(Py_UCS4 ch, Py_UCS4 *res);
+extern int _PyUnicode_ToTitleFull(Py_UCS4 ch, Py_UCS4 *res);
+extern int _PyUnicode_ToUpperFull(Py_UCS4 ch, Py_UCS4 *res);
+extern int _PyUnicode_ToFoldedFull(Py_UCS4 ch, Py_UCS4 *res);
+extern int _PyUnicode_IsCaseIgnorable(Py_UCS4 ch);
+extern int _PyUnicode_IsCased(Py_UCS4 ch);
+
+/* --- Unicode API -------------------------------------------------------- */
+
 PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
     PyObject *op,
     int check_content);
@@ -174,7 +187,7 @@ _PyUnicodeWriter_Dealloc(_PyUnicodeWriter *writer);
 
 /* Format the object based on the format_spec, as defined in PEP 3101
    (Advanced String Formatting). */
-PyAPI_FUNC(int) _PyUnicode_FormatAdvancedWriter(
+extern int _PyUnicode_FormatAdvancedWriter(
     _PyUnicodeWriter *writer,
     PyObject *obj,
     PyObject *format_spec,
@@ -232,8 +245,9 @@ extern PyObject* _PyUnicode_DecodeUnicodeEscapeStateful(
     const char *errors,     /* error handling */
     Py_ssize_t *consumed);  /* bytes consumed */
 
-/* Helper for PyUnicode_DecodeUnicodeEscape that detects invalid escape
-   chars. */
+// Helper for PyUnicode_DecodeUnicodeEscape that detects invalid escape
+// chars.
+// Export for test_peg_generator.
 PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscapeInternal(
     const char *string,     /* Unicode-Escape encoded string */
     Py_ssize_t length,      /* size of string */
@@ -356,6 +370,7 @@ PyAPI_FUNC(int) _PyUnicode_Equal(PyObject *, PyObject *);
 extern int _PyUnicode_WideCharString_Converter(PyObject *, void *);
 extern int _PyUnicode_WideCharString_Opt_Converter(PyObject *, void *);
 
+// Export for test_peg_generator
 PyAPI_FUNC(Py_ssize_t) _PyUnicode_ScanIdentifier(PyObject *);
 
 /* --- Runtime lifecycle -------------------------------------------------- */

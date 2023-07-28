@@ -7,24 +7,25 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_SignalAsyncExc()
 #include "pycore_code.h"
+#include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 #include "pycore_function.h"
+#include "pycore_instruments.h"
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_instruments.h"
-#include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_moduleobject.h"  // PyModuleObject
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_opcode.h"        // EXTRA_CASES
 #include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"  // MAKE_FUNCTION_*
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_range.h"         // _PyRangeIterObject
+#include "pycore_setobject.h"     // _PySet_Update()
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
 #include "pycore_uops.h"          // _PyUOpExecutorObject
-#include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 
 #include "pycore_dict.h"
 #include "dictobject.h"
@@ -33,7 +34,7 @@
 #include "opcode.h"
 #include "pydtrace.h"
 #include "setobject.h"
-#include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
+
 
 #include <ctype.h>
 #include <stdbool.h>
@@ -183,13 +184,16 @@ lltrace_resume_frame(_PyInterpreterFrame *frame)
 static void monitor_raise(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr);
+static void monitor_reraise(PyThreadState *tstate,
+                 _PyInterpreterFrame *frame,
+                 _Py_CODEUNIT *instr);
 static int monitor_stop_iteration(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr);
 static void monitor_unwind(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr);
-static void monitor_handled(PyThreadState *tstate,
+static int monitor_handled(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr, PyObject *exc);
 static void monitor_throw(PyThreadState *tstate,
@@ -839,7 +843,6 @@ error:
             }
         }
         monitor_raise(tstate, frame, next_instr-1);
-
 exception_unwind:
         {
             /* We can't use frame->f_lasti here, as RERAISE may have set it */
@@ -883,7 +886,9 @@ exception_unwind:
             PyObject *exc = _PyErr_GetRaisedException(tstate);
             PUSH(exc);
             JUMPTO(handler);
-            monitor_handled(tstate, frame, next_instr, exc);
+            if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
+                goto exception_unwind;
+            }
             /* Resume normal execution */
             DISPATCH();
         }
@@ -1913,7 +1918,7 @@ static int
 do_monitor_exc(PyThreadState *tstate, _PyInterpreterFrame *frame,
                _Py_CODEUNIT *instr, int event)
 {
-    assert(event < PY_MONITORING_UNGROUPED_EVENTS);
+    assert(event < _PY_MONITORING_UNGROUPED_EVENTS);
     PyObject *exc = PyErr_GetRaisedException();
     assert(exc != NULL);
     int err = _Py_call_instrumentation_arg(tstate, event, frame, instr, exc);
@@ -1921,6 +1926,7 @@ do_monitor_exc(PyThreadState *tstate, _PyInterpreterFrame *frame,
         PyErr_SetRaisedException(exc);
     }
     else {
+        assert(PyErr_Occurred());
         Py_DECREF(exc);
     }
     return err;
@@ -1953,6 +1959,16 @@ monitor_raise(PyThreadState *tstate, _PyInterpreterFrame *frame,
     do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_RAISE);
 }
 
+static void
+monitor_reraise(PyThreadState *tstate, _PyInterpreterFrame *frame,
+              _Py_CODEUNIT *instr)
+{
+    if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_RERAISE)) {
+        return;
+    }
+    do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_RERAISE);
+}
+
 static int
 monitor_stop_iteration(PyThreadState *tstate, _PyInterpreterFrame *frame,
                        _Py_CODEUNIT *instr)
@@ -1971,19 +1987,19 @@ monitor_unwind(PyThreadState *tstate,
     if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_PY_UNWIND)) {
         return;
     }
-    _Py_call_instrumentation_exc0(tstate, PY_MONITORING_EVENT_PY_UNWIND, frame, instr);
+    do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_PY_UNWIND);
 }
 
 
-static void
+static int
 monitor_handled(PyThreadState *tstate,
                 _PyInterpreterFrame *frame,
                 _Py_CODEUNIT *instr, PyObject *exc)
 {
     if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_EXCEPTION_HANDLED)) {
-        return;
+        return 0;
     }
-    _Py_call_instrumentation_arg(tstate, PY_MONITORING_EVENT_EXCEPTION_HANDLED, frame, instr, exc);
+    return _Py_call_instrumentation_arg(tstate, PY_MONITORING_EVENT_EXCEPTION_HANDLED, frame, instr, exc);
 }
 
 static void
