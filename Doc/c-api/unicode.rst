@@ -1212,7 +1212,7 @@ Character Map Codecs
 
 This codec is special in that it can be used to implement many different codecs
 (and this is in fact what was done to obtain most of the standard codecs
-included in the :mod:`encodings` package). The codec uses mappings to encode and
+included in the :mod:`!encodings` package). The codec uses mappings to encode and
 decode characters.  The mapping objects provided must support the
 :meth:`~object.__getitem__` mapping interface; dictionaries and sequences work well.
 

@@ -4,6 +4,7 @@
 # to help avoid merge conflicts.
 
 Doc/c-api/allocation.rst
+Doc/c-api/arg.rst
 Doc/c-api/bool.rst
 Doc/c-api/buffer.rst
 Doc/c-api/capsule.rst
