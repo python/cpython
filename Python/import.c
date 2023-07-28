@@ -950,6 +950,12 @@ hashtable_destroy_str(void *ptr)
     PyMem_RawFree(ptr);
 }
 
+static void
+hashtable_destroy_module_def(void *ptr)
+{
+    Py_XDECREF((PyObject *)ptr);
+}
+
 #define HTSEP ':'
 
 static PyModuleDef *
@@ -994,7 +1000,7 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
             hashtable_hash_str,
             hashtable_compare_str,
             hashtable_destroy_str,  // key
-            NULL,  // value
+            hashtable_destroy_module_def,  // value
             &alloc
         );
         if (EXTENSIONS.hashtable == NULL) {
