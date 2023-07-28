@@ -2560,14 +2560,11 @@ config.status:	$(srcdir)/configure
 Python/asm_trampoline.o: $(srcdir)/Python/asm_trampoline.S
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
-Python/jit.o: $(srcdir)/Python/jit_stencils.h
-
-Python/jit_stencils.h: regen-jit
+Python/jit.o: regen-jit
 
 .PHONY: regen-jit
 regen-jit: regen-cases
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/jit/build.py \
-		$(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/jit_stencils.h
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/jit/build.py
 
 # Some make's put the object file in the current directory
 .c.o:

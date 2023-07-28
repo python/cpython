@@ -112,7 +112,7 @@ jobs:
             echo "::endgroup::"
             echo "::group::Test Python"
             ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
-            ./python -m test --exclude ${{ matrix.exclude }} test_tools --multiprocess 0 --timeout 3600 --verbose2 --verbose3 
+            ./python -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3 
             echo "::endgroup::"
       - name: Native Linux
         if: runner.os == 'Linux' && matrix.architecture == 'x86_64'
@@ -130,7 +130,7 @@ jobs:
           echo "::endgroup::"
           echo "::group::Test Python"
           ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
-          ./python -m test --exclude ${{ matrix.exclude }} test_tools --multiprocess 0 --timeout 3600 --verbose2 --verbose3
+          ./python -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
           echo "::endgroup::"
       - name: macOS
         if: runner.os == 'macOS'
@@ -147,7 +147,7 @@ jobs:
           echo "::endgroup::"
           echo "::group::Test Python"
           ./python.exe -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
-          ./python.exe -m test --exclude ${{ matrix.exclude }} test_tools --multiprocess 0 --timeout 3600 --verbose2 --verbose3
+          ./python.exe -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
           echo "::endgroup::"
       - name: Windows
         if: runner.os == 'Windows'
@@ -160,5 +160,5 @@ jobs:
           echo "::endgroup::"
           echo "::group::Test Python"
           ./python.bat -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
-          ./PCbuild/rt.bat ${{ matrix.debug && '-d' }} -p ${{ matrix.architecture }} -q --exclude ${{ matrix.exclude }} test_tools --multiprocess 0 --timeout 3600 --verbose2 --verbose3
+          ./PCbuild/rt.bat ${{ matrix.debug && '-d' }} -p ${{ matrix.architecture }} -q --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
           echo "::endgroup::"

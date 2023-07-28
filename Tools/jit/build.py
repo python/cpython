@@ -14,10 +14,17 @@ import sys
 import tempfile
 import typing
 
-TOOLS_JUSTIN = pathlib.Path(__file__).parent
-TOOLS_JUSTIN_TEMPLATE = TOOLS_JUSTIN / "template.c"
-TOOLS_JUSTIN_TRAMPOLINE = TOOLS_JUSTIN / "trampoline.c"
-PYTHON_GENERATED_CASES_C_H = TOOLS_JUSTIN.parent.parent / "Python" / "executor_cases.c.h"
+ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
+INCLUDE = ROOT / "Include"
+INCLUDE_INTERNAL = INCLUDE / "internal"
+PC = ROOT / "PC"
+PYTHON = ROOT / "Python"
+PYTHON_EXECUTOR_CASES_C_H = PYTHON / "executor_cases.c.h"
+PYTHON_JIT_STENCILS_H = PYTHON / "jit_stencils.h"
+TOOLS = ROOT / "Tools"
+TOOLS_JIT = TOOLS / "jit"
+TOOLS_JIT_TEMPLATE = TOOLS_JIT / "template.c"
+TOOLS_JIT_TRAMPOLINE = TOOLS_JIT / "trampoline.c"
 
 def batched(iterable, n):
     """Batch an iterable into lists of size n."""
@@ -762,31 +769,31 @@ class ObjectParserELF(ObjectParser):
 
 
 CFLAGS = [
-    "-DNDEBUG",  # XXX
-    "-DPy_BUILD_CORE",
-    "-D_PyJIT_ACTIVE",
-    "-I.",
-    "-I./Include",
-    "-I./Include/internal",
-    "-I./PC",
-    "-O3",
-    "-Wno-unreachable-code",
-    "-Wno-unused-but-set-variable",
-    "-Wno-unused-command-line-argument",
-    "-Wno-unused-label",
-    "-Wno-unused-variable",
+    f"-DNDEBUG",  # XXX
+    f"-DPy_BUILD_CORE",
+    f"-D_PyJIT_ACTIVE",
+    f"-I{ROOT}",  # XXX
+    f"-I{INCLUDE}",
+    f"-I{INCLUDE_INTERNAL}",
+    f"-I{PC}",  # XXX
+    f"-O3",
+    f"-Wno-unreachable-code",
+    f"-Wno-unused-but-set-variable",
+    f"-Wno-unused-command-line-argument",
+    f"-Wno-unused-label",
+    f"-Wno-unused-variable",
     # We don't need this (and it causes weird relocations):
-    "-fno-asynchronous-unwind-tables",  # XXX
+    f"-fno-asynchronous-unwind-tables",  # XXX
     # # Don't need the overhead of position-independent code, if posssible:
     # "-fno-pic",
     # Disable stack-smashing canaries, which use magic symbols:
-    "-fno-stack-protector",  # XXX
+    f"-fno-stack-protector",  # XXX
     # The GHC calling convention uses %rbp as an argument-passing register:
-    "-fomit-frame-pointer",  # XXX
+    f"-fomit-frame-pointer",  # XXX
     # Disable debug info:
-    "-g0",  # XXX
+    f"-g0",  # XXX
     # Need this to leave room for patching our 64-bit pointers:
-    "-mcmodel=large",  # XXX
+    f"-mcmodel=large",  # XXX
 ]
 
 if sys.platform == "darwin":
@@ -811,7 +818,6 @@ elif sys.platform == "win32":
         pass
     else:
         assert False, sys.argv[2]
-    sys.argv[1:] = sys.argv[3:]
 else:
     raise NotImplementedError(sys.platform)
 
@@ -858,9 +864,9 @@ class Compiler:
     async def _compile(self, opname, body) -> None:
         defines = [f"-D_JIT_OPCODE={opname}"]
         with tempfile.TemporaryDirectory() as tempdir:
-            c = pathlib.Path(tempdir, f"{opname}.c")
-            ll = pathlib.Path(tempdir, f"{opname}.ll")
-            o = pathlib.Path(tempdir, f"{opname}.o")
+            c = pathlib.Path(tempdir, f"{opname}.c").resolve()
+            ll = pathlib.Path(tempdir, f"{opname}.ll").resolve()
+            o = pathlib.Path(tempdir, f"{opname}.o").resolve()
             c.write_text(body)
             self._use_tos_caching(c)
             async with self._semaphore:
@@ -884,10 +890,10 @@ class Compiler:
         self._stderr(f"Built {opname}!")
 
     async def build(self) -> None:
-        generated_cases = PYTHON_GENERATED_CASES_C_H.read_text()
+        generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
         opnames = sorted(set(re.findall(r"\n {8}case (\w+): \{\n", generated_cases)) - {"SET_FUNCTION_ATTRIBUTE"}) # XXX: 32-bit Windows...
-        trampoline = TOOLS_JUSTIN_TRAMPOLINE.read_text()
-        template = TOOLS_JUSTIN_TEMPLATE.read_text()
+        trampoline = TOOLS_JIT_TRAMPOLINE.read_text()
+        template = TOOLS_JIT_TEMPLATE.read_text()
         await asyncio.gather(
             self._compile("trampoline", trampoline),
             *[self._compile(opname, template) for opname in opnames],
@@ -1017,5 +1023,5 @@ if __name__ == "__main__":
     ghccc = platform.machine() not in {"aarch64", "arm64"}
     engine = Compiler(verbose=True, ghccc=ghccc)
     asyncio.run(engine.build())
-    with open(sys.argv[2], "w") as file:
+    with PYTHON_JIT_STENCILS_H.open("w") as file:
         file.write(engine.dump())

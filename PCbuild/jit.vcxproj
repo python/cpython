@@ -22,6 +22,6 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props"/>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
   <Target Name="Build" DependsOnTargets="FindPythonForBuild">
-	  <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" --windows "$(Configuration)|$(Platform)" "$(PySourcePath)Python/generated_cases.c.h" "$(PySourcePath)Python\jit_stencils.h"' WorkingDirectory="$(PySourcePath)"/>
+	  <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" --windows "$(Configuration)|$(Platform)"' WorkingDirectory="$(PySourcePath)"/>
   </Target>
 </Project>
