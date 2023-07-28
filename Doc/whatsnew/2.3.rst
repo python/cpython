@@ -1847,7 +1847,7 @@ specifically for allocating Python objects.
   :c:func:`PyObject_Malloc`, :c:func:`PyObject_Realloc`, and :c:func:`PyObject_Free`.
 
 * To allocate and free Python objects, use the "object" family
-  :c:func:`PyObject_New`, :c:func:`PyObject_NewVar`, and :c:func:`PyObject_Del`.
+  :c:macro:`PyObject_New`, :c:macro:`PyObject_NewVar`, and :c:func:`PyObject_Del`.
 
 Thanks to lots of work by Tim Peters, pymalloc in 2.3 also provides debugging
 features to catch memory overwrites and doubled frees in both extension modules
