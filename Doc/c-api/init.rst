@@ -1334,15 +1334,15 @@ function. You can create and destroy them using the following functions:
    ``sys.stdout`` and ``sys.stderr`` (however these refer to the same underlying
    file descriptors).
 
-   The given config controls the options with which the interpreter
+   The given *config* controls the options with which the interpreter
    is initialized.
 
-   Upon success, the ``tstate_p`` arg will be set to the first thread state
+   Upon success, *tstate_p* will be set to the first thread state
    created in the new
    sub-interpreter.  This thread state is made in the current thread state.
    Note that no actual thread is created; see the discussion of thread states
    below.  If creation of the new interpreter is unsuccessful,
-   ``tstate_p`` is set to ``NULL``;
+   *tstate_p* is set to ``NULL``;
    no exception is set since the exception state is stored in the
    current thread state and there may not be a current thread state.
 
