@@ -4288,7 +4288,7 @@ def eval_ast_expr(
         globals: dict[str, Any],
         *,
         filename: str = '-'
-) -> FunctionType:
+) -> Any:
     """
     Takes an ast.Expr node.  Compiles and evaluates it.
     Returns the result of the expression.
