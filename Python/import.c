@@ -920,6 +920,7 @@ hashtable_key_from_2_strings(PyObject *str1, PyObject *str2, const char sep)
 
     char *key = PyMem_RawMalloc(size);
     if (key == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
 
@@ -994,6 +995,7 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
             &alloc
         );
         if (EXTENSIONS.hashtable == NULL) {
+            PyErr_NoMemory();
             goto finally;
         }
     }
@@ -1008,6 +1010,7 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
     if (entry == NULL) {
         if (_Py_hashtable_set(EXTENSIONS.hashtable, key, Py_NewRef(def)) < 0) {
             PyMem_RawFree(key);
+            PyErr_NoMemory();
             goto finally;
         }
     }
