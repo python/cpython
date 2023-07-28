@@ -476,7 +476,7 @@ def indent(text, prefix, predicate=None):
     consist solely of whitespace characters.
     """
     if predicate is None:
-        predicate = str.strip
+        predicate = str.lstrip
 
     prefixed_lines = []
     for line in text.splitlines(True):
