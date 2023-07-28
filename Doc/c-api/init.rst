@@ -1314,7 +1314,7 @@ function. You can create and destroy them using the following functions:
       :c:member:`PyInterpreterConfig.use_main_obmalloc` must be ``0``.
 
 
-.. c:function:: PyThreadState* Py_NewInterpreterFromConfig(PyInterpreterConfig *config)
+.. c:function:: PyStatus Py_NewInterpreterFromConfig(PyThreadState **tstate_p, const PyInterpreterConfig *config)
 
    .. index::
       pair: module; builtins
@@ -1337,11 +1337,13 @@ function. You can create and destroy them using the following functions:
    The given config controls the options with which the interpreter
    is initialized.
 
-   The return value points to the first thread state created in the new
+   Upon success, the ``tstate_p`` arg will be set to the first thread state
+   created in the new
    sub-interpreter.  This thread state is made in the current thread state.
    Note that no actual thread is created; see the discussion of thread states
-   below.  If creation of the new interpreter is unsuccessful, ``NULL`` is
-   returned; no exception is set since the exception state is stored in the
+   below.  If creation of the new interpreter is unsuccessful,
+   ``tstate_p`` is set to ``NULL``;
+   no exception is set since the exception state is stored in the
    current thread state and there may not be a current thread state.
 
    Like all other Python/C API functions, the global interpreter lock
