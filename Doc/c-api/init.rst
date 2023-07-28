@@ -1286,7 +1286,7 @@ function. You can create and destroy them using the following functions:
       including legacy (single-phase init) modules,
       in any thread where the sub-interpreter is currently active.
       Otherwise only multi-phase init extension modules
-      (see :ref:`Isolating Extension Modules`) may be imported.
+      (see :pep:`489`) may be imported.
 
       This must be ``1`` (non-zero) if
       :c:member:`~PyInterpreterConfig.use_main_obmalloc` is ``0``.
