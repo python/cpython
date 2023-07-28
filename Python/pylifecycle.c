@@ -620,15 +620,17 @@ init_interp_create_gil(PyThreadState *tstate, int gil)
         return status;
     }
 
-    HEAD_LOCK(runtime);
-    if (runtime->allocators.num_gils == INT_MAX) {
-        status = _PyStatus_ERR("allocators GIL overflow");
+    if (own_gil) {
+        HEAD_LOCK(runtime);
+        if (runtime->allocators.num_gils == INT_MAX) {
+            status = _PyStatus_ERR("allocators GIL overflow");
+        }
+        else {
+            status =_PyStatus_OK();
+            runtime->allocators.num_gils++;
+        }
+        HEAD_UNLOCK(runtime);
     }
-    else {
-        status =_PyStatus_OK();
-        runtime->allocators.num_gils++;
-    }
-    HEAD_UNLOCK(runtime);
 
     return status;
 }
@@ -1754,10 +1756,12 @@ finalize_interp_delete(PyInterpreterState *interp)
     _PyGILState_Fini(interp);
 
     _PyRuntimeState *runtime = interp->runtime;
-    HEAD_LOCK(runtime);
-    assert(runtime->allocators.num_gils > 0);
-    runtime->allocators.num_gils--;
-    HEAD_UNLOCK(runtime);
+    if (interp->ceval.own_gil) {
+        HEAD_LOCK(runtime);
+        assert(runtime->allocators.num_gils > 0);
+        runtime->allocators.num_gils--;
+        HEAD_UNLOCK(runtime);
+    }
 
     /* We can't call _PyEval_FiniGIL() here because destroying the GIL lock can
        fail when it is being awaited by another running daemon thread (see
