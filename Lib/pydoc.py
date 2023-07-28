@@ -1500,10 +1500,9 @@ location listed above.
                 argspec = str(signature)
                 if realname == '<lambda>':
                     title = self.bold(name) + ' lambda '
-                    # XXX lambda's won't usually have func_annotations['return']
-                    # since the syntax doesn't support but it is possible.
-                    # So removing parentheses isn't truly safe.
-                    argspec = argspec[1:-1] # remove parentheses
+                    # Since lambda's cannot have a parenthesis in their signature,
+                    # it's safe to replace them.
+                    argspec = argspec.replace("(", "").replace(")", "")
         if not argspec:
             argspec = '(...)'
         decl = asyncqualifier + title + argspec + note
