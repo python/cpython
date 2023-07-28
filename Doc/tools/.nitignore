@@ -100,7 +100,6 @@ Doc/library/faulthandler.rst
 Doc/library/fcntl.rst
 Doc/library/filecmp.rst
 Doc/library/fileinput.rst
-Doc/library/fractions.rst
 Doc/library/ftplib.rst
 Doc/library/functions.rst
 Doc/library/functools.rst
