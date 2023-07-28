@@ -4703,15 +4703,14 @@ class DSLParser:
                 function_name = fields.pop()
                 module, cls = self.clinic._module_and_class(fields)
 
-                for existing_function in (cls or module).functions:
-                    if existing_function.name == function_name:
-                        break
-                else:
-                    existing_function = None
-                if not existing_function:
-                    print("class", cls, "module", module, "existing", existing)
-                    print("cls. functions", cls.functions)
-                    fail("Couldn't find existing function " + repr(existing) + "!")
+                try:
+                    existing_function = next(
+                        f for f in (cls or module).functions if f.name == function_name
+                    )
+                except StopIteration:
+                    print(f"{cls=}, {module=}, {existing=}")
+                    print(f"{(cls or module).functions=}")
+                    fail(f"Couldn't find existing function {existing!r}!")
 
                 fields = [x.strip() for x in full_name.split('.')]
                 function_name = fields.pop()
