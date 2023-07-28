@@ -145,7 +145,7 @@ only used for variable-sized objects and should otherwise be zero.
    :c:member:`~PyTypeObject.tp_basicsize` as its base type, you may have problems with multiple
    inheritance.  A Python subclass of your type will have to list your type first
    in its :attr:`~class.__bases__`, or else it will not be able to call your type's
-   :meth:`__new__` method without getting an error.  You can avoid this problem by
+   :meth:`~object.__new__` method without getting an error.  You can avoid this problem by
    ensuring that your type has a larger value for :c:member:`~PyTypeObject.tp_basicsize` than its
    base type does.  Most of the time, this will be true anyway, because either your
    base type will be :class:`object`, or else you will be adding data members to
@@ -164,14 +164,14 @@ We provide a doc string for the type in :c:member:`~PyTypeObject.tp_doc`. ::
    .tp_doc = PyDoc_STR("Custom objects"),
 
 To enable object creation, we have to provide a :c:member:`~PyTypeObject.tp_new`
-handler.  This is the equivalent of the Python method :meth:`__new__`, but
+handler.  This is the equivalent of the Python method :meth:`~object.__new__`, but
 has to be specified explicitly.  In this case, we can just use the default
 implementation provided by the API function :c:func:`PyType_GenericNew`. ::
 
    .tp_new = PyType_GenericNew,
 
 Everything else in the file should be familiar, except for some code in
-:c:func:`PyInit_custom`::
+:c:func:`!PyInit_custom`::
 
    if (PyType_Ready(&CustomType) < 0)
        return;
@@ -220,7 +220,7 @@ Of course, the current Custom type is pretty uninteresting. It has no data and
 doesn't do anything. It can't even be subclassed.
 
 .. note::
-   While this documentation showcases the standard :mod:`distutils` module
+   While this documentation showcases the standard :mod:`!distutils` module
    for building C extensions, it is recommended in real-world use cases to
    use the newer and better-maintained ``setuptools`` library.  Documentation
    on how to do this is out of scope for this document and can be found in
@@ -279,7 +279,7 @@ This method first clears the reference counts of the two Python attributes.
 ``NULL`` (which might happen here if ``tp_new`` failed midway).  It then
 calls the :c:member:`~PyTypeObject.tp_free` member of the object's type
 (computed by ``Py_TYPE(self)``) to free the object's memory.  Note that
-the object's type might not be :class:`CustomType`, because the object may
+the object's type might not be :class:`!CustomType`, because the object may
 be an instance of a subclass.
 
 .. note::
@@ -318,7 +318,7 @@ and install it in the :c:member:`~PyTypeObject.tp_new` member::
    .tp_new = Custom_new,
 
 The ``tp_new`` handler is responsible for creating (as opposed to initializing)
-objects of the type.  It is exposed in Python as the :meth:`__new__` method.
+objects of the type.  It is exposed in Python as the :meth:`~object.__new__` method.
 It is not required to define a ``tp_new`` member, and indeed many extension
 types will simply reuse :c:func:`PyType_GenericNew` as done in the first
 version of the :class:`!Custom` type above.  In this case, we use the ``tp_new``
@@ -352,7 +352,7 @@ result against ``NULL`` before proceeding.
 
 .. note::
    If you are creating a co-operative :c:member:`~PyTypeObject.tp_new` (one
-   that calls a base type's :c:member:`~PyTypeObject.tp_new` or :meth:`__new__`),
+   that calls a base type's :c:member:`~PyTypeObject.tp_new` or :meth:`~object.__new__`),
    you must *not* try to determine what method to call using method resolution
    order at runtime.  Always statically determine what type you are going to
    call, and call its :c:member:`~PyTypeObject.tp_new` directly, or via
@@ -395,14 +395,14 @@ by filling the :c:member:`~PyTypeObject.tp_init` slot. ::
    .tp_init = (initproc) Custom_init,
 
 The :c:member:`~PyTypeObject.tp_init` slot is exposed in Python as the
-:meth:`__init__` method.  It is used to initialize an object after it's
+:meth:`~object.__init__` method.  It is used to initialize an object after it's
 created.  Initializers always accept positional and keyword arguments,
 and they should return either ``0`` on success or ``-1`` on error.
 
 Unlike the ``tp_new`` handler, there is no guarantee that ``tp_init``
 is called at all (for example, the :mod:`pickle` module by default
-doesn't call :meth:`__init__` on unpickled instances).  It can also be
-called multiple times.  Anyone can call the :meth:`__init__` method on
+doesn't call :meth:`~object.__init__` on unpickled instances).  It can also be
+called multiple times.  Anyone can call the :meth:`!__init__` method on
 our objects.  For this reason, we have to be extra careful when assigning
 the new attribute values.  We might be tempted, for example to assign the
 ``first`` member like this::
@@ -715,8 +715,8 @@ participate in cycles::
    }
 
 For each subobject that can participate in cycles, we need to call the
-:c:func:`visit` function, which is passed to the traversal method. The
-:c:func:`visit` function takes as arguments the subobject and the extra argument
+:c:func:`!visit` function, which is passed to the traversal method. The
+:c:func:`!visit` function takes as arguments the subobject and the extra argument
 *arg* passed to the traversal method.  It returns an integer value that must be
 returned if it is non-zero.
 
@@ -798,9 +798,9 @@ types. It is easiest to inherit from the built in types, since an extension can
 easily use the :c:type:`PyTypeObject` it needs. It can be difficult to share
 these :c:type:`PyTypeObject` structures between extension modules.
 
-In this example we will create a :class:`SubList` type that inherits from the
+In this example we will create a :class:`!SubList` type that inherits from the
 built-in :class:`list` type. The new type will be completely compatible with
-regular lists, but will have an additional :meth:`increment` method that
+regular lists, but will have an additional :meth:`!increment` method that
 increases an internal counter:
 
 .. code-block:: pycon
@@ -830,7 +830,7 @@ The primary difference for derived type objects is that the base type's
 object structure must be the first value.  The base type will already include
 the :c:func:`PyObject_HEAD` at the beginning of its structure.
 
-When a Python object is a :class:`SubList` instance, its ``PyObject *`` pointer
+When a Python object is a :class:`!SubList` instance, its ``PyObject *`` pointer
 can be safely cast to both ``PyListObject *`` and ``SubListObject *``::
 
    static int
@@ -842,7 +842,7 @@ can be safely cast to both ``PyListObject *`` and ``SubListObject *``::
        return 0;
    }
 
-We see above how to call through to the :attr:`__init__` method of the base
+We see above how to call through to the :meth:`~object.__init__` method of the base
 type.
 
 This pattern is important when writing a type with custom

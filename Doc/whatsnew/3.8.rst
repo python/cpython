@@ -1847,7 +1847,7 @@ Changes in Python behavior
   finalizing, making them consistent with :c:func:`PyEval_RestoreThread`,
   :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`. If this
   behavior is not desired, guard the call by checking :c:func:`_Py_IsFinalizing`
-  or :c:func:`sys.is_finalizing`.
+  or :func:`sys.is_finalizing`.
   (Contributed by Joannah Nanjekye in :issue:`36475`.)
 
 
