@@ -2,10 +2,12 @@
 
 #include "Python.h"
 
+#include "pycore_hashtable.h"     // _Py_hashtable_new_full()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // struct _import_runtime_state
 #include "pycore_namespace.h"     // _PyNamespace_Type
+#include "pycore_object.h"        // _Py_SetImmortal()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pyhash.h"        // _Py_KeyedHash()
 #include "pycore_pylifecycle.h"
@@ -912,35 +914,79 @@ extensions_lock_release(void)
    dictionary, to avoid loading shared libraries twice.
 */
 
-static void
-_extensions_cache_init(void)
+static void *
+hashtable_key_from_2_strings(PyObject *str1, PyObject *str2, const char sep)
 {
-    /* The runtime (i.e. main interpreter) must be initializing,
-       so we don't need to worry about the lock. */
-    _PyThreadState_InitDetached(&EXTENSIONS.main_tstate,
-                                _PyInterpreterState_Main());
+    Py_ssize_t str1_len, str2_len;
+    const char *str1_data = PyUnicode_AsUTF8AndSize(str1, &str1_len);
+    const char *str2_data = PyUnicode_AsUTF8AndSize(str2, &str2_len);
+    if (str1_data == NULL || str2_data == NULL) {
+        return NULL;
+    }
+    /* Make sure sep and the NULL byte won't cause an overflow. */
+    assert(SIZE_MAX - str1_len - str2_len > 2);
+    size_t size = str1_len + 1 + str2_len + 1;
+
+    char *key = PyMem_RawMalloc(size);
+    if (key == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    strncpy(key, str1_data, str1_len);
+    key[str1_len] = sep;
+    strncpy(key + str1_len + 1, str2_data, str2_len + 1);
+    assert(strlen(key) == size - 1);
+    return key;
 }
+
+static Py_uhash_t
+hashtable_hash_str(const void *key)
+{
+    return _Py_HashBytes(key, strlen((const char *)key));
+}
+
+static int
+hashtable_compare_str(const void *key1, const void *key2)
+{
+    return strcmp((const char *)key1, (const char *)key2) == 0;
+}
+
+static void
+hashtable_destroy_str(void *ptr)
+{
+    PyMem_RawFree(ptr);
+}
+
+#define HTSEP ':'
 
 static PyModuleDef *
 _extensions_cache_get(PyObject *filename, PyObject *name)
 {
     PyModuleDef *def = NULL;
+    void *key = NULL;
     extensions_lock_acquire();
 
-    PyObject *key = PyTuple_Pack(2, filename, name);
+    if (EXTENSIONS.hashtable == NULL) {
+        goto finally;
+    }
+
+    key = hashtable_key_from_2_strings(filename, name, HTSEP);
     if (key == NULL) {
         goto finally;
     }
-
-    PyObject *extensions = EXTENSIONS.dict;
-    if (extensions == NULL) {
+    _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(
+            EXTENSIONS.hashtable, key);
+    if (entry == NULL) {
         goto finally;
     }
-    def = (PyModuleDef *)PyDict_GetItemWithError(extensions, key);
+    def = (PyModuleDef *)entry->value;
 
 finally:
-    Py_XDECREF(key);
     extensions_lock_release();
+    if (key != NULL) {
+        PyMem_RawFree(key);
+    }
     return def;
 }
 
@@ -948,124 +994,99 @@ static int
 _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
 {
     int res = -1;
-    PyThreadState *oldts = NULL;
     extensions_lock_acquire();
 
-    /* Swap to the main interpreter, if necessary.  This matters if
-       the dict hasn't been created yet or if the item isn't in the
-       dict yet.  In both cases we must ensure the relevant objects
-       are created using the main interpreter. */
-    PyThreadState *main_tstate = &EXTENSIONS.main_tstate;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (!_Py_IsMainInterpreter(interp)) {
-        _PyThreadState_BindDetached(main_tstate);
-        oldts = _PyThreadState_Swap(interp->runtime, main_tstate);
-        assert(!_Py_IsMainInterpreter(oldts->interp));
-
-        /* Make sure the name and filename objects are owned
-           by the main interpreter. */
-        name = PyUnicode_InternFromString(PyUnicode_AsUTF8(name));
-        assert(name != NULL);
-        filename = PyUnicode_InternFromString(PyUnicode_AsUTF8(filename));
-        assert(filename != NULL);
+    if (EXTENSIONS.hashtable == NULL) {
+        _Py_hashtable_allocator_t alloc = {PyMem_RawMalloc, PyMem_RawFree};
+        EXTENSIONS.hashtable = _Py_hashtable_new_full(
+            hashtable_hash_str,
+            hashtable_compare_str,
+            hashtable_destroy_str,  // key
+            /* There's no need to decref the def since it's immortal. */
+            NULL,  // value
+            &alloc
+        );
+        if (EXTENSIONS.hashtable == NULL) {
+            PyErr_NoMemory();
+            goto finally;
+        }
     }
 
-    PyObject *key = PyTuple_Pack(2, filename, name);
+    void *key = hashtable_key_from_2_strings(filename, name, HTSEP);
     if (key == NULL) {
         goto finally;
     }
 
-    PyObject *extensions = EXTENSIONS.dict;
-    if (extensions == NULL) {
-        extensions = PyDict_New();
-        if (extensions == NULL) {
+    int already_set = 0;
+    _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(
+            EXTENSIONS.hashtable, key);
+    if (entry == NULL) {
+        if (_Py_hashtable_set(EXTENSIONS.hashtable, key, def) < 0) {
+            PyMem_RawFree(key);
+            PyErr_NoMemory();
             goto finally;
         }
-        EXTENSIONS.dict = extensions;
     }
-
-    PyModuleDef *actual = (PyModuleDef *)PyDict_GetItemWithError(extensions, key);
-    if (PyErr_Occurred()) {
-        goto finally;
+    else {
+        if (entry->value == NULL) {
+            entry->value = def;
+        }
+        else {
+            /* We expect it to be static, so it must be the same pointer. */
+            assert((PyModuleDef *)entry->value == def);
+            already_set = 1;
+        }
+        PyMem_RawFree(key);
     }
-    else if (actual != NULL) {
-        /* We expect it to be static, so it must be the same pointer. */
-        assert(def == actual);
-        res = 0;
-        goto finally;
-    }
-
-    /* This might trigger a resize, which is why we must switch
-       to the main interpreter. */
-    res = PyDict_SetItem(extensions, key, (PyObject *)def);
-    if (res < 0) {
-        res = -1;
-        goto finally;
+    if (!already_set) {
+        /* We assume that all module defs are statically allocated
+           and will never be freed.  Otherwise, we would incref here. */
+        _Py_SetImmortal(def);
     }
     res = 0;
 
 finally:
-    Py_XDECREF(key);
-    if (oldts != NULL) {
-        _PyThreadState_Swap(interp->runtime, oldts);
-        _PyThreadState_UnbindDetached(main_tstate);
-        Py_DECREF(name);
-        Py_DECREF(filename);
-    }
     extensions_lock_release();
     return res;
 }
 
-static int
+static void
 _extensions_cache_delete(PyObject *filename, PyObject *name)
 {
-    int res = -1;
-    PyThreadState *oldts = NULL;
+    void *key = NULL;
     extensions_lock_acquire();
 
-    PyObject *key = PyTuple_Pack(2, filename, name);
+    if (EXTENSIONS.hashtable == NULL) {
+        /* It was never added. */
+        goto finally;
+    }
+
+    key = hashtable_key_from_2_strings(filename, name, HTSEP);
     if (key == NULL) {
         goto finally;
     }
 
-    PyObject *extensions = EXTENSIONS.dict;
-    if (extensions == NULL) {
-        res = 0;
+    _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(
+            EXTENSIONS.hashtable, key);
+    if (entry == NULL) {
+        /* It was never added. */
         goto finally;
     }
-
-    PyModuleDef *actual = (PyModuleDef *)PyDict_GetItemWithError(extensions, key);
-    if (PyErr_Occurred()) {
+    if (entry->value == NULL) {
+        /* It was already removed. */
         goto finally;
     }
-    else if (actual == NULL) {
-        /* It was already removed or never added. */
-        res = 0;
-        goto finally;
-    }
-
-    /* Swap to the main interpreter, if necessary. */
-    PyThreadState *main_tstate = &EXTENSIONS.main_tstate;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (!_Py_IsMainInterpreter(interp)) {
-        _PyThreadState_BindDetached(main_tstate);
-        oldts = _PyThreadState_Swap(interp->runtime, main_tstate);
-        assert(!_Py_IsMainInterpreter(oldts->interp));
-    }
-
-    if (PyDict_DelItem(extensions, key) < 0) {
-        goto finally;
-    }
-    res = 0;
+    /* If we hadn't made the stored defs immortal, we would decref here.
+       However, this decref would be problematic if the module def were
+       dynamically allocated, it were the last ref, and this function
+       were called with an interpreter other than the def's owner. */
+    entry->value = NULL;
 
 finally:
-    if (oldts != NULL) {
-        _PyThreadState_Swap(interp->runtime, oldts);
-        _PyThreadState_UnbindDetached(main_tstate);
-    }
-    Py_XDECREF(key);
     extensions_lock_release();
-    return res;
+    if (key != NULL) {
+        PyMem_RawFree(key);
+    }
 }
 
 static void
@@ -1073,10 +1094,11 @@ _extensions_cache_clear_all(void)
 {
     /* The runtime (i.e. main interpreter) must be finalizing,
        so we don't need to worry about the lock. */
-    // XXX assert(_Py_IsMainInterpreter(_PyInterpreterState_GET()));
-    Py_CLEAR(EXTENSIONS.dict);
-    _PyThreadState_ClearDetached(&EXTENSIONS.main_tstate);
+    _Py_hashtable_destroy(EXTENSIONS.hashtable);
+    EXTENSIONS.hashtable = NULL;
 }
+
+#undef HTSEP
 
 
 static bool
@@ -1238,6 +1260,8 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
         PyObject *m_copy = def->m_base.m_copy;
         /* Module does not support repeated initialization */
         if (m_copy == NULL) {
+            /* It might be a core module (e.g. sys & builtins),
+               for which we don't set m_copy. */
             m_copy = get_core_module_dict(tstate->interp, name, filename);
             if (m_copy == NULL) {
                 return NULL;
@@ -1307,9 +1331,7 @@ clear_singlephase_extension(PyInterpreterState *interp,
     }
 
     /* Clear the cached module def. */
-    if (_extensions_cache_delete(filename, name) < 0) {
-        return -1;
-    }
+    _extensions_cache_delete(filename, name);
 
     return 0;
 }
@@ -3059,6 +3081,8 @@ void
 _PyImport_Fini(void)
 {
     /* Destroy the database used by _PyImport_{Fixup,Find}Extension */
+    // XXX Should we actually leave them (mostly) intact, since we don't
+    // ever dlclose() the module files?
     _extensions_cache_clear_all();
 
     /* Use the same memory allocator as _PyImport_Init(). */
@@ -3096,10 +3120,6 @@ _PyImport_Fini2(void)
 PyStatus
 _PyImport_InitCore(PyThreadState *tstate, PyObject *sysmod, int importlib)
 {
-    if (_Py_IsMainInterpreter(tstate->interp)) {
-        _extensions_cache_init();
-    }
-
     // XXX Initialize here: interp->modules and interp->import_func.
     // XXX Initialize here: sys.modules and sys.meta_path.
 
