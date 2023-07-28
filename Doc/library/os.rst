@@ -401,11 +401,11 @@ process and user.
 
       On macOS, :func:`getgroups` behavior differs somewhat from
       other Unix platforms. If the Python interpreter was built with a
-      deployment target of :const:`10.5` or earlier, :func:`getgroups` returns
+      deployment target of ``10.5`` or earlier, :func:`getgroups` returns
       the list of effective group ids associated with the current user process;
       this list is limited to a system-defined number of entries, typically 16,
       and may be modified by calls to :func:`setgroups` if suitably privileged.
-      If built with a deployment target greater than :const:`10.5`,
+      If built with a deployment target greater than ``10.5``,
       :func:`getgroups` returns the current group access list for the user
       associated with the effective user id of the process; the group access
       list may change over the lifetime of the process, it is not affected by
