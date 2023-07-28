@@ -1135,20 +1135,20 @@ API changes
 * The C module has the following context limits, depending on the machine
   architecture:
 
-   +-------------------+---------------------+------------------------------+
-   |                   |       32-bit        |            64-bit            |
-   +===================+=====================+==============================+
-   | :const:`MAX_PREC` | :const:`425000000`  | :const:`999999999999999999`  |
-   +-------------------+---------------------+------------------------------+
-   | :const:`MAX_EMAX` | :const:`425000000`  | :const:`999999999999999999`  |
-   +-------------------+---------------------+------------------------------+
-   | :const:`MIN_EMIN` | :const:`-425000000` | :const:`-999999999999999999` |
-   +-------------------+---------------------+------------------------------+
+   +-------------------+----------------+-------------------------+
+   |                   |       32-bit   |            64-bit       |
+   +===================+================+=========================+
+   | :const:`MAX_PREC` | ``425000000``  | ``999999999999999999``  |
+   +-------------------+----------------+-------------------------+
+   | :const:`MAX_EMAX` | ``425000000``  | ``999999999999999999``  |
+   +-------------------+----------------+-------------------------+
+   | :const:`MIN_EMIN` | ``-425000000`` | ``-999999999999999999`` |
+   +-------------------+----------------+-------------------------+
 
 * In the context templates (:class:`~decimal.DefaultContext`,
   :class:`~decimal.BasicContext` and :class:`~decimal.ExtendedContext`)
   the magnitude of :attr:`~decimal.Context.Emax` and
-  :attr:`~decimal.Context.Emin` has changed to :const:`999999`.
+  :attr:`~decimal.Context.Emin` has changed to ``999999``.
 
 * The :class:`~decimal.Decimal` constructor in decimal.py does not observe
   the context limits and converts values with arbitrary exponents or precision
