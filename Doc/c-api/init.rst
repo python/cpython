@@ -1245,7 +1245,7 @@ function. You can create and destroy them using the following functions:
       If this is ``0`` then
       :c:member:`~PyInterpreterConfig.check_multi_interp_extensions`
       must be ``1`` (non-zero).
-      If this is ``1`` then :c:member:`PyInterpreterConfig.gil`
+      If this is ``1`` then :c:member:`~PyInterpreterConfig.gil`
       must not be :c:macro:`PyInterpreterConfig_OWN_GIL`.
 
    .. c:member:: int allow_fork
