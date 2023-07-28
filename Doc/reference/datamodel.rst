@@ -2460,8 +2460,8 @@ but can represent other containers as well.  The first set of methods is used
 either to emulate a sequence or to emulate a mapping; the difference is that for
 a sequence, the allowable keys should be the integers *k* for which ``0 <= k <
 N`` where *N* is the length of the sequence, or :class:`slice` objects, which define a
-range of items.  Another difference is the :meth:`keys` method which is specific to
-mappings.  It is also recommended that mappings provide the methods
+range of items, while mappings must define the :meth:`keys` method.  Along with
+the :meth:`keys` method, it is recommended that mappings provide the methods
 :meth:`values`, :meth:`items`, :meth:`get`, :meth:`clear`,
 :meth:`setdefault`, :meth:`pop`, :meth:`popitem`, :meth:`!copy`, and
 :meth:`update` behaving similar to those for Python's standard :class:`dictionary <dict>`
