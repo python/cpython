@@ -1258,7 +1258,7 @@ an :term:`importer`.
 .. function:: _incompatible_extension_module_restrictions(*, disable_check)
 
    A context manager that can temporarily skip the compatibility check
-   for extension modules.  By default the check is abled and will fail
+   for extension modules.  By default the check is enabled and will fail
    when a single-phase init module is imported in a subinterpreter.
    It will also fail for a multi-phase init module that doesn't
    explicitly support a per-interpreter GIL, when imported
