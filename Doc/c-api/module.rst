@@ -396,6 +396,9 @@ The available slot types are:
       even when they have their own GIL.
       (See :ref:`isolating-extensions-howto`.)
 
+   This slot determines whether or not importing this module
+   in a subinterpreter will fail.
+
    Multiple ``Py_mod_multiple_interpreters`` slots may not be specified
    in one module definition.
 
