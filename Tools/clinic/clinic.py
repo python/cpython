@@ -4283,6 +4283,11 @@ class float_return_converter(double_return_converter):
     cast = '(double)'
 
 
+# What do we do in this function?
+# We take an arbitrary AST node, compile the node into a function object,
+# call that function with 0 arguments, and return whatever the call returns.
+# The only possible return annotations here would be `object` or `Any`,
+# and `object` would be too annoying. Return `Any`!
 def eval_ast_expr(
         node: ast.expr,
         globals: dict[str, Any],
