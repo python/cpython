@@ -1243,7 +1243,7 @@ function. You can create and destroy them using the following functions:
       Otherwise it will use (share) the main interpreter's.
 
       If this is ``0`` then
-      :c:member:`PyInterpreterConfig.check_multi_interp_extensions`
+      :c:member:`~PyInterpreterConfig.check_multi_interp_extensions`
       must be ``1`` (non-zero).
       If this is ``1`` then :c:member:`PyInterpreterConfig.gil`
       must not be :c:macro:`PyInterpreterConfig_OWN_GIL`.
@@ -1278,7 +1278,7 @@ function. You can create and destroy them using the following functions:
       If this is ``0`` then the sub-interpreter's :mod:`threading` module
       won't create daemon threads.
       Otherwise daemon threads are allowed (as long as
-      :c:member:`PyInterpreterConfig.allow_threads` is non-zero).
+      :c:member:`~PyInterpreterConfig.allow_threads` is non-zero).
 
    .. c:member:: int check_multi_interp_extensions
 
@@ -1289,7 +1289,7 @@ function. You can create and destroy them using the following functions:
       (see :ref:`Isolating Extension Modules`) may be imported.
 
       This must be ``1`` (non-zero) if
-      :c:member:`PyInterpreterConfig.use_main_obmalloc` is ``0``.
+      :c:member:`~PyInterpreterConfig.use_main_obmalloc` is ``0``.
 
    .. c:member:: int gil
 
