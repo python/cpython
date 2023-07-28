@@ -544,6 +544,8 @@ that has to be called, it is common to call this method in a
     @dataclass
     class Square(Rectangle):
         side: float
+        height: float = field(init=False)
+        width: float = field(init=False)
 
         def __post_init__(self):
             super().__init__(self.side, self.side)
