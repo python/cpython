@@ -12,7 +12,6 @@ Doc/c-api/bytes.rst
 Doc/c-api/capsule.rst
 Doc/c-api/cell.rst
 Doc/c-api/code.rst
-Doc/c-api/codec.rst
 Doc/c-api/complex.rst
 Doc/c-api/conversion.rst
 Doc/c-api/datetime.rst
