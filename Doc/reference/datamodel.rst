@@ -2460,8 +2460,9 @@ but can represent other containers as well.  The first set of methods is used
 either to emulate a sequence or to emulate a mapping; the difference is that for
 a sequence, the allowable keys should be the integers *k* for which ``0 <= k <
 N`` where *N* is the length of the sequence, or :class:`slice` objects, which define a
-range of items.  It is also recommended that mappings provide the methods
-:meth:`keys`, :meth:`values`, :meth:`items`, :meth:`get`, :meth:`clear`,
+range of items.  Another difference is the :meth:`keys` method which is specific to
+mappings.  It is also recommended that mappings provide the methods
+:meth:`values`, :meth:`items`, :meth:`get`, :meth:`clear`,
 :meth:`setdefault`, :meth:`pop`, :meth:`popitem`, :meth:`!copy`, and
 :meth:`update` behaving similar to those for Python's standard :class:`dictionary <dict>`
 objects.  The :mod:`collections.abc` module provides a
@@ -2588,6 +2589,19 @@ through the object's keys; for sequences, it should iterate through the values.
    This method should return a new iterator object that can iterate over all the
    objects in the container.  For mappings, it should iterate over the keys of
    the container.
+
+
+.. method:: object.keys(self)
+
+   This method can be used by Python in arbitrary circumstances to treat an
+   arbitrary instance as a mapping or not.  The method should return an object
+   that can iterate over all the keys of the mapping.
+
+   .. impl-detail::
+
+      In CPython, the method is used by the ``**expression`` syntax in
+      :ref:`function calls <calls>`, as well as in the implementation of the
+      :meth:`dict.update` method of the native dictionnary class.
 
 
 .. method:: object.__reversed__(self)
