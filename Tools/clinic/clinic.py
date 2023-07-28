@@ -2382,7 +2382,7 @@ class PythonParser:
 @dc.dataclass(repr=False)
 class Module:
     name: str
-    module: Module | Clinic | None = None
+    module: Module | Clinic
 
     def __post_init__(self) -> None:
         self.parent = self.module
