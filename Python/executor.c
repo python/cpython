@@ -31,6 +31,39 @@
 #define ENABLE_SPECIALIZATION 0
 
 
+// TODO: continue editing this from tupleobject.c to fit _PyUOpExecutorObject
+static _PyUOpExecutorObject *
+tuple_alloc(Py_ssize_t size)
+{
+    _PyUOpExecutorObject *op = maybe_freelist_pop(size);
+    if (op == NULL) {
+        /* Check for overflow */
+        if ((size_t)size > ((size_t)PY_SSIZE_T_MAX - (sizeof(PyTupleObject) -
+                    sizeof(PyObject *))) / sizeof(PyObject *)) {
+            return (_PyUOpExecutorObject *)PyErr_NoMemory();
+        }
+        op = PyObject_GC_NewVar(_PyUOpExecutorObject, &PyTuple_Type, size);
+        if (op == NULL)
+            return NULL;
+    }
+    return op;
+}
+
+PyObject *
+PyUOpExecutor_New(_PyUOpInstruction trace[], Py_ssize_t size)
+{
+    _PyUOpExecutorObject *op;
+    op = tuple_alloc(size);
+    if (op == NULL) {
+        return NULL;
+    }
+    for (Py_ssize_t i = 0; i < size; i++) {
+        op->trace[i] = trace[i];
+    }
+    _PyObject_GC_TRACK(op);
+    return (PyObject *) op;
+}
+
 _PyInterpreterFrame *
 _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
 {

@@ -17,14 +17,25 @@ typedef struct {
 } _PyUOpInstruction;
 
 typedef struct {
+    PyObject_VAR_HEAD
     _PyExecutorObject base;
-    _PyUOpInstruction trace[_Py_UOP_MAX_TRACE_LENGTH];  // TODO: variable length
+    _PyUOpInstruction trace[1];
 } _PyUOpExecutorObject;
 
 _PyInterpreterFrame *_PyUopExecute(
     _PyExecutorObject *executor,
     _PyInterpreterFrame *frame,
     PyObject **stack_pointer);
+
+/* Cast argument to _PyUOpExecutorObject* type. */
+#define _PyUOpExecutor_CAST(op) \
+    _Py_CAST(_PyUOpExecutorObject*, (op))
+
+static inline Py_ssize_t PyUOpExecutor_GET_SIZE(PyObject *op) {
+    _PyUOpExecutorObject *executor = _PyUOpExecutor_CAST(op);
+    return Py_SIZE(executor);
+}
+#define PyUOpExecutor_GET_SIZE(op) PyUOpExecutor_GET_SIZE(_PyObject_CAST(op))
 
 #ifdef __cplusplus
 }
