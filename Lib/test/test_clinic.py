@@ -1360,7 +1360,7 @@ class ClinicExternalTest(TestCase):
         ) as proc:
             proc.wait()
             if expect_success and proc.returncode:
-                self.fail("".join(proc.stderr))
+                self.fail("".join([*proc.stdout, *proc.stderr]))
             stdout = proc.stdout.read()
             stderr = proc.stderr.read()
             # Clinic never writes to stderr.

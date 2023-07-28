@@ -119,7 +119,7 @@ Module Objects
    encoded to 'utf-8'.
 
    .. deprecated:: 3.2
-      :c:func:`PyModule_GetFilename` raises :c:type:`UnicodeEncodeError` on
+      :c:func:`PyModule_GetFilename` raises :exc:`UnicodeEncodeError` on
       unencodable filenames, use :c:func:`PyModule_GetFilenameObject` instead.
 
 
@@ -282,7 +282,7 @@ An alternate way to specify extensions is to request "multi-phase initialization
 Extension modules created this way behave more like Python modules: the
 initialization is split between the *creation phase*, when the module object
 is created, and the *execution phase*, when it is populated.
-The distinction is similar to the :py:meth:`__new__` and :py:meth:`__init__` methods
+The distinction is similar to the :py:meth:`!__new__` and :py:meth:`!__init__` methods
 of classes.
 
 Unlike modules created using single-phase initialization, these modules are not
@@ -293,7 +293,7 @@ By default, multiple modules created from the same definition should be
 independent: changes to one should not affect the others.
 This means that all state should be specific to the module object (using e.g.
 using :c:func:`PyModule_GetState`), or its contents (such as the module's
-:attr:`__dict__` or individual classes created with :c:func:`PyType_FromSpec`).
+:attr:`~object.__dict__` or individual classes created with :c:func:`PyType_FromSpec`).
 
 All modules created using multi-phase initialization are expected to support
 :ref:`sub-interpreters <sub-interpreter-support>`. Making sure multiple modules
@@ -555,7 +555,7 @@ state:
    ``NULL``-terminated.  Return ``-1`` on error, ``0`` on success.
 
 
-.. c:function:: int PyModule_AddIntMacro(PyObject *module, macro)
+.. c:macro:: PyModule_AddIntMacro(module, macro)
 
    Add an int constant to *module*. The name and the value are taken from
    *macro*. For example ``PyModule_AddIntMacro(module, AF_INET)`` adds the int
@@ -563,7 +563,7 @@ state:
    Return ``-1`` on error, ``0`` on success.
 
 
-.. c:function:: int PyModule_AddStringMacro(PyObject *module, macro)
+.. c:macro:: PyModule_AddStringMacro(module, macro)
 
    Add a string constant to *module*.
 

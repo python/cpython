@@ -485,7 +485,7 @@ PyObject Slots
 --------------
 
 The type object structure extends the :c:type:`PyVarObject` structure. The
-:c:member:`~PyVarObject.ob_size` field is used for dynamic types (created by :func:`type_new`,
+:c:member:`~PyVarObject.ob_size` field is used for dynamic types (created by :c:func:`!type_new`,
 usually called from a class statement). Note that :c:data:`PyType_Type` (the
 metatype) initializes :c:member:`~PyTypeObject.tp_itemsize`, which means that its instances (i.e.
 type objects) *must* have the :c:member:`~PyVarObject.ob_size` field.
@@ -579,7 +579,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    name, followed by a dot, followed by the type name; for built-in types, it
    should be just the type name.  If the module is a submodule of a package, the
    full package name is part of the full module name.  For example, a type named
-   :class:`T` defined in module :mod:`M` in subpackage :mod:`Q` in package :mod:`P`
+   :class:`!T` defined in module :mod:`!M` in subpackage :mod:`!Q` in package :mod:`!P`
    should have the :c:member:`~PyTypeObject.tp_name` initializer ``"P.Q.M.T"``.
 
    For :ref:`dynamically allocated type objects <heap-types>`,
@@ -673,9 +673,9 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    permissible to call the object deallocator directly instead of via
    :c:member:`~PyTypeObject.tp_free`.  The object deallocator should be the one used to allocate the
    instance; this is normally :c:func:`PyObject_Del` if the instance was allocated
-   using :c:func:`PyObject_New` or :c:func:`PyObject_VarNew`, or
+   using :c:macro:`PyObject_New` or :c:macro:`PyObject_NewVar`, or
    :c:func:`PyObject_GC_Del` if the instance was allocated using
-   :c:func:`PyObject_GC_New` or :c:func:`PyObject_GC_NewVar`.
+   :c:macro:`PyObject_GC_New` or :c:macro:`PyObject_GC_NewVar`.
 
    If the type supports garbage collection (has the :c:macro:`Py_TPFLAGS_HAVE_GC`
    flag bit set), the destructor should call :c:func:`PyObject_GC_UnTrack`
@@ -740,7 +740,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       Before version 3.12, it was not recommended for
       :ref:`mutable heap types <heap-types>` to implement the vectorcall
       protocol.
-      When a user sets :attr:`~type.__call__` in Python code, only *tp_call* is
+      When a user sets :attr:`~object.__call__` in Python code, only *tp_call* is
       updated, likely making it inconsistent with the vectorcall function.
       Since 3.12, setting ``__call__`` will disable vectorcall optimization
       by clearing the :c:macro:`Py_TPFLAGS_HAVE_VECTORCALL` flag.
@@ -1092,7 +1092,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    .. c:macro:: Py_TPFLAGS_HAVE_GC
 
       This bit is set when the object supports garbage collection.  If this bit
-      is set, instances must be created using :c:func:`PyObject_GC_New` and
+      is set, instances must be created using :c:macro:`PyObject_GC_New` and
       destroyed using :c:func:`PyObject_GC_Del`.  More information in section
       :ref:`supporting-cycle-detection`.  This bit also implies that the
       GC-related fields :c:member:`~PyTypeObject.tp_traverse` and :c:member:`~PyTypeObject.tp_clear` are present in
@@ -1180,7 +1180,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
       Indicates that the variable-sized portion of an instance of this type is
       at the end of the instance's memory area, at an offset of
-      :c:expr:`Py_TYPE(obj)->tp_basicsize` (which may be different in each
+      ``Py_TYPE(obj)->tp_basicsize`` (which may be different in each
       subclass).
 
       When setting this flag, be sure that all superclasses either
@@ -1369,8 +1369,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    The :c:member:`~PyTypeObject.tp_traverse` pointer is used by the garbage collector to detect
    reference cycles. A typical implementation of a :c:member:`~PyTypeObject.tp_traverse` function
    simply calls :c:func:`Py_VISIT` on each of the instance's members that are Python
-   objects that the instance owns. For example, this is function :c:func:`local_traverse` from the
-   :mod:`_thread` extension module::
+   objects that the instance owns. For example, this is function :c:func:`!local_traverse` from the
+   :mod:`!_thread` extension module::
 
       static int
       local_traverse(localobject *self, visitproc visit, void *arg)
@@ -1721,7 +1721,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    called; it may also be initialized to a dictionary containing initial attributes
    for the type.  Once :c:func:`PyType_Ready` has initialized the type, extra
    attributes for the type may be added to this dictionary only if they don't
-   correspond to overloaded operations (like :meth:`__add__`).  Once
+   correspond to overloaded operations (like :meth:`~object.__add__`).  Once
    initialization for the type has finished, this field should be
    treated as read-only.
 
@@ -1818,7 +1818,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    **Default:**
 
    This slot has no default.  For :ref:`static types <static-types>`, if the
-   field is ``NULL`` then no :attr:`__dict__` gets created for instances.
+   field is ``NULL`` then no :attr:`~object.__dict__` gets created for instances.
 
    If the :c:macro:`Py_TPFLAGS_MANAGED_DICT` bit is set in the
    :c:member:`~PyTypeObject.tp_dict` field, then
@@ -1830,10 +1830,10 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    An optional pointer to an instance initialization function.
 
-   This function corresponds to the :meth:`__init__` method of classes.  Like
-   :meth:`__init__`, it is possible to create an instance without calling
-   :meth:`__init__`, and it is possible to reinitialize an instance by calling its
-   :meth:`__init__` method again.
+   This function corresponds to the :meth:`~object.__init__` method of classes.  Like
+   :meth:`!__init__`, it is possible to create an instance without calling
+   :meth:`!__init__`, and it is possible to reinitialize an instance by calling its
+   :meth:`!__init__` method again.
 
    The function signature is::
 
@@ -1841,7 +1841,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    The self argument is the instance to be initialized; the *args* and *kwds*
    arguments represent positional and keyword arguments of the call to
-   :meth:`__init__`.
+   :meth:`~object.__init__`.
 
    The :c:member:`~PyTypeObject.tp_init` function, if not ``NULL``, is called when an instance is
    created normally by calling its type, after the type's :c:member:`~PyTypeObject.tp_new` function
@@ -2130,7 +2130,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    In other words, it is used to implement
    :ref:`vectorcall <vectorcall>` for ``type.__call__``.
    If ``tp_vectorcall`` is ``NULL``, the default call implementation
-   using :attr:`__new__` and :attr:`__init__` is used.
+   using :meth:`~object.__new__` and :meth:`~object.__init__` is used.
 
    **Inheritance:**
 
@@ -2329,8 +2329,8 @@ Mapping Object Structures
 .. c:member:: objobjargproc PyMappingMethods.mp_ass_subscript
 
    This function is used by :c:func:`PyObject_SetItem`,
-   :c:func:`PyObject_DelItem`, :c:func:`PyObject_SetSlice` and
-   :c:func:`PyObject_DelSlice`.  It has the same signature as
+   :c:func:`PyObject_DelItem`, :c:func:`PySequence_SetSlice` and
+   :c:func:`PySequence_DelSlice`.  It has the same signature as
    :c:func:`!PyObject_SetItem`, but *v* can also be set to ``NULL`` to delete
    an item.  If this slot is ``NULL``, the object does not support item
    assignment and deletion.
@@ -2552,7 +2552,7 @@ Async Object Structures
       PyObject *am_aiter(PyObject *self);
 
    Must return an :term:`asynchronous iterator` object.
-   See :meth:`__anext__` for details.
+   See :meth:`~object.__anext__` for details.
 
    This slot may be set to ``NULL`` if an object does not implement
    asynchronous iteration protocol.
@@ -2563,7 +2563,8 @@ Async Object Structures
 
       PyObject *am_anext(PyObject *self);
 
-   Must return an :term:`awaitable` object.  See :meth:`__anext__` for details.
+   Must return an :term:`awaitable` object.
+   See :meth:`~object.__anext__` for details.
    This slot may be set to ``NULL``.
 
 .. c:member:: sendfunc PyAsyncMethods.am_send

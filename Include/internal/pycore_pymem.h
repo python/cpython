@@ -95,4 +95,4 @@ PyAPI_FUNC(int) _PyMem_SetupAllocators(PyMemAllocatorName allocator);
 #ifdef __cplusplus
 }
 #endif
-#endif  // !Py_INTERNAL_PYMEM_H
+#endif /* !Py_INTERNAL_PYMEM_H */

@@ -167,7 +167,7 @@ Operating System Utilities
 
    .. versionchanged:: 3.8
       The function now uses the UTF-8 encoding on Windows if
-      :c:member:`PyConfig.legacy_windows_fs_encoding` is zero;
+      :c:member:`PyPreConfig.legacy_windows_fs_encoding` is zero;
 
 
 .. c:function:: char* Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
@@ -209,7 +209,7 @@ Operating System Utilities
 
    .. versionchanged:: 3.8
       The function now uses the UTF-8 encoding on Windows if
-      :c:member:`PyConfig.legacy_windows_fs_encoding` is zero.
+      :c:member:`PyPreConfig.legacy_windows_fs_encoding` is zero.
 
 
 .. _systemfunctions:
@@ -414,7 +414,7 @@ Process Control
    This function should only be invoked when a condition is detected that would
    make it dangerous to continue using the Python interpreter; e.g., when the
    object administration appears to be corrupted.  On Unix, the standard C library
-   function :c:func:`abort` is called which will attempt to produce a :file:`core`
+   function :c:func:`!abort` is called which will attempt to produce a :file:`core`
    file.
 
    The ``Py_FatalError()`` function is replaced with a macro which logs

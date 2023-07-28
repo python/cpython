@@ -1850,7 +1850,7 @@ Changes in Python behavior
   finalizing, making them consistent with :c:func:`PyEval_RestoreThread`,
   :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`. If this
   behavior is not desired, guard the call by checking :c:func:`_Py_IsFinalizing`
-  or :c:func:`sys.is_finalizing`.
+  or :func:`sys.is_finalizing`.
   (Contributed by Joannah Nanjekye in :issue:`36475`.)
 
 
@@ -2061,8 +2061,8 @@ Changes in the C API
 
   * Remove :c:macro:`Py_INCREF` on the type object after allocating an
     instance - if any.
-    This may happen after calling :c:func:`PyObject_New`,
-    :c:func:`PyObject_NewVar`, :c:func:`PyObject_GC_New`,
+    This may happen after calling :c:macro:`PyObject_New`,
+    :c:macro:`PyObject_NewVar`, :c:func:`PyObject_GC_New`,
     :c:func:`PyObject_GC_NewVar`, or any other custom allocator that uses
     :c:func:`PyObject_Init` or :c:func:`PyObject_INIT`.
 
