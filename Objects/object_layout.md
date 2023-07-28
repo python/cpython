@@ -45,7 +45,7 @@ pointers are combined into a single tagged pointer:
 
 If the object has no physical dictionary, then the ``dict_or_values``
 has its low bit set to one, and points to the values array.
-If the object has a physical dictioanry, then the ``dict_or_values``
+If the object has a physical dictionary, then the ``dict_or_values``
 has its low bit set to zero, and points to the dictionary.
 
 The untagged form is chosen for the dictionary pointer, rather than

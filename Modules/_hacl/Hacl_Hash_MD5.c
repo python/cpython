@@ -1227,14 +1227,14 @@ void Hacl_Streaming_MD5_legacy_init(Hacl_Streaming_MD_state_32 *s)
 /**
 0 = success, 1 = max length exceeded
 */
-uint32_t
+Hacl_Streaming_Types_error_code
 Hacl_Streaming_MD5_legacy_update(Hacl_Streaming_MD_state_32 *p, uint8_t *data, uint32_t len)
 {
   Hacl_Streaming_MD_state_32 s = *p;
   uint64_t total_len = s.total_len;
   if ((uint64_t)len > (uint64_t)2305843009213693951U - total_len)
   {
-    return (uint32_t)1U;
+    return Hacl_Streaming_Types_MaximumLengthExceeded;
   }
   uint32_t sz;
   if (total_len % (uint64_t)(uint32_t)64U == (uint64_t)0U && total_len > (uint64_t)0U)
@@ -1399,7 +1399,7 @@ Hacl_Streaming_MD5_legacy_update(Hacl_Streaming_MD_state_32 *p, uint8_t *data, u
         }
       );
   }
-  return (uint32_t)0U;
+  return Hacl_Streaming_Types_Success;
 }
 
 void Hacl_Streaming_MD5_legacy_finish(Hacl_Streaming_MD_state_32 *p, uint8_t *dst)

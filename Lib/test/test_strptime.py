@@ -242,6 +242,16 @@ class StrptimeTests(unittest.TestCase):
         # 5. Julian/ordinal day (%j) is specified with %G, but not %Y
         with self.assertRaises(ValueError):
             _strptime._strptime("1999 256", "%G %j")
+        # 6. Invalid ISO weeks
+        invalid_iso_weeks = [
+            "2019-00-1",
+            "2019-54-1",
+            "2021-53-1",
+        ]
+        for invalid_iso_dtstr in invalid_iso_weeks:
+            with self.subTest(invalid_iso_dtstr):
+                with self.assertRaises(ValueError):
+                    _strptime._strptime(invalid_iso_dtstr, "%G-%V-%u")
 
 
     def test_strptime_exception_context(self):

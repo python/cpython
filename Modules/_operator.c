@@ -1,7 +1,9 @@
 #include "Python.h"
+#include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "structmember.h"         // PyMemberDef
 #include "pycore_runtime.h"       // _Py_ID()
+
+
 #include "clinic/_operator.c.h"
 
 typedef struct {
@@ -823,9 +825,6 @@ _operator__compare_digest_impl(PyObject *module, PyObject *a, PyObject *b)
 
     /* ASCII unicode string */
     if(PyUnicode_Check(a) && PyUnicode_Check(b)) {
-        if (PyUnicode_READY(a) == -1 || PyUnicode_READY(b) == -1) {
-            return NULL;
-        }
         if (!PyUnicode_IS_ASCII(a) || !PyUnicode_IS_ASCII(b)) {
             PyErr_SetString(PyExc_TypeError,
                             "comparing strings with non-ASCII characters is "
@@ -1154,7 +1153,7 @@ static PyMethodDef itemgetter_methods[] = {
 };
 
 static PyMemberDef itemgetter_members[] = {
-    {"__vectorcalloffset__", T_PYSSIZET, offsetof(itemgetterobject, vectorcall), READONLY},
+    {"__vectorcalloffset__", Py_T_PYSSIZET, offsetof(itemgetterobject, vectorcall), Py_READONLY},
     {NULL} /* Sentinel */
 };
 
@@ -1231,10 +1230,6 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         if (!PyUnicode_Check(item)) {
             PyErr_SetString(PyExc_TypeError,
                             "attribute name must be a string");
-            Py_DECREF(attr);
-            return NULL;
-        }
-        if (PyUnicode_READY(item)) {
             Py_DECREF(attr);
             return NULL;
         }
@@ -1513,7 +1508,7 @@ static PyMethodDef attrgetter_methods[] = {
 };
 
 static PyMemberDef attrgetter_members[] = {
-    {"__vectorcalloffset__", T_PYSSIZET, offsetof(attrgetterobject, vectorcall), READONLY},
+    {"__vectorcalloffset__", Py_T_PYSSIZET, offsetof(attrgetterobject, vectorcall), Py_READONLY},
     {NULL} /* Sentinel*/
 };
 
@@ -1828,6 +1823,7 @@ operator_exec(PyObject *module)
 
 static struct PyModuleDef_Slot operator_slots[] = {
     {Py_mod_exec, operator_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

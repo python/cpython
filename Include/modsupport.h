@@ -9,43 +9,34 @@ extern "C" {
 
 #include <stdarg.h>               // va_list
 
-/* If PY_SSIZE_T_CLEAN is defined, each functions treats #-specifier
-   to mean Py_ssize_t */
-#ifdef PY_SSIZE_T_CLEAN
-#define PyArg_Parse                     _PyArg_Parse_SizeT
-#define PyArg_ParseTuple                _PyArg_ParseTuple_SizeT
-#define PyArg_ParseTupleAndKeywords     _PyArg_ParseTupleAndKeywords_SizeT
-#define PyArg_VaParse                   _PyArg_VaParse_SizeT
-#define PyArg_VaParseTupleAndKeywords   _PyArg_VaParseTupleAndKeywords_SizeT
-#define Py_BuildValue                   _Py_BuildValue_SizeT
-#define Py_VaBuildValue                 _Py_VaBuildValue_SizeT
-#endif
-
-/* Due to a glitch in 3.2, the _SizeT versions weren't exported from the DLL. */
-#if !defined(PY_SSIZE_T_CLEAN) || !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 PyAPI_FUNC(int) PyArg_Parse(PyObject *, const char *, ...);
 PyAPI_FUNC(int) PyArg_ParseTuple(PyObject *, const char *, ...);
 PyAPI_FUNC(int) PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
-                                                  const char *, char **, ...);
+                                            const char *, char **, ...);
 PyAPI_FUNC(int) PyArg_VaParse(PyObject *, const char *, va_list);
 PyAPI_FUNC(int) PyArg_VaParseTupleAndKeywords(PyObject *, PyObject *,
-                                                  const char *, char **, va_list);
-#endif
+                                              const char *, char **, va_list);
+
 PyAPI_FUNC(int) PyArg_ValidateKeywordArguments(PyObject *);
 PyAPI_FUNC(int) PyArg_UnpackTuple(PyObject *, const char *, Py_ssize_t, Py_ssize_t, ...);
 PyAPI_FUNC(PyObject *) Py_BuildValue(const char *, ...);
-PyAPI_FUNC(PyObject *) _Py_BuildValue_SizeT(const char *, ...);
-
-
 PyAPI_FUNC(PyObject *) Py_VaBuildValue(const char *, va_list);
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030a0000
 // Add an attribute with name 'name' and value 'obj' to the module 'mod.
-// On success, return 0 on success.
+// On success, return 0.
 // On error, raise an exception and return -1.
 PyAPI_FUNC(int) PyModule_AddObjectRef(PyObject *mod, const char *name, PyObject *value);
+#endif   /* Py_LIMITED_API */
 
-// Similar to PyModule_AddObjectRef() but steal a reference to 'obj'
-// (Py_DECREF(obj)) on success (if it returns 0).
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+// Similar to PyModule_AddObjectRef() but steal a reference to 'value'.
+PyAPI_FUNC(int) PyModule_Add(PyObject *mod, const char *name, PyObject *value);
+#endif   /* Py_LIMITED_API */
+
+// Similar to PyModule_AddObjectRef() and PyModule_Add() but steal
+// a reference to 'value' on success and only on success.
+// Errorprone. Should not be used in new code.
 PyAPI_FUNC(int) PyModule_AddObject(PyObject *mod, const char *, PyObject *value);
 
 PyAPI_FUNC(int) PyModule_AddIntConstant(PyObject *, const char *, long);

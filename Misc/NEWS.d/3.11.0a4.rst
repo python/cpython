@@ -839,7 +839,7 @@ patch by Kumar Aditya.
 .. nonce: jeiPiX
 .. section: Library
 
-Added :data:`signal.SIGSTKFLT` on platforms where this signal is defined.
+Added :const:`signal.SIGSTKFLT` on platforms where this signal is defined.
 
 ..
 

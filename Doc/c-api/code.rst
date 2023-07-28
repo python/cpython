@@ -39,7 +39,7 @@ bound into a function.
    use :c:func:`PyCode_NewEmpty` instead.
 
    Since the definition of the bytecode changes often, calling
-   :c:func:`PyCode_New` directly can bind you to a precise Python version.
+   :c:func:`PyUnstable_Code_New` directly can bind you to a precise Python version.
 
    The many arguments of this function are inter-dependent in complex
    ways, meaning that subtle changes to values are likely to result in incorrect
@@ -58,8 +58,8 @@ bound into a function.
 
 .. c:function:: PyCodeObject* PyUnstable_Code_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
 
-   Similar to :c:func:`PyCode_New`, but with an extra "posonlyargcount" for positional-only arguments.
-   The same caveats that apply to ``PyCode_New`` also apply to this function.
+   Similar to :c:func:`PyUnstable_Code_New`, but with an extra "posonlyargcount" for positional-only arguments.
+   The same caveats that apply to ``PyUnstable_Code_New`` also apply to this function.
 
    .. index:: single: PyCode_NewWithPosOnlyArgs
 

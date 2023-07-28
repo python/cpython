@@ -24,10 +24,10 @@
     <ClCompile Include="..\Modules\_testcapi\heaptype.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_testcapi\unicode.c">
+    <ClCompile Include="..\Modules\_testcapi\heaptype_relative.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_testcapi\pytime.c">
+    <ClCompile Include="..\Modules\_testcapi\unicode.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_testcapi\datetime.c">
@@ -55,6 +55,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_testcapi\code.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testcapi\buffer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testcapi\pyos.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testcapi\gc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
