@@ -909,9 +909,13 @@ extensions_lock_release(void)
 static void *
 hashtable_key_from_2_strings(PyObject *str1, PyObject *str2, const char sep)
 {
-    Py_ssize_t str1_len = strlen(PyUnicode_AsUTF8(str1));
-    Py_ssize_t str2_len = strlen(PyUnicode_AsUTF8(str2));
-    assert(SIZE_MAX - str1_len - 1 - str2_len > 0);
+    Py_ssize_t str1_len, str2_len;
+    const char *str1_data = PyUnicode_AsUTF8AndSize(str1, &str1_len);
+    const char *str2_data = PyUnicode_AsUTF8AndSize(str2, &str2_len);
+    if (str1_data == NULL || str2_data == NULL) {
+        return NULL;
+    }
+    assert(SIZE_MAX - str1_len - str2_len > 2);
     size_t size = str1_len + 1 + str2_len + 1;
 
     char *key = PyMem_RawMalloc(size);
@@ -919,9 +923,10 @@ hashtable_key_from_2_strings(PyObject *str1, PyObject *str2, const char sep)
         return NULL;
     }
 
-    strncpy(key, PyUnicode_AsUTF8(str1), str1_len);
+    strncpy(key, str1_data, str1_len);
     key[str1_len] = sep;
-    strncpy(key + str1_len + 1, PyUnicode_AsUTF8(str2), str2_len + 1);
+    strncpy(key + str1_len + 1, str2_data, str2_len + 1);
+    assert(strlen(key) == size - 1);
     return key;
 }
 
