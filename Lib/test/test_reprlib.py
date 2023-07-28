@@ -774,7 +774,5 @@ class TestRecursiveRepr(unittest.TestCase):
 
         self.assertIs(X.f, X.__repr__.__wrapped__)
 
-
-
 if __name__ == "__main__":
     unittest.main()
