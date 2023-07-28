@@ -250,7 +250,7 @@ following two statements before the call to :c:func:`Py_Initialize`::
    PyImport_AppendInittab("emb", &PyInit_emb);
 
 These two lines initialize the ``numargs`` variable, and make the
-:func:`emb.numargs` function accessible to the embedded Python interpreter.
+:func:`!emb.numargs` function accessible to the embedded Python interpreter.
 With these extensions, the Python script can do things like
 
 .. code-block:: python
