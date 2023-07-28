@@ -2164,6 +2164,19 @@ s_sizeof(PyStructObject *self, void *unused)
     return PyLong_FromSize_t(size);
 }
 
+static PyObject *
+s_repr(PyStructObject *self)
+{
+    PyObject* fmt;
+    PyObject* s;
+
+    fmt = PyUnicode_FromStringAndSize(PyBytes_AS_STRING(self->s_format),
+                                      PyBytes_GET_SIZE(self->s_format));
+    s = PyUnicode_FromFormat("%s(%R)", _PyType_Name(Py_TYPE(self)), fmt);
+    Py_DECREF(fmt);
+    return s;
+}
+
 /* List of functions */
 
 static struct PyMethodDef s_methods[] = {
@@ -2196,6 +2209,7 @@ static PyType_Slot PyStructType_slots[] = {
     {Py_tp_dealloc, s_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_setattro, PyObject_GenericSetAttr},
+    {Py_tp_repr, s_repr},
     {Py_tp_doc, (void*)s__doc__},
     {Py_tp_traverse, s_traverse},
     {Py_tp_clear, s_clear},
