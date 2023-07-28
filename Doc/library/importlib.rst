@@ -941,7 +941,14 @@ find and load modules.
    The *fullname* argument specifies the name of the module the loader is to
    support. The *path* argument is the path to the extension module's file.
 
+   Note that, by default, importing an extension module will fail
+   in subinterpreters if it doesn't implement multi-phase init
+   (see :pep:`489`), even if it would otherwise import successfully.
+
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.12
+      Multi-phase init is now required for use in subinterpreters.
 
    .. attribute:: name
 
