@@ -1324,10 +1324,6 @@ function. You can create and destroy them using the following functions:
       single: stderr (in module sys)
       single: stdin (in module sys)
 
-   Create a new sub-interpreter using the given config.  This is like
-   :c:func:`Py_NewInterpreter` except you control the options with which
-   the interpreter is initialized.
-
    Create a new sub-interpreter.  This is an (almost) totally separate environment
    for the execution of Python code.  In particular, the new interpreter has
    separate, independent versions of all imported modules, including the
@@ -1337,6 +1333,9 @@ function. You can create and destroy them using the following functions:
    variable.  It has new standard I/O stream file objects ``sys.stdin``,
    ``sys.stdout`` and ``sys.stderr`` (however these refer to the same underlying
    file descriptors).
+
+   The given config controls the options with which the interpreter
+   is initialized.
 
    The return value points to the first thread state created in the new
    sub-interpreter.  This thread state is made in the current thread state.
