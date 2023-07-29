@@ -592,7 +592,7 @@ from the Fibonacci series that are lower than 150::
    >>> a, b = 0, 1
    >>> while a < 150:
    ...      print('', a, '', end='->')
-   ...      a, b = b, a+b
+   ...      a, b = b, a + b
    ...
     0 -> 1 -> 1 -> 2 -> 3 -> 5 -> 8 -> 13 -> 21 -> 34 -> 55 -> 89 -> 144 ->
 
