@@ -1348,9 +1348,6 @@ dummy_func(
             null = NULL;
         }
 
-        op(_SKIP_CACHE, (unused/1 -- )) {
-        }
-
         op(_GUARD_GLOBALS_VERSION, (version/1 --)) {
             PyDictObject *dict = (PyDictObject *)GLOBALS();
             DEOPT_IF(!PyDict_CheckExact(dict), LOAD_GLOBAL);
@@ -1386,13 +1383,13 @@ dummy_func(
         }
 
         macro(LOAD_GLOBAL_MODULE) =
-            _SKIP_CACHE + // Skip over the counter
+            unused/1 + // Skip over the counter
             _GUARD_GLOBALS_VERSION +
-            _SKIP_CACHE + // Skip over the builtins version
+            unused/1 + // Skip over the builtins version
             _LOAD_GLOBAL_MODULE;
 
         macro(LOAD_GLOBAL_BUILTIN) =
-            _SKIP_CACHE + // Skip over the counter
+            unused/1 + // Skip over the counter
             _GUARD_GLOBALS_VERSION +
             _GUARD_BUILTINS_VERSION +
             _LOAD_GLOBAL_BUILTINS;
@@ -1835,7 +1832,7 @@ dummy_func(
         }
 
         macro(LOAD_ATTR_INSTANCE_VALUE) =
-            _SKIP_CACHE + // Skip over the counter
+            unused/1 + // Skip over the counter
             _GUARD_TYPE_VERSION +
             _CHECK_MANAGED_OBJECT_HAS_VALUES +
             _LOAD_ATTR_INSTANCE_VALUE;
