@@ -1,0 +1,2 @@
+Make ``DictProxy`` and ``ListProxy`` types in ``multiprocessing.managers``
+generic.
