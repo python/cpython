@@ -16,7 +16,7 @@ setting the :envvar:`PYTHONDEVMODE` environment variable to ``1``.
 See also :ref:`Python debug build <debug-build>`.
 
 Effects of the Python Development Mode
-======================================
+--------------------------------------
 
 Enabling the Python Development Mode is similar to the following command, but
 with additional effects described below::
@@ -81,7 +81,7 @@ Effects of the Python Development Mode:
   ignored for empty strings.
 
 * The :class:`io.IOBase` destructor logs ``close()`` exceptions.
-* Set the :attr:`~sys.flags.dev_mode` attribute of :attr:`sys.flags` to
+* Set the :attr:`~sys.flags.dev_mode` attribute of :data:`sys.flags` to
   ``True``.
 
 The Python Development Mode does not enable the :mod:`tracemalloc` module by
@@ -107,7 +107,7 @@ value can be read from :data:`sys.flags.dev_mode <sys.flags>`.
 
 
 ResourceWarning Example
-=======================
+-----------------------
 
 Example of a script counting the number of lines of the text file specified in
 the command line::
@@ -171,7 +171,7 @@ application more deterministic and more reliable.
 
 
 Bad file descriptor error example
-=================================
+---------------------------------
 
 Script displaying the first line of itself::
 
@@ -198,7 +198,7 @@ descriptor" error when finalizing the file object:
 
 .. code-block:: shell-session
 
-    $ python3 script.py
+    $ python3 -X dev script.py
     import os
     script.py:10: ResourceWarning: unclosed file <_io.TextIOWrapper name='script.py' mode='r' encoding='UTF-8'>
       main()

@@ -659,8 +659,8 @@ depending on the system error code.
 
    Raised when an operation would block on an object (e.g. socket) set
    for non-blocking operation.
-   Corresponds to :c:data:`errno` :py:data:`~errno.EAGAIN`, :py:data:`~errno.EALREADY`,
-   :py:data:`~errno.EWOULDBLOCK` and :py:data:`~errno.EINPROGRESS`.
+   Corresponds to :c:data:`errno` :py:const:`~errno.EAGAIN`, :py:const:`~errno.EALREADY`,
+   :py:const:`~errno.EWOULDBLOCK` and :py:const:`~errno.EINPROGRESS`.
 
    In addition to those of :exc:`OSError`, :exc:`BlockingIOError` can have
    one more attribute:
@@ -674,7 +674,7 @@ depending on the system error code.
 .. exception:: ChildProcessError
 
    Raised when an operation on a child process failed.
-   Corresponds to :c:data:`errno` :py:data:`~errno.ECHILD`.
+   Corresponds to :c:data:`errno` :py:const:`~errno.ECHILD`.
 
 .. exception:: ConnectionError
 
@@ -688,40 +688,40 @@ depending on the system error code.
    A subclass of :exc:`ConnectionError`, raised when trying to write on a
    pipe while the other end has been closed, or trying to write on a socket
    which has been shutdown for writing.
-   Corresponds to :c:data:`errno` :py:data:`~errno.EPIPE` and :py:data:`~errno.ESHUTDOWN`.
+   Corresponds to :c:data:`errno` :py:const:`~errno.EPIPE` and :py:const:`~errno.ESHUTDOWN`.
 
 .. exception:: ConnectionAbortedError
 
    A subclass of :exc:`ConnectionError`, raised when a connection attempt
    is aborted by the peer.
-   Corresponds to :c:data:`errno` :py:data:`~errno.ECONNABORTED`.
+   Corresponds to :c:data:`errno` :py:const:`~errno.ECONNABORTED`.
 
 .. exception:: ConnectionRefusedError
 
    A subclass of :exc:`ConnectionError`, raised when a connection attempt
    is refused by the peer.
-   Corresponds to :c:data:`errno` :py:data:`~errno.ECONNREFUSED`.
+   Corresponds to :c:data:`errno` :py:const:`~errno.ECONNREFUSED`.
 
 .. exception:: ConnectionResetError
 
    A subclass of :exc:`ConnectionError`, raised when a connection is
    reset by the peer.
-   Corresponds to :c:data:`errno` :py:data:`~errno.ECONNRESET`.
+   Corresponds to :c:data:`errno` :py:const:`~errno.ECONNRESET`.
 
 .. exception:: FileExistsError
 
    Raised when trying to create a file or directory which already exists.
-   Corresponds to :c:data:`errno` :py:data:`~errno.EEXIST`.
+   Corresponds to :c:data:`errno` :py:const:`~errno.EEXIST`.
 
 .. exception:: FileNotFoundError
 
    Raised when a file or directory is requested but doesn't exist.
-   Corresponds to :c:data:`errno` :py:data:`~errno.ENOENT`.
+   Corresponds to :c:data:`errno` :py:const:`~errno.ENOENT`.
 
 .. exception:: InterruptedError
 
    Raised when a system call is interrupted by an incoming signal.
-   Corresponds to :c:data:`errno` :py:data:`~errno.EINTR`.
+   Corresponds to :c:data:`errno` :py:const:`~errno.EINTR`.
 
    .. versionchanged:: 3.5
       Python now retries system calls when a syscall is interrupted by a
@@ -732,7 +732,7 @@ depending on the system error code.
 
    Raised when a file operation (such as :func:`os.remove`) is requested
    on a directory.
-   Corresponds to :c:data:`errno` :py:data:`~errno.EISDIR`.
+   Corresponds to :c:data:`errno` :py:const:`~errno.EISDIR`.
 
 .. exception:: NotADirectoryError
 
@@ -740,28 +740,28 @@ depending on the system error code.
    something which is not a directory.  On most POSIX platforms, it may also be
    raised if an operation attempts to open or traverse a non-directory file as if
    it were a directory.
-   Corresponds to :c:data:`errno` :py:data:`~errno.ENOTDIR`.
+   Corresponds to :c:data:`errno` :py:const:`~errno.ENOTDIR`.
 
 .. exception:: PermissionError
 
    Raised when trying to run an operation without the adequate access
    rights - for example filesystem permissions.
-   Corresponds to :c:data:`errno` :py:data:`~errno.EACCES`,
-   :py:data:`~errno.EPERM`, and :py:data:`~errno.ENOTCAPABLE`.
+   Corresponds to :c:data:`errno` :py:const:`~errno.EACCES`,
+   :py:const:`~errno.EPERM`, and :py:const:`~errno.ENOTCAPABLE`.
 
    .. versionchanged:: 3.11.1
-      WASI's :py:data:`~errno.ENOTCAPABLE` is now mapped to
+      WASI's :py:const:`~errno.ENOTCAPABLE` is now mapped to
       :exc:`PermissionError`.
 
 .. exception:: ProcessLookupError
 
    Raised when a given process doesn't exist.
-   Corresponds to :c:data:`errno` :py:data:`~errno.ESRCH`.
+   Corresponds to :c:data:`errno` :py:const:`~errno.ESRCH`.
 
 .. exception:: TimeoutError
 
    Raised when a system function timed out at the system level.
-   Corresponds to :c:data:`errno` :py:data:`~errno.ETIMEDOUT`.
+   Corresponds to :c:data:`errno` :py:const:`~errno.ETIMEDOUT`.
 
 .. versionadded:: 3.3
    All the above :exc:`OSError` subclasses were added.

@@ -351,12 +351,17 @@ mmap_gfind(mmap_object *self,
 
         Py_ssize_t res;
         CHECK_VALID_OR_RELEASE(NULL, view);
-        if (reverse) {
+        if (end < start) {
+            res = -1;
+        }
+        else if (reverse) {
+            assert(0 <= start && start <= end && end <= self->size);
             res = _PyBytes_ReverseFind(
                 self->data + start, end - start,
                 view.buf, view.len, start);
         }
         else {
+            assert(0 <= start && start <= end && end <= self->size);
             res = _PyBytes_Find(
                 self->data + start, end - start,
                 view.buf, view.len, start);

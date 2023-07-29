@@ -2800,7 +2800,7 @@ _ssl_session_dup(SSL_SESSION *session) {
     /* get length */
     slen = i2d_SSL_SESSION(session, NULL);
     if (slen == 0 || slen > 0xFF00) {
-        PyErr_SetString(PyExc_ValueError, "i2d() failed.");
+        PyErr_SetString(PyExc_ValueError, "i2d() failed");
         goto error;
     }
     if ((senc = PyMem_Malloc(slen)) == NULL) {
@@ -2809,12 +2809,13 @@ _ssl_session_dup(SSL_SESSION *session) {
     }
     p = senc;
     if (!i2d_SSL_SESSION(session, &p)) {
-        PyErr_SetString(PyExc_ValueError, "i2d() failed.");
+        PyErr_SetString(PyExc_ValueError, "i2d() failed");
         goto error;
     }
     const_p = senc;
     newsession = d2i_SSL_SESSION(NULL, &const_p, slen);
-    if (session == NULL) {
+    if (newsession == NULL) {
+        PyErr_SetString(PyExc_ValueError, "d2i() failed");
         goto error;
     }
     PyMem_Free(senc);
@@ -6129,22 +6130,22 @@ sslmodule_init_versioninfo(PyObject *m)
     */
     libver = OpenSSL_version_num();
     r = PyLong_FromUnsignedLong(libver);
-    if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION_NUMBER", r))
+    if (_PyModule_Add(m, "OPENSSL_VERSION_NUMBER", r) < 0)
         return -1;
 
     parse_openssl_version(libver, &major, &minor, &fix, &patch, &status);
     r = Py_BuildValue("IIIII", major, minor, fix, patch, status);
-    if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION_INFO", r))
+    if (_PyModule_Add(m, "OPENSSL_VERSION_INFO", r) < 0)
         return -1;
 
     r = PyUnicode_FromString(OpenSSL_version(OPENSSL_VERSION));
-    if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION", r))
+    if (_PyModule_Add(m, "OPENSSL_VERSION", r) < 0)
         return -1;
 
     libver = OPENSSL_VERSION_NUMBER;
     parse_openssl_version(libver, &major, &minor, &fix, &patch, &status);
     r = Py_BuildValue("IIIII", major, minor, fix, patch, status);
-    if (r == NULL || PyModule_AddObject(m, "_OPENSSL_API_VERSION", r))
+    if (_PyModule_Add(m, "_OPENSSL_API_VERSION", r) < 0)
         return -1;
 
     return 0;

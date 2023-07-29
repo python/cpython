@@ -754,8 +754,8 @@ now accepts characters as arguments.  Based on patch by Steve Fink.
 .. nonce: DYQL0g
 .. section: Library
 
-Add 3 new clock identifiers: :data:`time.CLOCK_BOOTTIME`,
-:data:`time.CLOCK_PROF` and :data:`time.CLOCK_UPTIME`.
+Add 3 new clock identifiers: :const:`time.CLOCK_BOOTTIME`,
+:const:`time.CLOCK_PROF` and :const:`time.CLOCK_UPTIME`.
 
 ..
 

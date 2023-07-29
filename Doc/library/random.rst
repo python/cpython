@@ -141,7 +141,7 @@ Functions for integers
       ``randrange(10)``.  In the future, this will raise a :exc:`TypeError`.
 
    .. deprecated:: 3.10
-      The exception raised for non-integral values such as ``randrange(10.5)``
+      The exception raised for non-integer values such as ``randrange(10.5)``
       or ``randrange('10')`` will be changed from :exc:`ValueError` to
       :exc:`TypeError`.
 

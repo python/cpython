@@ -23,7 +23,7 @@ Object Protocol
 
    Print an object *o*, on file *fp*.  Returns ``-1`` on error.  The flags argument
    is used to enable certain printing options.  The only option currently supported
-   is :const:`Py_PRINT_RAW`; if given, the :func:`str` of the object is written
+   is :c:macro:`Py_PRINT_RAW`; if given, the :func:`str` of the object is written
    instead of the :func:`repr`.
 
 
@@ -162,8 +162,8 @@ Object Protocol
 .. c:function:: PyObject* PyObject_RichCompare(PyObject *o1, PyObject *o2, int opid)
 
    Compare the values of *o1* and *o2* using the operation specified by *opid*,
-   which must be one of :const:`Py_LT`, :const:`Py_LE`, :const:`Py_EQ`,
-   :const:`Py_NE`, :const:`Py_GT`, or :const:`Py_GE`, corresponding to ``<``,
+   which must be one of :c:macro:`Py_LT`, :c:macro:`Py_LE`, :c:macro:`Py_EQ`,
+   :c:macro:`Py_NE`, :c:macro:`Py_GT`, or :c:macro:`Py_GE`, corresponding to ``<``,
    ``<=``, ``==``, ``!=``, ``>``, or ``>=`` respectively. This is the equivalent of
    the Python expression ``o1 op o2``, where ``op`` is the operator corresponding
    to *opid*. Returns the value of the comparison on success, or ``NULL`` on failure.
@@ -172,8 +172,8 @@ Object Protocol
 .. c:function:: int PyObject_RichCompareBool(PyObject *o1, PyObject *o2, int opid)
 
    Compare the values of *o1* and *o2* using the operation specified by *opid*,
-   which must be one of :const:`Py_LT`, :const:`Py_LE`, :const:`Py_EQ`,
-   :const:`Py_NE`, :const:`Py_GT`, or :const:`Py_GE`, corresponding to ``<``,
+   which must be one of :c:macro:`Py_LT`, :c:macro:`Py_LE`, :c:macro:`Py_EQ`,
+   :c:macro:`Py_NE`, :c:macro:`Py_GT`, or :c:macro:`Py_GE`, corresponding to ``<``,
    ``<=``, ``==``, ``!=``, ``>``, or ``>=`` respectively. Returns ``-1`` on error,
    ``0`` if the result is false, ``1`` otherwise. This is the equivalent of the
    Python expression ``o1 op o2``, where ``op`` is the operator corresponding to
@@ -181,7 +181,7 @@ Object Protocol
 
 .. note::
    If *o1* and *o2* are the same object, :c:func:`PyObject_RichCompareBool`
-   will always return ``1`` for :const:`Py_EQ` and ``0`` for :const:`Py_NE`.
+   will always return ``1`` for :c:macro:`Py_EQ` and ``0`` for :c:macro:`Py_NE`.
 
 .. c:function:: PyObject* PyObject_Format(PyObject *obj, PyObject *format_spec)
 
@@ -256,7 +256,7 @@ Object Protocol
 
    Normally only class objects, i.e. instances of :class:`type` or a derived
    class, are considered classes.  However, objects can override this by having
-   a :attr:`__bases__` attribute (which must be a tuple of base classes).
+   a :attr:`~class.__bases__` attribute (which must be a tuple of base classes).
 
 
 .. c:function:: int PyObject_IsInstance(PyObject *inst, PyObject *cls)
@@ -273,10 +273,10 @@ Object Protocol
    is an instance of *cls* if its class is a subclass of *cls*.
 
    An instance *inst* can override what is considered its class by having a
-   :attr:`__class__` attribute.
+   :attr:`~instance.__class__` attribute.
 
    An object *cls* can override if it is considered a class, and what its base
-   classes are, by having a :attr:`__bases__` attribute (which must be a tuple
+   classes are, by having a :attr:`~class.__bases__` attribute (which must be a tuple
    of base classes).
 
 

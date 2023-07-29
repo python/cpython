@@ -1,0 +1,2 @@
+Fix :c:func:`PyUnicode_DecodeUTF8Stateful` for ASCII-only data:
+``*consumed`` was not set.

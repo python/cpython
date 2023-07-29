@@ -650,8 +650,8 @@ compiled in release mode using ``PYTHONMALLOC=debug``. Effects of debug hooks:
 * Detect writes before the start of a buffer (buffer underflows)
 * Detect writes after the end of a buffer (buffer overflows)
 * Check that the :term:`GIL <global interpreter lock>` is held when allocator
-  functions of :c:data:`PYMEM_DOMAIN_OBJ` (ex: :c:func:`PyObject_Malloc`) and
-  :c:data:`PYMEM_DOMAIN_MEM` (ex: :c:func:`PyMem_Malloc`) domains are called.
+  functions of :c:macro:`PYMEM_DOMAIN_OBJ` (ex: :c:func:`PyObject_Malloc`) and
+  :c:macro:`PYMEM_DOMAIN_MEM` (ex: :c:func:`PyMem_Malloc`) domains are called.
 
 Checking if the GIL is held is also a new feature of Python 3.6.
 
@@ -1388,7 +1388,7 @@ are treated as punctuation.
 site
 ----
 
-When specifying paths to add to :attr:`sys.path` in a ``.pth`` file,
+When specifying paths to add to :data:`sys.path` in a ``.pth`` file,
 you may now specify file paths on top of directories (e.g. zip files).
 (Contributed by Wolfgang Langner in :issue:`26587`).
 
@@ -1404,7 +1404,7 @@ socket
 ------
 
 The :func:`~socket.socket.ioctl` function now supports the
-:data:`~socket.SIO_LOOPBACK_FAST_PATH` control code.
+:const:`~socket.SIO_LOOPBACK_FAST_PATH` control code.
 (Contributed by Daniel Stokes in :issue:`26536`.)
 
 The :meth:`~socket.socket.getsockopt` constants ``SO_DOMAIN``,
@@ -1416,7 +1416,7 @@ The :meth:`~socket.socket.setsockopt` now supports the
 (Contributed by Christian Heimes in :issue:`27744`.)
 
 The socket module now supports the address family
-:data:`~socket.AF_ALG` to interface with Linux Kernel crypto API. ``ALG_*``,
+:const:`~socket.AF_ALG` to interface with Linux Kernel crypto API. ``ALG_*``,
 ``SOL_ALG`` and :meth:`~socket.socket.sendmsg_afalg` were added.
 (Contributed by Christian Heimes in :issue:`27744` with support from
 Victor Stinner.)
@@ -1822,7 +1822,7 @@ Optimizations
   up to 80% faster. (Contributed by Josh Snider in :issue:`26574`).
 
 * Allocator functions of the :c:func:`PyMem_Malloc` domain
-  (:c:data:`PYMEM_DOMAIN_MEM`) now use the :ref:`pymalloc memory allocator
+  (:c:macro:`PYMEM_DOMAIN_MEM`) now use the :ref:`pymalloc memory allocator
   <pymalloc>` instead of :c:func:`malloc` function of the C library. The
   pymalloc allocator is optimized for objects smaller or equal to 512 bytes
   with a short lifetime, and use :c:func:`malloc` for larger memory blocks.
@@ -1874,8 +1874,8 @@ Build and C API Changes
   (Original patch by Alecsandru Patrascu of Intel in :issue:`26359`.)
 
 * The :term:`GIL <global interpreter lock>` must now be held when allocator
-  functions of :c:data:`PYMEM_DOMAIN_OBJ` (ex: :c:func:`PyObject_Malloc`) and
-  :c:data:`PYMEM_DOMAIN_MEM` (ex: :c:func:`PyMem_Malloc`) domains are called.
+  functions of :c:macro:`PYMEM_DOMAIN_OBJ` (ex: :c:func:`PyObject_Malloc`) and
+  :c:macro:`PYMEM_DOMAIN_MEM` (ex: :c:func:`PyMem_Malloc`) domains are called.
 
 * New :c:func:`Py_FinalizeEx` API which indicates if flushing buffered data
   failed.
@@ -2010,7 +2010,7 @@ been deprecated in previous versions of Python in favour of
 :meth:`importlib.abc.Loader.exec_module`.
 
 The :class:`importlib.machinery.WindowsRegistryFinder` class is now
-deprecated. As of 3.6.0, it is still added to :attr:`sys.meta_path` by
+deprecated. As of 3.6.0, it is still added to :data:`sys.meta_path` by
 default (on Windows), but this may change in future releases.
 
 os

@@ -34,7 +34,7 @@ the definition of all other Python objects.
 
 .. c:type:: PyVarObject
 
-   This is an extension of :c:type:`PyObject` that adds the :attr:`ob_size`
+   This is an extension of :c:type:`PyObject` that adds the :c:member:`~PyVarObject.ob_size`
    field.  This is only used for objects that have some notion of *length*.
    This type does not often appear in the Python/C API.
    Access to the members must be done by using the macros
@@ -171,7 +171,7 @@ the definition of all other Python objects.
 .. c:macro:: PyVarObject_HEAD_INIT(type, size)
 
    This is a macro which expands to initialization values for a new
-   :c:type:`PyVarObject` type, including the :attr:`ob_size` field.
+   :c:type:`PyVarObject` type, including the :c:member:`~PyVarObject.ob_size` field.
    This macro expands to::
 
       _PyObject_EXTRA_INIT
@@ -198,7 +198,7 @@ Implementing functions and methods
 .. c:type:: PyCFunctionWithKeywords
 
    Type of the functions used to implement Python callables in C
-   with signature :const:`METH_VARARGS | METH_KEYWORDS`.
+   with signature :ref:`METH_VARARGS | METH_KEYWORDS <METH_VARARGS-METH_KEYWORDS>`.
    The function signature is::
 
       PyObject *PyCFunctionWithKeywords(PyObject *self,
@@ -209,7 +209,7 @@ Implementing functions and methods
 .. c:type:: _PyCFunctionFast
 
    Type of the functions used to implement Python callables in C
-   with signature :const:`METH_FASTCALL`.
+   with signature :c:macro:`METH_FASTCALL`.
    The function signature is::
 
       PyObject *_PyCFunctionFast(PyObject *self,
@@ -219,7 +219,7 @@ Implementing functions and methods
 .. c:type:: _PyCFunctionFastWithKeywords
 
    Type of the functions used to implement Python callables in C
-   with signature :const:`METH_FASTCALL | METH_KEYWORDS`.
+   with signature :ref:`METH_FASTCALL | METH_KEYWORDS <METH_FASTCALL-METH_KEYWORDS>`.
    The function signature is::
 
       PyObject *_PyCFunctionFastWithKeywords(PyObject *self,
@@ -230,7 +230,7 @@ Implementing functions and methods
 .. c:type:: PyCMethod
 
    Type of the functions used to implement Python callables in C
-   with signature :const:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS`.
+   with signature :ref:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS <METH_METHOD-METH_FASTCALL-METH_KEYWORDS>`.
    The function signature is::
 
       PyObject *PyCMethod(PyObject *self,
@@ -247,36 +247,38 @@ Implementing functions and methods
    Structure used to describe a method of an extension type.  This structure has
    four fields:
 
-   .. c:member:: const char* ml_name
+   .. c:member:: const char *ml_name
 
-      name of the method
+      Name of the method.
 
    .. c:member:: PyCFunction ml_meth
 
-      pointer to the C implementation
+      Pointer to the C implementation.
 
    .. c:member:: int ml_flags
 
-      flags bits indicating how the call should be constructed
+      Flags bits indicating how the call should be constructed.
 
-   .. c:member:: const char* ml_doc
+   .. c:member:: const char *ml_doc
 
-      points to the contents of the docstring
+      Points to the contents of the docstring.
 
-The :c:member:`ml_meth` is a C function pointer.  The functions may be of different
+The :c:member:`~PyMethodDef.ml_meth` is a C function pointer.
+The functions may be of different
 types, but they always return :c:expr:`PyObject*`.  If the function is not of
 the :c:type:`PyCFunction`, the compiler will require a cast in the method table.
 Even though :c:type:`PyCFunction` defines the first parameter as
 :c:expr:`PyObject*`, it is common that the method implementation uses the
 specific C type of the *self* object.
 
-The :c:member:`ml_flags` field is a bitfield which can include the following flags.
+The :c:member:`~PyMethodDef.ml_flags` field is a bitfield which can include
+the following flags.
 The individual flags indicate either a calling convention or a binding
 convention.
 
 There are these calling conventions:
 
-.. data:: METH_VARARGS
+.. c:macro:: METH_VARARGS
 
    This is the typical calling convention, where the methods have the type
    :c:type:`PyCFunction`. The function expects two :c:expr:`PyObject*` values.
@@ -286,8 +288,17 @@ There are these calling conventions:
    using :c:func:`PyArg_ParseTuple` or :c:func:`PyArg_UnpackTuple`.
 
 
-.. data:: METH_VARARGS | METH_KEYWORDS
+.. c:macro:: METH_KEYWORDS
 
+   Can only be used in certain combinations with other flags:
+   :ref:`METH_VARARGS | METH_KEYWORDS <METH_VARARGS-METH_KEYWORDS>`,
+   :ref:`METH_FASTCALL | METH_KEYWORDS <METH_FASTCALL-METH_KEYWORDS>` and
+   :ref:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS <METH_METHOD-METH_FASTCALL-METH_KEYWORDS>`.
+
+
+.. _METH_VARARGS-METH_KEYWORDS:
+
+:c:expr:`METH_VARARGS | METH_KEYWORDS`
    Methods with these flags must be of type :c:type:`PyCFunctionWithKeywords`.
    The function expects three parameters: *self*, *args*, *kwargs* where
    *kwargs* is a dictionary of all the keyword arguments or possibly ``NULL``
@@ -295,7 +306,7 @@ There are these calling conventions:
    using :c:func:`PyArg_ParseTupleAndKeywords`.
 
 
-.. data:: METH_FASTCALL
+.. c:macro:: METH_FASTCALL
 
    Fast calling convention supporting only positional arguments.
    The methods have the type :c:type:`_PyCFunctionFast`.
@@ -310,9 +321,10 @@ There are these calling conventions:
       ``METH_FASTCALL`` is now part of the stable ABI.
 
 
-.. data:: METH_FASTCALL | METH_KEYWORDS
+.. _METH_FASTCALL-METH_KEYWORDS:
 
-   Extension of :const:`METH_FASTCALL` supporting also keyword arguments,
+:c:expr:`METH_FASTCALL | METH_KEYWORDS`
+   Extension of :c:macro:`METH_FASTCALL` supporting also keyword arguments,
    with methods of type :c:type:`_PyCFunctionFastWithKeywords`.
    Keyword arguments are passed the same way as in the
    :ref:`vectorcall protocol <vectorcall>`:
@@ -325,10 +337,18 @@ There are these calling conventions:
    .. versionadded:: 3.7
 
 
-.. data:: METH_METHOD | METH_FASTCALL | METH_KEYWORDS
+.. c:macro:: METH_METHOD
 
-   Extension of :const:`METH_FASTCALL | METH_KEYWORDS` supporting the *defining
-   class*, that is, the class that contains the method in question.
+   Can only be used in the combination with other flags:
+   :ref:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS <METH_METHOD-METH_FASTCALL-METH_KEYWORDS>`.
+
+
+.. _METH_METHOD-METH_FASTCALL-METH_KEYWORDS:
+
+:c:expr:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS`
+   Extension of :ref:`METH_FASTCALL | METH_KEYWORDS <METH_FASTCALL-METH_KEYWORDS>`
+   supporting the *defining class*, that is,
+   the class that contains the method in question.
    The defining class might be a superclass of ``Py_TYPE(self)``.
 
    The method needs to be of type :c:type:`PyCMethod`, the same as for
@@ -338,10 +358,10 @@ There are these calling conventions:
    .. versionadded:: 3.9
 
 
-.. data:: METH_NOARGS
+.. c:macro:: METH_NOARGS
 
    Methods without parameters don't need to check whether arguments are given if
-   they are listed with the :const:`METH_NOARGS` flag.  They need to be of type
+   they are listed with the :c:macro:`METH_NOARGS` flag.  They need to be of type
    :c:type:`PyCFunction`.  The first parameter is typically named *self* and will
    hold a reference to the module or object instance.  In all cases the second
    parameter will be ``NULL``.
@@ -350,9 +370,9 @@ There are these calling conventions:
    :c:macro:`Py_UNUSED` can be used to prevent a compiler warning.
 
 
-.. data:: METH_O
+.. c:macro:: METH_O
 
-   Methods with a single object argument can be listed with the :const:`METH_O`
+   Methods with a single object argument can be listed with the :c:macro:`METH_O`
    flag, instead of invoking :c:func:`PyArg_ParseTuple` with a ``"O"`` argument.
    They have the type :c:type:`PyCFunction`, with the *self* parameter, and a
    :c:expr:`PyObject*` parameter representing the single argument.
@@ -364,7 +384,7 @@ defined for modules.  At most one of these flags may be set for any given
 method.
 
 
-.. data:: METH_CLASS
+.. c:macro:: METH_CLASS
 
    .. index:: pair: built-in function; classmethod
 
@@ -374,7 +394,7 @@ method.
    function.
 
 
-.. data:: METH_STATIC
+.. c:macro:: METH_STATIC
 
    .. index:: pair: built-in function; staticmethod
 
@@ -386,13 +406,13 @@ One other constant controls whether a method is loaded in place of another
 definition with the same method name.
 
 
-.. data:: METH_COEXIST
+.. c:macro:: METH_COEXIST
 
    The method will be loaded in place of existing definitions.  Without
    *METH_COEXIST*, the default is to skip repeated definitions.  Since slot
    wrappers are loaded before the method table, the existence of a
    *sq_contains* slot, for example, would generate a wrapped method named
-   :meth:`__contains__` and preclude the loading of a corresponding
+   :meth:`~object.__contains__` and preclude the loading of a corresponding
    PyCFunction with the same name.  With the flag defined, the PyCFunction
    will be loaded in place of the wrapper object and will co-exist with the
    slot.  This is helpful because calls to PyCFunctions are optimized more

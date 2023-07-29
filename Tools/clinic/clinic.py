@@ -1798,7 +1798,7 @@ class BufferSeries:
 
     def clear(self):
         for ta in self._array:
-            ta._text.clear()
+            ta.text.clear()
 
     def dump(self):
         texts = [ta.output() for ta in self._array]
@@ -4121,14 +4121,19 @@ class DSLParser:
 
         self.clinic.__dict__[name] = value
 
-    def directive_destination(self, name, command, *args):
-        if command == 'new':
-            self.clinic.add_destination(name, *args)
-            return
-
-        if command == 'clear':
-            self.clinic.get_destination(name).clear()
-        fail("unknown destination command", repr(command))
+    def directive_destination(
+            self,
+            name: str,
+            command: str,
+            *args
+    ) -> None:
+        match command:
+            case "new":
+                self.clinic.add_destination(name, *args)
+            case "clear":
+                self.clinic.get_destination(name).clear()
+            case _:
+                fail("unknown destination command", repr(command))
 
 
     def directive_output(self, command_or_name, destination=''):
@@ -5185,15 +5190,21 @@ with writing argument parsing code for builtins and providing introspection
 signatures ("docstrings") for CPython builtins.
 
 For more information see https://docs.python.org/3/howto/clinic.html""")
-    cmdline.add_argument("-f", "--force", action='store_true')
-    cmdline.add_argument("-o", "--output", type=str)
-    cmdline.add_argument("-v", "--verbose", action='store_true')
-    cmdline.add_argument("--converters", action='store_true')
+    cmdline.add_argument("-f", "--force", action='store_true',
+                         help="force output regeneration")
+    cmdline.add_argument("-o", "--output", type=str,
+                         help="redirect file output to OUTPUT")
+    cmdline.add_argument("-v", "--verbose", action='store_true',
+                         help="enable verbose mode")
+    cmdline.add_argument("--converters", action='store_true',
+                         help=("print a list of all supported converters "
+                               "and return converters"))
     cmdline.add_argument("--make", action='store_true',
-                         help="Walk --srcdir to run over all relevant files.")
+                         help="walk --srcdir to run over all relevant files")
     cmdline.add_argument("--srcdir", type=str, default=os.curdir,
-                         help="The directory tree to walk in --make mode.")
-    cmdline.add_argument("filename", type=str, nargs="*")
+                         help="the directory tree to walk in --make mode")
+    cmdline.add_argument("filename", metavar="FILE", type=str, nargs="*",
+                         help="the list of files to process")
     ns = cmdline.parse_args(argv)
 
     if ns.converters:

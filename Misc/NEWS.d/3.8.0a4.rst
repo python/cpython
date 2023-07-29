@@ -92,7 +92,7 @@ the field.
 .. nonce: wejLoC
 .. section: Core and Builtins
 
-On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
+On AIX, :data:`sys.platform` doesn't contain the major version anymore.
 Always return ``'aix'``, instead of ``'aix3'`` .. ``'aix7'``.  Since older
 Python versions include the version number, it is recommended to always use
 ``sys.platform.startswith('aix')``. Contributed by M. Felt.
@@ -955,7 +955,7 @@ Add a new :mod:`_testinternalcapi` module to test the internal C API.
 .. section: Tests
 
 Fix ``test_imap4_host_default_value()`` of ``test_imaplib``: catch also
-:data:`errno.ENETUNREACH` error.
+:const:`errno.ENETUNREACH` error.
 
 ..
 

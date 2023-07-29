@@ -4,11 +4,14 @@
 
 from test import support, test_tools
 from test.support import os_helper
+from test.support import SHORT_TIMEOUT, requires_subprocess
+from test.support.os_helper import TESTFN, unlink
 from textwrap import dedent
 from unittest import TestCase
 import collections
 import inspect
 import os.path
+import subprocess
 import sys
 import unittest
 
@@ -16,6 +19,19 @@ test_tools.skip_if_missing('clinic')
 with test_tools.imports_under_tool('clinic'):
     import clinic
     from clinic import DSLParser
+
+
+class _ParserBase(TestCase):
+    maxDiff = None
+
+    def expect_parser_failure(self, parser, _input):
+        with support.captured_stdout() as stdout:
+            with self.assertRaises(SystemExit):
+                parser(_input)
+        return stdout.getvalue()
+
+    def parse_function_should_fail(self, _input):
+        return self.expect_parser_failure(self.parse_function, _input)
 
 
 class FakeConverter:
@@ -88,7 +104,15 @@ class FakeClinic:
 
     _module_and_class = clinic.Clinic._module_and_class
 
-class ClinicWholeFileTest(TestCase):
+
+class ClinicWholeFileTest(_ParserBase):
+    def setUp(self):
+        self.clinic = clinic.Clinic(clinic.CLanguage(None), filename="test.c")
+
+    def expect_failure(self, raw):
+        _input = dedent(raw).strip()
+        return self.expect_parser_failure(self.clinic.parse, _input)
+
     def test_eol(self):
         # regression test:
         # clinic's block parser didn't recognize
@@ -98,15 +122,197 @@ class ClinicWholeFileTest(TestCase):
         # so it would spit out an end line for you.
         # and since you really already had one,
         # the last line of the block got corrupted.
-        c = clinic.Clinic(clinic.CLanguage(None), filename="file")
         raw = "/*[clinic]\nfoo\n[clinic]*/"
-        cooked = c.parse(raw).splitlines()
+        cooked = self.clinic.parse(raw).splitlines()
         end_line = cooked[2].rstrip()
         # this test is redundant, it's just here explicitly to catch
         # the regression test so we don't forget what it looked like
         self.assertNotEqual(end_line, "[clinic]*/[clinic]*/")
         self.assertEqual(end_line, "[clinic]*/")
 
+    def test_mangled_marker_line(self):
+        raw = """
+            /*[clinic input]
+            [clinic start generated code]*/
+            /*[clinic end generated code: foo]*/
+        """
+        msg = (
+            'Error in file "test.c" on line 3:\n'
+            "Mangled Argument Clinic marker line: '/*[clinic end generated code: foo]*/'\n"
+        )
+        out = self.expect_failure(raw)
+        self.assertEqual(out, msg)
+
+    def test_checksum_mismatch(self):
+        raw = """
+            /*[clinic input]
+            [clinic start generated code]*/
+            /*[clinic end generated code: output=0123456789abcdef input=fedcba9876543210]*/
+        """
+        msg = (
+            'Error in file "test.c" on line 3:\n'
+            'Checksum mismatch!\n'
+            'Expected: 0123456789abcdef\n'
+            'Computed: da39a3ee5e6b4b0d\n'
+        )
+        out = self.expect_failure(raw)
+        self.assertIn(msg, out)
+
+    def test_garbage_after_stop_line(self):
+        raw = """
+            /*[clinic input]
+            [clinic start generated code]*/foobarfoobar!
+        """
+        msg = (
+            'Error in file "test.c" on line 2:\n'
+            "Garbage after stop line: 'foobarfoobar!'\n"
+        )
+        out = self.expect_failure(raw)
+        self.assertEqual(out, msg)
+
+    def test_whitespace_before_stop_line(self):
+        raw = """
+            /*[clinic input]
+             [clinic start generated code]*/
+        """
+        msg = (
+            'Error in file "test.c" on line 2:\n'
+            "Whitespace is not allowed before the stop line: ' [clinic start generated code]*/'\n"
+        )
+        out = self.expect_failure(raw)
+        self.assertEqual(out, msg)
+
+    def test_parse_with_body_prefix(self):
+        clang = clinic.CLanguage(None)
+        clang.body_prefix = "//"
+        clang.start_line = "//[{dsl_name} start]"
+        clang.stop_line = "//[{dsl_name} stop]"
+        cl = clinic.Clinic(clang, filename="test.c")
+        raw = dedent("""
+            //[clinic start]
+            //module test
+            //[clinic stop]
+        """).strip()
+        out = cl.parse(raw)
+        expected = dedent("""
+            //[clinic start]
+            //module test
+            //
+            //[clinic stop]
+            /*[clinic end generated code: output=da39a3ee5e6b4b0d input=65fab8adff58cf08]*/
+        """).lstrip()  # Note, lstrip() because of the newline
+        self.assertEqual(out, expected)
+
+    def test_cpp_monitor_fail_nested_block_comment(self):
+        raw = """
+            /* start
+            /* nested
+            */
+            */
+        """
+        msg = (
+            'Error in file "test.c" on line 2:\n'
+            'Nested block comment!\n'
+        )
+        out = self.expect_failure(raw)
+        self.assertEqual(out, msg)
+
+    def test_cpp_monitor_fail_invalid_format_noarg(self):
+        raw = """
+            #if
+            a()
+            #endif
+        """
+        msg = (
+            'Error in file "test.c" on line 1:\n'
+            'Invalid format for #if line: no argument!\n'
+        )
+        out = self.expect_failure(raw)
+        self.assertEqual(out, msg)
+
+    def test_cpp_monitor_fail_invalid_format_toomanyargs(self):
+        raw = """
+            #ifdef A B
+            a()
+            #endif
+        """
+        msg = (
+            'Error in file "test.c" on line 1:\n'
+            'Invalid format for #ifdef line: should be exactly one argument!\n'
+        )
+        out = self.expect_failure(raw)
+        self.assertEqual(out, msg)
+
+    def test_cpp_monitor_fail_no_matching_if(self):
+        raw = '#else'
+        msg = (
+            'Error in file "test.c" on line 1:\n'
+            '#else without matching #if / #ifdef / #ifndef!\n'
+        )
+        out = self.expect_failure(raw)
+        self.assertEqual(out, msg)
+
+    def test_directive_output_unknown_preset(self):
+        out = self.expect_failure("""
+            /*[clinic input]
+            output preset nosuchpreset
+            [clinic start generated code]*/
+        """)
+        msg = "Unknown preset 'nosuchpreset'"
+        self.assertIn(msg, out)
+
+    def test_directive_output_cant_pop(self):
+        out = self.expect_failure("""
+            /*[clinic input]
+            output pop
+            [clinic start generated code]*/
+        """)
+        msg = "Can't 'output pop', stack is empty"
+        self.assertIn(msg, out)
+
+    def test_directive_output_print(self):
+        raw = dedent("""
+            /*[clinic input]
+            output print 'I told you once.'
+            [clinic start generated code]*/
+        """)
+        out = self.clinic.parse(raw)
+        # The generated output will differ for every run, but we can check that
+        # it starts with the clinic block, we check that it contains all the
+        # expected fields, and we check that it contains the checksum line.
+        self.assertTrue(out.startswith(dedent("""
+            /*[clinic input]
+            output print 'I told you once.'
+            [clinic start generated code]*/
+        """)))
+        fields = {
+            "cpp_endif",
+            "cpp_if",
+            "docstring_definition",
+            "docstring_prototype",
+            "impl_definition",
+            "impl_prototype",
+            "methoddef_define",
+            "methoddef_ifndef",
+            "parser_definition",
+            "parser_prototype",
+        }
+        for field in fields:
+            with self.subTest(field=field):
+                self.assertIn(field, out)
+        last_line = out.rstrip().split("\n")[-1]
+        self.assertTrue(
+            last_line.startswith("/*[clinic end generated code: output=")
+        )
+
+    def test_unknown_destination_command(self):
+        out = self.expect_failure("""
+            /*[clinic input]
+            destination buffer nosuchcommand
+            [clinic start generated code]*/
+        """)
+        msg = "unknown destination command 'nosuchcommand'"
+        self.assertIn(msg, out)
 
 
 class ClinicGroupPermuterTest(TestCase):
@@ -285,7 +491,7 @@ xyz
 """)
 
 
-class ClinicParserTest(TestCase):
+class ClinicParserTest(_ParserBase):
     def checkDocstring(self, fn, expected):
         self.assertTrue(hasattr(fn, "docstring"))
         self.assertEqual(fn.docstring.strip(),
@@ -894,6 +1100,25 @@ class ClinicParserTest(TestCase):
                 Nested docstring here, goeth.
         """)
 
+    def test_indent_stack_no_tabs(self):
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.bar
+               *vararg1: object
+            \t*vararg2: object
+        """)
+        msg = "Tab characters are illegal in the Clinic DSL."
+        self.assertIn(msg, out)
+
+    def test_indent_stack_illegal_outdent(self):
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.bar
+              a: object
+             b: object
+        """)
+        self.assertIn("Illegal outdent", out)
+
     def test_directive(self):
         c = FakeClinic()
         parser = DSLParser(c)
@@ -997,6 +1222,43 @@ class ClinicParserTest(TestCase):
         out = self.parse_function_should_fail(block)
         self.assertEqual(out, expected_error_msg)
 
+    def test_slot_methods_cannot_access_defining_class(self):
+        block = """
+            module foo
+            class Foo "" ""
+            Foo.__init__
+                cls: defining_class
+                a: object
+        """
+        msg = "Slot methods cannot access their defining class."
+        with self.assertRaisesRegex(ValueError, msg):
+            self.parse_function(block)
+
+    def test_new_must_be_a_class_method(self):
+        expected_error_msg = (
+            "Error on line 0:\n"
+            "__new__ must be a class method!\n"
+        )
+        out = self.parse_function_should_fail("""
+            module foo
+            class Foo "" ""
+            Foo.__new__
+        """)
+        self.assertEqual(out, expected_error_msg)
+
+    def test_init_must_be_a_normal_method(self):
+        expected_error_msg = (
+            "Error on line 0:\n"
+            "__init__ must be a normal method, not a class or static method!\n"
+        )
+        out = self.parse_function_should_fail("""
+            module foo
+            class Foo "" ""
+            @classmethod
+            Foo.__init__
+        """)
+        self.assertEqual(out, expected_error_msg)
+
     def parse(self, text):
         c = FakeClinic()
         parser = DSLParser(c)
@@ -1032,32 +1294,264 @@ class ClinicParserTest(TestCase):
 
 class ClinicExternalTest(TestCase):
     maxDiff = None
+    clinic_py = os.path.join(test_tools.toolsdir, "clinic", "clinic.py")
+
+    def _do_test(self, *args, expect_success=True):
+        with subprocess.Popen(
+            [sys.executable, "-Xutf8", self.clinic_py, *args],
+            encoding="utf-8",
+            bufsize=0,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        ) as proc:
+            proc.wait()
+            if expect_success and proc.returncode:
+                self.fail("".join([*proc.stdout, *proc.stderr]))
+            stdout = proc.stdout.read()
+            stderr = proc.stderr.read()
+            # Clinic never writes to stderr.
+            self.assertEqual(stderr, "")
+            return stdout
+
+    def expect_success(self, *args):
+        return self._do_test(*args)
+
+    def expect_failure(self, *args):
+        return self._do_test(*args, expect_success=False)
 
     def test_external(self):
         CLINIC_TEST = 'clinic.test.c'
-        # bpo-42398: Test that the destination file is left unchanged if the
-        # content does not change. Moreover, check also that the file
-        # modification time does not change in this case.
         source = support.findfile(CLINIC_TEST)
         with open(source, 'r', encoding='utf-8') as f:
             orig_contents = f.read()
 
-        with os_helper.temp_dir() as tmp_dir:
-            testfile = os.path.join(tmp_dir, CLINIC_TEST)
-            with open(testfile, 'w', encoding='utf-8') as f:
-                f.write(orig_contents)
-            old_mtime_ns = os.stat(testfile).st_mtime_ns
+        # Run clinic CLI and verify that it does not complain.
+        self.addCleanup(unlink, TESTFN)
+        out = self.expect_success("-f", "-o", TESTFN, source)
+        self.assertEqual(out, "")
 
-            clinic.parse_file(testfile)
-
-            with open(testfile, 'r', encoding='utf-8') as f:
-                new_contents = f.read()
-            new_mtime_ns = os.stat(testfile).st_mtime_ns
+        with open(TESTFN, 'r', encoding='utf-8') as f:
+            new_contents = f.read()
 
         self.assertEqual(new_contents, orig_contents)
+
+    def test_no_change(self):
+        # bpo-42398: Test that the destination file is left unchanged if the
+        # content does not change. Moreover, check also that the file
+        # modification time does not change in this case.
+        code = dedent("""
+            /*[clinic input]
+            [clinic start generated code]*/
+            /*[clinic end generated code: output=da39a3ee5e6b4b0d input=da39a3ee5e6b4b0d]*/
+        """)
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write(code)
+            pre_mtime = os.stat(fn).st_mtime_ns
+            self.expect_success(fn)
+            post_mtime = os.stat(fn).st_mtime_ns
         # Don't change the file modification time
         # if the content does not change
-        self.assertEqual(new_mtime_ns, old_mtime_ns)
+        self.assertEqual(pre_mtime, post_mtime)
+
+    def test_cli_force(self):
+        invalid_input = dedent("""
+            /*[clinic input]
+            output preset block
+            module test
+            test.fn
+                a: int
+            [clinic start generated code]*/
+
+            const char *hand_edited = "output block is overwritten";
+            /*[clinic end generated code: output=bogus input=bogus]*/
+        """)
+        fail_msg = dedent("""
+            Checksum mismatch!
+            Expected: bogus
+            Computed: 2ed19
+            Suggested fix: remove all generated code including the end marker,
+            or use the '-f' option.
+        """)
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write(invalid_input)
+            # First, run the CLI without -f and expect failure.
+            # Note, we cannot check the entire fail msg, because the path to
+            # the tmp file will change for every run.
+            out = self.expect_failure(fn)
+            self.assertTrue(out.endswith(fail_msg))
+            # Then, force regeneration; success expected.
+            out = self.expect_success("-f", fn)
+            self.assertEqual(out, "")
+            # Verify by checking the checksum.
+            checksum = (
+                "/*[clinic end generated code: "
+                "output=6c2289b73f32bc19 input=9543a8d2da235301]*/\n"
+            )
+            with open(fn, 'r', encoding='utf-8') as f:
+                generated = f.read()
+            self.assertTrue(generated.endswith(checksum))
+
+    def test_cli_make(self):
+        c_code = dedent("""
+            /*[clinic input]
+            [clinic start generated code]*/
+        """)
+        py_code = "pass"
+        c_files = "file1.c", "file2.c"
+        py_files = "file1.py", "file2.py"
+
+        def create_files(files, srcdir, code):
+            for fn in files:
+                path = os.path.join(srcdir, fn)
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write(code)
+
+        with os_helper.temp_dir() as tmp_dir:
+            # add some folders, some C files and a Python file
+            create_files(c_files, tmp_dir, c_code)
+            create_files(py_files, tmp_dir, py_code)
+
+            # create C files in externals/ dir
+            ext_path = os.path.join(tmp_dir, "externals")
+            with os_helper.temp_dir(path=ext_path) as externals:
+                create_files(c_files, externals, c_code)
+
+                # run clinic in verbose mode with --make on tmpdir
+                out = self.expect_success("-v", "--make", "--srcdir", tmp_dir)
+
+            # expect verbose mode to only mention the C files in tmp_dir
+            for filename in c_files:
+                with self.subTest(filename=filename):
+                    path = os.path.join(tmp_dir, filename)
+                    self.assertIn(path, out)
+            for filename in py_files:
+                with self.subTest(filename=filename):
+                    path = os.path.join(tmp_dir, filename)
+                    self.assertNotIn(path, out)
+            # don't expect C files from the externals dir
+            for filename in c_files:
+                with self.subTest(filename=filename):
+                    path = os.path.join(ext_path, filename)
+                    self.assertNotIn(path, out)
+
+    def test_cli_verbose(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write("")
+            out = self.expect_success("-v", fn)
+            self.assertEqual(out.strip(), fn)
+
+    def test_cli_help(self):
+        out = self.expect_success("-h")
+        self.assertIn("usage: clinic.py", out)
+
+    def test_cli_converters(self):
+        prelude = dedent("""
+            Legacy converters:
+                B C D L O S U Y Z Z#
+                b c d f h i l p s s# s* u u# w* y y# y* z z# z*
+
+            Converters:
+        """)
+        expected_converters = (
+            "bool",
+            "byte",
+            "char",
+            "defining_class",
+            "double",
+            "fildes",
+            "float",
+            "int",
+            "long",
+            "long_long",
+            "object",
+            "Py_buffer",
+            "Py_complex",
+            "Py_ssize_t",
+            "Py_UNICODE",
+            "PyByteArrayObject",
+            "PyBytesObject",
+            "self",
+            "short",
+            "size_t",
+            "slice_index",
+            "str",
+            "unicode",
+            "unsigned_char",
+            "unsigned_int",
+            "unsigned_long",
+            "unsigned_long_long",
+            "unsigned_short",
+        )
+        finale = dedent("""
+            Return converters:
+                bool()
+                double()
+                float()
+                init()
+                int()
+                long()
+                NoneType()
+                Py_ssize_t()
+                size_t()
+                unsigned_int()
+                unsigned_long()
+
+            All converters also accept (c_default=None, py_default=None, annotation=None).
+            All return converters also accept (py_default=None).
+        """)
+        out = self.expect_success("--converters")
+        # We cannot simply compare the output, because the repr of the *accept*
+        # param may change (it's a set, thus unordered). So, let's compare the
+        # start and end of the expected output, and then assert that the
+        # converters appear lined up in alphabetical order.
+        self.assertTrue(out.startswith(prelude), out)
+        self.assertTrue(out.endswith(finale), out)
+
+        out = out.removeprefix(prelude)
+        out = out.removesuffix(finale)
+        lines = out.split("\n")
+        for converter, line in zip(expected_converters, lines):
+            line = line.lstrip()
+            with self.subTest(converter=converter):
+                self.assertTrue(
+                    line.startswith(converter),
+                    f"expected converter {converter!r}, got {line!r}"
+                )
+
+    def test_cli_fail_converters_and_filename(self):
+        out = self.expect_failure("--converters", "test.c")
+        msg = (
+            "Usage error: can't specify --converters "
+            "and a filename at the same time"
+        )
+        self.assertIn(msg, out)
+
+    def test_cli_fail_no_filename(self):
+        out = self.expect_failure()
+        self.assertIn("usage: clinic.py", out)
+
+    def test_cli_fail_output_and_multiple_files(self):
+        out = self.expect_failure("-o", "out.c", "input.c", "moreinput.c")
+        msg = "Usage error: can't use -o with multiple filenames"
+        self.assertIn(msg, out)
+
+    def test_cli_fail_filename_or_output_and_make(self):
+        for opts in ("-o", "out.c"), ("filename.c",):
+            with self.subTest(opts=opts):
+                out = self.expect_failure("--make", *opts)
+                msg = "Usage error: can't use -o or filenames with --make"
+                self.assertIn(msg, out)
+
+    def test_cli_fail_make_without_srcdir(self):
+        out = self.expect_failure("--make", "--srcdir", "")
+        msg = "Usage error: --srcdir must not be empty with --make"
+        self.assertIn(msg, out)
 
 
 try:
