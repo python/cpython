@@ -476,6 +476,10 @@ def indent(text, prefix, predicate=None):
     consist solely of whitespace characters.
     """
     if predicate is None:
+        # str.splitlines(True) doesn't produce empty string.
+        #  ''.splitlines(True) => []
+        #  'foo\n'.splitlines(True) => ['foo\n']
+        # So we can use just `not s.isspace()` here.
         predicate = lambda s: not s.isspace()
 
     prefixed_lines = []
