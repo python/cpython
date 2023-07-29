@@ -924,7 +924,7 @@ iterations of the loop.
    Unpacks ``STACK[-1]`` into *count* individual values, which are put onto the stack
    right-to-left::
 
-      STACK.extend(STACK.pop()[:count:-1])
+      STACK.extend(STACK.pop()[:-count-1:-1])
 
 
 .. opcode:: UNPACK_EX (counts)
