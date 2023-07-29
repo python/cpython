@@ -997,8 +997,7 @@ class RawConfigParser(MutableMapping):
                     sectname = mo.group('header')
                     if sectname in self._sections:
                         if self._strict and sectname in elements_added:
-                            raise DuplicateSectionError(sectname, fpname,
-                                                        lineno)
+                            self._handle_duplicate_section(sectname, fpname, lineno)
                         cursect = self._sections[sectname]
                         elements_added.add(sectname)
                     elif sectname == self.default_section:
@@ -1023,8 +1022,7 @@ class RawConfigParser(MutableMapping):
                         optname = self.optionxform(optname.rstrip())
                         if (self._strict and
                             (sectname, optname) in elements_added):
-                            raise DuplicateOptionError(sectname, optname,
-                                                       fpname, lineno)
+                            self._handle_duplicate_option(sectname, optname, fpname, lineno)
                         elements_added.add((sectname, optname))
                         # This check is fine because the OPTCRE cannot
                         # match if it would set optval to None
@@ -1044,6 +1042,14 @@ class RawConfigParser(MutableMapping):
         # if any parsing errors occurred, raise an exception
         if e:
             raise e
+
+    def _handle_duplicate_option(self, sectname, optname, fpname, lineno):
+        """Handle duplicate option definition. Override for custom behavior."""
+        raise DuplicateOptionError(sectname, optname, fpname, lineno)
+
+    def _handle_duplicate_section(self, sectname, fpname, lineno):
+        """Handle duplicate section definition. Override for custom behavior."""
+        raise DuplicateSectionError(sectname, fpname, lineno)
 
     def _join_multiline_values(self):
         defaults = self.default_section, self._defaults
