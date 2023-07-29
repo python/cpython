@@ -125,11 +125,6 @@ extern PyThreadState * _PyThreadState_New(PyInterpreterState *interp);
 extern void _PyThreadState_Bind(PyThreadState *tstate);
 extern void _PyThreadState_DeleteExcept(PyThreadState *tstate);
 
-extern void _PyThreadState_InitDetached(PyThreadState *, PyInterpreterState *);
-extern void _PyThreadState_ClearDetached(PyThreadState *);
-extern void _PyThreadState_BindDetached(PyThreadState *);
-extern void _PyThreadState_UnbindDetached(PyThreadState *);
-
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyObject*) _PyThreadState_GetDict(PyThreadState *tstate);
 

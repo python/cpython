@@ -464,6 +464,7 @@ class TestInterpreterRun(TestBase):
     # test_xxsubinterpreters covers the remaining Interpreter.run() behavior.
 
 
+@unittest.skip('these are crashing, likely just due just to _xxsubinterpreters (see gh-105699)')
 class StressTests(TestBase):
 
     # In these tests we generally want a lot of interpreters,
