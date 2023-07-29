@@ -1169,7 +1169,7 @@ BaseDictProxy = MakeProxyType('DictProxy', (
     ))
 BaseDictProxy._method_to_typeid_ = {
     '__iter__': 'Iterator',
-}
+    }
 class DictProxy(BaseDictProxy):
     __class_getitem__ = classmethod(types.GenericAlias)
 
