@@ -1165,13 +1165,12 @@ class ListProxy(BaseListProxy):
 BaseDictProxy = MakeProxyType('DictProxy', (
     '__contains__', '__delitem__', '__getitem__', '__iter__', '__len__',
     '__setitem__', 'clear', 'copy', 'get', 'items',
-    'keys', 'pop', 'popitem', 'setdefault', 'update', 'values',
+    'keys', 'pop', 'popitem', 'setdefault', 'update', 'values'
     ))
+BaseDictProxy._method_to_typeid_ = {
+    '__iter__': 'Iterator',
+}
 class DictProxy(BaseDictProxy):
-    _method_to_typeid_ = {
-        '__iter__': 'Iterator',
-    }
-
     __class_getitem__ = classmethod(types.GenericAlias)
 
 
