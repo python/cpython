@@ -389,7 +389,7 @@ Lists
 Python knows a number of *compound* data types, used to group together other
 values.  The most versatile is the *list*, which can be written as a list of
 comma-separated values (items) between square brackets.  Lists might contain
-items of different types, but usually the items all have the same type. ::
+items of different types, but usually the items all have the same type::
 
    >>> squares = [1, 4, 9, 16, 25]
    >>> squares
@@ -488,7 +488,7 @@ Multiple Assignment
 
 A *multiple assignment* of variables us allows to set values of more than one
 variable on a single line.  Notice that if the value assignment is a
-expression, it is first evaluated and then assigned.::
+expression, it is first evaluated and then assigned::
 
    >>> a, b = 1, 5  # multiple assignment of two variables
    >>> a
@@ -505,10 +505,10 @@ Repeating our code
 ------------------
 
 The :keyword:`while` loop is example of a repeating cycle.  It performs
-a block of code over as long as the condition (in example: ``a < 10``) is
+a block of code over as long as the condition is
 fulfilled.  The test used in the example is a simple comparison you might
-know from arithmetics.  Fulfilled condition have the value True.  Unfulfilled
-condition have the value False.::
+know from arithmetics.  Fulfilled condition have the value ``True``.
+Unfulfilled condition have the value ``False``::
 
    >>> 1 < 3  # 1 is less than 3
    True
@@ -526,7 +526,12 @@ In Python, the following comparison operators are used:
   * ``>=``: Greater than or equal to
   * ``!=``: Not equal to
 
-::
+Let's create a simple loop.  We need the keyword ``while`` and a condition;
+in this case, ``count < 5``.  To ensure that the loop finishes, we must make
+sure that the condition is `not fulfilled` at a certain step.  Otherwise, the
+code would repeat indefinitely.  To achieve that, we can increase the value
+of count.  As soon as the variable count reaches the value 5, the condition
+will be ``False``::
 
    >>> count = 0;  # define variable to which we will be adding 1 in a loop
    >>> while count < 5: count = count + 1  # hit enter one more time to start the loop
@@ -534,13 +539,13 @@ In Python, the following comparison operators are used:
    >>> count  # when count reached value of 5, while loop finished
    5
 
-Note that block inside the while loop, or *body* of the loop is *indented*.
+Note that block inside the `while` loop, or *body* of the loop is *indented*.
 Indentation is Python's way of grouping statements together.  When you use
 the Python shell, you need to type a tab or space(s) for each indented line.
 Each line within a block must be indented by the same amount.
 When we want to exit the indented block of code in the Python shell, we must
-follow it by a blank line to indicate its completion.  This way, parser knows
-we have finished typing the last line).::
+follow it by a blank line to indicate its completion.  This way, the parser
+knows we have finished typing the last line)::
 
    >>> number = 1
    >>> while number < 5:
@@ -559,7 +564,7 @@ We already know :func:`print` function, that writes the value of the
 argument(s) it receives on screen.  The arguments are enclosed within
 parentheses ``()``. In simplest form, like ``print(a, b)`` the arguments
 are positional,  meaning the function processes them in the same order
-as they are written.::
+as they are written::
 
    >>> group = "Knights"
    >>> say_what = '"Ni!"'
@@ -582,7 +587,7 @@ Fibonacci series
 ----------------
 
 Great!  Now that we have the knowledge, let's write code to print all numbers
-from the Fibonacci series that are lower than 150.
+from the Fibonacci series that are lower than 150::
 
    >>> a, b = 0, 1
    >>> while a < 150:
