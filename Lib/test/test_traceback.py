@@ -427,6 +427,7 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+1}, in f\n'
             '    if True: raise ValueError("basic caret tests")\n'
             '             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
@@ -445,6 +446,7 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+1}, in f_with_unicode\n'
             '    if True: raise ValueError("Ĥellö Wörld")\n'
             '             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
@@ -462,6 +464,7 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+1}, in f_with_type\n'
             '    def foo(a: THIS_DOES_NOT_EXIST ) -> int:\n'
             '               ^^^^^^^^^^^^^^^^^^^\n'
@@ -482,9 +485,14 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+1}, in f_with_multiline\n'
             '    if True: raise ValueError(\n'
-            '             ^^^^^^^^^^^^^^^^^'
+            '             ^^^^^^^^^^^^^^^^^\n'
+            '        "error over multiple lines"\n'
+            '        ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+            '    )\n'
+            '    ^'
         )
         result_lines = self.get_exception(f_with_multiline)
         self.assertEqual(result_lines, expected_f.splitlines())
@@ -513,13 +521,14 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+2}, in f_with_multiline\n'
             '    return compile(code, "?", "exec")\n'
-            '           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+            '           ~~~~~~~^^^^^^^^^^^^^^^^^^^\n'
             '  File "?", line 7\n'
             '    foo(a, z\n'
             '           ^'
-            )
+        )
 
         result_lines = self.get_exception(f_with_multiline)
         self.assertEqual(result_lines, expected_f.splitlines())
@@ -538,9 +547,12 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+2}, in f_with_multiline\n'
             '    2 + 1 /\n'
-            '        ^^^'
+            '        ~~^\n'
+            '    0\n'
+            '    ~'
         )
         result_lines = self.get_exception(f_with_multiline)
         self.assertEqual(result_lines, expected_f.splitlines())
@@ -555,6 +567,7 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+2}, in f_with_binary_operator\n'
             '    return 10 + divisor / 0 + 30\n'
             '                ~~~~~~~~^~~\n'
@@ -572,6 +585,7 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+2}, in f_with_binary_operator\n'
             '    return 10 + áóí / 0 + 30\n'
             '                ~~~~^~~\n'
@@ -589,6 +603,7 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+2}, in f_with_binary_operator\n'
             '    return 10 + divisor // 0 + 30\n'
             '                ~~~~~~~~^^~~\n'
@@ -624,6 +639,7 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+2}, in f_with_subscript\n'
             "    return some_dict['x']['y']['z']\n"
             '           ~~~~~~~~~~~~~~~~~~~^^^^^\n'
@@ -641,6 +657,7 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+2}, in f_with_subscript\n'
             "    return some_dict['ó']['á']['í']['beta']\n"
             '           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^\n'
@@ -682,6 +699,7 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{TESTFN}", line {lineno_f}, in <module>\n'
             "    1 $ 0 / 1 / 2\n"
             '    ^^^^^\n'
@@ -704,6 +722,7 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{TESTFN}", line {lineno_f}, in <module>\n'
             f'    {source}\n'
             f'    {" "*len("if True: ") + "^"*256}\n'
@@ -721,6 +740,7 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+2}, in f_with_subscript\n'
             "    some_dict['x']['y']['z']\n"
             '    ~~~~~~~~~~~~~~~~~~~^^^^^\n'
@@ -740,6 +760,7 @@ class TracebackErrorLocationCaretTestBase:
              f'  + Exception Group Traceback (most recent call last):\n'
              f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
              f'  |     callable()\n'
+             f'  |     ~~~~~~~~^^\n'
              f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 1}, in exc\n'
              f'  |     if True: raise ExceptionGroup("eg", [ValueError(1), TypeError(2)])\n'
              f'  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
@@ -805,6 +826,7 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_applydescs + 1}, in applydecs\n'
             '    @dec_error\n'
             '     ^^^^^^^^^\n'
@@ -823,6 +845,7 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_applydescs_class + 1}, in applydecs_class\n'
             '    @dec_error\n'
             '     ^^^^^^^^^\n'
@@ -841,6 +864,7 @@ class TracebackErrorLocationCaretTestBase:
             "Traceback (most recent call last):",
             f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
             "    callable()",
+            "    ~~~~~~~~^^",
             f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 2}, in f",
             "    .method",
             "     ^^^^^^",
@@ -857,6 +881,7 @@ class TracebackErrorLocationCaretTestBase:
             "Traceback (most recent call last):",
             f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
             "    callable()",
+            "    ~~~~~~~~^^",
             f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 2}, in f",
             "    method",
         ]
@@ -872,6 +897,7 @@ class TracebackErrorLocationCaretTestBase:
             "Traceback (most recent call last):",
             f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
             "    callable()",
+            "    ~~~~~~~~^^",
             f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 2}, in f",
             "    . method",
             "      ^^^^^^",
@@ -887,6 +913,7 @@ class TracebackErrorLocationCaretTestBase:
             "Traceback (most recent call last):",
             f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
             "    callable()",
+            "    ~~~~~~~~^^",
             f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
             "    ｗｉｄｔｈ",
         ]
@@ -903,6 +930,7 @@ class TracebackErrorLocationCaretTestBase:
             "Traceback (most recent call last):",
             f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
             "    callable()",
+            "    ~~~~~~~~^^",
             f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 2}, in f",
             "    raise ValueError(ｗｉｄｔｈ)",
         ]
@@ -921,9 +949,12 @@ class TracebackErrorLocationCaretTestBase:
             "Traceback (most recent call last):",
             f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
             "    callable()",
+            "    ~~~~~~~~^^",
             f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 4}, in f",
             "    print(1, ｗｗｗ(",
-            "             ^^^^",
+            "             ~~~^",
+            "            ｔｈ))",
+            "            ^^^"
         ]
         self.assertEqual(actual, expected)
 
@@ -997,6 +1028,9 @@ class TracebackFormatTests(unittest.TestCase):
             raise Error("unable to create test traceback string")
 
         # Make sure that Python and the traceback module format the same thing
+        print(traceback_fmt)
+        print(python_fmt)
+        breakpoint()
         self.assertEqual(traceback_fmt, python_fmt)
         # Now verify the _tb func output
         self.assertEqual(tbstderr.getvalue(), tbfile.getvalue())
@@ -1072,12 +1106,16 @@ class TracebackFormatTests(unittest.TestCase):
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {lineno_f+5}, in _check_recursive_traceback_display\n'
             '    f()\n'
+            '    ~^^\n'
             f'  File "{__file__}", line {lineno_f+1}, in f\n'
             '    f()\n'
+            '    ~^^\n'
             f'  File "{__file__}", line {lineno_f+1}, in f\n'
             '    f()\n'
+            '    ~^^\n'
             f'  File "{__file__}", line {lineno_f+1}, in f\n'
             '    f()\n'
+            '    ~^^\n'
             # XXX: The following line changes depending on whether the tests
             # are run through the interactive interpreter or with -m
             # It also varies depending on the platform (stack size)
@@ -1118,13 +1156,13 @@ class TracebackFormatTests(unittest.TestCase):
         result_g = (
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
             '    return g(count-1)\n'
-            '           ^^^^^^^^^^\n'
+            '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
             '    return g(count-1)\n'
-            '           ^^^^^^^^^^\n'
+            '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
             '    return g(count-1)\n'
-            '           ^^^^^^^^^^\n'
+            '           ~^^^^^^^^^\n'
             '  [Previous line repeated 7 more times]\n'
             f'  File "{__file__}", line {lineno_g+3}, in g\n'
             '    raise ValueError\n'
@@ -1134,6 +1172,7 @@ class TracebackFormatTests(unittest.TestCase):
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {lineno_g+7}, in _check_recursive_traceback_display\n'
             '    g()\n'
+            '    ~^^\n'
         )
         expected = (tb_line + result_g).splitlines()
         actual = stderr_g.getvalue().splitlines()
@@ -1158,18 +1197,20 @@ class TracebackFormatTests(unittest.TestCase):
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {lineno_h+7}, in _check_recursive_traceback_display\n'
             '    h()\n'
+            '    ~^^\n'
             f'  File "{__file__}", line {lineno_h+2}, in h\n'
             '    return h(count-1)\n'
-            '           ^^^^^^^^^^\n'
+            '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_h+2}, in h\n'
             '    return h(count-1)\n'
-            '           ^^^^^^^^^^\n'
+            '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_h+2}, in h\n'
             '    return h(count-1)\n'
-            '           ^^^^^^^^^^\n'
+            '           ~^^^^^^^^^\n'
             '  [Previous line repeated 7 more times]\n'
             f'  File "{__file__}", line {lineno_h+3}, in h\n'
             '    g()\n'
+            '    ~^^\n'
         )
         expected = (result_h + result_g).splitlines()
         actual = stderr_h.getvalue().splitlines()
@@ -1186,21 +1227,22 @@ class TracebackFormatTests(unittest.TestCase):
         result_g = (
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
             '    return g(count-1)\n'
-            '           ^^^^^^^^^^\n'
+            '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
             '    return g(count-1)\n'
-            '           ^^^^^^^^^^\n'
+            '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
             '    return g(count-1)\n'
-            '           ^^^^^^^^^^\n'
+            '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+3}, in g\n'
             '    raise ValueError\n'
             'ValueError\n'
         )
         tb_line = (
             'Traceback (most recent call last):\n'
-            f'  File "{__file__}", line {lineno_g+77}, in _check_recursive_traceback_display\n'
+            f'  File "{__file__}", line {lineno_g+80}, in _check_recursive_traceback_display\n'
             '    g(traceback._RECURSIVE_CUTOFF)\n'
+            '    ~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
         )
         expected = (tb_line + result_g).splitlines()
         actual = stderr_g.getvalue().splitlines()
@@ -1217,13 +1259,13 @@ class TracebackFormatTests(unittest.TestCase):
         result_g = (
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
             '    return g(count-1)\n'
-            '           ^^^^^^^^^^\n'
+            '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
             '    return g(count-1)\n'
-            '           ^^^^^^^^^^\n'
+            '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
             '    return g(count-1)\n'
-            '           ^^^^^^^^^^\n'
+            '           ~^^^^^^^^^\n'
             '  [Previous line repeated 1 more time]\n'
             f'  File "{__file__}", line {lineno_g+3}, in g\n'
             '    raise ValueError\n'
@@ -1231,8 +1273,9 @@ class TracebackFormatTests(unittest.TestCase):
         )
         tb_line = (
             'Traceback (most recent call last):\n'
-            f'  File "{__file__}", line {lineno_g+108}, in _check_recursive_traceback_display\n'
+            f'  File "{__file__}", line {lineno_g+112}, in _check_recursive_traceback_display\n'
             '    g(traceback._RECURSIVE_CUTOFF + 1)\n'
+            '    ~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
         )
         expected = (tb_line + result_g).splitlines()
         actual = stderr_g.getvalue().splitlines()
@@ -1698,6 +1741,7 @@ class BaseExceptionReportingTests:
              f'  + Exception Group Traceback (most recent call last):\n'
              f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
              f'  |     exception_or_callable()\n'
+             f'  |     ~~~~~~~~~~~~~~~~~~~~~^^\n'
              f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 1}, in exc\n'
              f'  |     raise ExceptionGroup("eg", [ValueError(1), TypeError(2)])\n'
              f'  | ExceptionGroup: eg (2 sub-exceptions)\n'
@@ -1733,6 +1777,7 @@ class BaseExceptionReportingTests:
                     f'  + Exception Group Traceback (most recent call last):\n'
                     f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
                     f'  |     exception_or_callable()\n'
+                    f'  |     ~~~~~~~~~~~~~~~~~~~~~^^\n'
                     f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 5}, in exc\n'
                     f'  |     raise EG("eg2", [ValueError(3), TypeError(4)]) from e\n'
                     f'  | ExceptionGroup: eg2 (2 sub-exceptions)\n'
@@ -1784,6 +1829,7 @@ class BaseExceptionReportingTests:
              f'Traceback (most recent call last):\n'
              f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
              f'    exception_or_callable()\n'
+             f'    ~~~~~~~~~~~~~~~~~~~~~^^\n'
              f'  File "{__file__}", line {exc.__code__.co_firstlineno + 8}, in exc\n'
              f'    raise ImportError(5)\n'
              f'ImportError: 5\n')
@@ -1830,6 +1876,7 @@ class BaseExceptionReportingTests:
                     f'  + Exception Group Traceback (most recent call last):\n'
                     f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
                     f'  |     exception_or_callable()\n'
+                    f'  |     ~~~~~~~~~~~~~~~~~~~~~^^\n'
                     f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 11}, in exc\n'
                     f'  |     raise EG("top", [VE(5)])\n'
                     f'  | ExceptionGroup: top (1 sub-exception)\n'
@@ -1989,6 +2036,7 @@ class BaseExceptionReportingTests:
         expected = (f'  + Exception Group Traceback (most recent call last):\n'
                     f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
                     f'  |     exception_or_callable()\n'
+                    f'  |     ~~~~~~~~~~~~~~~~~~~~~^^\n'
                     f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 9}, in exc\n'
                     f'  |     raise ExceptionGroup("nested", excs)\n'
                     f'  | ExceptionGroup: nested (2 sub-exceptions)\n'
@@ -2040,6 +2088,7 @@ class BaseExceptionReportingTests:
         expected = (f'  + Exception Group Traceback (most recent call last):\n'
                     f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
                     f'  |     exception_or_callable()\n'
+                    f'  |     ~~~~~~~~~~~~~~~~~~~~~^^\n'
                     f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 10}, in exc\n'
                     f'  |     raise ExceptionGroup("nested", excs)\n'
                     f'  | ExceptionGroup: nested (2 sub-exceptions)\n'
@@ -2864,6 +2913,7 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
                     f'      | Traceback (most recent call last):',
                     f'      |   File "{__file__}", line {lno_g+9}, in _get_exception_group',
                     f'      |     f()',
+                    f'      |     ~^^',
                     f'      |   File "{__file__}", line {lno_f+1}, in f',
                     f'      |     1/0',
                     f'      |     ~^~',
@@ -2872,6 +2922,7 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
                     f'      | Traceback (most recent call last):',
                     f'      |   File "{__file__}", line {lno_g+13}, in _get_exception_group',
                     f'      |     g(42)',
+                    f'      |     ~^^^^',
                     f'      |   File "{__file__}", line {lno_g+1}, in g',
                     f'      |     raise ValueError(v)',
                     f'      | ValueError: 42',
@@ -2880,6 +2931,7 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
                     f'    | Traceback (most recent call last):',
                     f'    |   File "{__file__}", line {lno_g+20}, in _get_exception_group',
                     f'    |     g(24)',
+                    f'    |     ~^^^^',
                     f'    |   File "{__file__}", line {lno_g+1}, in g',
                     f'    |     raise ValueError(v)',
                     f'    | ValueError: 24',

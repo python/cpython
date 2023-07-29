@@ -263,7 +263,7 @@ class FrameSummary:
     """
 
     __slots__ = ('filename', 'lineno', 'end_lineno', 'colno', 'end_colno',
-                 'name', '_line', 'locals')
+                 'name', '_line', '_line_dedented', 'locals')
 
     def __init__(self, filename, lineno, name, *, lookup_line=True,
             locals=None, line=None,
@@ -281,6 +281,7 @@ class FrameSummary:
         self.lineno = lineno
         self.name = name
         self._line = line
+        self._line_dedented = None
         if lookup_line:
             self.line
         self.locals = {k: _safe_string(v, 'local', func=repr)
@@ -323,9 +324,15 @@ class FrameSummary:
         if self._line is None:
             if self.lineno is None:
                 return None
-            self._line = linecache.getline(self.filename, self.lineno)
-        return self._line.strip()
-
+            end_lineno = self.lineno if self.end_lineno is None else self.end_lineno
+            self._line = ""
+            for lineno in range(self.lineno, end_lineno + 1):
+                # treat errors and empty lines as the same
+                self._line += linecache.getline(self.filename, lineno).rstrip() + "\n"
+        if self._line_dedented is None:
+            if self._line is not None:
+                self._line_dedented = textwrap.dedent(self._line).rstrip()
+        return self._line_dedented
 
 def walk_stack(f):
     """Walk a stack yielding the frame and line number for each frame.
@@ -470,44 +477,105 @@ class StackSummary(list):
         row.append('  File "{}", line {}, in {}\n'.format(
             frame_summary.filename, frame_summary.lineno, frame_summary.name))
         if frame_summary.line:
-            stripped_line = frame_summary.line.strip()
-            row.append('    {}\n'.format(stripped_line))
-
-            orig_line_len = len(frame_summary._original_line)
-            frame_line_len = len(frame_summary.line.lstrip())
-            stripped_characters = orig_line_len - frame_line_len
             if (
-                frame_summary.colno is not None
-                and frame_summary.end_colno is not None
+                frame_summary.end_lineno is None or
+                frame_summary.colno is None or
+                frame_summary.end_colno is None
             ):
+                row.append(textwrap.indent(frame_summary.line, '    ') + "\n")
+            else:
+                all_lines_original = frame_summary._original_line.splitlines()
+                # character index of the start of the instruction
                 start_offset = _byte_offset_to_character_offset(
-                    frame_summary._original_line, frame_summary.colno) + 1
+                    all_lines_original[0], frame_summary.colno
+                )
+                # character index of the end of the instruction
                 end_offset = _byte_offset_to_character_offset(
-                    frame_summary._original_line, frame_summary.end_colno) + 1
+                    all_lines_original[-1], frame_summary.end_colno
+                )
 
-                anchors = None
+                all_lines = frame_summary.line.splitlines()
+                # adjust start/end offset based on dedent
+                dedent_characters = len(all_lines_original[0]) - len(all_lines[0])
+                start_offset -= dedent_characters
+                end_offset -= dedent_characters
+                start_offset = max(0, start_offset)
+                end_offset = max(0, end_offset)
+
+                # expression corresponding to the instruction so we can get anchors
+                segment = ""
+                # underline markers to be printed - start with `~` marker and replace with `^` later
+                markers = []
+
+                # Compute segment and initial markers
                 if frame_summary.lineno == frame_summary.end_lineno:
-                    with suppress(Exception):
-                        anchors = _extract_caret_anchors_from_line_segment(
-                            frame_summary._original_line[start_offset - 1:end_offset - 1]
-                        )
+                    segment = all_lines[0][start_offset:end_offset]
+                    markers.append(" " * start_offset + "~" * (end_offset - start_offset))
                 else:
-                    end_offset = stripped_characters + len(stripped_line)
+                    segment = all_lines[0][start_offset:] + "\n"
+                    markers.append(" " * start_offset + "~" * (len(all_lines[0]) - start_offset))
+                    for lineno in range(1, len(all_lines) - 1):
+                        line = all_lines[lineno]
+                        segment += line + "\n"
+                        # don't underline leading spaces
+                        num_spaces = len(line) - len(line.lstrip())
+                        markers.append(" " * num_spaces + "~" * (len(line) - num_spaces))
+                    segment += all_lines[-1][:end_offset]
+                    num_spaces = len(all_lines[-1]) - len(all_lines[-1].lstrip())
+                    markers.append(" " * num_spaces + "~" * (end_offset - num_spaces))
 
-                # show indicators if primary char doesn't span the frame line
-                if end_offset - start_offset < len(stripped_line) or (
-                        anchors and anchors.right_start_offset - anchors.left_end_offset > 0):
-                    row.append('    ')
-                    row.append(' ' * (start_offset - stripped_characters))
+                anchors: Optional[_Anchors] = None
+                try:
+                    anchors = _extract_caret_anchors_from_line_segment(segment)
+                except AssertionError:
+                    pass
 
-                    if anchors:
-                        row.append(anchors.primary_char * (anchors.left_end_offset))
-                        row.append(anchors.secondary_char * (anchors.right_start_offset - anchors.left_end_offset))
-                        row.append(anchors.primary_char * (end_offset - start_offset - anchors.right_start_offset))
+                if anchors is None:
+                    if len(all_lines[0][:start_offset].lstrip()) == 0 and len(all_lines[-1][end_offset:].rstrip()) == 0:
+                        # do not use markers if there are no anchors and the primary char spans all lines
+                        markers = None
                     else:
-                        row.append('^' * (end_offset - start_offset))
+                        # replace `~` markers with `^` where necessary
+                        markers = [marker.replace("~", "^") for marker in markers]
+                else:
+                    # make markers mutable
+                    markers = [list(marker) for marker in markers]
 
-                    row.append('\n')
+                    # anchor positions do not take start_offset into account
+                    anchors_left_end_offset = anchors.left_end_offset
+                    anchors_right_start_offset = anchors.right_start_offset
+                    if anchors.left_end_lineno == 0:
+                        anchors_left_end_offset += start_offset
+                    if anchors.right_start_lineno == 0:
+                        anchors_right_start_offset += start_offset
+
+                    # Turn `~` markers between anchors to primary/secondary characters (default, `~`, `^`)
+                    for line in range(len(markers)):
+                        for col in range(len(markers[line])):
+                            use_secondary = True
+                            if line < anchors.left_end_lineno:
+                                use_secondary = False
+                            elif line == anchors.left_end_lineno and col < anchors_left_end_offset:
+                                use_secondary = False
+                            elif (
+                                line == anchors.right_start_lineno
+                                and col >= anchors_right_start_offset
+                            ):
+                                use_secondary = False
+                            elif line > anchors.right_start_lineno:
+                                use_secondary = False
+                            if markers[line][col] == "~":
+                                markers[line][col] = anchors.secondary_char if use_secondary else anchors.primary_char
+
+                    # make markers into strings again
+                    markers = ["".join(marker) for marker in markers]
+
+                result = ""
+                for i in range(len(all_lines)):
+                    result += all_lines[i] + "\n"
+                    if markers is not None:
+                        result += markers[i] + "\n"
+                row.append(textwrap.indent(textwrap.dedent(result), '    '))
 
         if frame_summary.locals:
             for name, value in sorted(frame_summary.locals.items()):
@@ -571,7 +639,9 @@ def _byte_offset_to_character_offset(str, offset):
 _Anchors = collections.namedtuple(
     "_Anchors",
     [
+        "left_end_lineno",
         "left_end_offset",
+        "right_start_lineno",
         "right_start_offset",
         "primary_char",
         "secondary_char",
@@ -580,49 +650,128 @@ _Anchors = collections.namedtuple(
 )
 
 def _extract_caret_anchors_from_line_segment(segment):
+    """
+    Given source code `segment` corresponding to a FrameSummary, determine:
+        - for binary ops, the location of the binary op
+        - for indexing and function calls, the location of the brackets.
+    `segment` is expected to be a valid Python expression.
+    """
     import ast
 
     try:
-        tree = ast.parse(segment)
+        # Without brackets, `segment` is parsed as a statement.
+        # We expect an expression, so wrap `segment` in
+        # brackets to handle multi-line expressions.
+        tree = ast.parse("(\n" + segment + "\n)")
     except SyntaxError:
         return None
 
     if len(tree.body) != 1:
         return None
 
-    normalize = lambda offset: _byte_offset_to_character_offset(segment, offset)
+    lines = segment.split("\n")
+
+    # get character index given byte offset
+    def normalize(lineno, offset):
+        return _byte_offset_to_character_offset(lines[lineno], offset)
+
+    # Gets the next valid character index in `lines`, if
+    # the current location is not valid. Handles empty lines.
+    def next_valid_char(lineno, col):
+        while lineno < len(lines) and col >= len(lines[lineno]):
+            col = 0
+            lineno += 1
+        assert lineno < len(lines) and col < len(lines[lineno])
+        return lineno, col
+
+    # Get the next valid character index in `lines`.
+    def increment(lineno, col):
+        col += 1
+        lineno, col = next_valid_char(lineno, col)
+        assert lineno < len(lines) and col < len(lines[lineno])
+        return lineno, col
+
+    # Get the next valid character at least on the next line
+    def nextline(lineno, col):
+        col = 0
+        lineno += 1
+        lineno, col = next_valid_char(lineno, col)
+        assert lineno < len(lines) and col < len(lines[lineno])
+        return lineno, col
+
+    # Get the next valid non-"\#" character that satisfies the `stop` predicate
+    def increment_until(lineno, col, stop):
+        while not stop(ch := lines[lineno][col]) or ch in "\\#":
+            if ch in "\\#":
+                lineno, col = nextline(lineno, col)
+            else:
+                lineno, col = increment(lineno, col)
+        return lineno, col
+
+    # Get the lineno/col position of the end of `expr`. If `force_valid` is True,
+    # forces the position to be a valid character (e.g. if the position is beyond the
+    # end of the line, move to the next line)
+    def setup_positions(expr, force_valid=True):
+        # -2 since end_lineno is 1-indexed and because we added an extra
+        # bracket to `segment` when calling ast.parse
+        lineno = expr.end_lineno - 2
+        col = normalize(lineno, expr.end_col_offset)
+        return next_valid_char(lineno, col) if force_valid else (lineno, col)
+
+
     statement = tree.body[0]
-    match statement:
-        case ast.Expr(expr):
-            match expr:
-                case ast.BinOp():
-                    operator_start = normalize(expr.left.end_col_offset)
-                    operator_end = normalize(expr.right.col_offset)
-                    operator_str = segment[operator_start:operator_end]
-                    operator_offset = len(operator_str) - len(operator_str.lstrip())
+    if isinstance(statement, ast.Expr):
+        expr = statement.value
+        if isinstance(expr, ast.BinOp):
+            # ast gives these locations for BinOp subexpressions
+            # ( left_expr ) + ( right_expr )
+            #   left^^^^^       right^^^^^
+            lineno, col = setup_positions(expr.left)
 
-                    left_anchor = expr.left.end_col_offset + operator_offset
-                    right_anchor = left_anchor + 1
-                    if (
-                        operator_offset + 1 < len(operator_str)
-                        and not operator_str[operator_offset + 1].isspace()
-                    ):
-                        right_anchor += 1
+            # First operator character is the first non-space character not in ")\\#"
+            lineno, col = increment_until(lineno, col, lambda x: not x.isspace() and x != ')')
 
-                    while left_anchor < len(segment) and ((ch := segment[left_anchor]).isspace() or ch in ")#"):
-                        left_anchor += 1
-                        right_anchor += 1
-                    return _Anchors(normalize(left_anchor), normalize(right_anchor))
-                case ast.Subscript():
-                    left_anchor = normalize(expr.value.end_col_offset)
-                    right_anchor = normalize(expr.slice.end_col_offset + 1)
-                    while left_anchor < len(segment) and ((ch := segment[left_anchor]).isspace() or ch != "["):
-                        left_anchor += 1
-                    while right_anchor < len(segment) and ((ch := segment[right_anchor]).isspace() or ch != "]"):
-                        right_anchor += 1
-                    if right_anchor < len(segment):
-                        right_anchor += 1
-                    return _Anchors(left_anchor, right_anchor)
+            # binary op is 1 or 2 characters long, on the same line,
+            # before the right subexpression
+            right_col = col + 1
+            if (
+                right_col < len(lines[lineno])
+                and (
+                    # operator char should not be in the right subexpression
+                    expr.right.lineno - 2 > lineno or
+                    right_col < normalize(expr.right.lineno - 2, expr.right.col_offset)
+                )
+                and not (ch := lines[lineno][right_col]).isspace()
+                and ch not in "\\#"
+            ):
+                right_col += 1
+
+            # right_col can be invalid since it is exclusive
+            return _Anchors(lineno, col, lineno, right_col)
+        elif isinstance(expr, ast.Subscript):
+            # ast gives these locations for value and slice subexpressions
+            # ( value_expr ) [ slice_expr ]
+            #   value^^^^^     slice^^^^^
+            # subscript^^^^^^^^^^^^^^^^^^^^
+
+            # find left bracket
+            left_lineno, left_col = setup_positions(expr.value)
+            left_lineno, left_col = increment_until(left_lineno, left_col, lambda x: x == '[')
+            # find right bracket (final character of expression)
+            right_lineno, right_col = setup_positions(expr, force_valid=False)
+            return _Anchors(left_lineno, left_col, right_lineno, right_col)
+        elif isinstance(expr, ast.Call):
+            # ast gives these locations for function call expressions
+            # ( func_expr ) (args, kwargs)
+            #   func^^^^^
+            # call^^^^^^^^^^^^^^^^^^^^^^^^
+
+            # find left bracket
+            left_lineno, left_col = setup_positions(expr.func)
+            left_lineno, left_col = increment_until(left_lineno, left_col, lambda x: x == '(')
+            # find right bracket (final character of expression)
+            right_lineno, right_col = setup_positions(expr, force_valid=False)
+            return _Anchors(left_lineno, left_col, right_lineno, right_col)
 
     return None
 
