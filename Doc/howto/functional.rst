@@ -594,7 +594,7 @@ generators:
   garbage-collected.
 
   If you need to run cleanup code when a :exc:`GeneratorExit` occurs, it's recommended
-  to us a ``try: ... finally:`` suite instead of catching :exc:`GeneratorExit`.
+  to use a ``try: ... finally:`` suite instead of catching :exc:`GeneratorExit`.
 
 The cumulative effect of these changes is to turn generators from one-way
 producers of information into both producers and consumers.
