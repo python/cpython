@@ -786,12 +786,12 @@ CFLAGS = [
     f"-fno-asynchronous-unwind-tables",  # XXX
     # # Don't need the overhead of position-independent code, if posssible:
     # "-fno-pic",
-    # Disable stack-smashing canaries, which use magic symbols:
-    f"-fno-stack-protector",  # XXX
+    # # Disable stack-smashing canaries, which use magic symbols:
+    # f"-fno-stack-protector",  # XXX
     # The GHC calling convention uses %rbp as an argument-passing register:
     f"-fomit-frame-pointer",  # XXX
-    # Disable debug info:
-    f"-g0",  # XXX
+    # # Disable debug info:
+    # f"-g0",  # XXX
     # Need this to leave room for patching our 64-bit pointers:
     f"-mcmodel=large",  # XXX
 ]
