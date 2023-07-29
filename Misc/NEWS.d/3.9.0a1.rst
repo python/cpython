@@ -5686,7 +5686,7 @@ positional argument.
 .. nonce: zrmgki
 .. section: C API
 
-Add :func:`PyConfig_SetWideStringList` function.
+Add :c:func:`PyConfig_SetWideStringList` function.
 
 ..
 
