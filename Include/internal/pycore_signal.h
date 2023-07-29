@@ -14,7 +14,8 @@ extern "C" {
 #include <signal.h>                // NSIG
 
 
-/* Restore signals that the interpreter has called SIG_IGN on to SIG_DFL. */
+// Restore signals that the interpreter has called SIG_IGN on to SIG_DFL.
+// Export for '_posixsubprocess' shared extension.
 PyAPI_FUNC(void) _Py_RestoreSignals(void);
 
 #ifdef _SIG_MAXSIG
