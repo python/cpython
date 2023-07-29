@@ -481,9 +481,8 @@ def indent(text, prefix, predicate=None):
     prefixed_lines = []
     for line in text.splitlines(True):
         if predicate(line):
-            prefixed_lines.extend((prefix, line))
-        else:
-            prefixed_lines.append(line)
+            prefixed_lines.append(prefix)
+        prefixed_lines.append(line)
 
     return ''.join(prefixed_lines)
 
