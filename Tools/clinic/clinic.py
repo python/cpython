@@ -4288,10 +4288,11 @@ def eval_ast_expr(
         globals: dict[str, Any],
         *,
         filename: str = '-'
-) -> FunctionType:
+) -> Any:
     """
-    Takes an ast.Expr node.  Compiles and evaluates it.
-    Returns the result of the expression.
+    Takes an ast.Expr node.  Compiles it into a function object,
+    then calls the function object with 0 arguments.
+    Returns the result of that function call.
 
     globals represents the globals dict the expression
     should see.  (There's no equivalent for "locals" here.)
