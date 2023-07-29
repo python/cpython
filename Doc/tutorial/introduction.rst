@@ -492,7 +492,7 @@ expression, it is first evaluated and then assigned::
 
    >>> a, b = 1, 5  # multiple assignment of two variables
    >>> a
-   0
+   1
    >>> b
    5
    >>> a, b = b, a + b  # first a is set to value of b, then b is set to sum of a and b
