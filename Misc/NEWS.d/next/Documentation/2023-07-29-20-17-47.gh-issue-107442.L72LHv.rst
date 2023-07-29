@@ -1,0 +1,2 @@
+Document all valid types for the ``_as_parameter_`` attribute in
+:mod:`ctypes`.
