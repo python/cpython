@@ -805,7 +805,8 @@ class CLanguage(Language):
 
     def output_templates(
             self,
-            f: Function
+            f: Function,
+            clinic: Clinic
     ) -> dict[str, str]:
         parameters = list(f.parameters.values())
         assert parameters
@@ -1324,7 +1325,6 @@ class CLanguage(Language):
             cpp_if = "#if " + conditional
             cpp_endif = "#endif /* " + conditional + " */"
 
-            assert clinic is not None
             if methoddef_define and f.full_name not in clinic.ifndef_symbols:
                 clinic.ifndef_symbols.add(f.full_name)
                 methoddef_ifndef = normalize_snippet("""
@@ -1490,7 +1490,7 @@ class CLanguage(Language):
         parameters = f.render_parameters
         converters = [p.converter for p in parameters]
 
-        templates = self.output_templates(f)
+        templates = self.output_templates(f, clinic)
 
         f_self = parameters[0]
         selfless = parameters[1:]
@@ -4614,7 +4614,7 @@ class DSLParser:
         self.next(self.state_terminal)
         self.state(None)
 
-        block.output.extend(self.clinic.language.render(clinic, block.signatures))
+        block.output.extend(self.clinic.language.render(self.clinic, block.signatures))
 
         if self.preserve_output:
             if block.output:
