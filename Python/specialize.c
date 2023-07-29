@@ -224,7 +224,11 @@ print_stats(FILE *out, PyStats *stats) {
 void
 _Py_StatsClear(void)
 {
+    for (int i = 0; i < NUM_GENERATIONS; i++) {
+        _py_gc_stats[i] = (GCStats) { 0 };
+    }
     _py_stats_struct = (PyStats) { 0 };
+    _py_stats_struct.gc_stats = _py_gc_stats;
 }
 
 void
