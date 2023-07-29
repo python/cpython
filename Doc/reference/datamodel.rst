@@ -1594,9 +1594,9 @@ Basic customization
 
    Called to implement truth value testing and the built-in operation
    ``bool()``; should return ``False`` or ``True``.  When this method is not
-   defined, :meth:`__len__` is called, if it is defined, and the object is
+   defined, :meth:`~object.__len__` is called, if it is defined, and the object is
    considered true if its result is nonzero.  If a class defines neither
-   :meth:`__len__` nor :meth:`__bool__`, all its instances are considered
+   :meth:`!__len__` nor :meth:`!__bool__`, all its instances are considered
    true.
 
 
@@ -2494,7 +2494,7 @@ through the object's keys; for sequences, it should iterate through the values.
 
    Called to implement the built-in function :func:`len`.  Should return the length
    of the object, an integer ``>=`` 0.  Also, an object that doesn't define a
-   :meth:`__bool__` method and whose :meth:`__len__` method returns zero is
+   :meth:`~object.__bool__` method and whose :meth:`!__len__` method returns zero is
    considered to be false in a Boolean context.
 
    .. impl-detail::
@@ -2503,7 +2503,7 @@ through the object's keys; for sequences, it should iterate through the values.
       If the length is larger than :data:`!sys.maxsize` some features (such as
       :func:`len`) may raise :exc:`OverflowError`.  To prevent raising
       :exc:`!OverflowError` by truth value testing, an object must define a
-      :meth:`__bool__` method.
+      :meth:`~object.__bool__` method.
 
 
 .. method:: object.__length_hint__(self)
