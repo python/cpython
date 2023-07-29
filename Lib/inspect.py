@@ -1131,7 +1131,7 @@ def findsource(object):
     else:
         lines = linecache.getlines(file)
     if not lines:
-        raise OSError('could not get source code')
+        raise OSError(f'could not get source code {module}, {object}, {file}')
 
     if ismodule(object):
         return lines, 0

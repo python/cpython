@@ -990,6 +990,11 @@ class TestBuggyCases(GetSourceBase):
             with DirsOnSysPath(tempdir):
                 import inspect_actual
                 self.assertIn("correct", inspect.getsource(inspect_actual.A))
+                # --forever will run this test multiple times, each time the test
+                # executes, we create a different temporary directory, and the old
+                # one is removed. So we need to remove the module from sys.modules
+                # to force it to be reloaded.
+                sys.modules.pop("inspect_actual")
 
     @unittest.skipIf(
         support.is_emscripten or support.is_wasi,
