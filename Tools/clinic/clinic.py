@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import abc
+import argparse
 import ast
 import builtins as bltns
 import collections
@@ -28,6 +29,7 @@ import string
 import sys
 import textwrap
 import traceback
+import warnings
 
 from collections.abc import (
     Callable,
@@ -136,6 +138,24 @@ def text_accumulator() -> TextAccumulator:
     text, append, output = _text_accumulator()
     return TextAccumulator(append, output)
 
+
+class ClinicError(Exception):
+    def __init__(
+        self,
+        message: str,
+        /,
+        *,
+        lineno: int | None = None,
+        filename: str | None = None
+    ):
+        super().__init__(message)
+        self.lineno = lineno
+        self.filename = filename
+
+
+class ClinicWarning(Warning): ...
+
+
 @overload
 def warn_or_fail(
     *args: object,
@@ -159,25 +179,21 @@ def warn_or_fail(
     line_number: int | None = None,
 ) -> None:
     joined = " ".join([str(a) for a in args])
-    add, output = text_accumulator()
-    if fail:
-        add("Error")
-    else:
-        add("Warning")
     if clinic:
         if filename is None:
             filename = clinic.filename
         if getattr(clinic, 'block_parser', None) and (line_number is None):
             line_number = clinic.block_parser.line_number
-    if filename is not None:
-        add(' in file "' + filename + '"')
-    if line_number is not None:
-        add(" on line " + str(line_number))
-    add(':\n')
-    add(joined)
-    print(output())
     if fail:
-        sys.exit(-1)
+        raise ClinicError(joined, lineno=line_number, filename=filename)
+    else:
+        msg = "Warning"
+        if filename is not None:
+            msg += f" in file {filename!r}"
+        if line_number is not None:
+            msg += f" on line {line_number}"
+        msg += f": {joined}"
+        warnings.warn(msg, ClinicWarning)
 
 
 def warn(
@@ -5620,9 +5636,10 @@ parsers: dict[str, Callable[[Clinic], Parser]] = {
 clinic = None
 
 
-def main(argv: list[str]) -> None:
-    import sys
-    import argparse
+class CLIError(Exception): ...
+
+
+def create_cli() -> argparse.ArgumentParser:
     cmdline = argparse.ArgumentParser(
         description="""Preprocessor for CPython C files.
 
@@ -5646,14 +5663,13 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
                          help="the directory tree to walk in --make mode")
     cmdline.add_argument("filename", metavar="FILE", type=str, nargs="*",
                          help="the list of files to process")
-    ns = cmdline.parse_args(argv)
+    return cmdline
 
+
+def main(ns: argparse.Namespace) -> None:
     if ns.converters:
         if ns.filename:
-            print("Usage error: can't specify --converters and a filename at the same time.")
-            print()
-            cmdline.print_usage()
-            sys.exit(-1)
+            raise CLIError("can't specify --converters and a filename at the same time.")
         converters: list[tuple[str, str]] = []
         return_converters: list[tuple[str, str]] = []
         ignored = set("""
@@ -5707,19 +5723,13 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
             print()
         print("All converters also accept (c_default=None, py_default=None, annotation=None).")
         print("All return converters also accept (py_default=None).")
-        sys.exit(0)
+        return
 
     if ns.make:
         if ns.output or ns.filename:
-            print("Usage error: can't use -o or filenames with --make.")
-            print()
-            cmdline.print_usage()
-            sys.exit(-1)
+            raise CLIError("can't use -o or filenames with --make.")
         if not ns.srcdir:
-            print("Usage error: --srcdir must not be empty with --make.")
-            print()
-            cmdline.print_usage()
-            sys.exit(-1)
+            raise CLIError("--srcdir must not be empty with --make.")
         for root, dirs, files in os.walk(ns.srcdir):
             for rcs_dir in ('.svn', '.git', '.hg', 'build', 'externals'):
                 if rcs_dir in dirs:
@@ -5735,14 +5745,10 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
         return
 
     if not ns.filename:
-        cmdline.print_usage()
-        sys.exit(-1)
+        raise CLIError("no input files")
 
     if ns.output and len(ns.filename) > 1:
-        print("Usage error: can't use -o with multiple filenames.")
-        print()
-        cmdline.print_usage()
-        sys.exit(-1)
+        raise CLIError("can't use -o with multiple filenames.")
 
     for filename in ns.filename:
         if ns.verbose:
@@ -5751,5 +5757,19 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
-    sys.exit(0)
+    cli = create_cli()
+    try:
+        args = cli.parse_args()
+        main(args)
+    except CLIError as exc:
+        if msg := str(exc):
+            sys.stderr.write(f"Usage error: {msg}\n")
+        cli.print_usage()
+        sys.exit(1)
+    except ClinicError as exc:
+        msg = textwrap.dedent(f"""\
+            Error in file {exc.filename!r} on line {exc.lineno}:
+            {exc}
+        """)
+        sys.stderr.write(str(exc))
+        sys.exit(1)

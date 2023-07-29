@@ -21,17 +21,14 @@ with test_tools.imports_under_tool('clinic'):
     from clinic import DSLParser
 
 
-class _ParserBase(TestCase):
-    maxDiff = None
-
-    def expect_parser_failure(self, parser, _input):
-        with support.captured_stdout() as stdout:
-            with self.assertRaises(SystemExit):
-                parser(_input)
-        return stdout.getvalue()
-
-    def parse_function_should_fail(self, _input):
-        return self.expect_parser_failure(self.parse_function, _input)
+def _expect_failure(tc, parser, code, errmsg, *, filename=None, lineno=None):
+    _code = dedent(code).strip()
+    with tc.assertRaisesRegex(clinic.ClinicError, errmsg) as cm:
+        parser(_code)
+    if filename is not None:
+        tc.assertEqual(cm.exception.filename, filename)
+    if lineno is not None:
+        tc.assertEqual(cm.exception.lineno, lineno)
 
 
 class FakeConverter:
@@ -109,13 +106,14 @@ class FakeClinic:
         return "<FakeClinic object>"
 
 
-class ClinicWholeFileTest(_ParserBase):
+class ClinicWholeFileTest(TestCase):
+
+    def expect_failure(self, raw, errmsg, *, filename=None, lineno=None):
+        _expect_failure(self, self.clinic.parse, raw, errmsg,
+                        filename=filename, lineno=lineno)
+
     def setUp(self):
         self.clinic = clinic.Clinic(clinic.CLanguage(None), filename="test.c")
-
-    def expect_failure(self, raw):
-        _input = dedent(raw).strip()
-        return self.expect_parser_failure(self.clinic.parse, _input)
 
     def test_eol(self):
         # regression test:
@@ -140,12 +138,11 @@ class ClinicWholeFileTest(_ParserBase):
             [clinic start generated code]*/
             /*[clinic end generated code: foo]*/
         """
-        msg = (
-            'Error in file "test.c" on line 3:\n'
-            "Mangled Argument Clinic marker line: '/*[clinic end generated code: foo]*/'\n"
+        err = (
+            "Mangled Argument Clinic marker line: "
+            "'\/\*\[clinic end generated code: foo\]\*\/'"
         )
-        out = self.expect_failure(raw)
-        self.assertEqual(out, msg)
+        self.expect_failure(raw, err, filename="test.c", lineno=3)
 
     def test_checksum_mismatch(self):
         raw = """
@@ -153,38 +150,31 @@ class ClinicWholeFileTest(_ParserBase):
             [clinic start generated code]*/
             /*[clinic end generated code: output=0123456789abcdef input=fedcba9876543210]*/
         """
-        msg = (
-            'Error in file "test.c" on line 3:\n'
+        err = (
             'Checksum mismatch!\n'
             'Expected: 0123456789abcdef\n'
             'Computed: da39a3ee5e6b4b0d\n'
         )
-        out = self.expect_failure(raw)
-        self.assertIn(msg, out)
+        self.expect_failure(raw, err, filename="test.c", lineno=3)
 
     def test_garbage_after_stop_line(self):
         raw = """
             /*[clinic input]
             [clinic start generated code]*/foobarfoobar!
         """
-        msg = (
-            'Error in file "test.c" on line 2:\n'
-            "Garbage after stop line: 'foobarfoobar!'\n"
-        )
-        out = self.expect_failure(raw)
-        self.assertEqual(out, msg)
+        err = "Garbage after stop line: 'foobarfoobar!'"
+        self.expect_failure(raw, err, filename="test.c", lineno=2)
 
     def test_whitespace_before_stop_line(self):
         raw = """
             /*[clinic input]
              [clinic start generated code]*/
         """
-        msg = (
-            'Error in file "test.c" on line 2:\n'
-            "Whitespace is not allowed before the stop line: ' [clinic start generated code]*/'\n"
+        err = (
+            "Whitespace is not allowed before the stop line: "
+            "' \[clinic start generated code\]\*\/'"
         )
-        out = self.expect_failure(raw)
-        self.assertEqual(out, msg)
+        self.expect_failure(raw, err, filename="test.c", lineno=2)
 
     def test_parse_with_body_prefix(self):
         clang = clinic.CLanguage(None)
@@ -214,12 +204,8 @@ class ClinicWholeFileTest(_ParserBase):
             */
             */
         """
-        msg = (
-            'Error in file "test.c" on line 2:\n'
-            'Nested block comment!\n'
-        )
-        out = self.expect_failure(raw)
-        self.assertEqual(out, msg)
+        err = 'Nested block comment!'
+        self.expect_failure(raw, err, filename="test.c", lineno=2)
 
     def test_cpp_monitor_fail_invalid_format_noarg(self):
         raw = """
@@ -227,12 +213,8 @@ class ClinicWholeFileTest(_ParserBase):
             a()
             #endif
         """
-        msg = (
-            'Error in file "test.c" on line 1:\n'
-            'Invalid format for #if line: no argument!\n'
-        )
-        out = self.expect_failure(raw)
-        self.assertEqual(out, msg)
+        err = 'Invalid format for #if line: no argument!'
+        self.expect_failure(raw, err, filename="test.c", lineno=1)
 
     def test_cpp_monitor_fail_invalid_format_toomanyargs(self):
         raw = """
@@ -240,39 +222,31 @@ class ClinicWholeFileTest(_ParserBase):
             a()
             #endif
         """
-        msg = (
-            'Error in file "test.c" on line 1:\n'
-            'Invalid format for #ifdef line: should be exactly one argument!\n'
-        )
-        out = self.expect_failure(raw)
-        self.assertEqual(out, msg)
+        err = 'Invalid format for #ifdef line: should be exactly one argument!'
+        self.expect_failure(raw, err, filename="test.c", lineno=1)
 
     def test_cpp_monitor_fail_no_matching_if(self):
         raw = '#else'
-        msg = (
-            'Error in file "test.c" on line 1:\n'
-            '#else without matching #if / #ifdef / #ifndef!\n'
-        )
-        out = self.expect_failure(raw)
-        self.assertEqual(out, msg)
+        err = '#else without matching #if / #ifdef / #ifndef!'
+        self.expect_failure(raw, err, filename="test.c", lineno=1)
 
     def test_directive_output_unknown_preset(self):
-        out = self.expect_failure("""
+        raw = """
             /*[clinic input]
             output preset nosuchpreset
             [clinic start generated code]*/
-        """)
-        msg = "Unknown preset 'nosuchpreset'"
-        self.assertIn(msg, out)
+        """
+        err = "Unknown preset 'nosuchpreset'"
+        self.expect_failure(raw, err)
 
     def test_directive_output_cant_pop(self):
-        out = self.expect_failure("""
+        raw = """
             /*[clinic input]
             output pop
             [clinic start generated code]*/
-        """)
-        msg = "Can't 'output pop', stack is empty"
-        self.assertIn(msg, out)
+        """
+        err = "Can't 'output pop', stack is empty"
+        self.expect_failure(raw, err)
 
     def test_directive_output_print(self):
         raw = dedent("""
@@ -310,13 +284,13 @@ class ClinicWholeFileTest(_ParserBase):
         )
 
     def test_unknown_destination_command(self):
-        out = self.expect_failure("""
+        raw = """
             /*[clinic input]
             destination buffer nosuchcommand
             [clinic start generated code]*/
-        """)
-        msg = "unknown destination command 'nosuchcommand'"
-        self.assertIn(msg, out)
+        """
+        err = "unknown destination command 'nosuchcommand'"
+        self.expect_failure(raw, err)
 
 
 class ClinicGroupPermuterTest(TestCase):
@@ -495,7 +469,27 @@ xyz
 """)
 
 
-class ClinicParserTest(_ParserBase):
+class ClinicParserTest(TestCase):
+
+    def parse(self, text):
+        c = FakeClinic()
+        parser = DSLParser(c)
+        block = clinic.Block(text)
+        parser.parse(block)
+        return block
+
+    def parse_function(self, text, signatures_in_block=2, function_index=1):
+        block = self.parse(text)
+        s = block.signatures
+        self.assertEqual(len(s), signatures_in_block)
+        assert isinstance(s[0], clinic.Module)
+        assert isinstance(s[function_index], clinic.Function)
+        return s[function_index]
+
+    def expect_failure(self, block, err, *, filename=None, lineno=None):
+        _expect_failure(self, self.parse_function, block, err,
+                        filename=filename, lineno=lineno)
+
     def checkDocstring(self, fn, expected):
         self.assertTrue(hasattr(fn, "docstring"))
         self.assertEqual(fn.docstring.strip(),
@@ -565,17 +559,16 @@ class ClinicParserTest(_ParserBase):
         self.assertEqual(sys.maxsize, p.default)
         self.assertEqual("MAXSIZE", p.converter.c_default)
 
-        expected_msg = (
-            "Error on line 0:\n"
-            "When you specify a named constant ('sys.maxsize') as your default value,\n"
-            "you MUST specify a valid c_default.\n"
+        err = (
+            "When you specify a named constant \('sys.maxsize'\) as your default value,\n"
+            "you MUST specify a valid c_default."
         )
-        out = self.parse_function_should_fail("""
+        block = """
             module os
             os.access
                 follow_symlinks: int = sys.maxsize
-        """)
-        self.assertEqual(out, expected_msg)
+        """
+        self.expect_failure(block, err, lineno=0)
 
     def test_param_no_docstring(self):
         function = self.parse_function("""
@@ -590,17 +583,17 @@ class ClinicParserTest(_ParserBase):
         self.assertIsInstance(conv, clinic.str_converter)
 
     def test_param_default_parameters_out_of_order(self):
-        expected_msg = (
-            "Error on line 0:\n"
-            "Can't have a parameter without a default ('something_else')\n"
-            "after a parameter with a default!\n"
+        err = (
+            "Can't have a parameter without a default \('something_else'\)\n"
+            "after a parameter with a default!"
         )
-        out = self.parse_function_should_fail("""
+        block = """
             module os
             os.access
                 follow_symlinks: bool = True
-                something_else: str""")
-        self.assertEqual(out, expected_msg)
+                something_else: str
+        """
+        self.expect_failure(block, err, lineno=0)
 
     def disabled_test_converter_arguments(self):
         function = self.parse_function("""
@@ -677,17 +670,12 @@ class ClinicParserTest(_ParserBase):
         self.assertEqual("os_stat_fn", function.c_basename)
 
     def test_cloning_nonexistent_function_correctly_fails(self):
-        stdout = self.parse_function_should_fail("""
-            cloned = fooooooooooooooooooooooo
+        block = """
+            cloned = fooooooooooooooooo
             This is trying to clone a nonexistent function!!
-        """)
-        expected_error = """\
-cls=None, module=<FakeClinic object>, existing='fooooooooooooooooooooooo'
-(cls or module).functions=[]
-Error on line 0:
-Couldn't find existing function 'fooooooooooooooooooooooo'!
-"""
-        self.assertEqual(expected_error, stdout)
+        """
+        err = "Couldn't find existing function 'fooooooooooooooooo'!"
+        self.expect_failure(block, err, lineno=0)
 
     def test_return_converter(self):
         function = self.parse_function("""
@@ -697,30 +685,28 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
         self.assertIsInstance(function.return_converter, clinic.int_return_converter)
 
     def test_return_converter_invalid_syntax(self):
-        stdout = self.parse_function_should_fail("""
+        block = """
             module os
             os.stat -> invalid syntax
-        """)
-        expected_error = "Badly formed annotation for os.stat: 'invalid syntax'"
-        self.assertIn(expected_error, stdout)
+        """
+        err = "Badly formed annotation for os.stat: 'invalid syntax'"
+        self.expect_failure(block, err)
 
     def test_legacy_converter_disallowed_in_return_annotation(self):
-        stdout = self.parse_function_should_fail("""
+        block = """
             module os
             os.stat -> "s"
-        """)
-        expected_error = "Legacy converter 's' not allowed as a return converter"
-        self.assertIn(expected_error, stdout)
+        """
+        err = "Legacy converter 's' not allowed as a return converter"
+        self.expect_failure(block, err)
 
     def test_unknown_return_converter(self):
-        stdout = self.parse_function_should_fail("""
+        block = """
             module os
-            os.stat -> foooooooooooooooooooooooo
-        """)
-        expected_error = (
-            "No available return converter called 'foooooooooooooooooooooooo'"
-        )
-        self.assertIn(expected_error, stdout)
+            os.stat -> fooooooooooooooooooooooo
+        """
+        err = "No available return converter called 'fooooooooooooooooooooooo'"
+        self.expect_failure(block, err)
 
     def test_star(self):
         function = self.parse_function("""
@@ -865,19 +851,12 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
                 Attributes for the character.
         """)
 
-    def parse_function_should_fail(self, s):
-        with support.captured_stdout() as stdout:
-            with self.assertRaises(SystemExit):
-                self.parse_function(s)
-        return stdout.getvalue()
-
     def test_disallowed_grouping__two_top_groups_on_left(self):
-        expected_msg = (
-            'Error on line 0:\n'
+        err = (
             'Function two_top_groups_on_left has an unsupported group '
-            'configuration. (Unexpected state 2.b)\n'
+            'configuration. \(Unexpected state 2.b\)'
         )
-        out = self.parse_function_should_fail("""
+        block = """
             module foo
             foo.two_top_groups_on_left
                 [
@@ -887,11 +866,11 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
                 group2 : int
                 ]
                 param: int
-        """)
-        self.assertEqual(out, expected_msg)
+        """
+        self.expect_failure(block, err, lineno=0)
 
     def test_disallowed_grouping__two_top_groups_on_right(self):
-        out = self.parse_function_should_fail("""
+        block = """
             module foo
             foo.two_top_groups_on_right
                 param: int
@@ -901,15 +880,15 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
                 [
                 group2 : int
                 ]
-        """)
-        msg = (
+        """
+        err = (
             "Function two_top_groups_on_right has an unsupported group "
-            "configuration. (Unexpected state 6.b)"
+            "configuration. \(Unexpected state 6.b\)"
         )
-        self.assertIn(msg, out)
+        self.expect_failure(block, err)
 
     def test_disallowed_grouping__parameter_after_group_on_right(self):
-        out = self.parse_function_should_fail("""
+        block = """
             module foo
             foo.parameter_after_group_on_right
                 param: int
@@ -919,15 +898,15 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
                 ]
                 group2 : int
                 ]
-        """)
-        msg = (
+        """
+        err = (
             "Function parameter_after_group_on_right has an unsupported group "
-            "configuration. (Unexpected state 6.a)"
+            "configuration. \(Unexpected state 6.a\)"
         )
-        self.assertIn(msg, out)
+        self.expect_failure(block, err)
 
     def test_disallowed_grouping__group_after_parameter_on_left(self):
-        out = self.parse_function_should_fail("""
+        block = """
             module foo
             foo.group_after_parameter_on_left
                 [
@@ -937,15 +916,15 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
                 ]
                 ]
                 param: int
-        """)
-        msg = (
+        """
+        err = (
             "Function group_after_parameter_on_left has an unsupported group "
-            "configuration. (Unexpected state 2.b)"
+            "configuration. \(Unexpected state 2.b\)"
         )
-        self.assertIn(msg, out)
+        self.expect_failure(block, err)
 
     def test_disallowed_grouping__empty_group_on_left(self):
-        out = self.parse_function_should_fail("""
+        block = """
             module foo
             foo.empty_group
                 [
@@ -954,15 +933,15 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
                 group2 : int
                 ]
                 param: int
-        """)
-        msg = (
+        """
+        err = (
             "Function empty_group has an empty group.\n"
             "All groups must contain at least one parameter."
         )
-        self.assertIn(msg, out)
+        self.expect_failure(block, err)
 
     def test_disallowed_grouping__empty_group_on_right(self):
-        out = self.parse_function_should_fail("""
+        block = """
             module foo
             foo.empty_group
                 param: int
@@ -971,24 +950,24 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
                 ]
                 group2 : int
                 ]
-        """)
-        msg = (
+        """
+        err = (
             "Function empty_group has an empty group.\n"
             "All groups must contain at least one parameter."
         )
-        self.assertIn(msg, out)
+        self.expect_failure(block, err)
 
     def test_disallowed_grouping__no_matching_bracket(self):
-        out = self.parse_function_should_fail("""
+        block = """
             module foo
             foo.empty_group
                 param: int
                 ]
                 group2: int
                 ]
-        """)
-        msg = "Function empty_group has a ] without a matching [."
-        self.assertIn(msg, out)
+        """
+        err = "Function empty_group has a \] without a matching \[."
+        self.expect_failure(block, err)
 
     def test_no_parameters(self):
         function = self.parse_function("""
@@ -1017,31 +996,32 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
         self.assertEqual(1, len(function.parameters))
 
     def test_illegal_module_line(self):
-        out = self.parse_function_should_fail("""
+        block = """
             module foo
             foo.bar => int
                 /
-        """)
-        msg = "Illegal function name: foo.bar => int"
-        self.assertIn(msg, out)
+        """
+        err = "Illegal function name: foo.bar => int"
+        self.expect_failure(block, err)
 
     def test_illegal_c_basename(self):
-        out = self.parse_function_should_fail("""
+        block = """
             module foo
             foo.bar as 935
                 /
-        """)
-        msg = "Illegal C basename: 935"
-        self.assertIn(msg, out)
+        """
+        err = "Illegal C basename: 935"
+        self.expect_failure(block, err)
 
     def test_single_star(self):
-        out = self.parse_function_should_fail("""
+        block = """
             module foo
             foo.bar
                 *
                 *
-        """)
-        self.assertIn("Function bar uses '*' more than once.", out)
+        """
+        err = "Function bar uses '\*' more than once."
+        self.expect_failure(block, err)
 
     def test_parameters_required_after_star(self):
         dataset = (
@@ -1050,39 +1030,38 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
             "module foo\nfoo.bar\n  this: int\n  *",
             "module foo\nfoo.bar\n  this: int\n  *\nDocstring.",
         )
-        msg = "Function bar specifies '*' without any parameters afterwards."
+        err = "Function bar specifies '\*' without any parameters afterwards."
         for block in dataset:
             with self.subTest(block=block):
-                out = self.parse_function_should_fail(block)
-                self.assertIn(msg, out)
+                self.expect_failure(block, err)
 
     def test_single_slash(self):
-        out = self.parse_function_should_fail("""
+        block = """
             module foo
             foo.bar
                 /
                 /
-        """)
-        msg = (
+        """
+        err = (
             "Function bar has an unsupported group configuration. "
-            "(Unexpected state 0.d)"
+            "\(Unexpected state 0.d\)"
         )
-        self.assertIn(msg, out)
+        self.expect_failure(block, err)
 
     def test_double_slash(self):
-        out = self.parse_function_should_fail("""
+        block = """
             module foo
             foo.bar
                 a: int
                 /
                 b: int
                 /
-        """)
-        msg = "Function bar uses '/' more than once."
-        self.assertIn(msg, out)
+        """
+        err = "Function bar uses '/' more than once."
+        self.expect_failure(block, err)
 
     def test_mix_star_and_slash(self):
-        out = self.parse_function_should_fail("""
+        block = """
             module foo
             foo.bar
                x: int
@@ -1090,38 +1069,35 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
                *
                z: int
                /
-        """)
-        msg = (
+        """
+        err = (
             "Function bar mixes keyword-only and positional-only parameters, "
             "which is unsupported."
         )
-        self.assertIn(msg, out)
+        self.expect_failure(block, err)
 
     def test_parameters_not_permitted_after_slash_for_now(self):
-        out = self.parse_function_should_fail("""
+        block = """
             module foo
             foo.bar
                 /
                 x: int
-        """)
-        msg = (
+        """
+        err = (
             "Function bar has an unsupported group configuration. "
-            "(Unexpected state 0.d)"
+            "\(Unexpected state 0.d\)"
         )
-        self.assertIn(msg, out)
+        self.expect_failure(block, err)
 
     def test_parameters_no_more_than_one_vararg(self):
-        expected_msg = (
-            "Error on line 0:\n"
-            "Too many var args\n"
-        )
-        out = self.parse_function_should_fail("""
+        err = "Too many var args"
+        block = """
             module foo
             foo.bar
                *vararg1: object
                *vararg2: object
-        """)
-        self.assertEqual(out, expected_msg)
+        """
+        self.expect_failure(block, err, lineno=0)
 
     def test_function_not_at_column_0(self):
         function = self.parse_function("""
@@ -1144,23 +1120,24 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
         """)
 
     def test_indent_stack_no_tabs(self):
-        out = self.parse_function_should_fail("""
+        block = """
             module foo
             foo.bar
                *vararg1: object
             \t*vararg2: object
-        """)
-        msg = "Tab characters are illegal in the Clinic DSL."
-        self.assertIn(msg, out)
+        """
+        err = "Tab characters are illegal in the Clinic DSL."
+        self.expect_failure(block, err)
 
     def test_indent_stack_illegal_outdent(self):
-        out = self.parse_function_should_fail("""
+        block = """
             module foo
             foo.bar
               a: object
              b: object
-        """)
-        self.assertIn("Illegal outdent", out)
+        """
+        err = "Illegal outdent"
+        self.expect_failure(block, err)
 
     def test_directive(self):
         c = FakeClinic()
@@ -1178,10 +1155,7 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
         self.assertIsInstance(conv, clinic.str_converter)
 
     def test_legacy_converters_non_string_constant_annotation(self):
-        expected_failure_message = (
-            "Error on line 0:\n"
-            "Annotations must be either a name, a function call, or a string.\n"
-        )
+        err = "Annotations must be either a name, a function call, or a string"
         dataset = (
             'module os\nos.access\n   path: 42',
             'module os\nos.access\n   path: 42.42',
@@ -1190,14 +1164,10 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
         )
         for block in dataset:
             with self.subTest(block=block):
-                out = self.parse_function_should_fail(block)
-                self.assertEqual(out, expected_failure_message)
+                self.expect_failure(block, err, lineno=0)
 
     def test_other_bizarre_things_in_annotations_fail(self):
-        expected_failure_message = (
-            "Error on line 0:\n"
-            "Annotations must be either a name, a function call, or a string.\n"
-        )
+        err = "Annotations must be either a name, a function call, or a string"
         dataset = (
             'module os\nos.access\n   path: {"some": "dictionary"}',
             'module os\nos.access\n   path: ["list", "of", "strings"]',
@@ -1205,30 +1175,24 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
         )
         for block in dataset:
             with self.subTest(block=block):
-                out = self.parse_function_should_fail(block)
-                self.assertEqual(out, expected_failure_message)
+                self.expect_failure(block, err, lineno=0)
 
     def test_kwarg_splats_disallowed_in_function_call_annotations(self):
-        expected_error_msg = (
-            "Error on line 0:\n"
-            "Cannot use a kwarg splat in a function-call annotation\n"
-        )
+        err = "Cannot use a kwarg splat in a function-call annotation"
         dataset = (
             'module fo\nfo.barbaz\n   o: bool(**{None: "bang!"})',
             'module fo\nfo.barbaz -> bool(**{None: "bang!"})',
             'module fo\nfo.barbaz -> bool(**{"bang": 42})',
             'module fo\nfo.barbaz\n   o: bool(**{"bang": None})',
         )
-        for fn in dataset:
-            with self.subTest(fn=fn):
-                out = self.parse_function_should_fail(fn)
-                self.assertEqual(out, expected_error_msg)
+        for block in dataset:
+            with self.subTest(block=block):
+                self.expect_failure(block, err, lineno=0)
 
     def test_self_param_placement(self):
         expected_error_msg = (
-            "Error on line 0:\n"
             "A 'self' parameter, if specified, must be the very first thing "
-            "in the parameter block.\n"
+            "in the parameter block."
         )
         block = """
             module foo
@@ -1236,27 +1200,21 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
                 a: int
                 self: self(type="PyObject *")
         """
-        out = self.parse_function_should_fail(block)
-        self.assertEqual(out, expected_error_msg)
+        self.expect_failure(block, expected_error_msg, lineno=0)
 
     def test_self_param_cannot_be_optional(self):
-        expected_error_msg = (
-            "Error on line 0:\n"
-            "A 'self' parameter cannot be marked optional.\n"
-        )
+        err = "A 'self' parameter cannot be marked optional."
         block = """
             module foo
             foo.func
                 self: self(type="PyObject *") = None
         """
-        out = self.parse_function_should_fail(block)
-        self.assertEqual(out, expected_error_msg)
+        self.expect_failure(block, err, lineno=0)
 
     def test_defining_class_param_placement(self):
         expected_error_msg = (
-            "Error on line 0:\n"
             "A 'defining_class' parameter, if specified, must either be the "
-            "first thing in the parameter block, or come just after 'self'.\n"
+            "first thing in the parameter block, or come just after 'self'."
         )
         block = """
             module foo
@@ -1265,21 +1223,16 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
                 a: int
                 cls: defining_class
         """
-        out = self.parse_function_should_fail(block)
-        self.assertEqual(out, expected_error_msg)
+        self.expect_failure(block, expected_error_msg, lineno=0)
 
     def test_defining_class_param_cannot_be_optional(self):
-        expected_error_msg = (
-            "Error on line 0:\n"
-            "A 'defining_class' parameter cannot be marked optional.\n"
-        )
+        err = "A 'defining_class' parameter cannot be marked optional."
         block = """
             module foo
             foo.func
                 cls: defining_class(type="PyObject *") = None
         """
-        out = self.parse_function_should_fail(block)
-        self.assertEqual(out, expected_error_msg)
+        self.expect_failure(block, err, lineno=0)
 
     def test_slot_methods_cannot_access_defining_class(self):
         block = """
@@ -1289,34 +1242,28 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
                 cls: defining_class
                 a: object
         """
-        msg = "Slot methods cannot access their defining class."
-        with self.assertRaisesRegex(ValueError, msg):
+        err = "Slot methods cannot access their defining class."
+        with self.assertRaisesRegex(ValueError, err):
             self.parse_function(block)
 
     def test_new_must_be_a_class_method(self):
-        expected_error_msg = (
-            "Error on line 0:\n"
-            "__new__ must be a class method!\n"
-        )
-        out = self.parse_function_should_fail("""
+        err = "__new__ must be a class method!"
+        block = """
             module foo
             class Foo "" ""
             Foo.__new__
-        """)
-        self.assertEqual(out, expected_error_msg)
+        """
+        self.expect_failure(block, err, lineno=0)
 
     def test_init_must_be_a_normal_method(self):
-        expected_error_msg = (
-            "Error on line 0:\n"
-            "__init__ must be a normal method, not a class or static method!\n"
-        )
-        out = self.parse_function_should_fail("""
+        err = "__init__ must be a normal method, not a class or static method!"
+        block = """
             module foo
             class Foo "" ""
             @classmethod
             Foo.__init__
-        """)
-        self.assertEqual(out, expected_error_msg)
+        """
+        self.expect_failure(block, err, lineno=0)
 
     def test_unused_param(self):
         block = self.parse("""
@@ -1356,21 +1303,6 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
                 parser_decl = p.simple_declaration(in_parser=True)
                 self.assertNotIn("Py_UNUSED", parser_decl)
 
-    def parse(self, text):
-        c = FakeClinic()
-        parser = DSLParser(c)
-        block = clinic.Block(text)
-        parser.parse(block)
-        return block
-
-    def parse_function(self, text, signatures_in_block=2, function_index=1):
-        block = self.parse(text)
-        s = block.signatures
-        self.assertEqual(len(s), signatures_in_block)
-        assert isinstance(s[0], clinic.Module)
-        assert isinstance(s[function_index], clinic.Function)
-        return s[function_index]
-
     def test_scaffolding(self):
         # test repr on special values
         self.assertEqual(repr(clinic.unspecified), '<Unspecified>')
@@ -1382,11 +1314,12 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
             'The igloos are melting!\n'
         )
         with support.captured_stdout() as stdout:
-            with self.assertRaises(SystemExit):
-                clinic.fail('The igloos are melting!',
-                            filename='clown.txt', line_number=69)
-        actual = stdout.getvalue()
-        self.assertEqual(actual, expected)
+            errmsg = 'The igloos are melting'
+            with self.assertRaisesRegex(clinic.ClinicError, errmsg) as cm:
+                clinic.fail(errmsg, filename='clown.txt', line_number=69)
+            exc = cm.exception
+            self.assertEqual(exc.filename, 'clown.txt')
+            self.assertEqual(exc.lineno, 69)
 
 
 class ClinicExternalTest(TestCase):
@@ -1406,9 +1339,11 @@ class ClinicExternalTest(TestCase):
                 self.fail("".join([*proc.stdout, *proc.stderr]))
             stdout = proc.stdout.read()
             stderr = proc.stderr.read()
-            # Clinic never writes to stderr.
-            self.assertEqual(stderr, "")
-            return stdout
+            if expect_success:
+                self.assertEqual(stderr, "")
+                return stdout
+            else:
+                return stderr
 
     def expect_success(self, *args):
         return self._do_test(*args)
@@ -1470,7 +1405,7 @@ class ClinicExternalTest(TestCase):
             Computed: 2ed19
             Suggested fix: remove all generated code including the end marker,
             or use the '-f' option.
-        """)
+        """).strip()
         with os_helper.temp_dir() as tmp_dir:
             fn = os.path.join(tmp_dir, "test.c")
             with open(fn, "w", encoding="utf-8") as f:
@@ -1630,7 +1565,7 @@ class ClinicExternalTest(TestCase):
 
     def test_cli_fail_no_filename(self):
         out = self.expect_failure()
-        self.assertIn("usage: clinic.py", out)
+        self.assertIn("no input files", out)
 
     def test_cli_fail_output_and_multiple_files(self):
         out = self.expect_failure("-o", "out.c", "input.c", "moreinput.c")
@@ -2104,8 +2039,8 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(arg_refcount_origin, arg_refcount_after)
 
     def test_gh_99240_double_free(self):
-        expected_error = r'gh_99240_double_free\(\) argument 2 must be encoded string without null bytes, not str'
-        with self.assertRaisesRegex(TypeError, expected_error):
+        err = r'gh_99240_double_free\(\) argument 2 must be encoded string without null bytes, not str'
+        with self.assertRaisesRegex(TypeError, err):
             ac_tester.gh_99240_double_free('a', '\0b')
 
     def test_cloned_func_exception_message(self):
