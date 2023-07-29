@@ -33,7 +33,7 @@ bound into a function.
 
    Return the number of free variables in *co*.
 
-.. c:function:: PyCodeObject* PyUnstable_Code_New(int argcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
+.. c:function:: PyCodeObject* PyUnstable_Code_New(int argcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, PyObject *qualname, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
 
    Return a new code object.  If you need a dummy code object to create a frame,
    use :c:func:`PyCode_NewEmpty` instead.
@@ -46,7 +46,7 @@ bound into a function.
    execution or VM crashes. Use this function only with extreme care.
 
    .. versionchanged:: 3.11
-      Added ``exceptiontable`` parameter.
+      Added ``qualname`` and ``exceptiontable`` parameters.
 
    .. index:: single: PyCode_New
 
@@ -56,7 +56,7 @@ bound into a function.
       The old name is deprecated, but will remain available until the
       signature changes again.
 
-.. c:function:: PyCodeObject* PyUnstable_Code_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
+.. c:function:: PyCodeObject* PyUnstable_Code_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, PyObject *qualname, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
 
    Similar to :c:func:`PyUnstable_Code_New`, but with an extra "posonlyargcount" for positional-only arguments.
    The same caveats that apply to ``PyUnstable_Code_New`` also apply to this function.
@@ -66,7 +66,7 @@ bound into a function.
    .. versionadded:: 3.8 as ``PyCode_NewWithPosOnlyArgs``
 
    .. versionchanged:: 3.11
-      Added ``exceptiontable`` parameter.
+      Added ``qualname`` and  ``exceptiontable`` parameters.
 
    .. versionchanged:: 3.12
 
