@@ -505,7 +505,7 @@ Repeating our code
 ------------------
 
 The :keyword:`while` loop is example of a repeating cycle. It performs
-a block of code over as long as the condition is
+a block of code continuously as long as the condition is
 fulfilled.  The test used in the example is a simple comparison you might
 know from arithmetics.  Fulfilled condition have the value ``True``.
 Unfulfilled condition have the value ``False``::
