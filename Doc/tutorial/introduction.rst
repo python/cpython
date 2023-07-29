@@ -579,7 +579,7 @@ with a different string::
    >>> count = 10
    >>> while count > 5:
    ...     print(count, end=' ')  # end the output of print() with a whitespace
-   ...     count = count - 1  # lower the value by one with each repetition
+   ...     count = count - 1  # decrease the value by one with each repetition
    ...
    10 9 8 7 6
 
