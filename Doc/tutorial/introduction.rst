@@ -528,10 +528,10 @@ In Python, the following comparison operators are used:
 
 Let's create a simple loop.  We need the keyword ``while`` and a condition;
 in this case, ``count < 5``.  To ensure that the loop finishes, we must make
-sure that the condition is `not fulfilled` at a certain step.  Otherwise, the
+sure that the condition is *not fulfilled* at a certain step.  Otherwise, the
 code would repeat indefinitely.  To achieve that, we can increase the value
-of count.  As soon as the variable count reaches the value 5, the condition
-will be ``False``::
+of count.  As soon as the variable ``count`` reaches the value 5, the
+condition will be ``False``::
 
    >>> count = 0;  # define variable to which we will be adding 1 in a loop
    >>> while count < 5: count = count + 1  # hit enter one more time to start the loop
@@ -539,7 +539,7 @@ will be ``False``::
    >>> count  # when count reached value of 5, while loop finished
    5
 
-Note that block inside the `while` loop, or *body* of the loop is *indented*.
+Note that block inside the ``while`` loop, or *body* of the loop is *indented*.
 Indentation is Python's way of grouping statements together.  When you use
 the Python shell, you need to type a tab or space(s) for each indented line.
 Each line within a block must be indented by the same amount.
@@ -562,7 +562,7 @@ Function argumets
 
 We already know :func:`print` function, that writes the value of the
 argument(s) it receives on screen.  The arguments are enclosed within
-parentheses ``()``. In simplest form, like ``print(a, b)`` the arguments
+parentheses ``()``. In simplest form, like ``print(a, b)``, the arguments
 are positional,  meaning the function processes them in the same order
 as they are written::
 
