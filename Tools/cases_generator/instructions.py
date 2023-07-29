@@ -2,7 +2,7 @@ import dataclasses
 import re
 import typing
 
-from flags import InstructionFlags, variable_used_unspecialized
+from flags import InstructionFlags, variable_used, variable_used_unspecialized
 from formatting import (
     Formatter,
     UNUSED,
@@ -61,6 +61,7 @@ class Instruction:
 
     # Computed by constructor
     always_exits: bool
+    has_deopt: bool
     cache_offset: int
     cache_effects: list[parsing.CacheEffect]
     input_effects: list[StackEffect]
@@ -83,6 +84,7 @@ class Instruction:
             self.block
         )
         self.always_exits = always_exits(self.block_text)
+        self.has_deopt = variable_used(self.inst, "DEOPT_IF")
         self.cache_effects = [
             effect for effect in inst.inputs if isinstance(effect, parsing.CacheEffect)
         ]
