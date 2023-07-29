@@ -1140,7 +1140,7 @@ little bit better::
 
     total = functools.reduce(combine, items)[1]
 
-But it would be best of all would have been to use a ``for`` loop::
+But would be best of all would have been to use a ``for`` loop::
 
      total = 0
      for a, b in items:
