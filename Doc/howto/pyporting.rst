@@ -183,19 +183,19 @@ separation doesn't pose an issue. But for code that has to deal with both, it
 does mean you might have to now care about when you are using text compared
 to binary data, which is why this cannot be entirely automated.
 
-Decide which APIs take text and which take binary(it is **highly** recommended
+Decide which APIs take text and which take binary (it is **highly** recommended
 you don't design APIs that can take both due to the difficulty of keeping the
 code working; as stated earlier it is difficult to do well). In Python 2 this
 means making sure the APIs that take text can work with ``unicode`` and those
 that work with binary data work with the ``bytes`` type from Python 3
 (which is a subset of ``str`` in Python 2 and acts as an alias for ``bytes``
 type in Python 2). Usually the biggest issue is realizing which methods exist
-on which types in Python 2 and 3 simultaneously(for text that's ``unicode``
+on which types in Python 2 and 3 simultaneously (for text that's ``unicode``
 in Python 2 and ``str`` in Python 3, for binary that's ``str``/``bytes`` in
 Python 2 and ``bytes`` in Python 3).
 
 The following table lists the **unique** methods of each data type across
-Python 2 and 3(e.g., the ``decode()`` method is usable on the equivalent binary
+Python 2 and 3 (e.g., the ``decode()`` method is usable on the equivalent binary
 data type in either Python 2 or 3, but it can't be used by the textual data
 type consistently between Python 2 and 3 because ``str`` in Python 3 doesn't
 have the method). Do note that as of Python 3.5 the ``__mod__`` method was
@@ -225,7 +225,7 @@ having to keep track of what type of data you are working with.
 The next issue is making sure you know whether the string literals in your code
 represent text or binary data. You should add a ``b`` prefix to any
 literal that presents binary data. For text you should add a ``u`` prefix to
-the text literal. (there is a :mod:`__future__` import to force all unspecified
+the text literal. (There is a :mod:`__future__` import to force all unspecified
 literals to be Unicode, but usage has shown it isn't as effective as adding a
 ``b`` or ``u`` prefix to all literals explicitly)
 
