@@ -121,7 +121,7 @@ PyAPI_FUNC(void) _PyErr_SetString(
     PyObject *exception,
     const char *string);
 
-PyAPI_FUNC(PyObject *)_PyErr_Format(
+PyAPI_FUNC(PyObject*) _PyErr_Format(
     PyThreadState *tstate,
     PyObject *exception,
     const char *format,

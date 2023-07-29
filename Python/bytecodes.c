@@ -2615,7 +2615,7 @@ dummy_func(
                 goto error;
             }
             DECREF_INPUTS();
-            res = _PyObject_CallNoArgsTstate(tstate, enter);
+            res = _PyObject_CallNoArgs(enter);
             Py_DECREF(enter);
             if (res == NULL) {
                 Py_DECREF(exit);
@@ -2650,7 +2650,7 @@ dummy_func(
                 goto error;
             }
             DECREF_INPUTS();
-            res = _PyObject_CallNoArgsTstate(tstate, enter);
+            res = _PyObject_CallNoArgs(enter);
             Py_DECREF(enter);
             if (res == NULL) {
                 Py_DECREF(exit);

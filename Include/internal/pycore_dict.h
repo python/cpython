@@ -13,7 +13,7 @@ extern "C" {
 #include "pycore_runtime.h"         // _PyRuntime
 
 // Unsafe flavor of PyDict_GetItemWithError(): no error checking
-PyAPI_FUNC(PyObject *)_PyDict_GetItemWithError(PyObject *dp, PyObject *key);
+PyAPI_FUNC(PyObject*) _PyDict_GetItemWithError(PyObject *dp, PyObject *key);
 
 extern int _PyDict_Contains_KnownHash(PyObject *, PyObject *, Py_hash_t);
 
