@@ -44,7 +44,7 @@ Any object can be tested for truth value, for use in an :keyword:`if` or
 .. index:: single: true
 
 By default, an object is considered true unless its class defines either a
-:meth:`__bool__` method that returns ``False`` or a :meth:`__len__` method that
+:meth:`~object.__bool__` method that returns ``False`` or a :meth:`__len__` method that
 returns zero, when called with the object. [1]_  Here are most of the built-in
 objects considered false:
 
