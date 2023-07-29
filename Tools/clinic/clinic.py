@@ -2015,7 +2015,6 @@ class Destination:
         if self.type =='file':
             d = {}
             filename = self.clinic.filename
-            assert filename is not None
             d['path'] = filename
             dirname, basename = os.path.split(filename)
             if not dirname:
@@ -2133,8 +2132,8 @@ impl_definition block
             language: CLanguage,
             printer: BlockPrinter | None = None,
             *,
+            filename: str,
             verify: bool = True,
-            filename: str | None = None
     ) -> None:
         # maps strings to Parser objects.
         # (instantiated from the "parsers" global.)
