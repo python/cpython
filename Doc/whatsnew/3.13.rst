@@ -144,7 +144,7 @@ typing
 Optimizations
 =============
 
-* :func:`textwrap.indent` is now ~25% faster than before for large input.
+* :func:`textwrap.indent` is now ~30% faster than before for large input.
   (Contributed by Inada Naoki in :gh:`107369`.)
 
 
