@@ -643,6 +643,27 @@ def handle_relocations(
                 yield Hole("PATCH_REL_32", symbol, offset, addend)
             # x86_64-apple-darwin:
             case {
+                "Length": 2,
+                "Offset": int(offset),
+                "PCRel": 1,
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "X86_64_RELOC_GOT_LOAD"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(body[where], "little", signed=False)
+                assert not what, what
+                addend = what
+                body[where] = [0] * 4
+                assert symbol.startswith("_"), symbol
+                symbol = symbol.removeprefix("_")
+                if (symbol, addend) not in got_entries:
+                    got_entries.append((symbol, addend))
+                while len(body) % 8:
+                    body.append(0)
+                addend = len(body) + got_entries.index((symbol, addend)) * 8 - offset - 4
+                body[where] = addend.to_bytes(4, sys.byteorder)
+            case {
                 "Length": 3,
                 "Offset": int(offset),
                 "PCRel": 0,
@@ -928,7 +949,7 @@ class Compiler:
             opnames.append(opname)
             lines.append(f"// {opname}")
             assert stencil.body
-            lines.append(f"static unsigned char {opname}_stencil_bytes[] = {{")
+            lines.append(f"static const unsigned char {opname}_stencil_bytes[] = {{")
             for chunk in batched(stencil.body, 8):
                 lines.append(f"    {', '.join(f'0x{byte:02X}' for byte in chunk)},")
             lines.append(f"}};")
@@ -1007,10 +1028,10 @@ class Compiler:
         header.append(f"")
         header.append(f"typedef struct {{")
         header.append(f"    const size_t nbytes;")
-        header.append(f"    unsigned char * const bytes;")
+        header.append(f"    const unsigned char * const bytes;")
         header.append(f"    const size_t nholes;")
         header.append(f"    const Hole * const holes;")
-        header.append(f"    size_t nloads;")
+        header.append(f"    const size_t nloads;")
         header.append(f"    const SymbolLoad * const loads;")
         header.append(f"}} Stencil;")
         header.append(f"")
