@@ -852,8 +852,7 @@ using ``[]``.
    Note that, despite its name, ``AnyStr`` has nothing to do with the
    :class:`Any` type, nor does it mean "any string". In particular, ``AnyStr``
    and ``str | bytes`` are different from each other and have different use
-   cases. If ``AnyStr`` is not part of the input arguments it should not be
-   used::
+   cases::
 
       # Invalid use of AnyStr:
       # The type variable is used only once in the function signature,
