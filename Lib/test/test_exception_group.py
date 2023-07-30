@@ -460,7 +460,7 @@ class ExceptionGroupSplitTests(ExceptionGroupTestBase):
 class DeepRecursionInSplitAndSubgroup(unittest.TestCase):
     def make_deep_eg(self):
         e = TypeError(1)
-        for i in range(2000):
+        for i in range(3_000):
             e = ExceptionGroup('eg', [e])
         return e
 

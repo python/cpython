@@ -596,7 +596,7 @@ class DictTest(unittest.TestCase):
 
     def test_repr_deep(self):
         d = {}
-        for i in range(sys.getrecursionlimit() + 100):
+        for i in range(3_000):
             d = {1: d}
         self.assertRaises(RecursionError, repr, d)
 
