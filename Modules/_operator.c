@@ -1612,8 +1612,7 @@ methodcaller_vectorcall(
         return NULL;
     }
     if (mc->vectorcall_args == NULL) {
-        void *ret = _methodcaller_initialize_vectorcall(mc);
-        if (ret == NULL) {
+        if (_methodcaller_initialize_vectorcall(mc) < 0) {
             return NULL;
         }
     }
