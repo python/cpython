@@ -10,6 +10,8 @@ extern "C" {
 
 #define _Py_UOP_MAX_TRACE_LENGTH 32
 
+PyAPI_DATA(PyTypeObject) PyUOpExecutor_Type;
+
 typedef struct {
     uint32_t opcode;
     uint32_t oparg;
