@@ -69,6 +69,10 @@ New grammar features:
 
 * :pep:`701`: Syntactic formalization of f-strings
 
+Interpreter improvements:
+
+* :ref:`whatsnew312-pep684`
+
 New typing features:
 
 * :pep:`688`: Making the buffer protocol accessible in Python
@@ -275,6 +279,36 @@ way to represent buffer objects, for example in type annotations.
 The new :class:`inspect.BufferFlags` enum represents the flags that
 can be used to customize buffer creation.
 (Contributed by Jelle Zijlstra in :gh:`102500`.)
+
+.. _whatsnew312-pep684:
+
+PEP 684: A Per-Interpreter GIL
+------------------------------
+
+Sub-interpreters may now be created with a unique GIL per interpreter.
+This allows Python programs to take full advantage of multiple CPU
+cores.
+
+Use the new :c:func:`Py_NewInterpreterFromConfig` function to
+create an interpreter with its own GIL::
+
+   PyInterpreterConfig config = {
+       .check_multi_interp_extensions = 1,
+       .gil = PyInterpreterConfig_OWN_GIL,
+   };
+   PyThreadState *tstate = NULL;
+   PyStatus status = Py_NewInterpreterFromConfig(&tstate, &config);
+   if (PyStatus_Exception(status)) {
+       return -1;
+   }
+   /* The new interpeter is now active in the current thread. */
+
+For further examples how to use the C-API for sub-interpreters with a
+per-interpreter GIL, see :source:`Modules/_xxsubinterpretersmodule.c`.
+
+A Python API is anticipated for 3.13.  (See :pep:`554`.)
+
+(Contributed by Eric Snow in :gh:`104210`, etc.)
 
 New Features Related to Type Hints
 ==================================
@@ -1234,6 +1268,10 @@ Removed
 
   (Contributed by Pradyun Gedam in :gh:`95299`.)
 
+* :mod:`enum`: Remove ``EnumMeta.__getattr__``, which is no longer needed for
+  enum attribute access.
+  (Contributed by Ethan Furman in :gh:`95083`.)
+
 * :mod:`ftplib`: Remove the ``FTP_TLS.ssl_version`` class attribute: use the
   *context* parameter instead.
   (Contributed by Victor Stinner in :gh:`94172`.)
@@ -1738,6 +1776,12 @@ New Features
 
   (Contributed by Eddie Elizondo in :gh:`84436`.)
 
+* :pep:`684`: Added the new :c:func:`Py_NewInterpreterFromConfig`
+  function and :c:type:`PyInterpreterConfig`, which may be used
+  to create sub-interpreters with their own GILs.
+  (See :ref:`whatsnew312-pep684` for more info.)
+  (Contributed by Eric Snow in :gh:`104110`.)
+
 * In the limited C API version 3.12, :c:func:`Py_INCREF` and
   :c:func:`Py_DECREF` functions are now implemented as opaque function calls to
   hide implementation details.
@@ -1875,6 +1919,13 @@ Porting to Python 3.12
 
   * :c:func:`PyUnstable_Long_IsCompact`
   * :c:func:`PyUnstable_Long_CompactValue`
+
+* Custom allocators, set via :c:func:`PyMem_SetAllocator`, are now
+  required to be thread-safe, regardless of memory domain.  Allocators
+  that don't have their own state, including "hooks", are not affected.
+  If your custom allocator is not already thread-safe and you need
+  guidance then please create a new GitHub issue
+  and CC ``@ericsnowcurrently``.
 
 Deprecated
 ----------

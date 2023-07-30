@@ -1009,10 +1009,6 @@
             break;
         }
 
-        case _SKIP_CACHE: {
-            break;
-        }
-
         case _GUARD_GLOBALS_VERSION: {
             uint16_t version = (uint16_t)operand;
             PyDictObject *dict = (PyDictObject *)GLOBALS();

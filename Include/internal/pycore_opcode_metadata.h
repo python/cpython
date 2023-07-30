@@ -35,27 +35,26 @@
 #define _BINARY_OP_ADD_UNICODE 311
 #define _LOAD_LOCALS 312
 #define _LOAD_FROM_DICT_OR_GLOBALS 313
-#define _SKIP_CACHE 314
-#define _GUARD_GLOBALS_VERSION 315
-#define _GUARD_BUILTINS_VERSION 316
-#define _LOAD_GLOBAL_MODULE 317
-#define _LOAD_GLOBAL_BUILTINS 318
-#define _GUARD_TYPE_VERSION 319
-#define _CHECK_MANAGED_OBJECT_HAS_VALUES 320
-#define _LOAD_ATTR_INSTANCE_VALUE 321
-#define IS_NONE 322
-#define _ITER_CHECK_LIST 323
-#define _IS_ITER_EXHAUSTED_LIST 324
-#define _ITER_NEXT_LIST 325
-#define _ITER_CHECK_TUPLE 326
-#define _IS_ITER_EXHAUSTED_TUPLE 327
-#define _ITER_NEXT_TUPLE 328
-#define _ITER_CHECK_RANGE 329
-#define _IS_ITER_EXHAUSTED_RANGE 330
-#define _ITER_NEXT_RANGE 331
-#define _POP_JUMP_IF_FALSE 332
-#define _POP_JUMP_IF_TRUE 333
-#define JUMP_TO_TOP 334
+#define _GUARD_GLOBALS_VERSION 314
+#define _GUARD_BUILTINS_VERSION 315
+#define _LOAD_GLOBAL_MODULE 316
+#define _LOAD_GLOBAL_BUILTINS 317
+#define _GUARD_TYPE_VERSION 318
+#define _CHECK_MANAGED_OBJECT_HAS_VALUES 319
+#define _LOAD_ATTR_INSTANCE_VALUE 320
+#define IS_NONE 321
+#define _ITER_CHECK_LIST 322
+#define _IS_ITER_EXHAUSTED_LIST 323
+#define _ITER_NEXT_LIST 324
+#define _ITER_CHECK_TUPLE 325
+#define _IS_ITER_EXHAUSTED_TUPLE 326
+#define _ITER_NEXT_TUPLE 327
+#define _ITER_CHECK_RANGE 328
+#define _IS_ITER_EXHAUSTED_RANGE 329
+#define _ITER_NEXT_RANGE 330
+#define _POP_JUMP_IF_FALSE 331
+#define _POP_JUMP_IF_TRUE 332
+#define JUMP_TO_TOP 333
 
 #ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
@@ -945,7 +944,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
 }
 #endif
 
-enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT_IBC000, INSTR_FMT_IBC00000, INSTR_FMT_IBC00000000, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC0, INSTR_FMT_IXC00, INSTR_FMT_IXC000 };
+enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC0, INSTR_FMT_IXC00, INSTR_FMT_IXC000 };
 
 #define IS_VALID_OPCODE(OP) \
     (((OP) >= 0) && ((OP) < OPCODE_METADATA_SIZE) && \
@@ -1279,8 +1278,8 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [LOAD_NAME] = { .nuops = 2, .uops = { { _LOAD_LOCALS, 0, 0 }, { _LOAD_FROM_DICT_OR_GLOBALS, 0, 0 } } },
     [LOAD_FROM_DICT_OR_GLOBALS] = { .nuops = 1, .uops = { { _LOAD_FROM_DICT_OR_GLOBALS, 0, 0 } } },
     [LOAD_GLOBAL] = { .nuops = 1, .uops = { { LOAD_GLOBAL, 0, 0 } } },
-    [LOAD_GLOBAL_MODULE] = { .nuops = 4, .uops = { { _SKIP_CACHE, 0, 0 }, { _GUARD_GLOBALS_VERSION, 1, 1 }, { _SKIP_CACHE, 0, 0 }, { _LOAD_GLOBAL_MODULE, 1, 3 } } },
-    [LOAD_GLOBAL_BUILTIN] = { .nuops = 4, .uops = { { _SKIP_CACHE, 0, 0 }, { _GUARD_GLOBALS_VERSION, 1, 1 }, { _GUARD_BUILTINS_VERSION, 1, 2 }, { _LOAD_GLOBAL_BUILTINS, 1, 3 } } },
+    [LOAD_GLOBAL_MODULE] = { .nuops = 2, .uops = { { _GUARD_GLOBALS_VERSION, 1, 1 }, { _LOAD_GLOBAL_MODULE, 1, 3 } } },
+    [LOAD_GLOBAL_BUILTIN] = { .nuops = 3, .uops = { { _GUARD_GLOBALS_VERSION, 1, 1 }, { _GUARD_BUILTINS_VERSION, 1, 2 }, { _LOAD_GLOBAL_BUILTINS, 1, 3 } } },
     [DELETE_FAST] = { .nuops = 1, .uops = { { DELETE_FAST, 0, 0 } } },
     [DELETE_DEREF] = { .nuops = 1, .uops = { { DELETE_DEREF, 0, 0 } } },
     [LOAD_FROM_DICT_OR_DEREF] = { .nuops = 1, .uops = { { LOAD_FROM_DICT_OR_DEREF, 0, 0 } } },
@@ -1302,7 +1301,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [LOAD_SUPER_ATTR_ATTR] = { .nuops = 1, .uops = { { LOAD_SUPER_ATTR_ATTR, 0, 0 } } },
     [LOAD_SUPER_ATTR_METHOD] = { .nuops = 1, .uops = { { LOAD_SUPER_ATTR_METHOD, 0, 0 } } },
     [LOAD_ATTR] = { .nuops = 1, .uops = { { LOAD_ATTR, 0, 0 } } },
-    [LOAD_ATTR_INSTANCE_VALUE] = { .nuops = 4, .uops = { { _SKIP_CACHE, 0, 0 }, { _GUARD_TYPE_VERSION, 2, 1 }, { _CHECK_MANAGED_OBJECT_HAS_VALUES, 0, 0 }, { _LOAD_ATTR_INSTANCE_VALUE, 1, 3 } } },
+    [LOAD_ATTR_INSTANCE_VALUE] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _CHECK_MANAGED_OBJECT_HAS_VALUES, 0, 0 }, { _LOAD_ATTR_INSTANCE_VALUE, 1, 3 } } },
     [COMPARE_OP] = { .nuops = 1, .uops = { { COMPARE_OP, 0, 0 } } },
     [COMPARE_OP_FLOAT] = { .nuops = 1, .uops = { { COMPARE_OP_FLOAT, 0, 0 } } },
     [COMPARE_OP_INT] = { .nuops = 1, .uops = { { COMPARE_OP_INT, 0, 0 } } },
@@ -1356,7 +1355,6 @@ const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
     [_BINARY_OP_ADD_UNICODE] = "_BINARY_OP_ADD_UNICODE",
     [_LOAD_LOCALS] = "_LOAD_LOCALS",
     [_LOAD_FROM_DICT_OR_GLOBALS] = "_LOAD_FROM_DICT_OR_GLOBALS",
-    [_SKIP_CACHE] = "_SKIP_CACHE",
     [_GUARD_GLOBALS_VERSION] = "_GUARD_GLOBALS_VERSION",
     [_GUARD_BUILTINS_VERSION] = "_GUARD_BUILTINS_VERSION",
     [_LOAD_GLOBAL_MODULE] = "_LOAD_GLOBAL_MODULE",
