@@ -1391,30 +1391,24 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
 
 class ClinicExternalTest(TestCase):
     maxDiff = None
-    clinic_py = os.path.join(test_tools.toolsdir, "clinic", "clinic.py")
-
-    def _do_test(self, *args, expect_success=True):
-        with subprocess.Popen(
-            [sys.executable, "-Xutf8", self.clinic_py, *args],
-            encoding="utf-8",
-            bufsize=0,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        ) as proc:
-            proc.wait()
-            if expect_success and proc.returncode:
-                self.fail("".join([*proc.stdout, *proc.stderr]))
-            stdout = proc.stdout.read()
-            stderr = proc.stderr.read()
-            # Clinic never writes to stderr.
-            self.assertEqual(stderr, "")
-            return stdout
 
     def expect_success(self, *args):
-        return self._do_test(*args)
+        with support.captured_stdout() as out, support.captured_stderr() as err:
+            try:
+                clinic.main(args)
+            except SystemExit as exc:
+                if exc.code != 0:
+                    self.fail(f"unexpected failure: {args=}")
+        self.assertEqual(err.getvalue(), "")
+        return out.getvalue()
 
     def expect_failure(self, *args):
-        return self._do_test(*args, expect_success=False)
+        with support.captured_stdout() as out, support.captured_stderr() as err:
+            with self.assertRaises(SystemExit) as cm:
+                clinic.main(args)
+            if cm.exception.code == 0:
+                self.fail(f"unexpected success: {args=}")
+        return out.getvalue(), err.getvalue()
 
     def test_external(self):
         CLINIC_TEST = 'clinic.test.c'
@@ -1478,8 +1472,9 @@ class ClinicExternalTest(TestCase):
             # First, run the CLI without -f and expect failure.
             # Note, we cannot check the entire fail msg, because the path to
             # the tmp file will change for every run.
-            out = self.expect_failure(fn)
-            self.assertTrue(out.endswith(fail_msg))
+            out, _ = self.expect_failure(fn)
+            self.assertTrue(out.endswith(fail_msg),
+                            f"{out!r} does not end with {fail_msg!r}")
             # Then, force regeneration; success expected.
             out = self.expect_success("-f", fn)
             self.assertEqual(out, "")
@@ -1621,33 +1616,30 @@ class ClinicExternalTest(TestCase):
                 )
 
     def test_cli_fail_converters_and_filename(self):
-        out = self.expect_failure("--converters", "test.c")
-        msg = (
-            "Usage error: can't specify --converters "
-            "and a filename at the same time"
-        )
-        self.assertIn(msg, out)
+        _, err = self.expect_failure("--converters", "test.c")
+        msg = "can't specify --converters and a filename at the same time"
+        self.assertIn(msg, err)
 
     def test_cli_fail_no_filename(self):
-        out = self.expect_failure()
-        self.assertIn("usage: clinic.py", out)
+        _, err = self.expect_failure()
+        self.assertIn("no input files", err)
 
     def test_cli_fail_output_and_multiple_files(self):
-        out = self.expect_failure("-o", "out.c", "input.c", "moreinput.c")
+        _, err = self.expect_failure("-o", "out.c", "input.c", "moreinput.c")
         msg = "Usage error: can't use -o with multiple filenames"
-        self.assertIn(msg, out)
+        self.assertIn(msg, err)
 
     def test_cli_fail_filename_or_output_and_make(self):
+        msg = "can't use -o or filenames with --make"
         for opts in ("-o", "out.c"), ("filename.c",):
             with self.subTest(opts=opts):
-                out = self.expect_failure("--make", *opts)
-                msg = "Usage error: can't use -o or filenames with --make"
-                self.assertIn(msg, out)
+                _, err = self.expect_failure("--make", *opts)
+                self.assertIn(msg, err)
 
     def test_cli_fail_make_without_srcdir(self):
-        out = self.expect_failure("--make", "--srcdir", "")
+        _, err = self.expect_failure("--make", "--srcdir", "")
         msg = "Usage error: --srcdir must not be empty with --make"
-        self.assertIn(msg, out)
+        self.assertIn(msg, err)
 
 
 try:
