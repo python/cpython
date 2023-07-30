@@ -28,15 +28,33 @@
 #define ASSERT_KWNAMES_IS_NULL() (void)0
 
 // Stuff that will be patched at "JIT time":
+extern _PyInterpreterFrame *_jit_branch(_PyExecutorObject *executor,
+                                        _PyInterpreterFrame *frame,
+                                        PyObject **stack_pointer,
+                                        PyThreadState *tstate
+                                        , PyObject *_tos1
+                                        , PyObject *_tos2
+                                        , PyObject *_tos3
+                                        , PyObject *_tos4
+                                        );
 extern _PyInterpreterFrame *_jit_continue(_PyExecutorObject *executor,
                                           _PyInterpreterFrame *frame,
                                           PyObject **stack_pointer,
-                                          PyThreadState *tstate, int pc
+                                          PyThreadState *tstate
                                           , PyObject *_tos1
                                           , PyObject *_tos2
                                           , PyObject *_tos3
                                           , PyObject *_tos4
                                           );
+extern _PyInterpreterFrame *_jit_loop(_PyExecutorObject *executor,
+                                      _PyInterpreterFrame *frame,
+                                      PyObject **stack_pointer,
+                                      PyThreadState *tstate
+                                      , PyObject *_tos1
+                                      , PyObject *_tos2
+                                      , PyObject *_tos3
+                                      , PyObject *_tos4
+                                      );
 // The address of an extern can't be 0:
 extern void _jit_oparg_plus_one;
 extern void _jit_operand_plus_one;
@@ -47,7 +65,7 @@ extern _Py_CODEUNIT _jit_pc_plus_one;
 
 _PyInterpreterFrame *
 _jit_entry(_PyExecutorObject *executor, _PyInterpreterFrame *frame,
-           PyObject **stack_pointer, PyThreadState *tstate, int pc
+           PyObject **stack_pointer, PyThreadState *tstate
            , PyObject *_tos1
            , PyObject *_tos2
            , PyObject *_tos3
@@ -58,31 +76,47 @@ _jit_entry(_PyExecutorObject *executor, _PyInterpreterFrame *frame,
     __builtin_assume(_tos2 == stack_pointer[/* DON'T REPLACE ME */ -2]);
     __builtin_assume(_tos3 == stack_pointer[/* DON'T REPLACE ME */ -3]);
     __builtin_assume(_tos4 == stack_pointer[/* DON'T REPLACE ME */ -4]);
-    if (pc != (intptr_t)&_jit_pc_plus_one - 1) {
-        return _PyUopExecute(executor, frame, stack_pointer, pc);
-    }
     // Locals that the instruction implementations expect to exist:
     _PyUOpExecutorObject *self = (_PyUOpExecutorObject *)executor;
     uint32_t opcode = _JIT_OPCODE;
     int32_t oparg = (uintptr_t)&_jit_oparg_plus_one - 1;
     uint64_t operand = (uintptr_t)&_jit_operand_plus_one - 1;
+    int pc = -1;
     assert(self->trace[pc].opcode == opcode);
     assert(self->trace[pc].oparg == oparg);
     assert(self->trace[pc].operand == operand);
-    pc++;
     switch (opcode) {
         // Now, the actual instruction definitions (only one will be used):
 #include "Python/executor_cases.c.h"
         default:
             Py_UNREACHABLE();
     }
-    // Finally, the continuation:
     _tos1 = stack_pointer[/* DON'T REPLACE ME */ -1];
     _tos2 = stack_pointer[/* DON'T REPLACE ME */ -2];
     _tos3 = stack_pointer[/* DON'T REPLACE ME */ -3];
     _tos4 = stack_pointer[/* DON'T REPLACE ME */ -4];
+    if (pc != -1) {
+        if (opcode == JUMP_TO_TOP) {
+            __attribute__((musttail))
+            return _jit_loop(executor, frame, stack_pointer, tstate
+                             , _tos1
+                             , _tos2
+                             , _tos3
+                             , _tos4
+                             );
+        }
+        assert(opcode == _POP_JUMP_IF_FALSE || opcode == _POP_JUMP_IF_TRUE);
+        __attribute__((musttail))
+        return _jit_branch(executor, frame, stack_pointer, tstate
+                           , _tos1
+                           , _tos2
+                           , _tos3
+                           , _tos4
+                           );
+    }
+    // Finally, the continuation:
     __attribute__((musttail))
-    return _jit_continue(executor, frame, stack_pointer, tstate, pc
+    return _jit_continue(executor, frame, stack_pointer, tstate
                          , _tos1
                          , _tos2
                          , _tos3

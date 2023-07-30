@@ -6,7 +6,7 @@
 extern _PyInterpreterFrame *_jit_continue(_PyExecutorObject *executor,
                                           _PyInterpreterFrame *frame,
                                           PyObject **stack_pointer,
-                                          PyThreadState *tstate, int pc
+                                          PyThreadState *tstate
                                           , PyObject *_tos1
                                           , PyObject *_tos2
                                           , PyObject *_tos3
@@ -22,8 +22,7 @@ _jit_trampoline(_PyExecutorObject *executor, _PyInterpreterFrame *frame,
     PyObject *_tos3 = stack_pointer[/* DON'T REPLACE ME */ -3];
     PyObject *_tos4 = stack_pointer[/* DON'T REPLACE ME */ -4];
     PyThreadState *tstate = PyThreadState_Get();
-    int pc = 0;
-    return _jit_continue(executor, frame, stack_pointer, tstate, pc
+    return _jit_continue(executor, frame, stack_pointer, tstate
                          , _tos1
                          , _tos2
                          , _tos3

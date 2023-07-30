@@ -21,10 +21,10 @@ typedef struct {
     _PyUOpInstruction trace[_Py_UOP_MAX_TRACE_LENGTH];  // TODO: variable length
 } _PyUOpExecutorObject;
 
-PyAPI_FUNC(_PyInterpreterFrame *)_PyUopExecute(
+_PyInterpreterFrame *_PyUopExecute(
     _PyExecutorObject *executor,
     _PyInterpreterFrame *frame,
-    PyObject **stack_pointer, int pc);
+    PyObject **stack_pointer);
 
 #ifdef __cplusplus
 }

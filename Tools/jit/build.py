@@ -868,8 +868,10 @@ class Compiler:
     def _use_ghccc(self, ll: pathlib.Path) -> None:
         if self._ghccc:
             ir = ll.read_text()
+            ir = ir.replace("i32 @_jit_branch", "ghccc i32 @_jit_branch")
             ir = ir.replace("i32 @_jit_continue", "ghccc i32 @_jit_continue")
             ir = ir.replace("i32 @_jit_entry", "ghccc i32 @_jit_entry")
+            ir = ir.replace("i32 @_jit_loop", "ghccc i32 @_jit_loop")
             ll.write_text(ir)
 
     def _use_tos_caching(self, c: pathlib.Path) -> None:
@@ -938,7 +940,9 @@ class Compiler:
         }
         values = {
             "HOLE_base",
+            "HOLE_branch",
             "HOLE_continue",
+            "HOLE_loop",
             "HOLE_next_trace",
             "HOLE_oparg_plus_one",
             "HOLE_operand_plus_one",

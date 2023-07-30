@@ -279,14 +279,21 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         initialized = 1;
     }
     assert(initialized > 0);
+    int *offsets = PyMem_Malloc(size * sizeof(int));
+    if (offsets == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
     // First, loop over everything once to find the total compiled size:
     size_t nbytes = trampoline_stencil.nbytes;
     for (int i = 0; i < size; i++) {
+        offsets[i] = nbytes;
         _PyUOpInstruction *instruction = &trace[i];
         const Stencil *stencil = &stencils[instruction->opcode];
         // XXX: Assert this once we support everything, and move initialization
         // to interpreter startup. Then we can only fail due to memory stuff:
         if (stencil->nbytes == 0) {
+            PyMem_Free(offsets);
             return NULL;
         }
         nbytes += stencil->nbytes;
@@ -294,6 +301,7 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
     unsigned char *memory = alloc(nbytes);
     if (memory == NULL) {
         PyErr_WarnEx(PyExc_RuntimeWarning, "JIT out of memory", 0);
+        PyMem_Free(offsets);
         return NULL;
     }
     unsigned char *page = (unsigned char *)((uintptr_t)memory & ~(page_size - 1));
@@ -308,6 +316,7 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
 #endif
         const char *w = "JIT unable to map writable memory (%d)";
         PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, code);
+        PyMem_Free(offsets);
         return NULL;
     }
     unsigned char *head = memory;
@@ -323,15 +332,16 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         _PyUOpInstruction *instruction = &trace[i];
         const Stencil *stencil = &stencils[instruction->opcode];
         patches[HOLE_base] = (uintptr_t)head;
-        patches[HOLE_continue] = (i != size - 1)
-                               ? (uintptr_t)head + stencil->nbytes
-                               : (uintptr_t)memory + trampoline_stencil.nbytes;
+        patches[HOLE_branch] = (uintptr_t)memory + offsets[instruction->oparg % size];
+        patches[HOLE_continue] = (uintptr_t)head + stencil->nbytes;
+        patches[HOLE_loop] = (uintptr_t)memory + trampoline_stencil.nbytes;
         patches[HOLE_oparg_plus_one] = instruction->oparg + 1;
         patches[HOLE_operand_plus_one] = instruction->operand + 1;
         patches[HOLE_pc_plus_one] = i + 1;
         copy_and_patch(head, stencil, patches);
         head += stencil->nbytes;
     };
+    PyMem_Free(offsets);
 #ifdef MS_WINDOWS
     if (!FlushInstructionCache(GetCurrentProcess(), memory, nbytes) ||
         !VirtualProtect(page, page_nbytes, PAGE_EXECUTE_READ, &old))

@@ -32,7 +32,7 @@
 
 
 _PyInterpreterFrame *
-_PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer, int pc)
+_PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
 #ifdef Py_DEBUG
     char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
@@ -61,6 +61,7 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
 
     OBJECT_STAT_INC(optimization_traces_executed);
     _Py_CODEUNIT *ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
+    int pc = 0;
     int opcode;
     int oparg;
     uint64_t operand;
