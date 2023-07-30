@@ -1,1 +1,2 @@
-Add better `struct.Struct.__repr__` implementation.
+Implement new :meth:`__repr__` method for :class:`struct.Struct`.
+Now it returns ``Struct(<format repr>)``.
