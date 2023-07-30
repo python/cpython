@@ -864,9 +864,10 @@ iterations of the loop.
 .. opcode:: UNPACK_SEQUENCE (count)
 
    Unpacks ``STACK[-1]`` into *count* individual values, which are put onto the stack
-   right-to-left::
+   right-to-left. Require there to be exactly *count* values.::
 
-      STACK.extend(STACK.pop()[:count:-1])
+      assert(len(STACK[-1]) == count)
+      STACK.extend(STACK.pop()[:-count-1:-1])
 
 
 .. opcode:: UNPACK_EX (counts)
