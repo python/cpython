@@ -1728,9 +1728,9 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
         Py_DECREF(as_parameter);
         return value;
     }
-    /* XXX better message */
-    PyErr_SetString(PyExc_TypeError,
-                    "wrong type");
+    PyErr_Format(PyExc_TypeError,
+                 "'%.200s' object cannot be interpreted "
+                 "as ctypes.c_wchar_p", Py_TYPE(value)->tp_name);
     return NULL;
 }
 
@@ -1792,9 +1792,9 @@ c_char_p_from_param(PyObject *type, PyObject *value)
         Py_DECREF(as_parameter);
         return value;
     }
-    /* XXX better message */
-    PyErr_SetString(PyExc_TypeError,
-                    "wrong type");
+    PyErr_Format(PyExc_TypeError,
+                 "'%.200s' object cannot be interpreted "
+                 "as ctypes.c_char_p", Py_TYPE(value)->tp_name);
     return NULL;
 }
 
@@ -1927,9 +1927,9 @@ c_void_p_from_param(PyObject *type, PyObject *value)
         Py_DECREF(as_parameter);
         return value;
     }
-    /* XXX better message */
-    PyErr_SetString(PyExc_TypeError,
-                    "wrong type");
+    PyErr_Format(PyExc_TypeError,
+                 "'%.200s' object cannot be interpreted "
+                 "as ctypes.c_void_p", Py_TYPE(value)->tp_name);
     return NULL;
 }
 
