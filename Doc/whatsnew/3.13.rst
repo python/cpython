@@ -190,7 +190,8 @@ Deprecated
 
   * :data:`typing.AnyStr` is deprecated. In Python 3.16, it will be removed from
     ``typing.__all__``, and a :exc:`DeprecationWarning` will be emitted when it
-    is imported or accessed. It will be removed entirely in Python 3.18.
+    is imported or accessed. It will be removed entirely in Python 3.18. Use
+    the new :ref:`type parameter syntax <type-params>` instead.
     (Contributed by Michael The in :gh:`107116`.)
 
 * :mod:`wave`: Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()``
@@ -340,7 +341,7 @@ Pending Removal in Python 3.16
 Pending Removal in Python 3.18
 ------------------------------
 
-* :class:`typing.AnyStr`: Use the new type parameter syntax instead. See :pep:`695`. (:gh:`105578`)
+* :class:`typing.AnyStr`: Use the new :ref:`type parameter syntax <type-params>` instead. See :pep:`695`. (:gh:`105578`)
 
 Pending Removal in Future Versions
 ----------------------------------

@@ -832,8 +832,8 @@ using ``[]``.
 .. data:: AnyStr
 
    .. deprecated-removed:: 3.13 3.18
-      Deprecated in favor of the new type parameter syntax. Use
-      ``class A[T: (str, bytes)]: ...`` instead of importing ``AnyStr``. See
+      Deprecated in favor of the new :ref:`type parameter syntax <type-params>`.
+      Use ``class A[T: (str, bytes)]: ...`` instead of importing ``AnyStr``. See
       :pep:`695` for more details.
 
       In Python 3.16, ``AnyStr`` will be removed from ``typing.__all__``, and
