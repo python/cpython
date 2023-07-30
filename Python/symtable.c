@@ -285,7 +285,7 @@ symtable_new(void)
 /* Using a scaling factor means this should automatically adjust when
    the recursion limit is adjusted for small or large C stack allocations.
 */
-#define COMPILER_STACK_FRAME_SCALE 1
+#define COMPILER_STACK_FRAME_SCALE 2
 
 struct symtable *
 _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)

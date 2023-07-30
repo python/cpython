@@ -627,7 +627,7 @@ extern const struct _PyCode_DEF(8) _Py_InitCleanup;
 
 /* _PyEval_EvalFrameDefault() is a *big* function,
  * so consume 3 units of C stack */
-#define PY_EVAL_C_STACK_UNITS 3
+#define PY_EVAL_C_STACK_UNITS 2
 
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
