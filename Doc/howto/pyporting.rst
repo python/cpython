@@ -24,7 +24,7 @@ How to port Python 2 Code to Python 3
 The Short Explanation
 =====================
 
-To achieve Python 2/3 compatibility in a single code-base, the basic steps
+To achieve Python 2/3 compatibility in a single code base, the basic steps
 are:
 
 #. Only worry about supporting Python 2.7
