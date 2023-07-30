@@ -1,0 +1,2 @@
+Fix an issue which caused incorrect inline values to be used when running
+with :envvar:`PYTHONUOPS` or :option:`-X uops <-X>` enabled.
