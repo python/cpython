@@ -2461,4 +2461,4 @@ def adjust_int_max_str_digits(max_digits):
 #For recursion tests, easily exceeds default recursion limit
 EXCEEDS_RECURSION_LIMIT = 5000
 
-C_RECURSION_LIMIT = 2500
+C_RECURSION_LIMIT = 2400

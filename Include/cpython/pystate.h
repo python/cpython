@@ -222,7 +222,7 @@ struct _ts {
 #  ifdef __wasi__
 #    define C_RECURSION_LIMIT 500
 #  else
-#    define C_RECURSION_LIMIT 2500
+#    define C_RECURSION_LIMIT 2400
 #  endif
 #endif
 
