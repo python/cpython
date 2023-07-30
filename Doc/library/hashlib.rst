@@ -244,7 +244,7 @@ by the SHAKE algorithm.
 
 .. method:: shake.digest(length)
 
-   Return the digest of the data passed to the :meth:`update` method so far.
+   Return the digest of the data passed to the :meth:`~hash.update` method so far.
    This is a bytes object of size *length* which may contain bytes in
    the whole range from 0 to 255.
 
@@ -507,9 +507,9 @@ Simple hashing
 
 To calculate hash of some data, you should first construct a hash object by
 calling the appropriate constructor function (:func:`blake2b` or
-:func:`blake2s`), then update it with the data by calling :meth:`update` on the
+:func:`blake2s`), then update it with the data by calling :meth:`~hash.update` on the
 object, and, finally, get the digest out of the object by calling
-:meth:`digest` (or :meth:`hexdigest` for hex-encoded string).
+:meth:`~hash.digest` (or :meth:`~hash.hexdigest` for hex-encoded string).
 
     >>> from hashlib import blake2b
     >>> h = blake2b()

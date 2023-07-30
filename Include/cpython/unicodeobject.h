@@ -140,9 +140,11 @@ typedef struct {
            and the kind is PyUnicode_1BYTE_KIND. If ascii is set and compact is
            set, use the PyASCIIObject structure. */
         unsigned int ascii:1;
+        /* The object is statically allocated. */
+        unsigned int statically_allocated:1;
         /* Padding to ensure that PyUnicode_DATA() is always aligned to
            4 bytes (see issue #19537 on m68k). */
-        unsigned int :25;
+        unsigned int :24;
     } state;
 } PyASCIIObject;
 
@@ -473,14 +475,6 @@ PyAPI_FUNC(int) _PyUnicode_IsTitlecase(
     Py_UCS4 ch       /* Unicode character */
     );
 
-PyAPI_FUNC(int) _PyUnicode_IsXidStart(
-    Py_UCS4 ch       /* Unicode character */
-    );
-
-PyAPI_FUNC(int) _PyUnicode_IsXidContinue(
-    Py_UCS4 ch       /* Unicode character */
-    );
-
 PyAPI_FUNC(int) _PyUnicode_IsWhitespace(
     const Py_UCS4 ch         /* Unicode character */
     );
@@ -499,34 +493,6 @@ PyAPI_FUNC(Py_UCS4) _PyUnicode_ToUppercase(
 
 PyAPI_FUNC(Py_UCS4) _PyUnicode_ToTitlecase(
     Py_UCS4 ch       /* Unicode character */
-    );
-
-PyAPI_FUNC(int) _PyUnicode_ToLowerFull(
-    Py_UCS4 ch,       /* Unicode character */
-    Py_UCS4 *res
-    );
-
-PyAPI_FUNC(int) _PyUnicode_ToTitleFull(
-    Py_UCS4 ch,       /* Unicode character */
-    Py_UCS4 *res
-    );
-
-PyAPI_FUNC(int) _PyUnicode_ToUpperFull(
-    Py_UCS4 ch,       /* Unicode character */
-    Py_UCS4 *res
-    );
-
-PyAPI_FUNC(int) _PyUnicode_ToFoldedFull(
-    Py_UCS4 ch,       /* Unicode character */
-    Py_UCS4 *res
-    );
-
-PyAPI_FUNC(int) _PyUnicode_IsCaseIgnorable(
-    Py_UCS4 ch         /* Unicode character */
-    );
-
-PyAPI_FUNC(int) _PyUnicode_IsCased(
-    Py_UCS4 ch         /* Unicode character */
     );
 
 PyAPI_FUNC(int) _PyUnicode_ToDecimalDigit(

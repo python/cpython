@@ -150,7 +150,8 @@ typing
 Optimizations
 =============
 
-
+* :func:`textwrap.indent` is now ~30% faster than before for large input.
+  (Contributed by Inada Naoki in :gh:`107369`.)
 
 
 Deprecated
@@ -939,13 +940,6 @@ Removed
   * or :c:func:`PyGILState_Ensure` and :c:func:`PyGILState_Release`.
 
   (Contributed by Victor Stinner in :gh:`105182`.)
-
-* Remove the old private, undocumented and untested ``_PyGC_FINALIZED()`` macro
-  which was kept for backward compatibility with Python 3.8 and older: use
-  :c:func:`PyObject_GC_IsFinalized()` instead. The `pythoncapi-compat project
-  <https://github.com/python/pythoncapi-compat/>`__ can be used to get this
-  function on Python 3.8 and older.
-  (Contributed by Victor Stinner in :gh:`105268`.)
 
 * Remove the old aliases to functions calling functions which were kept for
   backward compatibility with Python 3.8 provisional API:

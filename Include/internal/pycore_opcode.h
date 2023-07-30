@@ -19,20 +19,20 @@ extern const uint8_t _PyOpcode_Deopt[256];
 #ifdef NEED_OPCODE_TABLES
 
 const uint8_t _PyOpcode_Caches[256] = {
-    [TO_BOOL] = 3,
-    [BINARY_SUBSCR] = 1,
-    [STORE_SUBSCR] = 1,
-    [UNPACK_SEQUENCE] = 1,
-    [FOR_ITER] = 1,
-    [STORE_ATTR] = 4,
-    [LOAD_ATTR] = 9,
-    [COMPARE_OP] = 1,
     [LOAD_GLOBAL] = 4,
     [BINARY_OP] = 1,
+    [UNPACK_SEQUENCE] = 1,
+    [COMPARE_OP] = 1,
+    [BINARY_SUBSCR] = 1,
+    [FOR_ITER] = 1,
+    [LOAD_SUPER_ATTR] = 1,
+    [LOAD_ATTR] = 9,
+    [STORE_ATTR] = 4,
+    [CALL] = 3,
+    [STORE_SUBSCR] = 1,
     [SEND] = 1,
     [JUMP_BACKWARD] = 1,
-    [LOAD_SUPER_ATTR] = 1,
-    [CALL] = 3,
+    [TO_BOOL] = 3,
 };
 
 const uint8_t _PyOpcode_Deopt[256] = {

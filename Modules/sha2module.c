@@ -25,7 +25,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
 #include "pycore_strhex.h"        // _Py_strhex()
-#include "structmember.h"         // PyMemberDef
+
 #include "hashlib.h"
 
 /*[clinic input]

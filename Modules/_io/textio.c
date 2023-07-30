@@ -14,7 +14,7 @@
 #include "pycore_fileutils.h"     // _Py_GetLocaleEncoding()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "structmember.h"         // PyMemberDef
+
 #include "_iomodule.h"
 
 /*[clinic input]
@@ -3230,13 +3230,13 @@ static PyMethodDef textiowrapper_methods[] = {
 };
 
 static PyMemberDef textiowrapper_members[] = {
-    {"encoding", T_OBJECT, offsetof(textio, encoding), READONLY},
-    {"buffer", T_OBJECT, offsetof(textio, buffer), READONLY},
-    {"line_buffering", T_BOOL, offsetof(textio, line_buffering), READONLY},
-    {"write_through", T_BOOL, offsetof(textio, write_through), READONLY},
-    {"_finalizing", T_BOOL, offsetof(textio, finalizing), 0},
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(textio, weakreflist), READONLY},
-    {"__dictoffset__", T_PYSSIZET, offsetof(textio, dict), READONLY},
+    {"encoding", _Py_T_OBJECT, offsetof(textio, encoding), Py_READONLY},
+    {"buffer", _Py_T_OBJECT, offsetof(textio, buffer), Py_READONLY},
+    {"line_buffering", Py_T_BOOL, offsetof(textio, line_buffering), Py_READONLY},
+    {"write_through", Py_T_BOOL, offsetof(textio, write_through), Py_READONLY},
+    {"_finalizing", Py_T_BOOL, offsetof(textio, finalizing), 0},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(textio, weakreflist), Py_READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(textio, dict), Py_READONLY},
     {NULL}
 };
 

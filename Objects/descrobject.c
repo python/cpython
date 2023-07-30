@@ -8,7 +8,7 @@
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
-#include "structmember.h"         // PyMemberDef
+
 
 /*[clinic input]
 class mappingproxy "mappingproxyobject *" "&PyDictProxy_Type"
@@ -182,7 +182,7 @@ member_get(PyMemberDescrObject *descr, PyObject *obj, PyObject *type)
         return NULL;
     }
 
-    if (descr->d_member->flags & PY_AUDIT_READ) {
+    if (descr->d_member->flags & Py_AUDIT_READ) {
         if (PySys_Audit("object.__getattr__", "Os",
             obj ? obj : Py_None, descr->d_member->name) < 0) {
             return NULL;
@@ -640,8 +640,8 @@ static PyMethodDef descr_methods[] = {
 };
 
 static PyMemberDef descr_members[] = {
-    {"__objclass__", T_OBJECT, offsetof(PyDescrObject, d_type), READONLY},
-    {"__name__", T_OBJECT, offsetof(PyDescrObject, d_name), READONLY},
+    {"__objclass__", _Py_T_OBJECT, offsetof(PyDescrObject, d_type), Py_READONLY},
+    {"__name__", _Py_T_OBJECT, offsetof(PyDescrObject, d_name), Py_READONLY},
     {0}
 };
 
@@ -1355,7 +1355,7 @@ static PyMethodDef wrapper_methods[] = {
 };
 
 static PyMemberDef wrapper_members[] = {
-    {"__self__", T_OBJECT, offsetof(wrapperobject, self), READONLY},
+    {"__self__", _Py_T_OBJECT, offsetof(wrapperobject, self), Py_READONLY},
     {0}
 };
 
@@ -1515,10 +1515,10 @@ static PyObject * property_copy(PyObject *, PyObject *, PyObject *,
                                   PyObject *);
 
 static PyMemberDef property_members[] = {
-    {"fget", T_OBJECT, offsetof(propertyobject, prop_get), READONLY},
-    {"fset", T_OBJECT, offsetof(propertyobject, prop_set), READONLY},
-    {"fdel", T_OBJECT, offsetof(propertyobject, prop_del), READONLY},
-    {"__doc__",  T_OBJECT, offsetof(propertyobject, prop_doc), 0},
+    {"fget", _Py_T_OBJECT, offsetof(propertyobject, prop_get), Py_READONLY},
+    {"fset", _Py_T_OBJECT, offsetof(propertyobject, prop_set), Py_READONLY},
+    {"fdel", _Py_T_OBJECT, offsetof(propertyobject, prop_del), Py_READONLY},
+    {"__doc__",  _Py_T_OBJECT, offsetof(propertyobject, prop_doc), 0},
     {0}
 };
 
