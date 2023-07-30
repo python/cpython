@@ -921,9 +921,10 @@ iterations of the loop.
 
 .. opcode:: UNPACK_SEQUENCE (count)
 
-   Unpacks ``STACK.pop()`` into *count* individual values, which are put onto the stack
+   Unpacks ``STACK[-1]`` into *count* individual values, which are put onto the stack
    right-to-left::
 
+      assert(len(STACK[-1]) == count)
       STACK.extend(STACK.pop()[:-count-1:-1])
 
 
