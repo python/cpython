@@ -557,7 +557,7 @@ class TestSpecifics(unittest.TestCase):
     @support.cpython_only
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_compiler_recursion_limit(self):
-        # Expected limit is C_RECURSION_LIMIT
+        # Expected limit is C_RECURSION_LIMIT * 2
         # Duplicating the limit here is a little ugly.
         # Perhaps it should be exposed somewhere...
         fail_depth = C_RECURSION_LIMIT * 2 + 1
