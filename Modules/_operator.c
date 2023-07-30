@@ -1556,7 +1556,7 @@ typedef struct {
     vectorcallfunc vectorcall;
 } methodcallerobject;
 
-static void * _methodcaller_initialize_vectorcall(methodcallerobject* mc)
+static int _methodcaller_initialize_vectorcall(methodcallerobject* mc)
 {
     PyObject* args = mc->xargs;
     PyObject* kwds = mc->kwds;
@@ -1599,8 +1599,8 @@ static void _methodcaller_clear_vectorcall(methodcallerobject* mc)
     if (mc->vectorcall_args != NULL) {
         PyMem_Free(mc->vectorcall_args);
         mc->vectorcall_args = 0;
-        Py_CLEAR(mc->vectorcall_kwnames);
     }
+    Py_CLEAR(mc->vectorcall_kwnames);
 }
 
 static PyObject *
@@ -1632,7 +1632,7 @@ static PyObject *
 methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     methodcallerobject *mc;
-    PyObject* name;
+    PyObject *name;
 
     if (PyTuple_GET_SIZE(args) < 1) {
         PyErr_SetString(PyExc_TypeError, "methodcaller needs at least "
@@ -1807,7 +1807,7 @@ methodcaller_reduce(methodcallerobject *mc, PyObject *Py_UNUSED(ignored))
     if (!mc->kwds || PyDict_GET_SIZE(mc->kwds) == 0) {
         Py_ssize_t i;
         Py_ssize_t newarg_size = PyTuple_GET_SIZE(mc->xargs);
-        PyObject * newargs = PyTuple_New(newarg_size);
+        PyObject *newargs = PyTuple_New(newarg_size);
         if (newargs == NULL)
             return NULL;
         PyTuple_SET_ITEM(newargs, 0, Py_NewRef(mc->name));
