@@ -1605,7 +1605,7 @@ methodcaller_vectorcall(
         return NULL;
     }
     if (mc->vectorcall_args == NULL) {
-        if (_methodcaller_initialize_vectorcall(mc) < 0) {
+        if (_methodcaller_initialize_vectorcall(mc) == NULL) {
             return NULL;
         }
     }
