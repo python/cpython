@@ -928,23 +928,27 @@ class singledispatchmethod:
     """
 
     def __init__(self, func):
+        import weakref # lazy import
         if not callable(func) and not hasattr(func, "__get__"):
             raise TypeError(f"{func!r} is not callable or a descriptor")
 
         self.dispatcher = singledispatch(func)
         self.func = func
+        self._method_cache = weakref.WeakKeyDictionary()
+        self._all_weakrefable_instances = True
 
     def register(self, cls, method=None):
         """generic_method.register(cls, func) -> func
 
         Registers a new implementation for the given *cls* on a *generic_method*.
         """
+        self._method_cache.clear()
         return self.dispatcher.register(cls, func=method)
 
-    def __set_name__(self, owner, name):
-        self._attrname = name
-
     def __get__(self, obj, cls=None):
+        if self._all_weakrefable_instances and cls is not None and obj in self._method_cache:
+            return self._method_cache[obj]
+
         def _method(*args, **kwargs):
             method = self.dispatcher.dispatch(args[0].__class__)
             return method.__get__(obj, cls)(*args, **kwargs)
@@ -953,9 +957,11 @@ class singledispatchmethod:
         _method.register = self.register
         update_wrapper(_method, self.func)
 
-        # not all objects have __dict__ (e.g. classes with __slots__)
-        if hasattr(obj, '__dict__'):
-            obj.__dict__[self._attrname] = _method
+        if self._all_weakrefable_instances and cls is not None:
+                    try:
+                        self._method_cache[obj] = _method
+                    except TypeError:
+                        self._all_weakrefable_instances = False
 
         return _method
 
