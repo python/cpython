@@ -5747,8 +5747,8 @@ def run_clinic(ns: argparse.Namespace) -> None:
 
 def main(argv: list[str] | None = None) -> None:
     cli = create_cli()
+    args = cli.parse_args(argv)
     try:
-        args = cli.parse_args(argv)
         run_clinic(args)
     except CLIError as exc:
         if msg := str(exc):
