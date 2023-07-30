@@ -1,5 +1,5 @@
 ********************************
-Functional programming in Python
+Functional Programming in Python
 ********************************
 
 :Author: A. M. Kuchling
