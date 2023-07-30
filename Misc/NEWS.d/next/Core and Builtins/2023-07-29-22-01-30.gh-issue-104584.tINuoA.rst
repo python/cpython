@@ -1,2 +1,2 @@
-Fix an issue which caused incorrect inline values to be used when running
+Fix an issue which caused incorrect inline caches to be read when running
 with :envvar:`PYTHONUOPS` or :option:`-X uops <-X>` enabled.
