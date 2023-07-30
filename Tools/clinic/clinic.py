@@ -2637,18 +2637,6 @@ class Parameter:
             return f'"argument {i}"'
 
 
-@dc.dataclass
-class LandMine:
-    # try to access any
-    __message__: str
-
-    def __getattribute__(self, name: str) -> Any:
-        if name in ('__repr__', '__message__'):
-            return super().__getattribute__(name)
-        # raise RuntimeError(repr(name))
-        fail("Stepped on a land mine, trying to access attribute " + repr(name) + ":\n" + self.__message__)
-
-
 CConverterClassT = TypeVar("CConverterClassT", bound=type["CConverter"])
 
 def add_c_converter(
@@ -2843,13 +2831,6 @@ class CConverter(metaclass=CConverterAutoRegister):
         if annotation is not unspecified:
             fail("The 'annotation' parameter is not currently permitted.")
 
-        # this is deliberate, to prevent you from caching information
-        # about the function in the init.
-        # (that breaks if we get cloned.)
-        # so after this change we will noisily fail.
-        self.function: Function | LandMine = LandMine(
-            "Don't access members of self.function inside converter_init!"
-        )
         self.converter_init(**kwargs)
         self.function = function
 
@@ -4004,7 +3985,6 @@ class self_converter(CConverter):
 
     def pre_render(self) -> None:
         f = self.function
-        assert isinstance(f, Function)
         default_type, default_name = correct_name_for_self(f)
         self.signature_name = default_name
         self.type = self.specified_type or self.type or default_type
@@ -4055,7 +4035,6 @@ class self_converter(CConverter):
     @property
     def parser_type(self) -> str:
         assert self.type is not None
-        assert isinstance(self.function, Function)
         return required_type_for_self_for_parser(self.function) or self.type
 
     def render(self, parameter: Parameter, data: CRenderData) -> None:
