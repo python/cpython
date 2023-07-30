@@ -10,7 +10,7 @@ extern "C" {
 
 #define _Py_UOP_MAX_TRACE_LENGTH 32
 
-PyAPI_DATA(PyTypeObject) PyUOpExecutor_Type;
+PyAPI_DATA(PyTypeObject) UOpExecutor_Type;
 
 typedef struct {
     uint32_t opcode;
@@ -38,6 +38,7 @@ static inline Py_ssize_t PyUOpExecutor_GET_SIZE(PyObject *op) {
     return Py_SIZE(executor);
 }
 #define PyUOpExecutor_GET_SIZE(op) PyUOpExecutor_GET_SIZE(_PyObject_CAST(op))
+PyAPI_FUNC(PyObject *) PyUOpExecutor_New(_PyUOpInstruction trace[], Py_ssize_t size);
 
 #ifdef __cplusplus
 }

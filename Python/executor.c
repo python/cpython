@@ -30,55 +30,10 @@
 #undef ENABLE_SPECIALIZATION
 #define ENABLE_SPECIALIZATION 0
 
-// Unsure what's needed here and what's unnecessary. Set everything to 0 for now.
-PyTypeObject PyUOpExecutor_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "PyUOpExecutor",
-    sizeof(_PyUOpExecutorObject) - sizeof(PyObject *),
-    sizeof(PyObject *),
-    0,                                          /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    PyObject_GenericGetAttr,                    /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE | Py_TPFLAGS_TUPLE_SUBCLASS |
-        _Py_TPFLAGS_MATCH_SELF | Py_TPFLAGS_SEQUENCE,  /* tp_flags */
-    0,                                          /* tp_doc */
-    0,                                          /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
-    PyObject_GC_Del,                            /* tp_free */
-};
-
 static _PyUOpExecutorObject *
 PyUOpExecutor_alloc(Py_ssize_t size)
 {
-    _PyUOpExecutorObject *op = PyObject_GC_NewVar(_PyUOpExecutorObject, &PyUOpExecutor_Type, size);
+    _PyUOpExecutorObject *op = PyObject_GC_NewVar(_PyUOpExecutorObject, &UOpExecutor_Type, size);
     if (op == NULL) {
         return NULL;
     }

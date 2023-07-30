@@ -359,7 +359,7 @@ PySequenceMethods uop_as_sequence = {
     .sq_item = (ssizeargfunc)uop_item,
 };
 
-static PyTypeObject UOpExecutor_Type = {
+PyTypeObject UOpExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uop_executor",
     .tp_basicsize = sizeof(_PyUOpExecutorObject),
@@ -692,19 +692,9 @@ uop_optimize(
         return trace_length;
     }
     OBJECT_STAT_INC(optimization_traces_created);
-    _PyUOpExecutorObject *executor = PyObject_New(_PyUOpExecutorObject, &UOpExecutor_Type);
-    if (executor == NULL) {
-        return -1;
-    }
-    executor->base.execute = _PyUopExecute;
-    /*
-    This should replace PyObject_New and memcpy
     _PyUOpExecutorObject *executor = PyUOpExecutor_New(trace, trace_length);
-    */
+    executor->base.execute = _PyUopExecute;
     memcpy(executor->trace, trace, trace_length * sizeof(_PyUOpInstruction));
-        if (trace_length < _Py_UOP_MAX_TRACE_LENGTH) {
-            executor->trace[trace_length].opcode = 0;  // Sentinel
-        }
     *exec_ptr = (_PyExecutorObject *)executor;
     return 1;
 }
