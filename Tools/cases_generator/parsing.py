@@ -136,6 +136,7 @@ class Family(Node):
     size: str  # Variable giving the cache size in code units
     members: list[str]
 
+
 @dataclass
 class Pseudo(Node):
     name: str
@@ -160,7 +161,13 @@ class Parser(PLexer):
         if hdr := self.inst_header():
             if block := self.block():
                 return InstDef(
-                    hdr.override, hdr.register, hdr.kind, hdr.name, hdr.inputs, hdr.outputs, block
+                    hdr.override,
+                    hdr.register,
+                    hdr.kind,
+                    hdr.name,
+                    hdr.inputs,
+                    hdr.outputs,
+                    block,
                 )
             raise self.make_syntax_error("Expected block")
         return None
@@ -377,9 +384,7 @@ class Parser(PLexer):
                                 raise self.make_syntax_error("Expected {")
                             if members := self.members():
                                 if self.expect(lx.RBRACE) and self.expect(lx.SEMI):
-                                    return Pseudo(
-                                        tkn.text, members
-                                    )
+                                    return Pseudo(tkn.text, members)
         return None
 
     def members(self) -> list[str] | None:

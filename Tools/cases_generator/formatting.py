@@ -19,8 +19,11 @@ class Formatter:
     nominal_filename: str
 
     def __init__(
-            self, stream: typing.TextIO, indent: int,
-                  emit_line_directives: bool = False, comment: str = "//",
+        self,
+        stream: typing.TextIO,
+        indent: int,
+        emit_line_directives: bool = False,
+        comment: str = "//",
     ) -> None:
         self.stream = stream
         self.prefix = " " * indent
