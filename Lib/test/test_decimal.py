@@ -5682,6 +5682,36 @@ class CWhitebox(unittest.TestCase):
             self.assertEqual(Decimal(400) ** -1, Decimal('0.0025'))
 
 
+    def test_c_signaldict_segfault(self):
+        # See gh-106263 for details.
+        SignalDict = type(C.Context().flags)
+        sd = SignalDict()
+        err_msg = "invalid signal dict"
+
+        with self.assertRaisesRegex(ValueError, err_msg):
+            len(sd)
+
+        with self.assertRaisesRegex(ValueError, err_msg):
+            iter(sd)
+
+        with self.assertRaisesRegex(ValueError, err_msg):
+            repr(sd)
+
+        with self.assertRaisesRegex(ValueError, err_msg):
+            sd[C.InvalidOperation] = True
+
+        with self.assertRaisesRegex(ValueError, err_msg):
+            sd[C.InvalidOperation]
+
+        with self.assertRaisesRegex(ValueError, err_msg):
+            sd == C.Context().flags
+
+        with self.assertRaisesRegex(ValueError, err_msg):
+            C.Context().flags == sd
+
+        with self.assertRaisesRegex(ValueError, err_msg):
+            sd.copy()
+
 @requires_docstrings
 @requires_cdecimal
 class SignatureTest(unittest.TestCase):
