@@ -1556,12 +1556,13 @@ typedef struct {
     vectorcallfunc vectorcall;
 } methodcallerobject;
 
-static int _methodcaller_initialize_vectorcall(methodcallerobject* mc)
+static void* _methodcaller_initialize_vectorcall(methodcallerobject* mc)
 {
     PyObject* args = mc->xargs;
     PyObject* kwds = mc->kwds;
 
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    assert(nargs > 0);
     mc->vectorcall_args = PyMem_Calloc(
         nargs + (kwds ? PyDict_Size(kwds) : 0),
         sizeof(PyObject*));
@@ -1594,14 +1595,6 @@ static int _methodcaller_initialize_vectorcall(methodcallerobject* mc)
     return (void *)1;
 }
 
-static void _methodcaller_clear_vectorcall(methodcallerobject* mc)
-{
-    if (mc->vectorcall_args != NULL) {
-        PyMem_Free(mc->vectorcall_args);
-        mc->vectorcall_args = 0;
-    }
-    Py_CLEAR(mc->vectorcall_kwnames);
-}
 
 static PyObject *
 methodcaller_vectorcall(
@@ -1675,7 +1668,11 @@ methodcaller_clear(methodcallerobject *mc)
     Py_CLEAR(mc->name);
     Py_CLEAR(mc->xargs);
     Py_CLEAR(mc->kwds);
-    _methodcaller_clear_vectorcall(mc);
+    if (mc->vectorcall_args != NULL) {
+        PyMem_Free(mc->vectorcall_args);
+        mc->vectorcall_args = 0;
+    }
+    Py_CLEAR(mc->vectorcall_kwnames);
 }
 
 static void
