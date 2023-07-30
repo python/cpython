@@ -2158,7 +2158,7 @@
                 total_args++;
             }
             DEOPT_IF(total_args != 1, CALL);
-            PyInterpreterState *interp = _PyInterpreterState_GET();
+            PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.len, CALL);
             STAT_INC(CALL, hit);
             PyObject *arg = args[0];
@@ -2193,7 +2193,7 @@
                 total_args++;
             }
             DEOPT_IF(total_args != 2, CALL);
-            PyInterpreterState *interp = _PyInterpreterState_GET();
+            PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.isinstance, CALL);
             STAT_INC(CALL, hit);
             PyObject *cls = args[1];
