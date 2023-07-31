@@ -945,17 +945,17 @@ class singledispatchmethod:
         return self.dispatcher.register(cls, func=method)
 
     def __get__(self, obj, cls=None):
-        caching = self._all_weakrefable_instances and obj is not None
-
-        if caching:
+        if self._all_weakrefable_instances and obj is not None:
             try:
                 _method = self._method_cache[obj]
             except TypeError:
                 self._all_weakrefable_instances = caching = False
             except KeyError:
-                pass
+                caching = True
             else:
                 return _method
+        else:
+            caching = False
 
         def _method(*args, **kwargs):
             method = self.dispatcher.dispatch(args[0].__class__)
