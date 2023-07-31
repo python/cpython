@@ -990,8 +990,22 @@ using ``[]``.
               ...
               return self
 
-   You should use :data:`Self` as calls to ``SubclassOfFoo.return_self`` would have
-   ``Foo`` as the return type and not ``SubclassOfFoo``.
+   You should use :data:`Self`. This way the return type of the annotated
+   method will be whatever the type of ``self`` is, even in subclasses::
+
+      class Foo:
+          def return_self(self) -> Self:
+              ...
+              return self
+
+      class SubclassOfFoo(Foo):
+            ...
+
+      reveal_type(Foo().return_self())  # Revealed type is "Foo"
+      reveal_type(SubclassOfFoo().return_self())  # Revealed type is "SubclassOfFoo"
+
+   Otherwise the return type of ``SubclassOfFoo().return_self()`` would have
+   been ``Foo`` and that may not be what you wanted.
 
    Other common use cases include:
 
