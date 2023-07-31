@@ -949,13 +949,11 @@ class singledispatchmethod:
             try:
                 _method = self._method_cache[obj]
             except TypeError:
-                self._all_weakrefable_instances = caching = False
+                self._all_weakrefable_instances = False
             except KeyError:
-                caching = True
+                pass
             else:
                 return _method
-        else:
-            caching = False
 
         def _method(*args, **kwargs):
             method = self.dispatcher.dispatch(args[0].__class__)
@@ -965,7 +963,7 @@ class singledispatchmethod:
         _method.register = self.register
         update_wrapper(_method, self.func)
 
-        if caching:
+        if self._all_weakrefable_instances:
             self._method_cache[obj] = _method
 
         return _method
