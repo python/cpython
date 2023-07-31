@@ -355,7 +355,7 @@ added as a more powerful replacement for the
 This means Python now supports three different modules for parsing
 command-line arguments: :mod:`getopt`, :mod:`optparse`, and
 :mod:`argparse`.  The :mod:`getopt` module closely resembles the C
-library's :c:func:`getopt` function, so it remains useful if you're writing a
+library's :c:func:`!getopt` function, so it remains useful if you're writing a
 Python prototype that will eventually be rewritten in C.
 :mod:`optparse` becomes redundant, but there are no plans to remove it
 because there are many scripts still using it, and there's no

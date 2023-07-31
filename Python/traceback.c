@@ -17,7 +17,7 @@
 
 #include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 #include "frameobject.h"          // PyFrame_New()
-#include "structmember.h"         // PyMemberDef
+
 #include "osdefs.h"               // SEP
 #ifdef HAVE_FCNTL_H
 #  include <fcntl.h>
@@ -148,9 +148,9 @@ static PyMethodDef tb_methods[] = {
 };
 
 static PyMemberDef tb_memberlist[] = {
-    {"tb_frame",        T_OBJECT,       OFF(tb_frame),  READONLY|PY_AUDIT_READ},
-    {"tb_lasti",        T_INT,          OFF(tb_lasti),  READONLY},
-    {"tb_lineno",       T_INT,          OFF(tb_lineno), READONLY},
+    {"tb_frame",        _Py_T_OBJECT,       OFF(tb_frame),  Py_READONLY|Py_AUDIT_READ},
+    {"tb_lasti",        Py_T_INT,          OFF(tb_lasti),  Py_READONLY},
+    {"tb_lineno",       Py_T_INT,          OFF(tb_lineno), Py_READONLY},
     {NULL}      /* Sentinel */
 };
 

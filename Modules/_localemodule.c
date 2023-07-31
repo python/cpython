@@ -844,12 +844,7 @@ _locale_exec(PyObject *module)
 
     _locale_state *state = get_locale_state(module);
     state->Error = PyErr_NewException("locale.Error", NULL, NULL);
-    if (state->Error == NULL) {
-        return -1;
-    }
-    Py_INCREF(get_locale_state(module)->Error);
-    if (PyModule_AddObject(module, "Error", get_locale_state(module)->Error) < 0) {
-        Py_DECREF(get_locale_state(module)->Error);
+    if (PyModule_AddObjectRef(module, "Error", state->Error) < 0) {
         return -1;
     }
 
