@@ -2474,10 +2474,42 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertTrue(A.t(''))
         self.assertEqual(A.t(0.0), 0.0)
 
+    def test_slotted_class(self):
+        class Slot:
+            __slots__ = ('a', 'b')
+            @functools.singledispatchmethod
+            def go(self, item, arg):
+                pass
+
+            @go.register
+            def _(self, item: int, arg):
+                return item + arg
+
+        s = Slot()
+        self.assertEqual(s.go(1, 1), 2)
+
+    def test_classmethod_slotted_class(self):
+        class Slot:
+            __slots__ = ('a', 'b')
+            @functools.singledispatchmethod
+            @classmethod
+            def go(cls, item, arg):
+                pass
+
+            @go.register
+            @classmethod
+            def _(cls, item: int, arg):
+                return item + arg
+
+        s = Slot()
+        self.assertEqual(s.go(1, 1), 2)
+        self.assertEqual(Slot.go(1, 1), 2)
+
     def test_staticmethod_slotted_class(self):
         class A:
             __slots__ = ['a']
             @functools.singledispatchmethod
+            @staticmethod
             def t(arg):
                 return arg
             @t.register(int)
