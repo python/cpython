@@ -314,6 +314,26 @@ class ClinicWholeFileTest(_ParserBase):
         msg = "unknown destination command 'nosuchcommand'"
         self.assertIn(msg, out)
 
+    def test_no_access_to_members_in_converter_init(self):
+        out = self.expect_failure("""
+            /*[python input]
+            class Custom_converter(CConverter):
+                converter = "some_c_function"
+                def converter_init(self):
+                    self.function.noaccess
+            [python start generated code]*/
+            /*[clinic input]
+            module test
+            test.fn
+                a: Custom
+            [clinic start generated code]*/
+        """)
+        msg = (
+            "Stepped on a land mine, trying to access attribute 'noaccess':\n"
+            "Don't access members of self.function inside converter_init!"
+        )
+        self.assertIn(msg, out)
+
 
 class ClinicGroupPermuterTest(TestCase):
     def _test(self, l, m, r, output):
