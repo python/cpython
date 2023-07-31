@@ -1555,6 +1555,7 @@ function. You can create and destroy them using the following functions:
       in any thread where the sub-interpreter is currently active.
       Otherwise only multi-phase init extension modules
       (see :pep:`489`) may be imported.
+      (Also see :c:macro:`Py_mod_multiple_interpreters`.)
 
       This must be ``1`` (non-zero) if
       :c:member:`~PyInterpreterConfig.use_main_obmalloc` is ``0``.
