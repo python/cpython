@@ -98,7 +98,7 @@ class NumberTestCase(unittest.TestCase):
     def test_floats(self):
         # c_float and c_double can be created from
         # Python int and float
-        class FloatLike(object):
+        class FloatLike:
             def __float__(self):
                 return 2.0
         f = FloatLike()
@@ -109,15 +109,15 @@ class NumberTestCase(unittest.TestCase):
             self.assertEqual(t(f).value, 2.0)
 
     def test_integers(self):
-        class FloatLike(object):
+        class FloatLike:
             def __float__(self):
                 return 2.0
         f = FloatLike()
-        class IntLike(object):
+        class IntLike:
             def __int__(self):
                 return 2
         d = IntLike()
-        class IndexLike(object):
+        class IndexLike:
             def __index__(self):
                 return 2
         i = IndexLike()
