@@ -1881,7 +1881,7 @@ Porting to Python 3.12
   that don't have their own state, including "hooks", are not affected.
   If your custom allocator is not already thread-safe and you need
   guidance then please create a new GitHub issue
-  and CC `@ericsnowcurrently`.
+  and CC ``@ericsnowcurrently``.
 
 Deprecated
 ----------
