@@ -778,7 +778,7 @@ Notes:
 
 (2)
    On Unix, if the :envvar:`HOME` environment variable is not defined, the user's
-   home directory will be determined with the :func:`getpwuid` function from the
+   home directory will be determined with the :func:`~pwd.getpwuid` function from the
    standard :mod:`pwd` module. This is done by the :func:`os.path.expanduser`
    function used by Distutils.
 

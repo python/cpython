@@ -103,7 +103,7 @@ Type Objects
    :c:func:`PyType_AddWatcher` will be called whenever
    :c:func:`PyType_Modified` reports a change to *type*. (The callback may be
    called only once for a series of consecutive modifications to *type*, if
-   :c:func:`PyType_Lookup` is not called on *type* between the modifications;
+   :c:func:`!_PyType_Lookup` is not called on *type* between the modifications;
    this is an implementation detail and subject to change.)
 
    An extension should never call ``PyType_Watch`` with a *watcher_id* that was

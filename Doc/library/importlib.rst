@@ -941,7 +941,14 @@ find and load modules.
    The *fullname* argument specifies the name of the module the loader is to
    support. The *path* argument is the path to the extension module's file.
 
+   Note that, by default, importing an extension module will fail
+   in subinterpreters if it doesn't implement multi-phase init
+   (see :pep:`489`), even if it would otherwise import successfully.
+
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.12
+      Multi-phase init is now required for use in subinterpreters.
 
    .. attribute:: name
 
@@ -1247,6 +1254,30 @@ an :term:`importer`.
    header.
 
    .. versionadded:: 3.7
+
+.. function:: _incompatible_extension_module_restrictions(*, disable_check)
+
+   A context manager that can temporarily skip the compatibility check
+   for extension modules.  By default the check is enabled and will fail
+   when a single-phase init module is imported in a subinterpreter.
+   It will also fail for a multi-phase init module that doesn't
+   explicitly support a per-interpreter GIL, when imported
+   in an interpreter with its own GIL.
+
+   Note that this function is meant to accommodate an unusual case;
+   one which is likely to eventually go away.  There's is a pretty good
+   chance this is not what you were looking for.
+
+   You can get the same effect as this function by implementing the
+   basic interface of multi-phase init (:pep:`489`) and lying about
+   support for mulitple interpreters (or per-interpreter GIL).
+
+   .. warning::
+      Using this function to disable the check can lead to
+      unexpected behavior and even crashes.  It should only be used during
+      extension module development.
+
+   .. versionadded:: 3.12
 
 .. class:: LazyLoader(loader)
 

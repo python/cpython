@@ -84,6 +84,7 @@ class FakeClinic:
             ('parser_definition', d('block')),
             ('impl_definition', d('block')),
         ))
+        self.functions = []
 
     def get_destination(self, name):
         d = self.destinations.get(name)
@@ -103,6 +104,9 @@ class FakeClinic:
         self.called_directives[name] = args
 
     _module_and_class = clinic.Clinic._module_and_class
+
+    def __repr__(self):
+        return "<FakeClinic object>"
 
 
 class ClinicWholeFileTest(_ParserBase):
@@ -672,12 +676,51 @@ class ClinicParserTest(_ParserBase):
         """)
         self.assertEqual("os_stat_fn", function.c_basename)
 
+    def test_cloning_nonexistent_function_correctly_fails(self):
+        stdout = self.parse_function_should_fail("""
+            cloned = fooooooooooooooooooooooo
+            This is trying to clone a nonexistent function!!
+        """)
+        expected_error = """\
+cls=None, module=<FakeClinic object>, existing='fooooooooooooooooooooooo'
+(cls or module).functions=[]
+Error on line 0:
+Couldn't find existing function 'fooooooooooooooooooooooo'!
+"""
+        self.assertEqual(expected_error, stdout)
+
     def test_return_converter(self):
         function = self.parse_function("""
             module os
             os.stat -> int
         """)
         self.assertIsInstance(function.return_converter, clinic.int_return_converter)
+
+    def test_return_converter_invalid_syntax(self):
+        stdout = self.parse_function_should_fail("""
+            module os
+            os.stat -> invalid syntax
+        """)
+        expected_error = "Badly formed annotation for os.stat: 'invalid syntax'"
+        self.assertIn(expected_error, stdout)
+
+    def test_legacy_converter_disallowed_in_return_annotation(self):
+        stdout = self.parse_function_should_fail("""
+            module os
+            os.stat -> "s"
+        """)
+        expected_error = "Legacy converter 's' not allowed as a return converter"
+        self.assertIn(expected_error, stdout)
+
+    def test_unknown_return_converter(self):
+        stdout = self.parse_function_should_fail("""
+            module os
+            os.stat -> foooooooooooooooooooooooo
+        """)
+        expected_error = (
+            "No available return converter called 'foooooooooooooooooooooooo'"
+        )
+        self.assertIn(expected_error, stdout)
 
     def test_star(self):
         function = self.parse_function("""
@@ -1360,7 +1403,7 @@ class ClinicExternalTest(TestCase):
         ) as proc:
             proc.wait()
             if expect_success and proc.returncode:
-                self.fail("".join(proc.stderr))
+                self.fail("".join([*proc.stdout, *proc.stderr]))
             stdout = proc.stdout.read()
             stderr = proc.stderr.read()
             # Clinic never writes to stderr.

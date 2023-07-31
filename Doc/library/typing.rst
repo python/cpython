@@ -2329,9 +2329,6 @@ types.
 
       class XZ(X, Z): pass  # raises TypeError
 
-      T = TypeVar('T')
-      class XT(X, Generic[T]): pass  # raises TypeError
-
    A ``TypedDict`` can be generic::
 
       class Group[T](TypedDict):

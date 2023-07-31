@@ -2151,8 +2151,8 @@ Changes to Python's build process and to the C API include:
 
   Previously these different families all reduced to the platform's
   :c:func:`malloc` and :c:func:`free` functions.  This meant  it didn't matter if
-  you got things wrong and allocated memory with the :c:func:`PyMem` function but
-  freed it with the :c:func:`PyObject` function.  With 2.5's changes to obmalloc,
+  you got things wrong and allocated memory with the ``PyMem`` function but
+  freed it with the ``PyObject`` function.  With 2.5's changes to obmalloc,
   these families now do different things and mismatches will probably result in a
   segfault.  You should carefully test your C extension modules with Python 2.5.
 

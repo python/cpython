@@ -163,6 +163,9 @@ _PyLong_New(Py_ssize_t size)
     }
     _PyLong_SetSignAndDigitCount(result, size != 0, size);
     _PyObject_Init((PyObject*)result, &PyLong_Type);
+    /* The digit has to be initialized explicitly to avoid
+     * use-of-uninitialized-value. */
+    result->long_value.ob_digit[0] = 0;
     return result;
 }
 
