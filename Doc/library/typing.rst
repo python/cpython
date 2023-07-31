@@ -831,16 +831,6 @@ using ``[]``.
 
 .. data:: AnyStr
 
-   .. deprecated-removed:: 3.13 3.18
-      Deprecated in favor of the new :ref:`type parameter syntax <type-params>`.
-      Use ``class A[T: (str, bytes)]: ...`` instead of importing ``AnyStr``. See
-      :pep:`695` for more details.
-
-      In Python 3.16, ``AnyStr`` will be removed from ``typing.__all__``, and
-      deprecation warnings will be emitted at runtime when it is accessed or
-      imported from ``typing``. ``AnyStr`` will be removed from ``typing``
-      in Python 3.18.
-
    A :ref:`constrained type variable <typing-constrained-typevar>`.
 
    Definition::
@@ -873,6 +863,16 @@ using ``[]``.
       # The better way of annotating this function:
       def greet_proper(cond: bool) -> str | bytes:
           return "hi there!" if cond else b"greetings!"
+
+   .. deprecated-removed:: 3.13 3.18
+      Deprecated in favor of the new :ref:`type parameter syntax <type-params>`.
+      Use ``class A[T: (str, bytes)]: ...`` instead of importing ``AnyStr``. See
+      :pep:`695` for more details.
+
+      In Python 3.16, ``AnyStr`` will be removed from ``typing.__all__``, and
+      deprecation warnings will be emitted at runtime when it is accessed or
+      imported from ``typing``. ``AnyStr`` will be removed from ``typing``
+      in Python 3.18.
 
 .. data:: LiteralString
 
