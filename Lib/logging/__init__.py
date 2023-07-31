@@ -1880,9 +1880,7 @@ class LoggerAdapter(object):
     information in logging output.
     """
 
-    merge_extras = False
-
-    def __init__(self, logger, extra=None, merge_extras=None):
+    def __init__(self, logger, extra=None, merge_extras=False):
         """
         Initialize the adapter with a logger and a dict-like object which
         provides contextual information. This constructor signature allows
@@ -1897,7 +1895,7 @@ class LoggerAdapter(object):
         passed on the individual log calls to use its own instead.
 
         Initializing it with merge_extras=True will instead merge both
-        maps when logging, the indivicual call extra taking precedence
+        maps when logging, the individual call extra taking precedence
         over the LoggerAdapter instance extra
 
         .. versionchanged:: 3.13
@@ -1905,8 +1903,7 @@ class LoggerAdapter(object):
         """
         self.logger = logger
         self.extra = extra
-        if merge_extras is not None:
-            self.merge_extras = merge_extras
+        self.merge_extras = merge_extras
 
     def process(self, msg, kwargs):
         """
