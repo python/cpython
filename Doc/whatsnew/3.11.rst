@@ -2712,4 +2712,13 @@ tarfile
   In Python 3.14, the default will switch to ``'data'``.
   (Contributed by Petr Viktorin in :pep:`706`.)
 
+
+Notable Changes in 3.11.5
+=========================
+
+OpenSSL
+-------
+
+* Windows builds and macOS installers from python.org now use OpenSSL 3.0.
+
 .. _libb2: https://www.blake2.net/
