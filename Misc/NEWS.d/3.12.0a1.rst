@@ -2752,7 +2752,7 @@ by Shin-myoung-serp.
 .. section: Library
 
 Add deprecation warning for enum ``member.member`` access (e.g.
-``Color.RED.BLUE``).
+``Color.RED.BLUE``). Remove ``EnumMeta.__getattr__``.
 
 ..
 
