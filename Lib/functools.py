@@ -958,10 +958,10 @@ class singledispatchmethod:
         update_wrapper(_method, self.func)
 
         if self._all_weakrefable_instances and cls is not None:
-                    try:
-                        self._method_cache[obj] = _method
-                    except TypeError:
-                        self._all_weakrefable_instances = False
+            try:
+                self._method_cache[obj] = _method
+            except TypeError:
+                self._all_weakrefable_instances = False
 
         return _method
 
