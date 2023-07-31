@@ -468,7 +468,15 @@ class Generator(Analyzer):
             if isinstance(part, Component):
                 # All component instructions must be viable uops
                 if not part.instr.is_viable_uop():
-                    print(f"NOTE: Part {part.instr.name} of {name} is not a viable uop")
+                    # This note just reminds us about macros that cannot
+                    # be expanded to Tier 2 uops. It is not an error.
+                    # It is sometimes emitted for macros that have a
+                    # manual translation in translate_bytecode_to_trace()
+                    # in Python/optimizer.c.
+                    self.note(
+                        f"Part {part.instr.name} of {name} is not a viable uop",
+                        part.instr.inst,
+                    )
                     return
                 if not part.active_caches:
                     size, offset = OPARG_SIZES["OPARG_FULL"], 0
