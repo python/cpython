@@ -44,7 +44,7 @@ the elements exposed by an :class:`array.array` can be multi-byte values.
 
 An example consumer of the buffer interface is the :meth:`~io.BufferedIOBase.write`
 method of file objects: any object that can export a series of bytes through
-the buffer interface can be written to a file.  While :meth:`write` only
+the buffer interface can be written to a file.  While :meth:`!write` only
 needs read-only access to the internal contents of the object passed to it,
 other methods such as :meth:`~io.BufferedIOBase.readinto` need write access
 to the contents of their argument.  The buffer interface allows objects to
@@ -225,7 +225,7 @@ object via :c:func:`PyObject_GetBuffer`. Since the complexity of the logical
 structure of the memory can vary drastically, the consumer uses the *flags*
 argument to specify the exact buffer type it can handle.
 
-All :c:data:`Py_buffer` fields are unambiguously defined by the request
+All :c:type:`Py_buffer` fields are unambiguously defined by the request
 type.
 
 request-independent fields
@@ -464,7 +464,7 @@ Buffer-related functions
 
 .. c:function:: Py_ssize_t PyBuffer_SizeFromFormat(const char *format)
 
-   Return the implied :c:data:`~Py_buffer.itemsize` from :c:data:`~Py_buffer.format`.
+   Return the implied :c:member:`~Py_buffer.itemsize` from :c:member:`~Py_buffer.format`.
    On error, raise an exception and return -1.
 
    .. versionadded:: 3.9

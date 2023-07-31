@@ -1,8 +1,9 @@
 /* Boolean type, a subtype of int */
 
 #include "Python.h"
-#include "pycore_object.h"      // _Py_FatalRefcountError()
-#include "pycore_long.h"        // FALSE_TAG TRUE_TAG
+#include "pycore_long.h"          // FALSE_TAG TRUE_TAG
+#include "pycore_modsupport.h"    // _PyArg_NoKwnames()
+#include "pycore_object.h"        // _Py_FatalRefcountError()
 #include "pycore_runtime.h"       // _Py_ID()
 
 #include <stddef.h>

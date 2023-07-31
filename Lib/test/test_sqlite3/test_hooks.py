@@ -323,7 +323,7 @@ class TraceCallbackTests(unittest.TestCase):
     )
     def test_trace_too_much_expanded_sql(self):
         # If the expanded string is too large, we'll fall back to the
-        # unexpanded SQL statement (for SQLite 3.14.0 and newer).
+        # unexpanded SQL statement.
         # The resulting string length is limited by the runtime limit
         # SQLITE_LIMIT_LENGTH.
         template = "select 1 as a where a="
@@ -334,8 +334,6 @@ class TraceCallbackTests(unittest.TestCase):
 
             unexpanded_query = template + "?"
             expected = [unexpanded_query]
-            if sqlite.sqlite_version_info < (3, 14, 0):
-                expected = []
             with self.check_stmt_trace(cx, expected):
                 cx.execute(unexpanded_query, (bad_param,))
 

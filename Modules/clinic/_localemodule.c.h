@@ -108,15 +108,9 @@ _locale_strcoll(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("strcoll", "argument 1", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     os1 = args[0];
     if (!PyUnicode_Check(args[1])) {
         _PyArg_BadArgument("strcoll", "argument 2", "str", args[1]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[1]) == -1) {
         goto exit;
     }
     os2 = args[1];
@@ -150,9 +144,6 @@ _locale_strxfrm(PyObject *module, PyObject *arg)
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("strxfrm", "argument", "str", arg);
-        goto exit;
-    }
-    if (PyUnicode_READY(arg) == -1) {
         goto exit;
     }
     str = arg;
@@ -608,4 +599,4 @@ _locale_getencoding(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
     #define _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
 #endif /* !defined(_LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF) */
-/*[clinic end generated code: output=406842c3441559cb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9dbd0b4bf5767edd input=a9049054013a1b77]*/

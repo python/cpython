@@ -68,7 +68,7 @@ typedef struct _tokenizer_mode {
 struct tok_state {
     /* Input state; buf <= cur <= inp <= end */
     /* NB an entire line is held in the buffer */
-    char *buf;          /* Input buffer, or NULL; malloc'ed if fp != NULL */
+    char *buf;          /* Input buffer, or NULL; malloc'ed if fp != NULL or readline != NULL */
     char *cur;          /* Next character in buffer */
     char *inp;          /* End of data in buffer */
     int fp_interactive; /* If the file descriptor is interactive */
@@ -109,27 +109,22 @@ struct tok_state {
                                      expression (cf. issue 16806) */
     PyObject *decoding_readline; /* open(...).readline */
     PyObject *decoding_buffer;
+    PyObject *readline;     /* readline() function */
     const char* enc;        /* Encoding for the current str. */
     char* str;          /* Source string being tokenized (if tokenizing from a string)*/
     char* input;       /* Tokenizer's newline translated copy of the string. */
 
     int type_comments;      /* Whether to look for type comments */
 
-    /* async/await related fields (still needed depending on feature_version) */
-    int async_hacks;     /* =1 if async/await aren't always keywords */
-    int async_def;        /* =1 if tokens are inside an 'async def' body. */
-    int async_def_indent; /* Indentation level of the outermost 'async def'. */
-    int async_def_nl;     /* =1 if the outermost 'async def' had at least one
-                             NEWLINE token after it. */
     /* How to proceed when asked for a new token in interactive mode */
     enum interactive_underflow_t interactive_underflow;
     int report_warnings;
     // TODO: Factor this into its own thing
     tokenizer_mode tok_mode_stack[MAXFSTRINGLEVEL];
     int tok_mode_stack_index;
-    int tok_report_warnings;
     int tok_extra_tokens;
     int comment_newline;
+    int implicit_newline;
 #ifdef Py_DEBUG
     int debug;
 #endif
@@ -137,6 +132,7 @@ struct tok_state {
 
 extern struct tok_state *_PyTokenizer_FromString(const char *, int, int);
 extern struct tok_state *_PyTokenizer_FromUTF8(const char *, int, int);
+extern struct tok_state *_PyTokenizer_FromReadline(PyObject*, const char*, int, int);
 extern struct tok_state *_PyTokenizer_FromFile(FILE *, const char*,
                                               const char *, const char *);
 extern void _PyTokenizer_Free(struct tok_state *);
