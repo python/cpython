@@ -522,12 +522,12 @@ def emit_comparative_object_stats(base_stats, head_stats):
         emit_table(("",  "Base Count:", "Base Ratio:", "Head Count:", "Head Ratio:"), join_rows(base_rows, head_rows))
 
 def emit_gc_stats(stats):
-    with Section("GC stats", summary"GC collections and effectiveness"):
+    with Section("GC stats", summary="GC collections and effectiveness"):
         rows = calculate_gc_stats(stats)
         emit_table(("Generation:",  "Collections:", "Objects collected:", "Object visits:"), rows)
 
 def emit_comparative_gc_stats(base_stats, head_stats):
-    with Section("GC stats", summary"GC collections and effectiveness"):
+    with Section("GC stats", summary="GC collections and effectiveness"):
         base_rows = calculate_gc_stats(base_stats)
         head_rows = calculate_gc_stats(head_stats)
         emit_table(
