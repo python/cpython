@@ -1880,6 +1880,13 @@ Porting to Python 3.12
   * :c:func:`PyUnstable_Long_IsCompact`
   * :c:func:`PyUnstable_Long_CompactValue`
 
+* Custom allocators, set via :c:func:`PyMem_SetAllocator`, are now
+  required to be thread-safe, regardless of memory domain.  Allocators
+  that don't have their own state, including "hooks", are not affected.
+  If your custom allocator is not already thread-safe and you need
+  guidance then please create a new GitHub issue
+  and CC ``@ericsnowcurrently``.
+
 Deprecated
 ----------
 
