@@ -946,11 +946,10 @@ class singledispatchmethod:
 
     def __get__(self, obj, cls=None):
         caching = self._all_weakrefable_instances and obj is not None
-        cache = self._method_cache
 
         if caching:
             try:
-                _method = cache[obj]
+                _method = self._method_cache[obj]
             except TypeError:
                 self._all_weakrefable_instances = caching = False
             except KeyError:
@@ -967,7 +966,7 @@ class singledispatchmethod:
         update_wrapper(_method, self.func)
 
         if caching:
-            cache[obj] = _method
+            self._method_cache[obj] = _method
 
         return _method
 
