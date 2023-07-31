@@ -13,27 +13,27 @@
 #include "pycore_atomic_funcs.h" // _Py_atomic_int_get()
 #include "pycore_bitutils.h"     // _Py_bswap32()
 #include "pycore_bytesobject.h"  // _PyBytes_Find()
-#include "pycore_ceval.h"        // _PyEval_AddPendingCall
 #include "pycore_compile.h"      // _PyCompile_CodeGen, _PyCompile_OptimizeCfg, _PyCompile_Assemble, _PyCompile_CleanDoc
+#include "pycore_ceval.h"        // _PyEval_AddPendingCall
 #include "pycore_fileutils.h"    // _Py_normpath
 #include "pycore_frame.h"        // _PyInterpreterFrame
 #include "pycore_gc.h"           // PyGC_Head
 #include "pycore_hashtable.h"    // _Py_hashtable_new()
 #include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
 #include "pycore_interp.h"       // _PyInterpreterState_GetConfigCopy()
-#include "pycore_interp_id.h"    // _PyInterpreterID_LookUp()
-#include "pycore_object.h"        // _PyObject_IsFreed()
+#include "pycore_object.h"       // _PyObject_IsFreed()
 #include "pycore_pathconfig.h"   // _PyPathConfig_ClearGlobal()
 #include "pycore_pyerrors.h"     // _Py_UTF8_Edit_Cost()
 #include "pycore_pystate.h"      // _PyThreadState_GET()
 
 #include "frameobject.h"
+#include "interpreteridobject.h" // PyInterpreterID_LookUp()
 #include "osdefs.h"              // MAXPATHLEN
 
 #include "clinic/_testinternalcapi.c.h"
 
 #ifdef MS_WINDOWS
-#  include <winsock2.h>           // struct timeval
+#  include <winsock2.h>          // struct timeval
 #endif
 
 
@@ -1083,7 +1083,7 @@ pending_identify(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O:pending_identify", &interpid)) {
         return NULL;
     }
-    PyInterpreterState *interp = _PyInterpreterID_LookUp(interpid);
+    PyInterpreterState *interp = PyInterpreterID_LookUp(interpid);
     if (interp == NULL) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError, "interpreter not found");
@@ -1433,7 +1433,7 @@ test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
     PyThreadState *tstate = Py_NewInterpreter();
 
     struct atexit_data data = {0};
-    int res = _Py_AtExit(tstate->interp, callback, (void *)&data);
+    int res = PyUnstable_AtExit(tstate->interp, callback, (void *)&data);
     Py_EndInterpreter(tstate);
     PyThreadState_Swap(oldts);
     if (res < 0) {

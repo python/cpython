@@ -215,8 +215,8 @@ a non-Python signal handler.
 .. nonce: VouZjn
 .. section: Core and Builtins
 
-Add ``__match_args__`` to :c:type:`structsequence` based classes. Patch by
-Pablo Galindo.
+Add ``__match_args__`` to :ref:`struct sequence objects <struct-sequence-objects>`.
+Patch by Pablo Galindo.
 
 ..
 

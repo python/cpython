@@ -84,6 +84,7 @@ class FakeClinic:
             ('parser_definition', d('block')),
             ('impl_definition', d('block')),
         ))
+        self.functions = []
 
     def get_destination(self, name):
         d = self.destinations.get(name)
@@ -103,6 +104,9 @@ class FakeClinic:
         self.called_directives[name] = args
 
     _module_and_class = clinic.Clinic._module_and_class
+
+    def __repr__(self):
+        return "<FakeClinic object>"
 
 
 class ClinicWholeFileTest(_ParserBase):
@@ -672,12 +676,51 @@ class ClinicParserTest(_ParserBase):
         """)
         self.assertEqual("os_stat_fn", function.c_basename)
 
+    def test_cloning_nonexistent_function_correctly_fails(self):
+        stdout = self.parse_function_should_fail("""
+            cloned = fooooooooooooooooooooooo
+            This is trying to clone a nonexistent function!!
+        """)
+        expected_error = """\
+cls=None, module=<FakeClinic object>, existing='fooooooooooooooooooooooo'
+(cls or module).functions=[]
+Error on line 0:
+Couldn't find existing function 'fooooooooooooooooooooooo'!
+"""
+        self.assertEqual(expected_error, stdout)
+
     def test_return_converter(self):
         function = self.parse_function("""
             module os
             os.stat -> int
         """)
         self.assertIsInstance(function.return_converter, clinic.int_return_converter)
+
+    def test_return_converter_invalid_syntax(self):
+        stdout = self.parse_function_should_fail("""
+            module os
+            os.stat -> invalid syntax
+        """)
+        expected_error = "Badly formed annotation for os.stat: 'invalid syntax'"
+        self.assertIn(expected_error, stdout)
+
+    def test_legacy_converter_disallowed_in_return_annotation(self):
+        stdout = self.parse_function_should_fail("""
+            module os
+            os.stat -> "s"
+        """)
+        expected_error = "Legacy converter 's' not allowed as a return converter"
+        self.assertIn(expected_error, stdout)
+
+    def test_unknown_return_converter(self):
+        stdout = self.parse_function_should_fail("""
+            module os
+            os.stat -> foooooooooooooooooooooooo
+        """)
+        expected_error = (
+            "No available return converter called 'foooooooooooooooooooooooo'"
+        )
+        self.assertIn(expected_error, stdout)
 
     def test_star(self):
         function = self.parse_function("""
@@ -1348,19 +1391,19 @@ class ClinicParserTest(_ParserBase):
 
 class ClinicExternalTest(TestCase):
     maxDiff = None
+    clinic_py = os.path.join(test_tools.toolsdir, "clinic", "clinic.py")
 
     def _do_test(self, *args, expect_success=True):
-        clinic_py = os.path.join(test_tools.toolsdir, "clinic", "clinic.py")
         with subprocess.Popen(
-            [sys.executable, "-Xutf8", clinic_py, *args],
+            [sys.executable, "-Xutf8", self.clinic_py, *args],
             encoding="utf-8",
             bufsize=0,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         ) as proc:
             proc.wait()
-            if expect_success == bool(proc.returncode):
-                self.fail("".join(proc.stderr))
+            if expect_success and proc.returncode:
+                self.fail("".join([*proc.stdout, *proc.stderr]))
             stdout = proc.stdout.read()
             stderr = proc.stderr.read()
             # Clinic never writes to stderr.
@@ -1449,6 +1492,49 @@ class ClinicExternalTest(TestCase):
                 generated = f.read()
             self.assertTrue(generated.endswith(checksum))
 
+    def test_cli_make(self):
+        c_code = dedent("""
+            /*[clinic input]
+            [clinic start generated code]*/
+        """)
+        py_code = "pass"
+        c_files = "file1.c", "file2.c"
+        py_files = "file1.py", "file2.py"
+
+        def create_files(files, srcdir, code):
+            for fn in files:
+                path = os.path.join(srcdir, fn)
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write(code)
+
+        with os_helper.temp_dir() as tmp_dir:
+            # add some folders, some C files and a Python file
+            create_files(c_files, tmp_dir, c_code)
+            create_files(py_files, tmp_dir, py_code)
+
+            # create C files in externals/ dir
+            ext_path = os.path.join(tmp_dir, "externals")
+            with os_helper.temp_dir(path=ext_path) as externals:
+                create_files(c_files, externals, c_code)
+
+                # run clinic in verbose mode with --make on tmpdir
+                out = self.expect_success("-v", "--make", "--srcdir", tmp_dir)
+
+            # expect verbose mode to only mention the C files in tmp_dir
+            for filename in c_files:
+                with self.subTest(filename=filename):
+                    path = os.path.join(tmp_dir, filename)
+                    self.assertIn(path, out)
+            for filename in py_files:
+                with self.subTest(filename=filename):
+                    path = os.path.join(tmp_dir, filename)
+                    self.assertNotIn(path, out)
+            # don't expect C files from the externals dir
+            for filename in c_files:
+                with self.subTest(filename=filename):
+                    path = os.path.join(ext_path, filename)
+                    self.assertNotIn(path, out)
+
     def test_cli_verbose(self):
         with os_helper.temp_dir() as tmp_dir:
             fn = os.path.join(tmp_dir, "test.c")
@@ -1533,6 +1619,35 @@ class ClinicExternalTest(TestCase):
                     line.startswith(converter),
                     f"expected converter {converter!r}, got {line!r}"
                 )
+
+    def test_cli_fail_converters_and_filename(self):
+        out = self.expect_failure("--converters", "test.c")
+        msg = (
+            "Usage error: can't specify --converters "
+            "and a filename at the same time"
+        )
+        self.assertIn(msg, out)
+
+    def test_cli_fail_no_filename(self):
+        out = self.expect_failure()
+        self.assertIn("usage: clinic.py", out)
+
+    def test_cli_fail_output_and_multiple_files(self):
+        out = self.expect_failure("-o", "out.c", "input.c", "moreinput.c")
+        msg = "Usage error: can't use -o with multiple filenames"
+        self.assertIn(msg, out)
+
+    def test_cli_fail_filename_or_output_and_make(self):
+        for opts in ("-o", "out.c"), ("filename.c",):
+            with self.subTest(opts=opts):
+                out = self.expect_failure("--make", *opts)
+                msg = "Usage error: can't use -o or filenames with --make"
+                self.assertIn(msg, out)
+
+    def test_cli_fail_make_without_srcdir(self):
+        out = self.expect_failure("--make", "--srcdir", "")
+        msg = "Usage error: --srcdir must not be empty with --make"
+        self.assertIn(msg, out)
 
 
 try:

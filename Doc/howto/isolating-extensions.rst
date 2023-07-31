@@ -467,7 +467,7 @@ Module State Access from Slot Methods, Getters and Setters
 
 Slot methods—the fast C equivalents for special methods, such as
 :c:member:`~PyNumberMethods.nb_add` for :py:attr:`~object.__add__` or
-:c:member:`~PyType.tp_new` for initialization—have a very simple API that
+:c:member:`~PyTypeObject.tp_new` for initialization—have a very simple API that
 doesn't allow passing in the defining class, unlike with :c:type:`PyCMethod`.
 The same goes for getters and setters defined with
 :c:type:`PyGetSetDef`.

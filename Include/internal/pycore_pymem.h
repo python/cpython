@@ -10,14 +10,14 @@ extern "C" {
 
 // Try to get the allocators name set by _PyMem_SetupAllocators().
 // Return NULL if unknown.
-// Export for shared _testinternalcapi extension.
+// Export for '_testinternalcapi' shared extension.
 PyAPI_FUNC(const char*) _PyMem_GetCurrentAllocatorName(void);
 
 // strdup() using PyMem_RawMalloc()
 extern char* _PyMem_RawStrdup(const char *str);
 
 // strdup() using PyMem_Malloc().
-// Export for shared _pickle extension.
+// Export for '_pickle ' shared extension.
 PyAPI_FUNC(char*) _PyMem_Strdup(const char *str);
 
 // wcsdup() using PyMem_RawMalloc()
@@ -48,7 +48,7 @@ struct _pymem_allocators {
 /* Set the memory allocator of the specified domain to the default.
    Save the old allocator into *old_alloc if it's non-NULL.
    Return on success, or return -1 if the domain is unknown. */
-PyAPI_FUNC(int) _PyMem_SetDefaultAllocator(
+extern int _PyMem_SetDefaultAllocator(
     PyMemAllocatorDomain domain,
     PyMemAllocatorEx *old_alloc);
 
@@ -94,14 +94,14 @@ static inline int _PyMem_IsPtrFreed(const void *ptr)
 #endif
 }
 
-PyAPI_FUNC(int) _PyMem_GetAllocatorName(
+extern int _PyMem_GetAllocatorName(
     const char *name,
     PyMemAllocatorName *allocator);
 
 /* Configure the Python memory allocators.
    Pass PYMEM_ALLOCATOR_DEFAULT to use default allocators.
    PYMEM_ALLOCATOR_NOT_SET does nothing. */
-PyAPI_FUNC(int) _PyMem_SetupAllocators(PyMemAllocatorName allocator);
+extern int _PyMem_SetupAllocators(PyMemAllocatorName allocator);
 
 
 #ifdef __cplusplus

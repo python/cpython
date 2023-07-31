@@ -97,7 +97,7 @@ nitpick_ignore = [
     ('c:func', 'vsnprintf'),
     # Standard C types
     ('c:type', 'FILE'),
-    ('c:type', '__int'),
+    ('c:type', 'int64_t'),
     ('c:type', 'intmax_t'),
     ('c:type', 'off_t'),
     ('c:type', 'ptrdiff_t'),
@@ -105,9 +105,16 @@ nitpick_ignore = [
     ('c:type', 'size_t'),
     ('c:type', 'ssize_t'),
     ('c:type', 'time_t'),
+    ('c:type', 'uint64_t'),
     ('c:type', 'uintmax_t'),
+    ('c:type', 'uintptr_t'),
     ('c:type', 'va_list'),
     ('c:type', 'wchar_t'),
+    # Standard C structures
+    ('c:struct', 'in6_addr'),
+    ('c:struct', 'in_addr'),
+    ('c:struct', 'stat'),
+    ('c:struct', 'statvfs'),
     # Standard C macros
     ('c:macro', 'LLONG_MAX'),
     ('c:macro', 'LLONG_MIN'),
@@ -152,6 +159,15 @@ nitpick_ignore = [
     # https://github.com/python/cpython/pull/103289.
     ('py:meth', '_SubParsersAction.add_parser'),
 ]
+
+# gh-106948: Copy standard C types declared in the "c:type" domain to the
+# "c:identifier" domain, since "c:function" markup looks for types in the
+# "c:identifier" domain. Use list() to not iterate on items which are being
+# added
+for role, name in list(nitpick_ignore):
+    if role == 'c:type':
+        nitpick_ignore.append(('c:identifier', name))
+del role, name
 
 # Disable Docutils smartquotes for several translations
 smartquotes_excludes = {
