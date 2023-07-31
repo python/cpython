@@ -5122,6 +5122,8 @@ static PyObject *
 Pointer_get_contents(CDataObject *self, void *closure)
 {
     StgDictObject *stgdict;
+    PyObject *keep, *ptr_probe;
+    CDataObject *ptr2ptr;
 
     if (*(void **)self->b_ptr == NULL) {
         PyErr_SetString(PyExc_ValueError,
@@ -5131,6 +5133,33 @@ Pointer_get_contents(CDataObject *self, void *closure)
 
     stgdict = PyObject_stgdict((PyObject *)self);
     assert(stgdict); /* Cannot be NULL for pointer instances */
+
+    keep = GetKeepedObjects(self);
+    if (keep != NULL) {
+        // check if it's a pointer to a pointer:
+        // pointers will have '0' key in the _objects
+        ptr_probe = PyDict_GetItemString(keep, "0");
+
+        if (ptr_probe != NULL) {
+            ptr2ptr = (CDataObject*) PyDict_GetItemString(keep, "1");
+            if (ptr2ptr ==  NULL) {
+                PyErr_SetString(PyExc_ValueError,
+                "Unexpected NULL pointer in _objects");
+                return NULL;
+            }
+            // don't construct a new object,
+            // return existing one instead to preserve refcount
+            assert(
+                *(void**) self->b_ptr == ptr2ptr->b_ptr ||
+                *(void**) self->b_value.c == ptr2ptr->b_ptr ||
+                *(void**) self->b_ptr == ptr2ptr->b_value.c ||
+                *(void**) self->b_value.c == ptr2ptr->b_value.c
+            ); // double-check that we are returning the same thing
+            Py_INCREF(ptr2ptr);
+            return (PyObject *) ptr2ptr;
+        }
+    }
+
     return PyCData_FromBaseObj(stgdict->proto,
                              (PyObject *)self, 0,
                              *(void **)self->b_ptr);
