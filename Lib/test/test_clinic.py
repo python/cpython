@@ -9,6 +9,7 @@ from test.support.os_helper import TESTFN, unlink
 from textwrap import dedent
 from unittest import TestCase
 import collections
+import contextlib
 import inspect
 import os.path
 import subprocess
@@ -338,6 +339,76 @@ class ClinicWholeFileTest(_ParserBase):
         )
         self.assertIn(msg, out)
 
+    @staticmethod
+    @contextlib.contextmanager
+    def _clinic_version(new_version):
+        """Helper for test_version_*() tests"""
+        _saved = clinic.version
+        clinic.version = new_version
+        try:
+            yield
+        finally:
+            clinic.version = _saved
+
+    def test_version_directive_lower(self):
+        with self._clinic_version('3'):
+            block = dedent("""
+                /*[clinic input]
+                version 2
+                [clinic start generated code]*/
+            """)
+            self.clinic.parse(block)
+
+    def test_version_directive_equal(self):
+        with self._clinic_version('5'):
+            block = dedent("""
+                /*[clinic input]
+                version 5
+                [clinic start generated code]*/
+            """)
+            self.clinic.parse(block)
+
+    def test_version_directive_with_modifier(self):
+        with self._clinic_version('1.2b0'):
+            block = dedent("""
+                /*[clinic input]
+                version 1.2a7
+                [clinic start generated code]*/
+            """)
+            self.clinic.parse(block)
+
+    def test_version_directive_insufficient_version(self):
+        with self._clinic_version('4'):
+            err = (
+                "Insufficient Clinic version!\n"
+                "  Version: 4\n"
+                "  Required: 5"
+            )
+            out = self.expect_failure("""
+                /*[clinic input]
+                version 5
+                [clinic start generated code]*/
+            """)
+            self.assertIn(err, out)
+
+    def test_version_directive_illegal_char(self):
+        err = "Illegal character 'v' in version string 'v5'"
+        out = self.expect_failure("""
+            /*[clinic input]
+            version v5
+            [clinic start generated code]*/
+        """)
+        self.assertIn(err, out)
+
+    def test_version_directive_unsupported_string(self):
+        err = "Unsupported version string: '.-'"
+        out = self.expect_failure("""
+            /*[clinic input]
+            version .-
+            [clinic start generated code]*/
+        """)
+        self.assertIn(err, out)
+
 
 class ClinicGroupPermuterTest(TestCase):
     def _test(self, l, m, r, output):
@@ -516,6 +587,22 @@ xyz
 
 
 class ClinicParserTest(_ParserBase):
+
+    def parse(self, text):
+        c = FakeClinic()
+        parser = DSLParser(c)
+        block = clinic.Block(text)
+        parser.parse(block)
+        return block
+
+    def parse_function(self, text, signatures_in_block=2, function_index=1):
+        block = self.parse(text)
+        s = block.signatures
+        self.assertEqual(len(s), signatures_in_block)
+        assert isinstance(s[0], clinic.Module)
+        assert isinstance(s[function_index], clinic.Function)
+        return s[function_index]
+
     def checkDocstring(self, fn, expected):
         self.assertTrue(hasattr(fn, "docstring"))
         self.assertEqual(fn.docstring.strip(),
@@ -1376,21 +1463,6 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
                 parser_decl = p.simple_declaration(in_parser=True)
                 self.assertNotIn("Py_UNUSED", parser_decl)
 
-    def parse(self, text):
-        c = FakeClinic()
-        parser = DSLParser(c)
-        block = clinic.Block(text)
-        parser.parse(block)
-        return block
-
-    def parse_function(self, text, signatures_in_block=2, function_index=1):
-        block = self.parse(text)
-        s = block.signatures
-        self.assertEqual(len(s), signatures_in_block)
-        assert isinstance(s[0], clinic.Module)
-        assert isinstance(s[function_index], clinic.Function)
-        return s[function_index]
-
     def test_scaffolding(self):
         # test repr on special values
         self.assertEqual(repr(clinic.unspecified), '<Unspecified>')
@@ -1407,6 +1479,26 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
                             filename='clown.txt', line_number=69)
         actual = stdout.getvalue()
         self.assertEqual(actual, expected)
+
+    def test_non_ascii_character_in_docstring(self):
+        block = """
+            module test
+            test.fn
+            docstring fü bár baß
+        """
+        with support.captured_stdout() as stdout:
+            self.parse(block)
+        msg = "Non-ascii character appear in docstring"
+        self.assertIn(msg, stdout.getvalue())
+
+    def test_illegal_c_identifier(self):
+        err = "Illegal C identifier: 17a"
+        out = self.parse_function_should_fail("""
+            module test
+            test.fn
+                a as 17a: int
+        """)
+        self.assertIn(err, out)
 
 
 class ClinicExternalTest(TestCase):
