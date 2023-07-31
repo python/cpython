@@ -83,6 +83,30 @@ extern PyObject* PyInit__tokenize(void);
 
 extern PyObject* PyMarshal_Init(void);
 extern PyObject* PyInit__imp(void);
+extern PyObject* PyInit__asyncio(void);
+extern PyObject* PyInit__bz2(void);
+extern PyObject* PyInit__ctypes(void);
+extern PyObject* PyInit__decimal(void);
+extern PyObject* PyInit__elementtree(void);
+extern PyObject* PyInit__hashlib(void);
+extern PyObject* PyInit__lzma(void);
+extern PyObject* PyInit__multiprocessing(void);
+#ifdef MS_WINDOWS
+extern PyObject* PyInit__overlapped(void);
+#endif
+extern PyObject* PyInit__queue(void);
+extern PyObject* PyInit__socket(void);
+extern PyObject* PyInit__sqlite3(void);
+extern PyObject* PyInit__ssl(void);
+extern PyObject* PyInit__uuid(void);
+extern PyObject* PyInit__zoneinfo(void);
+extern PyObject* PyInit_pyexpat(void);
+extern PyObject* PyInit_select(void);
+extern PyObject* PyInit_unicodedata(void);
+#ifdef MS_WINDOWS
+extern PyObject* PyInit_winsound(void);
+extern PyObject* PyInit__wmi(void);
+#endif
 
 struct _inittab _PyImport_Inittab[] = {
     {"_abc", PyInit__abc},
@@ -175,6 +199,31 @@ struct _inittab _PyImport_Inittab[] = {
     {"_opcode", PyInit__opcode},
 
     {"_contextvars", PyInit__contextvars},
+    /* Used to be in separate extension modules. */
+    {"_asyncio", PyInit__asyncio},
+    {"_bz2", PyInit__bz2},
+    {"_ctypes", PyInit__ctypes},
+    {"_decimal", PyInit__decimal},
+    {"_elementtree", PyInit__elementtree},
+    {"_hashlib", PyInit__hashlib},
+    {"_lzma", PyInit__lzma},
+    {"_multiprocessing", PyInit__multiprocessing},
+#ifdef MS_WINDOWS
+    {"_overlapped", PyInit__overlapped},
+#endif
+    {"_queue", PyInit__queue},
+    {"_socket", PyInit__socket},
+    {"_sqlite3", PyInit__sqlite3},
+    {"_ssl", PyInit__ssl},
+    {"_uuid", PyInit__uuid},
+    {"_zoneinfo", PyInit__zoneinfo},
+    {"pyexpat", PyInit_pyexpat},
+    {"select", PyInit_select},
+    {"unicodedata", PyInit_unicodedata},
+#ifdef MS_WINDOWS
+    {"winsound", PyInit_winsound},
+    {"_wmi", PyInit__wmi},
+#endif
 
     /* Sentinel */
     {0, 0}
