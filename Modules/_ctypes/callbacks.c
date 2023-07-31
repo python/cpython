@@ -591,6 +591,12 @@ STDAPI DllCanUnloadNow(void)
     return result;
 }
 
+/*
+ * When this is included in the pythoncore Visual Studio project
+ * this results in the following compile error:
+ * "dl_nt.obj : error LNK2005: DllMain already defined in callbacks.obj"
+ */
+#ifndef Py_BUILD_CORE
 #ifndef Py_NO_ENABLE_SHARED
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvRes)
 {
@@ -601,6 +607,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvRes)
     }
     return TRUE;
 }
+#endif
 #endif
 
 #endif

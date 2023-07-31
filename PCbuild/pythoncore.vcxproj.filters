@@ -37,6 +37,24 @@
     <Filter Include="Include\cpython">
       <UniqueIdentifier>{875bf4f2-ac42-46bd-b703-8371a824ec32}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Modules\expat">
+      <UniqueIdentifier>{3bdc375c-24bd-4bbd-85db-fe8c32a73e87}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Modules\_ctypes">
+      <UniqueIdentifier>{43545efb-b9bf-4b71-8444-77b2069c6a51}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Modules\openssl">
+      <UniqueIdentifier>{7be0dfd8-b014-4b8b-afdb-af92c7b88a06}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Modules\_sqlite3">
+      <UniqueIdentifier>{dfce4c62-95ed-42a3-bc6c-54762b509f9d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Modules\_multiprocessing">
+      <UniqueIdentifier>{91888a4d-7424-4a0b-968b-fb17266a1291}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Modules\_decimal">
+      <UniqueIdentifier>{2a360e91-b422-45f8-b221-95f03ac3630d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Include\abstract.h">
@@ -52,9 +70,6 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\ceval.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\code.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\codecs.h">
@@ -753,6 +768,98 @@
     <ClInclude Include="..\Include\internal\pycore_structseq.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_function.h" />
+    <ClInclude Include="..\Include\opcode.h" />
+    <ClInclude Include="..\Modules\unicodedata_db.h">
+      <Filter>Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\unicodename_db.h">
+      <Filter>Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\expat\xmlrole.h">
+      <Filter>Modules\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\expat\xmltok.h">
+      <Filter>Modules\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\socketmodule.h">
+      <Filter>Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\_ctypes\ctypes.h">
+      <Filter>Modules\_ctypes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\expat\ascii.h">
+      <Filter>Modules\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\expat\asciitab.h">
+      <Filter>Modules\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\expat\expat.h">
+      <Filter>Modules\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\expat\expat_config.h">
+      <Filter>Modules\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\expat\expat_external.h">
+      <Filter>Modules\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\expat\iasciitab.h">
+      <Filter>Modules\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\expat\internal.h">
+      <Filter>Modules\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\expat\latin1tab.h">
+      <Filter>Modules\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\expat\macconfig.h">
+      <Filter>Modules\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\expat\nametab.h">
+      <Filter>Modules\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\expat\pyexpatns.h">
+      <Filter>Modules\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\expat\utf8tab.h">
+      <Filter>Modules\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\expat\winconfig.h">
+      <Filter>Modules\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\_sqlite\util.h">
+      <Filter>Modules\_sqlite3</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\_sqlite\blob.h">
+      <Filter>Modules\_sqlite3</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\_sqlite\connection.h">
+      <Filter>Modules\_sqlite3</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\_sqlite\cursor.h">
+      <Filter>Modules\_sqlite3</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\_sqlite\microprotocols.h">
+      <Filter>Modules\_sqlite3</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\_sqlite\module.h">
+      <Filter>Modules\_sqlite3</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\_sqlite\prepare_protocol.h">
+      <Filter>Modules\_sqlite3</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\_sqlite\row.h">
+      <Filter>Modules\_sqlite3</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\_sqlite\statement.h">
+      <Filter>Modules\_sqlite3</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\_multiprocessing\multiprocessing.h">
+      <Filter>Modules\_multiprocessing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\_decimal\docstrings.h">
+      <Filter>Modules\_decimal</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_abc.c">
@@ -1393,6 +1500,124 @@
     </ClCompile>
     <ClCompile Include="..\Modules\getbuildinfo.c">
       <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\deepfreeze\deepfreeze.c" />
+    <ClCompile Include="..\Modules\_uuidmodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_zoneinfo.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\selectmodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\unicodedata.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\expat\xmlparse.c">
+      <Filter>Modules\expat</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\expat\xmlrole.c">
+      <Filter>Modules\expat</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\expat\xmltok.c">
+      <Filter>Modules\expat</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\pyexpat.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PC\winsound.c">
+      <Filter>PC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_asynciomodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\socketmodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_ctypes\_ctypes.c">
+      <Filter>Modules\_ctypes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_ctypes\callbacks.c">
+      <Filter>Modules\_ctypes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_ctypes\callproc.c">
+      <Filter>Modules\_ctypes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_ctypes\cfield.c">
+      <Filter>Modules\_ctypes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_ctypes\malloc_closure.c">
+      <Filter>Modules\_ctypes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_ctypes\stgdict.c">
+      <Filter>Modules\_ctypes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_lzmamodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_bz2module.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_elementtree.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_ssl.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\openssl-bin-3.0.9\amd64\include\applink.c">
+      <Filter>Modules\openssl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\overlapped.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_queuemodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_hashopenssl.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_sqlite\blob.c">
+      <Filter>Modules\_sqlite3</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_sqlite\connection.c">
+      <Filter>Modules\_sqlite3</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_sqlite\cursor.c">
+      <Filter>Modules\_sqlite3</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_sqlite\microprotocols.c">
+      <Filter>Modules\_sqlite3</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_sqlite\module.c">
+      <Filter>Modules\_sqlite3</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_sqlite\prepare_protocol.c">
+      <Filter>Modules\_sqlite3</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_sqlite\row.c">
+      <Filter>Modules\_sqlite3</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_sqlite\statement.c">
+      <Filter>Modules\_sqlite3</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_sqlite\util.c">
+      <Filter>Modules\_sqlite3</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_multiprocessing\semaphore.c">
+      <Filter>Modules\_multiprocessing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_multiprocessing\multiprocessing.c">
+      <Filter>Modules\_multiprocessing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_decimal\_decimal.c">
+      <Filter>Modules\_decimal</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PC\_msi.c">
+      <Filter>PC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PC\_wmimodule.cpp">
+      <Filter>PC</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
