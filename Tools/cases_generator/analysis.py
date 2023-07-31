@@ -2,6 +2,8 @@ import re
 import sys
 import typing
 
+import stacking  # Do this before import from instructions (import cycle)
+
 from flags import InstructionFlags, variable_used
 from formatting import prettify_filename, UNUSED
 from instructions import (

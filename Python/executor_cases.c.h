@@ -464,7 +464,7 @@
 
         case LIST_APPEND: {
             PyObject *v = stack_pointer[-1];
-            PyObject *list = stack_pointer[-(2 + (oparg-1))];
+            PyObject *list = stack_pointer[-2 - (oparg-1)];
             if (_PyList_AppendTakeRef((PyListObject *)list, v) < 0) goto pop_1_error;
             STACK_SHRINK(1);
             break;
@@ -472,7 +472,7 @@
 
         case SET_ADD: {
             PyObject *v = stack_pointer[-1];
-            PyObject *set = stack_pointer[-(2 + (oparg-1))];
+            PyObject *set = stack_pointer[-2 - (oparg-1)];
             int err = PySet_Add(set, v);
             Py_DECREF(v);
             if (err) goto pop_1_error;
@@ -790,7 +790,7 @@
 
         case UNPACK_SEQUENCE_TWO_TUPLE: {
             PyObject *seq = stack_pointer[-1];
-            PyObject **values = stack_pointer - (1);
+            PyObject **values = stack_pointer - 1;
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyTuple_GET_SIZE(seq) != 2, UNPACK_SEQUENCE);
             assert(oparg == 2);
@@ -805,7 +805,7 @@
 
         case UNPACK_SEQUENCE_TUPLE: {
             PyObject *seq = stack_pointer[-1];
-            PyObject **values = stack_pointer - (1);
+            PyObject **values = stack_pointer - 1;
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyTuple_GET_SIZE(seq) != oparg, UNPACK_SEQUENCE);
             STAT_INC(UNPACK_SEQUENCE, hit);
@@ -821,7 +821,7 @@
 
         case UNPACK_SEQUENCE_LIST: {
             PyObject *seq = stack_pointer[-1];
-            PyObject **values = stack_pointer - (1);
+            PyObject **values = stack_pointer - 1;
             DEOPT_IF(!PyList_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyList_GET_SIZE(seq) != oparg, UNPACK_SEQUENCE);
             STAT_INC(UNPACK_SEQUENCE, hit);
@@ -1148,7 +1148,7 @@
         }
 
         case BUILD_STRING: {
-            PyObject **pieces = (stack_pointer - oparg);
+            PyObject **pieces = stack_pointer - oparg;
             PyObject *str;
             str = _PyUnicode_JoinArray(&_Py_STR(empty), pieces, oparg);
             for (int _i = oparg; --_i >= 0;) {
@@ -1162,7 +1162,7 @@
         }
 
         case BUILD_TUPLE: {
-            PyObject **values = (stack_pointer - oparg);
+            PyObject **values = stack_pointer - oparg;
             PyObject *tup;
             tup = _PyTuple_FromArraySteal(values, oparg);
             if (tup == NULL) { STACK_SHRINK(oparg); goto error; }
@@ -1173,7 +1173,7 @@
         }
 
         case BUILD_LIST: {
-            PyObject **values = (stack_pointer - oparg);
+            PyObject **values = stack_pointer - oparg;
             PyObject *list;
             list = _PyList_FromArraySteal(values, oparg);
             if (list == NULL) { STACK_SHRINK(oparg); goto error; }
@@ -1185,7 +1185,7 @@
 
         case LIST_EXTEND: {
             PyObject *iterable = stack_pointer[-1];
-            PyObject *list = stack_pointer[-(2 + (oparg-1))];
+            PyObject *list = stack_pointer[-2 - (oparg-1)];
             PyObject *none_val = _PyList_Extend((PyListObject *)list, iterable);
             if (none_val == NULL) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError) &&
@@ -1207,7 +1207,7 @@
 
         case SET_UPDATE: {
             PyObject *iterable = stack_pointer[-1];
-            PyObject *set = stack_pointer[-(2 + (oparg-1))];
+            PyObject *set = stack_pointer[-2 - (oparg-1)];
             int err = _PySet_Update(set, iterable);
             Py_DECREF(iterable);
             if (err < 0) goto pop_1_error;
@@ -1216,7 +1216,7 @@
         }
 
         case BUILD_SET: {
-            PyObject **values = (stack_pointer - oparg);
+            PyObject **values = stack_pointer - oparg;
             PyObject *set;
             set = PySet_New(NULL);
             if (set == NULL)
@@ -1239,7 +1239,7 @@
         }
 
         case BUILD_MAP: {
-            PyObject **values = (stack_pointer - oparg*2);
+            PyObject **values = stack_pointer - oparg*2;
             PyObject *map;
             map = _PyDict_FromItems(
                     values, 2,
@@ -1301,7 +1301,7 @@
 
         case BUILD_CONST_KEY_MAP: {
             PyObject *keys = stack_pointer[-1];
-            PyObject **values = (stack_pointer - (1 + oparg));
+            PyObject **values = stack_pointer - 1 - oparg;
             PyObject *map;
             if (!PyTuple_CheckExact(keys) ||
                 PyTuple_GET_SIZE(keys) != (Py_ssize_t)oparg) {
@@ -1981,9 +1981,9 @@
         }
 
         case CALL_NO_KW_TYPE_1: {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *callable = stack_pointer[-(1 + oparg)];
-            PyObject *null = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *callable = stack_pointer[-1 - oparg];
+            PyObject *null = stack_pointer[-2 - oparg];
             PyObject *res;
             ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
@@ -2001,9 +2001,9 @@
         }
 
         case CALL_NO_KW_STR_1: {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *callable = stack_pointer[-(1 + oparg)];
-            PyObject *null = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *callable = stack_pointer[-1 - oparg];
+            PyObject *null = stack_pointer[-2 - oparg];
             PyObject *res;
             ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
@@ -2023,9 +2023,9 @@
         }
 
         case CALL_NO_KW_TUPLE_1: {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *callable = stack_pointer[-(1 + oparg)];
-            PyObject *null = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *callable = stack_pointer[-1 - oparg];
+            PyObject *null = stack_pointer[-2 - oparg];
             PyObject *res;
             ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
@@ -2058,9 +2058,9 @@
         }
 
         case CALL_NO_KW_BUILTIN_O: {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *callable = stack_pointer[-(1 + oparg)];
-            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *callable = stack_pointer[-1 - oparg];
+            PyObject *method = stack_pointer[-2 - oparg];
             PyObject *res;
             /* Builtin METH_O functions */
             ASSERT_KWNAMES_IS_NULL();
@@ -2097,9 +2097,9 @@
         }
 
         case CALL_NO_KW_BUILTIN_FAST: {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *callable = stack_pointer[-(1 + oparg)];
-            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *callable = stack_pointer[-1 - oparg];
+            PyObject *method = stack_pointer[-2 - oparg];
             PyObject *res;
             /* Builtin METH_FASTCALL functions, without keywords */
             ASSERT_KWNAMES_IS_NULL();
@@ -2140,9 +2140,9 @@
         }
 
         case CALL_NO_KW_LEN: {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *callable = stack_pointer[-(1 + oparg)];
-            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *callable = stack_pointer[-1 - oparg];
+            PyObject *method = stack_pointer[-2 - oparg];
             PyObject *res;
             ASSERT_KWNAMES_IS_NULL();
             /* len(o) */
@@ -2175,9 +2175,9 @@
         }
 
         case CALL_NO_KW_ISINSTANCE: {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *callable = stack_pointer[-(1 + oparg)];
-            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *callable = stack_pointer[-1 - oparg];
+            PyObject *method = stack_pointer[-2 - oparg];
             PyObject *res;
             ASSERT_KWNAMES_IS_NULL();
             /* isinstance(o, o2) */
@@ -2212,8 +2212,8 @@
         }
 
         case CALL_NO_KW_METHOD_DESCRIPTOR_O: {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *method = stack_pointer[-2 - oparg];
             PyObject *res;
             ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
@@ -2253,8 +2253,8 @@
         }
 
         case CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS: {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *method = stack_pointer[-2 - oparg];
             PyObject *res;
             ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 0 || oparg == 1);
@@ -2292,8 +2292,8 @@
         }
 
         case CALL_NO_KW_METHOD_DESCRIPTOR_FAST: {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *method = stack_pointer[-2 - oparg];
             PyObject *res;
             ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
@@ -2380,9 +2380,9 @@
         }
 
         case BUILD_SLICE: {
-            PyObject *step = (oparg == 3) ? stack_pointer[-(((oparg == 3) ? 1 : 0))] : NULL;
-            PyObject *stop = stack_pointer[-(1 + ((oparg == 3) ? 1 : 0))];
-            PyObject *start = stack_pointer[-(2 + ((oparg == 3) ? 1 : 0))];
+            PyObject *step = oparg == 3 ? stack_pointer[-(oparg == 3 ? 1 : 0)] : NULL;
+            PyObject *stop = stack_pointer[-1 - (oparg == 3 ? 1 : 0)];
+            PyObject *start = stack_pointer[-2 - (oparg == 3 ? 1 : 0)];
             PyObject *slice;
             slice = PySlice_New(start, stop, step);
             Py_DECREF(start);
@@ -2439,7 +2439,7 @@
         }
 
         case COPY: {
-            PyObject *bottom = stack_pointer[-(1 + (oparg-1))];
+            PyObject *bottom = stack_pointer[-1 - (oparg-1)];
             PyObject *top;
             assert(oparg > 0);
             top = Py_NewRef(bottom);
@@ -2477,7 +2477,7 @@
 
         case SWAP: {
             PyObject *top = stack_pointer[-1];
-            PyObject *bottom = stack_pointer[-(2 + (oparg-2))];
+            PyObject *bottom = stack_pointer[-2 - (oparg-2)];
             assert(oparg >= 2);
             stack_pointer[-1] = bottom;
             stack_pointer[-(2 + (oparg-2))] = top;

@@ -751,7 +751,7 @@
 
         TARGET(LIST_APPEND) {
             PyObject *v = stack_pointer[-1];
-            PyObject *list = stack_pointer[-(2 + (oparg-1))];
+            PyObject *list = stack_pointer[-2 - (oparg-1)];
             if (_PyList_AppendTakeRef((PyListObject *)list, v) < 0) goto pop_1_error;
             STACK_SHRINK(1);
             DISPATCH();
@@ -759,7 +759,7 @@
 
         TARGET(SET_ADD) {
             PyObject *v = stack_pointer[-1];
-            PyObject *set = stack_pointer[-(2 + (oparg-1))];
+            PyObject *set = stack_pointer[-2 - (oparg-1)];
             int err = PySet_Add(set, v);
             Py_DECREF(v);
             if (err) goto pop_1_error;
@@ -871,7 +871,7 @@
         }
 
         TARGET(RAISE_VARARGS) {
-            PyObject **args = (stack_pointer - oparg);
+            PyObject **args = stack_pointer - oparg;
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
             case 2:
@@ -1224,7 +1224,7 @@
 
         TARGET(RERAISE) {
             PyObject *exc = stack_pointer[-1];
-            PyObject **values = (stack_pointer - (1 + oparg));
+            PyObject **values = stack_pointer - 1 - oparg;
             assert(oparg >= 0 && oparg <= 2);
             if (oparg) {
                 PyObject *lasti = values[0];
@@ -1377,7 +1377,7 @@
 
         TARGET(UNPACK_SEQUENCE_TWO_TUPLE) {
             PyObject *seq = stack_pointer[-1];
-            PyObject **values = stack_pointer - (1);
+            PyObject **values = stack_pointer - 1;
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyTuple_GET_SIZE(seq) != 2, UNPACK_SEQUENCE);
             assert(oparg == 2);
@@ -1393,7 +1393,7 @@
 
         TARGET(UNPACK_SEQUENCE_TUPLE) {
             PyObject *seq = stack_pointer[-1];
-            PyObject **values = stack_pointer - (1);
+            PyObject **values = stack_pointer - 1;
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyTuple_GET_SIZE(seq) != oparg, UNPACK_SEQUENCE);
             STAT_INC(UNPACK_SEQUENCE, hit);
@@ -1410,7 +1410,7 @@
 
         TARGET(UNPACK_SEQUENCE_LIST) {
             PyObject *seq = stack_pointer[-1];
-            PyObject **values = stack_pointer - (1);
+            PyObject **values = stack_pointer - 1;
             DEOPT_IF(!PyList_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyList_GET_SIZE(seq) != oparg, UNPACK_SEQUENCE);
             STAT_INC(UNPACK_SEQUENCE, hit);
@@ -1828,7 +1828,7 @@
         }
 
         TARGET(BUILD_STRING) {
-            PyObject **pieces = (stack_pointer - oparg);
+            PyObject **pieces = stack_pointer - oparg;
             PyObject *str;
             str = _PyUnicode_JoinArray(&_Py_STR(empty), pieces, oparg);
             for (int _i = oparg; --_i >= 0;) {
@@ -1842,7 +1842,7 @@
         }
 
         TARGET(BUILD_TUPLE) {
-            PyObject **values = (stack_pointer - oparg);
+            PyObject **values = stack_pointer - oparg;
             PyObject *tup;
             tup = _PyTuple_FromArraySteal(values, oparg);
             if (tup == NULL) { STACK_SHRINK(oparg); goto error; }
@@ -1853,7 +1853,7 @@
         }
 
         TARGET(BUILD_LIST) {
-            PyObject **values = (stack_pointer - oparg);
+            PyObject **values = stack_pointer - oparg;
             PyObject *list;
             list = _PyList_FromArraySteal(values, oparg);
             if (list == NULL) { STACK_SHRINK(oparg); goto error; }
@@ -1865,7 +1865,7 @@
 
         TARGET(LIST_EXTEND) {
             PyObject *iterable = stack_pointer[-1];
-            PyObject *list = stack_pointer[-(2 + (oparg-1))];
+            PyObject *list = stack_pointer[-2 - (oparg-1)];
             PyObject *none_val = _PyList_Extend((PyListObject *)list, iterable);
             if (none_val == NULL) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError) &&
@@ -1887,7 +1887,7 @@
 
         TARGET(SET_UPDATE) {
             PyObject *iterable = stack_pointer[-1];
-            PyObject *set = stack_pointer[-(2 + (oparg-1))];
+            PyObject *set = stack_pointer[-2 - (oparg-1)];
             int err = _PySet_Update(set, iterable);
             Py_DECREF(iterable);
             if (err < 0) goto pop_1_error;
@@ -1896,7 +1896,7 @@
         }
 
         TARGET(BUILD_SET) {
-            PyObject **values = (stack_pointer - oparg);
+            PyObject **values = stack_pointer - oparg;
             PyObject *set;
             set = PySet_New(NULL);
             if (set == NULL)
@@ -1919,7 +1919,7 @@
         }
 
         TARGET(BUILD_MAP) {
-            PyObject **values = (stack_pointer - oparg*2);
+            PyObject **values = stack_pointer - oparg*2;
             PyObject *map;
             map = _PyDict_FromItems(
                     values, 2,
@@ -1981,7 +1981,7 @@
 
         TARGET(BUILD_CONST_KEY_MAP) {
             PyObject *keys = stack_pointer[-1];
-            PyObject **values = (stack_pointer - (1 + oparg));
+            PyObject **values = stack_pointer - 1 - oparg;
             PyObject *map;
             if (!PyTuple_CheckExact(keys) ||
                 PyTuple_GET_SIZE(keys) != (Py_ssize_t)oparg) {
@@ -3489,9 +3489,9 @@
         TARGET(CALL) {
             PREDICTED(CALL);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *callable = stack_pointer[-(1 + oparg)];
-            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *callable = stack_pointer[-1 - oparg];
+            PyObject *method = stack_pointer[-2 - oparg];
             PyObject *res;
             int is_meth = method != NULL;
             int total_args = oparg;
@@ -3583,8 +3583,8 @@
         }
 
         TARGET(CALL_BOUND_METHOD_EXACT_ARGS) {
-            PyObject *callable = stack_pointer[-(1 + oparg)];
-            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject *callable = stack_pointer[-1 - oparg];
+            PyObject *method = stack_pointer[-2 - oparg];
             DEOPT_IF(method != NULL, CALL);
             DEOPT_IF(Py_TYPE(callable) != &PyMethod_Type, CALL);
             STAT_INC(CALL, hit);
@@ -3598,9 +3598,9 @@
 
         TARGET(CALL_PY_EXACT_ARGS) {
             PREDICTED(CALL_PY_EXACT_ARGS);
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *callable = stack_pointer[-(1 + oparg)];
-            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *callable = stack_pointer[-1 - oparg];
+            PyObject *method = stack_pointer[-2 - oparg];
             uint32_t func_version = read_u32(&next_instr[1].cache);
             ASSERT_KWNAMES_IS_NULL();
             DEOPT_IF(tstate->interp->eval_frame, CALL);
@@ -3630,9 +3630,9 @@
         }
 
         TARGET(CALL_PY_WITH_DEFAULTS) {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *callable = stack_pointer[-(1 + oparg)];
-            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *callable = stack_pointer[-1 - oparg];
+            PyObject *method = stack_pointer[-2 - oparg];
             uint32_t func_version = read_u32(&next_instr[1].cache);
             ASSERT_KWNAMES_IS_NULL();
             DEOPT_IF(tstate->interp->eval_frame, CALL);
@@ -3672,9 +3672,9 @@
         }
 
         TARGET(CALL_NO_KW_TYPE_1) {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *callable = stack_pointer[-(1 + oparg)];
-            PyObject *null = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *callable = stack_pointer[-1 - oparg];
+            PyObject *null = stack_pointer[-2 - oparg];
             PyObject *res;
             ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
@@ -3693,9 +3693,9 @@
         }
 
         TARGET(CALL_NO_KW_STR_1) {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *callable = stack_pointer[-(1 + oparg)];
-            PyObject *null = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *callable = stack_pointer[-1 - oparg];
+            PyObject *null = stack_pointer[-2 - oparg];
             PyObject *res;
             ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
@@ -3716,9 +3716,9 @@
         }
 
         TARGET(CALL_NO_KW_TUPLE_1) {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *callable = stack_pointer[-(1 + oparg)];
-            PyObject *null = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *callable = stack_pointer[-1 - oparg];
+            PyObject *null = stack_pointer[-2 - oparg];
             PyObject *res;
             ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
@@ -3739,9 +3739,9 @@
         }
 
         TARGET(CALL_NO_KW_ALLOC_AND_ENTER_INIT) {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *callable = stack_pointer[-(1 + oparg)];
-            PyObject *null = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *callable = stack_pointer[-1 - oparg];
+            PyObject *null = stack_pointer[-2 - oparg];
             /* This instruction does the following:
              * 1. Creates the object (by calling ``object.__new__``)
              * 2. Pushes a shim frame to the frame stack (to cleanup after ``__init__``)
@@ -3808,9 +3808,9 @@
         }
 
         TARGET(CALL_BUILTIN_CLASS) {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *callable = stack_pointer[-(1 + oparg)];
-            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *callable = stack_pointer[-1 - oparg];
+            PyObject *method = stack_pointer[-2 - oparg];
             PyObject *res;
             int is_meth = method != NULL;
             int total_args = oparg;
@@ -3842,9 +3842,9 @@
         }
 
         TARGET(CALL_NO_KW_BUILTIN_O) {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *callable = stack_pointer[-(1 + oparg)];
-            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *callable = stack_pointer[-1 - oparg];
+            PyObject *method = stack_pointer[-2 - oparg];
             PyObject *res;
             /* Builtin METH_O functions */
             ASSERT_KWNAMES_IS_NULL();
@@ -3882,9 +3882,9 @@
         }
 
         TARGET(CALL_NO_KW_BUILTIN_FAST) {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *callable = stack_pointer[-(1 + oparg)];
-            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *callable = stack_pointer[-1 - oparg];
+            PyObject *method = stack_pointer[-2 - oparg];
             PyObject *res;
             /* Builtin METH_FASTCALL functions, without keywords */
             ASSERT_KWNAMES_IS_NULL();
@@ -3926,9 +3926,9 @@
         }
 
         TARGET(CALL_BUILTIN_FAST_WITH_KEYWORDS) {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *callable = stack_pointer[-(1 + oparg)];
-            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *callable = stack_pointer[-1 - oparg];
+            PyObject *method = stack_pointer[-2 - oparg];
             PyObject *res;
             /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
             int is_meth = method != NULL;
@@ -3970,9 +3970,9 @@
         }
 
         TARGET(CALL_NO_KW_LEN) {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *callable = stack_pointer[-(1 + oparg)];
-            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *callable = stack_pointer[-1 - oparg];
+            PyObject *method = stack_pointer[-2 - oparg];
             PyObject *res;
             ASSERT_KWNAMES_IS_NULL();
             /* len(o) */
@@ -4006,9 +4006,9 @@
         }
 
         TARGET(CALL_NO_KW_ISINSTANCE) {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *callable = stack_pointer[-(1 + oparg)];
-            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *callable = stack_pointer[-1 - oparg];
+            PyObject *method = stack_pointer[-2 - oparg];
             PyObject *res;
             ASSERT_KWNAMES_IS_NULL();
             /* isinstance(o, o2) */
@@ -4044,9 +4044,9 @@
         }
 
         TARGET(CALL_NO_KW_LIST_APPEND) {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *self = stack_pointer[-(1 + oparg)];
-            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *self = stack_pointer[-1 - oparg];
+            PyObject *method = stack_pointer[-2 - oparg];
             ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             assert(method != NULL);
@@ -4067,8 +4067,8 @@
         }
 
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_O) {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *method = stack_pointer[-2 - oparg];
             PyObject *res;
             ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
@@ -4109,8 +4109,8 @@
         }
 
         TARGET(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS) {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *method = stack_pointer[-2 - oparg];
             PyObject *res;
             int is_meth = method != NULL;
             int total_args = oparg;
@@ -4149,8 +4149,8 @@
         }
 
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS) {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *method = stack_pointer[-2 - oparg];
             PyObject *res;
             ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 0 || oparg == 1);
@@ -4189,8 +4189,8 @@
         }
 
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_FAST) {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject **args = stack_pointer - oparg;
+            PyObject *method = stack_pointer[-2 - oparg];
             PyObject *res;
             ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
@@ -4233,9 +4233,9 @@
 
         TARGET(CALL_FUNCTION_EX) {
             PREDICTED(CALL_FUNCTION_EX);
-            PyObject *kwargs = (oparg & 1) ? stack_pointer[-(((oparg & 1) ? 1 : 0))] : NULL;
-            PyObject *callargs = stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))];
-            PyObject *func = stack_pointer[-(2 + ((oparg & 1) ? 1 : 0))];
+            PyObject *kwargs = oparg & 1 ? stack_pointer[-(oparg & 1 ? 1 : 0)] : NULL;
+            PyObject *callargs = stack_pointer[-1 - (oparg & 1 ? 1 : 0)];
+            PyObject *func = stack_pointer[-2 - (oparg & 1 ? 1 : 0)];
             PyObject *result;
             // DICT_MERGE is called before this opcode if there are kwargs.
             // It converts all dict subtypes in kwargs into regular dicts.
@@ -4384,9 +4384,9 @@
         }
 
         TARGET(BUILD_SLICE) {
-            PyObject *step = (oparg == 3) ? stack_pointer[-(((oparg == 3) ? 1 : 0))] : NULL;
-            PyObject *stop = stack_pointer[-(1 + ((oparg == 3) ? 1 : 0))];
-            PyObject *start = stack_pointer[-(2 + ((oparg == 3) ? 1 : 0))];
+            PyObject *step = oparg == 3 ? stack_pointer[-(oparg == 3 ? 1 : 0)] : NULL;
+            PyObject *stop = stack_pointer[-1 - (oparg == 3 ? 1 : 0)];
+            PyObject *start = stack_pointer[-2 - (oparg == 3 ? 1 : 0)];
             PyObject *slice;
             slice = PySlice_New(start, stop, step);
             Py_DECREF(start);
@@ -4443,7 +4443,7 @@
         }
 
         TARGET(COPY) {
-            PyObject *bottom = stack_pointer[-(1 + (oparg-1))];
+            PyObject *bottom = stack_pointer[-1 - (oparg-1)];
             PyObject *top;
             assert(oparg > 0);
             top = Py_NewRef(bottom);
@@ -4483,7 +4483,7 @@
 
         TARGET(SWAP) {
             PyObject *top = stack_pointer[-1];
-            PyObject *bottom = stack_pointer[-(2 + (oparg-2))];
+            PyObject *bottom = stack_pointer[-2 - (oparg-2)];
             assert(oparg >= 2);
             stack_pointer[-1] = bottom;
             stack_pointer[-(2 + (oparg-2))] = top;

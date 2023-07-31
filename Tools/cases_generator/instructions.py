@@ -13,6 +13,7 @@ from formatting import (
 import lexer as lx
 import parsing
 from parsing import StackEffect
+import stacking
 
 BITS_PER_CODE_UNIT = 16
 
@@ -153,45 +154,44 @@ class Instruction:
                     )
 
         # Write input stack effect variable declarations and initializations
-        ieffects = list(reversed(self.input_effects))
-        for i, ieffect in enumerate(ieffects):
-            isize = string_effect_size(
-                list_effect_size([ieff for ieff in ieffects[: i + 1]])
-            )
-            if ieffect.size:
-                src = StackEffect(
-                    f"(stack_pointer - {maybe_parenthesize(isize)})", "PyObject **"
-                )
-            elif ieffect.cond:
-                src = StackEffect(
-                    f"({ieffect.cond}) ? stack_pointer[-{maybe_parenthesize(isize)}] : NULL",
-                    "",
-                )
-            else:
-                src = StackEffect(f"stack_pointer[-{maybe_parenthesize(isize)}]", "")
-            out.declare(ieffect, src)
+        stacking.write_single_instr(self, out, tier)
+        # ieffects = list(reversed(self.input_effects))
+        # for i, ieffect in enumerate(ieffects):
+        #     isize = string_effect_size(
+        #         list_effect_size([ieff for ieff in ieffects[: i + 1]])
+        #     )
+        #     if ieffect.size:
+        #         src = StackEffect(
+        #             f"(stack_pointer - {maybe_parenthesize(isize)})", "PyObject **"
+        #         )
+        #     elif ieffect.cond:
+        #         src = StackEffect(
+        #             f"({ieffect.cond}) ? stack_pointer[-{maybe_parenthesize(isize)}] : NULL",
+        #             "",
+        #         )
+        #     else:
+        #         src = StackEffect(f"stack_pointer[-{maybe_parenthesize(isize)}]", "")
+        #     out.declare(ieffect, src)
 
-        # Write output stack effect variable declarations
-        isize = string_effect_size(list_effect_size(self.input_effects))
-        input_names = {ieffect.name for ieffect in self.input_effects}
-        for i, oeffect in enumerate(self.output_effects):
-            if oeffect.name not in input_names:
-                if oeffect.size:
-                    osize = string_effect_size(
-                        list_effect_size([oeff for oeff in self.output_effects[:i]])
-                    )
-                    offset = "stack_pointer"
-                    if isize != osize:
-                        if isize != "0":
-                            offset += f" - ({isize})"
-                        if osize != "0":
-                            offset += f" + {osize}"
-                    src = StackEffect(offset, "PyObject **")
-                    out.declare(oeffect, src)
-                else:
-                    out.declare(oeffect, None)
-
-        # out.emit(f"next_instr += OPSIZE({self.inst.name}) - 1;")
+        # # Write output stack effect variable declarations
+        # isize = string_effect_size(list_effect_size(self.input_effects))
+        # input_names = {ieffect.name for ieffect in self.input_effects}
+        # for i, oeffect in enumerate(self.output_effects):
+        #     if oeffect.name not in input_names:
+        #         if oeffect.size:
+        #             osize = string_effect_size(
+        #                 list_effect_size([oeff for oeff in self.output_effects[:i]])
+        #             )
+        #             offset = "stack_pointer"
+        #             if isize != osize:
+        #                 if isize != "0":
+        #                     offset += f" - ({isize})"
+        #                 if osize != "0":
+        #                     offset += f" + {osize}"
+        #             src = StackEffect(offset, "PyObject **")
+        #             out.declare(oeffect, src)
+        #         else:
+        #             out.declare(oeffect, None)
 
         self.write_body(out, 0, self.active_caches, tier=tier)
 

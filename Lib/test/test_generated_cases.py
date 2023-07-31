@@ -68,6 +68,7 @@ class TestEffects(unittest.TestCase):
 class TestGeneratedCases(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
+        self.maxDiff = None
 
         self.temp_dir = tempfile.gettempdir()
         self.temp_input_filename = os.path.join(self.temp_dir, "input.txt")
@@ -397,8 +398,8 @@ class TestGeneratedCases(unittest.TestCase):
         output = """
         TARGET(OP) {
             PyObject *above = stack_pointer[-1];
-            PyObject **values = (stack_pointer - (1 + oparg*2));
-            PyObject *below = stack_pointer[-(2 + oparg*2)];
+            PyObject **values = stack_pointer - 1 - oparg*2;
+            PyObject *below = stack_pointer[-2 - oparg*2];
             spam();
             STACK_SHRINK(oparg*2);
             STACK_SHRINK(2);
@@ -416,7 +417,7 @@ class TestGeneratedCases(unittest.TestCase):
         output = """
         TARGET(OP) {
             PyObject *below;
-            PyObject **values = stack_pointer - (2) + 1;
+            PyObject **values = stack_pointer - 1;
             PyObject *above;
             spam(values, oparg);
             STACK_GROW(oparg*3);
@@ -435,7 +436,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            PyObject **values = (stack_pointer - oparg);
+            PyObject **values = stack_pointer - oparg;
             PyObject *above;
             spam(values, oparg);
             STACK_GROW(1);
@@ -453,8 +454,8 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            PyObject **values = (stack_pointer - oparg);
-            PyObject *extra = stack_pointer[-(1 + oparg)];
+            PyObject **values = stack_pointer - oparg;
+            PyObject *extra = stack_pointer[-1 - oparg];
             if (oparg == 0) { STACK_SHRINK(oparg); goto pop_1_somewhere; }
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
@@ -472,8 +473,8 @@ class TestGeneratedCases(unittest.TestCase):
         output = """
         TARGET(OP) {
             PyObject *cc = stack_pointer[-1];
-            PyObject *input = ((oparg & 1) == 1) ? stack_pointer[-(1 + (((oparg & 1) == 1) ? 1 : 0))] : NULL;
-            PyObject *aa = stack_pointer[-(2 + (((oparg & 1) == 1) ? 1 : 0))];
+            PyObject *input = (oparg & 1) == 1 ? stack_pointer[-1 - ((oparg & 1) == 1 ? 1 : 0)] : NULL;
+            PyObject *aa = stack_pointer[-2 - ((oparg & 1) == 1 ? 1 : 0)];
             PyObject *xx;
             PyObject *output = NULL;
             PyObject *zz;
