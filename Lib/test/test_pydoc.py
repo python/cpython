@@ -684,13 +684,23 @@ class PydocDocTest(unittest.TestCase):
         finally:
             pydoc.getpager = getpager_old
 
-    def test_lambda_with_annotations(self):
+    def test_lambda_return_annotation(self):
         func = lambda a, b, c: 1
         func.__annotations__ = {"return": int}
         with captured_stdout() as help_io:
             pydoc.help(func)
         helptext = help_io.getvalue()
         self.assertIn("lambda a, b, c -> int", helptext)
+
+    def test_lambda_return_annotation_tuple(self):
+        # test of a tuple return annotation,
+        # for a potential PEP 677-like future use
+        func = lambda a, b, c: (1, "")
+        func.__annotations__ = {"return": (int, str)}
+        with captured_stdout() as help_io:
+            pydoc.help(func)
+        helptext = help_io.getvalue()
+        self.assertIn("lambda a, b, c -> (<class 'int'>, <class 'str'>)", helptext)
 
     def test_namedtuple_fields(self):
         Person = namedtuple('Person', ['nickname', 'firstname'])
