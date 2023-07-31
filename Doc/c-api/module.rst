@@ -405,6 +405,8 @@ The available slot types are:
    If ``Py_mod_multiple_interpreters`` is not specified, the import
    machinery defaults to ``Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED``.
 
+   .. versionadded:: 3.12
+
 See :PEP:`489` for more details on multi-phase initialization.
 
 Low-level module creation functions
