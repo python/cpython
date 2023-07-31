@@ -515,19 +515,27 @@ def emit_object_stats(stats):
         rows = calculate_object_stats(stats)
         emit_table(("",  "Count:", "Ratio:"), rows)
 
-def emit_gc_stats(stats):
-    with Section("GC stats", summary="allocations, frees and dict materializatons"):
-        rows = calculate_gc_stats(stats)
-        emit_table(("Generation:",  "Collections:", "Objects collected:", "Object visits:"), rows)
-
 def emit_comparative_object_stats(base_stats, head_stats):
     with Section("Object stats", summary="allocations, frees and dict materializatons"):
         base_rows = calculate_object_stats(base_stats)
         head_rows = calculate_object_stats(head_stats)
         emit_table(("",  "Base Count:", "Base Ratio:", "Head Count:", "Head Ratio:"), join_rows(base_rows, head_rows))
 
+def emit_gc_stats(stats):
+    with Section("GC stats", summary"GC collections and effectiveness"):
+        rows = calculate_gc_stats(stats)
+        emit_table(("Generation:",  "Collections:", "Objects collected:", "Object visits:"), rows)
+
 def emit_comparative_gc_stats(base_stats, head_stats):
-    pass # To do...
+    with Section("GC stats", summary"GC collections and effectiveness"):
+        base_rows = calculate_gc_stats(base_stats)
+        head_rows = calculate_gc_stats(head_stats)
+        emit_table(
+            ("Generation:",
+            "Base collections:", "Head collections:",
+            "Base objects collected:", "Head objects collected:",
+            "Base object visits:", "Head object visits:"),
+            join_rows(base_rows, head_rows))
 
 def get_total(opcode_stats):
     total = 0
