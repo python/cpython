@@ -601,7 +601,7 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
     when an extension is loaded.  This includes when it is imported
     for the first time.
 
-    Here's a summary, using importlib._boostrap._load() as a starting point.
+    Here's a summary, using importlib._bootstrap._load() as a starting point.
 
     1.  importlib._bootstrap._load()
     2.    _load():  acquire import lock
