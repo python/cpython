@@ -1492,6 +1492,10 @@ location listed above.
         argspec = None
 
         if inspect.isroutine(object):
+            if realname == '<lambda>':
+                retann = object.__annotations__.pop('return', None)
+            else:
+                retann = None
             try:
                 signature = inspect.signature(object)
             except (ValueError, TypeError):
@@ -1500,9 +1504,10 @@ location listed above.
                 argspec = str(signature)
                 if realname == '<lambda>':
                     title = self.bold(name) + ' lambda '
-                    # Since lambda's cannot have a parenthesis in their signature,
-                    # it's safe to replace them.
-                    argspec = argspec.replace("(", "").replace(")", "")
+                    argspec = argspec[1:-1] # remove parentheses
+                    # add a return annotation, should one exist
+                    if retann is not None:
+                        argspec += f' -> {inspect.formatannotation(retann)}'
         if not argspec:
             argspec = '(...)'
         decl = asyncqualifier + title + argspec + note
