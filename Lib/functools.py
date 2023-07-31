@@ -945,7 +945,7 @@ class singledispatchmethod:
         return self.dispatcher.register(cls, func=method)
 
     def __get__(self, obj, cls=None):
-        if self._all_weakrefable_instances and obj is not None:
+        if self._all_weakrefable_instances:
             try:
                 _method = self._method_cache[obj]
             except TypeError:
