@@ -1844,7 +1844,7 @@ static PyMethodDef methodcaller_methods[] = {
 };
 
 static PyMemberDef methodcaller_members[] = {
-    {"__vectorcalloffset__", T_PYSSIZET, offsetof(methodcallerobject, vectorcall), READONLY},
+    {"__vectorcalloffset__", Py_T_PYSSIZET, offsetof(methodcallerobject, vectorcall), Py_READONLY},
     {NULL}
 };
 
