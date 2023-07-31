@@ -34,11 +34,12 @@ class Analyzer:
 
     input_filenames: list[str]
     errors: int = 0
+    warnings: int = 0
 
     def __init__(self, input_filenames: list[str]):
         self.input_filenames = input_filenames
 
-    def error(self, msg: str, node: parsing.Node) -> None:
+    def message(self, msg: str, node: parsing.Node) -> None:
         lineno = 0
         filename = "<unknown file>"
         if context := node.context:
@@ -49,7 +50,17 @@ class Analyzer:
                 if token.kind != "COMMENT":
                     break
         print(f"{filename}:{lineno}: {msg}", file=sys.stderr)
+
+    def error(self, msg: str, node: parsing.Node) -> None:
+        self.message("error: " + msg, node)
         self.errors += 1
+
+    def warning(self, msg: str, node: parsing.Node) -> None:
+        self.message("warning: " + msg, node)
+        self.warnings += 1
+
+    def note(self, msg: str, node: parsing.Node) -> None:
+        self.message("note: " + msg, node)
 
     everything: list[
         parsing.InstDef
