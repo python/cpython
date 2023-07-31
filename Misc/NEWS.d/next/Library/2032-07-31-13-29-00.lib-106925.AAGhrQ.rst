@@ -1,0 +1,1 @@
+Fix CookieJar + OpenerDirector interactions and UnhandledExceptionWarning
