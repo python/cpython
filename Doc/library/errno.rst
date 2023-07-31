@@ -666,3 +666,19 @@ defined by the module.  The specific list of defined symbols is available as
    .. availability:: WASI, FreeBSD
 
    .. versionadded:: 3.11.1
+
+.. data:: ECANCELED
+
+   operation canceled
+
+.. data:: EOWNERDEAD
+
+   owner dead
+
+.. data:: ENOTRECOVERABLE
+
+   state not recoverable
+
+.. data:: ENOTSUP
+
+   not supported
