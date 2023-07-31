@@ -422,7 +422,7 @@ class TestGeneratedCases(unittest.TestCase):
             spam(values, oparg);
             STACK_GROW(oparg*3);
             stack_pointer[-1] = above;
-            stack_pointer[-(2 + oparg*3)] = below;
+            stack_pointer[-2 - oparg*3] = below;
             DISPATCH();
         }
     """
@@ -482,8 +482,8 @@ class TestGeneratedCases(unittest.TestCase):
             STACK_SHRINK((((oparg & 1) == 1) ? 1 : 0));
             STACK_GROW(((oparg & 2) ? 1 : 0));
             stack_pointer[-1] = zz;
-            if (oparg & 2) { stack_pointer[-(1 + ((oparg & 2) ? 1 : 0))] = output; }
-            stack_pointer[-(2 + ((oparg & 2) ? 1 : 0))] = xx;
+            if (oparg & 2) { stack_pointer[-1 - (oparg & 2 ? 1 : 0)] = output; }
+            stack_pointer[-2 - (oparg & 2 ? 1 : 0)] = xx;
             DISPATCH();
         }
     """

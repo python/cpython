@@ -155,71 +155,10 @@ class Instruction:
 
         # Write input stack effect variable declarations and initializations
         stacking.write_single_instr(self, out, tier)
-        # ieffects = list(reversed(self.input_effects))
-        # for i, ieffect in enumerate(ieffects):
-        #     isize = string_effect_size(
-        #         list_effect_size([ieff for ieff in ieffects[: i + 1]])
-        #     )
-        #     if ieffect.size:
-        #         src = StackEffect(
-        #             f"(stack_pointer - {maybe_parenthesize(isize)})", "PyObject **"
-        #         )
-        #     elif ieffect.cond:
-        #         src = StackEffect(
-        #             f"({ieffect.cond}) ? stack_pointer[-{maybe_parenthesize(isize)}] : NULL",
-        #             "",
-        #         )
-        #     else:
-        #         src = StackEffect(f"stack_pointer[-{maybe_parenthesize(isize)}]", "")
-        #     out.declare(ieffect, src)
-
-        # # Write output stack effect variable declarations
-        # isize = string_effect_size(list_effect_size(self.input_effects))
-        # input_names = {ieffect.name for ieffect in self.input_effects}
-        # for i, oeffect in enumerate(self.output_effects):
-        #     if oeffect.name not in input_names:
-        #         if oeffect.size:
-        #             osize = string_effect_size(
-        #                 list_effect_size([oeff for oeff in self.output_effects[:i]])
-        #             )
-        #             offset = "stack_pointer"
-        #             if isize != osize:
-        #                 if isize != "0":
-        #                     offset += f" - ({isize})"
-        #                 if osize != "0":
-        #                     offset += f" + {osize}"
-        #             src = StackEffect(offset, "PyObject **")
-        #             out.declare(oeffect, src)
-        #         else:
-        #             out.declare(oeffect, None)
-
-        self.write_body(out, 0, self.active_caches, tier=tier)
 
         # Skip the rest if the block always exits
         if self.always_exits:
             return
-
-        # Write net stack growth/shrinkage
-        out.stack_adjust(
-            [ieff for ieff in self.input_effects],
-            [oeff for oeff in self.output_effects],
-        )
-
-        # Write output stack effect assignments
-        oeffects = list(reversed(self.output_effects))
-        for i, oeffect in enumerate(oeffects):
-            if oeffect.name in self.unmoved_names:
-                continue
-            osize = string_effect_size(
-                list_effect_size([oeff for oeff in oeffects[: i + 1]])
-            )
-            if oeffect.size:
-                dst = StackEffect(
-                    f"stack_pointer - {maybe_parenthesize(osize)}", "PyObject **"
-                )
-            else:
-                dst = StackEffect(f"stack_pointer[-{maybe_parenthesize(osize)}]", "")
-            out.assign(dst, oeffect)
 
         # Write cache effect
         if tier == TIER_ONE and self.cache_offset:

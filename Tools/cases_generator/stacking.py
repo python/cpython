@@ -1,16 +1,15 @@
 from abc import abstractmethod
 import dataclasses
 
-from formatting import Formatter, UNUSED, list_effect_size, maybe_parenthesize
+from formatting import (
+    Formatter,
+    UNUSED,
+    list_effect_size,
+    maybe_parenthesize,
+    parenthesize_cond,
+)
 from instructions import Instruction, Tiers, TIER_ONE, TIER_TWO
 from parsing import StackEffect
-
-
-def parenthesize_cond(cond: str) -> str:
-    """Parenthesize a condition, but only if it contains ?: itself."""
-    if "?" in cond:
-        cond = f"({cond})"
-    return cond
 
 
 @dataclasses.dataclass
@@ -62,16 +61,16 @@ class StackOffset:
         for eff in temp.deep:
             if eff.size:
                 terms.append(("-", maybe_parenthesize(eff.size)))
-            elif eff.cond:
+            elif eff.cond and eff.cond != "1":
                 terms.append(("-", f"({parenthesize_cond(eff.cond)} ? 1 : 0)"))
-            else:
+            elif eff.cond != "0":
                 num -= 1
         for eff in temp.high:
             if eff.size:
                 terms.append(("+", maybe_parenthesize(eff.size)))
-            elif eff.cond:
+            elif eff.cond and eff.cond != "1":
                 terms.append(("+", f"({parenthesize_cond(eff.cond)} ? 1 : 0)"))
-            else:
+            elif eff.cond != "0":
                 num += 1
 
         if num < 0:
@@ -80,6 +79,8 @@ class StackOffset:
             terms.append(("+", str(num)))
         if me.size:
             terms.insert(0, ("+", "stack_pointer"))
+        if not terms:
+            terms.append(("+", "0"))  # Avoid 'stack_pointer[]'
 
         # Produce an index expression from the terms honoring PEP 8,
         # surrounding binary ops with spaces but not unary minus
@@ -95,10 +96,7 @@ class StackOffset:
         if me.size:
             return index
         else:
-            variable = f"stack_pointer[{index}]"
-            if me.cond:
-                variable = f"{parenthesize_cond(me.cond)} ? {variable} : NULL"
-            return variable
+            return f"stack_pointer[{index}]"
 
 
 @dataclasses.dataclass
@@ -200,14 +198,23 @@ def write_single_instr(
     """Replace (most of) Instruction.write()."""
     effects = AllStackEffects(instr)
     assert not effects.copies
+
+    # Emit input stack effect variable declarations and initializations
     input_vars: set[str] = set()
     for peek in effects.peeks:
         if peek.dst.name != UNUSED:
             input_vars.add(peek.dst.name)
-            src = StackEffect(
-                peek.as_variable(), peek.dst.type, peek.dst.cond, peek.dst.size
-            )
+            variable = peek.as_variable()
+            # TODO: Move this to Formatter.declare() (see TODO there)
+            if peek.dst.cond and peek.dst.cond != "1":
+                variable = f"{parenthesize_cond(peek.dst.cond)} ? {variable} : NULL"
+            elif peek.dst.cond == "0":
+                variable = "NULL"
+            src = StackEffect(variable, peek.dst.type, peek.dst.cond, peek.dst.size)
             out.declare(peek.dst, src)
+
+    # Emit output stack effect variable declarations
+    # (with special cases for array output effects)
     for poke in effects.pokes:
         if poke.src.name != UNUSED and poke.src.name not in input_vars:
             if not poke.src.size:
@@ -217,6 +224,41 @@ def write_single_instr(
                     poke.as_variable(), poke.src.type, poke.src.cond, poke.src.size
                 )
             out.declare(poke.src, dst)
+
+    # Emit the instruction itself
+    instr.write_body(out, 0, instr.active_caches, tier=tier)
+
+    # Skip the rest if the block always exits
+    if instr.always_exits:
+        return
+
+    # Emit stack adjustments
+    endstate: StackOffset | None = None
+    if effects.pokes:
+        endstate = effects.pokes[-1]
+    elif effects.peeks:
+        endstate = effects.peeks[-1]
+        endstate = StackOffset(list(endstate.deep), list(endstate.high))
+        endstate.deeper(effects.peeks[-1].dst)
+    if endstate:
+        out.stack_adjust(endstate.deep, endstate.high)
+
+    # Emit output stack effects, except for array output effects
+    # (Reversed to match the old code, for easier comparison)
+    # TODO: Remove reversed() call
+    for poke in reversed(effects.pokes):
+        if poke.src.name != UNUSED and poke.src.name not in instr.unmoved_names:
+            if not poke.src.size:
+                poke = PokeEffect(list(poke.deep), list(poke.high), poke.src)
+                assert endstate
+                for eff in endstate.deep:
+                    poke.higher(eff)
+                for eff in endstate.high:
+                    poke.deeper(eff)
+                dst = StackEffect(
+                    poke.as_variable(), poke.src.type, poke.src.cond, poke.src.size
+                )
+                out.assign(dst, poke.src)
 
 
 # Plan:

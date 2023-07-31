@@ -96,8 +96,13 @@ class Formatter:
         typ = f"{dst.type}" if dst.type else "PyObject *"
         if src:
             cast = self.cast(dst, src)
-            init = f" = {cast}{src.name}"
-        elif dst.cond:
+            initexpr = f"{cast}{src.name}"
+            # TODO: Enable these lines
+            # (cannot yet because they currently mess up macros)
+            # if src.cond and src.cond != "1":
+            #     initexpr = f"{parenthesize_cond(src.cond)} ? {initexpr} : NULL"
+            init = f" = {initexpr}"
+        elif dst.cond and dst.cond != "1":
             init = " = NULL"
         else:
             init = ""
@@ -179,6 +184,13 @@ def maybe_parenthesize(sym: str) -> str:
         return sym
     else:
         return f"({sym})"
+
+
+def parenthesize_cond(cond: str) -> str:
+    """Parenthesize a condition, but only if it contains ?: itself."""
+    if "?" in cond:
+        cond = f"({cond})"
+    return cond
 
 
 def string_effect_size(arg: tuple[int, str]) -> str:

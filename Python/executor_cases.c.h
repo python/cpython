@@ -1005,7 +1005,7 @@
             STACK_GROW(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = v;
-            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = null; }
+            if (oparg & 1) { stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = null; }
             break;
         }
 
@@ -1041,7 +1041,7 @@
             STACK_GROW(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = res;
-            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = null; }
+            if (oparg & 1) { stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = null; }
             break;
         }
 
@@ -1059,7 +1059,7 @@
             STACK_GROW(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = res;
-            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = null; }
+            if (oparg & 1) { stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = null; }
             break;
         }
 
@@ -1384,7 +1384,7 @@
             STACK_SHRINK(2);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = res;
-            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
+            if (oparg & 1) { stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = res2; }
             break;
         }
 
@@ -1474,7 +1474,7 @@
             }
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = res;
-            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
+            if (oparg & 1) { stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = res2; }
             break;
         }
 
@@ -1510,7 +1510,7 @@
             Py_DECREF(owner);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = res;
-            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
+            if (oparg & 1) { stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = res2; }
             break;
         }
 
@@ -2480,7 +2480,7 @@
             PyObject *bottom = stack_pointer[-2 - (oparg-2)];
             assert(oparg >= 2);
             stack_pointer[-1] = bottom;
-            stack_pointer[-(2 + (oparg-2))] = top;
+            stack_pointer[-2 - (oparg-2)] = top;
             break;
         }
 

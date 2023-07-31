@@ -1655,7 +1655,7 @@
             STACK_GROW(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = v;
-            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = null; }
+            if (oparg & 1) { stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = null; }
             next_instr += 4;
             DISPATCH();
         }
@@ -2112,7 +2112,7 @@
             STACK_SHRINK(2);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = res;
-            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
+            if (oparg & 1) { stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = res2; }
             next_instr += 1;
             DISPATCH();
         }
@@ -2136,7 +2136,7 @@
             STACK_SHRINK(2);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = res;
-            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
+            if (oparg & 1) { stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = res2; }
             next_instr += 1;
             DISPATCH();
         }
@@ -2229,7 +2229,7 @@
             }
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = res;
-            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
+            if (oparg & 1) { stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = res2; }
             next_instr += 9;
             DISPATCH();
         }
@@ -2296,7 +2296,7 @@
             Py_DECREF(owner);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = res;
-            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
+            if (oparg & 1) { stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = res2; }
             next_instr += 9;
             DISPATCH();
         }
@@ -2336,7 +2336,7 @@
             Py_DECREF(owner);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = res;
-            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
+            if (oparg & 1) { stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = res2; }
             next_instr += 9;
             DISPATCH();
         }
@@ -2359,7 +2359,7 @@
             Py_DECREF(owner);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = res;
-            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
+            if (oparg & 1) { stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = res2; }
             next_instr += 9;
             DISPATCH();
         }
@@ -2384,7 +2384,7 @@
             Py_DECREF(cls);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = res;
-            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
+            if (oparg & 1) { stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = res2; }
             next_instr += 9;
             DISPATCH();
         }
@@ -3344,7 +3344,7 @@
 
         TARGET(LOAD_ATTR_METHOD_WITH_VALUES) {
             PyObject *self = stack_pointer[-1];
-            PyObject *res2 = NULL;
+            PyObject *res2;
             PyObject *res;
             uint32_t type_version = read_u32(&next_instr[1].cache);
             uint32_t keys_version = read_u32(&next_instr[3].cache);
@@ -3374,7 +3374,7 @@
 
         TARGET(LOAD_ATTR_METHOD_NO_DICT) {
             PyObject *self = stack_pointer[-1];
-            PyObject *res2 = NULL;
+            PyObject *res2;
             PyObject *res;
             uint32_t type_version = read_u32(&next_instr[1].cache);
             PyObject *descr = read_obj(&next_instr[5].cache);
@@ -3440,7 +3440,7 @@
 
         TARGET(LOAD_ATTR_METHOD_LAZY_DICT) {
             PyObject *self = stack_pointer[-1];
-            PyObject *res2 = NULL;
+            PyObject *res2;
             PyObject *res;
             uint32_t type_version = read_u32(&next_instr[1].cache);
             PyObject *descr = read_obj(&next_instr[5].cache);
@@ -4486,7 +4486,7 @@
             PyObject *bottom = stack_pointer[-2 - (oparg-2)];
             assert(oparg >= 2);
             stack_pointer[-1] = bottom;
-            stack_pointer[-(2 + (oparg-2))] = top;
+            stack_pointer[-2 - (oparg-2)] = top;
             DISPATCH();
         }
 
