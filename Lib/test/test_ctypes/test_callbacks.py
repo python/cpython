@@ -122,7 +122,7 @@ class Callbacks(unittest.TestCase):
     def test_issue_7959(self):
         proto = self.functype.__func__(None)
 
-        class X(object):
+        class X:
             def func(self): pass
             def __init__(self):
                 self.v = proto(self.func)
