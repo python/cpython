@@ -1432,6 +1432,7 @@ Modules/_decimal/_decimal.c	-	invalid_rounding_err	-
 Modules/_decimal/_decimal.c	-	invalid_signals_err	-
 Modules/_decimal/_decimal.c	-	signal_map	-
 Modules/_decimal/_decimal.c	-	ssize_constants	-
+Modules/_decimal/_decimal.c -   INVALID_SIGNALDICT_ERROR_MSG -
 Modules/_elementtree.c	-	ExpatMemoryHandler	-
 Modules/_io/_iomodule.c	-	static_types	-
 Modules/_io/textio.c	-	encodefuncs	-
