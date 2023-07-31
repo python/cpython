@@ -928,7 +928,7 @@ class singledispatchmethod:
     """
 
     def __init__(self, func):
-        import weakref # see comment in singledispatch method
+        import weakref # see comment in singledispatch function
         if not callable(func) and not hasattr(func, "__get__"):
             raise TypeError(f"{func!r} is not callable or a descriptor")
 
