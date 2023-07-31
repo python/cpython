@@ -945,8 +945,17 @@ class singledispatchmethod:
         return self.dispatcher.register(cls, func=method)
 
     def __get__(self, obj, cls=None):
-        if self._all_weakrefable_instances and cls is not None and obj in self._method_cache:
-            return self._method_cache[obj]
+        if self._all_weakrefable_instances and obj is not None:
+            try:
+                _method = self._method_cache[obj]
+            except TypeError:
+                self._all_weakrefable_instances = caching = False
+            except KeyError:
+                caching = True
+            else:
+                return _method
+        else:
+            caching = False
 
         def _method(*args, **kwargs):
             method = self.dispatcher.dispatch(args[0].__class__)
@@ -956,11 +965,8 @@ class singledispatchmethod:
         _method.register = self.register
         update_wrapper(_method, self.func)
 
-        if self._all_weakrefable_instances and cls is not None:
-            try:
-                self._method_cache[obj] = _method
-            except TypeError:
-                self._all_weakrefable_instances = False
+        if caching:
+            self._method_cache[obj] = _method
 
         return _method
 
