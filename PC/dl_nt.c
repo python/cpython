@@ -24,9 +24,13 @@ BOOL    WINAPI  DllMain (HANDLE hInst,
     switch (ul_reason_for_call)
     {
         case DLL_PROCESS_ATTACH:
+        {
             PyWin_DLLhModule = hInst;
-            break;
 
+            // This should be safe to call here?
+            DisableThreadLibraryCalls(hInst);
+            break;
+        }
         case DLL_PROCESS_DETACH:
             break;
     }

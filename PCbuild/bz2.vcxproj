@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|ARM">
@@ -67,21 +67,27 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <ProjectGuid>{D06B6426-4762-44CC-8BAD-D79052507F2F}</ProjectGuid>
-    <RootNamespace>pyexpat</RootNamespace>
+    <ProjectGuid>{1e7a1094-c246-4d5e-9856-2864948b9083}</ProjectGuid>
+    <RootNamespace>bz2</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
   <Import Project="python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <OutDir>$(BuildPath)</OutDir>
+    <IntDir>$(IntDir.Replace(`\\`, `\`))</IntDir>
+    <TargetName>$(TargetName)$(PyDebugExt)</TargetName>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Label="Configuration" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <PropertyGroup>
-    <TargetExt>.pyd</TargetExt>
+    <TargetExt>.lib</TargetExt>
   </PropertyGroup>
   <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
   </ImportGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -90,28 +96,23 @@
   <PropertyGroup Label="UserMacros" />
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(PySourcePath)Modules\expat;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;PYEXPAT_EXPORTS;XML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(bz2Dir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_FILE_OFFSET_BITS=64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4244;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\Modules\expat\xmlrole.h" />
-    <ClInclude Include="..\Modules\expat\xmltok.h" />
+    <ClCompile Include="$(bz2Dir)\blocksort.c" />
+    <ClCompile Include="$(bz2Dir)\bzlib.c" />
+    <ClCompile Include="$(bz2Dir)\compress.c" />
+    <ClCompile Include="$(bz2Dir)\crctable.c" />
+    <ClCompile Include="$(bz2Dir)\decompress.c" />
+    <ClCompile Include="$(bz2Dir)\huffman.c" />
+    <ClCompile Include="$(bz2Dir)\randtable.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Modules\pyexpat.c" />
-    <ClCompile Include="..\Modules\expat\xmlparse.c" />
-    <ClCompile Include="..\Modules\expat\xmlrole.c" />
-    <ClCompile Include="..\Modules\expat\xmltok.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="..\PC\python_nt.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="pythoncore.vcxproj">
-      <Project>{cf7ac3d1-e2df-41d2-bea6-1e2556cdea26}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
+    <ClInclude Include="$(bz2Dir)\bzlib.h" />
+    <ClInclude Include="$(bz2Dir)\bzlib_private.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

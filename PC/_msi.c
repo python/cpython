@@ -172,7 +172,11 @@ static FNFCIGETTEMPFILE(cb_gettempfile)
 static FNFCISTATUS(cb_status)
 {
     if (pv) {
+#ifndef Py_BUILD_CORE
         _Py_IDENTIFIER(status);
+#else
+        static _Py_Identifier PyId_status = { .string = "status", .index = -1 };
+#endif
 
         PyObject *result = _PyObject_CallMethodId(pv, &PyId_status, "iii", typeStatus, cb1, cb2);
         if (result == NULL)
@@ -185,7 +189,11 @@ static FNFCISTATUS(cb_status)
 static FNFCIGETNEXTCABINET(cb_getnextcabinet)
 {
     if (pv) {
+#ifndef Py_BUILD_CORE
         _Py_IDENTIFIER(getnextcabinet);
+#else
+        static _Py_Identifier PyId_getnextcabinet = { .string = "getnextcabinet", .index = -1 };
+#endif
 
         PyObject *result = _PyObject_CallMethodId(pv, &PyId_getnextcabinet, "i", pccab->iCab);
         if (result == NULL)
