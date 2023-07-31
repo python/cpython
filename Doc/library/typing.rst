@@ -849,6 +849,31 @@ using ``[]``.
       concat(b"foo", b"bar")  # OK, output has type 'bytes'
       concat("foo", b"bar")   # Error, cannot mix str and bytes
 
+   Note that, despite its name, ``AnyStr`` has nothing to do with the
+   :class:`Any` type, nor does it mean "any string". In particular, ``AnyStr``
+   and ``str | bytes`` are different from each other and have different use
+   cases::
+
+      # Invalid use of AnyStr:
+      # The type variable is used only once in the function signature,
+      # so cannot be "solved" by the type checker
+      def greet_bad(cond: bool) -> AnyStr:
+          return "hi there!" if cond else b"greetings!"
+
+      # The better way of annotating this function:
+      def greet_proper(cond: bool) -> str | bytes:
+          return "hi there!" if cond else b"greetings!"
+
+   .. deprecated-removed:: 3.13 3.18
+      Deprecated in favor of the new :ref:`type parameter syntax <type-params>`.
+      Use ``class A[T: (str, bytes)]: ...`` instead of importing ``AnyStr``. See
+      :pep:`695` for more details.
+
+      In Python 3.16, ``AnyStr`` will be removed from ``typing.__all__``, and
+      deprecation warnings will be emitted at runtime when it is accessed or
+      imported from ``typing``. ``AnyStr`` will be removed from ``typing``
+      in Python 3.18.
+
 .. data:: LiteralString
 
    Special type that includes only literal strings.
@@ -3685,3 +3710,7 @@ convenience. This is subject to change, and not all deprecations are listed.
      - 3.13
      - 3.15
      - :gh:`106309`
+   * - :data:`typing.AnyStr`
+     - 3.13
+     - 3.18
+     - :gh:`105578`

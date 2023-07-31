@@ -579,7 +579,8 @@ pop_jump_if_bool:
                     for (int i = 0; i < nuops; i++) {
                         oparg = orig_oparg;
                         uint64_t operand = 0;
-                        int offset = expansion->uops[i].offset;
+                        // Add one to account for the actual opcode/oparg pair:
+                        int offset = expansion->uops[i].offset + 1;
                         switch (expansion->uops[i].size) {
                             case OPARG_FULL:
                                 if (extras && OPCODE_HAS_JUMP(opcode)) {
