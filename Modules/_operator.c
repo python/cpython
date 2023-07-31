@@ -1556,7 +1556,7 @@ typedef struct {
     vectorcallfunc vectorcall;
 } methodcallerobject;
 
-static void* _methodcaller_initialize_vectorcall(methodcallerobject* mc)
+static int _methodcaller_initialize_vectorcall(methodcallerobject* mc)
 {
     PyObject* args = mc->xargs;
     PyObject* kwds = mc->kwds;
@@ -1567,7 +1567,8 @@ static void* _methodcaller_initialize_vectorcall(methodcallerobject* mc)
         nargs + (kwds ? PyDict_Size(kwds) : 0),
         sizeof(PyObject*));
     if (!mc->vectorcall_args) {
-        return PyErr_NoMemory();
+        PyErr_NoMemory();
+        return -1;
     }
     /* The first item of vectorcall_args will be filled with obj later */
     if (nargs > 1) {
@@ -1579,7 +1580,7 @@ static void* _methodcaller_initialize_vectorcall(methodcallerobject* mc)
 
         mc->vectorcall_kwnames = PyTuple_New(nkwds);
         if (!mc->vectorcall_kwnames) {
-            return NULL;
+            return -1;
         }
         Py_ssize_t i = 0, ppos = 0;
         PyObject* key, * value;
@@ -1592,7 +1593,7 @@ static void* _methodcaller_initialize_vectorcall(methodcallerobject* mc)
     else {
         mc->vectorcall_kwnames = NULL;
     }
-    return (void *)1;
+    return 1;
 }
 
 
@@ -1605,7 +1606,7 @@ methodcaller_vectorcall(
         return NULL;
     }
     if (mc->vectorcall_args == NULL) {
-        if (_methodcaller_initialize_vectorcall(mc) == NULL) {
+        if (_methodcaller_initialize_vectorcall(mc) < 0) {
             return NULL;
         }
     }
