@@ -120,9 +120,8 @@ def main(opcode_py,
         iobj.write("\n#ifdef NEED_OPCODE_TABLES\n")
 
         iobj.write("\nconst uint8_t _PyOpcode_Caches[256] = {\n")
-        for i, entries in enumerate(opcode["_inline_cache_entries"]):
-            if entries:
-                iobj.write(f"    [{opname[i]}] = {entries},\n")
+        for name, entries in opcode["_inline_cache_entries"].items():
+            iobj.write(f"    [{name}] = {entries},\n")
         iobj.write("};\n")
 
         deoptcodes = {}

@@ -203,7 +203,7 @@ the interpreter.
 .. nonce: LYAWlE
 .. section: Core and Builtins
 
-Bugfix: :func:`PyFunction_GetAnnotations` should return a borrowed
+Bugfix: :c:func:`PyFunction_GetAnnotations` should return a borrowed
 reference. It was returning a new reference.
 
 ..

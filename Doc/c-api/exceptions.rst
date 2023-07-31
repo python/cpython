@@ -83,7 +83,7 @@ Printing and clearing
    This utility function prints a warning message to ``sys.stderr`` when an
    exception has been set but it is impossible for the interpreter to actually
    raise the exception.  It is used, for example, when an exception occurs in an
-   :meth:`__del__` method.
+   :meth:`~object.__del__` method.
 
    The function is called with a single argument *obj* that identifies the context
    in which the unraisable exception occurred. If possible,
@@ -165,7 +165,7 @@ For convenience, some of these functions will always return a
    tuple object whose first item is the integer :c:data:`errno` value and whose
    second item is the corresponding error message (gotten from :c:func:`!strerror`),
    and then calls ``PyErr_SetObject(type, object)``.  On Unix, when the
-   :c:data:`errno` value is :c:macro:`EINTR`, indicating an interrupted system call,
+   :c:data:`errno` value is :c:macro:`!EINTR`, indicating an interrupted system call,
    this calls :c:func:`PyErr_CheckSignals`, and if that set the error indicator,
    leaves it set to that.  The function always returns ``NULL``, so a wrapper
    function around a system call can write ``return PyErr_SetFromErrno(type);``
@@ -177,7 +177,7 @@ For convenience, some of these functions will always return a
    Similar to :c:func:`PyErr_SetFromErrno`, with the additional behavior that if
    *filenameObject* is not ``NULL``, it is passed to the constructor of *type* as
    a third parameter.  In the case of :exc:`OSError` exception,
-   this is used to define the :attr:`filename` attribute of the
+   this is used to define the :attr:`!filename` attribute of the
    exception instance.
 
 
@@ -200,12 +200,12 @@ For convenience, some of these functions will always return a
 .. c:function:: PyObject* PyErr_SetFromWindowsErr(int ierr)
 
    This is a convenience function to raise :exc:`WindowsError`. If called with
-   *ierr* of ``0``, the error code returned by a call to :c:func:`GetLastError`
-   is used instead.  It calls the Win32 function :c:func:`FormatMessage` to retrieve
-   the Windows description of error code given by *ierr* or :c:func:`GetLastError`,
+   *ierr* of ``0``, the error code returned by a call to :c:func:`!GetLastError`
+   is used instead.  It calls the Win32 function :c:func:`!FormatMessage` to retrieve
+   the Windows description of error code given by *ierr* or :c:func:`!GetLastError`,
    then it constructs a tuple object whose first item is the *ierr* value and whose
    second item is the corresponding error message (gotten from
-   :c:func:`FormatMessage`), and then calls ``PyErr_SetObject(PyExc_WindowsError,
+   :c:func:`!FormatMessage`), and then calls ``PyErr_SetObject(PyExc_WindowsError,
    object)``. This function always returns ``NULL``.
 
    .. availability:: Windows.
@@ -631,7 +631,7 @@ Signal Handling
    be interruptible by user requests (such as by pressing Ctrl-C).
 
    .. note::
-      The default Python signal handler for :c:macro:`SIGINT` raises the
+      The default Python signal handler for :c:macro:`!SIGINT` raises the
       :exc:`KeyboardInterrupt` exception.
 
 
@@ -642,7 +642,7 @@ Signal Handling
       single: SIGINT
       single: KeyboardInterrupt (built-in exception)
 
-   Simulate the effect of a :c:macro:`SIGINT` signal arriving.
+   Simulate the effect of a :c:macro:`!SIGINT` signal arriving.
    This is equivalent to ``PyErr_SetInterruptEx(SIGINT)``.
 
    .. note::

@@ -60,7 +60,7 @@ functions should be good enough; otherwise, you should use an instance of
    First the whitespace in *text* is collapsed (all whitespace is replaced by
    single spaces).  If the result fits in the *width*, it is returned.
    Otherwise, enough words are dropped from the end so that the remaining words
-   plus the :attr:`placeholder` fit within :attr:`width`::
+   plus the :attr:`.placeholder` fit within :attr:`.width`::
 
       >>> textwrap.shorten("Hello  world!", width=12)
       'Hello world!'
@@ -173,7 +173,7 @@ hyphenated words; only then will long words be broken if necessary, unless
    .. attribute:: expand_tabs
 
       (default: ``True``) If true, then all tab characters in *text* will be
-      expanded to spaces using the :meth:`expandtabs` method of *text*.
+      expanded to spaces using the :meth:`~str.expandtabs` method of *text*.
 
 
    .. attribute:: tabsize

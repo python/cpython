@@ -720,7 +720,11 @@ dummy_func(
                 exc = args[0];
                 /* fall through */
             case 0:
-                ERROR_IF(do_raise(tstate, exc, cause), exception_unwind);
+                if (do_raise(tstate, exc, cause)) {
+                    assert(oparg == 0);
+                    monitor_reraise(tstate, frame, next_instr-1);
+                    goto exception_unwind;
+                }
                 break;
             default:
                 _PyErr_SetString(tstate, PyExc_SystemError,
@@ -1047,6 +1051,7 @@ dummy_func(
             assert(exc && PyExceptionInstance_Check(exc));
             Py_INCREF(exc);
             _PyErr_SetRaisedException(tstate, exc);
+            monitor_reraise(tstate, frame, next_instr-1);
             goto exception_unwind;
         }
 
@@ -1058,6 +1063,7 @@ dummy_func(
             else {
                 Py_INCREF(exc);
                 _PyErr_SetRaisedException(tstate, exc);
+                monitor_reraise(tstate, frame, next_instr-1);
                 goto exception_unwind;
             }
         }
@@ -1072,6 +1078,7 @@ dummy_func(
             }
             else {
                 _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
+                monitor_reraise(tstate, frame, next_instr-1);
                 goto exception_unwind;
             }
         }
@@ -1341,9 +1348,6 @@ dummy_func(
             null = NULL;
         }
 
-        op(_SKIP_CACHE, (unused/1 -- )) {
-        }
-
         op(_GUARD_GLOBALS_VERSION, (version/1 --)) {
             PyDictObject *dict = (PyDictObject *)GLOBALS();
             DEOPT_IF(!PyDict_CheckExact(dict), LOAD_GLOBAL);
@@ -1379,13 +1383,13 @@ dummy_func(
         }
 
         macro(LOAD_GLOBAL_MODULE) =
-            _SKIP_CACHE + // Skip over the counter
+            unused/1 + // Skip over the counter
             _GUARD_GLOBALS_VERSION +
-            _SKIP_CACHE + // Skip over the builtins version
+            unused/1 + // Skip over the builtins version
             _LOAD_GLOBAL_MODULE;
 
         macro(LOAD_GLOBAL_BUILTIN) =
-            _SKIP_CACHE + // Skip over the counter
+            unused/1 + // Skip over the counter
             _GUARD_GLOBALS_VERSION +
             _GUARD_BUILTINS_VERSION +
             _LOAD_GLOBAL_BUILTINS;
@@ -1817,7 +1821,7 @@ dummy_func(
             DEOPT_IF(!_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
         }
 
-        op(_LOAD_ATTR_INSTANCE_VALUE, (index/1, unused/5, owner -- res2 if (oparg & 1), res)) {
+        op(_LOAD_ATTR_INSTANCE_VALUE, (index/1, owner -- res2 if (oparg & 1), res)) {
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             res = _PyDictOrValues_GetValues(dorv)->values[index];
             DEOPT_IF(res == NULL, LOAD_ATTR);
@@ -1828,10 +1832,11 @@ dummy_func(
         }
 
         macro(LOAD_ATTR_INSTANCE_VALUE) =
-            _SKIP_CACHE + // Skip over the counter
+            unused/1 + // Skip over the counter
             _GUARD_TYPE_VERSION +
             _CHECK_MANAGED_OBJECT_HAS_VALUES +
-            _LOAD_ATTR_INSTANCE_VALUE;
+            _LOAD_ATTR_INSTANCE_VALUE +
+            unused/5;  // Skip over rest of cache
 
         inst(LOAD_ATTR_MODULE, (unused/1, type_version/2, index/1, unused/5, owner -- res2 if (oparg & 1), res)) {
             DEOPT_IF(!PyModule_CheckExact(owner), LOAD_ATTR);
@@ -2665,7 +2670,12 @@ dummy_func(
             assert(val && PyExceptionInstance_Check(val));
             exc = PyExceptionInstance_Class(val);
             tb = PyException_GetTraceback(val);
-            Py_XDECREF(tb);
+            if (tb == NULL) {
+                tb = Py_None;
+            }
+            else {
+                Py_DECREF(tb);
+            }
             assert(PyLong_Check(lasti));
             (void)lasti; // Shut up compiler warning if asserts are off
             PyObject *stack[4] = {NULL, exc, val, tb};

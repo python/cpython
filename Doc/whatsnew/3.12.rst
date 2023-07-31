@@ -1865,6 +1865,17 @@ Porting to Python 3.12
   subinterpreter that they don't support (or haven't yet been loaded in). See
   :gh:`104668` for more info.
 
+* :c:struct:`PyLongObject` has had its internals changed for better performance.
+  Although the internals of :c:struct:`PyLongObject` are private, they are used
+  by some extension modules.
+  The internal fields should no longer be accessed directly, instead the API
+  functions beginning ``PyLong_...`` should be used instead.
+  Two new *unstable* API functions are provided for efficient access to the
+  value of :c:struct:`PyLongObject`\s which fit into a single machine word:
+
+  * :c:func:`PyUnstable_Long_IsCompact`
+  * :c:func:`PyUnstable_Long_CompactValue`
+
 Deprecated
 ----------
 
