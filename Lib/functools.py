@@ -928,7 +928,7 @@ class singledispatchmethod:
     """
 
     def __init__(self, func):
-        import weakref # lazy import
+        import weakref # see comment in singledispatch method
         if not callable(func) and not hasattr(func, "__get__"):
             raise TypeError(f"{func!r} is not callable or a descriptor")
 
@@ -942,7 +942,6 @@ class singledispatchmethod:
 
         Registers a new implementation for the given *cls* on a *generic_method*.
         """
-        self._method_cache.clear()
         return self.dispatcher.register(cls, func=method)
 
     def __get__(self, obj, cls=None):
