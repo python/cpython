@@ -692,7 +692,7 @@ uop_optimize(
         return trace_length;
     }
     OBJECT_STAT_INC(optimization_traces_created);
-    _PyUOpExecutorObject *executor = PyUOpExecutor_New(trace, trace_length);
+    _PyUOpExecutorObject *executor = (_PyUOpExecutorObject *) PyUOpExecutor_New(trace, trace_length);
     executor->base.execute = _PyUopExecute;
     *exec_ptr = (_PyExecutorObject *)executor;
     return 1;
