@@ -288,9 +288,78 @@ class Analyzer:
         self.macro_instrs = {}
         self.pseudo_instrs = {}
         for name, macro in self.macros.items():
-            self.macro_instrs[name] = self.analyze_macro(macro)
+            self.macro_instrs[name] = mac = self.analyze_macro(macro)
+            self.check_macro_consistency(mac)
         for name, pseudo in self.pseudos.items():
             self.pseudo_instrs[name] = self.analyze_pseudo(pseudo)
+
+    def check_macro_consistency(self, mac: MacroInstruction) -> None:
+        def get_var_names(instr: Instruction) -> dict[str, StackEffect]:
+            vars: dict[str, StackEffect] = {}
+            for eff in instr.input_effects + instr.output_effects:
+                if eff.name in vars:
+                    if vars[eff.name] != eff:
+                        self.error(
+                            f"Instruction {instr.name!r} has "
+                            f"inconsistent types for variable {eff.name!r}: "
+                            f"{vars[eff.name]} vs {eff}",
+                            instr.inst,
+                        )
+                else:
+                    vars[eff.name] = eff
+            return vars
+
+        all_vars: dict[str, StackEffect] = {}
+        # print("Checking", mac.name)
+        prevop: Instruction | None = None
+        for part in mac.parts:
+            if not isinstance(part, Component):
+                continue
+            vars = get_var_names(part.instr)
+            # print("    //", part.instr.name, "//", vars)
+            for name, eff in vars.items():
+                if name in all_vars:
+                    if all_vars[name] != eff:
+                        self.warning(
+                            f"Macro {mac.name!r} has"
+                            f"inconsistent types for variable {name!r}: "
+                            f"{all_vars[name]} vs {eff} in {part.instr.name!r}",
+                            mac.macro,
+                        )
+                else:
+                    all_vars[name] = eff
+            if prevop is not None:
+                pushes = list(prevop.output_effects)
+                pops = list(reversed(part.instr.input_effects))
+                copies: list[tuple[StackEffect, StackEffect]] = []
+                while pushes and pops and pushes[-1] == pops[0]:
+                    src, dst = pushes.pop(), pops.pop(0)
+                    if src.name == dst.name or dst.name is UNUSED:
+                        continue
+                    copies.append((src, dst))
+                # if copies:
+                #     print("--", mac.name, "--", prevop.name, "--", part.instr.name, "--", copies)
+                reads = set(copy[0].name for copy in copies)
+                writes = set(copy[1].name for copy in copies)
+                if reads & writes:
+                    self.warning(
+                        f"Macro {mac.name!r} has conflicting copies: "
+                        f"{reads & writes}",
+                        mac.macro,
+                    )
+                if pushes:
+                    self.warning(
+                        f"Macro {mac.name!r} has extra pushes after "
+                        f"{prevop.name!r}: {pushes}",
+                        mac.macro,
+                    )
+                if pops:
+                    self.warning(
+                        f"Macro {mac.name!r} has extra pops before "
+                        f"{part.instr.name!r}: {pops}",
+                        mac.macro,
+                    )
+            prevop = part.instr
 
     def analyze_macro(self, macro: parsing.Macro) -> MacroInstruction:
         components = self.check_macro_components(macro)
