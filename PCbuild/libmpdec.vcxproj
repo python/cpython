@@ -74,9 +74,6 @@
   <Import Project="python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
-    <OutDir>$(BuildPath)</OutDir>
-    <IntDir>$(IntDir.Replace(`\\`, `\`))</IntDir>
-    <TargetName>$(TargetName)$(PyDebugExt)</TargetName>
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
