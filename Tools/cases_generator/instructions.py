@@ -145,6 +145,7 @@ class Instruction:
     def write(self, out: Formatter, tier: Tiers = TIER_ONE) -> None:
         """Write one instruction, sans prologue and epilogue."""
         # Write a static assertion that a family's cache size is correct
+        # TODO: Move into helper method/function
         if family := self.family:
             if self.name == family.name:
                 if cache_size := family.size:

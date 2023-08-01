@@ -7,8 +7,9 @@ from formatting import (
     list_effect_size,
     maybe_parenthesize,
     parenthesize_cond,
+    string_effect_size,
 )
-from instructions import Instruction, Tiers, TIER_ONE, TIER_TWO
+from instructions import Instruction, MacroInstruction, Component, Tiers, TIER_ONE, TIER_TWO
 from parsing import StackEffect
 
 
@@ -51,37 +52,31 @@ class StackOffset:
         """Implemented by subclasses PeekEffect, PokeEffect."""
         raise NotImplementedError("itself() not implemented")
 
-    def as_variable(self) -> str:
-        """Return e.g. stack_pointer[-1]."""
-        temp = StackOffset(list(self.deep), list(self.high))
-        me = self.itself()
-        temp.deeper(me)
+    def as_terms(self) -> list[tuple[str, str]]:
         num = 0
         terms: list[tuple[str, str]] = []
-        for eff in temp.deep:
+        for eff in self.deep:
             if eff.size:
                 terms.append(("-", maybe_parenthesize(eff.size)))
             elif eff.cond and eff.cond != "1":
                 terms.append(("-", f"({parenthesize_cond(eff.cond)} ? 1 : 0)"))
             elif eff.cond != "0":
                 num -= 1
-        for eff in temp.high:
+        for eff in self.high:
             if eff.size:
                 terms.append(("+", maybe_parenthesize(eff.size)))
             elif eff.cond and eff.cond != "1":
                 terms.append(("+", f"({parenthesize_cond(eff.cond)} ? 1 : 0)"))
             elif eff.cond != "0":
                 num += 1
-
         if num < 0:
             terms.insert(0, ("-", str(-num)))
         elif num > 0:
             terms.append(("+", str(num)))
-        if me.size:
-            terms.insert(0, ("+", "stack_pointer"))
-        if not terms:
-            terms.append(("+", "0"))  # Avoid 'stack_pointer[]'
+        return terms
 
+    # TODO: Turn into helper function (not method)
+    def make_index(self, terms: list[tuple[str, str]]) -> str:
         # Produce an index expression from the terms honoring PEP 8,
         # surrounding binary ops with spaces but not unary minus
         index = ""
@@ -92,7 +87,21 @@ class StackOffset:
                 index = term
             else:
                 index = sign + term
+        return index or "0"
 
+    def as_index(self) -> str:
+        terms = self.as_terms()
+        return self.make_index(terms)
+
+    def as_variable(self) -> str:
+        """Return e.g. stack_pointer[-1]."""
+        temp = StackOffset(list(self.deep), list(self.high))
+        me = self.itself()
+        temp.deeper(me)
+        terms = temp.as_terms()
+        if me.size:
+            terms.insert(0, ("+", "stack_pointer"))
+        index = self.make_index(terms)
         if me.size:
             return index
         else:
@@ -261,12 +270,38 @@ def write_single_instr(
                 out.assign(dst, poke.src)
 
 
-# Plan:
-# - Do this for single (non-macro) instructions
-#   - declare all vars
-#     - emit all peeks
-#     - emit special cases for array output effects
-#     - emit the instruction
-#     - emit all pokes
-# - Do it for macro instructions
-# - Write tests that show e.g. CALL can be split into uops
+def lower_than(a: StackOffset, b: StackOffset) -> bool:
+    # TODO: Handle more cases
+    if a.high != b.high:
+        return False
+    return a.deep[:len(b.deep)] == b.deep
+
+
+def get_stack_effect_info_for_macro(mac: MacroInstruction) -> tuple[str, str]:
+    """Get the stack effect info for a macro instruction.
+
+    Returns a tuple (popped, pushed) where each is a string giving a
+    symbolic expression for the number of values popped/pushed.
+    """
+    parts = [comp for comp in mac.parts if isinstance(comp, Component)]
+    all_effects = [AllStackEffects(part.instr).copy() for part in parts]
+    for prev, follow in zip(all_effects[:-1], all_effects[1:]):
+        prev.merge(follow)
+    net = StackOffset([] ,[])
+    lowest = StackOffset([], [])
+    for effects in all_effects:
+        for peek in effects.peeks:
+            net.deeper(peek.dst)
+        if lower_than(net, lowest):
+            lowest = StackOffset(net.deep[:], net.high[:])
+        else:
+            # TODO: Turn this into an error
+            assert net == lowest, (mac.name, net, lowest)
+        for poke in effects.pokes:
+            net.higher(poke.src)
+    popped = StackOffset(lowest.high[:], lowest.deep[:])  # Reverse direction!
+    for eff in popped.deep:
+        net.deeper(eff)
+    for eff in popped.high:
+        net.higher(eff)
+    return popped.as_index(), net.as_index()

@@ -10,6 +10,7 @@ import posixpath
 import sys
 import typing
 
+import stacking  # Early import to avoid circular import
 from analysis import Analyzer
 from formatting import Formatter, list_effect_size, maybe_parenthesize
 from flags import InstructionFlags, variable_used
@@ -118,41 +119,7 @@ class Generator(Analyzer):
                     pushed = ""
             case parsing.Macro():
                 instr = self.macro_instrs[thing.name]
-                parts = [comp for comp in instr.parts if isinstance(comp, Component)]
-                # Note: stack_analysis() already verifies that macro components
-                # have no variable-sized stack effects.
-                low = 0
-                sp = 0
-                high = 0
-                pushed_symbolic: list[str] = []
-                for comp in parts:
-                    for effect in comp.instr.input_effects:
-                        assert not effect.cond, effect
-                        assert not effect.size, effect
-                        sp -= 1
-                        low = min(low, sp)
-                    for effect in comp.instr.output_effects:
-                        assert not effect.size, effect
-                        if effect.cond:
-                            if effect.cond in ("0", "1"):
-                                pushed_symbolic.append(effect.cond)
-                            else:
-                                pushed_symbolic.append(
-                                    maybe_parenthesize(
-                                        f"{maybe_parenthesize(effect.cond)} ? 1 : 0"
-                                    )
-                                )
-                        sp += 1
-                        high = max(sp, high)
-                if high != max(0, sp):
-                    # If you get this, intermediate stack growth occurs,
-                    # and stack size calculations may go awry.
-                    # E.g. [push, pop]. The fix would be for stack size
-                    # calculations to use the micro ops.
-                    self.error("Macro has virtual stack growth", thing)
-                popped = str(-low)
-                pushed_symbolic.append(str(sp - low - len(pushed_symbolic)))
-                pushed = " + ".join(pushed_symbolic)
+                popped, pushed = stacking.get_stack_effect_info_for_macro(instr)
             case parsing.Pseudo():
                 instr = self.pseudo_instrs[thing.name]
                 popped = pushed = None
