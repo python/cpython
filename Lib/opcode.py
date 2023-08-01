@@ -16,11 +16,9 @@ import sys
 # The build uses older versions of Python which do not have _opcode_metadata
 if sys.version_info[:2] >= (3, 13):
     from _opcode_metadata import _specializations, _specialized_instructions
+    from _opcode import ENABLE_SPECIALIZATION
 
 cmp_op = ('<', '<=', '==', '!=', '>', '>=')
-
-
-ENABLE_SPECIALIZATION = True
 
 def is_pseudo(op):
     return op >= MIN_PSEUDO_OPCODE and op <= MAX_PSEUDO_OPCODE

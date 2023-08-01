@@ -73,7 +73,6 @@ def main(opcode_py,
     opname = opcode['opname']
     is_pseudo = opcode['is_pseudo']
 
-    ENABLE_SPECIALIZATION = opcode["ENABLE_SPECIALIZATION"]
     MIN_PSEUDO_OPCODE = opcode["MIN_PSEUDO_OPCODE"]
     MAX_PSEUDO_OPCODE = opcode["MAX_PSEUDO_OPCODE"]
     MIN_INSTRUMENTED_OPCODE = opcode["MIN_INSTRUMENTED_OPCODE"]
@@ -140,10 +139,6 @@ def main(opcode_py,
         fobj.write("\n")
         for i, (op, _) in enumerate(opcode["_nb_ops"]):
             fobj.write(DEFINE.format(op, i))
-
-        fobj.write("\n")
-        fobj.write("/* Defined in Lib/opcode.py */\n")
-        fobj.write(f"#define ENABLE_SPECIALIZATION {int(ENABLE_SPECIALIZATION)}")
 
         iobj.write("\n")
         iobj.write(f"\nextern const char *const _PyOpcode_OpName[{NUM_OPCODES}];\n")
