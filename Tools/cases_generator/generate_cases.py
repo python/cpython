@@ -258,7 +258,8 @@ class Generator(Analyzer):
                 case _:
                     typing.assert_never(thing)
             all_formats.add(format)
-        # Turn it into a list of enum definitions.
+
+        # Turn it into a sorted list of enum values.
         format_enums = [INSTR_FMT_PREFIX + format for format in sorted(all_formats)]
 
         with open(metadata_filename, "w") as f:
@@ -276,8 +277,10 @@ class Generator(Analyzer):
 
             self.write_stack_effect_functions()
 
-            # Write type definitions
-            self.out.emit(f"enum InstructionFormat {{ {', '.join(format_enums)} }};")
+            # Write the enum definition for instruction formats.
+            with self.out.block("enum InstructionFormat", ";"):
+                for enum in format_enums:
+                    self.out.emit(enum + ",")
 
             self.out.emit("")
             self.out.emit(
