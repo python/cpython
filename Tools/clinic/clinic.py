@@ -45,7 +45,6 @@ from typing import (
     NamedTuple,
     NoReturn,
     Protocol,
-    TypeGuard,
     TypeVar,
     cast,
     overload,
@@ -4388,7 +4387,7 @@ class IndentStack:
         return line[indent:]
 
 
-StateKeeper = Callable[[str | None], None]
+StateKeeper = Callable[[str], None]
 ConverterArgs = dict[str, Any]
 
 class ParamState(enum.IntEnum):
@@ -4610,9 +4609,7 @@ class DSLParser:
                 fail('Tab characters are illegal in the Clinic DSL.\n\t' + repr(line), line_number=block_start)
             self.state(line)
 
-        self.next(self.state_terminal)
-        self.state(None)
-
+        self.do_post_block_processing_cleanup()
         block.output.extend(self.clinic.language.render(self.clinic, block.signatures))
 
         if self.preserve_output:
@@ -4621,10 +4618,7 @@ class DSLParser:
             block.output = self.saved_output
 
     @staticmethod
-    def valid_line(line: str | None) -> TypeGuard[str]:
-        if line is None:
-            return False
-
+    def valid_line(line: str) -> bool:
         # ignore comment-only lines
         if line.lstrip().startswith('#'):
             return False
@@ -4650,7 +4644,7 @@ class DSLParser:
         if line is not None:
             self.state(line)
 
-    def state_dsl_start(self, line: str | None) -> None:
+    def state_dsl_start(self, line: str) -> None:
         # self.block = self.ClinicOutputBlock(self)
         if not self.valid_line(line):
             return
@@ -4668,7 +4662,7 @@ class DSLParser:
 
         self.next(self.state_modulename_name, line)
 
-    def state_modulename_name(self, line: str | None) -> None:
+    def state_modulename_name(self, line: str) -> None:
         # looking for declaration, which establishes the leftmost column
         # line should be
         #     modulename.fnname [as c_basename] [-> return annotation]
@@ -4857,7 +4851,7 @@ class DSLParser:
     # separate boolean state variables.)  The states are defined in the
     # ParamState class.
 
-    def state_parameters_start(self, line: str | None) -> None:
+    def state_parameters_start(self, line: str) -> None:
         if not self.valid_line(line):
             return
 
@@ -4879,7 +4873,7 @@ class DSLParser:
             for p in self.function.parameters.values():
                 p.group = -p.group
 
-    def state_parameter(self, line: str | None) -> None:
+    def state_parameter(self, line: str) -> None:
         assert isinstance(self.function, Function)
 
         if not self.valid_line(line):
@@ -5262,7 +5256,7 @@ class DSLParser:
                      "positional-only parameters, which is unsupported.")
             p.kind = inspect.Parameter.POSITIONAL_ONLY
 
-    def state_parameter_docstring_start(self, line: str | None) -> None:
+    def state_parameter_docstring_start(self, line: str) -> None:
         assert self.indent.margin is not None, "self.margin.infer() has not yet been called to set the margin"
         self.parameter_docstring_indent = len(self.indent.margin)
         assert self.indent.depth == 3
@@ -5271,9 +5265,7 @@ class DSLParser:
     # every line of the docstring must start with at least F spaces,
     # where F > P.
     # these F spaces will be stripped.
-    def state_parameter_docstring(self, line: str | None) -> None:
-        assert line is not None
-
+    def state_parameter_docstring(self, line: str) -> None:
         stripped = line.strip()
         if stripped.startswith('#'):
             return
@@ -5301,9 +5293,8 @@ class DSLParser:
         last_parameter.docstring = new_docstring
 
     # the final stanza of the DSL is the docstring.
-    def state_function_docstring(self, line: str | None) -> None:
+    def state_function_docstring(self, line: str) -> None:
         assert self.function is not None
-        assert line is not None
 
         if self.group:
             fail("Function " + self.function.name + " has a ] without a matching [.")
@@ -5572,12 +5563,10 @@ class DSLParser:
 
         return docstring
 
-    def state_terminal(self, line: str | None) -> None:
+    def do_post_block_processing_cleanup(self) -> None:
         """
         Called when processing the block is done.
         """
-        assert not line
-
         if not self.function:
             return
 
