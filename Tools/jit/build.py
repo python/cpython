@@ -967,10 +967,10 @@ class Compiler:
                     holes.append(f"    {{.kind = {hole.kind}, .offset = {hole.offset:4}, .addend = {hole.addend % (1 << 64):4}, .value = {value}}},")
                 else:
                     loads.append(f"    {{.kind = {hole.kind}, .offset = {hole.offset:4}, .addend = {hole.addend % (1 << 64):4}, .symbol = \"{hole.symbol}\"}},")
-            assert holes, stencil.holes
             lines.append(f"static const Hole {opname}_stencil_holes[] = {{")
             for hole in holes:
                 lines.append(hole)
+            lines.append(f"    {{.kind =            0, .offset =    0, .addend =    0, .value = 0}},")
             lines.append(f"}};")
             lines.append(f"static const SymbolLoad {opname}_stencil_loads[] = {{")
             for  load in loads:
@@ -981,7 +981,7 @@ class Compiler:
         lines.append(f"#define INIT_STENCIL(OP) {{                             \\")
         lines.append(f"    .nbytes = Py_ARRAY_LENGTH(OP##_stencil_bytes),     \\")
         lines.append(f"    .bytes = OP##_stencil_bytes,                       \\")
-        lines.append(f"    .nholes = Py_ARRAY_LENGTH(OP##_stencil_holes),     \\")
+        lines.append(f"    .nholes = Py_ARRAY_LENGTH(OP##_stencil_holes) - 1, \\")
         lines.append(f"    .holes = OP##_stencil_holes,                       \\")
         lines.append(f"    .nloads = Py_ARRAY_LENGTH(OP##_stencil_loads) - 1, \\")
         lines.append(f"    .loads = OP##_stencil_loads,                       \\")
