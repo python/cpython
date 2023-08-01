@@ -6,7 +6,7 @@ if __name__ != 'test.support':
 import contextlib
 import functools
 import getpass
-import opcode
+import _opcode
 import os
 import re
 import stat
@@ -1092,7 +1092,7 @@ def requires_limited_api(test):
 
 def requires_specialization(test):
     return unittest.skipUnless(
-        opcode.ENABLE_SPECIALIZATION, "requires specialization")(test)
+        _opcode.ENABLE_SPECIALIZATION, "requires specialization")(test)
 
 def _filter_suite(suite, pred):
     """Recursively filter test cases in a suite based on a predicate."""
