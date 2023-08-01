@@ -145,10 +145,10 @@
 
     An abstract base class for resource readers capable of serving
     the :meth:`importlib.resources.files` interface. Subclasses
-    :class:`importlib.resources.abc.ResourceReader` and provides
-    concrete implementations of the :class:`importlib.resources.abc.ResourceReader`'s
+    :class:`ResourceReader` and provides
+    concrete implementations of the :class:`!ResourceReader`'s
     abstract methods. Therefore, any loader supplying
-    :class:`importlib.abc.TraversableResources` also supplies ResourceReader.
+    :class:`!TraversableResources` also supplies :class:`!ResourceReader`.
 
     Loaders that wish to support resource reading are expected to
     implement this interface.
