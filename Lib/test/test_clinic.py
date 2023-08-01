@@ -1392,23 +1392,25 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
 class ClinicExternalTest(TestCase):
     maxDiff = None
 
+    def run_clinic(self, *args):
+        with (
+            support.captured_stdout() as out,
+            support.captured_stderr() as err,
+            self.assertRaises(SystemExit) as cm
+        ):
+            clinic.main(args)
+        return out.getvalue(), err.getvalue(), cm.exception.code
+
     def expect_success(self, *args):
-        with support.captured_stdout() as out, support.captured_stderr() as err:
-            try:
-                clinic.main(args)
-            except SystemExit as exc:
-                if exc.code != 0:
-                    self.fail(f"unexpected failure: {args=}")
-        self.assertEqual(err.getvalue(), "")
-        return out.getvalue()
+        out, err, code = self.run_clinic(*args)
+        self.assertEqual(code, 0, f"Unexpected failure: {args=}")
+        self.assertEqual(err, "")
+        return out
 
     def expect_failure(self, *args):
-        with support.captured_stdout() as out, support.captured_stderr() as err:
-            with self.assertRaises(SystemExit) as cm:
-                clinic.main(args)
-            if cm.exception.code == 0:
-                self.fail(f"unexpected success: {args=}")
-        return out.getvalue(), err.getvalue()
+        out, err, code = self.run_clinic(*args)
+        self.assertNotEqual(code, 0, f"Unexpected success: {args=}")
+        return out, err
 
     def test_external(self):
         CLINIC_TEST = 'clinic.test.c'
