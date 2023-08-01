@@ -292,7 +292,16 @@ opcode_functions[] =  {
     {NULL, NULL, 0, NULL}
 };
 
+int
+_opcode_exec(PyObject *m) {
+    if (PyModule_AddIntMacro(m, ENABLE_SPECIALIZATION) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
 static PyModuleDef_Slot module_slots[] = {
+    {Py_mod_exec, _opcode_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
