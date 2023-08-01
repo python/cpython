@@ -5621,10 +5621,6 @@ parsers: dict[str, Callable[[Clinic], Parser]] = {
 clinic = None
 
 
-class CLIError(Exception):
-    pass
-
-
 def create_cli() -> argparse.ArgumentParser:
     cmdline = argparse.ArgumentParser(
         prog="clinic.py",
@@ -5653,10 +5649,10 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
     return cmdline
 
 
-def run_clinic(ns: argparse.Namespace) -> None:
+def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
     if ns.converters:
         if ns.filename:
-            raise CLIError(
+            parser.error(
                 "can't specify --converters and a filename at the same time"
             )
         converters: list[tuple[str, str]] = []
@@ -5716,9 +5712,9 @@ def run_clinic(ns: argparse.Namespace) -> None:
 
     if ns.make:
         if ns.output or ns.filename:
-            raise CLIError("can't use -o or filenames with --make")
+            parser.error("can't use -o or filenames with --make")
         if not ns.srcdir:
-            raise CLIError("--srcdir must not be empty with --make")
+            parser.error("--srcdir must not be empty with --make")
         for root, dirs, files in os.walk(ns.srcdir):
             for rcs_dir in ('.svn', '.git', '.hg', 'build', 'externals'):
                 if rcs_dir in dirs:
@@ -5734,10 +5730,10 @@ def run_clinic(ns: argparse.Namespace) -> None:
         return
 
     if not ns.filename:
-        raise CLIError("no input files")
+        parser.error("no input files")
 
     if ns.output and len(ns.filename) > 1:
-        raise CLIError("can't use -o with multiple filenames")
+        parser.error("can't use -o with multiple filenames")
 
     for filename in ns.filename:
         if ns.verbose:
@@ -5745,16 +5741,11 @@ def run_clinic(ns: argparse.Namespace) -> None:
         parse_file(filename, output=ns.output, verify=not ns.force)
 
 
-def main(argv: list[str] | None = None) -> None:
-    cli = create_cli()
-    args = cli.parse_args(argv)
-    try:
-        run_clinic(args)
-    except CLIError as exc:
-        if msg := str(exc):
-            sys.stderr.write(f"Usage error: {msg}\n")
-        cli.print_usage()
-        sys.exit(1)
+def main(argv: list[str] | None = None) -> NoReturn:
+    parser = create_cli()
+    args = parser.parse_args(argv)
+    run_clinic(parser, args)
+    sys.exit(0)
 
 
 if __name__ == "__main__":

@@ -1626,7 +1626,7 @@ class ClinicExternalTest(TestCase):
 
     def test_cli_fail_output_and_multiple_files(self):
         _, err = self.expect_failure("-o", "out.c", "input.c", "moreinput.c")
-        msg = "Usage error: can't use -o with multiple filenames"
+        msg = "error: can't use -o with multiple filenames"
         self.assertIn(msg, err)
 
     def test_cli_fail_filename_or_output_and_make(self):
@@ -1638,7 +1638,7 @@ class ClinicExternalTest(TestCase):
 
     def test_cli_fail_make_without_srcdir(self):
         _, err = self.expect_failure("--make", "--srcdir", "")
-        msg = "Usage error: --srcdir must not be empty with --make"
+        msg = "error: --srcdir must not be empty with --make"
         self.assertIn(msg, err)
 
 
