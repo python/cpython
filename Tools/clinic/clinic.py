@@ -4619,7 +4619,10 @@ class DSLParser:
 
     def in_docstring(self) -> bool:
         """Return true if we are processing a docstring."""
-        return "docstring" in self.state.__name__
+        return self.state in {
+            self.state_parameter_docstring,
+            self.state_function_docstring,
+        }
 
     def valid_line(self, line: str) -> bool:
         # ignore comment-only lines
@@ -5292,7 +5295,7 @@ class DSLParser:
             return self.next(self.state_function_docstring, line)
 
         assert self.function and self.function.parameters
-        last_param = list(self.function.parameters.values())[-1]
+        last_param = next(reversed(self.function.parameters.values()))
         self.docstring_append(last_param, line)
 
     # the final stanza of the DSL is the docstring.
