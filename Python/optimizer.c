@@ -369,7 +369,7 @@ static PyTypeObject UOpExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uop_executor",
     .tp_basicsize = sizeof(_PyUOpExecutorObject),
-    .tp_itemsize = 0,
+    .tp_itemsize = sizeof(_PyUOpInstruction),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_dealloc = (destructor)uop_dealloc,
     .tp_as_sequence = &uop_as_sequence,
@@ -698,7 +698,7 @@ uop_optimize(
         return trace_length;
     }
     OBJECT_STAT_INC(optimization_traces_created);
-    _PyUOpExecutorObject *executor = PyObject_New(_PyUOpExecutorObject, &UOpExecutor_Type);
+    _PyUOpExecutorObject *executor = PyObject_NewVar(_PyUOpExecutorObject, &UOpExecutor_Type, trace_length+1);
     if (executor == NULL) {
         return -1;
     }
