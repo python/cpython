@@ -970,6 +970,10 @@ using ``[]``.
               ...
               return self
 
+      class SubclassOfFoo(Foo): pass
+
+      reveal_type(Foo().return_self())  # Revealed type is "Foo"
+      reveal_type(SubclassOfFoo().return_self())  # Revealed type is "SubclassOfFoo"
 
    This annotation is semantically equivalent to the following,
    albeit in a more succinct fashion::
@@ -983,29 +987,15 @@ using ``[]``.
               ...
               return self
 
-   In general if something currently follows the pattern of::
+   In general if something returns ``self``::
 
       class Foo:
           def return_self(self) -> "Foo":
               ...
               return self
 
-   You should use :data:`Self`. This way the return type of the
-   method will be the type of ``self``, even in subclasses::
-
-      class Foo:
-          def return_self(self) -> Self:
-              ...
-              return self
-
-      class SubclassOfFoo(Foo):
-            ...
-
-      reveal_type(Foo().return_self())  # Revealed type is "Foo"
-      reveal_type(SubclassOfFoo().return_self())  # Revealed type is "SubclassOfFoo"
-
-   Otherwise, the return type of ``SubclassOfFoo().return_self()`` is
-   ``Foo``, which may not be what you wanted.
+   You should use :data:`Self` as calls to ``SubclassOfFoo.return_self`` would have
+   ``Foo`` as the return type and not ``SubclassOfFoo``.
 
    Other common use cases include:
 
