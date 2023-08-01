@@ -153,7 +153,8 @@ class ClinicError(Exception):
         self.filename = filename
 
 
-class ClinicWarning(Warning): ...
+class ClinicWarning(Warning):
+    pass
 
 
 @overload
