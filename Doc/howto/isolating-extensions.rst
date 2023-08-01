@@ -1,5 +1,7 @@
 .. highlight:: c
 
+.. _isolating-extensions-howto:
+
 ***************************
 Isolating Extension Modules
 ***************************

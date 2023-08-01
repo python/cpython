@@ -5636,11 +5636,9 @@ parsers: dict[str, Callable[[Clinic], Parser]] = {
 clinic = None
 
 
-class CLIError(Exception): ...
-
-
 def create_cli() -> argparse.ArgumentParser:
     cmdline = argparse.ArgumentParser(
+        prog="clinic.py",
         description="""Preprocessor for CPython C files.
 
 The purpose of the Argument Clinic is automating all the boilerplate involved
@@ -5666,10 +5664,12 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
     return cmdline
 
 
-def main(ns: argparse.Namespace) -> None:
+def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
     if ns.converters:
         if ns.filename:
-            raise CLIError("can't specify --converters and a filename at the same time.")
+            parser.error(
+                "can't specify --converters and a filename at the same time"
+            )
         converters: list[tuple[str, str]] = []
         return_converters: list[tuple[str, str]] = []
         ignored = set("""
@@ -5727,9 +5727,9 @@ def main(ns: argparse.Namespace) -> None:
 
     if ns.make:
         if ns.output or ns.filename:
-            raise CLIError("can't use -o or filenames with --make.")
+            parser.error("can't use -o or filenames with --make")
         if not ns.srcdir:
-            raise CLIError("--srcdir must not be empty with --make.")
+            parser.error("--srcdir must not be empty with --make")
         for root, dirs, files in os.walk(ns.srcdir):
             for rcs_dir in ('.svn', '.git', '.hg', 'build', 'externals'):
                 if rcs_dir in dirs:
@@ -5745,10 +5745,10 @@ def main(ns: argparse.Namespace) -> None:
         return
 
     if not ns.filename:
-        raise CLIError("no input files")
+        parser.error("no input files")
 
     if ns.output and len(ns.filename) > 1:
-        raise CLIError("can't use -o with multiple filenames.")
+        parser.error("can't use -o with multiple filenames")
 
     for filename in ns.filename:
         if ns.verbose:
@@ -5756,16 +5756,12 @@ def main(ns: argparse.Namespace) -> None:
         parse_file(filename, output=ns.output, verify=not ns.force)
 
 
-if __name__ == "__main__":
-    cli = create_cli()
+def main(argv: list[str] | None = None) -> NoReturn:
+    parser = create_cli()
+    args = parser.parse_args(argv)
     try:
-        args = cli.parse_args()
-        main(args)
-    except CLIError as exc:
-        if msg := str(exc):
-            sys.stderr.write(f"Usage error: {msg}\n")
-        cli.print_usage()
-        sys.exit(1)
+        run_clinic(parser, args)
+        sys.exit(0)
     except ClinicError as exc:
         msg = textwrap.dedent(f"""\
             Error in file {exc.filename!r} on line {exc.lineno}:
@@ -5773,3 +5769,7 @@ if __name__ == "__main__":
         """)
         sys.stderr.write(str(exc))
         sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
