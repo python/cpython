@@ -693,7 +693,14 @@ class ClinicParserTest(TestCase):
             This is trying to clone a nonexistent function!!
         """
         err = "Couldn't find existing function 'fooooooooooooooooo'!"
-        self.expect_failure(block, err, lineno=0)
+        with support.captured_stdout() as out:
+            self.expect_failure(block, err, lineno=0)
+        expected_debug_print = dedent("""\
+            cls=None, module=<FakeClinic object>, existing='fooooooooooooooooo'
+            (cls or module).functions=[]
+        """)
+        out = out.getvalue()
+        self.assertIn(expected_debug_print, out)
 
     def test_return_converter(self):
         function = self.parse_function("""
