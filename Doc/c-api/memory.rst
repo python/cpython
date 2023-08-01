@@ -476,6 +476,10 @@ Customize Memory Allocators
    thread-safe: the :term:`GIL <global interpreter lock>` is not held when the
    allocator is called.
 
+   For the remaining domains, the allocator must also be thread-safe:
+   the allocator may be called in different interpreters that do not
+   share a ``GIL``.
+
    If the new allocator is not a hook (does not call the previous allocator),
    the :c:func:`PyMem_SetupDebugHooks` function must be called to reinstall the
    debug hooks on top on the new allocator.
@@ -500,6 +504,8 @@ Customize Memory Allocators
           **must** wrap the existing allocator. Substituting the current
           allocator for some other arbitrary one is **not supported**.
 
+   .. versionchanged:: 3.12
+      All allocators must be thread-safe.
 
 
 .. c:function:: void PyMem_SetupDebugHooks(void)

@@ -196,6 +196,12 @@ Deprecated
     has yet to be supported by any major type checkers.
     (Contributed by Alex Waygood in :gh:`106309`.)
 
+  * :data:`typing.AnyStr` is deprecated. In Python 3.16, it will be removed from
+    ``typing.__all__``, and a :exc:`DeprecationWarning` will be emitted when it
+    is imported or accessed. It will be removed entirely in Python 3.18. Use
+    the new :ref:`type parameter syntax <type-params>` instead.
+    (Contributed by Michael The in :gh:`107116`.)
+
 * :mod:`wave`: Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()``
   methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
   They will be removed in Python 3.15.
