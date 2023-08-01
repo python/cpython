@@ -117,6 +117,13 @@ and only logged in :ref:`Python Development Mode <devmode>` or on :ref:`Python
 built on debug mode <debug-build>`.
 (Contributed by Victor Stinner in :gh:`62948`.)
 
+opcode
+------
+
+* Move :data:`opcode.ENABLE_SPECIALIZATION` to :data:`_opcode.ENABLE_SPECIALIZATION`.
+  This field was added in 3.12, it was never documented and is not intended for
+  external usage. (Contributed by Irit Katriel in :gh:`105481`.)
+
 pathlib
 -------
 
