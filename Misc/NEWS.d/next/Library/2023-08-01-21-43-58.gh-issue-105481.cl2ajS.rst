@@ -1,0 +1,3 @@
+Remove ``opcode.is_pseudo``, which was added in 3.12, was never documented
+and not intended to be used externally. It is a shortcut for ``op >=
+opcode.MIN_PSEUDO_OPCODE and op <= opcode.MAX_PSEUDO_OPCODE``.

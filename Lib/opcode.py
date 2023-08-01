@@ -19,22 +19,10 @@ if sys.version_info[:2] >= (3, 13):
 
 cmp_op = ('<', '<=', '==', '!=', '>', '>=')
 
-def is_pseudo(op):
-    return op >= MIN_PSEUDO_OPCODE and op <= MAX_PSEUDO_OPCODE
-
 opmap = {}
-
-# pseudo opcodes (used in the compiler) mapped to the values
-# they can become in the actual code.
-_pseudo_ops = {}
 
 def def_op(name, op):
     opmap[name] = op
-
-def pseudo_op(name, op, real_ops):
-    def_op(name, op)
-    _pseudo_ops[name] = real_ops
-
 
 # Instruction opcodes for compiled code
 # Blank lines correspond to available opcodes
@@ -213,24 +201,29 @@ def_op('INSTRUMENTED_LINE', 254)
 
 
 MIN_PSEUDO_OPCODE = 256
+MAX_PSEUDO_OPCODE = -1
 
-pseudo_op('SETUP_FINALLY', 256, ['NOP'])
-pseudo_op('SETUP_CLEANUP', 257, ['NOP'])
-pseudo_op('SETUP_WITH', 258, ['NOP'])
-pseudo_op('POP_BLOCK', 259, ['NOP'])
+def pseudo_op(name, op):
+    global MAX_PSEUDO_OPCODE
+    if op > MAX_PSEUDO_OPCODE:
+        MAX_PSEUDO_OPCODE = op
+    def_op(name, op)
 
-pseudo_op('JUMP', 260, ['JUMP_FORWARD', 'JUMP_BACKWARD'])
-pseudo_op('JUMP_NO_INTERRUPT', 261, ['JUMP_FORWARD', 'JUMP_BACKWARD_NO_INTERRUPT'])
+pseudo_op('SETUP_FINALLY', 256)
+pseudo_op('SETUP_CLEANUP', 257)
+pseudo_op('SETUP_WITH', 258)
+pseudo_op('POP_BLOCK', 259)
 
-pseudo_op('LOAD_METHOD', 262, ['LOAD_ATTR'])
-pseudo_op('LOAD_SUPER_METHOD', 263, ['LOAD_SUPER_ATTR'])
-pseudo_op('LOAD_ZERO_SUPER_METHOD', 264, ['LOAD_SUPER_ATTR'])
-pseudo_op('LOAD_ZERO_SUPER_ATTR', 265, ['LOAD_SUPER_ATTR'])
+pseudo_op('JUMP', 260)
+pseudo_op('JUMP_NO_INTERRUPT', 261)
 
-pseudo_op('STORE_FAST_MAYBE_NULL', 266, ['STORE_FAST'])
-pseudo_op('LOAD_CLOSURE', 267, ['LOAD_FAST'])
+pseudo_op('LOAD_METHOD', 262)
+pseudo_op('LOAD_SUPER_METHOD', 263)
+pseudo_op('LOAD_ZERO_SUPER_METHOD', 264)
+pseudo_op('LOAD_ZERO_SUPER_ATTR', 265)
 
-MAX_PSEUDO_OPCODE = MIN_PSEUDO_OPCODE + len(_pseudo_ops) - 1
+pseudo_op('STORE_FAST_MAYBE_NULL', 266)
+pseudo_op('LOAD_CLOSURE', 267)
 
 del def_op, pseudo_op
 
