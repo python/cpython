@@ -19,10 +19,8 @@ labels: "type-bug"
 
 <!-- Bugs in third-party projects (e.g. `requests`) do not belong in the CPython issue tracker -->
 
-- [ ] I am confident this is a bug in CPython,
-      not a bug in a third-party project
-- [ ] I have searched the CPython issue tracker,
-      and am confident this bug has not been reported before
+- [ ] I am confident this is a bug in CPython, not a bug in a third-party project
+- [ ] I have searched the CPython issue tracker, and am confident this bug has not been reported before
 
 ## A clear and concise description of the bug
 
