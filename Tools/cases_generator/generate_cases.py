@@ -661,15 +661,9 @@ class Generator(Analyzer):
             if cache_adjust:
                 self.out.emit(f"next_instr += {cache_adjust};")
 
-            if (
-                (family := self.families.get(mac.name))
-                and mac.name == family.name
-                and (cache_size := family.size)
-            ):
-                self.out.emit(
-                    f"static_assert({cache_size} == "
-                    f'{cache_adjust}, "incorrect cache size");'
-                )
+            self.out.static_assert_family_size(
+                mac.name, self.families.get(mac.name), cache_adjust
+            )
 
             self.out.stack_adjust(ieffects[: mac.initial_sp], mac.stack[: mac.final_sp])
 

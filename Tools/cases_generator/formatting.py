@@ -2,7 +2,7 @@ import contextlib
 import re
 import typing
 
-from parsing import StackEffect
+from parsing import StackEffect, Family
 
 UNUSED = "unused"
 
@@ -129,6 +129,23 @@ class Formatter:
 
     def cast(self, dst: StackEffect, src: StackEffect) -> str:
         return f"({dst.type or 'PyObject *'})" if src.type != dst.type else ""
+
+    def static_assert_family_size(
+        self, name: str, family: Family | None, cache_offset: int
+    ) -> None:
+        """Emit a static_assert for the size of a family, if known.
+
+        This will fail at compile time if the cache size computed from
+        the instruction definition does not match the size of the struct
+        used by specialize.c.
+        """
+        if family and name == family.name:
+            cache_size = family.size
+            if cache_size:
+                self.emit(
+                    f"static_assert({cache_size} == {cache_offset}, "
+                    f'"incorrect cache size");'
+                )
 
 
 def prettify_filename(filename: str) -> str:
