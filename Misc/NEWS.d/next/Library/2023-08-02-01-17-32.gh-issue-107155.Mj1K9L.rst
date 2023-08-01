@@ -1,0 +1,2 @@
+Fix incorrect output of ``help(x)`` where ``x`` is :keyword:`lambda` function,
+which has ``__annotations__`` attribute with ``"return"`` key.
