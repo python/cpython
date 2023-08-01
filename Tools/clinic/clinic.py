@@ -4927,6 +4927,24 @@ class DSLParser:
             case param:
                 self.parse_parameter(param)
 
+    def parse_parameter_name(self, line: str) -> tuple[str, str, str]:
+        c_name = None
+        # Handle custom parameter names.
+        name, have_as_token, trailing = line.partition(' as ')
+        if have_as_token:
+            name = name.strip()
+            if ' ' not in name:
+                fields = trailing.strip().split(' ')
+                if not fields:
+                    fail("Invalid 'as' clause!")
+                c_name = fields[0]
+                if c_name.endswith(':'):
+                    name += ':'
+                    c_name = c_name[:-1]
+                fields[0] = name
+                line = ' '.join(fields)
+        return c_name, name, line
+
     def parse_parameter(self, line: str) -> None:
         assert self.function is not None
 
@@ -4943,21 +4961,7 @@ class DSLParser:
             case st:
                 fail(f"Function {self.function.name} has an unsupported group configuration. (Unexpected state {st}.a)")
 
-        # handle "as" for  parameters too
-        c_name = None
-        name, have_as_token, trailing = line.partition(' as ')
-        if have_as_token:
-            name = name.strip()
-            if ' ' not in name:
-                fields = trailing.strip().split(' ')
-                if not fields:
-                    fail("Invalid 'as' clause!")
-                c_name = fields[0]
-                if c_name.endswith(':'):
-                    name += ':'
-                    c_name = c_name[:-1]
-                fields[0] = name
-                line = ' '.join(fields)
+        c_name, name, line = self.parse_parameter_name(line)
 
         default: str | None
         base, equals, default = line.rpartition('=')
