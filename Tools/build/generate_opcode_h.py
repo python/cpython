@@ -163,13 +163,13 @@ def main(opcode_py,
         iobj.write(internal_footer)
 
     with open(opcode_targets_h, "w") as f:
-        targets = ['_unknown_opcode'] * 256
+        targets = ["_unknown_opcode"] * 256
         for op, name in enumerate(opname_including_specialized):
             if op < 256 and not name.startswith("<"):
-                targets[op] = "TARGET_%s" % name
+                targets[op] = f"TARGET_{name}"
 
         f.write("static void *opcode_targets[256] = {\n")
-        f.write(",\n".join(["    &&%s" % s for s in targets]))
+        f.write(",\n".join([f"    &&{s}" for s in targets]))
         f.write("\n};\n")
 
     print(f"{outfile} regenerated from {opcode_py}")
