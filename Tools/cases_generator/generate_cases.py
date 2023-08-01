@@ -4,7 +4,6 @@ Writes the cases to generated_cases.c.h, which is #included in ceval.c.
 """
 
 import argparse
-import contextlib
 import os
 import posixpath
 import sys
@@ -12,7 +11,7 @@ import typing
 
 import stacking  # Early import to avoid circular import
 from analysis import Analyzer
-from formatting import Formatter, list_effect_size, maybe_parenthesize
+from formatting import Formatter, list_effect_size
 from flags import InstructionFlags, variable_used
 from instructions import (
     AnyInstruction,
@@ -627,34 +626,6 @@ class Generator(Analyzer):
 
     def write_macro(self, mac: MacroInstruction) -> None:
         """Write code for a macro instruction."""
-        last_instr: Instruction | None = None
-        with self.wrap_macro(mac):
-            cache_adjust = 0
-            for part in mac.parts:
-                match part:
-                    case parsing.CacheEffect(size=size):
-                        cache_adjust += size
-                    case Component() as comp:
-                        last_instr = comp.instr
-                        comp.write_body(self.out)
-                        cache_adjust += comp.instr.cache_offset
-
-            if cache_adjust:
-                self.out.emit(f"next_instr += {cache_adjust};")
-
-            if (
-                (family := self.families.get(mac.name))
-                and mac.name == family.name
-                and (cache_size := family.size)
-            ):
-                self.out.emit(
-                    f"static_assert({cache_size} == "
-                    f'{cache_adjust}, "incorrect cache size");'
-                )
-
-    @contextlib.contextmanager
-    def wrap_macro(self, mac: MacroInstruction):
-        """Boilerplate for macro instructions."""
         # TODO: Somewhere (where?) make it so that if one instruction
         # has an output that is input to another, and the variable names
         # and types match and don't conflict with other instructions,
@@ -678,7 +649,27 @@ class Generator(Analyzer):
                     src = StackEffect(f"stack_pointer[-{mac.initial_sp - i}]", "")
                 self.out.declare(var, src)
 
-            yield
+            cache_adjust = 0
+            for part in mac.parts:
+                match part:
+                    case parsing.CacheEffect(size=size):
+                        cache_adjust += size
+                    case Component() as comp:
+                        comp.write_body(self.out)
+                        cache_adjust += comp.instr.cache_offset
+
+            if cache_adjust:
+                self.out.emit(f"next_instr += {cache_adjust};")
+
+            if (
+                (family := self.families.get(mac.name))
+                and mac.name == family.name
+                and (cache_size := family.size)
+            ):
+                self.out.emit(
+                    f"static_assert({cache_size} == "
+                    f'{cache_adjust}, "incorrect cache size");'
+                )
 
             self.out.stack_adjust(ieffects[: mac.initial_sp], mac.stack[: mac.final_sp])
 
