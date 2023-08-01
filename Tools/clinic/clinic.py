@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import abc
+import argparse
 import ast
 import builtins as bltns
 import collections
@@ -5620,10 +5621,9 @@ parsers: dict[str, Callable[[Clinic], Parser]] = {
 clinic = None
 
 
-def main(argv: list[str]) -> None:
-    import sys
-    import argparse
+def create_cli() -> argparse.ArgumentParser:
     cmdline = argparse.ArgumentParser(
+        prog="clinic.py",
         description="""Preprocessor for CPython C files.
 
 The purpose of the Argument Clinic is automating all the boilerplate involved
@@ -5646,14 +5646,15 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
                          help="the directory tree to walk in --make mode")
     cmdline.add_argument("filename", metavar="FILE", type=str, nargs="*",
                          help="the list of files to process")
-    ns = cmdline.parse_args(argv)
+    return cmdline
 
+
+def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
     if ns.converters:
         if ns.filename:
-            print("Usage error: can't specify --converters and a filename at the same time.")
-            print()
-            cmdline.print_usage()
-            sys.exit(-1)
+            parser.error(
+                "can't specify --converters and a filename at the same time"
+            )
         converters: list[tuple[str, str]] = []
         return_converters: list[tuple[str, str]] = []
         ignored = set("""
@@ -5707,19 +5708,13 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
             print()
         print("All converters also accept (c_default=None, py_default=None, annotation=None).")
         print("All return converters also accept (py_default=None).")
-        sys.exit(0)
+        return
 
     if ns.make:
         if ns.output or ns.filename:
-            print("Usage error: can't use -o or filenames with --make.")
-            print()
-            cmdline.print_usage()
-            sys.exit(-1)
+            parser.error("can't use -o or filenames with --make")
         if not ns.srcdir:
-            print("Usage error: --srcdir must not be empty with --make.")
-            print()
-            cmdline.print_usage()
-            sys.exit(-1)
+            parser.error("--srcdir must not be empty with --make")
         for root, dirs, files in os.walk(ns.srcdir):
             for rcs_dir in ('.svn', '.git', '.hg', 'build', 'externals'):
                 if rcs_dir in dirs:
@@ -5735,14 +5730,10 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
         return
 
     if not ns.filename:
-        cmdline.print_usage()
-        sys.exit(-1)
+        parser.error("no input files")
 
     if ns.output and len(ns.filename) > 1:
-        print("Usage error: can't use -o with multiple filenames.")
-        print()
-        cmdline.print_usage()
-        sys.exit(-1)
+        parser.error("can't use -o with multiple filenames")
 
     for filename in ns.filename:
         if ns.verbose:
@@ -5750,6 +5741,12 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
         parse_file(filename, output=ns.output, verify=not ns.force)
 
 
-if __name__ == "__main__":
-    main(sys.argv[1:])
+def main(argv: list[str] | None = None) -> NoReturn:
+    parser = create_cli()
+    args = parser.parse_args(argv)
+    run_clinic(parser, args)
     sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()
