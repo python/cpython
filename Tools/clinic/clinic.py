@@ -39,13 +39,13 @@ from collections.abc import (
 )
 from types import FunctionType, NoneType
 from typing import (
+    TYPE_CHECKING,
     Any,
     Final,
     Literal,
     NamedTuple,
     NoReturn,
     Protocol,
-    TypeGuard,
     TypeVar,
     cast,
     overload,
@@ -2653,18 +2653,6 @@ class Parameter:
             return f'"argument {i}"'
 
 
-@dc.dataclass
-class LandMine:
-    # try to access any
-    __message__: str
-
-    def __getattribute__(self, name: str) -> Any:
-        if name in ('__repr__', '__message__'):
-            return super().__getattribute__(name)
-        # raise RuntimeError(repr(name))
-        fail("Stepped on a land mine, trying to access attribute " + repr(name) + ":\n" + self.__message__)
-
-
 CConverterClassT = TypeVar("CConverterClassT", bound=type["CConverter"])
 
 def add_c_converter(
@@ -2859,15 +2847,27 @@ class CConverter(metaclass=CConverterAutoRegister):
         if annotation is not unspecified:
             fail("The 'annotation' parameter is not currently permitted.")
 
-        # this is deliberate, to prevent you from caching information
-        # about the function in the init.
-        # (that breaks if we get cloned.)
-        # so after this change we will noisily fail.
-        self.function: Function | LandMine = LandMine(
-            "Don't access members of self.function inside converter_init!"
-        )
+        # Make sure not to set self.function until after converter_init() has been called.
+        # This prevents you from caching information
+        # about the function in converter_init().
+        # (That breaks if we get cloned.)
         self.converter_init(**kwargs)
         self.function = function
+
+    # Add a custom __getattr__ method to improve the error message
+    # if somebody tries to access self.function in converter_init().
+    #
+    # mypy will assume arbitrary access is okay for a class with a __getattr__ method,
+    # and that's not what we want,
+    # so put it inside an `if not TYPE_CHECKING` block
+    if not TYPE_CHECKING:
+        def __getattr__(self, attr):
+            if attr == "function":
+                fail(
+                    f"{self.__class__.__name__!r} object has no attribute 'function'.\n"
+                    f"Note: accessing self.function inside converter_init is disallowed!"
+                )
+            return super().__getattr__(attr)
 
     def converter_init(self) -> None:
         pass
@@ -4020,7 +4020,6 @@ class self_converter(CConverter):
 
     def pre_render(self) -> None:
         f = self.function
-        assert isinstance(f, Function)
         default_type, default_name = correct_name_for_self(f)
         self.signature_name = default_name
         self.type = self.specified_type or self.type or default_type
@@ -4071,7 +4070,6 @@ class self_converter(CConverter):
     @property
     def parser_type(self) -> str:
         assert self.type is not None
-        assert isinstance(self.function, Function)
         return required_type_for_self_for_parser(self.function) or self.type
 
     def render(self, parameter: Parameter, data: CRenderData) -> None:
@@ -4404,7 +4402,7 @@ class IndentStack:
         return line[indent:]
 
 
-StateKeeper = Callable[[str | None], None]
+StateKeeper = Callable[[str], None]
 ConverterArgs = dict[str, Any]
 
 class ParamState(enum.IntEnum):
@@ -4626,9 +4624,7 @@ class DSLParser:
                 fail('Tab characters are illegal in the Clinic DSL.\n\t' + repr(line), line_number=block_start)
             self.state(line)
 
-        self.next(self.state_terminal)
-        self.state(None)
-
+        self.do_post_block_processing_cleanup()
         block.output.extend(self.clinic.language.render(self.clinic, block.signatures))
 
         if self.preserve_output:
@@ -4637,10 +4633,7 @@ class DSLParser:
             block.output = self.saved_output
 
     @staticmethod
-    def valid_line(line: str | None) -> TypeGuard[str]:
-        if line is None:
-            return False
-
+    def valid_line(line: str) -> bool:
         # ignore comment-only lines
         if line.lstrip().startswith('#'):
             return False
@@ -4666,7 +4659,7 @@ class DSLParser:
         if line is not None:
             self.state(line)
 
-    def state_dsl_start(self, line: str | None) -> None:
+    def state_dsl_start(self, line: str) -> None:
         # self.block = self.ClinicOutputBlock(self)
         if not self.valid_line(line):
             return
@@ -4684,7 +4677,7 @@ class DSLParser:
 
         self.next(self.state_modulename_name, line)
 
-    def state_modulename_name(self, line: str | None) -> None:
+    def state_modulename_name(self, line: str) -> None:
         # looking for declaration, which establishes the leftmost column
         # line should be
         #     modulename.fnname [as c_basename] [-> return annotation]
@@ -4873,7 +4866,7 @@ class DSLParser:
     # separate boolean state variables.)  The states are defined in the
     # ParamState class.
 
-    def state_parameters_start(self, line: str | None) -> None:
+    def state_parameters_start(self, line: str) -> None:
         if not self.valid_line(line):
             return
 
@@ -4895,7 +4888,7 @@ class DSLParser:
             for p in self.function.parameters.values():
                 p.group = -p.group
 
-    def state_parameter(self, line: str | None) -> None:
+    def state_parameter(self, line: str) -> None:
         assert isinstance(self.function, Function)
 
         if not self.valid_line(line):
@@ -5278,7 +5271,7 @@ class DSLParser:
                      "positional-only parameters, which is unsupported.")
             p.kind = inspect.Parameter.POSITIONAL_ONLY
 
-    def state_parameter_docstring_start(self, line: str | None) -> None:
+    def state_parameter_docstring_start(self, line: str) -> None:
         assert self.indent.margin is not None, "self.margin.infer() has not yet been called to set the margin"
         self.parameter_docstring_indent = len(self.indent.margin)
         assert self.indent.depth == 3
@@ -5287,9 +5280,7 @@ class DSLParser:
     # every line of the docstring must start with at least F spaces,
     # where F > P.
     # these F spaces will be stripped.
-    def state_parameter_docstring(self, line: str | None) -> None:
-        assert line is not None
-
+    def state_parameter_docstring(self, line: str) -> None:
         stripped = line.strip()
         if stripped.startswith('#'):
             return
@@ -5317,9 +5308,8 @@ class DSLParser:
         last_parameter.docstring = new_docstring
 
     # the final stanza of the DSL is the docstring.
-    def state_function_docstring(self, line: str | None) -> None:
+    def state_function_docstring(self, line: str) -> None:
         assert self.function is not None
-        assert line is not None
 
         if self.group:
             fail("Function " + self.function.name + " has a ] without a matching [.")
@@ -5588,12 +5578,10 @@ class DSLParser:
 
         return docstring
 
-    def state_terminal(self, line: str | None) -> None:
+    def do_post_block_processing_cleanup(self) -> None:
         """
         Called when processing the block is done.
         """
-        assert not line
-
         if not self.function:
             return
 
