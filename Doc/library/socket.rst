@@ -2252,7 +2252,7 @@ This is because the previous execution has left the socket in a ``TIME_WAIT``
 state, and can't be immediately reused.
 
 There is a :mod:`socket` flag to set, in order to prevent this,
-:data:`socket.SO_REUSEADDR`::
+:const:`socket.SO_REUSEADDR`::
 
    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

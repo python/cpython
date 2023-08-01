@@ -4,14 +4,16 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_interp.h"        // PyInterpreterState.importlib
-#include "pycore_object.h"        // _PyType_AllocNoTrack
-#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_modsupport.h"    // _PyModule_CreateInitialized()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
-#include "structmember.h"         // PyMemberDef
+#include "pycore_object.h"        // _PyType_AllocNoTrack
+#include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+
 
 
 static PyMemberDef module_members[] = {
-    {"__dict__", T_OBJECT, offsetof(PyModuleObject, md_dict), READONLY},
+    {"__dict__", _Py_T_OBJECT, offsetof(PyModuleObject, md_dict), Py_READONLY},
     {0}
 };
 
@@ -740,7 +742,7 @@ _PyModuleSpec_IsInitializing(PyObject *spec)
 {
     if (spec != NULL) {
         PyObject *value;
-        int ok = _PyObject_LookupAttr(spec, &_Py_ID(_initializing), &value);
+        int ok = PyObject_GetOptionalAttr(spec, &_Py_ID(_initializing), &value);
         if (ok == 0) {
             return 0;
         }
@@ -935,26 +937,20 @@ static PyObject *
 module_get_annotations(PyModuleObject *m, void *Py_UNUSED(ignored))
 {
     PyObject *dict = PyObject_GetAttr((PyObject *)m, &_Py_ID(__dict__));
-
-    if ((dict == NULL) || !PyDict_Check(dict)) {
+    if (dict == NULL) {
+        return NULL;
+    }
+    if (!PyDict_Check(dict)) {
         PyErr_Format(PyExc_TypeError, "<module>.__dict__ is not a dictionary");
-        Py_XDECREF(dict);
+        Py_DECREF(dict);
         return NULL;
     }
 
-    PyObject *annotations;
-    /* there's no _PyDict_GetItemId without WithError, so let's LBYL. */
-    if (PyDict_Contains(dict, &_Py_ID(__annotations__))) {
-        annotations = PyDict_GetItemWithError(dict, &_Py_ID(__annotations__));
-        /*
-        ** _PyDict_GetItemIdWithError could still fail,
-        ** for instance with a well-timed Ctrl-C or a MemoryError.
-        ** so let's be totally safe.
-        */
-        if (annotations) {
-            Py_INCREF(annotations);
-        }
-    } else {
+    PyObject *annotations = PyDict_GetItemWithError(dict, &_Py_ID(__annotations__));
+    if (annotations) {
+        Py_INCREF(annotations);
+    }
+    else if (!PyErr_Occurred()) {
         annotations = PyDict_New();
         if (annotations) {
             int result = PyDict_SetItem(
@@ -973,8 +969,10 @@ module_set_annotations(PyModuleObject *m, PyObject *value, void *Py_UNUSED(ignor
 {
     int ret = -1;
     PyObject *dict = PyObject_GetAttr((PyObject *)m, &_Py_ID(__dict__));
-
-    if ((dict == NULL) || !PyDict_Check(dict)) {
+    if (dict == NULL) {
+        return -1;
+    }
+    if (!PyDict_Check(dict)) {
         PyErr_Format(PyExc_TypeError, "<module>.__dict__ is not a dictionary");
         goto exit;
     }
@@ -982,19 +980,17 @@ module_set_annotations(PyModuleObject *m, PyObject *value, void *Py_UNUSED(ignor
     if (value != NULL) {
         /* set */
         ret = PyDict_SetItem(dict, &_Py_ID(__annotations__), value);
-        goto exit;
     }
-
-    /* delete */
-    if (!PyDict_Contains(dict, &_Py_ID(__annotations__))) {
-        PyErr_Format(PyExc_AttributeError, "__annotations__");
-        goto exit;
+    else {
+        /* delete */
+        ret = PyDict_DelItem(dict, &_Py_ID(__annotations__));
+        if (ret < 0 && PyErr_ExceptionMatches(PyExc_KeyError)) {
+            PyErr_SetString(PyExc_AttributeError, "__annotations__");
+        }
     }
-
-    ret = PyDict_DelItem(dict, &_Py_ID(__annotations__));
 
 exit:
-    Py_XDECREF(dict);
+    Py_DECREF(dict);
     return ret;
 }
 

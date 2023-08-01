@@ -62,6 +62,38 @@ extern "C" {
 
 /* Implemented elsewhere:
 
+   int PyObject_GetOptionalAttr(PyObject *obj, PyObject *attr_name, PyObject **result);
+
+   Variant of PyObject_GetAttr() which doesn't raise AttributeError
+   if the attribute is not found.
+
+   If the attribute is found, return 1 and set *result to a new strong
+   reference to the attribute.
+   If the attribute is not found, return 0 and set *result to NULL;
+   the AttributeError is silenced.
+   If an error other than AttributeError is raised, return -1 and
+   set *result to NULL.
+*/
+
+
+/* Implemented elsewhere:
+
+   int PyObject_GetOptionalAttrString(PyObject *obj, const char *attr_name, PyObject **result);
+
+   Variant of PyObject_GetAttrString() which doesn't raise AttributeError
+   if the attribute is not found.
+
+   If the attribute is found, return 1 and set *result to a new strong
+   reference to the attribute.
+   If the attribute is not found, return 0 and set *result to NULL;
+   the AttributeError is silenced.
+   If an error other than AttributeError is raised, return -1 and
+   set *result to NULL.
+*/
+
+
+/* Implemented elsewhere:
+
    int PyObject_SetAttrString(PyObject *o, const char *attr_name, PyObject *v);
 
    Set the value of the attribute named attr_name, for object 'o',
@@ -80,7 +112,7 @@ extern "C" {
 
    This is the equivalent of the Python statement o.attr_name=v. */
 
-/* Implemented as a macro:
+/* Implemented elsewhere:
 
    int PyObject_DelAttrString(PyObject *o, const char *attr_name);
 
@@ -88,17 +120,15 @@ extern "C" {
    -1 on failure.
 
    This is the equivalent of the Python statement: del o.attr_name. */
-#define PyObject_DelAttrString(O, A) PyObject_SetAttrString((O), (A), NULL)
 
 
-/* Implemented as a macro:
+/* Implemented elsewhere:
 
    int PyObject_DelAttr(PyObject *o, PyObject *attr_name);
 
    Delete attribute named attr_name, for object o. Returns -1
    on failure.  This is the equivalent of the Python
    statement: del o.attr_name. */
-#define  PyObject_DelAttr(O, A) PyObject_SetAttr((O), (A), NULL)
 
 
 /* Implemented elsewhere:
@@ -809,6 +839,21 @@ PyAPI_FUNC(PyObject *) PyMapping_Items(PyObject *o);
    This is the equivalent of the Python expression: o[key]. */
 PyAPI_FUNC(PyObject *) PyMapping_GetItemString(PyObject *o,
                                                const char *key);
+
+/* Variants of PyObject_GetItem() and PyMapping_GetItemString() which don't
+   raise KeyError if the key is not found.
+
+   If the key is found, return 1 and set *result to a new strong
+   reference to the corresponding value.
+   If the key is not found, return 0 and set *result to NULL;
+   the KeyError is silenced.
+   If an error other than KeyError is raised, return -1 and
+   set *result to NULL.
+*/
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+PyAPI_FUNC(int) PyMapping_GetOptionalItem(PyObject *, PyObject *, PyObject **);
+PyAPI_FUNC(int) PyMapping_GetOptionalItemString(PyObject *, const char *, PyObject **);
+#endif
 
 /* Map the string 'key' to the value 'v' in the mapping 'o'.
    Returns -1 on failure.

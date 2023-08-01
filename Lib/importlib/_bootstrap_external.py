@@ -451,6 +451,8 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.13a1 3553 (Add SET_FUNCTION_ATTRIBUTE)
 #     Python 3.13a1 3554 (more efficient bytecodes for f-strings)
 #     Python 3.13a1 3555 (generate specialized opcodes metadata from bytecodes.c)
+#     Python 3.13a1 3556 (Convert LOAD_CLOSURE to a pseudo-op)
+#     Python 3.13a1 3557 (Make the conversion to boolean in jumps explicit)
 
 #     Python 3.14 will start with 3600
 
@@ -467,7 +469,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3555).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3557).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 

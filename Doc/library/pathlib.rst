@@ -303,6 +303,13 @@ Methods and properties
 
 Pure paths provide the following methods and properties:
 
+.. attribute:: PurePath.pathmod
+
+   The implementation of the :mod:`os.path` module used for low-level path
+   operations: either ``posixpath`` or ``ntpath``.
+
+   .. versionadded:: 3.13
+
 .. attribute:: PurePath.drive
 
    A string representing the drive letter or name, if any::
@@ -432,7 +439,7 @@ Pure paths provide the following methods and properties:
 
 .. attribute:: PurePath.suffix
 
-   The file extension of the final component, if any::
+   The last dot-separated portion of the final component, if any::
 
       >>> PurePosixPath('my/library/setup.py').suffix
       '.py'
@@ -441,10 +448,11 @@ Pure paths provide the following methods and properties:
       >>> PurePosixPath('my/library').suffix
       ''
 
+   This is commonly called the file extension.
 
 .. attribute:: PurePath.suffixes
 
-   A list of the path's file extensions::
+   A list of the path's suffixes, often called file extensions::
 
       >>> PurePosixPath('my/library.tar.gar').suffixes
       ['.tar', '.gar']
@@ -978,22 +986,34 @@ call fails (for example because the path doesn't exist).
       available. In previous versions, :exc:`NotImplementedError` was raised.
 
 
-.. method:: Path.is_dir()
+.. method:: Path.is_dir(*, follow_symlinks=True)
 
-   Return ``True`` if the path points to a directory (or a symbolic link
-   pointing to a directory), ``False`` if it points to another kind of file.
+   Return ``True`` if the path points to a directory, ``False`` if it points
+   to another kind of file.
+
+   ``False`` is also returned if the path doesn't exist or is a broken symlink;
+   other errors (such as permission errors) are propagated.
+
+   This method normally follows symlinks; to exclude symlinks to directories,
+   add the argument ``follow_symlinks=False``.
+
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
+
+
+.. method:: Path.is_file(*, follow_symlinks=True)
+
+   Return ``True`` if the path points to a regular file, ``False`` if it
+   points to another kind of file.
 
    ``False`` is also returned if the path doesn't exist or is a broken symlink;
    other errors (such as permission errors) are propagated.
 
+   This method normally follows symlinks; to exclude symlinks, add the
+   argument ``follow_symlinks=False``.
 
-.. method:: Path.is_file()
-
-   Return ``True`` if the path points to a regular file (or a symbolic link
-   pointing to a regular file), ``False`` if it points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
 
 
 .. method:: Path.is_junction()
