@@ -990,8 +990,8 @@ using ``[]``.
    In general, if something returns ``self``, as in the above examples, you
    should use ``Self`` as the return annotation. If ``Foo.return_self`` was
    annotated as returning ``"Foo"``, then the type checker would infer the
-   object returned from ``SubclassOfFoo.return_self`` as being ``Foo`` rather
-   than ``SubclassOfFoo``.
+   object returned from ``SubclassOfFoo.return_self`` as being of type ``Foo`
+   rather than ``SubclassOfFoo``.
 
    Other common use cases include:
 
