@@ -2525,6 +2525,9 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertTrue(A.t(0))
         self.assertTrue(A.t(''))
         self.assertEqual(A.t(0.0), 0.0)
+        self.assertTrue(a.t(0))
+        self.assertTrue(a.t(''))
+        self.assertEqual(a.t(0.0), 0.0)
 
     def test_assignment_behavior(self):
         # see gh-106448
