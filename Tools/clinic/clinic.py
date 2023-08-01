@@ -4617,15 +4617,21 @@ class DSLParser:
                 fail("'preserve' only works for blocks that don't produce any output!")
             block.output = self.saved_output
 
-    @staticmethod
-    def valid_line(line: str) -> bool:
+    def in_docstring(self) -> bool:
+        """Return true if we are processing a docstring."""
+        return self.state in {
+            self.state_parameter_docstring,
+            self.state_function_docstring,
+        }
+
+    def valid_line(self, line: str) -> bool:
         # ignore comment-only lines
         if line.lstrip().startswith('#'):
             return False
 
         # Ignore empty lines too
         # (but not in docstring sections!)
-        if not line.strip():
+        if not self.in_docstring() and not line.strip():
             return False
 
         return True
@@ -5262,12 +5268,20 @@ class DSLParser:
         assert self.indent.depth == 3
         return self.next(self.state_parameter_docstring, line)
 
+    def docstring_append(self, obj: Function | Parameter, line: str) -> None:
+        """Add a rstripped line to the current docstring."""
+        docstring = obj.docstring
+        if docstring:
+            docstring += "\n"
+        if stripped := line.rstrip():
+            docstring += self.indent.dedent(stripped)
+        obj.docstring = docstring
+
     # every line of the docstring must start with at least F spaces,
     # where F > P.
     # these F spaces will be stripped.
     def state_parameter_docstring(self, line: str) -> None:
-        stripped = line.strip()
-        if stripped.startswith('#'):
+        if not self.valid_line(line):
             return
 
         indent = self.indent.measure(line)
@@ -5281,16 +5295,8 @@ class DSLParser:
             return self.next(self.state_function_docstring, line)
 
         assert self.function and self.function.parameters
-        last_parameter = next(reversed(list(self.function.parameters.values())))
-
-        new_docstring = last_parameter.docstring
-
-        if new_docstring:
-            new_docstring += '\n'
-        if stripped:
-            new_docstring += self.indent.dedent(line)
-
-        last_parameter.docstring = new_docstring
+        last_param = next(reversed(self.function.parameters.values()))
+        self.docstring_append(last_param, line)
 
     # the final stanza of the DSL is the docstring.
     def state_function_docstring(self, line: str) -> None:
@@ -5299,19 +5305,10 @@ class DSLParser:
         if self.group:
             fail("Function " + self.function.name + " has a ] without a matching [.")
 
-        stripped = line.strip()
-        if stripped.startswith('#'):
+        if not self.valid_line(line):
             return
 
-        new_docstring = self.function.docstring
-        if new_docstring:
-            new_docstring += "\n"
-        if stripped:
-            line = self.indent.dedent(line).rstrip()
-        else:
-            line = ''
-        new_docstring += line
-        self.function.docstring = new_docstring
+        self.docstring_append(self.function, line)
 
     def format_docstring(self) -> str:
         f = self.function
@@ -5579,12 +5576,6 @@ class DSLParser:
                 no_parameter_after_star = last_parameter.kind != inspect.Parameter.KEYWORD_ONLY
             if no_parameter_after_star:
                 fail("Function " + self.function.name + " specifies '*' without any parameters afterwards.")
-
-        # remove trailing whitespace from all parameter docstrings
-        for name, value in self.function.parameters.items():
-            if not value:
-                continue
-            value.docstring = value.docstring.rstrip()
 
         self.function.docstring = self.format_docstring()
 
