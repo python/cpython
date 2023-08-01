@@ -64,6 +64,7 @@ def get_python_module_dict(filename):
 def main(opcode_py,
          _opcode_metadata_py='Lib/_opcode_metadata.py',
          outfile='Include/opcode.h',
+         opcode_targets_h='Python/opcode_targets.h',
          internaloutfile='Include/internal/pycore_opcode.h'):
 
     _opcode_metadata = get_python_module_dict(_opcode_metadata_py)
@@ -161,9 +162,18 @@ def main(opcode_py,
         fobj.write(footer)
         iobj.write(internal_footer)
 
+    with open(opcode_targets_h, "w") as f:
+        targets = ['_unknown_opcode'] * 256
+        for op, name in enumerate(opname_including_specialized):
+            if op < 256 and not name.startswith("<"):
+                targets[op] = "TARGET_%s" % name
+
+        f.write("static void *opcode_targets[256] = {\n")
+        f.write(",\n".join(["    &&%s" % s for s in targets]))
+        f.write("\n};\n")
 
     print(f"{outfile} regenerated from {opcode_py}")
 
 
 if __name__ == '__main__':
-    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
