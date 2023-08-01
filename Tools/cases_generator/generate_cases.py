@@ -550,7 +550,9 @@ class Generator(Analyzer):
                             self.write_instr(self.instrs[thing.name])
                     case parsing.Macro():
                         n_macros += 1
-                        self.write_macro(self.macro_instrs[thing.name])
+                        mac = self.macro_instrs[thing.name]
+                        stacking.write_macro_instr(mac, self.out)
+                        # self.write_macro(self.macro_instrs[thing.name])
                     case parsing.Pseudo():
                         pass
                     case _:

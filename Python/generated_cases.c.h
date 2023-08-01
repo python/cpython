@@ -151,14 +151,15 @@
         }
 
         TARGET(END_FOR) {
-            PyObject *_tmp_1 = stack_pointer[-1];
-            PyObject *_tmp_2 = stack_pointer[-2];
+            PyObject *value;
+            // POP_TOP
+            value = stack_pointer[-1];
             {
-                PyObject *value = _tmp_1;
                 Py_DECREF(value);
             }
+            // POP_TOP
+            value = stack_pointer[-2];
             {
-                PyObject *value = _tmp_2;
                 Py_DECREF(value);
             }
             STACK_SHRINK(2);
@@ -346,215 +347,185 @@
         }
 
         TARGET(BINARY_OP_MULTIPLY_INT) {
-            PyObject *_tmp_1 = stack_pointer[-1];
-            PyObject *_tmp_2 = stack_pointer[-2];
+            PyObject *right;
+            PyObject *left;
+            PyObject *res;
+            // _GUARD_BOTH_INT
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
             {
-                PyObject *right = _tmp_1;
-                PyObject *left = _tmp_2;
                 DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
                 DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
-                _tmp_2 = left;
-                _tmp_1 = right;
             }
+            // _BINARY_OP_MULTIPLY_INT
             {
-                PyObject *right = _tmp_1;
-                PyObject *left = _tmp_2;
-                PyObject *res;
                 STAT_INC(BINARY_OP, hit);
                 res = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
                 _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
                 _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
                 if (res == NULL) goto pop_2_error;
-                _tmp_2 = res;
             }
-            next_instr += 1;
             STACK_SHRINK(1);
-            stack_pointer[-1] = _tmp_2;
+            stack_pointer[-1] = res;
             DISPATCH();
         }
 
         TARGET(BINARY_OP_ADD_INT) {
-            PyObject *_tmp_1 = stack_pointer[-1];
-            PyObject *_tmp_2 = stack_pointer[-2];
+            PyObject *right;
+            PyObject *left;
+            PyObject *res;
+            // _GUARD_BOTH_INT
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
             {
-                PyObject *right = _tmp_1;
-                PyObject *left = _tmp_2;
                 DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
                 DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
-                _tmp_2 = left;
-                _tmp_1 = right;
             }
+            // _BINARY_OP_ADD_INT
             {
-                PyObject *right = _tmp_1;
-                PyObject *left = _tmp_2;
-                PyObject *res;
                 STAT_INC(BINARY_OP, hit);
                 res = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
                 _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
                 _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
                 if (res == NULL) goto pop_2_error;
-                _tmp_2 = res;
             }
-            next_instr += 1;
             STACK_SHRINK(1);
-            stack_pointer[-1] = _tmp_2;
+            stack_pointer[-1] = res;
             DISPATCH();
         }
 
         TARGET(BINARY_OP_SUBTRACT_INT) {
-            PyObject *_tmp_1 = stack_pointer[-1];
-            PyObject *_tmp_2 = stack_pointer[-2];
+            PyObject *right;
+            PyObject *left;
+            PyObject *res;
+            // _GUARD_BOTH_INT
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
             {
-                PyObject *right = _tmp_1;
-                PyObject *left = _tmp_2;
                 DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
                 DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
-                _tmp_2 = left;
-                _tmp_1 = right;
             }
+            // _BINARY_OP_SUBTRACT_INT
             {
-                PyObject *right = _tmp_1;
-                PyObject *left = _tmp_2;
-                PyObject *res;
                 STAT_INC(BINARY_OP, hit);
                 res = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
                 _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
                 _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
                 if (res == NULL) goto pop_2_error;
-                _tmp_2 = res;
             }
-            next_instr += 1;
             STACK_SHRINK(1);
-            stack_pointer[-1] = _tmp_2;
+            stack_pointer[-1] = res;
             DISPATCH();
         }
 
         TARGET(BINARY_OP_MULTIPLY_FLOAT) {
-            PyObject *_tmp_1 = stack_pointer[-1];
-            PyObject *_tmp_2 = stack_pointer[-2];
+            PyObject *right;
+            PyObject *left;
+            PyObject *res;
+            // _GUARD_BOTH_FLOAT
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
             {
-                PyObject *right = _tmp_1;
-                PyObject *left = _tmp_2;
                 DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
                 DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
-                _tmp_2 = left;
-                _tmp_1 = right;
             }
+            // _BINARY_OP_MULTIPLY_FLOAT
             {
-                PyObject *right = _tmp_1;
-                PyObject *left = _tmp_2;
-                PyObject *res;
                 STAT_INC(BINARY_OP, hit);
                 double dres =
                     ((PyFloatObject *)left)->ob_fval *
                     ((PyFloatObject *)right)->ob_fval;
                 DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
-                _tmp_2 = res;
             }
-            next_instr += 1;
             STACK_SHRINK(1);
-            stack_pointer[-1] = _tmp_2;
+            stack_pointer[-1] = res;
             DISPATCH();
         }
 
         TARGET(BINARY_OP_ADD_FLOAT) {
-            PyObject *_tmp_1 = stack_pointer[-1];
-            PyObject *_tmp_2 = stack_pointer[-2];
+            PyObject *right;
+            PyObject *left;
+            PyObject *res;
+            // _GUARD_BOTH_FLOAT
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
             {
-                PyObject *right = _tmp_1;
-                PyObject *left = _tmp_2;
                 DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
                 DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
-                _tmp_2 = left;
-                _tmp_1 = right;
             }
+            // _BINARY_OP_ADD_FLOAT
             {
-                PyObject *right = _tmp_1;
-                PyObject *left = _tmp_2;
-                PyObject *res;
                 STAT_INC(BINARY_OP, hit);
                 double dres =
                     ((PyFloatObject *)left)->ob_fval +
                     ((PyFloatObject *)right)->ob_fval;
                 DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
-                _tmp_2 = res;
             }
-            next_instr += 1;
             STACK_SHRINK(1);
-            stack_pointer[-1] = _tmp_2;
+            stack_pointer[-1] = res;
             DISPATCH();
         }
 
         TARGET(BINARY_OP_SUBTRACT_FLOAT) {
-            PyObject *_tmp_1 = stack_pointer[-1];
-            PyObject *_tmp_2 = stack_pointer[-2];
+            PyObject *right;
+            PyObject *left;
+            PyObject *res;
+            // _GUARD_BOTH_FLOAT
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
             {
-                PyObject *right = _tmp_1;
-                PyObject *left = _tmp_2;
                 DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
                 DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
-                _tmp_2 = left;
-                _tmp_1 = right;
             }
+            // _BINARY_OP_SUBTRACT_FLOAT
             {
-                PyObject *right = _tmp_1;
-                PyObject *left = _tmp_2;
-                PyObject *res;
                 STAT_INC(BINARY_OP, hit);
                 double dres =
                     ((PyFloatObject *)left)->ob_fval -
                     ((PyFloatObject *)right)->ob_fval;
                 DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
-                _tmp_2 = res;
             }
-            next_instr += 1;
             STACK_SHRINK(1);
-            stack_pointer[-1] = _tmp_2;
+            stack_pointer[-1] = res;
             DISPATCH();
         }
 
         TARGET(BINARY_OP_ADD_UNICODE) {
-            PyObject *_tmp_1 = stack_pointer[-1];
-            PyObject *_tmp_2 = stack_pointer[-2];
+            PyObject *right;
+            PyObject *left;
+            PyObject *res;
+            // _GUARD_BOTH_UNICODE
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
             {
-                PyObject *right = _tmp_1;
-                PyObject *left = _tmp_2;
                 DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
                 DEOPT_IF(!PyUnicode_CheckExact(right), BINARY_OP);
-                _tmp_2 = left;
-                _tmp_1 = right;
             }
+            // _BINARY_OP_ADD_UNICODE
             {
-                PyObject *right = _tmp_1;
-                PyObject *left = _tmp_2;
-                PyObject *res;
                 STAT_INC(BINARY_OP, hit);
                 res = PyUnicode_Concat(left, right);
                 _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
                 _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
                 if (res == NULL) goto pop_2_error;
-                _tmp_2 = res;
             }
-            next_instr += 1;
             STACK_SHRINK(1);
-            stack_pointer[-1] = _tmp_2;
+            stack_pointer[-1] = res;
             DISPATCH();
         }
 
         TARGET(BINARY_OP_INPLACE_ADD_UNICODE) {
-            PyObject *_tmp_1 = stack_pointer[-1];
-            PyObject *_tmp_2 = stack_pointer[-2];
+            PyObject *right;
+            PyObject *left;
+            // _GUARD_BOTH_UNICODE
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
             {
-                PyObject *right = _tmp_1;
-                PyObject *left = _tmp_2;
                 DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
                 DEOPT_IF(!PyUnicode_CheckExact(right), BINARY_OP);
-                _tmp_2 = left;
-                _tmp_1 = right;
             }
+            // _BINARY_OP_INPLACE_ADD_UNICODE
             {
-                PyObject *right = _tmp_1;
-                PyObject *left = _tmp_2;
                 _Py_CODEUNIT true_next = next_instr[INLINE_CACHE_ENTRIES_BINARY_OP];
                 assert(true_next.op.code == STORE_FAST);
                 PyObject **target_local = &GETLOCAL(true_next.op.arg);
@@ -1498,9 +1469,9 @@
         }
 
         TARGET(LOAD_LOCALS) {
-            PyObject *_tmp_1;
+            PyObject *locals;
+            // _LOAD_LOCALS
             {
-                PyObject *locals;
                 locals = LOCALS();
                 if (locals == NULL) {
                     _PyErr_SetString(tstate, PyExc_SystemError,
@@ -1508,17 +1479,18 @@
                     if (true) goto error;
                 }
                 Py_INCREF(locals);
-                _tmp_1 = locals;
             }
             STACK_GROW(1);
-            stack_pointer[-1] = _tmp_1;
+            stack_pointer[-1] = locals;
             DISPATCH();
         }
 
         TARGET(LOAD_NAME) {
-            PyObject *_tmp_1;
+            PyObject *locals;
+            PyObject *mod_or_class_dict;
+            PyObject *v;
+            // _LOAD_LOCALS
             {
-                PyObject *locals;
                 locals = LOCALS();
                 if (locals == NULL) {
                     _PyErr_SetString(tstate, PyExc_SystemError,
@@ -1526,11 +1498,10 @@
                     if (true) goto error;
                 }
                 Py_INCREF(locals);
-                _tmp_1 = locals;
             }
+            // _LOAD_FROM_DICT_OR_GLOBALS
+            mod_or_class_dict = locals;
             {
-                PyObject *mod_or_class_dict = _tmp_1;
-                PyObject *v;
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
                 if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
                     Py_DECREF(mod_or_class_dict);
@@ -1557,18 +1528,18 @@
                         }
                     }
                 }
-                _tmp_1 = v;
             }
             STACK_GROW(1);
-            stack_pointer[-1] = _tmp_1;
+            stack_pointer[-1] = v;
             DISPATCH();
         }
 
         TARGET(LOAD_FROM_DICT_OR_GLOBALS) {
-            PyObject *_tmp_1 = stack_pointer[-1];
+            PyObject *mod_or_class_dict;
+            PyObject *v;
+            // _LOAD_FROM_DICT_OR_GLOBALS
+            mod_or_class_dict = stack_pointer[-1];
             {
-                PyObject *mod_or_class_dict = _tmp_1;
-                PyObject *v;
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
                 if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
                     Py_DECREF(mod_or_class_dict);
@@ -1595,9 +1566,8 @@
                         }
                     }
                 }
-                _tmp_1 = v;
             }
-            stack_pointer[-1] = _tmp_1;
+            stack_pointer[-1] = v;
             DISPATCH();
         }
 
@@ -1661,19 +1631,17 @@
         }
 
         TARGET(LOAD_GLOBAL_MODULE) {
-            PyObject *_tmp_1;
-            PyObject *_tmp_2;
+            PyObject *null = NULL;
+            PyObject *res;
+            // _GUARD_GLOBALS_VERSION
             {
-                uint16_t version = read_u16(&next_instr[1].cache);
                 PyDictObject *dict = (PyDictObject *)GLOBALS();
                 DEOPT_IF(!PyDict_CheckExact(dict), LOAD_GLOBAL);
                 DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
                 assert(DK_IS_UNICODE(dict->ma_keys));
             }
+            // _LOAD_GLOBAL_MODULE
             {
-                PyObject *null = NULL;
-                PyObject *res;
-                uint16_t index = read_u16(&next_instr[3].cache);
                 PyDictObject *dict = (PyDictObject *)GLOBALS();
                 PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
                 res = entries[index].me_value;
@@ -1681,38 +1649,33 @@
                 Py_INCREF(res);
                 STAT_INC(LOAD_GLOBAL, hit);
                 null = NULL;
-                if (oparg & 1) { _tmp_2 = null; }
-                _tmp_1 = res;
             }
-            next_instr += 4;
             STACK_GROW(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
-            stack_pointer[-1] = _tmp_1;
-            if (oparg & 1) { stack_pointer[-2] = _tmp_2; }
+            if (oparg & 1) { stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = null; }
+            stack_pointer[-1] = res;
             DISPATCH();
         }
 
         TARGET(LOAD_GLOBAL_BUILTIN) {
-            PyObject *_tmp_1;
-            PyObject *_tmp_2;
+            PyObject *null = NULL;
+            PyObject *res;
+            // _GUARD_GLOBALS_VERSION
             {
-                uint16_t version = read_u16(&next_instr[1].cache);
                 PyDictObject *dict = (PyDictObject *)GLOBALS();
                 DEOPT_IF(!PyDict_CheckExact(dict), LOAD_GLOBAL);
                 DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
                 assert(DK_IS_UNICODE(dict->ma_keys));
             }
+            // _GUARD_BUILTINS_VERSION
             {
-                uint16_t version = read_u16(&next_instr[2].cache);
                 PyDictObject *dict = (PyDictObject *)BUILTINS();
                 DEOPT_IF(!PyDict_CheckExact(dict), LOAD_GLOBAL);
                 DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
                 assert(DK_IS_UNICODE(dict->ma_keys));
             }
+            // _LOAD_GLOBAL_BUILTINS
             {
-                PyObject *null = NULL;
-                PyObject *res;
-                uint16_t index = read_u16(&next_instr[3].cache);
                 PyDictObject *bdict = (PyDictObject *)BUILTINS();
                 PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(bdict->ma_keys);
                 res = entries[index].me_value;
@@ -1720,14 +1683,11 @@
                 Py_INCREF(res);
                 STAT_INC(LOAD_GLOBAL, hit);
                 null = NULL;
-                if (oparg & 1) { _tmp_2 = null; }
-                _tmp_1 = res;
             }
-            next_instr += 4;
             STACK_GROW(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
-            stack_pointer[-1] = _tmp_1;
-            if (oparg & 1) { stack_pointer[-2] = _tmp_2; }
+            if (oparg & 1) { stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = null; }
+            stack_pointer[-1] = res;
             DISPATCH();
         }
 
@@ -2235,29 +2195,25 @@
         }
 
         TARGET(LOAD_ATTR_INSTANCE_VALUE) {
-            PyObject *_tmp_1;
-            PyObject *_tmp_2 = stack_pointer[-1];
+            PyObject *owner;
+            PyObject *res2 = NULL;
+            PyObject *res;
+            // _GUARD_TYPE_VERSION
+            owner = stack_pointer[-1];
             {
-                PyObject *owner = _tmp_2;
-                uint32_t type_version = read_u32(&next_instr[1].cache);
                 PyTypeObject *tp = Py_TYPE(owner);
                 assert(type_version != 0);
                 DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
-                _tmp_2 = owner;
             }
+            // _CHECK_MANAGED_OBJECT_HAS_VALUES
             {
-                PyObject *owner = _tmp_2;
                 assert(Py_TYPE(owner)->tp_dictoffset < 0);
                 assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
                 PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
                 DEOPT_IF(!_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
-                _tmp_2 = owner;
             }
+            // _LOAD_ATTR_INSTANCE_VALUE
             {
-                PyObject *owner = _tmp_2;
-                PyObject *res2 = NULL;
-                PyObject *res;
-                uint16_t index = read_u16(&next_instr[3].cache);
                 PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
                 res = _PyDictOrValues_GetValues(dorv)->values[index];
                 DEOPT_IF(res == NULL, LOAD_ATTR);
@@ -2265,13 +2221,11 @@
                 Py_INCREF(res);
                 res2 = NULL;
                 Py_DECREF(owner);
-                if (oparg & 1) { _tmp_2 = res2; }
-                _tmp_1 = res;
             }
-            next_instr += 9;
+            STACK_GROW(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
-            stack_pointer[-1] = _tmp_1;
-            if (oparg & 1) { stack_pointer[-2] = _tmp_2; }
+            if (oparg & 1) { stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = res2; }
+            stack_pointer[-1] = res;
             DISPATCH();
         }
 
@@ -2813,10 +2767,12 @@
         }
 
         TARGET(POP_JUMP_IF_NONE) {
-            PyObject *_tmp_1 = stack_pointer[-1];
+            PyObject *value;
+            PyObject *b;
+            PyObject *cond;
+            // IS_NONE
+            value = stack_pointer[-1];
             {
-                PyObject *value = _tmp_1;
-                PyObject *b;
                 if (Py_IsNone(value)) {
                     b = Py_True;
                 }
@@ -2824,10 +2780,10 @@
                     b = Py_False;
                     Py_DECREF(value);
                 }
-                _tmp_1 = b;
             }
+            // POP_JUMP_IF_TRUE
+            cond = b;
             {
-                PyObject *cond = _tmp_1;
                 assert(PyBool_Check(cond));
                 JUMPBY(oparg * Py_IsTrue(cond));
             }
@@ -2836,10 +2792,12 @@
         }
 
         TARGET(POP_JUMP_IF_NOT_NONE) {
-            PyObject *_tmp_1 = stack_pointer[-1];
+            PyObject *value;
+            PyObject *b;
+            PyObject *cond;
+            // IS_NONE
+            value = stack_pointer[-1];
             {
-                PyObject *value = _tmp_1;
-                PyObject *b;
                 if (Py_IsNone(value)) {
                     b = Py_True;
                 }
@@ -2847,10 +2805,10 @@
                     b = Py_False;
                     Py_DECREF(value);
                 }
-                _tmp_1 = b;
             }
+            // POP_JUMP_IF_FALSE
+            cond = b;
             {
-                PyObject *cond = _tmp_1;
                 assert(PyBool_Check(cond));
                 JUMPBY(oparg * Py_IsFalse(cond));
             }
@@ -3051,15 +3009,15 @@
         }
 
         TARGET(FOR_ITER_LIST) {
-            PyObject *_tmp_1;
-            PyObject *_tmp_2 = stack_pointer[-1];
+            PyObject *iter;
+            PyObject *next;
+            // _ITER_CHECK_LIST
+            iter = stack_pointer[-1];
             {
-                PyObject *iter = _tmp_2;
                 DEOPT_IF(Py_TYPE(iter) != &PyListIter_Type, FOR_ITER);
-                _tmp_2 = iter;
             }
+            // _ITER_JUMP_LIST
             {
-                PyObject *iter = _tmp_2;
                 _PyListIterObject *it = (_PyListIterObject *)iter;
                 assert(Py_TYPE(iter) == &PyListIter_Type);
                 STAT_INC(FOR_ITER, hit);
@@ -3076,37 +3034,32 @@
                     JUMPBY(oparg + 1);
                     DISPATCH();
                 }
-                _tmp_2 = iter;
             }
+            // _ITER_NEXT_LIST
             {
-                PyObject *iter = _tmp_2;
-                PyObject *next;
                 _PyListIterObject *it = (_PyListIterObject *)iter;
                 assert(Py_TYPE(iter) == &PyListIter_Type);
                 PyListObject *seq = it->it_seq;
                 assert(seq);
                 assert(it->it_index < PyList_GET_SIZE(seq));
                 next = Py_NewRef(PyList_GET_ITEM(seq, it->it_index++));
-                _tmp_2 = iter;
-                _tmp_1 = next;
             }
-            next_instr += 1;
-            STACK_GROW(1);
-            stack_pointer[-1] = _tmp_1;
-            stack_pointer[-2] = _tmp_2;
+            STACK_GROW(2);
+            stack_pointer[-2] = iter;
+            stack_pointer[-1] = next;
             DISPATCH();
         }
 
         TARGET(FOR_ITER_TUPLE) {
-            PyObject *_tmp_1;
-            PyObject *_tmp_2 = stack_pointer[-1];
+            PyObject *iter;
+            PyObject *next;
+            // _ITER_CHECK_TUPLE
+            iter = stack_pointer[-1];
             {
-                PyObject *iter = _tmp_2;
                 DEOPT_IF(Py_TYPE(iter) != &PyTupleIter_Type, FOR_ITER);
-                _tmp_2 = iter;
             }
+            // _ITER_JUMP_TUPLE
             {
-                PyObject *iter = _tmp_2;
                 _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
                 assert(Py_TYPE(iter) == &PyTupleIter_Type);
                 STAT_INC(FOR_ITER, hit);
@@ -3123,38 +3076,33 @@
                     JUMPBY(oparg + 1);
                     DISPATCH();
                 }
-                _tmp_2 = iter;
             }
+            // _ITER_NEXT_TUPLE
             {
-                PyObject *iter = _tmp_2;
-                PyObject *next;
                 _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
                 assert(Py_TYPE(iter) == &PyTupleIter_Type);
                 PyTupleObject *seq = it->it_seq;
                 assert(seq);
                 assert(it->it_index < PyTuple_GET_SIZE(seq));
                 next = Py_NewRef(PyTuple_GET_ITEM(seq, it->it_index++));
-                _tmp_2 = iter;
-                _tmp_1 = next;
             }
-            next_instr += 1;
-            STACK_GROW(1);
-            stack_pointer[-1] = _tmp_1;
-            stack_pointer[-2] = _tmp_2;
+            STACK_GROW(2);
+            stack_pointer[-2] = iter;
+            stack_pointer[-1] = next;
             DISPATCH();
         }
 
         TARGET(FOR_ITER_RANGE) {
-            PyObject *_tmp_1;
-            PyObject *_tmp_2 = stack_pointer[-1];
+            PyObject *iter;
+            PyObject *next;
+            // _ITER_CHECK_RANGE
+            iter = stack_pointer[-1];
             {
-                PyObject *iter = _tmp_2;
                 _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
                 DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
-                _tmp_2 = iter;
             }
+            // _ITER_JUMP_RANGE
             {
-                PyObject *iter = _tmp_2;
                 _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
                 assert(Py_TYPE(r) == &PyRangeIter_Type);
                 STAT_INC(FOR_ITER, hit);
@@ -3166,11 +3114,9 @@
                     JUMPBY(oparg + 1);
                     DISPATCH();
                 }
-                _tmp_2 = iter;
             }
+            // _ITER_NEXT_RANGE
             {
-                PyObject *iter = _tmp_2;
-                PyObject *next;
                 _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
                 assert(Py_TYPE(r) == &PyRangeIter_Type);
                 assert(r->len > 0);
@@ -3179,13 +3125,10 @@
                 r->len--;
                 next = PyLong_FromLong(value);
                 if (next == NULL) goto error;
-                _tmp_2 = iter;
-                _tmp_1 = next;
             }
-            next_instr += 1;
-            STACK_GROW(1);
-            stack_pointer[-1] = _tmp_1;
-            stack_pointer[-2] = _tmp_2;
+            STACK_GROW(2);
+            stack_pointer[-2] = iter;
+            stack_pointer[-1] = next;
             DISPATCH();
         }
 

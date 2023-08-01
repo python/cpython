@@ -460,7 +460,7 @@ class Analyzer:
                         eff.size for eff in instr.input_effects + instr.output_effects
                     ):
                         # TODO: Eventually this will be needed, at least for macros.
-                        self.error(
+                        self.warning(
                             f"Instruction {instr.name!r} has variable-sized stack effect, "
                             "which are not supported in macro instructions",
                             instr.inst,  # TODO: Pass name+location of macro
