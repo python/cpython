@@ -5749,7 +5749,6 @@ def main(argv: list[str] | None = None) -> NoReturn:
     args = parser.parse_args(argv)
     try:
         run_clinic(parser, args)
-        sys.exit(0)
     except ClinicError as exc:
         msg = textwrap.dedent(f"""\
             Error in file {exc.filename!r} on line {exc.lineno}:
@@ -5757,6 +5756,8 @@ def main(argv: list[str] | None = None) -> NoReturn:
         """)
         sys.stderr.write(str(exc))
         sys.exit(1)
+    else:
+        sys.exit(0)
 
 
 if __name__ == "__main__":
