@@ -648,6 +648,28 @@ class ClinicParserTest(_ParserBase):
                 Path to be examined
         """)
 
+    def test_docstring_trailing_whitespace(self):
+        function = self.parse_function(
+            "module t\n"
+            "t.s\n"
+            "   a: object\n"
+            "      Param docstring with trailing whitespace  \n"
+            "Func docstring summary with trailing whitespace  \n"
+            "  \n"
+            "Func docstring body with trailing whitespace  \n"
+        )
+        self.checkDocstring(function, """
+            s($module, /, a)
+            --
+
+            Func docstring summary with trailing whitespace
+
+              a
+                Param docstring with trailing whitespace
+
+            Func docstring body with trailing whitespace
+        """)
+
     def test_explicit_parameters_in_docstring(self):
         function = self.parse_function(dedent("""
             module foo
