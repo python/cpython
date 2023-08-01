@@ -331,8 +331,7 @@ class ClinicWholeFileTest(_ParserBase):
             [clinic start generated code]*/
         """)
         msg = (
-            "Stepped on a land mine, trying to access attribute 'noaccess':\n"
-            "Don't access members of self.function inside converter_init!"
+            "accessing self.function inside converter_init is disallowed!"
         )
         self.assertIn(msg, out)
 
