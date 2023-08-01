@@ -955,9 +955,9 @@ class singledispatchmethod:
             else:
                 return _method
 
+        dispatch = self.dispatcher.dispatch
         def _method(*args, **kwargs):
-            method = self.dispatcher.dispatch(args[0].__class__)
-            return method.__get__(obj, cls)(*args, **kwargs)
+            return dispatch(args[0].__class__).__get__(obj, cls)(*args, **kwargs)
 
         _method.__isabstractmethod__ = self.__isabstractmethod__
         _method.register = self.register
