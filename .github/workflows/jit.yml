@@ -118,6 +118,7 @@ jobs:
         if: runner.os == 'Linux' && matrix.architecture == 'x86_64'
         run: |
           echo "::group::Install LLVM"
+          sudo apt-get purge --auto-remove llvm python3-lldb-14 llvm-14
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           ${{ matrix.debug == false && matrix.llvm == 14 && matrix.compiler == 'clang' && 'sudo apt install --yes libclang-rt-14-dev' || '' }}
           echo "::endgroup::"
