@@ -963,7 +963,7 @@ using ``[]``.
 
    For example::
 
-      from typing import Self
+      from typing import Self, reveal_type
 
       class Foo:
           def return_self(self) -> Self:
