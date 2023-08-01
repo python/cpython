@@ -850,7 +850,6 @@ class Compiler:
         verbose: bool = False,
         jobs: int = os.cpu_count() or 1,
         ghccc: bool = True,
-        tos_cache: int = 0,
     )-> None:
         self._stencils_built = {}
         self._verbose = verbose
@@ -859,7 +858,6 @@ class Compiler:
         self._stderr(f"Using {self._clang} ({clang_version}) and {self._readobj} ({readobj_version}).")
         self._semaphore = asyncio.BoundedSemaphore(jobs)
         self._ghccc = ghccc
-        self._tos_cache = tos_cache
 
     def _stderr(self, *args, **kwargs) -> None:
         if self._verbose:
@@ -874,24 +872,11 @@ class Compiler:
             ir = ir.replace("i32 @_jit_loop", "ghccc i32 @_jit_loop")
             ll.write_text(ir)
 
-    def _use_tos_caching(self, c: pathlib.Path) -> None:
-        sc = c.read_text()
-        for i in range(1, self._tos_cache + 1):
-            sc = sc.replace(f" = stack_pointer[-{i}];", f" = _tos{i};")
-        for i in range(self._tos_cache + 1, 5):
-            sc = "".join(
-                line for line in sc.splitlines(True) if f"_tos{i}" not in line
-            )
-        c.write_text(sc)
-
-    async def _compile(self, opname, body) -> None:
+    async def _compile(self, opname, c) -> None:
         defines = [f"-D_JIT_OPCODE={opname}"]
         with tempfile.TemporaryDirectory() as tempdir:
-            c = pathlib.Path(tempdir, f"{opname}.c").resolve()
             ll = pathlib.Path(tempdir, f"{opname}.ll").resolve()
             o = pathlib.Path(tempdir, f"{opname}.o").resolve()
-            c.write_text(body)
-            self._use_tos_caching(c)
             async with self._semaphore:
                 self._stderr(f"Compiling {opname}...")
                 process = await asyncio.create_subprocess_exec(self._clang, *CFLAGS, "-emit-llvm", "-S", *defines, "-o", ll, c)
@@ -915,11 +900,9 @@ class Compiler:
     async def build(self) -> None:
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
         opnames = sorted(set(re.findall(r"\n {8}case (\w+): \{\n", generated_cases)) - {"SET_FUNCTION_ATTRIBUTE"}) # XXX: 32-bit Windows...
-        trampoline = TOOLS_JIT_TRAMPOLINE.read_text()
-        template = TOOLS_JIT_TEMPLATE.read_text()
         await asyncio.gather(
-            self._compile("trampoline", trampoline),
-            *[self._compile(opname, template) for opname in opnames],
+            self._compile("trampoline", TOOLS_JIT_TRAMPOLINE),
+            *[self._compile(opname, TOOLS_JIT_TEMPLATE) for opname in opnames],
         )
 
     def dump(self) -> str:

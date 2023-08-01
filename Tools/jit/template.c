@@ -31,30 +31,15 @@
 extern _PyInterpreterFrame *_jit_branch(_PyExecutorObject *executor,
                                         _PyInterpreterFrame *frame,
                                         PyObject **stack_pointer,
-                                        PyThreadState *tstate
-                                        , PyObject *_tos1
-                                        , PyObject *_tos2
-                                        , PyObject *_tos3
-                                        , PyObject *_tos4
-                                        );
+                                        PyThreadState *tstate);
 extern _PyInterpreterFrame *_jit_continue(_PyExecutorObject *executor,
                                           _PyInterpreterFrame *frame,
                                           PyObject **stack_pointer,
-                                          PyThreadState *tstate
-                                          , PyObject *_tos1
-                                          , PyObject *_tos2
-                                          , PyObject *_tos3
-                                          , PyObject *_tos4
-                                          );
+                                          PyThreadState *tstate);
 extern _PyInterpreterFrame *_jit_loop(_PyExecutorObject *executor,
                                       _PyInterpreterFrame *frame,
                                       PyObject **stack_pointer,
-                                      PyThreadState *tstate
-                                      , PyObject *_tos1
-                                      , PyObject *_tos2
-                                      , PyObject *_tos3
-                                      , PyObject *_tos4
-                                      );
+                                      PyThreadState *tstate);
 // The address of an extern can't be 0:
 extern void _jit_oparg_plus_one;
 extern void _jit_operand_plus_one;
@@ -66,62 +51,32 @@ extern _Py_CODEUNIT _jit_pc_plus_one;
 _PyInterpreterFrame *
 _jit_entry(_PyExecutorObject *executor, _PyInterpreterFrame *frame,
            PyObject **stack_pointer, PyThreadState *tstate
-           , PyObject *_tos1
-           , PyObject *_tos2
-           , PyObject *_tos3
-           , PyObject *_tos4
            )
 {
-    __builtin_assume(_tos1 == stack_pointer[/* DON'T REPLACE ME */ -1]);
-    __builtin_assume(_tos2 == stack_pointer[/* DON'T REPLACE ME */ -2]);
-    __builtin_assume(_tos3 == stack_pointer[/* DON'T REPLACE ME */ -3]);
-    __builtin_assume(_tos4 == stack_pointer[/* DON'T REPLACE ME */ -4]);
     // Locals that the instruction implementations expect to exist:
     _PyUOpExecutorObject *self = (_PyUOpExecutorObject *)executor;
     uint32_t opcode = _JIT_OPCODE;
     int32_t oparg = (uintptr_t)&_jit_oparg_plus_one - 1;
     uint64_t operand = (uintptr_t)&_jit_operand_plus_one - 1;
     int pc = -1;
-    assert(self->trace[pc].opcode == opcode);
-    assert(self->trace[pc].oparg == oparg);
-    assert(self->trace[pc].operand == operand);
     switch (opcode) {
         // Now, the actual instruction definitions (only one will be used):
 #include "Python/executor_cases.c.h"
         default:
             Py_UNREACHABLE();
     }
-    _tos1 = stack_pointer[/* DON'T REPLACE ME */ -1];
-    _tos2 = stack_pointer[/* DON'T REPLACE ME */ -2];
-    _tos3 = stack_pointer[/* DON'T REPLACE ME */ -3];
-    _tos4 = stack_pointer[/* DON'T REPLACE ME */ -4];
     if (pc != -1) {
         if (opcode == JUMP_TO_TOP) {
             __attribute__((musttail))
-            return _jit_loop(executor, frame, stack_pointer, tstate
-                             , _tos1
-                             , _tos2
-                             , _tos3
-                             , _tos4
-                             );
+            return _jit_loop(executor, frame, stack_pointer, tstate);
         }
         assert(opcode == _POP_JUMP_IF_FALSE || opcode == _POP_JUMP_IF_TRUE);
         __attribute__((musttail))
-        return _jit_branch(executor, frame, stack_pointer, tstate
-                           , _tos1
-                           , _tos2
-                           , _tos3
-                           , _tos4
-                           );
+        return _jit_branch(executor, frame, stack_pointer, tstate);
     }
     // Finally, the continuation:
     __attribute__((musttail))
-    return _jit_continue(executor, frame, stack_pointer, tstate
-                         , _tos1
-                         , _tos2
-                         , _tos3
-                         , _tos4
-                         );
+    return _jit_continue(executor, frame, stack_pointer, tstate);
     // Labels that the instruction implementations expect to exist:
 unbound_local_error:
     _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
