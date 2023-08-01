@@ -120,7 +120,7 @@ built on debug mode <debug-build>`.
 opcode
 ------
 
-* Move :data:`opcode.ENABLE_SPECIALIZATION` to :data:`_opcode.ENABLE_SPECIALIZATION`.
+* Move ``opcode.ENABLE_SPECIALIZATION`` to ``_opcode.ENABLE_SPECIALIZATION``.
   This field was added in 3.12, it was never documented and is not intended for
   external usage. (Contributed by Irit Katriel in :gh:`105481`.)
 
