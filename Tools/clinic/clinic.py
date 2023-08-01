@@ -147,7 +147,7 @@ class ClinicError(Exception):
         *,
         lineno: int | None = None,
         filename: str | None = None
-    ):
+    ) -> None:
         super().__init__(message)
         self.lineno = lineno
         self.filename = filename
