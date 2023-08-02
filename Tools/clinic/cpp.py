@@ -1,7 +1,6 @@
 import dataclasses as dc
 import re
 import sys
-from collections.abc import Callable
 from typing import NoReturn
 
 
