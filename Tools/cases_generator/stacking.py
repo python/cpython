@@ -18,7 +18,7 @@ from instructions import (
     TIER_ONE,
     TIER_TWO,
 )
-from parsing import StackEffect
+from parsing import StackEffect, CacheEffect
 
 
 @dataclasses.dataclass
@@ -393,6 +393,14 @@ def write_macro_instr(mac: MacroInstruction, out: Formatter) -> None:
     for prev, follow in zip(managers[:-1], managers[1:], strict=True):
         prev.merge(follow)
 
+    cache_adjust = 0
+    for part in mac.parts:
+        match part:
+            case CacheEffect(size=size):
+                cache_adjust += size
+            case Component(instr=instr):
+                cache_adjust += instr.cache_offset
+
     out.emit("")
     with out.block(f"TARGET({mac.name})"):
         if mac.predicted:
@@ -408,16 +416,28 @@ def write_macro_instr(mac: MacroInstruction, out: Formatter) -> None:
             for copy in mgr.copies:
                 out.assign(copy.dst, copy.src)
             for peek in mgr.peeks:
-                out.assign(peek.dst, StackEffect(peek.as_variable()))  # TODO: clone type/cond/size
+                out.assign(
+                    peek.dst,
+                    StackEffect(
+                        peek.as_variable(), peek.dst.type, peek.dst.cond, peek.dst.size
+                    ),
+                )
 
             with out.block(""):
                 mgr.instr.write_body(out, -4, mgr.active_caches)
 
             if mgr is managers[-1]:
+                if cache_adjust:
+                    out.emit(f"next_instr += {cache_adjust};")
                 out.stack_adjust(mgr.final_offset.deep, mgr.final_offset.high)
                 mgr.adjust_inverse(mgr.final_offset.clone())
 
             for poke in mgr.pokes:
-                out.assign(StackEffect(poke.as_variable()), poke.src)  # TODO: clone type/cond/size
+                out.assign(
+                    StackEffect(
+                        poke.as_variable(), poke.src.type, poke.src.cond, poke.src.size
+                    ),
+                    poke.src,
+                )
 
         out.emit("DISPATCH();")

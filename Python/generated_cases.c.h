@@ -365,6 +365,7 @@
                 _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
                 if (res == NULL) goto pop_2_error;
             }
+            next_instr += 1;
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
             DISPATCH();
@@ -389,6 +390,7 @@
                 _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
                 if (res == NULL) goto pop_2_error;
             }
+            next_instr += 1;
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
             DISPATCH();
@@ -413,6 +415,7 @@
                 _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
                 if (res == NULL) goto pop_2_error;
             }
+            next_instr += 1;
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
             DISPATCH();
@@ -437,6 +440,7 @@
                     ((PyFloatObject *)right)->ob_fval;
                 DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
             }
+            next_instr += 1;
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
             DISPATCH();
@@ -461,6 +465,7 @@
                     ((PyFloatObject *)right)->ob_fval;
                 DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
             }
+            next_instr += 1;
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
             DISPATCH();
@@ -485,6 +490,7 @@
                     ((PyFloatObject *)right)->ob_fval;
                 DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
             }
+            next_instr += 1;
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
             DISPATCH();
@@ -509,6 +515,7 @@
                 _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
                 if (res == NULL) goto pop_2_error;
             }
+            next_instr += 1;
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
             DISPATCH();
@@ -1652,6 +1659,7 @@
                 STAT_INC(LOAD_GLOBAL, hit);
                 null = NULL;
             }
+            next_instr += 4;
             STACK_GROW(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             if (oparg & 1) { stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = null; }
@@ -1689,6 +1697,7 @@
                 STAT_INC(LOAD_GLOBAL, hit);
                 null = NULL;
             }
+            next_instr += 4;
             STACK_GROW(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             if (oparg & 1) { stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = null; }
@@ -2229,6 +2238,7 @@
                 res2 = NULL;
                 Py_DECREF(owner);
             }
+            next_instr += 9;
             STACK_GROW(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             if (oparg & 1) { stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = res2; }
@@ -3051,6 +3061,7 @@
                 assert(it->it_index < PyList_GET_SIZE(seq));
                 next = Py_NewRef(PyList_GET_ITEM(seq, it->it_index++));
             }
+            next_instr += 1;
             STACK_GROW(2);
             stack_pointer[-2] = iter;
             stack_pointer[-1] = next;
@@ -3093,6 +3104,7 @@
                 assert(it->it_index < PyTuple_GET_SIZE(seq));
                 next = Py_NewRef(PyTuple_GET_ITEM(seq, it->it_index++));
             }
+            next_instr += 1;
             STACK_GROW(2);
             stack_pointer[-2] = iter;
             stack_pointer[-1] = next;
@@ -3133,6 +3145,7 @@
                 next = PyLong_FromLong(value);
                 if (next == NULL) goto error;
             }
+            next_instr += 1;
             STACK_GROW(2);
             stack_pointer[-2] = iter;
             stack_pointer[-1] = next;
