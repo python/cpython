@@ -1,13 +1,12 @@
 from abc import abstractmethod
 import dataclasses
+import typing
 
 from formatting import (
     Formatter,
     UNUSED,
-    list_effect_size,
     maybe_parenthesize,
     parenthesize_cond,
-    string_effect_size,
 )
 from instructions import (
     ActiveCacheEffect,
@@ -16,7 +15,6 @@ from instructions import (
     Component,
     Tiers,
     TIER_ONE,
-    TIER_TWO,
 )
 from parsing import StackEffect, CacheEffect
 
@@ -204,7 +202,11 @@ class EffectManager:
         sources: set[str] = set()
         destinations: set[str] = set()
         follow.adjust(self.final_offset)
-        while self.pokes and follow.peeks and self.pokes[-1].effect == follow.peeks[0].effect:
+        while (
+            self.pokes
+            and follow.peeks
+            and self.pokes[-1].effect == follow.peeks[0].effect
+        ):
             src = self.pokes.pop(-1).effect
             dst = follow.peeks.pop(0).effect
             self.final_offset.deeper(src)
@@ -263,7 +265,9 @@ def write_single_instr(
         if peek.effect.name != UNUSED:
             input_vars.add(peek.effect.name)
             variable = peek.as_variable()
-            src = StackEffect(variable, peek.effect.type, peek.effect.cond, peek.effect.size)
+            src = StackEffect(
+                variable, peek.effect.type, peek.effect.cond, peek.effect.size
+            )
             out.declare(peek.effect, src)
 
     # Emit output stack effect variable declarations
@@ -274,7 +278,10 @@ def write_single_instr(
                 dst = None
             else:
                 dst = StackEffect(
-                    poke.as_variable(), poke.effect.type, poke.effect.cond, poke.effect.size
+                    poke.as_variable(),
+                    poke.effect.type,
+                    poke.effect.cond,
+                    poke.effect.size,
                 )
             out.declare(poke.effect, dst)
 
@@ -301,7 +308,10 @@ def write_single_instr(
                 for eff in final_offset.high:
                     poke.deeper(eff)
                 dst = StackEffect(
-                    poke.as_variable(), poke.effect.type, poke.effect.cond, poke.effect.size
+                    poke.as_variable(),
+                    poke.effect.type,
+                    poke.effect.cond,
+                    poke.effect.size,
                 )
                 out.assign(dst, poke.effect)
 
@@ -345,27 +355,6 @@ def get_stack_effect_info_for_macro(mac: MacroInstruction) -> tuple[str, str]:
 
 def write_macro_instr(mac: MacroInstruction, out: Formatter) -> None:
     parts = [part for part in mac.parts if isinstance(part, Component)]
-    managers = [EffectManager(part.instr, part.active_caches) for part in parts]
-
-    all_vars: dict[str, StackEffect] = {}
-    for mgr in managers:
-        for name, eff in mgr.collect_vars().items():
-            if name in all_vars:
-                # TODO: Turn this into an error -- variable conflict
-                assert all_vars[name] == eff, (
-                    mac.name,
-                    mgr.instr.name,
-                    all_vars[name],
-                    eff,
-                )
-            else:
-                all_vars[name] = eff
-
-    # Do this after collecting variables, so we collect suppressed copies
-    # TODO: Maybe suppressed copies should be kept?
-    for prev, follow in zip(managers[:-1], managers[1:], strict=True):
-        prev.merge(follow)
-
     cache_adjust = 0
     for part in mac.parts:
         match part:
@@ -373,11 +362,43 @@ def write_macro_instr(mac: MacroInstruction, out: Formatter) -> None:
                 cache_adjust += size
             case Component(instr=instr):
                 cache_adjust += instr.cache_offset
+            case _:
+                typing.assert_never(part)
+    write_components(mac.name, parts, mac.predicted, cache_adjust, out)
+
+
+def write_components(
+    name: str,
+    parts: list[Component],
+    predicted: bool,
+    cache_adjust: int,
+    out: Formatter,
+) -> None:
+    managers = [EffectManager(part.instr, part.active_caches) for part in parts]
+
+    all_vars: dict[str, StackEffect] = {}
+    for mgr in managers:
+        for varname, eff in mgr.collect_vars().items():
+            if varname in all_vars:
+                # TODO: Turn this into an error -- variable conflict
+                assert all_vars[varname] == eff, (
+                    varname,
+                    mgr.instr.name,
+                    all_vars[varname],
+                    eff,
+                )
+            else:
+                all_vars[varname] = eff
+
+    # Do this after collecting variables, so we collect suppressed copies
+    # TODO: Maybe suppressed copies should be kept?
+    for prev, follow in zip(managers[:-1], managers[1:], strict=True):
+        prev.merge(follow)
 
     out.emit("")
-    with out.block(f"TARGET({mac.name})"):
-        if mac.predicted:
-            out.emit(f"PREDICTED({mac.name});")
+    with out.block(f"TARGET({name})"):
+        if predicted:
+            out.emit(f"PREDICTED({name});")
 
         # Declare all variables
         for name, eff in all_vars.items():
@@ -392,7 +413,10 @@ def write_macro_instr(mac: MacroInstruction, out: Formatter) -> None:
                 out.assign(
                     peek.effect,
                     StackEffect(
-                        peek.as_variable(), peek.effect.type, peek.effect.cond, peek.effect.size
+                        peek.as_variable(),
+                        peek.effect.type,
+                        peek.effect.cond,
+                        peek.effect.size,
                     ),
                 )
 
@@ -409,7 +433,10 @@ def write_macro_instr(mac: MacroInstruction, out: Formatter) -> None:
             for poke in mgr.pokes:
                 out.assign(
                     StackEffect(
-                        poke.as_variable(), poke.effect.type, poke.effect.cond, poke.effect.size
+                        poke.as_variable(),
+                        poke.effect.type,
+                        poke.effect.cond,
+                        poke.effect.size,
                     ),
                     poke.effect,
                 )
