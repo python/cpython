@@ -56,11 +56,6 @@ class StackOffset:
         else:
             self.high.append(eff)
 
-    @abstractmethod
-    def itself(self) -> StackEffect:
-        """Implemented by subclass StackItem."""
-        raise NotImplementedError("itself() not implemented")
-
     def as_terms(self) -> list[tuple[str, str]]:
         num = 0
         terms: list[tuple[str, str]] = []
@@ -84,48 +79,42 @@ class StackOffset:
             terms.append(("+", str(num)))
         return terms
 
-    # TODO: Turn into helper function (not method)
-    def make_index(self, terms: list[tuple[str, str]]) -> str:
-        # Produce an index expression from the terms honoring PEP 8,
-        # surrounding binary ops with spaces but not unary minus
-        index = ""
-        for sign, term in terms:
-            if index:
-                index += f" {sign} {term}"
-            elif sign == "+":
-                index = term
-            else:
-                index = sign + term
-        return index or "0"
-
     def as_index(self) -> str:
         terms = self.as_terms()
-        return self.make_index(terms)
+        return make_index(terms)
 
-    def as_variable(self) -> str:
-        """Return e.g. stack_pointer[-1]."""
-        temp = self.clone()
-        me = self.itself()
-        temp.deeper(me)
-        terms = temp.as_terms()
-        if me.size:
-            terms.insert(0, ("+", "stack_pointer"))
-        index = self.make_index(terms)
-        if me.size:
-            return index
+
+def make_index(terms: list[tuple[str, str]]) -> str:
+    # Produce an index expression from the terms honoring PEP 8,
+    # surrounding binary ops with spaces but not unary minus
+    index = ""
+    for sign, term in terms:
+        if index:
+            index += f" {sign} {term}"
+        elif sign == "+":
+            index = term
         else:
-            return f"stack_pointer[{index}]"
+            index = sign + term
+    return index or "0"
 
 
 @dataclasses.dataclass
-class StackItem(StackOffset):
+class StackItem:
+    offset: StackOffset = dataclasses.field(default_factory=StackOffset)
     effect: StackEffect = dataclasses.field(kw_only=True)
 
-    def clone(self):
-        return StackItem(list(self.deep), list(self.high), effect=self.effect)
-
-    def itself(self) -> StackEffect:
-        return self.effect
+    def as_variable(self) -> str:
+        """Return e.g. stack_pointer[-1]."""
+        temp = self.offset.clone()
+        temp.deeper(self.effect)
+        terms = temp.as_terms()
+        if self.effect.size:
+            terms.insert(0, ("+", "stack_pointer"))
+        index = make_index(terms)
+        if self.effect.size:
+            return index
+        else:
+            return f"stack_pointer[{index}]"
 
 
 @dataclasses.dataclass
@@ -157,32 +146,32 @@ class EffectManager:
             self.min_offset.deeper(eff)
             new_peek = StackItem(effect=eff)
             for peek in self.peeks:
-                new_peek.deeper(peek.effect)
+                new_peek.offset.deeper(peek.effect)
             self.peeks.append(new_peek)
         self.final_offset = self.min_offset.clone()
         for eff in instr.output_effects:
             self.final_offset.higher(eff)
             new_poke = StackItem(effect=eff)
             for peek in self.peeks:
-                new_poke.deeper(peek.effect)
+                new_poke.offset.deeper(peek.effect)
             for poke in self.pokes:
-                new_poke.higher(poke.effect)
-            new_poke.higher(eff)  # Account for the new poke itself (!)
+                new_poke.offset.higher(poke.effect)
+            new_poke.offset.higher(eff)  # Account for the new poke itself (!)
             self.pokes.append(new_poke)
 
     def adjust_deeper(self, eff: StackEffect) -> None:
         for peek in self.peeks:
-            peek.deeper(eff)
+            peek.offset.deeper(eff)
         for poke in self.pokes:
-            poke.deeper(eff)
+            poke.offset.deeper(eff)
         self.min_offset.deeper(eff)
         self.final_offset.deeper(eff)
 
     def adjust_higher(self, eff: StackEffect) -> None:
         for peek in self.peeks:
-            peek.higher(eff)
+            peek.offset.higher(eff)
         for poke in self.pokes:
-            poke.higher(eff)
+            poke.offset.higher(eff)
         self.min_offset.higher(eff)
         self.final_offset.higher(eff)
 
