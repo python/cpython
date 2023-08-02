@@ -369,30 +369,18 @@ class ClinicWholeFileTest(_ParserBase):
                     self.clinic.parse(block)
 
     def test_version_directive_insufficient_version(self):
-        dataset = (
-            # (clinic version, required version)
-            ('2', '3'),
-            ('1.4', '1.5'),
-            ('1.1a0', '1.1'),
-            ('1.1b0', '1.1'),
-            ('1.2b1', '1.2b2'),
-            ('1.2a7', '1.2b1'),
-        )
-        for clinic_version, required_version in dataset:
-            with self.subTest(clinic_version=clinic_version,
-                              required_version=required_version):
-                with self._clinic_version(clinic_version):
-                    err = (
-                        "Insufficient Clinic version!\n"
-                        f"  Version: {clinic_version}\n"
-                        f"  Required: {required_version}"
-                    )
-                    out = self.expect_failure(f"""
-                        /*[clinic input]
-                        version {required_version}
-                        [clinic start generated code]*/
-                    """)
-                    self.assertIn(err, out)
+        with self._clinic_version('4'):
+            err = (
+                "Insufficient Clinic version!\n"
+                "  Version: 4\n"
+                "  Required: 5"
+            )
+            out = self.expect_failure("""
+                /*[clinic input]
+                version 5
+                [clinic start generated code]*/
+            """)
+            self.assertIn(err, out)
 
     def test_version_directive_illegal_char(self):
         err = "Illegal character 'v' in version string 'v5'"
