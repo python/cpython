@@ -292,7 +292,7 @@ def write_single_instr(
     instr: Instruction, out: Formatter, tier: Tiers = TIER_ONE
 ) -> None:
     write_components(
-        [Component(instr, [], [], instr.active_caches)],
+        [Component(instr, instr.active_caches)],
         out,
         tier,
     )

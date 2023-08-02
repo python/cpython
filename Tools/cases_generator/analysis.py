@@ -13,7 +13,6 @@ from instructions import (
     MacroParts,
     OverriddenInstructionPlaceHolder,
     PseudoInstruction,
-    StackEffectMapping,
 )
 import parsing
 from parsing import StackEffect
@@ -361,8 +360,6 @@ class Analyzer:
 
     def analyze_macro(self, macro: parsing.Macro) -> MacroInstruction:
         components = self.check_macro_components(macro)
-        stack, initial_sp = self.stack_analysis(components)
-        sp = initial_sp
         parts: MacroParts = []
         flags = InstructionFlags.newEmpty()
         offset = 0
@@ -372,20 +369,15 @@ class Analyzer:
                     parts.append(ceffect)
                     offset += ceffect.size
                 case Instruction() as instr:
-                    part, sp, offset = self.analyze_instruction(
-                        instr, stack, sp, offset
-                    )
+                    part, offset = self.analyze_instruction(instr, offset)
                     parts.append(part)
                     flags.add(instr.instr_flags)
                 case _:
                     typing.assert_never(component)
-        final_sp = sp
         format = "IB"
         if offset:
             format += "C" + "0" * (offset - 1)
-        return MacroInstruction(
-            macro.name, stack, initial_sp, final_sp, format, flags, macro, parts, offset
-        )
+        return MacroInstruction(macro.name, format, flags, macro, parts, offset)
 
     def analyze_pseudo(self, pseudo: parsing.Pseudo) -> PseudoInstruction:
         targets = [self.instrs[target] for target in pseudo.targets]
@@ -397,24 +389,15 @@ class Analyzer:
         return PseudoInstruction(pseudo.name, targets, fmts[0], targets[0].instr_flags)
 
     def analyze_instruction(
-        self, instr: Instruction, stack: list[StackEffect], sp: int, offset: int
-    ) -> tuple[Component, int, int]:
-        input_mapping: StackEffectMapping = []
-        for ieffect in reversed(instr.input_effects):
-            sp -= 1
-            input_mapping.append((stack[sp], ieffect))
-        output_mapping: StackEffectMapping = []
-        for oeffect in instr.output_effects:
-            output_mapping.append((stack[sp], oeffect))
-            sp += 1
+        self, instr: Instruction, offset: int
+    ) -> tuple[Component, int]:
         active_effects: list[ActiveCacheEffect] = []
         for ceffect in instr.cache_effects:
             if ceffect.name != UNUSED:
                 active_effects.append(ActiveCacheEffect(ceffect, offset))
             offset += ceffect.size
         return (
-            Component(instr, input_mapping, output_mapping, active_effects),
-            sp,
+            Component(instr, active_effects),
             offset,
         )
 

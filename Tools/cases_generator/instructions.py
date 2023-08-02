@@ -246,29 +246,12 @@ class Instruction:
 
 
 InstructionOrCacheEffect = Instruction | parsing.CacheEffect
-StackEffectMapping = list[tuple[StackEffect, StackEffect]]
 
 
 @dataclasses.dataclass
 class Component:
     instr: Instruction
-    input_mapping: StackEffectMapping
-    output_mapping: StackEffectMapping
     active_caches: list[ActiveCacheEffect]
-
-    def write_body(self, out: Formatter) -> None:
-        with out.block(""):
-            input_names = {ieffect.name for _, ieffect in self.input_mapping}
-            for var, ieffect in self.input_mapping:
-                out.declare(ieffect, var)
-            for _, oeffect in self.output_mapping:
-                if oeffect.name not in input_names:
-                    out.declare(oeffect, None)
-
-            self.instr.write_body(out, -4, self.active_caches)
-
-            for var, oeffect in self.output_mapping:
-                out.assign(var, oeffect)
 
 
 MacroParts = list[Component | parsing.CacheEffect]
@@ -279,9 +262,6 @@ class MacroInstruction:
     """A macro instruction."""
 
     name: str
-    stack: list[StackEffect]
-    initial_sp: int
-    final_sp: int
     instr_fmt: str
     instr_flags: InstructionFlags
     macro: parsing.Macro

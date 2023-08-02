@@ -343,7 +343,7 @@ class Generator(Analyzer):
                             # Since an 'op' is not a bytecode, it has no expansion; but 'inst' is
                             if instr.kind == "inst" and instr.is_viable_uop():
                                 # Construct a dummy Component -- input/output mappings are not used
-                                part = Component(instr, [], [], instr.active_caches)
+                                part = Component(instr, instr.active_caches)
                                 self.write_macro_expansions(instr.name, [part])
                             elif instr.kind == "inst" and variable_used(
                                 instr.inst, "oparg1"
