@@ -28,7 +28,6 @@ import shlex
 import string
 import sys
 import textwrap
-import traceback
 
 from collections.abc import (
     Callable,
