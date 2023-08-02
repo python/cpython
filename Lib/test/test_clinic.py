@@ -8,6 +8,7 @@ from test.support.os_helper import TESTFN, unlink
 from textwrap import dedent
 from unittest import TestCase
 import collections
+import contextlib
 import inspect
 import os.path
 import re
@@ -310,6 +311,70 @@ class ClinicWholeFileTest(TestCase):
             "accessing self.function inside converter_init is disallowed!"
         )
         self.expect_failure(raw, err)
+
+    @staticmethod
+    @contextlib.contextmanager
+    def _clinic_version(new_version):
+        """Helper for test_version_*() tests"""
+        _saved = clinic.version
+        clinic.version = new_version
+        try:
+            yield
+        finally:
+            clinic.version = _saved
+
+    def test_version_directive(self):
+        dataset = (
+            # (clinic version, required version)
+            ('3', '2'),          # required version < clinic version
+            ('3.1', '3.0'),      # required version < clinic version
+            ('1.2b0', '1.2a7'),  # required version < clinic version
+            ('5', '5'),          # required version == clinic version
+            ('6.1', '6.1'),      # required version == clinic version
+            ('1.2b3', '1.2b3'),  # required version == clinic version
+        )
+        for clinic_version, required_version in dataset:
+            with self.subTest(clinic_version=clinic_version,
+                              required_version=required_version):
+                with self._clinic_version(clinic_version):
+                    block = dedent(f"""
+                        /*[clinic input]
+                        version {required_version}
+                        [clinic start generated code]*/
+                    """)
+                    self.clinic.parse(block)
+
+    def test_version_directive_insufficient_version(self):
+        with self._clinic_version('4'):
+            err = (
+                "Insufficient Clinic version!\n"
+                "  Version: 4\n"
+                "  Required: 5"
+            )
+            block = """
+                /*[clinic input]
+                version 5
+                [clinic start generated code]*/
+            """
+            self.expect_failure(block, err)
+
+    def test_version_directive_illegal_char(self):
+        err = "Illegal character 'v' in version string 'v5'"
+        block = """
+            /*[clinic input]
+            version v5
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err)
+
+    def test_version_directive_unsupported_string(self):
+        err = "Unsupported version string: '.-'"
+        block = """
+            /*[clinic input]
+            version .-
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err)
 
 
 class ClinicGroupPermuterTest(TestCase):
@@ -1369,6 +1434,32 @@ class ClinicParserTest(TestCase):
             self.assertEqual(exc.filename, 'clown.txt')
             self.assertEqual(exc.lineno, 69)
 
+    def test_non_ascii_character_in_docstring(self):
+        block = """
+            module test
+            test.fn
+                a: int
+                    á param docstring
+            docstring fü bár baß
+        """
+        with support.captured_stdout() as stdout:
+            self.parse(block)
+        # The line numbers are off; this is a known limitation.
+        expected = dedent("""\
+            Warning on line 0: Non-ascii characters are not allowed in docstrings: 'á'
+            Warning on line 0: Non-ascii characters are not allowed in docstrings: 'ü', 'á', 'ß'
+        """)
+        self.assertEqual(stdout.getvalue(), expected)
+
+    def test_illegal_c_identifier(self):
+        err = "Illegal C identifier: 17a"
+        block = """
+            module test
+            test.fn
+                a as 17a: int
+        """
+        self.expect_failure(block, err)
+
 
 class ClinicExternalTest(TestCase):
     maxDiff = None
@@ -1447,7 +1538,7 @@ class ClinicExternalTest(TestCase):
             Computed: 2ed19
             Suggested fix: remove all generated code including the end marker,
             or use the '-f' option.
-        """).strip()
+        """)
         with os_helper.temp_dir() as tmp_dir:
             fn = os.path.join(tmp_dir, "test.c")
             with open(fn, "w", encoding="utf-8") as f:

@@ -358,7 +358,7 @@ def version_splitter(s: str) -> tuple[int, ...]:
     accumulator: list[str] = []
     def flush() -> None:
         if not accumulator:
-            raise ValueError('Unsupported version string: ' + repr(s))
+            fail(f'Unsupported version string: {s!r}')
         version.append(int(''.join(accumulator)))
         accumulator.clear()
 
@@ -371,7 +371,7 @@ def version_splitter(s: str) -> tuple[int, ...]:
             flush()
             version.append('abc'.index(c) - 3)
         else:
-            raise ValueError('Illegal character ' + repr(c) + ' in version string ' + repr(s))
+            fail(f'Illegal character {c!r} in version string {s!r}')
     flush()
     return tuple(version)
 
@@ -796,9 +796,6 @@ class CLanguage(Language):
             self,
             f: Function
     ) -> str:
-        if re.search(r'[^\x00-\x7F]', f.docstring):
-            warn("Non-ascii character appear in docstring.")
-
         text, add, output = _text_accumulator()
         # turn docstring into a properly quoted C string
         for line in f.docstring.split('\n'):
@@ -2249,11 +2246,7 @@ impl_definition block
                     assert dsl_name in parsers, f"No parser to handle {dsl_name!r} block."
                     self.parsers[dsl_name] = parsers[dsl_name](self)
                 parser = self.parsers[dsl_name]
-                try:
-                    parser.parse(block)
-                except Exception:
-                    fail('Exception raised during parsing:\n' +
-                         traceback.format_exc().rstrip())
+                parser.parse(block)
             printer.print_block(block)
 
         # these are destinations not buffers
@@ -5277,6 +5270,11 @@ class DSLParser:
 
     def docstring_append(self, obj: Function | Parameter, line: str) -> None:
         """Add a rstripped line to the current docstring."""
+        matches = re.finditer(r'[^\x00-\x7F]', line)
+        if offending := ", ".join([repr(m[0]) for m in matches]):
+            warn("Non-ascii characters are not allowed in docstrings:",
+                 offending)
+
         docstring = obj.docstring
         if docstring:
             docstring += "\n"
@@ -5733,11 +5731,11 @@ def main(argv: list[str] | None = None) -> NoReturn:
     try:
         run_clinic(parser, args)
     except ClinicError as exc:
-        msg = textwrap.dedent(f"""\
-            Error in file {exc.filename!r} on line {exc.lineno}:
-            {exc}
-        """)
-        sys.stderr.write(str(exc))
+        msg = (
+            f"Error in file {exc.filename!r} on line {exc.lineno}:\n"
+            f"{exc}\n"
+        )
+        sys.stderr.write(msg)
         sys.exit(1)
     else:
         sys.exit(0)
