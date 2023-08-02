@@ -1427,6 +1427,25 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
         actual = stdout.getvalue()
         self.assertEqual(actual, expected)
 
+    def test_non_ascii_character_in_docstring(self):
+        block = """
+            module test
+            test.fn
+                a: int
+                    á param docstring
+            docstring fü bár baß
+        """
+        with support.captured_stdout() as stdout:
+            self.parse(block)
+        # The line numbers are off; this is a known limitation.
+        expected = dedent("""\
+            Warning on line 0:
+            Non-ascii characters are not allowed in docstrings: 'á'
+            Warning on line 0:
+            Non-ascii characters are not allowed in docstrings: 'ü', 'á', 'ß'
+        """)
+        self.assertEqual(stdout.getvalue(), expected)
+
 
 class ClinicExternalTest(TestCase):
     maxDiff = None
