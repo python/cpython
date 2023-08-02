@@ -376,6 +376,70 @@ class ClinicWholeFileTest(TestCase):
         """
         self.expect_failure(block, err)
 
+    @staticmethod
+    @contextlib.contextmanager
+    def _clinic_version(new_version):
+        """Helper for test_version_*() tests"""
+        _saved = clinic.version
+        clinic.version = new_version
+        try:
+            yield
+        finally:
+            clinic.version = _saved
+
+    def test_version_directive(self):
+        dataset = (
+            # (clinic version, required version)
+            ('3', '2'),          # required version < clinic version
+            ('3.1', '3.0'),      # required version < clinic version
+            ('1.2b0', '1.2a7'),  # required version < clinic version
+            ('5', '5'),          # required version == clinic version
+            ('6.1', '6.1'),      # required version == clinic version
+            ('1.2b3', '1.2b3'),  # required version == clinic version
+        )
+        for clinic_version, required_version in dataset:
+            with self.subTest(clinic_version=clinic_version,
+                              required_version=required_version):
+                with self._clinic_version(clinic_version):
+                    block = dedent(f"""
+                        /*[clinic input]
+                        version {required_version}
+                        [clinic start generated code]*/
+                    """)
+                    self.clinic.parse(block)
+
+    def test_version_directive_insufficient_version(self):
+        with self._clinic_version('4'):
+            err = (
+                "Insufficient Clinic version!\n"
+                "  Version: 4\n"
+                "  Required: 5"
+            )
+            out = self.expect_failure("""
+                /*[clinic input]
+                version 5
+                [clinic start generated code]*/
+            """)
+            self.assertIn(err, out)
+
+    def test_version_directive_illegal_char(self):
+        err = "Illegal character 'v' in version string 'v5'"
+        out = self.expect_failure("""
+            /*[clinic input]
+            version v5
+            [clinic start generated code]*/
+        """)
+        self.assertIn(err, out)
+
+    def test_version_directive_unsupported_string(self):
+        err = "Unsupported version string: '.-'"
+        out = self.expect_failure("""
+            /*[clinic input]
+            version .-
+            [clinic start generated code]*/
+        """)
+        self.assertIn(err, out)
+
 
 class ClinicGroupPermuterTest(TestCase):
     def _test(self, l, m, r, output):
@@ -1459,6 +1523,34 @@ class ClinicParserTest(TestCase):
                 a as 17a: int
         """
         self.expect_failure(block, err)
+
+    def test_non_ascii_character_in_docstring(self):
+        block = """
+            module test
+            test.fn
+                a: int
+                    á param docstring
+            docstring fü bár baß
+        """
+        with support.captured_stdout() as stdout:
+            self.parse(block)
+        # The line numbers are off; this is a known limitation.
+        expected = dedent("""\
+            Warning on line 0:
+            Non-ascii characters are not allowed in docstrings: 'á'
+            Warning on line 0:
+            Non-ascii characters are not allowed in docstrings: 'ü', 'á', 'ß'
+        """)
+        self.assertEqual(stdout.getvalue(), expected)
+
+    def test_illegal_c_identifier(self):
+        err = "Illegal C identifier: 17a"
+        out = self.parse_function_should_fail("""
+            module test
+            test.fn
+                a as 17a: int
+        """)
+        self.assertIn(err, out)
 
 
 class ClinicExternalTest(TestCase):
