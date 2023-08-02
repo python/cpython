@@ -13,7 +13,7 @@
 #include "pycore_optimizer.h"
 
 int
-uop_analyze_and_optimize(
+_Py_uop_analyze_and_optimize(
     _PyUOpInstruction *trace,
     int trace_len
 )
