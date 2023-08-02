@@ -326,7 +326,7 @@ class AbstractInstruction(Instruction):
                         f'{self.cache_offset}, "incorrect cache size");'
                     )
         # NULL out inputs, unless it's the same as in the output,
-        # Write input stack effect variable declarations and initializations
+        # Write input stack effect variable declarations and initializations.
         ieffects = list(reversed(self.input_effects))
         for i, ieffect in enumerate(ieffects):
             if ieffect.name in self.unmoved_names:
