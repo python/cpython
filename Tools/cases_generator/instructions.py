@@ -6,9 +6,7 @@ from flags import InstructionFlags, variable_used, variable_used_unspecialized
 from formatting import (
     Formatter,
     UNUSED,
-    string_effect_size,
     list_effect_size,
-    maybe_parenthesize,
 )
 import lexer as lx
 import parsing

@@ -2,8 +2,6 @@ import re
 import sys
 import typing
 
-import stacking  # Do this before import from instructions (import cycle)
-
 from flags import InstructionFlags, variable_used
 from formatting import prettify_filename, UNUSED
 from instructions import (
@@ -339,8 +337,6 @@ class Analyzer:
                     if src.name == dst.name or dst.name is UNUSED:
                         continue
                     copies.append((src, dst))
-                # if copies:
-                #     print("--", mac.name, "--", prevop.name, "--", part.instr.name, "--", copies)
                 reads = set(copy[0].name for copy in copies)
                 writes = set(copy[1].name for copy in copies)
                 if reads & writes:
