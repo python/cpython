@@ -8,7 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-extern int uop_analyze_and_optimize(struct _PyUOpInstruction *trace, int trace_len);
+#include "pycore_uops.h"
+
+int uop_analyze_and_optimize(_PyUOpInstruction *trace, int trace_len);
 
 #ifdef __cplusplus
 }
