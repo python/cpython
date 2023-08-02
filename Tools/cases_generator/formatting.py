@@ -97,10 +97,8 @@ class Formatter:
         if src:
             cast = self.cast(dst, src)
             initexpr = f"{cast}{src.name}"
-            # TODO: Enable these lines
-            # (cannot yet because they currently mess up macros)
-            # if src.cond and src.cond != "1":
-            #     initexpr = f"{parenthesize_cond(src.cond)} ? {initexpr} : NULL"
+            if src.cond and src.cond != "1":
+                initexpr = f"{parenthesize_cond(src.cond)} ? {initexpr} : NULL"
             init = f" = {initexpr}"
         elif dst.cond and dst.cond != "1":
             init = " = NULL"

@@ -285,11 +285,6 @@ def write_single_instr(
         if peek.dst.name != UNUSED:
             input_vars.add(peek.dst.name)
             variable = peek.as_variable()
-            # TODO: Move this to Formatter.declare() (see TODO there)
-            if peek.dst.cond and peek.dst.cond != "1":
-                variable = f"{parenthesize_cond(peek.dst.cond)} ? {variable} : NULL"
-            elif peek.dst.cond == "0":
-                variable = "NULL"
             src = StackEffect(variable, peek.dst.type, peek.dst.cond, peek.dst.size)
             out.declare(peek.dst, src)
 
