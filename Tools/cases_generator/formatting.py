@@ -108,11 +108,11 @@ class Formatter:
         self.emit(f"{typ}{sepa}{dst.name}{init};")
 
     def assign(self, dst: StackEffect, src: StackEffect):
-        if src.name == UNUSED:
+        if src.name == UNUSED or dst.name == UNUSED:
             return
-        if src.size:
-            # Don't write sized arrays -- it's up to the user code.
-            return
+        # if src.size:
+        #     # Don't write sized arrays -- it's up to the user code.
+        #     return
         cast = self.cast(dst, src)
         if re.match(r"^REG\(oparg(\d+)\)$", dst.name):
             self.emit(f"Py_XSETREF({dst.name}, {cast}{src.name});")

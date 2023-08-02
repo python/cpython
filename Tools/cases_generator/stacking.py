@@ -251,71 +251,6 @@ class EffectManager:
         return vars
 
 
-# TODO: Rewrite this using write_macro_instr()
-def write_single_instr(
-    instr: Instruction, out: Formatter, tier: Tiers = TIER_ONE
-) -> None:
-    """Replace (most of) Instruction.write()."""
-    mgr = EffectManager(instr, instr.active_caches)
-    assert not mgr.copies
-
-    # Emit input stack effect variable declarations and initializations
-    input_vars: set[str] = set()
-    for peek in mgr.peeks:
-        if peek.effect.name != UNUSED:
-            input_vars.add(peek.effect.name)
-            variable = peek.as_variable()
-            src = StackEffect(
-                variable, peek.effect.type, peek.effect.cond, peek.effect.size
-            )
-            out.declare(peek.effect, src)
-
-    # Emit output stack effect variable declarations
-    # (with special cases for array output effects)
-    for poke in mgr.pokes:
-        if poke.effect.name != UNUSED and poke.effect.name not in input_vars:
-            if not poke.effect.size:
-                dst = None
-            else:
-                dst = StackEffect(
-                    poke.as_variable(),
-                    poke.effect.type,
-                    poke.effect.cond,
-                    poke.effect.size,
-                )
-            out.declare(poke.effect, dst)
-
-    # Emit the instruction itself
-    instr.write_body(out, 0, mgr.active_caches, tier=tier)
-
-    # Skip the rest if the block always exits
-    if instr.always_exits:
-        return
-
-    # Emit stack adjustments
-    final_offset = mgr.final_offset
-    out.stack_adjust(final_offset.deep, final_offset.high)
-
-    # Emit output stack effects, except for array output effects
-    # (Reversed to match the old code, for easier comparison)
-    # TODO: Remove reversed() call
-    for poke in reversed(mgr.pokes):
-        if poke.effect.name != UNUSED and poke.effect.name not in instr.unmoved_names:
-            if not poke.effect.size:
-                poke = poke.clone()
-                for eff in final_offset.deep:
-                    poke.higher(eff)
-                for eff in final_offset.high:
-                    poke.deeper(eff)
-                dst = StackEffect(
-                    poke.as_variable(),
-                    poke.effect.type,
-                    poke.effect.cond,
-                    poke.effect.size,
-                )
-                out.assign(dst, poke.effect)
-
-
 def less_than(a: StackOffset, b: StackOffset) -> bool:
     # TODO: Handle more cases
     if a.high != b.high:
@@ -353,6 +288,16 @@ def get_stack_effect_info_for_macro(mac: MacroInstruction) -> tuple[str, str]:
     return popped.as_index(), net.as_index()
 
 
+def write_single_instr(
+    instr: Instruction, out: Formatter, tier: Tiers = TIER_ONE
+) -> None:
+    write_components(
+        [Component(instr, [], [], instr.active_caches)],
+        out,
+        tier,
+    )
+
+
 def write_macro_instr(mac: MacroInstruction, out: Formatter) -> None:
     parts = [part for part in mac.parts if isinstance(part, Component)]
     cache_adjust = 0
@@ -364,73 +309,89 @@ def write_macro_instr(mac: MacroInstruction, out: Formatter) -> None:
                 cache_adjust += instr.cache_offset
             case _:
                 typing.assert_never(part)
-    write_components(mac.name, parts, mac.predicted, cache_adjust, out)
+
+    out.emit("")
+    with out.block(f"TARGET({mac.name})"):
+        if mac.predicted:
+            out.emit(f"PREDICTED({mac.name});")
+        write_components(parts, out, TIER_ONE)
+        if cache_adjust:
+            out.emit(f"next_instr += {cache_adjust};")
+        out.emit("DISPATCH();")
 
 
 def write_components(
-    name: str,
     parts: list[Component],
-    predicted: bool,
-    cache_adjust: int,
     out: Formatter,
+    tier: Tiers,
 ) -> None:
     managers = [EffectManager(part.instr, part.active_caches) for part in parts]
 
     all_vars: dict[str, StackEffect] = {}
     for mgr in managers:
-        for varname, eff in mgr.collect_vars().items():
-            if varname in all_vars:
+        for name, eff in mgr.collect_vars().items():
+            if name in all_vars:
                 # TODO: Turn this into an error -- variable conflict
-                assert all_vars[varname] == eff, (
-                    varname,
+                assert all_vars[name] == eff, (
+                    name,
                     mgr.instr.name,
-                    all_vars[varname],
+                    all_vars[name],
                     eff,
                 )
             else:
-                all_vars[varname] = eff
+                all_vars[name] = eff
 
     # Do this after collecting variables, so we collect suppressed copies
     # TODO: Maybe suppressed copies should be kept?
     for prev, follow in zip(managers[:-1], managers[1:], strict=True):
         prev.merge(follow)
 
-    out.emit("")
-    with out.block(f"TARGET({name})"):
-        if predicted:
-            out.emit(f"PREDICTED({name});")
+    # Declare all variables
+    for name, eff in all_vars.items():
+        out.declare(eff, None)
 
-        # Declare all variables
-        for name, eff in all_vars.items():
-            out.declare(eff, None)
-
-        for mgr in managers:
+    for mgr in managers:
+        if len(parts) > 1:
             out.emit(f"// {mgr.instr.name}")
 
-            for copy in mgr.copies:
-                out.assign(copy.dst, copy.src)
-            for peek in mgr.peeks:
+        for copy in mgr.copies:
+            out.assign(copy.dst, copy.src)
+        for peek in mgr.peeks:
+            out.assign(
+                peek.effect,
+                StackEffect(
+                    peek.as_variable(),
+                    peek.effect.type,
+                    peek.effect.cond,
+                    peek.effect.size,
+                ),
+            )
+        # Initialize array outputs
+        for poke in mgr.pokes:
+            if poke.effect.size:
                 out.assign(
-                    peek.effect,
+                    poke.effect,
                     StackEffect(
-                        peek.as_variable(),
-                        peek.effect.type,
-                        peek.effect.cond,
-                        peek.effect.size,
+                        poke.as_variable(),
+                        poke.effect.type,
+                        poke.effect.cond,
+                        poke.effect.size,
                     ),
                 )
 
+        if len(parts) == 1:
+            mgr.instr.write_body(out, 0, mgr.active_caches, tier)
+        else:
             with out.block(""):
-                mgr.instr.write_body(out, -4, mgr.active_caches)
+                mgr.instr.write_body(out, -4, mgr.active_caches, tier)
 
-            if mgr is managers[-1]:
-                if cache_adjust:
-                    out.emit(f"next_instr += {cache_adjust};")
-                out.stack_adjust(mgr.final_offset.deep, mgr.final_offset.high)
-                # Use clone() since adjust_inverse() mutates final_offset
-                mgr.adjust_inverse(mgr.final_offset.clone())
+        if mgr is managers[-1]:
+            out.stack_adjust(mgr.final_offset.deep, mgr.final_offset.high)
+            # Use clone() since adjust_inverse() mutates final_offset
+            mgr.adjust_inverse(mgr.final_offset.clone())
 
-            for poke in mgr.pokes:
+        for poke in mgr.pokes:
+            if not poke.effect.size:
                 out.assign(
                     StackEffect(
                         poke.as_variable(),
@@ -440,5 +401,3 @@ def write_components(
                     ),
                     poke.effect,
                 )
-
-        out.emit("DISPATCH();")
