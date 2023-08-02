@@ -21,9 +21,10 @@ with test_tools.imports_under_tool('clinic'):
 
 
 def _expect_failure(tc, parser, code, errmsg, *, filename=None, lineno=None):
-    _code = dedent(code).strip()
+    code = dedent(code).strip()
+    errmsg = re.escape(errmsg)
     with tc.assertRaisesRegex(clinic.ClinicError, errmsg) as cm:
-        parser(_code)
+        parser(code)
     if filename is not None:
         tc.assertEqual(cm.exception.filename, filename)
     if lineno is not None:
@@ -137,7 +138,7 @@ class ClinicWholeFileTest(TestCase):
             [clinic start generated code]*/
             /*[clinic end generated code: foo]*/
         """
-        err = re.escape(
+        err = (
             "Mangled Argument Clinic marker line: "
             "'/*[clinic end generated code: foo]*/'"
         )
@@ -169,7 +170,7 @@ class ClinicWholeFileTest(TestCase):
             /*[clinic input]
              [clinic start generated code]*/
         """
-        err = re.escape(
+        err = (
             "Whitespace is not allowed before the stop line: "
             "' [clinic start generated code]*/'"
         )
@@ -577,7 +578,7 @@ class ClinicParserTest(TestCase):
         self.assertEqual(sys.maxsize, p.default)
         self.assertEqual("MAXSIZE", p.converter.c_default)
 
-        err = re.escape(
+        err = (
             "When you specify a named constant ('sys.maxsize') as your default value,\n"
             "you MUST specify a valid c_default."
         )
@@ -601,7 +602,7 @@ class ClinicParserTest(TestCase):
         self.assertIsInstance(conv, clinic.str_converter)
 
     def test_param_default_parameters_out_of_order(self):
-        err = re.escape(
+        err = (
             "Can't have a parameter without a default ('something_else')\n"
             "after a parameter with a default!"
         )
@@ -877,7 +878,7 @@ class ClinicParserTest(TestCase):
         """)
 
     def test_disallowed_grouping__two_top_groups_on_left(self):
-        err = re.escape(
+        err = (
             'Function two_top_groups_on_left has an unsupported group '
             'configuration. (Unexpected state 2.b)'
         )
@@ -906,7 +907,7 @@ class ClinicParserTest(TestCase):
                 group2 : int
                 ]
         """
-        err = re.escape(
+        err = (
             "Function two_top_groups_on_right has an unsupported group "
             "configuration. (Unexpected state 6.b)"
         )
@@ -924,7 +925,7 @@ class ClinicParserTest(TestCase):
                 group2 : int
                 ]
         """
-        err = re.escape(
+        err = (
             "Function parameter_after_group_on_right has an unsupported group "
             "configuration. (Unexpected state 6.a)"
         )
@@ -942,7 +943,7 @@ class ClinicParserTest(TestCase):
                 ]
                 param: int
         """
-        err = re.escape(
+        err = (
             "Function group_after_parameter_on_left has an unsupported group "
             "configuration. (Unexpected state 2.b)"
         )
@@ -991,7 +992,7 @@ class ClinicParserTest(TestCase):
                 group2: int
                 ]
         """
-        err = re.escape("Function empty_group has a ] without a matching [.")
+        err = "Function empty_group has a ] without a matching [."
         self.expect_failure(block, err)
 
     def test_no_parameters(self):
@@ -1045,7 +1046,7 @@ class ClinicParserTest(TestCase):
                 *
                 *
         """
-        err = "Function bar uses '\*' more than once."
+        err = "Function bar uses '*' more than once."
         self.expect_failure(block, err)
 
     def test_parameters_required_after_star(self):
@@ -1055,7 +1056,7 @@ class ClinicParserTest(TestCase):
             "module foo\nfoo.bar\n  this: int\n  *",
             "module foo\nfoo.bar\n  this: int\n  *\nDocstring.",
         )
-        err = "Function bar specifies '\*' without any parameters afterwards."
+        err = "Function bar specifies '*' without any parameters afterwards."
         for block in dataset:
             with self.subTest(block=block):
                 self.expect_failure(block, err)
@@ -1067,7 +1068,7 @@ class ClinicParserTest(TestCase):
                 /
                 /
         """
-        err = re.escape(
+        err = (
             "Function bar has an unsupported group configuration. "
             "(Unexpected state 0.d)"
         )
@@ -1108,7 +1109,7 @@ class ClinicParserTest(TestCase):
                 /
                 x: int
         """
-        err = re.escape(
+        err = (
             "Function bar has an unsupported group configuration. "
             "(Unexpected state 0.d)"
         )
