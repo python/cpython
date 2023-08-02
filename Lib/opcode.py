@@ -200,13 +200,8 @@ def_op('INSTRUMENTED_LINE', 254)
 # 255 is reserved
 
 
-MIN_PSEUDO_OPCODE = 256
-MAX_PSEUDO_OPCODE = -1
 
 def pseudo_op(name, op):
-    global MAX_PSEUDO_OPCODE
-    if op > MAX_PSEUDO_OPCODE:
-        MAX_PSEUDO_OPCODE = op
     def_op(name, op)
 
 pseudo_op('SETUP_FINALLY', 256)
@@ -227,7 +222,7 @@ pseudo_op('LOAD_CLOSURE', 267)
 
 del def_op, pseudo_op
 
-opname = ['<%r>' % (op,) for op in range(MAX_PSEUDO_OPCODE + 1)]
+opname = ['<%r>' % (op,) for op in range(max(opmap.values()) + 1)]
 for op, i in opmap.items():
     opname[i] = op
 

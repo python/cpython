@@ -73,8 +73,6 @@ def main(opcode_py,
     opmap = opcode['opmap']
     opname = opcode['opname']
 
-    MIN_PSEUDO_OPCODE = opcode["MIN_PSEUDO_OPCODE"]
-    MAX_PSEUDO_OPCODE = opcode["MAX_PSEUDO_OPCODE"]
     MIN_INSTRUMENTED_OPCODE = opcode["MIN_INSTRUMENTED_OPCODE"]
 
     NUM_OPCODES = len(opname)
@@ -100,15 +98,10 @@ def main(opcode_py,
         for name in opname:
             if name in opmap:
                 op = opmap[name]
-                if op == MIN_PSEUDO_OPCODE:
-                    fobj.write(DEFINE.format("MIN_PSEUDO_OPCODE", MIN_PSEUDO_OPCODE))
                 if op == MIN_INSTRUMENTED_OPCODE:
                     fobj.write(DEFINE.format("MIN_INSTRUMENTED_OPCODE", MIN_INSTRUMENTED_OPCODE))
 
                 fobj.write(DEFINE.format(name, op))
-
-                if op == MAX_PSEUDO_OPCODE:
-                    fobj.write(DEFINE.format("MAX_PSEUDO_OPCODE", MAX_PSEUDO_OPCODE))
 
 
         for name, op in specialized_opmap.items():
