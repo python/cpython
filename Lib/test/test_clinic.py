@@ -1509,12 +1509,20 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
         block = """
             module test
             test.fn
+                a: int
+                    á param docstring
             docstring fü bár baß
         """
         with support.captured_stdout() as stdout:
             self.parse(block)
-        msg = "Non-ascii character appear in docstring"
-        self.assertIn(msg, stdout.getvalue())
+        # The line numbers are off; this is a known limitation.
+        expected = dedent("""\
+            Warning on line 0:
+            Non-ascii characters are not allowed in docstrings: 'á'
+            Warning on line 0:
+            Non-ascii characters are not allowed in docstrings: 'ü', 'á', 'ß'
+        """)
+        self.assertEqual(stdout.getvalue(), expected)
 
     def test_illegal_c_identifier(self):
         err = "Illegal C identifier: 17a"
