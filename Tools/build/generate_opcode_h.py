@@ -64,6 +64,7 @@ def get_python_module_dict(filename):
 def main(opcode_py,
          _opcode_metadata_py='Lib/_opcode_metadata.py',
          outfile='Include/opcode.h',
+         opcode_targets_h='Python/opcode_targets.h',
          internaloutfile='Include/internal/pycore_opcode.h'):
 
     _opcode_metadata = get_python_module_dict(_opcode_metadata_py)
@@ -73,7 +74,6 @@ def main(opcode_py,
     opname = opcode['opname']
     is_pseudo = opcode['is_pseudo']
 
-    ENABLE_SPECIALIZATION = opcode["ENABLE_SPECIALIZATION"]
     MIN_PSEUDO_OPCODE = opcode["MIN_PSEUDO_OPCODE"]
     MAX_PSEUDO_OPCODE = opcode["MAX_PSEUDO_OPCODE"]
     MIN_INSTRUMENTED_OPCODE = opcode["MIN_INSTRUMENTED_OPCODE"]
@@ -141,10 +141,6 @@ def main(opcode_py,
         for i, (op, _) in enumerate(opcode["_nb_ops"]):
             fobj.write(DEFINE.format(op, i))
 
-        fobj.write("\n")
-        fobj.write("/* Defined in Lib/opcode.py */\n")
-        fobj.write(f"#define ENABLE_SPECIALIZATION {int(ENABLE_SPECIALIZATION)}")
-
         iobj.write("\n")
         iobj.write(f"\nextern const char *const _PyOpcode_OpName[{NUM_OPCODES}];\n")
         iobj.write("\n#ifdef NEED_OPCODE_TABLES\n")
@@ -166,9 +162,18 @@ def main(opcode_py,
         fobj.write(footer)
         iobj.write(internal_footer)
 
+    with open(opcode_targets_h, "w") as f:
+        targets = ["_unknown_opcode"] * 256
+        for op, name in enumerate(opname_including_specialized):
+            if op < 256 and not name.startswith("<"):
+                targets[op] = f"TARGET_{name}"
+
+        f.write("static void *opcode_targets[256] = {\n")
+        f.write(",\n".join([f"    &&{s}" for s in targets]))
+        f.write("\n};\n")
 
     print(f"{outfile} regenerated from {opcode_py}")
 
 
 if __name__ == '__main__':
-    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])

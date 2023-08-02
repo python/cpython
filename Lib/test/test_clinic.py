@@ -4,7 +4,6 @@
 
 from test import support, test_tools
 from test.support import os_helper
-from test.support import SHORT_TIMEOUT, requires_subprocess
 from test.support.os_helper import TESTFN, unlink
 from textwrap import dedent
 from unittest import TestCase
@@ -12,7 +11,6 @@ import collections
 import contextlib
 import inspect
 import os.path
-import subprocess
 import sys
 import unittest
 
@@ -334,8 +332,7 @@ class ClinicWholeFileTest(_ParserBase):
             [clinic start generated code]*/
         """)
         msg = (
-            "Stepped on a land mine, trying to access attribute 'noaccess':\n"
-            "Don't access members of self.function inside converter_init!"
+            "accessing self.function inside converter_init is disallowed!"
         )
         self.assertIn(msg, out)
 
@@ -736,6 +733,28 @@ class ClinicParserTest(_ParserBase):
 
               path
                 Path to be examined
+        """)
+
+    def test_docstring_trailing_whitespace(self):
+        function = self.parse_function(
+            "module t\n"
+            "t.s\n"
+            "   a: object\n"
+            "      Param docstring with trailing whitespace  \n"
+            "Func docstring summary with trailing whitespace  \n"
+            "  \n"
+            "Func docstring body with trailing whitespace  \n"
+        )
+        self.checkDocstring(function, """
+            s($module, /, a)
+            --
+
+            Func docstring summary with trailing whitespace
+
+              a
+                Param docstring with trailing whitespace
+
+            Func docstring body with trailing whitespace
         """)
 
     def test_explicit_parameters_in_docstring(self):
@@ -1503,30 +1522,26 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
 
 class ClinicExternalTest(TestCase):
     maxDiff = None
-    clinic_py = os.path.join(test_tools.toolsdir, "clinic", "clinic.py")
 
-    def _do_test(self, *args, expect_success=True):
-        with subprocess.Popen(
-            [sys.executable, "-Xutf8", self.clinic_py, *args],
-            encoding="utf-8",
-            bufsize=0,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        ) as proc:
-            proc.wait()
-            if expect_success and proc.returncode:
-                self.fail("".join([*proc.stdout, *proc.stderr]))
-            stdout = proc.stdout.read()
-            stderr = proc.stderr.read()
-            # Clinic never writes to stderr.
-            self.assertEqual(stderr, "")
-            return stdout
+    def run_clinic(self, *args):
+        with (
+            support.captured_stdout() as out,
+            support.captured_stderr() as err,
+            self.assertRaises(SystemExit) as cm
+        ):
+            clinic.main(args)
+        return out.getvalue(), err.getvalue(), cm.exception.code
 
     def expect_success(self, *args):
-        return self._do_test(*args)
+        out, err, code = self.run_clinic(*args)
+        self.assertEqual(code, 0, f"Unexpected failure: {args=}")
+        self.assertEqual(err, "")
+        return out
 
     def expect_failure(self, *args):
-        return self._do_test(*args, expect_success=False)
+        out, err, code = self.run_clinic(*args)
+        self.assertNotEqual(code, 0, f"Unexpected success: {args=}")
+        return out, err
 
     def test_external(self):
         CLINIC_TEST = 'clinic.test.c'
@@ -1590,8 +1605,9 @@ class ClinicExternalTest(TestCase):
             # First, run the CLI without -f and expect failure.
             # Note, we cannot check the entire fail msg, because the path to
             # the tmp file will change for every run.
-            out = self.expect_failure(fn)
-            self.assertTrue(out.endswith(fail_msg))
+            out, _ = self.expect_failure(fn)
+            self.assertTrue(out.endswith(fail_msg),
+                            f"{out!r} does not end with {fail_msg!r}")
             # Then, force regeneration; success expected.
             out = self.expect_success("-f", fn)
             self.assertEqual(out, "")
@@ -1733,33 +1749,30 @@ class ClinicExternalTest(TestCase):
                 )
 
     def test_cli_fail_converters_and_filename(self):
-        out = self.expect_failure("--converters", "test.c")
-        msg = (
-            "Usage error: can't specify --converters "
-            "and a filename at the same time"
-        )
-        self.assertIn(msg, out)
+        _, err = self.expect_failure("--converters", "test.c")
+        msg = "can't specify --converters and a filename at the same time"
+        self.assertIn(msg, err)
 
     def test_cli_fail_no_filename(self):
-        out = self.expect_failure()
-        self.assertIn("usage: clinic.py", out)
+        _, err = self.expect_failure()
+        self.assertIn("no input files", err)
 
     def test_cli_fail_output_and_multiple_files(self):
-        out = self.expect_failure("-o", "out.c", "input.c", "moreinput.c")
-        msg = "Usage error: can't use -o with multiple filenames"
-        self.assertIn(msg, out)
+        _, err = self.expect_failure("-o", "out.c", "input.c", "moreinput.c")
+        msg = "error: can't use -o with multiple filenames"
+        self.assertIn(msg, err)
 
     def test_cli_fail_filename_or_output_and_make(self):
+        msg = "can't use -o or filenames with --make"
         for opts in ("-o", "out.c"), ("filename.c",):
             with self.subTest(opts=opts):
-                out = self.expect_failure("--make", *opts)
-                msg = "Usage error: can't use -o or filenames with --make"
-                self.assertIn(msg, out)
+                _, err = self.expect_failure("--make", *opts)
+                self.assertIn(msg, err)
 
     def test_cli_fail_make_without_srcdir(self):
-        out = self.expect_failure("--make", "--srcdir", "")
-        msg = "Usage error: --srcdir must not be empty with --make"
-        self.assertIn(msg, out)
+        _, err = self.expect_failure("--make", "--srcdir", "")
+        msg = "error: --srcdir must not be empty with --make"
+        self.assertIn(msg, err)
 
 
 try:

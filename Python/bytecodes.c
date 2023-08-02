@@ -3245,7 +3245,7 @@ dummy_func(
                 total_args++;
             }
             DEOPT_IF(total_args != 1, CALL);
-            PyInterpreterState *interp = _PyInterpreterState_GET();
+            PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.len, CALL);
             STAT_INC(CALL, hit);
             PyObject *arg = args[0];
@@ -3272,7 +3272,7 @@ dummy_func(
                 total_args++;
             }
             DEOPT_IF(total_args != 2, CALL);
-            PyInterpreterState *interp = _PyInterpreterState_GET();
+            PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.isinstance, CALL);
             STAT_INC(CALL, hit);
             PyObject *cls = args[1];
@@ -3295,7 +3295,7 @@ dummy_func(
             ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             assert(method != NULL);
-            PyInterpreterState *interp = _PyInterpreterState_GET();
+            PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(method != interp->callable_cache.list_append, CALL);
             DEOPT_IF(!PyList_Check(self), CALL);
             STAT_INC(CALL, hit);

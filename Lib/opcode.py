@@ -19,9 +19,6 @@ if sys.version_info[:2] >= (3, 13):
 
 cmp_op = ('<', '<=', '==', '!=', '>', '>=')
 
-
-ENABLE_SPECIALIZATION = True
-
 def is_pseudo(op):
     return op >= MIN_PSEUDO_OPCODE and op <= MAX_PSEUDO_OPCODE
 
