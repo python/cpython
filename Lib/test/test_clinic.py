@@ -1443,7 +1443,7 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
             Warning on line 0:
             Non-ascii characters are not allowed in docstrings: 'á'
             Warning on line 0:
-            Non-ascii characters are not allowed in docstrings: 'ü'
+            Non-ascii characters are not allowed in docstrings: 'ü', 'á', 'ß'
         """)
         self.assertEqual(stdout.getvalue(), expected)
 

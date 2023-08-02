@@ -5263,10 +5263,10 @@ class DSLParser:
 
     def docstring_append(self, obj: Function | Parameter, line: str) -> None:
         """Add a rstripped line to the current docstring."""
-        if match := re.search(r'[^\x00-\x7F]', line):
-            offending = match[0]
+        matches = re.finditer(r'[^\x00-\x7F]', line)
+        if offending := ", ".join([repr(m[0]) for m in matches]):
             warn("Non-ascii characters are not allowed in docstrings:",
-                 repr(offending))
+                 offending)
 
         docstring = obj.docstring
         if docstring:
