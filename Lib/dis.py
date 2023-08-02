@@ -288,13 +288,16 @@ _ExceptionTableEntry = collections.namedtuple("_ExceptionTableEntry",
 _OPNAME_WIDTH = 20
 _OPARG_WIDTH = 5
 
+def _get_cache_size(opname):
+    return _inline_cache_entries.get(opname, 0)
+
 def _get_jump_target(op, arg, offset):
     """Gets the bytecode offset of the jump target if this is a jump instruction.
 
     Otherwise return None.
     """
     deop = _deoptop(op)
-    caches = _inline_cache_entries[deop]
+    caches = _get_cache_size(_all_opname[deop])
     if deop in hasjrel:
         if _is_backward_jump(deop):
             arg = -arg
@@ -353,7 +356,7 @@ class Instruction(_Instruction):
     @property
     def end_offset(self):
         """End index of the cache entries following the operation."""
-        return self.cache_offset + _inline_cache_entries[self.opcode]*2
+        return self.cache_offset + _get_cache_size(_all_opname[self.opcode])*2
 
     @property
     def jump_target(self):
@@ -535,7 +538,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         argrepr = ''
         positions = Positions(*next(co_positions, ()))
         deop = _deoptop(op)
-        caches = _inline_cache_entries[deop]
+        caches = _get_cache_size(_all_opname[deop])
         op = code[offset]
         if arg is not None:
             #  Set argval to the dereferenced value of the argument when
@@ -679,7 +682,7 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
         else:
             # Each CACHE takes 2 bytes
             is_current_instr = instr.offset <= lasti \
-                <= instr.offset + 2 * _inline_cache_entries[_deoptop(instr.opcode)]
+                <= instr.offset + 2 * _get_cache_size(_all_opname[_deoptop(instr.opcode)])
         print(instr._disassemble(lineno_width, is_current_instr, offset_width),
               file=file)
     if exception_entries:
@@ -712,7 +715,7 @@ def _unpack_opargs(code):
             continue
         op = code[i]
         deop = _deoptop(op)
-        caches = _inline_cache_entries[deop]
+        caches = _get_cache_size(_all_opname[deop])
         if deop in hasarg:
             arg = code[i+1] | extended_arg
             extended_arg = (arg << 8) if deop == EXTENDED_ARG else 0

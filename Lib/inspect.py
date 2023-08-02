@@ -1078,7 +1078,8 @@ class _ClassFinder(ast.NodeVisitor):
 
             # First, let's see if there are any method definitions
             for member in self.cls.__dict__.values():
-                if isinstance(member, types.FunctionType):
+                if (isinstance(member, types.FunctionType) and
+                    member.__module__ == self.cls.__module__):
                     for lineno, end_lineno in self.lineno_found:
                         if lineno <= member.__code__.co_firstlineno <= end_lineno:
                             return lineno

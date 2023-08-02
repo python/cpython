@@ -4,6 +4,7 @@
 
 from test import support, test_tools
 from test.support import os_helper
+from test.support.os_helper import TESTFN, unlink
 from textwrap import dedent
 from unittest import TestCase
 import collections
@@ -81,6 +82,7 @@ class FakeClinic:
             ('parser_definition', d('block')),
             ('impl_definition', d('block')),
         ))
+        self.functions = []
 
     def get_destination(self, name):
         d = self.destinations.get(name)
@@ -100,6 +102,9 @@ class FakeClinic:
         self.called_directives[name] = args
 
     _module_and_class = clinic.Clinic._module_and_class
+
+    def __repr__(self):
+        return "<FakeClinic object>"
 
 
 class ClinicWholeFileTest(_ParserBase):
@@ -309,6 +314,25 @@ class ClinicWholeFileTest(_ParserBase):
             [clinic start generated code]*/
         """)
         msg = "unknown destination command 'nosuchcommand'"
+        self.assertIn(msg, out)
+
+    def test_no_access_to_members_in_converter_init(self):
+        out = self.expect_failure("""
+            /*[python input]
+            class Custom_converter(CConverter):
+                converter = "some_c_function"
+                def converter_init(self):
+                    self.function.noaccess
+            [python start generated code]*/
+            /*[clinic input]
+            module test
+            test.fn
+                a: Custom
+            [clinic start generated code]*/
+        """)
+        msg = (
+            "accessing self.function inside converter_init is disallowed!"
+        )
         self.assertIn(msg, out)
 
 
@@ -624,6 +648,28 @@ class ClinicParserTest(_ParserBase):
                 Path to be examined
         """)
 
+    def test_docstring_trailing_whitespace(self):
+        function = self.parse_function(
+            "module t\n"
+            "t.s\n"
+            "   a: object\n"
+            "      Param docstring with trailing whitespace  \n"
+            "Func docstring summary with trailing whitespace  \n"
+            "  \n"
+            "Func docstring body with trailing whitespace  \n"
+        )
+        self.checkDocstring(function, """
+            s($module, /, a)
+            --
+
+            Func docstring summary with trailing whitespace
+
+              a
+                Param docstring with trailing whitespace
+
+            Func docstring body with trailing whitespace
+        """)
+
     def test_explicit_parameters_in_docstring(self):
         function = self.parse_function(dedent("""
             module foo
@@ -669,12 +715,51 @@ class ClinicParserTest(_ParserBase):
         """)
         self.assertEqual("os_stat_fn", function.c_basename)
 
+    def test_cloning_nonexistent_function_correctly_fails(self):
+        stdout = self.parse_function_should_fail("""
+            cloned = fooooooooooooooooooooooo
+            This is trying to clone a nonexistent function!!
+        """)
+        expected_error = """\
+cls=None, module=<FakeClinic object>, existing='fooooooooooooooooooooooo'
+(cls or module).functions=[]
+Error on line 0:
+Couldn't find existing function 'fooooooooooooooooooooooo'!
+"""
+        self.assertEqual(expected_error, stdout)
+
     def test_return_converter(self):
         function = self.parse_function("""
             module os
             os.stat -> int
         """)
         self.assertIsInstance(function.return_converter, clinic.int_return_converter)
+
+    def test_return_converter_invalid_syntax(self):
+        stdout = self.parse_function_should_fail("""
+            module os
+            os.stat -> invalid syntax
+        """)
+        expected_error = "Badly formed annotation for os.stat: 'invalid syntax'"
+        self.assertIn(expected_error, stdout)
+
+    def test_legacy_converter_disallowed_in_return_annotation(self):
+        stdout = self.parse_function_should_fail("""
+            module os
+            os.stat -> "s"
+        """)
+        expected_error = "Legacy converter 's' not allowed as a return converter"
+        self.assertIn(expected_error, stdout)
+
+    def test_unknown_return_converter(self):
+        stdout = self.parse_function_should_fail("""
+            module os
+            os.stat -> foooooooooooooooooooooooo
+        """)
+        expected_error = (
+            "No available return converter called 'foooooooooooooooooooooooo'"
+        )
+        self.assertIn(expected_error, stdout)
 
     def test_star(self):
         function = self.parse_function("""
@@ -1412,31 +1497,256 @@ class ClinicParserTest(_ParserBase):
 class ClinicExternalTest(TestCase):
     maxDiff = None
 
+    def run_clinic(self, *args):
+        with (
+            support.captured_stdout() as out,
+            support.captured_stderr() as err,
+            self.assertRaises(SystemExit) as cm
+        ):
+            clinic.main(args)
+        return out.getvalue(), err.getvalue(), cm.exception.code
+
+    def expect_success(self, *args):
+        out, err, code = self.run_clinic(*args)
+        self.assertEqual(code, 0, f"Unexpected failure: {args=}")
+        self.assertEqual(err, "")
+        return out
+
+    def expect_failure(self, *args):
+        out, err, code = self.run_clinic(*args)
+        self.assertNotEqual(code, 0, f"Unexpected success: {args=}")
+        return out, err
+
     def test_external(self):
         CLINIC_TEST = 'clinic.test.c'
-        # bpo-42398: Test that the destination file is left unchanged if the
-        # content does not change. Moreover, check also that the file
-        # modification time does not change in this case.
         source = support.findfile(CLINIC_TEST)
         with open(source, 'r', encoding='utf-8') as f:
             orig_contents = f.read()
 
-        with os_helper.temp_dir() as tmp_dir:
-            testfile = os.path.join(tmp_dir, CLINIC_TEST)
-            with open(testfile, 'w', encoding='utf-8') as f:
-                f.write(orig_contents)
-            old_mtime_ns = os.stat(testfile).st_mtime_ns
+        # Run clinic CLI and verify that it does not complain.
+        self.addCleanup(unlink, TESTFN)
+        out = self.expect_success("-f", "-o", TESTFN, source)
+        self.assertEqual(out, "")
 
-            clinic.parse_file(testfile)
-
-            with open(testfile, 'r', encoding='utf-8') as f:
-                new_contents = f.read()
-            new_mtime_ns = os.stat(testfile).st_mtime_ns
+        with open(TESTFN, 'r', encoding='utf-8') as f:
+            new_contents = f.read()
 
         self.assertEqual(new_contents, orig_contents)
+
+    def test_no_change(self):
+        # bpo-42398: Test that the destination file is left unchanged if the
+        # content does not change. Moreover, check also that the file
+        # modification time does not change in this case.
+        code = dedent("""
+            /*[clinic input]
+            [clinic start generated code]*/
+            /*[clinic end generated code: output=da39a3ee5e6b4b0d input=da39a3ee5e6b4b0d]*/
+        """)
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write(code)
+            pre_mtime = os.stat(fn).st_mtime_ns
+            self.expect_success(fn)
+            post_mtime = os.stat(fn).st_mtime_ns
         # Don't change the file modification time
         # if the content does not change
-        self.assertEqual(new_mtime_ns, old_mtime_ns)
+        self.assertEqual(pre_mtime, post_mtime)
+
+    def test_cli_force(self):
+        invalid_input = dedent("""
+            /*[clinic input]
+            output preset block
+            module test
+            test.fn
+                a: int
+            [clinic start generated code]*/
+
+            const char *hand_edited = "output block is overwritten";
+            /*[clinic end generated code: output=bogus input=bogus]*/
+        """)
+        fail_msg = dedent("""
+            Checksum mismatch!
+            Expected: bogus
+            Computed: 2ed19
+            Suggested fix: remove all generated code including the end marker,
+            or use the '-f' option.
+        """)
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write(invalid_input)
+            # First, run the CLI without -f and expect failure.
+            # Note, we cannot check the entire fail msg, because the path to
+            # the tmp file will change for every run.
+            out, _ = self.expect_failure(fn)
+            self.assertTrue(out.endswith(fail_msg),
+                            f"{out!r} does not end with {fail_msg!r}")
+            # Then, force regeneration; success expected.
+            out = self.expect_success("-f", fn)
+            self.assertEqual(out, "")
+            # Verify by checking the checksum.
+            checksum = (
+                "/*[clinic end generated code: "
+                "output=2124c291eb067d76 input=9543a8d2da235301]*/\n"
+            )
+            with open(fn, 'r', encoding='utf-8') as f:
+                generated = f.read()
+            self.assertTrue(generated.endswith(checksum))
+
+    def test_cli_make(self):
+        c_code = dedent("""
+            /*[clinic input]
+            [clinic start generated code]*/
+        """)
+        py_code = "pass"
+        c_files = "file1.c", "file2.c"
+        py_files = "file1.py", "file2.py"
+
+        def create_files(files, srcdir, code):
+            for fn in files:
+                path = os.path.join(srcdir, fn)
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write(code)
+
+        with os_helper.temp_dir() as tmp_dir:
+            # add some folders, some C files and a Python file
+            create_files(c_files, tmp_dir, c_code)
+            create_files(py_files, tmp_dir, py_code)
+
+            # create C files in externals/ dir
+            ext_path = os.path.join(tmp_dir, "externals")
+            with os_helper.temp_dir(path=ext_path) as externals:
+                create_files(c_files, externals, c_code)
+
+                # run clinic in verbose mode with --make on tmpdir
+                out = self.expect_success("-v", "--make", "--srcdir", tmp_dir)
+
+            # expect verbose mode to only mention the C files in tmp_dir
+            for filename in c_files:
+                with self.subTest(filename=filename):
+                    path = os.path.join(tmp_dir, filename)
+                    self.assertIn(path, out)
+            for filename in py_files:
+                with self.subTest(filename=filename):
+                    path = os.path.join(tmp_dir, filename)
+                    self.assertNotIn(path, out)
+            # don't expect C files from the externals dir
+            for filename in c_files:
+                with self.subTest(filename=filename):
+                    path = os.path.join(ext_path, filename)
+                    self.assertNotIn(path, out)
+
+    def test_cli_verbose(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write("")
+            out = self.expect_success("-v", fn)
+            self.assertEqual(out.strip(), fn)
+
+    def test_cli_help(self):
+        out = self.expect_success("-h")
+        self.assertIn("usage: clinic.py", out)
+
+    def test_cli_converters(self):
+        prelude = dedent("""
+            Legacy converters:
+                B C D L O S U Y Z Z#
+                b c d f h i l p s s# s* u u# w* y y# y* z z# z*
+
+            Converters:
+        """)
+        expected_converters = (
+            "bool",
+            "byte",
+            "char",
+            "defining_class",
+            "double",
+            "fildes",
+            "float",
+            "int",
+            "long",
+            "long_long",
+            "object",
+            "Py_buffer",
+            "Py_complex",
+            "Py_ssize_t",
+            "Py_UNICODE",
+            "PyByteArrayObject",
+            "PyBytesObject",
+            "self",
+            "short",
+            "size_t",
+            "slice_index",
+            "str",
+            "unicode",
+            "unsigned_char",
+            "unsigned_int",
+            "unsigned_long",
+            "unsigned_long_long",
+            "unsigned_short",
+        )
+        finale = dedent("""
+            Return converters:
+                bool()
+                double()
+                float()
+                init()
+                int()
+                long()
+                Py_ssize_t()
+                size_t()
+                unsigned_int()
+                unsigned_long()
+
+            All converters also accept (c_default=None, py_default=None, annotation=None).
+            All return converters also accept (py_default=None).
+        """)
+        out = self.expect_success("--converters")
+        # We cannot simply compare the output, because the repr of the *accept*
+        # param may change (it's a set, thus unordered). So, let's compare the
+        # start and end of the expected output, and then assert that the
+        # converters appear lined up in alphabetical order.
+        self.assertTrue(out.startswith(prelude), out)
+        self.assertTrue(out.endswith(finale), out)
+
+        out = out.removeprefix(prelude)
+        out = out.removesuffix(finale)
+        lines = out.split("\n")
+        for converter, line in zip(expected_converters, lines):
+            line = line.lstrip()
+            with self.subTest(converter=converter):
+                self.assertTrue(
+                    line.startswith(converter),
+                    f"expected converter {converter!r}, got {line!r}"
+                )
+
+    def test_cli_fail_converters_and_filename(self):
+        _, err = self.expect_failure("--converters", "test.c")
+        msg = "can't specify --converters and a filename at the same time"
+        self.assertIn(msg, err)
+
+    def test_cli_fail_no_filename(self):
+        _, err = self.expect_failure()
+        self.assertIn("no input files", err)
+
+    def test_cli_fail_output_and_multiple_files(self):
+        _, err = self.expect_failure("-o", "out.c", "input.c", "moreinput.c")
+        msg = "error: can't use -o with multiple filenames"
+        self.assertIn(msg, err)
+
+    def test_cli_fail_filename_or_output_and_make(self):
+        msg = "can't use -o or filenames with --make"
+        for opts in ("-o", "out.c"), ("filename.c",):
+            with self.subTest(opts=opts):
+                _, err = self.expect_failure("--make", *opts)
+                self.assertIn(msg, err)
+
+    def test_cli_fail_make_without_srcdir(self):
+        _, err = self.expect_failure("--make", "--srcdir", "")
+        msg = "error: --srcdir must not be empty with --make"
+        self.assertIn(msg, err)
 
 
 try:

@@ -1009,10 +1009,6 @@
             break;
         }
 
-        case _SKIP_CACHE: {
-            break;
-        }
-
         case _GUARD_GLOBALS_VERSION: {
             uint16_t version = (uint16_t)operand;
             PyDictObject *dict = (PyDictObject *)GLOBALS();
@@ -1406,7 +1402,7 @@
             PyTypeObject *cls = (PyTypeObject *)class;
             int method_found = 0;
             res2 = _PySuper_Lookup(cls, self, name,
-                                   cls->tp_getattro == PyObject_GenericGetAttr ? &method_found : NULL);
+                                   Py_TYPE(self)->tp_getattro == PyObject_GenericGetAttr ? &method_found : NULL);
             Py_DECREF(global_super);
             Py_DECREF(class);
             if (res2 == NULL) {
@@ -1949,7 +1945,12 @@
             assert(val && PyExceptionInstance_Check(val));
             exc = PyExceptionInstance_Class(val);
             tb = PyException_GetTraceback(val);
-            Py_XDECREF(tb);
+            if (tb == NULL) {
+                tb = Py_None;
+            }
+            else {
+                Py_DECREF(tb);
+            }
             assert(PyLong_Check(lasti));
             (void)lasti; // Shut up compiler warning if asserts are off
             PyObject *stack[4] = {NULL, exc, val, tb};
@@ -2153,7 +2154,7 @@
                 total_args++;
             }
             DEOPT_IF(total_args != 1, CALL);
-            PyInterpreterState *interp = _PyInterpreterState_GET();
+            PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.len, CALL);
             STAT_INC(CALL, hit);
             PyObject *arg = args[0];
@@ -2188,7 +2189,7 @@
                 total_args++;
             }
             DEOPT_IF(total_args != 2, CALL);
-            PyInterpreterState *interp = _PyInterpreterState_GET();
+            PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.isinstance, CALL);
             STAT_INC(CALL, hit);
             PyObject *cls = args[1];

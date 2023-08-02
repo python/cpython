@@ -150,8 +150,8 @@ This module defines the following constants and functions:
 .. data:: TIMEOUT_MAX
 
    The maximum value allowed for the *timeout* parameter of
-   :meth:`Lock.acquire`. Specifying a timeout greater than this value will
-   raise an :exc:`OverflowError`.
+   :meth:`Lock.acquire <threading.Lock.acquire>`. Specifying a timeout greater
+   than this value will raise an :exc:`OverflowError`.
 
    .. versionadded:: 3.2
 
@@ -217,8 +217,9 @@ In addition to these methods, lock objects can also be used via the
 * Calling :func:`sys.exit` or raising the :exc:`SystemExit` exception is
   equivalent to calling :func:`_thread.exit`.
 
-* It is not possible to interrupt the :meth:`acquire` method on a lock --- the
-  :exc:`KeyboardInterrupt` exception will happen after the lock has been acquired.
+* It is not possible to interrupt the :meth:`~threading.Lock.acquire` method on
+  a lock --- the :exc:`KeyboardInterrupt` exception will happen after the lock
+  has been acquired.
 
 * When the main thread exits, it is system defined whether the other threads
   survive.  On most systems, they are killed without executing

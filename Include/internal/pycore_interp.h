@@ -48,6 +48,11 @@ struct _Py_long_state {
    */
 struct _is {
 
+    /* This struct countains the eval_breaker,
+     * which is by far the hottest field in this struct
+     * and should be placed at the beginning. */
+    struct _ceval_state ceval;
+
     PyInterpreterState *next;
 
     int64_t id;
@@ -108,8 +113,6 @@ struct _is {
 
     // Dictionary of the builtins module
     PyObject *builtins;
-
-    struct _ceval_state ceval;
 
     struct _import_state imports;
 
@@ -232,13 +235,11 @@ struct _xidregitem {
     crossinterpdatafunc getdata;
 };
 
-PyAPI_FUNC(PyInterpreterState*) _PyInterpreterState_LookUpID(int64_t);
+extern PyInterpreterState* _PyInterpreterState_LookUpID(int64_t);
 
-PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
-PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
-PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
-
-PyAPI_FUNC(PyObject*) _PyInterpreterState_GetMainModule(PyInterpreterState *);
+extern int _PyInterpreterState_IDInitref(PyInterpreterState *);
+extern int _PyInterpreterState_IDIncref(PyInterpreterState *);
+extern void _PyInterpreterState_IDDecref(PyInterpreterState *);
 
 extern const PyConfig* _PyInterpreterState_GetConfig(PyInterpreterState *interp);
 
@@ -253,7 +254,9 @@ extern const PyConfig* _PyInterpreterState_GetConfig(PyInterpreterState *interp)
    The caller must hold the GIL.
 
    Once done with the configuration, PyConfig_Clear() must be called to clear
-   it. */
+   it.
+
+   Export for '_testinternalcapi' shared extension. */
 PyAPI_FUNC(int) _PyInterpreterState_GetConfigCopy(
     struct PyConfig *config);
 
@@ -271,7 +274,9 @@ PyAPI_FUNC(int) _PyInterpreterState_GetConfigCopy(
 
    Return 0 on success. Raise an exception and return -1 on error.
 
-   The configuration should come from _PyInterpreterState_GetConfigCopy(). */
+   The configuration should come from _PyInterpreterState_GetConfigCopy().
+
+   Export for '_testinternalcapi' shared extension. */
 PyAPI_FUNC(int) _PyInterpreterState_SetConfig(
     const struct PyConfig *config);
 

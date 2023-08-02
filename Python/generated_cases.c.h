@@ -881,7 +881,11 @@
                 exc = args[0];
                 /* fall through */
             case 0:
-                if (do_raise(tstate, exc, cause)) { STACK_SHRINK(oparg); goto exception_unwind; }
+                if (do_raise(tstate, exc, cause)) {
+                    assert(oparg == 0);
+                    monitor_reraise(tstate, frame, next_instr-1);
+                    goto exception_unwind;
+                }
                 break;
             default:
                 _PyErr_SetString(tstate, PyExc_SystemError,
@@ -1237,6 +1241,7 @@
             assert(exc && PyExceptionInstance_Check(exc));
             Py_INCREF(exc);
             _PyErr_SetRaisedException(tstate, exc);
+            monitor_reraise(tstate, frame, next_instr-1);
             goto exception_unwind;
         }
 
@@ -1251,6 +1256,7 @@
             else {
                 Py_INCREF(exc);
                 _PyErr_SetRaisedException(tstate, exc);
+                monitor_reraise(tstate, frame, next_instr-1);
                 goto exception_unwind;
             }
             STACK_SHRINK(2);
@@ -1274,6 +1280,7 @@
             }
             else {
                 _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
+                monitor_reraise(tstate, frame, next_instr-1);
                 goto exception_unwind;
             }
             STACK_SHRINK(1);
@@ -1657,15 +1664,11 @@
             PyObject *_tmp_1;
             PyObject *_tmp_2;
             {
-            }
-            {
                 uint16_t version = read_u16(&next_instr[1].cache);
                 PyDictObject *dict = (PyDictObject *)GLOBALS();
                 DEOPT_IF(!PyDict_CheckExact(dict), LOAD_GLOBAL);
                 DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
                 assert(DK_IS_UNICODE(dict->ma_keys));
-            }
-            {
             }
             {
                 PyObject *null = NULL;
@@ -1692,8 +1695,6 @@
         TARGET(LOAD_GLOBAL_BUILTIN) {
             PyObject *_tmp_1;
             PyObject *_tmp_2;
-            {
-            }
             {
                 uint16_t version = read_u16(&next_instr[1].cache);
                 PyDictObject *dict = (PyDictObject *)GLOBALS();
@@ -2154,7 +2155,7 @@
             PyTypeObject *cls = (PyTypeObject *)class;
             int method_found = 0;
             res2 = _PySuper_Lookup(cls, self, name,
-                                   cls->tp_getattro == PyObject_GenericGetAttr ? &method_found : NULL);
+                                   Py_TYPE(self)->tp_getattro == PyObject_GenericGetAttr ? &method_found : NULL);
             Py_DECREF(global_super);
             Py_DECREF(class);
             if (res2 == NULL) {
@@ -2236,8 +2237,6 @@
         TARGET(LOAD_ATTR_INSTANCE_VALUE) {
             PyObject *_tmp_1;
             PyObject *_tmp_2 = stack_pointer[-1];
-            {
-            }
             {
                 PyObject *owner = _tmp_2;
                 uint32_t type_version = read_u32(&next_instr[1].cache);
@@ -3308,7 +3307,12 @@
             assert(val && PyExceptionInstance_Check(val));
             exc = PyExceptionInstance_Class(val);
             tb = PyException_GetTraceback(val);
-            Py_XDECREF(tb);
+            if (tb == NULL) {
+                tb = Py_None;
+            }
+            else {
+                Py_DECREF(tb);
+            }
             assert(PyLong_Check(lasti));
             (void)lasti; // Shut up compiler warning if asserts are off
             PyObject *stack[4] = {NULL, exc, val, tb};
@@ -3980,7 +3984,7 @@
                 total_args++;
             }
             DEOPT_IF(total_args != 1, CALL);
-            PyInterpreterState *interp = _PyInterpreterState_GET();
+            PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.len, CALL);
             STAT_INC(CALL, hit);
             PyObject *arg = args[0];
@@ -4016,7 +4020,7 @@
                 total_args++;
             }
             DEOPT_IF(total_args != 2, CALL);
-            PyInterpreterState *interp = _PyInterpreterState_GET();
+            PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.isinstance, CALL);
             STAT_INC(CALL, hit);
             PyObject *cls = args[1];
@@ -4046,7 +4050,7 @@
             ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             assert(method != NULL);
-            PyInterpreterState *interp = _PyInterpreterState_GET();
+            PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(method != interp->callable_cache.list_append, CALL);
             DEOPT_IF(!PyList_Check(self), CALL);
             STAT_INC(CALL, hit);
