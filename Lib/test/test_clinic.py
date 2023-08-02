@@ -1446,8 +1446,12 @@ class ClinicParserTest(TestCase):
             self.parse(block)
         # The line numbers are off; this is a known limitation.
         expected = dedent("""\
-            Warning on line 0: Non-ascii characters are not allowed in docstrings: 'á'
-            Warning on line 0: Non-ascii characters are not allowed in docstrings: 'ü', 'á', 'ß'
+            Warning on line 0:
+            Non-ascii characters are not allowed in docstrings: 'á'
+
+            Warning on line 0:
+            Non-ascii characters are not allowed in docstrings: 'ü', 'á', 'ß'
+
         """)
         self.assertEqual(stdout.getvalue(), expected)
 
