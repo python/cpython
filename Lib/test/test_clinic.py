@@ -22,6 +22,15 @@ with test_tools.imports_under_tool('clinic'):
 
 
 def _expect_failure(tc, parser, code, errmsg, *, filename=None, lineno=None):
+    """Helper for the parser tests.
+
+    tc: unittest.TestCase; passed self in the wrapper
+    parser: the clinic parser used for this test case
+    code: a str with input text (clinic code)
+    errmsg: the expected error message
+    filename: str, optional filename
+    lineno: int, optional line number
+    """
     code = dedent(code).strip()
     errmsg = re.escape(errmsg)
     with tc.assertRaisesRegex(clinic.ClinicError, errmsg) as cm:
