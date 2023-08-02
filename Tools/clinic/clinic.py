@@ -4611,7 +4611,8 @@ class DSLParser:
             try:
                 self.state(line)
             except ClinicError as exc:
-                raise ClinicError(str(exc), filename=exc.filename, lineno=line_number)
+                exc.lineno = line_number
+                raise
 
         self.do_post_block_processing_cleanup()
         block.output.extend(self.clinic.language.render(self.clinic, block.signatures))
