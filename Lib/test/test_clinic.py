@@ -1437,8 +1437,7 @@ Couldn't find existing function 'fooooooooooooooooooooooo'!
         """
         with support.captured_stdout() as stdout:
             self.parse(block)
-        # Only the first match is shown.
-        # Also, the line numbers are off; this is a known limitation.
+        # The line numbers are off; this is a known limitation.
         expected = dedent("""\
             Warning on line 0:
             Non-ascii characters are not allowed in docstrings: 'á'
