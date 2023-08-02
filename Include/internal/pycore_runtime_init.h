@@ -108,6 +108,7 @@ extern PyTypeObject _PyExc_MemoryError;
         }, \
         .faulthandler = _faulthandler_runtime_state_INIT, \
         .tracemalloc = _tracemalloc_runtime_state_INIT, \
+        .object_state = _py_object_runtime_state_INIT(runtime), \
         .float_state = { \
             .float_format = _py_float_format_unknown, \
             .double_format = _py_float_format_unknown, \
@@ -185,6 +186,16 @@ extern PyTypeObject _PyExc_MemoryError;
         .py_recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         .context_ver = 1, \
     }
+
+#ifdef Py_TRACE_REFS
+# define _py_object_runtime_state_INIT(runtime) \
+    { \
+        .refchain = {&runtime.object_state.refchain, &runtime.object_state.refchain}, \
+    }
+#else
+# define _py_object_runtime_state_INIT(runtime) \
+    { 0 }
+#endif
 
 
 // global objects
