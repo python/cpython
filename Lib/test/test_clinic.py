@@ -652,7 +652,7 @@ class ClinicParserTest(TestCase):
             os.access
                 follow_symlinks: int = sys.maxsize
         """
-        self.expect_failure(block, err, lineno=3)
+        self.expect_failure(block, err, lineno=2)
 
     def test_param_no_docstring(self):
         function = self.parse_function("""
@@ -677,7 +677,7 @@ class ClinicParserTest(TestCase):
                 follow_symlinks: bool = True
                 something_else: str
         """
-        self.expect_failure(block, err, lineno=4)
+        self.expect_failure(block, err, lineno=3)
 
     def disabled_test_converter_arguments(self):
         function = self.parse_function("""
@@ -782,7 +782,7 @@ class ClinicParserTest(TestCase):
         """
         err = "Couldn't find existing function 'fooooooooooooooooo'!"
         with support.captured_stderr() as stderr:
-            self.expect_failure(block, err, lineno=1)
+            self.expect_failure(block, err, lineno=0)
         expected_debug_print = dedent("""\
             cls=None, module=<FakeClinic object>, existing='fooooooooooooooooo'
             (cls or module).functions=[]
@@ -980,7 +980,7 @@ class ClinicParserTest(TestCase):
                 ]
                 param: int
         """
-        self.expect_failure(block, err, lineno=6)
+        self.expect_failure(block, err, lineno=5)
 
     def test_disallowed_grouping__two_top_groups_on_right(self):
         block = """
@@ -1277,7 +1277,7 @@ class ClinicParserTest(TestCase):
         )
         for block in dataset:
             with self.subTest(block=block):
-                self.expect_failure(block, err, lineno=3)
+                self.expect_failure(block, err, lineno=2)
 
     def test_other_bizarre_things_in_annotations_fail(self):
         err = "Annotations must be either a name, a function call, or a string"
@@ -1288,7 +1288,7 @@ class ClinicParserTest(TestCase):
         )
         for block in dataset:
             with self.subTest(block=block):
-                self.expect_failure(block, err, lineno=3)
+                self.expect_failure(block, err, lineno=2)
 
     def test_kwarg_splats_disallowed_in_function_call_annotations(self):
         err = "Cannot use a kwarg splat in a function-call annotation"
@@ -1303,7 +1303,7 @@ class ClinicParserTest(TestCase):
                 self.expect_failure(block, err)
 
     def test_self_param_placement(self):
-        expected_error_msg = (
+        err = (
             "A 'self' parameter, if specified, must be the very first thing "
             "in the parameter block."
         )
@@ -1313,7 +1313,7 @@ class ClinicParserTest(TestCase):
                 a: int
                 self: self(type="PyObject *")
         """
-        self.expect_failure(block, expected_error_msg, lineno=4)
+        self.expect_failure(block, err, lineno=3)
 
     def test_self_param_cannot_be_optional(self):
         err = "A 'self' parameter cannot be marked optional."
@@ -1322,10 +1322,10 @@ class ClinicParserTest(TestCase):
             foo.func
                 self: self(type="PyObject *") = None
         """
-        self.expect_failure(block, err, lineno=3)
+        self.expect_failure(block, err, lineno=2)
 
     def test_defining_class_param_placement(self):
-        expected_error_msg = (
+        err = (
             "A 'defining_class' parameter, if specified, must either be the "
             "first thing in the parameter block, or come just after 'self'."
         )
@@ -1336,7 +1336,7 @@ class ClinicParserTest(TestCase):
                 a: int
                 cls: defining_class
         """
-        self.expect_failure(block, expected_error_msg, lineno=5)
+        self.expect_failure(block, err, lineno=4)
 
     def test_defining_class_param_cannot_be_optional(self):
         err = "A 'defining_class' parameter cannot be marked optional."
@@ -1345,7 +1345,7 @@ class ClinicParserTest(TestCase):
             foo.func
                 cls: defining_class(type="PyObject *") = None
         """
-        self.expect_failure(block, err, lineno=3)
+        self.expect_failure(block, err, lineno=2)
 
     def test_slot_methods_cannot_access_defining_class(self):
         block = """
@@ -1366,7 +1366,7 @@ class ClinicParserTest(TestCase):
             class Foo "" ""
             Foo.__new__
         """
-        self.expect_failure(block, err, lineno=3)
+        self.expect_failure(block, err, lineno=2)
 
     def test_init_must_be_a_normal_method(self):
         err = "__init__ must be a normal method, not a class or static method!"
@@ -1376,7 +1376,7 @@ class ClinicParserTest(TestCase):
             @classmethod
             Foo.__init__
         """
-        self.expect_failure(block, err, lineno=4)
+        self.expect_failure(block, err, lineno=3)
 
     def test_unused_param(self):
         block = self.parse("""
