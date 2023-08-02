@@ -72,10 +72,7 @@ def main(opcode_py,
     opcode = get_python_module_dict(opcode_py)
     opmap = opcode['opmap']
     opname = opcode['opname']
-    is_pseudo = opcode['is_pseudo']
 
-    MIN_PSEUDO_OPCODE = opcode["MIN_PSEUDO_OPCODE"]
-    MAX_PSEUDO_OPCODE = opcode["MAX_PSEUDO_OPCODE"]
     MIN_INSTRUMENTED_OPCODE = opcode["MIN_INSTRUMENTED_OPCODE"]
 
     NUM_OPCODES = len(opname)
@@ -101,15 +98,10 @@ def main(opcode_py,
         for name in opname:
             if name in opmap:
                 op = opmap[name]
-                if op == MIN_PSEUDO_OPCODE:
-                    fobj.write(DEFINE.format("MIN_PSEUDO_OPCODE", MIN_PSEUDO_OPCODE))
                 if op == MIN_INSTRUMENTED_OPCODE:
                     fobj.write(DEFINE.format("MIN_INSTRUMENTED_OPCODE", MIN_INSTRUMENTED_OPCODE))
 
                 fobj.write(DEFINE.format(name, op))
-
-                if op == MAX_PSEUDO_OPCODE:
-                    fobj.write(DEFINE.format("MAX_PSEUDO_OPCODE", MAX_PSEUDO_OPCODE))
 
 
         for name, op in specialized_opmap.items():
@@ -126,7 +118,7 @@ def main(opcode_py,
 
         deoptcodes = {}
         for basic, op in opmap.items():
-            if not is_pseudo(op):
+            if op < 256:
                 deoptcodes[basic] = basic
         for basic, family in _opcode_metadata["_specializations"].items():
             for specialized in family:
