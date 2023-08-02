@@ -15,7 +15,8 @@
 int
 uop_analyze_and_optimize(
     _PyUOpInstruction *trace,
-    int trace_len)
+    int trace_len
+)
 {
     return trace_len;
 }
