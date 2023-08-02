@@ -4,14 +4,13 @@
 
 from test import support, test_tools
 from test.support import os_helper
-from test.support import SHORT_TIMEOUT, requires_subprocess
 from test.support.os_helper import TESTFN, unlink
 from textwrap import dedent
 from unittest import TestCase
 import collections
+import contextlib
 import inspect
 import os.path
-import subprocess
 import sys
 import unittest
 
@@ -84,6 +83,7 @@ class FakeClinic:
             ('parser_definition', d('block')),
             ('impl_definition', d('block')),
         ))
+        self.functions = []
 
     def get_destination(self, name):
         d = self.destinations.get(name)
@@ -103,6 +103,9 @@ class FakeClinic:
         self.called_directives[name] = args
 
     _module_and_class = clinic.Clinic._module_and_class
+
+    def __repr__(self):
+        return "<FakeClinic object>"
 
 
 class ClinicWholeFileTest(_ParserBase):
@@ -314,6 +317,89 @@ class ClinicWholeFileTest(_ParserBase):
         msg = "unknown destination command 'nosuchcommand'"
         self.assertIn(msg, out)
 
+    def test_no_access_to_members_in_converter_init(self):
+        out = self.expect_failure("""
+            /*[python input]
+            class Custom_converter(CConverter):
+                converter = "some_c_function"
+                def converter_init(self):
+                    self.function.noaccess
+            [python start generated code]*/
+            /*[clinic input]
+            module test
+            test.fn
+                a: Custom
+            [clinic start generated code]*/
+        """)
+        msg = (
+            "accessing self.function inside converter_init is disallowed!"
+        )
+        self.assertIn(msg, out)
+
+    @staticmethod
+    @contextlib.contextmanager
+    def _clinic_version(new_version):
+        """Helper for test_version_*() tests"""
+        _saved = clinic.version
+        clinic.version = new_version
+        try:
+            yield
+        finally:
+            clinic.version = _saved
+
+    def test_version_directive(self):
+        dataset = (
+            # (clinic version, required version)
+            ('3', '2'),          # required version < clinic version
+            ('3.1', '3.0'),      # required version < clinic version
+            ('1.2b0', '1.2a7'),  # required version < clinic version
+            ('5', '5'),          # required version == clinic version
+            ('6.1', '6.1'),      # required version == clinic version
+            ('1.2b3', '1.2b3'),  # required version == clinic version
+        )
+        for clinic_version, required_version in dataset:
+            with self.subTest(clinic_version=clinic_version,
+                              required_version=required_version):
+                with self._clinic_version(clinic_version):
+                    block = dedent(f"""
+                        /*[clinic input]
+                        version {required_version}
+                        [clinic start generated code]*/
+                    """)
+                    self.clinic.parse(block)
+
+    def test_version_directive_insufficient_version(self):
+        with self._clinic_version('4'):
+            err = (
+                "Insufficient Clinic version!\n"
+                "  Version: 4\n"
+                "  Required: 5"
+            )
+            out = self.expect_failure("""
+                /*[clinic input]
+                version 5
+                [clinic start generated code]*/
+            """)
+            self.assertIn(err, out)
+
+    def test_version_directive_illegal_char(self):
+        err = "Illegal character 'v' in version string 'v5'"
+        out = self.expect_failure("""
+            /*[clinic input]
+            version v5
+            [clinic start generated code]*/
+        """)
+        self.assertIn(err, out)
+
+    def test_version_directive_unsupported_string(self):
+        err = "Unsupported version string: '.-'"
+        out = self.expect_failure("""
+            /*[clinic input]
+            version .-
+            [clinic start generated code]*/
+        """)
+        self.assertIn(err, out)
+
 
 class ClinicGroupPermuterTest(TestCase):
     def _test(self, l, m, r, output):
@@ -492,6 +578,22 @@ xyz
 
 
 class ClinicParserTest(_ParserBase):
+
+    def parse(self, text):
+        c = FakeClinic()
+        parser = DSLParser(c)
+        block = clinic.Block(text)
+        parser.parse(block)
+        return block
+
+    def parse_function(self, text, signatures_in_block=2, function_index=1):
+        block = self.parse(text)
+        s = block.signatures
+        self.assertEqual(len(s), signatures_in_block)
+        assert isinstance(s[0], clinic.Module)
+        assert isinstance(s[function_index], clinic.Function)
+        return s[function_index]
+
     def checkDocstring(self, fn, expected):
         self.assertTrue(hasattr(fn, "docstring"))
         self.assertEqual(fn.docstring.strip(),
@@ -627,6 +729,28 @@ class ClinicParserTest(_ParserBase):
                 Path to be examined
         """)
 
+    def test_docstring_trailing_whitespace(self):
+        function = self.parse_function(
+            "module t\n"
+            "t.s\n"
+            "   a: object\n"
+            "      Param docstring with trailing whitespace  \n"
+            "Func docstring summary with trailing whitespace  \n"
+            "  \n"
+            "Func docstring body with trailing whitespace  \n"
+        )
+        self.checkDocstring(function, """
+            s($module, /, a)
+            --
+
+            Func docstring summary with trailing whitespace
+
+              a
+                Param docstring with trailing whitespace
+
+            Func docstring body with trailing whitespace
+        """)
+
     def test_explicit_parameters_in_docstring(self):
         function = self.parse_function(dedent("""
             module foo
@@ -672,12 +796,51 @@ class ClinicParserTest(_ParserBase):
         """)
         self.assertEqual("os_stat_fn", function.c_basename)
 
+    def test_cloning_nonexistent_function_correctly_fails(self):
+        stdout = self.parse_function_should_fail("""
+            cloned = fooooooooooooooooooooooo
+            This is trying to clone a nonexistent function!!
+        """)
+        expected_error = """\
+cls=None, module=<FakeClinic object>, existing='fooooooooooooooooooooooo'
+(cls or module).functions=[]
+Error on line 0:
+Couldn't find existing function 'fooooooooooooooooooooooo'!
+"""
+        self.assertEqual(expected_error, stdout)
+
     def test_return_converter(self):
         function = self.parse_function("""
             module os
             os.stat -> int
         """)
         self.assertIsInstance(function.return_converter, clinic.int_return_converter)
+
+    def test_return_converter_invalid_syntax(self):
+        stdout = self.parse_function_should_fail("""
+            module os
+            os.stat -> invalid syntax
+        """)
+        expected_error = "Badly formed annotation for os.stat: 'invalid syntax'"
+        self.assertIn(expected_error, stdout)
+
+    def test_legacy_converter_disallowed_in_return_annotation(self):
+        stdout = self.parse_function_should_fail("""
+            module os
+            os.stat -> "s"
+        """)
+        expected_error = "Legacy converter 's' not allowed as a return converter"
+        self.assertIn(expected_error, stdout)
+
+    def test_unknown_return_converter(self):
+        stdout = self.parse_function_should_fail("""
+            module os
+            os.stat -> foooooooooooooooooooooooo
+        """)
+        expected_error = (
+            "No available return converter called 'foooooooooooooooooooooooo'"
+        )
+        self.assertIn(expected_error, stdout)
 
     def test_star(self):
         function = self.parse_function("""
@@ -1313,21 +1476,6 @@ class ClinicParserTest(_ParserBase):
                 parser_decl = p.simple_declaration(in_parser=True)
                 self.assertNotIn("Py_UNUSED", parser_decl)
 
-    def parse(self, text):
-        c = FakeClinic()
-        parser = DSLParser(c)
-        block = clinic.Block(text)
-        parser.parse(block)
-        return block
-
-    def parse_function(self, text, signatures_in_block=2, function_index=1):
-        block = self.parse(text)
-        s = block.signatures
-        self.assertEqual(len(s), signatures_in_block)
-        assert isinstance(s[0], clinic.Module)
-        assert isinstance(s[function_index], clinic.Function)
-        return s[function_index]
-
     def test_scaffolding(self):
         # test repr on special values
         self.assertEqual(repr(clinic.unspecified), '<Unspecified>')
@@ -1345,33 +1493,57 @@ class ClinicParserTest(_ParserBase):
         actual = stdout.getvalue()
         self.assertEqual(actual, expected)
 
+    def test_non_ascii_character_in_docstring(self):
+        block = """
+            module test
+            test.fn
+                a: int
+                    á param docstring
+            docstring fü bár baß
+        """
+        with support.captured_stdout() as stdout:
+            self.parse(block)
+        # The line numbers are off; this is a known limitation.
+        expected = dedent("""\
+            Warning on line 0:
+            Non-ascii characters are not allowed in docstrings: 'á'
+            Warning on line 0:
+            Non-ascii characters are not allowed in docstrings: 'ü', 'á', 'ß'
+        """)
+        self.assertEqual(stdout.getvalue(), expected)
+
+    def test_illegal_c_identifier(self):
+        err = "Illegal C identifier: 17a"
+        out = self.parse_function_should_fail("""
+            module test
+            test.fn
+                a as 17a: int
+        """)
+        self.assertIn(err, out)
+
 
 class ClinicExternalTest(TestCase):
     maxDiff = None
-    clinic_py = os.path.join(test_tools.toolsdir, "clinic", "clinic.py")
 
-    def _do_test(self, *args, expect_success=True):
-        with subprocess.Popen(
-            [sys.executable, "-Xutf8", self.clinic_py, *args],
-            encoding="utf-8",
-            bufsize=0,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        ) as proc:
-            proc.wait()
-            if expect_success and proc.returncode:
-                self.fail("".join(proc.stderr))
-            stdout = proc.stdout.read()
-            stderr = proc.stderr.read()
-            # Clinic never writes to stderr.
-            self.assertEqual(stderr, "")
-            return stdout
+    def run_clinic(self, *args):
+        with (
+            support.captured_stdout() as out,
+            support.captured_stderr() as err,
+            self.assertRaises(SystemExit) as cm
+        ):
+            clinic.main(args)
+        return out.getvalue(), err.getvalue(), cm.exception.code
 
     def expect_success(self, *args):
-        return self._do_test(*args)
+        out, err, code = self.run_clinic(*args)
+        self.assertEqual(code, 0, f"Unexpected failure: {args=}")
+        self.assertEqual(err, "")
+        return out
 
     def expect_failure(self, *args):
-        return self._do_test(*args, expect_success=False)
+        out, err, code = self.run_clinic(*args)
+        self.assertNotEqual(code, 0, f"Unexpected success: {args=}")
+        return out, err
 
     def test_external(self):
         CLINIC_TEST = 'clinic.test.c'
@@ -1435,8 +1607,9 @@ class ClinicExternalTest(TestCase):
             # First, run the CLI without -f and expect failure.
             # Note, we cannot check the entire fail msg, because the path to
             # the tmp file will change for every run.
-            out = self.expect_failure(fn)
-            self.assertTrue(out.endswith(fail_msg))
+            out, _ = self.expect_failure(fn)
+            self.assertTrue(out.endswith(fail_msg),
+                            f"{out!r} does not end with {fail_msg!r}")
             # Then, force regeneration; success expected.
             out = self.expect_success("-f", fn)
             self.assertEqual(out, "")
@@ -1578,33 +1751,30 @@ class ClinicExternalTest(TestCase):
                 )
 
     def test_cli_fail_converters_and_filename(self):
-        out = self.expect_failure("--converters", "test.c")
-        msg = (
-            "Usage error: can't specify --converters "
-            "and a filename at the same time"
-        )
-        self.assertIn(msg, out)
+        _, err = self.expect_failure("--converters", "test.c")
+        msg = "can't specify --converters and a filename at the same time"
+        self.assertIn(msg, err)
 
     def test_cli_fail_no_filename(self):
-        out = self.expect_failure()
-        self.assertIn("usage: clinic.py", out)
+        _, err = self.expect_failure()
+        self.assertIn("no input files", err)
 
     def test_cli_fail_output_and_multiple_files(self):
-        out = self.expect_failure("-o", "out.c", "input.c", "moreinput.c")
-        msg = "Usage error: can't use -o with multiple filenames"
-        self.assertIn(msg, out)
+        _, err = self.expect_failure("-o", "out.c", "input.c", "moreinput.c")
+        msg = "error: can't use -o with multiple filenames"
+        self.assertIn(msg, err)
 
     def test_cli_fail_filename_or_output_and_make(self):
+        msg = "can't use -o or filenames with --make"
         for opts in ("-o", "out.c"), ("filename.c",):
             with self.subTest(opts=opts):
-                out = self.expect_failure("--make", *opts)
-                msg = "Usage error: can't use -o or filenames with --make"
-                self.assertIn(msg, out)
+                _, err = self.expect_failure("--make", *opts)
+                self.assertIn(msg, err)
 
     def test_cli_fail_make_without_srcdir(self):
-        out = self.expect_failure("--make", "--srcdir", "")
-        msg = "Usage error: --srcdir must not be empty with --make"
-        self.assertIn(msg, out)
+        _, err = self.expect_failure("--make", "--srcdir", "")
+        msg = "error: --srcdir must not be empty with --make"
+        self.assertIn(msg, err)
 
 
 try:
