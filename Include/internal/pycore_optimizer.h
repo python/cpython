@@ -10,7 +10,7 @@ extern "C" {
 
 #include "pycore_uops.h"
 
-int uop_analyze_and_optimize(_PyUOpInstruction *trace, int trace_len);
+int _Py_uop_analyze_and_optimize(_PyUOpInstruction *trace, int trace_len);
 
 #ifdef __cplusplus
 }
