@@ -5155,17 +5155,11 @@ Test.__init__
     ]
     /
 Should generate two PyArg_ParseTuple calls.
-
-For some reason, this test fails if the rest of the docstring is removed.
-[clinic start generated output]*/
 [clinic start generated code]*/
 
 PyDoc_STRVAR(Test___init____doc__,
 "Test(a, [b])\n"
-"Should generate two PyArg_ParseTuple calls.\n"
-"\n"
-"For some reason, this test fails if the rest of the docstring is removed.\n"
-"[clinic start generated output]*/");
+"Should generate two PyArg_ParseTuple calls.");
 
 static int
 Test___init___impl(TestObj *self, PyObject *a, int group_right_1,
@@ -5210,7 +5204,7 @@ exit:
 static int
 Test___init___impl(TestObj *self, PyObject *a, int group_right_1,
                    PyObject *b)
-/*[clinic end generated code: output=a1697d0b3e523310 input=56ee43c117773c85]*/
+/*[clinic end generated code: output=2bbb8ea60e8f57a6 input=10f5d0f1e8e466ef]*/
 
 
 /*[clinic input]
