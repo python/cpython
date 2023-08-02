@@ -23,19 +23,16 @@ from parsing import StackEffect, CacheEffect, Family
 class StackOffset:
     """Represent the stack offset for a PEEK or POKE.
 
-    - If at the top of the stack (PEEK(-1) or POKE(-1)),
-      both deep and high are empty.
-    - If some number of items below stack top, only deep is non-empty.
-    - If some number of items above stack top, only high is non-empty.
-    - If accessing the entry would require some popping and then some
-      pushing, both deep and high are non-empty.
+    - At stack_pointer[0], deep and high are both empty.
+      (Note that that is an invalid stack reference.)
+    - Below stack top, only deep is non-empty.
+    - Above stack top, only high is non-empty.
+    - In complex cases, both deep and high may be non-empty.
 
     All this would be much simpler if all stack entries were the same
     size, but with conditional and array effects, they aren't.
     The offsets are each represented by a list of StackEffect objects.
     The name in the StackEffects is unused.
-
-    TODO: Maybe this should *include* the size of the accessed entry.
     """
 
     deep: list[StackEffect] = dataclasses.field(default_factory=list)
@@ -100,14 +97,12 @@ def make_index(terms: list[tuple[str, str]]) -> str:
 
 @dataclasses.dataclass
 class StackItem:
-    offset: StackOffset = dataclasses.field(default_factory=StackOffset)
-    effect: StackEffect = dataclasses.field(kw_only=True)
+    offset: StackOffset
+    effect: StackEffect
 
     def as_variable(self) -> str:
         """Return e.g. stack_pointer[-1]."""
-        temp = self.offset.clone()
-        temp.deeper(self.effect)
-        terms = temp.as_terms()
+        terms = self.offset.as_terms()
         if self.effect.size:
             terms.insert(0, ("+", "stack_pointer"))
         index = make_index(terms)
@@ -135,29 +130,51 @@ class EffectManager:
     min_offset: StackOffset
     final_offset: StackOffset
 
-    def __init__(self, instr: Instruction, active_caches: list[ActiveCacheEffect]):
+    def __init__(
+        self,
+        instr: Instruction,
+        active_caches: list[ActiveCacheEffect],
+        pred: "EffectManager | None" = None,
+    ):
         self.instr = instr
         self.active_caches = active_caches
         self.peeks = []
         self.pokes = []
         self.copies = []
-        self.min_offset = StackOffset()
+        self.final_offset = pred.final_offset.clone() if pred else StackOffset()
         for eff in reversed(instr.input_effects):
-            self.min_offset.deeper(eff)
-            new_peek = StackItem(effect=eff)
-            for peek in self.peeks:
-                new_peek.offset.deeper(peek.effect)
-            self.peeks.append(new_peek)
-        self.final_offset = self.min_offset.clone()
+            self.final_offset.deeper(eff)
+            self.peeks.append(StackItem(offset=self.final_offset.clone(), effect=eff))
+        self.min_offset = self.final_offset.clone()
         for eff in instr.output_effects:
+            self.pokes.append(StackItem(offset=self.final_offset.clone(), effect=eff))
             self.final_offset.higher(eff)
-            new_poke = StackItem(effect=eff)
-            for peek in self.peeks:
-                new_poke.offset.deeper(peek.effect)
-            for poke in self.pokes:
-                new_poke.offset.higher(poke.effect)
-            new_poke.offset.higher(eff)  # Account for the new poke itself (!)
-            self.pokes.append(new_poke)
+
+        if pred:
+            # Replace push(x) + pop(y) with copy(x, y).
+            # Check that the sources and destinations are disjoint.
+            sources: set[str] = set()
+            destinations: set[str] = set()
+            while (
+                pred.pokes
+                and self.peeks
+                and pred.pokes[-1].effect == self.peeks[-1].effect
+            ):
+                src = pred.pokes.pop(-1).effect
+                dst = self.peeks.pop(0).effect
+                pred.final_offset.deeper(src)
+                if dst.name != UNUSED:
+                    destinations.add(dst.name)
+                    if dst.name != src.name:
+                        sources.add(src.name)
+                    self.copies.append(CopyEffect(src, dst))
+            # TODO: Turn this into an error (pass an Analyzer instance?)
+            assert sources & destinations == set(), (
+                pred.instr.name,
+                self.instr.name,
+                sources,
+                destinations,
+            )
 
     def adjust_deeper(self, eff: StackEffect) -> None:
         for peek in self.peeks:
@@ -187,32 +204,6 @@ class EffectManager:
         for up in offset.high:
             self.adjust_deeper(up)
 
-    def merge(self, follow: "EffectManager") -> None:
-        sources: set[str] = set()
-        destinations: set[str] = set()
-        follow.adjust(self.final_offset)
-        while (
-            self.pokes
-            and follow.peeks
-            and self.pokes[-1].effect == follow.peeks[0].effect
-        ):
-            src = self.pokes.pop(-1).effect
-            dst = follow.peeks.pop(0).effect
-            self.final_offset.deeper(src)
-            if dst.name != UNUSED:
-                destinations.add(dst.name)
-                if dst.name != src.name:
-                    sources.add(src.name)
-                    # TODO: Do we leave redundant copies or skip them?
-                    follow.copies.append(CopyEffect(src, dst))
-        # TODO: Turn this into an error (pass an Analyzer instance?)
-        assert sources & destinations == set(), (
-            self.instr.name,
-            follow.instr.name,
-            sources,
-            destinations,
-        )
-
     def collect_vars(self) -> dict[str, StackEffect]:
         """Collect all variables, skipping unused ones."""
         vars: dict[str, StackEffect] = {}
@@ -231,6 +222,7 @@ class EffectManager:
                     vars[eff.name] = eff
 
         for copy in self.copies:
+            add(copy.src)
             add(copy.dst)
         for peek in self.peeks:
             add(peek.effect)
@@ -254,9 +246,12 @@ def get_stack_effect_info_for_macro(mac: MacroInstruction) -> tuple[str, str]:
     symbolic expression for the number of values popped/pushed.
     """
     parts = [part for part in mac.parts if isinstance(part, Component)]
-    managers = [EffectManager(part.instr, part.active_caches) for part in parts]
-    for prev, follow in zip(managers[:-1], managers[1:], strict=True):
-        prev.merge(follow)
+    managers: list[EffectManager] = []
+    pred: EffectManager | None = None
+    for part in parts:
+        mgr = EffectManager(part.instr, part.active_caches, pred)
+        managers.append(mgr)
+        pred = mgr
     net = StackOffset()
     lowest = StackOffset()
     for mgr in managers:
@@ -291,6 +286,7 @@ def write_macro_instr(
     mac: MacroInstruction, out: Formatter, family: Family | None
 ) -> None:
     parts = [part for part in mac.parts if isinstance(part, Component)]
+
     cache_adjust = 0
     for part in mac.parts:
         match part:
@@ -317,7 +313,12 @@ def write_components(
     out: Formatter,
     tier: Tiers,
 ) -> None:
-    managers = [EffectManager(part.instr, part.active_caches) for part in parts]
+    managers: list[EffectManager] = []
+    pred: EffectManager | None = None
+    for part in parts:
+        mgr = EffectManager(part.instr, part.active_caches, pred)
+        managers.append(mgr)
+        pred = mgr
 
     all_vars: dict[str, StackEffect] = {}
     for mgr in managers:
@@ -333,11 +334,6 @@ def write_components(
             else:
                 all_vars[name] = eff
 
-    # Do this after collecting variables, so we collect suppressed copies
-    # TODO: Maybe suppressed copies should be kept?
-    for prev, follow in zip(managers[:-1], managers[1:], strict=True):
-        prev.merge(follow)
-
     # Declare all variables
     for name, eff in all_vars.items():
         out.declare(eff, None)
@@ -347,7 +343,8 @@ def write_components(
             out.emit(f"// {mgr.instr.name}")
 
         for copy in mgr.copies:
-            out.assign(copy.dst, copy.src)
+            if copy.src.name != copy.dst.name:
+                out.assign(copy.dst, copy.src)
         for peek in mgr.peeks:
             out.assign(
                 peek.effect,
