@@ -4,7 +4,7 @@
 
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetOne()
-#include "structmember.h"
+
 
 #include <ctype.h>
 #include <stddef.h>
@@ -2692,13 +2692,13 @@ static PyMethodDef zoneinfo_methods[] = {
 static PyMemberDef zoneinfo_members[] = {
     {.name = "key",
      .offset = offsetof(PyZoneInfo_ZoneInfo, key),
-     .type = T_OBJECT_EX,
-     .flags = READONLY,
+     .type = Py_T_OBJECT_EX,
+     .flags = Py_READONLY,
      .doc = NULL},
     {.name = "__weaklistoffset__",
      .offset = offsetof(PyZoneInfo_ZoneInfo, weakreflist),
-     .type = T_PYSSIZET,
-     .flags = READONLY},
+     .type = Py_T_PYSSIZET,
+     .flags = Py_READONLY},
     {NULL}, /* Sentinel */
 };
 

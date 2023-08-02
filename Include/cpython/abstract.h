@@ -2,19 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-/* === Object Protocol ================================================== */
-
-/* Suggested size (number of positional arguments) for arrays of PyObject*
-   allocated on a C stack to avoid allocating memory on the heap memory. Such
-   array is used to pass positional arguments to call functions of the
-   PyObject_Vectorcall() family.
-
-   The size is chosen to not abuse the C stack and so limit the risk of stack
-   overflow. The size is also chosen to allow using the small stack for most
-   function calls of the Python standard library. On 64-bit CPU, it allocates
-   40 bytes on the stack. */
-#define _PY_FASTCALL_SMALL_STACK 5
-
 /* === Vectorcall protocol (PEP 590) ============================= */
 
 // PyVectorcall_NARGS() is exported as a function for the stable ABI.
@@ -36,12 +23,6 @@ PyAPI_FUNC(PyObject *) PyObject_VectorcallDict(
     PyObject *const *args,
     size_t nargsf,
     PyObject *kwargs);
-
-// Same as PyObject_Vectorcall(), except without keyword arguments
-PyAPI_FUNC(PyObject *) _PyObject_FastCall(
-    PyObject *func,
-    PyObject *const *args,
-    Py_ssize_t nargs);
 
 PyAPI_FUNC(PyObject *) PyObject_CallOneArg(PyObject *func, PyObject *arg);
 
