@@ -2759,6 +2759,80 @@ class ProtocolTests(BaseTestCase):
         with self.assertRaisesRegex(TypeError, only_classes_allowed):
             issubclass(1, BadPG)
 
+    def test_implicit_issubclass_between_two_protocols(self):
+        @runtime_checkable
+        class CallableMembersProto(Protocol):
+            def meth(self): ...
+
+        # All the below protocols should be considered "subclasses"
+        # of CallableMembersProto at runtime,
+        # even though none of them explicitly subclass CallableMembersProto
+
+        class IdenticalProto(Protocol):
+            def meth(self): ...
+
+        class SupersetProto(Protocol):
+            def meth(self): ...
+            def meth2(self): ...
+
+        class NonCallableMembersProto(Protocol):
+            meth: Callable[[], None]
+
+        class NonCallableMembersSupersetProto(Protocol):
+            meth: Callable[[], None]
+            meth2: Callable[[str, int], bool]
+
+        class MixedMembersProto1(Protocol):
+            meth: Callable[[], None]
+            def meth2(self): ...
+
+        class MixedMembersProto2(Protocol):
+            def meth(self): ...
+            meth2: Callable[[str, int], bool]
+
+        for proto in (
+            IdenticalProto, SupersetProto, NonCallableMembersProto,
+            NonCallableMembersSupersetProto, MixedMembersProto1, MixedMembersProto2
+        ):
+            with self.subTest(proto=proto.__name__):
+                self.assertIsSubclass(proto, CallableMembersProto)
+
+        # These two shouldn't be considered subclasses of CallableMembersProto, however,
+        # since they don't have the `meth` protocol member
+
+        class EmptyProtocol(Protocol): ...
+        class UnrelatedProtocol(Protocol):
+            def wut(self): ...
+
+        self.assertNotIsSubclass(EmptyProtocol, CallableMembersProto)
+        self.assertNotIsSubclass(UnrelatedProtocol, CallableMembersProto)
+
+        # These aren't protocols at all (despite having annotations),
+        # so they should only be considered subclasses of CallableMembersProto
+        # if they *actually have an attribute* matching the `meth` member
+        # (just having an annotation is insufficient)
+
+        class AnnotatedButNotAProtocol:
+            meth: Callable[[], None]
+
+        class NotAProtocolButAnImplicitSubclass:
+            def meth(self): pass
+
+        class NotAProtocolButAnImplicitSubclass2:
+            meth: Callable[[], None]
+            def meth(self): pass
+
+        class NotAProtocolButAnImplicitSubclass3:
+            meth: Callable[[], None]
+            meth2: Callable[[int, str], bool]
+            def meth(self): pass
+            def meth(self, x, y): return True
+
+        self.assertNotIsSubclass(AnnotatedButNotAProtocol, CallableMembersProto)
+        self.assertIsSubclass(NotAProtocolButAnImplicitSubclass, CallableMembersProto)
+        self.assertIsSubclass(NotAProtocolButAnImplicitSubclass2, CallableMembersProto)
+        self.assertIsSubclass(NotAProtocolButAnImplicitSubclass3, CallableMembersProto)
+
     def test_isinstance_checks_not_at_whim_of_gc(self):
         self.addCleanup(gc.enable)
         gc.disable()
@@ -3402,6 +3476,46 @@ class ProtocolTests(BaseTestCase):
         self.assertNotIsInstance(BadClass(), C)
         self.assertIsSubclass(OKClass, C)
         self.assertNotIsSubclass(BadClass, C)
+
+    def test_custom_subclasshook_2(self):
+        @runtime_checkable
+        class HasX(Protocol):
+            # The presence of a non-callable member
+            # would mean issubclass() checks would fail with TypeError
+            # if it weren't for the custom `__subclasshook__` method
+            x = 1
+
+            @classmethod
+            def __subclasshook__(cls, other):
+                return hasattr(other, 'x')
+
+        class Empty: pass
+
+        class ImplementsHasX:
+            x = 1
+
+        self.assertIsInstance(ImplementsHasX(), HasX)
+        self.assertNotIsInstance(Empty(), HasX)
+        self.assertIsSubclass(ImplementsHasX, HasX)
+        self.assertNotIsSubclass(Empty, HasX)
+
+        # isinstance() and issubclass() checks against this still raise TypeError,
+        # despite the presence of the custom __subclasshook__ method,
+        # as it's not decorated with @runtime_checkable
+        class NotRuntimeCheckable(Protocol):
+            @classmethod
+            def __subclasshook__(cls, other):
+                return hasattr(other, 'x')
+
+        must_be_runtime_checkable = (
+            "Instance and class checks can only be used "
+            "with @runtime_checkable protocols"
+        )
+
+        with self.assertRaisesRegex(TypeError, must_be_runtime_checkable):
+            issubclass(object, NotRuntimeCheckable)
+        with self.assertRaisesRegex(TypeError, must_be_runtime_checkable):
+            isinstance(object(), NotRuntimeCheckable)
 
     def test_issubclass_fails_correctly(self):
         @runtime_checkable
@@ -5680,10 +5794,14 @@ class ForwardRefTests(BaseTestCase):
                 get_type_hints(clazz)
 
     def test_meta_no_type_check(self):
-
-        @no_type_check_decorator
-        def magic_decorator(func):
-            return func
+        depr_msg = (
+            "'typing.no_type_check_decorator' is deprecated "
+            "and slated for removal in Python 3.15"
+        )
+        with self.assertWarnsRegex(DeprecationWarning, depr_msg):
+            @no_type_check_decorator
+            def magic_decorator(func):
+                return func
 
         self.assertEqual(magic_decorator.__name__, 'magic_decorator')
 

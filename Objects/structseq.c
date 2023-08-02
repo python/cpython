@@ -10,7 +10,7 @@
 #include "Python.h"
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
-#include "structmember.h"         // PyMemberDef
+
 #include "pycore_structseq.h"     // PyStructSequence_InitType()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 
@@ -74,15 +74,28 @@ PyStructSequence_New(PyTypeObject *type)
 }
 
 void
-PyStructSequence_SetItem(PyObject* op, Py_ssize_t i, PyObject* v)
+PyStructSequence_SetItem(PyObject *op, Py_ssize_t index, PyObject *value)
 {
-    PyStructSequence_SET_ITEM(op, i, v);
+    PyTupleObject *tuple = _PyTuple_CAST(op);
+    assert(0 <= index);
+#ifndef NDEBUG
+    Py_ssize_t n_fields = REAL_SIZE(op);
+    assert(n_fields >= 0);
+    assert(index < n_fields);
+#endif
+    tuple->ob_item[index] = value;
 }
 
 PyObject*
-PyStructSequence_GetItem(PyObject* op, Py_ssize_t i)
+PyStructSequence_GetItem(PyObject *op, Py_ssize_t index)
 {
-    return PyStructSequence_GET_ITEM(op, i);
+    assert(0 <= index);
+#ifndef NDEBUG
+    Py_ssize_t n_fields = REAL_SIZE(op);
+    assert(n_fields >= 0);
+    assert(index < n_fields);
+#endif
+    return PyTuple_GET_ITEM(op, index);
 }
 
 
@@ -287,7 +300,7 @@ structseq_repr(PyStructSequence *obj)
             goto error;
         }
 
-        PyObject *value = PyStructSequence_GET_ITEM(obj, i);
+        PyObject *value = PyStructSequence_GetItem((PyObject*)obj, i);
         assert(value != NULL);
         PyObject *repr = PyObject_Repr(value);
         if (repr == NULL) {
@@ -452,10 +465,10 @@ initialize_members(PyStructSequence_Desc *desc,
         /* The names and docstrings in these MemberDefs are statically */
         /* allocated so it is expected that they'll outlive the MemberDef */
         members[k].name = desc->fields[i].name;
-        members[k].type = T_OBJECT;
+        members[k].type = _Py_T_OBJECT;
         members[k].offset = offsetof(PyStructSequence, ob_item)
           + i * sizeof(PyObject*);
-        members[k].flags = READONLY;
+        members[k].flags = Py_READONLY;
         members[k].doc = desc->fields[i].doc;
         k++;
     }

@@ -3,11 +3,12 @@
 #endif
 
 #include "Python.h"
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
+#include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime_init.h"  // _Py_ID()
-#include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "structmember.h"         // PyMemberDef
+
 #include <stddef.h>               // offsetof()
 
 
@@ -55,6 +56,8 @@ typedef struct {
     PyObject *task_coro;
     PyObject *task_name;
     PyObject *task_context;
+    TaskObj *next;
+    TaskObj *prev;
 } TaskObj;
 
 typedef struct {
@@ -253,7 +256,7 @@ get_future_loop(asyncio_state *state, PyObject *fut)
         return Py_NewRef(loop);
     }
 
-    if (_PyObject_LookupAttr(fut, &_Py_ID(get_loop), &getloop) < 0) {
+    if (PyObject_GetOptionalAttr(fut, &_Py_ID(get_loop), &getloop) < 0) {
         return NULL;
     }
     if (getloop != NULL) {
@@ -532,7 +535,7 @@ future_init(FutureObj *fut, PyObject *loop)
     if (is_true < 0) {
         return -1;
     }
-    if (is_true && !_Py_IsInterpreterFinalizing(PyInterpreterState_Get())) {
+    if (is_true && !_Py_IsInterpreterFinalizing(_PyInterpreterState_GET())) {
         /* Only try to capture the traceback if the interpreter is not being
            finalized.  The original motivation to add a `_Py_IsFinalizing()`
            call was to prevent SIGSEGV when a Future is created in a __del__
@@ -1506,11 +1509,6 @@ static PyMethodDef FutureType_methods[] = {
     {NULL, NULL}        /* Sentinel */
 };
 
-static PyMemberDef FutureType_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(FutureObj, fut_weakreflist), READONLY},
-    {NULL},
-};
-
 #define FUTURE_COMMON_GETSETLIST                                              \
     {"_state", (getter)FutureObj_get_state, NULL, NULL},                      \
     {"_asyncio_future_blocking", (getter)FutureObj_get_blocking,              \
@@ -1541,7 +1539,6 @@ static PyType_Slot Future_slots[] = {
     {Py_tp_clear, (inquiry)FutureObj_clear},
     {Py_tp_iter, (getiterfunc)future_new_iter},
     {Py_tp_methods, FutureType_methods},
-    {Py_tp_members, FutureType_members},
     {Py_tp_getset, FutureType_getsetlist},
     {Py_tp_init, (initproc)_asyncio_Future___init__},
     {Py_tp_new, PyType_GenericNew},
@@ -1556,7 +1553,8 @@ static PyType_Spec Future_spec = {
     .name = "_asyncio.Future",
     .basicsize = sizeof(FutureObj),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE |
-              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_MANAGED_DICT),
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_MANAGED_DICT |
+              Py_TPFLAGS_MANAGED_WEAKREF),
     .slots = Future_slots,
 };
 
@@ -1573,9 +1571,7 @@ FutureObj_dealloc(PyObject *self)
     PyTypeObject *tp = Py_TYPE(fut);
     PyObject_GC_UnTrack(self);
 
-    if (fut->fut_weakreflist != NULL) {
-        PyObject_ClearWeakRefs(self);
-    }
+    PyObject_ClearWeakRefs(self);
 
     (void)FutureObj_clear(fut);
     tp->tp_free(fut);
@@ -2067,20 +2063,23 @@ swap_current_task(asyncio_state *state, PyObject *loop, PyObject *task)
         }
         prev_task = Py_None;
     }
+    Py_INCREF(prev_task);
 
     if (task == Py_None) {
         if (_PyDict_DelItem_KnownHash(state->current_tasks, loop, hash) == -1) {
-            return NULL;
+            goto error;
         }
     } else {
         if (_PyDict_SetItem_KnownHash(state->current_tasks, loop, task, hash) == -1) {
-            return NULL;
+            goto error;
         }
     }
 
-    Py_INCREF(prev_task);
-
     return prev_task;
+
+error:
+    Py_DECREF(prev_task);
+    return NULL;
 }
 
 /* ----- Task */
@@ -2662,11 +2661,6 @@ static PyMethodDef TaskType_methods[] = {
     {NULL, NULL}        /* Sentinel */
 };
 
-static PyMemberDef TaskType_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(TaskObj, task_weakreflist), READONLY},
-    {NULL},
-};
-
 static PyGetSetDef TaskType_getsetlist[] = {
     FUTURE_COMMON_GETSETLIST
     {"_log_destroy_pending", (getter)TaskObj_get_log_destroy_pending,
@@ -2685,7 +2679,6 @@ static PyType_Slot Task_slots[] = {
     {Py_tp_clear, (inquiry)TaskObj_clear},
     {Py_tp_iter, (getiterfunc)future_new_iter},
     {Py_tp_methods, TaskType_methods},
-    {Py_tp_members, TaskType_members},
     {Py_tp_getset, TaskType_getsetlist},
     {Py_tp_init, (initproc)_asyncio_Task___init__},
     {Py_tp_new, PyType_GenericNew},
@@ -2700,7 +2693,8 @@ static PyType_Spec Task_spec = {
     .name = "_asyncio.Task",
     .basicsize = sizeof(TaskObj),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE |
-              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_MANAGED_DICT),
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_MANAGED_DICT |
+              Py_TPFLAGS_MANAGED_WEAKREF),
     .slots = Task_slots,
 };
 
@@ -2717,9 +2711,7 @@ TaskObj_dealloc(PyObject *self)
     PyTypeObject *tp = Py_TYPE(task);
     PyObject_GC_UnTrack(self);
 
-    if (task->task_weakreflist != NULL) {
-        PyObject_ClearWeakRefs(self);
-    }
+    PyObject_ClearWeakRefs(self);
 
     (void)TaskObj_clear(task);
     tp->tp_free(task);
@@ -3001,7 +2993,7 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
     }
 
     /* Check if `result` is a Future-compatible object */
-    if (_PyObject_LookupAttr(result, &_Py_ID(_asyncio_future_blocking), &o) < 0) {
+    if (PyObject_GetOptionalAttr(result, &_Py_ID(_asyncio_future_blocking), &o) < 0) {
         goto fail;
     }
     if (o != NULL && o != Py_None) {
