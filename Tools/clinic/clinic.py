@@ -785,9 +785,6 @@ class CLanguage(Language):
             self,
             f: Function
     ) -> str:
-        if re.search(r'[^\x00-\x7F]', f.docstring):
-            warn("Non-ascii character appear in docstring.")
-
         text, add, output = _text_accumulator()
         # turn docstring into a properly quoted C string
         for line in f.docstring.split('\n'):
@@ -5266,6 +5263,11 @@ class DSLParser:
 
     def docstring_append(self, obj: Function | Parameter, line: str) -> None:
         """Add a rstripped line to the current docstring."""
+        if match := re.search(r'[^\x00-\x7F]', line):
+            offending = match[0]
+            warn("Non-ascii characters are not allowed in docstrings:",
+                 repr(offending))
+
         docstring = obj.docstring
         if docstring:
             docstring += "\n"
