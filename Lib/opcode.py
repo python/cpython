@@ -200,27 +200,25 @@ def_op('INSTRUMENTED_LINE', 254)
 # 255 is reserved
 
 
+# Pseudo ops are above 255:
 
-def pseudo_op(name, op):
-    def_op(name, op)
+def_op('SETUP_FINALLY', 256)
+def_op('SETUP_CLEANUP', 257)
+def_op('SETUP_WITH', 258)
+def_op('POP_BLOCK', 259)
 
-pseudo_op('SETUP_FINALLY', 256)
-pseudo_op('SETUP_CLEANUP', 257)
-pseudo_op('SETUP_WITH', 258)
-pseudo_op('POP_BLOCK', 259)
+def_op('JUMP', 260)
+def_op('JUMP_NO_INTERRUPT', 261)
 
-pseudo_op('JUMP', 260)
-pseudo_op('JUMP_NO_INTERRUPT', 261)
+def_op('LOAD_METHOD', 262)
+def_op('LOAD_SUPER_METHOD', 263)
+def_op('LOAD_ZERO_SUPER_METHOD', 264)
+def_op('LOAD_ZERO_SUPER_ATTR', 265)
 
-pseudo_op('LOAD_METHOD', 262)
-pseudo_op('LOAD_SUPER_METHOD', 263)
-pseudo_op('LOAD_ZERO_SUPER_METHOD', 264)
-pseudo_op('LOAD_ZERO_SUPER_ATTR', 265)
+def_op('STORE_FAST_MAYBE_NULL', 266)
+def_op('LOAD_CLOSURE', 267)
 
-pseudo_op('STORE_FAST_MAYBE_NULL', 266)
-pseudo_op('LOAD_CLOSURE', 267)
-
-del def_op, pseudo_op
+del def_op
 
 opname = ['<%r>' % (op,) for op in range(max(opmap.values()) + 1)]
 for op, i in opmap.items():
