@@ -489,7 +489,7 @@ class Generator(Analyzer):
         instr2 = self.instrs[name2]
         assert not instr1.active_caches, f"{name1} has active caches"
         assert not instr2.active_caches, f"{name2} has active caches"
-        expansions = [
+        expansions: list[tuple[str, int, int]] = [
             (name1, OPARG_SIZES["OPARG_TOP"], 0),
             (name2, OPARG_SIZES["OPARG_BOTTOM"], 0),
         ]
