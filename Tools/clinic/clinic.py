@@ -5734,11 +5734,13 @@ def main(argv: list[str] | None = None) -> NoReturn:
     try:
         run_clinic(parser, args)
     except ClinicError as exc:
-        msg = (
-            f"Error in file {exc.filename!r} on line {exc.lineno}:\n"
-            f"{exc}\n"
-        )
-        sys.stderr.write(msg)
+        sys.stderr.write("Error")
+        if exc.filename is not None:
+            sys.stderr.write(f" in file {exc.filename!r}")
+        if exc.lineno is not None:
+            sys.stderr.write(f" on line {exc.lineno}")
+        sys.stderr.write(":\n")
+        sys.stderr.write(f"{exc}\n")
         sys.exit(1)
     else:
         sys.exit(0)
