@@ -2239,7 +2239,6 @@
                 Py_DECREF(owner);
             }
             next_instr += 9;
-            STACK_GROW(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             if (oparg & 1) { stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = res2; }
             stack_pointer[-1] = res;
@@ -3062,7 +3061,7 @@
                 next = Py_NewRef(PyList_GET_ITEM(seq, it->it_index++));
             }
             next_instr += 1;
-            STACK_GROW(2);
+            STACK_GROW(1);
             stack_pointer[-2] = iter;
             stack_pointer[-1] = next;
             DISPATCH();
@@ -3105,7 +3104,7 @@
                 next = Py_NewRef(PyTuple_GET_ITEM(seq, it->it_index++));
             }
             next_instr += 1;
-            STACK_GROW(2);
+            STACK_GROW(1);
             stack_pointer[-2] = iter;
             stack_pointer[-1] = next;
             DISPATCH();
@@ -3146,7 +3145,7 @@
                 if (next == NULL) goto error;
             }
             next_instr += 1;
-            STACK_GROW(2);
+            STACK_GROW(1);
             stack_pointer[-2] = iter;
             stack_pointer[-1] = next;
             DISPATCH();

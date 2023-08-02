@@ -222,7 +222,7 @@ class EffectManager:
     def merge(self, follow: "EffectManager") -> None:
         sources: set[str] = set()
         destinations: set[str] = set()
-        follow.adjust(self.net_offset)
+        follow.adjust(self.final_offset)
         while self.pokes and follow.peeks and self.pokes[-1].src == follow.peeks[0].dst:
             src = self.pokes.pop(-1).src
             dst = follow.peeks.pop(0).dst
@@ -341,7 +341,7 @@ def get_stack_effect_info_for_macro(mac: MacroInstruction) -> tuple[str, str]:
     Returns a tuple (popped, pushed) where each is a string giving a
     symbolic expression for the number of values popped/pushed.
     """
-    parts = [comp for comp in mac.parts if isinstance(comp, Component)]
+    parts = [part for part in mac.parts if isinstance(part, Component)]
     managers = [EffectManager(part.instr, part.active_caches) for part in parts]
     for prev, follow in zip(managers[:-1], managers[1:], strict=True):
         prev.merge(follow)
@@ -366,7 +366,7 @@ def get_stack_effect_info_for_macro(mac: MacroInstruction) -> tuple[str, str]:
 
 
 def write_macro_instr(mac: MacroInstruction, out: Formatter) -> None:
-    parts = [comp for comp in mac.parts if isinstance(comp, Component)]
+    parts = [part for part in mac.parts if isinstance(part, Component)]
     managers = [EffectManager(part.instr, part.active_caches) for part in parts]
 
     all_vars: dict[str, StackEffect] = {}
@@ -425,6 +425,7 @@ def write_macro_instr(mac: MacroInstruction, out: Formatter) -> None:
                 if cache_adjust:
                     out.emit(f"next_instr += {cache_adjust};")
                 out.stack_adjust(mgr.final_offset.deep, mgr.final_offset.high)
+                # Use clone() since adjust_inverse() mutates final_offset
                 mgr.adjust_inverse(mgr.final_offset.clone())
 
             for poke in mgr.pokes:

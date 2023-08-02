@@ -626,55 +626,6 @@ class Generator(Analyzer):
                     self.out.emit("CHECK_EVAL_BREAKER();")
                 self.out.emit(f"DISPATCH();")
 
-    def write_macro(self, mac: MacroInstruction) -> None:
-        """Write code for a macro instruction."""
-        # TODO: Somewhere (where?) make it so that if one instruction
-        # has an output that is input to another, and the variable names
-        # and types match and don't conflict with other instructions,
-        # that variable is declared with the right name and type in the
-        # outer block, rather than trusting the compiler to optimize it.
-        self.out.emit("")
-        with self.out.block(f"TARGET({mac.name})"):
-            if mac.predicted:
-                self.out.emit(f"PREDICTED({mac.name});")
-
-            # The input effects should have no conditionals.
-            # Only the output effects do (for now).
-            ieffects = [
-                StackEffect(eff.name, eff.type) if eff.cond else eff
-                for eff in mac.stack
-            ]
-
-            for i, var in reversed(list(enumerate(ieffects))):
-                src = None
-                if i < mac.initial_sp:
-                    src = StackEffect(f"stack_pointer[-{mac.initial_sp - i}]", "")
-                self.out.declare(var, src)
-
-            cache_adjust = 0
-            for part in mac.parts:
-                match part:
-                    case parsing.CacheEffect(size=size):
-                        cache_adjust += size
-                    case Component() as comp:
-                        comp.write_body(self.out)
-                        cache_adjust += comp.instr.cache_offset
-
-            if cache_adjust:
-                self.out.emit(f"next_instr += {cache_adjust};")
-
-            self.out.static_assert_family_size(
-                mac.name, self.families.get(mac.name), cache_adjust
-            )
-
-            self.out.stack_adjust(ieffects[: mac.initial_sp], mac.stack[: mac.final_sp])
-
-            for i, var in enumerate(reversed(mac.stack[: mac.final_sp]), 1):
-                dst = StackEffect(f"stack_pointer[-{i}]", "")
-                self.out.assign(dst, var)
-
-            self.out.emit(f"DISPATCH();")
-
 
 def main():
     """Parse command line, parse input, analyze, write output."""
