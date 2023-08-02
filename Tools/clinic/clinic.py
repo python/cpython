@@ -1098,7 +1098,6 @@ class CLanguage(Language):
 
                 parsearg = p.converter.parse_arg(argname, displayname)
                 if parsearg is None:
-                    #print('Cannot convert %s %r for %s' % (p.converter.__class__.__name__, p.converter.format_unit, p.converter.name), file=sys.stderr)
                     parser_code = None
                     break
                 if has_optional or p.is_optional():
@@ -1191,7 +1190,6 @@ class CLanguage(Language):
                 displayname = p.get_displayname(i+1)
                 parsearg = p.converter.parse_arg(argname_fmt % i, displayname)
                 if parsearg is None:
-                    #print('Cannot convert %s %r for %s' % (p.converter.__class__.__name__, p.converter.format_unit, p.converter.name), file=sys.stderr)
                     parser_code = None
                     break
                 if add_label and (i == pos_only or i == max_pos):
@@ -4645,13 +4643,11 @@ class DSLParser:
             state: StateKeeper,
             line: str | None = None
     ) -> None:
-        # real_print(self.state.__name__, "->", state.__name__, ", line=", line)
         self.state = state
         if line is not None:
             self.state(line)
 
     def state_dsl_start(self, line: str) -> None:
-        # self.block = self.ClinicOutputBlock(self)
         if not self.valid_line(line):
             return
 
