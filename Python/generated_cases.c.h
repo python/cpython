@@ -1635,6 +1635,7 @@
             PyObject *res;
             // _GUARD_GLOBALS_VERSION
             {
+                uint16_t version = read_u16(&next_instr[1].cache);
                 PyDictObject *dict = (PyDictObject *)GLOBALS();
                 DEOPT_IF(!PyDict_CheckExact(dict), LOAD_GLOBAL);
                 DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
@@ -1642,6 +1643,7 @@
             }
             // _LOAD_GLOBAL_MODULE
             {
+                uint16_t index = read_u16(&next_instr[3].cache);
                 PyDictObject *dict = (PyDictObject *)GLOBALS();
                 PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
                 res = entries[index].me_value;
@@ -1662,6 +1664,7 @@
             PyObject *res;
             // _GUARD_GLOBALS_VERSION
             {
+                uint16_t version = read_u16(&next_instr[1].cache);
                 PyDictObject *dict = (PyDictObject *)GLOBALS();
                 DEOPT_IF(!PyDict_CheckExact(dict), LOAD_GLOBAL);
                 DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
@@ -1669,6 +1672,7 @@
             }
             // _GUARD_BUILTINS_VERSION
             {
+                uint16_t version = read_u16(&next_instr[2].cache);
                 PyDictObject *dict = (PyDictObject *)BUILTINS();
                 DEOPT_IF(!PyDict_CheckExact(dict), LOAD_GLOBAL);
                 DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
@@ -1676,6 +1680,7 @@
             }
             // _LOAD_GLOBAL_BUILTINS
             {
+                uint16_t index = read_u16(&next_instr[3].cache);
                 PyDictObject *bdict = (PyDictObject *)BUILTINS();
                 PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(bdict->ma_keys);
                 res = entries[index].me_value;
@@ -2201,6 +2206,7 @@
             // _GUARD_TYPE_VERSION
             owner = stack_pointer[-1];
             {
+                uint32_t type_version = read_u32(&next_instr[1].cache);
                 PyTypeObject *tp = Py_TYPE(owner);
                 assert(type_version != 0);
                 DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
@@ -2214,6 +2220,7 @@
             }
             // _LOAD_ATTR_INSTANCE_VALUE
             {
+                uint16_t index = read_u16(&next_instr[3].cache);
                 PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
                 res = _PyDictOrValues_GetValues(dorv)->values[index];
                 DEOPT_IF(res == NULL, LOAD_ATTR);

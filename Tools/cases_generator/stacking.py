@@ -10,6 +10,7 @@ from formatting import (
     string_effect_size,
 )
 from instructions import (
+    ActiveCacheEffect,
     Instruction,
     MacroInstruction,
     Component,
@@ -150,6 +151,7 @@ class EffectManager:
     """Manage stack effects and offsets for an instruction."""
 
     instr: Instruction
+    active_caches: list[ActiveCacheEffect]
     peeks: list[PeekEffect]
     pokes: list[PokeEffect]
     copies: list[CopyEffect]  # See merge()
@@ -159,8 +161,9 @@ class EffectManager:
     final_offset: StackOffset
     net_offset: StackOffset
 
-    def __init__(self, instr: Instruction):
+    def __init__(self, instr: Instruction, active_caches: list[ActiveCacheEffect]):
         self.instr = instr
+        self.active_caches = active_caches
         self.peeks = []
         self.pokes = []
         self.copies = []
@@ -273,7 +276,7 @@ def write_single_instr(
     instr: Instruction, out: Formatter, tier: Tiers = TIER_ONE
 ) -> None:
     """Replace (most of) Instruction.write()."""
-    mgr = EffectManager(instr)
+    mgr = EffectManager(instr, instr.active_caches)
     assert not mgr.copies
 
     # Emit input stack effect variable declarations and initializations
@@ -303,7 +306,7 @@ def write_single_instr(
             out.declare(poke.src, dst)
 
     # Emit the instruction itself
-    instr.write_body(out, 0, instr.active_caches, tier=tier)
+    instr.write_body(out, 0, mgr.active_caches, tier=tier)
 
     # Skip the rest if the block always exits
     if instr.always_exits:
@@ -344,7 +347,7 @@ def get_stack_effect_info_for_macro(mac: MacroInstruction) -> tuple[str, str]:
     symbolic expression for the number of values popped/pushed.
     """
     parts = [comp for comp in mac.parts if isinstance(comp, Component)]
-    managers = [EffectManager(part.instr) for part in parts]
+    managers = [EffectManager(part.instr, part.active_caches) for part in parts]
     for prev, follow in zip(managers[:-1], managers[1:], strict=True):
         prev.merge(follow)
     net = StackOffset()
@@ -369,7 +372,7 @@ def get_stack_effect_info_for_macro(mac: MacroInstruction) -> tuple[str, str]:
 
 def write_macro_instr(mac: MacroInstruction, out: Formatter) -> None:
     parts = [comp for comp in mac.parts if isinstance(comp, Component)]
-    managers = [EffectManager(part.instr) for part in parts]
+    managers = [EffectManager(part.instr, part.active_caches) for part in parts]
 
     all_vars: dict[str, StackEffect] = {}
     for mgr in managers:
@@ -395,8 +398,6 @@ def write_macro_instr(mac: MacroInstruction, out: Formatter) -> None:
         if mac.predicted:
             out.emit(f"PREDICTED({mac.name});")
 
-        # TODO: Cache variables
-
         # Declare all variables
         for name, eff in all_vars.items():
             out.declare(eff, None)
@@ -410,7 +411,7 @@ def write_macro_instr(mac: MacroInstruction, out: Formatter) -> None:
                 out.assign(peek.dst, StackEffect(peek.as_variable()))  # TODO: clone type/cond/size
 
             with out.block(""):
-                mgr.instr.write_body(out, -4, [])  # TODO: active_caches
+                mgr.instr.write_body(out, -4, mgr.active_caches)
 
             if mgr is managers[-1]:
                 out.stack_adjust(mgr.final_offset.deep, mgr.final_offset.high)
