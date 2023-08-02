@@ -15,6 +15,7 @@ from formatting import Formatter, list_effect_size, maybe_parenthesize
 from flags import InstructionFlags, variable_used
 from instructions import (
     AnyInstruction,
+    AbstractInstruction,
     Component,
     Instruction,
     MacroInstruction,
@@ -42,6 +43,9 @@ DEFAULT_PYMETADATA_OUTPUT = os.path.relpath(
 )
 DEFAULT_EXECUTOR_OUTPUT = os.path.relpath(
     os.path.join(ROOT, "Python/executor_cases.c.h")
+)
+DEFAULT_ABSTRACT_INTERPRETER_OUTPUT = os.path.relpath(
+    os.path.join(ROOT, "Python/abstract_interp_cases.c.h")
 )
 
 # Constants used instead of size for macro expansions.
@@ -91,7 +95,13 @@ arg_parser.add_argument(
     help="Write executor cases to this file",
     default=DEFAULT_EXECUTOR_OUTPUT,
 )
-
+arg_parser.add_argument(
+    "-a",
+    "--abstract-interpreter-cases",
+    type=str,
+    help="Write abstract interpreter cases to this file",
+    default=DEFAULT_ABSTRACT_INTERPRETER_OUTPUT,
+)
 
 class Generator(Analyzer):
     def get_stack_effect_info(
@@ -620,6 +630,39 @@ class Generator(Analyzer):
             file=sys.stderr,
         )
 
+    def write_abstract_interpreter_instructions(
+        self, abstract_interpreter_filename: str, emit_line_directives: bool
+    ) -> None:
+        """Generate cases for the Tier 2 abstract interpreter/analzyer."""
+        with open(abstract_interpreter_filename, "w") as f:
+            self.out = Formatter(f, 8, emit_line_directives)
+            self.write_provenance_header()
+            for thing in self.everything:
+                match thing:
+                    case OverriddenInstructionPlaceHolder():
+                        # TODO: Is this helpful?
+                        self.write_overridden_instr_place_holder(thing)
+                    case parsing.InstDef():
+                        instr = AbstractInstruction(self.instrs[thing.name].inst)
+                        self.out.emit("")
+                        with self.out.block(f"case {thing.name}:"):
+                            instr.write(self.out, tier=TIER_TWO)
+                            if instr.check_eval_breaker:
+                                self.out.emit("CHECK_EVAL_BREAKER();")
+                            self.out.emit("break;")
+                        # elif instr.kind != "op":
+                        #     print(f"NOTE: {thing.name} is not a viable uop")
+                    case parsing.Macro():
+                        pass
+                    case parsing.Pseudo():
+                        pass
+                    case _:
+                        typing.assert_never(thing)
+        print(
+            f"Wrote some stuff to {abstract_interpreter_filename}",
+            file=sys.stderr,
+        )
+
     def write_overridden_instr_place_holder(
         self, place_holder: OverriddenInstructionPlaceHolder
     ) -> None:
@@ -724,6 +767,8 @@ def main():
     a.write_instructions(args.output, args.emit_line_directives)
     a.write_metadata(args.metadata, args.pymetadata)
     a.write_executor_instructions(args.executor_cases, args.emit_line_directives)
+    a.write_abstract_interpreter_instructions(args.abstract_interpreter_cases,
+                                              args.emit_line_directives)
 
 
 if __name__ == "__main__":

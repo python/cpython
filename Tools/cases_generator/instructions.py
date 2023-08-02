@@ -310,6 +310,37 @@ InstructionOrCacheEffect = Instruction | parsing.CacheEffect
 StackEffectMapping = list[tuple[StackEffect, StackEffect]]
 
 
+# Instruction used for abstract interpretation.
+class AbstractInstruction(Instruction):
+    def __init__(self, inst: parsing.InstDef):
+        super().__init__(inst)
+
+    def write(self, out: Formatter, tier: Tiers = TIER_ONE) -> None:
+        """Write one abstract instruction, sans prologue and epilogue."""
+        # Write a static assertion that a family's cache size is correct
+        if family := self.family:
+            if self.name == family.name:
+                if cache_size := family.size:
+                    out.emit(
+                        f"static_assert({cache_size} == "
+                        f'{self.cache_offset}, "incorrect cache size");'
+                    )
+        # Write net stack growth/shrinkage
+        out.stack_adjust(
+            [ieff for ieff in self.input_effects],
+            [oeff for oeff in self.output_effects],
+        )
+
+    def write_body(
+        self,
+        out: Formatter,
+        dedent: int,
+        active_caches: list[ActiveCacheEffect],
+        tier: Tiers = TIER_ONE,
+    ) -> None:
+        pass
+
+
 @dataclasses.dataclass
 class Component:
     instr: Instruction

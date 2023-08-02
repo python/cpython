@@ -4,6 +4,7 @@
 #include "pycore_opcode.h"
 #include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"
+#include "pycore_optimizer.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_uops.h"
 #include "cpython/optimizer.h"
@@ -704,10 +705,11 @@ uop_optimize(
         return -1;
     }
     executor->base.execute = _PyUopExecute;
+    trace_length = uop_analyze_and_optimize(trace, trace_length);
     memcpy(executor->trace, trace, trace_length * sizeof(_PyUOpInstruction));
-        if (trace_length < _Py_UOP_MAX_TRACE_LENGTH) {
-            executor->trace[trace_length].opcode = 0;  // Sentinel
-        }
+    if (trace_length < _Py_UOP_MAX_TRACE_LENGTH) {
+        executor->trace[trace_length].opcode = 0;  // Sentinel
+    }
     *exec_ptr = (_PyExecutorObject *)executor;
     return 1;
 }

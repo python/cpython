@@ -405,6 +405,7 @@ PYTHON_OBJS=	\
 		Python/mysnprintf.o \
 		Python/mystrtoul.o \
 		Python/optimizer.o \
+		Python/optimizer_analysis.o \
 		Python/pathconfig.o \
 		Python/preconfig.o \
 		Python/pyarena.o \
@@ -1562,6 +1563,7 @@ Python/ceval.o: \
 
 Python/executor.o: \
 		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
+		$(srcdir)/Include/internal/pycore_optimizer.h \
 		$(srcdir)/Python/ceval_macros.h \
 		$(srcdir)/Python/executor_cases.c.h
 
@@ -1570,7 +1572,12 @@ Python/flowgraph.o: \
 
 Python/optimizer.o: \
 		$(srcdir)/Python/executor_cases.c.h \
-		$(srcdir)/Include/internal/pycore_opcode_metadata.h
+		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
+		$(srcdir)/Include/internal/pycore_optimizer.h
+
+Python/optimizer_analysis.o: \
+		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
+		$(srcdir)/Include/internal/pycore_optimizer.h
 
 Python/frozen.o: $(FROZEN_FILES_OUT)
 
