@@ -271,7 +271,6 @@
             value = stack_pointer[-1];
             DEOPT_IF(!PyBool_Check(value), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
-            stack_pointer[-1] = value;
             next_instr += 3;
             DISPATCH();
         }
@@ -774,7 +773,6 @@
             list = stack_pointer[-2 - (oparg-1)];
             if (_PyList_AppendTakeRef((PyListObject *)list, v) < 0) goto pop_1_error;
             STACK_SHRINK(1);
-            stack_pointer[-1 - (oparg-1)] = list;
             DISPATCH();
         }
 
@@ -787,7 +785,6 @@
             Py_DECREF(v);
             if (err) goto pop_1_error;
             STACK_SHRINK(1);
-            stack_pointer[-1 - (oparg-1)] = set;
             DISPATCH();
         }
 
@@ -1110,7 +1107,6 @@
                 }
             }
             STACK_GROW(1);
-            stack_pointer[-2] = aiter;
             stack_pointer[-1] = awaitable;
             DISPATCH();
         }
@@ -1200,7 +1196,6 @@
                 }
             }
             Py_DECREF(v);
-            stack_pointer[-2] = receiver;
             stack_pointer[-1] = retval;
             next_instr += 1;
             DISPATCH();
@@ -1226,7 +1221,6 @@
             tstate->exc_info = &gen->gi_exc_state;
             SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
             DISPATCH_INLINED(gen_frame);
-            stack_pointer[-2] = receiver;
         }
 
         TARGET(INSTRUMENTED_YIELD_VALUE) {
@@ -1285,7 +1279,6 @@
             PyObject *exc;
             PyObject **values;
             exc = stack_pointer[-1];
-            values = stack_pointer - 1 - oparg;
             values = stack_pointer - 1 - oparg;
             assert(oparg >= 0 && oparg <= 2);
             if (oparg) {
@@ -1960,7 +1953,6 @@
             assert(Py_IsNone(none_val));
             Py_DECREF(iterable);
             STACK_SHRINK(1);
-            stack_pointer[-1 - (oparg-1)] = list;
             DISPATCH();
         }
 
@@ -1973,7 +1965,6 @@
             Py_DECREF(iterable);
             if (err < 0) goto pop_1_error;
             STACK_SHRINK(1);
-            stack_pointer[-1 - (oparg-1)] = set;
             DISPATCH();
         }
 
@@ -2844,7 +2835,6 @@
             int res = PyErr_GivenExceptionMatches(left, right);
             Py_DECREF(right);
             b = res ? Py_True : Py_False;
-            stack_pointer[-2] = left;
             stack_pointer[-1] = b;
             DISPATCH();
         }
@@ -2873,7 +2863,6 @@
             res = import_from(tstate, from, name);
             if (res == NULL) goto error;
             STACK_GROW(1);
-            stack_pointer[-2] = from;
             stack_pointer[-1] = res;
             DISPATCH();
         }
@@ -3017,7 +3006,6 @@
             len_o = PyLong_FromSsize_t(len_i);
             if (len_o == NULL) goto error;
             STACK_GROW(1);
-            stack_pointer[-2] = obj;
             stack_pointer[-1] = len_o;
             DISPATCH();
         }
@@ -3056,7 +3044,6 @@
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
             res = match ? Py_True : Py_False;
             STACK_GROW(1);
-            stack_pointer[-2] = subject;
             stack_pointer[-1] = res;
             DISPATCH();
         }
@@ -3068,7 +3055,6 @@
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
             res = match ? Py_True : Py_False;
             STACK_GROW(1);
-            stack_pointer[-2] = subject;
             stack_pointer[-1] = res;
             DISPATCH();
         }
@@ -3083,8 +3069,6 @@
             values_or_none = _PyEval_MatchKeys(tstate, subject, keys);
             if (values_or_none == NULL) goto error;
             STACK_GROW(1);
-            stack_pointer[-3] = subject;
-            stack_pointer[-2] = keys;
             stack_pointer[-1] = values_or_none;
             DISPATCH();
         }
@@ -3171,7 +3155,6 @@
             }
             // Common case: no jump, leave it to the code generator
             STACK_GROW(1);
-            stack_pointer[-2] = iter;
             stack_pointer[-1] = next;
             next_instr += 1;
             DISPATCH();
@@ -3243,7 +3226,6 @@
                 next = Py_NewRef(PyList_GET_ITEM(seq, it->it_index++));
             }
             STACK_GROW(1);
-            stack_pointer[-2] = iter;
             stack_pointer[-1] = next;
             next_instr += 1;
             DISPATCH();
@@ -3286,7 +3268,6 @@
                 next = Py_NewRef(PyTuple_GET_ITEM(seq, it->it_index++));
             }
             STACK_GROW(1);
-            stack_pointer[-2] = iter;
             stack_pointer[-1] = next;
             next_instr += 1;
             DISPATCH();
@@ -3327,7 +3308,6 @@
                 if (next == NULL) goto error;
             }
             STACK_GROW(1);
-            stack_pointer[-2] = iter;
             stack_pointer[-1] = next;
             next_instr += 1;
             DISPATCH();
@@ -3352,7 +3332,6 @@
                    next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
             DISPATCH_INLINED(gen_frame);
             STACK_GROW(1);
-            stack_pointer[-2] = iter;
         }
 
         TARGET(BEFORE_ASYNC_WITH) {
@@ -3472,9 +3451,6 @@
                     3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
             if (res == NULL) goto error;
             STACK_GROW(1);
-            stack_pointer[-5] = exit_func;
-            stack_pointer[-4] = lasti;
-            stack_pointer[-2] = val;
             stack_pointer[-1] = res;
             DISPATCH();
         }
@@ -4686,7 +4662,6 @@
             assert(oparg > 0);
             top = Py_NewRef(bottom);
             STACK_GROW(1);
-            stack_pointer[-2 - (oparg-1)] = bottom;
             stack_pointer[-1] = top;
             DISPATCH();
         }

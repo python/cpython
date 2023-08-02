@@ -130,7 +130,6 @@
             value = stack_pointer[-1];
             DEOPT_IF(!PyBool_Check(value), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
-            stack_pointer[-1] = value;
             break;
         }
 
@@ -228,8 +227,6 @@
             left = stack_pointer[-2];
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
-            stack_pointer[-2] = left;
-            stack_pointer[-1] = right;
             break;
         }
 
@@ -288,8 +285,6 @@
             left = stack_pointer[-2];
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
-            stack_pointer[-2] = left;
-            stack_pointer[-1] = right;
             break;
         }
 
@@ -348,8 +343,6 @@
             left = stack_pointer[-2];
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyUnicode_CheckExact(right), BINARY_OP);
-            stack_pointer[-2] = left;
-            stack_pointer[-1] = right;
             break;
         }
 
@@ -525,7 +518,6 @@
             list = stack_pointer[-2 - (oparg-1)];
             if (_PyList_AppendTakeRef((PyListObject *)list, v) < 0) goto pop_1_error;
             STACK_SHRINK(1);
-            stack_pointer[-1 - (oparg-1)] = list;
             break;
         }
 
@@ -538,7 +530,6 @@
             Py_DECREF(v);
             if (err) goto pop_1_error;
             STACK_SHRINK(1);
-            stack_pointer[-1 - (oparg-1)] = set;
             break;
         }
 
@@ -740,7 +731,6 @@
                 }
             }
             STACK_GROW(1);
-            stack_pointer[-2] = aiter;
             stack_pointer[-1] = awaitable;
             break;
         }
@@ -1304,7 +1294,6 @@
             assert(Py_IsNone(none_val));
             Py_DECREF(iterable);
             STACK_SHRINK(1);
-            stack_pointer[-1 - (oparg-1)] = list;
             break;
         }
 
@@ -1317,7 +1306,6 @@
             Py_DECREF(iterable);
             if (err < 0) goto pop_1_error;
             STACK_SHRINK(1);
-            stack_pointer[-1 - (oparg-1)] = set;
             break;
         }
 
@@ -1606,7 +1594,6 @@
             PyTypeObject *tp = Py_TYPE(owner);
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
-            stack_pointer[-1] = owner;
             break;
         }
 
@@ -1617,7 +1604,6 @@
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             DEOPT_IF(!_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
-            stack_pointer[-1] = owner;
             break;
         }
 
@@ -1822,7 +1808,6 @@
             int res = PyErr_GivenExceptionMatches(left, right);
             Py_DECREF(right);
             b = res ? Py_True : Py_False;
-            stack_pointer[-2] = left;
             stack_pointer[-1] = b;
             break;
         }
@@ -1852,7 +1837,6 @@
             len_o = PyLong_FromSsize_t(len_i);
             if (len_o == NULL) goto error;
             STACK_GROW(1);
-            stack_pointer[-2] = obj;
             stack_pointer[-1] = len_o;
             break;
         }
@@ -1891,7 +1875,6 @@
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
             res = match ? Py_True : Py_False;
             STACK_GROW(1);
-            stack_pointer[-2] = subject;
             stack_pointer[-1] = res;
             break;
         }
@@ -1903,7 +1886,6 @@
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
             res = match ? Py_True : Py_False;
             STACK_GROW(1);
-            stack_pointer[-2] = subject;
             stack_pointer[-1] = res;
             break;
         }
@@ -1918,8 +1900,6 @@
             values_or_none = _PyEval_MatchKeys(tstate, subject, keys);
             if (values_or_none == NULL) goto error;
             STACK_GROW(1);
-            stack_pointer[-3] = subject;
-            stack_pointer[-2] = keys;
             stack_pointer[-1] = values_or_none;
             break;
         }
@@ -1972,7 +1952,6 @@
             PyObject *iter;
             iter = stack_pointer[-1];
             DEOPT_IF(Py_TYPE(iter) != &PyListIter_Type, FOR_ITER);
-            stack_pointer[-1] = iter;
             break;
         }
 
@@ -1995,7 +1974,6 @@
                 exhausted = Py_False;
             }
             STACK_GROW(1);
-            stack_pointer[-2] = iter;
             stack_pointer[-1] = exhausted;
             break;
         }
@@ -2011,7 +1989,6 @@
             assert(it->it_index < PyList_GET_SIZE(seq));
             next = Py_NewRef(PyList_GET_ITEM(seq, it->it_index++));
             STACK_GROW(1);
-            stack_pointer[-2] = iter;
             stack_pointer[-1] = next;
             break;
         }
@@ -2020,7 +1997,6 @@
             PyObject *iter;
             iter = stack_pointer[-1];
             DEOPT_IF(Py_TYPE(iter) != &PyTupleIter_Type, FOR_ITER);
-            stack_pointer[-1] = iter;
             break;
         }
 
@@ -2043,7 +2019,6 @@
                 exhausted = Py_False;
             }
             STACK_GROW(1);
-            stack_pointer[-2] = iter;
             stack_pointer[-1] = exhausted;
             break;
         }
@@ -2059,7 +2034,6 @@
             assert(it->it_index < PyTuple_GET_SIZE(seq));
             next = Py_NewRef(PyTuple_GET_ITEM(seq, it->it_index++));
             STACK_GROW(1);
-            stack_pointer[-2] = iter;
             stack_pointer[-1] = next;
             break;
         }
@@ -2069,7 +2043,6 @@
             iter = stack_pointer[-1];
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
-            stack_pointer[-1] = iter;
             break;
         }
 
@@ -2081,7 +2054,6 @@
             assert(Py_TYPE(r) == &PyRangeIter_Type);
             exhausted = r->len <= 0 ? Py_True : Py_False;
             STACK_GROW(1);
-            stack_pointer[-2] = iter;
             stack_pointer[-1] = exhausted;
             break;
         }
@@ -2099,7 +2071,6 @@
             next = PyLong_FromLong(value);
             if (next == NULL) goto error;
             STACK_GROW(1);
-            stack_pointer[-2] = iter;
             stack_pointer[-1] = next;
             break;
         }
@@ -2138,9 +2109,6 @@
                     3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
             if (res == NULL) goto error;
             STACK_GROW(1);
-            stack_pointer[-5] = exit_func;
-            stack_pointer[-4] = lasti;
-            stack_pointer[-2] = val;
             stack_pointer[-1] = res;
             break;
         }
@@ -2667,7 +2635,6 @@
             assert(oparg > 0);
             top = Py_NewRef(bottom);
             STACK_GROW(1);
-            stack_pointer[-2 - (oparg-1)] = bottom;
             stack_pointer[-1] = top;
             break;
         }

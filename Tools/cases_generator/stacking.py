@@ -368,7 +368,7 @@ def write_components(
             )
         # Initialize array outputs
         for poke in mgr.pokes:
-            if poke.effect.size:
+            if poke.effect.size and poke.effect.name not in mgr.instr.unmoved_names:
                 out.assign(
                     poke.effect,
                     StackEffect(
@@ -391,7 +391,7 @@ def write_components(
             mgr.adjust_inverse(mgr.final_offset.clone())
 
         for poke in mgr.pokes:
-            if not poke.effect.size:
+            if not poke.effect.size and poke.effect.name not in mgr.instr.unmoved_names:
                 out.assign(
                     StackEffect(
                         poke.as_variable(),
