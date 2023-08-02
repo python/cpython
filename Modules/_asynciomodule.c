@@ -47,7 +47,7 @@ typedef struct {
     FutureObj_HEAD(fut)
 } FutureObj;
 
-typedef struct {
+typedef struct TaskObj {
     FutureObj_HEAD(task)
     unsigned task_must_cancel: 1;
     unsigned task_log_destroy_pending: 1;
@@ -56,8 +56,8 @@ typedef struct {
     PyObject *task_coro;
     PyObject *task_name;
     PyObject *task_context;
-    TaskObj *next;
-    TaskObj *prev;
+    struct TaskObj *next;
+    struct TaskObj *prev;
 } TaskObj;
 
 typedef struct {
@@ -3580,7 +3580,7 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
 {
 
     asyncio_state *state = get_asyncio_state(module);
-    PyObject *tasks = PySet_New(state->scheduled_tasks);
+    PyObject *tasks = PySet_New(NULL);
     if (tasks == NULL) {
         return NULL;
     }
@@ -3608,6 +3608,35 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
         }
         head = head->prev;
     }
+    PyObject *iter = PyObject_GetIter(state->scheduled_tasks);
+    if (iter == NULL) {
+        Py_DECREF(tasks);
+        Py_DECREF(loop);
+        return NULL;
+    }
+    PyObject *item;
+    while ((item = PyIter_Next(iter)) != NULL) {
+        PyObject *task_loop = get_future_loop(state, item);
+        if (task_loop == NULL) {
+            Py_DECREF(tasks);
+            Py_DECREF(loop);
+            Py_DECREF(iter);
+            Py_DECREF(item);
+            return NULL;
+        }
+        if (task_loop == loop) {
+            if (PySet_Add(tasks, item) < 0) {
+                Py_DECREF(tasks);
+                Py_DECREF(loop);
+                Py_DECREF(iter);
+                Py_DECREF(item);
+                return NULL;
+            }
+        }
+        Py_DECREF(task_loop);
+        Py_DECREF(item);
+    }
+    Py_DECREF(iter);
     Py_DECREF(loop);
     return tasks;
 }
