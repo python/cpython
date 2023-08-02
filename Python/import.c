@@ -1080,6 +1080,7 @@ _extensions_cache_delete(PyObject *filename, PyObject *name)
        However, this decref would be problematic if the module def were
        dynamically allocated, it were the last ref, and this function
        were called with an interpreter other than the def's owner. */
+    assert(_Py_IsImmortal(entry->value));
     entry->value = NULL;
 
 finally:
