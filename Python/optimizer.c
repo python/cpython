@@ -705,7 +705,7 @@ uop_optimize(
         return -1;
     }
     executor->base.execute = _PyUopExecute;
-    trace_length = uop_analyze_and_optimize(trace, trace_length);
+    trace_length = _Py_uop_analyze_and_optimize(trace, trace_length);
     memcpy(executor->trace, trace, trace_length * sizeof(_PyUOpInstruction));
     if (trace_length < _Py_UOP_MAX_TRACE_LENGTH) {
         executor->trace[trace_length].opcode = 0;  // Sentinel
