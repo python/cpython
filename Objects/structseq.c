@@ -10,7 +10,7 @@
 #include "Python.h"
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
-#include "structmember.h"         // PyMemberDef
+
 #include "pycore_structseq.h"     // PyStructSequence_InitType()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 
@@ -465,10 +465,10 @@ initialize_members(PyStructSequence_Desc *desc,
         /* The names and docstrings in these MemberDefs are statically */
         /* allocated so it is expected that they'll outlive the MemberDef */
         members[k].name = desc->fields[i].name;
-        members[k].type = T_OBJECT;
+        members[k].type = _Py_T_OBJECT;
         members[k].offset = offsetof(PyStructSequence, ob_item)
           + i * sizeof(PyObject*);
-        members[k].flags = READONLY;
+        members[k].flags = Py_READONLY;
         members[k].doc = desc->fields[i].doc;
         k++;
     }

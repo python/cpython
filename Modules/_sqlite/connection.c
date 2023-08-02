@@ -26,13 +26,15 @@
 #endif
 
 #include "module.h"
-#include "structmember.h"         // PyMemberDef
+
 #include "connection.h"
 #include "statement.h"
 #include "cursor.h"
 #include "blob.h"
 #include "prepare_protocol.h"
 #include "util.h"
+#include "pycore_import.h"        // _PyImport_GetModuleAttrString()
+#include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_weakref.h"       // _PyWeakref_IS_DEAD()
 
 #include <stdbool.h>
@@ -2509,18 +2511,18 @@ static PyMethodDef connection_methods[] = {
 
 static struct PyMemberDef connection_members[] =
 {
-    {"Warning", T_OBJECT, offsetof(pysqlite_Connection, Warning), READONLY},
-    {"Error", T_OBJECT, offsetof(pysqlite_Connection, Error), READONLY},
-    {"InterfaceError", T_OBJECT, offsetof(pysqlite_Connection, InterfaceError), READONLY},
-    {"DatabaseError", T_OBJECT, offsetof(pysqlite_Connection, DatabaseError), READONLY},
-    {"DataError", T_OBJECT, offsetof(pysqlite_Connection, DataError), READONLY},
-    {"OperationalError", T_OBJECT, offsetof(pysqlite_Connection, OperationalError), READONLY},
-    {"IntegrityError", T_OBJECT, offsetof(pysqlite_Connection, IntegrityError), READONLY},
-    {"InternalError", T_OBJECT, offsetof(pysqlite_Connection, InternalError), READONLY},
-    {"ProgrammingError", T_OBJECT, offsetof(pysqlite_Connection, ProgrammingError), READONLY},
-    {"NotSupportedError", T_OBJECT, offsetof(pysqlite_Connection, NotSupportedError), READONLY},
-    {"row_factory", T_OBJECT, offsetof(pysqlite_Connection, row_factory)},
-    {"text_factory", T_OBJECT, offsetof(pysqlite_Connection, text_factory)},
+    {"Warning", _Py_T_OBJECT, offsetof(pysqlite_Connection, Warning), Py_READONLY},
+    {"Error", _Py_T_OBJECT, offsetof(pysqlite_Connection, Error), Py_READONLY},
+    {"InterfaceError", _Py_T_OBJECT, offsetof(pysqlite_Connection, InterfaceError), Py_READONLY},
+    {"DatabaseError", _Py_T_OBJECT, offsetof(pysqlite_Connection, DatabaseError), Py_READONLY},
+    {"DataError", _Py_T_OBJECT, offsetof(pysqlite_Connection, DataError), Py_READONLY},
+    {"OperationalError", _Py_T_OBJECT, offsetof(pysqlite_Connection, OperationalError), Py_READONLY},
+    {"IntegrityError", _Py_T_OBJECT, offsetof(pysqlite_Connection, IntegrityError), Py_READONLY},
+    {"InternalError", _Py_T_OBJECT, offsetof(pysqlite_Connection, InternalError), Py_READONLY},
+    {"ProgrammingError", _Py_T_OBJECT, offsetof(pysqlite_Connection, ProgrammingError), Py_READONLY},
+    {"NotSupportedError", _Py_T_OBJECT, offsetof(pysqlite_Connection, NotSupportedError), Py_READONLY},
+    {"row_factory", _Py_T_OBJECT, offsetof(pysqlite_Connection, row_factory)},
+    {"text_factory", _Py_T_OBJECT, offsetof(pysqlite_Connection, text_factory)},
     {NULL}
 };
 

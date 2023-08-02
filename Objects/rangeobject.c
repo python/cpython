@@ -2,10 +2,11 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_range.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_modsupport.h"    // _PyArg_NoKwnames()
+#include "pycore_range.h"
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
-#include "structmember.h"         // PyMemberDef
+
 
 /* Support objects whose length is > PY_SSIZE_T_MAX.
 
@@ -756,9 +757,9 @@ static PyMethodDef range_methods[] = {
 };
 
 static PyMemberDef range_members[] = {
-    {"start",   T_OBJECT_EX,    offsetof(rangeobject, start),   READONLY},
-    {"stop",    T_OBJECT_EX,    offsetof(rangeobject, stop),    READONLY},
-    {"step",    T_OBJECT_EX,    offsetof(rangeobject, step),    READONLY},
+    {"start",   Py_T_OBJECT_EX,    offsetof(rangeobject, start),   Py_READONLY},
+    {"stop",    Py_T_OBJECT_EX,    offsetof(rangeobject, stop),    Py_READONLY},
+    {"step",    Py_T_OBJECT_EX,    offsetof(rangeobject, step),    Py_READONLY},
     {0}
 };
 
