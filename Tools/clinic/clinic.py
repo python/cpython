@@ -29,7 +29,6 @@ import string
 import sys
 import textwrap
 import traceback
-import warnings
 
 from collections.abc import (
     Callable,
@@ -153,10 +152,6 @@ class ClinicError(Exception):
         self.filename = filename
 
 
-class ClinicWarning(UserWarning):
-    pass
-
-
 @overload
 def warn_or_fail(
     *args: object,
@@ -194,7 +189,7 @@ def warn_or_fail(
         if line_number is not None:
             msg += f" on line {line_number}"
         msg += f": {joined}"
-        warnings.warn(msg, ClinicWarning)
+        print(msg)
 
 
 def warn(
