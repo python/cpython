@@ -229,6 +229,8 @@ extern void _PyLineTable_InitAddressRange(
 extern int _PyLineTable_NextAddressRange(PyCodeAddressRange *range);
 extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 
+#define ENABLE_SPECIALIZATION 1
+
 /* Specialization functions */
 
 extern void _Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *cls,
