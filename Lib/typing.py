@@ -2395,6 +2395,8 @@ def no_type_check_decorator(decorator):
     This wraps the decorator with something that wraps the decorated
     function in @no_type_check.
     """
+    import warnings
+    warnings._deprecated("typing.no_type_check_decorator", remove=(3, 15))
     @functools.wraps(decorator)
     def wrapped_decorator(*args, **kwds):
         func = decorator(*args, **kwds)

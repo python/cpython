@@ -205,14 +205,15 @@ Modules/_datetimemodule.c	-	max_fold_seconds	-
 Modules/_datetimemodule.c	datetime_isoformat	specs	-
 Modules/_datetimemodule.c	parse_hh_mm_ss_ff	correction	-
 Modules/_datetimemodule.c	time_isoformat	specs	-
-Modules/_decimal/_decimal.c	-	cond_map	-
+Modules/_decimal/_decimal.c	-	cond_map_template	-
 Modules/_decimal/_decimal.c	-	dec_signal_string	-
 Modules/_decimal/_decimal.c	-	dflt_ctx	-
 Modules/_decimal/_decimal.c	-	int_constants	-
 Modules/_decimal/_decimal.c	-	invalid_rounding_err	-
 Modules/_decimal/_decimal.c	-	invalid_signals_err	-
-Modules/_decimal/_decimal.c	-	signal_map	-
+Modules/_decimal/_decimal.c	-	signal_map_template	-
 Modules/_decimal/_decimal.c	-	ssize_constants	-
+Modules/_decimal/_decimal.c	-	INVALID_SIGNALDICT_ERROR_MSG	-
 Modules/_elementtree.c	-	ExpatMemoryHandler	-
 Modules/_hashopenssl.c	-	py_hashes	-
 Modules/_hacl/Hacl_Hash_SHA1.c	-	_h0	-
@@ -326,7 +327,7 @@ Parser/parser.c	-	reserved_keywords	-
 Parser/parser.c	-	soft_keywords	-
 Parser/tokenizer.c	-	type_comment_prefix	-
 Python/ast_opt.c	fold_unaryop	ops	-
-Python/ceval.c	-	binary_ops	-
+Python/ceval.c	-	_PyEval_BinaryOps	-
 Python/ceval.c	-	_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS	-
 Python/codecs.c	-	Py_hexdigits	-
 Python/codecs.c	-	ucnhash_capi	-
@@ -366,6 +367,8 @@ Python/sysmodule.c	-	whatstrings	-
 Python/optimizer.c	-	DefaultOptimizer_Type	-
 Python/optimizer.c	-	CounterExecutor_Type	-
 Python/optimizer.c	-	CounterOptimizer_Type	-
+Python/optimizer.c	-	UOpExecutor_Type	-
+Python/optimizer.c	-	UOpOptimizer_Type	-
 Python/optimizer.c	-	_PyOptimizer_Default	-
 
 ##-----------------------

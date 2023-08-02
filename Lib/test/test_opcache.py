@@ -2,6 +2,7 @@ import dis
 import threading
 import types
 import unittest
+from test.support import threading_helper
 
 
 class TestLoadSuperAttrCache(unittest.TestCase):
@@ -484,6 +485,7 @@ class TestCallCache(unittest.TestCase):
             f()
 
 
+@threading_helper.requires_working_threading()
 class TestRacesDoNotCrash(unittest.TestCase):
     # Careful with these. Bigger numbers have a higher chance of catching bugs,
     # but you can also burn through a *ton* of type/dict/function versions:

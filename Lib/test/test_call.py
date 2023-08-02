@@ -519,19 +519,6 @@ class FastCallTests(unittest.TestCase):
                 expected = (*expected[:-1], result[-1])
         self.assertEqual(result, expected)
 
-    def test_fastcall(self):
-        # Test _PyObject_FastCall()
-
-        for func, args, expected in self.CALLS_POSARGS:
-            with self.subTest(func=func, args=args):
-                result = _testcapi.pyobject_fastcall(func, args)
-                self.check_result(result, expected)
-
-                if not args:
-                    # args=NULL, nargs=0
-                    result = _testcapi.pyobject_fastcall(func, None)
-                    self.check_result(result, expected)
-
     def test_vectorcall_dict(self):
         # Test PyObject_VectorcallDict()
 
@@ -945,11 +932,11 @@ class TestRecursion(unittest.TestCase):
 
         def c_recurse(n):
             if n:
-                _testcapi.pyobject_fastcall(c_recurse, (n-1,))
+                _testcapi.pyobject_vectorcall(c_recurse, (n-1,), ())
 
         def c_py_recurse(m):
             if m:
-                _testcapi.pyobject_fastcall(py_recurse, (1000, m))
+                _testcapi.pyobject_vectorcall(py_recurse, (1000, m), ())
 
         depth = sys.getrecursionlimit()
         sys.setrecursionlimit(100_000)
