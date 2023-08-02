@@ -1921,12 +1921,15 @@ Py_FinalizeEx(void)
     }
 
     if (dump_refs) {
-        _Py_PrintReferences(stderr);
+        _Py_PrintReferences(tstate->interp, stderr);
     }
 
     if (dump_refs_fp != NULL) {
-        _Py_PrintReferences(dump_refs_fp);
+        _Py_PrintReferences(tstate->interp, dump_refs_fp);
     }
+
+    PyObject refchain = { 0 };
+    _Py_StealRefchain(tstate->interp, &refchain);
 #endif /* Py_TRACE_REFS */
 
     /* At this point there's almost no other Python code that will run,
@@ -1961,11 +1964,11 @@ Py_FinalizeEx(void)
      */
 
     if (dump_refs) {
-        _Py_PrintReferenceAddresses(stderr);
+        _Py_PrintReferenceAddresses(&refchain, stderr);
     }
 
     if (dump_refs_fp != NULL) {
-        _Py_PrintReferenceAddresses(dump_refs_fp);
+        _Py_PrintReferenceAddresses(&refchain, dump_refs_fp);
         fclose(dump_refs_fp);
     }
 #endif /* Py_TRACE_REFS */

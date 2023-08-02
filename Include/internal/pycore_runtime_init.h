@@ -108,7 +108,6 @@ extern PyTypeObject _PyExc_MemoryError;
         }, \
         .faulthandler = _faulthandler_runtime_state_INIT, \
         .tracemalloc = _tracemalloc_runtime_state_INIT, \
-        .object_state = _py_object_runtime_state_INIT(runtime), \
         .float_state = { \
             .float_format = _py_float_format_unknown, \
             .double_format = _py_float_format_unknown, \
@@ -158,6 +157,7 @@ extern PyTypeObject _PyExc_MemoryError;
                 { .threshold = 10, }, \
             }, \
         }, \
+        .object_state = _py_object_state_INIT(INTERP), \
         .dtoa = _dtoa_state_INIT(&(INTERP)), \
         .dict_state = _dict_state_INIT, \
         .func_state = { \
@@ -188,12 +188,12 @@ extern PyTypeObject _PyExc_MemoryError;
     }
 
 #ifdef Py_TRACE_REFS
-# define _py_object_runtime_state_INIT(runtime) \
+# define _py_object_state_INIT(INTERP) \
     { \
-        .refchain = {&runtime.object_state.refchain, &runtime.object_state.refchain}, \
+        .refchain = {&INTERP.object_state.refchain, &INTERP.object_state.refchain}, \
     }
 #else
-# define _py_object_runtime_state_INIT(runtime) \
+# define _py_object_state_INIT(INTERP) \
     { 0 }
 #endif
 
