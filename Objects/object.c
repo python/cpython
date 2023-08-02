@@ -2316,10 +2316,11 @@ _Py_GetObjects(PyObject *self, PyObject *args)
     int i, n;
     PyObject *t = NULL;
     PyObject *res, *op;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     if (!PyArg_ParseTuple(args, "i|O", &n, &t))
         return NULL;
-    PyObject *refchain = REFCHAIN(_PyInterpreterState_GET());
+    PyObject *refchain = REFCHAIN(interp);
     op = refchain->_ob_next;
     res = PyList_New(0);
     if (res == NULL)
