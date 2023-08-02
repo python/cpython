@@ -145,10 +145,8 @@ class EffectManager:
     pokes: list[StackItem]
     copies: list[CopyEffect]  # See merge()
     # Track offsets from stack pointer
-    initial_offset: StackOffset
     min_offset: StackOffset
     final_offset: StackOffset
-    net_offset: StackOffset
 
     def __init__(self, instr: Instruction, active_caches: list[ActiveCacheEffect]):
         self.instr = instr
@@ -156,7 +154,6 @@ class EffectManager:
         self.peeks = []
         self.pokes = []
         self.copies = []
-        self.initial_offset = StackOffset()
         self.min_offset = StackOffset()
         for eff in reversed(instr.input_effects):
             self.min_offset.deeper(eff)
@@ -174,27 +171,22 @@ class EffectManager:
                 new_poke.higher(poke.effect)
             new_poke.higher(eff)  # Account for the new poke itself (!)
             self.pokes.append(new_poke)
-        self.net_offset = self.final_offset.clone()
 
     def adjust_deeper(self, eff: StackEffect) -> None:
         for peek in self.peeks:
             peek.deeper(eff)
         for poke in self.pokes:
             poke.deeper(eff)
-        self.initial_offset.deeper(eff)
         self.min_offset.deeper(eff)
         self.final_offset.deeper(eff)
-        # self.net_offset doesn't change!
 
     def adjust_higher(self, eff: StackEffect) -> None:
         for peek in self.peeks:
             peek.higher(eff)
         for poke in self.pokes:
             poke.higher(eff)
-        self.initial_offset.higher(eff)
         self.min_offset.higher(eff)
         self.final_offset.higher(eff)
-        # self.net_offset doesn't change!
 
     def adjust(self, offset: StackOffset) -> None:
         for down in offset.deep:
@@ -216,9 +208,6 @@ class EffectManager:
             src = self.pokes.pop(-1).effect
             dst = follow.peeks.pop(0).effect
             self.final_offset.deeper(src)
-            follow.initial_offset.deeper(dst)  # Note!
-            self.net_offset.deeper(src)
-            follow.net_offset.higher(dst)
             if dst.name != UNUSED:
                 destinations.add(dst.name)
                 if dst.name != src.name:
@@ -297,8 +286,8 @@ def write_single_instr(
         return
 
     # Emit stack adjustments
-    net_offset = mgr.net_offset
-    out.stack_adjust(net_offset.deep, net_offset.high)
+    final_offset = mgr.final_offset
+    out.stack_adjust(final_offset.deep, final_offset.high)
 
     # Emit output stack effects, except for array output effects
     # (Reversed to match the old code, for easier comparison)
@@ -307,9 +296,9 @@ def write_single_instr(
         if poke.effect.name != UNUSED and poke.effect.name not in instr.unmoved_names:
             if not poke.effect.size:
                 poke = poke.clone()
-                for eff in net_offset.deep:
+                for eff in final_offset.deep:
                     poke.higher(eff)
-                for eff in net_offset.high:
+                for eff in final_offset.high:
                     poke.deeper(eff)
                 dst = StackEffect(
                     poke.as_variable(), poke.effect.type, poke.effect.cond, poke.effect.size
