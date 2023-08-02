@@ -551,7 +551,7 @@ class Generator(Analyzer):
                     case parsing.Macro():
                         n_macros += 1
                         mac = self.macro_instrs[thing.name]
-                        stacking.write_macro_instr(mac, self.out)
+                        stacking.write_macro_instr(mac, self.out, self.families.get(mac.name))
                         # self.write_macro(self.macro_instrs[thing.name])
                     case parsing.Pseudo():
                         pass

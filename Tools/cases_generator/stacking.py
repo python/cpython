@@ -16,7 +16,7 @@ from instructions import (
     Tiers,
     TIER_ONE,
 )
-from parsing import StackEffect, CacheEffect
+from parsing import StackEffect, CacheEffect, Family
 
 
 @dataclasses.dataclass
@@ -298,7 +298,9 @@ def write_single_instr(
     )
 
 
-def write_macro_instr(mac: MacroInstruction, out: Formatter) -> None:
+def write_macro_instr(
+    mac: MacroInstruction, out: Formatter, family: Family | None
+) -> None:
     parts = [part for part in mac.parts if isinstance(part, Component)]
     cache_adjust = 0
     for part in mac.parts:
@@ -314,6 +316,7 @@ def write_macro_instr(mac: MacroInstruction, out: Formatter) -> None:
     with out.block(f"TARGET({mac.name})"):
         if mac.predicted:
             out.emit(f"PREDICTED({mac.name});")
+        out.static_assert_family_size(mac.name, family, cache_adjust)
         write_components(parts, out, TIER_ONE)
         if cache_adjust:
             out.emit(f"next_instr += {cache_adjust};")

@@ -360,6 +360,7 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP) {
+            static_assert(INLINE_CACHE_ENTRIES_OP == 5, "incorrect cache size");
             PyObject *right;
             PyObject *left;
             PyObject *arg2;
