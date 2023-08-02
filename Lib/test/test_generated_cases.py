@@ -6,9 +6,9 @@ from test import test_tools
 
 test_tools.skip_if_missing('cases_generator')
 with test_tools.imports_under_tool('cases_generator'):
+    import generate_cases
     import analysis
     import formatting
-    import generate_cases
     from parsing import StackEffect
 
 
