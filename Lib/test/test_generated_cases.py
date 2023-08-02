@@ -348,30 +348,26 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP) {
-            PyObject *_tmp_1 = stack_pointer[-1];
-            PyObject *_tmp_2 = stack_pointer[-2];
-            PyObject *_tmp_3 = stack_pointer[-3];
+            PyObject *right;
+            PyObject *left;
+            PyObject *arg2;
+            PyObject *res;
+            // OP1
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
             {
-                PyObject *right = _tmp_1;
-                PyObject *left = _tmp_2;
                 uint16_t counter = read_u16(&next_instr[0].cache);
                 op1(left, right);
-                _tmp_2 = left;
-                _tmp_1 = right;
             }
+            // OP2
+            arg2 = stack_pointer[-3];
             {
-                PyObject *right = _tmp_1;
-                PyObject *left = _tmp_2;
-                PyObject *arg2 = _tmp_3;
-                PyObject *res;
                 uint32_t extra = read_u32(&next_instr[3].cache);
                 res = op2(arg2, left, right);
-                _tmp_3 = res;
             }
             next_instr += 5;
-            static_assert(INLINE_CACHE_ENTRIES_OP == 5, "incorrect cache size");
             STACK_SHRINK(2);
-            stack_pointer[-1] = _tmp_3;
+            stack_pointer[-1] = res;
             DISPATCH();
         }
 
@@ -501,29 +497,28 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(M) {
-            PyObject *_tmp_1 = stack_pointer[-1];
-            PyObject *_tmp_2 = stack_pointer[-2];
-            PyObject *_tmp_3 = stack_pointer[-3];
+            PyObject *right;
+            PyObject *middle;
+            PyObject *left;
+            PyObject *deep;
+            PyObject *extra = NULL;
+            PyObject *res;
+            // A
+            right = stack_pointer[-1];
+            middle = stack_pointer[-2];
+            left = stack_pointer[-3];
             {
-                PyObject *right = _tmp_1;
-                PyObject *middle = _tmp_2;
-                PyObject *left = _tmp_3;
                 # Body of A
             }
+            // B
             {
-                PyObject *deep;
-                PyObject *extra = NULL;
-                PyObject *res;
                 # Body of B
-                _tmp_3 = deep;
-                if (oparg) { _tmp_2 = extra; }
-                _tmp_1 = res;
             }
             STACK_SHRINK(1);
             STACK_GROW((oparg ? 1 : 0));
-            stack_pointer[-1] = _tmp_1;
-            if (oparg) { stack_pointer[-2] = _tmp_2; }
-            stack_pointer[-3] = _tmp_3;
+            stack_pointer[-2 - (oparg ? 1 : 0)] = deep;
+            if (oparg) { stack_pointer[-1 - (oparg ? 1 : 0)] = extra; }
+            stack_pointer[-1] = res;
             DISPATCH();
         }
     """
