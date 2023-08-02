@@ -60,7 +60,7 @@ class StackOffset:
 
     @abstractmethod
     def itself(self) -> StackEffect:
-        """Implemented by subclasses PeekEffect, PokeEffect."""
+        """Implemented by subclass StackItem."""
         raise NotImplementedError("itself() not implemented")
 
     def as_terms(self) -> list[tuple[str, str]]:
@@ -120,25 +120,14 @@ class StackOffset:
 
 
 @dataclasses.dataclass
-class PeekEffect(StackOffset):
-    dst: StackEffect = dataclasses.field(kw_only=True)
+class StackItem(StackOffset):
+    effect: StackEffect = dataclasses.field(kw_only=True)
 
     def clone(self):
-        return PeekEffect(list(self.deep), list(self.high), dst=self.dst)
+        return StackItem(list(self.deep), list(self.high), effect=self.effect)
 
     def itself(self) -> StackEffect:
-        return self.dst
-
-
-@dataclasses.dataclass
-class PokeEffect(StackOffset):
-    src: StackEffect = dataclasses.field(kw_only=True)
-
-    def clone(self):
-        return PokeEffect(list(self.deep), list(self.high), src=self.src)
-
-    def itself(self) -> StackEffect:
-        return self.src
+        return self.effect
 
 
 @dataclasses.dataclass
@@ -152,8 +141,8 @@ class EffectManager:
 
     instr: Instruction
     active_caches: list[ActiveCacheEffect]
-    peeks: list[PeekEffect]
-    pokes: list[PokeEffect]
+    peeks: list[StackItem]
+    pokes: list[StackItem]
     copies: list[CopyEffect]  # See merge()
     # Track offsets from stack pointer
     initial_offset: StackOffset
@@ -171,18 +160,18 @@ class EffectManager:
         self.min_offset = StackOffset()
         for eff in reversed(instr.input_effects):
             self.min_offset.deeper(eff)
-            new_peek = PeekEffect(dst=eff)
+            new_peek = StackItem(effect=eff)
             for peek in self.peeks:
-                new_peek.deeper(peek.dst)
+                new_peek.deeper(peek.effect)
             self.peeks.append(new_peek)
         self.final_offset = self.min_offset.clone()
         for eff in instr.output_effects:
             self.final_offset.higher(eff)
-            new_poke = PokeEffect(src=eff)
+            new_poke = StackItem(effect=eff)
             for peek in self.peeks:
-                new_poke.deeper(peek.dst)
+                new_poke.deeper(peek.effect)
             for poke in self.pokes:
-                new_poke.higher(poke.src)
+                new_poke.higher(poke.effect)
             new_poke.higher(eff)  # Account for the new poke itself (!)
             self.pokes.append(new_poke)
         self.net_offset = self.final_offset.clone()
@@ -223,9 +212,9 @@ class EffectManager:
         sources: set[str] = set()
         destinations: set[str] = set()
         follow.adjust(self.final_offset)
-        while self.pokes and follow.peeks and self.pokes[-1].src == follow.peeks[0].dst:
-            src = self.pokes.pop(-1).src
-            dst = follow.peeks.pop(0).dst
+        while self.pokes and follow.peeks and self.pokes[-1].effect == follow.peeks[0].effect:
+            src = self.pokes.pop(-1).effect
+            dst = follow.peeks.pop(0).effect
             self.final_offset.deeper(src)
             follow.initial_offset.deeper(dst)  # Note!
             self.net_offset.deeper(src)
@@ -264,9 +253,9 @@ class EffectManager:
         for copy in self.copies:
             add(copy.dst)
         for peek in self.peeks:
-            add(peek.dst)
+            add(peek.effect)
         for poke in self.pokes:
-            add(poke.src)
+            add(poke.effect)
 
         return vars
 
@@ -282,23 +271,23 @@ def write_single_instr(
     # Emit input stack effect variable declarations and initializations
     input_vars: set[str] = set()
     for peek in mgr.peeks:
-        if peek.dst.name != UNUSED:
-            input_vars.add(peek.dst.name)
+        if peek.effect.name != UNUSED:
+            input_vars.add(peek.effect.name)
             variable = peek.as_variable()
-            src = StackEffect(variable, peek.dst.type, peek.dst.cond, peek.dst.size)
-            out.declare(peek.dst, src)
+            src = StackEffect(variable, peek.effect.type, peek.effect.cond, peek.effect.size)
+            out.declare(peek.effect, src)
 
     # Emit output stack effect variable declarations
     # (with special cases for array output effects)
     for poke in mgr.pokes:
-        if poke.src.name != UNUSED and poke.src.name not in input_vars:
-            if not poke.src.size:
+        if poke.effect.name != UNUSED and poke.effect.name not in input_vars:
+            if not poke.effect.size:
                 dst = None
             else:
                 dst = StackEffect(
-                    poke.as_variable(), poke.src.type, poke.src.cond, poke.src.size
+                    poke.as_variable(), poke.effect.type, poke.effect.cond, poke.effect.size
                 )
-            out.declare(poke.src, dst)
+            out.declare(poke.effect, dst)
 
     # Emit the instruction itself
     instr.write_body(out, 0, mgr.active_caches, tier=tier)
@@ -315,17 +304,17 @@ def write_single_instr(
     # (Reversed to match the old code, for easier comparison)
     # TODO: Remove reversed() call
     for poke in reversed(mgr.pokes):
-        if poke.src.name != UNUSED and poke.src.name not in instr.unmoved_names:
-            if not poke.src.size:
+        if poke.effect.name != UNUSED and poke.effect.name not in instr.unmoved_names:
+            if not poke.effect.size:
                 poke = poke.clone()
                 for eff in net_offset.deep:
                     poke.higher(eff)
                 for eff in net_offset.high:
                     poke.deeper(eff)
                 dst = StackEffect(
-                    poke.as_variable(), poke.src.type, poke.src.cond, poke.src.size
+                    poke.as_variable(), poke.effect.type, poke.effect.cond, poke.effect.size
                 )
-                out.assign(dst, poke.src)
+                out.assign(dst, poke.effect)
 
 
 def less_than(a: StackOffset, b: StackOffset) -> bool:
@@ -349,14 +338,14 @@ def get_stack_effect_info_for_macro(mac: MacroInstruction) -> tuple[str, str]:
     lowest = StackOffset()
     for mgr in managers:
         for peek in mgr.peeks:
-            net.deeper(peek.dst)
+            net.deeper(peek.effect)
         if less_than(net, lowest):
             lowest = StackOffset(net.deep[:], net.high[:])
         else:
             # TODO: Turn this into an error -- the "min" is ambiguous
             assert net == lowest, (mac.name, net, lowest)
         for poke in mgr.pokes:
-            net.higher(poke.src)
+            net.higher(poke.effect)
     popped = StackOffset(lowest.high[:], lowest.deep[:])  # Reverse direction!
     for eff in popped.deep:
         net.deeper(eff)
@@ -412,9 +401,9 @@ def write_macro_instr(mac: MacroInstruction, out: Formatter) -> None:
                 out.assign(copy.dst, copy.src)
             for peek in mgr.peeks:
                 out.assign(
-                    peek.dst,
+                    peek.effect,
                     StackEffect(
-                        peek.as_variable(), peek.dst.type, peek.dst.cond, peek.dst.size
+                        peek.as_variable(), peek.effect.type, peek.effect.cond, peek.effect.size
                     ),
                 )
 
@@ -431,9 +420,9 @@ def write_macro_instr(mac: MacroInstruction, out: Formatter) -> None:
             for poke in mgr.pokes:
                 out.assign(
                     StackEffect(
-                        poke.as_variable(), poke.src.type, poke.src.cond, poke.src.size
+                        poke.as_variable(), poke.effect.type, poke.effect.cond, poke.effect.size
                     ),
-                    poke.src,
+                    poke.effect,
                 )
 
         out.emit("DISPATCH();")
