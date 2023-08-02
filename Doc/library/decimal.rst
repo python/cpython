@@ -37,7 +37,7 @@ decimal floating point arithmetic. It offers several advantages over the
 * Decimal "is based on a floating-point model which was designed with people
   in mind, and necessarily has a paramount guiding principle -- computers must
   provide an arithmetic that works in the same way as the arithmetic that
-  people learn at school." -- excerpt from the decimal arithmetic specification.
+  people learn at school." -- except from the decimal arithmetic specification.
 
 * Decimal numbers can be represented exactly.  In contrast, numbers like
   ``1.1`` and ``2.2`` do not have exact representations in binary
