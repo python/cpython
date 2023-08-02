@@ -2126,7 +2126,7 @@ class SinglephaseInitTests(unittest.TestCase):
             _interpreters.run_string(interpid, textwrap.dedent(f'''
                 name = {self.NAME!r}
                 if name in sys.modules:
-                    sys.modules[name]._clear_globals()
+                    sys.modules.pop(name)._clear_globals()
                 _testinternalcapi.clear_extension(name, {self.FILE!r})
                 '''))
             _interpreters.destroy(interpid)
