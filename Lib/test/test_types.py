@@ -1420,7 +1420,7 @@ class ClassCreationTests(unittest.TestCase):
         class First_(typing.Generic[T]): pass
         class Second_(typing.Generic[T]): pass
         class H(First_, Second_): pass
-        self.assertEqual(types.get_original_bases(G), (First, Second))
+        self.assertEqual(types.get_original_bases(H), (First_, Second_))
 
         class ClassBasedNamedTuple(typing.NamedTuple):
             x: int
