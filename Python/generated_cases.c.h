@@ -1664,15 +1664,11 @@
             PyObject *_tmp_1;
             PyObject *_tmp_2;
             {
-            }
-            {
                 uint16_t version = read_u16(&next_instr[1].cache);
                 PyDictObject *dict = (PyDictObject *)GLOBALS();
                 DEOPT_IF(!PyDict_CheckExact(dict), LOAD_GLOBAL);
                 DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
                 assert(DK_IS_UNICODE(dict->ma_keys));
-            }
-            {
             }
             {
                 PyObject *null = NULL;
@@ -1699,8 +1695,6 @@
         TARGET(LOAD_GLOBAL_BUILTIN) {
             PyObject *_tmp_1;
             PyObject *_tmp_2;
-            {
-            }
             {
                 uint16_t version = read_u16(&next_instr[1].cache);
                 PyDictObject *dict = (PyDictObject *)GLOBALS();
@@ -2243,8 +2237,6 @@
         TARGET(LOAD_ATTR_INSTANCE_VALUE) {
             PyObject *_tmp_1;
             PyObject *_tmp_2 = stack_pointer[-1];
-            {
-            }
             {
                 PyObject *owner = _tmp_2;
                 uint32_t type_version = read_u32(&next_instr[1].cache);
@@ -3992,7 +3984,7 @@
                 total_args++;
             }
             DEOPT_IF(total_args != 1, CALL);
-            PyInterpreterState *interp = _PyInterpreterState_GET();
+            PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.len, CALL);
             STAT_INC(CALL, hit);
             PyObject *arg = args[0];
@@ -4028,7 +4020,7 @@
                 total_args++;
             }
             DEOPT_IF(total_args != 2, CALL);
-            PyInterpreterState *interp = _PyInterpreterState_GET();
+            PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.isinstance, CALL);
             STAT_INC(CALL, hit);
             PyObject *cls = args[1];
@@ -4058,7 +4050,7 @@
             ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             assert(method != NULL);
-            PyInterpreterState *interp = _PyInterpreterState_GET();
+            PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(method != interp->callable_cache.list_append, CALL);
             DEOPT_IF(!PyList_Check(self), CALL);
             STAT_INC(CALL, hit);

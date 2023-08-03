@@ -376,6 +376,37 @@ The available slot types are:
    If multiple ``Py_mod_exec`` slots are specified, they are processed in the
    order they appear in the *m_slots* array.
 
+.. c:macro:: Py_mod_multiple_interpreters
+
+   Specifies one of the following values:
+
+   .. c:macro:: Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED
+
+      The module does not support being imported in subinterpreters.
+
+   .. c:macro:: Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED
+
+      The module supports being imported in subinterpreters,
+      but only when they share the main interpreter's GIL.
+      (See :ref:`isolating-extensions-howto`.)
+
+   .. c:macro:: Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+
+      The module supports being imported in subinterpreters,
+      even when they have their own GIL.
+      (See :ref:`isolating-extensions-howto`.)
+
+   This slot determines whether or not importing this module
+   in a subinterpreter will fail.
+
+   Multiple ``Py_mod_multiple_interpreters`` slots may not be specified
+   in one module definition.
+
+   If ``Py_mod_multiple_interpreters`` is not specified, the import
+   machinery defaults to ``Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED``.
+
+   .. versionadded:: 3.12
+
 See :PEP:`489` for more details on multi-phase initialization.
 
 Low-level module creation functions

@@ -146,7 +146,6 @@ extern "C" {
 #define INSTRUMENTED_END_SEND                  252
 #define INSTRUMENTED_INSTRUCTION               253
 #define INSTRUMENTED_LINE                      254
-#define MIN_PSEUDO_OPCODE                      256
 #define SETUP_FINALLY                          256
 #define SETUP_CLEANUP                          257
 #define SETUP_WITH                             258
@@ -159,7 +158,6 @@ extern "C" {
 #define LOAD_ZERO_SUPER_ATTR                   265
 #define STORE_FAST_MAYBE_NULL                  266
 #define LOAD_CLOSURE                           267
-#define MAX_PSEUDO_OPCODE                      267
 #define TO_BOOL_ALWAYS_TRUE                      7
 #define TO_BOOL_BOOL                             8
 #define TO_BOOL_INT                             10
@@ -256,8 +254,6 @@ extern "C" {
 #define NB_INPLACE_TRUE_DIVIDE                  24
 #define NB_INPLACE_XOR                          25
 
-/* Defined in Lib/opcode.py */
-#define ENABLE_SPECIALIZATION 1
 
 #ifdef __cplusplus
 }
