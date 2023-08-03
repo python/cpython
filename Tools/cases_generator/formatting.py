@@ -203,13 +203,3 @@ def parenthesize_cond(cond: str) -> str:
     if "?" in cond:
         cond = f"({cond})"
     return cond
-
-
-def string_effect_size(arg: tuple[int, str]) -> str:
-    numeric, symbolic = arg
-    if numeric and symbolic:
-        return f"{numeric} + {symbolic}"
-    elif symbolic:
-        return symbolic
-    else:
-        return str(numeric)

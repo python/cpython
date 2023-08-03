@@ -46,24 +46,6 @@ class TestEffects(unittest.TestCase):
             (2, "(oparg<<1)"),
         )
 
-        self.assertEqual(
-            formatting.string_effect_size(
-                formatting.list_effect_size(input_effects),
-            ), "1 + oparg + oparg*2",
-        )
-        self.assertEqual(
-            formatting.string_effect_size(
-                formatting.list_effect_size(output_effects),
-            ),
-            "2 + oparg*4",
-        )
-        self.assertEqual(
-            formatting.string_effect_size(
-                formatting.list_effect_size(other_effects),
-            ),
-            "2 + (oparg<<1)",
-        )
-
 
 class TestGeneratedCases(unittest.TestCase):
     def setUp(self) -> None:
