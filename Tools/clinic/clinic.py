@@ -4478,7 +4478,7 @@ class DSLParser:
         if cls:
             fail("Can't nest a module inside a class!")
 
-        if name in module.classes:
+        if name in module.modules:
             fail("Already defined module " + repr(name) + "!")
 
         m = Module(name, module)
