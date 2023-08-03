@@ -675,6 +675,28 @@
             DISPATCH();
         }
 
+        TARGET(BINARY_SUBSCR_STR_INT) {
+            PyObject *sub = stack_pointer[-1];
+            PyObject *str = stack_pointer[-2];
+            PyObject *res;
+            DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
+            DEOPT_IF(!PyUnicode_CheckExact(str), BINARY_SUBSCR);
+            DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub), BINARY_SUBSCR);
+            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
+            DEOPT_IF(index >= PyUnicode_GET_LENGTH(str), BINARY_SUBSCR);
+            // Specialize for reading an ASCII character from any string:
+            Py_UCS4 ch = PyUnicode_READ_CHAR(str, index);
+            DEOPT_IF(ch >= Py_ARRAY_LENGTH(_Py_SINGLETON(strings).ascii), BINARY_SUBSCR);
+            STAT_INC(BINARY_SUBSCR, hit);
+            res = (PyObject*)&_Py_SINGLETON(strings).ascii[ch];
+            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
+            Py_DECREF(str);
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
+            next_instr += 1;
+            DISPATCH();
+        }
+
         TARGET(BINARY_SUBSCR_TUPLE_INT) {
             PyObject *sub = stack_pointer[-1];
             PyObject *tuple = stack_pointer[-2];
@@ -682,7 +704,7 @@
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
             DEOPT_IF(!PyTuple_CheckExact(tuple), BINARY_SUBSCR);
 
-            // Deopt unless 0 <= sub < PyTuple_Size(list)
+            // Deopt unless 0 <= subPyUnicode_READ_CHAR < PyTuple_Size(list)
             DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub), BINARY_SUBSCR);
             Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
             DEOPT_IF(index >= PyTuple_GET_SIZE(tuple), BINARY_SUBSCR);
