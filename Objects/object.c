@@ -2253,28 +2253,6 @@ _Py_ForgetReference(PyObject *op)
     op->_ob_next = op->_ob_prev = NULL;
 }
 
-void
-_Py_StealRefchain(PyInterpreterState *interp, PyObject *refchain)
-{
-    assert(refchain != NULL
-           && (refchain->_ob_prev == NULL || refchain->_ob_prev == refchain)
-           && (refchain->_ob_next == NULL || refchain->_ob_next == refchain));
-    if (interp == NULL) {
-        interp = _PyInterpreterState_Main();
-    }
-    PyObject *old = REFCHAIN(interp);
-    if (old->_ob_prev == old) {
-        assert(old->_ob_next == old);
-        refchain->_ob_prev = refchain;
-        refchain->_ob_next = refchain;
-        return;
-    }
-    refchain->_ob_prev = old->_ob_prev;
-    refchain->_ob_prev->_ob_next = refchain;
-    refchain->_ob_next = old->_ob_next;
-    refchain->_ob_next->_ob_prev = refchain;
-}
-
 /* Print all live objects.  Because PyObject_Print is called, the
  * interpreter must be in a healthy state.
  */
