@@ -385,6 +385,37 @@ class ClinicWholeFileTest(TestCase):
         """
         self.expect_failure(block, err)
 
+    def test_clone_mismatch(self):
+        err = "'kind' of function and cloned function don't match!"
+        block = """
+            /*[clinic input]
+            module m
+            @classmethod
+            m.f1
+                a: object
+            [clinic start generated code]*/
+            /*[clinic input]
+            @staticmethod
+            m.f2 = m.f1
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=9)
+
+    def test_badly_formed_return_annotation(self):
+        err = "Badly formed annotation for m.f: 'Custom'"
+        block = """
+            /*[python input]
+            class Custom_return_converter(CReturnConverter):
+                def __init__(self):
+                    raise ValueError("abc")
+            [python start generated code]*/
+            /*[clinic input]
+            module m
+            m.f -> Custom
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=8)
+
 
 class ClinicGroupPermuterTest(TestCase):
     def _test(self, l, m, r, output):
@@ -642,7 +673,7 @@ class ClinicParserTest(TestCase):
         p = function.parameters['follow_symlinks']
         self.assertEqual(True, p.default)
 
-    def test_param_default_expression(self):
+    def test_param_default_expr_named_constant(self):
         function = self.parse_function("""
             module os
             os.access
@@ -662,6 +693,17 @@ class ClinicParserTest(TestCase):
                 follow_symlinks: int = sys.maxsize
         """
         self.expect_failure(block, err, lineno=2)
+
+    def test_param_default_expr_binop(self):
+        err = (
+            "When you specify an expression ('a + b') as your default value,\n"
+            "you MUST specify a valid c_default."
+        )
+        block = """
+            fn
+                follow_symlinks: int = a + b
+        """
+        self.expect_failure(block, err, lineno=1)
 
     def test_param_no_docstring(self):
         function = self.parse_function("""
@@ -1241,6 +1283,63 @@ class ClinicParserTest(TestCase):
                 Nested docstring here, goeth.
         """)
 
+    def test_docstring_only_summary(self):
+        function = self.parse_function("""
+              module m
+              m.f
+              summary
+        """)
+        self.checkDocstring(function, """
+            f($module, /)
+            --
+
+            summary
+        """)
+
+    def test_docstring_empty_lines(self):
+        function = self.parse_function("""
+              module m
+              m.f
+
+
+        """)
+        self.checkDocstring(function, """
+            f($module, /)
+            --
+        """)
+
+    def test_docstring_explicit_params_placement(self):
+        function = self.parse_function("""
+              module m
+              m.f
+                a: int
+                    Param docstring for 'a' will be included
+                b: int
+                c: int
+                    Param docstring for 'c' will be included
+              This is the summary line.
+
+              We'll now place the params section here:
+              {parameters}
+              And now for something completely different!
+              (Note the added newline)
+        """)
+        self.checkDocstring(function, """
+            f($module, /, a, b, c)
+            --
+
+            This is the summary line.
+
+            We'll now place the params section here:
+              a
+                Param docstring for 'a' will be included
+              c
+                Param docstring for 'c' will be included
+
+            And now for something completely different!
+            (Note the added newline)
+        """)
+
     def test_indent_stack_no_tabs(self):
         block = """
             module foo
@@ -1471,7 +1570,100 @@ class ClinicParserTest(TestCase):
             test.fn
                 a as 17a: int
         """
-        self.expect_failure(block, err)
+        self.expect_failure(block, err, lineno=2)
+
+    def test_cannot_convert_special_method(self):
+        err = "__len__ is a special method and cannot be converted"
+        block = """
+            class T "" ""
+            T.__len__
+        """
+        self.expect_failure(block, err, lineno=1)
+
+    def test_cannot_specify_pydefault_without_default(self):
+        err = "You can't specify py_default without specifying a default value!"
+        block = """
+            fn
+                a: object(py_default='NULL')
+        """
+        self.expect_failure(block, err, lineno=1)
+
+    def test_vararg_cannot_take_default_value(self):
+        err = "Vararg can't take a default value!"
+        block = """
+            fn
+                *args: object = None
+        """
+        self.expect_failure(block, err, lineno=1)
+
+    def test_invalid_legacy_converter(self):
+        err = "fhi is not a valid legacy converter"
+        block = """
+            fn
+                a: 'fhi'
+        """
+        self.expect_failure(block, err, lineno=1)
+
+    def test_parent_class_or_module_does_not_exist(self):
+        err = "Parent class or module z does not exist"
+        block = """
+            module m
+            z.func
+        """
+        self.expect_failure(block, err, lineno=1)
+
+    def test_duplicate_param_name(self):
+        err = "You can't have two parameters named 'a'"
+        block = """
+            module m
+            m.func
+                a: int
+                a: float
+        """
+        self.expect_failure(block, err, lineno=3)
+
+    def test_param_requires_custom_c_name(self):
+        err = "Parameter 'module' requires a custom C name"
+        block = """
+            module m
+            m.func
+                module: int
+        """
+        self.expect_failure(block, err, lineno=2)
+
+    def test_state_func_docstring_assert_no_group(self):
+        err = "Function func has a ] without a matching [."
+        block = """
+            module m
+            m.func
+                ]
+            docstring
+        """
+        self.expect_failure(block, err, lineno=2)
+
+    def test_state_func_docstring_no_summary(self):
+        err = "Docstring for m.func does not have a summary line!"
+        block = """
+            module m
+            m.func
+            docstring1
+            docstring2
+        """
+        self.expect_failure(block, err, lineno=0)
+
+    def test_state_func_docstring_only_one_param_template(self):
+        err = "You may not specify {parameters} more than once in a docstring!"
+        block = """
+            module m
+            m.func
+            docstring summary
+
+            these are the params:
+                {parameters}
+            these are the params again:
+                {parameters}
+        """
+        self.expect_failure(block, err, lineno=0)
 
 
 class ClinicExternalTest(TestCase):
