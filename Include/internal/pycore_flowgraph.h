@@ -90,6 +90,15 @@ void _PyCfgBuilder_Fini(_PyCfgBuilder *g);
 
 int _PyCfg_OptimizeCodeUnit(_PyCfgBuilder *g, PyObject *consts, PyObject *const_cache,
                             int nlocals, int nparams, int firstlineno);
+
+int _PyCfg_OptimizedCfgToInstructionList(_PyCfgBuilder *g, _PyCompile_CodeUnitMetadata *umd,
+                                         int code_flags, int *stackdepth, int *nlocalsplus);
+
+int _PyCfg_ToOptimizedInstructionList(_PyCfgBuilder *g, _PyCompile_CodeUnitMetadata *umd,
+                                      PyObject *consts, PyObject *const_cache,
+                                      int nparams, int firstlineno, int code_flags,
+                                      int *stackdepth, int *nlocalsplus);
+
 int _PyCfg_Stackdepth(_PyCfgBuilder *g);
 void _PyCfg_ConvertPseudoOps(_PyCfgBasicblock *entryblock);
 int _PyCfg_ResolveJumps(_PyCfgBuilder *g);

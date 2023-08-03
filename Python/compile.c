@@ -7493,201 +7493,6 @@ _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj)
     return SUCCESS;
 }
 
-
-static int *
-build_cellfixedoffsets(_PyCompile_CodeUnitMetadata *umd)
-{
-    int nlocals = (int)PyDict_GET_SIZE(umd->u_varnames);
-    int ncellvars = (int)PyDict_GET_SIZE(umd->u_cellvars);
-    int nfreevars = (int)PyDict_GET_SIZE(umd->u_freevars);
-
-    int noffsets = ncellvars + nfreevars;
-    int *fixed = PyMem_New(int, noffsets);
-    if (fixed == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    for (int i = 0; i < noffsets; i++) {
-        fixed[i] = nlocals + i;
-    }
-
-    PyObject *varname, *cellindex;
-    Py_ssize_t pos = 0;
-    while (PyDict_Next(umd->u_cellvars, &pos, &varname, &cellindex)) {
-        PyObject *varindex = PyDict_GetItem(umd->u_varnames, varname);
-        if (varindex != NULL) {
-            assert(PyLong_AS_LONG(cellindex) < INT_MAX);
-            assert(PyLong_AS_LONG(varindex) < INT_MAX);
-            int oldindex = (int)PyLong_AS_LONG(cellindex);
-            int argoffset = (int)PyLong_AS_LONG(varindex);
-            fixed[oldindex] = argoffset;
-        }
-    }
-
-    return fixed;
-}
-
-#define IS_GENERATOR(CF) \
-    ((CF) & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR))
-
-static int
-insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entryblock,
-                           int *fixed, int nfreevars, int code_flags)
-{
-    assert(umd->u_firstlineno > 0);
-
-    /* Add the generator prefix instructions. */
-    if (IS_GENERATOR(code_flags)) {
-        /* Note that RETURN_GENERATOR + POP_TOP have a net stack effect
-         * of 0. This is because RETURN_GENERATOR pushes an element
-         * with _PyFrame_StackPush before switching stacks.
-         */
-        cfg_instr make_gen = {
-            .i_opcode = RETURN_GENERATOR,
-            .i_oparg = 0,
-            .i_loc = LOCATION(umd->u_firstlineno, umd->u_firstlineno, -1, -1),
-            .i_target = NULL,
-        };
-        RETURN_IF_ERROR(_PyBasicblock_InsertInstruction(entryblock, 0, &make_gen));
-        cfg_instr pop_top = {
-            .i_opcode = POP_TOP,
-            .i_oparg = 0,
-            .i_loc = NO_LOCATION,
-            .i_target = NULL,
-        };
-        RETURN_IF_ERROR(_PyBasicblock_InsertInstruction(entryblock, 1, &pop_top));
-    }
-
-    /* Set up cells for any variable that escapes, to be put in a closure. */
-    const int ncellvars = (int)PyDict_GET_SIZE(umd->u_cellvars);
-    if (ncellvars) {
-        // umd->u_cellvars has the cells out of order so we sort them
-        // before adding the MAKE_CELL instructions.  Note that we
-        // adjust for arg cells, which come first.
-        const int nvars = ncellvars + (int)PyDict_GET_SIZE(umd->u_varnames);
-        int *sorted = PyMem_RawCalloc(nvars, sizeof(int));
-        if (sorted == NULL) {
-            PyErr_NoMemory();
-            return ERROR;
-        }
-        for (int i = 0; i < ncellvars; i++) {
-            sorted[fixed[i]] = i + 1;
-        }
-        for (int i = 0, ncellsused = 0; ncellsused < ncellvars; i++) {
-            int oldindex = sorted[i] - 1;
-            if (oldindex == -1) {
-                continue;
-            }
-            cfg_instr make_cell = {
-                .i_opcode = MAKE_CELL,
-                // This will get fixed in offset_derefs().
-                .i_oparg = oldindex,
-                .i_loc = NO_LOCATION,
-                .i_target = NULL,
-            };
-            if (_PyBasicblock_InsertInstruction(entryblock, ncellsused, &make_cell) < 0) {
-                PyMem_RawFree(sorted);
-                return ERROR;
-            }
-            ncellsused += 1;
-        }
-        PyMem_RawFree(sorted);
-    }
-
-    if (nfreevars) {
-        cfg_instr copy_frees = {
-            .i_opcode = COPY_FREE_VARS,
-            .i_oparg = nfreevars,
-            .i_loc = NO_LOCATION,
-            .i_target = NULL,
-        };
-        RETURN_IF_ERROR(_PyBasicblock_InsertInstruction(entryblock, 0, &copy_frees));
-    }
-
-    return SUCCESS;
-}
-
-static int
-fix_cell_offsets(_PyCompile_CodeUnitMetadata *umd, basicblock *entryblock, int *fixedmap)
-{
-    int nlocals = (int)PyDict_GET_SIZE(umd->u_varnames);
-    int ncellvars = (int)PyDict_GET_SIZE(umd->u_cellvars);
-    int nfreevars = (int)PyDict_GET_SIZE(umd->u_freevars);
-    int noffsets = ncellvars + nfreevars;
-
-    // First deal with duplicates (arg cells).
-    int numdropped = 0;
-    for (int i = 0; i < noffsets ; i++) {
-        if (fixedmap[i] == i + nlocals) {
-            fixedmap[i] -= numdropped;
-        }
-        else {
-            // It was a duplicate (cell/arg).
-            numdropped += 1;
-        }
-    }
-
-    // Then update offsets, either relative to locals or by cell2arg.
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        for (int i = 0; i < b->b_iused; i++) {
-            cfg_instr *inst = &b->b_instr[i];
-            // This is called before extended args are generated.
-            assert(inst->i_opcode != EXTENDED_ARG);
-            int oldoffset = inst->i_oparg;
-            switch(inst->i_opcode) {
-                case MAKE_CELL:
-                case LOAD_CLOSURE:
-                case LOAD_DEREF:
-                case STORE_DEREF:
-                case DELETE_DEREF:
-                case LOAD_FROM_DICT_OR_DEREF:
-                    assert(oldoffset >= 0);
-                    assert(oldoffset < noffsets);
-                    assert(fixedmap[oldoffset] >= 0);
-                    inst->i_oparg = fixedmap[oldoffset];
-            }
-        }
-    }
-
-    return numdropped;
-}
-
-
-static int
-prepare_localsplus(_PyCompile_CodeUnitMetadata *umd, cfg_builder *g, int code_flags)
-{
-    assert(PyDict_GET_SIZE(umd->u_varnames) < INT_MAX);
-    assert(PyDict_GET_SIZE(umd->u_cellvars) < INT_MAX);
-    assert(PyDict_GET_SIZE(umd->u_freevars) < INT_MAX);
-    int nlocals = (int)PyDict_GET_SIZE(umd->u_varnames);
-    int ncellvars = (int)PyDict_GET_SIZE(umd->u_cellvars);
-    int nfreevars = (int)PyDict_GET_SIZE(umd->u_freevars);
-    assert(INT_MAX - nlocals - ncellvars > 0);
-    assert(INT_MAX - nlocals - ncellvars - nfreevars > 0);
-    int nlocalsplus = nlocals + ncellvars + nfreevars;
-    int* cellfixedoffsets = build_cellfixedoffsets(umd);
-    if (cellfixedoffsets == NULL) {
-        return ERROR;
-    }
-
-
-    // This must be called before fix_cell_offsets().
-    if (insert_prefix_instructions(umd, g->g_entryblock, cellfixedoffsets, nfreevars, code_flags)) {
-        PyMem_Free(cellfixedoffsets);
-        return ERROR;
-    }
-
-    int numdropped = fix_cell_offsets(umd, g->g_entryblock, cellfixedoffsets);
-    PyMem_Free(cellfixedoffsets);  // At this point we're done with it.
-    cellfixedoffsets = NULL;
-    if (numdropped < 0) {
-        return ERROR;
-    }
-
-    nlocalsplus -= numdropped;
-    return nlocalsplus;
-}
-
 static int
 add_return_at_end(struct compiler *c, int addNone)
 {
@@ -7720,42 +7525,18 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
         goto error;
     }
     int nparams = (int)PyList_GET_SIZE(u->u_ste->ste_varnames);
-    int nlocals = (int)PyDict_GET_SIZE(u->u_metadata.u_varnames);
     assert(u->u_metadata.u_firstlineno);
-    if (_PyCfg_OptimizeCodeUnit(&g, consts, const_cache, nlocals,
-                                nparams, u->u_metadata.u_firstlineno) < 0) {
+
+    int stackdepth;
+    int nlocalsplus;
+    if (_PyCfg_ToOptimizedInstructionList(&g, &u->u_metadata,
+            consts, const_cache, nparams,
+            u->u_metadata.u_firstlineno, code_flags,
+            &stackdepth, &nlocalsplus) < 0) {
         goto error;
     }
-
-    int stackdepth = _PyCfg_Stackdepth(&g);
-    if (stackdepth < 0) {
-        goto error;
-    }
-
-    /* prepare_localsplus adds instructions for generators that push
-     * and pop an item on the stack. This assertion makes sure there
-     * is space on the stack for that.
-     * It should always be true, because a generator must have at
-     * least one expression or call to INTRINSIC_STOPITERATION_ERROR,
-     * which requires stackspace.
-     */
-    assert(!(IS_GENERATOR(code_flags) && stackdepth == 0));
 
     /** Assembly **/
-    int nlocalsplus = prepare_localsplus(&u->u_metadata, &g, code_flags);
-    if (nlocalsplus < 0) {
-        goto error;
-    }
-
-    _PyCfg_ConvertPseudoOps(g.g_entryblock);
-
-    /* Order of basic blocks must have been determined by now */
-
-    if (_PyCfg_ResolveJumps(&g) < 0) {
-        goto error;
-    }
-
-    /* Can't modify the bytecode after computing jump offsets. */
 
     if (cfg_to_instr_sequence(&g, &optimized_instrs) < 0) {
         goto error;
@@ -8242,26 +8023,12 @@ _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
         goto error;
     }
 
-    int stackdepth = _PyCfg_Stackdepth(&g);
-    if (stackdepth < 0) {
-        goto error;
-    }
-
     int code_flags = 0;
-    int nlocalsplus = prepare_localsplus(umd, &g, code_flags);
-    if (nlocalsplus < 0) {
+    int stackdepth, nlocalsplus;
+    if (_PyCfg_OptimizedCfgToInstructionList(&g, umd, code_flags,
+                                             &stackdepth, &nlocalsplus) < 0) {
         goto error;
     }
-
-    _PyCfg_ConvertPseudoOps(g.g_entryblock);
-
-    /* Order of basic blocks must have been determined by now */
-
-    if (_PyCfg_ResolveJumps(&g) < 0) {
-        goto error;
-    }
-
-    /* Can't modify the bytecode after computing jump offsets. */
 
     if (cfg_to_instr_sequence(&g, &optimized_instrs) < 0) {
         goto error;
