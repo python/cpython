@@ -1680,7 +1680,8 @@ class ClinicExternalTest(TestCase):
 
     def expect_success(self, *args):
         out, err, code = self.run_clinic(*args)
-        self.assertEqual(code, 0, f"Unexpected failure: {args=}")
+        if code != 0:
+            self.fail("\n".join([f"Unexpected failure: {args=}", out, err]))
         self.assertEqual(err, "")
         return out
 
