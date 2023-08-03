@@ -292,6 +292,7 @@ class Analyzer:
         for name, pseudo in self.pseudos.items():
             self.pseudo_instrs[name] = self.analyze_pseudo(pseudo)
 
+    # TODO: Merge with similar code in stacking.py, write_components()
     def check_macro_consistency(self, mac: MacroInstruction) -> None:
         def get_var_names(instr: Instruction) -> dict[str, StackEffect]:
             vars: dict[str, StackEffect] = {}
@@ -300,8 +301,8 @@ class Analyzer:
                     if vars[eff.name] != eff:
                         self.error(
                             f"Instruction {instr.name!r} has "
-                            f"inconsistent types for variable {eff.name!r}: "
-                            f"{vars[eff.name]} vs {eff}",
+                            f"inconsistent type/cond/size for variable "
+                            f"{eff.name!r}: {vars[eff.name]} vs {eff}",
                             instr.inst,
                         )
                 else:
@@ -319,9 +320,10 @@ class Analyzer:
             for name, eff in vars.items():
                 if name in all_vars:
                     if all_vars[name] != eff:
-                        self.warning(
-                            f"Macro {mac.name!r} has"
-                            f"inconsistent types for variable {name!r}: "
+                        self.error(
+                            f"Macro {mac.name!r} has "
+                            f"inconsistent type/cond/size for variable "
+                            f"{name!r}: "
                             f"{all_vars[name]} vs {eff} in {part.instr.name!r}",
                             mac.macro,
                         )
@@ -339,21 +341,10 @@ class Analyzer:
                 reads = set(copy[0].name for copy in copies)
                 writes = set(copy[1].name for copy in copies)
                 if reads & writes:
-                    self.warning(
-                        f"Macro {mac.name!r} has conflicting copies: "
+                    self.error(
+                        f"Macro {mac.name!r} has conflicting copies "
+                        f"(source of one copy is destination of another): "
                         f"{reads & writes}",
-                        mac.macro,
-                    )
-                if pushes:
-                    self.warning(
-                        f"Macro {mac.name!r} has extra pushes after "
-                        f"{prevop.name!r}: {pushes}",
-                        mac.macro,
-                    )
-                if pops:
-                    self.warning(
-                        f"Macro {mac.name!r} has extra pops before "
-                        f"{part.instr.name!r}: {pops}",
                         mac.macro,
                     )
             prevop = part.instr
@@ -416,65 +407,3 @@ class Analyzer:
                 case _:
                     typing.assert_never(uop)
         return components
-
-    def stack_analysis(
-        self, components: typing.Iterable[InstructionOrCacheEffect]
-    ) -> tuple[list[StackEffect], int]:
-        """Analyze a macro.
-
-        Ignore cache effects.
-
-        Return the list of variables (as StackEffects) and the initial stack pointer.
-        """
-        lowest = current = highest = 0
-        conditions: dict[int, str] = {}  # Indexed by 'current'.
-        last_instr: Instruction | None = None
-        for thing in components:
-            if isinstance(thing, Instruction):
-                last_instr = thing
-        for thing in components:
-            match thing:
-                case Instruction() as instr:
-                    if any(
-                        eff.size for eff in instr.input_effects + instr.output_effects
-                    ):
-                        # TODO: Eventually this will be needed, at least for macros.
-                        self.warning(
-                            f"Instruction {instr.name!r} has variable-sized stack effect, "
-                            "which are not supported in macro instructions",
-                            instr.inst,  # TODO: Pass name+location of macro
-                        )
-                    if any(eff.cond for eff in instr.input_effects):
-                        self.error(
-                            f"Instruction {instr.name!r} has conditional input stack effect, "
-                            "which are not supported in macro instructions",
-                            instr.inst,  # TODO: Pass name+location of macro
-                        )
-                    if (
-                        any(eff.cond for eff in instr.output_effects)
-                        and instr is not last_instr
-                    ):
-                        self.error(
-                            f"Instruction {instr.name!r} has conditional output stack effect, "
-                            "but is not the last instruction in a macro",
-                            instr.inst,  # TODO: Pass name+location of macro
-                        )
-                    current -= len(instr.input_effects)
-                    lowest = min(lowest, current)
-                    for eff in instr.output_effects:
-                        if eff.cond:
-                            conditions[current] = eff.cond
-                        current += 1
-                    highest = max(highest, current)
-                case parsing.CacheEffect():
-                    pass
-                case _:
-                    typing.assert_never(thing)
-        # At this point, 'current' is the net stack effect,
-        # and 'lowest' and 'highest' are the extremes.
-        # Note that 'lowest' may be negative.
-        stack = [
-            StackEffect(f"_tmp_{i}", "", conditions.get(highest - i, ""))
-            for i in reversed(range(1, highest - lowest + 1))
-        ]
-        return stack, -lowest
