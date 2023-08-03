@@ -41,6 +41,9 @@ class StackOffset:
     def clone(self) -> "StackOffset":
         return StackOffset(list(self.deep), list(self.high))
 
+    def negate(self) -> "StackOffset":
+        return StackOffset(list(self.high), list(self.deep))
+
     def deeper(self, eff: StackEffect) -> None:
         if eff in self.high:
             self.high.remove(eff)
@@ -239,6 +242,16 @@ def less_than(a: StackOffset, b: StackOffset) -> bool:
     return a.deep[: len(b.deep)] == b.deep
 
 
+def get_managers(parts: list[Component]) -> list[EffectManager]:
+    managers: list[EffectManager] = []
+    pred: EffectManager | None = None
+    for part in parts:
+        mgr = EffectManager(part.instr, part.active_caches, pred)
+        managers.append(mgr)
+        pred = mgr
+    return managers
+
+
 def get_stack_effect_info_for_macro(mac: MacroInstruction) -> tuple[str, str]:
     """Get the stack effect info for a macro instruction.
 
@@ -246,30 +259,18 @@ def get_stack_effect_info_for_macro(mac: MacroInstruction) -> tuple[str, str]:
     symbolic expression for the number of values popped/pushed.
     """
     parts = [part for part in mac.parts if isinstance(part, Component)]
-    managers: list[EffectManager] = []
-    pred: EffectManager | None = None
-    for part in parts:
-        mgr = EffectManager(part.instr, part.active_caches, pred)
-        managers.append(mgr)
-        pred = mgr
-    net = StackOffset()
-    lowest = StackOffset()
+    managers = get_managers(parts)
+    popped = StackOffset()
     for mgr in managers:
-        for peek in mgr.peeks:
-            net.deeper(peek.effect)
-        if less_than(net, lowest):
-            lowest = StackOffset(net.deep[:], net.high[:])
-        else:
-            # TODO: Turn this into an error -- the "min" is ambiguous
-            assert net == lowest, (mac.name, net, lowest)
-        for poke in mgr.pokes:
-            net.higher(poke.effect)
-    popped = StackOffset(lowest.high[:], lowest.deep[:])  # Reverse direction!
-    for eff in popped.deep:
-        net.deeper(eff)
-    for eff in popped.high:
-        net.higher(eff)
-    return popped.as_index(), net.as_index()
+        if less_than(mgr.min_offset, popped):
+            popped = mgr.min_offset.clone()
+    # Compute pushed = final - popped
+    pushed = managers[-1].final_offset.clone()
+    for effect in popped.deep:
+        pushed.higher(effect)
+    for effect in popped.high:
+        pushed.deeper(effect)
+    return popped.negate().as_index(), pushed.as_index()
 
 
 def write_single_instr(
@@ -313,12 +314,7 @@ def write_components(
     out: Formatter,
     tier: Tiers,
 ) -> None:
-    managers: list[EffectManager] = []
-    pred: EffectManager | None = None
-    for part in parts:
-        mgr = EffectManager(part.instr, part.active_caches, pred)
-        managers.append(mgr)
-        pred = mgr
+    managers = get_managers(parts)
 
     all_vars: dict[str, StackEffect] = {}
     for mgr in managers:
