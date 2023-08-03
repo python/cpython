@@ -165,15 +165,7 @@ def get_original_bases(cls, /):
         assert get_original_bases(int) == (object,)
     """
     try:
-        cls_dict = cls.__dict__
-    except AttributeError:
-        pass
-    else:
-        if "__orig_bases__" in cls_dict:  # GH-107576: don't return the parent's
-            return cls.__orig_bases__
-
-    try:
-        return cls.__bases__
+        return cls.__dict__.get("__orig_bases__", cls.__bases__)
     except AttributeError:
         raise TypeError(
             f"Expected an instance of type, not {type(cls).__name__!r}"
