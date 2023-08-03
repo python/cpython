@@ -109,9 +109,13 @@ class StackItem:
             terms.insert(0, ("+", "stack_pointer"))
         index = make_index(terms)
         if self.effect.size:
-            return index
+            res = index
         else:
-            return f"stack_pointer[{index}]"
+            res = f"stack_pointer[{index}]"
+        assert self.effect.name == UNUSED or (
+            self.offset.deep and not self.offset.high
+        ), f"Push or pop above current stack level: {res}"
+        return res
 
 
 @dataclasses.dataclass
@@ -275,11 +279,14 @@ def get_stack_effect_info_for_macro(mac: MacroInstruction) -> tuple[str, str]:
 def write_single_instr(
     instr: Instruction, out: Formatter, tier: Tiers = TIER_ONE
 ) -> None:
-    write_components(
-        [Component(instr, instr.active_caches)],
-        out,
-        tier,
-    )
+    try:
+        write_components(
+            [Component(instr, instr.active_caches)],
+            out,
+            tier,
+        )
+    except AssertionError as err:
+        raise AssertionError(f"Error writing instruction {instr.name}") from err
 
 
 def write_macro_instr(
@@ -302,7 +309,10 @@ def write_macro_instr(
         if mac.predicted:
             out.emit(f"PREDICTED({mac.name});")
         out.static_assert_family_size(mac.name, family, cache_adjust)
-        write_components(parts, out, TIER_ONE)
+        try:
+            write_components(parts, out, TIER_ONE)
+        except AssertionError as err:
+            raise AssertionError(f"Error writing macro {mac.name}") from err
         if cache_adjust:
             out.emit(f"next_instr += {cache_adjust};")
         out.emit("DISPATCH();")
