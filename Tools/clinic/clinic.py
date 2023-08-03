@@ -28,7 +28,6 @@ import shlex
 import string
 import sys
 import textwrap
-import traceback
 
 from collections.abc import (
     Callable,
@@ -137,6 +136,28 @@ def text_accumulator() -> TextAccumulator:
     text, append, output = _text_accumulator()
     return TextAccumulator(append, output)
 
+
+@dc.dataclass
+class ClinicError(Exception):
+    message: str
+    _: dc.KW_ONLY
+    lineno: int | None = None
+    filename: str | None = None
+
+    def __post_init__(self) -> None:
+        super().__init__(self.message)
+
+    def report(self, *, warn_only: bool = False) -> str:
+        msg = "Warning" if warn_only else "Error"
+        if self.filename is not None:
+            msg += f" in file {self.filename!r}"
+        if self.lineno is not None:
+            msg += f" on line {self.lineno}"
+        msg += ":\n"
+        msg += f"{self.message}\n"
+        return msg
+
+
 @overload
 def warn_or_fail(
     *args: object,
@@ -160,25 +181,16 @@ def warn_or_fail(
     line_number: int | None = None,
 ) -> None:
     joined = " ".join([str(a) for a in args])
-    add, output = text_accumulator()
-    if fail:
-        add("Error")
-    else:
-        add("Warning")
     if clinic:
         if filename is None:
             filename = clinic.filename
         if getattr(clinic, 'block_parser', None) and (line_number is None):
             line_number = clinic.block_parser.line_number
-    if filename is not None:
-        add(' in file "' + filename + '"')
-    if line_number is not None:
-        add(" on line " + str(line_number))
-    add(':\n')
-    add(joined)
-    print(output())
+    error = ClinicError(joined, filename=filename, lineno=line_number)
     if fail:
-        sys.exit(-1)
+        raise error
+    else:
+        print(error.report(warn_only=True))
 
 
 def warn(
@@ -347,7 +359,7 @@ def version_splitter(s: str) -> tuple[int, ...]:
     accumulator: list[str] = []
     def flush() -> None:
         if not accumulator:
-            raise ValueError('Unsupported version string: ' + repr(s))
+            fail(f'Unsupported version string: {s!r}')
         version.append(int(''.join(accumulator)))
         accumulator.clear()
 
@@ -360,7 +372,7 @@ def version_splitter(s: str) -> tuple[int, ...]:
             flush()
             version.append('abc'.index(c) - 3)
         else:
-            raise ValueError('Illegal character ' + repr(c) + ' in version string ' + repr(s))
+            fail(f'Illegal character {c!r} in version string {s!r}')
     flush()
     return tuple(version)
 
@@ -2233,11 +2245,7 @@ impl_definition block
                     assert dsl_name in parsers, f"No parser to handle {dsl_name!r} block."
                     self.parsers[dsl_name] = parsers[dsl_name](self)
                 parser = self.parsers[dsl_name]
-                try:
-                    parser.parse(block)
-                except Exception:
-                    fail('Exception raised during parsing:\n' +
-                         traceback.format_exc().rstrip())
+                parser.parse(block)
             printer.print_block(block)
 
         # these are destinations not buffers
@@ -4600,7 +4608,11 @@ class DSLParser:
         for line_number, line in enumerate(lines, self.clinic.block_parser.block_start_line_number):
             if '\t' in line:
                 fail('Tab characters are illegal in the Clinic DSL.\n\t' + repr(line), line_number=block_start)
-            self.state(line)
+            try:
+                self.state(line)
+            except ClinicError as exc:
+                exc.lineno = line_number
+                raise
 
         self.do_post_block_processing_cleanup()
         block.output.extend(self.clinic.language.render(self.clinic, block.signatures))
@@ -4701,8 +4713,8 @@ class DSLParser:
                     if existing_function.name == function_name:
                         break
                 else:
-                    print(f"{cls=}, {module=}, {existing=}")
-                    print(f"{(cls or module).functions=}")
+                    print(f"{cls=}, {module=}, {existing=}", file=sys.stderr)
+                    print(f"{(cls or module).functions=}", file=sys.stderr)
                     fail(f"Couldn't find existing function {existing!r}!")
 
                 fields = [x.strip() for x in full_name.split('.')]
@@ -5719,8 +5731,13 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
 def main(argv: list[str] | None = None) -> NoReturn:
     parser = create_cli()
     args = parser.parse_args(argv)
-    run_clinic(parser, args)
-    sys.exit(0)
+    try:
+        run_clinic(parser, args)
+    except ClinicError as exc:
+        sys.stderr.write(exc.report())
+        sys.exit(1)
+    else:
+        sys.exit(0)
 
 
 if __name__ == "__main__":
