@@ -2526,20 +2526,4 @@ _PyCfg_OptimizedCfgToInstructionList(_PyCfgBuilder *g,
 
 }
 
-int
-_PyCfg_ToOptimizedInstructionList(_PyCfgBuilder *g, _PyCompile_CodeUnitMetadata *umd,
-                                  PyObject *consts, PyObject *const_cache,
-                                  int nparams, int firstlineno, int code_flags,
-                                  int *stackdepth, int *nlocalsplus)
-{
-    int nlocals = (int)PyDict_GET_SIZE(umd->u_varnames);
-    RETURN_IF_ERROR(_PyCfg_OptimizeCodeUnit(g, consts, const_cache, nlocals,
-                    nparams, firstlineno));
-
-    RETURN_IF_ERROR(_PyCfg_OptimizedCfgToInstructionList(
-                                   g, umd, code_flags,
-                                   stackdepth, nlocalsplus));
-
-    return SUCCESS;
-}
 

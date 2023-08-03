@@ -7524,15 +7524,19 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     if (instr_sequence_to_cfg(&u->u_instr_sequence, &g) < 0) {
         goto error;
     }
+    int nlocals = (int)PyDict_GET_SIZE(u->u_metadata.u_varnames);
     int nparams = (int)PyList_GET_SIZE(u->u_ste->ste_varnames);
     assert(u->u_metadata.u_firstlineno);
 
+    if (_PyCfg_OptimizeCodeUnit(&g, consts, const_cache, nlocals,
+                                nparams, u->u_metadata.u_firstlineno) < 0) {
+        goto error;
+    }
+
     int stackdepth;
     int nlocalsplus;
-    if (_PyCfg_ToOptimizedInstructionList(&g, &u->u_metadata,
-            consts, const_cache, nparams,
-            u->u_metadata.u_firstlineno, code_flags,
-            &stackdepth, &nlocalsplus) < 0) {
+    if (_PyCfg_OptimizedCfgToInstructionList(&g, &u->u_metadata, code_flags,
+                                             &stackdepth, &nlocalsplus) < 0) {
         goto error;
     }
 
