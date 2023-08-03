@@ -220,7 +220,7 @@ Fundamental data types
 +----------------------+------------------------------------------+----------------------------+
 | :class:`c_char`      | :c:expr:`char`                           | 1-character bytes object   |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_wchar`     | :c:expr:`wchar_t`                        | 1-character string         |
+| :class:`c_wchar`     | :c:type:`wchar_t`                        | 1-character string         |
 +----------------------+------------------------------------------+----------------------------+
 | :class:`c_byte`      | :c:expr:`char`                           | int                        |
 +----------------------+------------------------------------------+----------------------------+
@@ -243,9 +243,9 @@ Fundamental data types
 | :class:`c_ulonglong` | :c:expr:`unsigned __int64` or            | int                        |
 |                      | :c:expr:`unsigned long long`             |                            |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_size_t`    | :c:expr:`size_t`                         | int                        |
+| :class:`c_size_t`    | :c:type:`size_t`                         | int                        |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_ssize_t`   | :c:expr:`ssize_t` or                     | int                        |
+| :class:`c_ssize_t`   | :c:type:`ssize_t` or                     | int                        |
 |                      | :c:expr:`Py_ssize_t`                     |                            |
 +----------------------+------------------------------------------+----------------------------+
 | :class:`c_time_t`    | :c:type:`time_t`                         | int                        |
@@ -335,7 +335,7 @@ property::
 
 The :func:`create_string_buffer` function replaces the old :func:`c_buffer`
 function (which is still available as an alias).  To create a mutable memory
-block containing unicode characters of the C type :c:expr:`wchar_t`, use the
+block containing unicode characters of the C type :c:type:`wchar_t`, use the
 :func:`create_unicode_buffer` function.
 
 
@@ -478,7 +478,7 @@ By default functions are assumed to return the C :c:expr:`int` type.  Other
 return types can be specified by setting the :attr:`restype` attribute of the
 function object.
 
-The C prototype of ``time()`` is ``time_t time(time_t *)``. Because ``time_t``
+The C prototype of ``time()`` is ``time_t time(time_t *)``. Because :c:type:`time_t`
 might be of a different type than the default return type ``int``, you should
 specify the ``restype``::
 
@@ -2407,7 +2407,7 @@ These are the fundamental ctypes data types:
 
 .. class:: c_wchar
 
-   Represents the C :c:expr:`wchar_t` datatype, and interprets the value as a
+   Represents the C :c:type:`wchar_t` datatype, and interprets the value as a
    single character unicode string.  The constructor accepts an optional string
    initializer, the length of the string must be exactly one character.
 

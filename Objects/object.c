@@ -5,11 +5,12 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_context.h"       // _PyContextTokenMissing_Type
+#include "pycore_descrobject.h"   // _PyMethodWrapper_Type
 #include "pycore_dict.h"          // _PyObject_MakeDictFromInstanceAttributes()
 #include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_namespace.h"     // _PyNamespace_Type
-#include "pycore_object.h"        // _PyType_CheckConsistency(), _Py_FatalRefcountError()
+#include "pycore_object.h"        // PyAPI_DATA() _Py_SwappedOp definition
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -206,14 +207,14 @@ _Py_NegativeRefcount(const char *filename, int lineno, PyObject *op)
 
 /* This is used strictly by Py_INCREF(). */
 void
-_Py_IncRefTotal_DO_NOT_USE_THIS(void)
+_Py_INCREF_IncRefTotal(void)
 {
     reftotal_increment(_PyInterpreterState_GET());
 }
 
 /* This is used strictly by Py_DECREF(). */
 void
-_Py_DecRefTotal_DO_NOT_USE_THIS(void)
+_Py_DECREF_DecRefTotal(void)
 {
     reftotal_decrement(_PyInterpreterState_GET());
 }
@@ -1576,9 +1577,18 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
         }
         if (dictptr == NULL) {
             if (descr == NULL) {
-                PyErr_Format(PyExc_AttributeError,
-                            "'%.100s' object has no attribute '%U'",
-                            tp->tp_name, name);
+                if (tp->tp_setattro == PyObject_GenericSetAttr) {
+                    PyErr_Format(PyExc_AttributeError,
+                                "'%.100s' object has no attribute '%U' and no "
+                                "__dict__ for setting new attributes",
+                                tp->tp_name, name);
+                }
+                else {
+                    PyErr_Format(PyExc_AttributeError,
+                                "'%.100s' object has no attribute '%U'",
+                                tp->tp_name, name);
+                }
+                set_attribute_error_context(obj, name);
             }
             else {
                 PyErr_Format(PyExc_AttributeError,
@@ -1611,6 +1621,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
                          "'%.100s' object has no attribute '%U'",
                          tp->tp_name, name);
         }
+        set_attribute_error_context(obj, name);
     }
   done:
     Py_XDECREF(descr);
@@ -2061,6 +2072,7 @@ static PyTypeObject* static_types[] = {
     &PyGen_Type,
     &PyGetSetDescr_Type,
     &PyInstanceMethod_Type,
+    &PyInterpreterID_Type,
     &PyListIter_Type,
     &PyListRevIter_Type,
     &PyList_Type,
@@ -2111,7 +2123,6 @@ static PyTypeObject* static_types[] = {
     &_PyHamt_CollisionNode_Type,
     &_PyHamt_Type,
     &_PyLegacyEventHandler_Type,
-    &_PyInterpreterID_Type,
     &_PyLineIterator,
     &_PyManagedBuffer_Type,
     &_PyMemoryIter_Type,

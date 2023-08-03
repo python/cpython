@@ -85,9 +85,15 @@ class CAPITest(unittest.TestCase):
 
     @support.requires_subprocess()
     def test_no_FatalError_infinite_loop(self):
-        run_result, _cmd_line = run_python_until_end(
-            '-c', 'import _testcapi; _testcapi.crash_no_current_thread()',
-        )
+        code = textwrap.dedent("""
+            import _testcapi
+            from test import support
+
+            with support.SuppressCrashReport():
+                _testcapi.crash_no_current_thread()
+        """)
+
+        run_result, _cmd_line = run_python_until_end('-c', code)
         _rc, out, err = run_result
         self.assertEqual(out, b'')
         # This used to cause an infinite loop.
@@ -2368,12 +2374,16 @@ def clear_executors(func):
 class TestOptimizerAPI(unittest.TestCase):
 
     def test_get_set_optimizer(self):
-        self.assertEqual(_testinternalcapi.get_optimizer(), None)
+        old = _testinternalcapi.get_optimizer()
         opt = _testinternalcapi.get_counter_optimizer()
-        _testinternalcapi.set_optimizer(opt)
-        self.assertEqual(_testinternalcapi.get_optimizer(), opt)
-        _testinternalcapi.set_optimizer(None)
-        self.assertEqual(_testinternalcapi.get_optimizer(), None)
+        try:
+            _testinternalcapi.set_optimizer(opt)
+            self.assertEqual(_testinternalcapi.get_optimizer(), opt)
+            _testinternalcapi.set_optimizer(None)
+            self.assertEqual(_testinternalcapi.get_optimizer(), None)
+        finally:
+            _testinternalcapi.set_optimizer(old)
+
 
     def test_counter_optimizer(self):
         # Generate a new function at each call
@@ -2426,7 +2436,7 @@ def get_first_executor(func):
     co_code = code.co_code
     JUMP_BACKWARD = opcode.opmap["JUMP_BACKWARD"]
     for i in range(0, len(co_code), 2):
-        if co_code[i] == JUMP_BACKWARD or 1:
+        if co_code[i] == JUMP_BACKWARD:
             try:
                 return _testinternalcapi.get_executor(code, i)
             except ValueError:
@@ -2448,42 +2458,46 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _ in ex}
+        uops = {opname for opname, _, _ in ex}
         self.assertIn("SAVE_IP", uops)
         self.assertIn("LOAD_FAST", uops)
 
     def test_extended_arg(self):
         "Check EXTENDED_ARG handling in superblock creation"
-        def many_vars():
-            # 260 vars, so z9 should have index 259
-            a0 = a1 = a2 = a3 = a4 = a5 = a6 = a7 = a8 = a9 = 42
-            b0 = b1 = b2 = b3 = b4 = b5 = b6 = b7 = b8 = b9 = 42
-            c0 = c1 = c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = 42
-            d0 = d1 = d2 = d3 = d4 = d5 = d6 = d7 = d8 = d9 = 42
-            e0 = e1 = e2 = e3 = e4 = e5 = e6 = e7 = e8 = e9 = 42
-            f0 = f1 = f2 = f3 = f4 = f5 = f6 = f7 = f8 = f9 = 42
-            g0 = g1 = g2 = g3 = g4 = g5 = g6 = g7 = g8 = g9 = 42
-            h0 = h1 = h2 = h3 = h4 = h5 = h6 = h7 = h8 = h9 = 42
-            i0 = i1 = i2 = i3 = i4 = i5 = i6 = i7 = i8 = i9 = 42
-            j0 = j1 = j2 = j3 = j4 = j5 = j6 = j7 = j8 = j9 = 42
-            k0 = k1 = k2 = k3 = k4 = k5 = k6 = k7 = k8 = k9 = 42
-            l0 = l1 = l2 = l3 = l4 = l5 = l6 = l7 = l8 = l9 = 42
-            m0 = m1 = m2 = m3 = m4 = m5 = m6 = m7 = m8 = m9 = 42
-            n0 = n1 = n2 = n3 = n4 = n5 = n6 = n7 = n8 = n9 = 42
-            o0 = o1 = o2 = o3 = o4 = o5 = o6 = o7 = o8 = o9 = 42
-            p0 = p1 = p2 = p3 = p4 = p5 = p6 = p7 = p8 = p9 = 42
-            q0 = q1 = q2 = q3 = q4 = q5 = q6 = q7 = q8 = q9 = 42
-            r0 = r1 = r2 = r3 = r4 = r5 = r6 = r7 = r8 = r9 = 42
-            s0 = s1 = s2 = s3 = s4 = s5 = s6 = s7 = s8 = s9 = 42
-            t0 = t1 = t2 = t3 = t4 = t5 = t6 = t7 = t8 = t9 = 42
-            u0 = u1 = u2 = u3 = u4 = u5 = u6 = u7 = u8 = u9 = 42
-            v0 = v1 = v2 = v3 = v4 = v5 = v6 = v7 = v8 = v9 = 42
-            w0 = w1 = w2 = w3 = w4 = w5 = w6 = w7 = w8 = w9 = 42
-            x0 = x1 = x2 = x3 = x4 = x5 = x6 = x7 = x8 = x9 = 42
-            y0 = y1 = y2 = y3 = y4 = y5 = y6 = y7 = y8 = y9 = 42
-            z0 = z1 = z2 = z3 = z4 = z5 = z6 = z7 = z8 = z9 = 42
-            while z9 > 0:
-                z9 = z9 - 1
+        ns = {}
+        exec(textwrap.dedent("""
+            def many_vars():
+                # 260 vars, so z9 should have index 259
+                a0 = a1 = a2 = a3 = a4 = a5 = a6 = a7 = a8 = a9 = 42
+                b0 = b1 = b2 = b3 = b4 = b5 = b6 = b7 = b8 = b9 = 42
+                c0 = c1 = c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = 42
+                d0 = d1 = d2 = d3 = d4 = d5 = d6 = d7 = d8 = d9 = 42
+                e0 = e1 = e2 = e3 = e4 = e5 = e6 = e7 = e8 = e9 = 42
+                f0 = f1 = f2 = f3 = f4 = f5 = f6 = f7 = f8 = f9 = 42
+                g0 = g1 = g2 = g3 = g4 = g5 = g6 = g7 = g8 = g9 = 42
+                h0 = h1 = h2 = h3 = h4 = h5 = h6 = h7 = h8 = h9 = 42
+                i0 = i1 = i2 = i3 = i4 = i5 = i6 = i7 = i8 = i9 = 42
+                j0 = j1 = j2 = j3 = j4 = j5 = j6 = j7 = j8 = j9 = 42
+                k0 = k1 = k2 = k3 = k4 = k5 = k6 = k7 = k8 = k9 = 42
+                l0 = l1 = l2 = l3 = l4 = l5 = l6 = l7 = l8 = l9 = 42
+                m0 = m1 = m2 = m3 = m4 = m5 = m6 = m7 = m8 = m9 = 42
+                n0 = n1 = n2 = n3 = n4 = n5 = n6 = n7 = n8 = n9 = 42
+                o0 = o1 = o2 = o3 = o4 = o5 = o6 = o7 = o8 = o9 = 42
+                p0 = p1 = p2 = p3 = p4 = p5 = p6 = p7 = p8 = p9 = 42
+                q0 = q1 = q2 = q3 = q4 = q5 = q6 = q7 = q8 = q9 = 42
+                r0 = r1 = r2 = r3 = r4 = r5 = r6 = r7 = r8 = r9 = 42
+                s0 = s1 = s2 = s3 = s4 = s5 = s6 = s7 = s8 = s9 = 42
+                t0 = t1 = t2 = t3 = t4 = t5 = t6 = t7 = t8 = t9 = 42
+                u0 = u1 = u2 = u3 = u4 = u5 = u6 = u7 = u8 = u9 = 42
+                v0 = v1 = v2 = v3 = v4 = v5 = v6 = v7 = v8 = v9 = 42
+                w0 = w1 = w2 = w3 = w4 = w5 = w6 = w7 = w8 = w9 = 42
+                x0 = x1 = x2 = x3 = x4 = x5 = x6 = x7 = x8 = x9 = 42
+                y0 = y1 = y2 = y3 = y4 = y5 = y6 = y7 = y8 = y9 = 42
+                z0 = z1 = z2 = z3 = z4 = z5 = z6 = z7 = z8 = z9 = 42
+                while z9 > 0:
+                    z9 = z9 - 1
+        """), ns, ns)
+        many_vars = ns["many_vars"]
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
@@ -2493,7 +2507,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(many_vars)
         self.assertIsNotNone(ex)
-        self.assertIn(("LOAD_FAST", 259), list(ex))
+        self.assertIn(("LOAD_FAST", 259, 0), list(ex))
 
     def test_unspecialized_unpack(self):
         # An example of an unspecialized opcode
@@ -2514,7 +2528,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _ in ex}
+        uops = {opname for opname, _, _ in ex}
         self.assertIn("UNPACK_SEQUENCE", uops)
 
     def test_pop_jump_if_false(self):
@@ -2529,7 +2543,37 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _ in ex}
+        uops = {opname for opname, _, _ in ex}
+        self.assertIn("_POP_JUMP_IF_FALSE", uops)
+
+    def test_pop_jump_if_none(self):
+        def testfunc(a):
+            for x in a:
+                if x is None:
+                    x = 0
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            testfunc([1, 2, 3])
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        self.assertIn("_POP_JUMP_IF_TRUE", uops)
+
+    def test_pop_jump_if_not_none(self):
+        def testfunc(a):
+            for x in a:
+                if x is not None:
+                    x = 0
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            testfunc([1, 2, 3])
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
         self.assertIn("_POP_JUMP_IF_FALSE", uops)
 
     def test_pop_jump_if_true(self):
@@ -2544,7 +2588,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _ in ex}
+        uops = {opname for opname, _, _ in ex}
         self.assertIn("_POP_JUMP_IF_TRUE", uops)
 
     def test_jump_backward(self):
@@ -2559,7 +2603,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _ in ex}
+        uops = {opname for opname, _, _ in ex}
         self.assertIn("JUMP_TO_TOP", uops)
 
     def test_jump_forward(self):
@@ -2579,7 +2623,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _ in ex}
+        uops = {opname for opname, _, _ in ex}
         # Since there is no JUMP_FORWARD instruction,
         # look for indirect evidence: the += operator
         self.assertIn("_BINARY_OP_ADD_INT", uops)
@@ -2600,7 +2644,7 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         # for i, (opname, oparg) in enumerate(ex):
         #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
-        uops = {opname for opname, _ in ex}
+        uops = {opname for opname, _, _ in ex}
         self.assertIn("_IS_ITER_EXHAUSTED_RANGE", uops)
         # Verification that the jump goes past END_FOR
         # is done by manual inspection of the output
@@ -2622,7 +2666,7 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         # for i, (opname, oparg) in enumerate(ex):
         #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
-        uops = {opname for opname, _ in ex}
+        uops = {opname for opname, _, _ in ex}
         self.assertIn("_IS_ITER_EXHAUSTED_LIST", uops)
         # Verification that the jump goes past END_FOR
         # is done by manual inspection of the output
@@ -2644,7 +2688,7 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         # for i, (opname, oparg) in enumerate(ex):
         #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
-        uops = {opname for opname, _ in ex}
+        uops = {opname for opname, _, _ in ex}
         self.assertIn("_IS_ITER_EXHAUSTED_TUPLE", uops)
         # Verification that the jump goes past END_FOR
         # is done by manual inspection of the output
