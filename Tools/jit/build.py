@@ -254,13 +254,15 @@ class ObjectParser:
         #     entry = self.body_symbols["_jit_trampoline"]
         entry = 0  # XXX
         holes = []
+        while len(self.body) % 8:
+            self.body.append(0)
+        got = len(self.body)
         for newhole in handle_relocations(self.got_entries, self.body, self.relocations_todo):
             assert newhole.symbol not in self.dupes, newhole.symbol
             if newhole.symbol in self.body_symbols:
                 addend = newhole.addend + self.body_symbols[newhole.symbol] - entry
                 newhole = Hole(newhole.kind, "_jit_base", newhole.offset, addend)
             holes.append(newhole)
-        got = len(self.body)
         for i, (got_symbol, addend) in enumerate(self.got_entries):
             if got_symbol in self.body_symbols:
                 holes.append(Hole("PATCH_ABS_64", "_jit_base", got + 8 * i, self.body_symbols[got_symbol] + addend))
@@ -268,6 +270,8 @@ class ObjectParser:
             # XXX: PATCH_ABS_32 on 32-bit platforms?
             holes.append(Hole("PATCH_ABS_64", got_symbol, got + 8 * i, addend))
         self.body.extend([0] * 8 * len(self.got_entries))
+        while len(self.body) % 16:
+            self.body.append(0)
         holes.sort(key=lambda hole: hole.offset)
         return Stencil(bytes(self.body)[entry:], tuple(holes))  # XXX
 
@@ -332,8 +336,6 @@ def handle_relocations(
                 symbol = symbol.removeprefix("_")
                 if (symbol, addend) not in got_entries:
                     got_entries.append((symbol, addend))
-                while len(body) % 8:
-                    body.append(0)
                 addend = len(body) + got_entries.index((symbol, addend)) * 8
                 yield Hole("PATCH_REL_21", "_jit_base", offset, addend)
             case {
@@ -360,8 +362,6 @@ def handle_relocations(
                 symbol = symbol.removeprefix("_")
                 if (symbol, addend) not in got_entries:
                     got_entries.append((symbol, addend))
-                while len(body) % 8:
-                    body.append(0)
                 addend = len(body) + got_entries.index((symbol, addend)) * 8
                 yield Hole("PATCH_ABS_12", "_jit_base", offset, addend)
             case {
@@ -487,8 +487,6 @@ def handle_relocations(
                 addend = sign_extend_64(addend, 33)
                 if (symbol, addend) not in got_entries:
                     got_entries.append((symbol, addend))
-                while len(body) % 8:
-                    body.append(0)
                 addend = len(body) + got_entries.index((symbol, addend)) * 8
                 yield Hole("PATCH_REL_21", "_jit_base", offset, addend)
             case {
@@ -526,8 +524,6 @@ def handle_relocations(
                 addend <<= implicit_shift
                 if (symbol, addend) not in got_entries:
                     got_entries.append((symbol, addend))
-                while len(body) % 8:
-                    body.append(0)
                 addend = len(body) + got_entries.index((symbol, addend)) * 8
                 yield Hole("PATCH_ABS_12", "_jit_base", offset, addend)
             case {
@@ -598,8 +594,6 @@ def handle_relocations(
                 assert not what, what
                 if (symbol, addend) not in got_entries:
                     got_entries.append((symbol, addend))
-                while len(body) % 8:
-                    body.append(0)
                 addend = got_entries.index((symbol, addend)) * 8
                 body[where] = addend.to_bytes(8, sys.byteorder)
             case {
@@ -612,8 +606,6 @@ def handle_relocations(
                 where = slice(offset, offset + 8)
                 what = int.from_bytes(body[where], sys.byteorder)
                 assert not what, what
-                while len(body) % 8:
-                    body.append(0)
                 addend += offset - len(body)
                 yield Hole("PATCH_REL_64", symbol, offset, addend)
             case {
@@ -626,8 +618,6 @@ def handle_relocations(
                 where = slice(offset, offset + 8)
                 what = int.from_bytes(body[where], sys.byteorder)
                 assert not what, what
-                while len(body) % 8:
-                    body.append(0)
                 addend += len(body) - offset
                 body[where] = addend.to_bytes(8, sys.byteorder)
             case {
@@ -659,8 +649,6 @@ def handle_relocations(
                 symbol = symbol.removeprefix("_")
                 if (symbol, addend) not in got_entries:
                     got_entries.append((symbol, addend))
-                while len(body) % 8:
-                    body.append(0)
                 addend = len(body) + got_entries.index((symbol, addend)) * 8 - offset - 4
                 body[where] = addend.to_bytes(4, sys.byteorder)
             case {

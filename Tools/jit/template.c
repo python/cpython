@@ -65,16 +65,17 @@ _jit_entry(_PyExecutorObject *executor, _PyInterpreterFrame *frame,
         default:
             Py_UNREACHABLE();
     }
-    if (pc != -1) {
-        if (opcode == JUMP_TO_TOP) {
-            __attribute__((musttail))
-            return _jit_loop(executor, frame, stack_pointer, tstate);
-        }
-        assert(opcode == _POP_JUMP_IF_FALSE || opcode == _POP_JUMP_IF_TRUE);
+    // Finally, the continuations:
+    if (opcode == JUMP_TO_TOP) {
+        assert(pc == 0);
+        __attribute__((musttail))
+        return _jit_loop(executor, frame, stack_pointer, tstate);
+    }
+    if ((opcode == _POP_JUMP_IF_FALSE || opcode == _POP_JUMP_IF_TRUE) && pc != -1) {
+        assert(pc == oparg);
         __attribute__((musttail))
         return _jit_branch(executor, frame, stack_pointer, tstate);
     }
-    // Finally, the continuation:
     __attribute__((musttail))
     return _jit_continue(executor, frame, stack_pointer, tstate);
     // Labels that the instruction implementations expect to exist:
