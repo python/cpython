@@ -102,7 +102,7 @@ class StackItem:
     offset: StackOffset
     effect: StackEffect
 
-    def as_variable(self) -> str:
+    def as_variable(self, lax: bool = False) -> str:
         """Return e.g. stack_pointer[-1]."""
         terms = self.offset.as_terms()
         if self.effect.size:
@@ -112,9 +112,12 @@ class StackItem:
             res = index
         else:
             res = f"stack_pointer[{index}]"
-        assert self.effect.name == UNUSED or (
-            self.offset.deep and not self.offset.high
-        ), f"Push or pop above current stack level: {res}"
+        if not lax:
+            # Check that we're not reading or writing above stack top.
+            # Skip this for output variable initialization (lax=True).
+            assert (
+                self.effect in self.offset.deep and not self.offset.high
+            ), f"Push or pop above current stack level: {res}"
         return res
 
 
@@ -366,7 +369,7 @@ def write_components(
                 out.assign(
                     poke.effect,
                     StackEffect(
-                        poke.as_variable(),
+                        poke.as_variable(lax=True),
                         poke.effect.type,
                         poke.effect.cond,
                         poke.effect.size,
