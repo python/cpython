@@ -377,8 +377,10 @@ def version_splitter(s: str) -> tuple[int, ...]:
     return tuple(version)
 
 def version_comparitor(version1: str, version2: str) -> Literal[-1, 0, 1]:
-    iterator = itertools.zip_longest(version_splitter(version1), version_splitter(version2), fillvalue=0)
-    for i, (a, b) in enumerate(iterator):
+    iterator = itertools.zip_longest(
+        version_splitter(version1), version_splitter(version2), fillvalue=0
+    )
+    for a, b in iterator:
         if a < b:
             return -1
         if a > b:
@@ -4368,19 +4370,11 @@ class IndentStack:
         """
         return len(self.indents)
 
-    def indent(self, line: str) -> str:
-        """
-        Indents a line by the currently defined margin.
-        """
-        assert self.margin is not None, "Cannot call .indent() before calling .infer()"
-        return self.margin + line
-
     def dedent(self, line: str) -> str:
         """
         Dedents a line by the currently defined margin.
-        (The inverse of 'indent'.)
         """
-        assert self.margin is not None, "Cannot call .indent() before calling .infer()"
+        assert self.margin is not None, "Cannot call .dedent() before calling .infer()"
         margin = self.margin
         indent = self.indents[-1]
         if not line.startswith(margin):
@@ -4640,10 +4634,6 @@ class DSLParser:
             return False
 
         return True
-
-    @staticmethod
-    def calculate_indent(line: str) -> int:
-        return len(line) - len(line.strip())
 
     def next(
             self,
