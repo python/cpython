@@ -533,6 +533,33 @@ cleanup_fob:
 }
 
 static int
+_write_line_with_margin_and_indent(PyObject *f, PyObject *line, int indent, int margin_indent, const char *margin) {
+    if (line == NULL) {
+        return -1;
+    }
+
+    if (_Py_WriteIndentedMargin(margin_indent, margin, f) < 0) {
+        return -1;
+    }
+
+    /* Write some spaces before the line */
+    if (_Py_WriteIndent(indent, f) < 0) {
+        return -1;
+    }
+
+    /* finally display the line */
+    if (PyFile_WriteObject(lineobj, f, Py_PRINT_RAW) < 0) {
+        return -1;
+    }
+
+    if (PyFile_WriteString("\n", f) < 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+static int
 display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int indent,
                                 int margin_indent, const char *margin,
                                 int *truncation, PyObject **line)
@@ -558,7 +585,7 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
     data = PyUnicode_DATA(lineobj);
     for (i=0; i < PyUnicode_GET_LENGTH(lineobj); i++) {
         Py_UCS4 ch = PyUnicode_READ(kind, data, i);
-        if (ch != ' ' && ch != '\t' && ch != '\014')
+        if (!IS_WHITESPACE(ch))
             break;
     }
     if (i) {
@@ -575,21 +602,7 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
         *truncation = i - indent;
     }
 
-    if (_Py_WriteIndentedMargin(margin_indent, margin, f) < 0) {
-        goto error;
-    }
-
-    /* Write some spaces before the line */
-    if (_Py_WriteIndent(indent, f) < 0) {
-        goto error;
-    }
-
-    /* finally display the line */
-    if (PyFile_WriteObject(lineobj, f, Py_PRINT_RAW) < 0) {
-        goto error;
-    }
-
-    if (PyFile_WriteString("\n", f) < 0) {
+    if (_write_line_with_margin_and_indent(f, lineobj, indent, margin_indent, margin)) {
         goto error;
     }
 
@@ -627,7 +640,9 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent,
 #define IS_WHITESPACE(c) (((c) == ' ') || ((c) == '\t') || ((c) == '\f'))
 
 static int
-extract_anchors_from_expr(const char *segment_str, expr_ty expr, Py_ssize_t *left_anchor, Py_ssize_t *right_anchor,
+extract_anchors_from_expr(const char *segment_str, expr_ty expr,
+                          Py_ssize_t *left_anchor_lineno, *right_anchor_lineno,
+                          Py_ssize_t *left_anchor_col, Py_ssize_t *right_anchor_col,
                           char** primary_error_char, char** secondary_error_char)
 {
     switch (expr->kind) {
@@ -686,12 +701,16 @@ extract_anchors_from_expr(const char *segment_str, expr_ty expr, Py_ssize_t *lef
 }
 
 static int
-extract_anchors_from_stmt(const char *segment_str, stmt_ty statement, Py_ssize_t *left_anchor, Py_ssize_t *right_anchor,
+extract_anchors_from_stmt(const char *segment_str, stmt_ty statement,
+                          Py_ssize_t *left_anchor_lineno, *right_anchor_lineno,
+                          Py_ssize_t *left_anchor_col, Py_ssize_t *right_anchor_col,
                           char** primary_error_char, char** secondary_error_char)
 {
     switch (statement->kind) {
         case Expr_kind: {
-            return extract_anchors_from_expr(segment_str, statement->v.Expr.value, left_anchor, right_anchor,
+            return extract_anchors_from_expr(segment_str, statement->v.Expr.value,
+                                             left_anchor_lineno, right_anchor_lineno,
+                                             left_anchor_col, right_anchor_col,
                                              primary_error_char, secondary_error_char);
         }
         default:
@@ -700,17 +719,39 @@ extract_anchors_from_stmt(const char *segment_str, stmt_ty statement, Py_ssize_t
 }
 
 static int
-extract_anchors_from_line(PyObject *filename, PyObject *line,
+extract_anchors_from_line(PyObject *filename, PyObject *lines,
+                          Py_ssize_t lineno, Py_ssize_t end_lineno,
                           Py_ssize_t start_offset, Py_ssize_t end_offset,
-                          Py_ssize_t *left_anchor, Py_ssize_t *right_anchor,
+                          Py_ssize_t *left_anchor_lineno, *right_anchor_lineno,
+                          Py_ssize_t *left_anchor_col, Py_ssize_t *right_anchor_col,
                           char** primary_error_char, char** secondary_error_char)
 {
     int res = -1;
     PyArena *arena = NULL;
-    PyObject *segment = PyUnicode_Substring(line, start_offset, end_offset);
-    if (!segment) {
+    PyObject *segment = NULL;
+    PyObject *tmp;
+
+    *tmp = PyUnicode_Join(PyUnicode_FromString("\n"), lines);
+    if (!tmp) {
         goto done;
     }
+    Py_SETREF(segment, tmp);
+
+    Py_ssize_t num_lines = PyList_Size(lines);
+    PyObject *last_string = PyList_GET_ITEM(lines, num_lines - 1);
+    Py_ssize_t right_end_offset = PyUnicode_GET_LENGTH(last_string) - end_offset;
+    Py_ssize_t end_join_offset = PyUnicode_GET_LENGTH(segment) - right_end_offset;
+    tmp = PyUnicode_Substring(segment, 0, PyUnicode_GET_LENGTH(segment) - end_join_offset);
+    if (!tmp) {
+        goto done;
+    }
+    Py_SETREF(segment, tmp);
+
+    tmp = PyUnicode_Substring(segment, start_offset, PyUnicode_GET_LENGTH(segment));
+    if (!tmp) {
+        goto done;
+    }
+    Py_SETREF(segment, tmp);
 
     const char *segment_str = PyUnicode_AsUTF8(segment);
     if (!segment_str) {
@@ -736,7 +777,9 @@ extract_anchors_from_line(PyObject *filename, PyObject *line,
     assert(module->kind == Module_kind);
     if (asdl_seq_LEN(module->v.Module.body) == 1) {
         stmt_ty statement = asdl_seq_GET(module->v.Module.body, 0);
-        res = extract_anchors_from_stmt(segment_str, statement, left_anchor, right_anchor,
+        res = extract_anchors_from_stmt(segment_str, statement,
+                                        left_anchor_lineno, right_anchor_lineno,
+                                        left_anchor_col, right_anchor_col,
                                         primary_error_char, secondary_error_char);
     } else {
         res = 0;
@@ -821,21 +864,10 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     }
 
     int err = 0;
-
-    int truncation = _TRACEBACK_SOURCE_LINE_INDENT;
-    PyObject* source_line = NULL;
-    int rc = display_source_line_with_margin(
-            f, filename, lineno, _TRACEBACK_SOURCE_LINE_INDENT,
-            margin_indent, margin, &truncation, &source_line);
-    if (rc != 0 || !source_line) {
-        /* ignore errors since we can't report them, can we? */
-        err = ignore_source_errors();
-        goto done;
-    }
+    bool done_dedent = 0;
 
     int code_offset = tb->tb_lasti;
     PyCodeObject* code = _PyFrame_GetCode(frame->f_frame);
-    const Py_ssize_t source_line_len = PyUnicode_GET_LENGTH(source_line);
 
     int start_line;
     int end_line;
@@ -843,15 +875,91 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     int end_col_byte_offset;
     if (!PyCode_Addr2Location(code, code_offset, &start_line, &start_col_byte_offset,
                               &end_line, &end_col_byte_offset)) {
+        start_line = end_line = lineno;
+        start_col_byte_offset = -1;
+    }
+
+    if (start_line < 0) {
+        start_line = lineno;
+    }
+    if (end_line < 0) {
+        end_line = lineno;
+    }
+    PyObject* source_lines = NULL;
+    PyObject* source_lines_dedented = NULL;
+    Py_ssize_t num_source_lines;
+    PyObject* markers = NULL;
+    int rc = get_source_lines(filename, start_line, end_line, &source_lines);
+    if (rc != 0 || !source_lines) {
+        /* ignore errors since we can't report them, can we? */
+        err = ignore_source_errors();
         goto done;
     }
 
-    if (start_line < 0 || end_line < 0
-        || start_col_byte_offset < 0
+    num_source_lines = PyList_Size(source_lines);
+    if (num_source_lines == 0) {
+        // error
+    }
+
+    // fix error lines (replace None's with "")
+    for (Py_ssize_t i = 0; i < num_source_lines; ++i) {
+        PyObject* line = PyList_GET_ITEM(source_lines, i);
+        if (line == NULL || !PyUnicode_Check(line)) {
+            // check for errors
+            PyList_SetItem(source_lines, i, PyUnicode_FromString(""));
+        }
+    }
+
+    // dedent lines
+    int truncation = 0;
+    Py_ssize_t reference_lineno = 0;
+    for (;; ++truncation) {
+        PyObject* reference_line = PyList_GET_ITEM(source_lines, reference_lineno);
+        while (truncation >= PyUnicode_GET_LENGTH(reference_line)) {
+            ++reference_lineno;
+            if (reference_line >= num_source_lines) {
+                goto dedent_compute_end;
+            }
+            reference_line = PyList_GET_ITEM(source_lines, reference_lineno);
+        }
+        Py_UCS4 reference_ch = PyUnicode_READ_CHAR(reference_line, truncation);
+        if (!IS_WHITESPACE(reference_ch)) {
+            goto dedent_compute_end;
+        }
+        for (Py_ssize_t i = reference_line + 1; i < num_source_lines; ++i) {
+            PyObject* line = PyList_GET_ITEM(source_lines, i);
+            if (truncation < PyUnicode_GET_LENGTH(line)) {
+                Py_UCS4 ch = PyUnicode_READ_CHAR(line, truncation);
+                if (!IS_WHITESPACE(ch) || ch != reference_ch) {
+                    goto dedent_compute_end;
+                }
+            }
+        }
+    }
+dedent_compute_end:
+    source_lines_dedented = PyList_New(num_source_lines);
+    if (source_lines_dedented == NULL) {
+        goto done;
+    }
+    for (Py_ssize_t i = 0; i < num_source_lines; ++i) {
+        PyObject* truncated_line;
+        PyObject* line = PyList_GET_ITEM(source_lines, i);
+        Py_ssize_t line_len = PyUnicode_GET_LENGTH(line);
+        if (truncation >= line_len) {
+            truncated_line = PyUnicode_FromString("");
+        } else {
+            truncated_line = PyUnicode_Substring(line, truncation, line_len);
+        }
+        PyList_SET_ITEM(source_lines_dedented_tmp, i, truncated_line);
+    }
+    done_dedent = 1;
+
+    if (start_col_byte_offset < 0
         || end_col_byte_offset < 0)
     {
         goto done;
     }
+
 
     // When displaying errors, we will use the following generic structure:
     //
@@ -871,18 +979,21 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     // spans the whole line.
 
     // Convert the utf-8 byte offset to the actual character offset so we print the right number of carets.
-    assert(source_line);
-    Py_ssize_t start_offset = _PyPegen_byte_offset_to_character_offset(source_line, start_col_byte_offset);
+    Py_ssize_t start_offset = _PyPegen_byte_offset_to_character_offset(PyList_GET_ITEM(source_lines, 0), start_col_byte_offset);
     if (start_offset < 0) {
         err = ignore_source_errors() < 0;
         goto done;
     }
 
-    Py_ssize_t end_offset = _PyPegen_byte_offset_to_character_offset(source_line, end_col_byte_offset);
+    Py_ssize_t end_offset = _PyPegen_byte_offset_to_character_offset(PyList_GET_ITEM(source_lines, num_source_lines - 1), end_col_byte_offset);
     if (end_offset < 0) {
         err = ignore_source_errors() < 0;
         goto done;
     }
+
+    // adjust start/end offset based on dedent
+    start_offset = (start_offset < truncation) ? 0 : start_offset - truncation;
+    end_offset = (end_offset < truncation) ? 0 : end_offset - truncation;
 
     Py_ssize_t left_end_offset = -1;
     Py_ssize_t right_start_offset = -1;
@@ -936,7 +1047,24 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     }
 
 done:
-    Py_XDECREF(source_line);
+    if (source_lines_dedented != NULL && done_dedent) {
+        Py_ssize_t num_markers = 0;
+        if (markers != NULL) {
+            num_markers = PyList_Size(markers);
+        }
+        for (Py_ssize_t i = 0; i < num_source_lines; ++i) {
+            PyObject* line = PyList_GET_ITEM(source_lines_dedented, i);
+            if (_write_line_with_margin_and_indent(f, line, _TRACEBACK_SOURCE_LINE_INDENT, margin_indent, margin)) {
+                continue;
+            }
+            if (i < num_markers) {
+                _write_line_with_margin_and_indent(f, PyList_GET_ITEM(markers, i), _TRACEBACK_SOURCE_LINE_INDENT, margin_indent, margin);
+            }
+        }
+    }
+    Py_XDECREF(source_lines);
+    Py_XDECREF(source_lines_dedented);
+    Py_XDECREF(markers);
     return err;
 }
 
