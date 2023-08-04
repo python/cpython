@@ -320,13 +320,7 @@ uop_name(int index) {
 static Py_ssize_t
 uop_len(_PyUOpExecutorObject *self)
 {
-    int count = 0;
-    for (; count < _Py_UOP_MAX_TRACE_LENGTH; count++) {
-        if (self->trace[count].opcode == 0) {
-            break;
-        }
-    }
-    return count;
+    return Py_SIZE(self);
 }
 
 static PyObject *
@@ -698,15 +692,12 @@ uop_optimize(
         return trace_length;
     }
     OBJECT_STAT_INC(optimization_traces_created);
-    _PyUOpExecutorObject *executor = PyObject_NewVar(_PyUOpExecutorObject, &UOpExecutor_Type, trace_length+1);
+    _PyUOpExecutorObject *executor = PyObject_NewVar(_PyUOpExecutorObject, &UOpExecutor_Type, trace_length);
     if (executor == NULL) {
         return -1;
     }
     executor->base.execute = _PyUopExecute;
     memcpy(executor->trace, trace, trace_length * sizeof(_PyUOpInstruction));
-        if (trace_length < _Py_UOP_MAX_TRACE_LENGTH) {
-            executor->trace[trace_length].opcode = 0;  // Sentinel
-        }
     *exec_ptr = (_PyExecutorObject *)executor;
     return 1;
 }
