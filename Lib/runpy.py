@@ -250,7 +250,7 @@ def _get_main_module_details(error=ImportError):
 def _get_code_from_file(run_name, fname):
     # Check for a compiled file first
     from pkgutil import read_code
-    decoded_path = os.path.abspath(os.fsdecode(fname))
+    decoded_path = os.path.abspath(fname)
     with io.open_code(decoded_path) as f:
         code = read_code(f)
     if code is None:
@@ -279,6 +279,7 @@ def run_path(path_name, init_globals=None, run_name=None):
     pkg_name = run_name.rpartition(".")[0]
     from pkgutil import get_importer
     importer = get_importer(path_name)
+    path_name = os.fsdecode(path_name)
     if isinstance(importer, type(None)):
         # Not a valid sys.path entry, so run the code directly
         # execfile() doesn't help as we want to allow compiled files
