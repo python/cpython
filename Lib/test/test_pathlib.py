@@ -11,6 +11,7 @@ import stat
 import tempfile
 import unittest
 from unittest import mock
+from urllib.request import pathname2url
 
 from test.support import import_helper
 from test.support import set_recursion_limit
@@ -2913,6 +2914,20 @@ class PathTest(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.cls(foo="bar")
 
+    def test_from_uri_common(self):
+        P = self.cls
+        self.assertEqual(P.from_uri('file:foo/bar'), P('foo/bar'))
+        self.assertEqual(P.from_uri('file:/foo/bar'), P('/foo/bar'))
+        self.assertEqual(P.from_uri('file://foo/bar'), P('//foo/bar'))
+        self.assertEqual(P.from_uri('file:///foo/bar'), P('/foo/bar'))
+        self.assertEqual(P.from_uri('file:////foo/bar'), P('//foo/bar'))
+
+    def test_from_uri_pathname2url_common(self):
+        P = self.cls
+        self.assertEqual(P.from_uri(pathname2url('foo/bar')), P('foo/bar'))
+        self.assertEqual(P.from_uri(pathname2url('/foo/bar')), P('/foo/bar'))
+        self.assertEqual(P.from_uri(pathname2url('//foo/bar')), P('//foo/bar'))
+
 
 class WalkTests(unittest.TestCase):
 
@@ -3441,7 +3456,23 @@ class WindowsPathTest(PathTest):
             env['HOME'] = 'C:\\Users\\eve'
             check()
 
+    def test_from_uri(self):
+        P = self.cls
+        # DOS drive paths
+        self.assertEqual(P.from_uri('file:c:/path/to/file'), P('c:/path/to/file'))
+        self.assertEqual(P.from_uri('file:c|/path/to/file'), P('c:/path/to/file'))
+        self.assertEqual(P.from_uri('file:/c|/path/to/file'), P('c:/path/to/file'))
+        self.assertEqual(P.from_uri('file:///c|/path/to/file'), P('c:/path/to/file'))
+        self.assertEqual(P.from_uri('file://///c|/path/to/file'), P('c:/path/to/file'))
+        # UNC paths
+        self.assertEqual(P.from_uri('file://server/path/to/file'), P('//server/path/to/file'))
+        self.assertEqual(P.from_uri('file:////server/path/to/file'), P('//server/path/to/file'))
+        self.assertEqual(P.from_uri('file://///server/path/to/file'), P('//server/path/to/file'))
 
+    def test_from_uri_pathname2url(self):
+        P = self.cls
+        self.assertEqual(P.from_uri(pathname2url(r'c:\path\to\file')), P('c:/path/to/file'))
+        self.assertEqual(P.from_uri(pathname2url(r'\\server\path\to\file')), P('//server/path/to/file'))
 
 class PathSubclassTest(PathTest):
     class cls(pathlib.Path):

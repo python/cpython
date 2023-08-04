@@ -17,7 +17,6 @@ import warnings
 from _collections_abc import Sequence
 from errno import ENOENT, ENOTDIR, EBADF, ELOOP
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
-from urllib.parse import quote_from_bytes as urlquote_from_bytes
 
 
 __all__ = [
@@ -433,7 +432,8 @@ class PurePath:
             # It's a posix path => 'file:///etc/hosts'
             prefix = 'file://'
             path = str(self)
-        return prefix + urlquote_from_bytes(os.fsencode(path))
+        from urllib.parse import quote_from_bytes
+        return prefix + quote_from_bytes(os.fsencode(path))
 
     @property
     def _str_normcase(self):
@@ -1177,6 +1177,22 @@ class Path(PurePath):
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
         return object.__new__(cls)
+
+    @classmethod
+    def from_uri(cls, uri):
+        """Return a new path from the given 'file' URI."""
+        uri = uri.removeprefix('file:')
+        if uri[:3] == '///':
+            # Remove empty authority
+            uri = uri[2:]
+        if uri[:1] == '/' and (uri[2:3] in ':|' or uri[1:3] == '//'):
+            # Remove slash before DOS device/UNC path
+            uri = uri[1:]
+        if uri[1:2] == '|':
+            # Replace bar with colon in DOS drive
+            uri = uri[:1] + ':' + uri[2:]
+        from urllib.parse import unquote_to_bytes
+        return cls(os.fsdecode(unquote_to_bytes(uri)))
 
     @classmethod
     def cwd(cls):
