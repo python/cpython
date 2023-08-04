@@ -160,11 +160,8 @@ class ClinicWholeFileTest(TestCase):
             [clinic start generated code]*/
             /*[clinic end generated code: output=0123456789abcdef input=fedcba9876543210]*/
         """
-        err = (
-            'Checksum mismatch!\n'
-            'Expected: 0123456789abcdef\n'
-            'Computed: da39a3ee5e6b4b0d\n'
-        )
+        err = ("Checksum mismatch! "
+               "Expected '0123456789abcdef', computed 'da39a3ee5e6b4b0d'")
         self.expect_failure(raw, err, filename="test.c", lineno=3)
 
     def test_garbage_after_stop_line(self):
@@ -402,7 +399,7 @@ class ClinicWholeFileTest(TestCase):
         self.expect_failure(block, err, lineno=9)
 
     def test_badly_formed_return_annotation(self):
-        err = "Badly formed annotation for m.f: 'Custom'"
+        err = "Badly formed annotation for 'm.f': 'Custom'"
         block = """
             /*[python input]
             class Custom_return_converter(CReturnConverter):
@@ -694,7 +691,7 @@ class ClinicParserTest(TestCase):
         self.assertEqual("MAXSIZE", p.converter.c_default)
 
         err = (
-            "When you specify a named constant ('sys.maxsize') as your default value,\n"
+            "When you specify a named constant ('sys.maxsize') as your default value, "
             "you MUST specify a valid c_default."
         )
         block = """
@@ -706,7 +703,7 @@ class ClinicParserTest(TestCase):
 
     def test_param_default_expr_binop(self):
         err = (
-            "When you specify an expression ('a + b') as your default value,\n"
+            "When you specify an expression ('a + b') as your default value, "
             "you MUST specify a valid c_default."
         )
         block = """
@@ -729,7 +726,7 @@ class ClinicParserTest(TestCase):
 
     def test_param_default_parameters_out_of_order(self):
         err = (
-            "Can't have a parameter without a default ('something_else')\n"
+            "Can't have a parameter without a default ('something_else') "
             "after a parameter with a default!"
         )
         block = """
@@ -863,7 +860,7 @@ class ClinicParserTest(TestCase):
             module os
             os.stat -> invalid syntax
         """
-        err = "Badly formed annotation for os.stat: 'invalid syntax'"
+        err = "Badly formed annotation for 'os.stat': 'invalid syntax'"
         self.expect_failure(block, err)
 
     def test_legacy_converter_disallowed_in_return_annotation(self):
@@ -1027,8 +1024,8 @@ class ClinicParserTest(TestCase):
 
     def test_disallowed_grouping__two_top_groups_on_left(self):
         err = (
-            'Function two_top_groups_on_left has an unsupported group '
-            'configuration. (Unexpected state 2.b)'
+            "Function 'two_top_groups_on_left' has an unsupported group "
+            "configuration. (Unexpected state 2.b)"
         )
         block = """
             module foo
@@ -1056,7 +1053,7 @@ class ClinicParserTest(TestCase):
                 ]
         """
         err = (
-            "Function two_top_groups_on_right has an unsupported group "
+            "Function 'two_top_groups_on_right' has an unsupported group "
             "configuration. (Unexpected state 6.b)"
         )
         self.expect_failure(block, err)
@@ -1092,7 +1089,7 @@ class ClinicParserTest(TestCase):
                 param: int
         """
         err = (
-            "Function group_after_parameter_on_left has an unsupported group "
+            "Function 'group_after_parameter_on_left' has an unsupported group "
             "configuration. (Unexpected state 2.b)"
         )
         self.expect_failure(block, err)
@@ -1109,7 +1106,7 @@ class ClinicParserTest(TestCase):
                 param: int
         """
         err = (
-            "Function empty_group has an empty group.\n"
+            "Function 'empty_group' has an empty group. "
             "All groups must contain at least one parameter."
         )
         self.expect_failure(block, err)
@@ -1126,7 +1123,7 @@ class ClinicParserTest(TestCase):
                 ]
         """
         err = (
-            "Function empty_group has an empty group.\n"
+            "Function 'empty_group' has an empty group. "
             "All groups must contain at least one parameter."
         )
         self.expect_failure(block, err)
@@ -1140,7 +1137,7 @@ class ClinicParserTest(TestCase):
                 group2: int
                 ]
         """
-        err = "Function empty_group has a ] without a matching [."
+        err = "Function 'empty_group' has a ']' without a matching '['"
         self.expect_failure(block, err)
 
     def test_no_parameters(self):
@@ -1175,7 +1172,7 @@ class ClinicParserTest(TestCase):
             foo.bar => int
                 /
         """
-        err = "Illegal function name: foo.bar => int"
+        err = "Illegal function name: 'foo.bar => int'"
         self.expect_failure(block, err)
 
     def test_illegal_c_basename(self):
@@ -1184,7 +1181,7 @@ class ClinicParserTest(TestCase):
             foo.bar as 935
                 /
         """
-        err = "Illegal C basename: 935"
+        err = "Illegal C basename: '935'"
         self.expect_failure(block, err)
 
     def test_single_star(self):
@@ -1194,7 +1191,7 @@ class ClinicParserTest(TestCase):
                 *
                 *
         """
-        err = "Function bar uses '*' more than once."
+        err = "Function 'bar' uses '*' more than once."
         self.expect_failure(block, err)
 
     def test_parameters_required_after_star(self):
@@ -1204,7 +1201,7 @@ class ClinicParserTest(TestCase):
             "module foo\nfoo.bar\n  this: int\n  *",
             "module foo\nfoo.bar\n  this: int\n  *\nDocstring.",
         )
-        err = "Function bar specifies '*' without any parameters afterwards."
+        err = "Function 'bar' specifies '*' without any parameters afterwards."
         for block in dataset:
             with self.subTest(block=block):
                 self.expect_failure(block, err)
@@ -1217,7 +1214,7 @@ class ClinicParserTest(TestCase):
                 /
         """
         err = (
-            "Function bar has an unsupported group configuration. "
+            "Function 'bar' has an unsupported group configuration. "
             "(Unexpected state 0.d)"
         )
         self.expect_failure(block, err)
@@ -1231,7 +1228,7 @@ class ClinicParserTest(TestCase):
                 b: int
                 /
         """
-        err = "Function bar uses '/' more than once."
+        err = "Function 'bar' uses '/' more than once."
         self.expect_failure(block, err)
 
     def test_mix_star_and_slash(self):
@@ -1245,7 +1242,7 @@ class ClinicParserTest(TestCase):
                /
         """
         err = (
-            "Function bar mixes keyword-only and positional-only parameters, "
+            "Function 'bar' mixes keyword-only and positional-only parameters, "
             "which is unsupported."
         )
         self.expect_failure(block, err)
@@ -1258,7 +1255,7 @@ class ClinicParserTest(TestCase):
                 x: int
         """
         err = (
-            "Function bar has an unsupported group configuration. "
+            "Function 'bar' has an unsupported group configuration. "
             "(Unexpected state 0.d)"
         )
         self.expect_failure(block, err)
@@ -1357,7 +1354,8 @@ class ClinicParserTest(TestCase):
                *vararg1: object
             \t*vararg2: object
         """
-        err = "Tab characters are illegal in the Clinic DSL."
+        err = ("Tab characters are illegal in the Clinic DSL: "
+               r"'\t*vararg2: object'")
         self.expect_failure(block, err)
 
     def test_indent_stack_illegal_outdent(self):
@@ -1607,7 +1605,7 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=1)
 
     def test_invalid_legacy_converter(self):
-        err = "fhi is not a valid legacy converter"
+        err = "'fhi' is not a valid legacy converter"
         block = """
             fn
                 a: 'fhi'
@@ -1615,7 +1613,7 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=1)
 
     def test_parent_class_or_module_does_not_exist(self):
-        err = "Parent class or module z does not exist"
+        err = "Parent class or module 'z' does not exist"
         block = """
             module m
             z.func
@@ -1642,7 +1640,7 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=2)
 
     def test_state_func_docstring_assert_no_group(self):
-        err = "Function func has a ] without a matching [."
+        err = "Function 'func' has a ']' without a matching '['"
         block = """
             module m
             m.func
@@ -1652,7 +1650,7 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=2)
 
     def test_state_func_docstring_no_summary(self):
-        err = "Docstring for m.func does not have a summary line!"
+        err = "Docstring for 'm.func' does not have a summary line!"
         block = """
             module m
             m.func
@@ -1748,13 +1746,11 @@ class ClinicExternalTest(TestCase):
             const char *hand_edited = "output block is overwritten";
             /*[clinic end generated code: output=bogus input=bogus]*/
         """)
-        fail_msg = dedent("""
-            Checksum mismatch!
-            Expected: bogus
-            Computed: 2ed19
-            Suggested fix: remove all generated code including the end marker,
-            or use the '-f' option.
-        """)
+        fail_msg = (
+            "Checksum mismatch! Expected 'bogus', computed '2ed19'. "
+            "Suggested fix: remove all generated code including the end marker, "
+            "or use the '-f' option.\n"
+        )
         with os_helper.temp_dir() as tmp_dir:
             fn = os.path.join(tmp_dir, "test.c")
             with open(fn, "w", encoding="utf-8") as f:
