@@ -679,9 +679,9 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case LOAD_GLOBAL:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_GLOBAL_MODULE:
-            return ((oparg & 1) ? 1 : 0) + 1;
+            return (oparg & 1 ? 1 : 0) + 1;
         case LOAD_GLOBAL_BUILTIN:
-            return ((oparg & 1) ? 1 : 0) + 1;
+            return (oparg & 1 ? 1 : 0) + 1;
         case DELETE_FAST:
             return 0;
         case MAKE_CELL:
@@ -739,7 +739,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case LOAD_METHOD:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_INSTANCE_VALUE:
-            return ((oparg & 1) ? 1 : 0) + 1;
+            return (oparg & 1 ? 1 : 0) + 1;
         case LOAD_ATTR_MODULE:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_WITH_HINT:
@@ -944,7 +944,18 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
 }
 #endif
 
-enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC0, INSTR_FMT_IXC00, INSTR_FMT_IXC000 };
+enum InstructionFormat {
+    INSTR_FMT_IB,
+    INSTR_FMT_IBC,
+    INSTR_FMT_IBC00,
+    INSTR_FMT_IBC000,
+    INSTR_FMT_IBC00000000,
+    INSTR_FMT_IX,
+    INSTR_FMT_IXC,
+    INSTR_FMT_IXC0,
+    INSTR_FMT_IXC00,
+    INSTR_FMT_IXC000,
+};
 
 #define IS_VALID_OPCODE(OP) \
     (((OP) >= 0) && ((OP) < OPCODE_METADATA_SIZE) && \
