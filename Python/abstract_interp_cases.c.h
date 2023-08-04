@@ -35,8 +35,8 @@
 
         case LOAD_FAST_LOAD_FAST: {
             STACK_GROW(2);
-            stack_pointer[-1] = NULL;
             stack_pointer[-2] = NULL;
+            stack_pointer[-1] = NULL;
             break;
         }
 
@@ -47,26 +47,21 @@
         }
 
         case STORE_FAST: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             break;
         }
 
         case STORE_FAST_LOAD_FAST: {
             stack_pointer[-1] = NULL;
-            stack_pointer[-1] = NULL;
             break;
         }
 
         case STORE_FAST_STORE_FAST: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(2);
             break;
         }
 
         case POP_TOP: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             break;
         }
@@ -78,23 +73,17 @@
         }
 
         case INSTRUMENTED_END_FOR: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(2);
             break;
         }
 
         case END_SEND: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
             break;
         }
 
         case INSTRUMENTED_END_SEND: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
             break;
@@ -102,18 +91,15 @@
 
         case UNARY_NEGATIVE: {
             stack_pointer[-1] = NULL;
-            stack_pointer[-1] = NULL;
             break;
         }
 
         case UNARY_NOT: {
             stack_pointer[-1] = NULL;
-            stack_pointer[-1] = NULL;
             break;
         }
 
         case TO_BOOL: {
-            stack_pointer[-1] = NULL;
             stack_pointer[-1] = NULL;
             break;
         }
@@ -124,36 +110,30 @@
 
         case TO_BOOL_INT: {
             stack_pointer[-1] = NULL;
-            stack_pointer[-1] = NULL;
             break;
         }
 
         case TO_BOOL_LIST: {
-            stack_pointer[-1] = NULL;
             stack_pointer[-1] = NULL;
             break;
         }
 
         case TO_BOOL_NONE: {
             stack_pointer[-1] = NULL;
-            stack_pointer[-1] = NULL;
             break;
         }
 
         case TO_BOOL_STR: {
-            stack_pointer[-1] = NULL;
             stack_pointer[-1] = NULL;
             break;
         }
 
         case TO_BOOL_ALWAYS_TRUE: {
             stack_pointer[-1] = NULL;
-            stack_pointer[-1] = NULL;
             break;
         }
 
         case UNARY_INVERT: {
-            stack_pointer[-1] = NULL;
             stack_pointer[-1] = NULL;
             break;
         }
@@ -163,24 +143,18 @@
         }
 
         case _BINARY_OP_MULTIPLY_INT: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
             break;
         }
 
         case _BINARY_OP_ADD_INT: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
             break;
         }
 
         case _BINARY_OP_SUBTRACT_INT: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
             break;
@@ -191,24 +165,18 @@
         }
 
         case _BINARY_OP_MULTIPLY_FLOAT: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
             break;
         }
 
         case _BINARY_OP_ADD_FLOAT: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
             break;
         }
 
         case _BINARY_OP_SUBTRACT_FLOAT: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
             break;
@@ -219,155 +187,114 @@
         }
 
         case _BINARY_OP_ADD_UNICODE: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
             break;
         }
 
         case _BINARY_OP_INPLACE_ADD_UNICODE: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(2);
             break;
         }
 
         case BINARY_SUBSCR: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
             break;
         }
 
         case BINARY_SLICE: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
-            stack_pointer[-3] = NULL;
             STACK_SHRINK(2);
             stack_pointer[-1] = NULL;
             break;
         }
 
         case STORE_SLICE: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
-            stack_pointer[-3] = NULL;
-            stack_pointer[-4] = NULL;
             STACK_SHRINK(4);
             break;
         }
 
         case BINARY_SUBSCR_LIST_INT: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
             break;
         }
 
         case BINARY_SUBSCR_TUPLE_INT: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
             break;
         }
 
         case BINARY_SUBSCR_DICT: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
             break;
         }
 
         case BINARY_SUBSCR_GETITEM: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
             break;
         }
 
         case LIST_APPEND: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             break;
         }
 
         case SET_ADD: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             break;
         }
 
         case STORE_SUBSCR: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
-            stack_pointer[-3] = NULL;
             STACK_SHRINK(3);
             break;
         }
 
         case STORE_SUBSCR_LIST_INT: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
-            stack_pointer[-3] = NULL;
             STACK_SHRINK(3);
             break;
         }
 
         case STORE_SUBSCR_DICT: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
-            stack_pointer[-3] = NULL;
             STACK_SHRINK(3);
             break;
         }
 
         case DELETE_SUBSCR: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(2);
             break;
         }
 
         case CALL_INTRINSIC_1: {
             stack_pointer[-1] = NULL;
-            stack_pointer[-1] = NULL;
             break;
         }
 
         case CALL_INTRINSIC_2: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
             break;
         }
 
         case RAISE_VARARGS: {
-            (stack_pointer - oparg) = (PyObject **)NULL;
             STACK_SHRINK(oparg);
             break;
         }
 
         case INTERPRETER_EXIT: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             break;
         }
 
         case RETURN_VALUE: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             break;
         }
 
         case INSTRUMENTED_RETURN_VALUE: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             break;
         }
@@ -382,7 +309,6 @@
 
         case GET_AITER: {
             stack_pointer[-1] = NULL;
-            stack_pointer[-1] = NULL;
             break;
         }
 
@@ -394,60 +320,48 @@
 
         case GET_AWAITABLE: {
             stack_pointer[-1] = NULL;
-            stack_pointer[-1] = NULL;
             break;
         }
 
         case SEND: {
-            stack_pointer[-1] = NULL;
             stack_pointer[-1] = NULL;
             break;
         }
 
         case SEND_GEN: {
             stack_pointer[-1] = NULL;
-            stack_pointer[-1] = NULL;
             break;
         }
 
         case INSTRUMENTED_YIELD_VALUE: {
-            stack_pointer[-1] = NULL;
             stack_pointer[-1] = NULL;
             break;
         }
 
         case YIELD_VALUE: {
             stack_pointer[-1] = NULL;
-            stack_pointer[-1] = NULL;
             break;
         }
 
         case POP_EXCEPT: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             break;
         }
 
         case RERAISE: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             break;
         }
 
         case END_ASYNC_FOR: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(2);
             break;
         }
 
         case CLEANUP_THROW: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
-            stack_pointer[-3] = NULL;
             STACK_SHRINK(1);
-            stack_pointer[-1] = NULL;
             stack_pointer[-2] = NULL;
+            stack_pointer[-1] = NULL;
             break;
         }
 
@@ -464,7 +378,6 @@
         }
 
         case STORE_NAME: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             break;
         }
@@ -474,61 +387,46 @@
         }
 
         case UNPACK_SEQUENCE: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             STACK_GROW(oparg);
-            stack_pointer - oparg = (PyObject **)NULL;
             break;
         }
 
         case UNPACK_SEQUENCE_TWO_TUPLE: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             STACK_GROW(oparg);
-            stack_pointer - oparg = (PyObject **)NULL;
             break;
         }
 
         case UNPACK_SEQUENCE_TUPLE: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             STACK_GROW(oparg);
-            stack_pointer - oparg = (PyObject **)NULL;
             break;
         }
 
         case UNPACK_SEQUENCE_LIST: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             STACK_GROW(oparg);
-            stack_pointer - oparg = (PyObject **)NULL;
             break;
         }
 
         case UNPACK_EX: {
-            stack_pointer[-1] = NULL;
             STACK_GROW((oparg & 0xFF) + (oparg >> 8));
-            stack_pointer - ((oparg >> 8)) = (PyObject **)NULL;
-            stack_pointer[-(1 + (oparg >> 8))] = NULL;
-            stack_pointer - (1 + (oparg >> 8) + (oparg & 0xFF)) = (PyObject **)NULL;
+            stack_pointer[-1 - (oparg >> 8)] = NULL;
             break;
         }
 
         case STORE_ATTR: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(2);
             break;
         }
 
         case DELETE_ATTR: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             break;
         }
 
         case STORE_GLOBAL: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             break;
         }
@@ -545,15 +443,14 @@
 
         case _LOAD_FROM_DICT_OR_GLOBALS: {
             stack_pointer[-1] = NULL;
-            stack_pointer[-1] = NULL;
             break;
         }
 
         case LOAD_GLOBAL: {
             STACK_GROW(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = NULL;
             stack_pointer[-1] = NULL;
-            stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = NULL;
             break;
         }
 
@@ -568,16 +465,16 @@
         case _LOAD_GLOBAL_MODULE: {
             STACK_GROW(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = NULL;
             stack_pointer[-1] = NULL;
-            stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = NULL;
             break;
         }
 
         case _LOAD_GLOBAL_BUILTINS: {
             STACK_GROW(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = NULL;
             stack_pointer[-1] = NULL;
-            stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = NULL;
             break;
         }
 
@@ -595,7 +492,6 @@
 
         case LOAD_FROM_DICT_OR_DEREF: {
             stack_pointer[-1] = NULL;
-            stack_pointer[-1] = NULL;
             break;
         }
 
@@ -606,7 +502,6 @@
         }
 
         case STORE_DEREF: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             break;
         }
@@ -616,7 +511,6 @@
         }
 
         case BUILD_STRING: {
-            (stack_pointer - oparg) = (PyObject **)NULL;
             STACK_SHRINK(oparg);
             STACK_GROW(1);
             stack_pointer[-1] = NULL;
@@ -624,7 +518,6 @@
         }
 
         case BUILD_TUPLE: {
-            (stack_pointer - oparg) = (PyObject **)NULL;
             STACK_SHRINK(oparg);
             STACK_GROW(1);
             stack_pointer[-1] = NULL;
@@ -632,7 +525,6 @@
         }
 
         case BUILD_LIST: {
-            (stack_pointer - oparg) = (PyObject **)NULL;
             STACK_SHRINK(oparg);
             STACK_GROW(1);
             stack_pointer[-1] = NULL;
@@ -640,19 +532,16 @@
         }
 
         case LIST_EXTEND: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             break;
         }
 
         case SET_UPDATE: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             break;
         }
 
         case BUILD_SET: {
-            (stack_pointer - oparg) = (PyObject **)NULL;
             STACK_SHRINK(oparg);
             STACK_GROW(1);
             stack_pointer[-1] = NULL;
@@ -660,7 +549,6 @@
         }
 
         case BUILD_MAP: {
-            (stack_pointer - oparg*2) = (PyObject **)NULL;
             STACK_SHRINK(oparg*2);
             STACK_GROW(1);
             stack_pointer[-1] = NULL;
@@ -672,28 +560,22 @@
         }
 
         case BUILD_CONST_KEY_MAP: {
-            stack_pointer[-1] = NULL;
-            (stack_pointer - (1 + oparg)) = (PyObject **)NULL;
             STACK_SHRINK(oparg);
             stack_pointer[-1] = NULL;
             break;
         }
 
         case DICT_UPDATE: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             break;
         }
 
         case DICT_MERGE: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             break;
         }
 
         case MAP_ADD: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(2);
             break;
         }
@@ -701,46 +583,38 @@
         case INSTRUMENTED_LOAD_SUPER_ATTR: {
             STACK_SHRINK(2);
             STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = NULL;
+            stack_pointer[-1] = NULL;
             break;
         }
 
         case LOAD_SUPER_ATTR: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
-            stack_pointer[-3] = NULL;
             STACK_SHRINK(2);
             STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = NULL;
             stack_pointer[-1] = NULL;
-            stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = NULL;
             break;
         }
 
         case LOAD_SUPER_ATTR_ATTR: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
-            stack_pointer[-3] = NULL;
             STACK_SHRINK(2);
             STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = NULL;
             stack_pointer[-1] = NULL;
-            stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = NULL;
             break;
         }
 
         case LOAD_SUPER_ATTR_METHOD: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
-            stack_pointer[-3] = NULL;
             STACK_SHRINK(1);
-            stack_pointer[-1] = NULL;
             stack_pointer[-2] = NULL;
+            stack_pointer[-1] = NULL;
             break;
         }
 
         case LOAD_ATTR: {
-            stack_pointer[-1] = NULL;
             STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = NULL;
             stack_pointer[-1] = NULL;
-            stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = NULL;
             break;
         }
 
@@ -753,147 +627,117 @@
         }
 
         case _LOAD_ATTR_INSTANCE_VALUE: {
-            stack_pointer[-1] = NULL;
             STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = NULL;
             stack_pointer[-1] = NULL;
-            stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = NULL;
             break;
         }
 
         case LOAD_ATTR_MODULE: {
-            stack_pointer[-1] = NULL;
             STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = NULL;
             stack_pointer[-1] = NULL;
-            stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = NULL;
             break;
         }
 
         case LOAD_ATTR_WITH_HINT: {
-            stack_pointer[-1] = NULL;
             STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = NULL;
             stack_pointer[-1] = NULL;
-            stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = NULL;
             break;
         }
 
         case LOAD_ATTR_SLOT: {
-            stack_pointer[-1] = NULL;
             STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = NULL;
             stack_pointer[-1] = NULL;
-            stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = NULL;
             break;
         }
 
         case LOAD_ATTR_CLASS: {
-            stack_pointer[-1] = NULL;
             STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = NULL;
             stack_pointer[-1] = NULL;
-            stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = NULL;
             break;
         }
 
         case LOAD_ATTR_PROPERTY: {
-            stack_pointer[-1] = NULL;
             STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = NULL;
             stack_pointer[-1] = NULL;
-            stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = NULL;
             break;
         }
 
         case LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN: {
-            stack_pointer[-1] = NULL;
             STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = NULL;
             stack_pointer[-1] = NULL;
-            stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = NULL;
             break;
         }
 
         case STORE_ATTR_INSTANCE_VALUE: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(2);
             break;
         }
 
         case STORE_ATTR_WITH_HINT: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(2);
             break;
         }
 
         case STORE_ATTR_SLOT: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(2);
             break;
         }
 
         case COMPARE_OP: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
             break;
         }
 
         case COMPARE_OP_FLOAT: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
             break;
         }
 
         case COMPARE_OP_INT: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
             break;
         }
 
         case COMPARE_OP_STR: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
             break;
         }
 
         case IS_OP: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
             break;
         }
 
         case CONTAINS_OP: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
             break;
         }
 
         case CHECK_EG_MATCH: {
-            stack_pointer[-1] = NULL;
             stack_pointer[-2] = NULL;
             stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             break;
         }
 
         case CHECK_EXC_MATCH: {
             stack_pointer[-1] = NULL;
-            stack_pointer[-1] = NULL;
             break;
         }
 
         case IMPORT_NAME: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
             break;
@@ -918,19 +762,16 @@
         }
 
         case POP_JUMP_IF_FALSE: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             break;
         }
 
         case POP_JUMP_IF_TRUE: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             break;
         }
 
         case IS_NONE: {
-            stack_pointer[-1] = NULL;
             stack_pointer[-1] = NULL;
             break;
         }
@@ -946,9 +787,6 @@
         }
 
         case MATCH_CLASS: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
-            stack_pointer[-3] = NULL;
             STACK_SHRINK(2);
             stack_pointer[-1] = NULL;
             break;
@@ -974,12 +812,10 @@
 
         case GET_ITER: {
             stack_pointer[-1] = NULL;
-            stack_pointer[-1] = NULL;
             break;
         }
 
         case GET_YIELD_FROM_ITER: {
-            stack_pointer[-1] = NULL;
             stack_pointer[-1] = NULL;
             break;
         }
@@ -1061,18 +897,16 @@
         }
 
         case BEFORE_ASYNC_WITH: {
-            stack_pointer[-1] = NULL;
             STACK_GROW(1);
-            stack_pointer[-1] = NULL;
             stack_pointer[-2] = NULL;
+            stack_pointer[-1] = NULL;
             break;
         }
 
         case BEFORE_WITH: {
-            stack_pointer[-1] = NULL;
             STACK_GROW(1);
-            stack_pointer[-1] = NULL;
             stack_pointer[-2] = NULL;
+            stack_pointer[-1] = NULL;
             break;
         }
 
@@ -1083,48 +917,42 @@
         }
 
         case PUSH_EXC_INFO: {
-            stack_pointer[-1] = NULL;
             STACK_GROW(1);
-            stack_pointer[-1] = NULL;
             stack_pointer[-2] = NULL;
+            stack_pointer[-1] = NULL;
             break;
         }
 
         case LOAD_ATTR_METHOD_WITH_VALUES: {
-            stack_pointer[-1] = NULL;
             STACK_GROW(1);
-            stack_pointer[-1] = NULL;
             stack_pointer[-2] = NULL;
+            stack_pointer[-1] = NULL;
             break;
         }
 
         case LOAD_ATTR_METHOD_NO_DICT: {
-            stack_pointer[-1] = NULL;
             STACK_GROW(1);
-            stack_pointer[-1] = NULL;
             stack_pointer[-2] = NULL;
+            stack_pointer[-1] = NULL;
             break;
         }
 
         case LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-1] = NULL;
+            stack_pointer[-1 - (0 ? 1 : 0)] = NULL;
             stack_pointer[-1] = NULL;
             break;
         }
 
         case LOAD_ATTR_NONDESCRIPTOR_NO_DICT: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-1] = NULL;
+            stack_pointer[-1 - (0 ? 1 : 0)] = NULL;
             stack_pointer[-1] = NULL;
             break;
         }
 
         case LOAD_ATTR_METHOD_LAZY_DICT: {
-            stack_pointer[-1] = NULL;
             STACK_GROW(1);
-            stack_pointer[-1] = NULL;
             stack_pointer[-2] = NULL;
+            stack_pointer[-1] = NULL;
             break;
         }
 
@@ -1137,9 +965,6 @@
         }
 
         case CALL: {
-            (stack_pointer - oparg) = (PyObject **)NULL;
-            stack_pointer[-(1 + oparg)] = NULL;
-            stack_pointer[-(2 + oparg)] = NULL;
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
@@ -1148,9 +973,6 @@
         }
 
         case CALL_BOUND_METHOD_EXACT_ARGS: {
-            (stack_pointer - oparg) = (PyObject **)NULL;
-            stack_pointer[-(1 + oparg)] = NULL;
-            stack_pointer[-(2 + oparg)] = NULL;
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
@@ -1158,9 +980,6 @@
         }
 
         case CALL_PY_EXACT_ARGS: {
-            (stack_pointer - oparg) = (PyObject **)NULL;
-            stack_pointer[-(1 + oparg)] = NULL;
-            stack_pointer[-(2 + oparg)] = NULL;
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
@@ -1168,9 +987,6 @@
         }
 
         case CALL_PY_WITH_DEFAULTS: {
-            (stack_pointer - oparg) = (PyObject **)NULL;
-            stack_pointer[-(1 + oparg)] = NULL;
-            stack_pointer[-(2 + oparg)] = NULL;
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
@@ -1178,9 +994,6 @@
         }
 
         case CALL_NO_KW_TYPE_1: {
-            (stack_pointer - oparg) = (PyObject **)NULL;
-            stack_pointer[-(1 + oparg)] = NULL;
-            stack_pointer[-(2 + oparg)] = NULL;
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
@@ -1188,9 +1001,6 @@
         }
 
         case CALL_NO_KW_STR_1: {
-            (stack_pointer - oparg) = (PyObject **)NULL;
-            stack_pointer[-(1 + oparg)] = NULL;
-            stack_pointer[-(2 + oparg)] = NULL;
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
@@ -1199,9 +1009,6 @@
         }
 
         case CALL_NO_KW_TUPLE_1: {
-            (stack_pointer - oparg) = (PyObject **)NULL;
-            stack_pointer[-(1 + oparg)] = NULL;
-            stack_pointer[-(2 + oparg)] = NULL;
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
@@ -1210,9 +1017,6 @@
         }
 
         case CALL_NO_KW_ALLOC_AND_ENTER_INIT: {
-            (stack_pointer - oparg) = (PyObject **)NULL;
-            stack_pointer[-(1 + oparg)] = NULL;
-            stack_pointer[-(2 + oparg)] = NULL;
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
@@ -1220,15 +1024,11 @@
         }
 
         case EXIT_INIT_CHECK: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             break;
         }
 
         case CALL_BUILTIN_CLASS: {
-            (stack_pointer - oparg) = (PyObject **)NULL;
-            stack_pointer[-(1 + oparg)] = NULL;
-            stack_pointer[-(2 + oparg)] = NULL;
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
@@ -1237,9 +1037,6 @@
         }
 
         case CALL_NO_KW_BUILTIN_O: {
-            (stack_pointer - oparg) = (PyObject **)NULL;
-            stack_pointer[-(1 + oparg)] = NULL;
-            stack_pointer[-(2 + oparg)] = NULL;
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
@@ -1248,9 +1045,6 @@
         }
 
         case CALL_NO_KW_BUILTIN_FAST: {
-            (stack_pointer - oparg) = (PyObject **)NULL;
-            stack_pointer[-(1 + oparg)] = NULL;
-            stack_pointer[-(2 + oparg)] = NULL;
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
@@ -1259,9 +1053,6 @@
         }
 
         case CALL_BUILTIN_FAST_WITH_KEYWORDS: {
-            (stack_pointer - oparg) = (PyObject **)NULL;
-            stack_pointer[-(1 + oparg)] = NULL;
-            stack_pointer[-(2 + oparg)] = NULL;
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
@@ -1270,9 +1061,6 @@
         }
 
         case CALL_NO_KW_LEN: {
-            (stack_pointer - oparg) = (PyObject **)NULL;
-            stack_pointer[-(1 + oparg)] = NULL;
-            stack_pointer[-(2 + oparg)] = NULL;
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
@@ -1280,9 +1068,6 @@
         }
 
         case CALL_NO_KW_ISINSTANCE: {
-            (stack_pointer - oparg) = (PyObject **)NULL;
-            stack_pointer[-(1 + oparg)] = NULL;
-            stack_pointer[-(2 + oparg)] = NULL;
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
@@ -1290,9 +1075,6 @@
         }
 
         case CALL_NO_KW_LIST_APPEND: {
-            (stack_pointer - oparg) = (PyObject **)NULL;
-            stack_pointer[-(1 + oparg)] = NULL;
-            stack_pointer[-(2 + oparg)] = NULL;
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
@@ -1300,9 +1082,6 @@
         }
 
         case CALL_NO_KW_METHOD_DESCRIPTOR_O: {
-            (stack_pointer - oparg) = (PyObject **)NULL;
-            stack_pointer[-(1 + oparg)] = NULL;
-            stack_pointer[-(2 + oparg)] = NULL;
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
@@ -1311,9 +1090,6 @@
         }
 
         case CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
-            (stack_pointer - oparg) = (PyObject **)NULL;
-            stack_pointer[-(1 + oparg)] = NULL;
-            stack_pointer[-(2 + oparg)] = NULL;
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
@@ -1322,9 +1098,6 @@
         }
 
         case CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS: {
-            (stack_pointer - oparg) = (PyObject **)NULL;
-            stack_pointer[-(1 + oparg)] = NULL;
-            stack_pointer[-(2 + oparg)] = NULL;
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
@@ -1333,9 +1106,6 @@
         }
 
         case CALL_NO_KW_METHOD_DESCRIPTOR_FAST: {
-            (stack_pointer - oparg) = (PyObject **)NULL;
-            stack_pointer[-(1 + oparg)] = NULL;
-            stack_pointer[-(2 + oparg)] = NULL;
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
@@ -1348,10 +1118,6 @@
         }
 
         case CALL_FUNCTION_EX: {
-            (oparg & 1) ? stack_pointer[-(((oparg & 1) ? 1 : 0))] : NULL = NULL;
-            stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = NULL;
-            stack_pointer[-(2 + ((oparg & 1) ? 1 : 0))] = NULL;
-            stack_pointer[-(3 + ((oparg & 1) ? 1 : 0))] = NULL;
             STACK_SHRINK(((oparg & 1) ? 1 : 0));
             STACK_SHRINK(2);
             stack_pointer[-1] = NULL;
@@ -1361,13 +1127,10 @@
 
         case MAKE_FUNCTION: {
             stack_pointer[-1] = NULL;
-            stack_pointer[-1] = NULL;
             break;
         }
 
         case SET_FUNCTION_ATTRIBUTE: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
             break;
@@ -1378,9 +1141,6 @@
         }
 
         case BUILD_SLICE: {
-            (oparg == 3) ? stack_pointer[-(((oparg == 3) ? 1 : 0))] : NULL = NULL;
-            stack_pointer[-(1 + ((oparg == 3) ? 1 : 0))] = NULL;
-            stack_pointer[-(2 + ((oparg == 3) ? 1 : 0))] = NULL;
             STACK_SHRINK(((oparg == 3) ? 1 : 0));
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
@@ -1389,19 +1149,15 @@
 
         case CONVERT_VALUE: {
             stack_pointer[-1] = NULL;
-            stack_pointer[-1] = NULL;
             break;
         }
 
         case FORMAT_SIMPLE: {
             stack_pointer[-1] = NULL;
-            stack_pointer[-1] = NULL;
             break;
         }
 
         case FORMAT_WITH_SPEC: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
             break;
@@ -1414,20 +1170,14 @@
         }
 
         case BINARY_OP: {
-            stack_pointer[-1] = NULL;
-            stack_pointer[-2] = NULL;
             STACK_SHRINK(1);
             stack_pointer[-1] = NULL;
             break;
         }
 
         case SWAP: {
+            stack_pointer[-2 - (oparg-2)] = NULL;
             stack_pointer[-1] = NULL;
-            (stack_pointer - (1 + (oparg-2))) = (PyObject **)NULL;
-            stack_pointer[-(2 + (oparg-2))] = NULL;
-            stack_pointer[-1] = NULL;
-            stack_pointer - (1 + (oparg-2)) = (PyObject **)NULL;
-            stack_pointer[-(2 + (oparg-2))] = NULL;
             break;
         }
 
@@ -1472,13 +1222,11 @@
         }
 
         case _POP_JUMP_IF_FALSE: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             break;
         }
 
         case _POP_JUMP_IF_TRUE: {
-            stack_pointer[-1] = NULL;
             STACK_SHRINK(1);
             break;
         }

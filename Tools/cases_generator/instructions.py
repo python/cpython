@@ -263,49 +263,8 @@ class AbstractInstruction(Instruction):
                         f"static_assert({cache_size} == "
                         f'{self.cache_offset}, "incorrect cache size");'
                     )
-        # NULL out inputs, unless it's the same as in the output,
-        # Write input stack effect variable declarations and initializations.
-        ieffects = list(reversed(self.input_effects))
-        for i, ieffect in enumerate(ieffects):
-            if ieffect.name in self.unmoved_names:
-                continue
-            isize = string_effect_size(
-                list_effect_size([ieff for ieff in ieffects[: i + 1]])
-            )
-            if ieffect.size:
-                src = StackEffect(
-                    f"(stack_pointer - {maybe_parenthesize(isize)})", "PyObject **"
-                )
-            elif ieffect.cond:
-                src = StackEffect(
-                    f"({ieffect.cond}) ? stack_pointer[-{maybe_parenthesize(isize)}] : NULL",
-                    "",
-                )
-            else:
-                src = StackEffect(f"stack_pointer[-{maybe_parenthesize(isize)}]", "")
-            out.assign(src, parsing.StackEffect("NULL"))
 
-        # Write net stack growth/shrinkage
-        out.stack_adjust(
-            [ieff for ieff in self.input_effects],
-            [oeff for oeff in self.output_effects],
-        )
-
-        # NULL out outputs, unless it's same as input.
-        oeffects = list(reversed(self.output_effects))
-        for i, oeffect in enumerate(oeffects):
-            if oeffect.name in self.unmoved_names:
-                continue
-            osize = string_effect_size(
-                list_effect_size([oeff for oeff in oeffects[: i + 1]])
-            )
-            if oeffect.size:
-                dst = StackEffect(
-                    f"stack_pointer - {maybe_parenthesize(osize)}", "PyObject **"
-                )
-            else:
-                dst = StackEffect(f"stack_pointer[-{maybe_parenthesize(osize)}]", "")
-            out.assign(dst, parsing.StackEffect("NULL"))
+        stacking.write_single_instr_for_abstract_interp(self, out)
 
     def write_body(
         self,
