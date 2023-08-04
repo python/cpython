@@ -42,7 +42,7 @@ typedef struct _PyCfgBasicblock {
     /* The label of this block if it is a jump target, -1 otherwise */
     _PyCfgJumpTargetLabel b_label;
     /* Exception stack at start of block, used by assembler to create the exception handling table */
-    struct PyCfgExceptStack *b_exceptstack;
+    struct _PyCfgExceptStack *b_exceptstack;
     /* pointer to an array of instructions, initially NULL */
     cfg_instr *b_instr;
     /* If b_next is non-NULL, it is a pointer to the next
@@ -71,7 +71,7 @@ typedef struct _PyCfgBasicblock {
 } basicblock;
 
 
-typedef struct _PyCfgBuilder {
+struct _PyCfgBuilder {
     /* The entryblock, at which control flow begins. All blocks of the
        CFG are reachable through the b_next links */
     struct _PyCfgBasicblock *g_entryblock;
@@ -82,7 +82,9 @@ typedef struct _PyCfgBuilder {
     struct _PyCfgBasicblock *g_curblock;
     /* label for the next instruction to be placed */
     _PyCfgJumpTargetLabel g_current_label;
-} cfg_builder;
+};
+
+typedef struct _PyCfgBuilder cfg_builder;
 
 static const jump_target_label NO_LABEL = {-1};
 
@@ -399,7 +401,7 @@ _PyCfgBuilder_New(void)
 }
 
 void
-_PyCfgBuilder_Free(cfg_builder* g)
+_PyCfgBuilder_Free(cfg_builder *g)
 {
     if (g == NULL) {
         return;
@@ -418,7 +420,7 @@ _PyCfgBuilder_Free(cfg_builder* g)
 }
 
 int
-_PyCfgBuilder_CheckSize(cfg_builder* g)
+_PyCfgBuilder_CheckSize(cfg_builder *g)
 {
     int nblocks = 0;
     for (basicblock *b = g->g_block_list; b != NULL; b = b->b_list) {
