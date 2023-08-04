@@ -1252,13 +1252,12 @@ variants of :func:`functools.lru_cache`:
                 self.cache.move_to_end(args)
                 return self.cache[args]
             result = self.func(*args)
-            self.requests[args] = self.requests.get(args, 0) + 1 # increment existing value by 1 if seen before, otherwise set to 1
+            self.requests[args] = self.requests.get(args, 0) + 1
             if self.requests[args] <= self.cache_after:
                 self.requests.move_to_end(args)
                 if len(self.requests) > self.maxrequests:
                     self.requests.popitem(last=False)
             else:
-                # entry has been seen more than cache_after times
                 self.requests.pop(args) # no longer need to keep track of how many times this entry has been seen
                 if len(self.cache) == self.maxsize:
                     self.cache.popitem(last=False)
