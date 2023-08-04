@@ -290,9 +290,11 @@ def linear_format(s: str, **kwargs: str) -> str:
             continue
 
         if trailing:
-            fail(f"Text found after {{{name}}} block marker! It must be on a line by itself.")
+            fail(f"Text found after {{{name}}} block marker! "
+                 "It must be on a line by itself.")
         if indent.strip():
-            fail(f"Non-whitespace characters found before {{{name}}} block marker! It must be on a line by itself.")
+            fail(f"Non-whitespace characters found before {{{name}}} block marker! "
+                 "It must be on a line by itself.")
 
         value = kwargs[name]
         if not value:
@@ -2017,7 +2019,8 @@ class Destination:
             )
         extra_arguments = 1 if self.type == "file" else 0
         if len(args) < extra_arguments:
-            fail(f"Not enough arguments for destination {self.name!r} new {self.type!r}")
+            fail(f"Not enough arguments for destination "
+                 f"{self.name!r} new {self.type!r}")
         if len(args) > extra_arguments:
             fail(f"Too many arguments for destination {self.name!r} new {self.type!r}")
         if self.type =='file':
@@ -2273,14 +2276,16 @@ impl_definition block
                             os.makedirs(dirname)
                         except FileExistsError:
                             if not os.path.isdir(dirname):
-                                fail(f"Can't write to destination {destination.filename!r}, "
+                                fail(f"Can't write to destination "
+                                     f"{destination.filename!r}, "
                                      f"can't make directory {dirname!r}!")
                         if self.verify:
                             with open(destination.filename) as f:
                                 parser_2 = BlockParser(f.read(), language=self.language)
                                 blocks = list(parser_2)
                                 if (len(blocks) != 1) or (blocks[0].input != 'preserve\n'):
-                                    fail(f"Modified destination file {destination.filename!r}, not overwriting!")
+                                    fail(f"Modified destination file "
+                                         f"{destination.filename!r}, not overwriting!")
                     except FileNotFoundError:
                         pass
 
@@ -4720,7 +4725,8 @@ class DSLParser:
                 module, cls = self.clinic._module_and_class(fields)
 
                 if not (existing_function.kind is self.kind and existing_function.coexist == self.coexist):
-                    fail("'kind' of function and cloned function don't match! (@classmethod/@staticmethod/@coexist)")
+                    fail("'kind' of function and cloned function don't match! "
+                         "(@classmethod/@staticmethod/@coexist)")
                 function = existing_function.copy(
                     name=function_name, full_name=full_name, module=module,
                     cls=cls, c_basename=c_basename, docstring=''
@@ -5082,7 +5088,8 @@ class DSLParser:
                     c_default = kwargs.get("c_default")
                     if not (isinstance(c_default, str) and c_default):
                         fail(f"When you specify an expression ({default!r}) "
-                             f"as your default value, you MUST specify a valid c_default.",
+                             f"as your default value, "
+                             f"you MUST specify a valid c_default.",
                              ast.dump(expr))
                     py_default = default
                     value = unknown
@@ -5101,7 +5108,8 @@ class DSLParser:
                     c_default = kwargs.get("c_default")
                     if not (isinstance(c_default, str) and c_default):
                         fail(f"When you specify a named constant ({py_default!r}) "
-                             "as your default value, you MUST specify a valid c_default.")
+                             "as your default value, "
+                             "you MUST specify a valid c_default.")
 
                     try:
                         value = eval(py_default)
@@ -5224,7 +5232,8 @@ class DSLParser:
             case ParamState.REQUIRED | ParamState.GROUP_AFTER:
                 self.parameter_state = ParamState.GROUP_AFTER
             case st:
-                fail(f"Function {function.name!r} has an unsupported group configuration. "
+                fail(f"Function {function.name!r} "
+                     f"has an unsupported group configuration. "
                      f"(Unexpected state {st}.b)")
         self.group += 1
         function.docstring_only = True
@@ -5243,7 +5252,8 @@ class DSLParser:
             case ParamState.GROUP_AFTER | ParamState.RIGHT_SQUARE_AFTER:
                 self.parameter_state = ParamState.RIGHT_SQUARE_AFTER
             case st:
-                fail(f"Function {function.name!r} has an unsupported group configuration. "
+                fail(f"Function {function.name!r} "
+                     f"has an unsupported group configuration. "
                      f"(Unexpected state {st}.c)")
 
     def parse_slash(self, function: Function) -> None:
