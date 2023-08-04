@@ -3050,39 +3050,59 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'O&':
-            return """
+            template = """
                 if (!{converter}({argname}, &{paramname})) {{{{
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.parser_name,
-                           converter=self.converter)
+            """
+            return template.format(
+                argname=argname,
+                paramname=self.parser_name,
+                converter=self.converter
+            )
         if self.format_unit == 'O!':
             cast = '(%s)' % self.type if self.type != 'PyObject *' else ''
             if self.subclass_of in type_checks:
                 typecheck, typename = type_checks[self.subclass_of]
-                return """
+                template = """
                     if (!{typecheck}({argname})) {{{{
                         _PyArg_BadArgument("{{name}}", {displayname}, "{typename}", {argname});
                         goto exit;
                     }}}}
                     {paramname} = {cast}{argname};
-                    """.format(argname=argname, paramname=self.parser_name,
-                               displayname=displayname, typecheck=typecheck,
-                               typename=typename, cast=cast)
-            return """
+                """
+                return template.format(
+                    argname=argname,
+                    paramname=self.parser_name,
+                    displayname=displayname,
+                    typecheck=typecheck,
+                    typename=typename,
+                    cast=cast
+                )
+            template = """
                 if (!PyObject_TypeCheck({argname}, {subclass_of})) {{{{
                     _PyArg_BadArgument("{{name}}", {displayname}, ({subclass_of})->tp_name, {argname});
                     goto exit;
                 }}}}
                 {paramname} = {cast}{argname};
-                """.format(argname=argname, paramname=self.parser_name,
-                           subclass_of=self.subclass_of, cast=cast,
-                           displayname=displayname)
+            """
+            return template.format(
+                argname=argname,
+                paramname=self.parser_name,
+                subclass_of=self.subclass_of,
+                cast=cast,
+                displayname=displayname
+            )
         if self.format_unit == 'O':
             cast = '(%s)' % self.type if self.type != 'PyObject *' else ''
-            return """
+            template = """
                 {paramname} = {cast}{argname};
-                """.format(argname=argname, paramname=self.parser_name, cast=cast)
+            """
+            return template.format(
+                argname=argname,
+                paramname=self.parser_name,
+                cast=cast
+            )
         return None
 
     def set_template_dict(self, template_dict: TemplateDict) -> None:
@@ -3152,21 +3172,27 @@ class bool_converter(CConverter):
             self.c_default = str(int(self.default))
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
-        if self.format_unit == 'i':
-            return """
-                {paramname} = _PyLong_AsInt({argname});
-                if ({paramname} == -1 && PyErr_Occurred()) {{{{
-                    goto exit;
-                }}}}
-                """.format(argname=argname, paramname=self.parser_name)
-        elif self.format_unit == 'p':
-            return """
-                {paramname} = PyObject_IsTrue({argname});
-                if ({paramname} < 0) {{{{
-                    goto exit;
-                }}}}
-                """.format(argname=argname, paramname=self.parser_name)
-        return super().parse_arg(argname, displayname)
+        match self.format_unit:
+            case 'i':
+                template = """
+                    {paramname} = _PyLong_AsInt({argname});
+                    if ({paramname} == -1 && PyErr_Occurred()) {{{{
+                        goto exit;
+                    }}}}
+                """
+            case 'p':
+                template = """
+                    {paramname} = PyObject_IsTrue({argname});
+                    if ({paramname} < 0) {{{{
+                        goto exit;
+                    }}}}
+                """
+            case _:
+                return super().parse_arg(argname, displayname)
+        return template.format(
+            argname=argname,
+            paramname=self.parser_name
+        )
 
 class defining_class_converter(CConverter):
     """
@@ -3204,7 +3230,7 @@ class char_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'c':
-            return """
+            template = """
                 if (PyBytes_Check({argname}) && PyBytes_GET_SIZE({argname}) == 1) {{{{
                     {paramname} = PyBytes_AS_STRING({argname})[0];
                 }}}}
@@ -3215,8 +3241,12 @@ class char_converter(CConverter):
                     _PyArg_BadArgument("{{name}}", {displayname}, "a byte string of length 1", {argname});
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.parser_name,
-                           displayname=displayname)
+            """
+            return template.format(
+                argname=argname,
+                paramname=self.parser_name,
+                displayname=displayname
+            )
         return super().parse_arg(argname, displayname)
 
 
@@ -3233,7 +3263,7 @@ class unsigned_char_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'b':
-            return """
+            template = """
                 {{{{
                     long ival = PyLong_AsLong({argname});
                     if (ival == -1 && PyErr_Occurred()) {{{{
@@ -3253,9 +3283,9 @@ class unsigned_char_converter(CConverter):
                         {paramname} = (unsigned char) ival;
                     }}}}
                 }}}}
-                """.format(argname=argname, paramname=self.parser_name)
+            """
         elif self.format_unit == 'B':
-            return """
+            template = """
                 {{{{
                     unsigned long ival = PyLong_AsUnsignedLongMask({argname});
                     if (ival == (unsigned long)-1 && PyErr_Occurred()) {{{{
@@ -3265,8 +3295,13 @@ class unsigned_char_converter(CConverter):
                         {paramname} = (unsigned char) ival;
                     }}}}
                 }}}}
-                """.format(argname=argname, paramname=self.parser_name)
-        return super().parse_arg(argname, displayname)
+            """
+        else:
+            return super().parse_arg(argname, displayname)
+        return template.format(
+            argname=argname,
+            paramname=self.parser_name
+        )
 
 class byte_converter(unsigned_char_converter): pass
 
@@ -3278,7 +3313,7 @@ class short_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'h':
-            return """
+            template = """
                 {{{{
                     long ival = PyLong_AsLong({argname});
                     if (ival == -1 && PyErr_Occurred()) {{{{
@@ -3298,7 +3333,11 @@ class short_converter(CConverter):
                         {paramname} = (short) ival;
                     }}}}
                 }}}}
-                """.format(argname=argname, paramname=self.parser_name)
+            """
+            return template.format(
+                argname=argname,
+                paramname=self.parser_name
+            )
         return super().parse_arg(argname, displayname)
 
 class unsigned_short_converter(CConverter):
@@ -3314,12 +3353,16 @@ class unsigned_short_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'H':
-            return """
+            template = """
                 {paramname} = (unsigned short)PyLong_AsUnsignedLongMask({argname});
                 if ({paramname} == (unsigned short)-1 && PyErr_Occurred()) {{{{
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.parser_name)
+            """
+            return template.format(
+                argname=argname,
+                paramname=self.parser_name
+            )
         return super().parse_arg(argname, displayname)
 
 @add_legacy_c_converter('C', accept={str})
@@ -3341,14 +3384,18 @@ class int_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'i':
-            return """
+            template = """
                 {paramname} = _PyLong_AsInt({argname});
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.parser_name)
+            """
+            return template.format(
+                argname=argname,
+                paramname=self.parser_name
+            )
         elif self.format_unit == 'C':
-            return """
+            template = """
                 if (!PyUnicode_Check({argname})) {{{{
                     _PyArg_BadArgument("{{name}}", {displayname}, "a unicode character", {argname});
                     goto exit;
@@ -3358,8 +3405,12 @@ class int_converter(CConverter):
                     goto exit;
                 }}}}
                 {paramname} = PyUnicode_READ_CHAR({argname}, 0);
-                """.format(argname=argname, paramname=self.parser_name,
-                           displayname=displayname)
+            """
+            return template.format(
+                argname=argname,
+                paramname=self.parser_name,
+                displayname=displayname
+            )
         return super().parse_arg(argname, displayname)
 
 class unsigned_int_converter(CConverter):
@@ -3375,12 +3426,16 @@ class unsigned_int_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'I':
-            return """
+            template = """
                 {paramname} = (unsigned int)PyLong_AsUnsignedLongMask({argname});
                 if ({paramname} == (unsigned int)-1 && PyErr_Occurred()) {{{{
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.parser_name)
+            """
+            return template.format(
+                argname=argname,
+                paramname=self.parser_name
+            )
         return super().parse_arg(argname, displayname)
 
 class long_converter(CConverter):
@@ -3391,12 +3446,16 @@ class long_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'l':
-            return """
+            template = """
                 {paramname} = PyLong_AsLong({argname});
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.parser_name)
+            """
+            return template.format(
+                argname=argname,
+                paramname=self.parser_name
+            )
         return super().parse_arg(argname, displayname)
 
 class unsigned_long_converter(CConverter):
@@ -3412,14 +3471,18 @@ class unsigned_long_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'k':
-            return """
+            template = """
                 if (!PyLong_Check({argname})) {{{{
                     _PyArg_BadArgument("{{name}}", {displayname}, "int", {argname});
                     goto exit;
                 }}}}
                 {paramname} = PyLong_AsUnsignedLongMask({argname});
-                """.format(argname=argname, paramname=self.parser_name,
-                           displayname=displayname)
+            """
+            return template.format(
+                argname=argname,
+                paramname=self.parser_name,
+                displayname=displayname
+            )
         return super().parse_arg(argname, displayname)
 
 class long_long_converter(CConverter):
@@ -3430,12 +3493,16 @@ class long_long_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'L':
-            return """
+            template = """
                 {paramname} = PyLong_AsLongLong({argname});
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.parser_name)
+            """
+            return template.format(
+                argname=argname,
+                paramname=self.parser_name
+            )
         return super().parse_arg(argname, displayname)
 
 class unsigned_long_long_converter(CConverter):
@@ -3451,14 +3518,18 @@ class unsigned_long_long_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'K':
-            return """
+            template = """
                 if (!PyLong_Check({argname})) {{{{
                     _PyArg_BadArgument("{{name}}", {displayname}, "int", {argname});
                     goto exit;
                 }}}}
                 {paramname} = PyLong_AsUnsignedLongLongMask({argname});
-                """.format(argname=argname, paramname=self.parser_name,
-                           displayname=displayname)
+            """
+            return template.format(
+                argname=argname,
+                paramname=self.parser_name,
+                displayname=displayname
+            )
         return super().parse_arg(argname, displayname)
 
 class Py_ssize_t_converter(CConverter):
@@ -3476,7 +3547,7 @@ class Py_ssize_t_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'n':
-            return """
+            template = """
                 {{{{
                     Py_ssize_t ival = -1;
                     PyObject *iobj = _PyNumber_Index({argname});
@@ -3489,7 +3560,11 @@ class Py_ssize_t_converter(CConverter):
                     }}}}
                     {paramname} = ival;
                 }}}}
-                """.format(argname=argname, paramname=self.parser_name)
+            """
+            return template.format(
+                argname=argname,
+                paramname=self.parser_name
+            )
         return super().parse_arg(argname, displayname)
 
 
@@ -3511,12 +3586,16 @@ class size_t_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'n':
-            return """
+            template = """
                 {paramname} = PyNumber_AsSsize_t({argname}, PyExc_OverflowError);
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.parser_name)
+            """
+            return template.format(
+                argname=argname,
+                paramname=self.parser_name
+            )
         return super().parse_arg(argname, displayname)
 
 
@@ -3525,12 +3604,16 @@ class fildes_converter(CConverter):
     converter = '_PyLong_FileDescriptor_Converter'
 
     def _parse_arg(self, argname: str, displayname: str) -> str | None:
-        return """
+        template = """
             {paramname} = PyObject_AsFileDescriptor({argname});
             if ({paramname} == -1) {{{{
                 goto exit;
             }}}}
-            """.format(argname=argname, paramname=self.name)
+        """
+        return template.format(
+            argname=argname,
+            paramname=self.name
+        )
 
 
 class float_converter(CConverter):
@@ -3541,7 +3624,7 @@ class float_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'f':
-            return """
+            template = """
                 if (PyFloat_CheckExact({argname})) {{{{
                     {paramname} = (float) (PyFloat_AS_DOUBLE({argname}));
                 }}}}
@@ -3552,7 +3635,11 @@ class float_converter(CConverter):
                         goto exit;
                     }}}}
                 }}}}
-                """.format(argname=argname, paramname=self.parser_name)
+            """
+            return template.format(
+                argname=argname,
+                paramname=self.parser_name
+            )
         return super().parse_arg(argname, displayname)
 
 class double_converter(CConverter):
@@ -3563,7 +3650,7 @@ class double_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'd':
-            return """
+            template = """
                 if (PyFloat_CheckExact({argname})) {{{{
                     {paramname} = PyFloat_AS_DOUBLE({argname});
                 }}}}
@@ -3574,7 +3661,11 @@ class double_converter(CConverter):
                         goto exit;
                     }}}}
                 }}}}
-                """.format(argname=argname, paramname=self.parser_name)
+            """
+            return template.format(
+                argname=argname,
+                paramname=self.parser_name
+            )
         return super().parse_arg(argname, displayname)
 
 
@@ -3586,12 +3677,16 @@ class Py_complex_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'D':
-            return """
+            template = """
                 {paramname} = PyComplex_AsCComplex({argname});
                 if (PyErr_Occurred()) {{{{
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.parser_name)
+            """
+            return template.format(
+                argname=argname,
+                paramname=self.parser_name
+            )
         return super().parse_arg(argname, displayname)
 
 
@@ -3679,7 +3774,7 @@ class str_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 's':
-            return """
+            template = """
                 if (!PyUnicode_Check({argname})) {{{{
                     _PyArg_BadArgument("{{name}}", {displayname}, "str", {argname});
                     goto exit;
@@ -3693,10 +3788,9 @@ class str_converter(CConverter):
                     PyErr_SetString(PyExc_ValueError, "embedded null character");
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.parser_name,
-                           displayname=displayname)
+            """
         if self.format_unit == 'z':
-            return """
+            template = """
                 if ({argname} == Py_None) {{{{
                     {paramname} = NULL;
                 }}}}
@@ -3715,9 +3809,14 @@ class str_converter(CConverter):
                     _PyArg_BadArgument("{{name}}", {displayname}, "str or None", {argname});
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.parser_name,
-                           displayname=displayname)
-        return super().parse_arg(argname, displayname)
+            """
+        else:
+            return super().parse_arg(argname, displayname)
+        return template.format(
+            argname=argname,
+            paramname=self.parser_name,
+            displayname=displayname
+        )
 
 #
 # This is the fourth or fifth rewrite of registering all the
@@ -3781,14 +3880,19 @@ class PyBytesObject_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'S':
-            return """
+            template = """
                 if (!PyBytes_Check({argname})) {{{{
                     _PyArg_BadArgument("{{name}}", {displayname}, "bytes", {argname});
                     goto exit;
                 }}}}
                 {paramname} = ({type}){argname};
-                """.format(argname=argname, paramname=self.parser_name,
-                           type=self.type, displayname=displayname)
+            """
+            return template.format(
+                argname=argname,
+                paramname=self.parser_name,
+                type=self.type,
+                displayname=displayname
+            )
         return super().parse_arg(argname, displayname)
 
 class PyByteArrayObject_converter(CConverter):
@@ -3798,14 +3902,19 @@ class PyByteArrayObject_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'Y':
-            return """
+            template = """
                 if (!PyByteArray_Check({argname})) {{{{
                     _PyArg_BadArgument("{{name}}", {displayname}, "bytearray", {argname});
                     goto exit;
                 }}}}
                 {paramname} = ({type}){argname};
-                """.format(argname=argname, paramname=self.parser_name,
-                           type=self.type, displayname=displayname)
+            """
+            return template.format(
+                argname=argname,
+                paramname=self.parser_name,
+                type=self.type,
+                displayname=displayname
+            )
         return super().parse_arg(argname, displayname)
 
 class unicode_converter(CConverter):
@@ -3815,14 +3924,18 @@ class unicode_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'U':
-            return """
+            template = """
                 if (!PyUnicode_Check({argname})) {{{{
                     _PyArg_BadArgument("{{name}}", {displayname}, "str", {argname});
                     goto exit;
                 }}}}
                 {paramname} = {argname};
-                """.format(argname=argname, paramname=self.parser_name,
-                           displayname=displayname)
+            """
+            return template.format(
+                argname=argname,
+                paramname=self.parser_name,
+                displayname=displayname
+            )
         return super().parse_arg(argname, displayname)
 
 @add_legacy_c_converter('u')
@@ -3857,14 +3970,12 @@ class Py_UNICODE_converter(CConverter):
         if self.length:
             return ""
         else:
-            return """\
-PyMem_Free((void *){name});
-""".format(name=self.name)
+            return f"PyMem_Free((void *){self.name});\n"
 
     def parse_arg(self, argname: str, argnum: str) -> str | None:
         if not self.length:
             if self.accept == {str}:
-                return """
+                template = """
                     if (!PyUnicode_Check({argname})) {{{{
                         _PyArg_BadArgument("{{name}}", {argnum}, "str", {argname});
                         goto exit;
@@ -3873,9 +3984,14 @@ PyMem_Free((void *){name});
                     if ({paramname} == NULL) {{{{
                         goto exit;
                     }}}}
-                    """.format(argname=argname, paramname=self.name, argnum=argnum)
+                    """
+                return template.format(
+                    argname=argname,
+                    paramname=self.name,
+                    argnum=argnum
+                )
             elif self.accept == {str, NoneType}:
-                return """
+                template = """
                     if ({argname} == Py_None) {{{{
                         {paramname} = NULL;
                     }}}}
@@ -3889,7 +4005,12 @@ PyMem_Free((void *){name});
                         _PyArg_BadArgument("{{name}}", {argnum}, "str or None", {argname});
                         goto exit;
                     }}}}
-                    """.format(argname=argname, paramname=self.name, argnum=argnum)
+                """
+                return template.format(
+                    argname=argname,
+                    paramname=self.name,
+                    argnum=argnum
+                )
         return super().parse_arg(argname, argnum)
 
 @add_legacy_c_converter('s*', accept={str, buffer})
@@ -3926,7 +4047,7 @@ class Py_buffer_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'y*':
-            return """
+            template = """
                 if (PyObject_GetBuffer({argname}, &{paramname}, PyBUF_SIMPLE) != 0) {{{{
                     goto exit;
                 }}}}
@@ -3934,10 +4055,9 @@ class Py_buffer_converter(CConverter):
                     _PyArg_BadArgument("{{name}}", {displayname}, "contiguous buffer", {argname});
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.parser_name,
-                           displayname=displayname)
+            """
         elif self.format_unit == 's*':
-            return """
+            template = """
                 if (PyUnicode_Check({argname})) {{{{
                     Py_ssize_t len;
                     const char *ptr = PyUnicode_AsUTF8AndSize({argname}, &len);
@@ -3955,10 +4075,9 @@ class Py_buffer_converter(CConverter):
                         goto exit;
                     }}}}
                 }}}}
-                """.format(argname=argname, paramname=self.parser_name,
-                           displayname=displayname)
+            """
         elif self.format_unit == 'w*':
-            return """
+            template = """
                 if (PyObject_GetBuffer({argname}, &{paramname}, PyBUF_WRITABLE) < 0) {{{{
                     PyErr_Clear();
                     _PyArg_BadArgument("{{name}}", {displayname}, "read-write bytes-like object", {argname});
@@ -3968,9 +4087,14 @@ class Py_buffer_converter(CConverter):
                     _PyArg_BadArgument("{{name}}", {displayname}, "contiguous buffer", {argname});
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.parser_name,
-                           displayname=displayname)
-        return super().parse_arg(argname, displayname)
+            """
+        else:
+            return super().parse_arg(argname, displayname)
+        return template.format(
+            argname=argname,
+            paramname=self.parser_name,
+            displayname=displayname
+        )
 
 
 def correct_name_for_self(
