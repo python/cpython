@@ -565,9 +565,9 @@ translate_jump_labels_to_targets(basicblock *entryblock)
 }
 
 int
-_PyCfg_JumpLabelsToTargets(basicblock *entryblock)
+_PyCfg_JumpLabelsToTargets(_PyCfgBuilder *g)
 {
-    return translate_jump_labels_to_targets(entryblock);
+    return translate_jump_labels_to_targets(g->g_entryblock);
 }
 
 static int
@@ -2522,10 +2522,47 @@ prepare_localsplus(_PyCompile_CodeUnitMetadata *umd, cfg_builder *g, int code_fl
     return nlocalsplus;
 }
 
+typedef _PyCompile_InstructionSequence instr_sequence;
+
+static int
+cfg_to_instr_sequence(cfg_builder *g, instr_sequence *seq)
+{
+    int lbl = 0;
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+        b->b_label = (jump_target_label){lbl};
+        lbl += b->b_iused;
+    }
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+        RETURN_IF_ERROR(_PyCompile_InstructionSequence_UseLabel(seq, b->b_label.id));
+        for (int i = 0; i < b->b_iused; i++) {
+            cfg_instr *instr = &b->b_instr[i];
+            if (OPCODE_HAS_JUMP(instr->i_opcode)) {
+                instr->i_oparg = instr->i_target->b_label.id;
+            }
+            RETURN_IF_ERROR(
+                _PyCompile_InstructionSequence_Addop(
+                    seq, instr->i_opcode, instr->i_oparg, instr->i_loc));
+
+            _PyCompile_ExceptHandlerInfo *hi = &seq->s_instrs[seq->s_used-1].i_except_handler_info;
+            if (instr->i_except != NULL) {
+                hi->h_label = instr->i_except->b_label.id;
+                hi->h_startdepth = instr->i_except->b_startdepth;
+                hi->h_preserve_lasti = instr->i_except->b_preserve_lasti;
+            }
+            else {
+                hi->h_label = -1;
+            }
+        }
+    }
+    return SUCCESS;
+}
+
+
 int
 _PyCfg_OptimizedCfgToInstructionSequence(_PyCfgBuilder *g,
                                      _PyCompile_CodeUnitMetadata *umd, int code_flags,
-                                     int *stackdepth, int *nlocalsplus)
+                                     int *stackdepth, int *nlocalsplus,
+                                     instr_sequence *seq)
 {
     *stackdepth = _PyCfg_Stackdepth(g);
     if (*stackdepth < 0) {
@@ -2555,6 +2592,9 @@ _PyCfg_OptimizedCfgToInstructionSequence(_PyCfgBuilder *g,
     }
 
     /* Can't modify the bytecode after computing jump offsets. */
+    if (cfg_to_instr_sequence(g, seq) < 0) {
+        return ERROR;
+    }
 
     return SUCCESS;
 

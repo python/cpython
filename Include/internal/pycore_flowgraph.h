@@ -93,7 +93,8 @@ int _PyCfg_OptimizeCodeUnit(_PyCfgBuilder *g, PyObject *consts, PyObject *const_
                             int nlocals, int nparams, int firstlineno);
 
 int _PyCfg_OptimizedCfgToInstructionSequence(_PyCfgBuilder *g, _PyCompile_CodeUnitMetadata *umd,
-                                             int code_flags, int *stackdepth, int *nlocalsplus);
+                                             int code_flags, int *stackdepth, int *nlocalsplus,
+                                             _PyCompile_InstructionSequence *seq);
 
 int _PyCfg_Stackdepth(_PyCfgBuilder *g);
 void _PyCfg_ConvertPseudoOps(_PyCfgBasicblock *entryblock);

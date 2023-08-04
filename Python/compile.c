@@ -101,7 +101,7 @@ static jump_target_label NO_LABEL = {-1};
     }
 
 #define USE_LABEL(C, LBL) \
-    RETURN_IF_ERROR(instr_sequence_use_label(INSTR_SEQUENCE(C), (LBL).id))
+    RETURN_IF_ERROR(_PyCompile_InstructionSequence_UseLabel(INSTR_SEQUENCE(C), (LBL).id))
 
 
 /* fblockinfo tracks the current frame block.
@@ -218,8 +218,9 @@ instr_sequence_new_label(instr_sequence *seq)
     return lbl;
 }
 
-static int
-instr_sequence_use_label(instr_sequence *seq, int lbl) {
+int
+_PyCompile_InstructionSequence_UseLabel(instr_sequence *seq, int lbl)
+{
     int old_size = seq->s_labelmap_size;
     RETURN_IF_ERROR(
         _PyCompile_EnsureArrayLargeEnough(lbl,
@@ -238,8 +239,9 @@ instr_sequence_use_label(instr_sequence *seq, int lbl) {
 
 #define MAX_OPCODE 511
 
-static int
-instr_sequence_addop(instr_sequence *seq, int opcode, int oparg, location loc)
+int
+_PyCompile_InstructionSequence_Addop(instr_sequence *seq, int opcode, int oparg,
+                                     location loc)
 {
     assert(0 <= opcode && opcode <= MAX_OPCODE);
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
@@ -916,7 +918,7 @@ codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
 {
     assert(!OPCODE_HAS_ARG(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
-    return instr_sequence_addop(seq, opcode, 0, loc);
+    return _PyCompile_InstructionSequence_Addop(seq, opcode, 0, loc);
 }
 
 static Py_ssize_t
@@ -1149,7 +1151,7 @@ codegen_addop_i(instr_sequence *seq, int opcode, Py_ssize_t oparg, location loc)
 
     int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
     assert(!IS_ASSEMBLER_OPCODE(opcode));
-    return instr_sequence_addop(seq, opcode, oparg_, loc);
+    return _PyCompile_InstructionSequence_Addop(seq, opcode, oparg_, loc);
 }
 
 static int
@@ -1159,7 +1161,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
     assert(IS_LABEL(target));
     assert(OPCODE_HAS_JUMP(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
-    return instr_sequence_addop(seq, opcode, target.id, loc);
+    return _PyCompile_InstructionSequence_Addop(seq, opcode, target.id, loc);
 }
 
 #define RETURN_IF_ERROR_IN_SCOPE(C, CALL) { \
@@ -7502,8 +7504,6 @@ add_return_at_end(struct compiler *c, int addNone)
     return SUCCESS;
 }
 
-static int cfg_to_instr_sequence(cfg_builder *g, instr_sequence *seq);
-
 static PyCodeObject *
 optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
                    int code_flags, PyObject *filename)
@@ -7533,15 +7533,12 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     int stackdepth;
     int nlocalsplus;
     if (_PyCfg_OptimizedCfgToInstructionSequence(g, &u->u_metadata, code_flags,
-                                                 &stackdepth, &nlocalsplus) < 0) {
+                                                 &stackdepth, &nlocalsplus,
+                                                 &optimized_instrs) < 0) {
         goto error;
     }
 
     /** Assembly **/
-
-    if (cfg_to_instr_sequence(g, &optimized_instrs) < 0) {
-        goto error;
-    }
 
     co = _PyAssemble_MakeCodeObject(&u->u_metadata, const_cache, consts,
                                     stackdepth, &optimized_instrs, nlocalsplus,
@@ -7572,39 +7569,6 @@ optimize_and_assemble(struct compiler *c, int addNone)
 
     return optimize_and_assemble_code_unit(u, const_cache, code_flags, filename);
 }
-
-static int
-cfg_to_instr_sequence(cfg_builder *g, instr_sequence *seq)
-{
-    int lbl = 0;
-    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        b->b_label = (jump_target_label){lbl};
-        lbl += b->b_iused;
-    }
-    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        RETURN_IF_ERROR(instr_sequence_use_label(seq, b->b_label.id));
-        for (int i = 0; i < b->b_iused; i++) {
-            cfg_instr *instr = &b->b_instr[i];
-            if (OPCODE_HAS_JUMP(instr->i_opcode)) {
-                instr->i_oparg = instr->i_target->b_label.id;
-            }
-            RETURN_IF_ERROR(
-                instr_sequence_addop(seq, instr->i_opcode, instr->i_oparg, instr->i_loc));
-
-            _PyCompile_ExceptHandlerInfo *hi = &seq->s_instrs[seq->s_used-1].i_except_handler_info;
-            if (instr->i_except != NULL) {
-                hi->h_label = instr->i_except->b_label.id;
-                hi->h_startdepth = instr->i_except->b_startdepth;
-                hi->h_preserve_lasti = instr->i_except->b_preserve_lasti;
-            }
-            else {
-                hi->h_label = -1;
-            }
-        }
-    }
-    return SUCCESS;
-}
-
 
 /* Access to compiler optimizations for unit tests.
  *
@@ -7655,7 +7619,7 @@ instructions_to_instr_sequence(PyObject *instructions, instr_sequence *seq)
 
     for (int i = 0; i < num_insts; i++) {
         if (is_target[i]) {
-            if (instr_sequence_use_label(seq, i) < 0) {
+            if (_PyCompile_InstructionSequence_UseLabel(seq, i) < 0) {
                 goto error;
             }
         }
@@ -7695,7 +7659,7 @@ instructions_to_instr_sequence(PyObject *instructions, instr_sequence *seq)
         if (PyErr_Occurred()) {
             goto error;
         }
-        if (instr_sequence_addop(seq, opcode, oparg, loc) < 0) {
+        if (_PyCompile_InstructionSequence_Addop(seq, opcode, oparg, loc) < 0) {
             goto error;
         }
     }
@@ -8004,7 +7968,7 @@ error:
     return res;
 }
 
-int _PyCfg_JumpLabelsToTargets(basicblock *entryblock);
+int _PyCfg_JumpLabelsToTargets(cfg_builder *g);
 
 PyCodeObject *
 _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
@@ -8025,18 +7989,15 @@ _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
         goto error;
     }
 
-    if (_PyCfg_JumpLabelsToTargets(g->g_entryblock) < 0) {
+    if (_PyCfg_JumpLabelsToTargets(g) < 0) {
         goto error;
     }
 
     int code_flags = 0;
     int stackdepth, nlocalsplus;
     if (_PyCfg_OptimizedCfgToInstructionSequence(g, umd, code_flags,
-                                                 &stackdepth, &nlocalsplus) < 0) {
-        goto error;
-    }
-
-    if (cfg_to_instr_sequence(g, &optimized_instrs) < 0) {
+                                                 &stackdepth, &nlocalsplus,
+                                                 &optimized_instrs) < 0) {
         goto error;
     }
 
