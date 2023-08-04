@@ -17,6 +17,7 @@ import time
 import types
 import unittest
 import warnings
+import subprocess
 
 from .testresult import get_test_runner
 
@@ -65,6 +66,8 @@ __all__ = [
     "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
     "Py_DEBUG", "EXCEEDS_RECURSION_LIMIT",
+    # decorators
+    "ignore_popen_stdout",
     ]
 
 
@@ -2460,3 +2463,12 @@ def adjust_int_max_str_digits(max_digits):
 
 #For recursion tests, easily exceeds default recursion limit
 EXCEEDS_RECURSION_LIMIT = 5000
+
+
+@contextlib.contextmanager
+def ignore_popen_stdout():
+    old_popen = subprocess.Popen
+    subprocess.Popen = functools.partial(subprocess.Popen,
+                                         stdout=subprocess.DEVNULL)
+    yield
+    subprocess.Popen = old_popen

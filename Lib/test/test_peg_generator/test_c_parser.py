@@ -10,7 +10,7 @@ from pathlib import Path
 
 from test import test_tools
 from test import support
-from test.support import os_helper, import_helper
+from test.support import os_helper, import_helper, ignore_popen_stdout
 from test.support.script_helper import assert_python_ok
 
 _py_cflags_nodist = sysconfig.get_config_var("PY_CFLAGS_NODIST")
@@ -125,6 +125,9 @@ class TestCParser(unittest.TestCase):
         sysconfig._CONFIG_VARS.clear()
         sysconfig._CONFIG_VARS.update(self._backup_config_vars)
 
+    # gh-86248:
+    # We are ignoring stdout from subprocesses because redundant output comes from build processes done by setuptools
+    @ignore_popen_stdout()
     def build_extension(self, grammar_source):
         grammar = parse_string(grammar_source, GrammarParser)
         # Because setUp() already changes the current directory to the
