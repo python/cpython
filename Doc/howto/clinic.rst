@@ -1348,7 +1348,7 @@ See also :pep:`573`.
 How to write a custom converter
 -------------------------------
 
-A converter is a Python class that inherits from :py:class:`CConverter`.
+A converter is a Python class that inherits from :py:class:`!CConverter`.
 The main purpose of a custom converter, is for parameters parsed with
 the ``O&`` format unit --- parsing such a parameter means calling
 a :c:func:`PyArg_ParseTuple` "converter function".
@@ -1364,7 +1364,7 @@ Apart for the *self* parameter, all additional :py:meth:`!converter_init`
 parameters **must** be keyword-only.
 Any arguments passed to the converter in Argument Clinic
 will be passed along to your :py:meth:`!converter_init` method.
-See :py:class:`CConverter` for a list of members you may wish to specify in
+See :py:class:`!CConverter` for a list of members you may wish to specify in
 your subclass.
 
 .. module:: clinic
