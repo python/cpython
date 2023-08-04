@@ -629,13 +629,13 @@ class Generator(Analyzer):
                     case parsing.InstDef():
                         instr = AbstractInstruction(self.instrs[thing.name].inst)
                         self.out.emit("")
-                        with self.out.block(f"case {thing.name}:"):
-                            instr.write(self.out, tier=TIER_TWO)
-                            if instr.check_eval_breaker:
-                                self.out.emit("CHECK_EVAL_BREAKER();")
-                            self.out.emit("break;")
-                        # elif instr.kind != "op":
-                        #     print(f"NOTE: {thing.name} is not a viable uop")
+                        if instr.is_viable_uop():
+                            self.out.emit("")
+                            with self.out.block(f"case {thing.name}:"):
+                                instr.write(self.out, tier=TIER_TWO)
+                                self.out.emit("break;")
+                            # elif instr.kind != "op":
+                            #     print(f"NOTE: {thing.name} is not a viable uop")
                     case parsing.Macro():
                         pass
                     case parsing.Pseudo():
