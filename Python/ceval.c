@@ -637,6 +637,11 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 #  pragma warning(disable:4102)
 #endif
 
+
+/* _PyEval_EvalFrameDefault() is a *big* function,
+ * so consume 3 units of C stack */
+#define PY_EVAL_C_STACK_UNITS 2
+
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
@@ -691,6 +696,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     frame->previous = &entry_frame;
     cframe.current_frame = frame;
 
+    tstate->c_recursion_remaining -= (PY_EVAL_C_STACK_UNITS - 1);
     if (_Py_EnterRecursiveCallTstate(tstate, "")) {
         tstate->c_recursion_remaining--;
         tstate->py_recursion_remaining--;
@@ -990,7 +996,7 @@ exit_unwind:
         /* Restore previous cframe and exit */
         tstate->cframe = cframe.previous;
         assert(tstate->cframe->current_frame == frame->previous);
-        _Py_LeaveRecursiveCallTstate(tstate);
+        tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
         return NULL;
     }
 

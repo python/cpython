@@ -802,6 +802,11 @@ sys
   exception instance, rather than to a ``(typ, exc, tb)`` tuple.
   (Contributed by Irit Katriel in :gh:`103176`.)
 
+* :func:`sys.setrecursionlimit` and :func:`sys.getrecursionlimit`.
+  The recursion limit now applies only to Python code. Builtin functions do
+  not use the recursion limit, but are protected by a different mechanism
+  that prevents recursion from causing a virtual machine crash.
+
 tempfile
 --------
 

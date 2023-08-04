@@ -255,7 +255,8 @@ struct _ts {
 #  ifdef __wasi__
 #    define C_RECURSION_LIMIT 500
 #  else
-#    define C_RECURSION_LIMIT 800
+    // This value is duplicated in Lib/test/support/__init__.py
+#    define C_RECURSION_LIMIT 1500
 #  endif
 #endif
 
