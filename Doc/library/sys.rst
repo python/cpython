@@ -1880,6 +1880,12 @@ always available.
    .. availability:: Windows.
 
 
+.. data:: monitoring
+
+   Namespace containing functions and constants for register callbacks
+   and controlling monitoring events.
+   See  :mod:`sys.monitoring` for details.
+
 .. data:: _xoptions
 
    A dictionary of the various implementation-specific flags passed through
