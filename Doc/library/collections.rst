@@ -1258,7 +1258,7 @@ variants of :func:`functools.lru_cache`:
                 if len(self.requests) > self.maxrequests:
                     self.requests.popitem(last=False)
             else:
-                self.requests.pop(args, None)
+                self.requests.pop(args)
                 self.cache[args] = result
                 if len(self.cache) > self.maxsize:
                     self.cache.popitem(last=False)
