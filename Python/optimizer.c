@@ -104,7 +104,8 @@ error_optimize(
     _PyOptimizerObject* self,
     PyCodeObject *code,
     _Py_CODEUNIT *instr,
-    _PyExecutorObject **exec)
+    _PyExecutorObject **exec,
+    int Py_UNUSED(stack_entries))
 {
     PyErr_Format(PyExc_SystemError, "Should never call error_optimize");
     return -1;
@@ -165,7 +166,7 @@ _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNI
     }
     _PyOptimizerObject *opt = interp->optimizer;
     _PyExecutorObject *executor = NULL;
-    int err = opt->optimize(opt, code, dest, &executor);
+    int err = opt->optimize(opt, code, dest, &executor, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
     if (err <= 0) {
         assert(executor == NULL);
         if (err < 0) {
@@ -255,7 +256,9 @@ counter_optimize(
     _PyOptimizerObject* self,
     PyCodeObject *code,
     _Py_CODEUNIT *instr,
-    _PyExecutorObject **exec_ptr)
+    _PyExecutorObject **exec_ptr,
+    int Py_UNUSED(curr_stackentries)
+)
 {
     _PyCounterExecutorObject *executor = (_PyCounterExecutorObject *)_PyObject_New(&CounterExecutor_Type);
     if (executor == NULL) {
@@ -691,7 +694,8 @@ uop_optimize(
     _PyOptimizerObject *self,
     PyCodeObject *code,
     _Py_CODEUNIT *instr,
-    _PyExecutorObject **exec_ptr)
+    _PyExecutorObject **exec_ptr,
+    int curr_stackentries)
 {
     _PyUOpInstruction trace[_Py_UOP_MAX_TRACE_LENGTH];
     int trace_length = translate_bytecode_to_trace(code, instr, trace, _Py_UOP_MAX_TRACE_LENGTH);
@@ -705,7 +709,7 @@ uop_optimize(
         return -1;
     }
     executor->base.execute = _PyUopExecute;
-    trace_length = _Py_uop_analyze_and_optimize(trace, trace_length);
+    trace_length = _Py_uop_analyze_and_optimize(code, trace, trace_length, curr_stackentries);
     memcpy(executor->trace, trace, trace_length * sizeof(_PyUOpInstruction));
     if (trace_length < _Py_UOP_MAX_TRACE_LENGTH) {
         executor->trace[trace_length].opcode = 0;  // Sentinel

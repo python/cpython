@@ -432,5 +432,5 @@ def _write_components_for_abstract_interp(
                         poke.effect.cond,
                         poke.effect.size,
                     ),
-                    StackEffect("NULL"),
+                    StackEffect("partitionnode_null()"),
                 )
