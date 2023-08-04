@@ -5589,12 +5589,14 @@ test_deprecate_positional_use_3
     optarg: int
     *
     kw: int
+TODO: this does not generate correct code yet.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(test_deprecate_positional_use_3__doc__,
 "test_deprecate_positional_use_3($module, /, pos, optarg, *, kw)\n"
 "--\n"
-"\n");
+"\n"
+"TODO: this does not generate correct code yet.");
 
 #define TEST_DEPRECATE_POSITIONAL_USE_3_METHODDEF    \
     {"test_deprecate_positional_use_3", _PyCFunction_CAST(test_deprecate_positional_use_3), METH_FASTCALL|METH_KEYWORDS, test_deprecate_positional_use_3__doc__},
@@ -5659,4 +5661,4 @@ exit:
 static PyObject *
 test_deprecate_positional_use_3_impl(PyObject *module, PyObject *pos,
                                      int optarg, int kw)
-/*[clinic end generated code: output=928a72c3ca930b7b input=42f1c1240b70ddd8]*/
+/*[clinic end generated code: output=2ccbfc730fab9bb9 input=9ed0dd3ec64c1b42]*/
