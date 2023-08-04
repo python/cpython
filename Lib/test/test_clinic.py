@@ -595,7 +595,7 @@ class ClinicWholeFileTest(TestCase):
         self.assertEqual(generated, expected)
 
     def test_directive_preserve_twice(self):
-        err = "Can't have preserve twice in one block!"
+        err = "Can't have 'preserve' twice in one block!"
         block = """
             /*[clinic input]
             preserve
@@ -636,7 +636,7 @@ class ClinicWholeFileTest(TestCase):
     def test_directive_output_invalid_command(self):
         err = (
             "Invalid command / destination name 'cmd', must be one of:\n"
-            "  preset push pop print everything cpp_if docstring_prototype "
+            "preset push pop print everything cpp_if docstring_prototype "
             "docstring_definition methoddef_define impl_prototype "
             "parser_prototype parser_definition cpp_endif methoddef_ifndef "
             "impl_definition"
