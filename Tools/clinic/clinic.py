@@ -1684,27 +1684,30 @@ class Block:
     found on the start line of the block between the square
     brackets.
 
-    signatures is either list or None.  If it's a list,
-    it may only contain clinic.Module, clinic.Class, and
+    signatures is a list.
+    It may only contain clinic.Module, clinic.Class, and
     clinic.Function objects.  At the moment it should
     contain at most one of each.
 
     output is either str or None.  If str, it's the output
     from this block, with embedded '\n' characters.
 
-    indent is either str or None.  It's the leading whitespace
+    indent is a str.  It's the leading whitespace
     that was found on every line of input.  (If body_prefix is
     not empty, this is the indent *after* removing the
     body_prefix.)
 
-    preindent is either str or None.  It's the whitespace that
+    "indent" is different from the concept of "preindent"
+    (which is not stored as state on Block objects).
+    "preindent" is the whitespace that
     was found in front of every line of input *before* the
     "body_prefix" (see the Language object).  If body_prefix
     is empty, preindent must always be empty too.
 
-    To illustrate indent and preindent: Assume that '_'
-    represents whitespace.  If the block processed was in a
-    Python file, and looked like this:
+    To illustrate the difference between "indent" and "preindent":
+
+    Assume that '_' represents whitespace.
+    If the block processed was in a Python file, and looked like this:
       ____#/*[python]
       ____#__for a in range(20):
       ____#____print(a)
@@ -1717,7 +1720,6 @@ class Block:
     signatures: list[Module | Class | Function] = dc.field(default_factory=list)
     output: Any = None  # TODO: Very dynamic; probably untypeable in its current form?
     indent: str = ''
-    preindent: str = ''
 
     def __repr__(self) -> str:
         dsl_name = self.dsl_name or "text"
@@ -2049,12 +2051,8 @@ class Destination:
         return self.buffers.dump()
 
 
-# maps strings to Language objects.
-# "languages" maps the name of the language ("C", "Python").
-# "extensions" maps the file extension ("c", "py").
+# "extensions" maps the file extension ("c", "py") to Language classes.
 LangDict = dict[str, Callable[[str], Language]]
-
-languages = { 'C': CLanguage, 'Python': PythonLanguage }
 extensions: LangDict = { name: CLanguage for name in "c cc cpp cxx h hh hpp hxx".split() }
 extensions['py'] = PythonLanguage
 
@@ -4427,7 +4425,6 @@ class DSLParser:
     positional_only: bool
     group: int
     parameter_state: ParamState
-    seen_positional_with_default: bool
     indent: IndentStack
     kind: FunctionKind
     coexist: bool
@@ -4458,7 +4455,6 @@ class DSLParser:
         self.positional_only = False
         self.group = 0
         self.parameter_state: ParamState = ParamState.START
-        self.seen_positional_with_default = False
         self.indent = IndentStack()
         self.kind = CALLABLE
         self.coexist = False
