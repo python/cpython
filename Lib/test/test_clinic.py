@@ -417,6 +417,16 @@ class ClinicWholeFileTest(TestCase):
         """
         self.expect_failure(block, err, lineno=8)
 
+    def test_module_already_got_one(self):
+        err = "Already defined module 'm'!"
+        block = """
+            /*[clinic input]
+            module m
+            module m
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=3)
+
     def test_destination_already_got_one(self):
         err = "Destination already exists: 'test'"
         block = """
