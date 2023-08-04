@@ -7,6 +7,7 @@
 
 #include "zlib.h"
 #include "stdbool.h"
+#include <stddef.h>               // offsetof()
 
 #if defined(ZLIB_VERNUM) && ZLIB_VERNUM < 0x1221
 #error "At least zlib version 1.2.2.1 is required"

@@ -117,6 +117,18 @@ and only logged in :ref:`Python Development Mode <devmode>` or on :ref:`Python
 built on debug mode <debug-build>`.
 (Contributed by Victor Stinner in :gh:`62948`.)
 
+opcode
+------
+
+* Move ``opcode.ENABLE_SPECIALIZATION`` to ``_opcode.ENABLE_SPECIALIZATION``.
+  This field was added in 3.12, it was never documented and is not intended for
+  external usage. (Contributed by Irit Katriel in :gh:`105481`.)
+
+* Removed ``opcode.is_pseudo``, ``opcode.MIN_PSEUDO_OPCODE`` and
+  ``opcode.MAX_PSEUDO_OPCODE``, which were added in 3.12, were never
+  documented or exposed through ``dis``, and were not intended to be
+  used externally.
+
 pathlib
 -------
 
@@ -150,7 +162,8 @@ typing
 Optimizations
 =============
 
-
+* :func:`textwrap.indent` is now ~30% faster than before for large input.
+  (Contributed by Inada Naoki in :gh:`107369`.)
 
 
 Deprecated
@@ -194,6 +207,12 @@ Deprecated
     removal in Python 3.15. After eight years in the :mod:`typing` module, it
     has yet to be supported by any major type checkers.
     (Contributed by Alex Waygood in :gh:`106309`.)
+
+  * :data:`typing.AnyStr` is deprecated. In Python 3.16, it will be removed from
+    ``typing.__all__``, and a :exc:`DeprecationWarning` will be emitted when it
+    is imported or accessed. It will be removed entirely in Python 3.18. Use
+    the new :ref:`type parameter syntax <type-params>` instead.
+    (Contributed by Michael The in :gh:`107116`.)
 
 * :mod:`wave`: Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()``
   methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
@@ -939,13 +958,6 @@ Removed
   * or :c:func:`PyGILState_Ensure` and :c:func:`PyGILState_Release`.
 
   (Contributed by Victor Stinner in :gh:`105182`.)
-
-* Remove the old private, undocumented and untested ``_PyGC_FINALIZED()`` macro
-  which was kept for backward compatibility with Python 3.8 and older: use
-  :c:func:`PyObject_GC_IsFinalized()` instead. The `pythoncapi-compat project
-  <https://github.com/python/pythoncapi-compat/>`__ can be used to get this
-  function on Python 3.8 and older.
-  (Contributed by Victor Stinner in :gh:`105268`.)
 
 * Remove the old aliases to functions calling functions which were kept for
   backward compatibility with Python 3.8 provisional API:

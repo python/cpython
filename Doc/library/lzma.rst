@@ -100,7 +100,8 @@ Reading and writing compressed files
    *filters* arguments have the same meanings as for :class:`LZMACompressor`.
 
    :class:`LZMAFile` supports all the members specified by
-   :class:`io.BufferedIOBase`, except for :meth:`detach` and :meth:`truncate`.
+   :class:`io.BufferedIOBase`, except for :meth:`~io.BufferedIOBase.detach`
+   and :meth:`~io.IOBase.truncate`.
    Iteration and the :keyword:`with` statement are supported.
 
    The following method is also provided:
