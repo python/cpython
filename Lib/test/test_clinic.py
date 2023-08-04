@@ -636,21 +636,21 @@ class ClinicWholeFileTest(TestCase):
     def test_directive_output_invalid_command(self):
         err = dedent("""
             Invalid command or destination name 'cmd'. Must be one of:
-             - preset
-             - push
-             - pop
-             - print
-             - everything
-             - cpp_if
-             - docstring_prototype
-             - docstring_definition
-             - methoddef_define
-             - impl_prototype
-             - parser_prototype
-             - parser_definition
-             - cpp_endif
-             - methoddef_ifndef
-             - impl_definition
+             - 'preset'
+             - 'push'
+             - 'pop'
+             - 'print'
+             - 'everything'
+             - 'cpp_if'
+             - 'docstring_prototype'
+             - 'docstring_definition'
+             - 'methoddef_define'
+             - 'impl_prototype'
+             - 'parser_prototype'
+             - 'parser_definition'
+             - 'cpp_endif'
+             - 'methoddef_ifndef'
+             - 'impl_definition'
         """).strip()
         block = """
             /*[clinic input]
@@ -1847,6 +1847,15 @@ class ClinicParserTest(TestCase):
         block = """
             fn
                 *args: object = None
+        """
+        self.expect_failure(block, err, lineno=1)
+
+    def test_default_is_not_of_correct_type(self):
+        err = ("int_converter: default value 2.5 for field 'a' "
+               "is not of type 'int'")
+        block = """
+            fn
+                a: int = 2.5
         """
         self.expect_failure(block, err, lineno=1)
 

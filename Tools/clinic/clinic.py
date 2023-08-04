@@ -516,11 +516,11 @@ class Language(metaclass=abc.ABCMeta):
             fcf.format(line)
             def local_fail(should_be_there_but_isnt: bool) -> None:
                 if should_be_there_but_isnt:
-                    fail("{cls} {attr} must contain {{{name}}} exactly once!".format(
-                        cls=self.__class__.__name__, attr=attr, name=name))
+                    fail("{} {} must contain {{{}}} exactly once!".format(
+                        self.__class__.__name__, attr, name))
                 else:
-                    fail("{cls} {attr} must not contain {{{name}}}!".format(
-                        cls=self.__class__.__name__, attr=attr, name=name))
+                    fail("{} {} must not contain {{{}}}!".format(
+                        self.__class__.__name__, attr, name))
 
             for name, count in fcf.counts.items():
                 if name in fields:
@@ -844,9 +844,7 @@ class CLanguage(Language):
         for o in signatures:
             if isinstance(o, Function):
                 if function:
-                    fail("You may specify at most one function per block. "
-                         "Found a block containing at least two: "
-                         "{function!r} and {o!r}")
+                    fail("You may specify at most one function per block.\nFound a block containing at least two:\n\t" + repr(function) + " and " + repr(o))
                 function = o
         return self.render_function(clinic, function)
 
@@ -2825,9 +2823,9 @@ class CConverter(metaclass=CConverterAutoRegister):
                 else:
                     names = [cls.__name__ for cls in self.default_type]
                     types_str = ', '.join(names)
-                fail("{cls}: default value {df!r} for field {name!r} is not of type {tp!r}".format(
-                    cls=self.__class__.__name__, df=default, name=name,
-                    tp=types_str))
+                cls_name = self.__class__.__name__
+                fail(f"{cls_name}: default value {default!r} for field "
+                     f"{name!r} is not of type {types_str!r}")
             self.default = default
 
         if c_default:
@@ -4381,7 +4379,7 @@ class IndentStack:
         margin = self.margin
         indent = self.indents[-1]
         if not line.startswith(margin):
-            fail('Cannot dedent, line does not start with the previous margin.')
+            fail('Cannot dedent; line does not start with the previous margin.')
         return line[indent:]
 
 
@@ -4570,7 +4568,8 @@ class DSLParser:
             allowed = ["preset", "push", "pop", "print", "everything"]
             allowed.extend(fd)
             fail(f"Invalid command or destination name {command_or_name!r}. "
-                 "Must be one of:\n -", "\n - ".join(allowed))
+                 "Must be one of:\n -",
+                 "\n - ".join([repr(word) for word in allowed]))
         fd[command_or_name] = d
 
     def directive_dump(self, name: str) -> None:
