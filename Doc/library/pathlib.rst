@@ -875,8 +875,6 @@ call fails (for example because the path doesn't exist).
        WindowsPath('c:/windows')
        >>> p = Path.from_uri('file:/c|/windows')
        WindowsPath('c:/windows')
-       >>> p = Path.from_uri('file://///c:/windows')
-       WindowsPath('c:/windows')
 
    URIs with no slash after the scheme (and no drive letter) are parsed as
    relative paths::

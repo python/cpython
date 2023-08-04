@@ -3463,7 +3463,6 @@ class WindowsPathTest(PathTest):
         self.assertEqual(P.from_uri('file:c|/path/to/file'), P('c:/path/to/file'))
         self.assertEqual(P.from_uri('file:/c|/path/to/file'), P('c:/path/to/file'))
         self.assertEqual(P.from_uri('file:///c|/path/to/file'), P('c:/path/to/file'))
-        self.assertEqual(P.from_uri('file://///c|/path/to/file'), P('c:/path/to/file'))
         # UNC paths
         self.assertEqual(P.from_uri('file://server/path/to/file'), P('//server/path/to/file'))
         self.assertEqual(P.from_uri('file:////server/path/to/file'), P('//server/path/to/file'))
