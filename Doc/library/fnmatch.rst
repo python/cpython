@@ -99,7 +99,7 @@ cache the compiled regex patterns in the following functions: :func:`fnmatch`,
       <re.Match object; span=(0, 10), match='foobar.txt'>
 
    A path separator character may be supplied to the *sep* argument. If given,
-   the separator is sed to split the pattern into segments, where:
+   the separator is used to split the pattern into segments, where:
 
    - A ``*`` pattern segment matches precisely one path segment.
    - A ``**`` pattern segment matches any number of path segments.
