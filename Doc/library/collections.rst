@@ -1259,8 +1259,12 @@ variants of :func:`functools.lru_cache`:
                     self.requests.popitem(last=False)
             else:
                 # no longer need to keep track of how many times this
-                # entry has been seen
-                self.requests.pop(args)
+                # entry has been seen; in a single-threaded environment,
+                # the `requests` OrderedDict will always contain the value
+                # being removed, but use `pop(args, None)` to reduce
+                # complications in a multi-threaded environment where
+                # a race condition may cause an exception
+                self.requests.pop(args, None)
                 if len(self.cache) == self.maxsize:
                     self.cache.popitem(last=False)
                 self.cache[args] = result
