@@ -4580,7 +4580,7 @@ class DSLParser:
 
     def directive_preserve(self) -> None:
         if self.preserve_output:
-            fail("Can't have preserve twice in one block!")
+            fail("Can't have 'preserve' twice in one block!")
         self.preserve_output = True
 
     def at_classmethod(self) -> None:
