@@ -70,8 +70,6 @@
         && ((C)->u->u_ste->ste_type == ModuleBlock))
 
 typedef _PyCompilerSrcLocation location;
-typedef _PyCfgInstruction cfg_instr;
-typedef _PyCfgBasicblock basicblock;
 typedef _PyCfgBuilder cfg_builder;
 
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
@@ -7728,42 +7726,14 @@ error:
 static PyObject *
 cfg_to_instructions(cfg_builder *g)
 {
-    PyObject *instructions = PyList_New(0);
-    if (instructions == NULL) {
+    instr_sequence seq;
+    memset(&seq, 0, sizeof(seq));
+    if (_PyCfg_ToInstructionSequence(g, &seq) < 0) {
         return NULL;
     }
-    int lbl = 0;
-    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        b->b_label = (jump_target_label){lbl};
-        lbl += b->b_iused;
-    }
-    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        for (int i = 0; i < b->b_iused; i++) {
-            cfg_instr *instr = &b->b_instr[i];
-            location loc = instr->i_loc;
-            int arg = HAS_TARGET(instr->i_opcode) ?
-                      instr->i_target->b_label.id : instr->i_oparg;
-
-            PyObject *inst_tuple = Py_BuildValue(
-                "(iiiiii)", instr->i_opcode, arg,
-                loc.lineno, loc.end_lineno,
-                loc.col_offset, loc.end_col_offset);
-            if (inst_tuple == NULL) {
-                goto error;
-            }
-
-            if (PyList_Append(instructions, inst_tuple) != 0) {
-                Py_DECREF(inst_tuple);
-                goto error;
-            }
-            Py_DECREF(inst_tuple);
-        }
-    }
-
-    return instructions;
-error:
-    Py_DECREF(instructions);
-    return NULL;
+    PyObject *res = instr_sequence_to_instructions(&seq);
+    instr_sequence_fini(&seq);
+    return res;
 }
 
 // C implementation of inspect.cleandoc()

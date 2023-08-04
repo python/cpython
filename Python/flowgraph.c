@@ -177,8 +177,8 @@ copy_basicblock(cfg_builder *g, basicblock *block)
     return result;
 }
 
-int
-_PyBasicblock_InsertInstruction(basicblock *block, int pos, cfg_instr *instr) {
+static int
+basicblock_insert_instruction(basicblock *block, int pos, cfg_instr *instr) {
     RETURN_IF_ERROR(basicblock_next_instr(block));
     for (int i = block->b_iused - 1; i > pos; i--) {
         block->b_instr[i] = block->b_instr[i-1];
@@ -499,14 +499,6 @@ normalize_jumps(_PyCfgBuilder *g)
     return SUCCESS;
 }
 
-int
-_PyCfg_ResolveJumps(_PyCfgBuilder *g)
-{
-    RETURN_IF_ERROR(normalize_jumps(g));
-    assert(no_redundant_jumps(g));
-    return SUCCESS;
-}
-
 static int
 check_cfg(cfg_builder *g) {
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
@@ -669,8 +661,8 @@ stackdepth_push(basicblock ***sp, basicblock *b, int depth)
 /* Find the flow path that needs the largest stack.  We assume that
  * cycles in the flow graph have no net effect on the stack depth.
  */
-int
-_PyCfg_Stackdepth(cfg_builder *g)
+static int
+calculate_stackdepth(cfg_builder *g)
 {
     basicblock *entryblock = g->g_entryblock;
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
@@ -2139,8 +2131,8 @@ push_cold_blocks_to_end(cfg_builder *g) {
     return SUCCESS;
 }
 
-void
-_PyCfg_ConvertPseudoOps(basicblock *entryblock)
+static void
+convert_pseudo_ops(basicblock *entryblock)
 {
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
@@ -2384,14 +2376,14 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
             .i_loc = LOCATION(umd->u_firstlineno, umd->u_firstlineno, -1, -1),
             .i_target = NULL,
         };
-        RETURN_IF_ERROR(_PyBasicblock_InsertInstruction(entryblock, 0, &make_gen));
+        RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 0, &make_gen));
         cfg_instr pop_top = {
             .i_opcode = POP_TOP,
             .i_oparg = 0,
             .i_loc = NO_LOCATION,
             .i_target = NULL,
         };
-        RETURN_IF_ERROR(_PyBasicblock_InsertInstruction(entryblock, 1, &pop_top));
+        RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 1, &pop_top));
     }
 
     /* Set up cells for any variable that escapes, to be put in a closure. */
@@ -2421,7 +2413,7 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
                 .i_loc = NO_LOCATION,
                 .i_target = NULL,
             };
-            if (_PyBasicblock_InsertInstruction(entryblock, ncellsused, &make_cell) < 0) {
+            if (basicblock_insert_instruction(entryblock, ncellsused, &make_cell) < 0) {
                 PyMem_RawFree(sorted);
                 return ERROR;
             }
@@ -2437,7 +2429,7 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
             .i_loc = NO_LOCATION,
             .i_target = NULL,
         };
-        RETURN_IF_ERROR(_PyBasicblock_InsertInstruction(entryblock, 0, &copy_frees));
+        RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 0, &copy_frees));
     }
 
     return SUCCESS;
@@ -2522,10 +2514,8 @@ prepare_localsplus(_PyCompile_CodeUnitMetadata *umd, cfg_builder *g, int code_fl
     return nlocalsplus;
 }
 
-typedef _PyCompile_InstructionSequence instr_sequence;
-
-static int
-cfg_to_instr_sequence(cfg_builder *g, instr_sequence *seq)
+int
+_PyCfg_ToInstructionSequence(cfg_builder *g, _PyCompile_InstructionSequence *seq)
 {
     int lbl = 0;
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
@@ -2562,9 +2552,9 @@ int
 _PyCfg_OptimizedCfgToInstructionSequence(_PyCfgBuilder *g,
                                      _PyCompile_CodeUnitMetadata *umd, int code_flags,
                                      int *stackdepth, int *nlocalsplus,
-                                     instr_sequence *seq)
+                                     _PyCompile_InstructionSequence *seq)
 {
-    *stackdepth = _PyCfg_Stackdepth(g);
+    *stackdepth = calculate_stackdepth(g);
     if (*stackdepth < 0) {
         return ERROR;
     }
@@ -2583,21 +2573,18 @@ _PyCfg_OptimizedCfgToInstructionSequence(_PyCfgBuilder *g,
         return ERROR;
     }
 
-    _PyCfg_ConvertPseudoOps(g->g_entryblock);
+    convert_pseudo_ops(g->g_entryblock);
 
     /* Order of basic blocks must have been determined by now */
 
-    if (_PyCfg_ResolveJumps(g) < 0) {
-        return ERROR;
-    }
+    RETURN_IF_ERROR(normalize_jumps(g));
+    assert(no_redundant_jumps(g));
 
     /* Can't modify the bytecode after computing jump offsets. */
-    if (cfg_to_instr_sequence(g, seq) < 0) {
+    if (_PyCfg_ToInstructionSequence(g, seq) < 0) {
         return ERROR;
     }
 
     return SUCCESS;
-
 }
-
 

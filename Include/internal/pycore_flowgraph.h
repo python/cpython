@@ -67,7 +67,6 @@ typedef struct _PyCfgBasicblock_ {
     unsigned b_warm : 1;
 } _PyCfgBasicblock;
 
-int _PyBasicblock_InsertInstruction(_PyCfgBasicblock *block, int pos, _PyCfgInstruction *instr);
 
 typedef struct cfg_builder_ {
     /* The entryblock, at which control flow begins. All blocks of the
@@ -92,13 +91,10 @@ int _PyCfgBuilder_CheckSize(_PyCfgBuilder* g);
 int _PyCfg_OptimizeCodeUnit(_PyCfgBuilder *g, PyObject *consts, PyObject *const_cache,
                             int nlocals, int nparams, int firstlineno);
 
+int _PyCfg_ToInstructionSequence(_PyCfgBuilder *g, _PyCompile_InstructionSequence *seq);
 int _PyCfg_OptimizedCfgToInstructionSequence(_PyCfgBuilder *g, _PyCompile_CodeUnitMetadata *umd,
                                              int code_flags, int *stackdepth, int *nlocalsplus,
                                              _PyCompile_InstructionSequence *seq);
-
-int _PyCfg_Stackdepth(_PyCfgBuilder *g);
-void _PyCfg_ConvertPseudoOps(_PyCfgBasicblock *entryblock);
-int _PyCfg_ResolveJumps(_PyCfgBuilder *g);
 
 PyCodeObject *
 _PyAssemble_MakeCodeObject(_PyCompile_CodeUnitMetadata *u, PyObject *const_cache,
