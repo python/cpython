@@ -5466,7 +5466,7 @@ test_deprecate_positional_use_1(PyObject *module, PyObject *const *args, Py_ssiz
     }
     #if PY_MAJOR_VERSION == 3 && \
         PY_MINOR_VERSION == 14 && \
-        PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_BETA
+        PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_ALPHA
     #  ifdef _MSC_VER
     #    pragma message ("Update 'optarg' in 'test_deprecate_positional_use_1' in 'clinic.test.c' to be keyword-only.")
     #  else
@@ -5501,7 +5501,7 @@ exit:
 static PyObject *
 test_deprecate_positional_use_1_impl(PyObject *module, PyObject *pos,
                                      int optarg)
-/*[clinic end generated code: output=9967aec5c089cab8 input=fe31c35d217b4ed4]*/
+/*[clinic end generated code: output=259fc44a87bd82af input=fe31c35d217b4ed4]*/
 
 
 /*[clinic input]

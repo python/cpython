@@ -831,7 +831,7 @@ class CLanguage(Language):
     DEPRECATED_POSITIONAL_PROTOTYPE: Final[str] = r"""
         #if PY_MAJOR_VERSION == {major} && \
             PY_MINOR_VERSION == {minor} && \
-            PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_BETA
+            PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_ALPHA
         #  ifdef _MSC_VER
         #    pragma message ("{cpp_warning}")
         #  else
