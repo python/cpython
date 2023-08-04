@@ -117,6 +117,7 @@ class FakeClinic:
 
 
 class ClinicWholeFileTest(TestCase):
+    maxDiff = None
 
     def expect_failure(self, raw, errmsg, *, filename=None, lineno=None):
         _expect_failure(self, self.clinic.parse, raw, errmsg,
@@ -425,6 +426,230 @@ class ClinicWholeFileTest(TestCase):
             [clinic start generated code]*/
         """
         self.expect_failure(block, err, lineno=3)
+
+    def test_destination_already_got_one(self):
+        err = "Destination already exists: 'test'"
+        block = """
+            /*[clinic input]
+            destination test new buffer
+            destination test new buffer
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=3)
+
+    def test_destination_does_not_exist(self):
+        err = "Destination does not exist: '/dev/null'"
+        block = """
+            /*[clinic input]
+            output everything /dev/null
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=2)
+
+    def test_class_already_got_one(self):
+        err = "Already defined class 'C'!"
+        block = """
+            /*[clinic input]
+            class C "" ""
+            class C "" ""
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=3)
+
+    def test_cant_nest_module_inside_class(self):
+        err = "Can't nest a module inside a class!"
+        block = """
+            /*[clinic input]
+            class C "" ""
+            module C.m
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=3)
+
+    def test_dest_buffer_not_empty_at_eof(self):
+        expected_warning = ("Destination buffer 'buffer' not empty at "
+                            "end of file, emptying.")
+        expected_generated = dedent("""
+            /*[clinic input]
+            output everything buffer
+            fn
+                a: object
+                /
+            [clinic start generated code]*/
+            /*[clinic end generated code: output=da39a3ee5e6b4b0d input=1c4668687f5fd002]*/
+
+            /*[clinic input]
+            dump buffer
+            [clinic start generated code]*/
+
+            PyDoc_VAR(fn__doc__);
+
+            PyDoc_STRVAR(fn__doc__,
+            "fn($module, a, /)\\n"
+            "--\\n"
+            "\\n");
+
+            #define FN_METHODDEF    \\
+                {"fn", (PyCFunction)fn, METH_O, fn__doc__},
+
+            static PyObject *
+            fn(PyObject *module, PyObject *a)
+            /*[clinic end generated code: output=be6798b148ab4e53 input=524ce2e021e4eba6]*/
+        """)
+        block = dedent("""
+            /*[clinic input]
+            output everything buffer
+            fn
+                a: object
+                /
+            [clinic start generated code]*/
+        """)
+        with support.captured_stdout() as stdout:
+            generated = self.clinic.parse(block)
+        self.assertIn(expected_warning, stdout.getvalue())
+        self.assertEqual(generated, expected_generated)
+
+    def test_directive_set_misuse(self):
+        err = "unknown variable 'ets'"
+        block = """
+            /*[clinic input]
+            set ets tse
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=2)
+
+    def test_directive_set_prefix(self):
+        block = dedent("""
+            /*[clinic input]
+            set line_prefix '// '
+            output everything suppress
+            output docstring_prototype buffer
+            fn
+                a: object
+                /
+            [clinic start generated code]*/
+            /* We need to dump the buffer.
+             * If not, Argument Clinic will emit a warning */
+            /*[clinic input]
+            dump buffer
+            [clinic start generated code]*/
+        """)
+        generated = self.clinic.parse(block)
+        expected_docstring_prototype = "// PyDoc_VAR(fn__doc__);"
+        self.assertIn(expected_docstring_prototype, generated)
+
+    def test_directive_set_suffix(self):
+        block = dedent("""
+            /*[clinic input]
+            set line_suffix '  // test'
+            output everything suppress
+            output docstring_prototype buffer
+            fn
+                a: object
+                /
+            [clinic start generated code]*/
+            /* We need to dump the buffer.
+             * If not, Argument Clinic will emit a warning */
+            /*[clinic input]
+            dump buffer
+            [clinic start generated code]*/
+        """)
+        generated = self.clinic.parse(block)
+        expected_docstring_prototype = "PyDoc_VAR(fn__doc__);  // test"
+        self.assertIn(expected_docstring_prototype, generated)
+
+    def test_directive_set_prefix_and_suffix(self):
+        block = dedent("""
+            /*[clinic input]
+            set line_prefix '{block comment start} '
+            set line_suffix ' {block comment end}'
+            output everything suppress
+            output docstring_prototype buffer
+            fn
+                a: object
+                /
+            [clinic start generated code]*/
+            /* We need to dump the buffer.
+             * If not, Argument Clinic will emit a warning */
+            /*[clinic input]
+            dump buffer
+            [clinic start generated code]*/
+        """)
+        generated = self.clinic.parse(block)
+        expected_docstring_prototype = "/* PyDoc_VAR(fn__doc__); */"
+        self.assertIn(expected_docstring_prototype, generated)
+
+    def test_directive_printout(self):
+        block = dedent("""
+            /*[clinic input]
+            output everything buffer
+            printout test
+            [clinic start generated code]*/
+        """)
+        expected = dedent("""
+            /*[clinic input]
+            output everything buffer
+            printout test
+            [clinic start generated code]*/
+            test
+            /*[clinic end generated code: output=4e1243bd22c66e76 input=898f1a32965d44ca]*/
+        """)
+        generated = self.clinic.parse(block)
+        self.assertEqual(generated, expected)
+
+    def test_directive_preserve_twice(self):
+        err = "Can't have preserve twice in one block!"
+        block = """
+            /*[clinic input]
+            preserve
+            preserve
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=3)
+
+    def test_directive_preserve_input(self):
+        err = "'preserve' only works for blocks that don't produce any output!"
+        block = """
+            /*[clinic input]
+            preserve
+            fn
+                a: object
+                /
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=6)
+
+    def test_directive_preserve_output(self):
+        err = "'preserve' only works for blocks that don't produce any output!"
+        block = dedent("""
+            /*[clinic input]
+            output everything buffer
+            preserve
+            [clinic start generated code]*/
+            // Preserve this
+            /*[clinic end generated code: output=eaa49677ae4c1f7d input=559b5db18fddae6a]*/
+            /*[clinic input]
+            dump buffer
+            [clinic start generated code]*/
+            /*[clinic end generated code: output=da39a3ee5e6b4b0d input=524ce2e021e4eba6]*/
+        """)
+        generated = self.clinic.parse(block)
+        self.assertEqual(generated, block)
+
+    def test_directive_output_invalid_command(self):
+        err = (
+            "Invalid command / destination name 'cmd', must be one of:\n"
+            "  preset push pop print everything cpp_if docstring_prototype "
+            "docstring_definition methoddef_define impl_prototype "
+            "parser_prototype parser_definition cpp_endif methoddef_ifndef "
+            "impl_definition"
+        )
+        block = """
+            /*[clinic input]
+            output cmd buffer
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=2)
 
 
 class ClinicGroupPermuterTest(TestCase):
@@ -1496,6 +1721,16 @@ class ClinicParserTest(TestCase):
         """
         self.expect_failure(block, err, lineno=3)
 
+    def test_duplicate_coexist(self):
+        err = "Called @coexist twice"
+        block = """
+            module m
+            @coexist
+            @coexist
+            m.fn
+        """
+        self.expect_failure(block, err, lineno=2)
+
     def test_unused_param(self):
         block = self.parse("""
             module foo
@@ -1931,6 +2166,67 @@ class ClinicExternalTest(TestCase):
         msg = "error: --srcdir must not be empty with --make"
         self.assertIn(msg, err)
 
+    def test_file_dest(self):
+        block = dedent("""
+            /*[clinic input]
+            destination test new file {path}.h
+            output everything test
+            func
+                a: object
+                /
+            [clinic start generated code]*/
+        """)
+        expected_checksum_line = (
+            "/*[clinic end generated code: "
+            "output=da39a3ee5e6b4b0d input=b602ab8e173ac3bd]*/\n"
+        )
+        expected_output = dedent("""\
+            /*[clinic input]
+            preserve
+            [clinic start generated code]*/
+
+            #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+            #  include "pycore_gc.h"            // PyGC_Head
+            #  include "pycore_runtime.h"       // _Py_ID()
+            #endif
+
+
+            PyDoc_VAR(func__doc__);
+
+            PyDoc_STRVAR(func__doc__,
+            "func($module, a, /)\\n"
+            "--\\n"
+            "\\n");
+
+            #define FUNC_METHODDEF    \\
+                {"func", (PyCFunction)func, METH_O, func__doc__},
+
+            static PyObject *
+            func(PyObject *module, PyObject *a)
+            /*[clinic end generated code: output=56c09670e89a0d9a input=a9049054013a1b77]*/
+        """)
+        with os_helper.temp_dir() as tmp_dir:
+            in_fn = os.path.join(tmp_dir, "test.c")
+            out_fn = os.path.join(tmp_dir, "test.c.h")
+            with open(in_fn, "w", encoding="utf-8") as f:
+                f.write(block)
+            with open(out_fn, "w", encoding="utf-8") as f:
+                f.write("")  # Write an empty output file!
+            # Clinic should complain about the empty output file.
+            _, err = self.expect_failure(in_fn)
+            expected_err = (f"Modified destination file {out_fn!r}, "
+                            "not overwriting!")
+            self.assertIn(expected_err, err)
+            # Run clinic again, this time with the -f option.
+            out = self.expect_success("-f", in_fn)
+            # Read back the generated output.
+            with open(in_fn, encoding="utf-8") as f:
+                data = f.read()
+                expected_block = f"{block}{expected_checksum_line}"
+                self.assertEqual(data, expected_block)
+            with open(out_fn, encoding="utf-8") as f:
+                data = f.read()
+                self.assertEqual(data, expected_output)
 
 try:
     import _testclinic as ac_tester
