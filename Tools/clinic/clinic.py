@@ -2044,7 +2044,7 @@ class Destination:
 
     def clear(self) -> None:
         if self.type != 'buffer':
-            fail(f"Can't clear destination {self.name!r}, it's not of type buffer")
+            fail(f"Can't clear destination {self.name!r}: it's not of type buffer")
         self.buffers.clear()
 
     def dump(self) -> str:
@@ -2277,7 +2277,7 @@ impl_definition block
                         except FileExistsError:
                             if not os.path.isdir(dirname):
                                 fail(f"Can't write to destination "
-                                     f"{destination.filename!r}, "
+                                     f"{destination.filename!r}; "
                                      f"can't make directory {dirname!r}!")
                         if self.verify:
                             with open(destination.filename) as f:
@@ -2285,7 +2285,7 @@ impl_definition block
                                 blocks = list(parser_2)
                                 if (len(blocks) != 1) or (blocks[0].input != 'preserve\n'):
                                     fail(f"Modified destination file "
-                                         f"{destination.filename!r}, not overwriting!")
+                                         f"{destination.filename!r}; not overwriting!")
                     except FileNotFoundError:
                         pass
 

@@ -2230,7 +2230,7 @@ class ClinicExternalTest(TestCase):
                 f.write("")  # Write an empty output file!
             # Clinic should complain about the empty output file.
             _, err = self.expect_failure(in_fn)
-            expected_err = (f"Modified destination file {out_fn!r}, "
+            expected_err = (f"Modified destination file {out_fn!r}; "
                             "not overwriting!")
             self.assertIn(expected_err, err)
             # Run clinic again, this time with the -f option.
