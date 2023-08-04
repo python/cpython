@@ -2781,7 +2781,7 @@ class CConverter(metaclass=CConverterAutoRegister):
     # Only used by the 'O!' format unit (and the "object" converter).
     subclass_of: str | None = None
 
-    # Do we want an adjacent '_length' variable for this variable?
+    # See also the 'length_name' property.
     # Only used by format units ending with '#'.
     length = False
 
@@ -2875,12 +2875,12 @@ class CConverter(metaclass=CConverterAutoRegister):
         s = ("&" if self.impl_by_reference else "") + name
         data.impl_arguments.append(s)
         if self.length:
-            data.impl_arguments.append(self.length_name())
+            data.impl_arguments.append(self.length_name)
 
         # impl_parameters
         data.impl_parameters.append(self.simple_declaration(by_reference=self.impl_by_reference))
         if self.length:
-            data.impl_parameters.append("Py_ssize_t " + self.length_name())
+            data.impl_parameters.append(f"Py_ssize_t {self.length_name}")
 
     def _render_non_self(
             self,
@@ -2939,6 +2939,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         self._render_self(parameter, data)
         self._render_non_self(parameter, data)
 
+    @property
     def length_name(self) -> str:
         """Computes the name of the associated "length" variable."""
         assert self.length is not None
@@ -2962,7 +2963,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         args.append(s)
 
         if self.length:
-            args.append("&" + self.length_name())
+            args.append(f"&{self.length_name}")
 
     #
     # All the functions after here are intended as extension points.
@@ -3007,9 +3008,8 @@ class CConverter(metaclass=CConverterAutoRegister):
             declaration.append(default)
         declaration.append(";")
         if self.length:
-            declaration.append('\nPy_ssize_t ')
-            declaration.append(self.length_name())
-            declaration.append(';')
+            declaration.append('\n')
+            declaration.append(f"Py_ssize_t {self.length_name};")
         return "".join(declaration)
 
     def initialize(self) -> str:
@@ -3688,29 +3688,29 @@ class str_converter(CConverter):
                     _PyArg_BadArgument("{{name}}", {displayname}, "str", {argname});
                     goto exit;
                 }}}}
-                Py_ssize_t {paramname}_length;
-                {paramname} = PyUnicode_AsUTF8AndSize({argname}, &{paramname}_length);
+                Py_ssize_t {length_name};
+                {paramname} = PyUnicode_AsUTF8AndSize({argname}, &{length_name});
                 if ({paramname} == NULL) {{{{
                     goto exit;
                 }}}}
-                if (strlen({paramname}) != (size_t){paramname}_length) {{{{
+                if (strlen({paramname}) != (size_t){length_name}) {{{{
                     PyErr_SetString(PyExc_ValueError, "embedded null character");
                     goto exit;
                 }}}}
                 """.format(argname=argname, paramname=self.parser_name,
-                           displayname=displayname)
+                           displayname=displayname, length_name=self.length_name)
         if self.format_unit == 'z':
             return """
                 if ({argname} == Py_None) {{{{
                     {paramname} = NULL;
                 }}}}
                 else if (PyUnicode_Check({argname})) {{{{
-                    Py_ssize_t {paramname}_length;
-                    {paramname} = PyUnicode_AsUTF8AndSize({argname}, &{paramname}_length);
+                    Py_ssize_t {length_name};
+                    {paramname} = PyUnicode_AsUTF8AndSize({argname}, &{length_name});
                     if ({paramname} == NULL) {{{{
                         goto exit;
                     }}}}
-                    if (strlen({paramname}) != (size_t){paramname}_length) {{{{
+                    if (strlen({paramname}) != (size_t){length_name}) {{{{
                         PyErr_SetString(PyExc_ValueError, "embedded null character");
                         goto exit;
                     }}}}
@@ -3720,7 +3720,7 @@ class str_converter(CConverter):
                     goto exit;
                 }}}}
                 """.format(argname=argname, paramname=self.parser_name,
-                           displayname=displayname)
+                           displayname=displayname, length_name=self.length_name)
         return super().parse_arg(argname, displayname)
 
 #
