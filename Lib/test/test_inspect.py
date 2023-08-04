@@ -990,6 +990,9 @@ class TestBuggyCases(GetSourceBase):
             with DirsOnSysPath(tempdir):
                 import inspect_actual
                 self.assertIn("correct", inspect.getsource(inspect_actual.A))
+                # Remove the module from sys.modules to force it to be reloaded.
+                # This is necessary when the test is run multiple times.
+                sys.modules.pop("inspect_actual")
 
     @unittest.skipIf(
         support.is_emscripten or support.is_wasi,
