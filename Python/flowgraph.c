@@ -313,8 +313,8 @@ cfg_builder_check(cfg_builder *g)
 }
 #endif
 
-int
-_PyCfgBuilder_Init(cfg_builder *g)
+static int
+init_cfg_builder(cfg_builder *g)
 {
     g->g_block_list = NULL;
     basicblock *block = cfg_builder_new_block(g);
@@ -326,9 +326,28 @@ _PyCfgBuilder_Init(cfg_builder *g)
     return SUCCESS;
 }
 
-void
-_PyCfgBuilder_Fini(cfg_builder* g)
+cfg_builder *
+_PyCfgBuilder_New(void)
 {
+    cfg_builder *g = PyMem_Malloc(sizeof(cfg_builder));
+    if (g == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    memset(g, 0, sizeof(cfg_builder));
+    if (init_cfg_builder(g) < 0) {
+        PyMem_Free(g);
+        return NULL;
+    }
+    return g;
+}
+
+void
+_PyCfgBuilder_Free(cfg_builder* g)
+{
+    if (g == NULL) {
+        return;
+    }
     assert(cfg_builder_check(g));
     basicblock *b = g->g_block_list;
     while (b != NULL) {
@@ -339,6 +358,7 @@ _PyCfgBuilder_Fini(cfg_builder* g)
         PyObject_Free((void *)b);
         b = next;
     }
+    PyMem_Free(g);
 }
 
 int

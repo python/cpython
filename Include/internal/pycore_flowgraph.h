@@ -85,8 +85,8 @@ typedef struct cfg_builder_ {
 int _PyCfgBuilder_UseLabel(_PyCfgBuilder *g, _PyCfgJumpTargetLabel lbl);
 int _PyCfgBuilder_Addop(_PyCfgBuilder *g, int opcode, int oparg, _PyCompilerSrcLocation loc);
 
-int _PyCfgBuilder_Init(_PyCfgBuilder *g);
-void _PyCfgBuilder_Fini(_PyCfgBuilder *g);
+_PyCfgBuilder* _PyCfgBuilder_New(void);
+void _PyCfgBuilder_Free(_PyCfgBuilder *g);
 
 int _PyCfg_OptimizeCodeUnit(_PyCfgBuilder *g, PyObject *consts, PyObject *const_cache,
                             int nlocals, int nparams, int firstlineno);

@@ -288,10 +288,12 @@ instr_sequence_fini(instr_sequence *seq) {
     seq->s_instrs = NULL;
 }
 
-static int
-instr_sequence_to_cfg(instr_sequence *seq, cfg_builder *g) {
-    memset(g, 0, sizeof(cfg_builder));
-    RETURN_IF_ERROR(_PyCfgBuilder_Init(g));
+static cfg_builder*
+instr_sequence_to_cfg(instr_sequence *seq) {
+    cfg_builder *g = _PyCfgBuilder_New();
+    if (g == NULL) {
+        return NULL;
+    }
 
     /* There can be more than one label for the same offset. The
      * offset2lbl maping selects one of them which we use consistently.
@@ -300,7 +302,7 @@ instr_sequence_to_cfg(instr_sequence *seq, cfg_builder *g) {
     int *offset2lbl = PyMem_Malloc(seq->s_used * sizeof(int));
     if (offset2lbl == NULL) {
         PyErr_NoMemory();
-        return ERROR;
+        goto error;
     }
     for (int i = 0; i < seq->s_used; i++) {
         offset2lbl[i] = -1;
@@ -344,12 +346,13 @@ instr_sequence_to_cfg(instr_sequence *seq, cfg_builder *g) {
     }
     if ((size_t)nblocks > SIZE_MAX / sizeof(basicblock *)) {
         PyErr_NoMemory();
-        return ERROR;
+        goto error;
     }
-    return SUCCESS;
+    return g;
 error:
     PyMem_Free(offset2lbl);
-    return ERROR;
+    _PyCfgBuilder_Free(g);
+    return NULL;
 }
 
 
@@ -7512,6 +7515,7 @@ static PyCodeObject *
 optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
                    int code_flags, PyObject *filename)
 {
+    cfg_builder *g = NULL;
     instr_sequence optimized_instrs;
     memset(&optimized_instrs, 0, sizeof(instr_sequence));
 
@@ -7520,29 +7524,29 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     if (consts == NULL) {
         goto error;
     }
-    cfg_builder g;
-    if (instr_sequence_to_cfg(&u->u_instr_sequence, &g) < 0) {
+    g = instr_sequence_to_cfg(&u->u_instr_sequence);
+    if (g == NULL) {
         goto error;
     }
     int nlocals = (int)PyDict_GET_SIZE(u->u_metadata.u_varnames);
     int nparams = (int)PyList_GET_SIZE(u->u_ste->ste_varnames);
     assert(u->u_metadata.u_firstlineno);
 
-    if (_PyCfg_OptimizeCodeUnit(&g, consts, const_cache, nlocals,
+    if (_PyCfg_OptimizeCodeUnit(g, consts, const_cache, nlocals,
                                 nparams, u->u_metadata.u_firstlineno) < 0) {
         goto error;
     }
 
     int stackdepth;
     int nlocalsplus;
-    if (_PyCfg_OptimizedCfgToInstructionList(&g, &u->u_metadata, code_flags,
+    if (_PyCfg_OptimizedCfgToInstructionList(g, &u->u_metadata, code_flags,
                                              &stackdepth, &nlocalsplus) < 0) {
         goto error;
     }
 
     /** Assembly **/
 
-    if (cfg_to_instr_sequence(&g, &optimized_instrs) < 0) {
+    if (cfg_to_instr_sequence(g, &optimized_instrs) < 0) {
         goto error;
     }
 
@@ -7553,7 +7557,7 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
 error:
     Py_XDECREF(consts);
     instr_sequence_fini(&optimized_instrs);
-    _PyCfgBuilder_Fini(&g);
+    _PyCfgBuilder_Free(g);
     return co;
 }
 
@@ -7709,23 +7713,26 @@ error:
     return ERROR;
 }
 
-static int
-instructions_to_cfg(PyObject *instructions, cfg_builder *g)
+static cfg_builder*
+instructions_to_cfg(PyObject *instructions)
 {
+    cfg_builder *g = NULL;
     instr_sequence seq;
     memset(&seq, 0, sizeof(instr_sequence));
 
     if (instructions_to_instr_sequence(instructions, &seq) < 0) {
         goto error;
     }
-    if (instr_sequence_to_cfg(&seq, g) < 0) {
+    g = instr_sequence_to_cfg(&seq);
+    if (g == NULL) {
         goto error;
     }
     instr_sequence_fini(&seq);
-    return SUCCESS;
+    return g;
 error:
+    _PyCfgBuilder_Free(g);
     instr_sequence_fini(&seq);
-    return ERROR;
+    return NULL;
 }
 
 static PyObject *
@@ -7981,25 +7988,26 @@ finally:
 PyObject *
 _PyCompile_OptimizeCfg(PyObject *instructions, PyObject *consts, int nlocals)
 {
+    cfg_builder *g = NULL;
     PyObject *res = NULL;
     PyObject *const_cache = PyDict_New();
     if (const_cache == NULL) {
         return NULL;
     }
 
-    cfg_builder g;
-    if (instructions_to_cfg(instructions, &g) < 0) {
+    g = instructions_to_cfg(instructions);
+    if (g == NULL) {
         goto error;
     }
     int nparams = 0, firstlineno = 1;
-    if (_PyCfg_OptimizeCodeUnit(&g, consts, const_cache, nlocals,
+    if (_PyCfg_OptimizeCodeUnit(g, consts, const_cache, nlocals,
                                 nparams, firstlineno) < 0) {
         goto error;
     }
-    res = cfg_to_instructions(&g);
+    res = cfg_to_instructions(g);
 error:
     Py_DECREF(const_cache);
-    _PyCfgBuilder_Fini(&g);
+    _PyCfgBuilder_Free(g);
     return res;
 }
 
@@ -8009,6 +8017,7 @@ PyCodeObject *
 _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
                     PyObject *instructions)
 {
+    cfg_builder *g = NULL;
     PyCodeObject *co = NULL;
     instr_sequence optimized_instrs;
     memset(&optimized_instrs, 0, sizeof(instr_sequence));
@@ -8018,23 +8027,23 @@ _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
         return NULL;
     }
 
-    cfg_builder g;
-    if (instructions_to_cfg(instructions, &g) < 0) {
+    g = instructions_to_cfg(instructions);
+    if (g == NULL) {
         goto error;
     }
 
-    if (_PyCfg_JumpLabelsToTargets(g.g_entryblock) < 0) {
+    if (_PyCfg_JumpLabelsToTargets(g->g_entryblock) < 0) {
         goto error;
     }
 
     int code_flags = 0;
     int stackdepth, nlocalsplus;
-    if (_PyCfg_OptimizedCfgToInstructionList(&g, umd, code_flags,
+    if (_PyCfg_OptimizedCfgToInstructionList(g, umd, code_flags,
                                              &stackdepth, &nlocalsplus) < 0) {
         goto error;
     }
 
-    if (cfg_to_instr_sequence(&g, &optimized_instrs) < 0) {
+    if (cfg_to_instr_sequence(g, &optimized_instrs) < 0) {
         goto error;
     }
 
@@ -8049,7 +8058,7 @@ _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
 
 error:
     Py_DECREF(const_cache);
-    _PyCfgBuilder_Fini(&g);
+    _PyCfgBuilder_Free(g);
     instr_sequence_fini(&optimized_instrs);
     return co;
 }
