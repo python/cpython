@@ -1260,7 +1260,7 @@ variants of :func:`functools.lru_cache`:
             else:
                 # no longer need to keep track of how many times this
                 # entry has been seen; in a single-threaded environment,
-                # the `requests` OrderedDict will always contain the value
+                # the self.requests OrderedDict will always contain the value
                 # being removed, but use `pop(args, None)` to reduce
                 # complications in a multi-threaded environment where
                 # a race condition may cause an exception
