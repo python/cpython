@@ -1861,6 +1861,9 @@ monitoring_register_callback_impl(PyObject *module, int tool_id, int event,
         PyErr_Format(PyExc_ValueError, "invalid event %d", event);
         return NULL;
     }
+    if (PySys_Audit("sys.monitoring.register_callback", "O", func) < 0) {
+        return NULL;
+    }
     if (func == Py_None) {
         func = NULL;
     }
