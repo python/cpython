@@ -4666,9 +4666,9 @@ class DSLParser:
                 fail(str(e))
             return
 
-        self.next(self.state_modulename_name, line)
+        self.parse_modulename_name(line)
 
-    def state_modulename_name(self, line: str) -> None:
+    def parse_modulename_name(self, line: str) -> None:
         # looking for declaration, which establishes the leftmost column
         # line should be
         #     modulename.fnname [as c_basename] [-> return annotation]
@@ -4684,9 +4684,6 @@ class DSLParser:
         #
         # this line is permitted to start with whitespace.
         # we'll call this number of spaces F (for "function").
-
-        if not self.valid_line(line):
-            return
 
         self.indent.infer(line)
 
@@ -4896,7 +4893,10 @@ class DSLParser:
 
         if indent == 1:
             # we indented, must be to new parameter docstring column
-            return self.next(self.state_parameter_docstring_start, line)
+            assert self.indent.margin is not None
+            self.parameter_docstring_indent = len(self.indent.margin)
+            assert self.indent.depth == 3
+            return self.next(self.state_parameter_docstring, line)
 
         line = line.rstrip()
         if line.endswith('\\'):
@@ -5277,12 +5277,6 @@ class DSLParser:
                 fail(f"Function {function.name!r} mixes keyword-only and "
                      "positional-only parameters, which is unsupported.")
             p.kind = inspect.Parameter.POSITIONAL_ONLY
-
-    def state_parameter_docstring_start(self, line: str) -> None:
-        assert self.indent.margin is not None, "self.margin.infer() has not yet been called to set the margin"
-        self.parameter_docstring_indent = len(self.indent.margin)
-        assert self.indent.depth == 3
-        return self.next(self.state_parameter_docstring, line)
 
     def docstring_append(self, obj: Function | Parameter, line: str) -> None:
         """Add a rstripped line to the current docstring."""
