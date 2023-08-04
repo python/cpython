@@ -4685,9 +4685,7 @@ class DSLParser:
         # this line is permitted to start with whitespace.
         # we'll call this number of spaces F (for "function").
 
-        if not self.valid_line(line):
-            return
-
+        assert self.valid_line(line)
         self.indent.infer(line)
 
         # are we cloning?
