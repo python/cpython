@@ -886,9 +886,7 @@ class CLanguage(Language):
         converters = [p.converter for p in parameters]
 
         has_option_groups = parameters and (parameters[0].group or parameters[-1].group)
-        default_return_converter = (not f.return_converter or
-            f.return_converter.type == 'PyObject *')
-
+        default_return_converter = f.return_converter.type == 'PyObject *'
         new_or_init = f.kind.new_or_init
 
         vararg: int | str = NO_VARARG
@@ -4428,7 +4426,7 @@ class DSLParser:
     keyword_only: bool
     positional_only: bool
     group: int
-    parameter_state: int
+    parameter_state: ParamState
     seen_positional_with_default: bool
     indent: IndentStack
     kind: FunctionKind
@@ -4790,8 +4788,6 @@ class DSLParser:
         if not return_converter:
             return_converter = CReturnConverter()
 
-        if not module:
-            fail("Undefined module used in declaration of {full_name.strip()!r}.")
         self.function = Function(name=function_name, full_name=full_name, module=module, cls=cls, c_basename=c_basename,
                                  return_converter=return_converter, kind=self.kind, coexist=self.coexist)
         self.block.signatures.append(self.function)
