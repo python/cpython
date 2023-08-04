@@ -5308,23 +5308,13 @@ class DSLParser:
 
         self.docstring_append(self.function, line)
 
-    def format_docstring(self) -> str:
-        f = self.function
-        assert f is not None
-
-        new_or_init = f.kind.new_or_init
-        if new_or_init and not f.docstring:
-            # don't render a docstring at all, no signature, nothing.
-            return f.docstring
-
+    @staticmethod
+    def format_docstring_signature(
+            f: Function,
+            parameters: list[Parameter]
+    ) -> str:
         text, add, output = _text_accumulator()
-        parameters = f.render_parameters
-
-        ##
-        ## docstring first line
-        ##
-
-        if new_or_init:
+        if f.kind.new_or_init:
             # classes get *just* the name of the class
             # not __new__, not __init__, and not module.classname
             assert f.cls
@@ -5484,35 +5474,39 @@ class DSLParser:
         if not f.docstring_only:
             add("\n" + sig_end_marker + "\n")
 
-        docstring_first_line = output()
+        signature_line = output()
 
         # now fix up the places where the brackets look wrong
-        docstring_first_line = docstring_first_line.replace(', ]', ',] ')
+        return signature_line.replace(', ]', ',] ')
 
-        # okay.  now we're officially building the "parameters" section.
-        # create substitution text for {parameters}
+    @staticmethod
+    def format_docstring_parameters(params: list[Parameter]) -> str:
+        """Create substitution text for {parameters}"""
+        text, add, output = _text_accumulator()
         spacer_line = False
-        for p in parameters:
-            if not p.docstring.strip():
+        for param in params:
+            docstring = param.docstring.strip()
+            if not docstring:
                 continue
             if spacer_line:
                 add('\n')
             else:
                 spacer_line = True
             add("  ")
-            add(p.name)
+            add(param.name)
             add('\n')
-            add(textwrap.indent(rstrip_lines(p.docstring.rstrip()), "    "))
-        parameters_output = output()
-        if parameters_output:
-            parameters_output += '\n'
+            stripped = rstrip_lines(docstring.rstrip())
+            add(textwrap.indent(stripped, "    "))
+        if text:
+            add('\n')
+        return output()
 
-        ##
-        ## docstring body
-        ##
-
-        docstring = f.docstring.rstrip()
-        lines = [line.rstrip() for line in docstring.split('\n')]
+    def format_docstring(self) -> str:
+        assert self.function is not None
+        f = self.function
+        if f.kind.new_or_init and not f.docstring:
+            # don't render a docstring at all, no signature, nothing.
+            return f.docstring
 
         # Enforce the summary line!
         # The first line of a docstring should be a summary of the function.
@@ -5526,6 +5520,7 @@ class DSLParser:
         # Guido said Clinic should enforce this:
         # http://mail.python.org/pipermail/python-dev/2013-June/127110.html
 
+        lines = [line for line in f.docstring.split('\n')]
         if len(lines) >= 2:
             if lines[1]:
                 fail("Docstring for " + f.full_name + " does not have a summary line!\n" +
@@ -5537,26 +5532,23 @@ class DSLParser:
             # between it and the {parameters} we're about to add.
             lines.append('')
 
-        parameters_marker_count = len(docstring.split('{parameters}')) - 1
+        parameters_marker_count = len(f.docstring.split('{parameters}')) - 1
         if parameters_marker_count > 1:
             fail('You may not specify {parameters} more than once in a docstring!')
 
+        # insert signature at front and params after the summary line
         if not parameters_marker_count:
-            # insert after summary line
             lines.insert(2, '{parameters}')
+        lines.insert(0, '{signature}')
 
-        # insert at front of docstring
-        lines.insert(0, docstring_first_line)
-
+        # finalize docstring
+        params = f.render_parameters
+        parameters = self.format_docstring_parameters(params)
+        signature = self.format_docstring_signature(f, params)
         docstring = "\n".join(lines)
-
-        add(docstring)
-        docstring = output()
-
-        docstring = linear_format(docstring, parameters=parameters_output)
-        docstring = docstring.rstrip()
-
-        return docstring
+        return linear_format(docstring,
+                             signature=signature,
+                             parameters=parameters).rstrip()
 
     def do_post_block_processing_cleanup(self) -> None:
         """
