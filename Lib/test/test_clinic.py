@@ -1537,18 +1537,19 @@ class ClinicParserTest(TestCase):
         err = "Function 'bar': '* [from ...]' must come before '*'"
         self.expect_failure(block, err, lineno=4)
 
-    def test_duplicate_depr_star(self):
+    def test_depr_star_duplicate(self):
         block = """
             module foo
             foo.bar
                 a: int
                 * [from 3.14]
-                * [from 3.14]
                 b: int
+                * [from 3.14]
+                c: int
             Docstring.
         """
         err = "Function 'bar' uses '[from ...]' more than once"
-        self.expect_failure(block, err, lineno=4)
+        self.expect_failure(block, err, lineno=5)
 
     def test_single_slash(self):
         block = """
