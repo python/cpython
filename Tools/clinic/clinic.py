@@ -2939,7 +2939,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         self._render_self(parameter, data)
         self._render_non_self(parameter, data)
 
-    @property
+    @functools.cached_property
     def length_name(self) -> str:
         """Computes the name of the associated "length" variable."""
         assert self.length is not None
