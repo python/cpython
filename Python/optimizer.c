@@ -368,7 +368,7 @@ PySequenceMethods uop_as_sequence = {
 static PyTypeObject UOpExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uop_executor",
-    .tp_basicsize = sizeof(_PyUOpExecutorObject),
+    .tp_basicsize = sizeof(_PyUOpExecutorObject) - sizeof(_PyUOpInstruction),
     .tp_itemsize = sizeof(_PyUOpInstruction),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_dealloc = (destructor)uop_dealloc,
