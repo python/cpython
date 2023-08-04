@@ -25,11 +25,13 @@
 
 #include "Python.h"
 #include "pycore_context.h"
+#include "pycore_dict.h"          // _PyDict_MaybeUntrack()
 #include "pycore_initconfig.h"
-#include "pycore_interp.h"      // PyInterpreterState.gc
+#include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
-#include "pycore_pystate.h"     // _PyThreadState_GET()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_weakref.h"       // _PyWeakref_ClearRef()
 #include "pydtrace.h"
 
 typedef struct _gc_runtime_state GCState;
@@ -68,11 +70,9 @@ module gc
 // most gc_list_* functions for it.
 #define NEXT_MASK_UNREACHABLE  (1)
 
-/* Get an object's GC head */
-#define AS_GC(o) ((PyGC_Head *)(((char *)(o))-sizeof(PyGC_Head)))
+#define AS_GC(op) _Py_AS_GC(op)
+#define FROM_GC(gc) _Py_FROM_GC(gc)
 
-/* Get the object given the GC head */
-#define FROM_GC(g) ((PyObject *)(((char *)(g))+sizeof(PyGC_Head)))
 
 static inline int
 gc_is_collecting(PyGC_Head *g)
@@ -460,6 +460,7 @@ update_refs(PyGC_Head *containers)
 static int
 visit_decref(PyObject *op, void *parent)
 {
+    OBJECT_STAT_INC(object_visits);
     _PyObject_ASSERT(_PyObject_CAST(parent), !_PyObject_IsFreed(op));
 
     if (_PyObject_IS_GC(op)) {
@@ -498,6 +499,7 @@ subtract_refs(PyGC_Head *containers)
 static int
 visit_reachable(PyObject *op, PyGC_Head *reachable)
 {
+    OBJECT_STAT_INC(object_visits);
     if (!_PyObject_IS_GC(op)) {
         return 0;
     }
@@ -725,6 +727,7 @@ clear_unreachable_mask(PyGC_Head *unreachable)
 static int
 visit_move(PyObject *op, PyGC_Head *tolist)
 {
+    OBJECT_STAT_INC(object_visits);
     if (_PyObject_IS_GC(op)) {
         PyGC_Head *gc = AS_GC(op);
         if (gc_is_collecting(gc)) {
@@ -861,7 +864,7 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
              * to imagine how calling it later could create a problem for us.  wr
              * is moved to wrcb_to_call in this case.
              */
-            if (gc_is_collecting(AS_GC(wr))) {
+            if (gc_is_collecting(AS_GC((PyObject *)wr))) {
                 /* it should already have been cleared above */
                 assert(wr->wr_object == Py_None);
                 continue;
@@ -873,7 +876,7 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
             Py_INCREF(wr);
 
             /* Move wr to wrcb_to_call, for the next pass. */
-            wrasgc = AS_GC(wr);
+            wrasgc = AS_GC((PyObject *)wr);
             assert(wrasgc != next); /* wrasgc is reachable, but
                                        next isn't, so they can't
                                        be the same */
@@ -1195,6 +1198,12 @@ gc_collect_main(PyThreadState *tstate, int generation,
                 Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
                 int nofail)
 {
+    GC_STAT_ADD(generation, collections, 1);
+#ifdef Py_STATS
+    if (_py_stats) {
+        _py_stats->object_stats.object_visits = 0;
+    }
+#endif
     int i;
     Py_ssize_t m = 0; /* # objects collected */
     Py_ssize_t n = 0; /* # unreachable objects that couldn't be collected */
@@ -1350,6 +1359,15 @@ gc_collect_main(PyThreadState *tstate, int generation,
     stats->collections++;
     stats->collected += m;
     stats->uncollectable += n;
+
+    GC_STAT_ADD(generation, objects_collected, m);
+#ifdef Py_STATS
+    if (_py_stats) {
+        GC_STAT_ADD(generation, object_visits,
+            _py_stats->object_stats.object_visits);
+        _py_stats->object_stats.object_visits = 0;
+    }
+#endif
 
     if (PyDTrace_GC_DONE_ENABLED()) {
         PyDTrace_GC_DONE(n + m);
@@ -1909,7 +1927,7 @@ static PyObject *
 gc_is_finalized(PyObject *module, PyObject *obj)
 /*[clinic end generated code: output=e1516ac119a918ed input=201d0c58f69ae390]*/
 {
-    if (_PyObject_IS_GC(obj) && _PyGCHead_FINALIZED(AS_GC(obj))) {
+    if (_PyObject_IS_GC(obj) && _PyGC_FINALIZED(obj)) {
          Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;
@@ -2044,6 +2062,7 @@ gcmodule_exec(PyObject *module)
 
 static PyModuleDef_Slot gcmodule_slots[] = {
     {Py_mod_exec, gcmodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
@@ -2174,23 +2193,6 @@ _PyGC_DumpShutdownStats(PyInterpreterState *interp)
 }
 
 
-static void
-gc_fini_untrack(PyGC_Head *list)
-{
-    PyGC_Head *gc;
-    for (gc = GC_NEXT(list); gc != list; gc = GC_NEXT(list)) {
-        PyObject *op = FROM_GC(gc);
-        _PyObject_GC_UNTRACK(op);
-        // gh-92036: If a deallocator function expect the object to be tracked
-        // by the GC (ex: func_dealloc()), it can crash if called on an object
-        // which is no longer tracked by the GC. Leak one strong reference on
-        // purpose so the object is never deleted and its deallocator is not
-        // called.
-        Py_INCREF(op);
-    }
-}
-
-
 void
 _PyGC_Fini(PyInterpreterState *interp)
 {
@@ -2198,17 +2200,9 @@ _PyGC_Fini(PyInterpreterState *interp)
     Py_CLEAR(gcstate->garbage);
     Py_CLEAR(gcstate->callbacks);
 
-    if (!_Py_IsMainInterpreter(interp)) {
-        // bpo-46070: Explicitly untrack all objects currently tracked by the
-        // GC. Otherwise, if an object is used later by another interpreter,
-        // calling PyObject_GC_UnTrack() on the object crashs if the previous
-        // or the next object of the PyGC_Head structure became a dangling
-        // pointer.
-        for (int i = 0; i < NUM_GENERATIONS; i++) {
-            PyGC_Head *gen = GEN_HEAD(gcstate, i);
-            gc_fini_untrack(gen);
-        }
-    }
+    /* We expect that none of this interpreters objects are shared
+       with other interpreters.
+       See https://github.com/python/cpython/issues/90228. */
 }
 
 /* for debugging */
@@ -2433,7 +2427,7 @@ PyObject_GC_IsTracked(PyObject* obj)
 int
 PyObject_GC_IsFinalized(PyObject *obj)
 {
-    if (_PyObject_IS_GC(obj) && _PyGCHead_FINALIZED(AS_GC(obj))) {
+    if (_PyObject_IS_GC(obj) && _PyGC_FINALIZED(obj)) {
          return 1;
     }
     return 0;
