@@ -709,6 +709,7 @@ class CheckEvents(MonitoringTestBase, unittest.TestCase):
 
     def check_balanced(self, func, recorders):
         events = self.get_events(func, TEST_TOOL, recorders)
+        print("----\n", events, "\n------")
         self.assertEqual(len(events)%2, 0)
         for r, h in zip(events[::2],events[1::2]):
             r0 = r[0]
@@ -742,6 +743,13 @@ class ExceptionHandledRecorder(ExceptionRecorder):
 
     def __call__(self, code, offset, exc):
         self.events.append(("handled", type(exc)))
+
+class ThrowRecorder(ExceptionRecorder):
+
+    event_type = E.PY_THROW
+
+    def __call__(self, code, offset, exc):
+        self.events.append(("throw", type(exc)))
 
 class ExceptionMonitoringTest(CheckEvents):
 
@@ -887,6 +895,31 @@ class ExceptionMonitoringTest(CheckEvents):
         self.check_balanced(
             func,
             recorders = self.exception_recorders)
+
+    def test_throw(self):
+
+        def gen():
+            yield 1
+            yield 2
+
+        def func():
+            try:
+                g = gen()
+                next(g)
+                g.throw(IndexError)
+            except IndexError:
+                pass
+
+        self.check_balanced(
+            func,
+            recorders = self.exception_recorders)
+
+        events = self.get_events(
+            func,
+            TEST_TOOL,
+            self.exception_recorders + (ThrowRecorder,)
+        )
+        self.assertEqual(events[0], ("throw", IndexError))
 
 class LineRecorder:
 
