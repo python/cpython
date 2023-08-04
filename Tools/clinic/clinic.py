@@ -5520,7 +5520,7 @@ class DSLParser:
         # Guido said Clinic should enforce this:
         # http://mail.python.org/pipermail/python-dev/2013-June/127110.html
 
-        lines = [line for line in f.docstring.split('\n')]
+        lines = f.docstring.split('\n')
         if len(lines) >= 2:
             if lines[1]:
                 fail("Docstring for " + f.full_name + " does not have a summary line!\n" +
