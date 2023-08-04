@@ -1,7 +1,7 @@
 import collections.abc
 import types
 import unittest
-
+from test.support import C_RECURSION_LIMIT
 
 class TestExceptionGroupTypeHierarchy(unittest.TestCase):
     def test_exception_group_types(self):
@@ -433,7 +433,7 @@ class ExceptionGroupSplitTests(ExceptionGroupTestBase):
 class DeepRecursionInSplitAndSubgroup(unittest.TestCase):
     def make_deep_eg(self):
         e = TypeError(1)
-        for i in range(2000):
+        for i in range(C_RECURSION_LIMIT + 1):
             e = ExceptionGroup('eg', [e])
         return e
 
