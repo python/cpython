@@ -334,6 +334,16 @@ class ClinicWholeFileTest(_ParserBase):
         )
         self.assertIn(msg, out)
 
+    def test_module_already_got_one(self):
+        err = "Already defined module 'm'!"
+        block = """
+            /*[clinic input]
+            module m
+            module m
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=3)
+
 
 class ClinicGroupPermuterTest(TestCase):
     def _test(self, l, m, r, output):
