@@ -1684,27 +1684,30 @@ class Block:
     found on the start line of the block between the square
     brackets.
 
-    signatures is either list or None.  If it's a list,
-    it may only contain clinic.Module, clinic.Class, and
+    signatures is a list.
+    It may only contain clinic.Module, clinic.Class, and
     clinic.Function objects.  At the moment it should
     contain at most one of each.
 
     output is either str or None.  If str, it's the output
     from this block, with embedded '\n' characters.
 
-    indent is either str or None.  It's the leading whitespace
+    indent is a str.  It's the leading whitespace
     that was found on every line of input.  (If body_prefix is
     not empty, this is the indent *after* removing the
     body_prefix.)
 
-    preindent is either str or None.  It's the whitespace that
+    "indent" is different from the concept of "preindent"
+    (which is not stored as state on Block objects).
+    "preindent" is the whitespace that
     was found in front of every line of input *before* the
     "body_prefix" (see the Language object).  If body_prefix
     is empty, preindent must always be empty too.
 
-    To illustrate indent and preindent: Assume that '_'
-    represents whitespace.  If the block processed was in a
-    Python file, and looked like this:
+    To illustrate the difference between "indent" and "preindent":
+
+    Assume that '_' represents whitespace.
+    If the block processed was in a Python file, and looked like this:
       ____#/*[python]
       ____#__for a in range(20):
       ____#____print(a)
