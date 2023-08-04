@@ -2044,7 +2044,7 @@ class Destination:
 
     def clear(self) -> None:
         if self.type != 'buffer':
-            fail(f"Can't clear destination {self.name!r}: it's not of type buffer")
+            fail(f"Can't clear destination {self.name!r}: it's not of type 'buffer'")
         self.buffers.clear()
 
     def dump(self) -> str:
