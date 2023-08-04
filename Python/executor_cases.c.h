@@ -463,9 +463,11 @@
         }
 
         case BINARY_SUBSCR_STR_INT: {
-            PyObject *sub = stack_pointer[-1];
-            PyObject *str = stack_pointer[-2];
+            PyObject *sub;
+            PyObject *str;
             PyObject *res;
+            sub = stack_pointer[-1];
+            str = stack_pointer[-2];
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
             DEOPT_IF(!PyUnicode_CheckExact(str), BINARY_SUBSCR);
             DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub), BINARY_SUBSCR);
