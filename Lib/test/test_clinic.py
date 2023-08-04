@@ -506,6 +506,15 @@ class ClinicWholeFileTest(TestCase):
         self.assertIn(expected_warning, stdout.getvalue())
         self.assertEqual(generated, expected_generated)
 
+    def test_dest_clear(self):
+        err = "Can't clear destination 'file': it's not of type 'buffer'"
+        block = """
+            /*[clinic input]
+            destination file clear
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=2)
+
     def test_directive_set_misuse(self):
         err = "unknown variable 'ets'"
         block = """
