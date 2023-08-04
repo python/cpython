@@ -26,7 +26,15 @@ typedef _PyCompilerSrcLocation location;
 typedef _PyCfgJumpTargetLabel jump_target_label;
 typedef _PyCfgBasicblock basicblock;
 typedef _PyCfgBuilder cfg_builder;
-typedef _PyCfgInstruction cfg_instr;
+
+typedef struct _PyCfgInstruction {
+    int i_opcode;
+    int i_oparg;
+    _PyCompilerSrcLocation i_loc;
+    struct _PyCfgBasicblock_ *i_target; /* target block (if jump instruction) */
+    struct _PyCfgBasicblock_ *i_except; /* target block when exception is raised */
+} cfg_instr;
+
 
 static const jump_target_label NO_LABEL = {-1};
 
@@ -52,7 +60,7 @@ is_jump(cfg_instr *i)
 #define INSTR_SET_OP1(I, OP, ARG) \
     do { \
         assert(OPCODE_HAS_ARG(OP)); \
-        _PyCfgInstruction *_instr__ptr_ = (I); \
+        struct _PyCfgInstruction *_instr__ptr_ = (I); \
         _instr__ptr_->i_opcode = (OP); \
         _instr__ptr_->i_oparg = (ARG); \
     } while (0);
@@ -61,7 +69,7 @@ is_jump(cfg_instr *i)
 #define INSTR_SET_OP0(I, OP) \
     do { \
         assert(!OPCODE_HAS_ARG(OP)); \
-        _PyCfgInstruction *_instr__ptr_ = (I); \
+        struct _PyCfgInstruction *_instr__ptr_ = (I); \
         _instr__ptr_->i_opcode = (OP); \
         _instr__ptr_->i_oparg = 0; \
     } while (0);
@@ -151,7 +159,7 @@ basicblock_last_instr(const basicblock *b) {
 
 static inline int
 basicblock_nofallthrough(const _PyCfgBasicblock *b) {
-    _PyCfgInstruction *last = basicblock_last_instr(b);
+    struct _PyCfgInstruction *last = basicblock_last_instr(b);
     return (last &&
             (IS_SCOPE_EXIT_OPCODE(last->i_opcode) ||
              IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)));
@@ -581,10 +589,14 @@ mark_except_handlers(basicblock *entryblock) {
 }
 
 
-typedef _PyCfgExceptStack ExceptStack;
+struct _PyCfgExceptStack {
+    struct _PyCfgBasicblock_ *handlers[CO_MAXBLOCKS+1];
+    int depth;
+};
+
 
 static basicblock *
-push_except_block(ExceptStack *stack, cfg_instr *setup) {
+push_except_block(struct _PyCfgExceptStack *stack, cfg_instr *setup) {
     assert(is_block_push(setup));
     int opcode = setup->i_opcode;
     basicblock * target = setup->i_target;
@@ -596,19 +608,19 @@ push_except_block(ExceptStack *stack, cfg_instr *setup) {
 }
 
 static basicblock *
-pop_except_block(ExceptStack *stack) {
+pop_except_block(struct _PyCfgExceptStack *stack) {
     assert(stack->depth > 0);
     return stack->handlers[--stack->depth];
 }
 
 static basicblock *
-except_stack_top(ExceptStack *stack) {
+except_stack_top(struct _PyCfgExceptStack *stack) {
     return stack->handlers[stack->depth];
 }
 
-static ExceptStack *
+static struct _PyCfgExceptStack *
 make_except_stack(void) {
-    ExceptStack *new = PyMem_Malloc(sizeof(ExceptStack));
+    struct _PyCfgExceptStack *new = PyMem_Malloc(sizeof(struct _PyCfgExceptStack));
     if (new == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -618,14 +630,14 @@ make_except_stack(void) {
     return new;
 }
 
-static ExceptStack *
-copy_except_stack(ExceptStack *stack) {
-    ExceptStack *copy = PyMem_Malloc(sizeof(ExceptStack));
+static struct _PyCfgExceptStack *
+copy_except_stack(struct _PyCfgExceptStack *stack) {
+    struct _PyCfgExceptStack *copy = PyMem_Malloc(sizeof(struct _PyCfgExceptStack));
     if (copy == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    memcpy(copy, stack, sizeof(ExceptStack));
+    memcpy(copy, stack, sizeof(struct _PyCfgExceptStack));
     return copy;
 }
 
@@ -751,7 +763,7 @@ label_exception_targets(basicblock *entryblock) {
     if (todo_stack == NULL) {
         return ERROR;
     }
-    ExceptStack *except_stack = make_except_stack();
+    struct _PyCfgExceptStack *except_stack = make_except_stack();
     if (except_stack == NULL) {
         PyMem_Free(todo_stack);
         PyErr_NoMemory();
@@ -775,7 +787,7 @@ label_exception_targets(basicblock *entryblock) {
             cfg_instr *instr = &b->b_instr[i];
             if (is_block_push(instr)) {
                 if (!instr->i_target->b_visited) {
-                    ExceptStack *copy = copy_except_stack(except_stack);
+                    struct _PyCfgExceptStack *copy = copy_except_stack(except_stack);
                     if (copy == NULL) {
                         goto error;
                     }
@@ -794,7 +806,7 @@ label_exception_targets(basicblock *entryblock) {
                 assert(i == b->b_iused -1);
                 if (!instr->i_target->b_visited) {
                     if (BB_HAS_FALLTHROUGH(b)) {
-                        ExceptStack *copy = copy_except_stack(except_stack);
+                        struct _PyCfgExceptStack *copy = copy_except_stack(except_stack);
                         if (copy == NULL) {
                             goto error;
                         }

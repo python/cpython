@@ -13,22 +13,10 @@ extern "C" {
 
 
 typedef struct {
-    int i_opcode;
-    int i_oparg;
-    _PyCompilerSrcLocation i_loc;
-    struct _PyCfgBasicblock_ *i_target; /* target block (if jump instruction) */
-    struct _PyCfgBasicblock_ *i_except; /* target block when exception is raised */
-} _PyCfgInstruction;
-
-typedef struct {
     int id;
 } _PyCfgJumpTargetLabel;
 
-
-typedef struct {
-    struct _PyCfgBasicblock_ *handlers[CO_MAXBLOCKS+1];
-    int depth;
-} _PyCfgExceptStack;
+struct _PyCfgExceptStack;
 
 typedef struct _PyCfgBasicblock_ {
     /* Each basicblock in a compilation unit is linked via b_list in the
@@ -39,9 +27,9 @@ typedef struct _PyCfgBasicblock_ {
     /* The label of this block if it is a jump target, -1 otherwise */
     _PyCfgJumpTargetLabel b_label;
     /* Exception stack at start of block, used by assembler to create the exception handling table */
-    _PyCfgExceptStack *b_exceptstack;
+    struct PyCfgExceptStack *b_exceptstack;
     /* pointer to an array of instructions, initially NULL */
-    _PyCfgInstruction *b_instr;
+    struct _PyCfgInstruction *b_instr;
     /* If b_next is non-NULL, it is a pointer to the next
        block reached by normal control flow. */
     struct _PyCfgBasicblock_ *b_next;
