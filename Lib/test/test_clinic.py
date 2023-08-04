@@ -634,13 +634,24 @@ class ClinicWholeFileTest(TestCase):
         self.assertEqual(generated, block)
 
     def test_directive_output_invalid_command(self):
-        err = (
-            "Invalid command / destination name 'cmd', must be one of:\n"
-            "preset push pop print everything cpp_if docstring_prototype "
-            "docstring_definition methoddef_define impl_prototype "
-            "parser_prototype parser_definition cpp_endif methoddef_ifndef "
-            "impl_definition"
-        )
+        err = dedent("""
+            Invalid command or destination name 'cmd'. Must be one of:
+             - preset
+             - push
+             - pop
+             - print
+             - everything
+             - cpp_if
+             - docstring_prototype
+             - docstring_definition
+             - methoddef_define
+             - impl_prototype
+             - parser_prototype
+             - parser_definition
+             - cpp_endif
+             - methoddef_ifndef
+             - impl_definition
+        """).strip()
         block = """
             /*[clinic input]
             output cmd buffer

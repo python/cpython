@@ -4567,8 +4567,10 @@ class DSLParser:
             return
 
         if command_or_name not in fd:
-            fail(f"Invalid command / destination name {command_or_name!r}, must be one of:\n"
-                 "preset push pop print everything", " ".join(fd))
+            allowed = ["preset", "push", "pop", "print", "everything"]
+            allowed.extend(fd)
+            fail(f"Invalid command or destination name {command_or_name!r}. "
+                 "Must be one of:\n -", "\n - ".join(allowed))
         fd[command_or_name] = d
 
     def directive_dump(self, name: str) -> None:
