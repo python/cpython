@@ -828,6 +828,31 @@ class CLanguage(Language):
             #define {methoddef_name}
         #endif /* !defined({methoddef_name}) */
     """)
+    DEPRECATED_POSITIONAL_PROTOTYPE: Final[str] = r"""
+        #if PY_MAJOR_VERSION == {major} && \
+            PY_MINOR_VERSION == {minor} && \
+            PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_BETA
+        #  ifdef _MSC_VER
+        #    pragma message ("{cpp_warning}")
+        #  else
+        #    warning "{cpp_warning}"
+        #  endif
+        #elif PY_MAJOR_VERSION > {major} || \
+             (PY_MAJOR_VERSION == {major} && PY_MINOR_VERSION > {minor}) || \
+             (PY_MAJOR_VERSION == {major} && \
+              PY_MINOR_VERSION == {minor} && \
+              PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_GAMMA)
+        #  error "{cpp_warning}"
+        #endif
+        if (nargs == {pos}) {{{{
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Using {name!r} as a positional argument is deprecated. "
+                "It will become a keyword-only argument in Python {thenceforth}.", 2))
+            {{{{
+                goto exit;
+            }}}}
+        }}}}
+    """
 
     def __init__(self, filename: str) -> None:
         super().__init__(filename)
@@ -1243,39 +1268,22 @@ class CLanguage(Language):
                             }}
                             """ % add_label, indent=4))
                     if p.deprecated_positional:
-                        arg = p.name
                         thenceforth = p.deprecated_positional
                         major, minor = thenceforth.split(".")
                         assert isinstance(self.cpp.filename, str)
                         source = os.path.basename(self.cpp.filename)
-                        cpp_warning = (
-                            f"Update {p.name!r} in {f.name!r} in {source!r} to be keyword-only."
+                        cpp_warning = (f"Update {p.name!r} in {f.name!r} in "
+                                       f"{source!r} to be keyword-only.")
+                        code = self.DEPRECATED_POSITIONAL_PROTOTYPE.format(
+                            name=p.name,
+                            pos=i+1,
+                            thenceforth=thenceforth,
+                            major=major,
+                            minor=minor,
+                            cpp_warning=cpp_warning,
                         )
-                        parser_code.append(normalize_snippet(fr"""
-                            #if PY_MAJOR_VERSION == {major} && \
-                                PY_MINOR_VERSION == {minor} && \
-                                PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_BETA
-                            #  ifdef _MSC_VER
-                            #    pragma message ("{cpp_warning}")
-                            #  else
-                            #    warning "{cpp_warning}"
-                            #  endif
-                            #elif PY_MAJOR_VERSION > {major} || \
-                                 (PY_MAJOR_VERSION == {major} && PY_MINOR_VERSION > {minor}) || \
-                                 (PY_MAJOR_VERSION == {major} && \
-                                  PY_MINOR_VERSION == {minor} && \
-                                  PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_GAMMA)
-                            #  error "{cpp_warning}"
-                            #endif
-                            if (nargs == {i+1}) {{{{
-                                if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                                    "Using {p.name!r} as a positional argument is deprecated. "
-                                    "It will become a keyword-only argument in Python {thenceforth}.", 2))
-                                {{{{
-                                    goto exit;
-                                }}}}
-                            }}}}
-                            """, indent=4))
+                        code = normalize_snippet(code, indent=4)
+                        parser_code.append(code)
                     if i + 1 == len(parameters):
                         parser_code.append(normalize_snippet(parsearg, indent=4))
                     else:
