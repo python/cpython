@@ -7,7 +7,6 @@
     Mostly written by Amaury Forgeot d'Arc
 */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "_iomodule.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()

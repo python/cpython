@@ -2067,7 +2067,7 @@ math_trunc(PyObject *module, PyObject *x)
         return PyFloat_Type.tp_as_number->nb_int(x);
     }
 
-    if (_PyType_IsReady(Py_TYPE(x))) {
+    if (!_PyType_IsReady(Py_TYPE(x))) {
         if (PyType_Ready(Py_TYPE(x)) < 0)
             return NULL;
     }
@@ -4037,20 +4037,20 @@ math_exec(PyObject *module)
     if (state->str___trunc__ == NULL) {
         return -1;
     }
-    if (PyModule_AddObject(module, "pi", PyFloat_FromDouble(Py_MATH_PI)) < 0) {
+    if (PyModule_Add(module, "pi", PyFloat_FromDouble(Py_MATH_PI)) < 0) {
         return -1;
     }
-    if (PyModule_AddObject(module, "e", PyFloat_FromDouble(Py_MATH_E)) < 0) {
+    if (PyModule_Add(module, "e", PyFloat_FromDouble(Py_MATH_E)) < 0) {
         return -1;
     }
     // 2pi
-    if (PyModule_AddObject(module, "tau", PyFloat_FromDouble(Py_MATH_TAU)) < 0) {
+    if (PyModule_Add(module, "tau", PyFloat_FromDouble(Py_MATH_TAU)) < 0) {
         return -1;
     }
-    if (PyModule_AddObject(module, "inf", PyFloat_FromDouble(Py_INFINITY)) < 0) {
+    if (PyModule_Add(module, "inf", PyFloat_FromDouble(Py_INFINITY)) < 0) {
         return -1;
     }
-    if (PyModule_AddObject(module, "nan", PyFloat_FromDouble(fabs(Py_NAN))) < 0) {
+    if (PyModule_Add(module, "nan", PyFloat_FromDouble(fabs(Py_NAN))) < 0) {
         return -1;
     }
     return 0;

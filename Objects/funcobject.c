@@ -6,7 +6,7 @@
 #include "pycore_code.h"          // _Py_next_func_version
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
-#include "structmember.h"         // PyMemberDef
+
 
 static PyObject* func_repr(PyFunctionObject *op);
 
@@ -106,9 +106,14 @@ PyFunction_ClearWatcher(int watcher_id)
 PyFunctionObject *
 _PyFunction_FromConstructor(PyFrameConstructor *constr)
 {
+    PyObject *module = Py_XNewRef(PyDict_GetItemWithError(constr->fc_globals, &_Py_ID(__name__)));
+    if (!module && PyErr_Occurred()) {
+        return NULL;
+    }
 
     PyFunctionObject *op = PyObject_GC_New(PyFunctionObject, &PyFunction_Type);
     if (op == NULL) {
+        Py_XDECREF(module);
         return NULL;
     }
     op->func_globals = Py_NewRef(constr->fc_globals);
@@ -122,10 +127,7 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
     op->func_doc = Py_NewRef(Py_None);
     op->func_dict = NULL;
     op->func_weakreflist = NULL;
-    op->func_module = Py_XNewRef(PyDict_GetItem(op->func_globals, &_Py_ID(__name__)));
-    if (!op->func_module) {
-        PyErr_Clear();
-    }
+    op->func_module = module;
     op->func_annotations = NULL;
     op->func_typeparams = NULL;
     op->vectorcall = _PyFunction_Vectorcall;
@@ -449,11 +451,11 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
 #define OFF(x) offsetof(PyFunctionObject, x)
 
 static PyMemberDef func_memberlist[] = {
-    {"__closure__",   T_OBJECT,     OFF(func_closure), READONLY},
-    {"__doc__",       T_OBJECT,     OFF(func_doc), 0},
-    {"__globals__",   T_OBJECT,     OFF(func_globals), READONLY},
-    {"__module__",    T_OBJECT,     OFF(func_module), 0},
-    {"__builtins__",  T_OBJECT,     OFF(func_builtins), READONLY},
+    {"__closure__",   _Py_T_OBJECT,     OFF(func_closure), Py_READONLY},
+    {"__doc__",       _Py_T_OBJECT,     OFF(func_doc), 0},
+    {"__globals__",   _Py_T_OBJECT,     OFF(func_globals), Py_READONLY},
+    {"__module__",    _Py_T_OBJECT,     OFF(func_module), 0},
+    {"__builtins__",  _Py_T_OBJECT,     OFF(func_builtins), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -940,17 +942,12 @@ PyTypeObject PyFunction_Type = {
 static int
 functools_copy_attr(PyObject *wrapper, PyObject *wrapped, PyObject *name)
 {
-    PyObject *value = PyObject_GetAttr(wrapped, name);
-    if (value == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
-            return 0;
-        }
-        return -1;
+    PyObject *value;
+    int res = PyObject_GetOptionalAttr(wrapped, name, &value);
+    if (value != NULL) {
+        res = PyObject_SetAttr(wrapper, name, value);
+        Py_DECREF(value);
     }
-
-    int res = PyObject_SetAttr(wrapper, name, value);
-    Py_DECREF(value);
     return res;
 }
 
@@ -1066,8 +1063,8 @@ cm_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyMemberDef cm_memberlist[] = {
-    {"__func__", T_OBJECT, offsetof(classmethod, cm_callable), READONLY},
-    {"__wrapped__", T_OBJECT, offsetof(classmethod, cm_callable), READONLY},
+    {"__func__", _Py_T_OBJECT, offsetof(classmethod, cm_callable), Py_READONLY},
+    {"__wrapped__", _Py_T_OBJECT, offsetof(classmethod, cm_callable), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -1261,8 +1258,8 @@ sm_call(PyObject *callable, PyObject *args, PyObject *kwargs)
 }
 
 static PyMemberDef sm_memberlist[] = {
-    {"__func__", T_OBJECT, offsetof(staticmethod, sm_callable), READONLY},
-    {"__wrapped__", T_OBJECT, offsetof(staticmethod, sm_callable), READONLY},
+    {"__func__", _Py_T_OBJECT, offsetof(staticmethod, sm_callable), Py_READONLY},
+    {"__wrapped__", _Py_T_OBJECT, offsetof(staticmethod, sm_callable), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 

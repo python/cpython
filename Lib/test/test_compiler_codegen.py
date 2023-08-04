@@ -18,6 +18,7 @@ class IsolatedCodeGenTests(CodegenTestCase):
         expected = [
             ('RESUME', 0, 0),
             ('LOAD_CONST', 0, 1),
+            ('TO_BOOL', 0, 1),
             ('POP_JUMP_IF_FALSE', false_lbl := self.Label(), 1),
             ('LOAD_CONST', 1, 1),
             ('JUMP', exit_lbl := self.Label()),

@@ -343,7 +343,7 @@ Other objects
    *items*.  Format units for sequences may be nested.
 
 It is possible to pass "long" integers (integers whose value exceeds the
-platform's :const:`LONG_MAX`) however no proper range checking is done --- the
+platform's :c:macro:`LONG_MAX`) however no proper range checking is done --- the
 most significant bits are silently truncated when the receiving field is too
 small to receive the value (actually, the semantics are inherited from downcasts
 in C --- your mileage may vary).
@@ -439,23 +439,31 @@ API Functions
    .. versionadded:: 3.2
 
 
-.. XXX deprecated, will be removed
 .. c:function:: int PyArg_Parse(PyObject *args, const char *format, ...)
 
-   Function used to deconstruct the argument lists of "old-style" functions ---
-   these are functions which use the :const:`METH_OLDARGS` parameter parsing
-   method, which has been removed in Python 3.  This is not recommended for use
-   in parameter parsing in new code, and most code in the standard interpreter
-   has been modified to no longer use this for that purpose.  It does remain a
-   convenient way to decompose other tuples, however, and may continue to be
-   used for that purpose.
+   Parse the parameter of a function that takes a single positional parameter
+   into a local variable.  Returns true on success; on failure, it returns
+   false and raises the appropriate exception.
+
+   Example::
+
+       // Function using METH_O calling convention
+       static PyObject*
+       my_function(PyObject *module, PyObject *arg)
+       {
+           int value;
+           if (!PyArg_Parse(arg, "i:my_function", &value)) {
+               return NULL;
+           }
+           // ... use value ...
+       }
 
 
 .. c:function:: int PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t max, ...)
 
    A simpler form of parameter retrieval which does not use a format string to
    specify the types of the arguments.  Functions which use this method to retrieve
-   their parameters should be declared as :const:`METH_VARARGS` in function or
+   their parameters should be declared as :c:macro:`METH_VARARGS` in function or
    method tables.  The tuple containing the actual parameters should be passed as
    *args*; it must actually be a tuple.  The length of the tuple must be at least
    *min* and no more than *max*; *min* and *max* may be equal.  Additional
@@ -469,7 +477,7 @@ API Functions
    will be set if there was a failure.
 
    This is an example of the use of this function, taken from the sources for the
-   :mod:`_weakref` helper module for weak references::
+   :mod:`!_weakref` helper module for weak references::
 
       static PyObject *
       weakref_ref(PyObject *self, PyObject *args)
@@ -547,7 +555,7 @@ Building values
       Same as ``s#``.
 
    ``u`` (:class:`str`) [const wchar_t \*]
-      Convert a null-terminated :c:expr:`wchar_t` buffer of Unicode (UTF-16 or UCS-4)
+      Convert a null-terminated :c:type:`wchar_t` buffer of Unicode (UTF-16 or UCS-4)
       data to a Python Unicode object.  If the Unicode buffer pointer is ``NULL``,
       ``None`` is returned.
 

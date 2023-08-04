@@ -1,4 +1,3 @@
-
 /* interpreters module */
 /* low-level access to interpreter primitives */
 
@@ -269,7 +268,7 @@ _sharedexception_bind(PyObject *exc, _sharedexception *sharedexc)
     assert(exc != NULL);
     const char *failure = NULL;
 
-    PyObject *nameobj = PyUnicode_FromFormat("%S", Py_TYPE(exc));
+    PyObject *nameobj = PyUnicode_FromString(Py_TYPE(exc)->tp_name);
     if (nameobj == NULL) {
         failure = "unable to format exception type name";
         goto error;
@@ -396,7 +395,7 @@ _run_script(PyInterpreterState *interp, const char *codestr,
             _sharedns *shared, _sharedexception *sharedexc)
 {
     PyObject *excval = NULL;
-    PyObject *main_mod = _PyInterpreterState_GetMainModule(interp);
+    PyObject *main_mod = PyUnstable_InterpreterState_GetMainModule(interp);
     if (main_mod == NULL) {
         goto error;
     }
@@ -527,7 +526,7 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
     }
     assert(tstate != NULL);
     PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
-    PyObject *idobj = _PyInterpreterState_GetIDObject(interp);
+    PyObject *idobj = PyInterpreterState_GetIDObject(interp);
     if (idobj == NULL) {
         // XXX Possible GILState issues?
         save_tstate = PyThreadState_Swap(tstate);
@@ -557,7 +556,7 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Look up the interpreter.
-    PyInterpreterState *interp = _PyInterpreterID_LookUp(id);
+    PyInterpreterState *interp = PyInterpreterID_LookUp(id);
     if (interp == NULL) {
         return NULL;
     }
@@ -612,7 +611,7 @@ interp_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     interp = PyInterpreterState_Head();
     while (interp != NULL) {
-        id = _PyInterpreterState_GetIDObject(interp);
+        id = PyInterpreterState_GetIDObject(interp);
         if (id == NULL) {
             Py_DECREF(ids);
             return NULL;
@@ -644,7 +643,7 @@ interp_get_current(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (interp == NULL) {
         return NULL;
     }
-    return _PyInterpreterState_GetIDObject(interp);
+    return PyInterpreterState_GetIDObject(interp);
 }
 
 PyDoc_STRVAR(get_current_doc,
@@ -658,7 +657,7 @@ interp_get_main(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     // Currently, 0 is always the main interpreter.
     int64_t id = 0;
-    return _PyInterpreterID_New(id);
+    return PyInterpreterID_New(id);
 }
 
 PyDoc_STRVAR(get_main_doc,
@@ -680,7 +679,7 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Look up the interpreter.
-    PyInterpreterState *interp = _PyInterpreterID_LookUp(id);
+    PyInterpreterState *interp = PyInterpreterID_LookUp(id);
     if (interp == NULL) {
         return NULL;
     }
@@ -746,7 +745,7 @@ interp_is_running(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyInterpreterState *interp = _PyInterpreterID_LookUp(id);
+    PyInterpreterState *interp = PyInterpreterID_LookUp(id);
     if (interp == NULL) {
         return NULL;
     }
@@ -804,7 +803,7 @@ module_exec(PyObject *mod)
     }
 
     // PyInterpreterID
-    if (PyModule_AddType(mod, &_PyInterpreterID_Type) < 0) {
+    if (PyModule_AddType(mod, &PyInterpreterID_Type) < 0) {
         goto error;
     }
 

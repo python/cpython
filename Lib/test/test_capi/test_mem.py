@@ -8,8 +8,10 @@ from test.support import import_helper, requires_subprocess
 from test.support.script_helper import assert_python_failure, assert_python_ok
 
 
-# Skip this test if the _testcapi module isn't available.
+# Skip this test if the _testcapi and _testinternalcapi extensions are not
+# available.
 _testcapi = import_helper.import_module('_testcapi')
+_testinternalcapi = import_helper.import_module('_testinternalcapi')
 
 @requires_subprocess()
 class PyMemDebugTests(unittest.TestCase):
@@ -84,16 +86,13 @@ class PyMemDebugTests(unittest.TestCase):
 
     def check_pyobject_is_freed(self, func_name):
         code = textwrap.dedent(f'''
-            import gc, os, sys, _testcapi
+            import gc, os, sys, _testinternalcapi
             # Disable the GC to avoid crash on GC collection
             gc.disable()
-            try:
-                _testcapi.{func_name}()
-                # Exit immediately to avoid a crash while deallocating
-                # the invalid object
-                os._exit(0)
-            except _testcapi.error:
-                os._exit(1)
+            _testinternalcapi.{func_name}()
+            # Exit immediately to avoid a crash while deallocating
+            # the invalid object
+            os._exit(0)
         ''')
         assert_python_ok(
             '-c', code,

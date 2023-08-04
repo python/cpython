@@ -397,21 +397,21 @@ have specific values relative to the predefined levels. If you define a level
 with the same numeric value, it overwrites the predefined value; the predefined
 name is lost.
 
-+--------------+---------------+
-| Level        | Numeric value |
-+==============+===============+
-| ``CRITICAL`` | 50            |
-+--------------+---------------+
-| ``ERROR``    | 40            |
-+--------------+---------------+
-| ``WARNING``  | 30            |
-+--------------+---------------+
-| ``INFO``     | 20            |
-+--------------+---------------+
-| ``DEBUG``    | 10            |
-+--------------+---------------+
-| ``NOTSET``   | 0             |
-+--------------+---------------+
++-----------------------+---------------+
+| Level                 | Numeric value |
++=======================+===============+
+| .. py:data:: CRITICAL | 50            |
++-----------------------+---------------+
+| .. py:data:: ERROR    | 40            |
++-----------------------+---------------+
+| .. py:data:: WARNING  | 30            |
++-----------------------+---------------+
+| .. py:data:: INFO     | 20            |
++-----------------------+---------------+
+| .. py:data:: DEBUG    | 10            |
++-----------------------+---------------+
+| .. py:data:: NOTSET   | 0             |
++-----------------------+---------------+
 
 
 .. _handler:
@@ -1015,6 +1015,10 @@ interchangeably.
    Attribute :attr:`manager` and method :meth:`_log` were added, which
    delegate to the underlying logger and allow adapters to be nested.
 
+.. versionchanged:: 3.13
+   Remove the undocumented ``warn()`` method which was an alias to the
+   ``warning()`` method.
+
 
 Thread Safety
 -------------
@@ -1161,6 +1165,10 @@ functions.
    .. note:: There is an obsolete function ``warn`` which is functionally
       identical to ``warning``. As ``warn`` is deprecated, please do not use
       it - use ``warning`` instead.
+
+   .. versionchanged:: 3.13
+      Remove the undocumented ``warn()`` function which was an alias to the
+      :func:`warning` function.
 
 
 .. function:: error(msg, *args, **kwargs)
