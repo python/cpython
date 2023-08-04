@@ -1265,9 +1265,9 @@ variants of :func:`functools.lru_cache`:
                 # complications in a multi-threaded environment where
                 # a race condition may cause an exception
                 self.requests.pop(args, None)
-                if len(self.cache) == self.maxsize:
-                    self.cache.popitem(last=False)
                 self.cache[args] = result
+                if len(self.cache) > self.maxsize:
+                    self.cache.popitem(last=False)
             return result
 
 .. doctest::
