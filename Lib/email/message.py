@@ -288,6 +288,7 @@ class Message:
         payload = self._payload
         # cte might be a Header, so for now stringify it.
         cte = str(self.get('content-transfer-encoding', '')).lower()
+
         # payload may be bytes here.
         if isinstance(payload, str):
             if utils._has_surrogates(payload):
@@ -298,6 +299,17 @@ class Message:
                     except LookupError:
                         payload = bpayload.decode('ascii', 'replace')
             elif decode:
+
+                # 7bit:   This value means that the email's content contains only 7-bit ASCII characters and no special encoding is required.
+                #         It does not expect any non-ASCII characters or binary data
+                # 8bit:   As mentioned earlier, this value means that the content consists of 8-bit characters,
+                #         including non-ASCII characters, and no special encoding is required.
+                # binary: This value is used to indicate that the content is binary and does not require any special encoding.
+                #         It expects the content to consist of 8-bit characters, including non-ASCII characters and binary data
+                # => if one of these encoding is used, no additional decoding is needed
+                if cte in {'7bit', '8bit', 'binary'}:
+                    return payload
+
                 try:
                     bpayload = payload.encode('ascii')
                 except UnicodeError:

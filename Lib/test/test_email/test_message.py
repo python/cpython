@@ -1,6 +1,6 @@
 import unittest
 import textwrap
-from email import policy, message_from_string
+from email import policy, message_from_string, message_from_bytes, message_from_file
 from email.message import EmailMessage, MIMEPart
 from test.test_email import TestEmailBase, parameterize
 
@@ -955,6 +955,22 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         # In bpo-42892, this would raise
         # AttributeError: 'str' object has no attribute 'is_attachment'
         m.get_body()
+
+    def test_get_payload_with_content_transport_encoding(self):
+        """ test for https://github.com/python/cpython/issues/107645 """
+        encodings = ['7bit', '8bit', 'binary']
+
+        for encoding in encodings:
+            test_message = message_from_string(f"""MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: {encoding}
+
+The umlauts have to be there also after the decoding: Ääßö
+""")
+            # the resulting should be the same as when the decoding flag is set to True
+            self.assertEqual(test_message.get_payload(decode=False), test_message.get_payload(decode=True))
+            # check if the umlauts are presented correctly in the "decoded" payload
+            self.assertEqual('The umlauts have to be there also after the decoding: Ääßö', test_message.get_payload(decode=True).strip())
 
 
 class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
