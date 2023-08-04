@@ -124,6 +124,11 @@ opcode
   This field was added in 3.12, it was never documented and is not intended for
   external usage. (Contributed by Irit Katriel in :gh:`105481`.)
 
+* Removed ``opcode.is_pseudo``, ``opcode.MIN_PSEUDO_OPCODE`` and
+  ``opcode.MAX_PSEUDO_OPCODE``, which were added in 3.12, were never
+  documented or exposed through ``dis``, and were not intended to be
+  used externally.
+
 pathlib
 -------
 

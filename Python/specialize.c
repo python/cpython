@@ -18,7 +18,8 @@
  */
 
 #ifdef Py_STATS
-PyStats _py_stats_struct = { 0 };
+GCStats _py_gc_stats[NUM_GENERATIONS] = { 0 };
+PyStats _py_stats_struct = { .gc_stats = &_py_gc_stats[0] };
 PyStats *_py_stats = NULL;
 
 #define ADD_STAT_TO_DICT(res, field) \
@@ -203,16 +204,31 @@ print_object_stats(FILE *out, ObjectStats *stats)
 }
 
 static void
+print_gc_stats(FILE *out, GCStats *stats)
+{
+    for (int i = 0; i < NUM_GENERATIONS; i++) {
+        fprintf(out, "GC[%d] collections: %" PRIu64 "\n", i, stats[i].collections);
+        fprintf(out, "GC[%d] object visits: %" PRIu64 "\n", i, stats[i].object_visits);
+        fprintf(out, "GC[%d] objects collected: %" PRIu64 "\n", i, stats[i].objects_collected);
+    }
+}
+
+static void
 print_stats(FILE *out, PyStats *stats) {
     print_spec_stats(out, stats->opcode_stats);
     print_call_stats(out, &stats->call_stats);
     print_object_stats(out, &stats->object_stats);
+    print_gc_stats(out, stats->gc_stats);
 }
 
 void
 _Py_StatsClear(void)
 {
+    for (int i = 0; i < NUM_GENERATIONS; i++) {
+        _py_gc_stats[i] = (GCStats) { 0 };
+    }
     _py_stats_struct = (PyStats) { 0 };
+    _py_stats_struct.gc_stats = _py_gc_stats;
 }
 
 void
