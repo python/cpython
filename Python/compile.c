@@ -338,23 +338,16 @@ instr_sequence_to_cfg(instr_sequence *seq) {
             goto error;
         }
     }
-    PyMem_Free(offset2lbl);
-
-    int nblocks = 0;
-    for (basicblock *b = g->g_block_list; b != NULL; b = b->b_list) {
-        nblocks++;
-    }
-    if ((size_t)nblocks > SIZE_MAX / sizeof(basicblock *)) {
-        PyErr_NoMemory();
+    if (_PyCfgBuilder_CheckSize(g) < 0) {
         goto error;
     }
+    PyMem_Free(offset2lbl);
     return g;
 error:
-    PyMem_Free(offset2lbl);
     _PyCfgBuilder_Free(g);
+    PyMem_Free(offset2lbl);
     return NULL;
 }
-
 
 /* The following items change on entry and exit of code blocks.
    They must be saved and restored when returning to a block.
@@ -7539,8 +7532,8 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
 
     int stackdepth;
     int nlocalsplus;
-    if (_PyCfg_OptimizedCfgToInstructionList(g, &u->u_metadata, code_flags,
-                                             &stackdepth, &nlocalsplus) < 0) {
+    if (_PyCfg_OptimizedCfgToInstructionSequence(g, &u->u_metadata, code_flags,
+                                                 &stackdepth, &nlocalsplus) < 0) {
         goto error;
     }
 
@@ -8038,8 +8031,8 @@ _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
 
     int code_flags = 0;
     int stackdepth, nlocalsplus;
-    if (_PyCfg_OptimizedCfgToInstructionList(g, umd, code_flags,
-                                             &stackdepth, &nlocalsplus) < 0) {
+    if (_PyCfg_OptimizedCfgToInstructionSequence(g, umd, code_flags,
+                                                 &stackdepth, &nlocalsplus) < 0) {
         goto error;
     }
 

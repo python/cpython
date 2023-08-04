@@ -362,6 +362,20 @@ _PyCfgBuilder_Free(cfg_builder* g)
 }
 
 int
+_PyCfgBuilder_CheckSize(cfg_builder* g)
+{
+    int nblocks = 0;
+    for (basicblock *b = g->g_block_list; b != NULL; b = b->b_list) {
+        nblocks++;
+    }
+    if ((size_t)nblocks > SIZE_MAX / sizeof(basicblock *)) {
+        PyErr_NoMemory();
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
+int
 _PyCfgBuilder_UseLabel(cfg_builder *g, jump_target_label lbl)
 {
     g->g_current_label = lbl;
@@ -2509,7 +2523,7 @@ prepare_localsplus(_PyCompile_CodeUnitMetadata *umd, cfg_builder *g, int code_fl
 }
 
 int
-_PyCfg_OptimizedCfgToInstructionList(_PyCfgBuilder *g,
+_PyCfg_OptimizedCfgToInstructionSequence(_PyCfgBuilder *g,
                                      _PyCompile_CodeUnitMetadata *umd, int code_flags,
                                      int *stackdepth, int *nlocalsplus)
 {
