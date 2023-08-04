@@ -1717,7 +1717,6 @@ class Block:
     signatures: list[Module | Class | Function] = dc.field(default_factory=list)
     output: Any = None  # TODO: Very dynamic; probably untypeable in its current form?
     indent: str = ''
-    preindent: str = ''
 
     def __repr__(self) -> str:
         dsl_name = self.dsl_name or "text"
@@ -2049,12 +2048,8 @@ class Destination:
         return self.buffers.dump()
 
 
-# maps strings to Language objects.
-# "languages" maps the name of the language ("C", "Python").
-# "extensions" maps the file extension ("c", "py").
+# "extensions" maps the file extension ("c", "py") to Language classes.
 LangDict = dict[str, Callable[[str], Language]]
-
-languages = { 'C': CLanguage, 'Python': PythonLanguage }
 extensions: LangDict = { name: CLanguage for name in "c cc cpp cxx h hh hpp hxx".split() }
 extensions['py'] = PythonLanguage
 
@@ -4427,7 +4422,6 @@ class DSLParser:
     positional_only: bool
     group: int
     parameter_state: ParamState
-    seen_positional_with_default: bool
     indent: IndentStack
     kind: FunctionKind
     coexist: bool
@@ -4458,7 +4452,6 @@ class DSLParser:
         self.positional_only = False
         self.group = 0
         self.parameter_state: ParamState = ParamState.START
-        self.seen_positional_with_default = False
         self.indent = IndentStack()
         self.kind = CALLABLE
         self.coexist = False
