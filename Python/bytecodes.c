@@ -579,12 +579,12 @@ dummy_func(
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
             DEOPT_IF(!PyUnicode_CheckExact(str), BINARY_SUBSCR);
             DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub), BINARY_SUBSCR);
+            DEOPT_IF(!PyUnicode_IS_ASCII(str), BINARY_SUBSCR);
             Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
-            DEOPT_IF(index >= PyUnicode_GET_LENGTH(str), BINARY_SUBSCR);
-            // Specialize for reading an ASCII character from any string:
-            Py_UCS4 ch = PyUnicode_READ_CHAR(str, index);
-            DEOPT_IF(ch >= Py_ARRAY_LENGTH(_Py_SINGLETON(strings).ascii), BINARY_SUBSCR);
+            DEOPT_IF(PyUnicode_GET_LENGTH(str) <= index, BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
+            Py_UCS4 ch = PyUnicode_1BYTE_DATA(str)[index];
+            assert(ch < Py_ARRAY_LENGTH(_Py_SINGLETON(strings).ascii));
             res = (PyObject*)&_Py_SINGLETON(strings).ascii[ch];
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
             Py_DECREF(str);

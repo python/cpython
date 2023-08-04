@@ -347,6 +347,7 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_SUBSCR_ARRAY_SLICE 10
 #define SPEC_FAIL_SUBSCR_LIST_SLICE 11
 #define SPEC_FAIL_SUBSCR_TUPLE_SLICE 12
+#define SPEC_FAIL_SUBSCR_STRING_NOT_ASCII 13
 #define SPEC_FAIL_SUBSCR_STRING_SLICE 14
 #define SPEC_FAIL_SUBSCR_BUFFER_INT 15
 #define SPEC_FAIL_SUBSCR_BUFFER_SLICE 16
@@ -1352,12 +1353,16 @@ _Py_Specialize_BinarySubscr(
     }
     if (container_type == &PyUnicode_Type) {
         if (PyLong_CheckExact(sub)) {
-            if (_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
-                instr->op.code = BINARY_SUBSCR_STR_INT;
-                goto success;
+            if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
+                SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OUT_OF_RANGE);
+                goto fail;
             }
-            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OUT_OF_RANGE);
-            goto fail;
+            if (!PyUnicode_IS_ASCII(container)) {
+                SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_SUBSCR_STRING_NOT_ASCII);
+                goto fail;
+            }
+            instr->op.code = BINARY_SUBSCR_STR_INT;
+            goto success;
         }
         SPECIALIZATION_FAIL(BINARY_SUBSCR,
             PySlice_Check(sub) ? SPEC_FAIL_SUBSCR_STRING_SLICE : SPEC_FAIL_OTHER);
