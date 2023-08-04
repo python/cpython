@@ -24,17 +24,65 @@
 
 typedef _PyCompilerSrcLocation location;
 typedef _PyCfgJumpTargetLabel jump_target_label;
-typedef _PyCfgBasicblock basicblock;
-typedef _PyCfgBuilder cfg_builder;
 
 typedef struct _PyCfgInstruction {
     int i_opcode;
     int i_oparg;
     _PyCompilerSrcLocation i_loc;
-    struct _PyCfgBasicblock_ *i_target; /* target block (if jump instruction) */
-    struct _PyCfgBasicblock_ *i_except; /* target block when exception is raised */
+    struct _PyCfgBasicblock *i_target; /* target block (if jump instruction) */
+    struct _PyCfgBasicblock *i_except; /* target block when exception is raised */
 } cfg_instr;
 
+typedef struct _PyCfgBasicblock {
+    /* Each basicblock in a compilation unit is linked via b_list in the
+       reverse order that the block are allocated.  b_list points to the next
+       block in this list, not to be confused with b_next, which is next by
+       control flow. */
+    struct _PyCfgBasicblock *b_list;
+    /* The label of this block if it is a jump target, -1 otherwise */
+    _PyCfgJumpTargetLabel b_label;
+    /* Exception stack at start of block, used by assembler to create the exception handling table */
+    struct PyCfgExceptStack *b_exceptstack;
+    /* pointer to an array of instructions, initially NULL */
+    cfg_instr *b_instr;
+    /* If b_next is non-NULL, it is a pointer to the next
+       block reached by normal control flow. */
+    struct _PyCfgBasicblock *b_next;
+    /* number of instructions used */
+    int b_iused;
+    /* length of instruction array (b_instr) */
+    int b_ialloc;
+    /* Used by add_checks_for_loads_of_unknown_variables */
+    uint64_t b_unsafe_locals_mask;
+    /* Number of predecessors that a block has. */
+    int b_predecessors;
+    /* depth of stack upon entry of block, computed by stackdepth() */
+    int b_startdepth;
+    /* Basic block is an exception handler that preserves lasti */
+    unsigned b_preserve_lasti : 1;
+    /* Used by compiler passes to mark whether they have visited a basic block. */
+    unsigned b_visited : 1;
+    /* b_except_handler is used by the cold-detection algorithm to mark exception targets */
+    unsigned b_except_handler : 1;
+    /* b_cold is true if this block is not perf critical (like an exception handler) */
+    unsigned b_cold : 1;
+    /* b_warm is used by the cold-detection algorithm to mark blocks which are definitely not cold */
+    unsigned b_warm : 1;
+} basicblock;
+
+
+typedef struct _PyCfgBuilder {
+    /* The entryblock, at which control flow begins. All blocks of the
+       CFG are reachable through the b_next links */
+    struct _PyCfgBasicblock *g_entryblock;
+    /* Pointer to the most recently allocated block.  By following
+       b_list links, you can reach all allocated blocks. */
+    struct _PyCfgBasicblock *g_block_list;
+    /* pointer to the block currently being constructed */
+    struct _PyCfgBasicblock *g_curblock;
+    /* label for the next instruction to be placed */
+    _PyCfgJumpTargetLabel g_current_label;
+} cfg_builder;
 
 static const jump_target_label NO_LABEL = {-1};
 
@@ -60,7 +108,7 @@ is_jump(cfg_instr *i)
 #define INSTR_SET_OP1(I, OP, ARG) \
     do { \
         assert(OPCODE_HAS_ARG(OP)); \
-        struct _PyCfgInstruction *_instr__ptr_ = (I); \
+        cfg_instr *_instr__ptr_ = (I); \
         _instr__ptr_->i_opcode = (OP); \
         _instr__ptr_->i_oparg = (ARG); \
     } while (0);
@@ -69,7 +117,7 @@ is_jump(cfg_instr *i)
 #define INSTR_SET_OP0(I, OP) \
     do { \
         assert(!OPCODE_HAS_ARG(OP)); \
-        struct _PyCfgInstruction *_instr__ptr_ = (I); \
+        cfg_instr *_instr__ptr_ = (I); \
         _instr__ptr_->i_opcode = (OP); \
         _instr__ptr_->i_oparg = 0; \
     } while (0);
@@ -158,8 +206,8 @@ basicblock_last_instr(const basicblock *b) {
 }
 
 static inline int
-basicblock_nofallthrough(const _PyCfgBasicblock *b) {
-    struct _PyCfgInstruction *last = basicblock_last_instr(b);
+basicblock_nofallthrough(const basicblock *b) {
+    cfg_instr *last = basicblock_last_instr(b);
     return (last &&
             (IS_SCOPE_EXIT_OPCODE(last->i_opcode) ||
              IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)));
@@ -494,7 +542,7 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
 
 
 static int
-normalize_jumps(_PyCfgBuilder *g)
+normalize_jumps(cfg_builder *g)
 {
     basicblock *entryblock = g->g_entryblock;
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
@@ -565,7 +613,7 @@ translate_jump_labels_to_targets(basicblock *entryblock)
 }
 
 int
-_PyCfg_JumpLabelsToTargets(_PyCfgBuilder *g)
+_PyCfg_JumpLabelsToTargets(cfg_builder *g)
 {
     return translate_jump_labels_to_targets(g->g_entryblock);
 }
@@ -590,7 +638,7 @@ mark_except_handlers(basicblock *entryblock) {
 
 
 struct _PyCfgExceptStack {
-    struct _PyCfgBasicblock_ *handlers[CO_MAXBLOCKS+1];
+    basicblock *handlers[CO_MAXBLOCKS+1];
     int depth;
 };
 
@@ -2561,7 +2609,7 @@ _PyCfg_ToInstructionSequence(cfg_builder *g, _PyCompile_InstructionSequence *seq
 
 
 int
-_PyCfg_OptimizedCfgToInstructionSequence(_PyCfgBuilder *g,
+_PyCfg_OptimizedCfgToInstructionSequence(cfg_builder *g,
                                      _PyCompile_CodeUnitMetadata *umd, int code_flags,
                                      int *stackdepth, int *nlocalsplus,
                                      _PyCompile_InstructionSequence *seq)

@@ -70,7 +70,7 @@
         && ((C)->u->u_ste->ste_type == ModuleBlock))
 
 typedef _PyCompilerSrcLocation location;
-typedef _PyCfgBuilder cfg_builder;
+typedef struct _PyCfgBuilder cfg_builder;
 
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
     ((const _PyCompilerSrcLocation){(LNO), (END_LNO), (COL), (END_COL)})
