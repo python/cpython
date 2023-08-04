@@ -851,8 +851,8 @@ class ClinicParserTest(TestCase):
 
     def checkDocstring(self, fn, expected):
         self.assertTrue(hasattr(fn, "docstring"))
-        self.assertEqual(fn.docstring.strip(),
-                         dedent(expected).strip())
+        self.assertEqual(dedent(expected).strip(),
+                         fn.docstring.strip())
 
     def test_trivial(self):
         parser = DSLParser(FakeClinic())
@@ -981,8 +981,12 @@ class ClinicParserTest(TestCase):
 
                path: str
                    Path to be examined
+                   Ensure that multiple lines are indented correctly.
 
             Perform a stat system call on the given path.
+
+            Ensure that multiple lines are indented correctly.
+            Ensure that multiple lines are indented correctly.
         """)
         self.checkDocstring(function, """
             stat($module, /, path)
@@ -992,6 +996,10 @@ class ClinicParserTest(TestCase):
 
               path
                 Path to be examined
+                Ensure that multiple lines are indented correctly.
+
+            Ensure that multiple lines are indented correctly.
+            Ensure that multiple lines are indented correctly.
         """)
 
     def test_docstring_trailing_whitespace(self):
