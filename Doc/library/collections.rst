@@ -1260,9 +1260,9 @@ variants of :func:`functools.lru_cache`:
             else:
                 # entry has been seen more than cache_after times
                 self.requests.pop(args) # no longer need to keep track of how many times this entry has been seen
-                self.cache[args] = result
-                if len(self.cache) > self.maxsize:
+                if len(self.cache) == self.maxsize:
                     self.cache.popitem(last=False)
+                self.cache[args] = result
             return result
 
 .. doctest::
