@@ -986,8 +986,11 @@ class RawConfigParser(MutableMapping):
             first_nonspace = self.NONSPACECRE.search(line)
             cur_indent_level = first_nonspace.start() if first_nonspace else 0
             if (cursect is not None and optname and
-                cur_indent_level > indent_level):
-                cursect[optname].append(value)
+               cur_indent_level > indent_level):
+               if cursect[optname]:
+                   cursect[optname].append(value)
+               else:
+                   raise ParsingError(f"No-value option {optname} cannot be continued")
             # a section header or option header?
             else:
                 indent_level = cur_indent_level
