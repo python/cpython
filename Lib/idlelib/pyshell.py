@@ -1369,11 +1369,11 @@ class PyShell(OutputWindow):
 
         from idlelib.stackviewer import StackBrowser
         try:
-            StackBrowser(self.root, sys.last_value, self.flist)
+            StackBrowser(self.root, sys.last_exc, self.flist)
         except:
             messagebox.showerror("No stack trace",
                 "There is no stack trace yet.\n"
-                "(sys.last_value is not defined)",
+                "(sys.last_exc is not defined)",
                 parent=self.text)
         return None
 

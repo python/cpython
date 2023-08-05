@@ -135,6 +135,8 @@ PyStatus
 
       Name of the function which created an error, can be ``NULL``.
 
+   .. c:namespace:: NULL
+
    Functions to create a status:
 
    .. c:function:: PyStatus PyStatus_Ok(void)
@@ -210,6 +212,8 @@ PyPreConfig
 
    Structure used to preinitialize Python.
 
+   .. c:namespace:: NULL
+
    Function to initialize a preconfiguration:
 
    .. c:function:: void PyPreConfig_InitPythonConfig(PyPreConfig *preconfig)
@@ -221,6 +225,8 @@ PyPreConfig
 
       Initialize the preconfiguration with :ref:`Isolated Configuration
       <init-isolated-conf>`.
+
+   .. c:namespace:: PyPreConfig
 
    Structure fields:
 
@@ -429,6 +435,8 @@ PyConfig
    When done, the :c:func:`PyConfig_Clear` function must be used to release the
    configuration memory.
 
+   .. c:namespace:: NULL
+
    Structure methods:
 
    .. c:function:: void PyConfig_InitPythonConfig(PyConfig *config)
@@ -522,10 +530,12 @@ PyConfig
    Moreover, if :c:func:`PyConfig_SetArgv` or :c:func:`PyConfig_SetBytesArgv`
    is used, this method must be called before other methods, since the
    preinitialization configuration depends on command line arguments (if
-   :c:member:`parse_argv` is non-zero).
+   :c:member:`~PyConfig.parse_argv` is non-zero).
 
    The caller of these methods is responsible to handle exceptions (error or
    exit) using ``PyStatus_Exception()`` and ``Py_ExitStatusException()``.
+
+   .. c:namespace:: PyConfig
 
    Structure fields:
 
@@ -889,7 +899,7 @@ PyConfig
    .. c:member:: int legacy_windows_stdio
 
       If non-zero, use :class:`io.FileIO` instead of
-      :class:`io.WindowsConsoleIO` for :data:`sys.stdin`, :data:`sys.stdout`
+      :class:`!io._WindowsConsoleIO` for :data:`sys.stdin`, :data:`sys.stdout`
       and :data:`sys.stderr`.
 
       Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSSTDIO` environment
@@ -938,7 +948,7 @@ PyConfig
    .. c:member:: wchar_t* pythonpath_env
 
       Module search paths (:data:`sys.path`) as a string separated by ``DELIM``
-      (:data:`os.path.pathsep`).
+      (:data:`os.pathsep`).
 
       Set by the :envvar:`PYTHONPATH` environment variable.
 
@@ -1139,7 +1149,7 @@ PyConfig
 
       Set to ``0`` by the :option:`-S` command line option.
 
-      :data:`sys.flags.no_site` is set to the inverted value of
+      :data:`sys.flags.no_site <sys.flags>` is set to the inverted value of
       :c:member:`~PyConfig.site_import`.
 
       Default: ``1``.

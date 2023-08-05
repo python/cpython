@@ -46,6 +46,7 @@
 
 #include "Python.h"
 #include "pycore_hashtable.h"
+#include "pycore_pyhash.h"        // _Py_HashPointerRaw()
 
 #define HASHTABLE_MIN_SIZE 16
 #define HASHTABLE_HIGH 0.50
@@ -125,6 +126,13 @@ _Py_hashtable_size(const _Py_hashtable_t *ht)
     /* entries */
     size += ht->nentries * sizeof(_Py_hashtable_entry_t);
     return size;
+}
+
+
+size_t
+_Py_hashtable_len(const _Py_hashtable_t *ht)
+{
+    return ht->nentries;
 }
 
 

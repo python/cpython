@@ -177,7 +177,7 @@ available for subclassing as well:
       The keyword-only parameter *encoding* and *errors* are added.
 
    .. versionchanged:: 3.11
-      The ``'rU'`` and ``'U'`` modes and the :meth:`__getitem__` method have
+      The ``'rU'`` and ``'U'`` modes and the :meth:`!__getitem__` method have
       been removed.
 
 

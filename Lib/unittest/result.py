@@ -166,7 +166,8 @@ class TestResult(object):
         """
         # support for a TextTestRunner using an old TestResult class
         if hasattr(self, "collectedDurations"):
-            self.collectedDurations.append((test, elapsed))
+            # Pass test repr and not the test object itself to avoid resources leak
+            self.collectedDurations.append((str(test), elapsed))
 
     def wasSuccessful(self):
         """Tells whether or not this result was a success."""

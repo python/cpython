@@ -74,7 +74,7 @@ Contents of the Limited API are :ref:`listed below <limited-api-list>`.
    Define this macro before including ``Python.h`` to opt in to only use
    the Limited API, and to select the Limited API version.
 
-   Define ``Py_LIMITED_API`` to the value of :c:data:`PY_VERSION_HEX`
+   Define ``Py_LIMITED_API`` to the value of :c:macro:`PY_VERSION_HEX`
    corresponding to the lowest Python version your extension supports.
    The extension will work without recompilation with all Python 3 releases
    from the specified one onward, and can use Limited API introduced up to that

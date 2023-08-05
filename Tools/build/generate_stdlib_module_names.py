@@ -43,6 +43,16 @@ IGNORE = {
     'xxsubtype',
 }
 
+ALLOW_TEST_MODULES = {
+    'doctest',
+    'unittest',
+}
+
+# Built-in modules
+def list_builtin_modules(names):
+    names |= set(sys.builtin_module_names)
+
+
 # Pure Python modules (Lib/*.py)
 def list_python_modules(names):
     for filename in os.listdir(STDLIB_PATH):
@@ -93,7 +103,9 @@ def list_frozen(names):
 
 
 def list_modules():
-    names = set(sys.builtin_module_names)
+    names = set()
+
+    list_builtin_modules(names)
     list_modules_setup_extensions(names)
     list_packages(names)
     list_python_modules(names)
@@ -106,9 +118,12 @@ def list_modules():
         if package_name in IGNORE:
             names.discard(name)
 
+    # Sanity checks
     for name in names:
         if "." in name:
-            raise Exception("sub-modules must not be listed")
+            raise Exception(f"sub-modules must not be listed: {name}")
+        if ("test" in name or "xx" in name) and name not in ALLOW_TEST_MODULES:
+            raise Exception(f"test modules must not be listed: {name}")
 
     return names
 
