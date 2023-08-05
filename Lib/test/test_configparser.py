@@ -1555,8 +1555,7 @@ class ReadFileTestCase(unittest.TestCase):
             "'[badbad'"
         )
 
-    def test_gh_107625(self):
-        #test key without value with extra whitespace within sections
+    def test_keys_without_value_with_extra_whitespace(self):
         lines = [
             '[SECT]\n',
             'KEY1\n',
