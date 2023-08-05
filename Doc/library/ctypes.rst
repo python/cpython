@@ -475,7 +475,7 @@ Return types
    strchr = libc.strchr
 
 
-By default functions are assumed to return the C :c:expr:`int` type.  Other
+By default functions are assumed to return the C :c:int:`int` type.  Other
 return types can be specified by setting the :attr:`restype` attribute of the
 function object.
 
