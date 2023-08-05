@@ -1,0 +1,1 @@
+Raise an :exc:`ParsingError` instead of an :exc:`AttributeError` when the configuration contains a key without a corresponding value in a scenario where extra space or a new line is present within the section.
