@@ -956,6 +956,11 @@ ConfigParser Objects
    converter gets its own corresponding :meth:`get*()` method on the parser
    object and section proxies.
 
+   Raise a :exc:`ParsingError` instead of an :exc:`AttributeError` for
+   :meth:`read` and :meth:`read_file` if the configuration contains
+   a key without a corresponding value in scenarios where configuration
+   contains extra space or newline within a section.
+
    .. versionchanged:: 3.1
       The default *dict_type* is :class:`collections.OrderedDict`.
 
@@ -1029,13 +1034,6 @@ ConfigParser Objects
       current directory, the user's home directory, and some system-wide
       directory), and all existing configuration files in the iterable will be
       read.
-
-      Raise :exc:`ParsingError` instead of :exc:`AttributeError`
-      when the configuration contains a key without a corresponding value.
-      This change is intended to handle scenarios where a key lacks a value
-      in a configuration which contains extra space or newline within a section.
-      Please note that it's not recommended to have extra spaces
-      or blank lines within sections of the configuration.
 
       If none of the named files exist, the :class:`ConfigParser`
       instance will contain an empty dataset.  An application which requires

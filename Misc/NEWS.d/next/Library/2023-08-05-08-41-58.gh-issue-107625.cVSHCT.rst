@@ -1,1 +1,4 @@
-Raise an :exc:`ParsingError` instead of an :exc:`AttributeError` when the configuration contains a key without a corresponding value in a scenario where extra space or a new line is present within the section.
+Emit :exc:`ParsingError` from :meth:`read` and :meth:`read_file`
+of :class:`ConfigParser` if configuration contains a key
+without a corresponding value in a scenario where extra space
+or a new line is present within the section.
