@@ -1560,15 +1560,15 @@ class ReadFileTestCase(unittest.TestCase):
             '[SECT]\n',
             'KEY1\n',
             ' KEY2 = VAL2\n', # note the Space before the key!
-            ]
+        ]
+        parser = configparser.ConfigParser(
+            comment_prefixes="",
+            allow_no_value=True,
+            strict=False,
+            delimiters=('=',),
+            interpolation=None,
+        )
         with self.assertRaises(configparser.ParsingError):
-            parser = configparser.ConfigParser(
-                comment_prefixes ="",
-                allow_no_value   =True,
-                strict           =False,
-                delimiters       =( '=', ),
-                interpolation    =None,
-            )
             parser.read_file(lines)
 
 
