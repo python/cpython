@@ -43,9 +43,12 @@ class Monitor:
         self.line_number = 0
 
     def __repr__(self) -> str:
-        return (
-            f"<Monitor {id(self)} line={self.line_number} condition={self.condition()!r}>"
+        parts = (
+            str(id(self)),
+            f"line={self.line_number}",
+            f"condition={self.condition()!r}"
         )
+        return f"<clinic.Monitor {' '.join(parts)}>"
 
     def status(self) -> str:
         return str(self.line_number).rjust(4) + ": " + self.condition()
