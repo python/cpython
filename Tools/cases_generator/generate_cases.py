@@ -63,13 +63,13 @@ INSTR_FMT_PREFIX = "INSTR_FMT_"
 
 # @TODO generate all these after updating the DSL
 SPECIALLY_HANDLED_ABSTRACT_INSTR = {
-    # "LOAD_FAST",
-    # "LOAD_FAST_CHECK",
-    # "LOAD_FAST_AND_CLEAR",
-    # "LOAD_CONST",
-    # "STORE_FAST",
-    # "STORE_FAST_MAYBE_NULL",
-    # "COPY",
+    "LOAD_FAST",
+    "LOAD_FAST_CHECK",
+    "LOAD_FAST_AND_CLEAR",
+    "LOAD_CONST",
+    "STORE_FAST",
+    "STORE_FAST_MAYBE_NULL",
+    "COPY",
 }
 
 arg_parser = argparse.ArgumentParser(
