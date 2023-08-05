@@ -1895,14 +1895,15 @@ blocks embedded in Python files look slightly different.  They look like this:
     #/*[python checksum:...]*/
 
 
-How to deprecate positional use of optional parameters
-------------------------------------------------------
+How to deprecate passing parameters positionally
+------------------------------------------------
 
 Argument Clinic provides syntax that makes it possible to generate code that
-deprecates positional use of optional parameters.
-For example, say we've got a module level function :py:func:`!foo.myfunc` that
-takes three :class:`int` parameters:
-optional parameters *a* and *b*, and keyword-only parameter *c*::
+deprecates passing :term:`arguments <argument>` positionally.
+For example, say we've got a module-level function :py:func:`!foo.myfunc`
+that has three :term:`parameters <parameter>`:
+positional-or-keyword parameters *a* and *b*,
+and a :ref:`keyword-only <keyword-only_parameter>` parameter *c*::
 
    /*[clinic input]
    module foo
@@ -1913,9 +1914,10 @@ optional parameters *a* and *b*, and keyword-only parameter *c*::
        c: int
    [clinic start generated output]*/
 
-We now want to make the *b* parameter keyword-only from Python 3.14 and onward,
-and since :py:func:`!myfunc` is a public API,
-we must follow :pep:`387` and issue a deprecation warning.
+We now want to make the *b* parameter keyword-only.
+For this example, imagine we're in the development phase for Python 3.12,
+meaning we can deprecate positional use of *b* earliest in Python 3.14 and onward
+(see :pep:`387` -- *Backwards Compatibility Policy*).
 We can do that using the ``* [from ...]``` syntax,
 by adding the line ``* [from 3.14]`` right above the *b* parameter::
 
@@ -1933,14 +1935,14 @@ Next, regenerate Argument Clinic code (``make clinic``),
 and add unit tests for the new behaviour.
 
 The generated code will now emit a :exc:`DeprecationWarning`
-when an the optional parameter *b* is used as a positional paremeter.
+when an :term:`argument` for the :term:`parameter` *b* is passed positionally.
 C preprocessor directives are also generated for emitting
 compiler warnings if the ``* [from ...]`` line has not been removed
 from the Argument Clinic input when the deprecation period is over,
-which means when the beta phase of the specified Python version kicks in.
+which means when the alpha phase of the specified Python version kicks in.
 
 Let's return to our example and assume Python 3.14 development has entered the
-beta phase, and we forgot all about updating the Argument Clinic code for
+alpha phase, and we forgot all about updating the Argument Clinic code for
 :py:func:`!myfunc`.
 Luckily for us, compiler warnings are now generated:
 
@@ -1969,6 +1971,6 @@ and update your unit tests to reflect the new behaviour.
 
 .. note::
 
-   If you forget to update your clinic code during the target beta phase, the
-   copmiler warning will turn into a compiler error when the release candidate
-   phase kicks in.
+   If you forget to update your input block during the alpha and beta phases,
+   the compiler warning will turn into a compiler error when the
+   release candidate phase begins.
