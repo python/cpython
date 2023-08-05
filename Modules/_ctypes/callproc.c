@@ -1966,7 +1966,7 @@ create_pointer_type(PyObject *module, PyObject *cls)
 /*[clinic input]
 _ctypes.pointer as create_pointer_inst
 
-    obj: object
+    obj as arg: object
     /
 
 Creates a new pointer instance, pointing to 'obj'.
@@ -1977,23 +1977,23 @@ you should use byref(obj) which is much faster.
 [clinic start generated code]*/
 
 static PyObject *
-create_pointer_inst(PyObject *module, PyObject *obj)
-/*[clinic end generated code: output=1039888809db21a2 input=925d2ec210c75c47]*/
+create_pointer_inst(PyObject *module, PyObject *arg)
+/*[clinic end generated code: output=3b543bc9f0de2180 input=649dec8dad8c0e52]*/
 {
     PyObject *result;
     PyObject *typ;
 
-    typ = PyDict_GetItemWithError(_ctypes_ptrtype_cache, (PyObject *)Py_TYPE(obj));
+    typ = PyDict_GetItemWithError(_ctypes_ptrtype_cache, (PyObject *)Py_TYPE(arg));
     if (typ) {
-        return PyObject_CallOneArg(typ, obj);
+        return PyObject_CallOneArg(typ, arg);
     }
     else if (PyErr_Occurred()) {
         return NULL;
     }
-    typ = create_pointer_type(NULL, (PyObject *)Py_TYPE(obj));
+    typ = create_pointer_type(NULL, (PyObject *)Py_TYPE(arg));
     if (typ == NULL)
         return NULL;
-    result = PyObject_CallOneArg(typ, obj);
+    result = PyObject_CallOneArg(typ, arg);
     Py_DECREF(typ);
     return result;
 }
