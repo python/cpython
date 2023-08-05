@@ -1355,7 +1355,7 @@ a :c:func:`PyArg_ParseTuple` "converter function".
 
 Your converter class should be named :samp:`{ConverterName}_converter`.
 By following this convention, your converter class will be automatically
-registered with Argument Clinic, with its *converter name* being be the name of
+registered with Argument Clinic, with its *converter name* being the name of
 your converter class with the ``_converter`` suffix stripped off.
 
 Instead of subclassing :py:meth:`!CConverter.__init__`,
