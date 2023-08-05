@@ -1,0 +1,2 @@
+Set up CIFuzz to run fuzz targets in GitHub Actions. Patch by Illia
+Volochii.
