@@ -986,7 +986,7 @@ class RawConfigParser(MutableMapping):
             first_nonspace = self.NONSPACECRE.search(line)
             cur_indent_level = first_nonspace.start() if first_nonspace else 0
             if (cursect is not None and optname and
-               cur_indent_level > indent_level):
+                cur_indent_level > indent_level):
                 if cursect[optname]:
                     cursect[optname].append(value)
                 else:
