@@ -1225,6 +1225,7 @@ class CLanguage(Language):
                 parser_prototype = self.PARSER_PROTOTYPE_DEF_CLASS
 
             def deprecate_positional_use(p: Parameter) -> str:
+                assert p.deprecated_positional is not None
                 thenceforth = p.deprecated_positional
                 major, minor = thenceforth.split(".")
                 assert isinstance(self.cpp.filename, str)
