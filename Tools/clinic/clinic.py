@@ -830,18 +830,18 @@ class CLanguage(Language):
     """)
     DEPRECATED_POSITIONAL_PROTOTYPE: Final[str] = r"""
         #if PY_VERSION_HEX >= 0x{major:02x}{minor:02x}00C0
+        #  error "{cpp_warning}"
+        #elif PY_VERSION_HEX >= 0x{major:02x}{minor:02x}00A0
         #  ifdef _MSC_VER
         #    pragma message ("{cpp_warning}")
         #  else
         #    warning "{cpp_warning}"
         #  endif
-        #elif PY_VERSION_HEX >= 0x{major:02x}{minor:02x}00A0
-        #  error "{cpp_warning}"
         #endif
         if (nargs == {pos}) {{{{
             if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing {name!r} as a positional parameter is deprecated. "
-                "It will become a keyword-only parameter in Python {thenceforth}.", 1))
+                "It will become a keyword-only parameter in Python {major}.{minor}.", 1))
             {{{{
                 goto exit;
             }}}}
@@ -1220,9 +1220,9 @@ class CLanguage(Language):
 
             def deprecate_positional_use(
                     param_name: str,
-                    thenceforth: str
+                    thenceforth: VersionTuple,
             ) -> str:
-                major, minor = thenceforth.split(".")
+                major, minor = thenceforth
                 assert isinstance(self.cpp.filename, str)
                 source = os.path.basename(self.cpp.filename)
                 cpp_warning = (f"Update {param_name!r} in {f.name!r} in "
@@ -1230,9 +1230,8 @@ class CLanguage(Language):
                 code = self.DEPRECATED_POSITIONAL_PROTOTYPE.format(
                     name=param_name,
                     pos=i+1,
-                    thenceforth=thenceforth,
-                    major=int(major),
-                    minor=int(minor),
+                    major=major,
+                    minor=minor,
                     cpp_warning=cpp_warning,
                 )
                 return normalize_snippet(code, indent=4)
@@ -2649,7 +2648,7 @@ class Parameter:
     docstring: str = ''
     group: int = 0
     # (`None` signifies that there is no deprecation)
-    deprecated_positional: str | None = None
+    deprecated_positional: VersionTuple | None = None
     right_bracket_count: int = dc.field(init=False, default=0)
 
     def __repr__(self) -> str:
@@ -4466,12 +4465,15 @@ class ParamState(enum.IntEnum):
     RIGHT_SQUARE_AFTER = 6
 
 
+VersionTuple = tuple[int, int]
+
+
 class DSLParser:
     function: Function | None
     state: StateKeeper
     keyword_only: bool
     positional_only: bool
-    deprecated_positional: str | None
+    deprecated_positional: VersionTuple | None
     group: int
     parameter_state: ParamState
     indent: IndentStack
@@ -4957,7 +4959,8 @@ class DSLParser:
             return
 
         line = line.lstrip()
-        if match := self.deprecate_posonly_re.match(line):
+        match = self.deprecate_posonly_re.match(line)
+        if match:
             self.parse_deprecated_positional(match.group(1))
             return
 
@@ -5289,7 +5292,7 @@ class DSLParser:
             fail(f"Function {self.function.name!r}: '* [from ...]' must come before '*'")
         if self.deprecated_positional:
             fail(f"Function {self.function.name!r} uses '[from ...]' more than once.")
-        self.deprecated_positional = thenceforth
+        self.deprecated_positional = int(major), int(minor)
 
     def parse_star(self, function: Function) -> None:
         """Parse keyword-only parameter marker '*'."""

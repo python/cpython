@@ -5402,12 +5402,12 @@ docstr_fallback_to_converter_default_impl(PyObject *module, str a)
 test_deprecate_positional_use_1
     pos: object
     * [from 3.14]
-    optarg: object = 5
+    optarg: object = None
       has a default value, unlike test_deprecate_positional_use_2
 [clinic start generated code]*/
 
 PyDoc_STRVAR(test_deprecate_positional_use_1__doc__,
-"test_deprecate_positional_use_1($module, /, pos, optarg=5)\n"
+"test_deprecate_positional_use_1($module, /, pos, optarg=None)\n"
 "--\n"
 "\n"
 "\n"
@@ -5454,7 +5454,7 @@ test_deprecate_positional_use_1(PyObject *module, PyObject *const *args, Py_ssiz
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *pos;
-    PyObject *optarg = 5;
+    PyObject *optarg = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
     if (!args) {
@@ -5465,13 +5465,13 @@ test_deprecate_positional_use_1(PyObject *module, PyObject *const *args, Py_ssiz
         goto skip_optional_pos;
     }
     #if PY_VERSION_HEX >= 0x030e00C0
+    #  error "Update 'optarg' in 'test_deprecate_positional_use_1' in 'clinic.test.c' to be keyword-only."
+    #elif PY_VERSION_HEX >= 0x030e00A0
     #  ifdef _MSC_VER
     #    pragma message ("Update 'optarg' in 'test_deprecate_positional_use_1' in 'clinic.test.c' to be keyword-only.")
     #  else
     #    warning "Update 'optarg' in 'test_deprecate_positional_use_1' in 'clinic.test.c' to be keyword-only."
     #  endif
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  error "Update 'optarg' in 'test_deprecate_positional_use_1' in 'clinic.test.c' to be keyword-only."
     #endif
     if (nargs == 2) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
@@ -5492,7 +5492,7 @@ exit:
 static PyObject *
 test_deprecate_positional_use_1_impl(PyObject *module, PyObject *pos,
                                      PyObject *optarg)
-/*[clinic end generated code: output=3dde639bffd82431 input=84fc16857e7b0354]*/
+/*[clinic end generated code: output=1a0fab8ac7ae0dc6 input=ead4a995482b22d3]*/
 
 
 /*[clinic input]
@@ -5558,13 +5558,13 @@ test_deprecate_positional_use_2(PyObject *module, PyObject *const *args, Py_ssiz
     }
     pos = args[0];
     #if PY_VERSION_HEX >= 0x030e00C0
+    #  error "Update 'optarg' in 'test_deprecate_positional_use_2' in 'clinic.test.c' to be keyword-only."
+    #elif PY_VERSION_HEX >= 0x030e00A0
     #  ifdef _MSC_VER
     #    pragma message ("Update 'optarg' in 'test_deprecate_positional_use_2' in 'clinic.test.c' to be keyword-only.")
     #  else
     #    warning "Update 'optarg' in 'test_deprecate_positional_use_2' in 'clinic.test.c' to be keyword-only."
     #  endif
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  error "Update 'optarg' in 'test_deprecate_positional_use_2' in 'clinic.test.c' to be keyword-only."
     #endif
     if (nargs == 2) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
@@ -5584,7 +5584,7 @@ exit:
 static PyObject *
 test_deprecate_positional_use_2_impl(PyObject *module, PyObject *pos,
                                      PyObject *optarg)
-/*[clinic end generated code: output=74e00bed5d1eb50f input=3ced298b4a297b2f]*/
+/*[clinic end generated code: output=dd1b18342d4af153 input=3ced298b4a297b2f]*/
 
 
 /*[clinic input]
@@ -5648,13 +5648,13 @@ test_deprecate_positional_use_3(PyObject *module, PyObject *const *args, Py_ssiz
     }
     pos = args[0];
     #if PY_VERSION_HEX >= 0x030e00C0
+    #  error "Update 'optarg' in 'test_deprecate_positional_use_3' in 'clinic.test.c' to be keyword-only."
+    #elif PY_VERSION_HEX >= 0x030e00A0
     #  ifdef _MSC_VER
     #    pragma message ("Update 'optarg' in 'test_deprecate_positional_use_3' in 'clinic.test.c' to be keyword-only.")
     #  else
     #    warning "Update 'optarg' in 'test_deprecate_positional_use_3' in 'clinic.test.c' to be keyword-only."
     #  endif
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  error "Update 'optarg' in 'test_deprecate_positional_use_3' in 'clinic.test.c' to be keyword-only."
     #endif
     if (nargs == 2) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
@@ -5666,13 +5666,13 @@ test_deprecate_positional_use_3(PyObject *module, PyObject *const *args, Py_ssiz
     }
     optarg = args[1];
     #if PY_VERSION_HEX >= 0x030e00C0
+    #  error "Update 'kw' in 'test_deprecate_positional_use_3' in 'clinic.test.c' to be keyword-only."
+    #elif PY_VERSION_HEX >= 0x030e00A0
     #  ifdef _MSC_VER
     #    pragma message ("Update 'kw' in 'test_deprecate_positional_use_3' in 'clinic.test.c' to be keyword-only.")
     #  else
     #    warning "Update 'kw' in 'test_deprecate_positional_use_3' in 'clinic.test.c' to be keyword-only."
     #  endif
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  error "Update 'kw' in 'test_deprecate_positional_use_3' in 'clinic.test.c' to be keyword-only."
     #endif
     if (nargs == 3) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
@@ -5692,4 +5692,4 @@ exit:
 static PyObject *
 test_deprecate_positional_use_3_impl(PyObject *module, PyObject *pos,
                                      PyObject *optarg, PyObject *kw)
-/*[clinic end generated code: output=ba43d0a4835e7a75 input=c19ac8533f05d314]*/
+/*[clinic end generated code: output=e9a2915901c0a9ca input=c19ac8533f05d314]*/
