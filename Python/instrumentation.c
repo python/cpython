@@ -1151,6 +1151,32 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
         (interp->monitors.tools[PY_MONITORING_EVENT_LINE] |
          code->_co_monitoring->local_monitors.tools[PY_MONITORING_EVENT_LINE]
         );
+    /* Special case sys.settrace to avoid boxing the line number,
+     * only to unbox it. */
+    if (tools & (1 << PY_MONITORING_SYS_TRACE_ID)) {
+        if (tstate->c_tracefunc != NULL && line >= 0) {
+            PyFrameObject *frame_obj = _PyFrame_GetFrameObject(frame);
+            if (frame_obj == NULL) {
+                return -1;
+            }
+            if (frame_obj->f_trace_lines) {
+                int old_what = tstate->what_event;
+                tstate->what_event = PY_MONITORING_EVENT_LINE;
+                tstate->tracing++;
+                Py_INCREF(frame_obj);
+                frame_obj->f_lineno = line;
+                int err = tstate->c_tracefunc(tstate->c_traceobj, frame_obj, PyTrace_LINE, Py_None);
+                frame_obj->f_lineno = 0;
+                tstate->tracing--;
+                tstate->what_event = old_what;
+                Py_DECREF(frame_obj);
+                if (err) {
+                    return -1;
+                }
+            }
+        }
+        tools &= (255 - (1 << PY_MONITORING_SYS_TRACE_ID));
+    }
     PyObject *line_obj = PyLong_FromLong(line);
     if (line_obj == NULL) {
         return -1;
@@ -1158,7 +1184,7 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
     PyObject *args[3] = { NULL, (PyObject *)code, line_obj };
     while (tools) {
         int tool = most_significant_bit(tools);
-        assert(tool >= 0 && tool < 8);
+        assert(tool >= 0 && tool < PY_MONITORING_SYS_PROFILE_ID);
         assert(tools & (1 << tool));
         tools &= ~(1 << tool);
         int res = call_one_instrument(interp, tstate, &args[1],
