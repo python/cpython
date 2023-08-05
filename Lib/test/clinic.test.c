@@ -5007,6 +5007,75 @@ PyDoc_STRVAR(new_dest__doc__,
 
 
 /*[clinic input]
+mangled_c_keyword_identifier
+    i as int: int
+The 'int' param should be mangled as 'int_value'
+[clinic start generated code]*/
+
+PyDoc_STRVAR(mangled_c_keyword_identifier__doc__,
+"mangled_c_keyword_identifier($module, /, i)\n"
+"--\n"
+"\n"
+"The \'int\' param should be mangled as \'int_value\'");
+
+#define MANGLED_C_KEYWORD_IDENTIFIER_METHODDEF    \
+    {"mangled_c_keyword_identifier", _PyCFunction_CAST(mangled_c_keyword_identifier), METH_FASTCALL|METH_KEYWORDS, mangled_c_keyword_identifier__doc__},
+
+static PyObject *
+mangled_c_keyword_identifier_impl(PyObject *module, int int_value);
+
+static PyObject *
+mangled_c_keyword_identifier(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(i), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"i", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "mangled_c_keyword_identifier",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    int int_value;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    int_value = _PyLong_AsInt(args[0]);
+    if (int_value == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = mangled_c_keyword_identifier_impl(module, int_value);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+mangled_c_keyword_identifier_impl(PyObject *module, int int_value)
+/*[clinic end generated code: output=c049d7d79be26cda input=060876448ab567a2]*/
+
+
+/*[clinic input]
 bool_return -> bool
 [clinic start generated code]*/
 
