@@ -1,7 +1,6 @@
 import dataclasses as dc
 import re
 import sys
-from collections.abc import Callable
 from typing import NoReturn
 
 
@@ -65,14 +64,6 @@ class Monitor:
         print("Error at" + filename, "line", self.line_number, ":")
         print("   ", ' '.join(str(x) for x in a))
         sys.exit(-1)
-
-    def close(self) -> None:
-        if self.stack:
-            self.fail("Ended file while still in a preprocessor conditional block!")
-
-    def write(self, s: str) -> None:
-        for line in s.split("\n"):
-            self.writeline(line)
 
     def writeline(self, line: str) -> None:
         self.line_number += 1
