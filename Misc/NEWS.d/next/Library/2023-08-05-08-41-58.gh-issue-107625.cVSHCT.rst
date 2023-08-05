@@ -1,4 +1,5 @@
-Emit :exc:`ParsingError` from :meth:`read` and :meth:`read_file`
-of :class:`ConfigParser` if configuration contains a key
+Emit :exc:`configparser.ParsingError` from :meth:`~configparser.ConfigParser.read`
+and :meth:`~configparser.ConfigParser.read_file` methods of
+:class:`configparser.ConfigParser` if configuration contains a key
 without a corresponding value in a scenario where extra space
 is present within the section.
