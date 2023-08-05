@@ -1059,12 +1059,12 @@ ConfigParser Objects
       .. versionadded:: 3.7
          The *filenames* parameter accepts a :class:`bytes` object.
 
-     .. versionchanged:: 3.13
-        Parsing errors will result in a ParsingError being raised instead
-        of an AttributeError when encountering a key without a corresponding
-        value. This change is designed to handle situations where a key is
-        present without a value, particularly in scenarios not recommended,
-        such as having extra spaces or blank lines within sections.
+      .. versionchanged:: 3.13
+         Parsing errors will result in a ParsingError being raised instead
+         of an AttributeError when encountering a key without a corresponding
+         value. This change is designed to handle situations where a key is
+         present without a value, particularly in scenarios not recommended,
+         such as having extra spaces or blank lines within sections.
 
    .. method:: read_file(f, source=None)
 
@@ -1084,12 +1084,12 @@ ConfigParser Objects
       .. versionadded:: 3.2
          Replaces :meth:`readfp`.
 
-     .. versionchanged:: 3.13
-        Parsing errors will result in a ParsingError being raised instead
-        of an AttributeError when encountering a key without a corresponding
-        value. This change is designed to handle situations where a key is
-        present without a value, particularly in scenarios not recommended,
-        such as having extra spaces or blank lines within sections.
+      .. versionchanged:: 3.13
+         Parsing errors will result in a ParsingError being raised instead
+         of an AttributeError when encountering a key without a corresponding
+         value. This change is designed to handle situations where a key is
+         present without a value, particularly in scenarios not recommended,
+         such as having extra spaces or blank lines within sections.
 
 
    .. method:: read_string(string, source='<string>')
