@@ -829,25 +829,19 @@ class CLanguage(Language):
         #endif /* !defined({methoddef_name}) */
     """)
     DEPRECATED_POSITIONAL_PROTOTYPE: Final[str] = r"""
-        #if PY_MAJOR_VERSION == {major} && \
-            PY_MINOR_VERSION == {minor} && \
-            PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_ALPHA
+        #if PY_VERSION_HEX >= 0x{major:02x}{minor:02x}00C0
         #  ifdef _MSC_VER
         #    pragma message ("{cpp_warning}")
         #  else
         #    warning "{cpp_warning}"
         #  endif
-        #elif PY_MAJOR_VERSION > {major} || \
-             (PY_MAJOR_VERSION == {major} && PY_MINOR_VERSION > {minor}) || \
-             (PY_MAJOR_VERSION == {major} && \
-              PY_MINOR_VERSION == {minor} && \
-              PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_GAMMA)
+        #elif PY_VERSION_HEX >= 0x{major:02x}{minor:02x}00A0
         #  error "{cpp_warning}"
         #endif
         if (nargs == {pos}) {{{{
             if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                "Using {name!r} as a positional argument is deprecated. "
-                "It will become a keyword-only argument in Python {thenceforth}.", 2))
+                "Passing {name!r} as a positional parameter is deprecated. "
+                "It will become a keyword-only parameter in Python {thenceforth}.", 2))
             {{{{
                 goto exit;
             }}}}
@@ -1237,8 +1231,8 @@ class CLanguage(Language):
                     name=param_name,
                     pos=i+1,
                     thenceforth=thenceforth,
-                    major=major,
-                    minor=minor,
+                    major=int(major),
+                    minor=int(minor),
                     cpp_warning=cpp_warning,
                 )
                 return normalize_snippet(code, indent=4)
@@ -1257,11 +1251,11 @@ class CLanguage(Language):
                     parser_code.append("%s:" % add_label)
                     add_label = None
                 if not p.is_optional():
-                    parser_code.append(normalize_snippet(parsearg, indent=4))
                     if p.deprecated_positional:
                         code = deprecate_positional_use(
                                 p.name, p.deprecated_positional)
                         parser_code.append(code)
+                    parser_code.append(normalize_snippet(parsearg, indent=4))
                 elif i < pos_only:
                     add_label = 'skip_optional_posonly'
                     parser_code.append(normalize_snippet("""
