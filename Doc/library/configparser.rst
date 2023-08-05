@@ -1034,13 +1034,14 @@ ConfigParser Objects
       instance will contain an empty dataset.  An application which requires
       initial values to be loaded from a file should load the required file or
       files using :meth:`read_file` before calling :meth:`read` for any
-      optional files
+      optional files::
 
-      Raise a :exc:`ParsingError` instead of an :exc:`AttributeError`
+      Raise :exc:`ParsingError` instead of :exc:`AttributeError`
       when the configuration contains a key without a corresponding value.
       This change is intended to handle scenarios where a key lacks a value
-      in a configuration. Please note that it's not recommended to have extra
-      spaces or blank lines within sections of the configuration.
+      in a configuration which contains extra space or newline within a section.
+      Please note that it's not recommended to have extra spaces
+      or blank lines within sections of the configuration.
 
          import configparser, os
 
@@ -1059,13 +1060,6 @@ ConfigParser Objects
       .. versionadded:: 3.7
          The *filenames* parameter accepts a :class:`bytes` object.
 
-      .. versionchanged:: 3.13
-         Parsing errors will result in a ParsingError being raised instead
-         of an AttributeError when encountering a key without a corresponding
-         value. This change is designed to handle situations where a key is
-         present without a value, particularly in scenarios not recommended,
-         such as having extra spaces or blank lines within sections.
-
 
    .. method:: read_file(f, source=None)
 
@@ -1076,21 +1070,15 @@ ConfigParser Objects
       not given and *f* has a :attr:`name` attribute, that is used for
       *source*; the default is ``'<???>'``.
 
-      Raise a :exc:`ParsingError` instead of an :exc:`AttributeError`
+      Raise :exc:`ParsingError` instead of :exc:`AttributeError`
       when the configuration contains a key without a corresponding value.
       This change is intended to handle scenarios where a key lacks a value
-      in a configuration. Please note that it's not recommended to have extra
-      spaces or blank lines within sections of the configuration.
+      in a configuration which contains extra space or newline within a section.
+      Please note that it's not recommended to have extra spaces
+      or blank lines within sections of the configuration.
 
       .. versionadded:: 3.2
          Replaces :meth:`readfp`.
-
-      .. versionchanged:: 3.13
-         Parsing errors will result in a ParsingError being raised instead
-         of an AttributeError when encountering a key without a corresponding
-         value. This change is designed to handle situations where a key is
-         present without a value, particularly in scenarios not recommended,
-         such as having extra spaces or blank lines within sections.
 
 
    .. method:: read_string(string, source='<string>')
