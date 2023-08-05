@@ -5717,6 +5717,7 @@ PyObject_GenericGetDict(PyObject *obj, void *context)
             dict = _PyDictOrValues_GetDict(*dorv_ptr);
             if (dict == NULL) {
                 dictkeys_incref(CACHED_KEYS(tp));
+                OBJECT_STAT_INC(dict_materialized_on_request);
                 dict = new_dict_with_shared_keys(interp, CACHED_KEYS(tp));
                 dorv_ptr->dict = dict;
             }
