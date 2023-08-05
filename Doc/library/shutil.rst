@@ -369,7 +369,7 @@ Directory and files operations
    If *copy_function* is given, it must be a callable that takes two arguments
    *src* and *dst*, and will be used to copy *src* to *dst* if
    :func:`os.rename` cannot be used.  If the source is a directory,
-   :func:`copytree` is called, passing it the :func:`copy_function`. The
+   :func:`copytree` is called, passing it the *copy_function*. The
    default *copy_function* is :func:`copy2`.  Using :func:`~shutil.copy` as the
    *copy_function* allows the move to succeed when it is not possible to also
    copy the metadata, at the expense of not copying any of the metadata.

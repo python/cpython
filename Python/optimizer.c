@@ -320,13 +320,7 @@ uop_name(int index) {
 static Py_ssize_t
 uop_len(_PyUOpExecutorObject *self)
 {
-    int count = 0;
-    for (; count < _Py_UOP_MAX_TRACE_LENGTH; count++) {
-        if (self->trace[count].opcode == 0) {
-            break;
-        }
-    }
-    return count;
+    return Py_SIZE(self);
 }
 
 static PyObject *
@@ -368,8 +362,8 @@ PySequenceMethods uop_as_sequence = {
 static PyTypeObject UOpExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uop_executor",
-    .tp_basicsize = sizeof(_PyUOpExecutorObject),
-    .tp_itemsize = 0,
+    .tp_basicsize = sizeof(_PyUOpExecutorObject) - sizeof(_PyUOpInstruction),
+    .tp_itemsize = sizeof(_PyUOpInstruction),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_dealloc = (destructor)uop_dealloc,
     .tp_as_sequence = &uop_as_sequence,
@@ -579,7 +573,8 @@ pop_jump_if_bool:
                     for (int i = 0; i < nuops; i++) {
                         oparg = orig_oparg;
                         uint64_t operand = 0;
-                        int offset = expansion->uops[i].offset;
+                        // Add one to account for the actual opcode/oparg pair:
+                        int offset = expansion->uops[i].offset + 1;
                         switch (expansion->uops[i].size) {
                             case OPARG_FULL:
                                 if (extras && OPCODE_HAS_JUMP(opcode)) {
@@ -698,15 +693,12 @@ uop_optimize(
         return trace_length;
     }
     OBJECT_STAT_INC(optimization_traces_created);
-    _PyUOpExecutorObject *executor = PyObject_New(_PyUOpExecutorObject, &UOpExecutor_Type);
+    _PyUOpExecutorObject *executor = PyObject_NewVar(_PyUOpExecutorObject, &UOpExecutor_Type, trace_length);
     if (executor == NULL) {
         return -1;
     }
     executor->base.execute = _PyUopExecute;
     memcpy(executor->trace, trace, trace_length * sizeof(_PyUOpInstruction));
-        if (trace_length < _Py_UOP_MAX_TRACE_LENGTH) {
-            executor->trace[trace_length].opcode = 0;  // Sentinel
-        }
     *exec_ptr = (_PyExecutorObject *)executor;
     return 1;
 }

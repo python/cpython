@@ -35,7 +35,7 @@ under :ref:`reference counting <countingrefs>`.
 
 .. c:type:: PyVarObject
 
-   This is an extension of :c:type:`PyObject` that adds the :attr:`ob_size`
+   This is an extension of :c:type:`PyObject` that adds the :c:member:`~PyVarObject.ob_size`
    field.  This is only used for objects that have some notion of *length*.
    This type does not often appear in the Python/C API.
    Access to the members must be done by using the macros
@@ -152,7 +152,7 @@ under :ref:`reference counting <countingrefs>`.
 .. c:macro:: PyVarObject_HEAD_INIT(type, size)
 
    This is a macro which expands to initialization values for a new
-   :c:type:`PyVarObject` type, including the :attr:`ob_size` field.
+   :c:type:`PyVarObject` type, including the :c:member:`~PyVarObject.ob_size` field.
    This macro expands to::
 
       _PyObject_EXTRA_INIT
@@ -228,21 +228,21 @@ Implementing functions and methods
    Structure used to describe a method of an extension type.  This structure has
    four fields:
 
-   .. c:member:: const char* ml_name
+   .. c:member:: const char *ml_name
 
-      name of the method
+      Name of the method.
 
    .. c:member:: PyCFunction ml_meth
 
-      pointer to the C implementation
+      Pointer to the C implementation.
 
    .. c:member:: int ml_flags
 
-      flags bits indicating how the call should be constructed
+      Flags bits indicating how the call should be constructed.
 
-   .. c:member:: const char* ml_doc
+   .. c:member:: const char *ml_doc
 
-      points to the contents of the docstring
+      Points to the contents of the docstring.
 
 The :c:member:`~PyMethodDef.ml_meth` is a C function pointer.
 The functions may be of different
@@ -393,7 +393,7 @@ definition with the same method name.
    *METH_COEXIST*, the default is to skip repeated definitions.  Since slot
    wrappers are loaded before the method table, the existence of a
    *sq_contains* slot, for example, would generate a wrapped method named
-   :meth:`__contains__` and preclude the loading of a corresponding
+   :meth:`~object.__contains__` and preclude the loading of a corresponding
    PyCFunction with the same name.  With the flag defined, the PyCFunction
    will be loaded in place of the wrapper object and will co-exist with the
    slot.  This is helpful because calls to PyCFunctions are optimized more

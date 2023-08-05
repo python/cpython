@@ -911,16 +911,13 @@ AsObj(PyObject *value)
     if (PyLong_CheckExact(value)) {
         int overflow;
         long longValue;
-#ifdef TCL_WIDE_INT_TYPE
         Tcl_WideInt wideValue;
-#endif
         longValue = PyLong_AsLongAndOverflow(value, &overflow);
         if (!overflow) {
             return Tcl_NewLongObj(longValue);
         }
         /* If there is an overflow in the long conversion,
            fall through to wideInt handling. */
-#ifdef TCL_WIDE_INT_TYPE
         if (_PyLong_AsByteArray((PyLongObject *)value,
                                 (unsigned char *)(void *)&wideValue,
                                 sizeof(wideValue),
@@ -929,7 +926,6 @@ AsObj(PyObject *value)
             return Tcl_NewWideIntObj(wideValue);
         }
         PyErr_Clear();
-#endif
         /* If there is an overflow in the wideInt conversion,
            fall through to bignum handling. */
         return asBignumObj(value);

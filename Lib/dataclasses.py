@@ -1036,7 +1036,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     # Was this class defined with an explicit __hash__?  Note that if
     # __eq__ is defined in this class, then python will automatically
     # set __hash__ to None.  This is a heuristic, as it's possible
-    # that such a __hash__ == None was not auto-generated, but it
+    # that such a __hash__ == None was not auto-generated, but it's
     # close enough.
     class_hash = cls.__dict__.get('__hash__', MISSING)
     has_explicit_hash = not (class_hash is MISSING or
