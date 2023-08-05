@@ -1057,6 +1057,38 @@ class ClinicParserTest(TestCase):
             Okay, we're done here.
         """)
 
+    def test_docstring_with_comments(self):
+        function = self.parse_function(dedent("""
+            module foo
+            foo.bar
+              x: int
+                 # We're about to have
+                 # the documentation for x.
+                 Documentation for x.
+                 # We've just had
+                 # the documentation for x.
+              y: int
+
+            # We're about to have
+            # the documentation for foo.
+            This is the documentation for foo.
+            # We've just had
+            # the documentation for foo.
+
+            Okay, we're done here.
+        """))
+        self.checkDocstring(function, """
+            bar($module, /, x, y)
+            --
+
+            This is the documentation for foo.
+
+              x
+                Documentation for x.
+
+            Okay, we're done here.
+        """)
+
     def test_parser_regression_special_character_in_parameter_column_of_docstring_first_line(self):
         function = self.parse_function(dedent("""
             module os

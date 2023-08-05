@@ -297,6 +297,8 @@ class Analyzer:
         def get_var_names(instr: Instruction) -> dict[str, StackEffect]:
             vars: dict[str, StackEffect] = {}
             for eff in instr.input_effects + instr.output_effects:
+                if eff.name == UNUSED:
+                    continue
                 if eff.name in vars:
                     if vars[eff.name] != eff:
                         self.error(
@@ -335,7 +337,7 @@ class Analyzer:
                 copies: list[tuple[StackEffect, StackEffect]] = []
                 while pushes and pops and pushes[-1] == pops[0]:
                     src, dst = pushes.pop(), pops.pop(0)
-                    if src.name == dst.name or dst.name is UNUSED:
+                    if src.name == dst.name or dst.name == UNUSED:
                         continue
                     copies.append((src, dst))
                 reads = set(copy[0].name for copy in copies)
