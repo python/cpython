@@ -959,7 +959,7 @@ ConfigParser Objects
    Raise a :exc:`ParsingError` instead of an :exc:`AttributeError` for
    :meth:`read` and :meth:`read_file` if the configuration contains
    a key without a corresponding value in scenarios where configuration
-   contains extra space or newline within a section.
+   contains extra space within a section.
 
    .. versionchanged:: 3.1
       The default *dict_type* is :class:`collections.OrderedDict`.
