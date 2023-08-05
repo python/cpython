@@ -14,8 +14,8 @@ are always available.  They are listed here in alphabetical order.
 | |  :func:`abs`          | |  :func:`enumerate`  | |  :func:`len`        | |  |func-range|_        |
 | |  :func:`aiter`        | |  :func:`eval`       | |  |func-list|_       | |  :func:`repr`         |
 | |  :func:`all`          | |  :func:`exec`       | |  :func:`locals`     | |  :func:`reversed`     |
-| |  :func:`any`          | |                     | |                     | |  :func:`round`        |
-| |  :func:`anext`        | |  **F**              | |  **M**              | |                       |
+| |  :func:`anext`        | |                     | |                     | |  :func:`round`        |
+| |  :func:`any`          | |  **F**              | |  **M**              | |                       |
 | |  :func:`ascii`        | |  :func:`filter`     | |  :func:`map`        | |  **S**                |
 | |                       | |  :func:`float`      | |  :func:`max`        | |  |func-set|_          |
 | |  **B**                | |  :func:`format`     | |  |func-memoryview|_ | |  :func:`setattr`      |
