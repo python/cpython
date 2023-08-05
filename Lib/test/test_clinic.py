@@ -7,7 +7,6 @@ from test.support import os_helper
 from test.support.os_helper import TESTFN, unlink
 from textwrap import dedent
 from unittest import TestCase
-import collections
 import contextlib
 import inspect
 import os.path
@@ -19,6 +18,13 @@ test_tools.skip_if_missing('clinic')
 with test_tools.imports_under_tool('clinic'):
     import clinic
     from clinic import DSLParser
+
+
+def _make_clinic(*, filename='clinic_tests'):
+    clang = clinic.CLanguage(None)
+    c = clinic.Clinic(clang, filename=filename)
+    c.block_parser = clinic.BlockParser('', clang)
+    return c
 
 
 def _expect_failure(tc, parser, code, errmsg, *, filename=None, lineno=None):
@@ -41,89 +47,15 @@ def _expect_failure(tc, parser, code, errmsg, *, filename=None, lineno=None):
         tc.assertEqual(cm.exception.lineno, lineno)
 
 
-class FakeConverter:
-    def __init__(self, name, args):
-        self.name = name
-        self.args = args
-
-
-class FakeConverterFactory:
-    def __init__(self, name):
-        self.name = name
-
-    def __call__(self, name, default, **kwargs):
-        return FakeConverter(self.name, kwargs)
-
-
-class FakeConvertersDict:
-    def __init__(self):
-        self.used_converters = {}
-
-    def get(self, name, default):
-        return self.used_converters.setdefault(name, FakeConverterFactory(name))
-
-c = clinic.Clinic(language='C', filename = "file")
-
-class FakeClinic:
-    def __init__(self):
-        self.converters = FakeConvertersDict()
-        self.legacy_converters = FakeConvertersDict()
-        self.language = clinic.CLanguage(None)
-        self.filename = None
-        self.destination_buffers = {}
-        self.block_parser = clinic.BlockParser('', self.language)
-        self.modules = collections.OrderedDict()
-        self.classes = collections.OrderedDict()
-        clinic.clinic = self
-        self.name = "FakeClinic"
-        self.line_prefix = self.line_suffix = ''
-        self.destinations = {}
-        self.add_destination("block", "buffer")
-        self.add_destination("file", "buffer")
-        self.add_destination("suppress", "suppress")
-        d = self.destinations.get
-        self.field_destinations = collections.OrderedDict((
-            ('docstring_prototype', d('suppress')),
-            ('docstring_definition', d('block')),
-            ('methoddef_define', d('block')),
-            ('impl_prototype', d('block')),
-            ('parser_prototype', d('suppress')),
-            ('parser_definition', d('block')),
-            ('impl_definition', d('block')),
-        ))
-        self.functions = []
-
-    def get_destination(self, name):
-        d = self.destinations.get(name)
-        if not d:
-            sys.exit("Destination does not exist: " + repr(name))
-        return d
-
-    def add_destination(self, name, type, *args):
-        if name in self.destinations:
-            sys.exit("Destination already exists: " + repr(name))
-        self.destinations[name] = clinic.Destination(name, type, self, *args)
-
-    def is_directive(self, name):
-        return name == "module"
-
-    def directive(self, name, args):
-        self.called_directives[name] = args
-
-    _module_and_class = clinic.Clinic._module_and_class
-
-    def __repr__(self):
-        return "<FakeClinic object>"
-
-
 class ClinicWholeFileTest(TestCase):
+    maxDiff = None
 
     def expect_failure(self, raw, errmsg, *, filename=None, lineno=None):
         _expect_failure(self, self.clinic.parse, raw, errmsg,
                         filename=filename, lineno=lineno)
 
     def setUp(self):
-        self.clinic = clinic.Clinic(clinic.CLanguage(None), filename="test.c")
+        self.clinic = _make_clinic(filename="test.c")
 
     def test_eol(self):
         # regression test:
@@ -160,11 +92,8 @@ class ClinicWholeFileTest(TestCase):
             [clinic start generated code]*/
             /*[clinic end generated code: output=0123456789abcdef input=fedcba9876543210]*/
         """
-        err = (
-            'Checksum mismatch!\n'
-            'Expected: 0123456789abcdef\n'
-            'Computed: da39a3ee5e6b4b0d\n'
-        )
+        err = ("Checksum mismatch! "
+               "Expected '0123456789abcdef', computed 'da39a3ee5e6b4b0d'")
         self.expect_failure(raw, err, filename="test.c", lineno=3)
 
     def test_garbage_after_stop_line(self):
@@ -402,7 +331,7 @@ class ClinicWholeFileTest(TestCase):
         self.expect_failure(block, err, lineno=9)
 
     def test_badly_formed_return_annotation(self):
-        err = "Badly formed annotation for m.f: 'Custom'"
+        err = "Badly formed annotation for 'm.f': 'Custom'"
         block = """
             /*[python input]
             class Custom_return_converter(CReturnConverter):
@@ -415,6 +344,260 @@ class ClinicWholeFileTest(TestCase):
             [clinic start generated code]*/
         """
         self.expect_failure(block, err, lineno=8)
+
+    def test_module_already_got_one(self):
+        err = "Already defined module 'm'!"
+        block = """
+            /*[clinic input]
+            module m
+            module m
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=3)
+
+    def test_destination_already_got_one(self):
+        err = "Destination already exists: 'test'"
+        block = """
+            /*[clinic input]
+            destination test new buffer
+            destination test new buffer
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=3)
+
+    def test_destination_does_not_exist(self):
+        err = "Destination does not exist: '/dev/null'"
+        block = """
+            /*[clinic input]
+            output everything /dev/null
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=2)
+
+    def test_class_already_got_one(self):
+        err = "Already defined class 'C'!"
+        block = """
+            /*[clinic input]
+            class C "" ""
+            class C "" ""
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=3)
+
+    def test_cant_nest_module_inside_class(self):
+        err = "Can't nest a module inside a class!"
+        block = """
+            /*[clinic input]
+            class C "" ""
+            module C.m
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=3)
+
+    def test_dest_buffer_not_empty_at_eof(self):
+        expected_warning = ("Destination buffer 'buffer' not empty at "
+                            "end of file, emptying.")
+        expected_generated = dedent("""
+            /*[clinic input]
+            output everything buffer
+            fn
+                a: object
+                /
+            [clinic start generated code]*/
+            /*[clinic end generated code: output=da39a3ee5e6b4b0d input=1c4668687f5fd002]*/
+
+            /*[clinic input]
+            dump buffer
+            [clinic start generated code]*/
+
+            PyDoc_VAR(fn__doc__);
+
+            PyDoc_STRVAR(fn__doc__,
+            "fn($module, a, /)\\n"
+            "--\\n"
+            "\\n");
+
+            #define FN_METHODDEF    \\
+                {"fn", (PyCFunction)fn, METH_O, fn__doc__},
+
+            static PyObject *
+            fn(PyObject *module, PyObject *a)
+            /*[clinic end generated code: output=be6798b148ab4e53 input=524ce2e021e4eba6]*/
+        """)
+        block = dedent("""
+            /*[clinic input]
+            output everything buffer
+            fn
+                a: object
+                /
+            [clinic start generated code]*/
+        """)
+        with support.captured_stdout() as stdout:
+            generated = self.clinic.parse(block)
+        self.assertIn(expected_warning, stdout.getvalue())
+        self.assertEqual(generated, expected_generated)
+
+    def test_dest_clear(self):
+        err = "Can't clear destination 'file': it's not of type 'buffer'"
+        block = """
+            /*[clinic input]
+            destination file clear
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=2)
+
+    def test_directive_set_misuse(self):
+        err = "unknown variable 'ets'"
+        block = """
+            /*[clinic input]
+            set ets tse
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=2)
+
+    def test_directive_set_prefix(self):
+        block = dedent("""
+            /*[clinic input]
+            set line_prefix '// '
+            output everything suppress
+            output docstring_prototype buffer
+            fn
+                a: object
+                /
+            [clinic start generated code]*/
+            /* We need to dump the buffer.
+             * If not, Argument Clinic will emit a warning */
+            /*[clinic input]
+            dump buffer
+            [clinic start generated code]*/
+        """)
+        generated = self.clinic.parse(block)
+        expected_docstring_prototype = "// PyDoc_VAR(fn__doc__);"
+        self.assertIn(expected_docstring_prototype, generated)
+
+    def test_directive_set_suffix(self):
+        block = dedent("""
+            /*[clinic input]
+            set line_suffix '  // test'
+            output everything suppress
+            output docstring_prototype buffer
+            fn
+                a: object
+                /
+            [clinic start generated code]*/
+            /* We need to dump the buffer.
+             * If not, Argument Clinic will emit a warning */
+            /*[clinic input]
+            dump buffer
+            [clinic start generated code]*/
+        """)
+        generated = self.clinic.parse(block)
+        expected_docstring_prototype = "PyDoc_VAR(fn__doc__);  // test"
+        self.assertIn(expected_docstring_prototype, generated)
+
+    def test_directive_set_prefix_and_suffix(self):
+        block = dedent("""
+            /*[clinic input]
+            set line_prefix '{block comment start} '
+            set line_suffix ' {block comment end}'
+            output everything suppress
+            output docstring_prototype buffer
+            fn
+                a: object
+                /
+            [clinic start generated code]*/
+            /* We need to dump the buffer.
+             * If not, Argument Clinic will emit a warning */
+            /*[clinic input]
+            dump buffer
+            [clinic start generated code]*/
+        """)
+        generated = self.clinic.parse(block)
+        expected_docstring_prototype = "/* PyDoc_VAR(fn__doc__); */"
+        self.assertIn(expected_docstring_prototype, generated)
+
+    def test_directive_printout(self):
+        block = dedent("""
+            /*[clinic input]
+            output everything buffer
+            printout test
+            [clinic start generated code]*/
+        """)
+        expected = dedent("""
+            /*[clinic input]
+            output everything buffer
+            printout test
+            [clinic start generated code]*/
+            test
+            /*[clinic end generated code: output=4e1243bd22c66e76 input=898f1a32965d44ca]*/
+        """)
+        generated = self.clinic.parse(block)
+        self.assertEqual(generated, expected)
+
+    def test_directive_preserve_twice(self):
+        err = "Can't have 'preserve' twice in one block!"
+        block = """
+            /*[clinic input]
+            preserve
+            preserve
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=3)
+
+    def test_directive_preserve_input(self):
+        err = "'preserve' only works for blocks that don't produce any output!"
+        block = """
+            /*[clinic input]
+            preserve
+            fn
+                a: object
+                /
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=6)
+
+    def test_directive_preserve_output(self):
+        err = "'preserve' only works for blocks that don't produce any output!"
+        block = dedent("""
+            /*[clinic input]
+            output everything buffer
+            preserve
+            [clinic start generated code]*/
+            // Preserve this
+            /*[clinic end generated code: output=eaa49677ae4c1f7d input=559b5db18fddae6a]*/
+            /*[clinic input]
+            dump buffer
+            [clinic start generated code]*/
+            /*[clinic end generated code: output=da39a3ee5e6b4b0d input=524ce2e021e4eba6]*/
+        """)
+        generated = self.clinic.parse(block)
+        self.assertEqual(generated, block)
+
+    def test_directive_output_invalid_command(self):
+        err = dedent("""
+            Invalid command or destination name 'cmd'. Must be one of:
+             - 'preset'
+             - 'push'
+             - 'pop'
+             - 'print'
+             - 'everything'
+             - 'cpp_if'
+             - 'docstring_prototype'
+             - 'docstring_definition'
+             - 'methoddef_define'
+             - 'impl_prototype'
+             - 'parser_prototype'
+             - 'parser_definition'
+             - 'cpp_endif'
+             - 'methoddef_ifndef'
+             - 'impl_definition'
+        """).strip()
+        block = """
+            /*[clinic input]
+            output cmd buffer
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=2)
 
 
 class ClinicGroupPermuterTest(TestCase):
@@ -596,7 +779,7 @@ xyz
 class ClinicParserTest(TestCase):
 
     def parse(self, text):
-        c = FakeClinic()
+        c = _make_clinic()
         parser = DSLParser(c)
         block = clinic.Block(text)
         parser.parse(block)
@@ -620,7 +803,7 @@ class ClinicParserTest(TestCase):
                          dedent(expected).strip())
 
     def test_trivial(self):
-        parser = DSLParser(FakeClinic())
+        parser = DSLParser(_make_clinic())
         block = clinic.Block("""
             module os
             os.access
@@ -684,7 +867,7 @@ class ClinicParserTest(TestCase):
         self.assertEqual("MAXSIZE", p.converter.c_default)
 
         err = (
-            "When you specify a named constant ('sys.maxsize') as your default value,\n"
+            "When you specify a named constant ('sys.maxsize') as your default value, "
             "you MUST specify a valid c_default."
         )
         block = """
@@ -696,7 +879,7 @@ class ClinicParserTest(TestCase):
 
     def test_param_default_expr_binop(self):
         err = (
-            "When you specify an expression ('a + b') as your default value,\n"
+            "When you specify an expression ('a + b') as your default value, "
             "you MUST specify a valid c_default."
         )
         block = """
@@ -719,7 +902,7 @@ class ClinicParserTest(TestCase):
 
     def test_param_default_parameters_out_of_order(self):
         err = (
-            "Can't have a parameter without a default ('something_else')\n"
+            "Can't have a parameter without a default ('something_else') "
             "after a parameter with a default!"
         )
         block = """
@@ -805,6 +988,38 @@ class ClinicParserTest(TestCase):
             Okay, we're done here.
         """)
 
+    def test_docstring_with_comments(self):
+        function = self.parse_function(dedent("""
+            module foo
+            foo.bar
+              x: int
+                 # We're about to have
+                 # the documentation for x.
+                 Documentation for x.
+                 # We've just had
+                 # the documentation for x.
+              y: int
+
+            # We're about to have
+            # the documentation for foo.
+            This is the documentation for foo.
+            # We've just had
+            # the documentation for foo.
+
+            Okay, we're done here.
+        """))
+        self.checkDocstring(function, """
+            bar($module, /, x, y)
+            --
+
+            This is the documentation for foo.
+
+              x
+                Documentation for x.
+
+            Okay, we're done here.
+        """)
+
     def test_parser_regression_special_character_in_parameter_column_of_docstring_first_line(self):
         function = self.parse_function(dedent("""
             module os
@@ -835,7 +1050,7 @@ class ClinicParserTest(TestCase):
         with support.captured_stderr() as stderr:
             self.expect_failure(block, err, lineno=0)
         expected_debug_print = dedent("""\
-            cls=None, module=<FakeClinic object>, existing='fooooooooooooooooo'
+            cls=None, module=<clinic.Clinic object>, existing='fooooooooooooooooo'
             (cls or module).functions=[]
         """)
         stderr = stderr.getvalue()
@@ -853,7 +1068,7 @@ class ClinicParserTest(TestCase):
             module os
             os.stat -> invalid syntax
         """
-        err = "Badly formed annotation for os.stat: 'invalid syntax'"
+        err = "Badly formed annotation for 'os.stat': 'invalid syntax'"
         self.expect_failure(block, err)
 
     def test_legacy_converter_disallowed_in_return_annotation(self):
@@ -1017,8 +1232,8 @@ class ClinicParserTest(TestCase):
 
     def test_disallowed_grouping__two_top_groups_on_left(self):
         err = (
-            'Function two_top_groups_on_left has an unsupported group '
-            'configuration. (Unexpected state 2.b)'
+            "Function 'two_top_groups_on_left' has an unsupported group "
+            "configuration. (Unexpected state 2.b)"
         )
         block = """
             module foo
@@ -1046,7 +1261,7 @@ class ClinicParserTest(TestCase):
                 ]
         """
         err = (
-            "Function two_top_groups_on_right has an unsupported group "
+            "Function 'two_top_groups_on_right' has an unsupported group "
             "configuration. (Unexpected state 6.b)"
         )
         self.expect_failure(block, err)
@@ -1082,7 +1297,7 @@ class ClinicParserTest(TestCase):
                 param: int
         """
         err = (
-            "Function group_after_parameter_on_left has an unsupported group "
+            "Function 'group_after_parameter_on_left' has an unsupported group "
             "configuration. (Unexpected state 2.b)"
         )
         self.expect_failure(block, err)
@@ -1099,7 +1314,7 @@ class ClinicParserTest(TestCase):
                 param: int
         """
         err = (
-            "Function empty_group has an empty group.\n"
+            "Function 'empty_group' has an empty group. "
             "All groups must contain at least one parameter."
         )
         self.expect_failure(block, err)
@@ -1116,7 +1331,7 @@ class ClinicParserTest(TestCase):
                 ]
         """
         err = (
-            "Function empty_group has an empty group.\n"
+            "Function 'empty_group' has an empty group. "
             "All groups must contain at least one parameter."
         )
         self.expect_failure(block, err)
@@ -1130,7 +1345,7 @@ class ClinicParserTest(TestCase):
                 group2: int
                 ]
         """
-        err = "Function empty_group has a ] without a matching [."
+        err = "Function 'empty_group' has a ']' without a matching '['"
         self.expect_failure(block, err)
 
     def test_no_parameters(self):
@@ -1165,7 +1380,7 @@ class ClinicParserTest(TestCase):
             foo.bar => int
                 /
         """
-        err = "Illegal function name: foo.bar => int"
+        err = "Illegal function name: 'foo.bar => int'"
         self.expect_failure(block, err)
 
     def test_illegal_c_basename(self):
@@ -1174,7 +1389,7 @@ class ClinicParserTest(TestCase):
             foo.bar as 935
                 /
         """
-        err = "Illegal C basename: 935"
+        err = "Illegal C basename: '935'"
         self.expect_failure(block, err)
 
     def test_single_star(self):
@@ -1184,7 +1399,7 @@ class ClinicParserTest(TestCase):
                 *
                 *
         """
-        err = "Function bar uses '*' more than once."
+        err = "Function 'bar' uses '*' more than once."
         self.expect_failure(block, err)
 
     def test_parameters_required_after_star(self):
@@ -1194,10 +1409,104 @@ class ClinicParserTest(TestCase):
             "module foo\nfoo.bar\n  this: int\n  *",
             "module foo\nfoo.bar\n  this: int\n  *\nDocstring.",
         )
-        err = "Function bar specifies '*' without any parameters afterwards."
+        err = "Function 'foo.bar' specifies '*' without any parameters afterwards."
         for block in dataset:
             with self.subTest(block=block):
                 self.expect_failure(block, err)
+
+    def test_parameters_required_after_depr_star(self):
+        dataset = (
+            "module foo\nfoo.bar\n  * [from 3.14]",
+            "module foo\nfoo.bar\n  * [from 3.14]\nDocstring here.",
+            "module foo\nfoo.bar\n  this: int\n  * [from 3.14]",
+            "module foo\nfoo.bar\n  this: int\n  * [from 3.14]\nDocstring.",
+        )
+        err = "Function 'foo.bar' specifies '* [from 3.14]' without any parameters afterwards."
+        for block in dataset:
+            with self.subTest(block=block):
+                self.expect_failure(block, err)
+
+    def test_depr_star_invalid_format_1(self):
+        block = """
+            module foo
+            foo.bar
+                this: int
+                * [from 3]
+            Docstring.
+        """
+        err = (
+            "Function 'foo.bar': expected format '* [from major.minor]' "
+            "where 'major' and 'minor' are integers; got '3'"
+        )
+        self.expect_failure(block, err, lineno=3)
+
+    def test_depr_star_invalid_format_2(self):
+        block = """
+            module foo
+            foo.bar
+                this: int
+                * [from a.b]
+            Docstring.
+        """
+        err = (
+            "Function 'foo.bar': expected format '* [from major.minor]' "
+            "where 'major' and 'minor' are integers; got 'a.b'"
+        )
+        self.expect_failure(block, err, lineno=3)
+
+    def test_depr_star_invalid_format_3(self):
+        block = """
+            module foo
+            foo.bar
+                this: int
+                * [from 1.2.3]
+            Docstring.
+        """
+        err = (
+            "Function 'foo.bar': expected format '* [from major.minor]' "
+            "where 'major' and 'minor' are integers; got '1.2.3'"
+        )
+        self.expect_failure(block, err, lineno=3)
+
+    def test_parameters_required_after_depr_star(self):
+        block = """
+            module foo
+            foo.bar
+                this: int
+                * [from 3.14]
+            Docstring.
+        """
+        err = (
+            "Function 'foo.bar' specifies '* [from ...]' without "
+            "any parameters afterwards"
+        )
+        self.expect_failure(block, err, lineno=4)
+
+    def test_depr_star_must_come_before_star(self):
+        block = """
+            module foo
+            foo.bar
+                this: int
+                *
+                * [from 3.14]
+            Docstring.
+        """
+        err = "Function 'foo.bar': '* [from ...]' must come before '*'"
+        self.expect_failure(block, err, lineno=4)
+
+    def test_depr_star_duplicate(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                * [from 3.14]
+                b: int
+                * [from 3.14]
+                c: int
+            Docstring.
+        """
+        err = "Function 'foo.bar' uses '[from ...]' more than once"
+        self.expect_failure(block, err, lineno=5)
 
     def test_single_slash(self):
         block = """
@@ -1207,7 +1516,7 @@ class ClinicParserTest(TestCase):
                 /
         """
         err = (
-            "Function bar has an unsupported group configuration. "
+            "Function 'bar' has an unsupported group configuration. "
             "(Unexpected state 0.d)"
         )
         self.expect_failure(block, err)
@@ -1221,7 +1530,7 @@ class ClinicParserTest(TestCase):
                 b: int
                 /
         """
-        err = "Function bar uses '/' more than once."
+        err = "Function 'bar' uses '/' more than once."
         self.expect_failure(block, err)
 
     def test_mix_star_and_slash(self):
@@ -1235,7 +1544,7 @@ class ClinicParserTest(TestCase):
                /
         """
         err = (
-            "Function bar mixes keyword-only and positional-only parameters, "
+            "Function 'bar' mixes keyword-only and positional-only parameters, "
             "which is unsupported."
         )
         self.expect_failure(block, err)
@@ -1248,7 +1557,7 @@ class ClinicParserTest(TestCase):
                 x: int
         """
         err = (
-            "Function bar has an unsupported group configuration. "
+            "Function 'bar' has an unsupported group configuration. "
             "(Unexpected state 0.d)"
         )
         self.expect_failure(block, err)
@@ -1347,7 +1656,8 @@ class ClinicParserTest(TestCase):
                *vararg1: object
             \t*vararg2: object
         """
-        err = "Tab characters are illegal in the Clinic DSL."
+        err = ("Tab characters are illegal in the Clinic DSL: "
+               r"'\t*vararg2: object'")
         self.expect_failure(block, err)
 
     def test_indent_stack_illegal_outdent(self):
@@ -1361,8 +1671,7 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err)
 
     def test_directive(self):
-        c = FakeClinic()
-        parser = DSLParser(c)
+        parser = DSLParser(_make_clinic())
         parser.flag = False
         parser.directives['setflag'] = lambda : setattr(parser, 'flag', True)
         block = clinic.Block("setflag")
@@ -1486,6 +1795,16 @@ class ClinicParserTest(TestCase):
         """
         self.expect_failure(block, err, lineno=3)
 
+    def test_duplicate_coexist(self):
+        err = "Called @coexist twice"
+        block = """
+            module m
+            @coexist
+            @coexist
+            m.fn
+        """
+        self.expect_failure(block, err, lineno=2)
+
     def test_unused_param(self):
         block = self.parse("""
             module foo
@@ -1554,10 +1873,10 @@ class ClinicParserTest(TestCase):
             self.parse(block)
         # The line numbers are off; this is a known limitation.
         expected = dedent("""\
-            Warning on line 0:
+            Warning in file 'clinic_tests' on line 0:
             Non-ascii characters are not allowed in docstrings: 'á'
 
-            Warning on line 0:
+            Warning in file 'clinic_tests' on line 0:
             Non-ascii characters are not allowed in docstrings: 'ü', 'á', 'ß'
 
         """)
@@ -1596,8 +1915,17 @@ class ClinicParserTest(TestCase):
         """
         self.expect_failure(block, err, lineno=1)
 
+    def test_default_is_not_of_correct_type(self):
+        err = ("int_converter: default value 2.5 for field 'a' "
+               "is not of type 'int'")
+        block = """
+            fn
+                a: int = 2.5
+        """
+        self.expect_failure(block, err, lineno=1)
+
     def test_invalid_legacy_converter(self):
-        err = "fhi is not a valid legacy converter"
+        err = "'fhi' is not a valid legacy converter"
         block = """
             fn
                 a: 'fhi'
@@ -1605,7 +1933,7 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=1)
 
     def test_parent_class_or_module_does_not_exist(self):
-        err = "Parent class or module z does not exist"
+        err = "Parent class or module 'z' does not exist"
         block = """
             module m
             z.func
@@ -1632,7 +1960,7 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=2)
 
     def test_state_func_docstring_assert_no_group(self):
-        err = "Function func has a ] without a matching [."
+        err = "Function 'func' has a ']' without a matching '['"
         block = """
             module m
             m.func
@@ -1642,7 +1970,7 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=2)
 
     def test_state_func_docstring_no_summary(self):
-        err = "Docstring for m.func does not have a summary line!"
+        err = "Docstring for 'm.func' does not have a summary line!"
         block = """
             module m
             m.func
@@ -1680,7 +2008,8 @@ class ClinicExternalTest(TestCase):
 
     def expect_success(self, *args):
         out, err, code = self.run_clinic(*args)
-        self.assertEqual(code, 0, f"Unexpected failure: {args=}")
+        if code != 0:
+            self.fail("\n".join([f"Unexpected failure: {args=}", out, err]))
         self.assertEqual(err, "")
         return out
 
@@ -1737,13 +2066,11 @@ class ClinicExternalTest(TestCase):
             const char *hand_edited = "output block is overwritten";
             /*[clinic end generated code: output=bogus input=bogus]*/
         """)
-        fail_msg = dedent("""
-            Checksum mismatch!
-            Expected: bogus
-            Computed: 2ed19
-            Suggested fix: remove all generated code including the end marker,
-            or use the '-f' option.
-        """)
+        fail_msg = (
+            "Checksum mismatch! Expected 'bogus', computed '2ed19'. "
+            "Suggested fix: remove all generated code including the end marker, "
+            "or use the '-f' option.\n"
+        )
         with os_helper.temp_dir() as tmp_dir:
             fn = os.path.join(tmp_dir, "test.c")
             with open(fn, "w", encoding="utf-8") as f:
@@ -1920,6 +2247,67 @@ class ClinicExternalTest(TestCase):
         msg = "error: --srcdir must not be empty with --make"
         self.assertIn(msg, err)
 
+    def test_file_dest(self):
+        block = dedent("""
+            /*[clinic input]
+            destination test new file {path}.h
+            output everything test
+            func
+                a: object
+                /
+            [clinic start generated code]*/
+        """)
+        expected_checksum_line = (
+            "/*[clinic end generated code: "
+            "output=da39a3ee5e6b4b0d input=b602ab8e173ac3bd]*/\n"
+        )
+        expected_output = dedent("""\
+            /*[clinic input]
+            preserve
+            [clinic start generated code]*/
+
+            #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+            #  include "pycore_gc.h"            // PyGC_Head
+            #  include "pycore_runtime.h"       // _Py_ID()
+            #endif
+
+
+            PyDoc_VAR(func__doc__);
+
+            PyDoc_STRVAR(func__doc__,
+            "func($module, a, /)\\n"
+            "--\\n"
+            "\\n");
+
+            #define FUNC_METHODDEF    \\
+                {"func", (PyCFunction)func, METH_O, func__doc__},
+
+            static PyObject *
+            func(PyObject *module, PyObject *a)
+            /*[clinic end generated code: output=56c09670e89a0d9a input=a9049054013a1b77]*/
+        """)
+        with os_helper.temp_dir() as tmp_dir:
+            in_fn = os.path.join(tmp_dir, "test.c")
+            out_fn = os.path.join(tmp_dir, "test.c.h")
+            with open(in_fn, "w", encoding="utf-8") as f:
+                f.write(block)
+            with open(out_fn, "w", encoding="utf-8") as f:
+                f.write("")  # Write an empty output file!
+            # Clinic should complain about the empty output file.
+            _, err = self.expect_failure(in_fn)
+            expected_err = (f"Modified destination file {out_fn!r}; "
+                            "not overwriting!")
+            self.assertIn(expected_err, err)
+            # Run clinic again, this time with the -f option.
+            out = self.expect_success("-f", in_fn)
+            # Read back the generated output.
+            with open(in_fn, encoding="utf-8") as f:
+                data = f.read()
+                expected_block = f"{block}{expected_checksum_line}"
+                self.assertEqual(data, expected_block)
+            with open(out_fn, encoding="utf-8") as f:
+                data = f.read()
+                self.assertEqual(data, expected_output)
 
 try:
     import _testclinic as ac_tester
@@ -2664,6 +3052,96 @@ class FormatHelperTests(unittest.TestCase):
         )
         out = clinic.suffix_all_lines(lines, suffix="foo")
         self.assertEqual(out, expected)
+
+
+class ClinicReprTests(unittest.TestCase):
+    def test_Block_repr(self):
+        block = clinic.Block("foo")
+        expected_repr = "<clinic.Block 'text' input='foo' output=None>"
+        self.assertEqual(repr(block), expected_repr)
+
+        block2 = clinic.Block("bar", "baz", [], "eggs", "spam")
+        expected_repr_2 = "<clinic.Block 'baz' input='bar' output='eggs'>"
+        self.assertEqual(repr(block2), expected_repr_2)
+
+        block3 = clinic.Block(
+            input="longboi_" * 100,
+            dsl_name="wow_so_long",
+            signatures=[],
+            output="very_long_" * 100,
+            indent=""
+        )
+        expected_repr_3 = (
+            "<clinic.Block 'wow_so_long' input='longboi_longboi_longboi_l...' output='very_long_very_long_very_...'>"
+        )
+        self.assertEqual(repr(block3), expected_repr_3)
+
+    def test_Destination_repr(self):
+        c = _make_clinic()
+
+        destination = clinic.Destination(
+            "foo", type="file", clinic=c, args=("eggs",)
+        )
+        self.assertEqual(
+            repr(destination), "<clinic.Destination 'foo' type='file' file='eggs'>"
+        )
+
+        destination2 = clinic.Destination("bar", type="buffer", clinic=c)
+        self.assertEqual(repr(destination2), "<clinic.Destination 'bar' type='buffer'>")
+
+    def test_Module_repr(self):
+        module = clinic.Module("foo", _make_clinic())
+        self.assertRegex(repr(module), r"<clinic.Module 'foo' at \d+>")
+
+    def test_Class_repr(self):
+        cls = clinic.Class("foo", _make_clinic(), None, 'some_typedef', 'some_type_object')
+        self.assertRegex(repr(cls), r"<clinic.Class 'foo' at \d+>")
+
+    def test_FunctionKind_repr(self):
+        self.assertEqual(
+            repr(clinic.FunctionKind.INVALID), "<clinic.FunctionKind.INVALID>"
+        )
+        self.assertEqual(
+            repr(clinic.FunctionKind.CLASS_METHOD), "<clinic.FunctionKind.CLASS_METHOD>"
+        )
+
+    def test_Function_and_Parameter_reprs(self):
+        function = clinic.Function(
+            name='foo',
+            module=_make_clinic(),
+            cls=None,
+            c_basename=None,
+            full_name='foofoo',
+            return_converter=clinic.init_return_converter(),
+            kind=clinic.FunctionKind.METHOD_INIT,
+            coexist=False
+        )
+        self.assertEqual(repr(function), "<clinic.Function 'foo'>")
+
+        converter = clinic.self_converter('bar', 'bar', function)
+        parameter = clinic.Parameter(
+            "bar",
+            kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            function=function,
+            converter=converter
+        )
+        self.assertEqual(repr(parameter), "<clinic.Parameter 'bar'>")
+
+    def test_Monitor_repr(self):
+        monitor = clinic.cpp.Monitor()
+        self.assertRegex(repr(monitor), r"<clinic.Monitor \d+ line=0 condition=''>")
+
+        monitor.line_number = 42
+        monitor.stack.append(("token1", "condition1"))
+        self.assertRegex(
+            repr(monitor), r"<clinic.Monitor \d+ line=42 condition='condition1'>"
+        )
+
+        monitor.stack.append(("token2", "condition2"))
+        self.assertRegex(
+            repr(monitor),
+            r"<clinic.Monitor \d+ line=42 condition='condition1 && condition2'>"
+        )
 
 
 if __name__ == "__main__":
