@@ -3065,11 +3065,11 @@ class ClinicReprTests(unittest.TestCase):
 
     def test_Module_repr(self):
         module = clinic.Module("foo", FakeClinic())
-        self.assertRegex(repr(module), r"<clinic.Module 'foo' at [a-zA-Z0-9]+>")
+        self.assertRegex(repr(module), r"<clinic.Module 'foo' at \d+>")
 
     def test_Class_repr(self):
         cls = clinic.Class("foo", FakeClinic(), None, 'some_typedef', 'some_type_object')
-        self.assertRegex(repr(cls), r"<clinic.Class 'foo' at [a-zA-Z0-9]+>")
+        self.assertRegex(repr(cls), r"<clinic.Class 'foo' at \d+>")
 
     def test_FunctionKind_repr(self):
         self.assertEqual(
@@ -3103,22 +3103,18 @@ class ClinicReprTests(unittest.TestCase):
 
     def test_Monitor_repr(self):
         monitor = clinic.cpp.Monitor()
-        self.assertRegex(
-            repr(monitor),
-            r"<clinic.Monitor [a-zA-Z0-9]+ line=0 condition=''>"
-        )
+        self.assertRegex(repr(monitor), r"<clinic.Monitor \d+ line=0 condition=''>")
 
         monitor.line_number = 42
         monitor.stack.append(("token1", "condition1"))
         self.assertRegex(
-            repr(monitor),
-            r"<clinic.Monitor [a-zA-Z0-9]+ line=42 condition='condition1'>"
+            repr(monitor), r"<clinic.Monitor \d+ line=42 condition='condition1'>"
         )
 
         monitor.stack.append(("token2", "condition2"))
         self.assertRegex(
             repr(monitor),
-            r"<clinic.Monitor [a-zA-Z0-9]+ line=42 condition='condition1 && condition2'>"
+            r"<clinic.Monitor \d+ line=42 condition='condition1 && condition2'>"
         )
 
 
