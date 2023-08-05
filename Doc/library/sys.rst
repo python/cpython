@@ -1881,6 +1881,7 @@ always available.
 
 
 .. data:: monitoring
+   :noindex:
 
    Namespace containing functions and constants for register callbacks
    and controlling monitoring events.

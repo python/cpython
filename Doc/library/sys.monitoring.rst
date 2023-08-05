@@ -2,6 +2,7 @@
 ====================================================
 
 ..  module:: sys.monitoring
+
     :synopsis: Access and control event monitoring
 
    .. note::
@@ -16,7 +17,7 @@ This namespace provides access to the functions and constants necessary to
 activate and control event monitoring.
 
 As programs execute, events occur that might be of interest to tools that
-monitor execution. The `mod:`sys.monitoring` namespace provides means to
+monitor execution. The :mod:`sys.monitoring` namespace provides means to
 receive callbacks when events of interest occur.
 
 The monitoring API consists of three components:
@@ -86,7 +87,7 @@ The following events are supported:
 
 More events may be added in the future.
 
-These events are attributes of the `:mod:sys.monitoring.events` namespace.
+These events are attributes of the :mod:`sys.monitoring.events` namespace.
 Each event is represented as a power-of-2 integer constant.
 To define a set of events, simply bitwise or the individual events together.
 For example, to specify both ``PY_RETURN`` and ``PY_START`` events, use the
@@ -196,7 +197,7 @@ Disabling events
 ''''''''''''''''
 
 Local events can be disabled for a specific code location by returning
-`sys.monitoring.DISABLE` from a callback function. This does not change
+``sys.monitoring.DISABLE`` from a callback function. This does not change
 which events are set, or any other code locations for the same event.
 
 Disabling events for specific locations is very important for high

@@ -312,7 +312,7 @@ A Python API is anticipated for 3.13.  (See :pep:`554`.)
 
 (Contributed by Eric Snow in :gh:`104210`, etc.)
 
-.. _whatsnew312-pep684:
+.. _whatsnew312-pep669:
 
 PEP 669: Low impact monitoring for CPython
 ------------------------------------------

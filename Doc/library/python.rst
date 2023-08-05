@@ -12,6 +12,7 @@ overview:
 .. toctree::
 
    sys.rst
+   sys.monitoring.rst
    sysconfig.rst
    builtins.rst
    __main__.rst
