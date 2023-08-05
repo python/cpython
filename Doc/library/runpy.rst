@@ -51,7 +51,7 @@ The :mod:`runpy` module provides two functions:
 
    The special global variables ``__name__``, ``__spec__``, ``__file__``,
    ``__cached__``, ``__loader__`` and ``__package__`` are set in the globals
-   dictionary before the module code is executed (Note that this is a
+   dictionary before the module code is executed (note that this is a
    minimal set of variables - other variables may be set implicitly as an
    interpreter implementation detail).
 
@@ -106,11 +106,12 @@ The :mod:`runpy` module provides two functions:
    Execute the code at the named filesystem location and return the resulting
    module globals dictionary. As with a script name supplied to the CPython
    command line, the supplied path may refer to a Python source file, a
-   compiled bytecode file or a valid sys.path entry containing a ``__main__``
-   module (e.g. a zipfile containing a top-level ``__main__.py`` file).
+   compiled bytecode file or a valid ``sys.path`` entry containing a
+   ``__main__`` module (e.g. a zipfile containing a top-level ``__main__.py``
+   file).
 
    For a simple script, the specified code is simply executed in a fresh
-   module namespace. For a valid sys.path entry (typically a zipfile or
+   module namespace. For a valid ``sys.path`` entry (typically a zipfile or
    directory), the entry is first added to the beginning of ``sys.path``. The
    function then looks for and executes a :mod:`__main__` module using the
    updated path. Note that there is no special protection against invoking
@@ -125,7 +126,7 @@ The :mod:`runpy` module provides two functions:
 
    The special global variables ``__name__``, ``__spec__``, ``__file__``,
    ``__cached__``, ``__loader__`` and ``__package__`` are set in the globals
-   dictionary before the module code is executed (Note that this is a
+   dictionary before the module code is executed (note that this is a
    minimal set of variables - other variables may be set implicitly as an
    interpreter implementation detail).
 
@@ -137,7 +138,7 @@ The :mod:`runpy` module provides two functions:
    supplied path, and ``__spec__``, ``__cached__``, ``__loader__`` and
    ``__package__`` will all be set to :const:`None`.
 
-   If the supplied path is a reference to a valid sys.path entry, then
+   If the supplied path is a reference to a valid ``sys.path`` entry, then
    ``__spec__`` will be set appropriately for the imported ``__main__``
    module (that is, ``__spec__.name`` will always be ``__main__``).
    ``__file__``, ``__cached__``, ``__loader__`` and ``__package__`` will be
@@ -152,7 +153,7 @@ The :mod:`runpy` module provides two functions:
 
    Note that, unlike :func:`run_module`, the alterations made to :mod:`sys`
    are not optional in this function as these adjustments are essential to
-   allowing the execution of sys.path entries. As the thread-safety
+   allowing the execution of ``sys.path`` entries. As the thread-safety
    limitations still apply, use of this function in threaded code should be
    either serialised with the import lock or delegated to a separate process.
 
@@ -165,7 +166,7 @@ The :mod:`runpy` module provides two functions:
    .. versionchanged:: 3.4
       Updated to take advantage of the module spec feature added by
       :pep:`451`. This allows ``__cached__`` to be set correctly in the
-      case where ``__main__`` is imported from a valid sys.path entry rather
+      case where ``__main__`` is imported from a valid ``sys.path`` entry rather
       than being executed directly.
 
    .. versionchanged:: 3.12
