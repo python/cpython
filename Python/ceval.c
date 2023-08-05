@@ -1265,7 +1265,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
     if (co->co_flags & CO_VARARGS) {
         PyObject *u = NULL;
         if (argcount == n) {
-            u = Py_NewRef(&_Py_SINGLETON(tuple_empty));
+            u = (PyObject *)&_Py_SINGLETON(tuple_empty);
         }
         else {
             assert(args != NULL);
