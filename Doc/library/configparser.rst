@@ -1030,18 +1030,18 @@ ConfigParser Objects
       directory), and all existing configuration files in the iterable will be
       read.
 
-      If none of the named files exist, the :class:`ConfigParser`
-      instance will contain an empty dataset.  An application which requires
-      initial values to be loaded from a file should load the required file or
-      files using :meth:`read_file` before calling :meth:`read` for any
-      optional files::
-
       Raise :exc:`ParsingError` instead of :exc:`AttributeError`
       when the configuration contains a key without a corresponding value.
       This change is intended to handle scenarios where a key lacks a value
       in a configuration which contains extra space or newline within a section.
       Please note that it's not recommended to have extra spaces
       or blank lines within sections of the configuration.
+      
+      If none of the named files exist, the :class:`ConfigParser`
+      instance will contain an empty dataset.  An application which requires
+      initial values to be loaded from a file should load the required file or
+      files using :meth:`read_file` before calling :meth:`read` for any
+      optional files::
 
          import configparser, os
 
