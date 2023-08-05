@@ -1,1 +1,0 @@
-Detect MPI compilers in :file:`configure`.
