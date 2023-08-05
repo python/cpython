@@ -538,20 +538,20 @@ jobs:
       matrix:
         sanitizer: [address, undefined, memory]
     steps:
-      - name: Build Fuzzers (${{ matrix.sanitizer }})
+      - name: Build fuzzers (${{ matrix.sanitizer }})
         id: build
         uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
         with:
           oss-fuzz-project-name: cpython3
           sanitizer: ${{ matrix.sanitizer }}
-      - name: Run Fuzzers (${{ matrix.sanitizer }})
+      - name: Run fuzzers (${{ matrix.sanitizer }})
         uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master
         with:
           fuzz-seconds: 600
           oss-fuzz-project-name: cpython3
           output-sarif: true
           sanitizer: ${{ matrix.sanitizer }}
-      - name: Upload Crash
+      - name: Upload crash
         uses: actions/upload-artifact@v3
         if: failure() && steps.build.outcome == 'success'
         with:
