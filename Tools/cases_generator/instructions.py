@@ -59,7 +59,7 @@ class Instruction:
     block_line: int  # First line of block in original code
 
     # Computed by constructor
-    always_exits: bool
+    always_exits: str  # If the block always exits, its last line; else ""
     has_deopt: bool
     cache_offset: int
     cache_effects: list[parsing.CacheEffect]
@@ -120,11 +120,13 @@ class Instruction:
     def is_viable_uop(self) -> bool:
         """Whether this instruction is viable as a uop."""
         dprint: typing.Callable[..., None] = lambda *args, **kwargs: None
-        # if self.name.startswith("CALL"):
-        #     dprint = print
+        if "PY_EXACT" in self.name:
+            dprint = print
 
         if self.name == "EXIT_TRACE":
             return True  # This has 'return frame' but it's okay
+        if self.name == "_PUSH_FRAME":
+            return True  # Has DISPATCH_INLINED but it's okay
         if self.always_exits:
             dprint(f"Skipping {self.name} because it always exits")
             return False
@@ -322,16 +324,16 @@ def extract_block_text(block: parsing.Block) -> tuple[list[str], bool, int]:
     return blocklines, check_eval_breaker, block_line
 
 
-def always_exits(lines: list[str]) -> bool:
+def always_exits(lines: list[str]) -> str:
     """Determine whether a block always ends in a return/goto/etc."""
     if not lines:
-        return False
+        return ""
     line = lines[-1].rstrip()
     # Indent must match exactly (TODO: Do something better)
     if line[:12] != " " * 12:
-        return False
+        return ""
     line = line[12:]
-    return line.startswith(
+    if line.startswith(
         (
             "goto ",
             "return ",
@@ -340,4 +342,6 @@ def always_exits(lines: list[str]) -> bool:
             "Py_UNREACHABLE()",
             "ERROR_IF(true, ",
         )
-    )
+    ):
+        return line
+    return ""

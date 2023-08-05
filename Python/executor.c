@@ -30,6 +30,19 @@
 #undef ENABLE_SPECIALIZATION
 #define ENABLE_SPECIALIZATION 0
 
+#undef DISPATCH_INLINED
+#define DISPATCH_INLINED(NEW_FRAME)                             \
+    do {                                                        \
+        assert(tstate->interp->eval_frame == NULL);             \
+        _PyFrame_SetStackPointer(frame, stack_pointer);         \
+        frame->prev_instr -= 1;                                 \
+        (NEW_FRAME)->previous = frame;                          \
+        frame = tstate->cframe->current_frame = (NEW_FRAME);    \
+        CALL_STAT_INC(inlined_py_calls);                        \
+        stack_pointer = _PyFrame_GetStackPointer(frame);        \
+        ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive; \
+    } while (0)
+
 
 _PyInterpreterFrame *
 _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)

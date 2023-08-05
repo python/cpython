@@ -52,9 +52,12 @@
 #define _ITER_CHECK_RANGE 328
 #define _IS_ITER_EXHAUSTED_RANGE 329
 #define _ITER_NEXT_RANGE 330
-#define _POP_JUMP_IF_FALSE 331
-#define _POP_JUMP_IF_TRUE 332
-#define JUMP_TO_TOP 333
+#define _CHECK_CALL_PY_EXACT_ARGS 331
+#define _INIT_CALL_PY_EXACT_ARGS 332
+#define _PUSH_FRAME 333
+#define _POP_JUMP_IF_FALSE 334
+#define _POP_JUMP_IF_TRUE 335
+#define JUMP_TO_TOP 336
 
 #ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
@@ -951,6 +954,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
 enum InstructionFormat {
     INSTR_FMT_IB,
     INSTR_FMT_IBC,
+    INSTR_FMT_IBC0,
     INSTR_FMT_IBC00,
     INSTR_FMT_IBC000,
     INSTR_FMT_IBC00000000,
@@ -995,6 +999,7 @@ struct opcode_macro_expansion {
 #define OPARG_CACHE_4 4
 #define OPARG_TOP 5
 #define OPARG_BOTTOM 6
+#define OPARG_SAVE_IP 7
 
 #define OPCODE_METADATA_FMT(OP) (_PyOpcode_opcode_metadata[(OP)].instr_format)
 #define SAME_OPCODE_METADATA(OP1, OP2) \
@@ -1336,6 +1341,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [GET_YIELD_FROM_ITER] = { .nuops = 1, .uops = { { GET_YIELD_FROM_ITER, 0, 0 } } },
     [WITH_EXCEPT_START] = { .nuops = 1, .uops = { { WITH_EXCEPT_START, 0, 0 } } },
     [PUSH_EXC_INFO] = { .nuops = 1, .uops = { { PUSH_EXC_INFO, 0, 0 } } },
+    [CALL_PY_EXACT_ARGS] = { .nuops = 4, .uops = { { _CHECK_CALL_PY_EXACT_ARGS, 2, 1 }, { _INIT_CALL_PY_EXACT_ARGS, 0, 0 }, { SAVE_IP, 7, 3 }, { _PUSH_FRAME, 0, 0 } } },
     [CALL_NO_KW_TYPE_1] = { .nuops = 1, .uops = { { CALL_NO_KW_TYPE_1, 0, 0 } } },
     [CALL_NO_KW_STR_1] = { .nuops = 1, .uops = { { CALL_NO_KW_STR_1, 0, 0 } } },
     [CALL_NO_KW_TUPLE_1] = { .nuops = 1, .uops = { { CALL_NO_KW_TUPLE_1, 0, 0 } } },
@@ -1389,6 +1395,9 @@ const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
     [_ITER_CHECK_RANGE] = "_ITER_CHECK_RANGE",
     [_IS_ITER_EXHAUSTED_RANGE] = "_IS_ITER_EXHAUSTED_RANGE",
     [_ITER_NEXT_RANGE] = "_ITER_NEXT_RANGE",
+    [_CHECK_CALL_PY_EXACT_ARGS] = "_CHECK_CALL_PY_EXACT_ARGS",
+    [_INIT_CALL_PY_EXACT_ARGS] = "_INIT_CALL_PY_EXACT_ARGS",
+    [_PUSH_FRAME] = "_PUSH_FRAME",
     [_POP_JUMP_IF_FALSE] = "_POP_JUMP_IF_FALSE",
     [_POP_JUMP_IF_TRUE] = "_POP_JUMP_IF_TRUE",
     [JUMP_TO_TOP] = "JUMP_TO_TOP",

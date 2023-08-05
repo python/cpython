@@ -295,6 +295,7 @@ def write_single_instr(
             [Component(instr, instr.active_caches)],
             out,
             tier,
+            0,
         )
     except AssertionError as err:
         raise AssertionError(f"Error writing instruction {instr.name}") from err
@@ -306,12 +307,14 @@ def write_macro_instr(
     parts = [part for part in mac.parts if isinstance(part, Component)]
 
     cache_adjust = 0
+    always_exits = False
     for part in mac.parts:
         match part:
             case CacheEffect(size=size):
                 cache_adjust += size
             case Component(instr=instr):
                 cache_adjust += instr.cache_offset
+                always_exits = instr.always_exits
             case _:
                 typing.assert_never(part)
 
@@ -321,18 +324,20 @@ def write_macro_instr(
             out.emit(f"PREDICTED({mac.name});")
         out.static_assert_family_size(mac.name, family, cache_adjust)
         try:
-            write_components(parts, out, TIER_ONE)
+            write_components(parts, out, TIER_ONE, cache_adjust)
         except AssertionError as err:
             raise AssertionError(f"Error writing macro {mac.name}") from err
-        if cache_adjust:
-            out.emit(f"next_instr += {cache_adjust};")
-        out.emit("DISPATCH();")
+        if not always_exits:
+            if cache_adjust:
+                out.emit(f"next_instr += {cache_adjust};")
+            out.emit("DISPATCH();")
 
 
 def write_components(
     parts: list[Component],
     out: Formatter,
     tier: Tiers,
+    cache_adjust: int,
 ) -> None:
     managers = get_managers(parts)
 
@@ -374,13 +379,24 @@ def write_components(
                     poke.as_stack_effect(lax=True),
                 )
 
+        dispatch_inlined_special_case = False
+        if mgr is managers[-1] and mgr.instr.always_exits.startswith("DISPATCH_INLINED") and mgr.instr.name == "_PUSH_FRAME":
+            dispatch_inlined_special_case = True
+            temp = mgr.final_offset.clone()
+            temp.deeper(StackEffect(UNUSED))  # Hack
+            out.stack_adjust(temp.deep, temp.high)
+            # Use clone() since adjust_inverse() mutates final_offset
+            mgr.adjust_inverse(mgr.final_offset.clone())
+            if cache_adjust:
+                out.emit(f"next_instr += {cache_adjust};")
+
         if len(parts) == 1:
             mgr.instr.write_body(out, 0, mgr.active_caches, tier)
         else:
             with out.block(""):
                 mgr.instr.write_body(out, -4, mgr.active_caches, tier)
 
-        if mgr is managers[-1]:
+        if mgr is managers[-1] and not dispatch_inlined_special_case:
             out.stack_adjust(mgr.final_offset.deep, mgr.final_offset.high)
             # Use clone() since adjust_inverse() mutates final_offset
             mgr.adjust_inverse(mgr.final_offset.clone())

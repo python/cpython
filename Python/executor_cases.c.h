@@ -2153,6 +2153,67 @@
             break;
         }
 
+        case _CHECK_CALL_PY_EXACT_ARGS: {
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *method;
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            uint32_t func_version = (uint32_t)operand;
+            ASSERT_KWNAMES_IS_NULL();
+            DEOPT_IF(tstate->interp->eval_frame, CALL);
+            int argcount = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                argcount++;
+            }
+            DEOPT_IF(!PyFunction_Check(callable), CALL);
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            DEOPT_IF(func->func_version != func_version, CALL);
+            PyCodeObject *code = (PyCodeObject *)func->func_code;
+            DEOPT_IF(code->co_argcount != argcount, CALL);
+            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
+            stack_pointer[-2 - oparg] = method;
+            stack_pointer[-1 - oparg] = callable;
+            break;
+        }
+
+        case _INIT_CALL_PY_EXACT_ARGS: {
+            PyObject **args;
+            PyObject *callable;
+            PyObject *method;
+            _PyInterpreterFrame *new_frame;
+            args = stack_pointer - oparg;
+            callable = stack_pointer[-1 - oparg];
+            method = stack_pointer[-2 - oparg];
+            int is_meth = method != NULL;
+            int argcount = oparg;
+            if (is_meth) {
+                callable = method;
+                args--;
+                argcount++;
+            }
+            STAT_INC(CALL, hit);
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
+            for (int i = 0; i < argcount; i++) {
+                new_frame->localsplus[i] = args[i];
+            }
+            STACK_SHRINK(oparg);
+            STACK_SHRINK(1);
+            stack_pointer[-1] = (PyObject *)new_frame;
+            break;
+        }
+
+        case _PUSH_FRAME: {
+            _PyInterpreterFrame *new_frame;
+            new_frame = (_PyInterpreterFrame *)stack_pointer[-1];
+            STACK_SHRINK(1);
+            frame->return_offset = 0;
+            DISPATCH_INLINED(new_frame);
+            break;
+        }
+
         case CALL_NO_KW_TYPE_1: {
             PyObject **args;
             PyObject *null;

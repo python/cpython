@@ -53,6 +53,7 @@ OPARG_SIZES = {
     "OPARG_CACHE_4": 4,
     "OPARG_TOP": 5,
     "OPARG_BOTTOM": 6,
+    "OPARG_SAVE_IP": 7,
 }
 
 INSTR_FMT_PREFIX = "INSTR_FMT_"
@@ -344,7 +345,7 @@ class Generator(Analyzer):
                             if instr.kind == "inst" and instr.is_viable_uop():
                                 # Construct a dummy Component -- input/output mappings are not used
                                 part = Component(instr, instr.active_caches)
-                                self.write_macro_expansions(instr.name, [part])
+                                self.write_macro_expansions(instr.name, [part], instr.cache_offset)
                             elif instr.kind == "inst" and variable_used(
                                 instr.inst, "oparg1"
                             ):
@@ -354,7 +355,7 @@ class Generator(Analyzer):
                                 self.write_super_expansions(instr.name)
                         case parsing.Macro():
                             mac = self.macro_instrs[thing.name]
-                            self.write_macro_expansions(mac.name, mac.parts)
+                            self.write_macro_expansions(mac.name, mac.parts, mac.cache_offset)
                         case parsing.Pseudo():
                             pass
                         case _:
@@ -428,13 +429,22 @@ class Generator(Analyzer):
             if instr.kind == "op" and instr.is_viable_uop():
                 add(instr.name)
 
-    def write_macro_expansions(self, name: str, parts: MacroParts) -> None:
+    def write_macro_expansions(
+        self, name: str, parts: MacroParts, cache_offset: int
+    ) -> None:
         """Write the macro expansions for a macro-instruction."""
         # TODO: Refactor to share code with write_cody(), is_viaible_uop(), etc.
         offset = 0  # Cache effect offset
         expansions: list[tuple[str, int, int]] = []  # [(name, size, offset), ...]
         for part in parts:
             if isinstance(part, Component):
+                # _PUSH_FRAME is super special; it expands to SAVE_IP(next_instr) + _PUSH_FRAME
+                if part.instr.name == "_PUSH_FRAME":
+                    expansions.append(
+                        ("SAVE_IP", OPARG_SIZES["OPARG_SAVE_IP"], cache_offset)
+                    )
+                    expansions.append(("_PUSH_FRAME", OPARG_SIZES["OPARG_FULL"], 0))
+                    continue
                 # All component instructions must be viable uops
                 if not part.instr.is_viable_uop():
                     # This note just reminds us about macros that cannot
