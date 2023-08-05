@@ -1036,7 +1036,7 @@ ConfigParser Objects
       in a configuration which contains extra space or newline within a section.
       Please note that it's not recommended to have extra spaces
       or blank lines within sections of the configuration.
-      
+
       If none of the named files exist, the :class:`ConfigParser`
       instance will contain an empty dataset.  An application which requires
       initial values to be loaded from a file should load the required file or
