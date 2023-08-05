@@ -1556,21 +1556,21 @@ class ReadFileTestCase(unittest.TestCase):
         )
 
     def test_gh_107625(self):
-       #test key without value with extra whitespace within sections
-       lines = [
-           '[SECT]\n',
-           'KEY1\n',
-           ' KEY2 = VAL2\n', # note the Space before the key!
-           ]
-       with self.assertRaises(configparser.ParsingError):
-           parser = configparser.ConfigParser(
-               comment_prefixes ="",
-               allow_no_value   =True,
-               strict           =False,
-               delimiters       =( '=', ),
-               interpolation    =None,
-           )
-           parser.read_file(lines)
+        #test key without value with extra whitespace within sections
+        lines = [
+            '[SECT]\n',
+            'KEY1\n',
+            ' KEY2 = VAL2\n', # note the Space before the key!
+            ]
+        with self.assertRaises(configparser.ParsingError):
+            parser = configparser.ConfigParser(
+                comment_prefixes ="",
+                allow_no_value   =True,
+                strict           =False,
+                delimiters       =( '=', ),
+                interpolation    =None,
+            )
+            parser.read_file(lines)
 
 
 class CoverageOneHundredTestCase(unittest.TestCase):
