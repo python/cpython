@@ -5476,7 +5476,7 @@ test_deprecate_positional_use_1(PyObject *module, PyObject *const *args, Py_ssiz
     if (nargs == 2) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
             "Passing 'optarg' as a positional parameter is deprecated. "
-            "It will become a keyword-only parameter in Python 3.14.", 2))
+            "It will become a keyword-only parameter in Python 3.14.", 1))
         {
             goto exit;
         }
@@ -5492,7 +5492,7 @@ exit:
 static PyObject *
 test_deprecate_positional_use_1_impl(PyObject *module, PyObject *pos,
                                      PyObject *optarg)
-/*[clinic end generated code: output=129103413f791da9 input=84fc16857e7b0354]*/
+/*[clinic end generated code: output=3dde639bffd82431 input=84fc16857e7b0354]*/
 
 
 /*[clinic input]
@@ -5569,7 +5569,7 @@ test_deprecate_positional_use_2(PyObject *module, PyObject *const *args, Py_ssiz
     if (nargs == 2) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
             "Passing 'optarg' as a positional parameter is deprecated. "
-            "It will become a keyword-only parameter in Python 3.14.", 2))
+            "It will become a keyword-only parameter in Python 3.14.", 1))
         {
             goto exit;
         }
@@ -5584,7 +5584,7 @@ exit:
 static PyObject *
 test_deprecate_positional_use_2_impl(PyObject *module, PyObject *pos,
                                      PyObject *optarg)
-/*[clinic end generated code: output=9afc2eb4085950b7 input=3ced298b4a297b2f]*/
+/*[clinic end generated code: output=74e00bed5d1eb50f input=3ced298b4a297b2f]*/
 
 
 /*[clinic input]
@@ -5659,7 +5659,7 @@ test_deprecate_positional_use_3(PyObject *module, PyObject *const *args, Py_ssiz
     if (nargs == 2) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
             "Passing 'optarg' as a positional parameter is deprecated. "
-            "It will become a keyword-only parameter in Python 3.14.", 2))
+            "It will become a keyword-only parameter in Python 3.14.", 1))
         {
             goto exit;
         }
@@ -5677,7 +5677,7 @@ test_deprecate_positional_use_3(PyObject *module, PyObject *const *args, Py_ssiz
     if (nargs == 3) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
             "Passing 'kw' as a positional parameter is deprecated. "
-            "It will become a keyword-only parameter in Python 3.14.", 2))
+            "It will become a keyword-only parameter in Python 3.14.", 1))
         {
             goto exit;
         }
@@ -5692,4 +5692,4 @@ exit:
 static PyObject *
 test_deprecate_positional_use_3_impl(PyObject *module, PyObject *pos,
                                      PyObject *optarg, PyObject *kw)
-/*[clinic end generated code: output=e067a37f03b5cea8 input=c19ac8533f05d314]*/
+/*[clinic end generated code: output=ba43d0a4835e7a75 input=c19ac8533f05d314]*/

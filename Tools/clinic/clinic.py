@@ -841,7 +841,7 @@ class CLanguage(Language):
         if (nargs == {pos}) {{{{
             if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing {name!r} as a positional parameter is deprecated. "
-                "It will become a keyword-only parameter in Python {thenceforth}.", 2))
+                "It will become a keyword-only parameter in Python {thenceforth}.", 1))
             {{{{
                 goto exit;
             }}}}
