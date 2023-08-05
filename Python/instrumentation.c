@@ -961,7 +961,7 @@ call_instrumentation_vector(
     /* Offset visible to user should be the offset in bytes, as that is the
      * convention for APIs involving code offsets. */
     int bytes_offset = offset * (int)sizeof(_Py_CODEUNIT);
-    PyObject *offset_obj = PyLong_FromSsize_t(bytes_offset);
+    PyObject *offset_obj = PyLong_FromLong(bytes_offset);
     if (offset_obj == NULL) {
         return -1;
     }
@@ -1151,7 +1151,7 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
         (interp->monitors.tools[PY_MONITORING_EVENT_LINE] |
          code->_co_monitoring->local_monitors.tools[PY_MONITORING_EVENT_LINE]
         );
-    PyObject *line_obj = PyLong_FromSsize_t(line);
+    PyObject *line_obj = PyLong_FromLong(line);
     if (line_obj == NULL) {
         return -1;
     }
@@ -1205,7 +1205,7 @@ _Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame*
          code->_co_monitoring->local_monitors.tools[PY_MONITORING_EVENT_INSTRUCTION]
         );
     int bytes_offset = offset * (int)sizeof(_Py_CODEUNIT);
-    PyObject *offset_obj = PyLong_FromSsize_t(bytes_offset);
+    PyObject *offset_obj = PyLong_FromLong(bytes_offset);
     if (offset_obj == NULL) {
         return -1;
     }
