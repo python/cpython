@@ -1224,6 +1224,23 @@ class CLanguage(Language):
                 flags = 'METH_METHOD|' + flags
                 parser_prototype = self.PARSER_PROTOTYPE_DEF_CLASS
 
+            def deprecate_positional_use(p: Parameter) -> str:
+                thenceforth = p.deprecated_positional
+                major, minor = thenceforth.split(".")
+                assert isinstance(self.cpp.filename, str)
+                source = os.path.basename(self.cpp.filename)
+                cpp_warning = (f"Update {p.name!r} in {f.name!r} in "
+                               f"{source!r} to be keyword-only.")
+                code = self.DEPRECATED_POSITIONAL_PROTOTYPE.format(
+                    name=p.name,
+                    pos=i+1,
+                    thenceforth=thenceforth,
+                    major=major,
+                    minor=minor,
+                    cpp_warning=cpp_warning,
+                )
+                return normalize_snippet(code, indent=4)
+
             add_label: str | None = None
             for i, p in enumerate(parameters):
                 if isinstance(p.converter, defining_class_converter):
@@ -1239,6 +1256,9 @@ class CLanguage(Language):
                     add_label = None
                 if not p.is_optional():
                     parser_code.append(normalize_snippet(parsearg, indent=4))
+                    if p.deprecated_positional:
+                        code = deprecate_positional_use(p)
+                        parser_code.append(code)
                 elif i < pos_only:
                     add_label = 'skip_optional_posonly'
                     parser_code.append(normalize_snippet("""
@@ -1268,21 +1288,7 @@ class CLanguage(Language):
                             }}
                             """ % add_label, indent=4))
                     if p.deprecated_positional:
-                        thenceforth = p.deprecated_positional
-                        major, minor = thenceforth.split(".")
-                        assert isinstance(self.cpp.filename, str)
-                        source = os.path.basename(self.cpp.filename)
-                        cpp_warning = (f"Update {p.name!r} in {f.name!r} in "
-                                       f"{source!r} to be keyword-only.")
-                        code = self.DEPRECATED_POSITIONAL_PROTOTYPE.format(
-                            name=p.name,
-                            pos=i+1,
-                            thenceforth=thenceforth,
-                            major=major,
-                            minor=minor,
-                            cpp_warning=cpp_warning,
-                        )
-                        code = normalize_snippet(code, indent=4)
+                        code = deprecate_positional_use(p)
                         parser_code.append(code)
                     if i + 1 == len(parameters):
                         parser_code.append(normalize_snippet(parsearg, indent=4))
