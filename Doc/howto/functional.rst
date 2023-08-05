@@ -516,7 +516,7 @@ Passing values into a generator
 -------------------------------
 
 In Python 2.4 and earlier, generators only produced output.  Once a generator's
-code was invoked to create an iterator, there was no way to pass any new
+code was invoked to create an iterator, there was no elegant way to pass any new
 information into the function when its execution is resumed.
 
 In Python 2.5, :keyword:`yield` became an expression, returning a value that
