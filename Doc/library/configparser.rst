@@ -1034,7 +1034,7 @@ ConfigParser Objects
       instance will contain an empty dataset.  An application which requires
       initial values to be loaded from a file should load the required file or
       files using :meth:`read_file` before calling :meth:`read` for any
-      optional files::
+      optional files
 
       Raise a :exc:`ParsingError` instead of an :exc:`AttributeError`
       when the configuration contains a key without a corresponding value.
