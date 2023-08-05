@@ -1536,10 +1536,10 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 break;
             case KW_NAMES:
                 break;
-            case PUSH_NULL:
-                if (nextop == LOAD_GLOBAL && (inst[1].i_opcode & 1) == 0) {
-                    INSTR_SET_OP0(inst, NOP);
-                    inst[1].i_oparg |= 1;
+            case LOAD_GLOBAL:
+                if (nextop == PUSH_NULL && (oparg & 1) == 0) {
+                    INSTR_SET_OP1(inst, LOAD_GLOBAL, oparg | 1);
+                    INSTR_SET_OP0(&bb->b_instr[i + 1], NOP);
                 }
                 break;
             case COMPARE_OP:

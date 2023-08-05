@@ -2361,11 +2361,6 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
 
     int is_generic = asdl_seq_LEN(type_params) > 0;
 
-    if (is_generic) {
-        // Used by the CALL to the type parameters function.
-        ADDOP(c, loc, PUSH_NULL);
-    }
-
     funcflags = compiler_default_arguments(c, loc, args);
     if (funcflags == -1) {
         return ERROR;
@@ -2436,8 +2431,12 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         Py_DECREF(co);
         if (num_typeparam_args > 0) {
             ADDOP_I(c, loc, SWAP, num_typeparam_args + 1);
+            ADDOP_I(c, loc, CALL, num_typeparam_args - 1);
         }
-        ADDOP_I(c, loc, CALL, num_typeparam_args);
+        else {
+            ADDOP(c, loc, PUSH_NULL);
+            ADDOP_I(c, loc, CALL, 0);
+        }
     }
 
     RETURN_IF_ERROR(compiler_apply_decorators(c, decos));
@@ -2565,8 +2564,8 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
     // these instructions should be attributed to the class line,
     // not a decorator line
     loc = LOC(s);
-    ADDOP(c, loc, PUSH_NULL);
     ADDOP(c, loc, LOAD_BUILD_CLASS);
+    ADDOP(c, loc, PUSH_NULL);
 
     /* 3. load a function (or closure) made from the code object */
     if (compiler_make_closure(c, loc, co, 0) < 0) {
@@ -2598,7 +2597,6 @@ compiler_class(struct compiler *c, stmt_ty s)
     int is_generic = asdl_seq_LEN(type_params) > 0;
     if (is_generic) {
         Py_XSETREF(c->u->u_private, Py_NewRef(s->v.ClassDef.name));
-        ADDOP(c, loc, PUSH_NULL);
         PyObject *type_params_name = PyUnicode_FromFormat("<generic parameters of %U>",
                                                          s->v.ClassDef.name);
         if (!type_params_name) {
@@ -2666,6 +2664,7 @@ compiler_class(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         Py_DECREF(co);
+        ADDOP(c, loc, PUSH_NULL);
         ADDOP_I(c, loc, CALL, 0);
     } else {
         RETURN_IF_ERROR(compiler_call_helper(c, loc, 2,
@@ -2716,7 +2715,6 @@ compiler_typealias(struct compiler *c, stmt_ty s)
     int is_generic = asdl_seq_LEN(type_params) > 0;
     PyObject *name = s->v.TypeAlias.name->v.Name.id;
     if (is_generic) {
-        ADDOP(c, loc, PUSH_NULL);
         PyObject *type_params_name = PyUnicode_FromFormat("<generic parameters of %U>",
                                                          name);
         if (!type_params_name) {
@@ -2756,6 +2754,7 @@ compiler_typealias(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         Py_DECREF(co);
+        ADDOP(c, loc, PUSH_NULL);
         ADDOP_I(c, loc, CALL, 0);
     }
     RETURN_IF_ERROR(compiler_nameop(c, loc, name, Store));
@@ -4994,9 +4993,9 @@ compiler_call(struct compiler *c, expr_ty e)
         return SUCCESS;
     }
     RETURN_IF_ERROR(check_caller(c, e->v.Call.func));
+    VISIT(c, expr, e->v.Call.func);
     location loc = LOC(e->v.Call.func);
     ADDOP(c, loc, PUSH_NULL);
-    VISIT(c, expr, e->v.Call.func);
     loc = LOC(e);
     return compiler_call_helper(c, loc, 0,
                                 e->v.Call.args,
