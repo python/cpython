@@ -1224,16 +1224,17 @@ class CLanguage(Language):
                 flags = 'METH_METHOD|' + flags
                 parser_prototype = self.PARSER_PROTOTYPE_DEF_CLASS
 
-            def deprecate_positional_use(p: Parameter) -> str:
-                assert p.deprecated_positional is not None
-                thenceforth = p.deprecated_positional
+            def deprecate_positional_use(
+                    param_name: str,
+                    thenceforth: str
+            ) -> str:
                 major, minor = thenceforth.split(".")
                 assert isinstance(self.cpp.filename, str)
                 source = os.path.basename(self.cpp.filename)
-                cpp_warning = (f"Update {p.name!r} in {f.name!r} in "
+                cpp_warning = (f"Update {param_name!r} in {f.name!r} in "
                                f"{source!r} to be keyword-only.")
                 code = self.DEPRECATED_POSITIONAL_PROTOTYPE.format(
-                    name=p.name,
+                    name=param_name,
                     pos=i+1,
                     thenceforth=thenceforth,
                     major=major,
@@ -1258,7 +1259,8 @@ class CLanguage(Language):
                 if not p.is_optional():
                     parser_code.append(normalize_snippet(parsearg, indent=4))
                     if p.deprecated_positional:
-                        code = deprecate_positional_use(p)
+                        code = deprecate_positional_use(
+                                p.name, p.deprecated_positional)
                         parser_code.append(code)
                 elif i < pos_only:
                     add_label = 'skip_optional_posonly'
@@ -1289,7 +1291,8 @@ class CLanguage(Language):
                             }}
                             """ % add_label, indent=4))
                     if p.deprecated_positional:
-                        code = deprecate_positional_use(p)
+                        code = deprecate_positional_use(
+                                p.name, p.deprecated_positional)
                         parser_code.append(code)
                     if i + 1 == len(parameters):
                         parser_code.append(normalize_snippet(parsearg, indent=4))
