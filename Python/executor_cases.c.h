@@ -1422,8 +1422,9 @@
 
         case DICT_UPDATE: {
             PyObject *update;
+            PyObject *dict;
             update = stack_pointer[-1];
-            PyObject *dict = PEEK(oparg + 1);  // update is still on the stack
+            dict = stack_pointer[-2 - (oparg - 1)];
             if (PyDict_Update(dict, update) < 0) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
@@ -1440,11 +1441,13 @@
 
         case DICT_MERGE: {
             PyObject *update;
+            PyObject *dict;
+            PyObject *callable;
             update = stack_pointer[-1];
-            PyObject *dict = PEEK(oparg + 1);  // update is still on the stack
-
+            dict = stack_pointer[-2 - (oparg - 1)];
+            callable = stack_pointer[-5 - (oparg - 1)];
             if (_PyDict_MergeEx(dict, update, 2) < 0) {
-                _PyEval_FormatKwargsError(tstate, PEEK(4 + oparg), update);
+                _PyEval_FormatKwargsError(tstate, callable, update);
                 Py_DECREF(update);
                 if (true) goto pop_1_error;
             }
@@ -1456,9 +1459,10 @@
         case MAP_ADD: {
             PyObject *value;
             PyObject *key;
+            PyObject *dict;
             value = stack_pointer[-1];
             key = stack_pointer[-2];
-            PyObject *dict = PEEK(oparg + 2);  // key, value are still on the stack
+            dict = stack_pointer[-3 - (oparg - 1)];
             assert(PyDict_CheckExact(dict));
             /* dict[key] = value */
             // Do not DECREF INPUTS because the function steals the references
@@ -1472,7 +1476,6 @@
             PyObject *class;
             PyObject *global_super;
             PyObject *attr;
-            PyObject *self_or_null = NULL;
             self = stack_pointer[-1];
             class = stack_pointer[-2];
             global_super = stack_pointer[-3];
@@ -1489,7 +1492,6 @@
             STACK_SHRINK(2);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = attr;
-            if (oparg & 1) { stack_pointer[-(oparg & 1 ? 1 : 0)] = self_or_null; }
             break;
         }
 
@@ -1549,15 +1551,14 @@
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
-                PyObject* meth = NULL;
-                if (_PyObject_GetMethod(owner, name, &meth)) {
+                attr = NULL;
+                if (_PyObject_GetMethod(owner, name, &attr)) {
                     /* We can bypass temporary bound method object.
                        meth is unbound method and obj is self.
 
                        meth | self | arg1 | ... | argN
                      */
-                    assert(meth != NULL);  // No errors on this branch
-                    attr = meth;
+                    assert(attr != NULL);  // No errors on this branch
                     self_or_null = owner;  // Transfer ownership
                 }
                 else {
@@ -1569,8 +1570,7 @@
                        NULL | meth | arg1 | ... | argN
                     */
                     Py_DECREF(owner);
-                    if (meth == NULL) goto pop_1_error;
-                    attr = meth;
+                    if (attr == NULL) goto pop_1_error;
                     self_or_null = NULL;
                 }
             }
@@ -1609,7 +1609,7 @@
         case _LOAD_ATTR_INSTANCE_VALUE: {
             PyObject *owner;
             PyObject *attr;
-            PyObject *self_or_null = NULL;
+            PyObject *null = NULL;
             owner = stack_pointer[-1];
             uint16_t index = (uint16_t)operand;
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
@@ -1617,11 +1617,11 @@
             DEOPT_IF(attr == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr);
-            self_or_null = NULL;
+            null = NULL;
             Py_DECREF(owner);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = attr;
-            if (oparg & 1) { stack_pointer[-(oparg & 1 ? 1 : 0)] = self_or_null; }
+            if (oparg & 1) { stack_pointer[-(oparg & 1 ? 1 : 0)] = null; }
             break;
         }
 
@@ -2133,15 +2133,15 @@
 
         case CALL_NO_KW_TYPE_1: {
             PyObject **args;
-            PyObject *self_or_null;
+            PyObject *null;
             PyObject *callable;
             PyObject *res;
             args = stack_pointer - oparg;
-            self_or_null = stack_pointer[-1 - oparg];
+            null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
-            DEOPT_IF(self_or_null != NULL, CALL);
+            DEOPT_IF(null != NULL, CALL);
             PyObject *obj = args[0];
             DEOPT_IF(callable != (PyObject *)&PyType_Type, CALL);
             STAT_INC(CALL, hit);
@@ -2156,15 +2156,15 @@
 
         case CALL_NO_KW_STR_1: {
             PyObject **args;
-            PyObject *self_or_null;
+            PyObject *null;
             PyObject *callable;
             PyObject *res;
             args = stack_pointer - oparg;
-            self_or_null = stack_pointer[-1 - oparg];
+            null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
-            DEOPT_IF(self_or_null != NULL, CALL);
+            DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyUnicode_Type, CALL);
             STAT_INC(CALL, hit);
             PyObject *arg = args[0];
@@ -2181,15 +2181,15 @@
 
         case CALL_NO_KW_TUPLE_1: {
             PyObject **args;
-            PyObject *self_or_null;
+            PyObject *null;
             PyObject *callable;
             PyObject *res;
             args = stack_pointer - oparg;
-            self_or_null = stack_pointer[-1 - oparg];
+            null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
-            DEOPT_IF(self_or_null != NULL, CALL);
+            DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyTuple_Type, CALL);
             STAT_INC(CALL, hit);
             PyObject *arg = args[0];

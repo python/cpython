@@ -271,11 +271,11 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case BUILD_CONST_KEY_MAP:
             return oparg + 1;
         case DICT_UPDATE:
-            return 1;
+            return (oparg - 1) + 2;
         case DICT_MERGE:
-            return 1;
+            return (oparg - 1) + 5;
         case MAP_ADD:
-            return 2;
+            return (oparg - 1) + 3;
         case INSTRUMENTED_LOAD_SUPER_ATTR:
             return 3;
         case LOAD_SUPER_ATTR:
@@ -715,11 +715,11 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case BUILD_CONST_KEY_MAP:
             return 1;
         case DICT_UPDATE:
-            return 0;
+            return (oparg - 1) + 1;
         case DICT_MERGE:
-            return 0;
+            return (oparg - 1) + 4;
         case MAP_ADD:
-            return 0;
+            return (oparg - 1) + 1;
         case INSTRUMENTED_LOAD_SUPER_ATTR:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_SUPER_ATTR:

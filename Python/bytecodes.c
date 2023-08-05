@@ -1598,8 +1598,7 @@ dummy_func(
             ERROR_IF(map == NULL, error);
         }
 
-        inst(DICT_UPDATE, (update --)) {
-            PyObject *dict = PEEK(oparg + 1);  // update is still on the stack
+        inst(DICT_UPDATE, (dict, unused[oparg - 1], update -- dict, unused[oparg - 1])) {
             if (PyDict_Update(dict, update) < 0) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
@@ -1612,19 +1611,16 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        inst(DICT_MERGE, (update --)) {
-            PyObject *dict = PEEK(oparg + 1);  // update is still on the stack
-
+        inst(DICT_MERGE, (callable, unused, unused, dict, unused[oparg - 1], update -- callable, unused, unused, dict, unused[oparg - 1])) {
             if (_PyDict_MergeEx(dict, update, 2) < 0) {
-                _PyEval_FormatKwargsError(tstate, PEEK(4 + oparg), update);
+                _PyEval_FormatKwargsError(tstate, callable, update);
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
             DECREF_INPUTS();
         }
 
-        inst(MAP_ADD, (key, value --)) {
-            PyObject *dict = PEEK(oparg + 2);  // key, value are still on the stack
+        inst(MAP_ADD, (dict, unused[oparg - 1], key, value -- dict, unused[oparg - 1])) {
             assert(PyDict_CheckExact(dict));
             /* dict[key] = value */
             // Do not DECREF INPUTS because the function steals the references
@@ -1644,7 +1640,7 @@ dummy_func(
             LOAD_SUPER_ATTR_METHOD,
         };
 
-        inst(LOAD_SUPER_ATTR, (unused/1, global_super, class, self -- attr, self_or_null if (oparg & 1))) {
+        inst(LOAD_SUPER_ATTR, (unused/1, global_super, class, self -- attr, null if (oparg & 1))) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
             int load_method = oparg & 1;
             #if ENABLE_SPECIALIZATION
@@ -1691,6 +1687,7 @@ dummy_func(
             attr = PyObject_GetAttr(super, name);
             Py_DECREF(super);
             ERROR_IF(attr == NULL, error);
+            null = NULL;
         }
 
         pseudo(LOAD_SUPER_METHOD) = {
@@ -1705,7 +1702,7 @@ dummy_func(
             LOAD_SUPER_ATTR,
         };
 
-        inst(LOAD_SUPER_ATTR_ATTR, (unused/1, global_super, class, self -- attr, self_or_null if (oparg & 1))) {
+        inst(LOAD_SUPER_ATTR_ATTR, (unused/1, global_super, class, self -- attr, unused if (oparg & 1))) {
             assert(!(oparg & 1));
             DEOPT_IF(global_super != (PyObject *)&PySuper_Type, LOAD_SUPER_ATTR);
             DEOPT_IF(!PyType_Check(class), LOAD_SUPER_ATTR);
@@ -1770,15 +1767,14 @@ dummy_func(
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
-                PyObject* meth = NULL;
-                if (_PyObject_GetMethod(owner, name, &meth)) {
+                attr = NULL;
+                if (_PyObject_GetMethod(owner, name, &attr)) {
                     /* We can bypass temporary bound method object.
                        meth is unbound method and obj is self.
 
                        meth | self | arg1 | ... | argN
                      */
-                    assert(meth != NULL);  // No errors on this branch
-                    attr = meth;
+                    assert(attr != NULL);  // No errors on this branch
                     self_or_null = owner;  // Transfer ownership
                 }
                 else {
@@ -1790,8 +1786,7 @@ dummy_func(
                        NULL | meth | arg1 | ... | argN
                     */
                     DECREF_INPUTS();
-                    ERROR_IF(meth == NULL, error);
-                    attr = meth;
+                    ERROR_IF(attr == NULL, error);
                     self_or_null = NULL;
                 }
             }
@@ -1820,13 +1815,13 @@ dummy_func(
             DEOPT_IF(!_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
         }
 
-        op(_LOAD_ATTR_INSTANCE_VALUE, (index/1, owner -- attr, self_or_null if (oparg & 1))) {
+        op(_LOAD_ATTR_INSTANCE_VALUE, (index/1, owner -- attr, null if (oparg & 1))) {
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             attr = _PyDictOrValues_GetValues(dorv)->values[index];
             DEOPT_IF(attr == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr);
-            self_or_null = NULL;
+            null = NULL;
             DECREF_INPUTS();
         }
 
@@ -1837,7 +1832,7 @@ dummy_func(
             _LOAD_ATTR_INSTANCE_VALUE +
             unused/5;  // Skip over rest of cache
 
-        inst(LOAD_ATTR_MODULE, (unused/1, type_version/2, index/1, unused/5, owner -- attr, self_or_null if (oparg & 1))) {
+        inst(LOAD_ATTR_MODULE, (unused/1, type_version/2, index/1, unused/5, owner -- attr, null if (oparg & 1))) {
             DEOPT_IF(!PyModule_CheckExact(owner), LOAD_ATTR);
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
             assert(dict != NULL);
@@ -1849,11 +1844,11 @@ dummy_func(
             DEOPT_IF(attr == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr);
-            self_or_null = NULL;
+            null = NULL;
             DECREF_INPUTS();
         }
 
-        inst(LOAD_ATTR_WITH_HINT, (unused/1, type_version/2, index/1, unused/5, owner -- attr, self_or_null if (oparg & 1))) {
+        inst(LOAD_ATTR_WITH_HINT, (unused/1, type_version/2, index/1, unused/5, owner -- attr, null if (oparg & 1))) {
             PyTypeObject *tp = Py_TYPE(owner);
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
@@ -1879,11 +1874,11 @@ dummy_func(
             DEOPT_IF(attr == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr);
-            self_or_null = NULL;
+            null = NULL;
             DECREF_INPUTS();
         }
 
-        inst(LOAD_ATTR_SLOT, (unused/1, type_version/2, index/1, unused/5, owner -- attr, self_or_null if (oparg & 1))) {
+        inst(LOAD_ATTR_SLOT, (unused/1, type_version/2, index/1, unused/5, owner -- attr, null if (oparg & 1))) {
             PyTypeObject *tp = Py_TYPE(owner);
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
@@ -1892,11 +1887,11 @@ dummy_func(
             DEOPT_IF(attr == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr);
-            self_or_null = NULL;
+            null = NULL;
             DECREF_INPUTS();
         }
 
-        inst(LOAD_ATTR_CLASS, (unused/1, type_version/2, unused/2, descr/4, cls -- attr, self_or_null if (oparg & 1))) {
+        inst(LOAD_ATTR_CLASS, (unused/1, type_version/2, unused/2, descr/4, cls -- attr, null if (oparg & 1))) {
 
             DEOPT_IF(!PyType_Check(cls), LOAD_ATTR);
             DEOPT_IF(((PyTypeObject *)cls)->tp_version_tag != type_version,
@@ -1904,7 +1899,7 @@ dummy_func(
             assert(type_version != 0);
 
             STAT_INC(LOAD_ATTR, hit);
-            self_or_null = NULL;
+            null = NULL;
             attr = descr;
             assert(attr != NULL);
             Py_INCREF(attr);
@@ -2740,7 +2735,7 @@ dummy_func(
             self_or_null = self;
         }
 
-        inst(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES, (unused/1, type_version/2, keys_version/2, descr/4, self -- attr, self_or_null if (0))) {
+        inst(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES, (unused/1, type_version/2, keys_version/2, descr/4, self -- attr, unused if (0))) {
             assert((oparg & 1) == 0);
             PyTypeObject *self_cls = Py_TYPE(self);
             assert(type_version != 0);
@@ -2757,7 +2752,7 @@ dummy_func(
             attr = Py_NewRef(descr);
         }
 
-        inst(LOAD_ATTR_NONDESCRIPTOR_NO_DICT, (unused/1, type_version/2, unused/2, descr/4, self -- attr, self_or_null if (0))) {
+        inst(LOAD_ATTR_NONDESCRIPTOR_NO_DICT, (unused/1, type_version/2, unused/2, descr/4, self -- attr, unused if (0))) {
             assert((oparg & 1) == 0);
             PyTypeObject *self_cls = Py_TYPE(self);
             assert(type_version != 0);
@@ -2893,7 +2888,7 @@ dummy_func(
                 kwnames);
             if (opcode == INSTRUMENTED_CALL) {
                 PyObject *arg = total_args == 0 ?
-                    &_PyInstrumentation_MISSING : PEEK(total_args);
+                    &_PyInstrumentation_MISSING : args[0];
                 if (res == NULL) {
                     _Py_call_instrumentation_exc2(
                         tstate, PY_MONITORING_EVENT_C_RAISE,
@@ -2921,8 +2916,8 @@ dummy_func(
         // Start out with [NULL, bound_method, arg1, arg2, ...]
         // Transform to [callable, self, arg1, arg2, ...]
         // Then fall through to CALL_PY_EXACT_ARGS
-        inst(CALL_BOUND_METHOD_EXACT_ARGS, (unused/1, unused/2, callable, self_or_null, unused[oparg] -- unused)) {
-            DEOPT_IF(self_or_null != NULL, CALL);
+        inst(CALL_BOUND_METHOD_EXACT_ARGS, (unused/1, unused/2, callable, null, unused[oparg] -- unused)) {
+            DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(Py_TYPE(callable) != &PyMethod_Type, CALL);
             STAT_INC(CALL, hit);
             PyObject *self = ((PyMethodObject *)callable)->im_self;
@@ -2995,10 +2990,10 @@ dummy_func(
             DISPATCH_INLINED(new_frame);
         }
 
-        inst(CALL_NO_KW_TYPE_1, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        inst(CALL_NO_KW_TYPE_1, (unused/1, unused/2, callable, null, args[oparg] -- res)) {
             ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
-            DEOPT_IF(self_or_null != NULL, CALL);
+            DEOPT_IF(null != NULL, CALL);
             PyObject *obj = args[0];
             DEOPT_IF(callable != (PyObject *)&PyType_Type, CALL);
             STAT_INC(CALL, hit);
@@ -3007,10 +3002,10 @@ dummy_func(
             Py_DECREF(&PyType_Type);  // I.e., callable
         }
 
-        inst(CALL_NO_KW_STR_1, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        inst(CALL_NO_KW_STR_1, (unused/1, unused/2, callable, null, args[oparg] -- res)) {
             ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
-            DEOPT_IF(self_or_null != NULL, CALL);
+            DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyUnicode_Type, CALL);
             STAT_INC(CALL, hit);
             PyObject *arg = args[0];
@@ -3021,10 +3016,10 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_NO_KW_TUPLE_1, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        inst(CALL_NO_KW_TUPLE_1, (unused/1, unused/2, callable, null, args[oparg] -- res)) {
             ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
-            DEOPT_IF(self_or_null != NULL, CALL);
+            DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyTuple_Type, CALL);
             STAT_INC(CALL, hit);
             PyObject *arg = args[0];
@@ -3035,7 +3030,7 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_NO_KW_ALLOC_AND_ENTER_INIT, (unused/1, unused/2, callable, self_or_null, args[oparg] -- unused)) {
+        inst(CALL_NO_KW_ALLOC_AND_ENTER_INIT, (unused/1, unused/2, callable, null, args[oparg] -- unused)) {
             /* This instruction does the following:
              * 1. Creates the object (by calling ``object.__new__``)
              * 2. Pushes a shim frame to the frame stack (to cleanup after ``__init__``)
@@ -3043,7 +3038,7 @@ dummy_func(
              * */
             ASSERT_KWNAMES_IS_NULL();
             _PyCallCache *cache = (_PyCallCache *)next_instr;
-            DEOPT_IF(self_or_null != NULL, CALL);
+            DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(!PyType_Check(callable), CALL);
             PyTypeObject *tp = (PyTypeObject *)callable;
             DEOPT_IF(tp->tp_version_tag != read_u32(cache->func_version), CALL);
@@ -3269,18 +3264,18 @@ dummy_func(
         }
 
         // This is secretly a super-instruction
-        inst(CALL_NO_KW_LIST_APPEND, (unused/1, unused/2, callable, self_or_null, args[oparg] -- unused)) {
+        inst(CALL_NO_KW_LIST_APPEND, (unused/1, unused/2, callable, self, args[oparg] -- unused)) {
             ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
-            assert(self_or_null != NULL);
+            assert(self != NULL);
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.list_append, CALL);
-            DEOPT_IF(!PyList_Check(self_or_null), CALL);
+            DEOPT_IF(!PyList_Check(self), CALL);
             STAT_INC(CALL, hit);
-            if (_PyList_AppendTakeRef((PyListObject *)self_or_null, args[0]) < 0) {
+            if (_PyList_AppendTakeRef((PyListObject *)self, args[0]) < 0) {
                 goto pop_1_error;  // Since arg is DECREF'ed already
             }
-            Py_DECREF(self_or_null);
+            Py_DECREF(self);
             Py_DECREF(callable);
             STACK_SHRINK(3);
             // CALL + POP_TOP
