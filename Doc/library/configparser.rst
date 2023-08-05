@@ -981,6 +981,10 @@ ConfigParser Objects
       The default *dict_type* is :class:`dict`, since it now preserves
       insertion order.
 
+   .. versionchanged:: 3.13
+      Raise a :exc:`ParsingError` if a key is present with a value
+      in a scenario where an extra space is present within a section.
+
    .. method:: defaults()
 
       Return a dictionary containing the instance-wide defaults.
