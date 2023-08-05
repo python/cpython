@@ -1902,7 +1902,7 @@ error:
 /*[clinic input]
 _ctypes.POINTER as create_pointer_type
 
-    type: object
+    type as cls: object
     /
 
 Creates and returns a new ctypes pointer type.
@@ -1912,22 +1912,22 @@ repeatedly is cheap. 'type' must be a ctypes type.
 [clinic start generated code]*/
 
 static PyObject *
-create_pointer_type(PyObject *module, PyObject *type)
-/*[clinic end generated code: output=6f3fdd0cf5308ce6 input=fcc2effb05dc7ab5]*/
+create_pointer_type(PyObject *module, PyObject *cls)
+/*[clinic end generated code: output=98c3547ab6f4f40b input=ccb867693e635dea]*/
 {
     PyObject *result;
     PyTypeObject *typ;
     PyObject *key;
 
-    result = PyDict_GetItemWithError(_ctypes_ptrtype_cache, type);
+    result = PyDict_GetItemWithError(_ctypes_ptrtype_cache, cls);
     if (result) {
         return Py_NewRef(result);
     }
     else if (PyErr_Occurred()) {
         return NULL;
     }
-    if (PyUnicode_CheckExact(type)) {
-        PyObject *name = PyUnicode_FromFormat("LP_%U", type);
+    if (PyUnicode_CheckExact(cls)) {
+        PyObject *name = PyUnicode_FromFormat("LP_%U", cls);
         result = PyObject_CallFunction((PyObject *)Py_TYPE(&PyCPointer_Type),
                                        "N(O){}",
                                        name,
@@ -1939,17 +1939,17 @@ create_pointer_type(PyObject *module, PyObject *type)
             Py_DECREF(result);
             return NULL;
         }
-    } else if (PyType_Check(type)) {
-        typ = (PyTypeObject *)type;
+    } else if (PyType_Check(cls)) {
+        typ = (PyTypeObject *)cls;
         PyObject *name = PyUnicode_FromFormat("LP_%s", typ->tp_name);
         result = PyObject_CallFunction((PyObject *)Py_TYPE(&PyCPointer_Type),
                                        "N(O){sO}",
                                        name,
                                        &PyCPointer_Type,
-                                       "_type_", type);
+                                       "_type_", cls);
         if (result == NULL)
             return result;
-        key = Py_NewRef(type);
+        key = Py_NewRef(cls);
     } else {
         PyErr_SetString(PyExc_TypeError, "must be a ctypes type");
         return NULL;
