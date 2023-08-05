@@ -849,6 +849,7 @@ class Bytes_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_y_hash, None)
         # TypeError: must be read-only bytes-like object, not memoryview
         self.assertRaises(TypeError, getargs_y_hash, NONCONTIG_WRITABLE)
+
     def test_w_star(self):
         # getargs_w_star() modifies first and last byte
         from _testcapi import getargs_w_star
