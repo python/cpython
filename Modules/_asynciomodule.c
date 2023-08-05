@@ -3581,7 +3581,7 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
 {
 
     asyncio_state *state = get_asyncio_state(module);
-    PyObject *tasks = PySet_New(NULL);
+    PyObject *tasks = PySet_New(state->eager_tasks);
     if (tasks == NULL) {
         return NULL;
     }
@@ -3600,6 +3600,17 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     TaskObj *tail = &state->asyncio_tasks.tail;
     while (head != tail)
     {
+        PyObject *done = _asyncio_Future_done_impl((FutureObj *)head);
+        if (done == NULL) {
+            Py_DECREF(tasks);
+            Py_DECREF(loop);
+            return NULL;
+        }
+        if (Py_IsTrue(done)) {
+            Py_DECREF(done);
+            head = head->prev;
+            continue;
+        }
         if (head->task_loop == loop) {
             if (PySet_Add(tasks, (PyObject *)head) < 0) {
                 Py_DECREF(tasks);
@@ -3624,6 +3635,21 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
             Py_DECREF(iter);
             Py_DECREF(item);
             return NULL;
+        }
+        PyObject *done = PyObject_CallMethodNoArgs(item, &_Py_ID(done));
+        if (done == NULL) {
+            Py_DECREF(tasks);
+            Py_DECREF(loop);
+            Py_DECREF(iter);
+            Py_DECREF(item);
+            Py_DECREF(task_loop);
+            return NULL;
+        }
+        if (Py_IsTrue(done)) {
+            Py_DECREF(done);
+            Py_DECREF(task_loop);
+            Py_DECREF(item);
+            continue;
         }
         if (task_loop == loop) {
             if (PySet_Add(tasks, item) < 0) {
