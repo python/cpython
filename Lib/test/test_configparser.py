@@ -1570,6 +1570,7 @@ class ReadFileTestCase(unittest.TestCase):
                delimiters       =( '=', ),
                interpolation    =None,
            )
+           parser.read_file(lines)
 
 
 class CoverageOneHundredTestCase(unittest.TestCase):

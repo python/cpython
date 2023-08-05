@@ -1066,6 +1066,7 @@ ConfigParser Objects
          present without a value, particularly in scenarios not recommended,
          such as having extra spaces or blank lines within sections.
 
+
    .. method:: read_file(f, source=None)
 
       Read and parse configuration data from *f* which must be an iterable
