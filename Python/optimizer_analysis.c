@@ -12,6 +12,8 @@
 #include <stddef.h>
 #include "pycore_optimizer.h"
 
+#define PARTITION_DEBUG 1
+
 // TYPENODE is a tagged pointer that uses the last 2 LSB as the tag
 #define _Py_PARTITIONNODE_t uintptr_t
 
@@ -66,7 +68,7 @@ partitionnode_clear_tag(_Py_PARTITIONNODE_t node)
 // 0 - static
 // 1 - dynamic
 // If static, const_value must be set!
-static inline _Py_PARTITIONNODE_t
+static _Py_PARTITIONNODE_t
 partitionnode_make_root(uint8_t static_or_dynamic, PyObject *const_val)
 {
     _Py_PartitionRootNode *root = PyObject_New(_Py_PartitionRootNode, &_Py_PartitionRootNode_Type);
@@ -75,19 +77,17 @@ partitionnode_make_root(uint8_t static_or_dynamic, PyObject *const_val)
     }
     root->static_or_dyanmic = static_or_dynamic;
     root->const_val = Py_NewRef(const_val);
-    fprintf(stderr, "allocating ROOT\n");
     return (_Py_PARTITIONNODE_t)root;
 }
 
 static inline _Py_PARTITIONNODE_t
-partitionnode_make_ref(_Py_PARTITIONNODE_t node)
+partitionnode_make_ref(_Py_PARTITIONNODE_t *node)
 {
-    return partitionnode_clear_tag(node) | TYPE_REF;
+    return partitionnode_clear_tag((_Py_PARTITIONNODE_t)node) | TYPE_REF;
 }
 
 
 static _Py_PARTITIONNODE_t PARTITIONNODE_NULLROOT = (_Py_PARTITIONNODE_t)_Py_NULL | TYPE_ROOT;
-
 
 // Tier 2 types meta interpreter
 typedef struct _Py_UOpsAbstractInterpContext {
@@ -110,9 +110,6 @@ abstractinterp_dealloc(PyObject *o)
     for (int i = 0; i < total; i++) {
         _Py_PARTITIONNODE_t node = self->locals[i];
         if (partitionnode_get_tag(node) == TYPE_ROOT) {
-            if (node != PARTITIONNODE_NULLROOT) {
-                fprintf(stderr, "DEALLOCATING ROOT\n");
-            }
             Py_XDECREF(partitionnode_clear_tag(node));
         }
     }
@@ -161,7 +158,11 @@ _Py_UOpsAbstractInterpContext_New(int stack_len, int locals_len, int curr_stackl
     return self;
 }
 
-static inline _Py_PARTITIONNODE_t *
+#if PARTITION_DEBUG
+static void print_ctx(_Py_UOpsAbstractInterpContext *ctx);
+#endif
+
+static _Py_PARTITIONNODE_t *
 partitionnode_get_rootptr(_Py_PARTITIONNODE_t *ref)
 {
     _Py_TypeNodeTags tag = partitionnode_get_tag(*ref);
@@ -204,31 +205,27 @@ partitionnode_set(_Py_PARTITIONNODE_t *src, _Py_PARTITIONNODE_t *dst, bool src_i
         switch (tag) {
             case TYPE_ROOT: {
                 _Py_PARTITIONNODE_t old_root = partitionnode_clear_tag(*dst);
+                Py_XDECREF(old_root);
                 if (!src_is_new) {
                     // Make dst a reference to src
-                    *dst = partitionnode_make_ref(*src);
-                    Py_XDECREF(old_root);
+                    *dst = partitionnode_make_ref(src);
                     break;
                 }
                 // Make dst the src
                 *dst = *src;
-                Py_XDECREF(old_root);
                 break;
             }
             case TYPE_REF: {
                 _Py_PARTITIONNODE_t *rootptr = partitionnode_get_rootptr(dst);
                 _Py_PARTITIONNODE_t old_root = partitionnode_clear_tag(*rootptr);
+                Py_XDECREF(old_root);
                 if (!src_is_new) {
                     // Traverse up to the root of dst, make root a reference to src
-                    *rootptr = partitionnode_make_ref(*src);
-                    // Old root no longer used.
-                    Py_XDECREF(old_root);
+                    *rootptr = partitionnode_make_ref(src);
                     break;
                 }
                 // Make root of dst the src
                 *rootptr = *src;
-                // Old root no longer used.
-                Py_XDECREF(old_root);
                 break;
             }
             default:
@@ -259,7 +256,7 @@ partitionnode_overwrite(_Py_UOpsAbstractInterpContext *ctx,
 {
 #ifdef Py_DEBUG
     if (src_is_new) {
-        assert(partitionnode_get_tag(*src) == TYPE_ROOT);
+        assert(partitionnode_get_tag((_Py_PARTITIONNODE_t)src) == TYPE_ROOT);
     }
 #endif
     _Py_TypeNodeTags tag = partitionnode_get_tag(*dst);
@@ -269,37 +266,40 @@ partitionnode_overwrite(_Py_UOpsAbstractInterpContext *ctx,
             _Py_PARTITIONNODE_t old_dst = *dst;
             if (!src_is_new) {
                 // Make dst a reference to src
-                *dst = partitionnode_make_ref(*src);
+                *dst = partitionnode_make_ref(src);
+                assert(partitionnode_get_tag(*dst) == TYPE_REF);
+                assert(partitionnode_clear_tag(*dst) != (_Py_PARTITIONNODE_t)_Py_NULL);
+                fprintf(stderr, "START\n");
+                print_ctx(ctx);
             }
             else {
                 // Make dst the src
-                *dst = *src;
+                *dst = (_Py_PARTITIONNODE_t)src;
             }
 
-            // No longer need the old root.
-            Py_XDECREF(partitionnode_clear_tag(old_dst));
 
             /* Pick one child of dst and make that the new root of the dst tree */
 
             // Children of dst will have this form
             _Py_PARTITIONNODE_t child_test = partitionnode_make_ref(
-                partitionnode_clear_tag(*dst));
-            // Will be initialised to the first child we find (ptr to the new root)
-            _Py_PARTITIONNODE_t *new_root_ptr = NULL;
+                (_Py_PARTITIONNODE_t *)partitionnode_clear_tag((_Py_PARTITIONNODE_t)dst));
+            // Will be initialised to the first child we find
+            _Py_PARTITIONNODE_t *new_root = (_Py_PARTITIONNODE_t *)NULL;
 
             // Search locals for children
             int nlocals = ctx->locals_len;
             for (int i = 0; i < nlocals; i++) {
                 _Py_PARTITIONNODE_t *node_ptr = &(ctx->locals[i]);
                 if (*node_ptr == child_test) {
-                    if (new_root_ptr == NULL) {
+                    if (new_root == (_Py_PARTITIONNODE_t)NULL) {
                         // First child encountered! initialise root
-                        new_root_ptr = node_ptr;
-                        *node_ptr = *dst;
+                        new_root = node_ptr;
+                        *node_ptr = old_dst;
+                        Py_XINCREF(partitionnode_clear_tag(old_dst));
                     }
                     else {
                         // Not the first child encounted, point it to the new root
-                        *node_ptr = partitionnode_make_ref(*new_root_ptr);
+                        *node_ptr = partitionnode_make_ref(new_root);
                     }
                 }
             }
@@ -309,18 +309,23 @@ partitionnode_overwrite(_Py_UOpsAbstractInterpContext *ctx,
             for (int i = 0; i < nstack; i++) {
                 _Py_PARTITIONNODE_t *node_ptr = &(ctx->stack[i]);
                 if (*node_ptr == child_test) {
-                    if (new_root_ptr == NULL) {
+                    if (new_root == (_Py_PARTITIONNODE_t)NULL) {
                         // First child encountered! initialise root
-                        new_root_ptr = node_ptr;
-                        *node_ptr = *dst;
+                        new_root = node_ptr;
+                        *node_ptr = old_dst;
+                        Py_XINCREF(partitionnode_clear_tag(old_dst));
                     }
                     else {
                         // Not the first child encounted, point it to the new root
-                        *node_ptr = partitionnode_make_ref(*new_root_ptr);
+                        *node_ptr = partitionnode_make_ref(new_root);
                     }
                 }
             }
 
+            // This ndoe is no longer referencing the old root.
+            Py_XDECREF(partitionnode_clear_tag(old_dst));
+            fprintf(stderr, "END\n");
+            print_ctx(ctx);
             break;
         }
         case TYPE_REF: {
@@ -329,18 +334,20 @@ partitionnode_overwrite(_Py_UOpsAbstractInterpContext *ctx,
             // Make dst a reference to src
             if (!src_is_new) {
                 // Make dst a reference to src
-                *dst = partitionnode_make_ref(*src);
+                *dst = partitionnode_make_ref(src);
+                assert(partitionnode_get_tag(*dst) == TYPE_REF);
+                assert(partitionnode_clear_tag(*dst) != (_Py_PARTITIONNODE_t)_Py_NULL);
             }
             else {
                 // Make dst the src
-                *dst = *src;
+                *dst = (_Py_PARTITIONNODE_t)src;
             }
 
             /* Make all child of src be a reference to the parent of dst */
 
             // Children of dst will have this form
             _Py_PARTITIONNODE_t child_test = partitionnode_make_ref(
-                partitionnode_clear_tag(*dst));
+                (_Py_PARTITIONNODE_t *)partitionnode_clear_tag(*dst));
 
             // Search locals for children
             int nlocals = ctx->locals_len;
@@ -368,6 +375,100 @@ partitionnode_overwrite(_Py_UOpsAbstractInterpContext *ctx,
     }
 }
 
+#if PARTITION_DEBUG
+
+/**
+ * @brief Print the entries in the abstract interpreter context (along with locals).
+*/
+static void
+print_ctx(_Py_UOpsAbstractInterpContext *ctx)
+{
+    _Py_PARTITIONNODE_t *locals = ctx->locals;
+    _Py_PARTITIONNODE_t *stackptr = ctx->stack_pointer;
+
+    int nstack_use = (int)(stackptr - ctx->stack);
+    int nstack = ctx->stack_len;
+    int nlocals = ctx->locals_len;
+
+    bool is_local = false;
+    bool is_stack = false;
+
+    int locals_offset = -1;
+    int stack_offset = -1;
+    int parent_idx = -1;
+
+    fprintf(stderr, "      Stack: %p: [", ctx->stack);
+    for (int i = 0; i < nstack; i++) {
+        _Py_PARTITIONNODE_t *node = &ctx->stack[i];
+        _Py_PARTITIONNODE_t tag = partitionnode_get_tag(*node);
+
+        _Py_PARTITIONNODE_t *root = partitionnode_get_rootptr(node);
+
+        fprintf(stderr, "%s", i == nstack_use ? "." : " ");
+
+        if (tag == TYPE_REF) {
+            _Py_PARTITIONNODE_t *parent = (_Py_PARTITIONNODE_t *)(partitionnode_clear_tag(*node));
+            is_local = parent >= ctx->locals && parent < ctx->stack;
+            is_stack = parent >= ctx->stack && parent < (ctx->stack + nstack);
+            parent_idx = is_local
+                ? (int)(parent - ctx->locals)
+                : is_stack
+                ? (int)(parent - ctx->locals)
+                : -1;
+        }
+
+
+        _Py_PartitionRootNode *ptr = (_Py_PartitionRootNode *)partitionnode_clear_tag(*root);
+        fprintf(stderr, "%s",
+            ptr == NULL ? "?" : (ptr->static_or_dyanmic ? "dynamic" : "static"));
+
+        if (tag == TYPE_REF) {
+            const char *wher = is_local
+                ? "locals"
+                : is_stack
+                ? "stack"
+                : "const";
+            fprintf(stderr, "->%s[%d]",
+                wher, parent_idx);
+        }
+    }
+    fprintf(stderr, "]\n");
+
+    fprintf(stderr, "      Locals %p: [", locals);
+    for (int i = 0; i < nlocals; i++) {
+        _Py_PARTITIONNODE_t *node = &ctx->locals[i];
+        _Py_PARTITIONNODE_t tag = partitionnode_get_tag(*node);
+
+        _Py_PARTITIONNODE_t *root = partitionnode_get_rootptr(node);
+
+        if (tag == TYPE_REF) {
+            _Py_PARTITIONNODE_t *parent = (_Py_PARTITIONNODE_t *)(partitionnode_clear_tag(*node));
+            is_local = parent >= ctx->locals && parent < ctx->stack;
+            is_stack = parent >= ctx->stack && parent < (ctx->stack + nstack);
+            parent_idx = is_local
+                ? (int)(parent - ctx->locals)
+                : is_stack
+                ? (int)(parent - ctx->locals)
+                : -1;
+        }
+
+        _Py_PartitionRootNode *ptr = (_Py_PartitionRootNode *)partitionnode_clear_tag(*root);
+        fprintf(stderr, "%s",
+            ptr == NULL ? "?" : (ptr->static_or_dyanmic ? "dynamic" : "static"));
+
+        if (tag == TYPE_REF) {
+            const char *wher = is_local
+                ? "locals"
+                : is_stack
+                ? "stack"
+                : "const";
+            fprintf(stderr, "->%s[%d]",
+                wher, parent_idx);
+        }
+    }
+    fprintf(stderr, "]\n");
+}
+#endif
 
 #ifndef Py_DEBUG
 #define GETITEM(v, i) PyTuple_GET_ITEM((v), (i))
@@ -398,6 +499,7 @@ _Py_uop_analyze_and_optimize(
                             assert(n >= 0); \
                             BASIC_STACKADJ(n); \
                             assert(STACK_LEVEL() <= STACK_SIZE()); \
+                            ctx->stack_pointer = stack_pointer; \
                         } while (0)
 #define STACK_SHRINK(n) do { \
                             assert(n >= 0); \
@@ -458,7 +560,10 @@ _Py_uop_analyze_and_optimize(
         case LOAD_CONST: {
             _Py_PARTITIONNODE_t value = MAKE_STATIC_ROOT(GETITEM(co->co_consts, oparg));
             STACK_GROW(1);
-            PARTITIONNODE_OVERWRITE(&value, PEEK(1), false);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)value, PEEK(1), false);
+#if PARTITION_DEBUG
+            print_ctx(ctx);
+#endif
             break;
         }
         case STORE_FAST:
@@ -478,8 +583,7 @@ _Py_uop_analyze_and_optimize(
             fprintf(stderr, "Unknown opcode in abstract interpreter\n");
             Py_UNREACHABLE();
         }
-        ctx->stack_pointer = stack_pointer;
-
+        //print_ctx(ctx);
     }
     assert(STACK_SIZE() >= 0);
     Py_DECREF(ctx);

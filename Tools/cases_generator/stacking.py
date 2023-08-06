@@ -425,7 +425,7 @@ def _write_components_for_abstract_interp(
         # NULL out the output stack effects
         for poke in mgr.pokes:
             if not poke.effect.size and poke.effect.name not in mgr.instr.unmoved_names:
-                out.emit(f"PARTITIONNODE_OVERWRITE(&PARTITIONNODE_NULLROOT, PEEK(-({poke.offset.as_index()})), true);")
+                out.emit(f"PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-({poke.offset.as_index()})), true);")
                 # out.assign(
                 #     StackEffect(
                 #         poke.as_variable(),
