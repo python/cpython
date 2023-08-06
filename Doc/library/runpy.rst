@@ -51,7 +51,7 @@ The :mod:`runpy` module provides two functions:
 
    The special global variables ``__name__``, ``__spec__``, ``__file__``,
    ``__cached__``, ``__loader__`` and ``__package__`` are set in the globals
-   dictionary before the module code is executed (note that this is a
+   dictionary before the module code is executed (Note that this is a
    minimal set of variables - other variables may be set implicitly as an
    interpreter implementation detail).
 
@@ -126,7 +126,7 @@ The :mod:`runpy` module provides two functions:
 
    The special global variables ``__name__``, ``__spec__``, ``__file__``,
    ``__cached__``, ``__loader__`` and ``__package__`` are set in the globals
-   dictionary before the module code is executed (note that this is a
+   dictionary before the module code is executed (Note that this is a
    minimal set of variables - other variables may be set implicitly as an
    interpreter implementation detail).
 
