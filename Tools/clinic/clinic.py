@@ -884,22 +884,21 @@ class CLanguage(Language):
             params: dict[int, Parameter],
     ) -> str:
         assert len(params) > 0
-        code_blocks: list[str] = []
         names = [repr(p.name) for p in params.values()]
         first_pos, first_param = next(iter(params.items()))
         last_pos, last_param = next(reversed(params.items()))
-        # FIXME: Handle multiple deprecation levels
-        # FIXME: For now, assume there's only one level
-        assert first_param.deprecated_positional == last_param.deprecated_positional
 
         # Pretty-print list of names.
         pstr = pprint_words(names)
 
+        # For now, assume there's only one deprecation level.
+        assert first_param.deprecated_positional == last_param.deprecated_positional
+        thenceforth = first_param.deprecated_positional
+        assert thenceforth is not None
+
         # Format the preprocessor warning and error messages.
         assert isinstance(self.cpp.filename, str)
         source = os.path.basename(self.cpp.filename)
-        thenceforth = first_param.deprecated_positional  # FIXME
-        assert thenceforth is not None
         major, minor = thenceforth
         cpp_message = (
             f"In {source}, update parameter(s) {pstr} in the clinic "
