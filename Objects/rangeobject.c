@@ -106,8 +106,8 @@ range_from_array(PyTypeObject *type, PyObject *const *args, Py_ssize_t num_args)
             if (!stop) {
                 return NULL;
             }
-            start = Py_NewRef(_PyLong_GetZero());
-            step = Py_NewRef(_PyLong_GetOne());
+            start = _PyLong_GetZero();
+            step = _PyLong_GetOne();
             break;
         case 0:
             PyErr_SetString(PyExc_TypeError,
