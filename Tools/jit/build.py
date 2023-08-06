@@ -855,9 +855,9 @@ class Compiler:
         if self._ghccc:
             ir = before = ll.read_text()
             for name in ["_jit_branch", "_jit_continue", "_jit_entry", "_jit_loop"]:
-                signature = f"%struct._PyInterpreterFrame* @{name}"
-                ir = ir.replace(signature, f"ghccc {signature}")
-            assert ir != before
+                for ptr in ["ptr", "%struct._PyInterpreterFrame*"]:
+                    ir = ir.replace(f"{ptr} @{name}", f"ghccc {ptr} @{name}")
+            assert ir != before, ir
             ll.write_text(ir)
 
     async def _compile(self, opname, c) -> None:
