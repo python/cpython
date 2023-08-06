@@ -875,7 +875,7 @@ class CLanguage(Language):
         # FIXME: Handle multiple deprecation levels
         # FIXME: For now, assume there's only one level
         code_blocks: list[str] = []
-        names = [repr(p.name) for p in iter(params.values())]
+        names = [repr(p.name) for p in params.values()]
         first_pos, first_param = next(iter(params.items()))
 
         # Pretty-print list of names.
