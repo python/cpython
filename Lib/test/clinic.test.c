@@ -5525,6 +5525,20 @@ test_deprecate_positional_use_1(PyObject *module, PyObject *const *args, Py_ssiz
     PyObject *pos;
     PyObject *optarg = Py_None;
 
+    #if PY_VERSION_HEX >= 0x030e00C0
+    #  error "In /Users/erlend.aasland/src/cpython.git/Lib/test/clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_1' to be keyword-only."
+    #elif PY_VERSION_HEX >= 0x030e00A0
+    #  ifdef _MSC_VER
+    #    pragma message ("In /Users/erlend.aasland/src/cpython.git/Lib/test/clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_1' to be keyword-only.")
+    #  else
+    #    warning "In /Users/erlend.aasland/src/cpython.git/Lib/test/clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_1' to be keyword-only."
+    #  endif
+    #endif
+    if (nargs == 2) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning, "Passing optarg as a positional parameter is deprecated. It will become a keyword-only parameter in Python 3.14.", 1)) {
+            goto exit;
+        }
+    }
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
     if (!args) {
         goto exit;
@@ -5532,23 +5546,6 @@ test_deprecate_positional_use_1(PyObject *module, PyObject *const *args, Py_ssiz
     pos = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
-    }
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error "Update 'optarg' in 'test_deprecate_positional_use_1' in 'clinic.test.c' to be keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ("Update 'optarg' in 'test_deprecate_positional_use_1' in 'clinic.test.c' to be keyword-only.")
-    #  else
-    #    warning "Update 'optarg' in 'test_deprecate_positional_use_1' in 'clinic.test.c' to be keyword-only."
-    #  endif
-    #endif
-    if (nargs == 2) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-            "Passing 'optarg' as a positional parameter is deprecated. "
-            "It will become a keyword-only parameter in Python 3.14.", 1))
-        {
-            goto exit;
-        }
     }
     optarg = args[1];
 skip_optional_pos:
@@ -5561,7 +5558,7 @@ exit:
 static PyObject *
 test_deprecate_positional_use_1_impl(PyObject *module, PyObject *pos,
                                      PyObject *optarg)
-/*[clinic end generated code: output=1a0fab8ac7ae0dc6 input=ead4a995482b22d3]*/
+/*[clinic end generated code: output=a23c5721eacca803 input=ead4a995482b22d3]*/
 
 
 /*[clinic input]
@@ -5621,28 +5618,25 @@ test_deprecate_positional_use_2(PyObject *module, PyObject *const *args, Py_ssiz
     PyObject *pos;
     PyObject *optarg;
 
+    #if PY_VERSION_HEX >= 0x030e00C0
+    #  error "In /Users/erlend.aasland/src/cpython.git/Lib/test/clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_2' to be keyword-only."
+    #elif PY_VERSION_HEX >= 0x030e00A0
+    #  ifdef _MSC_VER
+    #    pragma message ("In /Users/erlend.aasland/src/cpython.git/Lib/test/clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_2' to be keyword-only.")
+    #  else
+    #    warning "In /Users/erlend.aasland/src/cpython.git/Lib/test/clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_2' to be keyword-only."
+    #  endif
+    #endif
+    if (nargs == 2) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning, "Passing optarg as a positional parameter is deprecated. It will become a keyword-only parameter in Python 3.14.", 1)) {
+            goto exit;
+        }
+    }
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
     if (!args) {
         goto exit;
     }
     pos = args[0];
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error "Update 'optarg' in 'test_deprecate_positional_use_2' in 'clinic.test.c' to be keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ("Update 'optarg' in 'test_deprecate_positional_use_2' in 'clinic.test.c' to be keyword-only.")
-    #  else
-    #    warning "Update 'optarg' in 'test_deprecate_positional_use_2' in 'clinic.test.c' to be keyword-only."
-    #  endif
-    #endif
-    if (nargs == 2) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-            "Passing 'optarg' as a positional parameter is deprecated. "
-            "It will become a keyword-only parameter in Python 3.14.", 1))
-        {
-            goto exit;
-        }
-    }
     optarg = args[1];
     return_value = test_deprecate_positional_use_2_impl(module, pos, optarg);
 
@@ -5653,7 +5647,7 @@ exit:
 static PyObject *
 test_deprecate_positional_use_2_impl(PyObject *module, PyObject *pos,
                                      PyObject *optarg)
-/*[clinic end generated code: output=dd1b18342d4af153 input=3ced298b4a297b2f]*/
+/*[clinic end generated code: output=3d6f116d67f53bb9 input=3ced298b4a297b2f]*/
 
 
 /*[clinic input]
@@ -5711,46 +5705,26 @@ test_deprecate_positional_use_3(PyObject *module, PyObject *const *args, Py_ssiz
     PyObject *optarg;
     PyObject *kw;
 
+    #if PY_VERSION_HEX >= 0x030e00C0
+    #  error "In /Users/erlend.aasland/src/cpython.git/Lib/test/clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_3' to be keyword-only."
+    #elif PY_VERSION_HEX >= 0x030e00A0
+    #  ifdef _MSC_VER
+    #    pragma message ("In /Users/erlend.aasland/src/cpython.git/Lib/test/clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_3' to be keyword-only.")
+    #  else
+    #    warning "In /Users/erlend.aasland/src/cpython.git/Lib/test/clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_3' to be keyword-only."
+    #  endif
+    #endif
+    if (nargs == 2) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning, "Passing optarg as a positional parameter is deprecated. It will become a keyword-only parameter in Python 3.14.", 1)) {
+            goto exit;
+        }
+    }
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 1, argsbuf);
     if (!args) {
         goto exit;
     }
     pos = args[0];
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error "Update 'optarg' in 'test_deprecate_positional_use_3' in 'clinic.test.c' to be keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ("Update 'optarg' in 'test_deprecate_positional_use_3' in 'clinic.test.c' to be keyword-only.")
-    #  else
-    #    warning "Update 'optarg' in 'test_deprecate_positional_use_3' in 'clinic.test.c' to be keyword-only."
-    #  endif
-    #endif
-    if (nargs == 2) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-            "Passing 'optarg' as a positional parameter is deprecated. "
-            "It will become a keyword-only parameter in Python 3.14.", 1))
-        {
-            goto exit;
-        }
-    }
     optarg = args[1];
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error "Update 'kw' in 'test_deprecate_positional_use_3' in 'clinic.test.c' to be keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ("Update 'kw' in 'test_deprecate_positional_use_3' in 'clinic.test.c' to be keyword-only.")
-    #  else
-    #    warning "Update 'kw' in 'test_deprecate_positional_use_3' in 'clinic.test.c' to be keyword-only."
-    #  endif
-    #endif
-    if (nargs == 3) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-            "Passing 'kw' as a positional parameter is deprecated. "
-            "It will become a keyword-only parameter in Python 3.14.", 1))
-        {
-            goto exit;
-        }
-    }
     kw = args[2];
     return_value = test_deprecate_positional_use_3_impl(module, pos, optarg, kw);
 
@@ -5761,4 +5735,4 @@ exit:
 static PyObject *
 test_deprecate_positional_use_3_impl(PyObject *module, PyObject *pos,
                                      PyObject *optarg, PyObject *kw)
-/*[clinic end generated code: output=e9a2915901c0a9ca input=c19ac8533f05d314]*/
+/*[clinic end generated code: output=32fc07795a7eb5fa input=c19ac8533f05d314]*/

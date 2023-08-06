@@ -59,6 +59,20 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
     int uri = 0;
     enum autocommit_mode autocommit = LEGACY_TRANSACTION_CONTROL;
 
+    #if PY_VERSION_HEX >= 0x030d00C0
+    #  error "In /Users/erlend.aasland/src/cpython.git/Modules/_sqlite/connection.c, update parameter(s) 'timeout', 'detect_types', 'isolation_level', 'check_same_thread', 'factory', 'cached_statements' and 'uri' in the clinic input of '_sqlite3.Connection.__init__' to be keyword-only."
+    #elif PY_VERSION_HEX >= 0x030d00A0
+    #  ifdef _MSC_VER
+    #    pragma message ("In /Users/erlend.aasland/src/cpython.git/Modules/_sqlite/connection.c, update parameter(s) 'timeout', 'detect_types', 'isolation_level', 'check_same_thread', 'factory', 'cached_statements' and 'uri' in the clinic input of '_sqlite3.Connection.__init__' to be keyword-only.")
+    #  else
+    #    warning "In /Users/erlend.aasland/src/cpython.git/Modules/_sqlite/connection.c, update parameter(s) 'timeout', 'detect_types', 'isolation_level', 'check_same_thread', 'factory', 'cached_statements' and 'uri' in the clinic input of '_sqlite3.Connection.__init__' to be keyword-only."
+    #  endif
+    #endif
+    if (nargs == 2) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning, "Passing 'timeout', 'detect_types', 'isolation_level', 'check_same_thread', 'factory', 'cached_statements' and 'uri' as positional parameters is deprecated. They will become keyword-only parameters in Python 3.13.", 1)) {
+            goto exit;
+        }
+    }
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 8, 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -1659,4 +1673,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=d3c6cb9326736ea5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=900a2af28b0f6231 input=a9049054013a1b77]*/
