@@ -4793,6 +4793,15 @@ static PyMappingMethods Array_as_mapping = {
     Array_ass_subscript,
 };
 
+PyDoc_STRVAR(array_doc,
+"Abstract base class for arrays.\n"
+"\n" 
+"The recommended way to create concrete array types is by multiplying any ctypes data type with\n"
+"a non-negative integer. Alternatively, you can subclass this type and define _length_ and _type_\n" 
+"class variables. Array elements can be read and written using standard subscript and slice accesses;\n"
+"for slice reads, the resulting object is not itself an Array."
+);
+
 PyTypeObject PyCArray_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_ctypes.Array",
@@ -4813,8 +4822,8 @@ PyTypeObject PyCArray_Type = {
     0,                                          /* tp_getattro */
     0,                                          /* tp_setattro */
     &PyCData_as_buffer,                         /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    PyDoc_STR("XXX to be provided"),            /* tp_doc */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
+    PyDoc_STR(array_doc),                       /* tp_doc */
     (traverseproc)PyCData_traverse,             /* tp_traverse */
     (inquiry)PyCData_clear,                     /* tp_clear */
     0,                                          /* tp_richcompare */
