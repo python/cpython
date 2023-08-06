@@ -2669,6 +2669,9 @@ class Function:
         return f
 
 
+VersionTuple = tuple[int, int]
+
+
 @dc.dataclass(repr=False, slots=True)
 class Parameter:
     """
@@ -4499,9 +4502,6 @@ class ParamState(enum.IntEnum):
 
     # Right square brackets after required params.
     RIGHT_SQUARE_AFTER = 6
-
-
-VersionTuple = tuple[int, int]
 
 
 class DSLParser:
