@@ -1478,7 +1478,7 @@ class ClinicParserTest(TestCase):
             "module foo\nfoo.bar\n  this: int\n  *",
             "module foo\nfoo.bar\n  this: int\n  *\nDocstring.",
         )
-        err = "Function 'bar' specifies '*' without any parameters afterwards."
+        err = "Function 'foo.bar' specifies '*' without any parameters afterwards."
         for block in dataset:
             with self.subTest(block=block):
                 self.expect_failure(block, err)
@@ -1492,7 +1492,7 @@ class ClinicParserTest(TestCase):
             Docstring.
         """
         err = (
-            "Function 'bar': '* [from ...]' format expected to be "
+            "Function 'foo.bar': '* [from ...]' format expected to be "
             "'<major.minor>', where 'major' and 'minor' are digits."
         )
         self.expect_failure(block, err, lineno=3)
@@ -1506,7 +1506,7 @@ class ClinicParserTest(TestCase):
             Docstring.
         """
         err = (
-            "Function 'bar', '* [from <major.minor>]': "
+            "Function 'foo.bar', '* [from <major.minor>]': "
             "'major' and 'minor' must be digits, not 'a.b'"
         )
         self.expect_failure(block, err, lineno=3)
@@ -1520,7 +1520,7 @@ class ClinicParserTest(TestCase):
             Docstring.
         """
         err = (
-            "Function 'bar', '* [from <major.minor>]': "
+            "Function 'foo.bar', '* [from <major.minor>]': "
             "'major' and 'minor' must be digits, not '1.2.3'"
         )
         self.expect_failure(block, err, lineno=3)
@@ -1534,7 +1534,7 @@ class ClinicParserTest(TestCase):
             Docstring.
         """
         err = (
-            "Function 'bar' specifies '* [from ...]' without "
+            "Function 'foo.bar' specifies '* [from ...]' without "
             "any parameters afterwards"
         )
         self.expect_failure(block, err, lineno=4)
@@ -1548,7 +1548,7 @@ class ClinicParserTest(TestCase):
                 * [from 3.14]
             Docstring.
         """
-        err = "Function 'bar': '* [from ...]' must come before '*'"
+        err = "Function 'foo.bar': '* [from ...]' must come before '*'"
         self.expect_failure(block, err, lineno=4)
 
     def test_depr_star_duplicate(self):
@@ -1562,7 +1562,7 @@ class ClinicParserTest(TestCase):
                 c: int
             Docstring.
         """
-        err = "Function 'bar' uses '[from ...]' more than once"
+        err = "Function 'foo.bar' uses '[from ...]' more than once"
         self.expect_failure(block, err, lineno=5)
 
     def test_single_slash(self):

@@ -5319,23 +5319,23 @@ class DSLParser:
 
     def parse_deprecated_positional(self, thenceforth: str) -> None:
         assert isinstance(self.function, Function)
+        fname = self.function.full_name
 
         if "." not in thenceforth:
             fail(
-                f"Function {self.function.name!r}: '* [from ...]' format "
-                "expected to be '<major.minor>', where 'major' and 'minor' "
-                "are digits."
+                f"Function {fname!r}: '* [from ...]' format expected to be "
+                f"'<major.minor>', where 'major' and 'minor' are digits."
             )
         if self.keyword_only:
-            fail(f"Function {self.function.name!r}: '* [from ...]' must come before '*'")
+            fail(f"Function {fname!r}: '* [from ...]' must come before '*'")
         if self.deprecated_positional:
-            fail(f"Function {self.function.name!r} uses '[from ...]' more than once.")
+            fail(f"Function {fname!r} uses '[from ...]' more than once.")
         try:
             major, minor = thenceforth.split(".")
             self.deprecated_positional = int(major), int(minor)
         except ValueError:
             fail(
-                f"Function {self.function.name!r}, '* [from <major.minor>]': "
+                f"Function {fname!r}, '* [from <major.minor>]': "
                 f"'major' and 'minor' must be digits, not {thenceforth!r}"
             )
 
@@ -5730,7 +5730,8 @@ class DSLParser:
             else:
                 no_param_after_symbol = True
             if no_param_after_symbol:
-                fail(f"Function {self.function.name!r} specifies {symbol!r} "
+                fname = self.function.full_name
+                fail(f"Function {fname!r} specifies {symbol!r} "
                      "without any parameters afterwards.", line_number=lineno)
 
         if self.keyword_only:
