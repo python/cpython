@@ -5526,12 +5526,12 @@ test_deprecate_positional_use_1(PyObject *module, PyObject *const *args, Py_ssiz
     PyObject *optarg = Py_None;
 
     #if PY_VERSION_HEX >= 0x030e00C0
-    #  error "In /Users/erlend.aasland/src/cpython.git/Lib/test/clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_1' to be keyword-only."
+    #  error "In clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_1' to be keyword-only."
     #elif PY_VERSION_HEX >= 0x030e00A0
     #  ifdef _MSC_VER
-    #    pragma message ("In /Users/erlend.aasland/src/cpython.git/Lib/test/clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_1' to be keyword-only.")
+    #    pragma message ("In clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_1' to be keyword-only.")
     #  else
-    #    warning "In /Users/erlend.aasland/src/cpython.git/Lib/test/clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_1' to be keyword-only."
+    #    warning "In clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_1' to be keyword-only."
     #  endif
     #endif
     if (nargs == 2) {
@@ -5558,7 +5558,7 @@ exit:
 static PyObject *
 test_deprecate_positional_use_1_impl(PyObject *module, PyObject *pos,
                                      PyObject *optarg)
-/*[clinic end generated code: output=a23c5721eacca803 input=ead4a995482b22d3]*/
+/*[clinic end generated code: output=56f4e1fe9bcd8d19 input=ead4a995482b22d3]*/
 
 
 /*[clinic input]
@@ -5619,12 +5619,12 @@ test_deprecate_positional_use_2(PyObject *module, PyObject *const *args, Py_ssiz
     PyObject *optarg;
 
     #if PY_VERSION_HEX >= 0x030e00C0
-    #  error "In /Users/erlend.aasland/src/cpython.git/Lib/test/clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_2' to be keyword-only."
+    #  error "In clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_2' to be keyword-only."
     #elif PY_VERSION_HEX >= 0x030e00A0
     #  ifdef _MSC_VER
-    #    pragma message ("In /Users/erlend.aasland/src/cpython.git/Lib/test/clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_2' to be keyword-only.")
+    #    pragma message ("In clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_2' to be keyword-only.")
     #  else
-    #    warning "In /Users/erlend.aasland/src/cpython.git/Lib/test/clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_2' to be keyword-only."
+    #    warning "In clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_2' to be keyword-only."
     #  endif
     #endif
     if (nargs == 2) {
@@ -5647,7 +5647,7 @@ exit:
 static PyObject *
 test_deprecate_positional_use_2_impl(PyObject *module, PyObject *pos,
                                      PyObject *optarg)
-/*[clinic end generated code: output=3d6f116d67f53bb9 input=3ced298b4a297b2f]*/
+/*[clinic end generated code: output=6dbf610474d56ade input=3ced298b4a297b2f]*/
 
 
 /*[clinic input]
@@ -5706,12 +5706,12 @@ test_deprecate_positional_use_3(PyObject *module, PyObject *const *args, Py_ssiz
     PyObject *kw;
 
     #if PY_VERSION_HEX >= 0x030e00C0
-    #  error "In /Users/erlend.aasland/src/cpython.git/Lib/test/clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_3' to be keyword-only."
+    #  error "In clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_3' to be keyword-only."
     #elif PY_VERSION_HEX >= 0x030e00A0
     #  ifdef _MSC_VER
-    #    pragma message ("In /Users/erlend.aasland/src/cpython.git/Lib/test/clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_3' to be keyword-only.")
+    #    pragma message ("In clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_3' to be keyword-only.")
     #  else
-    #    warning "In /Users/erlend.aasland/src/cpython.git/Lib/test/clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_3' to be keyword-only."
+    #    warning "In clinic.test.c, update parameter(s) optarg in the clinic input of 'test_deprecate_positional_use_3' to be keyword-only."
     #  endif
     #endif
     if (nargs == 2) {
@@ -5735,4 +5735,4 @@ exit:
 static PyObject *
 test_deprecate_positional_use_3_impl(PyObject *module, PyObject *pos,
                                      PyObject *optarg, PyObject *kw)
-/*[clinic end generated code: output=32fc07795a7eb5fa input=c19ac8533f05d314]*/
+/*[clinic end generated code: output=2a31e06b3885abdd input=c19ac8533f05d314]*/

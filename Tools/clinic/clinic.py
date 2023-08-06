@@ -888,7 +888,7 @@ class CLanguage(Language):
                 pstr = ", ".join(names[:-1]) + " and " + names[-1]
 
         # Format the preprocessor warning and error messages.
-        source = self.cpp.filename
+        source = os.path.basename(self.cpp.filename)
         thenceforth = first_param.deprecated_positional  # FIXME
         assert thenceforth is not None
         major, minor = thenceforth
