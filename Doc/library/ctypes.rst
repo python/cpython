@@ -72,8 +72,9 @@ Windows appends the usual ``.dll`` file suffix automatically.
 
 On Linux, it is required to specify the filename *including* the extension to
 load a library, so attribute access can not be used to load libraries. Either the
-:meth:`LoadLibrary` method of the dll loaders should be used, or you should load
-the library by creating an instance of CDLL by calling the constructor::
+:meth:`~LibraryLoader.LoadLibrary` method of the dll loaders should be used,
+or you should load the library by creating an instance of CDLL by calling
+the constructor::
 
    >>> cdll.LoadLibrary("libc.so.6")  # doctest: +LINUX
    <CDLL 'libc.so.6', handle ... at ...>
@@ -333,7 +334,7 @@ property::
    10 b'Hi\x00lo\x00\x00\x00\x00\x00'
    >>>
 
-The :func:`create_string_buffer` function replaces the old :func:`c_buffer`
+The :func:`create_string_buffer` function replaces the old :func:`!c_buffer`
 function (which is still available as an alias).  To create a mutable memory
 block containing unicode characters of the C type :c:type:`wchar_t`, use the
 :func:`create_unicode_buffer` function.
@@ -383,15 +384,15 @@ as calling functions with a fixed number of parameters. On some platforms, and i
 particular ARM64 for Apple Platforms, the calling convention for variadic functions
 is different than that for regular functions.
 
-On those platforms it is required to specify the *argtypes* attribute for the
-regular, non-variadic, function arguments:
+On those platforms it is required to specify the :attr:`~_FuncPtr.argtypes`
+attribute for the regular, non-variadic, function arguments:
 
 .. code-block:: python3
 
    libc.printf.argtypes = [ctypes.c_char_p]
 
 Because specifying the attribute does not inhibit portability it is advised to always
-specify ``argtypes`` for all variadic functions.
+specify :attr:`~_FuncPtr.argtypes` for all variadic functions.
 
 
 .. _ctypes-calling-functions-with-own-custom-data-types:
@@ -401,7 +402,7 @@ Calling functions with your own custom data types
 
 You can also customize :mod:`ctypes` argument conversion to allow instances of
 your own classes be used as function arguments.  :mod:`ctypes` looks for an
-:attr:`_as_parameter_` attribute and uses this as the function argument.  Of
+:attr:`!_as_parameter_` attribute and uses this as the function argument.  Of
 course, it must be one of integer, string, or bytes::
 
    >>> class Bottles:
@@ -414,7 +415,7 @@ course, it must be one of integer, string, or bytes::
    19
    >>>
 
-If you don't want to store the instance's data in the :attr:`_as_parameter_`
+If you don't want to store the instance's data in the :attr:`!_as_parameter_`
 instance variable, you could define a :class:`property` which makes the
 attribute available on request.
 
@@ -425,9 +426,9 @@ Specifying the required argument types (function prototypes)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 It is possible to specify the required argument types of functions exported from
-DLLs by setting the :attr:`argtypes` attribute.
+DLLs by setting the :attr:`~_FuncPtr.argtypes` attribute.
 
-:attr:`argtypes` must be a sequence of C data types (the ``printf`` function is
+:attr:`~_FuncPtr.argtypes` must be a sequence of C data types (the :func:`!printf` function is
 probably not a good example here, because it takes a variable number and
 different types of parameters depending on the format string, on the other hand
 this is quite handy to experiment with this feature)::
@@ -451,14 +452,14 @@ prototype for a C function), and tries to convert the arguments to valid types::
    >>>
 
 If you have defined your own classes which you pass to function calls, you have
-to implement a :meth:`from_param` class method for them to be able to use them
-in the :attr:`argtypes` sequence. The :meth:`from_param` class method receives
+to implement a :meth:`~_CData.from_param` class method for them to be able to use them
+in the :attr:`~_FuncPtr.argtypes` sequence. The :meth:`~_CData.from_param` class method receives
 the Python object passed to the function call, it should do a typecheck or
 whatever is needed to make sure this object is acceptable, and then return the
-object itself, its :attr:`_as_parameter_` attribute, or whatever you want to
+object itself, its :attr:`!_as_parameter_` attribute, or whatever you want to
 pass as the C function argument in this case. Again, the result should be an
 integer, string, bytes, a :mod:`ctypes` instance, or an object with an
-:attr:`_as_parameter_` attribute.
+:attr:`!_as_parameter_` attribute.
 
 
 .. _ctypes-return-types:
@@ -478,13 +479,13 @@ By default functions are assumed to return the C :c:expr:`int` type.  Other
 return types can be specified by setting the :attr:`restype` attribute of the
 function object.
 
-The C prototype of ``time()`` is ``time_t time(time_t *)``. Because :c:type:`time_t`
-might be of a different type than the default return type ``int``, you should
-specify the ``restype``::
+The C prototype of :c:func:`time` is ``time_t time(time_t *)``. Because :c:type:`time_t`
+might be of a different type than the default return type :c:expr:`int`, you should
+specify the :attr:`!restype` attribute::
 
    >>> libc.time.restype = c_time_t
 
-The argument types can be specified using ``argtypes``::
+The argument types can be specified using :attr:`~_FuncPtr.argtypes`::
 
    >>> libc.time.argtypes = (POINTER(c_time_t),)
 
@@ -493,7 +494,7 @@ To call the function with a ``NULL`` pointer as first argument, use ``None``::
    >>> print(libc.time(None))  # doctest: +SKIP
    1150640792
 
-Here is a more advanced example, it uses the ``strchr`` function, which expects
+Here is a more advanced example, it uses the :func:`strchr` function, which expects
 a string pointer and a char, and returns a pointer to a string::
 
    >>> strchr = libc.strchr
@@ -506,8 +507,8 @@ a string pointer and a char, and returns a pointer to a string::
    None
    >>>
 
-If you want to avoid the ``ord("x")`` calls above, you can set the
-:attr:`argtypes` attribute, and the second argument will be converted from a
+If you want to avoid the :func:`ord("x") <ord>` calls above, you can set the
+:attr:`~_FuncPtr.argtypes` attribute, and the second argument will be converted from a
 single character Python bytes object into a C char:
 
 .. doctest::
@@ -853,7 +854,7 @@ Type conversions
 ^^^^^^^^^^^^^^^^
 
 Usually, ctypes does strict type checking.  This means, if you have
-``POINTER(c_int)`` in the :attr:`argtypes` list of a function or as the type of
+``POINTER(c_int)`` in the :attr:`~_FuncPtr.argtypes` list of a function or as the type of
 a member field in a structure definition, only instances of exactly the same
 type are accepted.  There are some exceptions to this rule, where ctypes accepts
 other objects.  For example, you can pass compatible array instances instead of
@@ -874,7 +875,7 @@ pointer types.  So, for ``POINTER(c_int)``, ctypes accepts an array of c_int::
    >>>
 
 In addition, if a function argument is explicitly declared to be a pointer type
-(such as ``POINTER(c_int)``) in :attr:`argtypes`, an object of the pointed
+(such as ``POINTER(c_int)``) in :attr:`_FuncPtr.argtypes`, an object of the pointed
 type (``c_int`` in this case) can be passed to the function.  ctypes will apply
 the required :func:`byref` conversion in this case automatically.
 
@@ -1437,7 +1438,7 @@ function exported by these libraries, and reacquired afterwards.
 All these classes can be instantiated by calling them with at least one
 argument, the pathname of the shared library.  If you have an existing handle to
 an already loaded shared library, it can be passed as the ``handle`` named
-parameter, otherwise the underlying platforms ``dlopen`` or ``LoadLibrary``
+parameter, otherwise the underlying platforms :c:func:`!dlopen` or :c:func:`LoadLibrary`
 function is used to load the library into the process, and to get a handle to
 it.
 
@@ -1522,8 +1523,8 @@ underscore to not clash with exported function names:
 
 Shared libraries can also be loaded by using one of the prefabricated objects,
 which are instances of the :class:`LibraryLoader` class, either by calling the
-:meth:`LoadLibrary` method, or by retrieving the library as attribute of the
-loader instance.
+:meth:`~LibraryLoader.LoadLibrary` method, or by retrieving the library as
+attribute of the loader instance.
 
 
 .. class:: LibraryLoader(dlltype)
@@ -1639,14 +1640,14 @@ They are instances of a private class:
       unspecified arguments as well.
 
       When a foreign function is called, each actual argument is passed to the
-      :meth:`from_param` class method of the items in the :attr:`argtypes`
+      :meth:`~_CData.from_param` class method of the items in the :attr:`argtypes`
       tuple, this method allows adapting the actual argument to an object that
       the foreign function accepts.  For example, a :class:`c_char_p` item in
       the :attr:`argtypes` tuple will convert a string passed as argument into
       a bytes object using ctypes conversion rules.
 
       New: It is now possible to put items in argtypes which are not ctypes
-      types, but each item must have a :meth:`from_param` method which returns a
+      types, but each item must have a :meth:`~_CData.from_param` method which returns a
       value usable as argument (integer, string, ctypes instance).  This allows
       defining adapters that can adapt custom objects as function parameters.
 
@@ -1770,12 +1771,12 @@ different ways, depending on the type and number of the parameters in the call:
 
       COM methods use a special calling convention: They require a pointer to
       the COM interface as first argument, in addition to those parameters that
-      are specified in the :attr:`argtypes` tuple.
+      are specified in the :attr:`~_FuncPtr.argtypes` tuple.
 
    The optional *paramflags* parameter creates foreign function wrappers with much
    more functionality than the features described above.
 
-   *paramflags* must be a tuple of the same length as :attr:`argtypes`.
+   *paramflags* must be a tuple of the same length as :attr:`~_FuncPtr.argtypes`.
 
    Each item in this tuple contains further information about a parameter, it must
    be a tuple containing one, two, or three items.
@@ -2157,8 +2158,8 @@ Data types
 
       This method adapts *obj* to a ctypes type.  It is called with the actual
       object used in a foreign function call when the type is present in the
-      foreign function's :attr:`argtypes` tuple; it must return an object that
-      can be used as a function call parameter.
+      foreign function's :attr:`~_FuncPtr.argtypes` tuple;
+      it must return an object that can be used as a function call parameter.
 
       All ctypes data types have a default implementation of this classmethod
       that normally returns *obj* if that is an instance of the type.  Some
