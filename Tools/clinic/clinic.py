@@ -5318,17 +5318,18 @@ class DSLParser:
                 "expected to be '<major.minor>', where 'major' and 'minor' "
                 "are digits."
             )
-        major, minor = thenceforth.split(".")
-        if not major.isdigit() or not minor.isdigit():
-            fail(
-                f"Function {self.function.name!r}, '* [from <major.minor>]': "
-                f"'major' and 'minor' must be digits, not {major!r} and {minor!r}"
-            )
         if self.keyword_only:
             fail(f"Function {self.function.name!r}: '* [from ...]' must come before '*'")
         if self.deprecated_positional:
             fail(f"Function {self.function.name!r} uses '[from ...]' more than once.")
-        self.deprecated_positional = int(major), int(minor)
+        try:
+            major, minor = thenceforth.split(".")
+            self.deprecated_positional = int(major), int(minor)
+        except ValueError:
+            fail(
+                f"Function {self.function.name!r}, '* [from <major.minor>]': "
+                f"'major' and 'minor' must be digits, not {major!r} and {minor!r}"
+            )
 
     def parse_star(self, function: Function) -> None:
         """Parse keyword-only parameter marker '*'."""
