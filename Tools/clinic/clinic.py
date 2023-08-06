@@ -904,14 +904,14 @@ class CLanguage(Language):
             condition = f"nargs == {first_pos+1}"
             depr_message = (
                 f"Passing {first_pos+1} positional arguments to "
-                f"{func.full_name!r}() is deprecated. Parameter {pstr} will "
+                f"{func.full_name}() is deprecated. Parameter {pstr} will "
                 f"become a keyword-only parameter in Python {major}.{minor}."
             )
         else:
             condition = f"nargs > {first_pos} && nargs <= {last_pos+1}"
             depr_message = (
                 f"Passing more than {first_pos} positional arguments to "
-                f"{func.full_name!r}() is deprecated. Parameters {pstr} will "
+                f"{func.full_name}() is deprecated. Parameters {pstr} will "
                 f"become keyword-only parameters in Python {major}.{minor}."
             )
         # Format and return the code block.
