@@ -74,7 +74,7 @@ The :mod:`runpy` module provides two functions:
 
    Note that this manipulation of :mod:`sys` is not thread-safe. Other threads
    may see the partially initialised module, as well as the altered list of
-   arguments. It is recommended that the :mod:`sys` module be left alone when
+   arguments. It is recommended that the ``sys`` module be left alone when
    invoking this function from threaded code.
 
    .. seealso::
@@ -115,7 +115,7 @@ The :mod:`runpy` module provides two functions:
    directory), the entry is first added to the beginning of ``sys.path``. The
    function then looks for and executes a :mod:`__main__` module using the
    updated path. Note that there is no special protection against invoking
-   an existing :mod:`__main__` entry located elsewhere on ``sys.path`` if
+   an existing ``__main__`` entry located elsewhere on ``sys.path`` if
    there is no such module at the specified location.
 
    The optional dictionary argument *init_globals* may be used to pre-populate
