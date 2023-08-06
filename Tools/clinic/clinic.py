@@ -838,7 +838,7 @@ class CLanguage(Language):
         #    warning "{cpp_message}"
         #  endif
         #endif
-        if (nargs == {pos}) {{{{
+        if ({condition}) {{{{
             if (PyErr_WarnEx(PyExc_DeprecationWarning, "{depr_message}", 1)) {{{{
                 goto exit;
             }}}}
@@ -872,11 +872,13 @@ class CLanguage(Language):
             params: dict[int, Parameter],
     ) -> str:
         assert len(params) > 0
-        # FIXME: Handle multiple deprecation levels
-        # FIXME: For now, assume there's only one level
         code_blocks: list[str] = []
         names = [repr(p.name) for p in params.values()]
         first_pos, first_param = next(iter(params.items()))
+        last_pos, last_param = next(reversed(params.items()))
+        # FIXME: Handle multiple deprecation levels
+        # FIXME: For now, assume there's only one level
+        assert first_param.deprecated_positional == last_param.deprecated_positional
 
         # Pretty-print list of names.
         match len(params):
@@ -898,21 +900,25 @@ class CLanguage(Language):
             f"input of {func.full_name!r} to be keyword-only."
         )
         # Format the deprecation message.
-        singular = (
-            f"Passing {pstr} as a positional parameter is deprecated. "
-            f"It will become a keyword-only parameter in Python {major}.{minor}."
-        )
-        plural = (
-            f"Passing {pstr} as positional parameters is deprecated. "
-            f"They will become keyword-only parameters in Python {major}.{minor}."
-        )
+        if len(params) == 1:
+            condition = f"nargs == {first_pos+1}"
+            depr_message = (
+                f"Passing {pstr} as a positional parameter is deprecated. "
+                f"It will become a keyword-only parameter in Python {major}.{minor}."
+            )
+        else:
+            condition = f"nargs > {first_pos} && nargs <= {last_pos+1}"
+            depr_message = (
+                f"Passing {pstr} as positional parameters is deprecated. "
+                f"They will become keyword-only parameters in Python {major}.{minor}."
+            )
         # Format and return the code block.
         code = self.DEPRECATED_POSITIONAL_PROTOTYPE.format(
-            pos=first_pos+1,
+            condition=condition,
             major=major,
             minor=minor,
             cpp_message=cpp_message,
-            depr_message=singular if len(params) == 1 else plural,
+            depr_message=depr_message,
         )
         return normalize_snippet(code, indent=4)
 
@@ -1281,6 +1287,7 @@ class CLanguage(Language):
                     add_label = None
                 if not p.is_optional():
                     if p.deprecated_positional:
+                        print("deprecating", i, p)
                         deprecated_positionals[i] = p
                     parser_code.append(normalize_snippet(parsearg, indent=4))
                 elif i < pos_only:
@@ -1312,6 +1319,7 @@ class CLanguage(Language):
                             }}
                             """ % add_label, indent=4))
                     if p.deprecated_positional:
+                        print("deprecating", i, p)
                         deprecated_positionals[i] = p
                     if i + 1 == len(parameters):
                         parser_code.append(normalize_snippet(parsearg, indent=4))
