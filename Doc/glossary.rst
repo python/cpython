@@ -22,15 +22,6 @@ Glossary
 
       * The :const:`Ellipsis` built-in constant.
 
-   2to3
-      A tool that tries to convert Python 2.x code to Python 3.x code by
-      handling most of the incompatibilities which can be detected by parsing the
-      source and traversing the parse tree.
-
-      2to3 is available in the standard library as :mod:`lib2to3`; a standalone
-      entry point is provided as :file:`Tools/scripts/2to3`.  See
-      :ref:`2to3-reference`.
-
    abstract base class
       Abstract base classes complement :term:`duck-typing` by
       providing a way to define interfaces when other techniques like
@@ -92,8 +83,8 @@ Glossary
 
    asynchronous context manager
       An object which controls the environment seen in an
-      :keyword:`async with` statement by defining :meth:`__aenter__` and
-      :meth:`__aexit__` methods.  Introduced by :pep:`492`.
+      :keyword:`async with` statement by defining :meth:`~object.__aenter__` and
+      :meth:`~object.__aexit__` methods.  Introduced by :pep:`492`.
 
    asynchronous generator
       A function which returns an :term:`asynchronous generator iterator`.  It
@@ -113,36 +104,43 @@ Glossary
       An object created by a :term:`asynchronous generator` function.
 
       This is an :term:`asynchronous iterator` which when called using the
-      :meth:`__anext__` method returns an awaitable object which will execute
+      :meth:`~object.__anext__` method returns an awaitable object which will execute
       the body of the asynchronous generator function until the next
       :keyword:`yield` expression.
 
       Each :keyword:`yield` temporarily suspends processing, remembering the
       location execution state (including local variables and pending
       try-statements).  When the *asynchronous generator iterator* effectively
-      resumes with another awaitable returned by :meth:`__anext__`, it
+      resumes with another awaitable returned by :meth:`~object.__anext__`, it
       picks up where it left off.  See :pep:`492` and :pep:`525`.
 
    asynchronous iterable
       An object, that can be used in an :keyword:`async for` statement.
       Must return an :term:`asynchronous iterator` from its
-      :meth:`__aiter__` method.  Introduced by :pep:`492`.
+      :meth:`~object.__aiter__` method.  Introduced by :pep:`492`.
 
    asynchronous iterator
-      An object that implements the :meth:`__aiter__` and :meth:`__anext__`
-      methods.  ``__anext__`` must return an :term:`awaitable` object.
+      An object that implements the :meth:`~object.__aiter__` and :meth:`~object.__anext__`
+      methods.  :meth:`~object.__anext__` must return an :term:`awaitable` object.
       :keyword:`async for` resolves the awaitables returned by an asynchronous
-      iterator's :meth:`__anext__` method until it raises a
+      iterator's :meth:`~object.__anext__` method until it raises a
       :exc:`StopAsyncIteration` exception.  Introduced by :pep:`492`.
 
    attribute
-      A value associated with an object which is referenced by name using
-      dotted expressions.  For example, if an object *o* has an attribute
+      A value associated with an object which is usually referenced by name
+      using dotted expressions.
+      For example, if an object *o* has an attribute
       *a* it would be referenced as *o.a*.
+
+      It is possible to give an object an attribute whose name is not an
+      identifier as defined by :ref:`identifiers`, for example using
+      :func:`setattr`, if the object allows it.
+      Such an attribute will not be accessible using a dotted expression,
+      and would instead need to be retrieved with :func:`getattr`.
 
    awaitable
       An object that can be used in an :keyword:`await` expression.  Can be
-      a :term:`coroutine` or an object with an :meth:`__await__` method.
+      a :term:`coroutine` or an object with an :meth:`~object.__await__` method.
       See also :pep:`492`.
 
    BDFL
@@ -202,6 +200,16 @@ Glossary
 
       A list of bytecode instructions can be found in the documentation for
       :ref:`the dis module <bytecodes>`.
+
+   callable
+      A callable is an object that can be called, possibly with a set
+      of arguments (see :term:`argument`), with the following syntax::
+
+         callable(argument1, argument2, argumentN)
+
+      A :term:`function`, and by extension a :term:`method`, is a callable.
+      An instance of a class that implements the :meth:`~object.__call__`
+      method is also a callable.
 
    callback
       A subroutine function which is passed as an argument to be executed at
@@ -532,7 +540,7 @@ Glossary
       machines.
 
       However, some extension modules, either standard or third-party,
-      are designed so as to release the GIL when doing computationally-intensive
+      are designed so as to release the GIL when doing computationally intensive
       tasks such as compression or hashing.  Also, the GIL is always released
       when doing I/O.
 
@@ -566,9 +574,9 @@ Glossary
       from their :func:`id`.
 
    IDLE
-      An Integrated Development Environment for Python.  IDLE is a basic editor
-      and interpreter environment which ships with the standard distribution of
-      Python.
+      An Integrated Development and Learning Environment for Python.
+      :ref:`idle` is a basic editor and interpreter environment
+      which ships with the standard distribution of Python.
 
    immutable
       An object with a fixed value.  Immutable objects include numbers, strings and
@@ -865,7 +873,7 @@ Glossary
 
    package
       A Python :term:`module` which can contain submodules or recursively,
-      subpackages.  Technically, a package is a Python module with an
+      subpackages.  Technically, a package is a Python module with a
       ``__path__`` attribute.
 
       See also :term:`regular package` and :term:`namespace package`.
@@ -1098,6 +1106,21 @@ Glossary
       created using the subscript notation, ``[]`` with colons between numbers
       when several are given, such as in ``variable_name[1:3:5]``.  The bracket
       (subscript) notation uses :class:`slice` objects internally.
+
+   soft deprecated
+      A soft deprecation can be used when using an API which should no longer
+      be used to write new code, but it remains safe to continue using it in
+      existing code. The API remains documented and tested, but will not be
+      developed further (no enhancement).
+
+      The main difference between a "soft" and a (regular) "hard" deprecation
+      is that the soft deprecation does not imply scheduling the removal of the
+      deprecated API.
+
+      Another difference is that a soft deprecation does not issue a warning.
+
+      See `PEP 387: Soft Deprecation
+      <https://peps.python.org/pep-0387/#soft-deprecation>`_.
 
    special method
       .. index:: pair: special; method

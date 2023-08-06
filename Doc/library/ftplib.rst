@@ -21,6 +21,8 @@ as mirroring other FTP servers.  It is also used by the module
 
 The default encoding is UTF-8, following :rfc:`2640`.
 
+.. include:: ../includes/wasm-notavail.rst
+
 Here's a sample session using the :mod:`ftplib` module::
 
    >>> from ftplib import FTP
@@ -83,7 +85,8 @@ The module defines the following items:
       The *encoding* parameter was added, and the default was changed from
       Latin-1 to UTF-8 to follow :rfc:`2640`.
 
-.. class:: FTP_TLS(host='', user='', passwd='', acct='', keyfile=None, certfile=None, context=None, timeout=None, source_address=None, *, encoding='utf-8')
+.. class:: FTP_TLS(host='', user='', passwd='', acct='', *, context=None,
+                   timeout=None, source_address=None, encoding='utf-8')
 
    A :class:`FTP` subclass which adds TLS support to FTP as described in
    :rfc:`4217`.
@@ -94,10 +97,6 @@ The module defines the following items:
    options, certificates and private keys into a single (potentially
    long-lived) structure.  Please read :ref:`ssl-security` for best practices.
 
-   *keyfile* and *certfile* are a legacy alternative to *context* -- they
-   can point to PEM-formatted private key and certificate chain files
-   (respectively) for the SSL connection.
-
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.3
@@ -106,20 +105,16 @@ The module defines the following items:
    .. versionchanged:: 3.4
       The class now supports hostname check with
       :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
-      :data:`ssl.HAS_SNI`).
-
-   .. deprecated:: 3.6
-
-       *keyfile* and *certfile* are deprecated in favor of *context*.
-       Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
-       :func:`ssl.create_default_context` select the system's trusted CA
-       certificates for you.
+      :const:`ssl.HAS_SNI`).
 
    .. versionchanged:: 3.9
       If the *timeout* parameter is set to be zero, it will raise a
       :class:`ValueError` to prevent the creation of a non-blocking socket.
       The *encoding* parameter was added, and the default was changed from
       Latin-1 to UTF-8 to follow :rfc:`2640`.
+
+   .. versionchanged:: 3.12
+      The deprecated *keyfile* and *certfile* parameters have been removed.
 
    Here's a sample session using the :class:`FTP_TLS` class::
 
@@ -436,7 +431,7 @@ FTP_TLS Objects
 
 .. attribute:: FTP_TLS.ssl_version
 
-   The SSL version to use (defaults to :attr:`ssl.PROTOCOL_SSLv23`).
+   The SSL version to use (defaults to :data:`ssl.PROTOCOL_SSLv23`).
 
 .. method:: FTP_TLS.auth()
 
@@ -446,7 +441,7 @@ FTP_TLS Objects
    .. versionchanged:: 3.4
       The method now supports hostname check with
       :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
-      :data:`ssl.HAS_SNI`).
+      :const:`ssl.HAS_SNI`).
 
 .. method:: FTP_TLS.ccc()
 

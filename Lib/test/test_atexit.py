@@ -1,6 +1,5 @@
 import atexit
 import os
-import sys
 import textwrap
 import unittest
 from test import support

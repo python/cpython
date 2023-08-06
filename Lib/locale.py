@@ -25,8 +25,8 @@ import functools
 # Yuck:  LC_MESSAGES is non-standard:  can't tell whether it exists before
 # trying the import.  So __all__ is also fiddled at the end of the file.
 __all__ = ["getlocale", "getdefaultlocale", "getpreferredencoding", "Error",
-           "setlocale", "resetlocale", "localeconv", "strcoll", "strxfrm",
-           "str", "atof", "atoi", "format", "format_string", "currency",
+           "setlocale", "localeconv", "strcoll", "strxfrm",
+           "str", "atof", "atoi", "format_string", "currency",
            "normalize", "LC_CTYPE", "LC_COLLATE", "LC_TIME", "LC_MONETARY",
            "LC_NUMERIC", "LC_ALL", "CHAR_MAX", "getencoding"]
 
@@ -246,21 +246,6 @@ def format_string(f, val, grouping=False, monetary=False):
     val = tuple(new_val)
 
     return new_f % val
-
-def format(percent, value, grouping=False, monetary=False, *additional):
-    """Deprecated, use format_string instead."""
-    import warnings
-    warnings.warn(
-        "This method will be removed in a future version of Python. "
-        "Use 'locale.format_string()' instead.",
-        DeprecationWarning, stacklevel=2
-    )
-
-    match = _percent_re.match(percent)
-    if not match or len(match.group())!= len(percent):
-        raise ValueError(("format() must be given exactly one %%char "
-                         "format specifier, %s not valid") % repr(percent))
-    return _format(percent, value, grouping, monetary, *additional)
 
 def currency(val, symbol=True, grouping=False, international=False):
     """Formats val according to the currency settings
@@ -560,7 +545,9 @@ def getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
         "Use setlocale(), getencoding() and getlocale() instead",
         DeprecationWarning, stacklevel=2
     )
+    return _getdefaultlocale(envvars)
 
+def _getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
     try:
         # check if it's supported by the _locale module
         import _locale
@@ -625,30 +612,15 @@ def setlocale(category, locale=None):
         locale = normalize(_build_localename(locale))
     return _setlocale(category, locale)
 
-def resetlocale(category=LC_ALL):
-
-    """ Sets the locale for category to the default setting.
-
-        The default setting is determined by calling
-        getdefaultlocale(). category defaults to LC_ALL.
-
-    """
-    _setlocale(category, _build_localename(getdefaultlocale()))
-
 
 try:
     from _locale import getencoding
 except ImportError:
+    # When _locale.getencoding() is missing, locale.getencoding() uses the
+    # Python filesystem encoding.
     def getencoding():
-        if hasattr(sys, 'getandroidapilevel'):
-            # On Android langinfo.h and CODESET are missing, and UTF-8 is
-            # always used in mbstowcs() and wcstombs().
-            return 'utf-8'
-        encoding = getdefaultlocale()[1]
-        if encoding is None:
-            # LANG not set, default to UTF-8
-            encoding = 'utf-8'
-        return encoding
+        return sys.getfilesystemencoding()
+
 
 try:
     CODESET
@@ -965,7 +937,7 @@ locale_alias = {
     'c.ascii':                              'C',
     'c.en':                                 'C',
     'c.iso88591':                           'en_US.ISO8859-1',
-    'c.utf8':                               'en_US.UTF-8',
+    'c.utf8':                               'C.UTF-8',
     'c_c':                                  'C',
     'c_c.c':                                'C',
     'ca':                                   'ca_ES.ISO8859-1',
@@ -1725,17 +1697,6 @@ def _print_locale():
 
     print('Locale settings on startup:')
     print('-'*72)
-    for name,category in categories.items():
-        print(name, '...')
-        lang, enc = getlocale(category)
-        print('   Language: ', lang or '(undefined)')
-        print('   Encoding: ', enc or '(undefined)')
-        print()
-
-    print()
-    print('Locale settings after calling resetlocale():')
-    print('-'*72)
-    resetlocale()
     for name,category in categories.items():
         print(name, '...')
         lang, enc = getlocale(category)

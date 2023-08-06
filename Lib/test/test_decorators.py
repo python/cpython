@@ -1,4 +1,3 @@
-from test import support
 import unittest
 from types import MethodType
 

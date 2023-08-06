@@ -69,7 +69,7 @@ An HMAC object has the following methods:
 
    .. warning::
 
-      When comparing the output of :meth:`digest` to an externally-supplied
+      When comparing the output of :meth:`digest` to an externally supplied
       digest during a verification routine, it is recommended to use the
       :func:`compare_digest` function instead of the ``==`` operator
       to reduce the vulnerability to timing attacks.
@@ -83,7 +83,7 @@ An HMAC object has the following methods:
 
    .. warning::
 
-      When comparing the output of :meth:`hexdigest` to an externally-supplied
+      When comparing the output of :meth:`hexdigest` to an externally supplied
       digest during a verification routine, it is recommended to use the
       :func:`compare_digest` function instead of the ``==`` operator
       to reduce the vulnerability to timing attacks.

@@ -88,19 +88,17 @@ def wait_threads_exit(timeout=None):
         yield
     finally:
         start_time = time.monotonic()
-        deadline = start_time + timeout
-        while True:
+        for _ in support.sleeping_retry(timeout, error=False):
+            support.gc_collect()
             count = _thread._count()
             if count <= old_count:
                 break
-            if time.monotonic() > deadline:
-                dt = time.monotonic() - start_time
-                msg = (f"wait_threads() failed to cleanup {count - old_count} "
-                       f"threads after {dt:.1f} seconds "
-                       f"(count: {count}, old count: {old_count})")
-                raise AssertionError(msg)
-            time.sleep(0.010)
-            support.gc_collect()
+        else:
+            dt = time.monotonic() - start_time
+            msg = (f"wait_threads() failed to cleanup {count - old_count} "
+                   f"threads after {dt:.1f} seconds "
+                   f"(count: {count}, old count: {old_count})")
+            raise AssertionError(msg)
 
 
 def join_thread(thread, timeout=None):
@@ -117,7 +115,11 @@ def join_thread(thread, timeout=None):
 
 @contextlib.contextmanager
 def start_threads(threads, unlock=None):
-    import faulthandler
+    try:
+        import faulthandler
+    except ImportError:
+        # It isn't supported on subinterpreters yet.
+        faulthandler = None
     threads = list(threads)
     started = []
     try:
@@ -149,7 +151,8 @@ def start_threads(threads, unlock=None):
         finally:
             started = [t for t in started if t.is_alive()]
             if started:
-                faulthandler.dump_traceback(sys.stdout)
+                if faulthandler is not None:
+                    faulthandler.dump_traceback(sys.stdout)
                 raise AssertionError('Unable to join %d threads' % len(started))
 
 

@@ -29,7 +29,10 @@ import threading
 import unittest
 import urllib.parse
 
-from test.support import SHORT_TIMEOUT, bigmemtest, check_disallow_instantiation
+from test.support import (
+    SHORT_TIMEOUT, check_disallow_instantiation, requires_subprocess,
+    is_emscripten, is_wasi
+)
 from test.support import threading_helper
 from _testcapi import INT_MAX, ULLONG_MAX
 from os import SEEK_SET, SEEK_CUR, SEEK_END
@@ -56,6 +59,17 @@ class ModuleTests(unittest.TestCase):
     def test_api_level(self):
         self.assertEqual(sqlite.apilevel, "2.0",
                          "apilevel is %s, should be 2.0" % sqlite.apilevel)
+
+    def test_deprecated_version(self):
+        msg = "deprecated and will be removed in Python 3.14"
+        for attr in "version", "version_info":
+            with self.subTest(attr=attr):
+                with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
+                    getattr(sqlite, attr)
+                self.assertEqual(cm.filename,  __file__)
+                with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
+                    getattr(sqlite.dbapi2, attr)
+                self.assertEqual(cm.filename,  __file__)
 
     def test_thread_safety(self):
         self.assertIn(sqlite.threadsafety, {0, 1, 3},
@@ -151,6 +165,7 @@ class ModuleTests(unittest.TestCase):
             "SQLITE_INTERNAL",
             "SQLITE_INTERRUPT",
             "SQLITE_IOERR",
+            "SQLITE_LIMIT_WORKER_THREADS",
             "SQLITE_LOCKED",
             "SQLITE_MISMATCH",
             "SQLITE_MISUSE",
@@ -158,6 +173,7 @@ class ModuleTests(unittest.TestCase):
             "SQLITE_NOMEM",
             "SQLITE_NOTADB",
             "SQLITE_NOTFOUND",
+            "SQLITE_NOTICE",
             "SQLITE_OK",
             "SQLITE_PERM",
             "SQLITE_PRAGMA",
@@ -165,6 +181,7 @@ class ModuleTests(unittest.TestCase):
             "SQLITE_RANGE",
             "SQLITE_READ",
             "SQLITE_READONLY",
+            "SQLITE_RECURSIVE",
             "SQLITE_REINDEX",
             "SQLITE_ROW",
             "SQLITE_SAVEPOINT",
@@ -173,6 +190,7 @@ class ModuleTests(unittest.TestCase):
             "SQLITE_TOOBIG",
             "SQLITE_TRANSACTION",
             "SQLITE_UPDATE",
+            "SQLITE_WARNING",
             # Run-time limit categories
             "SQLITE_LIMIT_LENGTH",
             "SQLITE_LIMIT_SQL_LENGTH",
@@ -186,32 +204,43 @@ class ModuleTests(unittest.TestCase):
             "SQLITE_LIMIT_VARIABLE_NUMBER",
             "SQLITE_LIMIT_TRIGGER_DEPTH",
         ]
-        if sqlite.sqlite_version_info >= (3, 7, 17):
-            consts += ["SQLITE_NOTICE", "SQLITE_WARNING"]
-        if sqlite.sqlite_version_info >= (3, 8, 3):
-            consts.append("SQLITE_RECURSIVE")
-        if sqlite.sqlite_version_info >= (3, 8, 7):
-            consts.append("SQLITE_LIMIT_WORKER_THREADS")
         consts += ["PARSE_DECLTYPES", "PARSE_COLNAMES"]
         # Extended result codes
         consts += [
             "SQLITE_ABORT_ROLLBACK",
+            "SQLITE_AUTH_USER",
             "SQLITE_BUSY_RECOVERY",
+            "SQLITE_BUSY_SNAPSHOT",
+            "SQLITE_CANTOPEN_CONVPATH",
             "SQLITE_CANTOPEN_FULLPATH",
             "SQLITE_CANTOPEN_ISDIR",
             "SQLITE_CANTOPEN_NOTEMPDIR",
+            "SQLITE_CONSTRAINT_CHECK",
+            "SQLITE_CONSTRAINT_COMMITHOOK",
+            "SQLITE_CONSTRAINT_FOREIGNKEY",
+            "SQLITE_CONSTRAINT_FUNCTION",
+            "SQLITE_CONSTRAINT_NOTNULL",
+            "SQLITE_CONSTRAINT_PRIMARYKEY",
+            "SQLITE_CONSTRAINT_ROWID",
+            "SQLITE_CONSTRAINT_TRIGGER",
+            "SQLITE_CONSTRAINT_UNIQUE",
+            "SQLITE_CONSTRAINT_VTAB",
             "SQLITE_CORRUPT_VTAB",
             "SQLITE_IOERR_ACCESS",
+            "SQLITE_IOERR_AUTH",
             "SQLITE_IOERR_BLOCKED",
             "SQLITE_IOERR_CHECKRESERVEDLOCK",
             "SQLITE_IOERR_CLOSE",
+            "SQLITE_IOERR_CONVPATH",
             "SQLITE_IOERR_DELETE",
             "SQLITE_IOERR_DELETE_NOENT",
             "SQLITE_IOERR_DIR_CLOSE",
             "SQLITE_IOERR_DIR_FSYNC",
             "SQLITE_IOERR_FSTAT",
             "SQLITE_IOERR_FSYNC",
+            "SQLITE_IOERR_GETTEMPPATH",
             "SQLITE_IOERR_LOCK",
+            "SQLITE_IOERR_MMAP",
             "SQLITE_IOERR_NOMEM",
             "SQLITE_IOERR_RDLOCK",
             "SQLITE_IOERR_READ",
@@ -223,81 +252,49 @@ class ModuleTests(unittest.TestCase):
             "SQLITE_IOERR_SHORT_READ",
             "SQLITE_IOERR_TRUNCATE",
             "SQLITE_IOERR_UNLOCK",
+            "SQLITE_IOERR_VNODE",
             "SQLITE_IOERR_WRITE",
             "SQLITE_LOCKED_SHAREDCACHE",
+            "SQLITE_NOTICE_RECOVER_ROLLBACK",
+            "SQLITE_NOTICE_RECOVER_WAL",
+            "SQLITE_OK_LOAD_PERMANENTLY",
             "SQLITE_READONLY_CANTLOCK",
+            "SQLITE_READONLY_DBMOVED",
             "SQLITE_READONLY_RECOVERY",
+            "SQLITE_READONLY_ROLLBACK",
+            "SQLITE_WARNING_AUTOINDEX",
         ]
-        if sqlite.version_info >= (3, 7, 16):
-            consts += [
-                "SQLITE_CONSTRAINT_CHECK",
-                "SQLITE_CONSTRAINT_COMMITHOOK",
-                "SQLITE_CONSTRAINT_FOREIGNKEY",
-                "SQLITE_CONSTRAINT_FUNCTION",
-                "SQLITE_CONSTRAINT_NOTNULL",
-                "SQLITE_CONSTRAINT_PRIMARYKEY",
-                "SQLITE_CONSTRAINT_TRIGGER",
-                "SQLITE_CONSTRAINT_UNIQUE",
-                "SQLITE_CONSTRAINT_VTAB",
-                "SQLITE_READONLY_ROLLBACK",
-            ]
-        if sqlite.version_info >= (3, 7, 17):
-            consts += [
-                "SQLITE_IOERR_MMAP",
-                "SQLITE_NOTICE_RECOVER_ROLLBACK",
-                "SQLITE_NOTICE_RECOVER_WAL",
-            ]
-        if sqlite.version_info >= (3, 8, 0):
-            consts += [
-                "SQLITE_BUSY_SNAPSHOT",
-                "SQLITE_IOERR_GETTEMPPATH",
-                "SQLITE_WARNING_AUTOINDEX",
-            ]
-        if sqlite.version_info >= (3, 8, 1):
-            consts += ["SQLITE_CANTOPEN_CONVPATH", "SQLITE_IOERR_CONVPATH"]
-        if sqlite.version_info >= (3, 8, 2):
-            consts.append("SQLITE_CONSTRAINT_ROWID")
-        if sqlite.version_info >= (3, 8, 3):
-            consts.append("SQLITE_READONLY_DBMOVED")
-        if sqlite.version_info >= (3, 8, 7):
-            consts.append("SQLITE_AUTH_USER")
-        if sqlite.version_info >= (3, 9, 0):
-            consts.append("SQLITE_IOERR_VNODE")
-        if sqlite.version_info >= (3, 10, 0):
-            consts.append("SQLITE_IOERR_AUTH")
-        if sqlite.version_info >= (3, 14, 1):
-            consts.append("SQLITE_OK_LOAD_PERMANENTLY")
-        if sqlite.version_info >= (3, 21, 0):
+        if sqlite.sqlite_version_info >= (3, 21, 0):
             consts += [
                 "SQLITE_IOERR_BEGIN_ATOMIC",
                 "SQLITE_IOERR_COMMIT_ATOMIC",
                 "SQLITE_IOERR_ROLLBACK_ATOMIC",
             ]
-        if sqlite.version_info >= (3, 22, 0):
+        if sqlite.sqlite_version_info >= (3, 22, 0):
             consts += [
                 "SQLITE_ERROR_MISSING_COLLSEQ",
                 "SQLITE_ERROR_RETRY",
                 "SQLITE_READONLY_CANTINIT",
                 "SQLITE_READONLY_DIRECTORY",
             ]
-        if sqlite.version_info >= (3, 24, 0):
+        if sqlite.sqlite_version_info >= (3, 24, 0):
             consts += ["SQLITE_CORRUPT_SEQUENCE", "SQLITE_LOCKED_VTAB"]
-        if sqlite.version_info >= (3, 25, 0):
+        if sqlite.sqlite_version_info >= (3, 25, 0):
             consts += ["SQLITE_CANTOPEN_DIRTYWAL", "SQLITE_ERROR_SNAPSHOT"]
-        if sqlite.version_info >= (3, 31, 0):
+        if sqlite.sqlite_version_info >= (3, 31, 0):
             consts += [
                 "SQLITE_CANTOPEN_SYMLINK",
                 "SQLITE_CONSTRAINT_PINNED",
                 "SQLITE_OK_SYMLINK",
             ]
-        if sqlite.version_info >= (3, 32, 0):
+        if sqlite.sqlite_version_info >= (3, 32, 0):
             consts += [
                 "SQLITE_BUSY_TIMEOUT",
                 "SQLITE_CORRUPT_INDEX",
                 "SQLITE_IOERR_DATA",
             ]
-        if sqlite.version_info >= (3, 34, 0):
-            const.append("SQLITE_IOERR_CORRUPTFS")
+        if sqlite.sqlite_version_info >= (3, 34, 0):
+            consts.append("SQLITE_IOERR_CORRUPTFS")
         for const in consts:
             with self.subTest(const=const):
                 self.assertTrue(hasattr(sqlite, const))
@@ -316,8 +313,6 @@ class ModuleTests(unittest.TestCase):
             self.assertEqual(e.sqlite_errorcode, err_code)
             self.assertTrue(e.sqlite_errorname.startswith("SQLITE_CANTOPEN"))
 
-    @unittest.skipIf(sqlite.sqlite_version_info <= (3, 7, 16),
-                     "Requires SQLite 3.7.16 or newer")
     def test_extended_error_code_on_exception(self):
         with memory_database() as con:
             with con:
@@ -563,6 +558,30 @@ class ConnectionTests(unittest.TestCase):
                                    cx.executemany, "insert into t values(?)",
                                    ((v,) for v in range(3)))
 
+    def test_connection_config(self):
+        op = sqlite.SQLITE_DBCONFIG_ENABLE_FKEY
+        with memory_database() as cx:
+            with self.assertRaisesRegex(ValueError, "unknown"):
+                cx.getconfig(-1)
+
+            # Toggle and verify.
+            old = cx.getconfig(op)
+            new = not old
+            cx.setconfig(op, new)
+            self.assertEqual(cx.getconfig(op), new)
+
+            cx.setconfig(op)  # defaults to True
+            self.assertTrue(cx.getconfig(op))
+
+            # Check that foreign key support was actually enabled.
+            with cx:
+                cx.executescript("""
+                    create table t(t integer primary key);
+                    create table u(u, foreign key(u) references t(t));
+                """)
+            with self.assertRaisesRegex(sqlite.IntegrityError, "constraint"):
+                cx.execute("insert into u values(0)")
+
 
 class UninitialisedConnectionTests(unittest.TestCase):
     def setUp(self):
@@ -592,7 +611,6 @@ class SerializeTests(unittest.TestCase):
             with cx:
                 cx.execute("create table t(t)")
             data = cx.serialize()
-            self.assertEqual(len(data), 8192)
 
             # Remove test table, verify that it was removed.
             with cx:
@@ -626,13 +644,6 @@ class SerializeTests(unittest.TestCase):
                 # deserialized database.
                 cx.execute("create table fail(f)")
 
-    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
-    @bigmemtest(size=2**63, memuse=3, dry_run=False)
-    def test_deserialize_too_much_data_64bit(self):
-        with memory_database() as cx:
-            with self.assertRaisesRegex(OverflowError, "'data' is too large"):
-                cx.deserialize(b"b" * size)
-
 
 class OpenTests(unittest.TestCase):
     _sql = "create table test(id integer)"
@@ -649,6 +660,7 @@ class OpenTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
     @unittest.skipIf(sys.platform == "darwin", "skipped on macOS")
+    @unittest.skipIf(is_emscripten or is_wasi, "not supported on Emscripten/WASI")
     @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
     def test_open_with_undecodable_path(self):
         path = TESTFN_UNDECODABLE
@@ -694,6 +706,7 @@ class OpenTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
     @unittest.skipIf(sys.platform == "darwin", "skipped on macOS")
+    @unittest.skipIf(is_emscripten or is_wasi, "not supported on Emscripten/WASI")
     @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
     def test_open_undecodable_uri(self):
         path = TESTFN_UNDECODABLE
@@ -742,22 +755,44 @@ class CursorTests(unittest.TestCase):
         with self.assertRaises(sqlite.OperationalError):
             self.cu.execute("select asdf")
 
-    def test_execute_too_much_sql(self):
-        self.assertRaisesRegex(sqlite.ProgrammingError,
-                               "You can only execute one statement at a time",
-                               self.cu.execute, "select 5+4; select 4+5")
+    def test_execute_multiple_statements(self):
+        msg = "You can only execute one statement at a time"
+        dataset = (
+            "select 1; select 2",
+            "select 1; // c++ comments are not allowed",
+            "select 1; *not a comment",
+            "select 1; -*not a comment",
+            "select 1; /* */ a",
+            "select 1; /**/a",
+            "select 1; -",
+            "select 1; /",
+            "select 1; -\n- select 2",
+            """select 1;
+               -- comment
+               select 2
+            """,
+        )
+        for query in dataset:
+            with self.subTest(query=query):
+                with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+                    self.cu.execute(query)
 
-    def test_execute_too_much_sql2(self):
-        self.cu.execute("select 5+4; -- foo bar")
-
-    def test_execute_too_much_sql3(self):
-        self.cu.execute("""
+    def test_execute_with_appended_comments(self):
+        dataset = (
+            "select 1; -- foo bar",
+            "select 1; --",
+            "select 1; /*",  # Unclosed comments ending in \0 are skipped.
+            """
             select 5+4;
 
             /*
             foo
             */
-            """)
+            """,
+        )
+        for query in dataset:
+            with self.subTest(query=query):
+                self.cu.execute(query)
 
     def test_execute_wrong_sql_arg(self):
         with self.assertRaises(TypeError):
@@ -830,6 +865,21 @@ class CursorTests(unittest.TestCase):
         with self.assertRaises(ZeroDivisionError):
             self.cu.execute("select name from test where name=?", L())
 
+    def test_execute_named_param_and_sequence(self):
+        dataset = (
+            ("select :a", (1,)),
+            ("select :a, ?, ?", (1, 2, 3)),
+            ("select ?, :b, ?", (1, 2, 3)),
+            ("select ?, ?, :c", (1, 2, 3)),
+            ("select :a, :b, ?", (1, 2, 3)),
+        )
+        msg = "Binding.*is a named parameter"
+        for query, params in dataset:
+            with self.subTest(query=query, params=params):
+                with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
+                    self.cu.execute(query, params)
+                self.assertEqual(cm.filename,  __file__)
+
     def test_execute_too_many_params(self):
         category = sqlite.SQLITE_LIMIT_VARIABLE_NUMBER
         msg = "too many SQL variables"
@@ -893,6 +943,38 @@ class CursorTests(unittest.TestCase):
         self.cu.execute("delete from test")
         self.cu.executemany("insert into test(name) values (?)", [(1,), (2,), (3,)])
         self.assertEqual(self.cu.rowcount, 3)
+
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 35, 0),
+                     "Requires SQLite 3.35.0 or newer")
+    def test_rowcount_update_returning(self):
+        # gh-93421: rowcount is updated correctly for UPDATE...RETURNING queries
+        self.cu.execute("update test set name='bar' where name='foo' returning 1")
+        self.assertEqual(self.cu.fetchone()[0], 1)
+        self.assertEqual(self.cu.rowcount, 1)
+
+    def test_rowcount_prefixed_with_comment(self):
+        # gh-79579: rowcount is updated even if query is prefixed with comments
+        self.cu.execute("""
+            -- foo
+            insert into test(name) values ('foo'), ('foo')
+        """)
+        self.assertEqual(self.cu.rowcount, 2)
+        self.cu.execute("""
+            /* -- messy *r /* /* ** *- *--
+            */
+            /* one more */ insert into test(name) values ('messy')
+        """)
+        self.assertEqual(self.cu.rowcount, 1)
+        self.cu.execute("/* bar */ update test set name='bar' where name='foo'")
+        self.assertEqual(self.cu.rowcount, 3)
+
+    def test_rowcount_vaccuum(self):
+        data = ((1,), (2,), (3,))
+        self.cu.executemany("insert into test(income) values(?)", data)
+        self.assertEqual(self.cu.rowcount, 3)
+        self.cx.commit()
+        self.cu.execute("vacuum")
+        self.assertEqual(self.cu.rowcount, -1)
 
     def test_total_changes(self):
         self.cu.execute("insert into test(name) values ('foo')")
@@ -1394,7 +1476,16 @@ class BlobTests(unittest.TestCase):
                                    "Cannot operate on a closed database",
                                    blob.read)
 
+    def test_blob_32bit_rowid(self):
+        # gh-100370: we should not get an OverflowError for 32-bit rowids
+        with memory_database() as cx:
+            rowid = 2**32
+            cx.execute("create table t(t blob)")
+            cx.execute("insert into t(rowid, t) values (?, zeroblob(1))", (rowid,))
+            cx.blobopen('t', 't', rowid)
 
+
+@threading_helper.requires_working_threading()
 class ThreadTests(unittest.TestCase):
     def setUp(self):
         self.con = sqlite.connect(":memory:")
@@ -1759,6 +1850,7 @@ class SqliteOnConflictTests(unittest.TestCase):
         self.assertEqual(self.cu.fetchall(), [('Very different data!', 'foo')])
 
 
+@requires_subprocess()
 class MultiprocessTests(unittest.TestCase):
     CONNECTION_TIMEOUT = SHORT_TIMEOUT / 1000.  # Defaults to 30 ms
 

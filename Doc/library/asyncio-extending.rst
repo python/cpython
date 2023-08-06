@@ -63,19 +63,13 @@ For this purpose the following, *private* constructors are listed:
 
       *context* argument is added.
 
-.. method:: Task._check_future(future)
-
-   Return ``True`` if *future* is attached to the same loop as the task, ``False``
-   otherwise.
-
-   .. versionadded:: 3.11
 
 
 Task lifetime support
 =====================
 
 A third party task implementation should call the following functions to keep a task
-visible by :func:`asyncio.get_tasks` and :func:`asyncio.current_task`:
+visible by :func:`asyncio.all_tasks` and :func:`asyncio.current_task`:
 
 .. function:: _register_task(task)
 

@@ -3,10 +3,12 @@
 #endif
 
 
+/* private interpreter helpers */
+
 PyAPI_FUNC(int) _PyInterpreterState_RequiresIDRef(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_RequireIDRef(PyInterpreterState *, int);
 
-PyAPI_FUNC(PyObject *) _PyInterpreterState_GetMainModule(PyInterpreterState *);
+PyAPI_FUNC(PyObject *) PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *);
 
 /* State unique per thread */
 
@@ -27,12 +29,6 @@ typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 #define PyTrace_C_RETURN 6
 #define PyTrace_OPCODE 7
 
-
-typedef struct {
-    PyCodeObject *code; // The code object for the bounds. May be NULL.
-    PyCodeAddressRange bounds; // Only valid if code != NULL.
-} PyTraceInfo;
-
 // Internal structure: you should not use it directly, but use public functions
 // like PyThreadState_EnterTracing() and PyThreadState_LeaveTracing().
 typedef struct _PyCFrame {
@@ -46,7 +42,6 @@ typedef struct _PyCFrame {
      * discipline and make sure that instances of this struct cannot
      * accessed outside of their lifetime.
      */
-    uint8_t use_tracing;  // 0 or 255 (or'ed into opcode, hence 8-bit type)
     /* Pointer to the currently executing frame (it can be NULL) */
     struct _PyInterpreterFrame *current_frame;
     struct _PyCFrame *previous;
@@ -79,6 +74,11 @@ typedef struct _stack_chunk {
     PyObject * data[1]; /* Variable sized */
 } _PyStackChunk;
 
+struct _py_trashcan {
+    int delete_nesting;
+    PyObject *delete_later;
+};
+
 struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
@@ -86,24 +86,42 @@ struct _ts {
     PyThreadState *next;
     PyInterpreterState *interp;
 
-    /* Has been initialized to a safe state.
+    struct {
+        /* Has been initialized to a safe state.
 
-       In order to be effective, this must be set to 0 during or right
-       after allocation. */
-    int _initialized;
+           In order to be effective, this must be set to 0 during or right
+           after allocation. */
+        unsigned int initialized:1;
 
-    /* Was this thread state statically allocated? */
-    int _static;
+        /* Has been bound to an OS thread. */
+        unsigned int bound:1;
+        /* Has been unbound from its OS thread. */
+        unsigned int unbound:1;
+        /* Has been bound aa current for the GILState API. */
+        unsigned int bound_gilstate:1;
+        /* Currently in use (maybe holds the GIL). */
+        unsigned int active:1;
 
-    int recursion_remaining;
-    int recursion_limit;
+        /* various stages of finalization */
+        unsigned int finalizing:1;
+        unsigned int cleared:1;
+        unsigned int finalized:1;
+
+        /* padding to align to 4 bytes */
+        unsigned int :24;
+    } _status;
+
+    int py_recursion_remaining;
+    int py_recursion_limit;
+
+    int c_recursion_remaining;
     int recursion_headroom; /* Allow 50 more calls to handle any errors. */
 
     /* 'tracing' keeps track of the execution depth when tracing/profiling.
        This is to prevent the actual trace/profile code from being recorded in
        the trace/profile. */
     int tracing;
-    int tracing_what; /* The event currently being traced, if any. */
+    int what_event; /* The event currently being monitored, if any. */
 
     /* Pointer to current _PyCFrame in the C stack frame of the currently,
      * or most recently, executing _PyEval_EvalFrameDefault. */
@@ -115,9 +133,7 @@ struct _ts {
     PyObject *c_traceobj;
 
     /* The exception currently being raised */
-    PyObject *curexc_type;
-    PyObject *curexc_value;
-    PyObject *curexc_traceback;
+    PyObject *current_exception;
 
     /* Pointer to the top of the exception stack for the exceptions
      * we may be currently handling.  (See _PyErr_StackItem above.)
@@ -137,8 +153,7 @@ struct _ts {
      */
     unsigned long native_thread_id;
 
-    int trash_delete_nesting;
-    PyObject *trash_delete_later;
+    struct _py_trashcan trash;
 
     /* Called when a thread state is deleted normally, but not when it
      * is destroyed after fork().
@@ -177,8 +192,6 @@ struct _ts {
     /* Unique thread state id. */
     uint64_t id;
 
-    PyTraceInfo trace_info;
-
     _PyStackChunk *datastack_chunk;
     PyObject **datastack_top;
     PyObject **datastack_limit;
@@ -202,19 +215,23 @@ struct _ts {
     _PyCFrame root_cframe;
 };
 
+/* WASI has limited call stack. Python's recursion limit depends on code
+   layout, optimization, and WASI runtime. Wasmtime can handle about 700
+   recursions, sometimes less. 500 is a more conservative limit. */
+#ifndef C_RECURSION_LIMIT
+#  ifdef __wasi__
+#    define C_RECURSION_LIMIT 500
+#  else
+    // This value is duplicated in Lib/test/support/__init__.py
+#    define C_RECURSION_LIMIT 1500
+#  endif
+#endif
 
 /* other API */
-
-// Alias for backward compatibility with Python 3.8
-#define _PyInterpreterState_Get PyInterpreterState_Get
-
-PyAPI_FUNC(PyThreadState *) _PyThreadState_Prealloc(PyInterpreterState *);
 
 /* Similar to PyThreadState_Get(), but don't issue a fatal error
  * if it is NULL. */
 PyAPI_FUNC(PyThreadState *) _PyThreadState_UncheckedGet(void);
-
-PyAPI_FUNC(PyObject *) _PyThreadState_GetDict(PyThreadState *tstate);
 
 // Disable tracing and profiling.
 PyAPI_FUNC(void) PyThreadState_EnterTracing(PyThreadState *tstate);
@@ -237,18 +254,8 @@ PyAPI_FUNC(int) PyGILState_Check(void);
    This function doesn't check for error. Return NULL before _PyGILState_Init()
    is called and after _PyGILState_Fini() is called.
 
-   See also _PyInterpreterState_Get() and _PyInterpreterState_GET(). */
+   See also PyInterpreterState_Get() and _PyInterpreterState_GET(). */
 PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
-
-/* The implementation of sys._current_frames()  Returns a dict mapping
-   thread id to that thread's current frame.
-*/
-PyAPI_FUNC(PyObject *) _PyThread_CurrentFrames(void);
-
-/* The implementation of sys._current_exceptions()  Returns a dict mapping
-   thread id to that thread's current exception.
-*/
-PyAPI_FUNC(PyObject *) _PyThread_CurrentExceptions(void);
 
 /* Routines for advanced debuggers, requested by David Beazley.
    Don't use unless you know what you are doing! */
@@ -269,42 +276,6 @@ PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
     PyInterpreterState *interp,
     _PyFrameEvalFunction eval_frame);
 
-PyAPI_FUNC(const PyConfig*) _PyInterpreterState_GetConfig(PyInterpreterState *interp);
-
-/* Get a copy of the current interpreter configuration.
-
-   Return 0 on success. Raise an exception and return -1 on error.
-
-   The caller must initialize 'config', using PyConfig_InitPythonConfig()
-   for example.
-
-   Python must be preinitialized to call this method.
-   The caller must hold the GIL. */
-PyAPI_FUNC(int) _PyInterpreterState_GetConfigCopy(
-    struct PyConfig *config);
-
-/* Set the configuration of the current interpreter.
-
-   This function should be called during or just after the Python
-   initialization.
-
-   Update the sys module with the new configuration. If the sys module was
-   modified directly after the Python initialization, these changes are lost.
-
-   Some configuration like faulthandler or warnoptions can be updated in the
-   configuration, but don't reconfigure Python (don't enable/disable
-   faulthandler and don't reconfigure warnings filters).
-
-   Return 0 on success. Raise an exception and return -1 on error.
-
-   The configuration should come from _PyInterpreterState_GetConfigCopy(). */
-PyAPI_FUNC(int) _PyInterpreterState_SetConfig(
-    const struct PyConfig *config);
-
-// Get the configuration of the current interpreter.
-// The caller must hold the GIL.
-PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
-
 
 /* cross-interpreter data */
 
@@ -312,6 +283,9 @@ PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 // opaque struct that holds data outside the object machinery.  This
 // is necessary to pass safely between interpreters in the same process.
 typedef struct _xid _PyCrossInterpreterData;
+
+typedef PyObject *(*xid_newobjectfunc)(_PyCrossInterpreterData *);
+typedef void (*xid_freefunc)(void *);
 
 struct _xid {
     // data is the cross-interpreter-safe derivation of a Python object
@@ -339,7 +313,7 @@ struct _xid {
     // interpreter given the data.  The resulting object (a new
     // reference) will be equivalent to the original object.  This field
     // is required.
-    PyObject *(*new_object)(_PyCrossInterpreterData *);
+    xid_newobjectfunc new_object;
     // free is called when the data is released.  If it is NULL then
     // nothing will be done to free the data.  For some types this is
     // okay (e.g. bytes) and for those types this field should be set
@@ -349,18 +323,31 @@ struct _xid {
     // leak.  In that case, at the very least this field should be set
     // to PyMem_RawFree (the default if not explicitly set to NULL).
     // The call will happen with the original interpreter activated.
-    void (*free)(void *);
+    xid_freefunc free;
 };
+
+PyAPI_FUNC(void) _PyCrossInterpreterData_Init(
+        _PyCrossInterpreterData *data,
+        PyInterpreterState *interp, void *shared, PyObject *obj,
+        xid_newobjectfunc new_object);
+PyAPI_FUNC(int) _PyCrossInterpreterData_InitWithSize(
+        _PyCrossInterpreterData *,
+        PyInterpreterState *interp, const size_t, PyObject *,
+        xid_newobjectfunc);
+PyAPI_FUNC(void) _PyCrossInterpreterData_Clear(
+        PyInterpreterState *, _PyCrossInterpreterData *);
 
 PyAPI_FUNC(int) _PyObject_GetCrossInterpreterData(PyObject *, _PyCrossInterpreterData *);
 PyAPI_FUNC(PyObject *) _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *);
-PyAPI_FUNC(void) _PyCrossInterpreterData_Release(_PyCrossInterpreterData *);
+PyAPI_FUNC(int) _PyCrossInterpreterData_Release(_PyCrossInterpreterData *);
 
 PyAPI_FUNC(int) _PyObject_CheckCrossInterpreterData(PyObject *);
 
 /* cross-interpreter data registry */
 
-typedef int (*crossinterpdatafunc)(PyObject *, _PyCrossInterpreterData *);
+typedef int (*crossinterpdatafunc)(PyThreadState *tstate, PyObject *,
+                                   _PyCrossInterpreterData *);
 
 PyAPI_FUNC(int) _PyCrossInterpreterData_RegisterClass(PyTypeObject *, crossinterpdatafunc);
+PyAPI_FUNC(int) _PyCrossInterpreterData_UnregisterClass(PyTypeObject *);
 PyAPI_FUNC(crossinterpdatafunc) _PyCrossInterpreterData_Lookup(PyObject *);

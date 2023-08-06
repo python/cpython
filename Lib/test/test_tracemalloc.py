@@ -11,8 +11,10 @@ from test.support import os_helper
 
 try:
     import _testcapi
+    import _testinternalcapi
 except ImportError:
     _testcapi = None
+    _testinternalcapi = None
 
 
 EMPTY_STRING_SIZE = sys.getsizeof(b'')
@@ -359,6 +361,20 @@ class TestTracemallocEnabled(unittest.TestCase):
                 os._exit(exitcode)
         else:
             support.wait_process(pid, exitcode=0)
+
+    def test_no_incomplete_frames(self):
+        tracemalloc.stop()
+        tracemalloc.start(8)
+
+        def f(x):
+            def g():
+                return x
+            return g
+
+        obj = f(0).__closure__[0]
+        traceback = tracemalloc.get_object_traceback(obj)
+        self.assertIn("test_tracemalloc", traceback[-1].filename)
+        self.assertNotIn("test_tracemalloc", traceback[-2].filename)
 
 
 class TestSnapshot(unittest.TestCase):
@@ -994,7 +1010,7 @@ class TestCAPI(unittest.TestCase):
         tracemalloc.stop()
 
     def get_traceback(self):
-        frames = _testcapi.tracemalloc_get_traceback(self.domain, self.ptr)
+        frames = _testinternalcapi._PyTraceMalloc_GetTraceback(self.domain, self.ptr)
         if frames is not None:
             return tracemalloc.Traceback(frames)
         else:

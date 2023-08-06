@@ -1,3 +1,0 @@
-Add :meth:`~object.__class_getitem__` to  :class:`csv.DictReader` and
-:class:`csv.DictWriter`, allowing them to be parameterized at runtime.
-Patch by Marc Mueller.

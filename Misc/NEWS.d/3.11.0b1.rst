@@ -109,7 +109,7 @@ methods are called only on objects of the correct type.
 .. nonce: 2PpaIN
 .. section: Core and Builtins
 
-Deoptimize statically-allocated code objects during ``Py_FINALIZE()`` so
+Deoptimize statically allocated code objects during ``Py_FINALIZE()`` so
 that future ``_PyCode_Quicken`` calls always start with unquickened code.
 
 ..
@@ -796,7 +796,7 @@ Patch by Kabir Kwatra.
 .. nonce: roapI2
 .. section: Library
 
-The :mod:`mailcap` module is now deprecated and will be removed in Python
+The :mod:`!mailcap` module is now deprecated and will be removed in Python
 3.13. See :pep:`594` for the rationale and the :mod:`mimetypes` module for
 an alternative. Patch by Victor Stinner.
 
@@ -817,8 +817,8 @@ it is ever needed and document the existing mechanism for ``posix_spawn()``.
 .. nonce: HFtERN
 .. section: Library
 
-Fix :data:`signal.NSIG` value on FreeBSD to accept signal numbers greater
-than 32, like :data:`signal.SIGRTMIN` and :data:`signal.SIGRTMAX`. Patch by
+Fix :const:`signal.NSIG` value on FreeBSD to accept signal numbers greater
+than 32, like :const:`signal.SIGRTMIN` and :const:`signal.SIGRTMAX`. Patch by
 Victor Stinner.
 
 ..
@@ -1373,6 +1373,7 @@ Suppress expression chaining for more :mod:`re` parsing errors.
 
 Remove undocumented and never working function ``re.template()`` and flag
 ``re.TEMPLATE``.
+This was later reverted in 3.11.0b2 and deprecated instead.
 
 ..
 
@@ -1798,7 +1799,7 @@ The documentation now lists which members of C structs are part of the
 .. nonce: FIVe9I
 .. section: Documentation
 
-All docstrings in code snippets are now wrapped into :func:`PyDoc_STR` to
+All docstrings in code snippets are now wrapped into :c:macro:`PyDoc_STR` to
 follow the guideline of `PEP 7's Documentation Strings paragraph
 <https://www.python.org/dev/peps/pep-0007/#documentation-strings>`_. Patch
 by Oleg Iarygin.

@@ -23,7 +23,11 @@
       The up to date module installation documentation. For regular Python
       usage, you almost certainly want that document rather than this one.
 
-.. include:: ../distutils/_setuptools_disclaimer.rst
+.. note::
+
+   This document is being retained solely until the ``setuptools`` documentation
+   at https://setuptools.readthedocs.io/en/latest/setuptools.html
+   independently covers all of the relevant information currently included here.
 
 .. note::
 
@@ -65,7 +69,7 @@ If you download a module source distribution, you can tell pretty quickly if it
 was packaged and distributed in the standard way, i.e. using the Distutils.
 First, the distribution's name and version number will be featured prominently
 in the name of the downloaded archive, e.g. :file:`foo-1.0.tar.gz` or
-:file:`widget-0.9.7.zip`.  Next, the archive will unpack into a similarly-named
+:file:`widget-0.9.7.zip`.  Next, the archive will unpack into a similarly named
 directory: :file:`foo-1.0` or :file:`widget-0.9.7`.  Additionally, the
 distribution will contain a setup script :file:`setup.py`, and a file named
 :file:`README.txt` or possibly just :file:`README`, which should explain that
@@ -309,9 +313,9 @@ install into it.  It is enabled with a simple option::
 
    python setup.py install --user
 
-Files will be installed into subdirectories of :data:`site.USER_BASE` (written
+Files will be installed into subdirectories of :const:`site.USER_BASE` (written
 as :file:`{userbase}` hereafter).  This scheme installs pure Python modules and
-extension modules in the same location (also known as :data:`site.USER_SITE`).
+extension modules in the same location (also known as :const:`site.USER_SITE`).
 Here are the values for UNIX, including macOS:
 
 =============== ===========================================================
@@ -370,7 +374,7 @@ will expand this to your home directory::
 
 To make Python find the distributions installed with this scheme, you may have
 to :ref:`modify Python's search path <inst-search-path>` or edit
-:mod:`sitecustomize` (see :mod:`site`) to call :func:`site.addsitedir` or edit
+:mod:`!sitecustomize` (see :mod:`site`) to call :func:`site.addsitedir` or edit
 :data:`sys.path`.
 
 The :option:`!--home` option defines the installation base directory.  Files are
@@ -692,7 +696,7 @@ is supplied to suppress this behaviour.  So you could simply edit
    import sys
    sys.path.append('/www/python/')
 
-However, if you reinstall the same major version of Python (perhaps when
+However, if you reinstall the same minor version of Python (perhaps when
 upgrading from 2.2 to 2.2.2, for example) :file:`site.py` will be overwritten by
 the stock version.  You'd have to remember that it was modified and save a copy
 before doing the installation.
@@ -761,7 +765,7 @@ And on Windows, the configuration files are:
 +--------------+-------------------------------------------------+-------+
 
 On all platforms, the "personal" file can be temporarily disabled by
-passing the `--no-user-cfg` option.
+passing the ``--no-user-cfg`` option.
 
 Notes:
 
@@ -774,7 +778,7 @@ Notes:
 
 (2)
    On Unix, if the :envvar:`HOME` environment variable is not defined, the user's
-   home directory will be determined with the :func:`getpwuid` function from the
+   home directory will be determined with the :func:`~pwd.getpwuid` function from the
    standard :mod:`pwd` module. This is done by the :func:`os.path.expanduser`
    function used by Distutils.
 
@@ -1062,7 +1066,7 @@ normal libraries do.
 
 .. seealso::
 
-   `Building Python modules on MS Windows platform with MinGW <http://old.zope.org/Members/als/tips/win32_mingw_modules>`_
+   `Building Python modules on MS Windows platform with MinGW <https://old.zope.dev/Members/als/tips/win32_mingw_modules>`_
       Information about building the required libraries for the MinGW environment.
 
 

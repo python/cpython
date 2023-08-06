@@ -25,6 +25,11 @@ or as base classes.
    replaced with its corresponding value.  The characters ``'&'``, ``'<'`` and
    ``'>'`` are always escaped, even if *entities* is provided.
 
+   .. note::
+
+      This function should only be used to escape characters that
+      can't be used directly in XML. Do not use this function as a general
+      string translation function.
 
 .. function:: unescape(data, entities={})
 
@@ -87,5 +92,5 @@ or as base classes.
    reading.  The input source can be given as a string, a file-like object, or
    an :class:`~xml.sax.xmlreader.InputSource` object; parsers will use this
    function to implement the polymorphic *source* argument to their
-   :meth:`parse` method.
+   :meth:`~xml.sax.xmlreader.XMLReader.parse` method.
 

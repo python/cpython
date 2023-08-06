@@ -38,7 +38,7 @@ details that are unchanged.
 
 .. seealso::
 
-   * `TkDocs <http://tkdocs.com/>`_
+   * `TkDocs <https://tkdocs.com/>`_
       Extensive tutorial on creating user interfaces with Tkinter.  Explains key concepts,
       and illustrates recommended approaches using the modern API.
 
@@ -61,7 +61,7 @@ details that are unchanged.
    * `Python and Tkinter Programming <https://www.packtpub.com/product/python-gui-programming-with-tkinter/9781788835886>`_
       By Alan Moore. (ISBN 978-1788835886)
 
-   * `Programming Python <http://learning-python.com/about-pp4e.html>`_
+   * `Programming Python <https://learning-python.com/about-pp4e.html>`_
       By Mark Lutz; has excellent coverage of Tkinter. (ISBN 978-0596158101)
 
    * `Tcl and the Tk Toolkit (2nd edition)  <https://www.amazon.com/exec/obidos/ASIN/032133633X>`_
@@ -90,7 +90,7 @@ Tcl
    (see `Threading model`_ for details).
 
 Tk
-   Tk is a `Tcl package <http://wiki.tcl.tk/37432>`_ implemented in C
+   Tk is a `Tcl package <https://wiki.tcl-lang.org/37432>`_ implemented in C
    that adds custom commands to create and manipulate GUI widgets. Each
    :class:`Tk` object embeds its own Tcl interpreter instance with Tk loaded into
    it. Tk's widgets are very customizable, though at the cost of a dated appearance.
@@ -163,7 +163,7 @@ the modern themed widget set and API::
    interpreter and calls :func:`exec` on the contents of
    :file:`.{className}.py` and :file:`.{baseName}.py`.  The path for the
    profile files is the :envvar:`HOME` environment variable or, if that
-   isn't defined, then :attr:`os.curdir`.
+   isn't defined, then :data:`os.curdir`.
 
    .. attribute:: tk
 
@@ -251,10 +251,6 @@ Additional modules:
 :mod:`tkinter.dnd`
    (experimental) Drag-and-drop support for :mod:`tkinter`. This will
    become deprecated when it is replaced with the Tk DND.
-
-:mod:`tkinter.tix`
-   (deprecated) An older third-party Tcl/Tk package that adds several new
-   widgets. Better alternatives for most can be found in :mod:`tkinter.ttk`.
 
 :mod:`turtle`
    Turtle graphics in a Tk window.
@@ -988,7 +984,7 @@ wherever the image was used.
 
 .. seealso::
 
-    The `Pillow <http://python-pillow.org/>`_ package adds support for
+    The `Pillow <https://python-pillow.org/>`_ package adds support for
     formats such as BMP, JPEG, TIFF, and WebP, among others.
 
 .. _tkinter-file-handlers:
