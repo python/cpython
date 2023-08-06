@@ -1131,7 +1131,7 @@ Regular Expression Objects
 
    Compiled regular expression object returned by :func:`re.compile`.
 
-   .. versionadded:: 3.9
+   .. versionchanged:: 3.9
       :py:class:`re.Pattern` supports ``[]`` to indicate a Unicode (str) or bytes pattern.
       See :ref:`types-genericalias`.
 
@@ -1273,7 +1273,10 @@ when there is no match, you can test whether there was a match with a simple
 .. class:: Match
 
    Match object returned by successful ``match``\ es and ``search``\ es.
-   It supports the following methods and attributes:
+
+   .. versionchanged:: 3.9
+      :py:class:`re.Match` supports ``[]`` to indicate a Unicode (str) or bytes match.
+      See :ref:`types-genericalias`.
 
 .. method:: Match.expand(template)
 
