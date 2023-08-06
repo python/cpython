@@ -733,11 +733,11 @@ Flags
 
    .. note::
 
-      The :py:const`~re.U` flag still exists for backward compatibility,
+      The :py:const:`~re.U` flag still exists for backward compatibility,
       but is redundant in Python 3 since
       matches are Unicode by default for ``str`` patterns,
       and Unicode matching isn't allowed for bytes patterns.
-      :py:const`~re.UNICODE` and the inline flag ``(?u)`` are similarly redundant.
+      :py:const:`~re.UNICODE` and the inline flag ``(?u)`` are similarly redundant.
 
 
 .. data:: DEBUG
@@ -1278,7 +1278,7 @@ attributes:
 
    The regex matching flags.  This is a combination of the flags given to
    :func:`.compile`, any ``(?...)`` inline flags in the pattern, and implicit
-   flags such as :py:const`~re.UNICODE` if the pattern is a Unicode string.
+   flags such as :py:const:`~re.UNICODE` if the pattern is a Unicode string.
 
 
 .. attribute:: Pattern.groups
