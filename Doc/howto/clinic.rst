@@ -1902,8 +1902,7 @@ Argument Clinic provides syntax that makes it possible to generate code that
 deprecates passing :term:`arguments <argument>` positionally.
 For example, say we've got a module-level function :py:func:`!foo.myfunc`
 that has three :term:`parameters <parameter>`:
-positional-or-keyword parameters *a* and *b*,
-and a :ref:`keyword-only <keyword-only_parameter>` parameter *c*::
+positional-or-keyword parameters *a* and *b*, and a keyword-only parameter *c*::
 
    /*[clinic input]
    module foo
