@@ -5328,7 +5328,7 @@ class DSLParser:
         except ValueError:
             fail(
                 f"Function {self.function.name!r}, '* [from <major.minor>]': "
-                f"'major' and 'minor' must be digits, not {major!r} and {minor!r}"
+                f"'major' and 'minor' must be digits, not {thenceforth!r}"
             )
 
     def parse_star(self, function: Function) -> None:

@@ -1507,7 +1507,21 @@ class ClinicParserTest(TestCase):
         """
         err = (
             "Function 'bar', '* [from <major.minor>]': "
-            "'major' and 'minor' must be digits, not 'a' and 'b'"
+            "'major' and 'minor' must be digits, not 'a.b'"
+        )
+        self.expect_failure(block, err, lineno=3)
+
+    def test_depr_star_invalid_format_3(self):
+        block = """
+            module foo
+            foo.bar
+                this: int
+                * [from 1.2.3]
+            Docstring.
+        """
+        err = (
+            "Function 'bar', '* [from <major.minor>]': "
+            "'major' and 'minor' must be digits, not '1.2.3'"
         )
         self.expect_failure(block, err, lineno=3)
 
