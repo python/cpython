@@ -8,7 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_global_objects.h"  // _PY_NSMALLNEGINTS
+#include "pycore_bytesobject.h"   // _PyBytesWriter
+#include "pycore_global_objects.h"// _PY_NSMALLNEGINTS
 #include "pycore_runtime.h"       // _PyRuntime
 
 /*
@@ -63,45 +64,45 @@ extern void _PyLong_FiniTypes(PyInterpreterState *interp);
 #  error "_PY_NSMALLPOSINTS must be greater than or equal to 257"
 #endif
 
-// Return a borrowed reference to the zero singleton.
+// Return a reference to the immortal zero singleton.
 // The function cannot return NULL.
 static inline PyObject* _PyLong_GetZero(void)
 { return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS]; }
 
-// Return a borrowed reference to the one singleton.
+// Return a reference to the immortal one singleton.
 // The function cannot return NULL.
 static inline PyObject* _PyLong_GetOne(void)
 { return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+1]; }
 
 static inline PyObject* _PyLong_FromUnsignedChar(unsigned char i)
 {
-    return Py_NewRef((PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+i]);
+    return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+i];
 }
 
-PyObject *_PyLong_Add(PyLongObject *left, PyLongObject *right);
-PyObject *_PyLong_Multiply(PyLongObject *left, PyLongObject *right);
-PyObject *_PyLong_Subtract(PyLongObject *left, PyLongObject *right);
+extern PyObject *_PyLong_Add(PyLongObject *left, PyLongObject *right);
+extern PyObject *_PyLong_Multiply(PyLongObject *left, PyLongObject *right);
+extern PyObject *_PyLong_Subtract(PyLongObject *left, PyLongObject *right);
 
-/* Used by Python/mystrtoul.c, _PyBytes_FromHex(),
-   _PyBytes_DecodeEscape(), etc. */
+// Used by _PyBytes_FromHex(), _PyBytes_DecodeEscape(), Python/mystrtoul.c.
+// Export for 'binascii' shared extension.
 PyAPI_DATA(unsigned char) _PyLong_DigitValue[256];
 
 /* Format the object based on the format_spec, as defined in PEP 3101
    (Advanced String Formatting). */
-PyAPI_FUNC(int) _PyLong_FormatAdvancedWriter(
+extern int _PyLong_FormatAdvancedWriter(
     _PyUnicodeWriter *writer,
     PyObject *obj,
     PyObject *format_spec,
     Py_ssize_t start,
     Py_ssize_t end);
 
-PyAPI_FUNC(int) _PyLong_FormatWriter(
+extern int _PyLong_FormatWriter(
     _PyUnicodeWriter *writer,
     PyObject *obj,
     int base,
     int alternate);
 
-PyAPI_FUNC(char*) _PyLong_FormatBytesWriter(
+extern char* _PyLong_FormatBytesWriter(
     _PyBytesWriter *writer,
     char *str,
     PyObject *obj,
@@ -118,6 +119,21 @@ PyAPI_FUNC(char*) _PyLong_FormatBytesWriter(
 #define SIGN_NEGATIVE 2
 #define NON_SIZE_BITS 3
 
+/* The functions _PyLong_IsCompact and _PyLong_CompactValue are defined
+ * in Include/cpython/longobject.h, since they need to be inline.
+ *
+ * "Compact" values have at least one bit to spare,
+ * so that addition and subtraction can be performed on the values
+ * without risk of overflow.
+ *
+ * The inline functions need tag bits.
+ * For readability, rather than do `#define SIGN_MASK _PyLong_SIGN_MASK`
+ * we define them to the numbers in both places and then assert that
+ * they're the same.
+ */
+static_assert(SIGN_MASK == _PyLong_SIGN_MASK, "SIGN_MASK does not match _PyLong_SIGN_MASK");
+static_assert(NON_SIZE_BITS == _PyLong_NON_SIZE_BITS, "NON_SIZE_BITS does not match _PyLong_NON_SIZE_BITS");
+
 /* All *compact" values are guaranteed to fit into
  * a Py_ssize_t with at least one bit to spare.
  * In other words, for 64 bit machines, compact
@@ -131,32 +147,12 @@ _PyLong_IsNonNegativeCompact(const PyLongObject* op) {
     return op->long_value.lv_tag <= (1 << NON_SIZE_BITS);
 }
 
-static inline int
-_PyLong_IsCompact(const PyLongObject* op) {
-    assert(PyLong_Check(op));
-    return op->long_value.lv_tag < (2 << NON_SIZE_BITS);
-}
 
 static inline int
 _PyLong_BothAreCompact(const PyLongObject* a, const PyLongObject* b) {
     assert(PyLong_Check(a));
     assert(PyLong_Check(b));
     return (a->long_value.lv_tag | b->long_value.lv_tag) < (2 << NON_SIZE_BITS);
-}
-
-/* Returns a *compact* value, iff `_PyLong_IsCompact` is true for `op`.
- *
- * "Compact" values have at least one bit to spare,
- * so that addition and subtraction can be performed on the values
- * without risk of overflow.
- */
-static inline Py_ssize_t
-_PyLong_CompactValue(const PyLongObject *op)
-{
-    assert(PyLong_Check(op));
-    assert(_PyLong_IsCompact(op));
-    Py_ssize_t sign = 1 - (op->long_value.lv_tag & SIGN_MASK);
-    return sign * (Py_ssize_t)op->long_value.ob_digit[0];
 }
 
 static inline bool

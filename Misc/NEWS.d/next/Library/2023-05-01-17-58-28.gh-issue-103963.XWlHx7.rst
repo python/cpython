@@ -1,1 +1,0 @@
-Make :mod:`dis` display the names of the args for :opcode:`CALL_INTRINSIC_*`.

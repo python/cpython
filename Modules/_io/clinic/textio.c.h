@@ -8,6 +8,197 @@ preserve
 #endif
 
 
+PyDoc_STRVAR(_io__TextIOBase_detach__doc__,
+"detach($self, /)\n"
+"--\n"
+"\n"
+"Separate the underlying buffer from the TextIOBase and return it.\n"
+"\n"
+"After the underlying buffer has been detached, the TextIO is in an unusable state.");
+
+#define _IO__TEXTIOBASE_DETACH_METHODDEF    \
+    {"detach", _PyCFunction_CAST(_io__TextIOBase_detach), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__TextIOBase_detach__doc__},
+
+static PyObject *
+_io__TextIOBase_detach_impl(PyObject *self, PyTypeObject *cls);
+
+static PyObject *
+_io__TextIOBase_detach(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "detach() takes no arguments");
+        return NULL;
+    }
+    return _io__TextIOBase_detach_impl(self, cls);
+}
+
+PyDoc_STRVAR(_io__TextIOBase_read__doc__,
+"read($self, size=-1, /)\n"
+"--\n"
+"\n"
+"Read at most size characters from stream.\n"
+"\n"
+"Read from underlying buffer until we have size characters or we hit EOF.\n"
+"If size is negative or omitted, read until EOF.");
+
+#define _IO__TEXTIOBASE_READ_METHODDEF    \
+    {"read", _PyCFunction_CAST(_io__TextIOBase_read), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__TextIOBase_read__doc__},
+
+static PyObject *
+_io__TextIOBase_read_impl(PyObject *self, PyTypeObject *cls,
+                          int Py_UNUSED(size));
+
+static PyObject *
+_io__TextIOBase_read(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "read",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    int size = -1;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional_posonly;
+    }
+    size = _PyLong_AsInt(args[0]);
+    if (size == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_posonly:
+    return_value = _io__TextIOBase_read_impl(self, cls, size);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_io__TextIOBase_readline__doc__,
+"readline($self, size=-1, /)\n"
+"--\n"
+"\n"
+"Read until newline or EOF.\n"
+"\n"
+"Return an empty string if EOF is hit immediately.\n"
+"If size is specified, at most size characters will be read.");
+
+#define _IO__TEXTIOBASE_READLINE_METHODDEF    \
+    {"readline", _PyCFunction_CAST(_io__TextIOBase_readline), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__TextIOBase_readline__doc__},
+
+static PyObject *
+_io__TextIOBase_readline_impl(PyObject *self, PyTypeObject *cls,
+                              int Py_UNUSED(size));
+
+static PyObject *
+_io__TextIOBase_readline(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "readline",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    int size = -1;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional_posonly;
+    }
+    size = _PyLong_AsInt(args[0]);
+    if (size == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_posonly:
+    return_value = _io__TextIOBase_readline_impl(self, cls, size);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_io__TextIOBase_write__doc__,
+"write($self, s, /)\n"
+"--\n"
+"\n"
+"Write string s to stream.\n"
+"\n"
+"Return the number of characters written\n"
+"(which is always equal to the length of the string).");
+
+#define _IO__TEXTIOBASE_WRITE_METHODDEF    \
+    {"write", _PyCFunction_CAST(_io__TextIOBase_write), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__TextIOBase_write__doc__},
+
+static PyObject *
+_io__TextIOBase_write_impl(PyObject *self, PyTypeObject *cls,
+                           const char *Py_UNUSED(s));
+
+static PyObject *
+_io__TextIOBase_write(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "write",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    const char *s;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("write", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    Py_ssize_t s_length;
+    s = PyUnicode_AsUTF8AndSize(args[0], &s_length);
+    if (s == NULL) {
+        goto exit;
+    }
+    if (strlen(s) != (size_t)s_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    return_value = _io__TextIOBase_write_impl(self, cls, s);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_io_IncrementalNewlineDecoder___init____doc__,
 "IncrementalNewlineDecoder(decoder, translate, errors=\'strict\')\n"
 "--\n"
@@ -482,9 +673,6 @@ _io_TextIOWrapper_write(textio *self, PyObject *arg)
         _PyArg_BadArgument("write", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     text = arg;
     return_value = _io_TextIOWrapper_write_impl(self, text);
 
@@ -769,4 +957,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=73f84b13c343b34b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e1060638b65e8a63 input=a9049054013a1b77]*/

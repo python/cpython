@@ -641,6 +641,14 @@ class ClassTests(unittest.TestCase):
         class B:
             y = 0
             __slots__ = ('z',)
+        class C:
+            __slots__ = ("y",)
+
+            def __setattr__(self, name, value) -> None:
+                if name == "z":
+                    super().__setattr__("y", 1)
+                else:
+                    super().__setattr__(name, value)
 
         error_msg = "'A' object has no attribute 'x'"
         with self.assertRaisesRegex(AttributeError, error_msg):
@@ -653,8 +661,16 @@ class ClassTests(unittest.TestCase):
             B().x
         with self.assertRaisesRegex(AttributeError, error_msg):
             del B().x
-        with self.assertRaisesRegex(AttributeError, error_msg):
+        with self.assertRaisesRegex(
+            AttributeError,
+            "'B' object has no attribute 'x' and no __dict__ for setting new attributes"
+        ):
             B().x = 0
+        with self.assertRaisesRegex(
+            AttributeError,
+            "'C' object has no attribute 'x'"
+        ):
+            C().x = 0
 
         error_msg = "'B' object attribute 'y' is read-only"
         with self.assertRaisesRegex(AttributeError, error_msg):
@@ -739,6 +755,21 @@ class ClassTests(unittest.TestCase):
         self.assertEqual(A, (tuple(range(8)), {}))
         class A(0, *range(1, 8), **d, foo='bar'): pass
         self.assertEqual(A, (tuple(range(8)), {'foo': 'bar'}))
+
+    def testClassCallRecursionLimit(self):
+        class C:
+            def __init__(self):
+                self.c = C()
+
+        with self.assertRaises(RecursionError):
+            C()
+
+        def add_one_level():
+            #Each call to C() consumes 2 levels, so offset by 1.
+            C()
+
+        with self.assertRaises(RecursionError):
+            add_one_level()
 
 
 if __name__ == '__main__':

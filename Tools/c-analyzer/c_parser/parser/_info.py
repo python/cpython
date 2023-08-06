@@ -1,4 +1,4 @@
-import re
+#import re
 
 from ..info import KIND, ParsedItem, FileInfo
 

@@ -616,7 +616,7 @@ and lose important information about the exact cause of the error.
 .. index:: single: sum_sequence()
 
 A simple example of detecting exceptions and passing them on is shown in the
-:c:func:`sum_sequence` example above.  It so happens that this example doesn't
+:c:func:`!sum_sequence` example above.  It so happens that this example doesn't
 need to clean up any owned references when it detects an error.  The following
 example function shows some error cleanup.  First, to remind you why you like
 Python, we show the equivalent Python code::
@@ -739,14 +739,14 @@ environment variable :envvar:`PYTHONHOME`, or insert additional directories in
 front of the standard path by setting :envvar:`PYTHONPATH`.
 
 .. index::
-   single: Py_SetProgramName()
    single: Py_GetPath()
    single: Py_GetPrefix()
    single: Py_GetExecPrefix()
    single: Py_GetProgramFullPath()
 
-The embedding application can steer the search by calling
-``Py_SetProgramName(file)`` *before* calling  :c:func:`Py_Initialize`.  Note that
+The embedding application can steer the search by setting
+:c:member:`PyConfig.program_name` *before* calling
+:c:func:`Py_InitializeFromConfig`. Note that
 :envvar:`PYTHONHOME` still overrides this and :envvar:`PYTHONPATH` is still
 inserted in front of the standard path.  An application that requires total
 control has to provide its own implementation of :c:func:`Py_GetPath`,

@@ -93,14 +93,32 @@ Dictionary Objects
    Return ``0`` on success or ``-1`` on failure.
 
 
+.. c:function:: int PyDict_GetItemRef(PyObject *p, PyObject *key, PyObject **result)
+
+   Return a new :term:`strong reference` to the object from dictionary *p*
+   which has a key *key*:
+
+   * If the key is present, set *\*result* to a new :term:`strong reference`
+     to the value and return ``1``.
+   * If the key is missing, set *\*result* to ``NULL`` and return ``0``.
+   * On error, raise an exception and return ``-1``.
+
+   .. versionadded:: 3.13
+
+   See also the :c:func:`PyObject_GetItem` function.
+
+
 .. c:function:: PyObject* PyDict_GetItem(PyObject *p, PyObject *key)
 
-   Return the object from dictionary *p* which has a key *key*.  Return ``NULL``
-   if the key *key* is not present, but *without* setting an exception.
+   Return a :term:`borrowed reference` to the object from dictionary *p* which
+   has a key *key*.  Return ``NULL`` if the key *key* is missing *without*
+   setting an exception.
 
-   Note that exceptions which occur while calling :meth:`__hash__` and
-   :meth:`__eq__` methods will get suppressed.
-   To get error reporting use :c:func:`PyDict_GetItemWithError()` instead.
+   .. note::
+
+      Exceptions that occur while this calls :meth:`~object.__hash__` and
+      :meth:`~object.__eq__` methods are silently ignored.
+      Prefer the :c:func:`PyDict_GetItemWithError` function instead.
 
    .. versionchanged:: 3.10
       Calling this API without :term:`GIL` held had been allowed for historical
@@ -120,10 +138,21 @@ Dictionary Objects
    This is the same as :c:func:`PyDict_GetItem`, but *key* is specified as a
    :c:expr:`const char*`, rather than a :c:expr:`PyObject*`.
 
-   Note that exceptions which occur while calling :meth:`__hash__` and
-   :meth:`__eq__` methods and creating a temporary string object
-   will get suppressed.
-   To get error reporting use :c:func:`PyDict_GetItemWithError()` instead.
+   .. note::
+
+      Exceptions that occur while this calls :meth:`~object.__hash__` and
+      :meth:`~object.__eq__` methods or while creating the temporary :class:`str`
+      object are silently ignored.
+      Prefer using the :c:func:`PyDict_GetItemWithError` function with your own
+      :c:func:`PyUnicode_FromString` *key* instead.
+
+
+.. c:function:: int PyDict_GetItemStringRef(PyObject *p, const char *key, PyObject **result)
+
+   Similar than :c:func:`PyDict_GetItemRef`, but *key* is specified as a
+   :c:expr:`const char*`, rather than a :c:expr:`PyObject*`.
+
+   .. versionadded:: 3.13
 
 
 .. c:function:: PyObject* PyDict_SetDefault(PyObject *p, PyObject *key, PyObject *defaultobj)
@@ -154,7 +183,7 @@ Dictionary Objects
 
 .. c:function:: Py_ssize_t PyDict_Size(PyObject *p)
 
-   .. index:: builtin: len
+   .. index:: pair: built-in function; len
 
    Return the number of items in the dictionary.  This is equivalent to
    ``len(p)`` on a dictionary.

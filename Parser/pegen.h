@@ -1,7 +1,6 @@
 #ifndef PEGEN_H
 #define PEGEN_H
 
-#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <pycore_ast.h>
 #include <pycore_token.h>
@@ -21,7 +20,6 @@
 #define PyPARSE_IGNORE_COOKIE 0x0010
 #define PyPARSE_BARRY_AS_BDFL 0x0020
 #define PyPARSE_TYPE_COMMENTS 0x0040
-#define PyPARSE_ASYNC_HACKS   0x0080
 #define PyPARSE_ALLOW_INCOMPLETE_INPUT 0x0100
 
 #define CURRENT_POS (-5)
@@ -328,6 +326,7 @@ expr_ty _PyPegen_collect_call_seqs(Parser *, asdl_expr_seq *, asdl_seq *,
                      int lineno, int col_offset, int end_lineno,
                      int end_col_offset, PyArena *arena);
 expr_ty _PyPegen_constant_from_token(Parser* p, Token* tok);
+expr_ty _PyPegen_decoded_constant_from_token(Parser* p, Token* tok);
 expr_ty _PyPegen_constant_from_string(Parser* p, Token* tok);
 expr_ty _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *, int, int, int, int, PyArena *);
 expr_ty _PyPegen_FetchRawForm(Parser *p, int, int, int, int);
