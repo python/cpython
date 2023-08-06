@@ -601,7 +601,7 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
     when an extension is loaded.  This includes when it is imported
     for the first time.
 
-    Here's a summary, using importlib._boostrap._load() as a starting point.
+    Here's a summary, using importlib._bootstrap._load() as a starting point.
 
     1.  importlib._bootstrap._load()
     2.    _load():  acquire import lock
@@ -1073,6 +1073,7 @@ _extensions_cache_delete(PyObject *filename, PyObject *name)
        However, this decref would be problematic if the module def were
        dynamically allocated, it were the last ref, and this function
        were called with an interpreter other than the def's owner. */
+    assert(_Py_IsImmortal(entry->value));
     entry->value = NULL;
 
 finally:
