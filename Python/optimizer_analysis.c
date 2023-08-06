@@ -309,8 +309,6 @@ partitionnode_overwrite(_Py_UOpsAbstractInterpContext *ctx,
                 *dst = partitionnode_make_ref(src);
                 assert(partitionnode_get_tag(*dst) == TYPE_REF);
                 assert(partitionnode_clear_tag(*dst) != (_Py_PARTITIONNODE_t)_Py_NULL);
-                fprintf(stderr, "START\n");
-                print_ctx(ctx);
             }
             else {
                 // Make dst the src
@@ -364,8 +362,6 @@ partitionnode_overwrite(_Py_UOpsAbstractInterpContext *ctx,
 
             // This ndoe is no longer referencing the old root.
             Py_XDECREF(partitionnode_clear_tag(old_dst));
-            fprintf(stderr, "END\n");
-            print_ctx(ctx);
             break;
         }
         case TYPE_REF: {
@@ -575,13 +571,14 @@ _Py_uop_analyze_and_optimize(
         oparg = trace[i].oparg;
         opcode = trace[i].opcode;
         /*
+        * The following are special cased:
             "LOAD_FAST",
-    "LOAD_FAST_CHECK",
-    "LOAD_FAST_AND_CLEAR",
-    "LOAD_CONST",
-    "STORE_FAST",
-    "STORE_FAST_MAYBE_NULL",
-    "COPY",
+            "LOAD_FAST_CHECK",
+            "LOAD_FAST_AND_CLEAR",
+            "LOAD_CONST",
+            "STORE_FAST",
+            "STORE_FAST_MAYBE_NULL",
+            "COPY",
         */
         switch (opcode) {
 #include "abstract_interp_cases.c.h"
@@ -623,7 +620,9 @@ _Py_uop_analyze_and_optimize(
             fprintf(stderr, "Unknown opcode in abstract interpreter\n");
             Py_UNREACHABLE();
         }
-        //print_ctx(ctx);
+#if PARTITION_DEBUG
+        print_ctx(ctx);
+#endif
     }
     assert(STACK_SIZE() >= 0);
     Py_DECREF(ctx);
