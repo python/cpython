@@ -69,7 +69,7 @@ class FakeClinic:
         self.converters = FakeConvertersDict()
         self.legacy_converters = FakeConvertersDict()
         self.language = clinic.CLanguage(None)
-        self.filename = None
+        self.filename = "clinic_tests"
         self.destination_buffers = {}
         self.block_parser = clinic.BlockParser('', self.language)
         self.modules = collections.OrderedDict()
@@ -1917,10 +1917,10 @@ class ClinicParserTest(TestCase):
             self.parse(block)
         # The line numbers are off; this is a known limitation.
         expected = dedent("""\
-            Warning on line 0:
+            Warning in file 'clinic_tests' on line 0:
             Non-ascii characters are not allowed in docstrings: 'á'
 
-            Warning on line 0:
+            Warning in file 'clinic_tests' on line 0:
             Non-ascii characters are not allowed in docstrings: 'ü', 'á', 'ß'
 
         """)
@@ -3096,6 +3096,94 @@ class FormatHelperTests(unittest.TestCase):
         )
         out = clinic.suffix_all_lines(lines, suffix="foo")
         self.assertEqual(out, expected)
+
+
+class ClinicReprTests(unittest.TestCase):
+    def test_Block_repr(self):
+        block = clinic.Block("foo")
+        expected_repr = "<clinic.Block 'text' input='foo' output=None>"
+        self.assertEqual(repr(block), expected_repr)
+
+        block2 = clinic.Block("bar", "baz", [], "eggs", "spam")
+        expected_repr_2 = "<clinic.Block 'baz' input='bar' output='eggs'>"
+        self.assertEqual(repr(block2), expected_repr_2)
+
+        block3 = clinic.Block(
+            input="longboi_" * 100,
+            dsl_name="wow_so_long",
+            signatures=[],
+            output="very_long_" * 100,
+            indent=""
+        )
+        expected_repr_3 = (
+            "<clinic.Block 'wow_so_long' input='longboi_longboi_longboi_l...' output='very_long_very_long_very_...'>"
+        )
+        self.assertEqual(repr(block3), expected_repr_3)
+
+    def test_Destination_repr(self):
+        destination = clinic.Destination(
+            "foo", type="file", clinic=FakeClinic(), args=("eggs",)
+        )
+        self.assertEqual(
+            repr(destination), "<clinic.Destination 'foo' type='file' file='eggs'>"
+        )
+
+        destination2 = clinic.Destination("bar", type="buffer", clinic=FakeClinic())
+        self.assertEqual(repr(destination2), "<clinic.Destination 'bar' type='buffer'>")
+
+    def test_Module_repr(self):
+        module = clinic.Module("foo", FakeClinic())
+        self.assertRegex(repr(module), r"<clinic.Module 'foo' at \d+>")
+
+    def test_Class_repr(self):
+        cls = clinic.Class("foo", FakeClinic(), None, 'some_typedef', 'some_type_object')
+        self.assertRegex(repr(cls), r"<clinic.Class 'foo' at \d+>")
+
+    def test_FunctionKind_repr(self):
+        self.assertEqual(
+            repr(clinic.FunctionKind.INVALID), "<clinic.FunctionKind.INVALID>"
+        )
+        self.assertEqual(
+            repr(clinic.FunctionKind.CLASS_METHOD), "<clinic.FunctionKind.CLASS_METHOD>"
+        )
+
+    def test_Function_and_Parameter_reprs(self):
+        function = clinic.Function(
+            name='foo',
+            module=FakeClinic(),
+            cls=None,
+            c_basename=None,
+            full_name='foofoo',
+            return_converter=clinic.init_return_converter(),
+            kind=clinic.FunctionKind.METHOD_INIT,
+            coexist=False
+        )
+        self.assertEqual(repr(function), "<clinic.Function 'foo'>")
+
+        converter = clinic.self_converter('bar', 'bar', function)
+        parameter = clinic.Parameter(
+            "bar",
+            kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            function=function,
+            converter=converter
+        )
+        self.assertEqual(repr(parameter), "<clinic.Parameter 'bar'>")
+
+    def test_Monitor_repr(self):
+        monitor = clinic.cpp.Monitor()
+        self.assertRegex(repr(monitor), r"<clinic.Monitor \d+ line=0 condition=''>")
+
+        monitor.line_number = 42
+        monitor.stack.append(("token1", "condition1"))
+        self.assertRegex(
+            repr(monitor), r"<clinic.Monitor \d+ line=42 condition='condition1'>"
+        )
+
+        monitor.stack.append(("token2", "condition2"))
+        self.assertRegex(
+            repr(monitor),
+            r"<clinic.Monitor \d+ line=42 condition='condition1 && condition2'>"
+        )
 
 
 if __name__ == "__main__":

@@ -1773,8 +1773,12 @@ class Block:
             if len(s) > 30:
                 return s[:26] + "..." + s[0]
             return s
-        return "".join((
-            "<Block ", dsl_name, " input=", summarize(self.input), " output=", summarize(self.output), ">"))
+        parts = (
+            repr(dsl_name),
+            f"input={summarize(self.input)}",
+            f"output={summarize(self.output)}"
+        )
+        return f"<clinic.Block {' '.join(parts)}>"
 
 
 class BlockParser:
@@ -2082,10 +2086,10 @@ class Destination:
 
     def __repr__(self) -> str:
         if self.type == 'file':
-            file_repr = " " + repr(self.filename)
+            type_repr = f"type='file' file={self.filename!r}"
         else:
-            file_repr = ''
-        return "".join(("<Destination ", self.name, " ", self.type, file_repr, ">"))
+            type_repr = f"type={self.type!r}"
+        return f"<clinic.Destination {self.name!r} {type_repr}>"
 
     def clear(self) -> None:
         if self.type != 'buffer':
@@ -2545,7 +2549,7 @@ class FunctionKind(enum.Enum):
         return self in {FunctionKind.METHOD_INIT, FunctionKind.METHOD_NEW}
 
     def __repr__(self) -> str:
-        return f"<FunctionKind.{self.name}>"
+        return f"<clinic.FunctionKind.{self.name}>"
 
 
 INVALID: Final = FunctionKind.INVALID
@@ -2622,7 +2626,7 @@ class Function:
         return '|'.join(flags)
 
     def __repr__(self) -> str:
-        return '<clinic.Function ' + self.name + '>'
+        return f'<clinic.Function {self.name!r}>'
 
     def copy(self, **overrides: Any) -> Function:
         f = dc.replace(self, **overrides)
@@ -2652,7 +2656,7 @@ class Parameter:
     right_bracket_count: int = dc.field(init=False, default=0)
 
     def __repr__(self) -> str:
-        return '<clinic.Parameter ' + self.name + '>'
+        return f'<clinic.Parameter {self.name!r}>'
 
     def is_keyword_only(self) -> bool:
         return self.kind == inspect.Parameter.KEYWORD_ONLY
