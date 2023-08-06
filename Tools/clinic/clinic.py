@@ -838,7 +838,7 @@ class CLanguage(Language):
         #    warning "{cpp_message}"
         #  endif
         #endif
-        if ({condition}) {{{{
+        if (nargs > {pos}) {{{{
             if (PyErr_WarnEx(PyExc_DeprecationWarning, "{depr_message}", 1)) {{{{
                 goto exit;
             }}}}
@@ -903,16 +903,14 @@ class CLanguage(Language):
         depr_message = (f"Passing more than 1 positional arguments to "
                         f"{func.full_name!r}() is deprecated. ")
         if len(params) == 1:
-            condition = f"nargs == {first_pos+1}"
             depr_message += (f"Parameter {pstr} will become a keyword-only "
                              f"parameter in Python {major}.{minor}.")
         else:
-            condition = f"nargs > {first_pos} && nargs <= {last_pos+1}"
             depr_message += (f"Parameters {pstr} will become keyword-only "
                              f"parameters in Python {major}.{minor}.")
         # Format and return the code block.
         code = self.DEPRECATED_POSITIONAL_PROTOTYPE.format(
-            condition=condition,
+            pos=first_pos,
             major=major,
             minor=minor,
             cpp_message=cpp_message,
