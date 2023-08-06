@@ -107,8 +107,8 @@ The :mod:`runpy` module provides two functions:
    module globals dictionary. As with a script name supplied to the CPython
    command line, the supplied path may refer to a Python source file, a
    compiled bytecode file or a valid ``sys.path`` entry containing a
-   ``__main__`` module (e.g. a zipfile containing a top-level ``__main__.py``
-   file).
+   ``__main__`` module
+   (e.g. a zipfile containing a top-level ``__main__.py`` file).
 
    For a simple script, the specified code is simply executed in a fresh
    module namespace. For a valid ``sys.path`` entry (typically a zipfile or
