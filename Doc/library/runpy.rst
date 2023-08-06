@@ -39,7 +39,7 @@ The :mod:`runpy` module provides two functions:
 
    The *mod_name* argument should be an absolute module name.
    If the module name refers to a package rather than a normal
-   module, then that package is imported and the ``__main__`` submodule within
+   module, then that package is imported and the :mod:`__main__` submodule within
    that package is then executed and the resulting module globals dictionary
    returned.
 
@@ -82,7 +82,7 @@ The :mod:`runpy` module provides two functions:
       command line.
 
    .. versionchanged:: 3.1
-      Added ability to execute packages by looking for a ``__main__`` submodule.
+      Added ability to execute packages by looking for a :mod:`__main__` submodule.
 
    .. versionchanged:: 3.2
       Added ``__cached__`` global variable (see :pep:`3147`).
@@ -107,7 +107,7 @@ The :mod:`runpy` module provides two functions:
    module globals dictionary. As with a script name supplied to the CPython
    command line, the supplied path may refer to a Python source file, a
    compiled bytecode file or a valid :data:`sys.path` entry containing a
-   ``__main__`` module
+   :mod:`__main__` module
    (e.g. a zipfile containing a top-level ``__main__.py`` file).
 
    For a simple script, the specified code is simply executed in a fresh
@@ -139,7 +139,7 @@ The :mod:`runpy` module provides two functions:
    ``__package__`` will all be set to :const:`None`.
 
    If the supplied path is a reference to a valid :data:`sys.path` entry, then
-   ``__spec__`` will be set appropriately for the imported ``__main__``
+   ``__spec__`` will be set appropriately for the imported :mod:`__main__`
    module (that is, ``__spec__.name`` will always be ``__main__``).
    ``__file__``, ``__cached__``, ``__loader__`` and ``__package__`` will be
    :ref:`set as normal <import-mod-attrs>` based on the module spec.
