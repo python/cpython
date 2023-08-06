@@ -1072,13 +1072,6 @@ ConfigParser Objects
       not given and *f* has a :attr:`name` attribute, that is used for
       *source*; the default is ``'<???>'``.
 
-      Raise :exc:`ParsingError` instead of :exc:`AttributeError`
-      when the configuration contains a key without a corresponding value.
-      This change is intended to handle scenarios where a key lacks a value
-      in a configuration which contains extra space or newline within a section.
-      Please note that it's not recommended to have extra spaces
-      or blank lines within sections of the configuration.
-
       .. versionadded:: 3.2
          Replaces :meth:`readfp`.
 
