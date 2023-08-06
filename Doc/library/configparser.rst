@@ -1048,21 +1048,21 @@ ConfigParser Objects
       highest priority. Any conflicting keys are taken from the more recent
       configuration while the previously existing keys are retained.
 
-   .. doctest::
+      .. doctest::
 
-      >>> another_config = configparser.ConfigParser()
-      >>> another_config.read('example.ini')
-      ['example.ini']
-      >>> another_config['topsecret.server.example']['Port']
-      '50022'
-      >>> another_config.read_string("[topsecret.server.example]\nPort=48484")
-      >>> another_config['topsecret.server.example']['Port']
-      '48484'
-      >>> another_config.read_dict({"topsecret.server.example": {"Port": 21212}})
-      >>> another_config['topsecret.server.example']['Port']
-      '21212'
-      >>> another_config['topsecret.server.example']['ForwardX11']
-      'no'
+         >>> another_config = configparser.ConfigParser()
+         >>> another_config.read('example.ini')
+         ['example.ini']
+         >>> another_config['topsecret.server.example']['Port']
+         '50022'
+         >>> another_config.read_string("[topsecret.server.example]\nPort=48484")
+         >>> another_config['topsecret.server.example']['Port']
+         '48484'
+         >>> another_config.read_dict({"topsecret.server.example": {"Port": 21212}})
+         >>> another_config['topsecret.server.example']['Port']
+         '21212'
+         >>> another_config['topsecret.server.example']['ForwardX11']
+         'no'
 
       .. versionadded:: 3.2
          The *encoding* parameter.  Previously, all files were read using the
