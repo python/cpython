@@ -1,2 +1,0 @@
-Document all valid types for the :attr:`!_as_parameter_` attribute in
-:mod:`ctypes`.
