@@ -883,7 +883,7 @@ class CLanguage(Language):
         # Pretty-print list of names.
         match len(params):
             case 1:
-                pstr = first_param.name
+                pstr = repr(first_param.name)
             case 2:
                 pstr = " and ".join(names)
             case _:
@@ -900,18 +900,16 @@ class CLanguage(Language):
             f"input of {func.full_name!r} to be keyword-only."
         )
         # Format the deprecation message.
+        depr_message = (f"Passing more than 1 positional arguments to "
+                        f"{func.full_name!r}() is deprecated. ")
         if len(params) == 1:
             condition = f"nargs == {first_pos+1}"
-            depr_message = (
-                f"Passing {pstr} as a positional parameter is deprecated. "
-                f"It will become a keyword-only parameter in Python {major}.{minor}."
-            )
+            depr_message += (f"Parameter {pstr} will become a keyword-only "
+                             f"parameter in Python {major}.{minor}.")
         else:
             condition = f"nargs > {first_pos} && nargs <= {last_pos+1}"
-            depr_message = (
-                f"Passing {pstr} as positional parameters is deprecated. "
-                f"They will become keyword-only parameters in Python {major}.{minor}."
-            )
+            depr_message += (f"Parameters {pstr} will become keyword-only "
+                             f"parameters in Python {major}.{minor}.")
         # Format and return the code block.
         code = self.DEPRECATED_POSITIONAL_PROTOTYPE.format(
             condition=condition,
@@ -1287,7 +1285,6 @@ class CLanguage(Language):
                     add_label = None
                 if not p.is_optional():
                     if p.deprecated_positional:
-                        print("deprecating", i, p)
                         deprecated_positionals[i] = p
                     parser_code.append(normalize_snippet(parsearg, indent=4))
                 elif i < pos_only:
@@ -1319,7 +1316,6 @@ class CLanguage(Language):
                             }}
                             """ % add_label, indent=4))
                     if p.deprecated_positional:
-                        print("deprecating", i, p)
                         deprecated_positionals[i] = p
                     if i + 1 == len(parameters):
                         parser_code.append(normalize_snippet(parsearg, indent=4))
