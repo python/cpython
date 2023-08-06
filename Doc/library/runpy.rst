@@ -112,10 +112,10 @@ The :mod:`runpy` module provides two functions:
 
    For a simple script, the specified code is simply executed in a fresh
    module namespace. For a valid :data:`sys.path` entry (typically a zipfile or
-   directory), the entry is first added to the beginning of :data:`sys.path`.
+   directory), the entry is first added to the beginning of ``sys.path``.
    The function then looks for and executes a :mod:`__main__` module using the
    updated path. Note that there is no special protection against invoking
-   an existing :mod:`__main__` entry located elsewhere on :data:`sys.path` if
+   an existing :mod:`__main__` entry located elsewhere on ``sys.path`` if
    there is no such module at the specified location.
 
    The optional dictionary argument *init_globals* may be used to pre-populate
