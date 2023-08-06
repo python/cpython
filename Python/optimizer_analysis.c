@@ -174,6 +174,35 @@ partitionnode_get_rootptr(_Py_PARTITIONNODE_t *ref)
 }
 
 /**
+ * @brief Checks if two nodes are in the same partition.
+*/
+static bool
+partitionnode_is_same_partition(_Py_PARTITIONNODE_t *x, _Py_PARTITIONNODE_t *y)
+{
+    _Py_PARTITIONNODE_t *x_rootref = x;
+    _Py_PARTITIONNODE_t *y_rootref = y;
+    uintptr_t x_tag = partitionnode_get_tag(*x);
+    uintptr_t y_tag = partitionnode_get_tag(*y);
+    switch (y_tag) {
+        case TYPE_REF:
+            y_rootref = partitionnode_get_rootptr(y);
+        case TYPE_ROOT:
+            break;
+        default:
+            Py_UNREACHABLE();
+    }
+    switch (x_tag) {
+        case TYPE_REF:
+            x_rootref = partitionnode_get_rootptr(x);
+        case TYPE_ROOT:
+            break;
+        default:
+            Py_UNREACHABLE();
+    }
+    return x_rootref == y_rootref;
+}
+
+/**
  * @brief Performs SET operation. dst tree becomes part of src tree
  *
  * If src_is_new is set, src is interpreted as a TYPE_ROOT
@@ -200,6 +229,11 @@ partitionnode_set(_Py_PARTITIONNODE_t *src, _Py_PARTITIONNODE_t *dst, bool src_i
             assert(partitionnode_get_tag(*src) == TYPE_ROOT);
         }
 #endif
+
+        // This prevents cycles from forming
+        if (!src_is_new && partitionnode_is_same_partition(src, dst)) {
+            return;
+        }
 
         _Py_TypeNodeTags tag = partitionnode_get_tag(*dst);
         switch (tag) {
@@ -259,6 +293,12 @@ partitionnode_overwrite(_Py_UOpsAbstractInterpContext *ctx,
         assert(partitionnode_get_tag((_Py_PARTITIONNODE_t)src) == TYPE_ROOT);
     }
 #endif
+
+    // This prevents cycles from forming
+    if (!src_is_new && partitionnode_is_same_partition(src, dst)) {
+        return;
+    }
+
     _Py_TypeNodeTags tag = partitionnode_get_tag(*dst);
     switch (tag) {
         case TYPE_ROOT: {
