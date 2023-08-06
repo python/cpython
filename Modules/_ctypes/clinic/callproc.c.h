@@ -12,10 +12,13 @@ PyDoc_STRVAR(create_pointer_type__doc__,
 "POINTER($module, type, /)\n"
 "--\n"
 "\n"
-"Creates and returns a new ctypes pointer type.\n"
+"Create and return a new ctypes pointer type.\n"
 "\n"
-"Pointer types are cached and reused internally, so calling this function\n"
-"repeatedly is cheap. \'type\' must be a ctypes type.");
+"  type\n"
+"    A ctypes type.\n"
+"\n"
+"Pointer types are cached and reused internally,\n"
+"so calling this function repeatedly is cheap.");
 
 #define CREATE_POINTER_TYPE_METHODDEF    \
     {"POINTER", (PyCFunction)create_pointer_type, METH_O, create_pointer_type__doc__},
@@ -24,7 +27,7 @@ PyDoc_STRVAR(create_pointer_inst__doc__,
 "pointer($module, obj, /)\n"
 "--\n"
 "\n"
-"Creates a new pointer instance, pointing to \'obj\'.\n"
+"Create a new pointer instance, pointing to \'obj\'.\n"
 "\n"
 "The returned object is of the type POINTER(type(obj)). Note that if you just\n"
 "want to pass a pointer to an object to a foreign function call,\n"
@@ -32,4 +35,4 @@ PyDoc_STRVAR(create_pointer_inst__doc__,
 
 #define CREATE_POINTER_INST_METHODDEF    \
     {"pointer", (PyCFunction)create_pointer_inst, METH_O, create_pointer_inst__doc__},
-/*[clinic end generated code: output=923c1c75ce2705e3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a68a8cf6b8203cf9 input=a9049054013a1b77]*/

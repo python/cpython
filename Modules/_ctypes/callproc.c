@@ -1903,17 +1903,18 @@ error:
 _ctypes.POINTER as create_pointer_type
 
     type as cls: object
+        A ctypes type.
     /
 
 Create and return a new ctypes pointer type.
 
-Pointer types are cached and reused internally, so calling this function
-repeatedly is cheap. 'type' must be a ctypes type.
+Pointer types are cached and reused internally,
+so calling this function repeatedly is cheap.
 [clinic start generated code]*/
 
 static PyObject *
 create_pointer_type(PyObject *module, PyObject *cls)
-/*[clinic end generated code: output=98c3547ab6f4f40b input=ccb867693e635dea]*/
+/*[clinic end generated code: output=98c3547ab6f4f40b input=3b81cff5ff9b9d5b]*/
 {
     PyObject *result;
     PyTypeObject *typ;
@@ -1971,14 +1972,14 @@ _ctypes.pointer as create_pointer_inst
 
 Create a new pointer instance, pointing to 'obj'.
 
-Return an object of type POINTER(type(obj)). Note that if you just
+The returned object is of the type POINTER(type(obj)). Note that if you just
 want to pass a pointer to an object to a foreign function call,
 you should use byref(obj) which is much faster.
 [clinic start generated code]*/
 
 static PyObject *
 create_pointer_inst(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=3b543bc9f0de2180 input=649dec8dad8c0e52]*/
+/*[clinic end generated code: output=3b543bc9f0de2180 input=c133818141785580]*/
 {
     PyObject *result;
     PyObject *typ;
