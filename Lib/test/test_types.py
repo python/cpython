@@ -1397,6 +1397,7 @@ class ClassCreationTests(unittest.TestCase):
         class B(typing.Generic[T]): pass
         class C(B[int]): pass
         class D(B[str], float): pass
+
         self.assertEqual(types.get_original_bases(A), (object,))
         self.assertEqual(types.get_original_bases(B), (typing.Generic[T],))
         self.assertEqual(types.get_original_bases(C), (B[int],))
@@ -1408,6 +1409,18 @@ class ClassCreationTests(unittest.TestCase):
 
         self.assertEqual(types.get_original_bases(E), (list[T],))
         self.assertEqual(types.get_original_bases(F), (list[int],))
+
+        class FirstBase(typing.Generic[T]): pass
+        class SecondBase(typing.Generic[T]): pass
+        class First(FirstBase[int]): pass
+        class Second(SecondBase[int]): pass
+        class G(First, Second): pass
+        self.assertEqual(types.get_original_bases(G), (First, Second))
+
+        class First_(typing.Generic[T]): pass
+        class Second_(typing.Generic[T]): pass
+        class H(First_, Second_): pass
+        self.assertEqual(types.get_original_bases(H), (First_, Second_))
 
         class ClassBasedNamedTuple(typing.NamedTuple):
             x: int

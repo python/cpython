@@ -49,9 +49,9 @@ class InstructionFlags:
             if value:
                 setattr(self, name, value)
 
-    def names(self, value=None):
+    def names(self, value=None) -> list[str]:
         if value is None:
-            return dataclasses.asdict(self).keys()
+            return list(dataclasses.asdict(self).keys())
         return [n for n, v in dataclasses.asdict(self).items() if v == value]
 
     def bitmap(self) -> int:

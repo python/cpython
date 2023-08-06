@@ -2029,8 +2029,7 @@ whichmodule(PyObject *global, PyObject *dotted_path)
     }
 
     /* If no module is found, use __main__. */
-    module_name = &_Py_ID(__main__);
-    return Py_NewRef(module_name);
+    return &_Py_ID(__main__);
 }
 
 /* fast_save_enter() and fast_save_leave() are guards against recursive
