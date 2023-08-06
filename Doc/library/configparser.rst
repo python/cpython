@@ -982,8 +982,8 @@ ConfigParser Objects
       insertion order.
 
    .. versionchanged:: 3.13
-      Raise a :exc:`ParsingError` if a key is present with a value
-      in a scenario where an extra space is present within a section.
+      Raise a :exc:`ParsingError` if a key is present without a corresponding
+      value in a scenario where an extra space is present within a section.
 
    .. method:: defaults()
 
