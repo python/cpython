@@ -890,6 +890,7 @@ class CLanguage(Language):
         # Format the preprocessor warning and error messages.
         source = self.cpp.filename
         thenceforth = first_param.deprecated_positional  # FIXME
+        assert thenceforth is not None
         major, minor = thenceforth
         assert isinstance(self.cpp.filename, str)
         cpp_message = (
@@ -5333,7 +5334,7 @@ class DSLParser:
         """Parse keyword-only parameter marker '*'."""
         if self.keyword_only:
             fail(f"Function {function.name!r} uses '*' more than once.")
-        self.deprecated_positional = False
+        self.deprecated_positional = None
         self.keyword_only = True
 
     def parse_opening_square_bracket(self, function: Function) -> None:
