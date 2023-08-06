@@ -1130,7 +1130,10 @@ Regular Expression Objects
 .. class:: Pattern
 
    Compiled regular expression object returned by :func:`re.compile`.
-   It supports the following methods and attributes:
+
+   .. versionadded:: 3.9
+      :py:class:`re.Pattern` supports ``[]`` to indicate a Unicode (str) or bytes pattern.
+      See :ref:`types-genericalias`.
 
 .. method:: Pattern.search(string[, pos[, endpos]])
 
@@ -1270,7 +1273,7 @@ when there is no match, you can test whether there was a match with a simple
 .. class:: Match
 
    Match object returned by successful ``match``\ es and ``search``\ es.
-   Supports the following methods and attributes:
+   It supports the following methods and attributes:
 
 .. method:: Match.expand(template)
 
