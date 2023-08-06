@@ -676,6 +676,30 @@ class Misc:
     # XXX font command?
     _tclCommands = None
 
+    def busy_configure(self, **kw):
+        """Queries or modifies the tk busy command configuration
+        options for window. """
+        self.tk.call(('tk', 'busy', 'configure', self._w) + self._options(kw))
+
+    busy_config = busy_configure
+    
+    def busy_forget(self):
+        """Releases resources allocated by the tk busy command for window,
+        including the transparent window.  User events will again be received
+        by window. Resources are also released when window is destroyed.
+        Window must be the name of a widget specified in the hold operation,
+        otherwise an error is reported."""
+        self.tk.call('tk', 'busy', 'forget', self._w)
+        
+    def busy_hold(self, **kw):
+        """Makes the specified window (and its descendants
+        in the Tk window hierarchy) appear busy.A transparent window
+        is put in front of the specified window. This transparent
+        window is mapped the next time idle tasks are processed,
+        and the specified window and its descendants will be
+        blocked from user interactions."""
+        self.tk.call(('tk', 'busy', 'hold', self._w) + self._options(kw))
+
     def destroy(self):
         """Internal function.
 
