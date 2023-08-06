@@ -5792,7 +5792,7 @@ test_deprecate_positional_pos0_len1(PyObject *module, PyObject *const *args, Py_
     #  endif
     #endif
     if (nargs == 1) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning, "Passing 1 positional arguments to test_deprecate_positional_pos0_len1() is deprecated. Parameter 'a' will become a keyword-only parameter in Python 3.14.", 1)) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning, "Passing positional arguments to test_deprecate_positional_pos0_len1() is deprecated. Parameter 'a' will become a keyword-only parameter in Python 3.14.", 1)) {
             goto exit;
         }
     }
@@ -5809,7 +5809,7 @@ exit:
 
 static PyObject *
 test_deprecate_positional_pos0_len1_impl(PyObject *module, PyObject *a)
-/*[clinic end generated code: output=5365071086c2171b input=678206db25c0652c]*/
+/*[clinic end generated code: output=1b7f23b9ffca431b input=678206db25c0652c]*/
 
 
 /*[clinic input]
@@ -5874,7 +5874,7 @@ test_deprecate_positional_pos0_len2(PyObject *module, PyObject *const *args, Py_
     #  endif
     #endif
     if (nargs > 0 && nargs <= 2) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning, "Passing more than 0 positional arguments to test_deprecate_positional_pos0_len2() is deprecated. Parameters 'a' and 'b' will become keyword-only parameters in Python 3.14.", 1)) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning, "Passing positional arguments to test_deprecate_positional_pos0_len2() is deprecated. Parameters 'a' and 'b' will become keyword-only parameters in Python 3.14.", 1)) {
             goto exit;
         }
     }
@@ -5893,7 +5893,7 @@ exit:
 static PyObject *
 test_deprecate_positional_pos0_len2_impl(PyObject *module, PyObject *a,
                                          PyObject *b)
-/*[clinic end generated code: output=3d477331ccec8298 input=fae0d0b1d480c939]*/
+/*[clinic end generated code: output=31b494f2dcc016af input=fae0d0b1d480c939]*/
 
 
 /*[clinic input]
@@ -5967,7 +5967,7 @@ test_deprecate_positional_pos0_len3_with_kwdonly(PyObject *module, PyObject *con
     #  endif
     #endif
     if (nargs > 0 && nargs <= 3) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning, "Passing more than 0 positional arguments to test_deprecate_positional_pos0_len3_with_kwdonly() is deprecated. Parameters 'a', 'b' and 'c' will become keyword-only parameters in Python 3.14.", 1)) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning, "Passing positional arguments to test_deprecate_positional_pos0_len3_with_kwdonly() is deprecated. Parameters 'a', 'b' and 'c' will become keyword-only parameters in Python 3.14.", 1)) {
             goto exit;
         }
     }
@@ -5991,7 +5991,7 @@ test_deprecate_positional_pos0_len3_with_kwdonly_impl(PyObject *module,
                                                       PyObject *b,
                                                       PyObject *c,
                                                       PyObject *e)
-/*[clinic end generated code: output=256beee68d1e2fb8 input=1b0121770c0c52e0]*/
+/*[clinic end generated code: output=96978e786acfbc7b input=1b0121770c0c52e0]*/
 
 
 /*[clinic input]

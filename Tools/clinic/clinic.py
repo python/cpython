@@ -900,17 +900,21 @@ class CLanguage(Language):
             f"input of {func.full_name!r} to be keyword-only."
         )
         # Format the deprecation message.
+        if first_pos == 0:
+            preamble = "Passing positional arguments to "
         if len(params) == 1:
             condition = f"nargs == {first_pos+1}"
-            depr_message = (
-                f"Passing {first_pos+1} positional arguments to "
+            if first_pos:
+                preamble = f"Passing {first_pos+1} positional arguments to "
+            depr_message = preamble + (
                 f"{func.full_name}() is deprecated. Parameter {pstr} will "
                 f"become a keyword-only parameter in Python {major}.{minor}."
             )
         else:
             condition = f"nargs > {first_pos} && nargs <= {last_pos+1}"
-            depr_message = (
-                f"Passing more than {first_pos} positional arguments to "
+            if first_pos:
+                preamble = f"Passing more than {first_pos} positional arguments to "
+            depr_message = preamble + (
                 f"{func.full_name}() is deprecated. Parameters {pstr} will "
                 f"become keyword-only parameters in Python {major}.{minor}."
             )
