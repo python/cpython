@@ -888,11 +888,11 @@ class CLanguage(Language):
                 pstr = ", ".join(names[:-1]) + " and " + names[-1]
 
         # Format the preprocessor warning and error messages.
+        assert isinstance(self.cpp.filename, str)
         source = os.path.basename(self.cpp.filename)
         thenceforth = first_param.deprecated_positional  # FIXME
         assert thenceforth is not None
         major, minor = thenceforth
-        assert isinstance(self.cpp.filename, str)
         cpp_message = (
             f"In {source}, update parameter(s) {pstr} in the clinic "
             f"input of {func.full_name!r} to be keyword-only."
