@@ -1905,7 +1905,7 @@ _ctypes.POINTER as create_pointer_type
     type as cls: object
     /
 
-Creates and returns a new ctypes pointer type.
+Create and return a new ctypes pointer type.
 
 Pointer types are cached and reused internally, so calling this function
 repeatedly is cheap. 'type' must be a ctypes type.
@@ -1969,7 +1969,7 @@ _ctypes.pointer as create_pointer_inst
     obj as arg: object
     /
 
-Creates a new pointer instance, pointing to 'obj'.
+Create a new pointer instance, pointing to 'obj'.
 
 The returned object is of the type POINTER(type(obj)). Note that if you just
 want to pass a pointer to an object to a foreign function call,
