@@ -257,7 +257,7 @@ The special characters are:
    .. index:: single: \ (backslash); in regular expressions
 
    * Character classes such as ``\w`` or ``\S`` (defined below) are also accepted
-     inside a set, although the characters they match depends on the flags_ used.
+     inside a set, although the characters they match depend on the flags_ used.
 
    .. index:: single: ^ (caret); in regular expressions
 
@@ -330,13 +330,13 @@ The special characters are:
    The group matches the empty string;
    the letters set the corresponding flags for the entire regular expression:
 
-   * :const:`re.A` (ASCII-only matching),
-   * :const:`re.I` (ignore case),
-   * :const:`re.L` (locale dependent),
-   * :const:`re.M` (multi-line),
-   * :const:`re.S` (dot matches all),
-   * :const:`re.U` (Unicode matching),
-   * :const:`re.X` (verbose).
+   * :const:`re.A` (ASCII-only matching)
+   * :const:`re.I` (ignore case)
+   * :const:`re.L` (locale dependent)
+   * :const:`re.M` (multi-line)
+   * :const:`re.S` (dot matches all)
+   * :const:`re.U` (Unicode matching)
+   * :const:`re.X` (verbose)
 
    (The flags are described in :ref:`contents-of-module-re`.)
    This is useful if you wish to include the flags as part of the
@@ -363,11 +363,11 @@ The special characters are:
    The letters set or remove the corresponding flags for the part of the expression:
 
    * :const:`re.A` (ASCII-only matching)
-   * :const:`re.I` (ignore case),
+   * :const:`re.I` (ignore case)
    * :const:`re.L` (locale dependent)
-   * :const:`re.M` (multi-line),
+   * :const:`re.M` (multi-line)
    * :const:`re.S` (dot matches all)
-   * :const:`re.U` (Unicode matching),
+   * :const:`re.U` (Unicode matching)
    * :const:`re.X` (verbose)
 
    (The flags are described in :ref:`contents-of-module-re`.)
@@ -377,7 +377,7 @@ The special characters are:
    when one of them appears in an inline group, it overrides the matching mode
    in the enclosing group.  In Unicode patterns ``(?a:...)`` switches to
    ASCII-only matching, and ``(?u:...)`` switches to Unicode matching
-   (default).  In bytes patterns ``(?L:...)`` switches to locale depending
+   (default).  In bytes patterns ``(?L:...)`` switches to locale dependent
    matching, and ``(?a:...)`` switches to ASCII-only matching (default).
    This override is only in effect for the narrow inline group, and the
    original matching mode is restored outside of the group.
@@ -565,7 +565,7 @@ character ``'$'``.
    but only when it is *not* at the beginning or end of a word.
    This means that ``r'at\B'`` matches ``'athens'``, ``'atom'``,
    ``'attorney'``, but not ``'at'``, ``'at.'``, or ``'at!'``.
-   ``\B`` is just the opposite of ``\b``,
+   ``\B`` is the opposite of ``\b``,
    so word characters in Unicode (str) patterns
    are Unicode alphanumerics or the underscore,
    although this can be changed by using the :py:const:`~re.ASCII` flag.
@@ -579,7 +579,8 @@ character ``'$'``.
       Matches any Unicode decimal digit
       (that is, any character in Unicode character category `[Nd]`__).
       This includes ``[0-9]``, and also many other digit characters.
-      If the :py:const:`~re.ASCII` flag is used, only matches ``[0-9]``.
+
+      Matches ``[0-9]`` if the :py:const:`~re.ASCII` flag is used.
 
       __ https://www.unicode.org/versions/Unicode15.0.0/ch04.pdf#G134153
 
@@ -592,8 +593,8 @@ character ``'$'``.
 ``\D``
    Matches any character which is not a decimal digit.
    This is the opposite of ``\d``.
-   If the :py:const:`~re.ASCII` flag is used,
-   matches the equivalent of ``[^0-9]``.
+
+   Matches ``[^0-9]`` if the :py:const:`~re.ASCII` flag is used.
 
 .. index:: single: \s; in regular expressions
 
@@ -602,8 +603,9 @@ character ``'$'``.
       Matches Unicode whitespace characters (which includes
       ``[ \t\n\r\f\v]``, and also many other characters, for example the
       non-breaking spaces mandated by typography rules in many
-      languages). If the :py:const:`~re.ASCII` flag is used, only
-      ``[ \t\n\r\f\v]`` is matched.
+      languages).
+
+      Matches ``[ \t\n\r\f\v]`` if the :py:const:`~re.ASCII` flag is used.
 
    For 8-bit (bytes) patterns:
       Matches characters considered whitespace in the ASCII character set;
@@ -613,8 +615,9 @@ character ``'$'``.
 
 ``\S``
    Matches any character which is not a whitespace character. This is
-   the opposite of ``\s``. If the :py:const:`~re.ASCII` flag is used this
-   becomes the equivalent of ``[^ \t\n\r\f\v]``.
+   the opposite of ``\s``.
+
+   Matches ``[^ \t\n\r\f\v]`` if the :py:const:`~re.ASCII` flag is used.
 
 .. index:: single: \w; in regular expressions
 
@@ -624,8 +627,8 @@ character ``'$'``.
       this includes all Unicode alphanumeric characters
       (as defined by :py:meth:`str.isalnum`),
       as well as the underscore (``_``).
-      If the :py:const:`~re.ASCII` flag is used,
-      only ``[a-zA-Z0-9_]`` is matched.
+
+      Matches ``[a-zA-Z0-9_]`` if the :py:const:`~re.ASCII` flag is used.
 
    For 8-bit (bytes) patterns:
       Matches characters considered alphanumeric in the ASCII character set;
@@ -640,8 +643,9 @@ character ``'$'``.
    This is the opposite of ``\w``.
    By default, matches non-underscore (``_``) characters
    for which :py:meth:`str.isalnum` returns ``False``.
-   If the :py:const:`~re.ASCII` flag is used,
-   matches ``[^a-zA-Z0-9_]``.
+
+   Matches ``[^a-zA-Z0-9_]`` if the :py:const:`~re.ASCII` flag is used.
+
    If the :py:const:`~re.LOCALE` flag is used,
    matches characters which are neither alphanumeric in the current locale
    nor the underscore.
@@ -779,11 +783,11 @@ Flags
 
    .. warning::
 
-      This flag is discouraged, consider Unicode matching instead.
-      The locale mechanism is very unreliable,
-      as it only handles one "culture" at a time,
-      and it only works with 8-bit locales.
-      Unicode matching is enabled by default for Unicode (str) patterns,
+      This flag is discouraged; consider Unicode matching instead.
+      The locale mechanism is very unreliable
+      as it only handles one "culture" at a time
+      and only works with 8-bit locales.
+      Unicode matching is enabled by default for Unicode (str) patterns
       and it is able to handle different locales and languages.
 
    .. versionchanged:: 3.6
@@ -834,7 +838,7 @@ Flags
 
    In Python 3, Unicode characters are matched by default
    for ``str`` patterns.
-   This flag is therefore redundant with **no effect**,
+   This flag is therefore redundant with **no effect**
    and is only kept for backward compatibility.
 
    See :py:const:`~re.ASCII` to restrict matching to ASCII characters instead.
