@@ -348,15 +348,10 @@ def suffix_all_lines(s: str, suffix: str) -> str:
 
 
 def pprint_words(items: list[str]) -> str:
-    match len(items):
-        case 0:
-            return ""
-        case 1:
-            return next(iter(items))
-        case 2:
-            return " and ".join(items)
-        case _:
-            return ", ".join(items[:-1]) + " and " + items[-1]
+    if len(items) <= 2:
+        return " and ".join(items)
+    else:
+        return ", ".join(items[:-1]) + " and " + items[-1]
 
 
 def version_splitter(s: str) -> tuple[int, ...]:
