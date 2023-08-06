@@ -206,21 +206,6 @@ patch_one(unsigned char *location, HoleKind kind, uint64_t value, uint64_t adden
     }
 }
 
-static int
-preload_stencil(const Stencil *loading)
-{
-    for (size_t i = 0; i < loading->nloads; i++) {
-        const SymbolLoad *load = &loading->loads[i];
-        uintptr_t value = (uintptr_t)LOOKUP(load->symbol);
-        if (value == 0) {
-            const char *w = "JIT initialization failed (can't find symbol \"%s\")";
-            PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, load->symbol);
-            return -1;
-        }
-    }
-    return 0;
-}
-
 static void
 copy_and_patch(unsigned char *memory, const Stencil *stencil, uintptr_t patches[])
 {
@@ -231,8 +216,7 @@ copy_and_patch(unsigned char *memory, const Stencil *stencil, uintptr_t patches[
     }
     for (size_t i = 0; i < stencil->nloads; i++) {
         const SymbolLoad *load = &stencil->loads[i];
-        // XXX: Cache these somehow...
-        uintptr_t value = (uintptr_t)LOOKUP(load->symbol);
+        uintptr_t value = symbol_addresses[load->symbol];
         patch_one(memory + load->offset, load->kind, value, load->addend);
     }
 }
@@ -246,13 +230,13 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
     }
     if (initialized == 0) {
         initialized = -1;
-        for (size_t i = 0; i < Py_ARRAY_LENGTH(stencils); i++) {
-            if (preload_stencil(&stencils[i])) {
+        for (size_t i = 0; i < Py_ARRAY_LENGTH(symbols); i++) {
+            symbol_addresses[i] = (uintptr_t)LOOKUP(symbols[i]);
+            if (symbol_addresses[i] == 0) {
+                const char *w = "JIT initialization failed (can't find symbol \"%s\")";
+                PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, symbols[i]);
                 return NULL;
             }
-        }
-        if (preload_stencil(&trampoline_stencil)) {
-            return NULL;
         }
 #ifdef MS_WINDOWS
         SYSTEM_INFO si;
