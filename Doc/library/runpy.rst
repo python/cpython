@@ -112,8 +112,8 @@ The :mod:`runpy` module provides two functions:
 
    For a simple script, the specified code is simply executed in a fresh
    module namespace. For a valid :data:`sys.path` entry (typically a zipfile or
-   directory), the entry is first added to the beginning of ``sys.path``.
-   The function then looks for and executes a :mod:`__main__` module using the
+   directory), the entry is first added to the beginning of ``sys.path``. The
+   function then looks for and executes a :mod:`__main__` module using the
    updated path. Note that there is no special protection against invoking
    an existing :mod:`__main__` entry located elsewhere on ``sys.path`` if
    there is no such module at the specified location.
@@ -145,9 +145,9 @@ The :mod:`runpy` module provides two functions:
    :ref:`set as normal <import-mod-attrs>` based on the module spec.
 
    A number of alterations are also made to the :mod:`sys` module. Firstly,
-   :data:`sys.path` may be altered as described above. ``sys.argv[0]``
-   is updated with the value of ``path_name`` and ``sys.modules[__name__]`` is
-   updated with a temporary module object for the module being executed. All
+   :data:`sys.path` may be altered as described above. ``sys.argv[0]`` is updated
+   with the value of ``path_name`` and ``sys.modules[__name__]`` is updated
+   with a temporary module object for the module being executed. All
    modifications to items in :mod:`sys` are reverted before the function
    returns.
 
@@ -166,8 +166,8 @@ The :mod:`runpy` module provides two functions:
    .. versionchanged:: 3.4
       Updated to take advantage of the module spec feature added by
       :pep:`451`. This allows ``__cached__`` to be set correctly in the
-      case where ``__main__`` is imported from a valid :data:`sys.path` entry
-      rather than being executed directly.
+      case where ``__main__`` is imported from a valid :data:`sys.path` entry rather
+      than being executed directly.
 
    .. versionchanged:: 3.12
       The setting of ``__cached__``, ``__loader__``, and
