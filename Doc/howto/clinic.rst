@@ -1913,11 +1913,16 @@ positional-or-keyword parameters *a* and *b*, and a keyword-only parameter *c*::
        c: int
    [clinic start generated output]*/
 
-We now want to make the *b* parameter keyword-only.
-For this example, imagine we're in the development phase for Python 3.12,
-meaning we can deprecate positional use of *b* earliest in Python 3.14 and onward
-(see :pep:`387` -- *Backwards Compatibility Policy*).
-We can do that using the ``* [from ...]``` syntax,
+We now want to make the *b* parameter keyword-only;
+however, we'll have to wait two releases before making this change,
+as mandated by Python's backwards-compatibility policy (see :pep:`387`).
+For this example, imagine we're in the development phase for Python 3.12:
+that means we'll be allowed to introduce deprecation warnings in Python 3.12
+whenever the *b* parameter is passed positionally,
+and we'll be allowed to make it keyword-only in Python 3.14 at the earliest.
+
+We can use Argument Clinic to emit the desired deprecation warnings
+using the ``* [from ...]``` syntax,
 by adding the line ``* [from 3.14]`` right above the *b* parameter::
 
    /*[clinic input]
@@ -1940,9 +1945,10 @@ compiler warnings if the ``* [from ...]`` line has not been removed
 from the Argument Clinic input when the deprecation period is over,
 which means when the alpha phase of the specified Python version kicks in.
 
-Let's return to our example and assume Python 3.14 development has entered the
-alpha phase, and we forgot all about updating the Argument Clinic code for
-:py:func:`!myfunc`.
+Let's return to our example and skip ahead two years:
+Python 3.14 development has now entered the alpha phase,
+but we forgot all about updating the Argument Clinic code
+for :py:func:`!myfunc`!
 Luckily for us, compiler warnings are now generated:
 
 .. code-block:: none
