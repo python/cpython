@@ -480,7 +480,7 @@ return types can be specified by setting the :attr:`restype` attribute of the
 function object.
 
 The C prototype of :c:func:`time` is ``time_t time(time_t *)``. Because :c:type:`time_t`
-might be of a different type than the default return type :c:type:`int`, you should
+might be of a different type than the default return type :c:expr:`int`, you should
 specify the :attr:`!restype` attribute::
 
    >>> libc.time.restype = c_time_t
