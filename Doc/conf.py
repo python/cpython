@@ -110,6 +110,8 @@ nitpick_ignore = [
     ('c:type', 'uintptr_t'),
     ('c:type', 'va_list'),
     ('c:type', 'wchar_t'),
+    ('c:type', '__int64'),
+    ('c:type', 'unsigned __int64'),
     # Standard C structures
     ('c:struct', 'in6_addr'),
     ('c:struct', 'in_addr'),
