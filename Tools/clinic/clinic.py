@@ -347,6 +347,18 @@ def suffix_all_lines(s: str, suffix: str) -> str:
     return ''.join(final)
 
 
+def pprint_words(items: list[str]) -> str:
+    match len(items):
+        case 0:
+            return ""
+        case 1:
+            return next(iter(items))
+        case 2:
+            return " and ".join(items)
+        case _:
+            return ", ".join(items[:-1]) + " and " + items[-1]
+
+
 def version_splitter(s: str) -> tuple[int, ...]:
     """Splits a version string into a tuple of integers.
 
@@ -881,13 +893,7 @@ class CLanguage(Language):
         assert first_param.deprecated_positional == last_param.deprecated_positional
 
         # Pretty-print list of names.
-        match len(params):
-            case 1:
-                pstr = repr(first_param.name)
-            case 2:
-                pstr = " and ".join(names)
-            case _:
-                pstr = ", ".join(names[:-1]) + " and " + names[-1]
+        pstr = pprint_words(names)
 
         # Format the preprocessor warning and error messages.
         assert isinstance(self.cpp.filename, str)
