@@ -21,7 +21,7 @@ Example::
 
    >>> import rlcompleter
    >>> import readline
-   >>> readline.parse_and_bind("tab: complete")
+   >>> readline.parse_and_bind(r'"\t": complete')
    >>> readline. <TAB PRESSED>
    readline.__doc__          readline.get_line_buffer(  readline.read_init_file(
    readline.__file__         readline.insert_text(      readline.set_completer(

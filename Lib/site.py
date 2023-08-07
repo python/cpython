@@ -446,9 +446,9 @@ def enablerlcompleter():
         # completion key, so we set one first and then read the file.
         readline_doc = getattr(readline, '__doc__', '')
         if readline_doc is not None and 'libedit' in readline_doc:
-            readline.parse_and_bind('bind ^I rl_complete')
+            readline.parse_and_bind(r'bind "\t" rl_complete')
         else:
-            readline.parse_and_bind('tab: complete')
+            readline.parse_and_bind(r'"\t": complete')
 
         try:
             readline.read_init_file()
