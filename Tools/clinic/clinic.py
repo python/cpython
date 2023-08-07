@@ -222,39 +222,20 @@ def c_repr(s: str) -> str:
 
 
 def wrapped_c_string_literal(
-        line: str,
+        text: str,
+        *,
         width: int = 72,
-        indent: int = 0,
         suffix: str = '',
+        initial_indent: int = 0,
         subsequent_indent: int = 4
 ) -> str:
-    add, out = text_accumulator()
-    words = line.split(' ')
-    first = True
-    while True:
-        if first:
-            add(' ' * indent)
-            first = False
-        else:
-            add(' ' * subsequent_indent)
-        add('"')
-        sz = indent + 1
-        while True:
-            try:
-                word = words[0]
-            except IndexError:
-                add('"')
-                return out()
-            sz += len(word) + 1
-            if sz > width:
-                break
-            add(word)
-            del words[0]
-            if words:
-                add(' ')
-        add('"')
-        add(suffix)
-        add('\n')
+    wrapped = textwrap.wrap(text, replace_whitespace=False,
+                            drop_whitespace=False, break_on_hyphens=False)
+    suffix = f"{suffix}\n"
+    lines = [f'"{line}"{suffix}' for line in wrapped]
+    separator = subsequent_indent * ' '
+    joined = initial_indent * ' ' + separator.join(lines)
+    return joined.removesuffix(suffix)
 
 
 is_legal_c_identifier = re.compile('^[A-Za-z_][A-Za-z0-9_]*$').match
