@@ -5520,6 +5520,7 @@ test_deprecate_positional_pos1_len1_optional(PyObject *module, PyObject *const *
     PyObject *a;
     PyObject *b = Py_None;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'b' in the clinic input of" \
@@ -5538,6 +5539,7 @@ test_deprecate_positional_pos1_len1_optional(PyObject *module, PyObject *const *
             "keyword-only."
     #  endif
     #endif
+
     if (nargs == 2) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing 2 positional arguments to "
@@ -5548,6 +5550,7 @@ test_deprecate_positional_pos1_len1_optional(PyObject *module, PyObject *const *
                 goto exit;
         }
     }
+
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
     if (!args) {
         goto exit;
@@ -5567,7 +5570,7 @@ exit:
 static PyObject *
 test_deprecate_positional_pos1_len1_optional_impl(PyObject *module,
                                                   PyObject *a, PyObject *b)
-/*[clinic end generated code: output=09a6edec1ddcd469 input=89099f3dacd757da]*/
+/*[clinic end generated code: output=43b380a976ba40fb input=89099f3dacd757da]*/
 
 
 /*[clinic input]
@@ -5622,6 +5625,7 @@ test_deprecate_positional_pos1_len1(PyObject *module, PyObject *const *args, Py_
     PyObject *a;
     PyObject *b;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'b' in the clinic input of" \
@@ -5637,15 +5641,17 @@ test_deprecate_positional_pos1_len1(PyObject *module, PyObject *const *args, Py_
             " 'test_deprecate_positional_pos1_len1' to be keyword-only."
     #  endif
     #endif
+
     if (nargs == 2) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing 2 positional arguments to "
-                "test_deprecate_positional_pos1_len1() is deprecated. Parameter "
-                "'b' will become a keyword-only parameter in Python 3.14.", 1))
+                "test_deprecate_positional_pos1_len1() is deprecated. Parameter"
+                " 'b' will become a keyword-only parameter in Python 3.14.", 1))
         {
                 goto exit;
         }
     }
+
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
     if (!args) {
         goto exit;
@@ -5661,7 +5667,7 @@ exit:
 static PyObject *
 test_deprecate_positional_pos1_len1_impl(PyObject *module, PyObject *a,
                                          PyObject *b)
-/*[clinic end generated code: output=52a2618293df747d input=1702bbab1e9b3b99]*/
+/*[clinic end generated code: output=e50bde8381ea717f input=1702bbab1e9b3b99]*/
 
 
 /*[clinic input]
@@ -5722,6 +5728,7 @@ test_deprecate_positional_pos1_len2_with_kwd(PyObject *module, PyObject *const *
     PyObject *c;
     PyObject *d;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'b' and 'c' in the clinic " \
@@ -5740,6 +5747,7 @@ test_deprecate_positional_pos1_len2_with_kwd(PyObject *module, PyObject *const *
             "keyword-only."
     #  endif
     #endif
+
     if (nargs > 1 && nargs <= 3) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing more than 1 positional argument to "
@@ -5750,6 +5758,7 @@ test_deprecate_positional_pos1_len2_with_kwd(PyObject *module, PyObject *const *
                 goto exit;
         }
     }
+
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 1, argsbuf);
     if (!args) {
         goto exit;
@@ -5768,7 +5777,7 @@ static PyObject *
 test_deprecate_positional_pos1_len2_with_kwd_impl(PyObject *module,
                                                   PyObject *a, PyObject *b,
                                                   PyObject *c, PyObject *d)
-/*[clinic end generated code: output=550aabea548589b4 input=28cdb885f6c34eab]*/
+/*[clinic end generated code: output=bd0197ebd9af32b8 input=28cdb885f6c34eab]*/
 
 
 /*[clinic input]
@@ -5820,6 +5829,7 @@ test_deprecate_positional_pos0_len1(PyObject *module, PyObject *const *args, Py_
     PyObject *argsbuf[1];
     PyObject *a;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
@@ -5835,15 +5845,17 @@ test_deprecate_positional_pos0_len1(PyObject *module, PyObject *const *args, Py_
             " 'test_deprecate_positional_pos0_len1' to be keyword-only."
     #  endif
     #endif
+
     if (nargs == 1) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing positional arguments to "
-                "test_deprecate_positional_pos0_len1() is deprecated. Parameter "
-                "'a' will become a keyword-only parameter in Python 3.14.", 1))
+                "test_deprecate_positional_pos0_len1() is deprecated. Parameter"
+                " 'a' will become a keyword-only parameter in Python 3.14.", 1))
         {
                 goto exit;
         }
     }
+
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
@@ -5857,7 +5869,7 @@ exit:
 
 static PyObject *
 test_deprecate_positional_pos0_len1_impl(PyObject *module, PyObject *a)
-/*[clinic end generated code: output=66c63ec8d6903bde input=678206db25c0652c]*/
+/*[clinic end generated code: output=da418d2921f7a113 input=678206db25c0652c]*/
 
 
 /*[clinic input]
@@ -5912,6 +5924,7 @@ test_deprecate_positional_pos0_len2(PyObject *module, PyObject *const *args, Py_
     PyObject *a;
     PyObject *b;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'a' and 'b' in the clinic " \
@@ -5930,15 +5943,18 @@ test_deprecate_positional_pos0_len2(PyObject *module, PyObject *const *args, Py_
             "keyword-only."
     #  endif
     #endif
+
     if (nargs > 0 && nargs <= 2) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing positional arguments to "
-                "test_deprecate_positional_pos0_len2() is deprecated. Parameters "
-                "'a' and 'b' will become keyword-only parameters in Python 3.14.", 1))
+                "test_deprecate_positional_pos0_len2() is deprecated. "
+                "Parameters 'a' and 'b' will become keyword-only parameters in "
+                "Python 3.14.", 1))
         {
                 goto exit;
         }
     }
+
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
     if (!args) {
         goto exit;
@@ -5954,7 +5970,7 @@ exit:
 static PyObject *
 test_deprecate_positional_pos0_len2_impl(PyObject *module, PyObject *a,
                                          PyObject *b)
-/*[clinic end generated code: output=6b6df40aaf751b2e input=fae0d0b1d480c939]*/
+/*[clinic end generated code: output=e0a2c3423edd800f input=fae0d0b1d480c939]*/
 
 
 /*[clinic input]
@@ -6018,6 +6034,7 @@ test_deprecate_positional_pos0_len3_with_kwdonly(PyObject *module, PyObject *con
     PyObject *c;
     PyObject *e;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'a', 'b' and 'c' in the " \
@@ -6039,16 +6056,18 @@ test_deprecate_positional_pos0_len3_with_kwdonly(PyObject *module, PyObject *con
             "keyword-only."
     #  endif
     #endif
+
     if (nargs > 0 && nargs <= 3) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing positional arguments to "
                 "test_deprecate_positional_pos0_len3_with_kwdonly() is "
-                "deprecated. Parameters 'a', 'b' and 'c' will become keyword-only"
-                " parameters in Python 3.14.", 1))
+                "deprecated. Parameters 'a', 'b' and 'c' will become "
+                "keyword-only parameters in Python 3.14.", 1))
         {
                 goto exit;
         }
     }
+
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 1, argsbuf);
     if (!args) {
         goto exit;
@@ -6069,7 +6088,7 @@ test_deprecate_positional_pos0_len3_with_kwdonly_impl(PyObject *module,
                                                       PyObject *b,
                                                       PyObject *c,
                                                       PyObject *e)
-/*[clinic end generated code: output=5c936993846d01a3 input=1b0121770c0c52e0]*/
+/*[clinic end generated code: output=db1ce4dccd8c8db9 input=1b0121770c0c52e0]*/
 
 
 /*[clinic input]
@@ -6126,6 +6145,7 @@ test_deprecate_positional_pos2_len1(PyObject *module, PyObject *const *args, Py_
     PyObject *b;
     PyObject *c;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'c' in the clinic input of" \
@@ -6141,15 +6161,17 @@ test_deprecate_positional_pos2_len1(PyObject *module, PyObject *const *args, Py_
             " 'test_deprecate_positional_pos2_len1' to be keyword-only."
     #  endif
     #endif
+
     if (nargs == 3) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing 3 positional arguments to "
-                "test_deprecate_positional_pos2_len1() is deprecated. Parameter "
-                "'c' will become a keyword-only parameter in Python 3.14.", 1))
+                "test_deprecate_positional_pos2_len1() is deprecated. Parameter"
+                " 'c' will become a keyword-only parameter in Python 3.14.", 1))
         {
                 goto exit;
         }
     }
+
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
     if (!args) {
         goto exit;
@@ -6166,7 +6188,7 @@ exit:
 static PyObject *
 test_deprecate_positional_pos2_len1_impl(PyObject *module, PyObject *a,
                                          PyObject *b, PyObject *c)
-/*[clinic end generated code: output=2641e037296e3b61 input=e1d129689e69ec7c]*/
+/*[clinic end generated code: output=9e3c116878abd5bf input=e1d129689e69ec7c]*/
 
 
 /*[clinic input]
@@ -6226,6 +6248,7 @@ test_deprecate_positional_pos2_len2(PyObject *module, PyObject *const *args, Py_
     PyObject *c;
     PyObject *d;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'c' and 'd' in the clinic " \
@@ -6244,15 +6267,18 @@ test_deprecate_positional_pos2_len2(PyObject *module, PyObject *const *args, Py_
             "keyword-only."
     #  endif
     #endif
+
     if (nargs > 2 && nargs <= 4) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing more than 2 positional arguments to "
-                "test_deprecate_positional_pos2_len2() is deprecated. Parameters "
-                "'c' and 'd' will become keyword-only parameters in Python 3.14.", 1))
+                "test_deprecate_positional_pos2_len2() is deprecated. "
+                "Parameters 'c' and 'd' will become keyword-only parameters in "
+                "Python 3.14.", 1))
         {
                 goto exit;
         }
     }
+
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 4, 4, 0, argsbuf);
     if (!args) {
         goto exit;
@@ -6271,7 +6297,7 @@ static PyObject *
 test_deprecate_positional_pos2_len2_impl(PyObject *module, PyObject *a,
                                          PyObject *b, PyObject *c,
                                          PyObject *d)
-/*[clinic end generated code: output=4a9068ef8fee61f6 input=0d53533463a12792]*/
+/*[clinic end generated code: output=628616560b97da6c input=0d53533463a12792]*/
 
 
 /*[clinic input]
@@ -6338,6 +6364,7 @@ test_deprecate_positional_pos2_len3_with_kwdonly(PyObject *module, PyObject *con
     PyObject *d;
     PyObject *e;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'c' and 'd' in the clinic " \
@@ -6356,6 +6383,7 @@ test_deprecate_positional_pos2_len3_with_kwdonly(PyObject *module, PyObject *con
             "be keyword-only."
     #  endif
     #endif
+
     if (nargs > 2 && nargs <= 4) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing more than 2 positional arguments to "
@@ -6366,6 +6394,7 @@ test_deprecate_positional_pos2_len3_with_kwdonly(PyObject *module, PyObject *con
                 goto exit;
         }
     }
+
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 4, 4, 1, argsbuf);
     if (!args) {
         goto exit;
@@ -6388,4 +6417,422 @@ test_deprecate_positional_pos2_len3_with_kwdonly_impl(PyObject *module,
                                                       PyObject *c,
                                                       PyObject *d,
                                                       PyObject *e)
-/*[clinic end generated code: output=1154c2e3e798948c input=154fd450448d8935]*/
+/*[clinic end generated code: output=0c179f87e07f6664 input=154fd450448d8935]*/
+
+
+/*[clinic input]
+test_deprecate_positional_multiple_1
+    a: object
+    * [from 3.14]
+    b: object
+    c: object
+    * [from 3.15]
+    d: object
+    * [from 3.16]
+    e: object
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_deprecate_positional_multiple_1__doc__,
+"test_deprecate_positional_multiple_1($module, /, a, b, c, d, e)\n"
+"--\n"
+"\n");
+
+#define TEST_DEPRECATE_POSITIONAL_MULTIPLE_1_METHODDEF    \
+    {"test_deprecate_positional_multiple_1", _PyCFunction_CAST(test_deprecate_positional_multiple_1), METH_FASTCALL|METH_KEYWORDS, test_deprecate_positional_multiple_1__doc__},
+
+static PyObject *
+test_deprecate_positional_multiple_1_impl(PyObject *module, PyObject *a,
+                                          PyObject *b, PyObject *c,
+                                          PyObject *d, PyObject *e);
+
+static PyObject *
+test_deprecate_positional_multiple_1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 5
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), &_Py_ID(e), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", "b", "c", "d", "e", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "test_deprecate_positional_multiple_1",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[5];
+    PyObject *a;
+    PyObject *b;
+    PyObject *c;
+    PyObject *d;
+    PyObject *e;
+
+    // Emit compiler warnings when we get to Python 3.16.
+    #if PY_VERSION_HEX >= 0x031000C0
+    #  error \
+            "In clinic.test.c, update parameter(s) 'e' in the clinic input of" \
+            " 'test_deprecate_positional_multiple_1' to be keyword-only."
+    #elif PY_VERSION_HEX >= 0x031000A0
+    #  ifdef _MSC_VER
+    #    pragma message ( \
+            "In clinic.test.c, update parameter(s) 'e' in the clinic input of" \
+            " 'test_deprecate_positional_multiple_1' to be keyword-only.")
+    #  else
+    #    warning \
+            "In clinic.test.c, update parameter(s) 'e' in the clinic input of" \
+            " 'test_deprecate_positional_multiple_1' to be keyword-only."
+    #  endif
+    #endif
+
+    // Emit compiler warnings when we get to Python 3.15.
+    #if PY_VERSION_HEX >= 0x030f00C0
+    #  error \
+            "In clinic.test.c, update parameter(s) 'd' in the clinic input of" \
+            " 'test_deprecate_positional_multiple_1' to be keyword-only."
+    #elif PY_VERSION_HEX >= 0x030f00A0
+    #  ifdef _MSC_VER
+    #    pragma message ( \
+            "In clinic.test.c, update parameter(s) 'd' in the clinic input of" \
+            " 'test_deprecate_positional_multiple_1' to be keyword-only.")
+    #  else
+    #    warning \
+            "In clinic.test.c, update parameter(s) 'd' in the clinic input of" \
+            " 'test_deprecate_positional_multiple_1' to be keyword-only."
+    #  endif
+    #endif
+
+    // Emit compiler warnings when we get to Python 3.14.
+    #if PY_VERSION_HEX >= 0x030e00C0
+    #  error \
+            "In clinic.test.c, update parameter(s) 'b' and 'c' in the clinic " \
+            "input of 'test_deprecate_positional_multiple_1' to be " \
+            "keyword-only."
+    #elif PY_VERSION_HEX >= 0x030e00A0
+    #  ifdef _MSC_VER
+    #    pragma message ( \
+            "In clinic.test.c, update parameter(s) 'b' and 'c' in the clinic " \
+            "input of 'test_deprecate_positional_multiple_1' to be " \
+            "keyword-only.")
+    #  else
+    #    warning \
+            "In clinic.test.c, update parameter(s) 'b' and 'c' in the clinic " \
+            "input of 'test_deprecate_positional_multiple_1' to be " \
+            "keyword-only."
+    #  endif
+    #endif
+
+    if (nargs > 1 && nargs <= 5) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing more than 1 positional argument to "
+                "test_deprecate_positional_multiple_1() is deprecated. "
+                "Parameters 'b' and 'c' will become keyword-only parameters in "
+                "Python 3.14. Parameter 'd' will become a keyword-only "
+                "parameter in Python 3.15. Parameter 'e' will become a "
+                "keyword-only parameter in Python 3.16.", 1))
+        {
+                goto exit;
+        }
+    }
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 5, 5, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    a = args[0];
+    b = args[1];
+    c = args[2];
+    d = args[3];
+    e = args[4];
+    return_value = test_deprecate_positional_multiple_1_impl(module, a, b, c, d, e);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_deprecate_positional_multiple_1_impl(PyObject *module, PyObject *a,
+                                          PyObject *b, PyObject *c,
+                                          PyObject *d, PyObject *e)
+/*[clinic end generated code: output=28dd7843f99a8d69 input=440c2f88701ea4c1]*/
+
+
+/*[clinic input]
+test_deprecate_positional_multiple_2
+    a: object
+    b: object
+    * [from 3.14]
+    c: object
+    * [from 3.15]
+    d: object
+    e: object
+    *
+    f: object
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_deprecate_positional_multiple_2__doc__,
+"test_deprecate_positional_multiple_2($module, /, a, b, c, d, e, *, f)\n"
+"--\n"
+"\n");
+
+#define TEST_DEPRECATE_POSITIONAL_MULTIPLE_2_METHODDEF    \
+    {"test_deprecate_positional_multiple_2", _PyCFunction_CAST(test_deprecate_positional_multiple_2), METH_FASTCALL|METH_KEYWORDS, test_deprecate_positional_multiple_2__doc__},
+
+static PyObject *
+test_deprecate_positional_multiple_2_impl(PyObject *module, PyObject *a,
+                                          PyObject *b, PyObject *c,
+                                          PyObject *d, PyObject *e,
+                                          PyObject *f);
+
+static PyObject *
+test_deprecate_positional_multiple_2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 6
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), &_Py_ID(e), &_Py_ID(f), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", "b", "c", "d", "e", "f", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "test_deprecate_positional_multiple_2",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[6];
+    PyObject *a;
+    PyObject *b;
+    PyObject *c;
+    PyObject *d;
+    PyObject *e;
+    PyObject *f;
+
+    // Emit compiler warnings when we get to Python 3.15.
+    #if PY_VERSION_HEX >= 0x030f00C0
+    #  error \
+            "In clinic.test.c, update parameter(s) 'd' and 'e' in the clinic " \
+            "input of 'test_deprecate_positional_multiple_2' to be " \
+            "keyword-only."
+    #elif PY_VERSION_HEX >= 0x030f00A0
+    #  ifdef _MSC_VER
+    #    pragma message ( \
+            "In clinic.test.c, update parameter(s) 'd' and 'e' in the clinic " \
+            "input of 'test_deprecate_positional_multiple_2' to be " \
+            "keyword-only.")
+    #  else
+    #    warning \
+            "In clinic.test.c, update parameter(s) 'd' and 'e' in the clinic " \
+            "input of 'test_deprecate_positional_multiple_2' to be " \
+            "keyword-only."
+    #  endif
+    #endif
+
+    // Emit compiler warnings when we get to Python 3.14.
+    #if PY_VERSION_HEX >= 0x030e00C0
+    #  error \
+            "In clinic.test.c, update parameter(s) 'c' in the clinic input of" \
+            " 'test_deprecate_positional_multiple_2' to be keyword-only."
+    #elif PY_VERSION_HEX >= 0x030e00A0
+    #  ifdef _MSC_VER
+    #    pragma message ( \
+            "In clinic.test.c, update parameter(s) 'c' in the clinic input of" \
+            " 'test_deprecate_positional_multiple_2' to be keyword-only.")
+    #  else
+    #    warning \
+            "In clinic.test.c, update parameter(s) 'c' in the clinic input of" \
+            " 'test_deprecate_positional_multiple_2' to be keyword-only."
+    #  endif
+    #endif
+
+    if (nargs > 2 && nargs <= 5) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing more than 2 positional arguments to "
+                "test_deprecate_positional_multiple_2() is deprecated. "
+                "Parameter 'c' will become a keyword-only parameter in Python "
+                "3.14. Parameters 'd' and 'e' will become keyword-only "
+                "parameters in Python 3.15.", 1))
+        {
+                goto exit;
+        }
+    }
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 5, 5, 1, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    a = args[0];
+    b = args[1];
+    c = args[2];
+    d = args[3];
+    e = args[4];
+    f = args[5];
+    return_value = test_deprecate_positional_multiple_2_impl(module, a, b, c, d, e, f);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_deprecate_positional_multiple_2_impl(PyObject *module, PyObject *a,
+                                          PyObject *b, PyObject *c,
+                                          PyObject *d, PyObject *e,
+                                          PyObject *f)
+/*[clinic end generated code: output=655eb68fad97479c input=3d4ed8c65d3e1eb8]*/
+
+
+/*[clinic input]
+test_deprecate_positional_multiple_3
+    * [from 3.14]
+    a: object
+    b: object
+    * [from 3.15]
+    c: object
+    d: object
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_deprecate_positional_multiple_3__doc__,
+"test_deprecate_positional_multiple_3($module, /, a, b, c, d)\n"
+"--\n"
+"\n");
+
+#define TEST_DEPRECATE_POSITIONAL_MULTIPLE_3_METHODDEF    \
+    {"test_deprecate_positional_multiple_3", _PyCFunction_CAST(test_deprecate_positional_multiple_3), METH_FASTCALL|METH_KEYWORDS, test_deprecate_positional_multiple_3__doc__},
+
+static PyObject *
+test_deprecate_positional_multiple_3_impl(PyObject *module, PyObject *a,
+                                          PyObject *b, PyObject *c,
+                                          PyObject *d);
+
+static PyObject *
+test_deprecate_positional_multiple_3(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", "b", "c", "d", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "test_deprecate_positional_multiple_3",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[4];
+    PyObject *a;
+    PyObject *b;
+    PyObject *c;
+    PyObject *d;
+
+    // Emit compiler warnings when we get to Python 3.15.
+    #if PY_VERSION_HEX >= 0x030f00C0
+    #  error \
+            "In clinic.test.c, update parameter(s) 'c' and 'd' in the clinic " \
+            "input of 'test_deprecate_positional_multiple_3' to be " \
+            "keyword-only."
+    #elif PY_VERSION_HEX >= 0x030f00A0
+    #  ifdef _MSC_VER
+    #    pragma message ( \
+            "In clinic.test.c, update parameter(s) 'c' and 'd' in the clinic " \
+            "input of 'test_deprecate_positional_multiple_3' to be " \
+            "keyword-only.")
+    #  else
+    #    warning \
+            "In clinic.test.c, update parameter(s) 'c' and 'd' in the clinic " \
+            "input of 'test_deprecate_positional_multiple_3' to be " \
+            "keyword-only."
+    #  endif
+    #endif
+
+    // Emit compiler warnings when we get to Python 3.14.
+    #if PY_VERSION_HEX >= 0x030e00C0
+    #  error \
+            "In clinic.test.c, update parameter(s) 'a' and 'b' in the clinic " \
+            "input of 'test_deprecate_positional_multiple_3' to be " \
+            "keyword-only."
+    #elif PY_VERSION_HEX >= 0x030e00A0
+    #  ifdef _MSC_VER
+    #    pragma message ( \
+            "In clinic.test.c, update parameter(s) 'a' and 'b' in the clinic " \
+            "input of 'test_deprecate_positional_multiple_3' to be " \
+            "keyword-only.")
+    #  else
+    #    warning \
+            "In clinic.test.c, update parameter(s) 'a' and 'b' in the clinic " \
+            "input of 'test_deprecate_positional_multiple_3' to be " \
+            "keyword-only."
+    #  endif
+    #endif
+
+    if (nargs > 0 && nargs <= 4) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing positional arguments to "
+                "test_deprecate_positional_multiple_3() is deprecated. "
+                "Parameters 'a' and 'b' will become keyword-only parameters in "
+                "Python 3.14. Parameters 'c' and 'd' will become keyword-only "
+                "parameters in Python 3.15.", 1))
+        {
+                goto exit;
+        }
+    }
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 4, 4, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    a = args[0];
+    b = args[1];
+    c = args[2];
+    d = args[3];
+    return_value = test_deprecate_positional_multiple_3_impl(module, a, b, c, d);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_deprecate_positional_multiple_3_impl(PyObject *module, PyObject *a,
+                                          PyObject *b, PyObject *c,
+                                          PyObject *d)
+/*[clinic end generated code: output=ce5d1b049d7b251c input=9683b00748da8983]*/

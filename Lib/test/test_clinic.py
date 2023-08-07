@@ -1421,7 +1421,7 @@ class ClinicParserTest(TestCase):
             "module foo\nfoo.bar\n  this: int\n  * [from 3.14]",
             "module foo\nfoo.bar\n  this: int\n  * [from 3.14]\nDocstring.",
         )
-        err = "Function 'foo.bar' specifies '* [from 3.14]' without any parameters afterwards."
+        err = "Function 'foo.bar' specifies '* [from ...]' without any parameters afterwards."
         for block in dataset:
             with self.subTest(block=block):
                 self.expect_failure(block, err)
@@ -1468,20 +1468,6 @@ class ClinicParserTest(TestCase):
         )
         self.expect_failure(block, err, lineno=3)
 
-    def test_parameters_required_after_depr_star(self):
-        block = """
-            module foo
-            foo.bar
-                this: int
-                * [from 3.14]
-            Docstring.
-        """
-        err = (
-            "Function 'foo.bar' specifies '* [from ...]' without "
-            "any parameters afterwards"
-        )
-        self.expect_failure(block, err, lineno=4)
-
     def test_depr_star_must_come_before_star(self):
         block = """
             module foo
@@ -1491,7 +1477,7 @@ class ClinicParserTest(TestCase):
                 * [from 3.14]
             Docstring.
         """
-        err = "Function 'foo.bar': '* [from ...]' must come before '*'"
+        err = "Function 'foo.bar': '* [from 3.14]' must come before '*'"
         self.expect_failure(block, err, lineno=4)
 
     def test_depr_star_duplicate(self):
@@ -1505,8 +1491,57 @@ class ClinicParserTest(TestCase):
                 c: int
             Docstring.
         """
-        err = "Function 'foo.bar' uses '[from ...]' more than once"
+        err = "Function 'foo.bar' uses '[from 3.14]' more than once"
         self.expect_failure(block, err, lineno=5)
+
+    def test_depr_star_multiple_order(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                * [from 3.14]
+                b: int
+                * [from 3.13]
+                c: int
+            Docstring.
+        """
+        err = (
+            "Function 'foo.bar': '[from 3.13]' must specify "
+            "a newer version than 3.14"
+        )
+        self.expect_failure(block, err, lineno=5)
+
+    def test_depr_star_multiple_duplicate_1(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                * [from 3.13]
+                b: int
+                * [from 3.14]
+                c: int
+                * [from 3.14]
+                d: int
+            Docstring.
+        """
+        err = "Function 'foo.bar' uses '[from 3.14]' more than once"
+        self.expect_failure(block, err, lineno=7)
+
+    def test_depr_star_multiple_duplicate_2(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                * [from 3.13]
+                b: int
+                * [from 3.14]
+                c: int
+                * [from 3.13]
+                d: int
+            Docstring.
+        """
+        err = "Function 'foo.bar' uses '[from 3.13]' more than once"
+        self.expect_failure(block, err, lineno=7)
 
     def test_single_slash(self):
         block = """
