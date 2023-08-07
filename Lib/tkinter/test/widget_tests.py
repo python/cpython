@@ -2,7 +2,7 @@
 
 import unittest
 import tkinter
-from tkinter.test.support import (AbstractTkTest, tcl_version,
+from tkinter.test.support import (AbstractTkTest, tk_version,
                                   pixels_conv, tcl_obj_eq)
 import test.support
 
@@ -23,7 +23,7 @@ class AbstractWidgetTest(AbstractTkTest):
             return self._scaling
 
     def _str(self, value):
-        if not self._stringify and self.wantobjects and tcl_version >= (8, 6):
+        if not self._stringify and self.wantobjects and tk_version >= (8, 6):
             return value
         if isinstance(value, tuple):
             return ' '.join(map(self._str, value))
@@ -157,7 +157,7 @@ class AbstractWidgetTest(AbstractTkTest):
                          'flat', 'groove', 'raised', 'ridge', 'solid', 'sunken')
         errmsg='bad relief "spam": must be '\
                'flat, groove, raised, ridge, solid, or sunken'
-        if tcl_version < (8, 6):
+        if tk_version < (8, 6):
             errmsg = None
         self.checkInvalidParam(widget, name, 'spam',
                 errmsg=errmsg)
