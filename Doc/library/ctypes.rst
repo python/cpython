@@ -41,7 +41,7 @@ You load libraries by accessing them as attributes of these objects. *cdll*
 loads libraries which export functions using the standard ``cdecl`` calling
 convention, while *windll* libraries call functions using the ``stdcall``
 calling convention. *oledll* also uses the ``stdcall`` calling convention, and
-assumes the functions return a Windows :c:type:`HRESULT` error code. The error
+assumes the functions return a Windows :c:type:`!HRESULT` error code. The error
 code is used to automatically raise an :class:`OSError` exception when the
 function call fails.
 
@@ -477,7 +477,7 @@ Return types
 
 
 By default functions are assumed to return the C :c:expr:`int` type.  Other
-return types can be specified by setting the :attr:`restype` attribute of the
+return types can be specified by setting the :attr:`~_FuncPtr.restype` attribute of the
 function object.
 
 The C prototype of :c:func:`time` is ``time_t time(time_t *)``. Because :c:type:`time_t`
@@ -495,7 +495,7 @@ To call the function with a ``NULL`` pointer as first argument, use ``None``::
    >>> print(libc.time(None))  # doctest: +SKIP
    1150640792
 
-Here is a more advanced example, it uses the :func:`strchr` function, which expects
+Here is a more advanced example, it uses the :func:`!strchr` function, which expects
 a string pointer and a char, and returns a pointer to a string::
 
    >>> strchr = libc.strchr
@@ -528,7 +528,7 @@ single character Python bytes object into a C char:
    >>>
 
 You can also use a callable Python object (a function or a class for example) as
-the :attr:`restype` attribute, if the foreign function returns an integer.  The
+the :attr:`~_FuncPtr.restype` attribute, if the foreign function returns an integer.  The
 callable will be called with the *integer* the C function returns, and the
 result of this call will be used as the result of your function call. This is
 useful to check for error return values and automatically raise an exception::
@@ -556,7 +556,8 @@ get the string representation of an error code, and *returns* an exception.
 :func:`GetLastError` to retrieve it.
 
 Please note that a much more powerful error checking mechanism is available
-through the :attr:`errcheck` attribute; see the reference manual for details.
+through the :attr:`~_FuncPtr.errcheck` attribute;
+see the reference manual for details.
 
 
 .. _ctypes-passing-pointers:
@@ -594,7 +595,7 @@ Structures and unions
 
 Structures and unions must derive from the :class:`Structure` and :class:`Union`
 base classes which are defined in the :mod:`ctypes` module. Each subclass must
-define a :attr:`_fields_` attribute.  :attr:`_fields_` must be a list of
+define a :attr:`~Structure._fields_` attribute.  :attr:`!_fields_` must be a list of
 *2-tuples*, containing a *field name* and a *field type*.
 
 The field type must be a :mod:`ctypes` type like :class:`c_int`, or any other
@@ -666,9 +667,9 @@ Structure/union alignment and byte order
 
 By default, Structure and Union fields are aligned in the same way the C
 compiler does it. It is possible to override this behavior by specifying a
-:attr:`_pack_` class attribute in the subclass definition. This must be set to a
-positive integer and specifies the maximum alignment for the fields. This is
-what ``#pragma pack(n)`` also does in MSVC.
+:attr:`~Structure._pack_` class attribute in the subclass definition.
+This must be set to a positive integer and specifies the maximum alignment for the fields.
+This is what ``#pragma pack(n)`` also does in MSVC.
 
 :mod:`ctypes` uses the native byte order for Structures and Unions.  To build
 structures with non-native byte order, you can use one of the
@@ -684,7 +685,7 @@ Bit fields in structures and unions
 
 It is possible to create structures and unions containing bit fields. Bit fields
 are only possible for integer fields, the bit width is specified as the third
-item in the :attr:`_fields_` tuples::
+item in the :attr:`~Structure._fields_` tuples::
 
    >>> class Int(Structure):
    ...     _fields_ = [("first_16", c_int, 16),
@@ -952,8 +953,8 @@ work::
    >>>
 
 because the new ``class cell`` is not available in the class statement itself.
-In :mod:`ctypes`, we can define the ``cell`` class and set the :attr:`_fields_`
-attribute later, after the class statement::
+In :mod:`ctypes`, we can define the ``cell`` class and set the
+:attr:`~Structure._fields_` attribute later, after the class statement::
 
    >>> from ctypes import *
    >>> class cell(Structure):
@@ -1847,7 +1848,7 @@ value if there is a single one, or a tuple containing the output parameter
 values when there are more than one, so the GetWindowRect function now returns a
 RECT instance, when called.
 
-Output parameters can be combined with the :attr:`errcheck` protocol to do
+Output parameters can be combined with the :attr:`~_FuncPtr.errcheck` protocol to do
 further output processing and error checking.  The win32 ``GetWindowRect`` api
 function returns a ``BOOL`` to signal success or failure, so this function could
 do the error checking, and raises an exception when the api call failed::
@@ -1860,7 +1861,7 @@ do the error checking, and raises an exception when the api call failed::
    >>> GetWindowRect.errcheck = errcheck
    >>>
 
-If the :attr:`errcheck` function returns the argument tuple it receives
+If the :attr:`~_FuncPtr.errcheck` function returns the argument tuple it receives
 unchanged, :mod:`ctypes` continues the normal processing it does on the output
 parameters.  If you want to return a tuple of window coordinates instead of a
 ``RECT`` instance, you can retrieve the fields in the function and return them
@@ -2225,13 +2226,13 @@ Fundamental data types
 Fundamental data types, when returned as foreign function call results, or, for
 example, by retrieving structure field members or array items, are transparently
 converted to native Python types.  In other words, if a foreign function has a
-:attr:`restype` of :class:`c_char_p`, you will always receive a Python bytes
+:attr:`~_FuncPtr.restype` of :class:`c_char_p`, you will always receive a Python bytes
 object, *not* a :class:`c_char_p` instance.
 
 .. XXX above is false, it actually returns a Unicode string
 
 Subclasses of fundamental data types do *not* inherit this behavior. So, if a
-foreign functions :attr:`restype` is a subclass of :class:`c_void_p`, you will
+foreign functions :attr:`!restype` is a subclass of :class:`c_void_p`, you will
 receive an instance of this subclass from the function call. Of course, you can
 get the value of the pointer by accessing the ``value`` attribute.
 

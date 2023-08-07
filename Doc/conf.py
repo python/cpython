@@ -94,6 +94,7 @@ nitpick_ignore = [
     ('c:func', 'sprintf'),
     ('c:func', 'stat'),
     ('c:func', 'system'),
+    ('c:func', 'time'),
     ('c:func', 'vsnprintf'),
     # Standard C types
     ('c:type', 'FILE'),
