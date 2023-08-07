@@ -26,6 +26,7 @@
 
 int _PyTestCapi_Init_Vectorcall(PyObject *module);
 int _PyTestCapi_Init_Heaptype(PyObject *module);
+int _PyTestCapi_Init_Abstract(PyObject *module);
 int _PyTestCapi_Init_Unicode(PyObject *module);
 int _PyTestCapi_Init_GetArgs(PyObject *module);
 int _PyTestCapi_Init_DateTime(PyObject *module);
@@ -34,6 +35,7 @@ int _PyTestCapi_Init_Mem(PyObject *module);
 int _PyTestCapi_Init_Watchers(PyObject *module);
 int _PyTestCapi_Init_Long(PyObject *module);
 int _PyTestCapi_Init_Float(PyObject *module);
+int _PyTestCapi_Init_Dict(PyObject *module);
 int _PyTestCapi_Init_Structmember(PyObject *module);
 int _PyTestCapi_Init_Exceptions(PyObject *module);
 int _PyTestCapi_Init_Code(PyObject *module);
