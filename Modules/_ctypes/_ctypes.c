@@ -4819,9 +4819,9 @@ PyTypeObject PyCArray_Type = {
     PyDoc_STRVAR(array_doc,
     "Abstract base class for arrays.\n"
     "\n"
-    "The recommended way to create \n
-    concrete array types is by multiplying \n
-    any ctypes data type with a non-negative \n
+    "The recommended way to create \n"
+    "concrete array types is by multiplying \n"
+    "any ctypes data type with a non-negative \n"
     integer.\n"),                                /* tp_doc */
     (traverseproc)PyCData_traverse,             /* tp_traverse */
     (inquiry)PyCData_clear,                     /* tp_clear */
