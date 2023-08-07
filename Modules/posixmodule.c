@@ -36,7 +36,7 @@
 #  endif /* MS_WINDOWS_DESKTOP | MS_WINDOWS_SYSTEM */
 #endif
 
-#include "structmember.h"         // PyMemberDef
+
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"
 #else
@@ -285,7 +285,7 @@ corresponding Unix manual entries for more information on calls.");
 #  undef HAVE_SCHED_SETAFFINITY
 #endif
 
-#if defined(HAVE_SYS_XATTR_H) && defined(__linux__) && !defined(__FreeBSD_kernel__) && !defined(__GNU__)
+#if defined(HAVE_SYS_XATTR_H) && defined(HAVE_LINUX_LIMITS_H) && !defined(__FreeBSD_kernel__) && !defined(__GNU__)
 #  define USE_XATTRS
 #  include <linux/limits.h>  // Needed for XATTR_SIZE_MAX on musl libc.
 #endif
@@ -14822,9 +14822,9 @@ os_DirEntry___fspath___impl(DirEntry *self)
 }
 
 static PyMemberDef DirEntry_members[] = {
-    {"name", T_OBJECT_EX, offsetof(DirEntry, name), READONLY,
+    {"name", Py_T_OBJECT_EX, offsetof(DirEntry, name), Py_READONLY,
      "the entry's base filename, relative to scandir() \"path\" argument"},
-    {"path", T_OBJECT_EX, offsetof(DirEntry, path), READONLY,
+    {"path", Py_T_OBJECT_EX, offsetof(DirEntry, path), Py_READONLY,
      "the entry's full path name; equivalent to os.path.join(scandir_path, entry.name)"},
     {NULL}
 };

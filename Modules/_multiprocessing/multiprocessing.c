@@ -266,8 +266,7 @@ multiprocessing_exec(PyObject *module)
     ADD_FLAG(HAVE_BROKEN_SEM_UNLINK);
 #endif
 
-    if (PyModule_AddObject(module, "flags", flags) < 0) {
-        Py_DECREF(flags);
+    if (PyModule_Add(module, "flags", flags) < 0) {
         return -1;
     }
 

@@ -667,6 +667,10 @@ PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
                     errstr = "Some I/O error occurred";
                 }
             } else {
+                if (ERR_GET_LIB(e) == ERR_LIB_SSL &&
+                        ERR_GET_REASON(e) == SSL_R_CERTIFICATE_VERIFY_FAILED) {
+                    type = state->PySSLCertVerificationErrorObject;
+                }
                 p = PY_SSL_ERROR_SYSCALL;
             }
             break;
@@ -5986,7 +5990,7 @@ sslmodule_init_constants(PyObject *m)
 #define addbool(m, key, value) \
     do { \
         PyObject *bool_obj = (value) ? Py_True : Py_False; \
-        PyModule_AddObject((m), (key), Py_NewRef(bool_obj)); \
+        PyModule_AddObjectRef((m), (key), bool_obj); \
     } while (0)
 
     addbool(m, "HAS_SNI", 1);

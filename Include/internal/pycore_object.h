@@ -33,7 +33,7 @@ extern void _PyDebugAllocatorStats(FILE *out, const char *block_name,
 extern void _PyObject_DebugTypeStats(FILE *out);
 
 // Export for shared _testinternalcapi extension
-PyAPI_DATA(int) _PyObject_IsFreed(PyObject *);
+PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 
 /* We need to maintain an internal copy of Py{Var}Object_HEAD_INIT to avoid
    designated initializer conflicts in C++20. If we use the deinition in
@@ -156,8 +156,8 @@ _Py_DECREF_NO_DEALLOC(PyObject *op)
 #endif
 
 
-PyAPI_FUNC(int) _PyType_CheckConsistency(PyTypeObject *type);
-PyAPI_FUNC(int) _PyDict_CheckConsistency(PyObject *mp, int check_content);
+extern int _PyType_CheckConsistency(PyTypeObject *type);
+extern int _PyDict_CheckConsistency(PyObject *mp, int check_content);
 
 /* Update the Python traceback of an object. This function must be called
    when a memory block is reused from a free list.
@@ -292,8 +292,8 @@ extern void _PyDebug_PrintTotalRefs(void);
 
 #ifdef Py_TRACE_REFS
 extern void _Py_AddToAllObjects(PyObject *op, int force);
-extern void _Py_PrintReferences(FILE *);
-extern void _Py_PrintReferenceAddresses(FILE *);
+extern void _Py_PrintReferences(PyInterpreterState *, FILE *);
+extern void _Py_PrintReferenceAddresses(PyInterpreterState *, FILE *);
 #endif
 
 
@@ -434,7 +434,8 @@ extern PyObject ** _PyObject_ComputedDictPointer(PyObject *);
 extern void _PyObject_FreeInstanceAttributes(PyObject *obj);
 extern int _PyObject_IsInstanceDictEmpty(PyObject *);
 
-PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
+// Export for 'math' shared extension
+PyAPI_FUNC(PyObject*) _PyObject_LookupSpecial(PyObject *, PyObject *);
 
 extern int _PyObject_IsAbstract(PyObject *);
 
@@ -468,11 +469,14 @@ extern PyObject* _PyCFunctionWithKeywords_TrampolineCall(
     (meth)((self), (args), (kw))
 #endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
 
-// _pickle shared extension uses _PyNone_Type and _PyNotImplemented_Type
+// Export for '_pickle' shared extension
 PyAPI_DATA(PyTypeObject) _PyNone_Type;
+// Export for '_pickle' shared extension
 PyAPI_DATA(PyTypeObject) _PyNotImplemented_Type;
 
-/* Maps Py_LT to Py_GT, ..., Py_GE to Py_LE.  Defined in Objects/object.c. */
+// Maps Py_LT to Py_GT, ..., Py_GE to Py_LE.
+// Defined in Objects/object.c.
+// Export for the stable ABI.
 PyAPI_DATA(int) _Py_SwappedOp[];
 
 #ifdef __cplusplus
