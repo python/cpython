@@ -1900,6 +1900,8 @@ blocks embedded in Python files look slightly different.  They look like this:
     #/*[python checksum:...]*/
 
 
+.. _clinic-howto-deprecate-positional:
+
 How to deprecate passing parameters positionally
 ------------------------------------------------
 
