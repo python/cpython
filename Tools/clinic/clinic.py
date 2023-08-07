@@ -4710,7 +4710,7 @@ class DSLParser:
             fail("Called @coexist twice!")
         self.coexist = True
 
-    def at_text_signature(self, text_signature) -> None:
+    def at_text_signature(self, text_signature: str) -> None:
         if self.forced_text_signature:
             fail("Called @text_signature twice!")
         self.forced_text_signature = text_signature
