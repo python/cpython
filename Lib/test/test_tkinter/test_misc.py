@@ -4,7 +4,7 @@ import tkinter
 from tkinter import TclError
 import enum
 from test import support
-from test.test_tkinter.support import AbstractTkTest, AbstractDefaultRootTest, requires_tcl
+from test.test_tkinter.support import AbstractTkTest, AbstractDefaultRootTest, requires_tk
 
 support.requires('gui')
 
@@ -37,7 +37,7 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         for name in str(b).split('.'):
             self.assertFalse(name.isidentifier(), msg=repr(name))
 
-    @requires_tcl(8, 6, 6)
+    @requires_tk(8, 6, 6)
     def test_tk_busy(self):
         root = self.root
         f = tkinter.Frame(root, name='myframe')
@@ -71,7 +71,7 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         with self.assertRaisesRegex(TclError, "can't find busy window"):
             f.tk_busy_forget()
 
-    @requires_tcl(8, 6, 6)
+    @requires_tk(8, 6, 6)
     def test_tk_busy_with_cursor(self):
         root = self.root
         if root._windowingsystem == 'aqua':
