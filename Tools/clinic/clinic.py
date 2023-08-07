@@ -225,6 +225,7 @@ def wrapped_c_string_literal(
         line: str,
         width: int = 72,
         indent: int = 0,
+        suffix: str = '',
         subsequent_indent: int = 4
 ) -> str:
     add, out = text_accumulator()
@@ -252,7 +253,7 @@ def wrapped_c_string_literal(
             if words:
                 add(' ')
         add('"')
-        add(' \\')
+        add(suffix)
         add('\n')
 
 
@@ -966,7 +967,7 @@ class CLanguage(Language):
             condition=condition,
             major=major,
             minor=minor,
-            cpp_message=wrapped_c_string_literal(cpp_message,
+            cpp_message=wrapped_c_string_literal(cpp_message, suffix=" \\",
                                                  subsequent_indent=16),
             depr_message=wrapped_c_string_literal(depr_message,
                                                   subsequent_indent=29),
