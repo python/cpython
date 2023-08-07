@@ -89,6 +89,7 @@ nitpick_ignore = [
     ('c:func', 'main'),
     ('c:func', 'malloc'),
     ('c:func', 'printf'),
+    ('c:func', 'qsort'),
     ('c:func', 'realloc'),
     ('c:func', 'snprintf'),
     ('c:func', 'sprintf'),

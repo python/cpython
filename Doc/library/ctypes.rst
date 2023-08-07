@@ -1105,7 +1105,7 @@ Some shared libraries not only export functions, they also export variables. An
 example in the Python library itself is the :c:data:`Py_Version`, Python
 runtime version number encoded in a single constant integer.
 
-:mod:`ctypes` can access values like this with the :meth:`in_dll` class methods of
+:mod:`ctypes` can access values like this with the :meth:`~_CData.in_dll` class methods of
 the type.  *pythonapi* is a predefined symbol giving access to the Python C
 api::
 
@@ -1295,7 +1295,7 @@ Finding shared libraries
 When programming in a compiled language, shared libraries are accessed when
 compiling/linking a program, and when the program is run.
 
-The purpose of the :func:`find_library` function is to locate a library in a way
+The purpose of the :func:`~ctypes.util.find_library` function is to locate a library in a way
 similar to what the compiler or runtime loader does (on platforms with several
 versions of a shared library the most recent should be loaded), while the ctypes
 library loaders act like when a program is run, and call the runtime loader
@@ -1316,7 +1316,7 @@ the library to load.
 
 The exact functionality is system dependent.
 
-On Linux, :func:`find_library` tries to run external programs
+On Linux, :func:`~ctypes.util.find_library` tries to run external programs
 (``/sbin/ldconfig``, ``gcc``, ``objdump`` and ``ld``) to find the library file.
 It returns the filename of the library file.
 
@@ -1335,7 +1335,7 @@ Here are some examples::
    'libbz2.so.1.0'
    >>>
 
-On macOS, :func:`find_library` tries several predefined naming schemes and paths
+On macOS, :func:`~ctypes.util.find_library` tries several predefined naming schemes and paths
 to locate the library, and returns a full pathname if successful::
 
    >>> from ctypes.util import find_library
@@ -1349,13 +1349,13 @@ to locate the library, and returns a full pathname if successful::
    '/System/Library/Frameworks/AGL.framework/AGL'
    >>>
 
-On Windows, :func:`find_library` searches along the system search path, and
+On Windows, :func:`~ctypes.util.find_library` searches along the system search path, and
 returns the full pathname, but since there is no predefined naming scheme a call
 like ``find_library("c")`` will fail and return ``None``.
 
 If wrapping a shared library with :mod:`ctypes`, it *may* be better to determine
 the shared library name at development time, and hardcode that into the wrapper
-module instead of using :func:`find_library` to locate the library at runtime.
+module instead of using :func:`~ctypes.util.find_library` to locate the library at runtime.
 
 
 .. _ctypes-loading-shared-libraries:
@@ -1440,9 +1440,9 @@ function exported by these libraries, and reacquired afterwards.
 All these classes can be instantiated by calling them with at least one
 argument, the pathname of the shared library.  If you have an existing handle to
 an already loaded shared library, it can be passed as the ``handle`` named
-parameter, otherwise the underlying platforms :c:func:`!dlopen` or :c:func:`LoadLibrary`
-function is used to load the library into the process, and to get a handle to
-it.
+parameter, otherwise the underlying platforms :c:func:`!dlopen` or
+:c:func:`~LibraryLoader.LoadLibrary` function is used to load the library into
+the process, and to get a handle to it.
 
 The *mode* parameter can be used to specify how the library is loaded.  For
 details, consult the :manpage:`dlopen(3)` manpage.  On Windows, *mode* is
@@ -1462,7 +1462,7 @@ to a new value and returns the former value.
 
 The *use_last_error* parameter, when set to true, enables the same mechanism for
 the Windows error code which is managed by the :func:`GetLastError` and
-:func:`SetLastError` Windows API functions; :func:`ctypes.get_last_error` and
+:func:`!SetLastError` Windows API functions; :func:`ctypes.get_last_error` and
 :func:`ctypes.set_last_error` are used to request and change the ctypes private
 copy of the windows error code.
 
@@ -1534,7 +1534,7 @@ attribute of the loader instance.
    Class which loads shared libraries.  *dlltype* should be one of the
    :class:`CDLL`, :class:`PyDLL`, :class:`WinDLL`, or :class:`OleDLL` types.
 
-   :meth:`__getattr__` has special behavior: It allows loading a shared library by
+   :meth:`!__getattr__` has special behavior: It allows loading a shared library by
    accessing it as attribute of a library loader instance.  The result is cached,
    so repeated attribute accesses return the same library each time.
 
@@ -2440,9 +2440,9 @@ These are the fundamental ctypes data types:
    Represents the C :c:expr:`PyObject *` datatype.  Calling this without an
    argument creates a ``NULL`` :c:expr:`PyObject *` pointer.
 
-The :mod:`ctypes.wintypes` module provides quite some other Windows specific
-data types, for example :c:type:`HWND`, :c:type:`WPARAM`, or :c:type:`DWORD`.  Some
-useful structures like :c:type:`MSG` or :c:type:`RECT` are also defined.
+The :mod:`!ctypes.wintypes` module provides quite some other Windows specific
+data types, for example :c:type:`!HWND`, :c:type:`!WPARAM`, or :c:type:`!DWORD`.
+Some useful structures like :c:type:`!MSG` or :c:type:`!RECT` are also defined.
 
 
 .. _ctypes-structured-data-types:
