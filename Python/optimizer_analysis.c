@@ -77,7 +77,7 @@ partitionnode_make_root(uint8_t static_or_dynamic, PyObject *const_val)
     }
     root->static_or_dyanmic = static_or_dynamic;
     root->const_val = Py_NewRef(const_val);
-    return (_Py_PARTITIONNODE_t)root;
+    return (_Py_PARTITIONNODE_t)root | TYPE_ROOT;
 }
 
 static inline _Py_PARTITIONNODE_t
@@ -179,27 +179,7 @@ partitionnode_get_rootptr(_Py_PARTITIONNODE_t *ref)
 static bool
 partitionnode_is_same_partition(_Py_PARTITIONNODE_t *x, _Py_PARTITIONNODE_t *y)
 {
-    _Py_PARTITIONNODE_t *x_rootref = x;
-    _Py_PARTITIONNODE_t *y_rootref = y;
-    uintptr_t x_tag = partitionnode_get_tag(*x);
-    uintptr_t y_tag = partitionnode_get_tag(*y);
-    switch (y_tag) {
-        case TYPE_REF:
-            y_rootref = partitionnode_get_rootptr(y);
-        case TYPE_ROOT:
-            break;
-        default:
-            Py_UNREACHABLE();
-    }
-    switch (x_tag) {
-        case TYPE_REF:
-            x_rootref = partitionnode_get_rootptr(x);
-        case TYPE_ROOT:
-            break;
-        default:
-            Py_UNREACHABLE();
-    }
-    return x_rootref == y_rootref;
+    return partitionnode_get_rootptr(x) == partitionnode_get_rootptr(y);
 }
 
 /**
@@ -307,7 +287,6 @@ partitionnode_overwrite(_Py_UOpsAbstractInterpContext *ctx,
             if (!src_is_new) {
                 // Make dst a reference to src
                 *dst = partitionnode_make_ref(src);
-                assert(partitionnode_get_tag(*dst) == TYPE_REF);
                 assert(partitionnode_clear_tag(*dst) != (_Py_PARTITIONNODE_t)_Py_NULL);
             }
             else {
@@ -444,19 +423,21 @@ print_ctx(_Py_UOpsAbstractInterpContext *ctx)
 
         if (tag == TYPE_REF) {
             _Py_PARTITIONNODE_t *parent = (_Py_PARTITIONNODE_t *)(partitionnode_clear_tag(*node));
-            is_local = parent >= ctx->locals && parent < ctx->stack;
-            is_stack = parent >= ctx->stack && parent < (ctx->stack + nstack);
+            int local_index = (int)(parent - ctx->locals);
+            int stack_index = (int)(parent - ctx->stack);
+            is_local = local_index >= 0 && local_index < ctx->locals_len;
+            is_stack = stack_index >= 0 && stack_index < nstack;
             parent_idx = is_local
-                ? (int)(parent - ctx->locals)
+                ? local_index
                 : is_stack
-                ? (int)(parent - ctx->locals)
+                ? stack_index
                 : -1;
         }
 
 
         _Py_PartitionRootNode *ptr = (_Py_PartitionRootNode *)partitionnode_clear_tag(*root);
         fprintf(stderr, "%s",
-            ptr == NULL ? "?" : (ptr->static_or_dyanmic ? "dynamic" : "static"));
+            ptr == NULL ? "?" : (ptr->static_or_dyanmic == 0 ? "static" : "dynamic"));
 
         if (tag == TYPE_REF) {
             const char *wher = is_local
@@ -479,18 +460,20 @@ print_ctx(_Py_UOpsAbstractInterpContext *ctx)
 
         if (tag == TYPE_REF) {
             _Py_PARTITIONNODE_t *parent = (_Py_PARTITIONNODE_t *)(partitionnode_clear_tag(*node));
-            is_local = parent >= ctx->locals && parent < ctx->stack;
-            is_stack = parent >= ctx->stack && parent < (ctx->stack + nstack);
+            int local_index = (int)(parent - ctx->locals);
+            int stack_index = (int)(parent - ctx->stack);
+            is_local = local_index >= 0 && local_index < ctx->locals_len;
+            is_stack = stack_index >= 0 && stack_index < nstack;
             parent_idx = is_local
-                ? (int)(parent - ctx->locals)
+                ? local_index
                 : is_stack
-                ? (int)(parent - ctx->locals)
+                ? stack_index
                 : -1;
         }
 
         _Py_PartitionRootNode *ptr = (_Py_PartitionRootNode *)partitionnode_clear_tag(*root);
         fprintf(stderr, "%s",
-            ptr == NULL ? "?" : (ptr->static_or_dyanmic ? "dynamic" : "static"));
+            ptr == NULL ? "?" : (ptr->static_or_dyanmic == 0 ? "static" : "dynamic"));
 
         if (tag == TYPE_REF) {
             const char *wher = is_local
@@ -570,6 +553,13 @@ _Py_uop_analyze_and_optimize(
     for (int i = 0; i < trace_len; i++) {
         oparg = trace[i].oparg;
         opcode = trace[i].opcode;
+#ifdef PARTITION_DEBUG
+#ifdef Py_DEBUG
+        fprintf(stderr, "  [-] Type propagating across: %s{%d} : %d\n",
+            (opcode >= 300 ? _PyOpcode_uop_name : _PyOpcode_OpName)[opcode],
+            opcode, oparg);
+#endif
+#endif
         /*
         * The following are special cased:
             "LOAD_FAST",
@@ -591,13 +581,13 @@ _Py_uop_analyze_and_optimize(
         case LOAD_FAST_AND_CLEAR: {
             STACK_GROW(1);
             PARTITIONNODE_OVERWRITE(GETLOCAL(oparg), PEEK(1), false);
-            PARTITIONNODE_OVERWRITE(&PARTITIONNODE_NULLROOT, GETLOCAL(oparg), false);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, GETLOCAL(oparg), true);
             break;
         }
         case LOAD_CONST: {
-            _Py_PARTITIONNODE_t value = MAKE_STATIC_ROOT(GETITEM(co->co_consts, oparg));
+            _Py_PARTITIONNODE_t* value = (_Py_PARTITIONNODE_t *)MAKE_STATIC_ROOT(GETITEM(co->co_consts, oparg));
             STACK_GROW(1);
-            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)value, PEEK(1), false);
+            PARTITIONNODE_OVERWRITE(value, PEEK(1), true);
 #if PARTITION_DEBUG
             print_ctx(ctx);
 #endif
