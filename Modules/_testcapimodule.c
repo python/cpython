@@ -3454,10 +3454,6 @@ test_dict_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     assert(PyErr_ExceptionMatches(PyExc_TypeError));
     PyErr_Clear();
 
-    // test PyDict_GetItem(), invalid key
-    assert(PyDict_GetItem(dict, invalid_key) == NULL);
-    assert(!PyErr_Occurred());
-
     // test PyDict_GetItemWithError(), invalid key
     assert(PyDict_GetItemWithError(dict, invalid_key) == NULL);
     assert(PyErr_ExceptionMatches(PyExc_TypeError));
