@@ -1898,3 +1898,91 @@ blocks embedded in Python files look slightly different.  They look like this:
     #[python start generated code]*/
     def foo(): pass
     #/*[python checksum:...]*/
+
+
+.. _clinic-howto-deprecate-positional:
+
+How to deprecate passing parameters positionally
+------------------------------------------------
+
+Argument Clinic provides syntax that makes it possible to generate code that
+deprecates passing :term:`arguments <argument>` positionally.
+For example, say we've got a module-level function :py:func:`!foo.myfunc`
+that has three :term:`parameters <parameter>`:
+positional-or-keyword parameters *a* and *b*, and a keyword-only parameter *c*::
+
+   /*[clinic input]
+   module foo
+   myfunc
+       a: int
+       b: int
+       *
+       c: int
+   [clinic start generated output]*/
+
+We now want to make the *b* parameter keyword-only;
+however, we'll have to wait two releases before making this change,
+as mandated by Python's backwards-compatibility policy (see :pep:`387`).
+For this example, imagine we're in the development phase for Python 3.12:
+that means we'll be allowed to introduce deprecation warnings in Python 3.12
+whenever the *b* parameter is passed positionally,
+and we'll be allowed to make it keyword-only in Python 3.14 at the earliest.
+
+We can use Argument Clinic to emit the desired deprecation warnings
+using the ``* [from ...]``` syntax,
+by adding the line ``* [from 3.14]`` right above the *b* parameter::
+
+   /*[clinic input]
+   module foo
+   myfunc
+       a: int
+       * [from 3.14]
+       b: int
+       *
+       c: int
+   [clinic start generated output]*/
+
+Next, regenerate Argument Clinic code (``make clinic``),
+and add unit tests for the new behaviour.
+
+The generated code will now emit a :exc:`DeprecationWarning`
+when an :term:`argument` for the :term:`parameter` *b* is passed positionally.
+C preprocessor directives are also generated for emitting
+compiler warnings if the ``* [from ...]`` line has not been removed
+from the Argument Clinic input when the deprecation period is over,
+which means when the alpha phase of the specified Python version kicks in.
+
+Let's return to our example and skip ahead two years:
+Python 3.14 development has now entered the alpha phase,
+but we forgot all about updating the Argument Clinic code
+for :py:func:`!myfunc`!
+Luckily for us, compiler warnings are now generated:
+
+.. code-block:: none
+
+   In file included from Modules/foomodule.c:139:
+   Modules/clinic/foomodule.c.h:83:8: warning: Update 'b' in 'myfunc' in 'foomodule.c' to be keyword-only. [-W#warnings]
+    #    warning "Update 'b' in 'myfunc' in 'foomodule.c' to be keyword-only."
+         ^
+
+We now close the deprecation phase by making *b* keyword-only;
+replace the ``* [from ...]``` line above *b*
+with the ``*`` from the line above *c*::
+
+   /*[clinic input]
+   module foo
+   myfunc
+       a: int
+       *
+       b: int
+       c: int
+   [clinic start generated output]*/
+
+Finally, run ``make clinic`` to regenerate the Argument Clinic code,
+and update your unit tests to reflect the new behaviour.
+
+.. note::
+
+   If you forget to update your input block during the alpha and beta phases,
+   the compiler warning will turn into a compiler error when the
+   release candidate phase begins.
