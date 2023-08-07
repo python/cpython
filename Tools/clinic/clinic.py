@@ -221,13 +221,23 @@ def c_repr(s: str) -> str:
     return '"' + s + '"'
 
 
-def wrapped_c_string_literal(line, width=72):
+def wrapped_c_string_literal(
+        line: str,
+        width: int = 72,
+        indent: int = 0,
+        subsequent_indent: int = 4
+) -> str:
     add, out = text_accumulator()
     words = line.split(' ')
-    add(' \\\n')
+    first = True
     while True:
+        if first:
+            add(' ' * indent)
+            first = False
+        else:
+            add(' ' * subsequent_indent)
         add('"')
-        sz = 1
+        sz = indent + 1
         while True:
             try:
                 word = words[0]
@@ -862,16 +872,20 @@ class CLanguage(Language):
     """)
     DEPRECATED_POSITIONAL_PROTOTYPE: Final[str] = r"""
         #if PY_VERSION_HEX >= 0x{major:02x}{minor:02x}00C0
-        #  error {cpp_message}
+        #  error \
+                {cpp_message}
         #elif PY_VERSION_HEX >= 0x{major:02x}{minor:02x}00A0
         #  ifdef _MSC_VER
-        #    pragma message ({cpp_message})
+        #    pragma message ( \
+                {cpp_message})
         #  else
-        #    warning {cpp_message}
+        #    warning \
+                {cpp_message}
         #  endif
         #endif
         if ({condition}) {{{{
-            if (PyErr_WarnEx(PyExc_DeprecationWarning, {depr_message}, 1))
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                             {depr_message}, 1))
         {{{{
                 goto exit;
         }}}}
@@ -952,8 +966,10 @@ class CLanguage(Language):
             condition=condition,
             major=major,
             minor=minor,
-            cpp_message=wrapped_c_string_literal(cpp_message),
-            depr_message=wrapped_c_string_literal(depr_message),
+            cpp_message=wrapped_c_string_literal(cpp_message,
+                                                 subsequent_indent=16),
+            depr_message=wrapped_c_string_literal(depr_message,
+                                                  subsequent_indent=29),
         )
         return normalize_snippet(code, indent=4)
 
