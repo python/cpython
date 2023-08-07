@@ -221,6 +221,31 @@ def c_repr(s: str) -> str:
     return '"' + s + '"'
 
 
+def wrapped_c_string_literal(line, width=72):
+    add, out = text_accumulator()
+    words = line.split(' ')
+    add(' \\\n')
+    while True:
+        add('"')
+        sz = 1
+        while True:
+            try:
+                word = words[0]
+            except IndexError:
+                add('"')
+                return out()
+            sz += len(word) + 1
+            if sz > 72:
+                break
+            add(word)
+            del words[0]
+            if words:
+                add(' ')
+        add('"')
+        add(' \\')
+        add('\n')
+
+
 is_legal_c_identifier = re.compile('^[A-Za-z_][A-Za-z0-9_]*$').match
 
 def is_legal_py_identifier(s: str) -> bool:
@@ -837,18 +862,18 @@ class CLanguage(Language):
     """)
     DEPRECATED_POSITIONAL_PROTOTYPE: Final[str] = r"""
         #if PY_VERSION_HEX >= 0x{major:02x}{minor:02x}00C0
-        #  error "{cpp_message}"
+        #  error {cpp_message}
         #elif PY_VERSION_HEX >= 0x{major:02x}{minor:02x}00A0
         #  ifdef _MSC_VER
-        #    pragma message ("{cpp_message}")
+        #    pragma message ({cpp_message})
         #  else
-        #    warning "{cpp_message}"
+        #    warning {cpp_message}
         #  endif
         #endif
         if ({condition}) {{{{
-            if (PyErr_WarnEx(PyExc_DeprecationWarning, "{depr_message}", 1)) {{{{
+            if (PyErr_WarnEx(PyExc_DeprecationWarning, {depr_message}, 1))
+        {{{{
                 goto exit;
-            }}}}
         }}}}
     """
 
@@ -899,6 +924,7 @@ class CLanguage(Language):
             f"In {source}, update parameter(s) {pstr} in the clinic "
             f"input of {func.full_name!r} to be keyword-only."
         )
+
         # Format the deprecation message.
         if first_pos == 0:
             preamble = "Passing positional arguments to "
@@ -926,8 +952,8 @@ class CLanguage(Language):
             condition=condition,
             major=major,
             minor=minor,
-            cpp_message=cpp_message,
-            depr_message=depr_message,
+            cpp_message=wrapped_c_string_literal(cpp_message),
+            depr_message=wrapped_c_string_literal(depr_message),
         )
         return normalize_snippet(code, indent=4)
 
