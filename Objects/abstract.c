@@ -2429,7 +2429,16 @@ int
 PyMapping_HasKeyString(PyObject *obj, const char *key)
 {
     PyObject *dummy;
-    int rc = PyMapping_GetOptionalItemString(obj, key, &dummy);
+    int rc;
+    if (obj == NULL) {
+        // For backward compatibility.
+        // PyMapping_GetOptionalItemString() crashes if it is NULL.
+        null_error();
+        rc = -1;
+    }
+    else {
+        rc = PyMapping_GetOptionalItemString(obj, key, &dummy);
+    }
     if (rc < 0) {
         _PyErr_WriteUnraisableMsg(
             "in PyMapping_HasKeyString(); consider using "
@@ -2454,7 +2463,16 @@ int
 PyMapping_HasKey(PyObject *obj, PyObject *key)
 {
     PyObject *dummy;
-    int rc = PyMapping_GetOptionalItem(obj, key, &dummy);
+    int rc;
+    if (obj == NULL || key == NULL) {
+        // For backward compatibility.
+        // PyMapping_GetOptionalItem() crashes if any of them is NULL.
+        null_error();
+        rc = -1;
+    }
+    else {
+        rc = PyMapping_GetOptionalItem(obj, key, &dummy);
+    }
     if (rc < 0) {
         _PyErr_WriteUnraisableMsg(
             "in PyMapping_HasKey(); consider using "

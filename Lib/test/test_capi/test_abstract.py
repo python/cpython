@@ -322,8 +322,17 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(str(cm.unraisable.exc_value),
                              'list indices must be integers or slices, not str')
 
-        # CRASHES haskey({}, NULL)
-        # CRASHES haskey(NULL, 'a')
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(haskey({}, NULL))
+            self.assertEqual(cm.unraisable.exc_type, SystemError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             'null argument to internal routine')
+
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(haskey(NULL, 'a'))
+            self.assertEqual(cm.unraisable.exc_type, SystemError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             'null argument to internal routine')
 
     def test_mapping_haskeystring(self):
         haskeystring = _testcapi.mapping_haskeystring
@@ -360,7 +369,11 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(str(cm.unraisable.exc_value),
                              'list indices must be integers or slices, not str')
 
-        # CRASHES haskeystring(NULL, b'a')
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(haskeystring(NULL, b'a'))
+            self.assertEqual(cm.unraisable.exc_type, SystemError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             "null argument to internal routine")
 
     def test_object_setitem(self):
         setitem = _testcapi.object_setitem
