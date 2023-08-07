@@ -1478,10 +1478,104 @@ class ClinicParserTest(TestCase):
             "module foo\nfoo.bar\n  this: int\n  *",
             "module foo\nfoo.bar\n  this: int\n  *\nDocstring.",
         )
-        err = "Function 'bar' specifies '*' without any parameters afterwards."
+        err = "Function 'foo.bar' specifies '*' without any parameters afterwards."
         for block in dataset:
             with self.subTest(block=block):
                 self.expect_failure(block, err)
+
+    def test_parameters_required_after_depr_star(self):
+        dataset = (
+            "module foo\nfoo.bar\n  * [from 3.14]",
+            "module foo\nfoo.bar\n  * [from 3.14]\nDocstring here.",
+            "module foo\nfoo.bar\n  this: int\n  * [from 3.14]",
+            "module foo\nfoo.bar\n  this: int\n  * [from 3.14]\nDocstring.",
+        )
+        err = "Function 'foo.bar' specifies '* [from 3.14]' without any parameters afterwards."
+        for block in dataset:
+            with self.subTest(block=block):
+                self.expect_failure(block, err)
+
+    def test_depr_star_invalid_format_1(self):
+        block = """
+            module foo
+            foo.bar
+                this: int
+                * [from 3]
+            Docstring.
+        """
+        err = (
+            "Function 'foo.bar': expected format '* [from major.minor]' "
+            "where 'major' and 'minor' are integers; got '3'"
+        )
+        self.expect_failure(block, err, lineno=3)
+
+    def test_depr_star_invalid_format_2(self):
+        block = """
+            module foo
+            foo.bar
+                this: int
+                * [from a.b]
+            Docstring.
+        """
+        err = (
+            "Function 'foo.bar': expected format '* [from major.minor]' "
+            "where 'major' and 'minor' are integers; got 'a.b'"
+        )
+        self.expect_failure(block, err, lineno=3)
+
+    def test_depr_star_invalid_format_3(self):
+        block = """
+            module foo
+            foo.bar
+                this: int
+                * [from 1.2.3]
+            Docstring.
+        """
+        err = (
+            "Function 'foo.bar': expected format '* [from major.minor]' "
+            "where 'major' and 'minor' are integers; got '1.2.3'"
+        )
+        self.expect_failure(block, err, lineno=3)
+
+    def test_parameters_required_after_depr_star(self):
+        block = """
+            module foo
+            foo.bar
+                this: int
+                * [from 3.14]
+            Docstring.
+        """
+        err = (
+            "Function 'foo.bar' specifies '* [from ...]' without "
+            "any parameters afterwards"
+        )
+        self.expect_failure(block, err, lineno=4)
+
+    def test_depr_star_must_come_before_star(self):
+        block = """
+            module foo
+            foo.bar
+                this: int
+                *
+                * [from 3.14]
+            Docstring.
+        """
+        err = "Function 'foo.bar': '* [from ...]' must come before '*'"
+        self.expect_failure(block, err, lineno=4)
+
+    def test_depr_star_duplicate(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                * [from 3.14]
+                b: int
+                * [from 3.14]
+                c: int
+            Docstring.
+        """
+        err = "Function 'foo.bar' uses '[from ...]' more than once"
+        self.expect_failure(block, err, lineno=5)
 
     def test_single_slash(self):
         block = """
