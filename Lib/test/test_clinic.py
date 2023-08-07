@@ -1492,8 +1492,8 @@ class ClinicParserTest(TestCase):
             Docstring.
         """
         err = (
-            "Function 'foo.bar': '* [from ...]' format expected to be "
-            "'<major.minor>', where 'major' and 'minor' are digits."
+            "Function 'foo.bar': expected format '* [from major.minor]' "
+            "where 'major' and 'minor' are integers; got '3'"
         )
         self.expect_failure(block, err, lineno=3)
 
@@ -1506,8 +1506,8 @@ class ClinicParserTest(TestCase):
             Docstring.
         """
         err = (
-            "Function 'foo.bar', '* [from <major.minor>]': "
-            "'major' and 'minor' must be digits, not 'a.b'"
+            "Function 'foo.bar': expected format '* [from major.minor]' "
+            "where 'major' and 'minor' are integers; got 'a.b'"
         )
         self.expect_failure(block, err, lineno=3)
 
@@ -1520,8 +1520,8 @@ class ClinicParserTest(TestCase):
             Docstring.
         """
         err = (
-            "Function 'foo.bar', '* [from <major.minor>]': "
-            "'major' and 'minor' must be digits, not '1.2.3'"
+            "Function 'foo.bar': expected format '* [from major.minor]' "
+            "where 'major' and 'minor' are integers; got '1.2.3'"
         )
         self.expect_failure(block, err, lineno=3)
 

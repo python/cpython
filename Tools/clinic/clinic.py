@@ -4532,7 +4532,7 @@ class DSLParser:
     coexist: bool
     parameter_continuation: str
     preserve_output: bool
-    deprecate_posonly_re = create_regex(
+    star_from_version_re = create_regex(
         before="* [from ",
         after="]",
         word=False,
@@ -5010,7 +5010,7 @@ class DSLParser:
             return
 
         line = line.lstrip()
-        match = self.deprecate_posonly_re.match(line)
+        match = self.star_from_version_re.match(line)
         if match:
             self.parse_deprecated_positional(match.group(1))
             return
@@ -5328,11 +5328,6 @@ class DSLParser:
         assert isinstance(self.function, Function)
         fname = self.function.full_name
 
-        if "." not in thenceforth:
-            fail(
-                f"Function {fname!r}: '* [from ...]' format expected to be "
-                f"'<major.minor>', where 'major' and 'minor' are digits."
-            )
         if self.keyword_only:
             fail(f"Function {fname!r}: '* [from ...]' must come before '*'")
         if self.deprecated_positional:
@@ -5342,8 +5337,8 @@ class DSLParser:
             self.deprecated_positional = int(major), int(minor)
         except ValueError:
             fail(
-                f"Function {fname!r}, '* [from <major.minor>]': "
-                f"'major' and 'minor' must be digits, not {thenceforth!r}"
+                f"Function {fname!r}: expected format '* [from major.minor]' "
+                f"where 'major' and 'minor' are integers; got {thenceforth!r}"
             )
 
     def parse_star(self, function: Function) -> None:
