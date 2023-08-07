@@ -66,6 +66,26 @@ class CProfileTest(ProfileTest):
         self.assertRaises(ValueError, pr2.enable)
         pr.disable()
 
+    def test_throw(self):
+        """
+        gh-106152
+        generator.throw() should trigger a call in cProfile
+        In the any() call below, there should be two entries for the generator:
+            * one for the call to __next__ which gets a True and terminates any
+            * one when the generator is garbage collected which will effectively
+              do a throw.
+        """
+        pr = self.profilerclass()
+        pr.enable()
+        any(a == 1 for a in (1, 2))
+        pr.disable()
+        pr.create_stats()
+
+        for func, (cc, nc, _, _, _) in pr.stats.items():
+            if func[2] == "<genexpr>":
+                self.assertEqual(cc, 2)
+                self.assertEqual(nc, 2)
+
 
 class TestCommandLine(unittest.TestCase):
     def test_sort(self):

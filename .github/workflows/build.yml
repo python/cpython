@@ -519,3 +519,60 @@ jobs:
       run: make pythoninfo
     - name: Tests
       run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
+
+  all-required-green:  # This job does nothing and is only used for the branch protection
+    name: All required checks pass
+    if: always()
+
+    needs:
+    - check_source  # Transitive dependency, needed to access `run_tests` value
+    - check-docs
+    - check_generated_files
+    - build_win32
+    - build_win_amd64
+    - build_macos
+    - build_ubuntu
+    - build_ubuntu_ssltests
+    - test_hypothesis
+    - build_asan
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check whether the needed jobs succeeded or failed
+      uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe
+      with:
+        allowed-failures: >-
+          build_macos,
+          build_ubuntu_ssltests,
+          build_win32,
+          test_hypothesis,
+        allowed-skips: >-
+          ${{
+            !fromJSON(needs.check_source.outputs.run-docs)
+            && '
+            check-docs,
+            '
+            || ''
+          }}
+          ${{
+            needs.check_source.outputs.run_tests != 'true'
+            && '
+            check_generated_files,
+            build_win32,
+            build_win_amd64,
+            build_macos,
+            build_ubuntu,
+            build_ubuntu_ssltests,
+            build_asan,
+            '
+            || ''
+          }}
+          ${{
+            !fromJSON(needs.check_source.outputs.run_hypothesis)
+            && '
+            test_hypothesis,
+            '
+            || ''
+          }}
+        jobs: ${{ toJSON(needs) }}

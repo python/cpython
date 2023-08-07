@@ -494,6 +494,22 @@ def calculate_object_stats(stats):
             rows.append((label, value, ratio))
     return rows
 
+def calculate_gc_stats(stats):
+    gc_stats = []
+    for key, value in stats.items():
+        if not key.startswith("GC"):
+            continue
+        n, _, rest = key[3:].partition("]")
+        name = rest.strip()
+        gen_n = int(n)
+        while len(gc_stats) <= gen_n:
+            gc_stats.append({})
+        gc_stats[gen_n][name] = value
+    return [
+        (i, gen["collections"], gen["objects collected"], gen["object visits"])
+        for (i, gen) in enumerate(gc_stats)
+    ]
+
 def emit_object_stats(stats):
     with Section("Object stats", summary="allocations, frees and dict materializatons"):
         rows = calculate_object_stats(stats)
@@ -504,6 +520,22 @@ def emit_comparative_object_stats(base_stats, head_stats):
         base_rows = calculate_object_stats(base_stats)
         head_rows = calculate_object_stats(head_stats)
         emit_table(("",  "Base Count:", "Base Ratio:", "Head Count:", "Head Ratio:"), join_rows(base_rows, head_rows))
+
+def emit_gc_stats(stats):
+    with Section("GC stats", summary="GC collections and effectiveness"):
+        rows = calculate_gc_stats(stats)
+        emit_table(("Generation:",  "Collections:", "Objects collected:", "Object visits:"), rows)
+
+def emit_comparative_gc_stats(base_stats, head_stats):
+    with Section("GC stats", summary="GC collections and effectiveness"):
+        base_rows = calculate_gc_stats(base_stats)
+        head_rows = calculate_gc_stats(head_stats)
+        emit_table(
+            ("Generation:",
+            "Base collections:", "Head collections:",
+            "Base objects collected:", "Head objects collected:",
+            "Base object visits:", "Head object visits:"),
+            join_rows(base_rows, head_rows))
 
 def get_total(opcode_stats):
     total = 0
@@ -574,6 +606,7 @@ def output_single_stats(stats):
     emit_specialization_overview(opcode_stats, total)
     emit_call_stats(stats)
     emit_object_stats(stats)
+    emit_gc_stats(stats)
     with Section("Meta stats", summary="Meta statistics"):
         emit_table(("", "Count:"), [('Number of data files', stats['__nfiles__'])])
 
@@ -596,6 +629,7 @@ def output_comparative_stats(base_stats, head_stats):
     )
     emit_comparative_call_stats(base_stats, head_stats)
     emit_comparative_object_stats(base_stats, head_stats)
+    emit_comparative_gc_stats(base_stats, head_stats)
 
 def output_stats(inputs, json_output=None):
     if len(inputs) == 1:

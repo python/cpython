@@ -1270,6 +1270,7 @@ static PYC_MAGIC magic_values[] = {
     /* Allow 50 magic numbers per version from here on */
     { 3450, 3499, L"3.11" },
     { 3500, 3549, L"3.12" },
+    { 3550, 3599, L"3.13" },
     { 0 }
 };
 

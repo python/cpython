@@ -7366,7 +7366,7 @@ PyDoc_STRVAR(os_pwrite__doc__,
 "Write bytes to a file descriptor starting at a particular offset.\n"
 "\n"
 "Write buffer to fd, starting at offset bytes from the beginning of\n"
-"the file.  Returns the number of bytes writte.  Does not change the\n"
+"the file.  Returns the number of bytes written.  Does not change the\n"
 "current file offset.");
 
 #define OS_PWRITE_METHODDEF    \
@@ -11981,4 +11981,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=a7e8c3df2db09717 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a85a386b212b0631 input=a9049054013a1b77]*/
