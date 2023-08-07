@@ -916,7 +916,7 @@ def getHandlerNames():
     """
     Return all known handler names as an immutable set.
     """
-    return frozenset(_handlers.keys())
+    return frozenset(_handlers)
 
 
 class Handler(Filterer):
