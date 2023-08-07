@@ -4796,10 +4796,11 @@ static PyMappingMethods Array_as_mapping = {
 PyDoc_STRVAR(array_doc,
 "Abstract base class for arrays.\n"
 "\n"
-"The recommended way to create concrete array types is by multiplying any ctypes data type with\n"
-"a non-negative integer. Alternatively, you can subclass this type and define _length_ and _type_\n"
-"class variables. Array elements can be read and written using standard subscript and slice accesses;\n"
-"for slice reads, the resulting object is not itself an Array."
+"The recommended way to create concrete array types is by multiplying any\n"
+"ctypes data type with a non-negative integer. Alternatively, you can subclass\n"
+"this type and define _length_ and _type_ class variables. Array elements can\n"
+"be read and written using standard subscript and slice accesses for slice\n"
+"reads, the resulting object is not itself an Array."
 );
 
 PyTypeObject PyCArray_Type = {
