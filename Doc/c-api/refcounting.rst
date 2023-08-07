@@ -53,7 +53,7 @@ of Python objects.
    :term:`strong reference` in-place. The :c:func:`Py_NewRef` function can be
    used to create a new :term:`strong reference`.
 
-   When done using the object, release is by calling :c:func:`Py_DECREF`.
+   When done using the object, release it by calling :c:func:`Py_DECREF`.
 
    The object must not be ``NULL``; if you aren't sure that it isn't
    ``NULL``, use :c:func:`Py_XINCREF`.
