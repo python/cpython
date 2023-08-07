@@ -187,6 +187,10 @@ Deprecated
   practice.
   (Contributed by Victor Stinner in :gh:`106535`.)
 
+* :mod:`sys`: :func:`sys._enablelegacywindowsfsencoding` function.
+  Replace it with :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable.
+  (Contributed by Inada Naoki in :gh:`73427`.)
+
 * :mod:`typing`: Creating a :class:`typing.NamedTuple` class using keyword arguments to denote
   the fields (``NT = NamedTuple("NT", x=int, y=int)``) is deprecated, and will
   be disallowed in Python 3.15. Use the class-based syntax or the functional
