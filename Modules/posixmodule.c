@@ -10113,7 +10113,7 @@ Return timerfd value in seconds.
 
 static PyObject *
 os_timerfd_gettime_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=ec5a94a66cfe6ab4 input=30e69f73d8b73cb2]*/
+/*[clinic end generated code: output=ec5a94a66cfe6ab4 input=6ccb22f8c64c34ba]*/
 {
     struct itimerspec curr_value;
     int result;
@@ -10141,7 +10141,7 @@ Set timerfd value in seconds.
 static PyObject *
 os_timerfd_settime_impl(PyObject *module, int fd, int flags,
                         double it_interval, double it_value)
-/*[clinic end generated code: output=24030b5b2c5b539c input=24f0b47f6847a2c3]*/
+/*[clinic end generated code: output=24030b5b2c5b539c input=f72644587f165e92]*/
 {
     struct itimerspec new_value;
     struct itimerspec old_value;
@@ -10170,7 +10170,7 @@ Return timerfd value in nanoseconds.
 
 static PyObject *
 os_timerfd_gettime_ns_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=580633a4465f39fe input=03806d61a48536a9]*/
+/*[clinic end generated code: output=580633a4465f39fe input=9370e0147fd65ec7]*/
 {
     struct itimerspec curr_value;
     int result;
@@ -10198,7 +10198,7 @@ Set timerfd value in nanoseconds.
 static PyObject *
 os_timerfd_settime_ns_impl(PyObject *module, int fd, int flags,
                            long long it_interval_ns, long long it_value_ns)
-/*[clinic end generated code: output=8c2801053004f896 input=715746fc69e55bc7]*/
+/*[clinic end generated code: output=8c2801053004f896 input=810ccd4f64d7e082]*/
 {
     struct itimerspec new_value;
     struct itimerspec old_value;

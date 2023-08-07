@@ -6035,7 +6035,7 @@ PyDoc_STRVAR(os_timerfd_gettime__doc__,
 "timerfd_gettime($module, fd, /)\n"
 "--\n"
 "\n"
-"Read timerfd value in second.");
+"Return timerfd value in seconds.");
 
 #define OS_TIMERFD_GETTIME_METHODDEF    \
     {"timerfd_gettime", (PyCFunction)os_timerfd_gettime, METH_O, os_timerfd_gettime__doc__},
@@ -6066,7 +6066,7 @@ PyDoc_STRVAR(os_timerfd_settime__doc__,
 "timerfd_settime($module, fd, flags, it_interval=0.0, it_value=0.0, /)\n"
 "--\n"
 "\n"
-"Write timerfd value in second.");
+"Set timerfd value in seconds.");
 
 #define OS_TIMERFD_SETTIME_METHODDEF    \
     {"timerfd_settime", _PyCFunction_CAST(os_timerfd_settime), METH_FASTCALL, os_timerfd_settime__doc__},
@@ -6135,7 +6135,7 @@ PyDoc_STRVAR(os_timerfd_gettime_ns__doc__,
 "timerfd_gettime_ns($module, fd, /)\n"
 "--\n"
 "\n"
-"Read timerfd value in ns");
+"Return timerfd value in nanoseconds.");
 
 #define OS_TIMERFD_GETTIME_NS_METHODDEF    \
     {"timerfd_gettime_ns", (PyCFunction)os_timerfd_gettime_ns, METH_O, os_timerfd_gettime_ns__doc__},
@@ -6167,7 +6167,7 @@ PyDoc_STRVAR(os_timerfd_settime_ns__doc__,
 "                   /)\n"
 "--\n"
 "\n"
-"Write timerfd value.");
+"Set timerfd value in nanoseconds.");
 
 #define OS_TIMERFD_SETTIME_NS_METHODDEF    \
     {"timerfd_settime_ns", _PyCFunction_CAST(os_timerfd_settime_ns), METH_FASTCALL, os_timerfd_settime_ns__doc__},
@@ -12242,4 +12242,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=96967c7d4a8144b5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e82535c68bca8dfe input=a9049054013a1b77]*/
