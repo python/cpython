@@ -770,6 +770,15 @@ always available.
    higher than you might expect, because it includes the (temporary) reference as
    an argument to :func:`getrefcount`.
 
+   Note that the returned value may not actually reflect how many
+   references to the object are actually held.  For example, some
+   objects are "immortal" and have a very high refcount that does not
+   reflect the actual number of references.  Consequently, do not rely
+   on the returned value to be accurate, other than a value of 0 or 1.
+
+   .. versionchanged:: 3.12
+      Immortal objects have very large refcounts that do not match
+      the actual number of references to the object.
 
 .. function:: getrecursionlimit()
 
