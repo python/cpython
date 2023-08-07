@@ -4822,7 +4822,7 @@ PyTypeObject PyCArray_Type = {
     "The recommended way to create \n"
     "concrete array types is by multiplying \n"
     "any ctypes data type with a non-negative \n"
-    integer.\n"),                                /* tp_doc */
+    "integer.\n"),                                /* tp_doc */
     (traverseproc)PyCData_traverse,             /* tp_traverse */
     (inquiry)PyCData_clear,                     /* tp_clear */
     0,                                          /* tp_richcompare */
