@@ -72,7 +72,7 @@ Windows appends the usual ``.dll`` file suffix automatically.
 
 On Linux, it is required to specify the filename *including* the extension to
 load a library, so attribute access can not be used to load libraries. Either the
-:meth:`~LibraryLoader.LoadLibrary` method of the dll loaders should be used,
+:meth:`!LoadLibrary` method of the dll loaders should be used,
 or you should load the library by creating an instance of CDLL by calling
 the constructor::
 
@@ -1004,8 +1004,8 @@ argument, and the callback functions expected argument types as the remaining
 arguments.
 
 I will present an example here which uses the standard C library's
-:c:func:`qsort` function, that is used to sort items with the help of a callback
-function.  :c:func:`qsort` will be used to sort an array of integers::
+:c:func:`!qsort` function, that is used to sort items with the help of a callback
+function.  :c:func:`!qsort` will be used to sort an array of integers::
 
    >>> IntArray5 = c_int * 5
    >>> ia = IntArray5(5, 1, 7, 33, 99)
@@ -1013,7 +1013,7 @@ function.  :c:func:`qsort` will be used to sort an array of integers::
    >>> qsort.restype = None
    >>>
 
-:func:`qsort` must be called with a pointer to the data to sort, the number of
+:func:`!qsort` must be called with a pointer to the data to sort, the number of
 items in the data array, the size of one item, and a pointer to the comparison
 function, the callback. The callback will then be called with two pointers to
 items, and it must return a negative integer if the first item is smaller than
@@ -1301,7 +1301,7 @@ versions of a shared library the most recent should be loaded), while the ctypes
 library loaders act like when a program is run, and call the runtime loader
 directly.
 
-The :mod:`ctypes.util` module provides a function which can help to determine
+The :mod:`!ctypes.util` module provides a function which can help to determine
 the library to load.
 
 
@@ -1579,7 +1579,7 @@ object is available:
    An instance of :class:`PyDLL` that exposes Python C API functions as
    attributes.  Note that all these functions are assumed to return C
    :c:expr:`int`, which is of course not always the truth, so you have to assign
-   the correct :attr:`restype` attribute to use these functions.
+   the correct :attr:`!restype` attribute to use these functions.
 
 .. audit-event:: ctypes.dlopen name ctypes.LibraryLoader
 
@@ -1631,7 +1631,7 @@ They are instances of a private class:
       the callable will be called with this integer, allowing further
       processing or error checking.  Using this is deprecated, for more flexible
       post processing or error checking use a ctypes data type as
-      :attr:`restype` and assign a callable to the :attr:`errcheck` attribute.
+      :attr:`!restype` and assign a callable to the :attr:`errcheck` attribute.
 
    .. attribute:: argtypes
 
@@ -1663,7 +1663,7 @@ They are instances of a private class:
          :module:
 
          *result* is what the foreign function returns, as specified by the
-         :attr:`restype` attribute.
+         :attr:`!restype` attribute.
 
          *func* is the foreign function object itself, this allows reusing the
          same callable object to check or post process the results of several
@@ -2011,7 +2011,7 @@ Utility functions
 .. function:: get_last_error()
 
    Windows only: returns the current value of the ctypes-private copy of the system
-   :data:`LastError` variable in the calling thread.
+   :data:`!LastError` variable in the calling thread.
 
    .. audit-event:: ctypes.get_last_error "" ctypes.get_last_error
 
@@ -2064,7 +2064,7 @@ Utility functions
 .. function:: set_last_error(value)
 
    Windows only: set the current value of the ctypes-private copy of the system
-   :data:`LastError` variable in the calling thread to *value* and return the
+   :data:`!LastError` variable in the calling thread to *value* and return the
    previous value.
 
    .. audit-event:: ctypes.set_last_error error ctypes.set_last_error
@@ -2431,7 +2431,7 @@ These are the fundamental ctypes data types:
 
 .. class:: HRESULT
 
-   Windows only: Represents a :c:type:`HRESULT` value, which contains success or
+   Windows only: Represents a :c:type:`!HRESULT` value, which contains success or
    error information for a function or method call.
 
 
