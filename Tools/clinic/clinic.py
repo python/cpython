@@ -231,7 +231,7 @@ def wrapped_c_string_literal(
 ) -> str:
     wrapped = textwrap.wrap(text, replace_whitespace=False,
                             drop_whitespace=False, break_on_hyphens=False)
-    suffix = f"{suffix}\n"
+    suffix += "\n"
     lines = [f'"{line}"{suffix}' for line in wrapped]
     separator = subsequent_indent * ' '
     joined = initial_indent * ' ' + separator.join(lines)
