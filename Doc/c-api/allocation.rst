@@ -31,9 +31,11 @@ Allocating Objects on the Heap
 
    Allocate a new Python object using the C structure type *TYPE* and the
    Python type object *type*.  Fields not defined by the Python object header
-   are not initialized; the object's reference count will be one.  The size of
-   the memory allocation is determined from the :c:member:`~PyTypeObject.tp_basicsize` field of
-   the type object.
+   are not initialized.
+   The caller will own the only reference to the object
+   (i.e. its reference count will be one).
+   The size of the memory allocation is determined from the
+   :c:member:`~PyTypeObject.tp_basicsize` field of the type object.
 
 
 .. c:function:: TYPE* PyObject_NewVar(TYPE, PyTypeObject *type, Py_ssize_t size)

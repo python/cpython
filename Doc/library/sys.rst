@@ -709,6 +709,9 @@ always available.
    higher than you might expect, because it includes the (temporary) reference as
    an argument to :func:`getrefcount`.
 
+   Note that the returned value may not actually reflect how many
+   references to the object are actually held.  Consequently, do not rely
+   on the returned value to be accurate, other than a value of 0 or 1.
 
 .. function:: getrecursionlimit()
 
