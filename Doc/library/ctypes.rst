@@ -72,7 +72,7 @@ Windows appends the usual ``.dll`` file suffix automatically.
 
 On Linux, it is required to specify the filename *including* the extension to
 load a library, so attribute access can not be used to load libraries. Either the
-:meth:`!LoadLibrary` method of the dll loaders should be used,
+:meth:`~LibraryLoader.LoadLibrary` method of the dll loaders should be used,
 or you should load the library by creating an instance of CDLL by calling
 the constructor::
 
@@ -1773,7 +1773,7 @@ different ways, depending on the type and number of the parameters in the call:
 
       COM methods use a special calling convention: They require a pointer to
       the COM interface as first argument, in addition to those parameters that
-      are specified in the :attr:`~_FuncPtr.argtypes` tuple.
+      are specified in the :attr:`!argtypes` tuple.
 
    The optional *paramflags* parameter creates foreign function wrappers with much
    more functionality than the features described above.
