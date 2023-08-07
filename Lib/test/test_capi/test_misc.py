@@ -3,6 +3,7 @@
 
 from collections import OrderedDict
 import _thread
+import contextlib
 import importlib.machinery
 import importlib.util
 import os
@@ -39,6 +40,8 @@ import _testinternalcapi
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
 Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 
+
+NULL = None
 
 def decode_stderr(err):
     return err.decode('utf-8', 'replace').replace('\r', '')
@@ -909,6 +912,46 @@ class CAPITest(unittest.TestCase):
 
         with self.assertRaises(SystemError):
             _testcapi.function_get_module(None)  # not a function
+
+    def test_sys_getobject(self):
+        getobject = _testcapi.sys_getobject
+
+        self.assertIs(getobject(b'stdout'), sys.stdout)
+        with support.swap_attr(sys, '\U0001f40d', 42):
+            self.assertEqual(getobject('\U0001f40d'.encode()), 42)
+
+        self.assertIs(getobject(b'nonexisting'), AttributeError)
+        self.assertIs(getobject(b'\xff'), AttributeError)
+        # CRASHES getobject(NULL)
+
+    def test_sys_setobject(self):
+        setobject = _testcapi.sys_setobject
+
+        value = ['value']
+        value2 = ['value2']
+        try:
+            self.assertEqual(setobject(b'newattr', value), 0)
+            self.assertIs(sys.newattr, value)
+            self.assertEqual(setobject(b'newattr', value2), 0)
+            self.assertIs(sys.newattr, value2)
+            self.assertEqual(setobject(b'newattr', NULL), 0)
+            self.assertFalse(hasattr(sys, 'newattr'))
+            self.assertEqual(setobject(b'newattr', NULL), 0)
+        finally:
+            with contextlib.suppress(AttributeError):
+                del sys.newattr
+        try:
+            self.assertEqual(setobject('\U0001f40d'.encode(), value), 0)
+            self.assertIs(getattr(sys, '\U0001f40d'), value)
+            self.assertEqual(setobject('\U0001f40d'.encode(), NULL), 0)
+            self.assertFalse(hasattr(sys, '\U0001f40d'))
+        finally:
+            with contextlib.suppress(AttributeError):
+                delattr(sys, '\U0001f40d')
+
+        with self.assertRaises(UnicodeDecodeError):
+            setobject(b'\xff', value)
+        # CRASHES setobject(NULL, value)
 
 
 class TestPendingCalls(unittest.TestCase):
