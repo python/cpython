@@ -2424,6 +2424,9 @@ impl_definition block
 
         return module, cls
 
+    def __repr__(self) -> str:
+        return "<clinic.Clinic object>"
+
 
 def parse_file(
         filename: str,
