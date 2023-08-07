@@ -804,9 +804,17 @@ class _MinimalOutputTests:
         TE = self.MainEnum
         copied = copy.copy(TE)
         self.assertEqual(copied, TE)
+        self.assertIs(copied, TE)
         deep = copy.deepcopy(TE)
         self.assertEqual(deep, TE)
+        self.assertIs(deep, TE)
 
+    def test_copy_member(self):
+        TE = self.MainEnum
+        copied = copy.copy(TE.first)
+        self.assertIs(copied, TE.first)
+        deep = copy.deepcopy(TE.first)
+        self.assertIs(deep, TE.first)
 
 class _FlagTests:
 

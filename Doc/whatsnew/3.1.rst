@@ -370,7 +370,7 @@ New, Improved, and Deprecated Modules
 * The :mod:`io` module has three new constants for the :meth:`seek`
   method :data:`SEEK_SET`, :data:`SEEK_CUR`, and :data:`SEEK_END`.
 
-* The :attr:`sys.version_info` tuple is now a named tuple::
+* The :data:`sys.version_info` tuple is now a named tuple::
 
     >>> sys.version_info
     sys.version_info(major=3, minor=1, micro=0, releaselevel='alpha', serial=2)
@@ -486,7 +486,7 @@ Changes to Python's build process and to the C API include:
 
   Apart from the performance improvements this change should be invisible to
   end users, with one exception: for testing and debugging purposes there's a
-  new :attr:`sys.int_info` that provides information about the
+  new :data:`sys.int_info` that provides information about the
   internal format, giving the number of bits per digit and the size in bytes
   of the C type used to store each digit::
 

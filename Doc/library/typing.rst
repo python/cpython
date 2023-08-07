@@ -849,6 +849,31 @@ using ``[]``.
       concat(b"foo", b"bar")  # OK, output has type 'bytes'
       concat("foo", b"bar")   # Error, cannot mix str and bytes
 
+   Note that, despite its name, ``AnyStr`` has nothing to do with the
+   :class:`Any` type, nor does it mean "any string". In particular, ``AnyStr``
+   and ``str | bytes`` are different from each other and have different use
+   cases::
+
+      # Invalid use of AnyStr:
+      # The type variable is used only once in the function signature,
+      # so cannot be "solved" by the type checker
+      def greet_bad(cond: bool) -> AnyStr:
+          return "hi there!" if cond else b"greetings!"
+
+      # The better way of annotating this function:
+      def greet_proper(cond: bool) -> str | bytes:
+          return "hi there!" if cond else b"greetings!"
+
+   .. deprecated-removed:: 3.13 3.18
+      Deprecated in favor of the new :ref:`type parameter syntax <type-params>`.
+      Use ``class A[T: (str, bytes)]: ...`` instead of importing ``AnyStr``. See
+      :pep:`695` for more details.
+
+      In Python 3.16, ``AnyStr`` will be removed from ``typing.__all__``, and
+      deprecation warnings will be emitted at runtime when it is accessed or
+      imported from ``typing``. ``AnyStr`` will be removed from ``typing``
+      in Python 3.18.
+
 .. data:: LiteralString
 
    Special type that includes only literal strings.
@@ -938,13 +963,17 @@ using ``[]``.
 
    For example::
 
-      from typing import Self
+      from typing import Self, reveal_type
 
       class Foo:
           def return_self(self) -> Self:
               ...
               return self
 
+      class SubclassOfFoo(Foo): pass
+
+      reveal_type(Foo().return_self())  # Revealed type is "Foo"
+      reveal_type(SubclassOfFoo().return_self())  # Revealed type is "SubclassOfFoo"
 
    This annotation is semantically equivalent to the following,
    albeit in a more succinct fashion::
@@ -958,21 +987,28 @@ using ``[]``.
               ...
               return self
 
-   In general if something currently follows the pattern of::
-
-      class Foo:
-          def return_self(self) -> "Foo":
-              ...
-              return self
-
-   You should use :data:`Self` as calls to ``SubclassOfFoo.return_self`` would have
-   ``Foo`` as the return type and not ``SubclassOfFoo``.
+   In general, if something returns ``self``, as in the above examples, you
+   should use ``Self`` as the return annotation. If ``Foo.return_self`` was
+   annotated as returning ``"Foo"``, then the type checker would infer the
+   object returned from ``SubclassOfFoo.return_self`` as being of type ``Foo``
+   rather than ``SubclassOfFoo``.
 
    Other common use cases include:
 
    - :class:`classmethod`\s that are used as alternative constructors and return instances
      of the ``cls`` parameter.
    - Annotating an :meth:`~object.__enter__` method which returns self.
+
+   You should not use ``Self`` as the return annotation if the method is not
+   guaranteed to return an instance of a subclass when the class is
+   subclassed::
+
+      class Eggs:
+          # Self would be an incorrect return annotation here,
+          # as the object returned is always an instance of Eggs,
+          # even in subclasses
+          def returns_eggs(self) -> "Eggs":
+              return Eggs()
 
    See :pep:`673` for more details.
 
@@ -2329,9 +2365,6 @@ types.
 
       class XZ(X, Z): pass  # raises TypeError
 
-      T = TypeVar('T')
-      class XT(X, Generic[T]): pass  # raises TypeError
-
    A ``TypedDict`` can be generic::
 
       class Group[T](TypedDict):
@@ -2849,6 +2882,9 @@ Functions and decorators
    This wraps the decorator with something that wraps the decorated
    function in :func:`no_type_check`.
 
+   .. deprecated-removed:: 3.13 3.15
+      No type checker ever added support for ``@no_type_check_decorator``. It
+      is therefore deprecated, and will be removed in Python 3.15.
 
 .. decorator:: override
 
@@ -3098,6 +3134,7 @@ Constant
    .. versionadded:: 3.5.2
 
 .. _generic-concrete-collections:
+.. _deprecated-aliases:
 
 Deprecated aliases
 ------------------
@@ -3106,16 +3143,21 @@ This module defines several deprecated aliases to pre-existing
 standard library classes. These were originally included in the typing
 module in order to support parameterizing these generic classes using ``[]``.
 However, the aliases became redundant in Python 3.9 when the
-corresponding pre-existing classes were enhanced to support ``[]``.
+corresponding pre-existing classes were enhanced to support ``[]`` (see
+:pep:`585`).
 
-The redundant types are deprecated as of Python 3.9 but no
-deprecation warnings are issued by the interpreter.
-It is expected that type checkers will flag the deprecated types
-when the checked program targets Python 3.9 or newer.
+The redundant types are deprecated as of Python 3.9. However, while the aliases
+may be removed at some point, removal of these aliases is not currently
+planned. As such, no deprecation warnings are currently issued by the
+interpreter for these aliases.
 
-The deprecated types will be removed from the :mod:`typing` module
-no sooner than the first Python version released 5 years after the release of Python 3.9.0.
-See details in :pep:`585`—*Type Hinting Generics In Standard Collections*.
+If at some point it is decided to remove these deprecated aliases, a
+deprecation warning will be issued by the interpreter for at least two releases
+prior to removal. The aliases are guaranteed to remain in the typing module
+without deprecation warnings until at least Python 3.14.
+
+Type checkers are encouraged to flag uses of the deprecated types if the
+program they are checking targets a minimum Python version of 3.9 or newer.
 
 .. _corresponding-to-built-in-types:
 
@@ -3648,18 +3690,38 @@ Certain features in ``typing`` are deprecated and may be removed in a future
 version of Python. The following table summarizes major deprecations for your
 convenience. This is subject to change, and not all deprecations are listed.
 
-+----------------------------------+---------------+-------------------+----------------+
-|  Feature                         | Deprecated in | Projected removal | PEP/issue      |
-+==================================+===============+===================+================+
-|  ``typing`` versions of standard | 3.9           | Undecided         | :pep:`585`     |
-|  collections                     |               |                   |                |
-+----------------------------------+---------------+-------------------+----------------+
-|  ``typing.ByteString``           | 3.9           | 3.14              | :gh:`91896`    |
-+----------------------------------+---------------+-------------------+----------------+
-|  ``typing.Text``                 | 3.11          | Undecided         | :gh:`92332`    |
-+----------------------------------+---------------+-------------------+----------------+
-|  ``typing.Hashable`` and         | 3.12          | Undecided         | :gh:`94309`    |
-|  ``typing.Sized``                |               |                   |                |
-+----------------------------------+---------------+-------------------+----------------+
-|  ``typing.TypeAlias``            | 3.12          | Undecided         | :pep:`695`     |
-+----------------------------------+---------------+-------------------+----------------+
+.. list-table::
+   :header-rows: 1
+
+   * - Feature
+     - Deprecated in
+     - Projected removal
+     - PEP/issue
+   * - ``typing`` versions of standard collections
+     - 3.9
+     - Undecided (see :ref:`deprecated-aliases` for more information)
+     - :pep:`585`
+   * - :class:`typing.ByteString`
+     - 3.9
+     - 3.14
+     - :gh:`91896`
+   * - :data:`typing.Text`
+     - 3.11
+     - Undecided
+     - :gh:`92332`
+   * - :class:`typing.Hashable` and :class:`typing.Sized`
+     - 3.12
+     - Undecided
+     - :gh:`94309`
+   * - :data:`typing.TypeAlias`
+     - 3.12
+     - Undecided
+     - :pep:`695`
+   * - :func:`@typing.no_type_check_decorator <no_type_check_decorator>`
+     - 3.13
+     - 3.15
+     - :gh:`106309`
+   * - :data:`typing.AnyStr`
+     - 3.13
+     - 3.18
+     - :gh:`105578`

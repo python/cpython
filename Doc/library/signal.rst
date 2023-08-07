@@ -562,7 +562,7 @@ The :mod:`signal` module defines the following functions:
 
    Note that installing a signal handler with :func:`signal` will reset the
    restart behaviour to interruptible by implicitly calling
-   :c:func:`siginterrupt` with a true *flag* value for the given signal.
+   :c:func:`!siginterrupt` with a true *flag* value for the given signal.
 
 
 .. function:: signal(signalnum, handler)
@@ -656,7 +656,7 @@ The :mod:`signal` module defines the following functions:
 .. function:: sigtimedwait(sigset, timeout)
 
    Like :func:`sigwaitinfo`, but takes an additional *timeout* argument
-   specifying a timeout. If *timeout* is specified as :const:`0`, a poll is
+   specifying a timeout. If *timeout* is specified as ``0``, a poll is
    performed. Returns :const:`None` if a timeout occurs.
 
    .. availability:: Unix.

@@ -14,8 +14,8 @@ are always available.  They are listed here in alphabetical order.
 | |  :func:`abs`          | |  :func:`enumerate`  | |  :func:`len`        | |  |func-range|_        |
 | |  :func:`aiter`        | |  :func:`eval`       | |  |func-list|_       | |  :func:`repr`         |
 | |  :func:`all`          | |  :func:`exec`       | |  :func:`locals`     | |  :func:`reversed`     |
-| |  :func:`any`          | |                     | |                     | |  :func:`round`        |
-| |  :func:`anext`        | |  **F**              | |  **M**              | |                       |
+| |  :func:`anext`        | |                     | |                     | |  :func:`round`        |
+| |  :func:`any`          | |  **F**              | |  **M**              | |                       |
 | |  :func:`ascii`        | |  :func:`filter`     | |  :func:`map`        | |  **S**                |
 | |                       | |  :func:`float`      | |  :func:`max`        | |  |func-set|_          |
 | |  **B**                | |  :func:`format`     | |  |func-memoryview|_ | |  :func:`setattr`      |
@@ -1231,7 +1231,7 @@ are always available.  They are listed here in alphabetical order.
 
    * Binary files are buffered in fixed-size chunks; the size of the buffer is
      chosen using a heuristic trying to determine the underlying device's "block
-     size" and falling back on :attr:`io.DEFAULT_BUFFER_SIZE`.  On many systems,
+     size" and falling back on :const:`io.DEFAULT_BUFFER_SIZE`.  On many systems,
      the buffer will typically be 4096 or 8192 bytes long.
 
    * "Interactive" text files (files for which :meth:`~io.IOBase.isatty`

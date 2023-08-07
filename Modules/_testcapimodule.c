@@ -20,15 +20,16 @@
 #include "Python.h"
 #include "frameobject.h"          // PyFrame_New
 #include "marshal.h"              // PyMarshal_WriteLongToFile
-#include "structmember.h"         // for offsetof(), T_OBJECT
+
 #include <float.h>                // FLT_MAX
 #include <signal.h>
+#include <stddef.h>               // offsetof()
 #ifndef MS_WINDOWS
-#include <unistd.h>
+#  include <unistd.h>
 #endif
 
 #ifdef HAVE_SYS_WAIT_H
-#include <sys/wait.h>             // W_STOPCODE
+#  include <sys/wait.h>           // W_STOPCODE
 #endif
 
 #ifdef Py_BUILD_CORE
@@ -1982,7 +1983,7 @@ return_result_with_error(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static PyObject*
+static PyObject *
 getitem_with_error(PyObject *self, PyObject *args)
 {
     PyObject *map, *key;
@@ -2058,78 +2059,6 @@ py_w_stopcode(PyObject *self, PyObject *args)
 }
 #endif
 
-
-static PyObject *
-get_mapping_keys(PyObject* self, PyObject *obj)
-{
-    return PyMapping_Keys(obj);
-}
-
-static PyObject *
-get_mapping_values(PyObject* self, PyObject *obj)
-{
-    return PyMapping_Values(obj);
-}
-
-static PyObject *
-get_mapping_items(PyObject* self, PyObject *obj)
-{
-    return PyMapping_Items(obj);
-}
-
-static PyObject *
-mapping_has_key(PyObject* self, PyObject *args)
-{
-    PyObject *context, *key;
-    if (!PyArg_ParseTuple(args, "OO", &context, &key)) {
-        return NULL;
-    }
-    return PyLong_FromLong(PyMapping_HasKey(context, key));
-}
-
-static PyObject *
-mapping_has_key_string(PyObject* self, PyObject *args)
-{
-    PyObject *context;
-    const char *key;
-    Py_ssize_t size;
-    if (!PyArg_ParseTuple(args, "Oz#", &context, &key, &size)) {
-        return NULL;
-    }
-    return PyLong_FromLong(PyMapping_HasKeyString(context, key));
-}
-
-static PyObject *
-sequence_set_slice(PyObject* self, PyObject *args)
-{
-    PyObject *sequence, *obj;
-    Py_ssize_t i1, i2;
-    if (!PyArg_ParseTuple(args, "OnnO", &sequence, &i1, &i2, &obj)) {
-        return NULL;
-    }
-
-    int res = PySequence_SetSlice(sequence, i1, i2, obj);
-    if (res == -1) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-sequence_del_slice(PyObject* self, PyObject *args)
-{
-    PyObject *sequence;
-    Py_ssize_t i1, i2;
-    if (!PyArg_ParseTuple(args, "Onn", &sequence, &i1, &i2)) {
-        return NULL;
-    }
-
-    int res = PySequence_DelSlice(sequence, i1, i2);
-    if (res == -1) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
 
 static PyObject *
 test_pythread_tss_key_state(PyObject *self, PyObject *args)
@@ -2232,72 +2161,6 @@ negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 #endif
-
-
-static PyObject *
-sequence_getitem(PyObject *self, PyObject *args)
-{
-    PyObject *seq;
-    Py_ssize_t i;
-    if (!PyArg_ParseTuple(args, "On", &seq, &i)) {
-        return NULL;
-    }
-    return PySequence_GetItem(seq, i);
-}
-
-
-static PyObject *
-sequence_setitem(PyObject *self, PyObject *args)
-{
-    Py_ssize_t i;
-    PyObject *seq, *val;
-    if (!PyArg_ParseTuple(args, "OnO", &seq, &i, &val)) {
-        return NULL;
-    }
-    if (PySequence_SetItem(seq, i, val)) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-
-static PyObject *
-sequence_delitem(PyObject *self, PyObject *args)
-{
-    Py_ssize_t i;
-    PyObject *seq;
-    if (!PyArg_ParseTuple(args, "On", &seq, &i)) {
-        return NULL;
-    }
-    if (PySequence_DelItem(seq, i)) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-hasattr_string(PyObject *self, PyObject* args)
-{
-    PyObject* obj;
-    PyObject* attr_name;
-
-    if (!PyArg_UnpackTuple(args, "hasattr_string", 2, 2, &obj, &attr_name)) {
-        return NULL;
-    }
-
-    if (!PyUnicode_Check(attr_name)) {
-        PyErr_SetString(PyExc_TypeError, "attribute name must a be string");
-        return PyErr_Occurred();
-    }
-
-    const char *name_str = PyUnicode_AsUTF8(attr_name);
-    if (PyObject_HasAttrString(obj, name_str)) {
-        Py_RETURN_TRUE;
-    }
-    else {
-        Py_RETURN_FALSE;
-    }
-}
 
 
 /* Functions for testing C calling conventions (METH_*) are named meth_*,
@@ -3452,6 +3315,196 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject *
+test_dict_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
+{
+    assert(!PyErr_Occurred());
+
+    PyObject *dict= NULL, *key = NULL, *missing_key = NULL, *value = NULL;
+    PyObject *invalid_key = NULL;
+    int res;
+
+    // test PyDict_New()
+    dict = PyDict_New();
+    if (dict == NULL) {
+        goto error;
+    }
+
+    key = PyUnicode_FromString("key");
+    if (key == NULL) {
+        goto error;
+    }
+
+    missing_key = PyUnicode_FromString("missing_key");
+    if (missing_key == NULL) {
+        goto error;
+    }
+
+    value = PyUnicode_FromString("value");
+    if (value == NULL) {
+        goto error;
+    }
+
+    // test PyDict_SetItem()
+    Py_ssize_t key_refcnt = Py_REFCNT(key);
+    Py_ssize_t value_refcnt = Py_REFCNT(value);
+    res = PyDict_SetItem(dict, key, value);
+    if (res < 0) {
+        goto error;
+    }
+    assert(res == 0);
+    assert(Py_REFCNT(key) == (key_refcnt + 1));
+    assert(Py_REFCNT(value) == (value_refcnt + 1));
+
+    // test PyDict_SetItemString()
+    res = PyDict_SetItemString(dict, "key", value);
+    if (res < 0) {
+        goto error;
+    }
+    assert(res == 0);
+    assert(Py_REFCNT(key) == (key_refcnt + 1));
+    assert(Py_REFCNT(value) == (value_refcnt + 1));
+
+    // test PyDict_Size()
+    assert(PyDict_Size(dict) == 1);
+
+    // test PyDict_Contains(), key is present
+    assert(PyDict_Contains(dict, key) == 1);
+
+    // test PyDict_GetItem(), key is present
+    assert(PyDict_GetItem(dict, key) == value);
+
+    // test PyDict_GetItemString(), key is present
+    assert(PyDict_GetItemString(dict, "key") == value);
+
+    // test PyDict_GetItemWithError(), key is present
+    assert(PyDict_GetItemWithError(dict, key) == value);
+    assert(!PyErr_Occurred());
+
+    // test PyDict_GetItemRef(), key is present
+    PyObject *get_value = Py_Ellipsis;  // marker value
+    assert(PyDict_GetItemRef(dict, key, &get_value) == 1);
+    assert(get_value == value);
+    Py_DECREF(get_value);
+
+    // test PyDict_GetItemStringRef(), key is present
+    get_value = Py_Ellipsis;  // marker value
+    assert(PyDict_GetItemStringRef(dict, "key", &get_value) == 1);
+    assert(get_value == value);
+    Py_DECREF(get_value);
+
+    // test PyDict_Contains(), missing key
+    assert(PyDict_Contains(dict, missing_key) == 0);
+
+    // test PyDict_GetItem(), missing key
+    assert(PyDict_GetItem(dict, missing_key) == NULL);
+    assert(!PyErr_Occurred());
+
+    // test PyDict_GetItemString(), missing key
+    assert(PyDict_GetItemString(dict, "missing_key") == NULL);
+    assert(!PyErr_Occurred());
+
+    // test PyDict_GetItemWithError(), missing key
+    assert(PyDict_GetItem(dict, missing_key) == NULL);
+    assert(!PyErr_Occurred());
+
+    // test PyDict_GetItemRef(), missing key
+    get_value = Py_Ellipsis;  // marker value
+    assert(PyDict_GetItemRef(dict, missing_key, &get_value) == 0);
+    assert(!PyErr_Occurred());
+    assert(get_value == NULL);
+
+    // test PyDict_GetItemStringRef(), missing key
+    get_value = Py_Ellipsis;  // marker value
+    assert(PyDict_GetItemStringRef(dict, "missing_key", &get_value) == 0);
+    assert(!PyErr_Occurred());
+    assert(get_value == NULL);
+
+    // test PyDict_GetItem(), invalid dict
+    PyObject *invalid_dict = key;  // borrowed reference
+    assert(PyDict_GetItem(invalid_dict, key) == NULL);
+    assert(!PyErr_Occurred());
+
+    // test PyDict_GetItemWithError(), invalid dict
+    assert(PyDict_GetItemWithError(invalid_dict, key) == NULL);
+    assert(PyErr_ExceptionMatches(PyExc_SystemError));
+    PyErr_Clear();
+
+    // test PyDict_GetItemRef(), invalid dict
+    get_value = Py_Ellipsis;  // marker value
+    assert(PyDict_GetItemRef(invalid_dict, key, &get_value) == -1);
+    assert(PyErr_ExceptionMatches(PyExc_SystemError));
+    PyErr_Clear();
+    assert(get_value == NULL);
+
+    // test PyDict_GetItemStringRef(), invalid dict
+    get_value = Py_Ellipsis;  // marker value
+    assert(PyDict_GetItemStringRef(invalid_dict, "key", &get_value) == -1);
+    assert(PyErr_ExceptionMatches(PyExc_SystemError));
+    PyErr_Clear();
+    assert(get_value == NULL);
+
+    invalid_key = PyList_New(0);
+    if (invalid_key == NULL) {
+        goto error;
+    }
+
+    // test PyDict_Contains(), invalid key
+    assert(PyDict_Contains(dict, invalid_key) == -1);
+    assert(PyErr_ExceptionMatches(PyExc_TypeError));
+    PyErr_Clear();
+
+    // test PyDict_GetItem(), invalid key
+    assert(PyDict_GetItem(dict, invalid_key) == NULL);
+    assert(!PyErr_Occurred());
+
+    // test PyDict_GetItemWithError(), invalid key
+    assert(PyDict_GetItemWithError(dict, invalid_key) == NULL);
+    assert(PyErr_ExceptionMatches(PyExc_TypeError));
+    PyErr_Clear();
+
+    // test PyDict_GetItemRef(), invalid key
+    get_value = Py_Ellipsis;  // marker value
+    assert(PyDict_GetItemRef(dict, invalid_key, &get_value) == -1);
+    assert(PyErr_ExceptionMatches(PyExc_TypeError));
+    PyErr_Clear();
+    assert(get_value == NULL);
+
+    // test PyDict_DelItem(), key is present
+    assert(PyDict_DelItem(dict, key) == 0);
+    assert(PyDict_Size(dict) == 0);
+
+    // test PyDict_DelItem(), missing key
+    assert(PyDict_DelItem(dict, missing_key) == -1);
+    assert(PyErr_ExceptionMatches(PyExc_KeyError));
+    PyErr_Clear();
+
+    // test PyDict_DelItem(), invalid key
+    assert(PyDict_DelItem(dict, invalid_key) == -1);
+    assert(PyErr_ExceptionMatches(PyExc_TypeError));
+    PyErr_Clear();
+
+    // test PyDict_Clear()
+    PyDict_Clear(dict);
+
+    Py_DECREF(dict);
+    Py_DECREF(key);
+    Py_DECREF(missing_key);
+    Py_DECREF(value);
+    Py_DECREF(invalid_key);
+
+    Py_RETURN_NONE;
+
+error:
+    Py_XDECREF(dict);
+    Py_XDECREF(key);
+    Py_XDECREF(missing_key);
+    Py_XDECREF(value);
+    Py_XDECREF(invalid_key);
+    return NULL;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -3533,23 +3586,12 @@ static PyMethodDef TestMethods[] = {
 #ifdef W_STOPCODE
     {"W_STOPCODE", py_w_stopcode, METH_VARARGS},
 #endif
-    {"get_mapping_keys", get_mapping_keys, METH_O},
-    {"get_mapping_values", get_mapping_values, METH_O},
-    {"get_mapping_items", get_mapping_items, METH_O},
-    {"mapping_has_key", mapping_has_key, METH_VARARGS},
-    {"mapping_has_key_string", mapping_has_key_string, METH_VARARGS},
-    {"sequence_set_slice", sequence_set_slice, METH_VARARGS},
-    {"sequence_del_slice", sequence_del_slice, METH_VARARGS},
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
     {"hamt", new_hamt, METH_NOARGS},
     {"bad_get", _PyCFunction_CAST(bad_get), METH_FASTCALL},
 #ifdef Py_REF_DEBUG
     {"negative_refcount", negative_refcount, METH_NOARGS},
 #endif
-    {"sequence_getitem", sequence_getitem, METH_VARARGS},
-    {"sequence_setitem", sequence_setitem, METH_VARARGS},
-    {"sequence_delitem", sequence_delitem, METH_VARARGS},
-    {"hasattr_string", hasattr_string, METH_VARARGS},
     {"meth_varargs", meth_varargs, METH_VARARGS},
     {"meth_varargs_keywords", _PyCFunction_CAST(meth_varargs_keywords), METH_VARARGS|METH_KEYWORDS},
     {"meth_o", meth_o, METH_O},
@@ -3597,6 +3639,7 @@ static PyMethodDef TestMethods[] = {
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
     {"check_pyimport_addmodule", check_pyimport_addmodule, METH_VARARGS},
     {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
+    {"test_dict_capi", test_dict_capi, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -4054,7 +4097,7 @@ ContainerNoGC_dealloc(ContainerNoGCobject *self)
 }
 
 static PyMemberDef ContainerNoGC_members[] = {
-    {"value", T_OBJECT, offsetof(ContainerNoGCobject, value), READONLY,
+    {"value", _Py_T_OBJECT, offsetof(ContainerNoGCobject, value), Py_READONLY,
      PyDoc_STR("a container value for test purposes")},
     {0}
 };
@@ -4190,6 +4233,9 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_Heaptype(m) < 0) {
         return NULL;
     }
+    if (_PyTestCapi_Init_Abstract(m) < 0) {
+        return NULL;
+    }
     if (_PyTestCapi_Init_Unicode(m) < 0) {
         return NULL;
     }
@@ -4212,6 +4258,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Float(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Dict(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Structmember(m) < 0) {

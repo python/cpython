@@ -8,6 +8,65 @@ preserve
 #endif
 
 
+PyDoc_STRVAR(_testinternalcapi_compiler_cleandoc__doc__,
+"compiler_cleandoc($module, /, doc)\n"
+"--\n"
+"\n"
+"C implementation of inspect.cleandoc().");
+
+#define _TESTINTERNALCAPI_COMPILER_CLEANDOC_METHODDEF    \
+    {"compiler_cleandoc", _PyCFunction_CAST(_testinternalcapi_compiler_cleandoc), METH_FASTCALL|METH_KEYWORDS, _testinternalcapi_compiler_cleandoc__doc__},
+
+static PyObject *
+_testinternalcapi_compiler_cleandoc_impl(PyObject *module, PyObject *doc);
+
+static PyObject *
+_testinternalcapi_compiler_cleandoc(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(doc), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"doc", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "compiler_cleandoc",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *doc;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("compiler_cleandoc", "argument 'doc'", "str", args[0]);
+        goto exit;
+    }
+    doc = args[0];
+    return_value = _testinternalcapi_compiler_cleandoc_impl(module, doc);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_testinternalcapi_compiler_codegen__doc__,
 "compiler_codegen($module, /, ast, filename, optimize, compile_mode=0)\n"
 "--\n"
@@ -206,4 +265,4 @@ _testinternalcapi_assemble_code_object(PyObject *module, PyObject *const *args, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2965f1578b986218 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=811d50772c8f285a input=a9049054013a1b77]*/
