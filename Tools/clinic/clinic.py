@@ -476,7 +476,7 @@ class Language(metaclass=abc.ABCMeta):
     checksum_line = ""
 
     def __init__(self, filename: str) -> None:
-        pass
+        ...
 
     @abc.abstractmethod
     def render(
@@ -484,10 +484,10 @@ class Language(metaclass=abc.ABCMeta):
             clinic: Clinic | None,
             signatures: Iterable[Module | Class | Function]
     ) -> str:
-        pass
+        ...
 
     def parse_line(self, line: str) -> None:
-        pass
+        ...
 
     def validate(self) -> None:
         def assert_only_one(
@@ -2956,6 +2956,9 @@ class CConverter(metaclass=CConverterAutoRegister):
                     f"Note: accessing self.function inside converter_init is disallowed!"
                 )
             return super().__getattr__(attr)
+    # this branch is just here for coverage reporting
+    else:  # pragma: no cover
+        pass
 
     def converter_init(self) -> None:
         pass
@@ -4084,7 +4087,7 @@ def correct_name_for_self(
         return "void *", "null"
     if f.kind in (CLASS_METHOD, METHOD_NEW):
         return "PyTypeObject *", "type"
-    raise RuntimeError("Unhandled type of function f: " + repr(f.kind))
+    raise AssertionError(f"Unhandled type of function f: {f.kind!r}")
 
 def required_type_for_self_for_parser(
         f: Function

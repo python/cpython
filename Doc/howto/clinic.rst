@@ -193,6 +193,71 @@ The CLI supports the following options:
    The list of files to process.
 
 
+.. _clinic-classes:
+
+Classes for extending Argument Clinic
+-------------------------------------
+
+.. module:: clinic
+
+.. class:: CConverter
+
+   The base class for all converters.
+   See :ref:`clinic-howto-custom-converter` for how to subclass this class.
+
+   .. attribute:: type
+
+      The C type to use for this variable.
+      :attr:`!type` should be a Python string specifying the type,
+      e.g. ``'int'``.
+      If this is a pointer type, the type string should end with ``' *'``.
+
+   .. attribute:: default
+
+      The Python default value for this parameter, as a Python value.
+      Or the magic value ``unspecified`` if there is no default.
+
+   .. attribute:: py_default
+
+      :attr:`!default` as it should appear in Python code,
+      as a string.
+      Or ``None`` if there is no default.
+
+   .. attribute:: c_default
+
+      :attr:`!default` as it should appear in C code,
+      as a string.
+      Or ``None`` if there is no default.
+
+   .. attribute:: c_ignored_default
+
+      The default value used to initialize the C variable when
+      there is no default, but not specifying a default may
+      result in an "uninitialized variable" warning.  This can
+      easily happen when using option groups—although
+      properly written code will never actually use this value,
+      the variable does get passed in to the impl, and the
+      C compiler will complain about the "use" of the
+      uninitialized value.  This value should always be a
+      non-empty string.
+
+   .. attribute:: converter
+
+      The name of the C converter function, as a string.
+
+   .. attribute:: impl_by_reference
+
+      A boolean value.  If true,
+      Argument Clinic will add a ``&`` in front of the name of
+      the variable when passing it into the impl function.
+
+   .. attribute:: parse_by_reference
+
+      A boolean value.  If true,
+      Argument Clinic will add a ``&`` in front of the name of
+      the variable when passing it into :c:func:`PyArg_ParseTuple`.
+
+
 .. _clinic-tutorial:
 
 Tutorial
@@ -1348,7 +1413,7 @@ See also :pep:`573`.
 How to write a custom converter
 -------------------------------
 
-A converter is a Python class that inherits from :py:class:`!CConverter`.
+A converter is a Python class that inherits from :py:class:`CConverter`.
 The main purpose of a custom converter, is for parameters parsed with
 the ``O&`` format unit --- parsing such a parameter means calling
 a :c:func:`PyArg_ParseTuple` "converter function".
@@ -1360,72 +1425,12 @@ your converter class with the ``_converter`` suffix stripped off.
 
 Instead of subclassing :py:meth:`!CConverter.__init__`,
 write a :py:meth:`!converter_init` method.
-Apart for the *self* parameter, all additional :py:meth:`!converter_init`
-parameters **must** be keyword-only.
+:py:meth:`!converter_init` always accepts a *self* parameter.
+After *self*, all additional parameters **must** be keyword-only.
 Any arguments passed to the converter in Argument Clinic
 will be passed along to your :py:meth:`!converter_init` method.
-See :py:class:`!CConverter` for a list of members you may wish to specify in
+See :py:class:`CConverter` for a list of members you may wish to specify in
 your subclass.
-
-.. module:: clinic
-
-.. class:: CConverter
-
-   The base class for all converters.
-   See :ref:`clinic-howto-custom-converter` for how to subclass this class.
-
-   .. attribute:: type
-
-      The C type to use for this variable.
-      :attr:`!type` should be a Python string specifying the type,
-      e.g. ``'int'``.
-      If this is a pointer type, the type string should end with ``' *'``.
-
-   .. attribute:: default
-
-      The Python default value for this parameter, as a Python value.
-      Or the magic value ``unspecified`` if there is no default.
-
-   .. attribute:: py_default
-
-      :attr:`!default` as it should appear in Python code,
-      as a string.
-      Or ``None`` if there is no default.
-
-   .. attribute:: c_default
-
-      :attr:`!default` as it should appear in C code,
-      as a string.
-      Or ``None`` if there is no default.
-
-   .. attribute:: c_ignored_default
-
-      The default value used to initialize the C variable when
-      there is no default, but not specifying a default may
-      result in an "uninitialized variable" warning.  This can
-      easily happen when using option groups—although
-      properly written code will never actually use this value,
-      the variable does get passed in to the impl, and the
-      C compiler will complain about the "use" of the
-      uninitialized value.  This value should always be a
-      non-empty string.
-
-   .. attribute:: converter
-
-      The name of the C converter function, as a string.
-
-   .. attribute:: impl_by_reference
-
-      A boolean value.  If true,
-      Argument Clinic will add a ``&`` in front of the name of
-      the variable when passing it into the impl function.
-
-   .. attribute:: parse_by_reference
-
-      A boolean value.  If true,
-      Argument Clinic will add a ``&`` in front of the name of
-      the variable when passing it into :c:func:`PyArg_ParseTuple`.
-
 
 Here's the simplest example of a custom converter, from :source:`Modules/zlibmodule.c`::
 
