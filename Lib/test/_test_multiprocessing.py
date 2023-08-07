@@ -1139,15 +1139,6 @@ class _TestQueue(BaseTestCase):
         self.assertRaises(pyqueue.Empty, get, timeout=TIMEOUT3)
         self.assertTimingAlmostEqual(get.elapsed, TIMEOUT3)
 
-        if gc.isenabled():
-            gc.disable()
-            self.addCleanup(gc.enable)
-        try:
-            queue.get_nowait()
-        except pyqueue.Empty as e:
-            w = weakref.ref(e)
-        self.assertEqual(w(), None)
-
         proc.join()
         close_queue(queue)
 
@@ -3157,6 +3148,29 @@ class _TestManagerRestart(BaseTestCase):
                 shutdown_timeout=SHUTDOWN_TIMEOUT)
             if hasattr(manager, "shutdown"):
                 self.addCleanup(manager.shutdown)
+
+#
+# Issue 106558: Manager exceptions should not create cyclic references.
+#
+
+class TestManagerExceptions(unittest.TestCase):
+    def setUp(self):
+        self.mgr = multiprocessing.Manager()
+
+    def tearDown(self):
+        self.mgr.shutdown()
+        self.mgr.join()
+
+    def test_queue_get(self):
+        queue = self.mgr.Queue()
+        if gc.isenabled():
+            gc.disable()
+            self.addCleanup(gc.enable)
+        try:
+            queue.get_nowait()
+        except pyqueue.Empty as e:
+            wr = weakref.ref(e)
+        self.assertEqual(wr(), None)
 
 #
 #
