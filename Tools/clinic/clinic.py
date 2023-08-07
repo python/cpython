@@ -229,7 +229,7 @@ def wrapped_c_string_literal(
         initial_indent: int = 0,
         subsequent_indent: int = 4
 ) -> str:
-    wrapped = textwrap.wrap(text, replace_whitespace=False,
+    wrapped = textwrap.wrap(text, width=width, replace_whitespace=False,
                             drop_whitespace=False, break_on_hyphens=False)
     suffix += "\n"
     lines = [f'"{line}"{suffix}' for line in wrapped]
@@ -867,9 +867,10 @@ class CLanguage(Language):
         #endif
         if ({condition}) {{{{
             if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                             {depr_message}, 1))
-        {{{{
-                goto exit;
+                    {depr_message}, 1))
+            {{{{
+                    goto exit;
+            }}}}
         }}}}
     """
 
@@ -949,9 +950,10 @@ class CLanguage(Language):
             major=major,
             minor=minor,
             cpp_message=wrapped_c_string_literal(cpp_message, suffix=" \\",
+                                                 width=64,
                                                  subsequent_indent=16),
-            depr_message=wrapped_c_string_literal(depr_message,
-                                                  subsequent_indent=29),
+            depr_message=wrapped_c_string_literal(depr_message, width=64,
+                                                  subsequent_indent=20),
         )
         return normalize_snippet(code, indent=4)
 
