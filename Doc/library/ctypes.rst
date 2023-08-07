@@ -877,7 +877,7 @@ pointer types.  So, for ``POINTER(c_int)``, ctypes accepts an array of c_int::
    >>>
 
 In addition, if a function argument is explicitly declared to be a pointer type
-(such as ``POINTER(c_int)``) in :attr:`_FuncPtr.argtypes`, an object of the pointed
+(such as ``POINTER(c_int)``) in :attr:`~_FuncPtr.argtypes`, an object of the pointed
 type (``c_int`` in this case) can be passed to the function.  ctypes will apply
 the required :func:`byref` conversion in this case automatically.
 
@@ -1441,7 +1441,7 @@ All these classes can be instantiated by calling them with at least one
 argument, the pathname of the shared library.  If you have an existing handle to
 an already loaded shared library, it can be passed as the ``handle`` named
 parameter, otherwise the underlying platforms :c:func:`!dlopen` or
-:c:func:`~LibraryLoader.LoadLibrary` function is used to load the library into
+:c:func:`!LoadLibrary` function is used to load the library into
 the process, and to get a handle to it.
 
 The *mode* parameter can be used to specify how the library is loaded.  For
