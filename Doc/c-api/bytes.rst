@@ -184,8 +184,8 @@ called with a non-bytes parameter.
 .. c:function:: void PyBytes_ConcatAndDel(PyObject **bytes, PyObject *newpart)
 
    Create a new bytes object in *\*bytes* containing the contents of *newpart*
-   appended to *bytes*.  This version decrements the reference count of
-   *newpart*.
+   appended to *bytes*.  This version releases the :term:`strong reference`
+   to *newpart* (i.e. decrements its reference count).
 
 
 .. c:function:: int _PyBytes_Resize(PyObject **bytes, Py_ssize_t newsize)
