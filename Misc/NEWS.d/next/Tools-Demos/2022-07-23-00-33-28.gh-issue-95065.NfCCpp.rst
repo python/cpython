@@ -3,4 +3,4 @@ Argument Clinic, using the new ``* [from X.Y]`` syntax.
 (To be read as *"keyword-only from Python version X.Y"*.)
 See :ref:`clinic-howto-deprecate-positional` for more information.
 Patch by Erlend E. Aasland with help from Alex Waygood,
-Nikita Sobolev, and Serhiy Storchaca.
+Nikita Sobolev, and Serhiy Storchaka.
