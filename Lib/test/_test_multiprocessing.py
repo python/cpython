@@ -1139,6 +1139,15 @@ class _TestQueue(BaseTestCase):
         self.assertRaises(pyqueue.Empty, get, timeout=TIMEOUT3)
         self.assertTimingAlmostEqual(get.elapsed, TIMEOUT3)
 
+        if gc.isenabled():
+            gc.disable()
+            self.addCleanup(gc.enable)
+        try:
+            queue.get_nowait()
+        except pyqueue.Empty as e:
+            w = weakref.ref(e)
+        self.assertEqual(w(), None)
+
         proc.join()
         close_queue(queue)
 
