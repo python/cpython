@@ -4,14 +4,14 @@ Writes the cases to generated_cases.c.h, which is #included in ceval.c.
 """
 
 import argparse
-import contextlib
 import os
 import posixpath
 import sys
 import typing
 
+import stacking  # Early import to avoid circular import
 from analysis import Analyzer
-from formatting import Formatter, list_effect_size, maybe_parenthesize
+from formatting import Formatter, list_effect_size
 from flags import InstructionFlags, variable_used
 from instructions import (
     AnyInstruction,
@@ -118,41 +118,7 @@ class Generator(Analyzer):
                     pushed = ""
             case parsing.Macro():
                 instr = self.macro_instrs[thing.name]
-                parts = [comp for comp in instr.parts if isinstance(comp, Component)]
-                # Note: stack_analysis() already verifies that macro components
-                # have no variable-sized stack effects.
-                low = 0
-                sp = 0
-                high = 0
-                pushed_symbolic: list[str] = []
-                for comp in parts:
-                    for effect in comp.instr.input_effects:
-                        assert not effect.cond, effect
-                        assert not effect.size, effect
-                        sp -= 1
-                        low = min(low, sp)
-                    for effect in comp.instr.output_effects:
-                        assert not effect.size, effect
-                        if effect.cond:
-                            if effect.cond in ("0", "1"):
-                                pushed_symbolic.append(effect.cond)
-                            else:
-                                pushed_symbolic.append(
-                                    maybe_parenthesize(
-                                        f"{maybe_parenthesize(effect.cond)} ? 1 : 0"
-                                    )
-                                )
-                        sp += 1
-                        high = max(sp, high)
-                if high != max(0, sp):
-                    # If you get this, intermediate stack growth occurs,
-                    # and stack size calculations may go awry.
-                    # E.g. [push, pop]. The fix would be for stack size
-                    # calculations to use the micro ops.
-                    self.error("Macro has virtual stack growth", thing)
-                popped = str(-low)
-                pushed_symbolic.append(str(sp - low - len(pushed_symbolic)))
-                pushed = " + ".join(pushed_symbolic)
+                popped, pushed = stacking.get_stack_effect_info_for_macro(instr)
             case parsing.Pseudo():
                 instr = self.pseudo_instrs[thing.name]
                 popped = pushed = None
@@ -258,7 +224,8 @@ class Generator(Analyzer):
                 case _:
                     typing.assert_never(thing)
             all_formats.add(format)
-        # Turn it into a list of enum definitions.
+
+        # Turn it into a sorted list of enum values.
         format_enums = [INSTR_FMT_PREFIX + format for format in sorted(all_formats)]
 
         with open(metadata_filename, "w") as f:
@@ -276,8 +243,10 @@ class Generator(Analyzer):
 
             self.write_stack_effect_functions()
 
-            # Write type definitions
-            self.out.emit(f"enum InstructionFormat {{ {', '.join(format_enums)} }};")
+            # Write the enum definition for instruction formats.
+            with self.out.block("enum InstructionFormat", ";"):
+                for enum in format_enums:
+                    self.out.emit(enum + ",")
 
             self.out.emit("")
             self.out.emit(
@@ -374,7 +343,7 @@ class Generator(Analyzer):
                             # Since an 'op' is not a bytecode, it has no expansion; but 'inst' is
                             if instr.kind == "inst" and instr.is_viable_uop():
                                 # Construct a dummy Component -- input/output mappings are not used
-                                part = Component(instr, [], [], instr.active_caches)
+                                part = Component(instr, instr.active_caches)
                                 self.write_macro_expansions(instr.name, [part])
                             elif instr.kind == "inst" and variable_used(
                                 instr.inst, "oparg1"
@@ -468,7 +437,15 @@ class Generator(Analyzer):
             if isinstance(part, Component):
                 # All component instructions must be viable uops
                 if not part.instr.is_viable_uop():
-                    print(f"NOTE: Part {part.instr.name} of {name} is not a viable uop")
+                    # This note just reminds us about macros that cannot
+                    # be expanded to Tier 2 uops. It is not an error.
+                    # It is sometimes emitted for macros that have a
+                    # manual translation in translate_bytecode_to_trace()
+                    # in Python/optimizer.c.
+                    self.note(
+                        f"Part {part.instr.name} of {name} is not a viable uop",
+                        part.instr.inst,
+                    )
                     return
                 if not part.active_caches:
                     size, offset = OPARG_SIZES["OPARG_FULL"], 0
@@ -512,7 +489,7 @@ class Generator(Analyzer):
         instr2 = self.instrs[name2]
         assert not instr1.active_caches, f"{name1} has active caches"
         assert not instr2.active_caches, f"{name2} has active caches"
-        expansions = [
+        expansions: list[tuple[str, int, int]] = [
             (name1, OPARG_SIZES["OPARG_TOP"], 0),
             (name2, OPARG_SIZES["OPARG_BOTTOM"], 0),
         ]
@@ -563,7 +540,6 @@ class Generator(Analyzer):
             # Write and count instructions of all kinds
             n_instrs = 0
             n_macros = 0
-            n_pseudos = 0
             for thing in self.everything:
                 match thing:
                     case OverriddenInstructionPlaceHolder():
@@ -574,15 +550,17 @@ class Generator(Analyzer):
                             self.write_instr(self.instrs[thing.name])
                     case parsing.Macro():
                         n_macros += 1
-                        self.write_macro(self.macro_instrs[thing.name])
+                        mac = self.macro_instrs[thing.name]
+                        stacking.write_macro_instr(mac, self.out, self.families.get(mac.name))
+                        # self.write_macro(self.macro_instrs[thing.name])
                     case parsing.Pseudo():
-                        n_pseudos += 1
+                        pass
                     case _:
                         typing.assert_never(thing)
 
         print(
-            f"Wrote {n_instrs} instructions, {n_macros} macros, "
-            f"and {n_pseudos} pseudos to {output_filename}",
+            f"Wrote {n_instrs} instructions and {n_macros} macros "
+            f"to {output_filename}",
             file=sys.stderr,
         )
 
@@ -590,6 +568,8 @@ class Generator(Analyzer):
         self, executor_filename: str, emit_line_directives: bool
     ) -> None:
         """Generate cases for the Tier 2 interpreter."""
+        n_instrs = 0
+        n_uops = 0
         with open(executor_filename, "w") as f:
             self.out = Formatter(f, 8, emit_line_directives)
             self.write_provenance_header()
@@ -601,6 +581,10 @@ class Generator(Analyzer):
                     case parsing.InstDef():
                         instr = self.instrs[thing.name]
                         if instr.is_viable_uop():
+                            if instr.kind == "op":
+                                n_uops += 1
+                            else:
+                                n_instrs += 1
                             self.out.emit("")
                             with self.out.block(f"case {thing.name}:"):
                                 instr.write(self.out, tier=TIER_TWO)
@@ -616,7 +600,7 @@ class Generator(Analyzer):
                     case _:
                         typing.assert_never(thing)
         print(
-            f"Wrote some stuff to {executor_filename}",
+            f"Wrote {n_instrs} instructions and {n_uops} ops to {executor_filename}",
             file=sys.stderr,
         )
 
@@ -641,69 +625,6 @@ class Generator(Analyzer):
                 if instr.check_eval_breaker:
                     self.out.emit("CHECK_EVAL_BREAKER();")
                 self.out.emit(f"DISPATCH();")
-
-    def write_macro(self, mac: MacroInstruction) -> None:
-        """Write code for a macro instruction."""
-        last_instr: Instruction | None = None
-        with self.wrap_macro(mac):
-            cache_adjust = 0
-            for part in mac.parts:
-                match part:
-                    case parsing.CacheEffect(size=size):
-                        cache_adjust += size
-                    case Component() as comp:
-                        last_instr = comp.instr
-                        comp.write_body(self.out)
-                        cache_adjust += comp.instr.cache_offset
-
-            if cache_adjust:
-                self.out.emit(f"next_instr += {cache_adjust};")
-
-            if (
-                (family := self.families.get(mac.name))
-                and mac.name == family.name
-                and (cache_size := family.size)
-            ):
-                self.out.emit(
-                    f"static_assert({cache_size} == "
-                    f'{cache_adjust}, "incorrect cache size");'
-                )
-
-    @contextlib.contextmanager
-    def wrap_macro(self, mac: MacroInstruction):
-        """Boilerplate for macro instructions."""
-        # TODO: Somewhere (where?) make it so that if one instruction
-        # has an output that is input to another, and the variable names
-        # and types match and don't conflict with other instructions,
-        # that variable is declared with the right name and type in the
-        # outer block, rather than trusting the compiler to optimize it.
-        self.out.emit("")
-        with self.out.block(f"TARGET({mac.name})"):
-            if mac.predicted:
-                self.out.emit(f"PREDICTED({mac.name});")
-
-            # The input effects should have no conditionals.
-            # Only the output effects do (for now).
-            ieffects = [
-                StackEffect(eff.name, eff.type) if eff.cond else eff
-                for eff in mac.stack
-            ]
-
-            for i, var in reversed(list(enumerate(ieffects))):
-                src = None
-                if i < mac.initial_sp:
-                    src = StackEffect(f"stack_pointer[-{mac.initial_sp - i}]", "")
-                self.out.declare(var, src)
-
-            yield
-
-            self.out.stack_adjust(ieffects[: mac.initial_sp], mac.stack[: mac.final_sp])
-
-            for i, var in enumerate(reversed(mac.stack[: mac.final_sp]), 1):
-                dst = StackEffect(f"stack_pointer[-{i}]", "")
-                self.out.assign(dst, var)
-
-            self.out.emit(f"DISPATCH();")
 
 
 def main():

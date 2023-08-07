@@ -9,16 +9,16 @@
 #include "pycore_dict.h"          // _PyObject_MakeDictFromInstanceAttributes()
 #include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
-#include "pycore_interp_id.h"     // _PyInterpreterID_Type
 #include "pycore_namespace.h"     // _PyNamespace_Type
 #include "pycore_object.h"        // PyAPI_DATA() _Py_SwappedOp definition
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntry_Type
-#include "pycore_typeobject.h"    // _PyBufferWrapper_Type
 #include "pycore_typevarobject.h" // _PyTypeAlias_Type, _Py_initialize_generic
+#include "pycore_typeobject.h"    // _PyBufferWrapper_Type
 #include "pycore_unionobject.h"   // _PyUnion_Type
+#include "interpreteridobject.h"  // _PyInterpreterID_Type
 
 #ifdef Py_LIMITED_API
    // Prevent recursive call _Py_IncRef() <=> Py_INCREF()
@@ -159,11 +159,8 @@ _PyDebug_PrintTotalRefs(void) {
    Do not call them otherwise, they do not initialize the object! */
 
 #ifdef Py_TRACE_REFS
-/* Head of circular doubly-linked list of all objects.  These are linked
- * together via the _ob_prev and _ob_next members of a PyObject, which
- * exist only in a Py_TRACE_REFS build.
- */
-static PyObject refchain = {&refchain, &refchain};
+
+#define REFCHAIN(interp) &interp->object_state.refchain
 
 /* Insert op at the front of the list of all objects.  If force is true,
  * op is added even if _ob_prev and _ob_next are non-NULL already.  If
@@ -188,10 +185,11 @@ _Py_AddToAllObjects(PyObject *op, int force)
     }
 #endif
     if (force || op->_ob_prev == NULL) {
-        op->_ob_next = refchain._ob_next;
-        op->_ob_prev = &refchain;
-        refchain._ob_next->_ob_prev = op;
-        refchain._ob_next = op;
+        PyObject *refchain = REFCHAIN(_PyInterpreterState_GET());
+        op->_ob_next = refchain->_ob_next;
+        op->_ob_prev = refchain;
+        refchain->_ob_next->_ob_prev = op;
+        refchain->_ob_next = op;
     }
 }
 #endif  /* Py_TRACE_REFS */
@@ -2072,6 +2070,7 @@ static PyTypeObject* static_types[] = {
     &PyGen_Type,
     &PyGetSetDescr_Type,
     &PyInstanceMethod_Type,
+    &PyInterpreterID_Type,
     &PyListIter_Type,
     &PyListRevIter_Type,
     &PyList_Type,
@@ -2122,7 +2121,6 @@ static PyTypeObject* static_types[] = {
     &_PyHamt_CollisionNode_Type,
     &_PyHamt_Type,
     &_PyLegacyEventHandler_Type,
-    &_PyInterpreterID_Type,
     &_PyLineIterator,
     &_PyManagedBuffer_Type,
     &_PyMemoryIter_Type,
@@ -2229,7 +2227,8 @@ _Py_ForgetReference(PyObject *op)
         _PyObject_ASSERT_FAILED_MSG(op, "negative refcnt");
     }
 
-    if (op == &refchain ||
+    PyObject *refchain = REFCHAIN(_PyInterpreterState_GET());
+    if (op == refchain ||
         op->_ob_prev->_ob_next != op || op->_ob_next->_ob_prev != op)
     {
         _PyObject_ASSERT_FAILED_MSG(op, "invalid object chain");
@@ -2237,12 +2236,12 @@ _Py_ForgetReference(PyObject *op)
 
 #ifdef SLOW_UNREF_CHECK
     PyObject *p;
-    for (p = refchain._ob_next; p != &refchain; p = p->_ob_next) {
+    for (p = refchain->_ob_next; p != refchain; p = p->_ob_next) {
         if (p == op) {
             break;
         }
     }
-    if (p == &refchain) {
+    if (p == refchain) {
         /* Not found */
         _PyObject_ASSERT_FAILED_MSG(op,
                                     "object not found in the objects list");
@@ -2258,11 +2257,15 @@ _Py_ForgetReference(PyObject *op)
  * interpreter must be in a healthy state.
  */
 void
-_Py_PrintReferences(FILE *fp)
+_Py_PrintReferences(PyInterpreterState *interp, FILE *fp)
 {
     PyObject *op;
+    if (interp == NULL) {
+        interp = _PyInterpreterState_Main();
+    }
     fprintf(fp, "Remaining objects:\n");
-    for (op = refchain._ob_next; op != &refchain; op = op->_ob_next) {
+    PyObject *refchain = REFCHAIN(interp);
+    for (op = refchain->_ob_next; op != refchain; op = op->_ob_next) {
         fprintf(fp, "%p [%zd] ", (void *)op, Py_REFCNT(op));
         if (PyObject_Print(op, fp, 0) != 0) {
             PyErr_Clear();
@@ -2274,34 +2277,42 @@ _Py_PrintReferences(FILE *fp)
 /* Print the addresses of all live objects.  Unlike _Py_PrintReferences, this
  * doesn't make any calls to the Python C API, so is always safe to call.
  */
+// XXX This function is not safe to use if the interpreter has been
+// freed or is in an unhealthy state (e.g. late in finalization).
+// The call in Py_FinalizeEx() is okay since the main interpreter
+// is statically allocated.
 void
-_Py_PrintReferenceAddresses(FILE *fp)
+_Py_PrintReferenceAddresses(PyInterpreterState *interp, FILE *fp)
 {
     PyObject *op;
+    PyObject *refchain = REFCHAIN(interp);
     fprintf(fp, "Remaining object addresses:\n");
-    for (op = refchain._ob_next; op != &refchain; op = op->_ob_next)
+    for (op = refchain->_ob_next; op != refchain; op = op->_ob_next)
         fprintf(fp, "%p [%zd] %s\n", (void *)op,
             Py_REFCNT(op), Py_TYPE(op)->tp_name);
 }
 
+/* The implementation of sys.getobjects(). */
 PyObject *
 _Py_GetObjects(PyObject *self, PyObject *args)
 {
     int i, n;
     PyObject *t = NULL;
     PyObject *res, *op;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     if (!PyArg_ParseTuple(args, "i|O", &n, &t))
         return NULL;
-    op = refchain._ob_next;
+    PyObject *refchain = REFCHAIN(interp);
+    op = refchain->_ob_next;
     res = PyList_New(0);
     if (res == NULL)
         return NULL;
-    for (i = 0; (n == 0 || i < n) && op != &refchain; i++) {
+    for (i = 0; (n == 0 || i < n) && op != refchain; i++) {
         while (op == self || op == args || op == res || op == t ||
                (t != NULL && !Py_IS_TYPE(op, (PyTypeObject *) t))) {
             op = op->_ob_next;
-            if (op == &refchain)
+            if (op == refchain)
                 return res;
         }
         if (PyList_Append(res, op) < 0) {
@@ -2312,6 +2323,8 @@ _Py_GetObjects(PyObject *self, PyObject *args)
     }
     return res;
 }
+
+#undef REFCHAIN
 
 #endif
 

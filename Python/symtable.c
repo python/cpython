@@ -3,7 +3,7 @@
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntryObject
-#include "structmember.h"         // PyMemberDef
+
 
 /* error strings used for warnings */
 #define GLOBAL_PARAM \
@@ -171,14 +171,14 @@ ste_dealloc(PySTEntryObject *ste)
 #define OFF(x) offsetof(PySTEntryObject, x)
 
 static PyMemberDef ste_memberlist[] = {
-    {"id",       T_OBJECT, OFF(ste_id), READONLY},
-    {"name",     T_OBJECT, OFF(ste_name), READONLY},
-    {"symbols",  T_OBJECT, OFF(ste_symbols), READONLY},
-    {"varnames", T_OBJECT, OFF(ste_varnames), READONLY},
-    {"children", T_OBJECT, OFF(ste_children), READONLY},
-    {"nested",   T_INT,    OFF(ste_nested), READONLY},
-    {"type",     T_INT,    OFF(ste_type), READONLY},
-    {"lineno",   T_INT,    OFF(ste_lineno), READONLY},
+    {"id",       _Py_T_OBJECT, OFF(ste_id), Py_READONLY},
+    {"name",     _Py_T_OBJECT, OFF(ste_name), Py_READONLY},
+    {"symbols",  _Py_T_OBJECT, OFF(ste_symbols), Py_READONLY},
+    {"varnames", _Py_T_OBJECT, OFF(ste_varnames), Py_READONLY},
+    {"children", _Py_T_OBJECT, OFF(ste_children), Py_READONLY},
+    {"nested",   Py_T_INT,    OFF(ste_nested), Py_READONLY},
+    {"type",     Py_T_INT,    OFF(ste_type), Py_READONLY},
+    {"lineno",   Py_T_INT,    OFF(ste_lineno), Py_READONLY},
     {NULL}
 };
 
@@ -282,17 +282,10 @@ symtable_new(void)
     return NULL;
 }
 
-/* When compiling the use of C stack is probably going to be a lot
-   lighter than when executing Python code but still can overflow
-   and causing a Python crash if not checked (e.g. eval("()"*300000)).
-   Using the current recursion limit for the compiler seems too
-   restrictive (it caused at least one test to fail) so a factor is
-   used to allow deeper recursion when compiling an expression.
-
-   Using a scaling factor means this should automatically adjust when
+/* Using a scaling factor means this should automatically adjust when
    the recursion limit is adjusted for small or large C stack allocations.
 */
-#define COMPILER_STACK_FRAME_SCALE 3
+#define COMPILER_STACK_FRAME_SCALE 2
 
 struct symtable *
 _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)

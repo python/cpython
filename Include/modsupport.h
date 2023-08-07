@@ -22,10 +22,12 @@ PyAPI_FUNC(int) PyArg_UnpackTuple(PyObject *, const char *, Py_ssize_t, Py_ssize
 PyAPI_FUNC(PyObject *) Py_BuildValue(const char *, ...);
 PyAPI_FUNC(PyObject *) Py_VaBuildValue(const char *, va_list);
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030a0000
 // Add an attribute with name 'name' and value 'obj' to the module 'mod.
 // On success, return 0.
 // On error, raise an exception and return -1.
 PyAPI_FUNC(int) PyModule_AddObjectRef(PyObject *mod, const char *name, PyObject *value);
+#endif   /* Py_LIMITED_API */
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
 // Similar to PyModule_AddObjectRef() but steal a reference to 'value'.

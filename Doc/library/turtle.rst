@@ -55,6 +55,8 @@ graphical output it can be a way to do that without the overhead of
 introducing more complex or external libraries into their work.
 
 
+.. _turtle-tutorial:
+
 Tutorial
 ========
 
@@ -174,64 +176,125 @@ Finally, complete the filling::
 ``end_fill()`` command.)
 
 
-Explanation
-===========
+.. _turtle-how-to:
 
-The :mod:`turtle` module is an extended reimplementation of the same-named
-module from the Python standard distribution up to version Python 2.5.
+How to...
+=========
 
-It tries to keep the merits of the old turtle module and to be (nearly) 100%
-compatible with it.  This means in the first place to enable the learning
-programmer to use all the commands, classes and methods interactively when using
-the module from within IDLE run with the ``-n`` switch.
+This section covers some typical turtle use-cases and approaches.
 
-The turtle module provides turtle graphics primitives, in both object-oriented
-and procedure-oriented ways.  Because it uses :mod:`tkinter` for the underlying
-graphics, it needs a version of Python installed with Tk support.
 
-The object-oriented interface uses essentially two+two classes:
+Get started as quickly as possible
+----------------------------------
 
-1. The :class:`TurtleScreen` class defines graphics windows as a playground for
-   the drawing turtles.  Its constructor needs a :class:`tkinter.Canvas` or a
-   :class:`ScrolledCanvas` as argument.  It should be used when :mod:`turtle` is
-   used as part of some application.
+One of the joys of turtle graphics is the immediate, visual feedback that's
+available from simple commands - it's an excellent way to introduce children
+to programming ideas, with a minimum of overhead (not just children, of
+course).
 
-   The function :func:`Screen` returns a singleton object of a
-   :class:`TurtleScreen` subclass. This function should be used when
-   :mod:`turtle` is used as a standalone tool for doing graphics.
-   As a singleton object, inheriting from its class is not possible.
+The turtle module makes this possible by exposing all its basic functionality
+as functions, available with ``from turtle import *``. The :ref:`turtle
+graphics tutorial <turtle-tutorial>` covers this approach.
 
-   All methods of TurtleScreen/Screen also exist as functions, i.e. as part of
-   the procedure-oriented interface.
+It's worth noting that many of the turtle commands also have even more terse
+equivalents, such as ``fd()`` for :func:`forward`. These are especially
+useful when working with learners for whom typing is not a skill.
 
-2. :class:`RawTurtle` (alias: :class:`RawPen`) defines Turtle objects which draw
-   on a :class:`TurtleScreen`.  Its constructor needs a Canvas, ScrolledCanvas
-   or TurtleScreen as argument, so the RawTurtle objects know where to draw.
+.. _note:
 
-   Derived from RawTurtle is the subclass :class:`Turtle` (alias: :class:`Pen`),
-   which draws on "the" :class:`Screen` instance which is automatically
-   created, if not already present.
+    You'll need to have the :mod:`Tk interface package <tkinter>` installed on
+    your system for turtle graphics to work. Be warned that this is not
+    always straightforward, so check this in advance if you're planning to
+    use turtle graphics with a learner.
 
-   All methods of RawTurtle/Turtle also exist as functions, i.e. part of the
-   procedure-oriented interface.
 
-The procedural interface provides functions which are derived from the methods
-of the classes :class:`Screen` and :class:`Turtle`.  They have the same names as
-the corresponding methods.  A screen object is automatically created whenever a
-function derived from a Screen method is called.  An (unnamed) turtle object is
-automatically created whenever any of the functions derived from a Turtle method
-is called.
+Use the ``turtle`` module namespace
+-----------------------------------
 
-To use multiple turtles on a screen one has to use the object-oriented interface.
+Using ``from turtle import *`` is convenient - but be warned that it imports a
+rather large collection of objects, and if you're doing anything but turtle
+graphics you run the risk of a name conflict (this becomes even more an issue
+if you're using turtle graphics in a script where other modules might be
+imported).
 
-.. note::
-   In the following documentation the argument list for functions is given.
-   Methods, of course, have the additional first argument *self* which is
-   omitted here.
+The solution is to use ``import turtle`` - ``fd()`` becomes
+``turtle.fd()``, ``width()`` becomes ``turtle.width()`` and so on. (If typing
+"turtle" over and over again becomes tedious, use for example ``import turtle
+as t`` instead.)
+
+
+Use turtle graphics in a script
+-------------------------------
+
+It's recommended to use the ``turtle`` module namespace as described
+immediately above, for example::
+
+    import turtle as t
+    from random import random
+
+    for i in range(100):
+        steps = int(random() * 100)
+        angle = int(random() * 360)
+        t.right(angle)
+        t.fd(steps)
+
+Another step is also required though - as soon as the script ends, Python
+will also close the turtle's window. Add::
+
+    t.mainloop()
+
+to the end of the script. The script will now wait to be dismissed and
+will not exit until it is terminated, for example by closing the turtle
+graphics window.
+
+
+Use object-oriented turtle graphics
+-----------------------------------
+
+.. seealso:: :ref:`Explanation of the object-oriented interface <turtle-explanation>`
+
+Other than for very basic introductory purposes, or for trying things out
+as quickly as possible, it's more usual and much more powerful to use the
+object-oriented approach to turtle graphics. For example, this allows
+multiple turtles on screen at once.
+
+In this approach, the various turtle commands are methods of objects (mostly of
+``Turtle`` objects). You *can* use the object-oriented approach in the shell,
+but it would be more typical in a Python script.
+
+The example above then becomes::
+
+    from turtle import Turtle
+    from random import random
+
+    t = Turtle()
+    for i in range(100):
+        steps = int(random() * 100)
+        angle = int(random() * 360)
+        t.right(angle)
+        t.fd(steps)
+
+    t.screen.mainloop()
+
+Note the last line. ``t.screen`` is an instance of the :class:`Screen`
+that a Turtle instance exists on; it's created automatically along with
+the turtle.
+
+The turtle's screen can be customised, for example::
+
+    t.screen.title('Object-oriented turtle demo')
+    t.screen.bgcolor("orange")
 
 
 Turtle graphics reference
 =========================
+
+.. note::
+
+   In the following documentation the argument list for functions is given.
+   Methods, of course, have the additional first argument *self* which is
+   omitted here.
+
 
 Turtle methods
 --------------
@@ -2335,6 +2398,41 @@ Public classes
    * ``k * a`` and ``a * k`` multiplication with scalar
    * ``abs(a)`` absolute value of a
    * ``a.rotate(angle)`` rotation
+
+
+.. _turtle-explanation:
+
+Explanation
+===========
+
+A turtle object draws on a screen object, and there a number of key classes in
+the turtle object-oriented interface that can be used to create them and relate
+them to each other.
+
+A :class:`Turtle` instance will automatically create a :class:`Screen`
+instance if one is not already present.
+
+``Turtle`` is a subclass of :class:`RawTurtle`, which *doesn't* automatically
+create a drawing surface - a *canvas* will need to be provided or created for
+it. The *canvas* can be a :class:`tkinter.Canvas`, :class:`ScrolledCanvas`
+or :class:`TurtleScreen`.
+
+
+:class:`TurtleScreen` is the basic drawing surface for a
+turtle. :class:`Screen` is a subclass of ``TurtleScreen``, and
+includes :ref:`some additional methods <screenspecific>` for managing its
+appearance (including size and title) and behaviour. ``TurtleScreen``'s
+constructor needs a :class:`tkinter.Canvas` or a
+:class:`ScrolledCanvas` as an argument.
+
+The functional interface for turtle graphics uses the various methods of
+``Turtle`` and ``TurtleScreen``/``Screen``. Behind the scenes, a screen
+object is automatically created whenever a function derived from a ``Screen``
+method is called. Similarly, a turtle object is automatically created
+whenever any of the functions derived from a Turtle method is called.
+
+To use multiple turtles on a screen, the object-oriented interface must be
+used.
 
 
 Help and configuration

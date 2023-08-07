@@ -6,7 +6,6 @@
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
 #include "pycore_interp.h"        // _PyInterpreterState.ast
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "structmember.h"
 #include <stddef.h>
 
 // Forward declaration
@@ -923,7 +922,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
 }
 
 static PyMemberDef ast_type_members[] = {
-    {"__dictoffset__", T_PYSSIZET, offsetof(AST_object, dict), READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(AST_object, dict), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -13074,7 +13073,7 @@ PyObject* PyAST_mod2obj(mod_ty t)
 
     int starting_recursion_depth;
     /* Be careful here to prevent overflow. */
-    int COMPILER_STACK_FRAME_SCALE = 3;
+    int COMPILER_STACK_FRAME_SCALE = 2;
     PyThreadState *tstate = _PyThreadState_GET();
     if (!tstate) {
         return 0;

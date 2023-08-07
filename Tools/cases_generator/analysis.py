@@ -13,7 +13,6 @@ from instructions import (
     MacroParts,
     OverriddenInstructionPlaceHolder,
     PseudoInstruction,
-    StackEffectMapping,
 )
 import parsing
 from parsing import StackEffect
@@ -34,11 +33,12 @@ class Analyzer:
 
     input_filenames: list[str]
     errors: int = 0
+    warnings: int = 0
 
     def __init__(self, input_filenames: list[str]):
         self.input_filenames = input_filenames
 
-    def error(self, msg: str, node: parsing.Node) -> None:
+    def message(self, msg: str, node: parsing.Node) -> None:
         lineno = 0
         filename = "<unknown file>"
         if context := node.context:
@@ -49,7 +49,17 @@ class Analyzer:
                 if token.kind != "COMMENT":
                     break
         print(f"{filename}:{lineno}: {msg}", file=sys.stderr)
+
+    def error(self, msg: str, node: parsing.Node) -> None:
+        self.message("error: " + msg, node)
         self.errors += 1
+
+    def warning(self, msg: str, node: parsing.Node) -> None:
+        self.message("warning: " + msg, node)
+        self.warnings += 1
+
+    def note(self, msg: str, node: parsing.Node) -> None:
+        self.message("note: " + msg, node)
 
     everything: list[
         parsing.InstDef
@@ -83,8 +93,15 @@ class Analyzer:
             self.parse_file(filename, instrs_idx)
 
         files = " + ".join(self.input_filenames)
+        n_instrs = 0
+        n_ops = 0
+        for instr in self.instrs.values():
+            if instr.kind == "op":
+                n_ops += 1
+            else:
+                n_instrs += 1
         print(
-            f"Read {len(self.instrs)} instructions/ops, "
+            f"Read {n_instrs} instructions, {n_ops} ops, "
             f"{len(self.macros)} macros, {len(self.pseudos)} pseudos, "
             f"and {len(self.families)} families from {files}",
             file=sys.stderr,
@@ -270,14 +287,72 @@ class Analyzer:
         self.macro_instrs = {}
         self.pseudo_instrs = {}
         for name, macro in self.macros.items():
-            self.macro_instrs[name] = self.analyze_macro(macro)
+            self.macro_instrs[name] = mac = self.analyze_macro(macro)
+            self.check_macro_consistency(mac)
         for name, pseudo in self.pseudos.items():
             self.pseudo_instrs[name] = self.analyze_pseudo(pseudo)
 
+    # TODO: Merge with similar code in stacking.py, write_components()
+    def check_macro_consistency(self, mac: MacroInstruction) -> None:
+        def get_var_names(instr: Instruction) -> dict[str, StackEffect]:
+            vars: dict[str, StackEffect] = {}
+            for eff in instr.input_effects + instr.output_effects:
+                if eff.name == UNUSED:
+                    continue
+                if eff.name in vars:
+                    if vars[eff.name] != eff:
+                        self.error(
+                            f"Instruction {instr.name!r} has "
+                            f"inconsistent type/cond/size for variable "
+                            f"{eff.name!r}: {vars[eff.name]} vs {eff}",
+                            instr.inst,
+                        )
+                else:
+                    vars[eff.name] = eff
+            return vars
+
+        all_vars: dict[str, StackEffect] = {}
+        # print("Checking", mac.name)
+        prevop: Instruction | None = None
+        for part in mac.parts:
+            if not isinstance(part, Component):
+                continue
+            vars = get_var_names(part.instr)
+            # print("    //", part.instr.name, "//", vars)
+            for name, eff in vars.items():
+                if name in all_vars:
+                    if all_vars[name] != eff:
+                        self.error(
+                            f"Macro {mac.name!r} has "
+                            f"inconsistent type/cond/size for variable "
+                            f"{name!r}: "
+                            f"{all_vars[name]} vs {eff} in {part.instr.name!r}",
+                            mac.macro,
+                        )
+                else:
+                    all_vars[name] = eff
+            if prevop is not None:
+                pushes = list(prevop.output_effects)
+                pops = list(reversed(part.instr.input_effects))
+                copies: list[tuple[StackEffect, StackEffect]] = []
+                while pushes and pops and pushes[-1] == pops[0]:
+                    src, dst = pushes.pop(), pops.pop(0)
+                    if src.name == dst.name or dst.name == UNUSED:
+                        continue
+                    copies.append((src, dst))
+                reads = set(copy[0].name for copy in copies)
+                writes = set(copy[1].name for copy in copies)
+                if reads & writes:
+                    self.error(
+                        f"Macro {mac.name!r} has conflicting copies "
+                        f"(source of one copy is destination of another): "
+                        f"{reads & writes}",
+                        mac.macro,
+                    )
+            prevop = part.instr
+
     def analyze_macro(self, macro: parsing.Macro) -> MacroInstruction:
         components = self.check_macro_components(macro)
-        stack, initial_sp = self.stack_analysis(components)
-        sp = initial_sp
         parts: MacroParts = []
         flags = InstructionFlags.newEmpty()
         offset = 0
@@ -287,20 +362,15 @@ class Analyzer:
                     parts.append(ceffect)
                     offset += ceffect.size
                 case Instruction() as instr:
-                    part, sp, offset = self.analyze_instruction(
-                        instr, stack, sp, offset
-                    )
+                    part, offset = self.analyze_instruction(instr, offset)
                     parts.append(part)
                     flags.add(instr.instr_flags)
                 case _:
                     typing.assert_never(component)
-        final_sp = sp
         format = "IB"
         if offset:
             format += "C" + "0" * (offset - 1)
-        return MacroInstruction(
-            macro.name, stack, initial_sp, final_sp, format, flags, macro, parts, offset
-        )
+        return MacroInstruction(macro.name, format, flags, macro, parts, offset)
 
     def analyze_pseudo(self, pseudo: parsing.Pseudo) -> PseudoInstruction:
         targets = [self.instrs[target] for target in pseudo.targets]
@@ -312,24 +382,15 @@ class Analyzer:
         return PseudoInstruction(pseudo.name, targets, fmts[0], targets[0].instr_flags)
 
     def analyze_instruction(
-        self, instr: Instruction, stack: list[StackEffect], sp: int, offset: int
-    ) -> tuple[Component, int, int]:
-        input_mapping: StackEffectMapping = []
-        for ieffect in reversed(instr.input_effects):
-            sp -= 1
-            input_mapping.append((stack[sp], ieffect))
-        output_mapping: StackEffectMapping = []
-        for oeffect in instr.output_effects:
-            output_mapping.append((stack[sp], oeffect))
-            sp += 1
+        self, instr: Instruction, offset: int
+    ) -> tuple[Component, int]:
         active_effects: list[ActiveCacheEffect] = []
         for ceffect in instr.cache_effects:
             if ceffect.name != UNUSED:
                 active_effects.append(ActiveCacheEffect(ceffect, offset))
             offset += ceffect.size
         return (
-            Component(instr, input_mapping, output_mapping, active_effects),
-            sp,
+            Component(instr, active_effects),
             offset,
         )
 
@@ -348,65 +409,3 @@ class Analyzer:
                 case _:
                     typing.assert_never(uop)
         return components
-
-    def stack_analysis(
-        self, components: typing.Iterable[InstructionOrCacheEffect]
-    ) -> tuple[list[StackEffect], int]:
-        """Analyze a macro.
-
-        Ignore cache effects.
-
-        Return the list of variables (as StackEffects) and the initial stack pointer.
-        """
-        lowest = current = highest = 0
-        conditions: dict[int, str] = {}  # Indexed by 'current'.
-        last_instr: Instruction | None = None
-        for thing in components:
-            if isinstance(thing, Instruction):
-                last_instr = thing
-        for thing in components:
-            match thing:
-                case Instruction() as instr:
-                    if any(
-                        eff.size for eff in instr.input_effects + instr.output_effects
-                    ):
-                        # TODO: Eventually this will be needed, at least for macros.
-                        self.error(
-                            f"Instruction {instr.name!r} has variable-sized stack effect, "
-                            "which are not supported in macro instructions",
-                            instr.inst,  # TODO: Pass name+location of macro
-                        )
-                    if any(eff.cond for eff in instr.input_effects):
-                        self.error(
-                            f"Instruction {instr.name!r} has conditional input stack effect, "
-                            "which are not supported in macro instructions",
-                            instr.inst,  # TODO: Pass name+location of macro
-                        )
-                    if (
-                        any(eff.cond for eff in instr.output_effects)
-                        and instr is not last_instr
-                    ):
-                        self.error(
-                            f"Instruction {instr.name!r} has conditional output stack effect, "
-                            "but is not the last instruction in a macro",
-                            instr.inst,  # TODO: Pass name+location of macro
-                        )
-                    current -= len(instr.input_effects)
-                    lowest = min(lowest, current)
-                    for eff in instr.output_effects:
-                        if eff.cond:
-                            conditions[current] = eff.cond
-                        current += 1
-                    highest = max(highest, current)
-                case parsing.CacheEffect():
-                    pass
-                case _:
-                    typing.assert_never(thing)
-        # At this point, 'current' is the net stack effect,
-        # and 'lowest' and 'highest' are the extremes.
-        # Note that 'lowest' may be negative.
-        stack = [
-            StackEffect(f"_tmp_{i}", "", conditions.get(highest - i, ""))
-            for i in reversed(range(1, highest - lowest + 1))
-        ]
-        return stack, -lowest

@@ -154,7 +154,7 @@ exception type.
 The *except clause* may specify a variable after the exception name.  The
 variable is bound to the exception instance which typically has an ``args``
 attribute that stores the arguments. For convenience, builtin exception
-types define :meth:`__str__` to print all the arguments without explicitly
+types define :meth:`~object.__str__` to print all the arguments without explicitly
 accessing ``.args``.  ::
 
    >>> try:
@@ -174,7 +174,7 @@ accessing ``.args``.  ::
    x = spam
    y = eggs
 
-The exception's :meth:`__str__` output is printed as the last part ('detail')
+The exception's :meth:`~object.__str__` output is printed as the last part ('detail')
 of the message for unhandled exceptions.
 
 :exc:`BaseException` is the common base class of all exceptions. One of its

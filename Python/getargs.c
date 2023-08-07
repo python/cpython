@@ -1418,20 +1418,6 @@ _PyArg_ParseStackAndKeywords_SizeT(PyObject *const *args, Py_ssize_t nargs, PyOb
 }
 
 
-PyAPI_FUNC(int)
-_PyArg_VaParseTupleAndKeywordsFast(PyObject *args, PyObject *keywords,
-                            struct _PyArg_Parser *parser, va_list va)
-{
-    int retval;
-    va_list lva;
-
-    va_copy(lva, va);
-
-    retval = vgetargskeywordsfast(args, keywords, parser, &lva, 0);
-    va_end(lva);
-    return retval;
-}
-
 static void
 error_unexpected_keyword_arg(PyObject *kwargs, PyObject *kwnames, PyObject *kwtuple, const char *fname)
 {

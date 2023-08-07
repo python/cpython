@@ -4,8 +4,8 @@ import sys
 import unittest
 from ctypes import (CDLL, Structure, Array, CFUNCTYPE,
                     byref, POINTER, pointer, ArgumentError,
-                    c_char, c_wchar, c_byte, c_char_p,
-                    c_short, c_int, c_long, c_longlong,
+                    c_char, c_wchar, c_byte, c_char_p, c_wchar_p,
+                    c_short, c_int, c_long, c_longlong, c_void_p,
                     c_float, c_double, c_longdouble)
 from _ctypes import _Pointer,  _SimpleCData
 
@@ -91,6 +91,54 @@ class FunctionTestCase(unittest.TestCase):
         self.assertEqual(str(cm.exception),
                          "argument 2: TypeError: one character unicode string "
                          "expected")
+
+    def test_c_char_p_parm(self):
+        """Test the error message when converting an incompatible type to c_char_p."""
+        proto = CFUNCTYPE(c_int, c_char_p)
+        def callback(*args):
+            return 0
+
+        callback = proto(callback)
+        self.assertEqual(callback(b"abc"), 0)
+
+        with self.assertRaises(ArgumentError) as cm:
+            callback(10)
+
+        self.assertEqual(str(cm.exception),
+                         "argument 1: TypeError: 'int' object cannot be "
+                         "interpreted as ctypes.c_char_p")
+
+    def test_c_wchar_p_parm(self):
+        """Test the error message when converting an incompatible type to c_wchar_p."""
+        proto = CFUNCTYPE(c_int, c_wchar_p)
+        def callback(*args):
+            return 0
+
+        callback = proto(callback)
+        self.assertEqual(callback("abc"), 0)
+
+        with self.assertRaises(ArgumentError) as cm:
+            callback(10)
+
+        self.assertEqual(str(cm.exception),
+                         "argument 1: TypeError: 'int' object cannot be "
+                         "interpreted as ctypes.c_wchar_p")
+
+    def test_c_void_p_parm(self):
+        """Test the error message when converting an incompatible type to c_void_p."""
+        proto = CFUNCTYPE(c_int, c_void_p)
+        def callback(*args):
+            return 0
+
+        callback = proto(callback)
+        self.assertEqual(callback(5), 0)
+
+        with self.assertRaises(ArgumentError) as cm:
+            callback(2.5)
+
+        self.assertEqual(str(cm.exception),
+                         "argument 1: TypeError: 'float' object cannot be "
+                         "interpreted as ctypes.c_void_p")
 
     def test_wchar_result(self):
         f = dll._testfunc_i_bhilfd

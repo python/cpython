@@ -9,7 +9,7 @@
 #include "pycore_object.h"
 #include "pycore_opcode.h"        // _PyOpcode_Caches
 #include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
-#include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
+
 
 #include <stdlib.h> // rand()
 
@@ -18,7 +18,8 @@
  */
 
 #ifdef Py_STATS
-PyStats _py_stats_struct = { 0 };
+GCStats _py_gc_stats[NUM_GENERATIONS] = { 0 };
+PyStats _py_stats_struct = { .gc_stats = &_py_gc_stats[0] };
 PyStats *_py_stats = NULL;
 
 #define ADD_STAT_TO_DICT(res, field) \
@@ -203,16 +204,31 @@ print_object_stats(FILE *out, ObjectStats *stats)
 }
 
 static void
+print_gc_stats(FILE *out, GCStats *stats)
+{
+    for (int i = 0; i < NUM_GENERATIONS; i++) {
+        fprintf(out, "GC[%d] collections: %" PRIu64 "\n", i, stats[i].collections);
+        fprintf(out, "GC[%d] object visits: %" PRIu64 "\n", i, stats[i].object_visits);
+        fprintf(out, "GC[%d] objects collected: %" PRIu64 "\n", i, stats[i].objects_collected);
+    }
+}
+
+static void
 print_stats(FILE *out, PyStats *stats) {
     print_spec_stats(out, stats->opcode_stats);
     print_call_stats(out, &stats->call_stats);
     print_object_stats(out, &stats->object_stats);
+    print_gc_stats(out, stats->gc_stats);
 }
 
 void
 _Py_StatsClear(void)
 {
+    for (int i = 0; i < NUM_GENERATIONS; i++) {
+        _py_gc_stats[i] = (GCStats) { 0 };
+    }
     _py_stats_struct = (PyStats) { 0 };
+    _py_stats_struct.gc_stats = _py_gc_stats;
 }
 
 void
@@ -621,7 +637,7 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int sto
         if (desc_cls == &PyMemberDescr_Type) {
             PyMemberDescrObject *member = (PyMemberDescrObject *)descriptor;
             struct PyMemberDef *dmem = member->d_member;
-            if (dmem->type == T_OBJECT_EX) {
+            if (dmem->type == Py_T_OBJECT_EX) {
                 return OBJECT_SLOT;
             }
             return OTHER_SLOT;
@@ -803,7 +819,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_EXPECTED_ERROR);
                 goto fail;
             }
-            if (dmem->flags & PY_AUDIT_READ) {
+            if (dmem->flags & Py_AUDIT_READ) {
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_AUDITED_SLOT);
                 goto fail;
             }
@@ -811,7 +827,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_RANGE);
                 goto fail;
             }
-            assert(dmem->type == T_OBJECT_EX);
+            assert(dmem->type == Py_T_OBJECT_EX);
             assert(offset > 0);
             cache->index = (uint16_t)offset;
             write_u32(cache->version, type->tp_version_tag);
@@ -939,7 +955,7 @@ _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
                 SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_EXPECTED_ERROR);
                 goto fail;
             }
-            if (dmem->flags & READONLY) {
+            if (dmem->flags & Py_READONLY) {
                 SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_ATTR_READ_ONLY);
                 goto fail;
             }
@@ -947,7 +963,7 @@ _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
                 SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_OUT_OF_RANGE);
                 goto fail;
             }
-            assert(dmem->type == T_OBJECT_EX);
+            assert(dmem->type == Py_T_OBJECT_EX);
             assert(offset > 0);
             cache->index = (uint16_t)offset;
             write_u32(cache->version, type->tp_version_tag);
