@@ -162,6 +162,14 @@ _PyDebug_PrintTotalRefs(void) {
 
 #define REFCHAIN(interp) &interp->object_state.refchain
 
+static inline void
+init_refchain(PyInterpreterState *interp)
+{
+    PyObject *refchain = REFCHAIN(interp);
+    refchain->_ob_prev = refchain;
+    refchain->_ob_next = refchain;
+}
+
 /* Insert op at the front of the list of all objects.  If force is true,
  * op is added even if _ob_prev and _ob_next are non-NULL already.  If
  * force is false amd _ob_prev or _ob_next are non-NULL, do nothing.
@@ -2019,6 +2027,18 @@ PyObject _Py_NotImplementedStruct = {
     &_PyNotImplemented_Type
 };
 
+
+void
+_PyObject_InitState(PyInterpreterState *interp)
+{
+#ifdef Py_TRACE_REFS
+    if (!_Py_IsMainInterpreter(interp)) {
+        init_refchain(interp);
+    }
+#endif
+}
+
+
 extern PyTypeObject _Py_GenericAliasIterType;
 extern PyTypeObject _PyMemoryIter_Type;
 extern PyTypeObject _PyLineIterator;
@@ -2326,7 +2346,7 @@ _Py_GetObjects(PyObject *self, PyObject *args)
 
 #undef REFCHAIN
 
-#endif
+#endif  /* Py_TRACE_REFS */
 
 
 /* Hack to force loading of abstract.o */
