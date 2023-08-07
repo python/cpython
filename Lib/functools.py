@@ -950,6 +950,7 @@ class singledispatchmethod:
                 _method = self._method_cache[obj]
             except TypeError:
                 self._all_weakrefable_instances = False
+                del self._method_cache
             except KeyError:
                 pass
             else:
