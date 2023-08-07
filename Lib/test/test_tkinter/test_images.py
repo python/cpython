@@ -2,7 +2,7 @@ import unittest
 import tkinter
 from test import support
 from test.support import os_helper
-from test.test_tkinter.support import AbstractTkTest, AbstractDefaultRootTest, requires_tcl
+from test.test_tkinter.support import AbstractTkTest, AbstractDefaultRootTest, requires_tk
 
 support.requires('gui')
 
@@ -213,11 +213,11 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
     def test_create_from_gif_data(self):
         self.check_create_from_data('gif')
 
-    @requires_tcl(8, 6)
+    @requires_tk(8, 6)
     def test_create_from_png_file(self):
         self.check_create_from_file('png')
 
-    @requires_tcl(8, 6)
+    @requires_tk(8, 6)
     def test_create_from_png_data(self):
         self.check_create_from_data('png')
 
