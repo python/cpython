@@ -45,6 +45,16 @@
 // Include definitions from there.
 #include "_testcapi/parts.h"
 
+#define NULLABLE(x) do { if (x == Py_None) x = NULL; } while (0);
+
+#define RETURN_INT(value) do {          \
+        int _ret = (value);             \
+        if (_ret == -1) {               \
+            return NULL;                \
+        }                               \
+        return PyLong_FromLong(_ret);   \
+    } while (0)
+
 // Forward declarations
 static struct PyModuleDef _testcapimodule;
 static PyObject *TestError;     /* set to exception object in init */
@@ -3336,6 +3346,35 @@ test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject *
+sys_getobject(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    const char *name;
+    Py_ssize_t size;
+    if (!PyArg_Parse(arg, "z#", &name, &size)) {
+        return NULL;
+    }
+    PyObject *result = PySys_GetObject(name);
+    if (result == NULL) {
+        result = PyExc_AttributeError;
+    }
+    return Py_NewRef(result);
+}
+
+static PyObject *
+sys_setobject(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    const char *name;
+    Py_ssize_t size;
+    PyObject *value;
+    if (!PyArg_ParseTuple(args, "z#O", &name, &size, &value)) {
+        return NULL;
+    }
+    NULLABLE(value);
+    RETURN_INT(PySys_SetObject(name, value));
+}
+
+
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 
 static PyMethodDef TestMethods[] = {
@@ -3482,6 +3521,8 @@ static PyMethodDef TestMethods[] = {
     {"function_get_kw_defaults", function_get_kw_defaults, METH_O, NULL},
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
     {"test_atexit", test_atexit, METH_NOARGS},
+    {"sys_getobject", sys_getobject, METH_O},
+    {"sys_setobject", sys_setobject, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
