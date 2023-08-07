@@ -401,9 +401,10 @@ Calling functions with your own custom data types
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can also customize :mod:`ctypes` argument conversion to allow instances of
-your own classes be used as function arguments.  :mod:`ctypes` looks for an
-:attr:`!_as_parameter_` attribute and uses this as the function argument.  Of
-course, it must be one of integer, string, or bytes::
+your own classes be used as function arguments. :mod:`ctypes` looks for an
+:attr:`!_as_parameter_` attribute and uses this as the function argument. The
+attribute must be an integer, string, bytes, a :mod:`ctypes` instance, or an
+object with an :attr:`!_as_parameter_` attribute::
 
    >>> class Bottles:
    ...     def __init__(self, number):
