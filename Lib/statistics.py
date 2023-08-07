@@ -1004,6 +1004,12 @@ def _mean_stdev(data):
         # Handle Nans and Infs gracefully
         return float(xbar), float(xbar) / float(ss)
 
+def _sqrtprod(x: float, y: float) -> float:
+    "Return sqrt(x * y) computed with high accuracy."
+    h = sqrt(x * y)
+    x = sumprod((x, h), (y, -h))
+    return h + x / (2.0 * h)
+
 
 # === Statistics for relations between two inputs ===
 
@@ -1083,7 +1089,7 @@ def correlation(x, y, /, *, method='linear'):
     sxx = sumprod(x, x)
     syy = sumprod(y, y)
     try:
-        return sxy / sqrt(sxx * syy)
+        return sxy / _sqrtprod(sxx, syy)
     except ZeroDivisionError:
         raise StatisticsError('at least one of the inputs is constant')
 
