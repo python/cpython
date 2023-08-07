@@ -36,7 +36,7 @@ dict_checkexact(PyObject *self, PyObject *obj)
 }
 
 static PyObject *
-dict_new(PyObject *self, PyObject *obj)
+dict_new(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return PyDict_New();
 }
@@ -190,34 +190,6 @@ dict_getitemstringref(PyObject *self, PyObject *args)
             Py_UNREACHABLE();
     }
 }
-
-//
-// static PyObject *
-// mapping_haskey(PyObject *self, PyObject *args)
-// {
-//     PyObject *mapping, *key;
-//     if (!PyArg_ParseTuple(args, "OO", &mapping, &key)) {
-//         return NULL;
-//     }
-//     NULLABLE(mapping);
-//     NULLABLE(key);
-//     return PyLong_FromLong(PyMapping_HasKey(mapping, key));
-// }
-//
-// static PyObject *
-// mapping_haskeystring(PyObject *self, PyObject *args)
-// {
-//     PyObject *mapping;
-//     const char *key;
-//     Py_ssize_t size;
-//     if (!PyArg_ParseTuple(args, "Oz#", &mapping, &key, &size)) {
-//         return NULL;
-//     }
-//     NULLABLE(mapping);
-//     return PyLong_FromLong(PyMapping_HasKeyString(mapping, key));
-// }
-
-
 
 static PyObject *
 dict_setitem(PyObject *self, PyObject *args)
