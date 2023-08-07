@@ -5729,12 +5729,10 @@ class DSLParser:
         ) -> None:
             assert isinstance(self.function, Function)
 
-            if values := self.function.parameters.values():
-                last_param = next(reversed(values))
-                no_param_after_symbol = condition(last_param)
-            else:
-                no_param_after_symbol = True
-            if no_param_after_symbol:
+            values = self.function.parameters.values()
+            assert values
+            last_param = next(reversed(values))
+            if condition(last_param):
                 fname = self.function.full_name
                 fail(f"Function {fname!r} specifies {symbol!r} "
                      "without any parameters afterwards.", line_number=lineno)

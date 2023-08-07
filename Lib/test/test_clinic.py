@@ -1483,6 +1483,18 @@ class ClinicParserTest(TestCase):
             with self.subTest(block=block):
                 self.expect_failure(block, err)
 
+    def test_parameters_required_after_depr_star(self):
+        dataset = (
+            "module foo\nfoo.bar\n  * [from 3.14]",
+            "module foo\nfoo.bar\n  * [from 3.14]\nDocstring here.",
+            "module foo\nfoo.bar\n  this: int\n  * [from 3.14]",
+            "module foo\nfoo.bar\n  this: int\n  * [from 3.14]\nDocstring.",
+        )
+        err = "Function 'foo.bar' specifies '* [from 3.14]' without any parameters afterwards."
+        for block in dataset:
+            with self.subTest(block=block):
+                self.expect_failure(block, err)
+
     def test_depr_star_invalid_format_1(self):
         block = """
             module foo
