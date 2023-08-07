@@ -5708,7 +5708,7 @@ test_deprecate_positional_pos1_len2_with_kwd(PyObject *module, PyObject *const *
     #  endif
     #endif
     if (nargs > 1 && nargs <= 3) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning, "Passing more than 1 positional arguments to test_deprecate_positional_pos1_len2_with_kwd() is deprecated. Parameters 'b' and 'c' will become keyword-only parameters in Python 3.14.", 1)) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning, "Passing more than 1 positional argument to test_deprecate_positional_pos1_len2_with_kwd() is deprecated. Parameters 'b' and 'c' will become keyword-only parameters in Python 3.14.", 1)) {
             goto exit;
         }
     }
@@ -5730,7 +5730,7 @@ static PyObject *
 test_deprecate_positional_pos1_len2_with_kwd_impl(PyObject *module,
                                                   PyObject *a, PyObject *b,
                                                   PyObject *c, PyObject *d)
-/*[clinic end generated code: output=60c1c9621739c235 input=28cdb885f6c34eab]*/
+/*[clinic end generated code: output=79c5f04220a1f3aa input=28cdb885f6c34eab]*/
 
 
 /*[clinic input]

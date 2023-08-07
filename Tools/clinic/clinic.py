@@ -913,7 +913,10 @@ class CLanguage(Language):
         else:
             condition = f"nargs > {first_pos} && nargs <= {last_pos+1}"
             if first_pos:
-                preamble = f"Passing more than {first_pos} positional arguments to "
+                preamble = (
+                    f"Passing more than {first_pos} positional "
+                    f"argument{'s' if first_pos != 1 else ''} to "
+                )
             depr_message = preamble + (
                 f"{func.full_name}() is deprecated. Parameters {pstr} will "
                 f"become keyword-only parameters in Python {major}.{minor}."
