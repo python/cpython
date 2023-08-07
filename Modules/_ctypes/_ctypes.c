@@ -75,6 +75,8 @@ addressof(cdata)
 pointer(cdata)
 
 POINTER(ctype)
+    - This factory function creates and returns a new ctypes pointer type.
+
 
 bytes(cdata)
     - return the buffer contents as a sequence of bytes (which is currently a string)
@@ -4814,7 +4816,13 @@ PyTypeObject PyCArray_Type = {
     0,                                          /* tp_setattro */
     &PyCData_as_buffer,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    PyDoc_STR("XXX to be provided"),            /* tp_doc */
+    PyDoc_STRVAR(array_doc,
+    "Abstract base class for arrays.\n"
+    "\n"
+    "The recommended way to create \n
+    concrete array types is by multiplying \n
+    any ctypes data type with a non-negative \n
+    integer.\n"),                                /* tp_doc */
     (traverseproc)PyCData_traverse,             /* tp_traverse */
     (inquiry)PyCData_clear,                     /* tp_clear */
     0,                                          /* tp_richcompare */
