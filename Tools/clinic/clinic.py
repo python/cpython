@@ -231,11 +231,8 @@ def wrapped_c_string_literal(
 ) -> str:
     wrapped = textwrap.wrap(text, width=width, replace_whitespace=False,
                             drop_whitespace=False, break_on_hyphens=False)
-    suffix += "\n"
-    lines = [f'"{line}"{suffix}' for line in wrapped]
-    separator = subsequent_indent * ' '
-    joined = initial_indent * ' ' + separator.join(lines)
-    return joined.removesuffix(suffix)
+    separator = '"' + suffix + '\n' + subsequent_indent * ' ' + '"'
+    return initial_indent * ' ' + '"' + separator.join(wrapped) + '"'
 
 
 is_legal_c_identifier = re.compile('^[A-Za-z_][A-Za-z0-9_]*$').match
