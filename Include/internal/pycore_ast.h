@@ -198,31 +198,31 @@ struct _stmt {
     union {
         struct {
             identifier name;
-            asdl_type_param_seq *type_params;
             arguments_ty args;
             asdl_stmt_seq *body;
             asdl_expr_seq *decorator_list;
             expr_ty returns;
             string type_comment;
+            asdl_type_param_seq *type_params;
         } FunctionDef;
 
         struct {
             identifier name;
-            asdl_type_param_seq *type_params;
             arguments_ty args;
             asdl_stmt_seq *body;
             asdl_expr_seq *decorator_list;
             expr_ty returns;
             string type_comment;
+            asdl_type_param_seq *type_params;
         } AsyncFunctionDef;
 
         struct {
             identifier name;
-            asdl_type_param_seq *type_params;
             asdl_expr_seq *bases;
             asdl_keyword_seq *keywords;
             asdl_stmt_seq *body;
             asdl_expr_seq *decorator_list;
+            asdl_type_param_seq *type_params;
         } ClassDef;
 
         struct {
@@ -682,22 +682,22 @@ mod_ty _PyAST_Interactive(asdl_stmt_seq * body, PyArena *arena);
 mod_ty _PyAST_Expression(expr_ty body, PyArena *arena);
 mod_ty _PyAST_FunctionType(asdl_expr_seq * argtypes, expr_ty returns, PyArena
                            *arena);
-stmt_ty _PyAST_FunctionDef(identifier name, asdl_type_param_seq * type_params,
-                           arguments_ty args, asdl_stmt_seq * body,
-                           asdl_expr_seq * decorator_list, expr_ty returns,
-                           string type_comment, int lineno, int col_offset, int
+stmt_ty _PyAST_FunctionDef(identifier name, arguments_ty args, asdl_stmt_seq *
+                           body, asdl_expr_seq * decorator_list, expr_ty
+                           returns, string type_comment, asdl_type_param_seq *
+                           type_params, int lineno, int col_offset, int
                            end_lineno, int end_col_offset, PyArena *arena);
-stmt_ty _PyAST_AsyncFunctionDef(identifier name, asdl_type_param_seq *
-                                type_params, arguments_ty args, asdl_stmt_seq *
-                                body, asdl_expr_seq * decorator_list, expr_ty
-                                returns, string type_comment, int lineno, int
-                                col_offset, int end_lineno, int end_col_offset,
-                                PyArena *arena);
-stmt_ty _PyAST_ClassDef(identifier name, asdl_type_param_seq * type_params,
-                        asdl_expr_seq * bases, asdl_keyword_seq * keywords,
-                        asdl_stmt_seq * body, asdl_expr_seq * decorator_list,
-                        int lineno, int col_offset, int end_lineno, int
-                        end_col_offset, PyArena *arena);
+stmt_ty _PyAST_AsyncFunctionDef(identifier name, arguments_ty args,
+                                asdl_stmt_seq * body, asdl_expr_seq *
+                                decorator_list, expr_ty returns, string
+                                type_comment, asdl_type_param_seq *
+                                type_params, int lineno, int col_offset, int
+                                end_lineno, int end_col_offset, PyArena *arena);
+stmt_ty _PyAST_ClassDef(identifier name, asdl_expr_seq * bases,
+                        asdl_keyword_seq * keywords, asdl_stmt_seq * body,
+                        asdl_expr_seq * decorator_list, asdl_type_param_seq *
+                        type_params, int lineno, int col_offset, int
+                        end_lineno, int end_col_offset, PyArena *arena);
 stmt_ty _PyAST_Return(expr_ty value, int lineno, int col_offset, int
                       end_lineno, int end_col_offset, PyArena *arena);
 stmt_ty _PyAST_Delete(asdl_expr_seq * targets, int lineno, int col_offset, int

@@ -1169,8 +1169,8 @@ following advice will prevent conflicts with other installations:
   listed.
 
 * If you are loading :file:`python3.dll` or :file:`python37.dll` in your own
-  executable, explicitly call :c:func:`Py_SetPath` or (at least)
-  :c:func:`Py_SetProgramName` before :c:func:`Py_Initialize`.
+  executable, explicitly set :c:member:`PyConfig.module_search_paths` before
+  :c:func:`Py_InitializeFromConfig`.
 
 * Clear and/or overwrite :envvar:`PYTHONPATH` and set :envvar:`PYTHONHOME`
   before launching :file:`python.exe` from your application.
@@ -1201,7 +1201,7 @@ non-standard paths in the registry and user site-packages.
       Modules specified in the registry under ``Modules`` (not ``PythonPath``)
       may be imported by :class:`importlib.machinery.WindowsRegistryFinder`.
       This finder is enabled on Windows in 3.6.0 and earlier, but may need to
-      be explicitly added to :attr:`sys.meta_path` in the future.
+      be explicitly added to :data:`sys.meta_path` in the future.
 
 Additional modules
 ==================

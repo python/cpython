@@ -361,15 +361,19 @@ Soft Keywords
 .. versionadded:: 3.10
 
 Some identifiers are only reserved under specific contexts. These are known as
-*soft keywords*.  The identifiers ``match``, ``case`` and ``_`` can
-syntactically act as keywords in contexts related to the pattern matching
-statement, but this distinction is done at the parser level, not when
-tokenizing.
+*soft keywords*.  The identifiers ``match``, ``case``, ``type`` and ``_`` can
+syntactically act as keywords in certain contexts,
+but this distinction is done at the parser level, not when tokenizing.
 
-As soft keywords, their use with pattern matching is possible while still
-preserving compatibility with existing code that uses ``match``, ``case`` and ``_`` as
+As soft keywords, their use in the grammar is possible while still
+preserving compatibility with existing code that uses these names as
 identifier names.
 
+``match``, ``case``, and ``_`` are used in the :keyword:`match` statement.
+``type`` is used in the :keyword:`type` statement.
+
+.. versionchanged:: 3.12
+   ``type`` is now a soft keyword.
 
 .. index::
    single: _, identifiers
@@ -544,6 +548,10 @@ retained), except that three unescaped quotes in a row terminate the literal.  (
    single: \U; escape sequence
 
 .. _escape-sequences:
+
+
+Escape sequences
+^^^^^^^^^^^^^^^^
 
 Unless an ``'r'`` or ``'R'`` prefix is present, escape sequences in string and
 bytes literals are interpreted according to rules similar to those used by
@@ -779,7 +787,7 @@ is converted before formatting.  Conversion ``'!s'`` calls :func:`str` on
 the result, ``'!r'`` calls :func:`repr`, and ``'!a'`` calls :func:`ascii`.
 
 The result is then formatted using the :func:`format` protocol.  The
-format specifier is passed to the :meth:`__format__` method of the
+format specifier is passed to the :meth:`~object.__format__` method of the
 expression or conversion result.  An empty string is passed when the
 format specifier is omitted.  The formatted result is then included in
 the final value of the whole string.

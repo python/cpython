@@ -1,5 +1,5 @@
 import unittest
-from test.support import cpython_only, requires_limited_api
+from test.support import cpython_only, requires_limited_api, skip_on_s390x
 try:
     import _testcapi
 except ImportError:
@@ -519,19 +519,6 @@ class FastCallTests(unittest.TestCase):
                 expected = (*expected[:-1], result[-1])
         self.assertEqual(result, expected)
 
-    def test_fastcall(self):
-        # Test _PyObject_FastCall()
-
-        for func, args, expected in self.CALLS_POSARGS:
-            with self.subTest(func=func, args=args):
-                result = _testcapi.pyobject_fastcall(func, args)
-                self.check_result(result, expected)
-
-                if not args:
-                    # args=NULL, nargs=0
-                    result = _testcapi.pyobject_fastcall(func, None)
-                    self.check_result(result, expected)
-
     def test_vectorcall_dict(self):
         # Test PyObject_VectorcallDict()
 
@@ -931,6 +918,7 @@ class TestErrorMessagesUseQualifiedName(unittest.TestCase):
 @cpython_only
 class TestRecursion(unittest.TestCase):
 
+    @skip_on_s390x
     def test_super_deep(self):
 
         def recurse(n):
@@ -945,11 +933,11 @@ class TestRecursion(unittest.TestCase):
 
         def c_recurse(n):
             if n:
-                _testcapi.pyobject_fastcall(c_recurse, (n-1,))
+                _testcapi.pyobject_vectorcall(c_recurse, (n-1,), ())
 
         def c_py_recurse(m):
             if m:
-                _testcapi.pyobject_fastcall(py_recurse, (1000, m))
+                _testcapi.pyobject_vectorcall(py_recurse, (1000, m), ())
 
         depth = sys.getrecursionlimit()
         sys.setrecursionlimit(100_000)
@@ -966,6 +954,7 @@ class TestRecursion(unittest.TestCase):
         finally:
             sys.setrecursionlimit(depth)
 
+
 class TestFunctionWithManyArgs(unittest.TestCase):
     def test_function_with_many_args(self):
         for N in (10, 500, 1000):
@@ -975,6 +964,25 @@ class TestFunctionWithManyArgs(unittest.TestCase):
                 l = {}
                 exec(src, {}, l)
                 self.assertEqual(l['f'](*range(N)), N//2)
+
+
+@unittest.skipIf(_testcapi is None, 'need _testcapi')
+class TestCAPI(unittest.TestCase):
+    def test_cfunction_call(self):
+        def func(*args, **kwargs):
+            return (args, kwargs)
+
+        # PyCFunction_Call() was removed in Python 3.13 API, but was kept in
+        # the stable ABI.
+        def PyCFunction_Call(func, *args, **kwargs):
+            if kwargs:
+                return _testcapi.pycfunction_call(func, args, kwargs)
+            else:
+                return _testcapi.pycfunction_call(func, args)
+
+        self.assertEqual(PyCFunction_Call(func), ((), {}))
+        self.assertEqual(PyCFunction_Call(func, 1, 2, 3), ((1, 2, 3), {}))
+        self.assertEqual(PyCFunction_Call(func, "arg", num=5), (("arg",), {'num': 5}))
 
 
 if __name__ == "__main__":
