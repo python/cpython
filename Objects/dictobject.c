@@ -1662,7 +1662,7 @@ _PyDict_FromItems(PyObject *const *keys, Py_ssize_t keys_offset,
  * function hits a stack-depth error, which can cause this to return NULL
  * even if the key is present.
  */
-PyObject *
+static PyObject *
 dict_getitem(PyObject *op, PyObject *key, const char *warnmsg)
 {
     if (!PyDict_Check(op)) {
