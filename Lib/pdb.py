@@ -209,7 +209,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     _previous_sigint_handler = None
 
-    def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
+    def __init__(self, completekey=r'"\t"', stdin=None, stdout=None, skip=None,
                  nosigint=False, readrc=True):
         bdb.Bdb.__init__(self, skip=skip)
         cmd.Cmd.__init__(self, completekey, stdin, stdout)

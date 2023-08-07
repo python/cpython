@@ -15,7 +15,7 @@ command interpreters.  These are often useful for test harnesses, administrative
 tools, and prototypes that will later be wrapped in a more sophisticated
 interface.
 
-.. class:: Cmd(completekey='tab', stdin=None, stdout=None)
+.. class:: Cmd(completekey=r'"\t"', stdin=None, stdout=None)
 
    A :class:`Cmd` instance or subclass instance is a line-oriented interpreter
    framework.  There is no good reason to instantiate :class:`Cmd` itself; rather,
@@ -23,7 +23,7 @@ interface.
    to inherit :class:`Cmd`'s methods and encapsulate action methods.
 
    The optional argument *completekey* is the :mod:`readline` name of a completion
-   key; it defaults to :kbd:`Tab`. If *completekey* is not :const:`None` and
+   key; it defaults to "\\t"(:kbd:`tab`). If *completekey* is not :const:`None` and
    :mod:`readline` is available, command completion is done automatically.
 
    The optional arguments *stdin* and *stdout* specify the  input and output file

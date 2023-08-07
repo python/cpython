@@ -183,7 +183,7 @@ The ``run*`` functions and :func:`set_trace` are aliases for instantiating the
 :class:`Pdb` class and calling the method of the same name.  If you want to
 access further features, you have to do this yourself:
 
-.. class:: Pdb(completekey='tab', stdin=None, stdout=None, skip=None, \
+.. class:: Pdb(completekey=r'"\t"', stdin=None, stdout=None, skip=None, \
                nosigint=False, readrc=True)
 
    :class:`Pdb` is the debugger class.

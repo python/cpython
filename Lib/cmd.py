@@ -73,7 +73,7 @@ class Cmd:
     nohelp = "*** No help on %s"
     use_rawinput = 1
 
-    def __init__(self, completekey='tab', stdin=None, stdout=None):
+    def __init__(self, completekey='"\t"', stdin=None, stdout=None):
         """Instantiate a line-oriented interpreter framework.
 
         The optional argument 'completekey' is the readline name of a
@@ -108,7 +108,11 @@ class Cmd:
                 import readline
                 self.old_completer = readline.get_completer()
                 readline.set_completer(self.complete)
-                readline.parse_and_bind(self.completekey+": complete")
+                readline_doc = getattr(readline, '__doc__', '')
+                if readline_doc is not None and 'libedit' in readline_doc:
+                    readline.parse_and_bind("bind "+self.completekey+" rl_complete")
+                else:
+                    readline.parse_and_bind(self.completekey+": complete")
             except ImportError:
                 pass
         try:

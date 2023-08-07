@@ -17,6 +17,21 @@ made using  this module affect the behaviour of both the interpreter's
 interactive prompt  and the prompts offered by the built-in :func:`input`
 function.
 
+Compatible keybindings
+----------------------
+
+To support compatible keybindings between GNU readline and Libedit, use the
+following backslashed escape sequences or octal escape sequences in quotes. ::
+
+  \a     bell
+  \b     backspace
+  \f     form feed
+  \n     newline
+  \r     carriage return
+  \t     horizontal tab
+  \v     vertical tab
+  \nnn   octal escape sequences
+
 Readline keybindings may be configured via an initialization file, typically
 ``.inputrc`` in your home directory.  See `Readline Init File
 <https://tiswww.cwru.edu/php/chet/readline/rluserman.html#Readline-Init-File>`_
@@ -39,10 +54,10 @@ Readline library in general.
   If you use *editline*/``libedit`` readline emulation on macOS, the
   initialization file located in your home directory is named
   ``.editrc``. For example, the following content in ``~/.editrc`` will
-  turn ON *vi* keybindings and TAB completion::
+  turn ON *vi* keybindings and "\\t"(:kbd:`tab`) completion::
 
     python:bind -v
-    python:bind ^I rl_complete
+    python:bind "\t" rl_complete
 
 
 Init file
@@ -56,6 +71,16 @@ The following functions relate to the init file and user configuration:
    Execute the init line provided in the *string* argument. This calls
    :c:func:`rl_parse_and_bind` in the underlying library.
 
+.. note::
+   The syntax and command of *string* argument may be different depends on the readline library.
+
+   For GNU readline::
+
+    readline.parse_and_bind(r'"\t": complete')
+
+   For Libedit::
+
+    readline.parse_and_bind(r'bind "\t" rl_complete')
 
 .. function:: read_init_file([filename])
 
@@ -348,7 +373,12 @@ support history save/restore. ::
            self.init_history(histfile)
 
        def init_history(self, histfile):
-           readline.parse_and_bind("tab: complete")
+
+            readline_doc = getattr(readline, '__doc__', '')
+            if readline_doc is not None and 'libedit' in readline_doc:
+                readline.parse_and_bind(r'bind "\t" rl_complete')
+            else:
+               readline.parse_and_bind(r'"\t": complete')
            if hasattr(readline, "read_history_file"):
                try:
                    readline.read_history_file(histfile)
