@@ -246,7 +246,7 @@ def wrapped_c_string_literal(
                 add('"')
                 return out()
             sz += len(word) + 1
-            if sz > 72:
+            if sz > width:
                 break
             add(word)
             del words[0]
