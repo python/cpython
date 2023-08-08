@@ -1197,9 +1197,12 @@ clone_with_conv_f2_impl(PyObject *module, custom_t path)
 output push
 destination deprstar new file '{dirname}/clinic/_testclinic_depr_star.c.h'
 output everything deprstar
+#output methoddef_ifndef buffer 1
+output docstring_prototype suppress
+output parser_prototype suppress
 output impl_definition block
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=bc7f8fcde3a71485]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f88f37038e00fb0a]*/
 
 
 // Mock Python version 3.8
@@ -1212,37 +1215,36 @@ output impl_definition block
 
 
 /*[clinic input]
-deprecate_positional_pos0_len1
+depr_star_pos0_len1
     * [from 3.14]
     a: object
 [clinic start generated code]*/
 
 static PyObject *
-deprecate_positional_pos0_len1_impl(PyObject *module, PyObject *a)
-/*[clinic end generated code: output=d9108842c62d70f6 input=e4430c931ed3c0c9]*/
+depr_star_pos0_len1_impl(PyObject *module, PyObject *a)
+/*[clinic end generated code: output=e1c6c2b423129499 input=089b9aee25381b69]*/
 {
     Py_RETURN_NONE;
 }
 
 
 /*[clinic input]
-deprecate_positional_pos0_len2
+depr_star_pos0_len2
     * [from 3.14]
     a: object
     b: object
 [clinic start generated code]*/
 
 static PyObject *
-deprecate_positional_pos0_len2_impl(PyObject *module, PyObject *a,
-                                    PyObject *b)
-/*[clinic end generated code: output=555332d5ef96af2e input=e96ded10f82288b7]*/
+depr_star_pos0_len2_impl(PyObject *module, PyObject *a, PyObject *b)
+/*[clinic end generated code: output=96df9be39859c7e4 input=65c83a32e01495c6]*/
 {
     Py_RETURN_NONE;
 }
 
 
 /*[clinic input]
-deprecate_positional_pos0_len3_with_kwd
+depr_star_pos0_len3_with_kwd
     * [from 3.14]
     a: object
     b: object
@@ -1252,49 +1254,46 @@ deprecate_positional_pos0_len3_with_kwd
 [clinic start generated code]*/
 
 static PyObject *
-deprecate_positional_pos0_len3_with_kwd_impl(PyObject *module, PyObject *a,
-                                             PyObject *b, PyObject *c,
-                                             PyObject *d)
-/*[clinic end generated code: output=a37c65769a902cf9 input=b1339ff4e355e14d]*/
+depr_star_pos0_len3_with_kwd_impl(PyObject *module, PyObject *a, PyObject *b,
+                                  PyObject *c, PyObject *d)
+/*[clinic end generated code: output=7f2531eda837052f input=b33f620f57d9270f]*/
 {
     Py_RETURN_NONE;
 }
 
 
 /*[clinic input]
-deprecate_positional_pos1_len1_optional
+depr_star_pos1_len1_opt
     a: object
     * [from 3.14]
     b: object = None
 [clinic start generated code]*/
 
 static PyObject *
-deprecate_positional_pos1_len1_optional_impl(PyObject *module, PyObject *a,
-                                             PyObject *b)
-/*[clinic end generated code: output=14f5720becfb664d input=1fc29f6adebceb7e]*/
+depr_star_pos1_len1_opt_impl(PyObject *module, PyObject *a, PyObject *b)
+/*[clinic end generated code: output=b5b4e326ee3b216f input=4a4b8ff72eae9ff7]*/
 {
     Py_RETURN_NONE;
 }
 
 
 /*[clinic input]
-deprecate_positional_pos1_len1
+depr_star_pos1_len1
     a: object
     * [from 3.14]
     b: object
 [clinic start generated code]*/
 
 static PyObject *
-deprecate_positional_pos1_len1_impl(PyObject *module, PyObject *a,
-                                    PyObject *b)
-/*[clinic end generated code: output=f59d6481bb9a76c0 input=c3f682707fa61515]*/
+depr_star_pos1_len1_impl(PyObject *module, PyObject *a, PyObject *b)
+/*[clinic end generated code: output=eab92e37d5b0a480 input=1e7787a9fe5f62a0]*/
 {
     Py_RETURN_NONE;
 }
 
 
 /*[clinic input]
-deprecate_positional_pos1_len2_with_kwd
+depr_star_pos1_len2_with_kwd
     a: object
     * [from 3.14]
     b: object
@@ -1304,17 +1303,16 @@ deprecate_positional_pos1_len2_with_kwd
 [clinic start generated code]*/
 
 static PyObject *
-deprecate_positional_pos1_len2_with_kwd_impl(PyObject *module, PyObject *a,
-                                             PyObject *b, PyObject *c,
-                                             PyObject *d)
-/*[clinic end generated code: output=19432d502b8f6574 input=9f0422971bc03495]*/
+depr_star_pos1_len2_with_kwd_impl(PyObject *module, PyObject *a, PyObject *b,
+                                  PyObject *c, PyObject *d)
+/*[clinic end generated code: output=3bccab672b7cfbb8 input=6bc7bd742fa8be15]*/
 {
     Py_RETURN_NONE;
 }
 
 
 /*[clinic input]
-deprecate_positional_pos2_len1
+depr_star_pos2_len1
     a: object
     b: object
     * [from 3.14]
@@ -1322,16 +1320,16 @@ deprecate_positional_pos2_len1
 [clinic start generated code]*/
 
 static PyObject *
-deprecate_positional_pos2_len1_impl(PyObject *module, PyObject *a,
-                                    PyObject *b, PyObject *c)
-/*[clinic end generated code: output=a61f6e4bc2ef7759 input=2570ceea05b69ff3]*/
+depr_star_pos2_len1_impl(PyObject *module, PyObject *a, PyObject *b,
+                         PyObject *c)
+/*[clinic end generated code: output=20f5b230e9beeb70 input=5fc3e1790dec00d5]*/
 {
     Py_RETURN_NONE;
 }
 
 
 /*[clinic input]
-deprecate_positional_pos2_len2
+depr_star_pos2_len2
     a: object
     b: object
     * [from 3.14]
@@ -1340,16 +1338,16 @@ deprecate_positional_pos2_len2
 [clinic start generated code]*/
 
 static PyObject *
-deprecate_positional_pos2_len2_impl(PyObject *module, PyObject *a,
-                                    PyObject *b, PyObject *c, PyObject *d)
-/*[clinic end generated code: output=0bf78b4d6a21ad5e input=6876773a37491125]*/
+depr_star_pos2_len2_impl(PyObject *module, PyObject *a, PyObject *b,
+                         PyObject *c, PyObject *d)
+/*[clinic end generated code: output=9f90ed8fbce27d7a input=9cc8003b89d38779]*/
 {
     Py_RETURN_NONE;
 }
 
 
 /*[clinic input]
-deprecate_positional_pos2_len3_with_kwd
+depr_star_pos2_len2_with_kwd
     a: object
     b: object
     * [from 3.14]
@@ -1360,10 +1358,9 @@ deprecate_positional_pos2_len3_with_kwd
 [clinic start generated code]*/
 
 static PyObject *
-deprecate_positional_pos2_len3_with_kwd_impl(PyObject *module, PyObject *a,
-                                             PyObject *b, PyObject *c,
-                                             PyObject *d, PyObject *e)
-/*[clinic end generated code: output=3893e0935eaa43a4 input=73f9e1a8fa3b6c54]*/
+depr_star_pos2_len2_with_kwd_impl(PyObject *module, PyObject *a, PyObject *b,
+                                  PyObject *c, PyObject *d, PyObject *e)
+/*[clinic end generated code: output=05432c4f20527215 input=831832d90534da91]*/
 {
     Py_RETURN_NONE;
 }
@@ -1436,15 +1433,15 @@ static PyMethodDef tester_methods[] = {
     CLONE_WITH_CONV_F1_METHODDEF
     CLONE_WITH_CONV_F2_METHODDEF
 
-    DEPRECATE_POSITIONAL_POS0_LEN1_METHODDEF
-    DEPRECATE_POSITIONAL_POS0_LEN2_METHODDEF
-    DEPRECATE_POSITIONAL_POS0_LEN3_WITH_KWD_METHODDEF
-    DEPRECATE_POSITIONAL_POS1_LEN1_OPTIONAL_METHODDEF
-    DEPRECATE_POSITIONAL_POS1_LEN1_METHODDEF
-    DEPRECATE_POSITIONAL_POS1_LEN2_WITH_KWD_METHODDEF
-    DEPRECATE_POSITIONAL_POS2_LEN1_METHODDEF
-    DEPRECATE_POSITIONAL_POS2_LEN2_METHODDEF
-    DEPRECATE_POSITIONAL_POS2_LEN3_WITH_KWD_METHODDEF
+    DEPR_STAR_POS0_LEN1_METHODDEF
+    DEPR_STAR_POS0_LEN2_METHODDEF
+    DEPR_STAR_POS0_LEN3_WITH_KWD_METHODDEF
+    DEPR_STAR_POS1_LEN1_OPT_METHODDEF
+    DEPR_STAR_POS1_LEN1_METHODDEF
+    DEPR_STAR_POS1_LEN2_WITH_KWD_METHODDEF
+    DEPR_STAR_POS2_LEN1_METHODDEF
+    DEPR_STAR_POS2_LEN2_METHODDEF
+    DEPR_STAR_POS2_LEN2_WITH_KWD_METHODDEF
     {NULL, NULL}
 };
 

@@ -2319,15 +2319,11 @@ class ClinicFunctionalTest(unittest.TestCase):
     locals().update((name, getattr(ac_tester, name))
                     for name in dir(ac_tester) if name.startswith('test_'))
 
-    def check_depr_star(self, fn, *, fname, pnames, ok_args, fail_args):
+    def check_depr_star(self, fn, *, regex, ok_args, fail_args):
         for args, kwds in ok_args:
             fn(*args, **kwds)
-        regex = (
-            f"Passing.*positional argument.*to {fname}.*is deprecated. "
-            f"Parameter.*{pnames} will become.*keyword-only parameter.*in Python 3.14"
-        )
         for args, kwds in fail_args:
-            with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+            with self.assertWarnsRegex(DeprecationWarning, re.escape(regex)) as cm:
                 fn(*args, **kwds)
             self.assertTrue(cm.filename.endswith("test_clinic.py"), cm.filename)
             fn(*args, **kwds)  # No warning raised second time
@@ -2797,10 +2793,13 @@ class ClinicFunctionalTest(unittest.TestCase):
                 self.assertEqual(func(), name)
 
     def test_depr_star_pos0_len1(self):
-        fn = ac_tester.deprecate_positional_pos0_len1
+        fn = ac_tester.depr_star_pos0_len1
         self.check_depr_star(fn,
-            fname="deprecate_positional_pos0_len1",
-            pnames="'a'",
+            regex=(
+                "Passing positional arguments to depr_star_pos0_len1() "
+                "is deprecated. Parameter 'a' will become a keyword-only "
+                "parameter in Python 3.14"
+            ),
             ok_args=(
                 ((), {"a": None}),
             ),
@@ -2810,10 +2809,13 @@ class ClinicFunctionalTest(unittest.TestCase):
         )
 
     def test_depr_star_pos0_len2(self):
-        fn = ac_tester.deprecate_positional_pos0_len2
+        fn = ac_tester.depr_star_pos0_len2
         self.check_depr_star(fn,
-            fname="deprecate_positional_pos0_len2",
-            pnames="'a' and 'b'",
+            regex=(
+                "Passing positional arguments to depr_star_pos0_len2() "
+                "is deprecated. Parameters 'a' and 'b' will become "
+                "keyword-only parameters in Python 3.14"
+            ),
             ok_args=(
                 ((), {"a": None, "b": None}),
             ),
@@ -2823,10 +2825,13 @@ class ClinicFunctionalTest(unittest.TestCase):
         )
 
     def test_depr_star_pos0_len3_with_kwd(self):
-        fn = ac_tester.deprecate_positional_pos0_len3_with_kwd
+        fn = ac_tester.depr_star_pos0_len3_with_kwd
         self.check_depr_star(fn,
-            fname="deprecate_positional_pos0_len3_with_kwd",
-            pnames="'a', 'b' and 'c'",
+            regex=(
+                "Passing positional arguments to depr_star_pos0_len3_with_kwd() "
+                "is deprecated. Parameters 'a', 'b' and 'c' will become "
+                "keyword-only parameters in Python 3.14"
+            ),
             ok_args=(
                 ((), {"a": None, "b": None, "c": None, "d": None}),
             ),
@@ -2837,11 +2842,14 @@ class ClinicFunctionalTest(unittest.TestCase):
             )
         )
 
-    def test_depr_star_pos1_len1_optional(self):
-        fn = ac_tester.deprecate_positional_pos1_len1_optional
+    def test_depr_star_pos1_len1_opt(self):
+        fn = ac_tester.depr_star_pos1_len1_opt
         self.check_depr_star(fn,
-            fname="deprecate_positional_pos1_len1_optional",
-            pnames="'b'",
+            regex=(
+                "Passing 2 positional arguments to depr_star_pos1_len1_opt() "
+                "is deprecated. Parameter 'b' will become a keyword-only "
+                "parameter in Python 3.14"
+            ),
             ok_args=(
                 ((), {"a": None, "b": None}),
                 ((None,), {}),
@@ -2853,10 +2861,13 @@ class ClinicFunctionalTest(unittest.TestCase):
         )
 
     def test_depr_star_pos1_len1(self):
-        fn = ac_tester.deprecate_positional_pos1_len1
+        fn = ac_tester.depr_star_pos1_len1
         self.check_depr_star(fn,
-            fname="deprecate_positional_pos1_len1",
-            pnames="'b'",
+            regex=(
+                "Passing 2 positional arguments to depr_star_pos1_len1() is "
+                "deprecated. Parameter 'b' will become a keyword-only "
+                "parameter in Python 3.14"
+            ),
             ok_args=(
                 ((), {"a": None, "b": None}),
                 ((None,), {"b": None}),
@@ -2867,10 +2878,13 @@ class ClinicFunctionalTest(unittest.TestCase):
         )
 
     def test_depr_star_pos1_len2_with_kwd(self):
-        fn = ac_tester.deprecate_positional_pos1_len2_with_kwd
+        fn = ac_tester.depr_star_pos1_len2_with_kwd
         self.check_depr_star(fn,
-            fname="deprecate_positional_pos1_len2_with_kwd",
-            pnames="'b' and 'c'",
+            regex=(
+                "Passing more than 1 positional argument to "
+                "depr_star_pos1_len2_with_kwd() is deprecated. Parameters 'b' "
+                "and 'c' will become keyword-only parameters in Python 3.14"
+            ),
             ok_args=(
                 ((), {"a": None, "b": None, "c": None, "d": None}),
                 ((None,), {"b": None, "c": None, "d": None}),
@@ -2882,10 +2896,13 @@ class ClinicFunctionalTest(unittest.TestCase):
         )
 
     def test_depr_star_pos2_len1(self):
-        fn = ac_tester.deprecate_positional_pos2_len1
+        fn = ac_tester.depr_star_pos2_len1
         self.check_depr_star(fn,
-            fname="deprecate_positional_pos2_len1",
-            pnames="'c'",
+            regex=(
+                "Passing 3 positional arguments to depr_star_pos2_len1() is "
+                "deprecated. Parameter 'c' will become a keyword-only "
+                "parameter in Python 3.14"
+            ),
             ok_args=(
                 ((), {"a": None, "b": None, "c": None}),
                 ((None,), {"b": None, "c": None}),
@@ -2897,10 +2914,13 @@ class ClinicFunctionalTest(unittest.TestCase):
         )
 
     def test_depr_star_pos2_len2(self):
-        fn = ac_tester.deprecate_positional_pos2_len2
+        fn = ac_tester.depr_star_pos2_len2
         self.check_depr_star(fn,
-            fname="deprecate_positional_pos2_len2",
-            pnames="'c' and 'd'",
+            regex=(
+                "Passing more than 2 positional arguments to "
+                "depr_star_pos2_len2() is deprecated. Parameters 'c' and 'd' "
+                "will become keyword-only parameters in Python 3.14"
+            ),
             ok_args=(
                 ((), {"a": None, "b": None, "c": None, "d": None}),
                 ((None,), {"b": None, "c": None, "d": None}),
@@ -2912,11 +2932,14 @@ class ClinicFunctionalTest(unittest.TestCase):
             )
         )
 
-    def test_depr_star_pos2_len3_with_kwd(self):
-        fn = ac_tester.deprecate_positional_pos2_len3_with_kwd
+    def test_depr_star_pos2_len2_with_kwd(self):
+        fn = ac_tester.depr_star_pos2_len2_with_kwd
         self.check_depr_star(fn,
-            fname="deprecate_positional_pos2_len3_with_kwd",
-            pnames="'c' and 'd'",
+            regex=(
+                "Passing more than 2 positional arguments to "
+                "depr_star_pos2_len2_with_kwd() is deprecated. Parameters 'c' "
+                "and 'd' will become keyword-only parameters in Python 3.14"
+            ),
             ok_args=(
                 ((), {"a": None, "b": None, "c": None, "d": None, "e": None}),
                 ((None,), {"b": None, "c": None, "d": None, "e": None}),
