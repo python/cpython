@@ -532,13 +532,26 @@ op_is_pure(int opcode)
     case _BINARY_OP_MULTIPLY_INT:
     case _BINARY_OP_ADD_INT:
     case _BINARY_OP_SUBTRACT_INT:
-    case SAVE_IP:
-        return true;
     default:
         return false;
     }
 }
 
+static int
+remove_duplicate_save_ips(_PyUOpInstruction *trace, int trace_len)
+{
+    return trace_len;
+}
+
+/**
+ * Fixes all side exits due to jumps. This MUST be called as the last
+ * pass over the trace. Otherwise jumps will point to invalid ends.
+*/
+static int
+fix_jump_side_exits(_PyUOpInstruction *trace, int trace_len)
+{
+    return trace_len;
+}
 
 #ifndef Py_DEBUG
 #define GETITEM(v, i) PyList_GET_ITEM((v), (i))
@@ -638,7 +651,7 @@ _Py_uop_analyze_and_optimize(
         int num_inputs = _PyOpcode_num_popped(opcode, oparg, false);
         int num_dynamic_operands = 0;
         assert(num_inputs >= 0);
-        for (int x = num_inputs + 1; x > 0; x--) {
+        for (int x = num_inputs; x > 0; x--) {
             if (!partitionnode_is_static(PEEK(x))) {
                 should_emit = true;
                 num_dynamic_operands++;
@@ -646,6 +659,7 @@ _Py_uop_analyze_and_optimize(
         }
         int num_static_operands = num_inputs - num_dynamic_operands;
 
+        assert(num_static_operands >= 0);
         // We need to also check if this operation is "pure". That it can accept
         // constant nodes, output constant nodes, and does not cause any side effects.
         should_emit = should_emit || !op_is_pure(opcode);
@@ -653,7 +667,7 @@ _Py_uop_analyze_and_optimize(
 
         if (should_emit) {
             if (num_static_operands > 0) {
-                for (int x = num_inputs + 1; x > 0; x--) {
+                for (int x = num_inputs; x > 0; x--) {
                     // Re-materialise all virtual (partially-evaluated) constants
                     if (partitionnode_is_static(PEEK(x))) {
                         PyObject *const_val = get_const(PEEK(x));
@@ -705,7 +719,7 @@ _Py_uop_analyze_and_optimize(
             break;
         }
         case LOAD_CONST: {
-            _Py_PARTITIONNODE_t* value = (_Py_PARTITIONNODE_t *)MAKE_STATIC_ROOT(GETITEM(co->co_consts, oparg));
+            _Py_PARTITIONNODE_t* value = (_Py_PARTITIONNODE_t *)MAKE_STATIC_ROOT(GETITEM(co_const_copy, oparg));
             STACK_GROW(1);
             PARTITIONNODE_OVERWRITE(value, PEEK(1), true);
 #if PARTITION_DEBUG
@@ -800,9 +814,6 @@ _Py_uop_analyze_and_optimize(
         print_ctx(ctx);
 #endif
         ctx->stack_pointer = stack_pointer;
-        if (opcode == EXIT_TRACE) {
-            break;
-        }
 //        if (should_emit) {
 //
 //            // Emit instruction
@@ -880,6 +891,15 @@ _Py_uop_analyze_and_optimize(
     }
     assert(STACK_SIZE() >= 0);
     assert(buffer_trace_len <= trace_len);
+
+    buffer_trace_len = remove_duplicate_save_ips(temp_writebuffer, buffer_trace_len);
+    buffer_trace_len = fix_jump_side_exits(temp_writebuffer, buffer_trace_len);
+
+#if PARTITION_DEBUG
+    if (buffer_trace_len < trace_len) {
+        fprintf(stderr, "Shortened trace by %d instructions\n", trace_len - buffer_trace_len);
+    }
+#endif
     Py_DECREF(ctx);
 
     PyObject *co_const_final = PyTuple_New(PyList_Size(co_const_copy));
@@ -891,6 +911,7 @@ _Py_uop_analyze_and_optimize(
         PyTuple_SET_ITEM(co_const_final, x, Py_NewRef(PyList_GET_ITEM(co_const_copy, x)));
     }
 
+    
     Py_SETREF(co->co_consts, co_const_final);
     Py_XDECREF(co_const_copy);
     memcpy(trace, temp_writebuffer, buffer_trace_len * sizeof(_PyUOpInstruction));
