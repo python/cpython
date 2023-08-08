@@ -391,7 +391,7 @@ translate_bytecode_to_trace(
 
 #ifdef Py_DEBUG
 #define DPRINTF(level, ...) \
-    if (lltrace >= (level)) { fprintf(stderr, __VA_ARGS__); }
+    if (lltrace >= (level)) { printf(__VA_ARGS__); }
 #else
 #define DPRINTF(level, ...)
 #endif

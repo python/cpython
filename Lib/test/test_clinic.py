@@ -7,7 +7,6 @@ from test.support import os_helper
 from test.support.os_helper import TESTFN, unlink
 from textwrap import dedent
 from unittest import TestCase
-import collections
 import contextlib
 import inspect
 import os.path
@@ -19,6 +18,13 @@ test_tools.skip_if_missing('clinic')
 with test_tools.imports_under_tool('clinic'):
     import clinic
     from clinic import DSLParser
+
+
+def _make_clinic(*, filename='clinic_tests'):
+    clang = clinic.CLanguage(None)
+    c = clinic.Clinic(clang, filename=filename)
+    c.block_parser = clinic.BlockParser('', clang)
+    return c
 
 
 def _expect_failure(tc, parser, code, errmsg, *, filename=None, lineno=None):
@@ -41,81 +47,6 @@ def _expect_failure(tc, parser, code, errmsg, *, filename=None, lineno=None):
         tc.assertEqual(cm.exception.lineno, lineno)
 
 
-class FakeConverter:
-    def __init__(self, name, args):
-        self.name = name
-        self.args = args
-
-
-class FakeConverterFactory:
-    def __init__(self, name):
-        self.name = name
-
-    def __call__(self, name, default, **kwargs):
-        return FakeConverter(self.name, kwargs)
-
-
-class FakeConvertersDict:
-    def __init__(self):
-        self.used_converters = {}
-
-    def get(self, name, default):
-        return self.used_converters.setdefault(name, FakeConverterFactory(name))
-
-c = clinic.Clinic(language='C', filename = "file")
-
-class FakeClinic:
-    def __init__(self):
-        self.converters = FakeConvertersDict()
-        self.legacy_converters = FakeConvertersDict()
-        self.language = clinic.CLanguage(None)
-        self.filename = None
-        self.destination_buffers = {}
-        self.block_parser = clinic.BlockParser('', self.language)
-        self.modules = collections.OrderedDict()
-        self.classes = collections.OrderedDict()
-        clinic.clinic = self
-        self.name = "FakeClinic"
-        self.line_prefix = self.line_suffix = ''
-        self.destinations = {}
-        self.add_destination("block", "buffer")
-        self.add_destination("file", "buffer")
-        self.add_destination("suppress", "suppress")
-        d = self.destinations.get
-        self.field_destinations = collections.OrderedDict((
-            ('docstring_prototype', d('suppress')),
-            ('docstring_definition', d('block')),
-            ('methoddef_define', d('block')),
-            ('impl_prototype', d('block')),
-            ('parser_prototype', d('suppress')),
-            ('parser_definition', d('block')),
-            ('impl_definition', d('block')),
-        ))
-        self.functions = []
-
-    def get_destination(self, name):
-        d = self.destinations.get(name)
-        if not d:
-            sys.exit("Destination does not exist: " + repr(name))
-        return d
-
-    def add_destination(self, name, type, *args):
-        if name in self.destinations:
-            sys.exit("Destination already exists: " + repr(name))
-        self.destinations[name] = clinic.Destination(name, type, self, *args)
-
-    def is_directive(self, name):
-        return name == "module"
-
-    def directive(self, name, args):
-        self.called_directives[name] = args
-
-    _module_and_class = clinic.Clinic._module_and_class
-
-    def __repr__(self):
-        return "<FakeClinic object>"
-
-
 class ClinicWholeFileTest(TestCase):
     maxDiff = None
 
@@ -124,7 +55,7 @@ class ClinicWholeFileTest(TestCase):
                         filename=filename, lineno=lineno)
 
     def setUp(self):
-        self.clinic = clinic.Clinic(clinic.CLanguage(None), filename="test.c")
+        self.clinic = _make_clinic(filename="test.c")
 
     def test_eol(self):
         # regression test:
@@ -848,7 +779,7 @@ xyz
 class ClinicParserTest(TestCase):
 
     def parse(self, text):
-        c = FakeClinic()
+        c = _make_clinic()
         parser = DSLParser(c)
         block = clinic.Block(text)
         parser.parse(block)
@@ -872,7 +803,7 @@ class ClinicParserTest(TestCase):
                          dedent(expected).strip())
 
     def test_trivial(self):
-        parser = DSLParser(FakeClinic())
+        parser = DSLParser(_make_clinic())
         block = clinic.Block("""
             module os
             os.access
@@ -1119,7 +1050,7 @@ class ClinicParserTest(TestCase):
         with support.captured_stderr() as stderr:
             self.expect_failure(block, err, lineno=0)
         expected_debug_print = dedent("""\
-            cls=None, module=<FakeClinic object>, existing='fooooooooooooooooo'
+            cls=None, module=<clinic.Clinic object>, existing='fooooooooooooooooo'
             (cls or module).functions=[]
         """)
         stderr = stderr.getvalue()
@@ -1478,10 +1409,104 @@ class ClinicParserTest(TestCase):
             "module foo\nfoo.bar\n  this: int\n  *",
             "module foo\nfoo.bar\n  this: int\n  *\nDocstring.",
         )
-        err = "Function 'bar' specifies '*' without any parameters afterwards."
+        err = "Function 'foo.bar' specifies '*' without any parameters afterwards."
         for block in dataset:
             with self.subTest(block=block):
                 self.expect_failure(block, err)
+
+    def test_parameters_required_after_depr_star(self):
+        dataset = (
+            "module foo\nfoo.bar\n  * [from 3.14]",
+            "module foo\nfoo.bar\n  * [from 3.14]\nDocstring here.",
+            "module foo\nfoo.bar\n  this: int\n  * [from 3.14]",
+            "module foo\nfoo.bar\n  this: int\n  * [from 3.14]\nDocstring.",
+        )
+        err = "Function 'foo.bar' specifies '* [from 3.14]' without any parameters afterwards."
+        for block in dataset:
+            with self.subTest(block=block):
+                self.expect_failure(block, err)
+
+    def test_depr_star_invalid_format_1(self):
+        block = """
+            module foo
+            foo.bar
+                this: int
+                * [from 3]
+            Docstring.
+        """
+        err = (
+            "Function 'foo.bar': expected format '* [from major.minor]' "
+            "where 'major' and 'minor' are integers; got '3'"
+        )
+        self.expect_failure(block, err, lineno=3)
+
+    def test_depr_star_invalid_format_2(self):
+        block = """
+            module foo
+            foo.bar
+                this: int
+                * [from a.b]
+            Docstring.
+        """
+        err = (
+            "Function 'foo.bar': expected format '* [from major.minor]' "
+            "where 'major' and 'minor' are integers; got 'a.b'"
+        )
+        self.expect_failure(block, err, lineno=3)
+
+    def test_depr_star_invalid_format_3(self):
+        block = """
+            module foo
+            foo.bar
+                this: int
+                * [from 1.2.3]
+            Docstring.
+        """
+        err = (
+            "Function 'foo.bar': expected format '* [from major.minor]' "
+            "where 'major' and 'minor' are integers; got '1.2.3'"
+        )
+        self.expect_failure(block, err, lineno=3)
+
+    def test_parameters_required_after_depr_star(self):
+        block = """
+            module foo
+            foo.bar
+                this: int
+                * [from 3.14]
+            Docstring.
+        """
+        err = (
+            "Function 'foo.bar' specifies '* [from ...]' without "
+            "any parameters afterwards"
+        )
+        self.expect_failure(block, err, lineno=4)
+
+    def test_depr_star_must_come_before_star(self):
+        block = """
+            module foo
+            foo.bar
+                this: int
+                *
+                * [from 3.14]
+            Docstring.
+        """
+        err = "Function 'foo.bar': '* [from ...]' must come before '*'"
+        self.expect_failure(block, err, lineno=4)
+
+    def test_depr_star_duplicate(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                * [from 3.14]
+                b: int
+                * [from 3.14]
+                c: int
+            Docstring.
+        """
+        err = "Function 'foo.bar' uses '[from ...]' more than once"
+        self.expect_failure(block, err, lineno=5)
 
     def test_single_slash(self):
         block = """
@@ -1646,8 +1671,7 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err)
 
     def test_directive(self):
-        c = FakeClinic()
-        parser = DSLParser(c)
+        parser = DSLParser(_make_clinic())
         parser.flag = False
         parser.directives['setflag'] = lambda : setattr(parser, 'flag', True)
         block = clinic.Block("setflag")
@@ -1849,10 +1873,10 @@ class ClinicParserTest(TestCase):
             self.parse(block)
         # The line numbers are off; this is a known limitation.
         expected = dedent("""\
-            Warning on line 0:
+            Warning in file 'clinic_tests' on line 0:
             Non-ascii characters are not allowed in docstrings: 'á'
 
-            Warning on line 0:
+            Warning in file 'clinic_tests' on line 0:
             Non-ascii characters are not allowed in docstrings: 'ü', 'á', 'ß'
 
         """)
@@ -3028,6 +3052,96 @@ class FormatHelperTests(unittest.TestCase):
         )
         out = clinic.suffix_all_lines(lines, suffix="foo")
         self.assertEqual(out, expected)
+
+
+class ClinicReprTests(unittest.TestCase):
+    def test_Block_repr(self):
+        block = clinic.Block("foo")
+        expected_repr = "<clinic.Block 'text' input='foo' output=None>"
+        self.assertEqual(repr(block), expected_repr)
+
+        block2 = clinic.Block("bar", "baz", [], "eggs", "spam")
+        expected_repr_2 = "<clinic.Block 'baz' input='bar' output='eggs'>"
+        self.assertEqual(repr(block2), expected_repr_2)
+
+        block3 = clinic.Block(
+            input="longboi_" * 100,
+            dsl_name="wow_so_long",
+            signatures=[],
+            output="very_long_" * 100,
+            indent=""
+        )
+        expected_repr_3 = (
+            "<clinic.Block 'wow_so_long' input='longboi_longboi_longboi_l...' output='very_long_very_long_very_...'>"
+        )
+        self.assertEqual(repr(block3), expected_repr_3)
+
+    def test_Destination_repr(self):
+        c = _make_clinic()
+
+        destination = clinic.Destination(
+            "foo", type="file", clinic=c, args=("eggs",)
+        )
+        self.assertEqual(
+            repr(destination), "<clinic.Destination 'foo' type='file' file='eggs'>"
+        )
+
+        destination2 = clinic.Destination("bar", type="buffer", clinic=c)
+        self.assertEqual(repr(destination2), "<clinic.Destination 'bar' type='buffer'>")
+
+    def test_Module_repr(self):
+        module = clinic.Module("foo", _make_clinic())
+        self.assertRegex(repr(module), r"<clinic.Module 'foo' at \d+>")
+
+    def test_Class_repr(self):
+        cls = clinic.Class("foo", _make_clinic(), None, 'some_typedef', 'some_type_object')
+        self.assertRegex(repr(cls), r"<clinic.Class 'foo' at \d+>")
+
+    def test_FunctionKind_repr(self):
+        self.assertEqual(
+            repr(clinic.FunctionKind.INVALID), "<clinic.FunctionKind.INVALID>"
+        )
+        self.assertEqual(
+            repr(clinic.FunctionKind.CLASS_METHOD), "<clinic.FunctionKind.CLASS_METHOD>"
+        )
+
+    def test_Function_and_Parameter_reprs(self):
+        function = clinic.Function(
+            name='foo',
+            module=_make_clinic(),
+            cls=None,
+            c_basename=None,
+            full_name='foofoo',
+            return_converter=clinic.init_return_converter(),
+            kind=clinic.FunctionKind.METHOD_INIT,
+            coexist=False
+        )
+        self.assertEqual(repr(function), "<clinic.Function 'foo'>")
+
+        converter = clinic.self_converter('bar', 'bar', function)
+        parameter = clinic.Parameter(
+            "bar",
+            kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            function=function,
+            converter=converter
+        )
+        self.assertEqual(repr(parameter), "<clinic.Parameter 'bar'>")
+
+    def test_Monitor_repr(self):
+        monitor = clinic.cpp.Monitor()
+        self.assertRegex(repr(monitor), r"<clinic.Monitor \d+ line=0 condition=''>")
+
+        monitor.line_number = 42
+        monitor.stack.append(("token1", "condition1"))
+        self.assertRegex(
+            repr(monitor), r"<clinic.Monitor \d+ line=42 condition='condition1'>"
+        )
+
+        monitor.stack.append(("token2", "condition2"))
+        self.assertRegex(
+            repr(monitor),
+            r"<clinic.Monitor \d+ line=42 condition='condition1 && condition2'>"
+        )
 
 
 if __name__ == "__main__":
