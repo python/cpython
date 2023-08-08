@@ -5832,8 +5832,8 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
                          help="walk --srcdir to run over all relevant files")
     cmdline.add_argument("--srcdir", type=str, default=os.curdir,
                          help="the directory tree to walk in --make mode")
-    cmdline.add_argument("--exclude", type=str,
-                         help="a list of files to exclude --make mode")
+    cmdline.add_argument("--exclude", type=str, metavar="EXCLUDES",
+                         help="a comma-separated list of files to exclude --make mode")
     cmdline.add_argument("filename", metavar="FILE", type=str, nargs="*",
                          help="the list of files to process")
     return cmdline
