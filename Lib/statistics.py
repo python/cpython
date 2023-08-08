@@ -1006,6 +1006,8 @@ def _mean_stdev(data):
 
 def _sqrtprod(x: float, y: float) -> float:
     "Return sqrt(x * y) computed with high accuracy."
+    # Square root differential correction:
+    # https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
     h = sqrt(x * y)
     x = sumprod((x, h), (y, -h))
     return h + x / (2.0 * h)
