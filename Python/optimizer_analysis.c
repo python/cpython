@@ -6,6 +6,7 @@
 #include "pycore_opcode_utils.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_uops.h"
+#include "pycore_long.h"
 #include "cpython/optimizer.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -30,7 +31,9 @@ typedef enum _Py_TypeNodeTags {
 typedef struct _Py_PartitionRootNode {
     PyObject_HEAD
     // For partial evaluation
-    uint8_t static_or_dyanmic;
+    // 0 - static
+    // 1 - dynamic
+    uint8_t static_or_dynamic;
     PyObject *const_val;
     // For types (TODO)
 } _Py_PartitionRootNode;
@@ -68,14 +71,14 @@ partitionnode_clear_tag(_Py_PARTITIONNODE_t node)
 // 0 - static
 // 1 - dynamic
 // If static, const_value must be set!
-static _Py_PARTITIONNODE_t
+static inline _Py_PARTITIONNODE_t
 partitionnode_make_root(uint8_t static_or_dynamic, PyObject *const_val)
 {
     _Py_PartitionRootNode *root = PyObject_New(_Py_PartitionRootNode, &_Py_PartitionRootNode_Type);
     if (root == NULL) {
         return 0;
     }
-    root->static_or_dyanmic = static_or_dynamic;
+    root->static_or_dynamic = static_or_dynamic;
     root->const_val = Py_NewRef(const_val);
     return (_Py_PARTITIONNODE_t)root | TYPE_ROOT;
 }
@@ -92,12 +95,18 @@ static _Py_PARTITIONNODE_t PARTITIONNODE_NULLROOT = (_Py_PARTITIONNODE_t)_Py_NUL
 // Tier 2 types meta interpreter
 typedef struct _Py_UOpsAbstractInterpContext {
     PyObject_HEAD
+    // The following are abstract stack and locals.
     // points to one element after the abstract stack
     _Py_PARTITIONNODE_t *stack_pointer;
     int stack_len;
     _Py_PARTITIONNODE_t *stack;
     int locals_len;
     _Py_PARTITIONNODE_t *locals;
+    // The following represent the real (emitted instructions) stack and locals.
+    // points to one element after the abstract stack
+    _Py_PARTITIONNODE_t *real_stack_pointer;
+    _Py_PARTITIONNODE_t *real_stack;
+    _Py_PARTITIONNODE_t *real_locals;
 } _Py_UOpsAbstractInterpContext;
 
 static void
@@ -140,14 +149,15 @@ _Py_UOpsAbstractInterpContext_New(int stack_len, int locals_len, int curr_stackl
     self->stack_len = stack_len;
     self->locals_len = locals_len;
 
-    _Py_PARTITIONNODE_t *locals_with_stack = PyMem_New(_Py_PARTITIONNODE_t, locals_len + stack_len);
+    // Double the size needed because we also need a representation for the real stack and locals.
+    _Py_PARTITIONNODE_t *locals_with_stack = PyMem_New(_Py_PARTITIONNODE_t, (locals_len + stack_len) * 2);
     if (locals_with_stack == NULL) {
         Py_DECREF(self);
         return NULL;
     }
 
 
-    for (int i = 0; i < locals_len + stack_len; i++) {
+    for (int i = 0; i < (locals_len + stack_len) * 2; i++) {
         locals_with_stack[i] = PARTITIONNODE_NULLROOT;
     }
 
@@ -155,6 +165,9 @@ _Py_UOpsAbstractInterpContext_New(int stack_len, int locals_len, int curr_stackl
     self->stack = locals_with_stack + locals_len;
     self->stack_pointer = self->stack + curr_stacklen;
 
+    self->real_locals = self->locals + locals_len + stack_len;
+    self->real_stack = self->stack + locals_len + stack_len;
+    self->real_stack_pointer = self->stack_pointer + locals_len + stack_len;
     return self;
 }
 
@@ -162,7 +175,7 @@ _Py_UOpsAbstractInterpContext_New(int stack_len, int locals_len, int curr_stackl
 static void print_ctx(_Py_UOpsAbstractInterpContext *ctx);
 #endif
 
-static _Py_PARTITIONNODE_t *
+static inline _Py_PARTITIONNODE_t *
 partitionnode_get_rootptr(_Py_PARTITIONNODE_t *ref)
 {
     _Py_TypeNodeTags tag = partitionnode_get_tag(*ref);
@@ -489,15 +502,53 @@ print_ctx(_Py_UOpsAbstractInterpContext *ctx)
 }
 #endif
 
+static bool
+partitionnode_is_static(_Py_PARTITIONNODE_t *node)
+{
+    _Py_PARTITIONNODE_t *root = partitionnode_get_rootptr(node);
+    _Py_PartitionRootNode *root_obj = (_Py_PartitionRootNode *)partitionnode_clear_tag((_Py_PARTITIONNODE_t)root);
+    if (root_obj == _Py_NULL) {
+        return false;
+    }
+    return !root_obj->static_or_dynamic;
+}
+
+// MUST BE GUARDED BY partitionnode_is_static BEFORE CALLING THIS
+static inline PyObject *
+get_const(_Py_PARTITIONNODE_t *node)
+{
+    assert(partitionnode_is_static(node));
+    _Py_PARTITIONNODE_t *root = partitionnode_get_rootptr(node);
+    _Py_PartitionRootNode *root_obj = (_Py_PartitionRootNode * )partitionnode_clear_tag((_Py_PARTITIONNODE_t)root);
+    return root_obj->const_val;
+}
+
+// Hardcoded for now, @TODO autogenerate these from the DSL.
+static inline bool
+op_is_pure(int opcode)
+{
+    switch (opcode) {
+    case LOAD_CONST:
+    case _BINARY_OP_MULTIPLY_INT:
+    case _BINARY_OP_ADD_INT:
+    case _BINARY_OP_SUBTRACT_INT:
+    case SAVE_IP:
+        return true;
+    default:
+        return false;
+    }
+}
+
+
 #ifndef Py_DEBUG
-#define GETITEM(v, i) PyTuple_GET_ITEM((v), (i))
+#define GETITEM(v, i) PyList_GET_ITEM((v), (i))
 #else
 static inline PyObject *
 GETITEM(PyObject *v, Py_ssize_t i) {
-    assert(PyTuple_Check(v));
+    assert(PyList_CheckExact(v));
     assert(i >= 0);
-    assert(i < PyTuple_GET_SIZE(v));
-    return PyTuple_GET_ITEM(v, i);
+    assert(i < PyList_GET_SIZE(v));
+    return PyList_GET_ITEM(v, i);
 }
 #endif
 
@@ -509,7 +560,7 @@ _Py_uop_analyze_and_optimize(
     int curr_stacklen
 )
 {
-#define STACK_LEVEL()     ((int)(stack_pointer - ctx->stack))
+#define STACK_LEVEL()     ((int)(stack_pointer - stack))
 #define STACK_SIZE()      (co->co_stacksize)
 #define BASIC_STACKADJ(n) (stack_pointer += n)
 
@@ -518,7 +569,6 @@ _Py_uop_analyze_and_optimize(
                             assert(n >= 0); \
                             BASIC_STACKADJ(n); \
                             assert(STACK_LEVEL() <= STACK_SIZE()); \
-                            ctx->stack_pointer = stack_pointer; \
                         } while (0)
 #define STACK_SHRINK(n) do { \
                             assert(n >= 0); \
@@ -540,17 +590,33 @@ _Py_uop_analyze_and_optimize(
         return trace_len;
     }
 
+    int buffer_trace_len = 0;
+
     _Py_UOpsAbstractInterpContext *ctx = _Py_UOpsAbstractInterpContext_New(co->co_stacksize, co->co_nlocals, curr_stacklen);
     if (ctx == NULL) {
         PyMem_Free(temp_writebuffer);
         return trace_len;
     }
 
+    PyObject *co_const_copy = PyList_New(PyTuple_Size(co->co_consts));
+    if (co_const_copy == NULL) {
+        goto abstract_error;
+    }
+    // Copy over the co_const tuple
+    for (int x = 0; x < PyTuple_GET_SIZE(co->co_consts); x++) {
+        PyList_SET_ITEM(co_const_copy, x, Py_NewRef(PyTuple_GET_ITEM(co->co_consts, x)));
+    }
+
     int oparg;
     int opcode;
-    _Py_PARTITIONNODE_t *stack_pointer = ctx->stack_pointer;
-    _Py_PARTITIONNODE_t *locals = ctx->locals;
+    _Py_PARTITIONNODE_t *stack_pointer;
+    _Py_PARTITIONNODE_t *locals;
+    _Py_PARTITIONNODE_t *stack;
+
     for (int i = 0; i < trace_len; i++) {
+        stack_pointer = ctx->stack_pointer;
+        stack = ctx->stack;
+        locals = ctx->locals;
         oparg = trace[i].oparg;
         opcode = trace[i].opcode;
 #ifdef PARTITION_DEBUG
@@ -560,15 +626,69 @@ _Py_uop_analyze_and_optimize(
             opcode, oparg);
 #endif
 #endif
+
+        // Partial evaluation - the partition nodes already gave us the static-dynamic variable split.
+        // For partial evaluation, we simply need to follow these rules:
+        // 1. Operations on dynamic variables need to be emitted.
+        //      If an operand was previously partially evaluated and not yet emitted, then emit the residual with a LOAD_CONST.
+        // 2. Operations on static variables are a no-op as the abstract interpreter already analyzed their results.
+
+        bool should_emit = false;
+        // For all stack inputs, are their variables static?
+        int num_inputs = _PyOpcode_num_popped(opcode, oparg, false);
+        int num_dynamic_operands = 0;
+        assert(num_inputs >= 0);
+        for (int x = num_inputs + 1; x > 0; x--) {
+            if (!partitionnode_is_static(PEEK(x))) {
+                should_emit = true;
+                num_dynamic_operands++;
+            }
+        }
+        int num_static_operands = num_inputs - num_dynamic_operands;
+
+        // We need to also check if this operation is "pure". That it can accept
+        // constant nodes, output constant nodes, and does not cause any side effects.
+        should_emit = should_emit || !op_is_pure(opcode);
+
+
+        if (should_emit) {
+            if (num_static_operands > 0) {
+                for (int x = num_inputs + 1; x > 0; x--) {
+                    // Re-materialise all virtual (partially-evaluated) constants
+                    if (partitionnode_is_static(PEEK(x))) {
+                        PyObject *const_val = get_const(PEEK(x));
+                        _PyUOpInstruction load_const;
+                        load_const.opcode = LOAD_CONST;
+                        load_const.oparg = (int)PyList_GET_SIZE(co_const_copy);
+                        if (PyList_Append(co_const_copy, const_val) < 0) {
+                            goto abstract_error;
+                        }
+
+                        temp_writebuffer[buffer_trace_len] = load_const;
+                        buffer_trace_len++;
+
+                        // INSERT to the correct position in the stack
+                        int offset_from_target = num_dynamic_operands - x - 1;
+                        assert(offset_from_target >= 0);
+                        if (offset_from_target) {
+                            _PyUOpInstruction insert;
+                            insert.opcode = INSERT;
+                            insert.oparg = offset_from_target;
+
+                            temp_writebuffer[buffer_trace_len] = insert;
+                            buffer_trace_len++;
+                        }
+                        num_dynamic_operands++;
+                    }
+
+                }
+            }
+            temp_writebuffer[buffer_trace_len] = trace[i];
+            buffer_trace_len++;
+        }
         /*
         * The following are special cased:
-            "LOAD_FAST",
-            "LOAD_FAST_CHECK",
-            "LOAD_FAST_AND_CLEAR",
-            "LOAD_CONST",
-            "STORE_FAST",
-            "STORE_FAST_MAYBE_NULL",
-            "COPY",
+        * @TODO: shift these to the DSL
         */
         switch (opcode) {
 #include "abstract_interp_cases.c.h"
@@ -606,6 +726,72 @@ _Py_uop_analyze_and_optimize(
             PARTITIONNODE_SET(bottom, PEEK(1), false);
             break;
         }
+
+        // Arithmetic operations
+
+        case _BINARY_OP_MULTIPLY_INT: {
+            if (!should_emit) {
+                PyObject *right;
+                PyObject *left;
+                PyObject *res;
+                right = get_const(&stack_pointer[-1]);
+                left = get_const(&stack_pointer[-2]);
+                STAT_INC(BINARY_OP, hit);
+                res = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
+                if (res == NULL) goto abstract_error;
+                STACK_SHRINK(1);
+                PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)MAKE_STATIC_ROOT(res), PEEK(-(-1)), true);
+                break;
+            }
+            else {
+                STACK_SHRINK(1);
+                PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+                break;
+            }
+
+        }
+
+        case _BINARY_OP_ADD_INT: {
+            if (!should_emit) {
+                PyObject *right;
+                PyObject *left;
+                PyObject *res;
+                right = get_const(&stack_pointer[-1]);
+                left = get_const(&stack_pointer[-2]);
+                STAT_INC(BINARY_OP, hit);
+                res = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
+                if (res == NULL) goto abstract_error;
+                STACK_SHRINK(1);
+                PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)MAKE_STATIC_ROOT(res), PEEK(-(-1)), true);
+                break;
+            }
+            else {
+                STACK_SHRINK(1);
+                PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+                break;
+            }
+        }
+
+        case _BINARY_OP_SUBTRACT_INT: {
+            if (!should_emit) {
+                PyObject *right;
+                PyObject *left;
+                PyObject *res;
+                right = get_const(&stack_pointer[-1]);
+                left = get_const(&stack_pointer[-2]);
+                STAT_INC(BINARY_OP, hit);
+                res = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
+                if (res == NULL) goto abstract_error;
+                STACK_SHRINK(1);
+                PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)MAKE_STATIC_ROOT(res), PEEK(-(-1)), true);
+                break;
+            }
+            else {
+                STACK_SHRINK(1);
+                PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+                break;
+            }
+        }
         default:
             fprintf(stderr, "Unknown opcode in abstract interpreter\n");
             Py_UNREACHABLE();
@@ -613,9 +799,108 @@ _Py_uop_analyze_and_optimize(
 #if PARTITION_DEBUG
         print_ctx(ctx);
 #endif
+        ctx->stack_pointer = stack_pointer;
+        if (opcode == EXIT_TRACE) {
+            break;
+        }
+//        if (should_emit) {
+//
+//            // Emit instruction
+//            temp_writebuffer[buffer_trace_len] = trace[i];
+//            buffer_trace_len++;
+//
+//            // Update the real abstract interpreter
+//            stack_pointer = ctx->real_stack_pointer;
+//            locals = ctx->real_locals;
+//            stack = ctx->real_stack;
+//
+//            /*
+//            * The following are special cased:
+//            * @TODO: shift these to the DSL
+//            */
+//            switch (opcode) {
+//#include "abstract_interp_cases.c.h"
+//                // @TODO convert these to autogenerated using DSL
+//            case LOAD_FAST:
+//            case LOAD_FAST_CHECK:
+//                STACK_GROW(1);
+//                PARTITIONNODE_OVERWRITE(GETLOCAL(oparg), PEEK(1), false);
+//                break;
+//            case LOAD_FAST_AND_CLEAR: {
+//                STACK_GROW(1);
+//                PARTITIONNODE_OVERWRITE(GETLOCAL(oparg), PEEK(1), false);
+//                PARTITIONNODE_OVERWRITE(&PARTITIONNODE_NULLROOT, GETLOCAL(oparg), false);
+//                break;
+//            }
+//            case LOAD_CONST: {
+//                _Py_PARTITIONNODE_t value = MAKE_STATIC_ROOT(GETITEM(co->co_consts, oparg));
+//                STACK_GROW(1);
+//                PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)value, PEEK(1), false);
+//                break;
+//            }
+//            case STORE_FAST:
+//            case STORE_FAST_MAYBE_NULL: {
+//                _Py_PARTITIONNODE_t *value = PEEK(1);
+//                PARTITIONNODE_OVERWRITE(value, GETLOCAL(oparg), false);
+//                STACK_SHRINK(1);
+//                break;
+//            }
+//            case COPY: {
+//                _Py_PARTITIONNODE_t *bottom = PEEK(1 + (oparg - 1));
+//                STACK_GROW(1);
+//                PARTITIONNODE_SET(bottom, PEEK(1), false);
+//                break;
+//            }
+//
+//            case _BINARY_OP_MULTIPLY_INT: {
+//                STACK_SHRINK(1);
+//                PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+//                break;
+//
+//            }
+//
+//            case _BINARY_OP_ADD_INT: {
+//                STACK_SHRINK(1);
+//                PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+//                break;
+//            }
+//
+//            case _BINARY_OP_SUBTRACT_INT: {
+//                STACK_SHRINK(1);
+//                PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+//                break;
+//            }
+//            default:
+//                fprintf(stderr, "Unknown opcode in abstract interpreter\n");
+//                Py_UNREACHABLE();
+//            }
+//
+//            ctx->real_stack_pointer = stack_pointer;
+//        }
     }
     assert(STACK_SIZE() >= 0);
+    assert(buffer_trace_len <= trace_len);
     Py_DECREF(ctx);
+
+    PyObject *co_const_final = PyTuple_New(PyList_Size(co_const_copy));
+    if (co_const_final == NULL) {
+        goto abstract_error;
+    }
+    // Copy over the co_const tuple
+    for (int x = 0; x < PyList_GET_SIZE(co_const_copy); x++) {
+        PyTuple_SET_ITEM(co_const_final, x, Py_NewRef(PyList_GET_ITEM(co_const_copy, x)));
+    }
+
+    Py_SETREF(co->co_consts, co_const_final);
+    Py_XDECREF(co_const_copy);
+    memcpy(trace, temp_writebuffer, buffer_trace_len * sizeof(_PyUOpInstruction));
     PyMem_Free(temp_writebuffer);
+    return buffer_trace_len;
+
+abstract_error:
+    Py_XDECREF(co_const_copy);
+    Py_DECREF(ctx);
+    assert(PyErr_Occurred());
+    PyErr_Clear();
     return trace_len;
 }

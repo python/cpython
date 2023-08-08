@@ -70,6 +70,12 @@ SPECIALLY_HANDLED_ABSTRACT_INSTR = {
     "STORE_FAST",
     "STORE_FAST_MAYBE_NULL",
     "COPY",
+
+    # Arithmetic
+    "_BINARY_OP_MULTIPLY_INT",
+    "_BINARY_OP_ADD_INT",
+    "_BINARY_OP_SUBTRACT_INT",
+
 }
 
 arg_parser = argparse.ArgumentParser(
@@ -129,7 +135,7 @@ class Generator(Analyzer):
         pushed: str | None
         match thing:
             case parsing.InstDef():
-                if thing.kind != "op":
+                if thing.kind != "op" or (thing.kind != "inst" and self.instrs[thing.name].is_viable_uop()):
                     instr = self.instrs[thing.name]
                     popped = effect_str(instr.input_effects)
                     pushed = effect_str(instr.output_effects)

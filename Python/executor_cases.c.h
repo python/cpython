@@ -2717,3 +2717,13 @@
             return frame;
             break;
         }
+
+        case INSERT: {
+            // Inserts TOS at position specified by oparg
+            PyObject *tos = TOP();
+            for (int i = 1; i < oparg + 1; i++) {
+                stack_pointer[i] = stack_pointer[i - 1];
+            }
+            POKE(oparg, tos);
+            break;
+        }
