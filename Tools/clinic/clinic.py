@@ -850,6 +850,7 @@ class CLanguage(Language):
         #endif /* !defined({methoddef_name}) */
     """)
     DEPRECATED_POSITIONAL_PROTOTYPE: Final[str] = r"""
+        // Emit compiler warnings when we get to Python {major}.{minor}.
         #if PY_VERSION_HEX >= 0x{major:02x}{minor:02x}00C0
         #  error \
                 {cpp_message}
@@ -5206,13 +5207,14 @@ class DSLParser:
                     # but at least make an attempt at ensuring it's a valid expression.
                     try:
                         value = eval(default)
-                        if value is unspecified:
-                            fail("'unspecified' is not a legal default value!")
                     except NameError:
                         pass # probably a named constant
                     except Exception as e:
                         fail("Malformed expression given as default value "
                              f"{default!r} caused {e!r}")
+                    else:
+                        if value is unspecified:
+                            fail("'unspecified' is not a legal default value!")
                 if bad:
                     fail(f"Unsupported expression as default value: {default!r}")
 
