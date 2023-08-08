@@ -5207,13 +5207,14 @@ class DSLParser:
                     # but at least make an attempt at ensuring it's a valid expression.
                     try:
                         value = eval(default)
-                        if value is unspecified:
-                            fail("'unspecified' is not a legal default value!")
                     except NameError:
                         pass # probably a named constant
                     except Exception as e:
                         fail("Malformed expression given as default value "
                              f"{default!r} caused {e!r}")
+                    else:
+                        if value is unspecified:
+                            fail("'unspecified' is not a legal default value!")
                 if bad:
                     fail(f"Unsupported expression as default value: {default!r}")
 
