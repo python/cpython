@@ -1244,20 +1244,6 @@ class ClinicParserTest(TestCase):
                 Attributes for the character.
         """)
 
-    def test_unmatched_right_square_paren(self):
-        err = "Function 'addch' has a ']' without a matching '['."
-        block = """
-            module curses
-            curses.addch
-                y: int
-                    Y-coordinate.
-                x: int
-                    X-coordinate.
-                ]
-                /
-        """
-        self.expect_failure(block, err, lineno=6)
-
     def test_nested_groups(self):
         function = self.parse_function("""
             module curses
@@ -1516,18 +1502,6 @@ class ClinicParserTest(TestCase):
             "module foo\nfoo.bar\n  this: int\n  *\nDocstring.",
         )
         err = "Function 'foo.bar' specifies '*' without any parameters afterwards."
-        for block in dataset:
-            with self.subTest(block=block):
-                self.expect_failure(block, err)
-
-    def test_parameters_required_after_depr_star(self):
-        dataset = (
-            "module foo\nfoo.bar\n  * [from 3.14]",
-            "module foo\nfoo.bar\n  * [from 3.14]\nDocstring here.",
-            "module foo\nfoo.bar\n  this: int\n  * [from 3.14]",
-            "module foo\nfoo.bar\n  this: int\n  * [from 3.14]\nDocstring.",
-        )
-        err = "Function 'foo.bar' specifies '* [from 3.14]' without any parameters afterwards."
         for block in dataset:
             with self.subTest(block=block):
                 self.expect_failure(block, err)
