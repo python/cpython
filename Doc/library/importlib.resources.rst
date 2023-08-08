@@ -96,4 +96,4 @@ for example, a package and its resources can be imported from a zip file using
     .. versionadded:: 3.9
 
     .. versionchanged:: 3.12
-       Support added for ``traversable`` representing to a directory.
+       Added support for ``traversable`` representing a directory.
