@@ -5922,7 +5922,6 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
                 path = os.path.join(root, filename)
                 path = os.path.normpath(path)
                 if path in excludes:
-                    print("Excluding", path)
                     continue
                 if ns.verbose:
                     print(path)
