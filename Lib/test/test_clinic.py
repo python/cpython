@@ -2319,14 +2319,19 @@ class ClinicFunctionalTest(unittest.TestCase):
     locals().update((name, getattr(ac_tester, name))
                     for name in dir(ac_tester) if name.startswith('test_'))
 
-    def check_depr_star(self, fn, *, regex, ok_args, fail_args):
-        for args, kwds in ok_args:
-            fn(*args, **kwds)
-        for args, kwds in fail_args:
-            with self.assertWarnsRegex(DeprecationWarning, re.escape(regex)) as cm:
-                fn(*args, **kwds)
+    def check_depr_star(self, *, fname, pnames, good_calls, bad_calls):
+        for call in good_calls:
+            call()
+        regex = (
+            f"Passing.*positional argument.*to {fname}.*is deprecated. "
+            f"Parameter.*{pnames} will become.*keyword-only parameter.*in "
+            "Python 3.14"
+        )
+        for call in bad_calls:
+            with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+                call()
             self.assertTrue(cm.filename.endswith("test_clinic.py"), cm.filename)
-            fn(*args, **kwds)  # No warning raised second time
+            call()  # No warning raised second time
 
     def test_objects_converter(self):
         with self.assertRaises(TypeError):
@@ -2794,162 +2799,118 @@ class ClinicFunctionalTest(unittest.TestCase):
 
     def test_depr_star_pos0_len1(self):
         fn = ac_tester.depr_star_pos0_len1
-        self.check_depr_star(fn,
-            regex=(
-                "Passing positional arguments to depr_star_pos0_len1() "
-                "is deprecated. Parameter 'a' will become a keyword-only "
-                "parameter in Python 3.14"
-            ),
-            ok_args=(
-                ((), {"a": None}),
-            ),
-            fail_args=(
-                ((None,), {}),
-            )
-        )
+        self.check_depr_star(
+            fname="depr_star_pos0_len1", pnames="'a'",
+            good_calls=[
+                lambda: fn(a=None),
+            ],
+            bad_calls=[
+                lambda: fn(None),
+            ])
 
     def test_depr_star_pos0_len2(self):
         fn = ac_tester.depr_star_pos0_len2
-        self.check_depr_star(fn,
-            regex=(
-                "Passing positional arguments to depr_star_pos0_len2() "
-                "is deprecated. Parameters 'a' and 'b' will become "
-                "keyword-only parameters in Python 3.14"
-            ),
-            ok_args=(
-                ((), {"a": None, "b": None}),
-            ),
-            fail_args=(
-                ((None,), {"b": None}),
-            )
-        )
+        self.check_depr_star(
+            fname="depr_star_pos0_len2", pnames="'a' and 'b'",
+            good_calls=[
+                lambda: fn(a=None, b=None),
+            ],
+            bad_calls=[
+                lambda: fn(None, b=None),
+                lambda: fn(None, None),
+            ])
 
     def test_depr_star_pos0_len3_with_kwd(self):
         fn = ac_tester.depr_star_pos0_len3_with_kwd
-        self.check_depr_star(fn,
-            regex=(
-                "Passing positional arguments to depr_star_pos0_len3_with_kwd() "
-                "is deprecated. Parameters 'a', 'b' and 'c' will become "
-                "keyword-only parameters in Python 3.14"
-            ),
-            ok_args=(
-                ((), {"a": None, "b": None, "c": None, "d": None}),
-            ),
-            fail_args=(
-                ((None,), {"b": None, "c": None, "d": None}),
-                ((None, None), {"c": None, "d": None}),
-                ((None, None, None), {"d": None}),
-            )
-        )
+        self.check_depr_star(
+            fname="depr_star_pos0_len3_with_kwd", pnames="'a', 'b' and 'c'",
+            good_calls=[
+                lambda: fn(a=None, b=None, c=None, d=None),
+            ],
+            bad_calls=[
+                lambda: fn(None, b=None, c=None, d=None),
+                lambda: fn(None, None, c=None, d=None),
+                lambda: fn(None, None, None, d=None),
+            ])
 
     def test_depr_star_pos1_len1_opt(self):
         fn = ac_tester.depr_star_pos1_len1_opt
-        self.check_depr_star(fn,
-            regex=(
-                "Passing 2 positional arguments to depr_star_pos1_len1_opt() "
-                "is deprecated. Parameter 'b' will become a keyword-only "
-                "parameter in Python 3.14"
-            ),
-            ok_args=(
-                ((), {"a": None, "b": None}),
-                ((None,), {}),
-                ((None,), {"b": None}),
-            ),
-            fail_args=(
-                ((None, None), {}),
-            )
-        )
+        self.check_depr_star(
+            fname="depr_star_pos1_len1_opt", pnames="'b'",
+            good_calls=[
+                lambda: fn(a=None, b=None),
+                lambda: fn(None, b=None),
+                lambda: fn(a=None),
+            ],
+            bad_calls=[
+                lambda: fn(None, None),
+            ])
 
     def test_depr_star_pos1_len1(self):
         fn = ac_tester.depr_star_pos1_len1
-        self.check_depr_star(fn,
-            regex=(
-                "Passing 2 positional arguments to depr_star_pos1_len1() is "
-                "deprecated. Parameter 'b' will become a keyword-only "
-                "parameter in Python 3.14"
-            ),
-            ok_args=(
-                ((), {"a": None, "b": None}),
-                ((None,), {"b": None}),
-            ),
-            fail_args=(
-                ((None, None), {}),
-            )
-        )
+        self.check_depr_star(
+            fname="depr_star_pos1_len1", pnames="'b'",
+            good_calls=[
+                lambda: fn(a=None, b=None),
+                lambda: fn(None, b=None),
+            ],
+            bad_calls=[
+                lambda: fn(None, None),
+            ])
 
     def test_depr_star_pos1_len2_with_kwd(self):
         fn = ac_tester.depr_star_pos1_len2_with_kwd
-        self.check_depr_star(fn,
-            regex=(
-                "Passing more than 1 positional argument to "
-                "depr_star_pos1_len2_with_kwd() is deprecated. Parameters 'b' "
-                "and 'c' will become keyword-only parameters in Python 3.14"
-            ),
-            ok_args=(
-                ((), {"a": None, "b": None, "c": None, "d": None}),
-                ((None,), {"b": None, "c": None, "d": None}),
-            ),
-            fail_args=(
-                ((None, None), {"c": None, "d": None}),
-                ((None, None, None), {"d": None}),
-            )
-        )
+        self.check_depr_star(
+            fname="depr_star_pos1_len2_with_kwd", pnames="'b' and 'c'",
+            good_calls=[
+                lambda: fn(a=None, b=None, c=None, d=None),
+                lambda: fn(None, b=None, c=None, d=None),
+            ],
+            bad_calls=[
+                lambda: fn(None, None, c=None, d=None),
+                lambda: fn(None, None, None, d=None),
+            ])
 
     def test_depr_star_pos2_len1(self):
         fn = ac_tester.depr_star_pos2_len1
-        self.check_depr_star(fn,
-            regex=(
-                "Passing 3 positional arguments to depr_star_pos2_len1() is "
-                "deprecated. Parameter 'c' will become a keyword-only "
-                "parameter in Python 3.14"
-            ),
-            ok_args=(
-                ((), {"a": None, "b": None, "c": None}),
-                ((None,), {"b": None, "c": None}),
-                ((None, None), {"c": None}),
-            ),
-            fail_args=(
-                ((None, None, None), {}),
-            )
-        )
+        self.check_depr_star(
+            fname="depr_star_pos2_len1", pnames="'c'",
+            good_calls=[
+                lambda: fn(a=None, b=None, c=None),
+                lambda: fn(None, b=None, c=None),
+                lambda: fn(None, None, c=None),
+            ],
+            bad_calls=[
+                lambda: fn(None, None, None),
+            ])
 
     def test_depr_star_pos2_len2(self):
         fn = ac_tester.depr_star_pos2_len2
-        self.check_depr_star(fn,
-            regex=(
-                "Passing more than 2 positional arguments to "
-                "depr_star_pos2_len2() is deprecated. Parameters 'c' and 'd' "
-                "will become keyword-only parameters in Python 3.14"
-            ),
-            ok_args=(
-                ((), {"a": None, "b": None, "c": None, "d": None}),
-                ((None,), {"b": None, "c": None, "d": None}),
-                ((None, None), {"c": None, "d": None}),
-            ),
-            fail_args=(
-                ((None, None, None), {"d": None}),
-                ((None, None, None, None), {}),
-            )
-        )
+        self.check_depr_star(
+            fname="depr_star_pos2_len2", pnames="'c' and 'd'",
+            good_calls=[
+                lambda: fn(a=None, b=None, c=None, d=None),
+                lambda: fn(None, b=None, c=None, d=None),
+                lambda: fn(None, None, c=None, d=None),
+            ],
+            bad_calls=[
+                lambda: fn(None, None, None, d=None),
+                lambda: fn(None, None, None, None),
+            ])
 
     def test_depr_star_pos2_len2_with_kwd(self):
         fn = ac_tester.depr_star_pos2_len2_with_kwd
-        self.check_depr_star(fn,
-            regex=(
-                "Passing more than 2 positional arguments to "
-                "depr_star_pos2_len2_with_kwd() is deprecated. Parameters 'c' "
-                "and 'd' will become keyword-only parameters in Python 3.14"
-            ),
-            ok_args=(
-                ((), {"a": None, "b": None, "c": None, "d": None, "e": None}),
-                ((None,), {"b": None, "c": None, "d": None, "e": None}),
-                ((None, None), {"c": None, "d": None, "e": None}),
-            ),
-            fail_args=(
-                ((None, None, None), {"d": None, "e": None}),
-                ((None, None, None, None), {"e": None}),
-            )
-        )
+        self.check_depr_star(
+            fname="depr_star_pos2_len2", pnames="'c' and 'd'",
+            good_calls=[
+                lambda: fn(a=None, b=None, c=None, d=None, e=None),
+                lambda: fn(None, b=None, c=None, d=None, e=None),
+                lambda: fn(None, None, c=None, d=None, e=None),
+            ],
+            bad_calls=[
+                lambda: fn(None, None, None, d=None, e=None),
+                lambda: fn(None, None, None, None, e=None),
+            ])
 
 
 class PermutationTests(unittest.TestCase):
