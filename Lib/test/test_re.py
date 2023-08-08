@@ -127,8 +127,9 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.sub("(?i)b+", "x", "bbbb BBBB"), 'x x')
         self.assertEqual(re.sub(r'\d+', self.bump_num, '08.2 -2 23x99y'),
                          '9.3 -3 24x100y')
-        self.assertEqual(re.sub(r'\d+', self.bump_num, '08.2 -2 23x99y', 3),
-                         '9.3 -3 23x99y')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(re.sub(r'\d+', self.bump_num, '08.2 -2 23x99y', 3),
+                             '9.3 -3 23x99y')
         self.assertEqual(re.sub(r'\d+', self.bump_num, '08.2 -2 23x99y', count=3),
                          '9.3 -3 23x99y')
 
@@ -235,8 +236,23 @@ class ReTests(unittest.TestCase):
 
     def test_qualified_re_sub(self):
         self.assertEqual(re.sub('a', 'b', 'aaaaa'), 'bbbbb')
-        self.assertEqual(re.sub('a', 'b', 'aaaaa', 1), 'baaaa')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(re.sub('a', 'b', 'aaaaa', 1), 'baaaa')
         self.assertEqual(re.sub('a', 'b', 'aaaaa', count=1), 'baaaa')
+        self.assertRaises(TypeError, re.sub, 'a', 'b', 'aaaaa', 1, count=1)
+        self.assertRaises(TypeError, re.sub, 'a', 'b', 'aaaaa', 1, 0, flags=0)
+        self.assertRaises(TypeError, re.sub, 'a', 'b', 'aaaaa', 1, 0, 0)
+
+    def test_misuse_flags(self):
+        with self.assertWarns(DeprecationWarning):
+            result = re.sub('a', 'b', 'aaaaa', re.I)
+        self.assertEqual(result, re.sub('a', 'b', 'aaaaa', count=int(re.I)))
+        with self.assertWarns(DeprecationWarning):
+            result = re.subn("b*", "x", "xyz", re.I)
+        self.assertEqual(result, re.subn("b*", "x", "xyz", count=int(re.I)))
+        with self.assertWarns(DeprecationWarning):
+            result = re.split(":", ":a:b::c", re.I)
+        self.assertEqual(result, re.split(":", ":a:b::c", maxsplit=int(re.I)))
 
     def test_bug_114660(self):
         self.assertEqual(re.sub(r'(\S)\s+(\S)', r'\1 \2', 'hello  there'),
@@ -344,8 +360,13 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.subn("b+", "x", "bbbb BBBB"), ('x BBBB', 1))
         self.assertEqual(re.subn("b+", "x", "xyz"), ('xyz', 0))
         self.assertEqual(re.subn("b*", "x", "xyz"), ('xxxyxzx', 4))
-        self.assertEqual(re.subn("b*", "x", "xyz", 2), ('xxxyz', 2))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(re.subn("b*", "x", "xyz", 2), ('xxxyz', 2))
         self.assertEqual(re.subn("b*", "x", "xyz", count=2), ('xxxyz', 2))
+
+        self.assertRaises(TypeError, re.subn, "b*", "x", "xyz", 2, count=1)
+        self.assertRaises(TypeError, re.subn, "b*", "x", "xyz", 2, 0, flags=0)
+        self.assertRaises(TypeError, re.subn, "b*", "x", "xyz", 2, 0, 0)
 
     def test_re_split(self):
         for string in ":a:b::c", S(":a:b::c"):
@@ -401,7 +422,8 @@ class ReTests(unittest.TestCase):
                 self.assertTypedEqual(re.split(sep, ':a:b::c'), expected)
 
     def test_qualified_re_split(self):
-        self.assertEqual(re.split(":", ":a:b::c", 2), ['', 'a', 'b::c'])
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(re.split(":", ":a:b::c", 2), ['', 'a', 'b::c'])
         self.assertEqual(re.split(":", ":a:b::c", maxsplit=2), ['', 'a', 'b::c'])
         self.assertEqual(re.split(':', 'a:b:c:d', maxsplit=2), ['a', 'b', 'c:d'])
         self.assertEqual(re.split("(:)", ":a:b::c", maxsplit=2),
