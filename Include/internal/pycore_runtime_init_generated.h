@@ -834,6 +834,7 @@ extern "C" {
     INIT_ID(certfile), \
     INIT_ID(check_same_thread), \
     INIT_ID(clear), \
+    INIT_ID(clockid), \
     INIT_ID(close), \
     INIT_ID(closed), \
     INIT_ID(closefd), \
