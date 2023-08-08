@@ -29,10 +29,10 @@ PyDoc_STRVAR(create_pointer_inst__doc__,
 "\n"
 "Create a new pointer instance, pointing to \'obj\'.\n"
 "\n"
-"The returned object is of the type POINTER(type(obj)). Note that if you just\n"
-"want to pass a pointer to an object to a foreign function call,\n"
-"you should use byref(obj) which is much faster.");
+"The returned object is of the type POINTER(type(obj)). Note that if you\n"
+"just want to pass a pointer to an object to a foreign function call, you\n"
+"should use byref(obj) which is much faster.");
 
 #define CREATE_POINTER_INST_METHODDEF    \
     {"pointer", (PyCFunction)create_pointer_inst, METH_O, create_pointer_inst__doc__},
-/*[clinic end generated code: output=a68a8cf6b8203cf9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ae26452a759ba56d input=a9049054013a1b77]*/
