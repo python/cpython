@@ -5504,10 +5504,8 @@ class DSLParser:
 
         self.docstring_append(self.function, line)
 
-    @staticmethod
     def format_docstring_signature(
-        f: Function,
-        parameters: list[Parameter]
+        self, f: Function, parameters: list[Parameter]
     ) -> str:
         text, add, output = _text_accumulator()
         if f.kind.new_or_init:
