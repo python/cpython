@@ -831,8 +831,8 @@ func_clear(PyFunctionObject *op)
     // However, name and qualname could be str subclasses, so they
     // could have reference cycles. The solution is to replace them
     // with a genuinely immutable string.
-    Py_SETREF(op->func_name, Py_NewRef(&_Py_STR(empty)));
-    Py_SETREF(op->func_qualname, Py_NewRef(&_Py_STR(empty)));
+    Py_SETREF(op->func_name, &_Py_STR(empty));
+    Py_SETREF(op->func_qualname, &_Py_STR(empty));
     return 0;
 }
 
