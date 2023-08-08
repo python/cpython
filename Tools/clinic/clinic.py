@@ -5834,6 +5834,9 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
                          help="walk --srcdir to run over all relevant files")
     cmdline.add_argument("--srcdir", type=str, default=os.curdir,
                          help="the directory tree to walk in --make mode")
+    cmdline.add_argument("--exclude", type=str, action="append",
+                         help=("a file to exclude in --make mode; "
+                               "can be given multiple times"))
     cmdline.add_argument("filename", metavar="FILE", type=str, nargs="*",
                          help="the list of files to process")
     return cmdline
@@ -5905,6 +5908,11 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
             parser.error("can't use -o or filenames with --make")
         if not ns.srcdir:
             parser.error("--srcdir must not be empty with --make")
+        if ns.exclude:
+            excludes = [os.path.join(ns.srcdir, f) for f in ns.exclude]
+            excludes = [os.path.normpath(f) for f in excludes]
+        else:
+            excludes = []
         for root, dirs, files in os.walk(ns.srcdir):
             for rcs_dir in ('.svn', '.git', '.hg', 'build', 'externals'):
                 if rcs_dir in dirs:
@@ -5914,6 +5922,9 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
                 if not filename.endswith(('.c', '.cpp', '.h')):
                     continue
                 path = os.path.join(root, filename)
+                path = os.path.normpath(path)
+                if path in excludes:
+                    continue
                 if ns.verbose:
                     print(path)
                 parse_file(path, verify=not ns.force)
