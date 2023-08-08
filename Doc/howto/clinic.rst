@@ -188,10 +188,10 @@ The CLI supports the following options:
 
    The directory tree to walk in :option:`--make` mode.
 
-.. option:: --exclude EXCLUDES
+.. option:: --exclude EXCLUDE
 
-   Comma-separated list of files to exclude in :option:`--make` mode.
-   This option has no effect unless :option:`--make` is also given.
+   A file to exclude in :option:`--make` mode.
+   This option can be given multiple times.
 
 .. option:: FILE ...
 
