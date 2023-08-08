@@ -5694,7 +5694,7 @@ class DSLParser:
             add("  ")
             add(param.name)
             add('\n')
-            stripped = rstrip_lines(docstring.rstrip())
+            stripped = rstrip_lines(docstring)
             add(textwrap.indent(stripped, "    "))
         if text:
             add('\n')
