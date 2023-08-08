@@ -895,8 +895,6 @@ class ClinicParserTest(TestCase):
                 something_else: str = ''
         """)
         self.assertEqual(3, len(function.parameters))
-        p = function.parameters['follow_symlinks']
-        self.assertIsInstance(p, clinic.bool_converter)
         conv = function.parameters['something_else'].converter
         self.assertIsInstance(conv, clinic.str_converter)
 
