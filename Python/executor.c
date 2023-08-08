@@ -11,6 +11,7 @@
 #include "pycore_opcode_utils.h"
 #include "pycore_pyerrors.h"
 #include "pycore_range.h"
+#include "pycore_setobject.h"     // _PySet_Update()
 #include "pycore_sliceobject.h"
 #include "pycore_uops.h"
 
@@ -40,7 +41,7 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
         lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
     }
     #define DPRINTF(level, ...) \
-        if (lltrace >= (level)) { fprintf(stderr, __VA_ARGS__); }
+        if (lltrace >= (level)) { printf(__VA_ARGS__); }
 #else
     #define DPRINTF(level, ...)
 #endif

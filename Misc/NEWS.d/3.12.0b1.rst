@@ -1205,7 +1205,7 @@ the future, it will raise a ``KeyError``.
 
 Fixed a bug where :mod:`pdb` crashes when reading source file with different
 encoding by replacing :func:`io.open` with :func:`io.open_code`. The new
-method would also call into the hook set by :func:`PyFile_SetOpenCodeHook`.
+method would also call into the hook set by :c:func:`PyFile_SetOpenCodeHook`.
 
 ..
 
@@ -2382,7 +2382,7 @@ Patch by Dong-hee Na.
 .. section: C API
 
 Add support of more formatting options (left aligning, octals, uppercase
-hexadecimals, :c:expr:`intmax_t`, :c:expr:`ptrdiff_t`, :c:expr:`wchar_t` C
+hexadecimals, :c:type:`intmax_t`, :c:type:`ptrdiff_t`, :c:type:`wchar_t` C
 strings, variable width and precision) in :c:func:`PyUnicode_FromFormat` and
 :c:func:`PyUnicode_FromFormatV`.
 

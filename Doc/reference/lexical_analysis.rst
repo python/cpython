@@ -549,6 +549,10 @@ retained), except that three unescaped quotes in a row terminate the literal.  (
 
 .. _escape-sequences:
 
+
+Escape sequences
+^^^^^^^^^^^^^^^^
+
 Unless an ``'r'`` or ``'R'`` prefix is present, escape sequences in string and
 bytes literals are interpreted according to rules similar to those used by
 Standard C.  The recognized escape sequences are:
@@ -783,7 +787,7 @@ is converted before formatting.  Conversion ``'!s'`` calls :func:`str` on
 the result, ``'!r'`` calls :func:`repr`, and ``'!a'`` calls :func:`ascii`.
 
 The result is then formatted using the :func:`format` protocol.  The
-format specifier is passed to the :meth:`__format__` method of the
+format specifier is passed to the :meth:`~object.__format__` method of the
 expression or conversion result.  An empty string is passed when the
 format specifier is omitted.  The formatted result is then included in
 the final value of the whole string.

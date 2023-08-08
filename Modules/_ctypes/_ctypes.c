@@ -110,7 +110,7 @@ bytes(cdata)
 
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
-#include "structmember.h"         // PyMemberDef
+
 
 #include <ffi.h>
 #ifdef MS_WIN32
@@ -1728,9 +1728,9 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
         Py_DECREF(as_parameter);
         return value;
     }
-    /* XXX better message */
-    PyErr_SetString(PyExc_TypeError,
-                    "wrong type");
+    PyErr_Format(PyExc_TypeError,
+                 "'%.200s' object cannot be interpreted "
+                 "as ctypes.c_wchar_p", Py_TYPE(value)->tp_name);
     return NULL;
 }
 
@@ -1792,9 +1792,9 @@ c_char_p_from_param(PyObject *type, PyObject *value)
         Py_DECREF(as_parameter);
         return value;
     }
-    /* XXX better message */
-    PyErr_SetString(PyExc_TypeError,
-                    "wrong type");
+    PyErr_Format(PyExc_TypeError,
+                 "'%.200s' object cannot be interpreted "
+                 "as ctypes.c_char_p", Py_TYPE(value)->tp_name);
     return NULL;
 }
 
@@ -1927,9 +1927,9 @@ c_void_p_from_param(PyObject *type, PyObject *value)
         Py_DECREF(as_parameter);
         return value;
     }
-    /* XXX better message */
-    PyErr_SetString(PyExc_TypeError,
-                    "wrong type");
+    PyErr_Format(PyExc_TypeError,
+                 "'%.200s' object cannot be interpreted "
+                 "as ctypes.c_void_p", Py_TYPE(value)->tp_name);
     return NULL;
 }
 
@@ -2759,14 +2759,14 @@ PyCData_dealloc(PyObject *self)
 }
 
 static PyMemberDef PyCData_members[] = {
-    { "_b_base_", T_OBJECT,
-      offsetof(CDataObject, b_base), READONLY,
+    { "_b_base_", _Py_T_OBJECT,
+      offsetof(CDataObject, b_base), Py_READONLY,
       "the base object" },
-    { "_b_needsfree_", T_INT,
-      offsetof(CDataObject, b_needsfree), READONLY,
+    { "_b_needsfree_", Py_T_INT,
+      offsetof(CDataObject, b_needsfree), Py_READONLY,
       "whether the object owns the memory or not" },
-    { "_objects", T_OBJECT,
-      offsetof(CDataObject, b_objects), READONLY,
+    { "_objects", _Py_T_OBJECT,
+      offsetof(CDataObject, b_objects), Py_READONLY,
       "internal objects tree (NEVER CHANGE THIS OBJECT!)"},
     { NULL },
 };
@@ -5129,6 +5129,8 @@ static PyObject *
 Pointer_get_contents(CDataObject *self, void *closure)
 {
     StgDictObject *stgdict;
+    PyObject *keep, *ptr_probe;
+    CDataObject *ptr2ptr;
 
     if (*(void **)self->b_ptr == NULL) {
         PyErr_SetString(PyExc_ValueError,
@@ -5138,6 +5140,33 @@ Pointer_get_contents(CDataObject *self, void *closure)
 
     stgdict = PyObject_stgdict((PyObject *)self);
     assert(stgdict); /* Cannot be NULL for pointer instances */
+
+    keep = GetKeepedObjects(self);
+    if (keep != NULL) {
+        // check if it's a pointer to a pointer:
+        // pointers will have '0' key in the _objects
+        ptr_probe = PyDict_GetItemString(keep, "0");
+
+        if (ptr_probe != NULL) {
+            ptr2ptr = (CDataObject*) PyDict_GetItemString(keep, "1");
+            if (ptr2ptr ==  NULL) {
+                PyErr_SetString(PyExc_ValueError,
+                "Unexpected NULL pointer in _objects");
+                return NULL;
+            }
+            // don't construct a new object,
+            // return existing one instead to preserve refcount
+            assert(
+                *(void**) self->b_ptr == ptr2ptr->b_ptr ||
+                *(void**) self->b_value.c == ptr2ptr->b_ptr ||
+                *(void**) self->b_ptr == ptr2ptr->b_value.c ||
+                *(void**) self->b_value.c == ptr2ptr->b_value.c
+            ); // double-check that we are returning the same thing
+            Py_INCREF(ptr2ptr);
+            return (PyObject *) ptr2ptr;
+        }
+    }
+
     return PyCData_FromBaseObj(stgdict->proto,
                              (PyObject *)self, 0,
                              *(void **)self->b_ptr);

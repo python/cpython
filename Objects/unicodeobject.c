@@ -211,19 +211,11 @@ static int unicode_is_singleton(PyObject *unicode);
 #endif
 
 
-// Return a borrowed reference to the empty string singleton.
+// Return a reference to the immortal empty string singleton.
 static inline PyObject* unicode_get_empty(void)
 {
     _Py_DECLARE_STR(empty, "");
     return &_Py_STR(empty);
-}
-
-
-// Return a strong reference to the empty string singleton.
-static inline PyObject* unicode_new_empty(void)
-{
-    PyObject *empty = unicode_get_empty();
-    return Py_NewRef(empty);
 }
 
 /* This dictionary holds all interned unicode strings.  Note that references
@@ -236,15 +228,54 @@ static inline PyObject *get_interned_dict(PyInterpreterState *interp)
     return _Py_INTERP_CACHED_OBJECT(interp, interned_strings);
 }
 
+#define INTERNED_STRINGS _PyRuntime.cached_objects.interned_strings
+
 Py_ssize_t
 _PyUnicode_InternedSize(void)
 {
-    return PyObject_Length(get_interned_dict(_PyInterpreterState_GET()));
+    PyObject *dict = get_interned_dict(_PyInterpreterState_GET());
+    return _Py_hashtable_len(INTERNED_STRINGS) + PyDict_GET_SIZE(dict);
+}
+
+static Py_hash_t unicode_hash(PyObject *);
+static int unicode_compare_eq(PyObject *, PyObject *);
+
+static Py_uhash_t
+hashtable_unicode_hash(const void *key)
+{
+    return unicode_hash((PyObject *)key);
+}
+
+static int
+hashtable_unicode_compare(const void *key1, const void *key2)
+{
+    PyObject *obj1 = (PyObject *)key1;
+    PyObject *obj2 = (PyObject *)key2;
+    if (obj1 != NULL && obj2 != NULL) {
+        return unicode_compare_eq(obj1, obj2);
+    }
+    else {
+        return obj1 == obj2;
+    }
 }
 
 static int
 init_interned_dict(PyInterpreterState *interp)
 {
+    if (_Py_IsMainInterpreter(interp)) {
+        assert(INTERNED_STRINGS == NULL);
+        _Py_hashtable_allocator_t hashtable_alloc = {PyMem_RawMalloc, PyMem_RawFree};
+        INTERNED_STRINGS = _Py_hashtable_new_full(
+            hashtable_unicode_hash,
+            hashtable_unicode_compare,
+            NULL,
+            NULL,
+            &hashtable_alloc
+        );
+        if (INTERNED_STRINGS == NULL) {
+            return -1;
+        }
+    }
     assert(get_interned_dict(interp) == NULL);
     PyObject *interned = interned = PyDict_New();
     if (interned == NULL) {
@@ -263,11 +294,15 @@ clear_interned_dict(PyInterpreterState *interp)
         Py_DECREF(interned);
         _Py_INTERP_CACHED_OBJECT(interp, interned_strings) = NULL;
     }
+    if (_Py_IsMainInterpreter(interp) && INTERNED_STRINGS != NULL) {
+        _Py_hashtable_destroy(INTERNED_STRINGS);
+        INTERNED_STRINGS = NULL;
+    }
 }
 
 #define _Py_RETURN_UNICODE_EMPTY()   \
     do {                             \
-        return unicode_new_empty();  \
+        return unicode_get_empty();  \
     } while (0)
 
 static inline void
@@ -607,7 +642,6 @@ unicode_result(PyObject *unicode)
         PyObject *empty = unicode_get_empty();
         if (unicode != empty) {
             Py_DECREF(unicode);
-            Py_INCREF(empty);
         }
         return empty;
     }
@@ -619,7 +653,6 @@ unicode_result(PyObject *unicode)
             Py_UCS1 ch = data[0];
             PyObject *latin1_char = LATIN1(ch);
             if (unicode != latin1_char) {
-                Py_INCREF(latin1_char);
                 Py_DECREF(unicode);
             }
             return latin1_char;
@@ -1156,7 +1189,7 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
 {
     /* Optimization for empty strings */
     if (size == 0) {
-        return unicode_new_empty();
+        return unicode_get_empty();
     }
 
     PyObject *obj;
@@ -1223,6 +1256,7 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
     _PyUnicode_STATE(unicode).kind = kind;
     _PyUnicode_STATE(unicode).compact = 1;
     _PyUnicode_STATE(unicode).ascii = is_ascii;
+    _PyUnicode_STATE(unicode).statically_allocated = 0;
     if (is_ascii) {
         ((char*)data)[size] = 0;
     }
@@ -1553,7 +1587,9 @@ unicode_dealloc(PyObject *unicode)
      * we accidentally decref an immortal string out of existence. Since
      * the string is an immortal object, just re-set the reference count.
      */
-    if (PyUnicode_CHECK_INTERNED(unicode)) {
+    if (PyUnicode_CHECK_INTERNED(unicode)
+        || _PyUnicode_STATE(unicode).statically_allocated)
+    {
         _Py_SetImmortal(unicode);
         return;
     }
@@ -1623,7 +1659,7 @@ unicode_resize(PyObject **p_unicode, Py_ssize_t length)
         return 0;
 
     if (length == 0) {
-        PyObject *empty = unicode_new_empty();
+        PyObject *empty = unicode_get_empty();
         Py_SETREF(*p_unicode, empty);
         return 0;
     }
@@ -1718,7 +1754,9 @@ unicode_write_cstr(PyObject *unicode, Py_ssize_t index,
 static PyObject*
 get_latin1_char(Py_UCS1 ch)
 {
-    return Py_NewRef(LATIN1(ch));
+    PyObject *o = LATIN1(ch);
+    assert(_Py_IsImmortal(o));
+    return o;
 }
 
 static PyObject*
@@ -1845,7 +1883,7 @@ PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
             "NULL string with positive size with NULL passed to PyUnicode_FromStringAndSize");
         return NULL;
     }
-    return unicode_new_empty();
+    return unicode_get_empty();
 }
 
 PyObject *
@@ -10215,7 +10253,7 @@ replace(PyObject *self, PyObject *str1,
         }
         new_size = slen + n * (len2 - len1);
         if (new_size == 0) {
-            u = unicode_new_empty();
+            u = unicode_get_empty();
             goto done;
         }
         if (new_size > (PY_SSIZE_T_MAX / rkind)) {
@@ -14459,7 +14497,7 @@ unicode_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
 {
     PyObject *unicode;
     if (x == NULL) {
-        unicode = unicode_new_empty();
+        unicode = unicode_get_empty();
     }
     else if (encoding == NULL && errors == NULL) {
         unicode = PyObject_Str(x);
@@ -14503,6 +14541,7 @@ unicode_subtype_new(PyTypeObject *type, PyObject *unicode)
     _PyUnicode_STATE(self).kind = kind;
     _PyUnicode_STATE(self).compact = 0;
     _PyUnicode_STATE(self).ascii = _PyUnicode_STATE(unicode).ascii;
+    _PyUnicode_STATE(self).statically_allocated = 0;
     _PyUnicode_UTF8_LENGTH(self) = 0;
     _PyUnicode_UTF8(self) = NULL;
     _PyUnicode_DATA_ANY(self) = NULL;
@@ -14726,6 +14765,23 @@ _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p)
         return;
     }
 
+    /* Look in the global cache first. */
+    PyObject *r = (PyObject *)_Py_hashtable_get(INTERNED_STRINGS, s);
+    if (r != NULL && r != s) {
+        Py_SETREF(*p, Py_NewRef(r));
+        return;
+    }
+
+    /* Handle statically allocated strings. */
+    if (_PyUnicode_STATE(s).statically_allocated) {
+        assert(_Py_IsImmortal(s));
+        if (_Py_hashtable_set(INTERNED_STRINGS, s, s) == 0) {
+            _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL_STATIC;
+        }
+        return;
+    }
+
+    /* Look in the per-interpreter cache. */
     PyObject *interned = get_interned_dict(interp);
     assert(interned != NULL);
 
@@ -14741,9 +14797,11 @@ _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p)
     }
 
     if (_Py_IsImmortal(s)) {
+        // XXX Restrict this to the main interpreter?
         _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL_STATIC;
-       return;
+        return;
     }
+
 #ifdef Py_REF_DEBUG
     /* The reference count value excluding the 2 references from the
        interned dictionary should be excluded from the RefTotal. The
@@ -14928,8 +14986,7 @@ unicode_ascii_iter_next(unicodeiterobject *it)
         Py_UCS1 chr = (Py_UCS1)PyUnicode_READ(PyUnicode_1BYTE_KIND,
                                               data, it->it_index);
         it->it_index++;
-        PyObject *item = (PyObject*)&_Py_SINGLETON(strings).ascii[chr];
-        return Py_NewRef(item);
+        return (PyObject*)&_Py_SINGLETON(strings).ascii[chr];
     }
     it->it_seq = NULL;
     Py_DECREF(seq);
@@ -14959,7 +15016,7 @@ unicodeiter_reduce(unicodeiterobject *it, PyObject *Py_UNUSED(ignored))
     if (it->it_seq != NULL) {
         return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
     } else {
-        PyObject *u = unicode_new_empty();
+        PyObject *u = unicode_get_empty();
         if (u == NULL) {
             Py_XDECREF(iter);
             return NULL;

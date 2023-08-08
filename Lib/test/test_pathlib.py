@@ -693,8 +693,14 @@ class PurePathTest(unittest.TestCase):
         self.assertRaises(ValueError, p.relative_to, P('a/b/c'))
         self.assertRaises(ValueError, p.relative_to, P('a/c'))
         self.assertRaises(ValueError, p.relative_to, P('/a'))
+        self.assertRaises(ValueError, p.relative_to, P("../a"))
+        self.assertRaises(ValueError, p.relative_to, P("a/.."))
+        self.assertRaises(ValueError, p.relative_to, P("/a/.."))
         self.assertRaises(ValueError, p.relative_to, P('/'), walk_up=True)
         self.assertRaises(ValueError, p.relative_to, P('/a'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P("../a"), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P("a/.."), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P("/a/.."), walk_up=True)
         p = P('/a/b')
         self.assertEqual(p.relative_to(P('/')), P('a/b'))
         self.assertEqual(p.relative_to('/'), P('a/b'))
@@ -723,8 +729,14 @@ class PurePathTest(unittest.TestCase):
         self.assertRaises(ValueError, p.relative_to, P())
         self.assertRaises(ValueError, p.relative_to, '')
         self.assertRaises(ValueError, p.relative_to, P('a'))
+        self.assertRaises(ValueError, p.relative_to, P("../a"))
+        self.assertRaises(ValueError, p.relative_to, P("a/.."))
+        self.assertRaises(ValueError, p.relative_to, P("/a/.."))
         self.assertRaises(ValueError, p.relative_to, P(''), walk_up=True)
         self.assertRaises(ValueError, p.relative_to, P('a'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P("../a"), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P("a/.."), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P("/a/.."), walk_up=True)
 
     def test_is_relative_to_common(self):
         P = self.cls
@@ -1891,11 +1903,11 @@ class PathTest(unittest.TestCase):
                               "dirC/dirD", "dirC/dirD/fileD"])
         _check(p.rglob("file*"), ["dirC/fileC", "dirC/dirD/fileD"])
         _check(p.rglob("**/file*"), ["dirC/fileC", "dirC/dirD/fileD"])
-        _check(p.rglob("dir*/**"), ["dirC/dirD"])
+        _check(p.rglob("dir*/**/"), ["dirC/dirD"])
         _check(p.rglob("*/*"), ["dirC/dirD/fileD"])
         _check(p.rglob("*/"), ["dirC/dirD"])
         _check(p.rglob(""), ["dirC", "dirC/dirD"])
-        _check(p.rglob("**"), ["dirC", "dirC/dirD"])
+        _check(p.rglob("**/"), ["dirC", "dirC/dirD"])
         # gh-91616, a re module regression
         _check(p.rglob("*.txt"), ["dirC/novel.txt"])
         _check(p.rglob("*.*"), ["dirC/novel.txt"])
@@ -2045,7 +2057,20 @@ class PathTest(unittest.TestCase):
         path.mkdir(parents=True)
 
         with set_recursion_limit(recursion_limit):
-            list(base.glob('**'))
+            list(base.glob('**/'))
+
+    def test_glob_recursive_no_trailing_slash(self):
+        P = self.cls
+        p = P(BASE)
+        with self.assertWarns(FutureWarning):
+            p.glob('**')
+        with self.assertWarns(FutureWarning):
+            p.glob('*/**')
+        with self.assertWarns(FutureWarning):
+            p.rglob('**')
+        with self.assertWarns(FutureWarning):
+            p.rglob('*/**')
+
 
     def test_readlink(self):
         if not self.can_symlink:
