@@ -252,12 +252,14 @@ class Parser(PLexer):
 
     @contextual
     def stack_effect(self) -> StackEffect | None:
-        #   IDENTIFIER [':' IDENTIFIER] ['if' '(' expression ')']
+        #   IDENTIFIER [':' IDENTIFIER [TIMES]] ['if' '(' expression ')']
         # | IDENTIFIER '[' expression ']'
         if tkn := self.expect(lx.IDENTIFIER):
             type_text = ""
             if self.expect(lx.COLON):
                 type_text = self.require(lx.IDENTIFIER).text.strip()
+                if self.expect(lx.TIMES):
+                    type_text += " *"
             cond_text = ""
             if self.expect(lx.IF):
                 self.require(lx.LPAREN)
