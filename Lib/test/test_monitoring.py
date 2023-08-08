@@ -709,7 +709,6 @@ class CheckEvents(MonitoringTestBase, unittest.TestCase):
 
     def check_balanced(self, func, recorders):
         events = self.get_events(func, TEST_TOOL, recorders)
-        print("----\n", events, "\n------")
         self.assertEqual(len(events)%2, 0)
         for r, h in zip(events[::2],events[1::2]):
             r0 = r[0]
