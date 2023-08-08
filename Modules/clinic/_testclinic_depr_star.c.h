@@ -22,6 +22,22 @@ PyDoc_STRVAR(depr_star_new__doc__,
 static PyObject *
 depr_star_new_impl(PyTypeObject *type, PyObject *a);
 
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error \
+        "In _testclinic.c, update the clinic input of " \
+        "'_testclinic.DeprStarNew.__new__'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ( \
+        "In _testclinic.c, update the clinic input of " \
+        "'_testclinic.DeprStarNew.__new__'.")
+#  else
+#    warning \
+        "In _testclinic.c, update the clinic input of " \
+        "'_testclinic.DeprStarNew.__new__'."
+#  endif
+#endif
 static PyObject *
 depr_star_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
@@ -56,29 +72,13 @@ depr_star_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *a;
 
-    // Emit compiler warnings when we get to Python 3.14.
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error \
-            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
-            " '_testclinic.DeprStarNew.__new__' to be keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ( \
-            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
-            " '_testclinic.DeprStarNew.__new__' to be keyword-only.")
-    #  else
-    #    warning \
-            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
-            " '_testclinic.DeprStarNew.__new__' to be keyword-only."
-    #  endif
-    #endif
     if (nargs == 1) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing positional arguments to _testclinic.DeprStarNew() is "
                 "deprecated. Parameter 'a' will become a keyword-only parameter "
                 "in Python 3.14.", 1))
         {
-                goto exit;
+            goto exit;
         }
     }
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
@@ -107,6 +107,22 @@ PyDoc_STRVAR(depr_star_new_clone__doc__,
 static PyObject *
 depr_star_new_clone_impl(PyObject *type, PyObject *a);
 
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error \
+        "In _testclinic.c, update the clinic input of " \
+        "'_testclinic.DeprStarNew.cloned'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ( \
+        "In _testclinic.c, update the clinic input of " \
+        "'_testclinic.DeprStarNew.cloned'.")
+#  else
+#    warning \
+        "In _testclinic.c, update the clinic input of " \
+        "'_testclinic.DeprStarNew.cloned'."
+#  endif
+#endif
 static PyObject *
 depr_star_new_clone(PyObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -139,29 +155,13 @@ depr_star_new_clone(PyObject *type, PyObject *const *args, Py_ssize_t nargs, PyO
     PyObject *argsbuf[1];
     PyObject *a;
 
-    // Emit compiler warnings when we get to Python 3.14.
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error \
-            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
-            " '_testclinic.DeprStarNew.cloned' to be keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ( \
-            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
-            " '_testclinic.DeprStarNew.cloned' to be keyword-only.")
-    #  else
-    #    warning \
-            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
-            " '_testclinic.DeprStarNew.cloned' to be keyword-only."
-    #  endif
-    #endif
     if (nargs == 1) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing positional arguments to _testclinic.DeprStarNew.cloned()"
                 " is deprecated. Parameter 'a' will become a keyword-only "
                 "parameter in Python 3.14.", 1))
         {
-                goto exit;
+            goto exit;
         }
     }
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
@@ -189,6 +189,22 @@ PyDoc_STRVAR(depr_star_init__doc__,
 static int
 depr_star_init_impl(PyObject *self, PyObject *a);
 
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error \
+        "In _testclinic.c, update the clinic input of " \
+        "'_testclinic.DeprStarInit.__init__'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ( \
+        "In _testclinic.c, update the clinic input of " \
+        "'_testclinic.DeprStarInit.__init__'.")
+#  else
+#    warning \
+        "In _testclinic.c, update the clinic input of " \
+        "'_testclinic.DeprStarInit.__init__'."
+#  endif
+#endif
 static int
 depr_star_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
@@ -223,29 +239,13 @@ depr_star_init(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *a;
 
-    // Emit compiler warnings when we get to Python 3.14.
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error \
-            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
-            " '_testclinic.DeprStarInit.__init__' to be keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ( \
-            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
-            " '_testclinic.DeprStarInit.__init__' to be keyword-only.")
-    #  else
-    #    warning \
-            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
-            " '_testclinic.DeprStarInit.__init__' to be keyword-only."
-    #  endif
-    #endif
     if (nargs == 1) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing positional arguments to _testclinic.DeprStarInit() is "
                 "deprecated. Parameter 'a' will become a keyword-only parameter "
                 "in Python 3.14.", 1))
         {
-                goto exit;
+            goto exit;
         }
     }
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
@@ -274,6 +274,22 @@ PyDoc_STRVAR(depr_star_init_clone__doc__,
 static PyObject *
 depr_star_init_clone_impl(PyObject *self, PyObject *a);
 
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error \
+        "In _testclinic.c, update the clinic input of " \
+        "'_testclinic.DeprStarInit.cloned'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ( \
+        "In _testclinic.c, update the clinic input of " \
+        "'_testclinic.DeprStarInit.cloned'.")
+#  else
+#    warning \
+        "In _testclinic.c, update the clinic input of " \
+        "'_testclinic.DeprStarInit.cloned'."
+#  endif
+#endif
 static PyObject *
 depr_star_init_clone(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -306,29 +322,13 @@ depr_star_init_clone(PyObject *self, PyObject *const *args, Py_ssize_t nargs, Py
     PyObject *argsbuf[1];
     PyObject *a;
 
-    // Emit compiler warnings when we get to Python 3.14.
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error \
-            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
-            " '_testclinic.DeprStarInit.cloned' to be keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ( \
-            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
-            " '_testclinic.DeprStarInit.cloned' to be keyword-only.")
-    #  else
-    #    warning \
-            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
-            " '_testclinic.DeprStarInit.cloned' to be keyword-only."
-    #  endif
-    #endif
     if (nargs == 1) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing positional arguments to "
                 "_testclinic.DeprStarInit.cloned() is deprecated. Parameter 'a' "
                 "will become a keyword-only parameter in Python 3.14.", 1))
         {
-                goto exit;
+            goto exit;
         }
     }
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
@@ -337,6 +337,164 @@ depr_star_init_clone(PyObject *self, PyObject *const *args, Py_ssize_t nargs, Py
     }
     a = args[0];
     return_value = depr_star_init_clone_impl(self, a);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(depr_kwd_new__doc__,
+"DeprKwdNew(a)\n"
+"--\n"
+"\n"
+"The deprecation message should use the class name instead of __new__.");
+
+static PyObject *
+depr_kwd_new_impl(PyTypeObject *type, PyObject *a);
+
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error \
+        "In _testclinic.c, update the clinic input of " \
+        "'_testclinic.DeprKwdNew.__new__'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ( \
+        "In _testclinic.c, update the clinic input of " \
+        "'_testclinic.DeprKwdNew.__new__'.")
+#  else
+#    warning \
+        "In _testclinic.c, update the clinic input of " \
+        "'_testclinic.DeprKwdNew.__new__'."
+#  endif
+#endif
+static PyObject *
+depr_kwd_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "DeprKwdNew",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    PyObject *a;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing keyword argument 'a' to _testclinic.DeprKwdNew() is "
+                "deprecated. Corresponding parameter will become positional-only "
+                "in Python 3.14.", 1))
+        {
+            goto exit;
+        }
+    }
+    a = fastargs[0];
+    return_value = depr_kwd_new_impl(type, a);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(depr_kwd_init__doc__,
+"DeprKwdInit(a)\n"
+"--\n"
+"\n"
+"The deprecation message should use the class name instead of __init__.");
+
+static int
+depr_kwd_init_impl(PyObject *self, PyObject *a);
+
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error \
+        "In _testclinic.c, update the clinic input of " \
+        "'_testclinic.DeprKwdInit.__init__'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ( \
+        "In _testclinic.c, update the clinic input of " \
+        "'_testclinic.DeprKwdInit.__init__'.")
+#  else
+#    warning \
+        "In _testclinic.c, update the clinic input of " \
+        "'_testclinic.DeprKwdInit.__init__'."
+#  endif
+#endif
+static int
+depr_kwd_init(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int return_value = -1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "DeprKwdInit",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    PyObject *a;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing keyword argument 'a' to _testclinic.DeprKwdInit() is "
+                "deprecated. Corresponding parameter will become positional-only "
+                "in Python 3.14.", 1))
+        {
+            goto exit;
+        }
+    }
+    a = fastargs[0];
+    return_value = depr_kwd_init_impl(self, a);
 
 exit:
     return return_value;
@@ -357,6 +515,19 @@ PyDoc_STRVAR(depr_star_pos0_len1__doc__,
 static PyObject *
 depr_star_pos0_len1_impl(PyObject *module, PyObject *a);
 
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error \
+        "In _testclinic.c, update the clinic input of 'depr_star_pos0_len1'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ( \
+        "In _testclinic.c, update the clinic input of 'depr_star_pos0_len1'.")
+#  else
+#    warning \
+        "In _testclinic.c, update the clinic input of 'depr_star_pos0_len1'."
+#  endif
+#endif
 static PyObject *
 depr_star_pos0_len1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -389,29 +560,13 @@ depr_star_pos0_len1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *argsbuf[1];
     PyObject *a;
 
-    // Emit compiler warnings when we get to Python 3.14.
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error \
-            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
-            " 'depr_star_pos0_len1' to be keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ( \
-            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
-            " 'depr_star_pos0_len1' to be keyword-only.")
-    #  else
-    #    warning \
-            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
-            " 'depr_star_pos0_len1' to be keyword-only."
-    #  endif
-    #endif
     if (nargs == 1) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing positional arguments to depr_star_pos0_len1() is "
                 "deprecated. Parameter 'a' will become a keyword-only parameter "
                 "in Python 3.14.", 1))
         {
-                goto exit;
+            goto exit;
         }
     }
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
@@ -440,6 +595,19 @@ PyDoc_STRVAR(depr_star_pos0_len2__doc__,
 static PyObject *
 depr_star_pos0_len2_impl(PyObject *module, PyObject *a, PyObject *b);
 
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error \
+        "In _testclinic.c, update the clinic input of 'depr_star_pos0_len2'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ( \
+        "In _testclinic.c, update the clinic input of 'depr_star_pos0_len2'.")
+#  else
+#    warning \
+        "In _testclinic.c, update the clinic input of 'depr_star_pos0_len2'."
+#  endif
+#endif
 static PyObject *
 depr_star_pos0_len2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -473,29 +641,13 @@ depr_star_pos0_len2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *a;
     PyObject *b;
 
-    // Emit compiler warnings when we get to Python 3.14.
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error \
-            "In _testclinic.c, update parameter(s) 'a' and 'b' in the clinic " \
-            "input of 'depr_star_pos0_len2' to be keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ( \
-            "In _testclinic.c, update parameter(s) 'a' and 'b' in the clinic " \
-            "input of 'depr_star_pos0_len2' to be keyword-only.")
-    #  else
-    #    warning \
-            "In _testclinic.c, update parameter(s) 'a' and 'b' in the clinic " \
-            "input of 'depr_star_pos0_len2' to be keyword-only."
-    #  endif
-    #endif
     if (nargs > 0 && nargs <= 2) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing positional arguments to depr_star_pos0_len2() is "
                 "deprecated. Parameters 'a' and 'b' will become keyword-only "
                 "parameters in Python 3.14.", 1))
         {
-                goto exit;
+            goto exit;
         }
     }
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
@@ -526,6 +678,22 @@ static PyObject *
 depr_star_pos0_len3_with_kwd_impl(PyObject *module, PyObject *a, PyObject *b,
                                   PyObject *c, PyObject *d);
 
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error \
+        "In _testclinic.c, update the clinic input of " \
+        "'depr_star_pos0_len3_with_kwd'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ( \
+        "In _testclinic.c, update the clinic input of " \
+        "'depr_star_pos0_len3_with_kwd'.")
+#  else
+#    warning \
+        "In _testclinic.c, update the clinic input of " \
+        "'depr_star_pos0_len3_with_kwd'."
+#  endif
+#endif
 static PyObject *
 depr_star_pos0_len3_with_kwd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -561,32 +729,13 @@ depr_star_pos0_len3_with_kwd(PyObject *module, PyObject *const *args, Py_ssize_t
     PyObject *c;
     PyObject *d;
 
-    // Emit compiler warnings when we get to Python 3.14.
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error \
-            "In _testclinic.c, update parameter(s) 'a', 'b' and 'c' in the " \
-            "clinic input of 'depr_star_pos0_len3_with_kwd' to be " \
-            "keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ( \
-            "In _testclinic.c, update parameter(s) 'a', 'b' and 'c' in the " \
-            "clinic input of 'depr_star_pos0_len3_with_kwd' to be " \
-            "keyword-only.")
-    #  else
-    #    warning \
-            "In _testclinic.c, update parameter(s) 'a', 'b' and 'c' in the " \
-            "clinic input of 'depr_star_pos0_len3_with_kwd' to be " \
-            "keyword-only."
-    #  endif
-    #endif
     if (nargs > 0 && nargs <= 3) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing positional arguments to depr_star_pos0_len3_with_kwd() "
                 "is deprecated. Parameters 'a', 'b' and 'c' will become "
                 "keyword-only parameters in Python 3.14.", 1))
         {
-                goto exit;
+            goto exit;
         }
     }
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 1, argsbuf);
@@ -618,6 +767,19 @@ PyDoc_STRVAR(depr_star_pos1_len1_opt__doc__,
 static PyObject *
 depr_star_pos1_len1_opt_impl(PyObject *module, PyObject *a, PyObject *b);
 
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error \
+        "In _testclinic.c, update the clinic input of 'depr_star_pos1_len1_opt'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ( \
+        "In _testclinic.c, update the clinic input of 'depr_star_pos1_len1_opt'.")
+#  else
+#    warning \
+        "In _testclinic.c, update the clinic input of 'depr_star_pos1_len1_opt'."
+#  endif
+#endif
 static PyObject *
 depr_star_pos1_len1_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -652,29 +814,13 @@ depr_star_pos1_len1_opt(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *a;
     PyObject *b = Py_None;
 
-    // Emit compiler warnings when we get to Python 3.14.
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error \
-            "In _testclinic.c, update parameter(s) 'b' in the clinic input of" \
-            " 'depr_star_pos1_len1_opt' to be keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ( \
-            "In _testclinic.c, update parameter(s) 'b' in the clinic input of" \
-            " 'depr_star_pos1_len1_opt' to be keyword-only.")
-    #  else
-    #    warning \
-            "In _testclinic.c, update parameter(s) 'b' in the clinic input of" \
-            " 'depr_star_pos1_len1_opt' to be keyword-only."
-    #  endif
-    #endif
     if (nargs == 2) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing 2 positional arguments to depr_star_pos1_len1_opt() is "
                 "deprecated. Parameter 'b' will become a keyword-only parameter "
                 "in Python 3.14.", 1))
         {
-                goto exit;
+            goto exit;
         }
     }
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
@@ -708,6 +854,19 @@ PyDoc_STRVAR(depr_star_pos1_len1__doc__,
 static PyObject *
 depr_star_pos1_len1_impl(PyObject *module, PyObject *a, PyObject *b);
 
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error \
+        "In _testclinic.c, update the clinic input of 'depr_star_pos1_len1'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ( \
+        "In _testclinic.c, update the clinic input of 'depr_star_pos1_len1'.")
+#  else
+#    warning \
+        "In _testclinic.c, update the clinic input of 'depr_star_pos1_len1'."
+#  endif
+#endif
 static PyObject *
 depr_star_pos1_len1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -741,29 +900,13 @@ depr_star_pos1_len1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *a;
     PyObject *b;
 
-    // Emit compiler warnings when we get to Python 3.14.
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error \
-            "In _testclinic.c, update parameter(s) 'b' in the clinic input of" \
-            " 'depr_star_pos1_len1' to be keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ( \
-            "In _testclinic.c, update parameter(s) 'b' in the clinic input of" \
-            " 'depr_star_pos1_len1' to be keyword-only.")
-    #  else
-    #    warning \
-            "In _testclinic.c, update parameter(s) 'b' in the clinic input of" \
-            " 'depr_star_pos1_len1' to be keyword-only."
-    #  endif
-    #endif
     if (nargs == 2) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing 2 positional arguments to depr_star_pos1_len1() is "
                 "deprecated. Parameter 'b' will become a keyword-only parameter "
                 "in Python 3.14.", 1))
         {
-                goto exit;
+            goto exit;
         }
     }
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
@@ -794,6 +937,22 @@ static PyObject *
 depr_star_pos1_len2_with_kwd_impl(PyObject *module, PyObject *a, PyObject *b,
                                   PyObject *c, PyObject *d);
 
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error \
+        "In _testclinic.c, update the clinic input of " \
+        "'depr_star_pos1_len2_with_kwd'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ( \
+        "In _testclinic.c, update the clinic input of " \
+        "'depr_star_pos1_len2_with_kwd'.")
+#  else
+#    warning \
+        "In _testclinic.c, update the clinic input of " \
+        "'depr_star_pos1_len2_with_kwd'."
+#  endif
+#endif
 static PyObject *
 depr_star_pos1_len2_with_kwd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -829,29 +988,13 @@ depr_star_pos1_len2_with_kwd(PyObject *module, PyObject *const *args, Py_ssize_t
     PyObject *c;
     PyObject *d;
 
-    // Emit compiler warnings when we get to Python 3.14.
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error \
-            "In _testclinic.c, update parameter(s) 'b' and 'c' in the clinic " \
-            "input of 'depr_star_pos1_len2_with_kwd' to be keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ( \
-            "In _testclinic.c, update parameter(s) 'b' and 'c' in the clinic " \
-            "input of 'depr_star_pos1_len2_with_kwd' to be keyword-only.")
-    #  else
-    #    warning \
-            "In _testclinic.c, update parameter(s) 'b' and 'c' in the clinic " \
-            "input of 'depr_star_pos1_len2_with_kwd' to be keyword-only."
-    #  endif
-    #endif
     if (nargs > 1 && nargs <= 3) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing more than 1 positional argument to "
                 "depr_star_pos1_len2_with_kwd() is deprecated. Parameters 'b' and"
                 " 'c' will become keyword-only parameters in Python 3.14.", 1))
         {
-                goto exit;
+            goto exit;
         }
     }
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 1, argsbuf);
@@ -884,6 +1027,19 @@ static PyObject *
 depr_star_pos2_len1_impl(PyObject *module, PyObject *a, PyObject *b,
                          PyObject *c);
 
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error \
+        "In _testclinic.c, update the clinic input of 'depr_star_pos2_len1'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ( \
+        "In _testclinic.c, update the clinic input of 'depr_star_pos2_len1'.")
+#  else
+#    warning \
+        "In _testclinic.c, update the clinic input of 'depr_star_pos2_len1'."
+#  endif
+#endif
 static PyObject *
 depr_star_pos2_len1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -918,29 +1074,13 @@ depr_star_pos2_len1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *b;
     PyObject *c;
 
-    // Emit compiler warnings when we get to Python 3.14.
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error \
-            "In _testclinic.c, update parameter(s) 'c' in the clinic input of" \
-            " 'depr_star_pos2_len1' to be keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ( \
-            "In _testclinic.c, update parameter(s) 'c' in the clinic input of" \
-            " 'depr_star_pos2_len1' to be keyword-only.")
-    #  else
-    #    warning \
-            "In _testclinic.c, update parameter(s) 'c' in the clinic input of" \
-            " 'depr_star_pos2_len1' to be keyword-only."
-    #  endif
-    #endif
     if (nargs == 3) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing 3 positional arguments to depr_star_pos2_len1() is "
                 "deprecated. Parameter 'c' will become a keyword-only parameter "
                 "in Python 3.14.", 1))
         {
-                goto exit;
+            goto exit;
         }
     }
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
@@ -972,6 +1112,19 @@ static PyObject *
 depr_star_pos2_len2_impl(PyObject *module, PyObject *a, PyObject *b,
                          PyObject *c, PyObject *d);
 
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error \
+        "In _testclinic.c, update the clinic input of 'depr_star_pos2_len2'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ( \
+        "In _testclinic.c, update the clinic input of 'depr_star_pos2_len2'.")
+#  else
+#    warning \
+        "In _testclinic.c, update the clinic input of 'depr_star_pos2_len2'."
+#  endif
+#endif
 static PyObject *
 depr_star_pos2_len2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -1007,29 +1160,13 @@ depr_star_pos2_len2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *c;
     PyObject *d;
 
-    // Emit compiler warnings when we get to Python 3.14.
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error \
-            "In _testclinic.c, update parameter(s) 'c' and 'd' in the clinic " \
-            "input of 'depr_star_pos2_len2' to be keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ( \
-            "In _testclinic.c, update parameter(s) 'c' and 'd' in the clinic " \
-            "input of 'depr_star_pos2_len2' to be keyword-only.")
-    #  else
-    #    warning \
-            "In _testclinic.c, update parameter(s) 'c' and 'd' in the clinic " \
-            "input of 'depr_star_pos2_len2' to be keyword-only."
-    #  endif
-    #endif
     if (nargs > 2 && nargs <= 4) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing more than 2 positional arguments to "
                 "depr_star_pos2_len2() is deprecated. Parameters 'c' and 'd' will"
                 " become keyword-only parameters in Python 3.14.", 1))
         {
-                goto exit;
+            goto exit;
         }
     }
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 4, 4, 0, argsbuf);
@@ -1062,6 +1199,22 @@ static PyObject *
 depr_star_pos2_len2_with_kwd_impl(PyObject *module, PyObject *a, PyObject *b,
                                   PyObject *c, PyObject *d, PyObject *e);
 
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error \
+        "In _testclinic.c, update the clinic input of " \
+        "'depr_star_pos2_len2_with_kwd'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ( \
+        "In _testclinic.c, update the clinic input of " \
+        "'depr_star_pos2_len2_with_kwd'.")
+#  else
+#    warning \
+        "In _testclinic.c, update the clinic input of " \
+        "'depr_star_pos2_len2_with_kwd'."
+#  endif
+#endif
 static PyObject *
 depr_star_pos2_len2_with_kwd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -1098,29 +1251,13 @@ depr_star_pos2_len2_with_kwd(PyObject *module, PyObject *const *args, Py_ssize_t
     PyObject *d;
     PyObject *e;
 
-    // Emit compiler warnings when we get to Python 3.14.
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error \
-            "In _testclinic.c, update parameter(s) 'c' and 'd' in the clinic " \
-            "input of 'depr_star_pos2_len2_with_kwd' to be keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ( \
-            "In _testclinic.c, update parameter(s) 'c' and 'd' in the clinic " \
-            "input of 'depr_star_pos2_len2_with_kwd' to be keyword-only.")
-    #  else
-    #    warning \
-            "In _testclinic.c, update parameter(s) 'c' and 'd' in the clinic " \
-            "input of 'depr_star_pos2_len2_with_kwd' to be keyword-only."
-    #  endif
-    #endif
     if (nargs > 2 && nargs <= 4) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing more than 2 positional arguments to "
                 "depr_star_pos2_len2_with_kwd() is deprecated. Parameters 'c' and"
                 " 'd' will become keyword-only parameters in Python 3.14.", 1))
         {
-                goto exit;
+            goto exit;
         }
     }
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 4, 4, 1, argsbuf);
@@ -1137,4 +1274,616 @@ depr_star_pos2_len2_with_kwd(PyObject *module, PyObject *const *args, Py_ssize_t
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7a16fee4d6742d54 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(depr_kwd_required_1__doc__,
+"depr_kwd_required_1($module, a, /, b)\n"
+"--\n"
+"\n");
+
+#define DEPR_KWD_REQUIRED_1_METHODDEF    \
+    {"depr_kwd_required_1", _PyCFunction_CAST(depr_kwd_required_1), METH_FASTCALL|METH_KEYWORDS, depr_kwd_required_1__doc__},
+
+static PyObject *
+depr_kwd_required_1_impl(PyObject *module, PyObject *a, PyObject *b);
+
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error \
+        "In _testclinic.c, update the clinic input of 'depr_kwd_required_1'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ( \
+        "In _testclinic.c, update the clinic input of 'depr_kwd_required_1'.")
+#  else
+#    warning \
+        "In _testclinic.c, update the clinic input of 'depr_kwd_required_1'."
+#  endif
+#endif
+static PyObject *
+depr_kwd_required_1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(b), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "b", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "depr_kwd_required_1",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    PyObject *a;
+    PyObject *b;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing keyword argument 'b' to depr_kwd_required_1() is "
+                "deprecated. Corresponding parameter will become positional-only "
+                "in Python 3.14.", 1))
+        {
+            goto exit;
+        }
+    }
+    a = args[0];
+    b = args[1];
+    return_value = depr_kwd_required_1_impl(module, a, b);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(depr_kwd_required_2__doc__,
+"depr_kwd_required_2($module, a, /, b, c)\n"
+"--\n"
+"\n");
+
+#define DEPR_KWD_REQUIRED_2_METHODDEF    \
+    {"depr_kwd_required_2", _PyCFunction_CAST(depr_kwd_required_2), METH_FASTCALL|METH_KEYWORDS, depr_kwd_required_2__doc__},
+
+static PyObject *
+depr_kwd_required_2_impl(PyObject *module, PyObject *a, PyObject *b,
+                         PyObject *c);
+
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error \
+        "In _testclinic.c, update the clinic input of 'depr_kwd_required_2'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ( \
+        "In _testclinic.c, update the clinic input of 'depr_kwd_required_2'.")
+#  else
+#    warning \
+        "In _testclinic.c, update the clinic input of 'depr_kwd_required_2'."
+#  endif
+#endif
+static PyObject *
+depr_kwd_required_2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(b), &_Py_ID(c), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "b", "c", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "depr_kwd_required_2",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    PyObject *a;
+    PyObject *b;
+    PyObject *c;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing keyword arguments 'b' and 'c' to depr_kwd_required_2() "
+                "is deprecated. Corresponding parameters will become "
+                "positional-only in Python 3.14.", 1))
+        {
+            goto exit;
+        }
+    }
+    a = args[0];
+    b = args[1];
+    c = args[2];
+    return_value = depr_kwd_required_2_impl(module, a, b, c);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(depr_kwd_optional_1__doc__,
+"depr_kwd_optional_1($module, a, /, b=None)\n"
+"--\n"
+"\n");
+
+#define DEPR_KWD_OPTIONAL_1_METHODDEF    \
+    {"depr_kwd_optional_1", _PyCFunction_CAST(depr_kwd_optional_1), METH_FASTCALL|METH_KEYWORDS, depr_kwd_optional_1__doc__},
+
+static PyObject *
+depr_kwd_optional_1_impl(PyObject *module, PyObject *a, PyObject *b);
+
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error \
+        "In _testclinic.c, update the clinic input of 'depr_kwd_optional_1'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ( \
+        "In _testclinic.c, update the clinic input of 'depr_kwd_optional_1'.")
+#  else
+#    warning \
+        "In _testclinic.c, update the clinic input of 'depr_kwd_optional_1'."
+#  endif
+#endif
+static PyObject *
+depr_kwd_optional_1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(b), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "b", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "depr_kwd_optional_1",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *a;
+    PyObject *b = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (nargs < 2 && kwnames && PySequence_Contains(kwnames, &_Py_ID(b))) {
+        if (PyErr_Occurred()) { // PySequence_Contains() above can fail
+            goto exit;
+        }
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing keyword argument 'b' to depr_kwd_optional_1() is "
+                "deprecated. Corresponding parameter will become positional-only "
+                "in Python 3.14.", 1))
+        {
+            goto exit;
+        }
+    }
+    a = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    b = args[1];
+skip_optional_pos:
+    return_value = depr_kwd_optional_1_impl(module, a, b);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(depr_kwd_optional_2__doc__,
+"depr_kwd_optional_2($module, a, /, b=None, c=None)\n"
+"--\n"
+"\n");
+
+#define DEPR_KWD_OPTIONAL_2_METHODDEF    \
+    {"depr_kwd_optional_2", _PyCFunction_CAST(depr_kwd_optional_2), METH_FASTCALL|METH_KEYWORDS, depr_kwd_optional_2__doc__},
+
+static PyObject *
+depr_kwd_optional_2_impl(PyObject *module, PyObject *a, PyObject *b,
+                         PyObject *c);
+
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error \
+        "In _testclinic.c, update the clinic input of 'depr_kwd_optional_2'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ( \
+        "In _testclinic.c, update the clinic input of 'depr_kwd_optional_2'.")
+#  else
+#    warning \
+        "In _testclinic.c, update the clinic input of 'depr_kwd_optional_2'."
+#  endif
+#endif
+static PyObject *
+depr_kwd_optional_2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(b), &_Py_ID(c), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "b", "c", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "depr_kwd_optional_2",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *a;
+    PyObject *b = Py_None;
+    PyObject *c = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if ((nargs < 2 && kwnames && PySequence_Contains(kwnames, &_Py_ID(b))) || (nargs < 3 && kwnames && PySequence_Contains(kwnames, &_Py_ID(c)))) {
+        if (PyErr_Occurred()) { // PySequence_Contains() above can fail
+            goto exit;
+        }
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing keyword arguments 'b' and 'c' to depr_kwd_optional_2() "
+                "is deprecated. Corresponding parameters will become "
+                "positional-only in Python 3.14.", 1))
+        {
+            goto exit;
+        }
+    }
+    a = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[1]) {
+        b = args[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    c = args[2];
+skip_optional_pos:
+    return_value = depr_kwd_optional_2_impl(module, a, b, c);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(depr_kwd_optional_3__doc__,
+"depr_kwd_optional_3($module, /, a=None, b=None, c=None)\n"
+"--\n"
+"\n");
+
+#define DEPR_KWD_OPTIONAL_3_METHODDEF    \
+    {"depr_kwd_optional_3", _PyCFunction_CAST(depr_kwd_optional_3), METH_FASTCALL|METH_KEYWORDS, depr_kwd_optional_3__doc__},
+
+static PyObject *
+depr_kwd_optional_3_impl(PyObject *module, PyObject *a, PyObject *b,
+                         PyObject *c);
+
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error \
+        "In _testclinic.c, update the clinic input of 'depr_kwd_optional_3'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ( \
+        "In _testclinic.c, update the clinic input of 'depr_kwd_optional_3'.")
+#  else
+#    warning \
+        "In _testclinic.c, update the clinic input of 'depr_kwd_optional_3'."
+#  endif
+#endif
+static PyObject *
+depr_kwd_optional_3(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(c), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", "b", "c", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "depr_kwd_optional_3",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *a = Py_None;
+    PyObject *b = Py_None;
+    PyObject *c = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 3, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if ((nargs < 1 && kwnames && PySequence_Contains(kwnames, &_Py_ID(a))) || (nargs < 2 && kwnames && PySequence_Contains(kwnames, &_Py_ID(b))) || (nargs < 3 && kwnames && PySequence_Contains(kwnames, &_Py_ID(c)))) {
+        if (PyErr_Occurred()) { // PySequence_Contains() above can fail
+            goto exit;
+        }
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing keyword arguments 'a', 'b' and 'c' to "
+                "depr_kwd_optional_3() is deprecated. Corresponding parameters "
+                "will become positional-only in Python 3.14.", 1))
+        {
+            goto exit;
+        }
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        a = args[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[1]) {
+        b = args[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    c = args[2];
+skip_optional_pos:
+    return_value = depr_kwd_optional_3_impl(module, a, b, c);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(depr_kwd_required_optional__doc__,
+"depr_kwd_required_optional($module, a, /, b, c=None)\n"
+"--\n"
+"\n");
+
+#define DEPR_KWD_REQUIRED_OPTIONAL_METHODDEF    \
+    {"depr_kwd_required_optional", _PyCFunction_CAST(depr_kwd_required_optional), METH_FASTCALL|METH_KEYWORDS, depr_kwd_required_optional__doc__},
+
+static PyObject *
+depr_kwd_required_optional_impl(PyObject *module, PyObject *a, PyObject *b,
+                                PyObject *c);
+
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error \
+        "In _testclinic.c, update the clinic input of " \
+        "'depr_kwd_required_optional'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ( \
+        "In _testclinic.c, update the clinic input of " \
+        "'depr_kwd_required_optional'.")
+#  else
+#    warning \
+        "In _testclinic.c, update the clinic input of " \
+        "'depr_kwd_required_optional'."
+#  endif
+#endif
+static PyObject *
+depr_kwd_required_optional(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(b), &_Py_ID(c), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "b", "c", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "depr_kwd_required_optional",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
+    PyObject *a;
+    PyObject *b;
+    PyObject *c = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if ((nargs < 2) || (nargs < 3 && kwnames && PySequence_Contains(kwnames, &_Py_ID(c)))) {
+        if (PyErr_Occurred()) { // PySequence_Contains() above can fail
+            goto exit;
+        }
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing keyword arguments 'b' and 'c' to "
+                "depr_kwd_required_optional() is deprecated. Corresponding "
+                "parameters will become positional-only in Python 3.14.", 1))
+        {
+            goto exit;
+        }
+    }
+    a = args[0];
+    b = args[1];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    c = args[2];
+skip_optional_pos:
+    return_value = depr_kwd_required_optional_impl(module, a, b, c);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(depr_kwd_noinline__doc__,
+"depr_kwd_noinline($module, a, /, b, c=None, d=\'\')\n"
+"--\n"
+"\n");
+
+#define DEPR_KWD_NOINLINE_METHODDEF    \
+    {"depr_kwd_noinline", _PyCFunction_CAST(depr_kwd_noinline), METH_FASTCALL|METH_KEYWORDS, depr_kwd_noinline__doc__},
+
+static PyObject *
+depr_kwd_noinline_impl(PyObject *module, PyObject *a, PyObject *b,
+                       PyObject *c, const char *d, Py_ssize_t d_length);
+
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error \
+        "In _testclinic.c, update the clinic input of 'depr_kwd_noinline'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ( \
+        "In _testclinic.c, update the clinic input of 'depr_kwd_noinline'.")
+#  else
+#    warning \
+        "In _testclinic.c, update the clinic input of 'depr_kwd_noinline'."
+#  endif
+#endif
+static PyObject *
+depr_kwd_noinline(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "b", "c", "d", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .format = "OO|Os#:depr_kwd_noinline",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *a;
+    PyObject *b;
+    PyObject *c = Py_None;
+    const char *d = "";
+    Py_ssize_t d_length;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &a, &b, &c, &d, &d_length)) {
+        goto exit;
+    }
+    if ((nargs < 2) || (nargs < 3 && kwnames && PySequence_Contains(kwnames, &_Py_ID(c)))) {
+        if (PyErr_Occurred()) { // PySequence_Contains() above can fail
+            goto exit;
+        }
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing keyword arguments 'b' and 'c' to depr_kwd_noinline() is "
+                "deprecated. Corresponding parameters will become positional-only"
+                " in Python 3.14.", 1))
+        {
+            goto exit;
+        }
+    }
+    return_value = depr_kwd_noinline_impl(module, a, b, c, d, d_length);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=b68c191569031144 input=a9049054013a1b77]*/
