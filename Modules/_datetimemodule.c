@@ -5451,6 +5451,12 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
     if (!rv && len > separator_location) {
         // In UTF-8, the length of multi-byte characters is encoded in the MSB
         p += separator_location;
+
+        if (is_digit(p[0])) {
+            // Date and time most likely split at the wrong place, indicates wrong format.
+            goto invalid_string_error;
+        }
+
         if ((p[0] & 0x80) == 0) {
             p += 1;
         }

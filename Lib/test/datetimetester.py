@@ -1909,6 +1909,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             '2019-W53-1',       # No week 53 in 2019
             '2020-W54-1',       # No week 54
             '2009\ud80002\ud80028',     # Separators are surrogate codepoints
+            '2009-01-01 ',      # Trailing separator without time component
         ]
 
         for bad_str in bad_strs:
@@ -3295,6 +3296,8 @@ class TestDateTime(TestDate):
             '2009-04-19T12:30:45.123456-05:00a',    # Extra text
             '2009-04-19T12:30:45.123-05:00a',       # Extra text
             '2009-04-19T12:30:45-05:00a',           # Extra text
+            '2009-04-1912:30:45',           # Missing date-time separator 1
+            '20090419123054',               # Missing date-time separator 2
         ]
 
         for bad_str in bad_strs:
