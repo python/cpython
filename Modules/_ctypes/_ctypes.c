@@ -4795,6 +4795,14 @@ static PyMappingMethods Array_as_mapping = {
     Array_ass_subscript,
 };
 
+ PyDoc_STRVAR(array_doc,
+    "Abstract base class for arrays.\n"
+    "\n"
+    "The recommended way to create \n"
+    "concrete array types is by multiplying \n"
+    "any ctypes data type with a non-negative \n"
+    "integer.\n");
+
 PyTypeObject PyCArray_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_ctypes.Array",
@@ -4815,14 +4823,8 @@ PyTypeObject PyCArray_Type = {
     0,                                          /* tp_getattro */
     0,                                          /* tp_setattro */
     &PyCData_as_buffer,                         /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    PyDoc_STRVAR(array_doc,
-    "Abstract base class for arrays.\n"
-    "\n"
-    "The recommended way to create \n"
-    "concrete array types is by multiplying \n"
-    "any ctypes data type with a non-negative \n"
-    "integer.\n"),                                /* tp_doc */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
+    array_doc,                                 /* tp_doc */
     (traverseproc)PyCData_traverse,             /* tp_traverse */
     (inquiry)PyCData_clear,                     /* tp_clear */
     0,                                          /* tp_richcompare */
