@@ -2319,6 +2319,19 @@ class ClinicFunctionalTest(unittest.TestCase):
     locals().update((name, getattr(ac_tester, name))
                     for name in dir(ac_tester) if name.startswith('test_'))
 
+    def check_depr_star(self, fn, *, fname, pnames, ok_args, fail_args):
+        for args, kwds in ok_args:
+            fn(*args, **kwds)
+        regex = (
+            f"Passing.*positional argument.*to {fname}.*is deprecated. "
+            f"Parameter.*{pnames} will become.*keyword-only parameter.*in Python 3.14"
+        )
+        for args, kwds in fail_args:
+            with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+                fn(*args, **kwds)
+            self.assertTrue(cm.filename.endswith("test_clinic.py"), cm.filename)
+            fn(*args, **kwds)  # No warning raised second time
+
     def test_objects_converter(self):
         with self.assertRaises(TypeError):
             ac_tester.objects_converter()
@@ -2782,6 +2795,138 @@ class ClinicFunctionalTest(unittest.TestCase):
             with self.subTest(name=name):
                 func = getattr(ac_tester, name)
                 self.assertEqual(func(), name)
+
+    def test_depr_star_pos0_len1(self):
+        fn = ac_tester.deprecate_positional_pos0_len1
+        self.check_depr_star(fn,
+            fname="deprecate_positional_pos0_len1",
+            pnames="'a'",
+            ok_args=(
+                ((), {"a": None}),
+            ),
+            fail_args=(
+                ((None,), {}),
+            )
+        )
+
+    def test_depr_star_pos0_len2(self):
+        fn = ac_tester.deprecate_positional_pos0_len2
+        self.check_depr_star(fn,
+            fname="deprecate_positional_pos0_len2",
+            pnames="'a' and 'b'",
+            ok_args=(
+                ((), {"a": None, "b": None}),
+            ),
+            fail_args=(
+                ((None,), {"b": None}),
+            )
+        )
+
+    def test_depr_star_pos0_len3_with_kwd(self):
+        fn = ac_tester.deprecate_positional_pos0_len3_with_kwd
+        self.check_depr_star(fn,
+            fname="deprecate_positional_pos0_len3_with_kwd",
+            pnames="'a', 'b' and 'c'",
+            ok_args=(
+                ((), {"a": None, "b": None, "c": None, "d": None}),
+            ),
+            fail_args=(
+                ((None,), {"b": None, "c": None, "d": None}),
+                ((None, None), {"c": None, "d": None}),
+                ((None, None, None), {"d": None}),
+            )
+        )
+
+    def test_depr_star_pos1_len1_optional(self):
+        fn = ac_tester.deprecate_positional_pos1_len1_optional
+        self.check_depr_star(fn,
+            fname="deprecate_positional_pos1_len1_optional",
+            pnames="'b'",
+            ok_args=(
+                ((), {"a": None, "b": None}),
+                ((None,), {}),
+                ((None,), {"b": None}),
+            ),
+            fail_args=(
+                ((None, None), {}),
+            )
+        )
+
+    def test_depr_star_pos1_len1(self):
+        fn = ac_tester.deprecate_positional_pos1_len1
+        self.check_depr_star(fn,
+            fname="deprecate_positional_pos1_len1",
+            pnames="'b'",
+            ok_args=(
+                ((), {"a": None, "b": None}),
+                ((None,), {"b": None}),
+            ),
+            fail_args=(
+                ((None, None), {}),
+            )
+        )
+
+    def test_depr_star_pos1_len2_with_kwd(self):
+        fn = ac_tester.deprecate_positional_pos1_len2_with_kwd
+        self.check_depr_star(fn,
+            fname="deprecate_positional_pos1_len2_with_kwd",
+            pnames="'b' and 'c'",
+            ok_args=(
+                ((), {"a": None, "b": None, "c": None, "d": None}),
+                ((None,), {"b": None, "c": None, "d": None}),
+            ),
+            fail_args=(
+                ((None, None), {"c": None, "d": None}),
+                ((None, None, None), {"d": None}),
+            )
+        )
+
+    def test_depr_star_pos2_len1(self):
+        fn = ac_tester.deprecate_positional_pos2_len1
+        self.check_depr_star(fn,
+            fname="deprecate_positional_pos2_len1",
+            pnames="'c'",
+            ok_args=(
+                ((), {"a": None, "b": None, "c": None}),
+                ((None,), {"b": None, "c": None}),
+                ((None, None), {"c": None}),
+            ),
+            fail_args=(
+                ((None, None, None), {}),
+            )
+        )
+
+    def test_depr_star_pos2_len2(self):
+        fn = ac_tester.deprecate_positional_pos2_len2
+        self.check_depr_star(fn,
+            fname="deprecate_positional_pos2_len2",
+            pnames="'c' and 'd'",
+            ok_args=(
+                ((), {"a": None, "b": None, "c": None, "d": None}),
+                ((None,), {"b": None, "c": None, "d": None}),
+                ((None, None), {"c": None, "d": None}),
+            ),
+            fail_args=(
+                ((None, None, None), {"d": None}),
+                ((None, None, None, None), {}),
+            )
+        )
+
+    def test_depr_star_pos2_len3_with_kwd(self):
+        fn = ac_tester.deprecate_positional_pos2_len3_with_kwd
+        self.check_depr_star(fn,
+            fname="deprecate_positional_pos2_len3_with_kwd",
+            pnames="'c' and 'd'",
+            ok_args=(
+                ((), {"a": None, "b": None, "c": None, "d": None, "e": None}),
+                ((None,), {"b": None, "c": None, "d": None, "e": None}),
+                ((None, None), {"c": None, "d": None, "e": None}),
+            ),
+            fail_args=(
+                ((None, None, None), {"d": None, "e": None}),
+                ((None, None, None, None), {"e": None}),
+            )
+        )
 
 
 class PermutationTests(unittest.TestCase):
