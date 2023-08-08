@@ -886,7 +886,7 @@ Functions
    .. versionadded:: 3.4
 
 
-.. function:: split(pattern, string, maxsplit=0, flags=0)
+.. function:: split(pattern, string, \*, maxsplit=0, flags=0)
 
    Split *string* by the occurrences of *pattern*.  If capturing parentheses are
    used in *pattern*, then the text of all groups in the pattern are also returned
@@ -898,7 +898,7 @@ Functions
       ['Words', 'words', 'words', '']
       >>> re.split(r'(\W+)', 'Words, words, words.')
       ['Words', ', ', 'words', ', ', 'words', '.', '']
-      >>> re.split(r'\W+', 'Words, words, words.', 1)
+      >>> re.split(r'\W+', 'Words, words, words.', maxsplit=1)
       ['Words', 'words, words.']
       >>> re.split('[a-f]+', '0a3B9', flags=re.IGNORECASE)
       ['0', '3', '9']
@@ -963,7 +963,7 @@ Functions
       Non-empty matches can now start just after a previous empty match.
 
 
-.. function:: sub(pattern, repl, string, count=0, flags=0)
+.. function:: sub(pattern, repl, string, \*, count=0, flags=0)
 
    Return the string obtained by replacing the leftmost non-overlapping occurrences
    of *pattern* in *string* by the replacement *repl*.  If the pattern isn't found,
@@ -1038,7 +1038,7 @@ Functions
       in the ASCII range (``b'\x00'``-``b'\x7f'``).
 
 
-.. function:: subn(pattern, repl, string, count=0, flags=0)
+.. function:: subn(pattern, repl, string, \*, count=0, flags=0)
 
    Perform the same operation as :func:`sub`, but return a tuple ``(new_string,
    number_of_subs_made)``.
