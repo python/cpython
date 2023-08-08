@@ -1,0 +1,1 @@
+Deprecate passing `count`, `flags` and `maxsplit` via position to :func:`re.sub`, :func:`re.subn` and :func:`re.split`
