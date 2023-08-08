@@ -223,7 +223,44 @@ error:
     return NULL;
 }
 
-uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func)
+void
+_PyFunction_SetVersion(PyFunctionObject *func, uint32_t version)
+{
+    func->func_version = version;
+    if (version != 0) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        PyFunctionObject **slot =
+            interp->func_state.func_version_cache
+            + (version % FUNC_VERSION_CACHE_SIZE);
+        Py_XSETREF(*slot, (PyFunctionObject *)Py_NewRef(func));
+    }
+}
+
+PyFunctionObject *
+_PyFunction_LookupByVersion(uint32_t version)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyFunctionObject **slot =
+        interp->func_state.func_version_cache
+        + (version % FUNC_VERSION_CACHE_SIZE);
+    if (*slot != NULL && (*slot)->func_version == version) {
+        return (PyFunctionObject *)Py_NewRef(*slot);
+    }
+    return NULL;
+}
+
+void
+_PyFunction_ClearByVersionCache(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    for (int i = 0; i < FUNC_VERSION_CACHE_SIZE; i++) {
+        PyFunctionObject **slot = interp->func_state.func_version_cache + i;
+        Py_CLEAR(*slot);
+    }
+}
+
+uint32_t
+_PyFunction_GetVersionForCurrentState(PyFunctionObject *func)
 {
     if (func->func_version != 0) {
         return func->func_version;
@@ -236,7 +273,7 @@ uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func)
         return 0;
     }
     uint32_t v = interp->func_state.next_version++;
-    func->func_version = v;
+    _PyFunction_SetVersion(func, v);
     return v;
 }
 
