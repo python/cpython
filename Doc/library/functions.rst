@@ -1631,7 +1631,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. class:: slice(stop)
-           slice(start, stop, step=1)
+           slice(start, stop, step=None)
 
    Return a :term:`slice` object representing the set of indices specified by
    ``range(start, stop, step)``.  The *start* and *step* arguments default to
