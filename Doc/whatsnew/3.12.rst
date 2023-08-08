@@ -504,8 +504,8 @@ Other Language Changes
 * :class:`slice` objects are now hashable, allowing them to be used as dict keys and
   set items. (Contributed by Will Bradshaw, Furkan Onder, and Raymond Hettinger in :gh:`101264`.)
 
-* :func:`sum` now uses Neumaier summation to improve accuracy when summing
-  floats or mixed ints and floats.
+* :func:`sum` now uses Neumaier summation to improve accuracy and commutativity
+  when summing floats or mixed ints and floats.
   (Contributed by Raymond Hettinger in :gh:`100425`.)
 
 * Exceptions raised in a typeobject's ``__set_name__`` method are no longer
