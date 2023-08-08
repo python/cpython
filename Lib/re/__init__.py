@@ -195,8 +195,8 @@ def sub(pattern, repl, string, *args, count=_zero_sentinel, flags=_zero_sentinel
                 raise TypeError("sub() got multiple values for argument 'flags'")
             flags, *args = args
             if args:
-                raise TypeError("sub() takes from 2 to 4 positional arguments "
-                                "but %d were given" % (4 + len(args)))
+                raise TypeError("sub() takes from 3 to 5 positional arguments "
+                                "but %d were given" % (5 + len(args)))
 
         import warnings
         warnings.warn(
@@ -225,8 +225,8 @@ def subn(pattern, repl, string, *args, count=_zero_sentinel, flags=_zero_sentine
                 raise TypeError("subn() got multiple values for argument 'flags'")
             flags, *args = args
             if args:
-                raise TypeError("subn() takes from 2 to 4 positional arguments "
-                                "but %d were given" % (4 + len(args)))
+                raise TypeError("subn() takes from 3 to 5 positional arguments "
+                                "but %d were given" % (5 + len(args)))
 
         import warnings
         warnings.warn(

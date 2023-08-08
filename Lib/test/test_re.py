@@ -242,22 +242,35 @@ class ReTests(unittest.TestCase):
         self.assertEqual(w.filename, __file__)
         self.assertEqual(re.sub('a', 'b', 'aaaaa', count=1), 'baaaa')
 
-        self.assertRaises(TypeError, re.sub, 'a', 'b', 'aaaaa', 1, count=1)
-        self.assertRaises(TypeError, re.sub, 'a', 'b', 'aaaaa', 1, 0, flags=0)
-        self.assertRaises(TypeError, re.sub, 'a', 'b', 'aaaaa', 1, 0, 0)
+        with self.assertRaisesRegex(TypeError,
+                r"sub\(\) got multiple values for argument 'count'"):
+            re.sub('a', 'b', 'aaaaa', 1, count=1)
+        with self.assertRaisesRegex(TypeError,
+                r"sub\(\) got multiple values for argument 'flags'"):
+            re.sub('a', 'b', 'aaaaa', 1, 0, flags=0)
+        with self.assertRaisesRegex(TypeError,
+                r"sub\(\) takes from 3 to 5 positional arguments but 6 "
+                r"were given"):
+            re.sub('a', 'b', 'aaaaa', 1, 0, 0)
 
     def test_misuse_flags(self):
         with self.assertWarns(DeprecationWarning) as w:
             result = re.sub('a', 'b', 'aaaaa', re.I)
         self.assertEqual(result, re.sub('a', 'b', 'aaaaa', count=int(re.I)))
+        self.assertEqual(str(w.warning),
+                         "'count' is passed as positional argument")
         self.assertEqual(w.filename, __file__)
         with self.assertWarns(DeprecationWarning) as w:
             result = re.subn("b*", "x", "xyz", re.I)
         self.assertEqual(result, re.subn("b*", "x", "xyz", count=int(re.I)))
+        self.assertEqual(str(w.warning),
+                         "'count' is passed as positional argument")
         self.assertEqual(w.filename, __file__)
         with self.assertWarns(DeprecationWarning) as w:
             result = re.split(":", ":a:b::c", re.I)
         self.assertEqual(result, re.split(":", ":a:b::c", maxsplit=int(re.I)))
+        self.assertEqual(str(w.warning),
+                         "'maxsplit' is passed as positional argument")
         self.assertEqual(w.filename, __file__)
 
     def test_bug_114660(self):
@@ -371,9 +384,16 @@ class ReTests(unittest.TestCase):
         self.assertEqual(w.filename, __file__)
         self.assertEqual(re.subn("b*", "x", "xyz", count=2), ('xxxyz', 2))
 
-        self.assertRaises(TypeError, re.subn, "b*", "x", "xyz", 2, count=1)
-        self.assertRaises(TypeError, re.subn, "b*", "x", "xyz", 2, 0, flags=0)
-        self.assertRaises(TypeError, re.subn, "b*", "x", "xyz", 2, 0, 0)
+        with self.assertRaisesRegex(TypeError,
+                r"subn\(\) got multiple values for argument 'count'"):
+            re.subn('a', 'b', 'aaaaa', 1, count=1)
+        with self.assertRaisesRegex(TypeError,
+                r"subn\(\) got multiple values for argument 'flags'"):
+            re.subn('a', 'b', 'aaaaa', 1, 0, flags=0)
+        with self.assertRaisesRegex(TypeError,
+                r"subn\(\) takes from 3 to 5 positional arguments but 6 "
+                r"were given"):
+            re.subn('a', 'b', 'aaaaa', 1, 0, 0)
 
     def test_re_split(self):
         for string in ":a:b::c", S(":a:b::c"):
@@ -440,6 +460,17 @@ class ReTests(unittest.TestCase):
                          ['', ':', 'a', ':', 'b::c'])
         self.assertEqual(re.split("(:*)", ":a:b::c", maxsplit=2),
                          ['', ':', '', '', 'a:b::c'])
+
+        with self.assertRaisesRegex(TypeError,
+                r"split\(\) got multiple values for argument 'maxsplit'"):
+            re.split(":", ":a:b::c", 2, maxsplit=2)
+        with self.assertRaisesRegex(TypeError,
+                r"split\(\) got multiple values for argument 'flags'"):
+            re.split(":", ":a:b::c", 2, 0, flags=0)
+        with self.assertRaisesRegex(TypeError,
+                r"split\(\) takes from 2 to 4 positional arguments but 5 "
+                r"were given"):
+            re.split(":", ":a:b::c", 2, 0, 0)
 
     def test_re_findall(self):
         self.assertEqual(re.findall(":+", "abc"), [])
