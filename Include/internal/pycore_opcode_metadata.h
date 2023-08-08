@@ -144,6 +144,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 4;
         case BINARY_SUBSCR_LIST_INT:
             return 2;
+        case BINARY_SUBSCR_STR_INT:
+            return 2;
         case BINARY_SUBSCR_TUPLE_INT:
             return 2;
         case BINARY_SUBSCR_DICT:
@@ -587,6 +589,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case STORE_SLICE:
             return 0;
         case BINARY_SUBSCR_LIST_INT:
+            return 1;
+        case BINARY_SUBSCR_STR_INT:
             return 1;
         case BINARY_SUBSCR_TUPLE_INT:
             return 1;
@@ -1047,6 +1051,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [BINARY_SLICE] = { true, INSTR_FMT_IX, 0 },
     [STORE_SLICE] = { true, INSTR_FMT_IX, 0 },
     [BINARY_SUBSCR_LIST_INT] = { true, INSTR_FMT_IXC, 0 },
+    [BINARY_SUBSCR_STR_INT] = { true, INSTR_FMT_IXC, 0 },
     [BINARY_SUBSCR_TUPLE_INT] = { true, INSTR_FMT_IXC, 0 },
     [BINARY_SUBSCR_DICT] = { true, INSTR_FMT_IXC, 0 },
     [BINARY_SUBSCR_GETITEM] = { true, INSTR_FMT_IXC, 0 },
@@ -1258,6 +1263,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [BINARY_SLICE] = { .nuops = 1, .uops = { { BINARY_SLICE, 0, 0 } } },
     [STORE_SLICE] = { .nuops = 1, .uops = { { STORE_SLICE, 0, 0 } } },
     [BINARY_SUBSCR_LIST_INT] = { .nuops = 1, .uops = { { BINARY_SUBSCR_LIST_INT, 0, 0 } } },
+    [BINARY_SUBSCR_STR_INT] = { .nuops = 1, .uops = { { BINARY_SUBSCR_STR_INT, 0, 0 } } },
     [BINARY_SUBSCR_TUPLE_INT] = { .nuops = 1, .uops = { { BINARY_SUBSCR_TUPLE_INT, 0, 0 } } },
     [BINARY_SUBSCR_DICT] = { .nuops = 1, .uops = { { BINARY_SUBSCR_DICT, 0, 0 } } },
     [LIST_APPEND] = { .nuops = 1, .uops = { { LIST_APPEND, 0, 0 } } },
