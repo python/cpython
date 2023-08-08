@@ -444,6 +444,7 @@ translate_bytecode_to_trace(
             code->co_firstlineno,
             2 * INSTR_IP(initial_instr, code));
 
+top:  // Jump here after _PUSH_FRAME
     for (;;) {
         RESERVE_RAW(2, "epilogue");  // Always need space for SAVE_IP and EXIT_TRACE
         ADD_TO_TRACE(SAVE_IP, INSTR_IP(instr, code), 0);
@@ -617,6 +618,34 @@ pop_jump_if_bool:
                         ADD_TO_TRACE(expansion->uops[i].uop, oparg, operand);
                         if (expansion->uops[i].uop == _PUSH_FRAME) {
                             assert(i + 1 == nuops);
+                            int func_version_offset =
+                                offsetof(_PyCallCache, func_version)/sizeof(_Py_CODEUNIT)
+                                // Add one to account for the actual opcode/oparg pair:
+                                + 1;
+                            uint32_t func_version = read_u32(&instr[func_version_offset].cache);
+                            PyFunctionObject *func = _PyFunction_LookupByVersion(func_version);
+                            DPRINTF(3, "Function object: %p\n", func);
+                            if (func != NULL) {
+                                PyCodeObject *new_code = (PyCodeObject *)PyFunction_GET_CODE(func);
+                                if (new_code == code) {
+                                    // Recursive call, bail (we could be here forever).
+                                    DPRINTF(2, "Bailing on recursive call to %s (%s:%d)\n",
+                                            PyUnicode_AsUTF8(new_code->co_qualname),
+                                            PyUnicode_AsUTF8(new_code->co_filename),
+                                            new_code->co_firstlineno);
+                                    ADD_TO_TRACE(SAVE_IP, 0, 0);
+                                    goto done;
+                                }
+                                code = new_code;
+                                initial_instr = instr = _PyCode_CODE(code);
+                                DPRINTF(2,
+                                    "Continuing in %s (%s:%d) at byte offset %d\n",
+                                    PyUnicode_AsUTF8(code->co_qualname),
+                                    PyUnicode_AsUTF8(code->co_filename),
+                                    code->co_firstlineno,
+                                    2 * INSTR_IP(initial_instr, code));
+                                goto top;
+                            }
                             ADD_TO_TRACE(SAVE_IP, 0, 0);
                             goto done;
                         }
