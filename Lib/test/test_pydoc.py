@@ -1180,6 +1180,23 @@ class TestDescriptions(unittest.TestCase):
         self.assertEqual(self._get_summary_line(os.stat),
             "stat(path, *, dir_fd=None, follow_symlinks=True)")
 
+    def test_module_level_callable_unrepresentable_default(self):
+        self.assertEqual(self._get_summary_line(getattr),
+            "getattr(object, name, default=<unrepresentable>, /)")
+
+    def test_builtin_staticmethod_unrepresentable_default(self):
+        self.assertEqual(self._get_summary_line(str.maketrans),
+            "maketrans(x, y=<unrepresentable>, z=<unrepresentable>, /)")
+
+    def test_unbound_builtin_method_unrepresentable_default(self):
+        self.assertEqual(self._get_summary_line(dict.pop),
+            "pop(self, key, default=<unrepresentable>, /)")
+
+    def test_bound_builtin_method_unrepresentable_default(self):
+        self.assertEqual(self._get_summary_line({}.pop),
+            "pop(key, default=<unrepresentable>, /) "
+            "method of builtins.dict instance")
+
     @requires_docstrings
     def test_staticmethod(self):
         class X:

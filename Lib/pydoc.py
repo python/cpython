@@ -197,6 +197,29 @@ def splitdoc(doc):
         return lines[0], '\n'.join(lines[2:])
     return '', '\n'.join(lines)
 
+def _getargspec(object):
+    try:
+        signature = inspect.signature(object)
+        if signature:
+            return str(signature)
+    except (ValueError, TypeError):
+        argspec = getattr(object, '__text_signature__', None)
+        if argspec:
+            if argspec == '($module)':
+                argspec = '()'
+            elif argspec[:10] == '($module, ':
+                argspec = '(' + argspec[10:]
+            elif argspec == '($self)' and hasattr(object, '__self__'):
+                argspec = '()'
+            elif argspec[:8] == '($self, ' and hasattr(object, '__self__'):
+                argspec = '(' + argspec[8:]
+            elif argspec[:2] == '($':
+                argspec = '(' + argspec[2:]
+            if argspec[:4] == '(/, ':
+                argspec = '(' + argspec[4:]
+        return argspec
+    return None
+
 def classname(object, modname):
     """Get a class name and qualify it with a module name if necessary."""
     name = object.__name__
@@ -1003,14 +1026,9 @@ class HTMLDoc(Doc):
             title = title + '(%s)' % ', '.join(parents)
 
         decl = ''
-        try:
-            signature = inspect.signature(object)
-        except (ValueError, TypeError):
-            signature = None
-        if signature:
-            argspec = str(signature)
-            if argspec and argspec != '()':
-                decl = name + self.escape(argspec) + '\n\n'
+        argspec = _getargspec(object)
+        if argspec and argspec != '()':
+            decl = name + self.escape(argspec) + '\n\n'
 
         doc = getdoc(object)
         if decl:
@@ -1063,18 +1081,13 @@ class HTMLDoc(Doc):
                 anchor, name, reallink)
         argspec = None
         if inspect.isroutine(object):
-            try:
-                signature = inspect.signature(object)
-            except (ValueError, TypeError):
-                signature = None
-            if signature:
-                argspec = str(signature)
-                if realname == '<lambda>':
-                    title = '<strong>%s</strong> <em>lambda</em> ' % name
-                    # XXX lambda's won't usually have func_annotations['return']
-                    # since the syntax doesn't support but it is possible.
-                    # So removing parentheses isn't truly safe.
-                    argspec = argspec[1:-1] # remove parentheses
+            argspec = _getargspec(object)
+            if argspec and realname == '<lambda>':
+                title = '<strong>%s</strong> <em>lambda</em> ' % name
+                # XXX lambda's won't usually have func_annotations['return']
+                # since the syntax doesn't support but it is possible.
+                # So removing parentheses isn't truly safe.
+                argspec = argspec[1:-1] # remove parentheses
         if not argspec:
             argspec = '(...)'
 
@@ -1321,14 +1334,9 @@ location listed above.
         contents = []
         push = contents.append
 
-        try:
-            signature = inspect.signature(object)
-        except (ValueError, TypeError):
-            signature = None
-        if signature:
-            argspec = str(signature)
-            if argspec and argspec != '()':
-                push(name + argspec + '\n')
+        argspec = _getargspec(object)
+        if argspec and argspec != '()':
+            push(name + argspec + '\n')
 
         doc = getdoc(object)
         if doc:
@@ -1492,18 +1500,13 @@ location listed above.
         argspec = None
 
         if inspect.isroutine(object):
-            try:
-                signature = inspect.signature(object)
-            except (ValueError, TypeError):
-                signature = None
-            if signature:
-                argspec = str(signature)
-                if realname == '<lambda>':
-                    title = self.bold(name) + ' lambda '
-                    # XXX lambda's won't usually have func_annotations['return']
-                    # since the syntax doesn't support but it is possible.
-                    # So removing parentheses isn't truly safe.
-                    argspec = argspec[1:-1] # remove parentheses
+            argspec = _getargspec(object)
+            if argspec and realname == '<lambda>':
+                title = self.bold(name) + ' lambda '
+                # XXX lambda's won't usually have func_annotations['return']
+                # since the syntax doesn't support but it is possible.
+                # So removing parentheses isn't truly safe.
+                argspec = argspec[1:-1] # remove parentheses
         if not argspec:
             argspec = '(...)'
         decl = asyncqualifier + title + argspec + note
