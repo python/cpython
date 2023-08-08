@@ -5459,6 +5459,11 @@ class DSLParser:
 
     def docstring_append(self, obj: Function | Parameter, line: str) -> None:
         """Add a rstripped line to the current docstring."""
+        # gh-80282: We filter out non-ASCII characters from the docstring,
+        # since historically, some compilers may balk on non-ASCII input.
+        # Also, Argument Clinic _may_ be used in external projects, with a
+        # different policy. Keep this in mind if you intend to remove this
+        # limitation.
         matches = re.finditer(r'[^\x00-\x7F]', line)
         if offending := ", ".join([repr(m[0]) for m in matches]):
             warn("Non-ascii characters are not allowed in docstrings:",
