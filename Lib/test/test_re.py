@@ -2362,6 +2362,9 @@ class ReTests(unittest.TestCase):
                 p.terminate()
                 p.join()
 
+    def test_fail(self):
+        self.assertEqual(re.search(r'12(?!)|3', '123')[0], '3')
+
 
 def get_debug_out(pat):
     with captured_stdout() as out:

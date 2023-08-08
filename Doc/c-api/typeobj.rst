@@ -690,7 +690,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
      }
 
    Finally, if the type is heap allocated (:c:macro:`Py_TPFLAGS_HEAPTYPE`), the
-   deallocator should decrement the reference count for its type object after
+   deallocator should release the owned reference to its type object
+   (via :c:func:`Py_DECREF`)  after
    calling the type deallocator. In order to avoid dangling pointers, the
    recommended way to achieve this is:
 
@@ -1461,9 +1462,10 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       }
 
    The :c:func:`Py_CLEAR` macro should be used, because clearing references is
-   delicate:  the reference to the contained object must not be decremented until
+   delicate:  the reference to the contained object must not be released
+   (via :c:func:`Py_DECREF`) until
    after the pointer to the contained object is set to ``NULL``.  This is because
-   decrementing the reference count may cause the contained object to become trash,
+   releasing the reference may cause the contained object to become trash,
    triggering a chain of reclamation activity that may include invoking arbitrary
    Python code (due to finalizers, or weakref callbacks, associated with the
    contained object). If it's possible for such code to reference *self* again,
@@ -1541,7 +1543,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       they may be C ints or floats). The third argument specifies the requested
       operation, as for :c:func:`PyObject_RichCompare`.
 
-      The return value's reference count is properly incremented.
+      The returned value is a new :term:`strong reference`.
 
       On error, sets an exception and returns ``NULL`` from the function.
 
