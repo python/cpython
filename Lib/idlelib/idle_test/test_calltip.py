@@ -84,7 +84,7 @@ class Get_argspecTest(unittest.TestCase):
 
         p = re.compile('')
         tiptest(re.sub, '''\
-(pattern, repl, string, count=0, flags=0)
+(pattern, repl, string, *_args, count=0, flags=0)
 Return the string obtained by replacing the leftmost
 non-overlapping occurrences of the pattern in string by the
 replacement repl.  repl can be either a string or a callable;

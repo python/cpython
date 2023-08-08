@@ -178,24 +178,24 @@ def search(pattern, string, flags=0):
     a Match object, or None if no match was found."""
     return _compile(pattern, flags).search(string)
 
-def sub(pattern, repl, string, *args, count=_zero_sentinel, flags=_zero_sentinel):
+def sub(pattern, repl, string, *_args, count=_zero_sentinel, flags=_zero_sentinel):
     """Return the string obtained by replacing the leftmost
     non-overlapping occurrences of the pattern in string by the
     replacement repl.  repl can be either a string or a callable;
     if a string, backslash escapes in it are processed.  If it is
     a callable, it's passed the Match object and must return
     a replacement string to be used."""
-    if args:
+    if _args:
         if count is not _zero_sentinel:
             raise TypeError("sub() got multiple values for argument 'count'")
-        count, *args = args
-        if args:
+        count, *_args = _args
+        if _args:
             if flags is not _zero_sentinel:
                 raise TypeError("sub() got multiple values for argument 'flags'")
-            flags, *args = args
-            if args:
+            flags, *_args = _args
+            if _args:
                 raise TypeError("sub() takes from 2 to 4 positional arguments "
-                                f"but {4 + len(args)} were given")
+                                f"but {4 + len(_args)} were given")
 
         import warnings
         warnings.warn(
@@ -204,7 +204,7 @@ def sub(pattern, repl, string, *args, count=_zero_sentinel, flags=_zero_sentinel
         )
     return _compile(pattern, flags).sub(repl, string, count)
 
-def subn(pattern, repl, string, *args, count=_zero_sentinel, flags=_zero_sentinel):
+def subn(pattern, repl, string, *_args, count=_zero_sentinel, flags=_zero_sentinel):
     """Return a 2-tuple containing (new_string, number).
     new_string is the string obtained by replacing the leftmost
     non-overlapping occurrences of the pattern in the source
@@ -213,17 +213,17 @@ def subn(pattern, repl, string, *args, count=_zero_sentinel, flags=_zero_sentine
     callable; if a string, backslash escapes in it are processed.
     If it is a callable, it's passed the Match object and must
     return a replacement string to be used."""
-    if args:
+    if _args:
         if count is not _zero_sentinel:
             raise TypeError("subn() got multiple values for argument 'count'")
-        count, *args = args
-        if args:
+        count, *_args = _args
+        if _args:
             if flags is not _zero_sentinel:
                 raise TypeError("subn() got multiple values for argument 'flags'")
-            flags, *args = args
-            if args:
+            flags, *_args = _args
+            if _args:
                 raise TypeError("subn() takes from 2 to 4 positional arguments "
-                                f"but {4 + len(args)} were given")
+                                f"but {4 + len(_args)} were given")
 
         import warnings
         warnings.warn(
@@ -232,7 +232,7 @@ def subn(pattern, repl, string, *args, count=_zero_sentinel, flags=_zero_sentine
         )
     return _compile(pattern, flags).subn(repl, string, count)
 
-def split(pattern, string, *args, maxsplit=_zero_sentinel, flags=_zero_sentinel):
+def split(pattern, string, *_args, maxsplit=_zero_sentinel, flags=_zero_sentinel):
     """Split the source string by the occurrences of the pattern,
     returning a list containing the resulting substrings.  If
     capturing parentheses are used in pattern, then the text of all
@@ -240,17 +240,17 @@ def split(pattern, string, *args, maxsplit=_zero_sentinel, flags=_zero_sentinel)
     list.  If maxsplit is nonzero, at most maxsplit splits occur,
     and the remainder of the string is returned as the final element
     of the list."""
-    if args:
+    if _args:
         if maxsplit is not _zero_sentinel:
             raise TypeError("split() got multiple values for argument 'maxsplit'")
-        maxsplit, *args = args
-        if args:
+        maxsplit, *_args = _args
+        if _args:
             if flags is not _zero_sentinel:
                 raise TypeError("split() got multiple values for argument 'flags'")
-            flags, *args = args
-            if args:
+            flags, *_args = _args
+            if _args:
                 raise TypeError("split() takes from 2 to 4 positional arguments "
-                                f"but {4 + len(args)} were given")
+                                f"but {4 + len(_args)} were given")
 
         import warnings
         warnings.warn(
