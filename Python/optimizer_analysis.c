@@ -450,7 +450,7 @@ print_ctx(_Py_UOpsAbstractInterpContext *ctx)
 
         _Py_PartitionRootNode *ptr = (_Py_PartitionRootNode *)partitionnode_clear_tag(*root);
         fprintf(stderr, "%s",
-            ptr == NULL ? "?" : (ptr->static_or_dyanmic == 0 ? "static" : "dynamic"));
+            ptr == NULL ? "?" : (ptr->static_or_dynamic == 0 ? "static" : "dynamic"));
 
         if (tag == TYPE_REF) {
             const char *wher = is_local
@@ -486,7 +486,7 @@ print_ctx(_Py_UOpsAbstractInterpContext *ctx)
 
         _Py_PartitionRootNode *ptr = (_Py_PartitionRootNode *)partitionnode_clear_tag(*root);
         fprintf(stderr, "%s",
-            ptr == NULL ? "?" : (ptr->static_or_dyanmic == 0 ? "static" : "dynamic"));
+            ptr == NULL ? "?" : (ptr->static_or_dynamic == 0 ? "static" : "dynamic"));
 
         if (tag == TYPE_REF) {
             const char *wher = is_local
