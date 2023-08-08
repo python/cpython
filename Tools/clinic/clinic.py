@@ -850,6 +850,7 @@ class CLanguage(Language):
         #endif /* !defined({methoddef_name}) */
     """)
     DEPRECATED_POSITIONAL_PROTOTYPE: Final[str] = r"""
+        // Emit compiler warnings when we get to Python {major}.{minor}.
         #if PY_VERSION_HEX >= 0x{major:02x}{minor:02x}00C0
         #  error \
                 {cpp_message}

@@ -5524,6 +5524,7 @@ test_deprecate_positional_pos1_len1_optional(PyObject *module, PyObject *const *
     PyObject *a;
     PyObject *b = Py_None;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'b' in the clinic input of" \
@@ -5571,7 +5572,7 @@ exit:
 static PyObject *
 test_deprecate_positional_pos1_len1_optional_impl(PyObject *module,
                                                   PyObject *a, PyObject *b)
-/*[clinic end generated code: output=6c0fd9d94fa1e765 input=89099f3dacd757da]*/
+/*[clinic end generated code: output=144cbf1adc574dd9 input=89099f3dacd757da]*/
 
 
 /*[clinic input]
@@ -5630,6 +5631,7 @@ test_deprecate_positional_pos1_len1(PyObject *module, PyObject *const *args, Py_
     PyObject *a;
     PyObject *b;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'b' in the clinic input of" \
@@ -5669,7 +5671,7 @@ exit:
 static PyObject *
 test_deprecate_positional_pos1_len1_impl(PyObject *module, PyObject *a,
                                          PyObject *b)
-/*[clinic end generated code: output=22821a0fa9945d0c input=1702bbab1e9b3b99]*/
+/*[clinic end generated code: output=994bd57c1c634709 input=1702bbab1e9b3b99]*/
 
 
 /*[clinic input]
@@ -5735,6 +5737,7 @@ test_deprecate_positional_pos1_len2_with_kwd(PyObject *module, PyObject *const *
     PyObject *c;
     PyObject *d;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'b' and 'c' in the clinic " \
@@ -5781,7 +5784,7 @@ static PyObject *
 test_deprecate_positional_pos1_len2_with_kwd_impl(PyObject *module,
                                                   PyObject *a, PyObject *b,
                                                   PyObject *c, PyObject *d)
-/*[clinic end generated code: output=061d554ccc6b8f51 input=28cdb885f6c34eab]*/
+/*[clinic end generated code: output=146c60ecbcdbf4b8 input=28cdb885f6c34eab]*/
 
 
 /*[clinic input]
@@ -5837,6 +5840,7 @@ test_deprecate_positional_pos0_len1(PyObject *module, PyObject *const *args, Py_
     PyObject *argsbuf[1];
     PyObject *a;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
@@ -5874,7 +5878,7 @@ exit:
 
 static PyObject *
 test_deprecate_positional_pos0_len1_impl(PyObject *module, PyObject *a)
-/*[clinic end generated code: output=3e512117a5eda970 input=678206db25c0652c]*/
+/*[clinic end generated code: output=dce99971a2494f9f input=678206db25c0652c]*/
 
 
 /*[clinic input]
@@ -5933,6 +5937,7 @@ test_deprecate_positional_pos0_len2(PyObject *module, PyObject *const *args, Py_
     PyObject *a;
     PyObject *b;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'a' and 'b' in the clinic " \
@@ -5975,7 +5980,7 @@ exit:
 static PyObject *
 test_deprecate_positional_pos0_len2_impl(PyObject *module, PyObject *a,
                                          PyObject *b)
-/*[clinic end generated code: output=d41da050a5b82dd0 input=fae0d0b1d480c939]*/
+/*[clinic end generated code: output=06999692e0c8dac4 input=fae0d0b1d480c939]*/
 
 
 /*[clinic input]
@@ -6044,6 +6049,7 @@ test_deprecate_positional_pos0_len3_with_kwdonly(PyObject *module, PyObject *con
     PyObject *c;
     PyObject *e;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'a', 'b' and 'c' in the " \
@@ -6095,7 +6101,7 @@ test_deprecate_positional_pos0_len3_with_kwdonly_impl(PyObject *module,
                                                       PyObject *b,
                                                       PyObject *c,
                                                       PyObject *e)
-/*[clinic end generated code: output=c5d7ddfc139ddf31 input=1b0121770c0c52e0]*/
+/*[clinic end generated code: output=a553e33101dc42b2 input=1b0121770c0c52e0]*/
 
 
 /*[clinic input]
@@ -6156,6 +6162,7 @@ test_deprecate_positional_pos2_len1(PyObject *module, PyObject *const *args, Py_
     PyObject *b;
     PyObject *c;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'c' in the clinic input of" \
@@ -6196,7 +6203,7 @@ exit:
 static PyObject *
 test_deprecate_positional_pos2_len1_impl(PyObject *module, PyObject *a,
                                          PyObject *b, PyObject *c)
-/*[clinic end generated code: output=d80609e6b37ffb8a input=e1d129689e69ec7c]*/
+/*[clinic end generated code: output=f96454a4970b443c input=e1d129689e69ec7c]*/
 
 
 /*[clinic input]
@@ -6260,6 +6267,7 @@ test_deprecate_positional_pos2_len2(PyObject *module, PyObject *const *args, Py_
     PyObject *c;
     PyObject *d;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'c' and 'd' in the clinic " \
@@ -6305,7 +6313,7 @@ static PyObject *
 test_deprecate_positional_pos2_len2_impl(PyObject *module, PyObject *a,
                                          PyObject *b, PyObject *c,
                                          PyObject *d)
-/*[clinic end generated code: output=1c10d6197562319f input=0d53533463a12792]*/
+/*[clinic end generated code: output=5e648e887da0a804 input=0d53533463a12792]*/
 
 
 /*[clinic input]
@@ -6377,6 +6385,7 @@ test_deprecate_positional_pos2_len3_with_kwdonly(PyObject *module, PyObject *con
     PyObject *d;
     PyObject *e;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'c' and 'd' in the clinic " \
@@ -6427,4 +6436,4 @@ test_deprecate_positional_pos2_len3_with_kwdonly_impl(PyObject *module,
                                                       PyObject *c,
                                                       PyObject *d,
                                                       PyObject *e)
-/*[clinic end generated code: output=d32375ffce63d3db input=154fd450448d8935]*/
+/*[clinic end generated code: output=383d56b03f7c2dcb input=154fd450448d8935]*/
