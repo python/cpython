@@ -941,6 +941,12 @@ class CLanguage(Language):
                 f"{func.full_name}() is deprecated. Parameters {pstr} will "
                 f"become keyword-only parameters in Python {major}.{minor}."
             )
+
+        # Append deprecation warning to docstring.
+        lines = textwrap.wrap(f"Note: {depr_message}")
+        docstring = "\n".join(lines)
+        func.docstring += f"\n\n{docstring}\n"
+
         # Format and return the code block.
         code = self.DEPRECATED_POSITIONAL_PROTOTYPE.format(
             condition=condition,
