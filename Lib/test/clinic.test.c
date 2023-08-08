@@ -5477,7 +5477,11 @@ test_deprecate_positional_pos1_len1_optional
 PyDoc_STRVAR(test_deprecate_positional_pos1_len1_optional__doc__,
 "test_deprecate_positional_pos1_len1_optional($module, /, a, b=None)\n"
 "--\n"
-"\n");
+"\n"
+"Note: Passing 2 positional arguments to\n"
+"test_deprecate_positional_pos1_len1_optional() is deprecated.\n"
+"Parameter \'b\' will become a keyword-only parameter in Python 3.14.\n"
+"");
 
 #define TEST_DEPRECATE_POSITIONAL_POS1_LEN1_OPTIONAL_METHODDEF    \
     {"test_deprecate_positional_pos1_len1_optional", _PyCFunction_CAST(test_deprecate_positional_pos1_len1_optional), METH_FASTCALL|METH_KEYWORDS, test_deprecate_positional_pos1_len1_optional__doc__},
@@ -5520,6 +5524,7 @@ test_deprecate_positional_pos1_len1_optional(PyObject *module, PyObject *const *
     PyObject *a;
     PyObject *b = Py_None;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'b' in the clinic input of" \
@@ -5567,7 +5572,7 @@ exit:
 static PyObject *
 test_deprecate_positional_pos1_len1_optional_impl(PyObject *module,
                                                   PyObject *a, PyObject *b)
-/*[clinic end generated code: output=09a6edec1ddcd469 input=89099f3dacd757da]*/
+/*[clinic end generated code: output=144cbf1adc574dd9 input=89099f3dacd757da]*/
 
 
 /*[clinic input]
@@ -5580,7 +5585,11 @@ test_deprecate_positional_pos1_len1
 PyDoc_STRVAR(test_deprecate_positional_pos1_len1__doc__,
 "test_deprecate_positional_pos1_len1($module, /, a, b)\n"
 "--\n"
-"\n");
+"\n"
+"Note: Passing 2 positional arguments to\n"
+"test_deprecate_positional_pos1_len1() is deprecated. Parameter \'b\'\n"
+"will become a keyword-only parameter in Python 3.14.\n"
+"");
 
 #define TEST_DEPRECATE_POSITIONAL_POS1_LEN1_METHODDEF    \
     {"test_deprecate_positional_pos1_len1", _PyCFunction_CAST(test_deprecate_positional_pos1_len1), METH_FASTCALL|METH_KEYWORDS, test_deprecate_positional_pos1_len1__doc__},
@@ -5622,6 +5631,7 @@ test_deprecate_positional_pos1_len1(PyObject *module, PyObject *const *args, Py_
     PyObject *a;
     PyObject *b;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'b' in the clinic input of" \
@@ -5661,7 +5671,7 @@ exit:
 static PyObject *
 test_deprecate_positional_pos1_len1_impl(PyObject *module, PyObject *a,
                                          PyObject *b)
-/*[clinic end generated code: output=52a2618293df747d input=1702bbab1e9b3b99]*/
+/*[clinic end generated code: output=994bd57c1c634709 input=1702bbab1e9b3b99]*/
 
 
 /*[clinic input]
@@ -5677,7 +5687,12 @@ test_deprecate_positional_pos1_len2_with_kwd
 PyDoc_STRVAR(test_deprecate_positional_pos1_len2_with_kwd__doc__,
 "test_deprecate_positional_pos1_len2_with_kwd($module, /, a, b, c, *, d)\n"
 "--\n"
-"\n");
+"\n"
+"Note: Passing more than 1 positional argument to\n"
+"test_deprecate_positional_pos1_len2_with_kwd() is deprecated.\n"
+"Parameters \'b\' and \'c\' will become keyword-only parameters in Python\n"
+"3.14.\n"
+"");
 
 #define TEST_DEPRECATE_POSITIONAL_POS1_LEN2_WITH_KWD_METHODDEF    \
     {"test_deprecate_positional_pos1_len2_with_kwd", _PyCFunction_CAST(test_deprecate_positional_pos1_len2_with_kwd), METH_FASTCALL|METH_KEYWORDS, test_deprecate_positional_pos1_len2_with_kwd__doc__},
@@ -5722,6 +5737,7 @@ test_deprecate_positional_pos1_len2_with_kwd(PyObject *module, PyObject *const *
     PyObject *c;
     PyObject *d;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'b' and 'c' in the clinic " \
@@ -5768,7 +5784,7 @@ static PyObject *
 test_deprecate_positional_pos1_len2_with_kwd_impl(PyObject *module,
                                                   PyObject *a, PyObject *b,
                                                   PyObject *c, PyObject *d)
-/*[clinic end generated code: output=550aabea548589b4 input=28cdb885f6c34eab]*/
+/*[clinic end generated code: output=146c60ecbcdbf4b8 input=28cdb885f6c34eab]*/
 
 
 /*[clinic input]
@@ -5780,7 +5796,11 @@ test_deprecate_positional_pos0_len1
 PyDoc_STRVAR(test_deprecate_positional_pos0_len1__doc__,
 "test_deprecate_positional_pos0_len1($module, /, a)\n"
 "--\n"
-"\n");
+"\n"
+"Note: Passing positional arguments to\n"
+"test_deprecate_positional_pos0_len1() is deprecated. Parameter \'a\'\n"
+"will become a keyword-only parameter in Python 3.14.\n"
+"");
 
 #define TEST_DEPRECATE_POSITIONAL_POS0_LEN1_METHODDEF    \
     {"test_deprecate_positional_pos0_len1", _PyCFunction_CAST(test_deprecate_positional_pos0_len1), METH_FASTCALL|METH_KEYWORDS, test_deprecate_positional_pos0_len1__doc__},
@@ -5820,6 +5840,7 @@ test_deprecate_positional_pos0_len1(PyObject *module, PyObject *const *args, Py_
     PyObject *argsbuf[1];
     PyObject *a;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
@@ -5857,7 +5878,7 @@ exit:
 
 static PyObject *
 test_deprecate_positional_pos0_len1_impl(PyObject *module, PyObject *a)
-/*[clinic end generated code: output=66c63ec8d6903bde input=678206db25c0652c]*/
+/*[clinic end generated code: output=dce99971a2494f9f input=678206db25c0652c]*/
 
 
 /*[clinic input]
@@ -5870,7 +5891,11 @@ test_deprecate_positional_pos0_len2
 PyDoc_STRVAR(test_deprecate_positional_pos0_len2__doc__,
 "test_deprecate_positional_pos0_len2($module, /, a, b)\n"
 "--\n"
-"\n");
+"\n"
+"Note: Passing positional arguments to\n"
+"test_deprecate_positional_pos0_len2() is deprecated. Parameters \'a\'\n"
+"and \'b\' will become keyword-only parameters in Python 3.14.\n"
+"");
 
 #define TEST_DEPRECATE_POSITIONAL_POS0_LEN2_METHODDEF    \
     {"test_deprecate_positional_pos0_len2", _PyCFunction_CAST(test_deprecate_positional_pos0_len2), METH_FASTCALL|METH_KEYWORDS, test_deprecate_positional_pos0_len2__doc__},
@@ -5912,6 +5937,7 @@ test_deprecate_positional_pos0_len2(PyObject *module, PyObject *const *args, Py_
     PyObject *a;
     PyObject *b;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'a' and 'b' in the clinic " \
@@ -5954,7 +5980,7 @@ exit:
 static PyObject *
 test_deprecate_positional_pos0_len2_impl(PyObject *module, PyObject *a,
                                          PyObject *b)
-/*[clinic end generated code: output=6b6df40aaf751b2e input=fae0d0b1d480c939]*/
+/*[clinic end generated code: output=06999692e0c8dac4 input=fae0d0b1d480c939]*/
 
 
 /*[clinic input]
@@ -5971,7 +5997,12 @@ PyDoc_STRVAR(test_deprecate_positional_pos0_len3_with_kwdonly__doc__,
 "test_deprecate_positional_pos0_len3_with_kwdonly($module, /, a, b, c,\n"
 "                                                 *, e)\n"
 "--\n"
-"\n");
+"\n"
+"Note: Passing positional arguments to\n"
+"test_deprecate_positional_pos0_len3_with_kwdonly() is deprecated.\n"
+"Parameters \'a\', \'b\' and \'c\' will become keyword-only parameters in\n"
+"Python 3.14.\n"
+"");
 
 #define TEST_DEPRECATE_POSITIONAL_POS0_LEN3_WITH_KWDONLY_METHODDEF    \
     {"test_deprecate_positional_pos0_len3_with_kwdonly", _PyCFunction_CAST(test_deprecate_positional_pos0_len3_with_kwdonly), METH_FASTCALL|METH_KEYWORDS, test_deprecate_positional_pos0_len3_with_kwdonly__doc__},
@@ -6018,6 +6049,7 @@ test_deprecate_positional_pos0_len3_with_kwdonly(PyObject *module, PyObject *con
     PyObject *c;
     PyObject *e;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'a', 'b' and 'c' in the " \
@@ -6069,7 +6101,7 @@ test_deprecate_positional_pos0_len3_with_kwdonly_impl(PyObject *module,
                                                       PyObject *b,
                                                       PyObject *c,
                                                       PyObject *e)
-/*[clinic end generated code: output=5c936993846d01a3 input=1b0121770c0c52e0]*/
+/*[clinic end generated code: output=a553e33101dc42b2 input=1b0121770c0c52e0]*/
 
 
 /*[clinic input]
@@ -6083,7 +6115,11 @@ test_deprecate_positional_pos2_len1
 PyDoc_STRVAR(test_deprecate_positional_pos2_len1__doc__,
 "test_deprecate_positional_pos2_len1($module, /, a, b, c)\n"
 "--\n"
-"\n");
+"\n"
+"Note: Passing 3 positional arguments to\n"
+"test_deprecate_positional_pos2_len1() is deprecated. Parameter \'c\'\n"
+"will become a keyword-only parameter in Python 3.14.\n"
+"");
 
 #define TEST_DEPRECATE_POSITIONAL_POS2_LEN1_METHODDEF    \
     {"test_deprecate_positional_pos2_len1", _PyCFunction_CAST(test_deprecate_positional_pos2_len1), METH_FASTCALL|METH_KEYWORDS, test_deprecate_positional_pos2_len1__doc__},
@@ -6126,6 +6162,7 @@ test_deprecate_positional_pos2_len1(PyObject *module, PyObject *const *args, Py_
     PyObject *b;
     PyObject *c;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'c' in the clinic input of" \
@@ -6166,7 +6203,7 @@ exit:
 static PyObject *
 test_deprecate_positional_pos2_len1_impl(PyObject *module, PyObject *a,
                                          PyObject *b, PyObject *c)
-/*[clinic end generated code: output=2641e037296e3b61 input=e1d129689e69ec7c]*/
+/*[clinic end generated code: output=f96454a4970b443c input=e1d129689e69ec7c]*/
 
 
 /*[clinic input]
@@ -6181,7 +6218,11 @@ test_deprecate_positional_pos2_len2
 PyDoc_STRVAR(test_deprecate_positional_pos2_len2__doc__,
 "test_deprecate_positional_pos2_len2($module, /, a, b, c, d)\n"
 "--\n"
-"\n");
+"\n"
+"Note: Passing more than 2 positional arguments to\n"
+"test_deprecate_positional_pos2_len2() is deprecated. Parameters \'c\'\n"
+"and \'d\' will become keyword-only parameters in Python 3.14.\n"
+"");
 
 #define TEST_DEPRECATE_POSITIONAL_POS2_LEN2_METHODDEF    \
     {"test_deprecate_positional_pos2_len2", _PyCFunction_CAST(test_deprecate_positional_pos2_len2), METH_FASTCALL|METH_KEYWORDS, test_deprecate_positional_pos2_len2__doc__},
@@ -6226,6 +6267,7 @@ test_deprecate_positional_pos2_len2(PyObject *module, PyObject *const *args, Py_
     PyObject *c;
     PyObject *d;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'c' and 'd' in the clinic " \
@@ -6271,7 +6313,7 @@ static PyObject *
 test_deprecate_positional_pos2_len2_impl(PyObject *module, PyObject *a,
                                          PyObject *b, PyObject *c,
                                          PyObject *d)
-/*[clinic end generated code: output=4a9068ef8fee61f6 input=0d53533463a12792]*/
+/*[clinic end generated code: output=5e648e887da0a804 input=0d53533463a12792]*/
 
 
 /*[clinic input]
@@ -6289,7 +6331,12 @@ PyDoc_STRVAR(test_deprecate_positional_pos2_len3_with_kwdonly__doc__,
 "test_deprecate_positional_pos2_len3_with_kwdonly($module, /, a, b, c,\n"
 "                                                 d, *, e)\n"
 "--\n"
-"\n");
+"\n"
+"Note: Passing more than 2 positional arguments to\n"
+"test_deprecate_positional_pos2_len3_with_kwdonly() is deprecated.\n"
+"Parameters \'c\' and \'d\' will become keyword-only parameters in Python\n"
+"3.14.\n"
+"");
 
 #define TEST_DEPRECATE_POSITIONAL_POS2_LEN3_WITH_KWDONLY_METHODDEF    \
     {"test_deprecate_positional_pos2_len3_with_kwdonly", _PyCFunction_CAST(test_deprecate_positional_pos2_len3_with_kwdonly), METH_FASTCALL|METH_KEYWORDS, test_deprecate_positional_pos2_len3_with_kwdonly__doc__},
@@ -6338,6 +6385,7 @@ test_deprecate_positional_pos2_len3_with_kwdonly(PyObject *module, PyObject *con
     PyObject *d;
     PyObject *e;
 
+    // Emit compiler warnings when we get to Python 3.14.
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'c' and 'd' in the clinic " \
@@ -6388,4 +6436,4 @@ test_deprecate_positional_pos2_len3_with_kwdonly_impl(PyObject *module,
                                                       PyObject *c,
                                                       PyObject *d,
                                                       PyObject *e)
-/*[clinic end generated code: output=1154c2e3e798948c input=154fd450448d8935]*/
+/*[clinic end generated code: output=383d56b03f7c2dcb input=154fd450448d8935]*/

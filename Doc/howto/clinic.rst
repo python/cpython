@@ -1900,6 +1900,40 @@ blocks embedded in Python files look slightly different.  They look like this:
     #/*[python checksum:...]*/
 
 
+.. _clinic-howto-override-signature:
+
+How to override the generated signature
+---------------------------------------
+
+You can use the ``@text_signature`` directive to override the default generated
+signature in the docstring.
+This can be useful for complex signatures that Argument Clinic cannot handle.
+The ``@text_signature`` directive takes one argument:
+the custom signature as a string.
+The provided signature is copied verbatim to the generated docstring.
+
+Example from :source:`Objects/codeobject.c`::
+
+   /*[clinic input]
+   @text_signature "($self, /, **changes)"
+   code.replace
+       *
+       co_argcount: int(c_default="self->co_argcount") = unchanged
+       co_posonlyargcount: int(c_default="self->co_posonlyargcount") = unchanged
+       # etc ...
+
+       Return a copy of the code object with new values for the specified fields.
+   [clinic start generated output]*/
+
+The generated docstring ends up looking like this::
+
+   Doc_STRVAR(code_replace__doc__,
+   "replace($self, /, **changes)\n"
+   "--\n"
+   "\n"
+   "Return a copy of the code object with new values for the specified fields.");
+
+
 .. _clinic-howto-deprecate-positional:
 
 How to deprecate passing parameters positionally
