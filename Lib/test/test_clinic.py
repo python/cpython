@@ -2216,6 +2216,35 @@ class ClinicExternalTest(TestCase):
                     path = os.path.join(ext_path, filename)
                     self.assertNotIn(path, out)
 
+    def test_cli_make_exclude(self):
+        code = dedent("""
+            /*[clinic input]
+            [clinic start generated code]*/
+        """)
+        with os_helper.temp_dir(quiet=False) as tmp_dir:
+            # add some folders, some C files and a Python file
+            for fn in "file1.c", "file2.c", "file3.c", "file4.c":
+                path = os.path.join(tmp_dir, fn)
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write(code)
+
+            # Run clinic in verbose mode with --make on tmpdir.
+            # Exclude file2.c and file3.c.
+            out = self.expect_success(
+                "-v", "--make", "--srcdir", tmp_dir,
+                "--exclude", os.path.join(tmp_dir, "file2.c"),
+                # The added ./ should be normalised away.
+                "--exclude", os.path.join(tmp_dir, "./file3.c"),
+                # Relative paths should also work.
+                "--exclude", "file4.c"
+            )
+
+            # expect verbose mode to only mention the C files in tmp_dir
+            self.assertIn("file1.c", out)
+            self.assertNotIn("file2.c", out)
+            self.assertNotIn("file3.c", out)
+            self.assertNotIn("file4.c", out)
+
     def test_cli_verbose(self):
         with os_helper.temp_dir() as tmp_dir:
             fn = os.path.join(tmp_dir, "test.c")
