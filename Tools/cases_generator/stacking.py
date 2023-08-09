@@ -120,6 +120,14 @@ class StackItem:
             ), f"Push or pop above current stack level: {res}"
         return res
 
+    def as_stack_effect(self, lax: bool = False) -> StackEffect:
+        return StackEffect(
+            self.as_variable(lax=lax),
+            self.effect.type if self.effect.size else "",
+            self.effect.cond,
+            self.effect.size,
+        )
+
 
 @dataclasses.dataclass
 class CopyEffect:
@@ -356,24 +364,14 @@ def write_components(
         for peek in mgr.peeks:
             out.assign(
                 peek.effect,
-                StackEffect(
-                    peek.as_variable(),
-                    peek.effect.type,
-                    peek.effect.cond,
-                    peek.effect.size,
-                ),
+                peek.as_stack_effect(),
             )
         # Initialize array outputs
         for poke in mgr.pokes:
             if poke.effect.size and poke.effect.name not in mgr.instr.unmoved_names:
                 out.assign(
                     poke.effect,
-                    StackEffect(
-                        poke.as_variable(lax=True),
-                        poke.effect.type,
-                        poke.effect.cond,
-                        poke.effect.size,
-                    ),
+                    poke.as_stack_effect(lax=True),
                 )
 
         if len(parts) == 1:
@@ -390,11 +388,6 @@ def write_components(
         for poke in mgr.pokes:
             if not poke.effect.size and poke.effect.name not in mgr.instr.unmoved_names:
                 out.assign(
-                    StackEffect(
-                        poke.as_variable(),
-                        poke.effect.type,
-                        poke.effect.cond,
-                        poke.effect.size,
-                    ),
+                    poke.as_stack_effect(),
                     poke.effect,
                 )

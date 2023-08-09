@@ -2075,6 +2075,8 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
     }
     has_gil = 1;
 
+    /* No objects have been created yet. */
+
     status = pycore_interp_init(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;

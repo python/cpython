@@ -928,14 +928,14 @@ class singledispatchmethod:
     """
 
     def __init__(self, func):
-        import weakref # see comment in singledispatch function
         if not callable(func) and not hasattr(func, "__get__"):
             raise TypeError(f"{func!r} is not callable or a descriptor")
 
         self.dispatcher = singledispatch(func)
         self.func = func
+
+        import weakref # see comment in singledispatch function
         self._method_cache = weakref.WeakKeyDictionary()
-        self._all_weakrefable_instances = True
 
     def register(self, cls, method=None):
         """generic_method.register(cls, func) -> func
@@ -945,11 +945,11 @@ class singledispatchmethod:
         return self.dispatcher.register(cls, func=method)
 
     def __get__(self, obj, cls=None):
-        if self._all_weakrefable_instances:
+        if self._method_cache is not None:
             try:
                 _method = self._method_cache[obj]
             except TypeError:
-                self._all_weakrefable_instances = False
+                self._method_cache = None
             except KeyError:
                 pass
             else:
@@ -963,7 +963,7 @@ class singledispatchmethod:
         _method.register = self.register
         update_wrapper(_method, self.func)
 
-        if self._all_weakrefable_instances:
+        if self._method_cache is not None:
             self._method_cache[obj] = _method
 
         return _method
