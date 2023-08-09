@@ -4,9 +4,11 @@ output preset block
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=3c81ac2402d06a8b]*/
 
 /*[clinic input]
+module m
+class m.T "TestObj *" "TestType"
 class Test "TestObj *" "TestType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=fc7e50384d12b83f]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f761b4d55cb179cf]*/
 
 /*[clinic input]
 test_object_converter
@@ -6437,3 +6439,192 @@ test_deprecate_positional_pos2_len3_with_kwdonly_impl(PyObject *module,
                                                       PyObject *d,
                                                       PyObject *e)
 /*[clinic end generated code: output=383d56b03f7c2dcb input=154fd450448d8935]*/
+
+
+/*[clinic input]
+@classmethod
+Test.__new__
+    * [from 3.14]
+    a: object
+The deprecation message should use the class name instead of __new__.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(Test__doc__,
+"Test(a)\n"
+"--\n"
+"\n"
+"The deprecation message should use the class name instead of __new__.\n"
+"\n"
+"Note: Passing positional arguments to Test() is deprecated. Parameter\n"
+"\'a\' will become a keyword-only parameter in Python 3.14.\n"
+"");
+
+static PyObject *
+Test_impl(PyTypeObject *type, PyObject *a);
+
+static PyObject *
+Test(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "Test",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    PyObject *a;
+
+    // Emit compiler warnings when we get to Python 3.14.
+    #if PY_VERSION_HEX >= 0x030e00C0
+    #  error \
+            "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
+            " 'Test.__new__' to be keyword-only."
+    #elif PY_VERSION_HEX >= 0x030e00A0
+    #  ifdef _MSC_VER
+    #    pragma message ( \
+            "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
+            " 'Test.__new__' to be keyword-only.")
+    #  else
+    #    warning \
+            "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
+            " 'Test.__new__' to be keyword-only."
+    #  endif
+    #endif
+    if (nargs == 1) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing positional arguments to Test() is deprecated. Parameter "
+                "'a' will become a keyword-only parameter in Python 3.14.", 1))
+        {
+                goto exit;
+        }
+    }
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    a = fastargs[0];
+    return_value = Test_impl(type, a);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+Test_impl(PyTypeObject *type, PyObject *a)
+/*[clinic end generated code: output=d15a69ea37ec6502 input=f133dc077aef49ec]*/
+
+
+/*[clinic input]
+m.T.__init__
+    * [from 3.14]
+    a: object
+The deprecation message should use the class name instead of __init__.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(m_T___init____doc__,
+"T(a)\n"
+"--\n"
+"\n"
+"The deprecation message should use the class name instead of __init__.\n"
+"\n"
+"Note: Passing positional arguments to m.T() is deprecated. Parameter\n"
+"\'a\' will become a keyword-only parameter in Python 3.14.\n"
+"");
+
+static int
+m_T___init___impl(TestObj *self, PyObject *a);
+
+static int
+m_T___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int return_value = -1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "T",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    PyObject *a;
+
+    // Emit compiler warnings when we get to Python 3.14.
+    #if PY_VERSION_HEX >= 0x030e00C0
+    #  error \
+            "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
+            " 'm.T.__init__' to be keyword-only."
+    #elif PY_VERSION_HEX >= 0x030e00A0
+    #  ifdef _MSC_VER
+    #    pragma message ( \
+            "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
+            " 'm.T.__init__' to be keyword-only.")
+    #  else
+    #    warning \
+            "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
+            " 'm.T.__init__' to be keyword-only."
+    #  endif
+    #endif
+    if (nargs == 1) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing positional arguments to m.T() is deprecated. Parameter "
+                "'a' will become a keyword-only parameter in Python 3.14.", 1))
+        {
+                goto exit;
+        }
+    }
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    a = fastargs[0];
+    return_value = m_T___init___impl((TestObj *)self, a);
+
+exit:
+    return return_value;
+}
+
+static int
+m_T___init___impl(TestObj *self, PyObject *a)
+/*[clinic end generated code: output=ef43c425816a549f input=f71b51dbe19fa657]*/
