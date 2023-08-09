@@ -3,6 +3,7 @@ import smtplib
 
 # Import the email modules we'll need
 from email.message import EmailMessage
+from email.utils import formatdate
 
 # Open the plain text file whose name is in textfile for reading.
 with open(textfile) as fp:
@@ -15,6 +16,7 @@ with open(textfile) as fp:
 msg['Subject'] = f'The contents of {textfile}'
 msg['From'] = me
 msg['To'] = you
+msg["Date"] = formatdate(localtime=True)
 
 # Send the message via our own SMTP server.
 s = smtplib.SMTP('localhost')

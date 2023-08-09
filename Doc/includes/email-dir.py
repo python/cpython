@@ -11,6 +11,7 @@ from argparse import ArgumentParser
 
 from email.message import EmailMessage
 from email.policy import SMTP
+from email.utils import formatdate
 
 
 def main():
@@ -44,6 +45,7 @@ must be running an SMTP server.
     msg['Subject'] = f'Contents of directory {os.path.abspath(directory)}'
     msg['To'] = ', '.join(args.recipients)
     msg['From'] = args.sender
+    msg["Date"] = formatdate(localtime=True)
     msg.preamble = 'You will not see this in a MIME-aware mail reader.\n'
 
     for filename in os.listdir(directory):

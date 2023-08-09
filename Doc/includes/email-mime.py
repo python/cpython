@@ -3,6 +3,7 @@ import smtplib
 
 # Here are the email package modules we'll need.
 from email.message import EmailMessage
+from email.utils import formatdate
 
 # Create the container email message.
 msg = EmailMessage()
@@ -11,6 +12,7 @@ msg['Subject'] = 'Our family reunion'
 # family = the list of all recipients' email addresses
 msg['From'] = me
 msg['To'] = ', '.join(family)
+msg["Date"] = formatdate(localtime=True)
 msg.preamble = 'You will not see this in a MIME-aware mail reader.\n'
 
 # Open the files in binary mode.  You can also omit the subtype
