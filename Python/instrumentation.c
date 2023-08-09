@@ -1158,7 +1158,7 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
             PyFrameObject *frame_obj = _PyFrame_GetFrameObject(frame);
             if (frame_obj == NULL) {
                 return -1;
-//             }
+            }
             if (frame_obj->f_trace_lines) {
                 /* Need to set tracing and what_event as if using
                  * the instrumentation call. */
