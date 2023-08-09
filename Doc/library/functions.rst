@@ -1752,7 +1752,7 @@ are always available.  They are listed here in alphabetical order.
       The *start* parameter can be specified as a keyword argument.
 
    .. versionchanged:: 3.12 Summation of floats switched to an algorithm
-      that gives higher accuracy on most builds.
+      that gives higher accuracy and better commutativity on most builds.
 
 
 .. class:: super()

@@ -45,6 +45,7 @@ def _expect_failure(tc, parser, code, errmsg, *, filename=None, lineno=None):
         tc.assertEqual(cm.exception.filename, filename)
     if lineno is not None:
         tc.assertEqual(cm.exception.lineno, lineno)
+    return cm.exception
 
 
 class ClinicWholeFileTest(TestCase):
@@ -221,6 +222,15 @@ class ClinicWholeFileTest(TestCase):
         self.assertTrue(
             last_line.startswith("/*[clinic end generated code: output=")
         )
+
+    def test_directive_wrong_arg_number(self):
+        raw = dedent("""
+            /*[clinic input]
+            preserve foo bar baz eggs spam ham mushrooms
+            [clinic start generated code]*/
+        """)
+        err = "takes 1 positional argument but 8 were given"
+        self.expect_failure(raw, err)
 
     def test_unknown_destination_command(self):
         raw = """
@@ -557,7 +567,6 @@ class ClinicWholeFileTest(TestCase):
         self.expect_failure(block, err, lineno=6)
 
     def test_directive_preserve_output(self):
-        err = "'preserve' only works for blocks that don't produce any output!"
         block = dedent("""
             /*[clinic input]
             output everything buffer
@@ -598,6 +607,31 @@ class ClinicWholeFileTest(TestCase):
             [clinic start generated code]*/
         """
         self.expect_failure(block, err, lineno=2)
+
+
+class ParseFileUnitTest(TestCase):
+    def expect_parsing_failure(
+        self, *, filename, expected_error, verify=True, output=None
+    ):
+        errmsg = re.escape(dedent(expected_error).strip())
+        with self.assertRaisesRegex(clinic.ClinicError, errmsg):
+            clinic.parse_file(filename)
+
+    def test_parse_file_no_extension(self) -> None:
+        self.expect_parsing_failure(
+            filename="foo",
+            expected_error="Can't extract file type for file 'foo'"
+        )
+
+    def test_parse_file_strange_extension(self) -> None:
+        filenames_to_errors = {
+            "foo.rs": "Can't identify file type for file 'foo.rs'",
+            "foo.hs": "Can't identify file type for file 'foo.hs'",
+            "foo.js": "Can't identify file type for file 'foo.js'",
+        }
+        for filename, errmsg in filenames_to_errors.items():
+            with self.subTest(filename=filename):
+                self.expect_parsing_failure(filename=filename, expected_error=errmsg)
 
 
 class ClinicGroupPermuterTest(TestCase):
@@ -794,13 +828,13 @@ class ClinicParserTest(TestCase):
         return s[function_index]
 
     def expect_failure(self, block, err, *, filename=None, lineno=None):
-        _expect_failure(self, self.parse_function, block, err,
-                        filename=filename, lineno=lineno)
+        return _expect_failure(self, self.parse_function, block, err,
+                               filename=filename, lineno=lineno)
 
     def checkDocstring(self, fn, expected):
         self.assertTrue(hasattr(fn, "docstring"))
-        self.assertEqual(fn.docstring.strip(),
-                         dedent(expected).strip())
+        self.assertEqual(dedent(expected).strip(),
+                         fn.docstring.strip())
 
     def test_trivial(self):
         parser = DSLParser(_make_clinic())
@@ -877,6 +911,41 @@ class ClinicParserTest(TestCase):
         """
         self.expect_failure(block, err, lineno=2)
 
+    def test_param_with_bizarre_default_fails_correctly(self):
+        template = """
+            module os
+            os.access
+                follow_symlinks: int = {default}
+        """
+        err = "Unsupported expression as default value"
+        for bad_default_value in (
+            "{1, 2, 3}",
+            "3 if bool() else 4",
+            "[x for x in range(42)]"
+        ):
+            with self.subTest(bad_default=bad_default_value):
+                block = template.format(default=bad_default_value)
+                self.expect_failure(block, err, lineno=2)
+
+    def test_unspecified_not_allowed_as_default_value(self):
+        block = """
+            module os
+            os.access
+                follow_symlinks: int(c_default='MAXSIZE') = unspecified
+        """
+        err = "'unspecified' is not a legal default value!"
+        exc = self.expect_failure(block, err, lineno=2)
+        self.assertNotIn('Malformed expression given as default value', str(exc))
+
+    def test_malformed_expression_as_default_value(self):
+        block = """
+            module os
+            os.access
+                follow_symlinks: int(c_default='MAXSIZE') = 1/0
+        """
+        err = "Malformed expression given as default value"
+        self.expect_failure(block, err, lineno=2)
+
     def test_param_default_expr_binop(self):
         err = (
             "When you specify an expression ('a + b') as your default value, "
@@ -895,7 +964,6 @@ class ClinicParserTest(TestCase):
                 follow_symlinks: bool = True
                 something_else: str = ''
         """)
-        p = function.parameters['follow_symlinks']
         self.assertEqual(3, len(function.parameters))
         conv = function.parameters['something_else'].converter
         self.assertIsInstance(conv, clinic.str_converter)
@@ -929,8 +997,12 @@ class ClinicParserTest(TestCase):
 
                path: str
                    Path to be examined
+                   Ensure that multiple lines are indented correctly.
 
             Perform a stat system call on the given path.
+
+            Ensure that multiple lines are indented correctly.
+            Ensure that multiple lines are indented correctly.
         """)
         self.checkDocstring(function, """
             stat($module, /, path)
@@ -940,6 +1012,10 @@ class ClinicParserTest(TestCase):
 
               path
                 Path to be examined
+                Ensure that multiple lines are indented correctly.
+
+            Ensure that multiple lines are indented correctly.
+            Ensure that multiple lines are indented correctly.
         """)
 
     def test_docstring_trailing_whitespace(self):
@@ -1040,6 +1116,28 @@ class ClinicParserTest(TestCase):
             os.stat as os_stat_fn
         """)
         self.assertEqual("os_stat_fn", function.c_basename)
+
+    def test_base_invalid_syntax(self):
+        block = """
+            module os
+            os.stat
+                invalid syntax: int = 42
+        """
+        err = dedent(r"""
+            Function 'stat' has an invalid parameter declaration:
+            \s+'invalid syntax: int = 42'
+        """).strip()
+        with self.assertRaisesRegex(clinic.ClinicError, err):
+            self.parse_function(block)
+
+    def test_param_default_invalid_syntax(self):
+        block = """
+            module os
+            os.stat
+                x: int = invalid syntax
+        """
+        err = r"Syntax error: 'x = invalid syntax\n'"
+        self.expect_failure(block, err, lineno=2)
 
     def test_cloning_nonexistent_function_correctly_fails(self):
         block = """
@@ -1410,18 +1508,6 @@ class ClinicParserTest(TestCase):
             "module foo\nfoo.bar\n  this: int\n  *\nDocstring.",
         )
         err = "Function 'foo.bar' specifies '*' without any parameters afterwards."
-        for block in dataset:
-            with self.subTest(block=block):
-                self.expect_failure(block, err)
-
-    def test_parameters_required_after_depr_star(self):
-        dataset = (
-            "module foo\nfoo.bar\n  * [from 3.14]",
-            "module foo\nfoo.bar\n  * [from 3.14]\nDocstring here.",
-            "module foo\nfoo.bar\n  this: int\n  * [from 3.14]",
-            "module foo\nfoo.bar\n  this: int\n  * [from 3.14]\nDocstring.",
-        )
-        err = "Function 'foo.bar' specifies '* [from 3.14]' without any parameters afterwards."
         for block in dataset:
             with self.subTest(block=block):
                 self.expect_failure(block, err)
@@ -1849,10 +1935,6 @@ class ClinicParserTest(TestCase):
         self.assertEqual(repr(clinic.NULL), '<Null>')
 
         # test that fail fails
-        expected = (
-            'Error in file "clown.txt" on line 69:\n'
-            'The igloos are melting!\n'
-        )
         with support.captured_stdout() as stdout:
             errmsg = 'The igloos are melting'
             with self.assertRaisesRegex(clinic.ClinicError, errmsg) as cm:
@@ -1860,6 +1942,7 @@ class ClinicParserTest(TestCase):
             exc = cm.exception
             self.assertEqual(exc.filename, 'clown.txt')
             self.assertEqual(exc.lineno, 69)
+            self.assertEqual(stdout.getvalue(), "")
 
     def test_non_ascii_character_in_docstring(self):
         block = """
@@ -2136,6 +2219,35 @@ class ClinicExternalTest(TestCase):
                     path = os.path.join(ext_path, filename)
                     self.assertNotIn(path, out)
 
+    def test_cli_make_exclude(self):
+        code = dedent("""
+            /*[clinic input]
+            [clinic start generated code]*/
+        """)
+        with os_helper.temp_dir(quiet=False) as tmp_dir:
+            # add some folders, some C files and a Python file
+            for fn in "file1.c", "file2.c", "file3.c", "file4.c":
+                path = os.path.join(tmp_dir, fn)
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write(code)
+
+            # Run clinic in verbose mode with --make on tmpdir.
+            # Exclude file2.c and file3.c.
+            out = self.expect_success(
+                "-v", "--make", "--srcdir", tmp_dir,
+                "--exclude", os.path.join(tmp_dir, "file2.c"),
+                # The added ./ should be normalised away.
+                "--exclude", os.path.join(tmp_dir, "./file3.c"),
+                # Relative paths should also work.
+                "--exclude", "file4.c"
+            )
+
+            # expect verbose mode to only mention the C files in tmp_dir
+            self.assertIn("file1.c", out)
+            self.assertNotIn("file2.c", out)
+            self.assertNotIn("file3.c", out)
+            self.assertNotIn("file4.c", out)
+
     def test_cli_verbose(self):
         with os_helper.temp_dir() as tmp_dir:
             fn = os.path.join(tmp_dir, "test.c")
@@ -2299,7 +2411,7 @@ class ClinicExternalTest(TestCase):
                             "not overwriting!")
             self.assertIn(expected_err, err)
             # Run clinic again, this time with the -f option.
-            out = self.expect_success("-f", in_fn)
+            _ = self.expect_success("-f", in_fn)
             # Read back the generated output.
             with open(in_fn, encoding="utf-8") as f:
                 data = f.read()
