@@ -2434,9 +2434,9 @@ class ClinicFunctionalTest(unittest.TestCase):
 
     def check_depr_star(self, pnames, fn, *args, **kwds):
         regex = (
-            f"Passing( more than)?( [0-9]+)? positional argument(s)? to "
-            f"{fn.__name__}\(\) is deprecated. Parameter(s)? {pnames} will "
-            f"become( a)? keyword-only parameter(s)? in Python 3.14"
+            fr"Passing( more than)?( [0-9]+)? positional argument(s)? to "
+            fr"{fn.__name__}\(\) is deprecated. Parameter(s)? {pnames} will "
+            fr"become( a)? keyword-only parameter(s)? in Python 3.14"
         )
         with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
             fn(*args, **kwds)
