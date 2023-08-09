@@ -5461,6 +5461,11 @@ class DSLParser:
 
     def docstring_append(self, obj: Function | Parameter, line: str) -> None:
         """Add a rstripped line to the current docstring."""
+        # gh-80282: We filter out non-ASCII characters from the docstring,
+        # since historically, some compilers may balk on non-ASCII input.
+        # If you're using Argument Clinic in an external project,
+        # you may not need to support the same array of platforms as CPython,
+        # so you may be able to remove this restriction.
         matches = re.finditer(r'[^\x00-\x7F]', line)
         if offending := ", ".join([repr(m[0]) for m in matches]):
             warn("Non-ascii characters are not allowed in docstrings:",
@@ -5506,23 +5511,11 @@ class DSLParser:
 
         self.docstring_append(self.function, line)
 
-    def format_docstring(self) -> str:
-        f = self.function
-        assert f is not None
-
-        new_or_init = f.kind.new_or_init
-        if new_or_init and not f.docstring:
-            # don't render a docstring at all, no signature, nothing.
-            return f.docstring
-
+    def format_docstring_signature(
+        self, f: Function, parameters: list[Parameter]
+    ) -> str:
         text, add, output = _text_accumulator()
-        parameters = f.render_parameters
-
-        ##
-        ## docstring first line
-        ##
-
-        if new_or_init:
+        if f.kind.new_or_init:
             # classes get *just* the name of the class
             # not __new__, not __init__, and not module.classname
             assert f.cls
@@ -5685,35 +5678,39 @@ class DSLParser:
         if not f.docstring_only:
             add("\n" + sig_end_marker + "\n")
 
-        docstring_first_line = output()
+        signature_line = output()
 
         # now fix up the places where the brackets look wrong
-        docstring_first_line = docstring_first_line.replace(', ]', ',] ')
+        return signature_line.replace(', ]', ',] ')
 
-        # okay.  now we're officially building the "parameters" section.
-        # create substitution text for {parameters}
+    @staticmethod
+    def format_docstring_parameters(params: list[Parameter]) -> str:
+        """Create substitution text for {parameters}"""
+        text, add, output = _text_accumulator()
         spacer_line = False
-        for p in parameters:
-            if not p.docstring.strip():
+        for param in params:
+            docstring = param.docstring.strip()
+            if not docstring:
                 continue
             if spacer_line:
                 add('\n')
             else:
                 spacer_line = True
             add("  ")
-            add(p.name)
+            add(param.name)
             add('\n')
-            add(textwrap.indent(rstrip_lines(p.docstring.rstrip()), "    "))
-        parameters_output = output()
-        if parameters_output:
-            parameters_output += '\n'
+            stripped = rstrip_lines(docstring)
+            add(textwrap.indent(stripped, "    "))
+        if text:
+            add('\n')
+        return output()
 
-        ##
-        ## docstring body
-        ##
-
-        docstring = f.docstring.rstrip()
-        lines = [line.rstrip() for line in docstring.split('\n')]
+    def format_docstring(self) -> str:
+        assert self.function is not None
+        f = self.function
+        if f.kind.new_or_init and not f.docstring:
+            # don't render a docstring at all, no signature, nothing.
+            return f.docstring
 
         # Enforce the summary line!
         # The first line of a docstring should be a summary of the function.
@@ -5727,6 +5724,7 @@ class DSLParser:
         # Guido said Clinic should enforce this:
         # http://mail.python.org/pipermail/python-dev/2013-June/127110.html
 
+        lines = f.docstring.split('\n')
         if len(lines) >= 2:
             if lines[1]:
                 fail(f"Docstring for {f.full_name!r} does not have a summary line!\n"
@@ -5738,26 +5736,23 @@ class DSLParser:
             # between it and the {parameters} we're about to add.
             lines.append('')
 
-        parameters_marker_count = len(docstring.split('{parameters}')) - 1
+        parameters_marker_count = len(f.docstring.split('{parameters}')) - 1
         if parameters_marker_count > 1:
             fail('You may not specify {parameters} more than once in a docstring!')
 
+        # insert signature at front and params after the summary line
         if not parameters_marker_count:
-            # insert after summary line
             lines.insert(2, '{parameters}')
+        lines.insert(0, '{signature}')
 
-        # insert at front of docstring
-        lines.insert(0, docstring_first_line)
-
+        # finalize docstring
+        params = f.render_parameters
+        parameters = self.format_docstring_parameters(params)
+        signature = self.format_docstring_signature(f, params)
         docstring = "\n".join(lines)
-
-        add(docstring)
-        docstring = output()
-
-        docstring = linear_format(docstring, parameters=parameters_output)
-        docstring = docstring.rstrip()
-
-        return docstring
+        return linear_format(docstring,
+                             signature=signature,
+                             parameters=parameters).rstrip()
 
     def do_post_block_processing_cleanup(self, lineno: int) -> None:
         """
@@ -5834,6 +5829,9 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
                          help="walk --srcdir to run over all relevant files")
     cmdline.add_argument("--srcdir", type=str, default=os.curdir,
                          help="the directory tree to walk in --make mode")
+    cmdline.add_argument("--exclude", type=str, action="append",
+                         help=("a file to exclude in --make mode; "
+                               "can be given multiple times"))
     cmdline.add_argument("filename", metavar="FILE", type=str, nargs="*",
                          help="the list of files to process")
     return cmdline
@@ -5905,6 +5903,11 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
             parser.error("can't use -o or filenames with --make")
         if not ns.srcdir:
             parser.error("--srcdir must not be empty with --make")
+        if ns.exclude:
+            excludes = [os.path.join(ns.srcdir, f) for f in ns.exclude]
+            excludes = [os.path.normpath(f) for f in excludes]
+        else:
+            excludes = []
         for root, dirs, files in os.walk(ns.srcdir):
             for rcs_dir in ('.svn', '.git', '.hg', 'build', 'externals'):
                 if rcs_dir in dirs:
@@ -5914,6 +5917,9 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
                 if not filename.endswith(('.c', '.cpp', '.h')):
                     continue
                 path = os.path.join(root, filename)
+                path = os.path.normpath(path)
+                if path in excludes:
+                    continue
                 if ns.verbose:
                     print(path)
                 parse_file(path, verify=not ns.force)
