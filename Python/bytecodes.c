@@ -2944,27 +2944,20 @@ dummy_func(
             GO_TO_INSTRUCTION(CALL_PY_EXACT_ARGS);
         }
 
-        op(_CHECK_CALL_PY_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- method, callable, unused[oparg])) {
+        op(_CHECK_CALL_PY_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
             ASSERT_KWNAMES_IS_NULL();
             DEOPT_IF(tstate->interp->eval_frame, CALL);
-            int argcount = oparg;
-            if (self_or_null != NULL) {
-                args--;
-                argcount++;
-            }
             DEOPT_IF(!PyFunction_Check(callable), CALL);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             DEOPT_IF(func->func_version != func_version, CALL);
             PyCodeObject *code = (PyCodeObject *)func->func_code;
-            DEOPT_IF(code->co_argcount != argcount, CALL);
+            DEOPT_IF(code->co_argcount != oparg + (self_or_null != NULL), CALL);
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
         }
 
-        op(_INIT_CALL_PY_EXACT_ARGS, (method, callable, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
-            int is_meth = method != NULL;
+        op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
             int argcount = oparg;
-            if (is_meth) {
-                callable = method;
+            if (self_or_null != NULL) {
                 args--;
                 argcount++;
             }
@@ -2987,7 +2980,7 @@ dummy_func(
             _INIT_CALL_PY_EXACT_ARGS +
             _PUSH_FRAME;
 
-        inst(CALL_PY_WITH_DEFAULTS, (unused/1, func_version/2, method, callable, args[oparg] -- unused)) {
+        inst(CALL_PY_WITH_DEFAULTS, (unused/1, func_version/2, callable, self_or_null, args[oparg] -- unused)) {
             ASSERT_KWNAMES_IS_NULL();
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             int argcount = oparg;

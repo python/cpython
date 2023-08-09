@@ -3760,7 +3760,6 @@
             PREDICTED(CALL_PY_EXACT_ARGS);
             PyObject *self_or_null;
             PyObject *callable;
-            PyObject *method;
             PyObject **args;
             _PyInterpreterFrame *new_frame;
             // _CHECK_CALL_PY_EXACT_ARGS
@@ -3770,29 +3769,20 @@
                 uint32_t func_version = read_u32(&next_instr[1].cache);
                 ASSERT_KWNAMES_IS_NULL();
                 DEOPT_IF(tstate->interp->eval_frame, CALL);
-                int argcount = oparg;
-                if (self_or_null != NULL) {
-                    args--;
-                    argcount++;
-                }
                 DEOPT_IF(!PyFunction_Check(callable), CALL);
                 PyFunctionObject *func = (PyFunctionObject *)callable;
                 DEOPT_IF(func->func_version != func_version, CALL);
                 PyCodeObject *code = (PyCodeObject *)func->func_code;
-                DEOPT_IF(code->co_argcount != argcount, CALL);
+                DEOPT_IF(code->co_argcount != oparg + (self_or_null != NULL), CALL);
                 DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
             }
-            stack_pointer[-2 - oparg] = method;
-            stack_pointer[-1 - oparg] = callable;
             // _INIT_CALL_PY_EXACT_ARGS
             args = stack_pointer - oparg;
-            callable = stack_pointer[-1 - oparg];
-            method = stack_pointer[-2 - oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
             {
-                int is_meth = method != NULL;
                 int argcount = oparg;
-                if (is_meth) {
-                    callable = method;
+                if (self_or_null != NULL) {
                     args--;
                     argcount++;
                 }
@@ -3815,11 +3805,11 @@
 
         TARGET(CALL_PY_WITH_DEFAULTS) {
             PyObject **args;
+            PyObject *self_or_null;
             PyObject *callable;
-            PyObject *method;
             args = stack_pointer - oparg;
-            callable = stack_pointer[-1 - oparg];
-            method = stack_pointer[-2 - oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
             uint32_t func_version = read_u32(&next_instr[1].cache);
             ASSERT_KWNAMES_IS_NULL();
             DEOPT_IF(tstate->interp->eval_frame, CALL);
