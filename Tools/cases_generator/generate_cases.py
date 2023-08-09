@@ -327,7 +327,7 @@ class Generator(Analyzer):
     ) -> None:
         """Write header file that defined the opcode IDs"""
 
-        with open(opcode_ids_h_filename, "w") as f:
+        with open(opcode_ids_h_filename, "w", newline="\n") as f:
             # Create formatter
             self.out = Formatter(f, 0)
 
@@ -359,7 +359,7 @@ class Generator(Analyzer):
             self.out.emit("#endif")
             self.out.emit("#endif /* !Py_OPCODE_IDS_H */")
 
-        with open(opcode_targets_filename, "w") as f:
+        with open(opcode_targets_filename, "w", newline="\n") as f:
             # Create formatter
             self.out = Formatter(f, 0)
 
@@ -398,7 +398,7 @@ class Generator(Analyzer):
         # Turn it into a sorted list of enum values.
         format_enums = [INSTR_FMT_PREFIX + format for format in sorted(all_formats)]
 
-        with open(metadata_filename, "w") as f:
+        with open(metadata_filename, "w", newline="\n") as f:
             # Create formatter
             self.out = Formatter(f, 0)
 
@@ -575,7 +575,7 @@ class Generator(Analyzer):
                         self.out.emit(f"case {op}: \\")
                 self.out.emit("    ;\n")
 
-        with open(pymetadata_filename, "w") as f:
+        with open(pymetadata_filename, "w", newline="\n") as f:
             # Create formatter
             self.out = Formatter(f, 0, comment="#")
 
@@ -759,7 +759,7 @@ class Generator(Analyzer):
         self, output_filename: str, emit_line_directives: bool
     ) -> None:
         """Write instructions to output file."""
-        with open(output_filename, "w") as f:
+        with open(output_filename, "w", newline="\n") as f:
             # Create formatter
             self.out = Formatter(f, 8, emit_line_directives)
 
@@ -800,7 +800,7 @@ class Generator(Analyzer):
         """Generate cases for the Tier 2 interpreter."""
         n_instrs = 0
         n_uops = 0
-        with open(executor_filename, "w") as f:
+        with open(executor_filename, "w", newline="\n") as f:
             self.out = Formatter(f, 8, emit_line_directives)
             self.write_provenance_header()
             for thing in self.everything:
@@ -839,8 +839,8 @@ class Generator(Analyzer):
     def write_abstract_interpreter_instructions(
         self, abstract_interpreter_filename: str, emit_line_directives: bool
     ) -> None:
-        """Generate cases for the Tier 2 abstract interpreter/analzyer."""
-        with open(abstract_interpreter_filename, "w") as f:
+        """Generate cases for the Tier 2 abstract interpreter/analyzer."""
+        with open(abstract_interpreter_filename, "w", newline="\n") as f:
             self.out = Formatter(f, 8, emit_line_directives)
             self.write_provenance_header()
             for thing in self.everything:

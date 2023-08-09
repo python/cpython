@@ -1,0 +1,1 @@
+Some of the generated build files use the default system line ending leading. This PR updates them to always use lf as line ending.

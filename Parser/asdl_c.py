@@ -1677,9 +1677,9 @@ def main(input_filename, c_filename, h_filename, internal_h_filename, dump_modul
     metadata_visitor.visit(mod)
     metadata = metadata_visitor.metadata
 
-    with c_filename.open("w") as c_file, \
-         h_filename.open("w") as h_file, \
-         internal_h_filename.open("w") as internal_h_file:
+    with c_filename.open("w", newline="\n") as c_file, \
+         h_filename.open("w", newline="\n") as h_file, \
+         internal_h_filename.open("w", newline="\n") as internal_h_file:
         c_file.write(auto_gen_msg)
         h_file.write(auto_gen_msg)
         internal_h_file.write(auto_gen_msg)
