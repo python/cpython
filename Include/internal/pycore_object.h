@@ -173,6 +173,7 @@ _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
 
 extern void _PyType_InitCache(PyInterpreterState *interp);
 
+extern void _PyObject_InitState(PyInterpreterState *interp);
 
 /* Inline functions trading binary compatibility for speed:
    _PyObject_Init() is the fast version of PyObject_Init(), and
@@ -292,8 +293,8 @@ extern void _PyDebug_PrintTotalRefs(void);
 
 #ifdef Py_TRACE_REFS
 extern void _Py_AddToAllObjects(PyObject *op, int force);
-extern void _Py_PrintReferences(FILE *);
-extern void _Py_PrintReferenceAddresses(FILE *);
+extern void _Py_PrintReferences(PyInterpreterState *, FILE *);
+extern void _Py_PrintReferenceAddresses(PyInterpreterState *, FILE *);
 #endif
 
 

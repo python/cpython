@@ -18,7 +18,8 @@
  */
 
 #ifdef Py_STATS
-PyStats _py_stats_struct = { 0 };
+GCStats _py_gc_stats[NUM_GENERATIONS] = { 0 };
+PyStats _py_stats_struct = { .gc_stats = &_py_gc_stats[0] };
 PyStats *_py_stats = NULL;
 
 #define ADD_STAT_TO_DICT(res, field) \
@@ -203,16 +204,31 @@ print_object_stats(FILE *out, ObjectStats *stats)
 }
 
 static void
+print_gc_stats(FILE *out, GCStats *stats)
+{
+    for (int i = 0; i < NUM_GENERATIONS; i++) {
+        fprintf(out, "GC[%d] collections: %" PRIu64 "\n", i, stats[i].collections);
+        fprintf(out, "GC[%d] object visits: %" PRIu64 "\n", i, stats[i].object_visits);
+        fprintf(out, "GC[%d] objects collected: %" PRIu64 "\n", i, stats[i].objects_collected);
+    }
+}
+
+static void
 print_stats(FILE *out, PyStats *stats) {
     print_spec_stats(out, stats->opcode_stats);
     print_call_stats(out, &stats->call_stats);
     print_object_stats(out, &stats->object_stats);
+    print_gc_stats(out, stats->gc_stats);
 }
 
 void
 _Py_StatsClear(void)
 {
+    for (int i = 0; i < NUM_GENERATIONS; i++) {
+        _py_gc_stats[i] = (GCStats) { 0 };
+    }
     _py_stats_struct = (PyStats) { 0 };
+    _py_stats_struct.gc_stats = _py_gc_stats;
 }
 
 void
@@ -347,7 +363,6 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_SUBSCR_ARRAY_SLICE 10
 #define SPEC_FAIL_SUBSCR_LIST_SLICE 11
 #define SPEC_FAIL_SUBSCR_TUPLE_SLICE 12
-#define SPEC_FAIL_SUBSCR_STRING_INT 13
 #define SPEC_FAIL_SUBSCR_STRING_SLICE 14
 #define SPEC_FAIL_SUBSCR_BUFFER_INT 15
 #define SPEC_FAIL_SUBSCR_BUFFER_SLICE 16
@@ -1244,16 +1259,7 @@ success:
 static int
 binary_subscr_fail_kind(PyTypeObject *container_type, PyObject *sub)
 {
-    if (container_type == &PyUnicode_Type) {
-        if (PyLong_CheckExact(sub)) {
-            return SPEC_FAIL_SUBSCR_STRING_INT;
-        }
-        if (PySlice_Check(sub)) {
-            return SPEC_FAIL_SUBSCR_STRING_SLICE;
-        }
-        return SPEC_FAIL_OTHER;
-    }
-    else if (strcmp(container_type->tp_name, "array.array") == 0) {
+    if (strcmp(container_type->tp_name, "array.array") == 0) {
         if (PyLong_CheckExact(sub)) {
             return SPEC_FAIL_SUBSCR_ARRAY_INT;
         }
@@ -1358,6 +1364,19 @@ _Py_Specialize_BinarySubscr(
         }
         SPECIALIZATION_FAIL(BINARY_SUBSCR,
             PySlice_Check(sub) ? SPEC_FAIL_SUBSCR_TUPLE_SLICE : SPEC_FAIL_OTHER);
+        goto fail;
+    }
+    if (container_type == &PyUnicode_Type) {
+        if (PyLong_CheckExact(sub)) {
+            if (_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
+                instr->op.code = BINARY_SUBSCR_STR_INT;
+                goto success;
+            }
+            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OUT_OF_RANGE);
+            goto fail;
+        }
+        SPECIALIZATION_FAIL(BINARY_SUBSCR,
+            PySlice_Check(sub) ? SPEC_FAIL_SUBSCR_STRING_SLICE : SPEC_FAIL_OTHER);
         goto fail;
     }
     if (container_type == &PyDict_Type) {

@@ -615,23 +615,28 @@ make_cfg_traversal_stack(basicblock *entryblock) {
     return stack;
 }
 
-Py_LOCAL_INLINE(void)
+Py_LOCAL_INLINE(int)
 stackdepth_push(basicblock ***sp, basicblock *b, int depth)
 {
-    assert(b->b_startdepth < 0 || b->b_startdepth == depth);
+    if (!(b->b_startdepth < 0 || b->b_startdepth == depth)) {
+        PyErr_Format(PyExc_ValueError, "Invalid CFG, inconsistent stackdepth");
+        return ERROR;
+    }
     if (b->b_startdepth < depth && b->b_startdepth < 100) {
         assert(b->b_startdepth < 0);
         b->b_startdepth = depth;
         *(*sp)++ = b;
     }
+    return SUCCESS;
 }
 
 /* Find the flow path that needs the largest stack.  We assume that
  * cycles in the flow graph have no net effect on the stack depth.
  */
 int
-_PyCfg_Stackdepth(basicblock *entryblock, int code_flags)
+_PyCfg_Stackdepth(cfg_builder *g)
 {
+    basicblock *entryblock = g->g_entryblock;
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         b->b_startdepth = INT_MIN;
     }
@@ -640,14 +645,13 @@ _PyCfg_Stackdepth(basicblock *entryblock, int code_flags)
         return ERROR;
     }
 
+
+    int stackdepth = -1;
     int maxdepth = 0;
     basicblock **sp = stack;
-    if (code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
-        stackdepth_push(&sp, entryblock, 1);
-    } else {
-        stackdepth_push(&sp, entryblock, 0);
+    if (stackdepth_push(&sp, entryblock, 0) < 0) {
+        goto error;
     }
-
     while (sp != stack) {
         basicblock *b = *--sp;
         int depth = b->b_startdepth;
@@ -655,27 +659,40 @@ _PyCfg_Stackdepth(basicblock *entryblock, int code_flags)
         basicblock *next = b->b_next;
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
-            int effect = PyCompile_OpcodeStackEffectWithJump(instr->i_opcode, instr->i_oparg, 0);
+            int effect = PyCompile_OpcodeStackEffectWithJump(
+                             instr->i_opcode, instr->i_oparg, 0);
             if (effect == PY_INVALID_STACK_EFFECT) {
                 PyErr_Format(PyExc_SystemError,
-                             "compiler PyCompile_OpcodeStackEffectWithJump(opcode=%d, arg=%i) failed",
+                             "Invalid stack effect for opcode=%d, arg=%i",
                              instr->i_opcode, instr->i_oparg);
-                return ERROR;
+                goto error;
             }
             int new_depth = depth + effect;
-            assert(new_depth >= 0); /* invalid code or bug in stackdepth() */
+            if (new_depth < 0) {
+               PyErr_Format(PyExc_ValueError,
+                            "Invalid CFG, stack underflow");
+               goto error;
+            }
             if (new_depth > maxdepth) {
                 maxdepth = new_depth;
             }
             if (HAS_TARGET(instr->i_opcode)) {
-                effect = PyCompile_OpcodeStackEffectWithJump(instr->i_opcode, instr->i_oparg, 1);
-                assert(effect != PY_INVALID_STACK_EFFECT);
+                effect = PyCompile_OpcodeStackEffectWithJump(
+                             instr->i_opcode, instr->i_oparg, 1);
+                if (effect == PY_INVALID_STACK_EFFECT) {
+                    PyErr_Format(PyExc_SystemError,
+                                 "Invalid stack effect for opcode=%d, arg=%i",
+                                 instr->i_opcode, instr->i_oparg);
+                    goto error;
+                }
                 int target_depth = depth + effect;
                 assert(target_depth >= 0); /* invalid code or bug in stackdepth() */
                 if (target_depth > maxdepth) {
                     maxdepth = target_depth;
                 }
-                stackdepth_push(&sp, instr->i_target, target_depth);
+                if (stackdepth_push(&sp, instr->i_target, target_depth) < 0) {
+                    goto error;
+                }
             }
             depth = new_depth;
             assert(!IS_ASSEMBLER_OPCODE(instr->i_opcode));
@@ -689,11 +706,15 @@ _PyCfg_Stackdepth(basicblock *entryblock, int code_flags)
         }
         if (next != NULL) {
             assert(BB_HAS_FALLTHROUGH(b));
-            stackdepth_push(&sp, next, depth);
+            if (stackdepth_push(&sp, next, depth) < 0) {
+                goto error;
+            }
         }
     }
+    stackdepth = maxdepth;
+error:
     PyMem_Free(stack);
-    return maxdepth;
+    return stackdepth;
 }
 
 static int
@@ -2009,7 +2030,7 @@ mark_cold(basicblock *entryblock) {
 
 
 static int
-push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
+push_cold_blocks_to_end(cfg_builder *g) {
     basicblock *entryblock = g->g_entryblock;
     if (entryblock->b_next == NULL) {
         /* single basicblock, no need to reorder */
@@ -2251,7 +2272,7 @@ resolve_line_numbers(cfg_builder *g, int firstlineno)
 
 int
 _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
-                       int code_flags, int nlocals, int nparams, int firstlineno)
+                        int nlocals, int nparams, int firstlineno)
 {
     assert(cfg_builder_check(g));
     /** Preprocessing **/
@@ -2268,7 +2289,7 @@ _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
             g->g_entryblock, nlocals, nparams));
     insert_superinstructions(g);
 
-    RETURN_IF_ERROR(push_cold_blocks_to_end(g, code_flags));
+    RETURN_IF_ERROR(push_cold_blocks_to_end(g));
     RETURN_IF_ERROR(resolve_line_numbers(g, firstlineno));
     return SUCCESS;
 }

@@ -15,8 +15,8 @@ Object Protocol
 .. c:macro:: Py_RETURN_NOTIMPLEMENTED
 
    Properly handle returning :c:data:`Py_NotImplemented` from within a C
-   function (that is, increment the reference count of NotImplemented and
-   return it).
+   function (that is, create a new :term:`strong reference`
+   to NotImplemented and return it).
 
 
 .. c:function:: int PyObject_Print(PyObject *o, FILE *fp, int flags)
@@ -293,7 +293,7 @@ Object Protocol
 
    Normally only class objects, i.e. instances of :class:`type` or a derived
    class, are considered classes.  However, objects can override this by having
-   a :attr:`__bases__` attribute (which must be a tuple of base classes).
+   a :attr:`~class.__bases__` attribute (which must be a tuple of base classes).
 
 
 .. c:function:: int PyObject_IsInstance(PyObject *inst, PyObject *cls)
@@ -310,10 +310,10 @@ Object Protocol
    is an instance of *cls* if its class is a subclass of *cls*.
 
    An instance *inst* can override what is considered its class by having a
-   :attr:`__class__` attribute.
+   :attr:`~instance.__class__` attribute.
 
    An object *cls* can override if it is considered a class, and what its base
-   classes are, by having a :attr:`__bases__` attribute (which must be a tuple
+   classes are, by having a :attr:`~class.__bases__` attribute (which must be a tuple
    of base classes).
 
 
@@ -357,11 +357,12 @@ Object Protocol
 
    When *o* is non-``NULL``, returns a type object corresponding to the object type
    of object *o*. On failure, raises :exc:`SystemError` and returns ``NULL``.  This
-   is equivalent to the Python expression ``type(o)``. This function increments the
-   reference count of the return value. There's really no reason to use this
+   is equivalent to the Python expression ``type(o)``.
+   This function creates a new :term:`strong reference` to the return value.
+   There's really no reason to use this
    function instead of the :c:func:`Py_TYPE()` function, which returns a
-   pointer of type :c:expr:`PyTypeObject*`, except when the incremented reference
-   count is needed.
+   pointer of type :c:expr:`PyTypeObject*`, except when a new
+   :term:`strong reference` is needed.
 
 
 .. c:function:: int PyObject_TypeCheck(PyObject *o, PyTypeObject *type)

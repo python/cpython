@@ -109,11 +109,24 @@ dump_stack(_PyInterpreterFrame *frame, PyObject **stack_pointer)
         if (ptr != stack_base) {
             printf(", ");
         }
-        if (PyObject_Print(*ptr, stdout, 0) != 0) {
-            PyErr_Clear();
-            printf("<%s object at %p>",
-                   Py_TYPE(*ptr)->tp_name, (void *)(*ptr));
+        if (*ptr == NULL) {
+            printf("<nil>");
+            continue;
         }
+        if (
+            *ptr == Py_None
+            || PyBool_Check(*ptr)
+            || PyLong_CheckExact(*ptr)
+            || PyFloat_CheckExact(*ptr)
+            || PyUnicode_CheckExact(*ptr)
+        ) {
+            if (PyObject_Print(*ptr, stdout, 0) == 0) {
+                continue;
+            }
+            PyErr_Clear();
+        }
+        // Don't call __repr__(), it might recurse into the interpreter.
+        printf("<%s at %p>", Py_TYPE(*ptr)->tp_name, (void *)(*ptr));
     }
     printf("]\n");
     fflush(stdout);
@@ -128,9 +141,6 @@ lltrace_instruction(_PyInterpreterFrame *frame,
     if (frame->owner == FRAME_OWNED_BY_CSTACK) {
         return;
     }
-    /* This dump_stack() operation is risky, since the repr() of some
-       objects enters the interpreter recursively. It is also slow.
-       So you might want to comment it out. */
     dump_stack(frame, stack_pointer);
     int oparg = next_instr->op.arg;
     int opcode = next_instr->op.code;
@@ -184,13 +194,16 @@ lltrace_resume_frame(_PyInterpreterFrame *frame)
 static void monitor_raise(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr);
+static void monitor_reraise(PyThreadState *tstate,
+                 _PyInterpreterFrame *frame,
+                 _Py_CODEUNIT *instr);
 static int monitor_stop_iteration(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr);
 static void monitor_unwind(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr);
-static void monitor_handled(PyThreadState *tstate,
+static int monitor_handled(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr, PyObject *exc);
 static void monitor_throw(PyThreadState *tstate,
@@ -621,6 +634,11 @@ extern const struct _PyCode_DEF(8) _Py_InitCleanup;
 #  pragma warning(disable:4102)
 #endif
 
+
+/* _PyEval_EvalFrameDefault() is a *big* function,
+ * so consume 3 units of C stack */
+#define PY_EVAL_C_STACK_UNITS 2
+
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
@@ -673,6 +691,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     frame->previous = &entry_frame;
     cframe.current_frame = frame;
 
+    tstate->c_recursion_remaining -= (PY_EVAL_C_STACK_UNITS - 1);
     if (_Py_EnterRecursiveCallTstate(tstate, "")) {
         tstate->c_recursion_remaining--;
         tstate->py_recursion_remaining--;
@@ -720,6 +739,13 @@ resume_frame:
                 goto exit_unwind;
             }
             lltrace = r;
+            if (!lltrace) {
+                // When tracing executed uops, also trace bytecode
+                char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
+                if (uop_debug != NULL && *uop_debug >= '0') {
+                    lltrace = (*uop_debug - '0') >= 4;  // TODO: Parse an int and all that
+                }
+            }
         }
         if (lltrace) {
             lltrace_resume_frame(frame);
@@ -840,7 +866,6 @@ error:
             }
         }
         monitor_raise(tstate, frame, next_instr-1);
-
 exception_unwind:
         {
             /* We can't use frame->f_lasti here, as RERAISE may have set it */
@@ -884,8 +909,15 @@ exception_unwind:
             PyObject *exc = _PyErr_GetRaisedException(tstate);
             PUSH(exc);
             JUMPTO(handler);
-            monitor_handled(tstate, frame, next_instr, exc);
+            if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
+                goto exception_unwind;
+            }
             /* Resume normal execution */
+#ifdef LLTRACE
+            if (lltrace) {
+                lltrace_resume_frame(frame);
+            }
+#endif
             DISPATCH();
         }
     }
@@ -903,7 +935,7 @@ exit_unwind:
         /* Restore previous cframe and exit */
         tstate->cframe = cframe.previous;
         assert(tstate->cframe->current_frame == frame->previous);
-        _Py_LeaveRecursiveCallTstate(tstate);
+        tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
         return NULL;
     }
 
@@ -1255,7 +1287,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
     if (co->co_flags & CO_VARARGS) {
         PyObject *u = NULL;
         if (argcount == n) {
-            u = Py_NewRef(&_Py_SINGLETON(tuple_empty));
+            u = (PyObject *)&_Py_SINGLETON(tuple_empty);
         }
         else {
             assert(args != NULL);
@@ -1462,6 +1494,7 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     tstate->c_recursion_remaining--;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     _PyFrame_ClearExceptCode(frame);
+    _PyErr_ClearExcState(&gen->gi_exc_state);
     tstate->c_recursion_remaining++;
     frame->previous = NULL;
 }
@@ -1922,6 +1955,7 @@ do_monitor_exc(PyThreadState *tstate, _PyInterpreterFrame *frame,
         PyErr_SetRaisedException(exc);
     }
     else {
+        assert(PyErr_Occurred());
         Py_DECREF(exc);
     }
     return err;
@@ -1954,6 +1988,16 @@ monitor_raise(PyThreadState *tstate, _PyInterpreterFrame *frame,
     do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_RAISE);
 }
 
+static void
+monitor_reraise(PyThreadState *tstate, _PyInterpreterFrame *frame,
+              _Py_CODEUNIT *instr)
+{
+    if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_RERAISE)) {
+        return;
+    }
+    do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_RERAISE);
+}
+
 static int
 monitor_stop_iteration(PyThreadState *tstate, _PyInterpreterFrame *frame,
                        _Py_CODEUNIT *instr)
@@ -1972,19 +2016,19 @@ monitor_unwind(PyThreadState *tstate,
     if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_PY_UNWIND)) {
         return;
     }
-    _Py_call_instrumentation_exc0(tstate, PY_MONITORING_EVENT_PY_UNWIND, frame, instr);
+    do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_PY_UNWIND);
 }
 
 
-static void
+static int
 monitor_handled(PyThreadState *tstate,
                 _PyInterpreterFrame *frame,
                 _Py_CODEUNIT *instr, PyObject *exc)
 {
     if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_EXCEPTION_HANDLED)) {
-        return;
+        return 0;
     }
-    _Py_call_instrumentation_arg(tstate, PY_MONITORING_EVENT_EXCEPTION_HANDLED, frame, instr, exc);
+    return _Py_call_instrumentation_arg(tstate, PY_MONITORING_EVENT_EXCEPTION_HANDLED, frame, instr, exc);
 }
 
 static void
@@ -1995,7 +2039,7 @@ monitor_throw(PyThreadState *tstate,
     if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_PY_THROW)) {
         return;
     }
-    _Py_call_instrumentation_exc0(tstate, PY_MONITORING_EVENT_PY_THROW, frame, instr);
+    do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_PY_THROW);
 }
 
 void
