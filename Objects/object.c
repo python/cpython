@@ -1577,6 +1577,14 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
                 goto error_check;
             }
             dictptr = &dorv_ptr->dict;
+            if (*dictptr == NULL) {
+                if (_PyObject_InitInlineValues(obj, tp)) {
+                    goto done;
+                }
+                res = _PyObject_StoreInstanceAttribute(
+                    obj, _PyDictOrValues_GetValues(*dorv_ptr), name, value);
+                goto error_check;
+            }
         }
         else {
             dictptr = _PyObject_ComputedDictPointer(obj);
