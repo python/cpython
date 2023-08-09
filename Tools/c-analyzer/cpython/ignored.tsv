@@ -426,6 +426,7 @@ Modules/_testcapi/watchers.c	-	g_dict_watch_events	-
 Modules/_testcapi/watchers.c	-	g_dict_watchers_installed	-
 Modules/_testcapi/watchers.c	-	g_type_modified_events	-
 Modules/_testcapi/watchers.c	-	g_type_watchers_installed	-
+Modules/_testcapi/watchers.c	-	code_watcher_ids	-
 Modules/_testcapi/watchers.c	-	num_code_object_created_events	-
 Modules/_testcapi/watchers.c	-	num_code_object_destroyed_events	-
 Modules/_testcapi/watchers.c	-	pyfunc_watchers	-
