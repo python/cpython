@@ -1545,7 +1545,7 @@ get_objectvalues(PyObject *self, PyObject *obj)
     PyDictValues *values = _PyDictOrValues_GetValues(dorv);
     PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
     assert(keys != NULL);
-    int size = keys->dk_nentries;
+    int size = (int)keys->dk_nentries;
     assert(size >= 0);
     PyObject *res = PyTuple_New(size);
     if (res == NULL) {
