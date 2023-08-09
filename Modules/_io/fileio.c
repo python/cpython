@@ -1,5 +1,7 @@
 /* Author: Daniel Stutzbach */
 
+// Fixes _Py_*_SUPPRESS_IPH not found error but defined in pyport.h
+#define Py_BUILD_CORE
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #ifdef HAVE_SYS_TYPES_H
