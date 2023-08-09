@@ -2783,6 +2783,13 @@ class Parameter:
         else:
             return f'"argument {i}"'
 
+    def render_docstring(self) -> str:
+        add, out = text_accumulator()
+        add(f"  {self.name}\n")
+        for line in self.docstring.split("\n"):
+            add(f"    {line}\n")
+        return out().rstrip()
+
 
 CConverterClassT = TypeVar("CConverterClassT", bound=type["CConverter"])
 
@@ -5688,23 +5695,11 @@ class DSLParser:
     @staticmethod
     def format_docstring_parameters(params: list[Parameter]) -> str:
         """Create substitution text for {parameters}"""
-        text, add, output = _text_accumulator()
-        spacer_line = False
-        for param in params:
-            docstring = param.docstring.strip()
-            if not docstring:
-                continue
-            if spacer_line:
+        add, output = text_accumulator()
+        for p in params:
+            if p.docstring:
+                add(p.render_docstring())
                 add('\n')
-            else:
-                spacer_line = True
-            add("  ")
-            add(param.name)
-            add('\n')
-            stripped = rstrip_lines(docstring)
-            add(textwrap.indent(stripped, "    "))
-        if text:
-            add('\n')
         return output()
 
     def format_docstring(self) -> str:
