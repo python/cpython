@@ -184,14 +184,14 @@ PLATFORM_TRIPLET=mips-linux-LIBC_MIPS
 #  endif
 # elif defined(__or1k__)
 PLATFORM_TRIPLET=or1k-linux-LIBC
-# elif defined(__powerpc__)
-PLATFORM_TRIPLET=powerpc-linux-LIBC_PPC
 # elif defined(__powerpc64__)
 #  if defined(__LITTLE_ENDIAN__)
 PLATFORM_TRIPLET=powerpc64le-linux-LIBC
 #  else
 PLATFORM_TRIPLET=powerpc64-linux-LIBC
 #  endif
+# elif defined(__powerpc__)
+PLATFORM_TRIPLET=powerpc-linux-LIBC_PPC
 # elif defined(__s390x__)
 PLATFORM_TRIPLET=s390x-linux-LIBC
 # elif defined(__s390__)
