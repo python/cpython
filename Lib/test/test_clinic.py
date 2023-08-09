@@ -2423,11 +2423,11 @@ class ClinicFunctionalTest(unittest.TestCase):
     locals().update((name, getattr(ac_tester, name))
                     for name in dir(ac_tester) if name.startswith('test_'))
 
-    def check_depr_star(self, fn, *args, **kwds):
-        pnames = ".*".join([repr(a) for a in args])
+    def check_depr_star(self, pnames, fn, *args, **kwds):
         regex = (
-            f"Passing.*positional argument.*to {fn.__name__}.*is deprecated. "
-            f"Parameter.*{pnames} will become.*keyword-only parameter.*in Python 3.14"
+            f"Passing( more than)?( [0-9]+)? positional argument(s)? to "
+            f"{fn.__name__}\(\) is deprecated. Parameter(s)? {pnames} will "
+            f"become( a)? keyword-only parameter(s)? in Python 3.14"
         )
         with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
             fn(*args, **kwds)
@@ -2900,63 +2900,71 @@ class ClinicFunctionalTest(unittest.TestCase):
     def test_depr_star_pos0_len1(self):
         fn = ac_tester.depr_star_pos0_len1
         fn(a=None)
-        self.check_depr_star(fn, "a")
+        self.check_depr_star("'a'", fn, "a")
 
     def test_depr_star_pos0_len2(self):
         fn = ac_tester.depr_star_pos0_len2
-        fn(a=0, b=0),
-        self.check_depr_star(fn, "a", b=0),
-        self.check_depr_star(fn, "a", "b"),
+        fn(a=0, b=0)
+        pnames = "'a' and 'b'"
+        self.check_depr_star(pnames, fn, "a", b=0),
+        self.check_depr_star(pnames, fn, "a", "b"),
 
     def test_depr_star_pos0_len3_with_kwd(self):
         fn = ac_tester.depr_star_pos0_len3_with_kwd
         fn(a=0, b=0, c=0, d=0)
-        self.check_depr_star(fn, "a", b=0, c=0, d=0)
-        self.check_depr_star(fn, "a", "b", c=0, d=0)
-        self.check_depr_star(fn, "a", "b", "c", d=0)
+        pnames = "'a', 'b' and 'c'"
+        self.check_depr_star(pnames, fn, "a", b=0, c=0, d=0)
+        self.check_depr_star(pnames, fn, "a", "b", c=0, d=0)
+        self.check_depr_star(pnames, fn, "a", "b", "c", d=0)
 
     def test_depr_star_pos1_len1_opt(self):
         fn = ac_tester.depr_star_pos1_len1_opt
         fn(a=0, b=0)
         fn("a", b=0)
         fn(a=0)  # b is optional
-        self.check_depr_star(fn, "a", "b")
+        pnames = "'b'"
+        self.check_depr_star(pnames, fn, "a", "b")
 
     def test_depr_star_pos1_len1(self):
         fn = ac_tester.depr_star_pos1_len1
         fn(a=0, b=0)
         fn("a", b=0)
-        self.check_depr_star(fn, "a", "b")
+        pnames = "'b'"
+        self.check_depr_star(pnames, fn, "a", "b")
 
     def test_depr_star_pos1_len2_with_kwd(self):
         fn = ac_tester.depr_star_pos1_len2_with_kwd
         fn(a=0, b=0, c=0, d=0),
         fn("a", b=0, c=0, d=0),
-        self.check_depr_star(fn, "a", "b", c=0, d=0),
-        self.check_depr_star(fn, "a", "b", "c", d=0),
+        pnames = "'b' and 'c'"
+        self.check_depr_star(pnames, fn, "a", "b", c=0, d=0),
+        self.check_depr_star(pnames, fn, "a", "b", "c", d=0),
 
     def test_depr_star_pos2_len1(self):
         fn = ac_tester.depr_star_pos2_len1
         fn(a=0, b=0, c=0)
         fn("a", b=0, c=0)
         fn("a", "b", c=0)
-        self.check_depr_star(fn, "a", "b", "c")
+        pnames = "'c'"
+        self.check_depr_star(pnames, fn, "a", "b", "c")
 
     def test_depr_star_pos2_len2(self):
         fn = ac_tester.depr_star_pos2_len2
         fn(a=0, b=0, c=0, d=0)
         fn("a", b=0, c=0, d=0)
         fn("a", "b", c=0, d=0)
-        self.check_depr_star(fn, "a", "b", "c", d=0)
-        self.check_depr_star(fn, "a", "b", "c", "d")
+        pnames = "'c' and 'd'"
+        self.check_depr_star(pnames, fn, "a", "b", "c", d=0)
+        self.check_depr_star(pnames, fn, "a", "b", "c", "d")
 
     def test_depr_star_pos2_len2_with_kwd(self):
         fn = ac_tester.depr_star_pos2_len2_with_kwd
         fn(a=0, b=0, c=0, d=0, e=0)
         fn("a", b=0, c=0, d=0, e=0)
         fn("a", "b", c=0, d=0, e=0)
-        self.check_depr_star(fn, "a", "b", "c", d=0, e=0)
-        self.check_depr_star(fn, "a", "b", "c", "d", e=0)
+        pnames = "'c' and 'd'"
+        self.check_depr_star(pnames, fn, "a", "b", "c", d=0, e=0)
+        self.check_depr_star(pnames, fn, "a", "b", "c", "d", e=0)
 
 
 class PermutationTests(unittest.TestCase):
