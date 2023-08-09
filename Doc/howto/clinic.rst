@@ -1932,6 +1932,8 @@ Example from :source:`Objects/codeobject.c`::
 
 The generated docstring ends up looking like this::
 
+.. code-block:: none
+
    replace($self, /, **changes)
    --
 
