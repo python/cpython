@@ -5530,18 +5530,18 @@ test_deprecate_positional_pos1_len1_optional(PyObject *module, PyObject *const *
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'b' in the clinic input of" \
-            " test_deprecate_positional_pos1_len1_optional() to be " \
+            " 'test_deprecate_positional_pos1_len1_optional' to be " \
             "keyword-only."
     #elif PY_VERSION_HEX >= 0x030e00A0
     #  ifdef _MSC_VER
     #    pragma message ( \
             "In clinic.test.c, update parameter(s) 'b' in the clinic input of" \
-            " test_deprecate_positional_pos1_len1_optional() to be " \
+            " 'test_deprecate_positional_pos1_len1_optional' to be " \
             "keyword-only.")
     #  else
     #    warning \
             "In clinic.test.c, update parameter(s) 'b' in the clinic input of" \
-            " test_deprecate_positional_pos1_len1_optional() to be " \
+            " 'test_deprecate_positional_pos1_len1_optional' to be " \
             "keyword-only."
     #  endif
     #endif
@@ -5574,7 +5574,7 @@ exit:
 static PyObject *
 test_deprecate_positional_pos1_len1_optional_impl(PyObject *module,
                                                   PyObject *a, PyObject *b)
-/*[clinic end generated code: output=38192d2818f21bc9 input=89099f3dacd757da]*/
+/*[clinic end generated code: output=144cbf1adc574dd9 input=89099f3dacd757da]*/
 
 
 /*[clinic input]
@@ -5637,16 +5637,16 @@ test_deprecate_positional_pos1_len1(PyObject *module, PyObject *const *args, Py_
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'b' in the clinic input of" \
-            " test_deprecate_positional_pos1_len1() to be keyword-only."
+            " 'test_deprecate_positional_pos1_len1' to be keyword-only."
     #elif PY_VERSION_HEX >= 0x030e00A0
     #  ifdef _MSC_VER
     #    pragma message ( \
             "In clinic.test.c, update parameter(s) 'b' in the clinic input of" \
-            " test_deprecate_positional_pos1_len1() to be keyword-only.")
+            " 'test_deprecate_positional_pos1_len1' to be keyword-only.")
     #  else
     #    warning \
             "In clinic.test.c, update parameter(s) 'b' in the clinic input of" \
-            " test_deprecate_positional_pos1_len1() to be keyword-only."
+            " 'test_deprecate_positional_pos1_len1' to be keyword-only."
     #  endif
     #endif
     if (nargs == 2) {
@@ -5673,7 +5673,7 @@ exit:
 static PyObject *
 test_deprecate_positional_pos1_len1_impl(PyObject *module, PyObject *a,
                                          PyObject *b)
-/*[clinic end generated code: output=8a798ba78564b5be input=1702bbab1e9b3b99]*/
+/*[clinic end generated code: output=994bd57c1c634709 input=1702bbab1e9b3b99]*/
 
 
 /*[clinic input]
@@ -5743,18 +5743,18 @@ test_deprecate_positional_pos1_len2_with_kwd(PyObject *module, PyObject *const *
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'b' and 'c' in the clinic " \
-            "input of test_deprecate_positional_pos1_len2_with_kwd() to be " \
+            "input of 'test_deprecate_positional_pos1_len2_with_kwd' to be " \
             "keyword-only."
     #elif PY_VERSION_HEX >= 0x030e00A0
     #  ifdef _MSC_VER
     #    pragma message ( \
             "In clinic.test.c, update parameter(s) 'b' and 'c' in the clinic " \
-            "input of test_deprecate_positional_pos1_len2_with_kwd() to be " \
+            "input of 'test_deprecate_positional_pos1_len2_with_kwd' to be " \
             "keyword-only.")
     #  else
     #    warning \
             "In clinic.test.c, update parameter(s) 'b' and 'c' in the clinic " \
-            "input of test_deprecate_positional_pos1_len2_with_kwd() to be " \
+            "input of 'test_deprecate_positional_pos1_len2_with_kwd' to be " \
             "keyword-only."
     #  endif
     #endif
@@ -5786,7 +5786,7 @@ static PyObject *
 test_deprecate_positional_pos1_len2_with_kwd_impl(PyObject *module,
                                                   PyObject *a, PyObject *b,
                                                   PyObject *c, PyObject *d)
-/*[clinic end generated code: output=262458b0b1bc2bc6 input=28cdb885f6c34eab]*/
+/*[clinic end generated code: output=146c60ecbcdbf4b8 input=28cdb885f6c34eab]*/
 
 
 /*[clinic input]
@@ -5846,16 +5846,16 @@ test_deprecate_positional_pos0_len1(PyObject *module, PyObject *const *args, Py_
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
-            " test_deprecate_positional_pos0_len1() to be keyword-only."
+            " 'test_deprecate_positional_pos0_len1' to be keyword-only."
     #elif PY_VERSION_HEX >= 0x030e00A0
     #  ifdef _MSC_VER
     #    pragma message ( \
             "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
-            " test_deprecate_positional_pos0_len1() to be keyword-only.")
+            " 'test_deprecate_positional_pos0_len1' to be keyword-only.")
     #  else
     #    warning \
             "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
-            " test_deprecate_positional_pos0_len1() to be keyword-only."
+            " 'test_deprecate_positional_pos0_len1' to be keyword-only."
     #  endif
     #endif
     if (nargs == 1) {
@@ -5880,7 +5880,7 @@ exit:
 
 static PyObject *
 test_deprecate_positional_pos0_len1_impl(PyObject *module, PyObject *a)
-/*[clinic end generated code: output=8eab04dfe43d7c95 input=678206db25c0652c]*/
+/*[clinic end generated code: output=dce99971a2494f9f input=678206db25c0652c]*/
 
 
 /*[clinic input]
@@ -5943,18 +5943,18 @@ test_deprecate_positional_pos0_len2(PyObject *module, PyObject *const *args, Py_
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'a' and 'b' in the clinic " \
-            "input of test_deprecate_positional_pos0_len2() to be " \
+            "input of 'test_deprecate_positional_pos0_len2' to be " \
             "keyword-only."
     #elif PY_VERSION_HEX >= 0x030e00A0
     #  ifdef _MSC_VER
     #    pragma message ( \
             "In clinic.test.c, update parameter(s) 'a' and 'b' in the clinic " \
-            "input of test_deprecate_positional_pos0_len2() to be " \
+            "input of 'test_deprecate_positional_pos0_len2' to be " \
             "keyword-only.")
     #  else
     #    warning \
             "In clinic.test.c, update parameter(s) 'a' and 'b' in the clinic " \
-            "input of test_deprecate_positional_pos0_len2() to be " \
+            "input of 'test_deprecate_positional_pos0_len2' to be " \
             "keyword-only."
     #  endif
     #endif
@@ -5982,7 +5982,7 @@ exit:
 static PyObject *
 test_deprecate_positional_pos0_len2_impl(PyObject *module, PyObject *a,
                                          PyObject *b)
-/*[clinic end generated code: output=fe3b0d05e6a52a25 input=fae0d0b1d480c939]*/
+/*[clinic end generated code: output=06999692e0c8dac4 input=fae0d0b1d480c939]*/
 
 
 /*[clinic input]
@@ -6056,20 +6056,20 @@ test_deprecate_positional_pos0_len3_with_kwdonly(PyObject *module, PyObject *con
     #  error \
             "In clinic.test.c, update parameter(s) 'a', 'b' and 'c' in the " \
             "clinic input of " \
-            "test_deprecate_positional_pos0_len3_with_kwdonly() to be " \
+            "'test_deprecate_positional_pos0_len3_with_kwdonly' to be " \
             "keyword-only."
     #elif PY_VERSION_HEX >= 0x030e00A0
     #  ifdef _MSC_VER
     #    pragma message ( \
             "In clinic.test.c, update parameter(s) 'a', 'b' and 'c' in the " \
             "clinic input of " \
-            "test_deprecate_positional_pos0_len3_with_kwdonly() to be " \
+            "'test_deprecate_positional_pos0_len3_with_kwdonly' to be " \
             "keyword-only.")
     #  else
     #    warning \
             "In clinic.test.c, update parameter(s) 'a', 'b' and 'c' in the " \
             "clinic input of " \
-            "test_deprecate_positional_pos0_len3_with_kwdonly() to be " \
+            "'test_deprecate_positional_pos0_len3_with_kwdonly' to be " \
             "keyword-only."
     #  endif
     #endif
@@ -6103,7 +6103,7 @@ test_deprecate_positional_pos0_len3_with_kwdonly_impl(PyObject *module,
                                                       PyObject *b,
                                                       PyObject *c,
                                                       PyObject *e)
-/*[clinic end generated code: output=03633f700d5af5fa input=1b0121770c0c52e0]*/
+/*[clinic end generated code: output=a553e33101dc42b2 input=1b0121770c0c52e0]*/
 
 
 /*[clinic input]
@@ -6168,16 +6168,16 @@ test_deprecate_positional_pos2_len1(PyObject *module, PyObject *const *args, Py_
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'c' in the clinic input of" \
-            " test_deprecate_positional_pos2_len1() to be keyword-only."
+            " 'test_deprecate_positional_pos2_len1' to be keyword-only."
     #elif PY_VERSION_HEX >= 0x030e00A0
     #  ifdef _MSC_VER
     #    pragma message ( \
             "In clinic.test.c, update parameter(s) 'c' in the clinic input of" \
-            " test_deprecate_positional_pos2_len1() to be keyword-only.")
+            " 'test_deprecate_positional_pos2_len1' to be keyword-only.")
     #  else
     #    warning \
             "In clinic.test.c, update parameter(s) 'c' in the clinic input of" \
-            " test_deprecate_positional_pos2_len1() to be keyword-only."
+            " 'test_deprecate_positional_pos2_len1' to be keyword-only."
     #  endif
     #endif
     if (nargs == 3) {
@@ -6205,7 +6205,7 @@ exit:
 static PyObject *
 test_deprecate_positional_pos2_len1_impl(PyObject *module, PyObject *a,
                                          PyObject *b, PyObject *c)
-/*[clinic end generated code: output=7630d8014eee60a4 input=e1d129689e69ec7c]*/
+/*[clinic end generated code: output=f96454a4970b443c input=e1d129689e69ec7c]*/
 
 
 /*[clinic input]
@@ -6273,18 +6273,18 @@ test_deprecate_positional_pos2_len2(PyObject *module, PyObject *const *args, Py_
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'c' and 'd' in the clinic " \
-            "input of test_deprecate_positional_pos2_len2() to be " \
+            "input of 'test_deprecate_positional_pos2_len2' to be " \
             "keyword-only."
     #elif PY_VERSION_HEX >= 0x030e00A0
     #  ifdef _MSC_VER
     #    pragma message ( \
             "In clinic.test.c, update parameter(s) 'c' and 'd' in the clinic " \
-            "input of test_deprecate_positional_pos2_len2() to be " \
+            "input of 'test_deprecate_positional_pos2_len2' to be " \
             "keyword-only.")
     #  else
     #    warning \
             "In clinic.test.c, update parameter(s) 'c' and 'd' in the clinic " \
-            "input of test_deprecate_positional_pos2_len2() to be " \
+            "input of 'test_deprecate_positional_pos2_len2' to be " \
             "keyword-only."
     #  endif
     #endif
@@ -6315,7 +6315,7 @@ static PyObject *
 test_deprecate_positional_pos2_len2_impl(PyObject *module, PyObject *a,
                                          PyObject *b, PyObject *c,
                                          PyObject *d)
-/*[clinic end generated code: output=affce099ff43591d input=0d53533463a12792]*/
+/*[clinic end generated code: output=5e648e887da0a804 input=0d53533463a12792]*/
 
 
 /*[clinic input]
@@ -6391,18 +6391,18 @@ test_deprecate_positional_pos2_len3_with_kwdonly(PyObject *module, PyObject *con
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'c' and 'd' in the clinic " \
-            "input of test_deprecate_positional_pos2_len3_with_kwdonly() to " \
+            "input of 'test_deprecate_positional_pos2_len3_with_kwdonly' to " \
             "be keyword-only."
     #elif PY_VERSION_HEX >= 0x030e00A0
     #  ifdef _MSC_VER
     #    pragma message ( \
             "In clinic.test.c, update parameter(s) 'c' and 'd' in the clinic " \
-            "input of test_deprecate_positional_pos2_len3_with_kwdonly() to " \
+            "input of 'test_deprecate_positional_pos2_len3_with_kwdonly' to " \
             "be keyword-only.")
     #  else
     #    warning \
             "In clinic.test.c, update parameter(s) 'c' and 'd' in the clinic " \
-            "input of test_deprecate_positional_pos2_len3_with_kwdonly() to " \
+            "input of 'test_deprecate_positional_pos2_len3_with_kwdonly' to " \
             "be keyword-only."
     #  endif
     #endif
@@ -6438,7 +6438,7 @@ test_deprecate_positional_pos2_len3_with_kwdonly_impl(PyObject *module,
                                                       PyObject *c,
                                                       PyObject *d,
                                                       PyObject *e)
-/*[clinic end generated code: output=0c7e90700b1ab0dd input=154fd450448d8935]*/
+/*[clinic end generated code: output=383d56b03f7c2dcb input=154fd450448d8935]*/
 
 
 /*[clinic input]
@@ -6500,16 +6500,16 @@ Test(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
-            " Test() to be keyword-only."
+            " 'Test.__new__' to be keyword-only."
     #elif PY_VERSION_HEX >= 0x030e00A0
     #  ifdef _MSC_VER
     #    pragma message ( \
             "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
-            " Test() to be keyword-only.")
+            " 'Test.__new__' to be keyword-only.")
     #  else
     #    warning \
             "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
-            " Test() to be keyword-only."
+            " 'Test.__new__' to be keyword-only."
     #  endif
     #endif
     if (nargs == 1) {
@@ -6533,7 +6533,7 @@ exit:
 
 static PyObject *
 Test_impl(PyTypeObject *type, PyObject *a)
-/*[clinic end generated code: output=39b4c0aeee267af7 input=f133dc077aef49ec]*/
+/*[clinic end generated code: output=d15a69ea37ec6502 input=f133dc077aef49ec]*/
 
 
 /*[clinic input]
@@ -6594,16 +6594,16 @@ m_T___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
-            " m.T() to be keyword-only."
+            " 'm.T.__init__' to be keyword-only."
     #elif PY_VERSION_HEX >= 0x030e00A0
     #  ifdef _MSC_VER
     #    pragma message ( \
             "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
-            " m.T() to be keyword-only.")
+            " 'm.T.__init__' to be keyword-only.")
     #  else
     #    warning \
             "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
-            " m.T() to be keyword-only."
+            " 'm.T.__init__' to be keyword-only."
     #  endif
     #endif
     if (nargs == 1) {
@@ -6627,4 +6627,4 @@ exit:
 
 static int
 m_T___init___impl(TestObj *self, PyObject *a)
-/*[clinic end generated code: output=14ffb1aea3bc94d9 input=f71b51dbe19fa657]*/
+/*[clinic end generated code: output=ef43c425816a549f input=f71b51dbe19fa657]*/

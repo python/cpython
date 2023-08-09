@@ -917,7 +917,7 @@ class CLanguage(Language):
         major, minor = thenceforth
         cpp_message = (
             f"In {source}, update parameter(s) {pstr} in the clinic "
-            f"input of {func.fulldisplayname}() to be keyword-only."
+            f"input of {func.full_name!r} to be keyword-only."
         )
 
         # Format the deprecation message.
