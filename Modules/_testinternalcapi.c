@@ -1532,7 +1532,7 @@ test_pymem_getallocatorsname(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-get_objectvalues(PyObject *self, PyObject *obj)
+get_object_dict_values(PyObject *self, PyObject *obj)
 {
     PyTypeObject *type = Py_TYPE(obj);
     if (!_PyType_HasFeature(type, Py_TPFLAGS_MANAGED_DICT)) {
@@ -1629,7 +1629,7 @@ static PyMethodDef module_functions[] = {
     {"check_pyobject_uninitialized_is_freed",
                               check_pyobject_uninitialized_is_freed, METH_NOARGS},
     {"pymem_getallocatorsname", test_pymem_getallocatorsname, METH_NOARGS},
-    {"get_objectvalues", get_objectvalues, METH_O},
+    {"get_object_dict_values", get_object_dict_values, METH_O},
     {NULL, NULL} /* sentinel */
 };
 

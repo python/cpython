@@ -1015,7 +1015,7 @@ class TestInstanceDict(unittest.TestCase):
         C().b = 2
         c.c = 3
         self.assertEqual(
-            _testinternalcapi.get_objectvalues(c),
+            _testinternalcapi.get_object_dict_values(c),
             (1, '<NULL>', 3)
         )
 
@@ -1025,7 +1025,7 @@ class TestInstanceDict(unittest.TestCase):
         c.b = 2
         c.__dict__
         self.assertIs(
-            _testinternalcapi.get_objectvalues(c),
+            _testinternalcapi.get_object_dict_values(c),
             None
         )
 
@@ -1035,13 +1035,13 @@ class TestInstanceDict(unittest.TestCase):
         c.b = 2
         c.__dict__
         self.assertIs(
-            _testinternalcapi.get_objectvalues(c),
+            _testinternalcapi.get_object_dict_values(c),
             None
         )
         for _ in range(100):
             c.a
         self.assertEqual(
-            _testinternalcapi.get_objectvalues(c),
+            _testinternalcapi.get_object_dict_values(c),
             (1, 2, '<NULL>')
         )
 
@@ -1053,7 +1053,7 @@ class TestInstanceDict(unittest.TestCase):
         for _ in range(100):
             c.a
         self.assertIs(
-            _testinternalcapi.get_objectvalues(c),
+            _testinternalcapi.get_object_dict_values(c),
             None
         )
         self.assertIs(c.__dict__, d)
@@ -1067,11 +1067,11 @@ class TestInstanceDict(unittest.TestCase):
             c.a
             c2.a
         self.assertEqual(
-            _testinternalcapi.get_objectvalues(c),
+            _testinternalcapi.get_object_dict_values(c),
             (1, 2, '<NULL>')
         )
         self.assertEqual(
-            _testinternalcapi.get_objectvalues(c2),
+            _testinternalcapi.get_object_dict_values(c2),
             (1, 2, '<NULL>')
         )
         c3 = copy.deepcopy(c)
@@ -1079,7 +1079,7 @@ class TestInstanceDict(unittest.TestCase):
             c.a
             c3.a
         self.assertEqual(
-            _testinternalcapi.get_objectvalues(c),
+            _testinternalcapi.get_object_dict_values(c),
             (1, 2, '<NULL>')
         )
         #NOTE -- c3.__dict__ does not de-materialize
@@ -1093,11 +1093,11 @@ class TestInstanceDict(unittest.TestCase):
             c.a
             c2.a
         self.assertEqual(
-            _testinternalcapi.get_objectvalues(c),
+            _testinternalcapi.get_object_dict_values(c),
             (1, 2, '<NULL>')
         )
         self.assertEqual(
-            _testinternalcapi.get_objectvalues(c2),
+            _testinternalcapi.get_object_dict_values(c2),
             (1, 2, '<NULL>')
         )
 
@@ -1110,7 +1110,7 @@ class TestInstanceDict(unittest.TestCase):
         for _ in range(100):
             c.a
         self.assertIs(
-            _testinternalcapi.get_objectvalues(c),
+            _testinternalcapi.get_object_dict_values(c),
             None
         )
         self.assertEqual(
