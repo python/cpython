@@ -2944,14 +2944,22 @@ dummy_func(
             GO_TO_INSTRUCTION(CALL_PY_EXACT_ARGS);
         }
 
-        op(_CHECK_CALL_PY_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
-            ASSERT_KWNAMES_IS_NULL();
+        op(_CHECK_PEP_523, (--)) {
             DEOPT_IF(tstate->interp->eval_frame, CALL);
+        }
+
+        op(_CHECK_FUNCTION_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+            ASSERT_KWNAMES_IS_NULL();
             DEOPT_IF(!PyFunction_Check(callable), CALL);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             DEOPT_IF(func->func_version != func_version, CALL);
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             DEOPT_IF(code->co_argcount != oparg + (self_or_null != NULL), CALL);
+        }
+
+        op(_CHECK_STACK_SPACE, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            PyCodeObject *code = (PyCodeObject *)func->func_code;
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
         }
 
@@ -2976,7 +2984,9 @@ dummy_func(
 
         macro(CALL_PY_EXACT_ARGS) =
             unused/1 + // Skip over the counter
-            _CHECK_CALL_PY_EXACT_ARGS +
+            _CHECK_PEP_523 +
+            _CHECK_FUNCTION_EXACT_ARGS +
+            _CHECK_STACK_SPACE +
             _INIT_CALL_PY_EXACT_ARGS +
             _PUSH_FRAME;
 

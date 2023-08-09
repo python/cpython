@@ -2153,19 +2153,31 @@
             break;
         }
 
-        case _CHECK_CALL_PY_EXACT_ARGS: {
+        case _CHECK_PEP_523: {
+            DEOPT_IF(tstate->interp->eval_frame, CALL);
+            break;
+        }
+
+        case _CHECK_FUNCTION_EXACT_ARGS: {
             PyObject *self_or_null;
             PyObject *callable;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             uint32_t func_version = (uint32_t)operand;
             ASSERT_KWNAMES_IS_NULL();
-            DEOPT_IF(tstate->interp->eval_frame, CALL);
             DEOPT_IF(!PyFunction_Check(callable), CALL);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             DEOPT_IF(func->func_version != func_version, CALL);
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             DEOPT_IF(code->co_argcount != oparg + (self_or_null != NULL), CALL);
+            break;
+        }
+
+        case _CHECK_STACK_SPACE: {
+            PyObject *callable;
+            callable = stack_pointer[-2 - oparg];
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            PyCodeObject *code = (PyCodeObject *)func->func_code;
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
             break;
         }
