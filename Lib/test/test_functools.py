@@ -617,7 +617,7 @@ class TestUpdateWrapper(unittest.TestCase):
 
 
     def _default_update(self):
-        def f(a:'This is a new annotation'):
+        def f[T](a:'This is a new annotation'):
             """This is a test"""
             pass
         f.attr = 'This is also a test'
@@ -630,12 +630,14 @@ class TestUpdateWrapper(unittest.TestCase):
     def test_default_update(self):
         wrapper, f = self._default_update()
         self.check_wrapper(wrapper, f)
+        T, = f.__type_params__
         self.assertIs(wrapper.__wrapped__, f)
         self.assertEqual(wrapper.__name__, 'f')
         self.assertEqual(wrapper.__qualname__, f.__qualname__)
         self.assertEqual(wrapper.attr, 'This is also a test')
         self.assertEqual(wrapper.__annotations__['a'], 'This is a new annotation')
         self.assertNotIn('b', wrapper.__annotations__)
+        self.assertEqual(wrapper.__type_params__, (T,))
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
@@ -2472,6 +2474,74 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertTrue(A.t(''))
         self.assertEqual(A.t(0.0), 0.0)
 
+    def test_slotted_class(self):
+        class Slot:
+            __slots__ = ('a', 'b')
+            @functools.singledispatchmethod
+            def go(self, item, arg):
+                pass
+
+            @go.register
+            def _(self, item: int, arg):
+                return item + arg
+
+        s = Slot()
+        self.assertEqual(s.go(1, 1), 2)
+
+    def test_classmethod_slotted_class(self):
+        class Slot:
+            __slots__ = ('a', 'b')
+            @functools.singledispatchmethod
+            @classmethod
+            def go(cls, item, arg):
+                pass
+
+            @go.register
+            @classmethod
+            def _(cls, item: int, arg):
+                return item + arg
+
+        s = Slot()
+        self.assertEqual(s.go(1, 1), 2)
+        self.assertEqual(Slot.go(1, 1), 2)
+
+    def test_staticmethod_slotted_class(self):
+        class A:
+            __slots__ = ['a']
+            @functools.singledispatchmethod
+            @staticmethod
+            def t(arg):
+                return arg
+            @t.register(int)
+            @staticmethod
+            def _(arg):
+                return isinstance(arg, int)
+            @t.register(str)
+            @staticmethod
+            def _(arg):
+                return isinstance(arg, str)
+        a = A()
+
+        self.assertTrue(A.t(0))
+        self.assertTrue(A.t(''))
+        self.assertEqual(A.t(0.0), 0.0)
+        self.assertTrue(a.t(0))
+        self.assertTrue(a.t(''))
+        self.assertEqual(a.t(0.0), 0.0)
+
+    def test_assignment_behavior(self):
+        # see gh-106448
+        class A:
+            @functools.singledispatchmethod
+            def t(arg):
+                return arg
+
+        a = A()
+        a.t.foo = 'bar'
+        a2 = A()
+        with self.assertRaises(AttributeError):
+            a2.t.foo
+
     def test_classmethod_register(self):
         class A:
             def __init__(self, arg):
@@ -2980,7 +3050,7 @@ class TestCachedProperty(unittest.TestCase):
 
     def test_reuse_different_names(self):
         """Disallow this case because decorated function a would not be cached."""
-        with self.assertRaises(RuntimeError) as ctx:
+        with self.assertRaises(TypeError) as ctx:
             class ReusedCachedProperty:
                 @py_functools.cached_property
                 def a(self):
@@ -2989,7 +3059,7 @@ class TestCachedProperty(unittest.TestCase):
                 b = a
 
         self.assertEqual(
-            str(ctx.exception.__context__),
+            str(ctx.exception),
             str(TypeError("Cannot assign the same cached_property to two different names ('a' and 'b')."))
         )
 
@@ -3034,6 +3104,25 @@ class TestCachedProperty(unittest.TestCase):
 
     def test_doc(self):
         self.assertEqual(CachedCostItem.cost.__doc__, "The cost of the item.")
+
+    def test_subclass_with___set__(self):
+        """Caching still works for a subclass defining __set__."""
+        class readonly_cached_property(py_functools.cached_property):
+            def __set__(self, obj, value):
+                raise AttributeError("read only property")
+
+        class Test:
+            def __init__(self, prop):
+                self._prop = prop
+
+            @readonly_cached_property
+            def prop(self):
+                return self._prop
+
+        t = Test(1)
+        self.assertEqual(t.prop, 1)
+        t._prop = 999
+        self.assertEqual(t.prop, 1)
 
 
 if __name__ == '__main__':
