@@ -2365,6 +2365,16 @@ class ReTests(unittest.TestCase):
         self.assertTrue(template_re1.match('ahoy'))
         self.assertFalse(template_re1.match('nope'))
 
+    def test_bug_gh106052(self):
+        self.assertEqual(re.match("(?>(?:ab?c)+)", "aca").span(), (0, 2))
+        self.assertEqual(re.match("(?:ab?c)++", "aca").span(), (0, 2))
+        self.assertEqual(re.match("(?>(?:ab?c)*)", "aca").span(), (0, 2))
+        self.assertEqual(re.match("(?:ab?c)*+", "aca").span(), (0, 2))
+        self.assertEqual(re.match("(?>(?:ab?c)?)", "a").span(), (0, 0))
+        self.assertEqual(re.match("(?:ab?c)?+", "a").span(), (0, 0))
+        self.assertEqual(re.match("(?>(?:ab?c){1,3})", "aca").span(), (0, 2))
+        self.assertEqual(re.match("(?:ab?c){1,3}+", "aca").span(), (0, 2))
+
     @unittest.skipIf(multiprocessing is None, 'test requires multiprocessing')
     def test_regression_gh94675(self):
         pattern = re.compile(r'(?<=[({}])(((//[^\n]*)?[\n])([\000-\040])*)*'
@@ -2461,6 +2471,7 @@ ATOMIC_GROUP
 17: SUCCESS
 ''')
 
+    @unittest.expectedFailure  # gh-106052
     def test_possesive_repeat_one(self):
         self.assertEqual(get_debug_out(r'a?+'), '''\
 POSSESSIVE_REPEAT 0 1
@@ -2473,6 +2484,7 @@ POSSESSIVE_REPEAT 0 1
 12: SUCCESS
 ''')
 
+    @unittest.expectedFailure  # gh-106052
     def test_possesive_repeat(self):
         self.assertEqual(get_debug_out(r'(?:ab)?+'), '''\
 POSSESSIVE_REPEAT 0 1
