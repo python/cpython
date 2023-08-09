@@ -3337,10 +3337,12 @@ class ArchiveMaker:
         self.bio = None
 
     def add(self, name, *, type=None, symlink_to=None, hardlink_to=None,
-            mode=None, **kwargs):
+            mode=None, size=None, **kwargs):
         """Add a member to the test archive. Call within `with`."""
         name = str(name)
         tarinfo = tarfile.TarInfo(name).replace(**kwargs)
+        if size is not None:
+            tarinfo.size = size
         if mode:
             tarinfo.mode = _filemode_to_int(mode)
         if symlink_to is not None:
@@ -3416,7 +3418,8 @@ class TestExtractionFilters(unittest.TestCase):
                 raise self.raised_exception
             self.assertEqual(self.expected_paths, set())
 
-    def expect_file(self, name, type=None, symlink_to=None, mode=None):
+    def expect_file(self, name, type=None, symlink_to=None, mode=None,
+                    size=None):
         """Check a single file. See check_context."""
         if self.raised_exception:
             raise self.raised_exception
@@ -3445,6 +3448,8 @@ class TestExtractionFilters(unittest.TestCase):
             self.assertTrue(path.is_fifo())
         else:
             raise NotImplementedError(type)
+        if size is not None:
+            self.assertEqual(path.stat().st_size, size)
         for parent in path.parents:
             self.expected_paths.discard(parent)
 
@@ -3548,22 +3553,17 @@ class TestExtractionFilters(unittest.TestCase):
                 self.expect_file('current/')
                 self.expect_file('parent/evil')
 
-        with self.check_context(arc.open(), 'tar'):
-            if os_helper.can_symlink():
-                self.expect_exception(
-                        tarfile.OutsideDestinationError,
-                        "'parent/evil' would be extracted to "
-                        + """['"].*evil['"], which is outside """
-                        + "the destination")
-            else:
-                self.expect_file('current/')
-                self.expect_file('parent/evil')
-
-        with self.check_context(arc.open(), 'data'):
-            self.expect_exception(
-                    tarfile.LinkOutsideDestinationError,
-                    """'current/parent' would link to ['"].*['"], """
-                    + "which is outside the destination")
+        for filter in 'tar', 'data':
+            with self.check_context(arc.open(), filter):
+                if os_helper.can_symlink():
+                    self.expect_exception(
+                            tarfile.OutsideDestinationError,
+                            "'parent/evil' would be extracted to "
+                            + """['"].*evil['"], which is outside """
+                            + "the destination")
+                else:
+                    self.expect_file('current/')
+                    self.expect_file('parent/evil')
 
     @symlink_test
     def test_absolute_symlink(self):
@@ -3648,6 +3648,25 @@ class TestExtractionFilters(unittest.TestCase):
                     "'tmp/../../moo' would be extracted to "
                     + """['"].*moo['"], which is outside the """
                     + "destination")
+
+    @symlink_test
+    def test_deep_symlink(self):
+        with ArchiveMaker() as arc:
+            arc.add('targetdir/target', size=3)
+            arc.add('linkdir/hardlink', hardlink_to=os.path.join(
+                'targetdir', 'target'))
+            arc.add('linkdir/symlink', symlink_to=os.path.join(
+                '..', 'targetdir', 'target'))
+
+        for filter in 'tar', 'data', 'fully_trusted':
+            with self.check_context(arc.open(), filter):
+                self.expect_file('targetdir/target', size=3)
+                self.expect_file('linkdir/hardlink', size=3)
+                if os_helper.can_symlink():
+                    self.expect_file('linkdir/symlink', size=3,
+                                     symlink_to='../targetdir/target')
+                else:
+                    self.expect_file('linkdir/symlink', size=3)
 
     def test_modes(self):
         # Test how file modes are extracted

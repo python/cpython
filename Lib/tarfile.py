@@ -802,7 +802,14 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
         if member.islnk() or member.issym():
             if os.path.isabs(member.linkname):
                 raise AbsoluteLinkError(member)
-            target_path = os.path.realpath(os.path.join(dest_path, member.linkname))
+            if member.issym():
+                target_path = os.path.join(dest_path,
+                                           os.path.dirname(name),
+                                           member.linkname)
+            else:
+                target_path = os.path.join(dest_path,
+                                           member.linkname)
+            target_path = os.path.realpath(target_path)
             if os.path.commonpath([target_path, dest_path]) != dest_path:
                 raise LinkOutsideDestinationError(member, target_path)
     return new_attrs
