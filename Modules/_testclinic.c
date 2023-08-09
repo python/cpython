@@ -1215,6 +1215,60 @@ output impl_definition block
 
 
 /*[clinic input]
+class _testclinic.DeprStarNew "PyObject *" "PyObject"
+@classmethod
+_testclinic.DeprStarNew.__new__ as depr_star_new
+    * [from 3.14]
+    a: object
+The deprecation message should use the class name instead of __new__.
+[clinic start generated code]*/
+
+static PyObject *
+depr_star_new_impl(PyTypeObject *type, PyObject *a)
+/*[clinic end generated code: output=bdbb36244f90cf46 input=f4ae7dafbc23c378]*/
+{
+    PyObject *self = type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
+    }
+    return self;
+}
+
+static PyTypeObject DeprStarNew = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_testclinic.DeprStarNew",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_new = depr_star_new,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+};
+
+
+/*[clinic input]
+class _testclinic.DeprStarInit "PyObject *" "PyObject"
+_testclinic.DeprStarInit.__init__ as depr_star_init
+    * [from 3.14]
+    a: object
+The deprecation message should use the class name instead of __init__.
+[clinic start generated code]*/
+
+static int
+depr_star_init_impl(PyObject *self, PyObject *a)
+/*[clinic end generated code: output=8d27b43c286d3ecc input=659ebc748d87fa86]*/
+{
+    return 0;
+}
+
+static PyTypeObject DeprStarInit = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_testclinic.DeprStarInit",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_new = PyType_GenericNew,
+    .tp_init = depr_star_init,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+};
+
+
+/*[clinic input]
 depr_star_pos0_len1
     * [from 3.14]
     a: object
@@ -1455,7 +1509,21 @@ static struct PyModuleDef _testclinic_module = {
 PyMODINIT_FUNC
 PyInit__testclinic(void)
 {
-    return PyModule_Create(&_testclinic_module);
+    PyObject *m = PyModule_Create(&_testclinic_module);
+    if (m == NULL) {
+        return NULL;
+    }
+    if (PyModule_AddType(m, &DeprStarNew) < 0) {
+        goto error;
+    }
+    if (PyModule_AddType(m, &DeprStarInit) < 0) {
+        goto error;
+    }
+    return m;
+
+error:
+    Py_DECREF(m);
+    return NULL;
 }
 
 #undef RETURN_PACKED_ARGS

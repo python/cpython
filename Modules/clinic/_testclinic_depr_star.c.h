@@ -8,6 +8,174 @@ preserve
 #endif
 
 
+PyDoc_STRVAR(depr_star_new__doc__,
+"DeprStarNew(a)\n"
+"--\n"
+"\n"
+"The deprecation message should use the class name instead of __new__.\n"
+"\n"
+"Note: Passing positional arguments to _testclinic.DeprStarNew() is\n"
+"deprecated. Parameter \'a\' will become a keyword-only parameter in\n"
+"Python 3.14.\n"
+"");
+
+static PyObject *
+depr_star_new_impl(PyTypeObject *type, PyObject *a);
+
+static PyObject *
+depr_star_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "DeprStarNew",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    PyObject *a;
+
+    // Emit compiler warnings when we get to Python 3.14.
+    #if PY_VERSION_HEX >= 0x030e00C0
+    #  error \
+            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
+            " '_testclinic.DeprStarNew.__new__' to be keyword-only."
+    #elif PY_VERSION_HEX >= 0x030e00A0
+    #  ifdef _MSC_VER
+    #    pragma message ( \
+            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
+            " '_testclinic.DeprStarNew.__new__' to be keyword-only.")
+    #  else
+    #    warning \
+            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
+            " '_testclinic.DeprStarNew.__new__' to be keyword-only."
+    #  endif
+    #endif
+    if (nargs == 1) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing positional arguments to _testclinic.DeprStarNew() is "
+                "deprecated. Parameter 'a' will become a keyword-only parameter "
+                "in Python 3.14.", 1))
+        {
+                goto exit;
+        }
+    }
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    a = fastargs[0];
+    return_value = depr_star_new_impl(type, a);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(depr_star_init__doc__,
+"DeprStarInit(a)\n"
+"--\n"
+"\n"
+"The deprecation message should use the class name instead of __init__.\n"
+"\n"
+"Note: Passing positional arguments to _testclinic.DeprStarInit() is\n"
+"deprecated. Parameter \'a\' will become a keyword-only parameter in\n"
+"Python 3.14.\n"
+"");
+
+static int
+depr_star_init_impl(PyObject *self, PyObject *a);
+
+static int
+depr_star_init(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int return_value = -1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "DeprStarInit",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    PyObject *a;
+
+    // Emit compiler warnings when we get to Python 3.14.
+    #if PY_VERSION_HEX >= 0x030e00C0
+    #  error \
+            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
+            " '_testclinic.DeprStarInit.__init__' to be keyword-only."
+    #elif PY_VERSION_HEX >= 0x030e00A0
+    #  ifdef _MSC_VER
+    #    pragma message ( \
+            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
+            " '_testclinic.DeprStarInit.__init__' to be keyword-only.")
+    #  else
+    #    warning \
+            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
+            " '_testclinic.DeprStarInit.__init__' to be keyword-only."
+    #  endif
+    #endif
+    if (nargs == 1) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing positional arguments to _testclinic.DeprStarInit() is "
+                "deprecated. Parameter 'a' will become a keyword-only parameter "
+                "in Python 3.14.", 1))
+        {
+                goto exit;
+        }
+    }
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    a = fastargs[0];
+    return_value = depr_star_init_impl(self, a);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(depr_star_pos0_len1__doc__,
 "depr_star_pos0_len1($module, /, a)\n"
 "--\n"
@@ -803,4 +971,4 @@ depr_star_pos2_len2_with_kwd(PyObject *module, PyObject *const *args, Py_ssize_t
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=86f3daa601f61cee input=a9049054013a1b77]*/
+/*[clinic end generated code: output=18ab056f6cc06d7e input=a9049054013a1b77]*/

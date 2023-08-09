@@ -4,9 +4,11 @@ output preset block
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=3c81ac2402d06a8b]*/
 
 /*[clinic input]
+module m
+class m.T "TestObj *" "TestType"
 class Test "TestObj *" "TestType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=fc7e50384d12b83f]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f761b4d55cb179cf]*/
 
 /*[clinic input]
 test_object_converter

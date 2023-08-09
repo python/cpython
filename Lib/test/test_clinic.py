@@ -2906,6 +2906,24 @@ class ClinicFunctionalTest(unittest.TestCase):
                 func = getattr(ac_tester, name)
                 self.assertEqual(func(), name)
 
+    def test_depr_star_new(self):
+        regex = re.escape(
+            "Passing positional arguments to _testclinic.DeprStarNew() is "
+            "deprecated. Parameter 'a' will become a keyword-only parameter "
+            "in Python 3.14."
+        )
+        with self.assertWarnsRegex(DeprecationWarning, regex):
+            ac_tester.DeprStarNew(None)
+
+    def test_depr_star_init(self):
+        regex = re.escape(
+            "Passing positional arguments to _testclinic.DeprStarInit() is "
+            "deprecated. Parameter 'a' will become a keyword-only parameter "
+            "in Python 3.14."
+        )
+        with self.assertWarnsRegex(DeprecationWarning, regex):
+            ac_tester.DeprStarInit(None)
+
     def test_depr_star_pos0_len1(self):
         fn = ac_tester.depr_star_pos0_len1
         fn(a=None)
