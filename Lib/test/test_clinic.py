@@ -2439,8 +2439,11 @@ class ClinicFunctionalTest(unittest.TestCase):
             fr"become( a)? keyword-only parameter(s)? in Python 3.14"
         )
         with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
-            fn(*args, **kwds)
+            # Record the line number, so we're sure we've got the correct stack
+            # level on the deprecation warning.
+            _, lineno = fn(*args, **kwds), sys._getframe().f_lineno
         self.assertEqual(cm.filename, __file__)
+        self.assertEqual(cm.lineno, lineno)
 
     def test_objects_converter(self):
         with self.assertRaises(TypeError):
