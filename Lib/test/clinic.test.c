@@ -4,9 +4,11 @@ output preset block
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=3c81ac2402d06a8b]*/
 
 /*[clinic input]
+module m
+class m.T "TestObj *" "TestType"
 class Test "TestObj *" "TestType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=fc7e50384d12b83f]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f761b4d55cb179cf]*/
 
 /*[clinic input]
 test_object_converter
@@ -6535,27 +6537,27 @@ Test_impl(PyTypeObject *type, PyObject *a)
 
 
 /*[clinic input]
-Test.__init__
+m.T.__init__
     * [from 3.14]
     a: object
 The deprecation message should use the class name instead of __init__.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(Test___init____doc__,
-"Test(a)\n"
+PyDoc_STRVAR(m_T___init____doc__,
+"T(a)\n"
 "--\n"
 "\n"
 "The deprecation message should use the class name instead of __init__.\n"
 "\n"
-"Note: Passing positional arguments to Test() is deprecated. Parameter\n"
+"Note: Passing positional arguments to m.T() is deprecated. Parameter\n"
 "\'a\' will become a keyword-only parameter in Python 3.14.\n"
 "");
 
 static int
-Test___init___impl(TestObj *self, PyObject *a);
+m_T___init___impl(TestObj *self, PyObject *a);
 
 static int
-Test___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+m_T___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -6579,7 +6581,7 @@ Test___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     static const char * const _keywords[] = {"a", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .fname = "Test",
+        .fname = "T",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -6592,21 +6594,21 @@ Test___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     #if PY_VERSION_HEX >= 0x030e00C0
     #  error \
             "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
-            " Test() to be keyword-only."
+            " m.T() to be keyword-only."
     #elif PY_VERSION_HEX >= 0x030e00A0
     #  ifdef _MSC_VER
     #    pragma message ( \
             "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
-            " Test() to be keyword-only.")
+            " m.T() to be keyword-only.")
     #  else
     #    warning \
             "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
-            " Test() to be keyword-only."
+            " m.T() to be keyword-only."
     #  endif
     #endif
     if (nargs == 1) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                "Passing positional arguments to Test() is deprecated. Parameter "
+                "Passing positional arguments to m.T() is deprecated. Parameter "
                 "'a' will become a keyword-only parameter in Python 3.14.", 1))
         {
                 goto exit;
@@ -6617,12 +6619,12 @@ Test___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     a = fastargs[0];
-    return_value = Test___init___impl((TestObj *)self, a);
+    return_value = m_T___init___impl((TestObj *)self, a);
 
 exit:
     return return_value;
 }
 
 static int
-Test___init___impl(TestObj *self, PyObject *a)
-/*[clinic end generated code: output=4bd39f6cf9e13372 input=bcc7995baf256b11]*/
+m_T___init___impl(TestObj *self, PyObject *a)
+/*[clinic end generated code: output=14ffb1aea3bc94d9 input=f71b51dbe19fa657]*/
