@@ -1780,8 +1780,7 @@ class PyBuildExt(build_ext):
 
             exts.append( Extension('_Qt', ['qt/_Qtmodule.c'],
                         extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'QuickTime',
-                                     '-framework', 'Carbon']) )
+                        extra_link_args=['-framework', 'Carbon']) )
 
 
         self.extensions.extend(exts)
