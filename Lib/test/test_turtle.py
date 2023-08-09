@@ -468,8 +468,8 @@ class TestModuleLevel(unittest.TestCase):
 
         known_signatures = {
             'teleport':
-                '(x=None, y=None, fill_gap: bool = False) -> None',
-            'clear': '()',
+                '(x=None, y=None, *, fill_gap: bool = False) -> None',
+            'undo': '()',
             'reset': '(canvwidth=None, canvheight=None, bg=None)',
             'bgcolor': '(*args)',
             'pen': '(pen=None, **pendict)',
