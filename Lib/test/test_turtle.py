@@ -470,7 +470,7 @@ class TestModuleLevel(unittest.TestCase):
             'teleport':
                 '(x=None, y=None, *, fill_gap: bool = False) -> None',
             'undo': '()',
-            'reset': '(canvwidth=None, canvheight=None, bg=None)',
+            'goto': '(x, y=None)',
             'bgcolor': '(*args)',
             'pen': '(pen=None, **pendict)',
         }
