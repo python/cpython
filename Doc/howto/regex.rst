@@ -474,6 +474,15 @@ In actual programs, the most common style is to store the
    else:
        print('No match')
 
+Python 3.8 added assignment expressions that shorten the above pattern
+by a line::
+
+   p = re.compile( ... )
+   if (m := p.match( 'string goes here' )):
+       print('Match found: ', m.group())
+   else:
+       print('No match')
+
 Two pattern methods return all of the matches for a pattern.
 :meth:`~re.Pattern.findall` returns a list of matching strings::
 
