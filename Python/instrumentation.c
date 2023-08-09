@@ -1152,7 +1152,7 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
          code->_co_monitoring->local_monitors.tools[PY_MONITORING_EVENT_LINE]
         );
     /* Special case sys.settrace to avoid boxing the line number,
-     * only to unbox it. */
+     * only to immediately unbox it. */
     if (tools & (1 << PY_MONITORING_SYS_TRACE_ID)) {
         if (tstate->c_tracefunc != NULL && line >= 0) {
             PyFrameObject *frame_obj = _PyFrame_GetFrameObject(frame);
@@ -1160,9 +1160,12 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
                 return -1;
             }
             if (frame_obj->f_trace_lines) {
+                /* Set tracing and what_event as we do for
+                 * instrumentation */
                 int old_what = tstate->what_event;
                 tstate->what_event = PY_MONITORING_EVENT_LINE;
                 tstate->tracing++;
+                /* Call c_tracefunc directly */
                 Py_INCREF(frame_obj);
                 frame_obj->f_lineno = line;
                 int err = tstate->c_tracefunc(tstate->c_traceobj, frame_obj, PyTrace_LINE, Py_None);
@@ -1177,12 +1180,15 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
         }
         tools &= (255 - (1 << PY_MONITORING_SYS_TRACE_ID));
     }
+    if (tools == 0) {
+        goto done;
+    }
     PyObject *line_obj = PyLong_FromLong(line);
     if (line_obj == NULL) {
         return -1;
     }
     PyObject *args[3] = { NULL, (PyObject *)code, line_obj };
-    while (tools) {
+    do {
         int tool = most_significant_bit(tools);
         assert(tool >= 0 && tool < PY_MONITORING_SYS_PROFILE_ID);
         assert(tools & (1 << tool));
@@ -1202,7 +1208,7 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
             /* DISABLE  */
             remove_line_tools(code, i, 1 << tool);
         }
-    }
+    } while (tools);
     Py_DECREF(line_obj);
 done:
     assert(original_opcode != 0);
