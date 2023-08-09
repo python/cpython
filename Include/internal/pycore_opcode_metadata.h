@@ -731,7 +731,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case LOAD_ZERO_SUPER_ATTR:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_SUPER_ATTR_ATTR:
-            return ((oparg & 1) ? 1 : 0) + 1;
+            return 1;
         case LOAD_SUPER_ATTR_METHOD:
             return 2;
         case LOAD_ATTR:
@@ -749,9 +749,9 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case LOAD_ATTR_CLASS:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_PROPERTY:
-            return ((oparg & 1) ? 1 : 0) + 1;
+            return 1;
         case LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN:
-            return ((oparg & 1) ? 1 : 0) + 1;
+            return 1;
         case STORE_ATTR_INSTANCE_VALUE:
             return 0;
         case STORE_ATTR_WITH_HINT:

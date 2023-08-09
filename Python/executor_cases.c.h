@@ -1490,8 +1490,7 @@
             Py_DECREF(self);
             if (attr == NULL) goto pop_3_error;
             STACK_SHRINK(2);
-            STACK_GROW(((oparg & 1) ? 1 : 0));
-            stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = attr;
+            stack_pointer[-1 - (0 ? 1 : 0)] = attr;
             break;
         }
 
@@ -2229,7 +2228,7 @@
             /* Builtin METH_O functions */
             ASSERT_KWNAMES_IS_NULL();
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -2269,7 +2268,7 @@
             /* Builtin METH_FASTCALL functions, without keywords */
             ASSERT_KWNAMES_IS_NULL();
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -2313,7 +2312,7 @@
             ASSERT_KWNAMES_IS_NULL();
             /* len(o) */
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -2349,7 +2348,7 @@
             ASSERT_KWNAMES_IS_NULL();
             /* isinstance(o, o2) */
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -2386,7 +2385,7 @@
             callable = stack_pointer[-2 - oparg];
             ASSERT_KWNAMES_IS_NULL();
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -2430,7 +2429,7 @@
             ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 0 || oparg == 1);
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -2471,7 +2470,7 @@
             callable = stack_pointer[-2 - oparg];
             ASSERT_KWNAMES_IS_NULL();
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }

@@ -1702,7 +1702,7 @@ dummy_func(
             LOAD_SUPER_ATTR,
         };
 
-        inst(LOAD_SUPER_ATTR_ATTR, (unused/1, global_super, class, self -- attr, unused if (oparg & 1))) {
+        inst(LOAD_SUPER_ATTR_ATTR, (unused/1, global_super, class, self -- attr, unused if (0))) {
             assert(!(oparg & 1));
             DEOPT_IF(global_super != (PyObject *)&PySuper_Type, LOAD_SUPER_ATTR);
             DEOPT_IF(!PyType_Check(class), LOAD_SUPER_ATTR);
@@ -1891,10 +1891,10 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        inst(LOAD_ATTR_CLASS, (unused/1, type_version/2, unused/2, descr/4, cls -- attr, null if (oparg & 1))) {
+        inst(LOAD_ATTR_CLASS, (unused/1, type_version/2, unused/2, descr/4, owner -- attr, null if (oparg & 1))) {
 
-            DEOPT_IF(!PyType_Check(cls), LOAD_ATTR);
-            DEOPT_IF(((PyTypeObject *)cls)->tp_version_tag != type_version,
+            DEOPT_IF(!PyType_Check(owner), LOAD_ATTR);
+            DEOPT_IF(((PyTypeObject *)owner)->tp_version_tag != type_version,
                 LOAD_ATTR);
             assert(type_version != 0);
 
@@ -1906,7 +1906,7 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        inst(LOAD_ATTR_PROPERTY, (unused/1, type_version/2, func_version/2, fget/4, owner -- unused, unused if (oparg & 1))) {
+        inst(LOAD_ATTR_PROPERTY, (unused/1, type_version/2, func_version/2, fget/4, owner -- unused, unused if (0))) {
             assert((oparg & 1) == 0);
             DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
 
@@ -1931,7 +1931,7 @@ dummy_func(
             DISPATCH_INLINED(new_frame);
         }
 
-        inst(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN, (unused/1, type_version/2, func_version/2, getattribute/4, owner -- unused, unused if (oparg & 1))) {
+        inst(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN, (unused/1, type_version/2, func_version/2, getattribute/4, owner -- unused, unused if (0))) {
             assert((oparg & 1) == 0);
             DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
             PyTypeObject *cls = Py_TYPE(owner);
@@ -2704,47 +2704,47 @@ dummy_func(
             exc_info->exc_value = Py_NewRef(new_exc);
         }
 
-        inst(LOAD_ATTR_METHOD_WITH_VALUES, (unused/1, type_version/2, keys_version/2, descr/4, self -- attr, self_or_null if (1))) {
+        inst(LOAD_ATTR_METHOD_WITH_VALUES, (unused/1, type_version/2, keys_version/2, descr/4, owner -- attr, self if (1))) {
             assert(oparg & 1);
             /* Cached method object */
-            PyTypeObject *self_cls = Py_TYPE(self);
+            PyTypeObject *owner_cls = Py_TYPE(owner);
             assert(type_version != 0);
-            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
-            assert(self_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(self);
+            DEOPT_IF(owner_cls->tp_version_tag != type_version, LOAD_ATTR);
+            assert(owner_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             DEOPT_IF(!_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
-            PyHeapTypeObject *self_heap_type = (PyHeapTypeObject *)self_cls;
-            DEOPT_IF(self_heap_type->ht_cached_keys->dk_version !=
+            PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
+            DEOPT_IF(owner_heap_type->ht_cached_keys->dk_version !=
                      keys_version, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             attr = Py_NewRef(descr);
             assert(_PyType_HasFeature(Py_TYPE(attr), Py_TPFLAGS_METHOD_DESCRIPTOR));
-            self_or_null = self;
+            self = owner;
         }
 
-        inst(LOAD_ATTR_METHOD_NO_DICT, (unused/1, type_version/2, unused/2, descr/4, self -- attr, self_or_null if (1))) {
+        inst(LOAD_ATTR_METHOD_NO_DICT, (unused/1, type_version/2, unused/2, descr/4, owner -- attr, self if (1))) {
             assert(oparg & 1);
-            PyTypeObject *self_cls = Py_TYPE(self);
-            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
-            assert(self_cls->tp_dictoffset == 0);
+            PyTypeObject *owner_cls = Py_TYPE(owner);
+            DEOPT_IF(owner_cls->tp_version_tag != type_version, LOAD_ATTR);
+            assert(owner_cls->tp_dictoffset == 0);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             attr = Py_NewRef(descr);
-            self_or_null = self;
+            self = owner;
         }
 
-        inst(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES, (unused/1, type_version/2, keys_version/2, descr/4, self -- attr, unused if (0))) {
+        inst(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES, (unused/1, type_version/2, keys_version/2, descr/4, owner -- attr, unused if (0))) {
             assert((oparg & 1) == 0);
-            PyTypeObject *self_cls = Py_TYPE(self);
+            PyTypeObject *owner_cls = Py_TYPE(owner);
             assert(type_version != 0);
-            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
-            assert(self_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(self);
+            DEOPT_IF(owner_cls->tp_version_tag != type_version, LOAD_ATTR);
+            assert(owner_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             DEOPT_IF(!_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
-            PyHeapTypeObject *self_heap_type = (PyHeapTypeObject *)self_cls;
-            DEOPT_IF(self_heap_type->ht_cached_keys->dk_version !=
+            PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
+            DEOPT_IF(owner_heap_type->ht_cached_keys->dk_version !=
                      keys_version, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
@@ -2752,32 +2752,32 @@ dummy_func(
             attr = Py_NewRef(descr);
         }
 
-        inst(LOAD_ATTR_NONDESCRIPTOR_NO_DICT, (unused/1, type_version/2, unused/2, descr/4, self -- attr, unused if (0))) {
+        inst(LOAD_ATTR_NONDESCRIPTOR_NO_DICT, (unused/1, type_version/2, unused/2, descr/4, owner -- attr, unused if (0))) {
             assert((oparg & 1) == 0);
-            PyTypeObject *self_cls = Py_TYPE(self);
+            PyTypeObject *owner_cls = Py_TYPE(owner);
             assert(type_version != 0);
-            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
-            assert(self_cls->tp_dictoffset == 0);
+            DEOPT_IF(owner_cls->tp_version_tag != type_version, LOAD_ATTR);
+            assert(owner_cls->tp_dictoffset == 0);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             DECREF_INPUTS();
             attr = Py_NewRef(descr);
         }
 
-        inst(LOAD_ATTR_METHOD_LAZY_DICT, (unused/1, type_version/2, unused/2, descr/4, self -- attr, self_or_null if (1))) {
+        inst(LOAD_ATTR_METHOD_LAZY_DICT, (unused/1, type_version/2, unused/2, descr/4, owner -- attr, self if (1))) {
             assert(oparg & 1);
-            PyTypeObject *self_cls = Py_TYPE(self);
-            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
-            Py_ssize_t dictoffset = self_cls->tp_dictoffset;
+            PyTypeObject *owner_cls = Py_TYPE(owner);
+            DEOPT_IF(owner_cls->tp_version_tag != type_version, LOAD_ATTR);
+            Py_ssize_t dictoffset = owner_cls->tp_dictoffset;
             assert(dictoffset > 0);
-            PyObject *dict = *(PyObject **)((char *)self + dictoffset);
+            PyObject *dict = *(PyObject **)((char *)owner + dictoffset);
             /* This object has a __dict__, just not yet created */
             DEOPT_IF(dict != NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             attr = Py_NewRef(descr);
-            self_or_null = self;
+            self = owner;
         }
 
         inst(KW_NAMES, (--)) {
@@ -2833,7 +2833,7 @@ dummy_func(
         // When calling Python, inline the call using DISPATCH_INLINED().
         inst(CALL, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -2932,7 +2932,7 @@ dummy_func(
             ASSERT_KWNAMES_IS_NULL();
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             int argcount = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 argcount++;
             }
@@ -2958,7 +2958,7 @@ dummy_func(
             ASSERT_KWNAMES_IS_NULL();
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             int argcount = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 argcount++;
             }
@@ -3095,7 +3095,7 @@ dummy_func(
 
         inst(CALL_BUILTIN_CLASS, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -3120,7 +3120,7 @@ dummy_func(
             /* Builtin METH_O functions */
             ASSERT_KWNAMES_IS_NULL();
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -3149,7 +3149,7 @@ dummy_func(
             /* Builtin METH_FASTCALL functions, without keywords */
             ASSERT_KWNAMES_IS_NULL();
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -3181,7 +3181,7 @@ dummy_func(
         inst(CALL_BUILTIN_FAST_WITH_KEYWORDS, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
             /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -3215,7 +3215,7 @@ dummy_func(
             ASSERT_KWNAMES_IS_NULL();
             /* len(o) */
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -3240,7 +3240,7 @@ dummy_func(
             ASSERT_KWNAMES_IS_NULL();
             /* isinstance(o, o2) */
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -3287,7 +3287,7 @@ dummy_func(
         inst(CALL_NO_KW_METHOD_DESCRIPTOR_O, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
             ASSERT_KWNAMES_IS_NULL();
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -3318,7 +3318,7 @@ dummy_func(
 
         inst(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -3350,7 +3350,7 @@ dummy_func(
             ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 0 || oparg == 1);
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -3380,7 +3380,7 @@ dummy_func(
         inst(CALL_NO_KW_METHOD_DESCRIPTOR_FAST, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
             ASSERT_KWNAMES_IS_NULL();
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }

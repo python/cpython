@@ -2227,8 +2227,7 @@
             Py_DECREF(self);
             if (attr == NULL) goto pop_3_error;
             STACK_SHRINK(2);
-            STACK_GROW(((oparg & 1) ? 1 : 0));
-            stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = attr;
+            stack_pointer[-1 - (0 ? 1 : 0)] = attr;
             next_instr += 1;
             DISPATCH();
         }
@@ -2457,15 +2456,15 @@
         }
 
         TARGET(LOAD_ATTR_CLASS) {
-            PyObject *cls;
+            PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
-            cls = stack_pointer[-1];
+            owner = stack_pointer[-1];
             uint32_t type_version = read_u32(&next_instr[1].cache);
             PyObject *descr = read_obj(&next_instr[5].cache);
 
-            DEOPT_IF(!PyType_Check(cls), LOAD_ATTR);
-            DEOPT_IF(((PyTypeObject *)cls)->tp_version_tag != type_version,
+            DEOPT_IF(!PyType_Check(owner), LOAD_ATTR);
+            DEOPT_IF(((PyTypeObject *)owner)->tp_version_tag != type_version,
                 LOAD_ATTR);
             assert(type_version != 0);
 
@@ -2474,7 +2473,7 @@
             attr = descr;
             assert(attr != NULL);
             Py_INCREF(attr);
-            Py_DECREF(cls);
+            Py_DECREF(owner);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = attr;
             if (oparg & 1) { stack_pointer[-(oparg & 1 ? 1 : 0)] = null; }
@@ -2510,7 +2509,6 @@
             SKIP_OVER(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             frame->return_offset = 0;
             DISPATCH_INLINED(new_frame);
-            STACK_GROW(((oparg & 1) ? 1 : 0));
         }
 
         TARGET(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN) {
@@ -2543,7 +2541,6 @@
             SKIP_OVER(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             frame->return_offset = 0;
             DISPATCH_INLINED(new_frame);
-            STACK_GROW(((oparg & 1) ? 1 : 0));
         }
 
         TARGET(STORE_ATTR_INSTANCE_VALUE) {
@@ -3473,79 +3470,79 @@
         }
 
         TARGET(LOAD_ATTR_METHOD_WITH_VALUES) {
-            PyObject *self;
+            PyObject *owner;
             PyObject *attr;
-            PyObject *self_or_null;
-            self = stack_pointer[-1];
+            PyObject *self;
+            owner = stack_pointer[-1];
             uint32_t type_version = read_u32(&next_instr[1].cache);
             uint32_t keys_version = read_u32(&next_instr[3].cache);
             PyObject *descr = read_obj(&next_instr[5].cache);
             assert(oparg & 1);
             /* Cached method object */
-            PyTypeObject *self_cls = Py_TYPE(self);
+            PyTypeObject *owner_cls = Py_TYPE(owner);
             assert(type_version != 0);
-            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
-            assert(self_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(self);
+            DEOPT_IF(owner_cls->tp_version_tag != type_version, LOAD_ATTR);
+            assert(owner_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             DEOPT_IF(!_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
-            PyHeapTypeObject *self_heap_type = (PyHeapTypeObject *)self_cls;
-            DEOPT_IF(self_heap_type->ht_cached_keys->dk_version !=
+            PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
+            DEOPT_IF(owner_heap_type->ht_cached_keys->dk_version !=
                      keys_version, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             attr = Py_NewRef(descr);
             assert(_PyType_HasFeature(Py_TYPE(attr), Py_TPFLAGS_METHOD_DESCRIPTOR));
-            self_or_null = self;
+            self = owner;
             STACK_GROW(1);
             stack_pointer[-2] = attr;
-            stack_pointer[-1] = self_or_null;
+            stack_pointer[-1] = self;
             next_instr += 9;
             DISPATCH();
         }
 
         TARGET(LOAD_ATTR_METHOD_NO_DICT) {
-            PyObject *self;
+            PyObject *owner;
             PyObject *attr;
-            PyObject *self_or_null;
-            self = stack_pointer[-1];
+            PyObject *self;
+            owner = stack_pointer[-1];
             uint32_t type_version = read_u32(&next_instr[1].cache);
             PyObject *descr = read_obj(&next_instr[5].cache);
             assert(oparg & 1);
-            PyTypeObject *self_cls = Py_TYPE(self);
-            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
-            assert(self_cls->tp_dictoffset == 0);
+            PyTypeObject *owner_cls = Py_TYPE(owner);
+            DEOPT_IF(owner_cls->tp_version_tag != type_version, LOAD_ATTR);
+            assert(owner_cls->tp_dictoffset == 0);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             attr = Py_NewRef(descr);
-            self_or_null = self;
+            self = owner;
             STACK_GROW(1);
             stack_pointer[-2] = attr;
-            stack_pointer[-1] = self_or_null;
+            stack_pointer[-1] = self;
             next_instr += 9;
             DISPATCH();
         }
 
         TARGET(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES) {
-            PyObject *self;
+            PyObject *owner;
             PyObject *attr;
-            self = stack_pointer[-1];
+            owner = stack_pointer[-1];
             uint32_t type_version = read_u32(&next_instr[1].cache);
             uint32_t keys_version = read_u32(&next_instr[3].cache);
             PyObject *descr = read_obj(&next_instr[5].cache);
             assert((oparg & 1) == 0);
-            PyTypeObject *self_cls = Py_TYPE(self);
+            PyTypeObject *owner_cls = Py_TYPE(owner);
             assert(type_version != 0);
-            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
-            assert(self_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(self);
+            DEOPT_IF(owner_cls->tp_version_tag != type_version, LOAD_ATTR);
+            assert(owner_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             DEOPT_IF(!_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
-            PyHeapTypeObject *self_heap_type = (PyHeapTypeObject *)self_cls;
-            DEOPT_IF(self_heap_type->ht_cached_keys->dk_version !=
+            PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
+            DEOPT_IF(owner_heap_type->ht_cached_keys->dk_version !=
                      keys_version, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
-            Py_DECREF(self);
+            Py_DECREF(owner);
             attr = Py_NewRef(descr);
             stack_pointer[-1 - (0 ? 1 : 0)] = attr;
             next_instr += 9;
@@ -3553,19 +3550,19 @@
         }
 
         TARGET(LOAD_ATTR_NONDESCRIPTOR_NO_DICT) {
-            PyObject *self;
+            PyObject *owner;
             PyObject *attr;
-            self = stack_pointer[-1];
+            owner = stack_pointer[-1];
             uint32_t type_version = read_u32(&next_instr[1].cache);
             PyObject *descr = read_obj(&next_instr[5].cache);
             assert((oparg & 1) == 0);
-            PyTypeObject *self_cls = Py_TYPE(self);
+            PyTypeObject *owner_cls = Py_TYPE(owner);
             assert(type_version != 0);
-            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
-            assert(self_cls->tp_dictoffset == 0);
+            DEOPT_IF(owner_cls->tp_version_tag != type_version, LOAD_ATTR);
+            assert(owner_cls->tp_dictoffset == 0);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
-            Py_DECREF(self);
+            Py_DECREF(owner);
             attr = Py_NewRef(descr);
             stack_pointer[-1 - (0 ? 1 : 0)] = attr;
             next_instr += 9;
@@ -3573,28 +3570,28 @@
         }
 
         TARGET(LOAD_ATTR_METHOD_LAZY_DICT) {
-            PyObject *self;
+            PyObject *owner;
             PyObject *attr;
-            PyObject *self_or_null;
-            self = stack_pointer[-1];
+            PyObject *self;
+            owner = stack_pointer[-1];
             uint32_t type_version = read_u32(&next_instr[1].cache);
             PyObject *descr = read_obj(&next_instr[5].cache);
             assert(oparg & 1);
-            PyTypeObject *self_cls = Py_TYPE(self);
-            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
-            Py_ssize_t dictoffset = self_cls->tp_dictoffset;
+            PyTypeObject *owner_cls = Py_TYPE(owner);
+            DEOPT_IF(owner_cls->tp_version_tag != type_version, LOAD_ATTR);
+            Py_ssize_t dictoffset = owner_cls->tp_dictoffset;
             assert(dictoffset > 0);
-            PyObject *dict = *(PyObject **)((char *)self + dictoffset);
+            PyObject *dict = *(PyObject **)((char *)owner + dictoffset);
             /* This object has a __dict__, just not yet created */
             DEOPT_IF(dict != NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             attr = Py_NewRef(descr);
-            self_or_null = self;
+            self = owner;
             STACK_GROW(1);
             stack_pointer[-2] = attr;
-            stack_pointer[-1] = self_or_null;
+            stack_pointer[-1] = self;
             next_instr += 9;
             DISPATCH();
         }
@@ -3632,7 +3629,7 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -3747,7 +3744,7 @@
             ASSERT_KWNAMES_IS_NULL();
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             int argcount = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 argcount++;
             }
@@ -3782,7 +3779,7 @@
             ASSERT_KWNAMES_IS_NULL();
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             int argcount = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 argcount++;
             }
@@ -3976,7 +3973,7 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -4013,7 +4010,7 @@
             /* Builtin METH_O functions */
             ASSERT_KWNAMES_IS_NULL();
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -4054,7 +4051,7 @@
             /* Builtin METH_FASTCALL functions, without keywords */
             ASSERT_KWNAMES_IS_NULL();
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -4098,7 +4095,7 @@
             callable = stack_pointer[-2 - oparg];
             /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -4144,7 +4141,7 @@
             ASSERT_KWNAMES_IS_NULL();
             /* len(o) */
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -4181,7 +4178,7 @@
             ASSERT_KWNAMES_IS_NULL();
             /* isinstance(o, o2) */
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -4247,7 +4244,7 @@
             callable = stack_pointer[-2 - oparg];
             ASSERT_KWNAMES_IS_NULL();
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -4290,7 +4287,7 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -4334,7 +4331,7 @@
             ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 0 || oparg == 1);
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
@@ -4376,7 +4373,7 @@
             callable = stack_pointer[-2 - oparg];
             ASSERT_KWNAMES_IS_NULL();
             int total_args = oparg;
-            if (self_or_null) {
+            if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
