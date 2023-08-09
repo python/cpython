@@ -5476,7 +5476,9 @@ _PyObject_MakeInstanceAttributesFromDict(PyObject *obj, PyDictOrValues *dorv)
     }
     // It's likely that this dict still shares its keys (if it was materialized
     // on request and not heavily modified):
-    assert(PyDict_CheckExact(dict));
+    if (!PyDict_CheckExact(dict)) {
+        return 0;
+    }
     assert(_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_HEAPTYPE));
     if (dict->ma_keys != CACHED_KEYS(Py_TYPE(obj)) || Py_REFCNT(dict) != 1) {
         return 0;
