@@ -461,5 +461,32 @@ class TestTPen(unittest.TestCase):
             self.assertTrue(tpen.isdown())
 
 
+class TestModuleLevel(unittest.TestCase):
+    def test_all_signatures(self):
+        import inspect
+        import types
+
+        known_signatures = {
+            'teleport':
+                '(x=None, y=None, fill_gap: bool = False) -> None',
+            'clear': '()',
+            'reset': '(canvwidth=None, canvheight=None, bg=None)',
+            'bgcolor': '(*args)',
+            'pen': '(pen=None, **pendict)',
+        }
+
+        for name in turtle.__all__:
+            obj = getattr(turtle, name)
+            if not isinstance(obj, types.FunctionType):
+                continue
+
+            with self.subTest(name=name):
+                # All functions must produce correct signatures:
+                sig = inspect.signature(obj)
+
+                if name in known_signatures:
+                    self.assertEqual(str(sig), known_signatures[name])
+
+
 if __name__ == '__main__':
     unittest.main()
