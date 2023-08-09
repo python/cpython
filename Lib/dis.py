@@ -552,15 +552,15 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                 if deop == LOAD_GLOBAL:
                     argval, argrepr = _get_name_info(arg//2, get_name)
                     if (arg & 1) and argrepr:
-                        argrepr = "NULL + " + argrepr
+                        argrepr = f"{argrepr} + NULL"
                 elif deop == LOAD_ATTR:
                     argval, argrepr = _get_name_info(arg//2, get_name)
                     if (arg & 1) and argrepr:
-                        argrepr = "NULL|self + " + argrepr
+                        argrepr = f"{argrepr} + NULL|self"
                 elif deop == LOAD_SUPER_ATTR:
                     argval, argrepr = _get_name_info(arg//4, get_name)
                     if (arg & 1) and argrepr:
-                        argrepr = "NULL|self + " + argrepr
+                        argrepr = f"{argrepr} + NULL|self"
                 else:
                     argval, argrepr = _get_name_info(arg, get_name)
             elif deop in hasjabs:
