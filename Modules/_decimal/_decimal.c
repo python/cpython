@@ -5901,7 +5901,7 @@ _decimal_exec(PyObject *m)
     mpd_free = PyMem_Free;
 
     /* Suppress the warning caused by multi-phase initialization */
-    if (minalloc_is_set) {
+    if (!minalloc_is_set) {
         mpd_setminalloc(_Py_DEC_MINALLOC);
         minalloc_is_set = 1;
     }
