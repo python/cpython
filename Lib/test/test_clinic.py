@@ -567,7 +567,6 @@ class ClinicWholeFileTest(TestCase):
         self.expect_failure(block, err, lineno=6)
 
     def test_directive_preserve_output(self):
-        err = "'preserve' only works for blocks that don't produce any output!"
         block = dedent("""
             /*[clinic input]
             output everything buffer
@@ -965,7 +964,6 @@ class ClinicParserTest(TestCase):
                 follow_symlinks: bool = True
                 something_else: str = ''
         """)
-        p = function.parameters['follow_symlinks']
         self.assertEqual(3, len(function.parameters))
         conv = function.parameters['something_else'].converter
         self.assertIsInstance(conv, clinic.str_converter)
@@ -1929,10 +1927,6 @@ class ClinicParserTest(TestCase):
         self.assertEqual(repr(clinic.NULL), '<Null>')
 
         # test that fail fails
-        expected = (
-            'Error in file "clown.txt" on line 69:\n'
-            'The igloos are melting!\n'
-        )
         with support.captured_stdout() as stdout:
             errmsg = 'The igloos are melting'
             with self.assertRaisesRegex(clinic.ClinicError, errmsg) as cm:
@@ -1940,6 +1934,7 @@ class ClinicParserTest(TestCase):
             exc = cm.exception
             self.assertEqual(exc.filename, 'clown.txt')
             self.assertEqual(exc.lineno, 69)
+            self.assertEqual(stdout.getvalue(), "")
 
     def test_non_ascii_character_in_docstring(self):
         block = """
@@ -2408,7 +2403,7 @@ class ClinicExternalTest(TestCase):
                             "not overwriting!")
             self.assertIn(expected_err, err)
             # Run clinic again, this time with the -f option.
-            out = self.expect_success("-f", in_fn)
+            _ = self.expect_success("-f", in_fn)
             # Read back the generated output.
             with open(in_fn, encoding="utf-8") as f:
                 data = f.read()
