@@ -132,6 +132,16 @@ Socular.
 
 ..
 
+.. date: 2022-12-20-09-56-56
+.. gh-issue: 100357
+.. nonce: hPyTwY
+.. section: Core and Builtins
+
+Convert ``vars``, ``dir``, ``next``, ``getattr``, and ``iter`` to argument
+clinic.
+
+..
+
 .. date: 2022-12-17-19-44-57
 .. gh-issue: 100117
 .. nonce: yRWQ1y
