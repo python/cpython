@@ -1158,14 +1158,14 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
             PyFrameObject *frame_obj = _PyFrame_GetFrameObject(frame);
             if (frame_obj == NULL) {
                 return -1;
-            }
+//             }
             if (frame_obj->f_trace_lines) {
-                /* Set tracing and what_event as we do for
-                 * instrumentation */
+                /* Need to set tracing and what_event as if using
+                 * the instrumentation call. */
                 int old_what = tstate->what_event;
                 tstate->what_event = PY_MONITORING_EVENT_LINE;
                 tstate->tracing++;
-                /* Call c_tracefunc directly */
+                /* Call c_tracefunc directly, having set the line number. */
                 Py_INCREF(frame_obj);
                 frame_obj->f_lineno = line;
                 int err = tstate->c_tracefunc(tstate->c_traceobj, frame_obj, PyTrace_LINE, Py_None);
