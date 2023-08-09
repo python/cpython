@@ -363,7 +363,6 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_SUBSCR_ARRAY_SLICE 10
 #define SPEC_FAIL_SUBSCR_LIST_SLICE 11
 #define SPEC_FAIL_SUBSCR_TUPLE_SLICE 12
-#define SPEC_FAIL_SUBSCR_STRING_INT 13
 #define SPEC_FAIL_SUBSCR_STRING_SLICE 14
 #define SPEC_FAIL_SUBSCR_BUFFER_INT 15
 #define SPEC_FAIL_SUBSCR_BUFFER_SLICE 16
@@ -1260,16 +1259,7 @@ success:
 static int
 binary_subscr_fail_kind(PyTypeObject *container_type, PyObject *sub)
 {
-    if (container_type == &PyUnicode_Type) {
-        if (PyLong_CheckExact(sub)) {
-            return SPEC_FAIL_SUBSCR_STRING_INT;
-        }
-        if (PySlice_Check(sub)) {
-            return SPEC_FAIL_SUBSCR_STRING_SLICE;
-        }
-        return SPEC_FAIL_OTHER;
-    }
-    else if (strcmp(container_type->tp_name, "array.array") == 0) {
+    if (strcmp(container_type->tp_name, "array.array") == 0) {
         if (PyLong_CheckExact(sub)) {
             return SPEC_FAIL_SUBSCR_ARRAY_INT;
         }
@@ -1374,6 +1364,19 @@ _Py_Specialize_BinarySubscr(
         }
         SPECIALIZATION_FAIL(BINARY_SUBSCR,
             PySlice_Check(sub) ? SPEC_FAIL_SUBSCR_TUPLE_SLICE : SPEC_FAIL_OTHER);
+        goto fail;
+    }
+    if (container_type == &PyUnicode_Type) {
+        if (PyLong_CheckExact(sub)) {
+            if (_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
+                instr->op.code = BINARY_SUBSCR_STR_INT;
+                goto success;
+            }
+            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OUT_OF_RANGE);
+            goto fail;
+        }
+        SPECIALIZATION_FAIL(BINARY_SUBSCR,
+            PySlice_Check(sub) ? SPEC_FAIL_SUBSCR_STRING_SLICE : SPEC_FAIL_OTHER);
         goto fail;
     }
     if (container_type == &PyDict_Type) {

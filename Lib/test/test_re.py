@@ -2342,6 +2342,16 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.fullmatch(r'(?s:(?>.*?\.).*)\Z', "a.txt")) # reproducer
         self.assertTrue(re.fullmatch(r'(?s:(?=(?P<g0>.*?\.))(?P=g0).*)\Z', "a.txt"))
 
+    def test_bug_gh106052(self):
+        self.assertEqual(re.match("(?>(?:ab?c)+)", "aca").span(), (0, 2))
+        self.assertEqual(re.match("(?:ab?c)++", "aca").span(), (0, 2))
+        self.assertEqual(re.match("(?>(?:ab?c)*)", "aca").span(), (0, 2))
+        self.assertEqual(re.match("(?:ab?c)*+", "aca").span(), (0, 2))
+        self.assertEqual(re.match("(?>(?:ab?c)?)", "a").span(), (0, 0))
+        self.assertEqual(re.match("(?:ab?c)?+", "a").span(), (0, 0))
+        self.assertEqual(re.match("(?>(?:ab?c){1,3})", "aca").span(), (0, 2))
+        self.assertEqual(re.match("(?:ab?c){1,3}+", "aca").span(), (0, 2))
+
     @unittest.skipIf(multiprocessing is None, 'test requires multiprocessing')
     def test_regression_gh94675(self):
         pattern = re.compile(r'(?<=[({}])(((//[^\n]*)?[\n])([\000-\040])*)*'
@@ -2361,6 +2371,9 @@ class ReTests(unittest.TestCase):
             if p.is_alive():
                 p.terminate()
                 p.join()
+
+    def test_fail(self):
+        self.assertEqual(re.search(r'12(?!)|3', '123')[0], '3')
 
 
 def get_debug_out(pat):
@@ -2438,6 +2451,7 @@ ATOMIC_GROUP
 17: SUCCESS
 ''')
 
+    @unittest.expectedFailure  # gh-106052
     def test_possesive_repeat_one(self):
         self.assertEqual(get_debug_out(r'a?+'), '''\
 POSSESSIVE_REPEAT 0 1
@@ -2450,6 +2464,7 @@ POSSESSIVE_REPEAT 0 1
 12: SUCCESS
 ''')
 
+    @unittest.expectedFailure  # gh-106052
     def test_possesive_repeat(self):
         self.assertEqual(get_debug_out(r'(?:ab)?+'), '''\
 POSSESSIVE_REPEAT 0 1
