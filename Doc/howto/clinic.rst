@@ -1930,7 +1930,7 @@ Example from :source:`Objects/codeobject.c`::
        Return a copy of the code object with new values for the specified fields.
    [clinic start generated output]*/
 
-The generated docstring ends up looking like this::
+The generated docstring ends up looking like this:
 
 .. code-block:: none
 
