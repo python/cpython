@@ -144,6 +144,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 4;
         case BINARY_SUBSCR_LIST_INT:
             return 2;
+        case BINARY_SUBSCR_STR_INT:
+            return 2;
         case BINARY_SUBSCR_TUPLE_INT:
             return 2;
         case BINARY_SUBSCR_DICT:
@@ -588,6 +590,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case BINARY_SUBSCR_LIST_INT:
             return 1;
+        case BINARY_SUBSCR_STR_INT:
+            return 1;
         case BINARY_SUBSCR_TUPLE_INT:
             return 1;
         case BINARY_SUBSCR_DICT:
@@ -679,9 +683,9 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case LOAD_GLOBAL:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_GLOBAL_MODULE:
-            return ((oparg & 1) ? 1 : 0) + 1;
+            return (oparg & 1 ? 1 : 0) + 1;
         case LOAD_GLOBAL_BUILTIN:
-            return ((oparg & 1) ? 1 : 0) + 1;
+            return (oparg & 1 ? 1 : 0) + 1;
         case DELETE_FAST:
             return 0;
         case MAKE_CELL:
@@ -739,7 +743,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case LOAD_METHOD:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_INSTANCE_VALUE:
-            return ((oparg & 1) ? 1 : 0) + 1;
+            return (oparg & 1 ? 1 : 0) + 1;
         case LOAD_ATTR_MODULE:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_WITH_HINT:
@@ -944,7 +948,18 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
 }
 #endif
 
-enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC0, INSTR_FMT_IXC00, INSTR_FMT_IXC000 };
+enum InstructionFormat {
+    INSTR_FMT_IB,
+    INSTR_FMT_IBC,
+    INSTR_FMT_IBC00,
+    INSTR_FMT_IBC000,
+    INSTR_FMT_IBC00000000,
+    INSTR_FMT_IX,
+    INSTR_FMT_IXC,
+    INSTR_FMT_IXC0,
+    INSTR_FMT_IXC00,
+    INSTR_FMT_IXC000,
+};
 
 #define IS_VALID_OPCODE(OP) \
     (((OP) >= 0) && ((OP) < OPCODE_METADATA_SIZE) && \
@@ -1036,6 +1051,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [BINARY_SLICE] = { true, INSTR_FMT_IX, 0 },
     [STORE_SLICE] = { true, INSTR_FMT_IX, 0 },
     [BINARY_SUBSCR_LIST_INT] = { true, INSTR_FMT_IXC, 0 },
+    [BINARY_SUBSCR_STR_INT] = { true, INSTR_FMT_IXC, 0 },
     [BINARY_SUBSCR_TUPLE_INT] = { true, INSTR_FMT_IXC, 0 },
     [BINARY_SUBSCR_DICT] = { true, INSTR_FMT_IXC, 0 },
     [BINARY_SUBSCR_GETITEM] = { true, INSTR_FMT_IXC, 0 },
@@ -1247,6 +1263,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [BINARY_SLICE] = { .nuops = 1, .uops = { { BINARY_SLICE, 0, 0 } } },
     [STORE_SLICE] = { .nuops = 1, .uops = { { STORE_SLICE, 0, 0 } } },
     [BINARY_SUBSCR_LIST_INT] = { .nuops = 1, .uops = { { BINARY_SUBSCR_LIST_INT, 0, 0 } } },
+    [BINARY_SUBSCR_STR_INT] = { .nuops = 1, .uops = { { BINARY_SUBSCR_STR_INT, 0, 0 } } },
     [BINARY_SUBSCR_TUPLE_INT] = { .nuops = 1, .uops = { { BINARY_SUBSCR_TUPLE_INT, 0, 0 } } },
     [BINARY_SUBSCR_DICT] = { .nuops = 1, .uops = { { BINARY_SUBSCR_DICT, 0, 0 } } },
     [LIST_APPEND] = { .nuops = 1, .uops = { { LIST_APPEND, 0, 0 } } },
