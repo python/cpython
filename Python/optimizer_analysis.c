@@ -102,6 +102,10 @@ typedef struct _Py_UOpsAbstractInterpContext {
     _Py_PARTITIONNODE_t *stack;
     int locals_len;
     _Py_PARTITIONNODE_t *locals;
+
+    // Indicates whether the stack entry is real or virtualised.
+    // true - virtual false - real
+    bool *stack_virtual_or_real;
     // The following represent the real (emitted instructions) stack and locals.
     // points to one element after the abstract stack
     _Py_PARTITIONNODE_t *real_stack_pointer;
@@ -156,6 +160,12 @@ _Py_UOpsAbstractInterpContext_New(int stack_len, int locals_len, int curr_stackl
         return NULL;
     }
 
+    bool *virtual_or_real = PyMem_New(bool, stack_len);
+    if (virtual_or_real == NULL) {
+        Py_DECREF(self);
+        PyMem_Free(locals_with_stack);
+        return NULL;
+    }
 
     for (int i = 0; i < (locals_len + stack_len) * 2; i++) {
         locals_with_stack[i] = PARTITIONNODE_NULLROOT;
@@ -164,6 +174,8 @@ _Py_UOpsAbstractInterpContext_New(int stack_len, int locals_len, int curr_stackl
     self->locals = locals_with_stack;
     self->stack = locals_with_stack + locals_len;
     self->stack_pointer = self->stack + curr_stacklen;
+
+    self->stack_virtual_or_real = virtual_or_real;
 
     self->real_locals = self->locals + locals_len + stack_len;
     self->real_stack = self->stack + locals_len + stack_len;
@@ -175,7 +187,7 @@ _Py_UOpsAbstractInterpContext_New(int stack_len, int locals_len, int curr_stackl
 static void print_ctx(_Py_UOpsAbstractInterpContext *ctx);
 #endif
 
-static inline _Py_PARTITIONNODE_t *
+static _Py_PARTITIONNODE_t *
 partitionnode_get_rootptr(_Py_PARTITIONNODE_t *ref)
 {
     _Py_TypeNodeTags tag = partitionnode_get_tag(*ref);
@@ -461,6 +473,7 @@ print_ctx(_Py_UOpsAbstractInterpContext *ctx)
             fprintf(stderr, "->%s[%d]",
                 wher, parent_idx);
         }
+        fprintf(stderr, " | ");
     }
     fprintf(stderr, "]\n");
 
@@ -497,6 +510,7 @@ print_ctx(_Py_UOpsAbstractInterpContext *ctx)
             fprintf(stderr, "->%s[%d]",
                 wher, parent_idx);
         }
+        fprintf(stderr, " | ");
     }
     fprintf(stderr, "]\n");
 }
@@ -506,11 +520,11 @@ static bool
 partitionnode_is_static(_Py_PARTITIONNODE_t *node)
 {
     _Py_PARTITIONNODE_t *root = partitionnode_get_rootptr(node);
-    _Py_PartitionRootNode *root_obj = (_Py_PartitionRootNode *)partitionnode_clear_tag((_Py_PARTITIONNODE_t)root);
+    _Py_PartitionRootNode *root_obj = (_Py_PartitionRootNode *)partitionnode_clear_tag(*root);
     if (root_obj == _Py_NULL) {
         return false;
     }
-    return !root_obj->static_or_dynamic;
+    return root_obj->static_or_dynamic == 0;
 }
 
 // MUST BE GUARDED BY partitionnode_is_static BEFORE CALLING THIS
@@ -519,28 +533,54 @@ get_const(_Py_PARTITIONNODE_t *node)
 {
     assert(partitionnode_is_static(node));
     _Py_PARTITIONNODE_t *root = partitionnode_get_rootptr(node);
-    _Py_PartitionRootNode *root_obj = (_Py_PartitionRootNode * )partitionnode_clear_tag((_Py_PARTITIONNODE_t)root);
+    _Py_PartitionRootNode *root_obj = (_Py_PartitionRootNode * )partitionnode_clear_tag(*root);
     return root_obj->const_val;
 }
 
 // Hardcoded for now, @TODO autogenerate these from the DSL.
 static inline bool
-op_is_pure(int opcode)
+op_is_pure(int opcode, int oparg, _Py_PARTITIONNODE_t *locals)
 {
     switch (opcode) {
     case LOAD_CONST:
     case _BINARY_OP_MULTIPLY_INT:
     case _BINARY_OP_ADD_INT:
     case _BINARY_OP_SUBTRACT_INT:
+    case _GUARD_BOTH_INT:
+        return true;
+    case LOAD_FAST:
+        return partitionnode_is_static(&locals[oparg]) && get_const(&locals[oparg]) != _Py_NULL;
     default:
         return false;
     }
 }
 
+// Remove contiguous SAVE_IPs, leaving only the last one before a non-SAVE_IP instruction.
 static int
 remove_duplicate_save_ips(_PyUOpInstruction *trace, int trace_len)
 {
-    return trace_len;
+    _PyUOpInstruction *temp_trace = PyMem_New(_PyUOpInstruction, trace_len);
+    if (temp_trace == NULL) {
+        return trace_len;
+    }
+    int temp_trace_len = 0;
+
+    _PyUOpInstruction curr;
+    for (int i = 0; i < trace_len; i++) {
+        curr = trace[i];
+        if (i < trace_len && curr.opcode == SAVE_IP && trace[i+1].opcode == SAVE_IP) {
+            continue;
+        }
+        temp_trace[temp_trace_len] = curr;
+        temp_trace_len++;
+    }
+    memcpy(trace, temp_trace, temp_trace_len * sizeof(_PyUOpInstruction));
+    PyMem_Free(temp_trace);
+
+#if PARTITION_DEBUG
+    fprintf(stderr, "Removed %d SAVE_IPs\n", trace_len - temp_trace_len);
+#endif
+    return temp_trace_len;
 }
 
 /**
@@ -550,6 +590,15 @@ remove_duplicate_save_ips(_PyUOpInstruction *trace, int trace_len)
 static int
 fix_jump_side_exits(_PyUOpInstruction *trace, int trace_len)
 {
+    for (int i = 0; i < trace_len; i++) {
+        int oparg = trace[i].oparg;
+        int opcode = trace[i].opcode;
+        switch (opcode) {
+        case _POP_JUMP_IF_TRUE:
+        case _POP_JUMP_IF_FALSE:
+            trace[i].oparg = trace_len - 2;
+        }
+    }
     return trace_len;
 }
 
@@ -625,6 +674,7 @@ _Py_uop_analyze_and_optimize(
     _Py_PARTITIONNODE_t *stack_pointer;
     _Py_PARTITIONNODE_t *locals;
     _Py_PARTITIONNODE_t *stack;
+    bool *stack_virtual_or_real = ctx->stack_virtual_or_real;
 
     for (int i = 0; i < trace_len; i++) {
         stack_pointer = ctx->stack_pointer;
@@ -646,30 +696,40 @@ _Py_uop_analyze_and_optimize(
         //      If an operand was previously partially evaluated and not yet emitted, then emit the residual with a LOAD_CONST.
         // 2. Operations on static variables are a no-op as the abstract interpreter already analyzed their results.
 
-        bool should_emit = false;
         // For all stack inputs, are their variables static?
         int num_inputs = _PyOpcode_num_popped(opcode, oparg, false);
         int num_dynamic_operands = 0;
+
+        // We need to also check if this operation is "pure". That it can accept
+        // constant nodes, output constant nodes, and does not cause any side effects.
+        bool should_emit = !op_is_pure(opcode, oparg, locals);
+
+        int virtual_objects = 0;
         assert(num_inputs >= 0);
         for (int x = num_inputs; x > 0; x--) {
             if (!partitionnode_is_static(PEEK(x))) {
                 should_emit = true;
                 num_dynamic_operands++;
             }
+            if (stack_virtual_or_real[STACK_LEVEL() - num_inputs]) {
+                virtual_objects++;
+            }
         }
+
         int num_static_operands = num_inputs - num_dynamic_operands;
 
         assert(num_static_operands >= 0);
-        // We need to also check if this operation is "pure". That it can accept
-        // constant nodes, output constant nodes, and does not cause any side effects.
-        should_emit = should_emit || !op_is_pure(opcode);
 
 
         if (should_emit) {
             if (num_static_operands > 0) {
+                int real_stack_size = num_dynamic_operands;
+                int virtual_stack_size = (int)(ctx->stack_pointer - ctx->stack);
+                assert(virtual_stack_size >= real_stack_size);
                 for (int x = num_inputs; x > 0; x--) {
                     // Re-materialise all virtual (partially-evaluated) constants
-                    if (partitionnode_is_static(PEEK(x))) {
+                    if (partitionnode_is_static(PEEK(x)) && stack_virtual_or_real[STACK_LEVEL() - x]) {
+                        stack_virtual_or_real[STACK_LEVEL() - x] = false;
                         PyObject *const_val = get_const(PEEK(x));
                         _PyUOpInstruction load_const;
                         load_const.opcode = LOAD_CONST;
@@ -678,17 +738,23 @@ _Py_uop_analyze_and_optimize(
                             goto abstract_error;
                         }
 
+#if PARTITION_DEBUG
+                        fprintf(stderr, "Emitting LOAD_CONST\n");
+#endif
                         temp_writebuffer[buffer_trace_len] = load_const;
                         buffer_trace_len++;
 
+
                         // INSERT to the correct position in the stack
-                        int offset_from_target = num_dynamic_operands - x - 1;
-                        assert(offset_from_target >= 0);
-                        if (offset_from_target) {
+                        int offset_from_target = x - num_dynamic_operands - 1;
+                        if (offset_from_target > 0) {
                             _PyUOpInstruction insert;
                             insert.opcode = INSERT;
-                            insert.oparg = offset_from_target;
+                            insert.oparg = -offset_from_target;
 
+#if PARTITION_DEBUG
+                            fprintf(stderr, "Emitting INSERT %d\n", offset_from_target);
+#endif
                             temp_writebuffer[buffer_trace_len] = insert;
                             buffer_trace_len++;
                         }
@@ -697,6 +763,9 @@ _Py_uop_analyze_and_optimize(
 
                 }
             }
+#if PARTITION_DEBUG
+            fprintf(stderr, "Emitting %s\n", (opcode >= 300 ? _PyOpcode_uop_name : _PyOpcode_OpName)[opcode]);
+#endif
             temp_writebuffer[buffer_trace_len] = trace[i];
             buffer_trace_len++;
         }
@@ -722,9 +791,6 @@ _Py_uop_analyze_and_optimize(
             _Py_PARTITIONNODE_t* value = (_Py_PARTITIONNODE_t *)MAKE_STATIC_ROOT(GETITEM(co_const_copy, oparg));
             STACK_GROW(1);
             PARTITIONNODE_OVERWRITE(value, PEEK(1), true);
-#if PARTITION_DEBUG
-            print_ctx(ctx);
-#endif
             break;
         }
         case STORE_FAST:
@@ -814,6 +880,12 @@ _Py_uop_analyze_and_optimize(
         print_ctx(ctx);
 #endif
         ctx->stack_pointer = stack_pointer;
+
+        // Mark all stack outputs as virtual or real
+        int stack_outputs = _PyOpcode_num_pushed(opcode, oparg, false);
+        for (int y = stack_outputs; y > 0; y--) {
+            stack_virtual_or_real[STACK_LEVEL() - y] = !should_emit;
+        }
 //        if (should_emit) {
 //
 //            // Emit instruction
