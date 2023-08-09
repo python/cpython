@@ -44,6 +44,16 @@
 #  error "The public headers should not include <stdbool.h>, see bpo-46748"
 #endif
 
+#define NULLABLE(x) do { if (x == Py_None) x = NULL; } while (0);
+
+#define RETURN_INT(value) do {          \
+        int _ret = (value);             \
+        if (_ret == -1) {               \
+            return NULL;                \
+        }                               \
+        return PyLong_FromLong(_ret);   \
+    } while (0)
+
 // Forward declarations
 static struct PyModuleDef _testcapimodule;
 static PyType_Spec HeapTypeNameType_Spec;
@@ -6449,6 +6459,35 @@ static PyObject *getargs_s_hash_int(PyObject *, PyObject *, PyObject*);
 static PyObject *getargs_s_hash_int2(PyObject *, PyObject *, PyObject*);
 static PyObject *gh_99240_clear_args(PyObject *, PyObject *);
 
+static PyObject *
+sys_getobject(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    const char *name;
+    Py_ssize_t size;
+    if (!PyArg_Parse(arg, "z#", &name, &size)) {
+        return NULL;
+    }
+    PyObject *result = PySys_GetObject(name);
+    if (result == NULL) {
+        result = PyExc_AttributeError;
+    }
+    return Py_NewRef(result);
+}
+
+static PyObject *
+sys_setobject(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    const char *name;
+    Py_ssize_t size;
+    PyObject *value;
+    if (!PyArg_ParseTuple(args, "z#O", &name, &size, &value)) {
+        return NULL;
+    }
+    NULLABLE(value);
+    RETURN_INT(PySys_SetObject(name, value));
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"exc_set_object",          exc_set_object,                  METH_VARARGS},
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -6761,6 +6800,8 @@ static PyMethodDef TestMethods[] = {
     {"function_get_code", function_get_code, METH_O, NULL},
     {"function_get_globals", function_get_globals, METH_O, NULL},
     {"function_get_module", function_get_module, METH_O, NULL},
+    {"sys_getobject", sys_getobject, METH_O},
+    {"sys_setobject", sys_setobject, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
