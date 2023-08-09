@@ -110,7 +110,8 @@ For convenience, some of these functions will always return a
 
    This is the most common way to set the error indicator.  The first argument
    specifies the exception type; it is normally one of the standard exceptions,
-   e.g. :c:data:`PyExc_RuntimeError`.  You need not increment its reference count.
+   e.g. :c:data:`PyExc_RuntimeError`.  You need not create a new
+   :term:`strong reference` to it (e.g. with :c:func:`Py_INCREF`).
    The second argument is an error message; it is decoded from ``'utf-8'``.
 
 
