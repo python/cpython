@@ -1009,6 +1009,8 @@ def _sqrtprod(x: float, y: float) -> float:
     # Square root differential correction:
     # https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
     h = sqrt(x * y)
+    if not h:
+        return 0.0
     x = sumprod((x, h), (y, -h))
     return h + x / (2.0 * h)
 
