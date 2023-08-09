@@ -5691,10 +5691,10 @@ class DSLParser:
     def format_docstring_parameters(params: list[Parameter]) -> str:
         """Create substitution text for {parameters}"""
         add, output = text_accumulator()
-        docstrings = [p.render_docstring() for p in params if p.docstring]
-        for docstring in docstrings:
-            add(docstring)
-            add('\n')
+        for p in params:
+            if p.docstring:
+                add(p.render_docstring())
+                add('\n')
         return output()
 
     def format_docstring(self) -> str:
