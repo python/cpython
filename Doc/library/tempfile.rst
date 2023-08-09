@@ -172,7 +172,7 @@ The module defines the following user-callable items:
       :class:`io.TextIOBase` abstract base classes (depending on whether binary
       or text *mode* was specified).
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.13
       The truncate method returns new file size.
 
 
