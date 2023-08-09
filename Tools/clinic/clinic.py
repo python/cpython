@@ -917,7 +917,7 @@ class CLanguage(Language):
         major, minor = thenceforth
         cpp_message = (
             f"In {source}, update parameter(s) {pstr} in the clinic "
-            f"input of {func.full_name!r} to be keyword-only."
+            f"input of {func.fulldisplayname}() to be keyword-only."
         )
 
         # Format the deprecation message.
@@ -928,7 +928,7 @@ class CLanguage(Language):
             if first_pos:
                 preamble = f"Passing {first_pos+1} positional arguments to "
             depr_message = preamble + (
-                f"{func.full_name}() is deprecated. Parameter {pstr} will "
+                f"{func.fulldisplayname}() is deprecated. Parameter {pstr} will "
                 f"become a keyword-only parameter in Python {major}.{minor}."
             )
         else:
@@ -939,7 +939,7 @@ class CLanguage(Language):
                     f"argument{'s' if first_pos != 1 else ''} to "
                 )
             depr_message = preamble + (
-                f"{func.full_name}() is deprecated. Parameters {pstr} will "
+                f"{func.fulldisplayname}() is deprecated. Parameters {pstr} will "
                 f"become keyword-only parameters in Python {major}.{minor}."
             )
 
@@ -1673,14 +1673,7 @@ class CLanguage(Language):
 
         full_name = f.full_name
         template_dict = {'full_name': full_name}
-
-        if new_or_init:
-            assert isinstance(f.cls, Class)
-            name = f.cls.name
-        else:
-            name = f.name
-
-        template_dict['name'] = name
+        template_dict['name'] = f.displayname
 
         if f.c_basename:
             c_basename = f.c_basename
@@ -2677,6 +2670,21 @@ class Function:
         self.parent = self.cls or self.module
         self.self_converter: self_converter | None = None
         self.__render_parameters__: list[Parameter] | None = None
+
+    @functools.cached_property
+    def displayname(self) -> str:
+        """Pretty-printable name."""
+        if self.kind.new_or_init:
+            assert isinstance(self.cls, Class)
+            return self.cls.name
+        else:
+            return self.name
+
+    @functools.cached_property
+    def fulldisplayname(self) -> str:
+        if isinstance(self.module, Module):
+            return f"{self.module.name}.{self.displayname}"
+        return self.displayname
 
     @property
     def render_parameters(self) -> list[Parameter]:
@@ -5515,13 +5523,7 @@ class DSLParser:
         self, f: Function, parameters: list[Parameter]
     ) -> str:
         text, add, output = _text_accumulator()
-        if f.kind.new_or_init:
-            # classes get *just* the name of the class
-            # not __new__, not __init__, and not module.classname
-            assert f.cls
-            add(f.cls.name)
-        else:
-            add(f.name)
+        add(f.displayname)
         if self.forced_text_signature:
             add(self.forced_text_signature)
         else:
