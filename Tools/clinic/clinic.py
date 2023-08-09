@@ -2776,8 +2776,6 @@ class Parameter:
             return f'"argument {i}"'
 
     def render_docstring(self) -> str:
-        if not self.docstring:
-            return ""
         add, out = text_accumulator()
         add(f"  {self.name}\n")
         for line in self.docstring.split("\n"):
