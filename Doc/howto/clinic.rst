@@ -1930,13 +1930,14 @@ Example from :source:`Objects/codeobject.c`::
        Return a copy of the code object with new values for the specified fields.
    [clinic start generated output]*/
 
-The generated docstring ends up looking like this::
+The generated docstring ends up looking like this:
 
-   Doc_STRVAR(code_replace__doc__,
-   "replace($self, /, **changes)\n"
-   "--\n"
-   "\n"
-   "Return a copy of the code object with new values for the specified fields.");
+.. code-block:: none
+
+   replace($self, /, **changes)
+   --
+
+   Return a copy of the code object with new values for the specified fields.
 
 
 .. _clinic-howto-deprecate-positional:
@@ -1968,7 +1969,7 @@ whenever the *b* parameter is passed positionally,
 and we'll be allowed to make it keyword-only in Python 3.14 at the earliest.
 
 We can use Argument Clinic to emit the desired deprecation warnings
-using the ``* [from ...]``` syntax,
+using the ``* [from ...]`` syntax,
 by adding the line ``* [from 3.14]`` right above the *b* parameter::
 
    /*[clinic input]
@@ -2000,12 +2001,12 @@ Luckily for us, compiler warnings are now generated:
 .. code-block:: none
 
    In file included from Modules/foomodule.c:139:
-   Modules/clinic/foomodule.c.h:83:8: warning: Update 'b' in 'myfunc' in 'foomodule.c' to be keyword-only. [-W#warnings]
-    #    warning "Update 'b' in 'myfunc' in 'foomodule.c' to be keyword-only."
+   Modules/clinic/foomodule.c.h:139:8: warning: In 'foomodule.c', update parameter(s) 'a' and 'b' in the clinic input of 'mymod.myfunc' to be keyword-only. [-W#warnings]
+    #    warning "In 'foomodule.c', update parameter(s) 'a' and 'b' in the clinic input of 'mymod.myfunc' to be keyword-only. [-W#warnings]"
          ^
 
 We now close the deprecation phase by making *b* keyword-only;
-replace the ``* [from ...]``` line above *b*
+replace the ``* [from ...]`` line above *b*
 with the ``*`` from the line above *c*::
 
    /*[clinic input]
