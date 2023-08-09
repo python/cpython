@@ -2423,19 +2423,15 @@ class ClinicFunctionalTest(unittest.TestCase):
     locals().update((name, getattr(ac_tester, name))
                     for name in dir(ac_tester) if name.startswith('test_'))
 
-    def check_depr_star(self, *, fname, pnames, good_calls, bad_calls):
-        for call in good_calls:
-            call()
+    def check_depr_star(self, fn, *args, **kwds):
+        pnames = ".*".join([repr(a) for a in args])
         regex = (
-            f"Passing.*positional argument.*to {fname}.*is deprecated. "
-            f"Parameter.*{pnames} will become.*keyword-only parameter.*in "
-            "Python 3.14"
+            f"Passing.*positional argument.*to {fn.__name__}.*is deprecated. "
+            f"Parameter.*{pnames} will become.*keyword-only parameter.*in Python 3.14"
         )
-        for call in bad_calls:
-            with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
-                call()
-            self.assertTrue(cm.filename.endswith("test_clinic.py"), cm.filename)
-            call()  # No warning raised second time
+        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+            fn(*args, **kwds)
+        self.assertEqual(cm.filename, __file__)
 
     def test_objects_converter(self):
         with self.assertRaises(TypeError):
@@ -2903,118 +2899,64 @@ class ClinicFunctionalTest(unittest.TestCase):
 
     def test_depr_star_pos0_len1(self):
         fn = ac_tester.depr_star_pos0_len1
-        self.check_depr_star(
-            fname="depr_star_pos0_len1", pnames="'a'",
-            good_calls=[
-                lambda: fn(a=None),
-            ],
-            bad_calls=[
-                lambda: fn(None),
-            ])
+        fn(a=None)
+        self.check_depr_star(fn, "a")
 
     def test_depr_star_pos0_len2(self):
         fn = ac_tester.depr_star_pos0_len2
-        self.check_depr_star(
-            fname="depr_star_pos0_len2", pnames="'a' and 'b'",
-            good_calls=[
-                lambda: fn(a=None, b=None),
-            ],
-            bad_calls=[
-                lambda: fn(None, b=None),
-                lambda: fn(None, None),
-            ])
+        fn(a=0, b=0),
+        self.check_depr_star(fn, "a", b=0),
+        self.check_depr_star(fn, "a", "b"),
 
     def test_depr_star_pos0_len3_with_kwd(self):
         fn = ac_tester.depr_star_pos0_len3_with_kwd
-        self.check_depr_star(
-            fname="depr_star_pos0_len3_with_kwd", pnames="'a', 'b' and 'c'",
-            good_calls=[
-                lambda: fn(a=None, b=None, c=None, d=None),
-            ],
-            bad_calls=[
-                lambda: fn(None, b=None, c=None, d=None),
-                lambda: fn(None, None, c=None, d=None),
-                lambda: fn(None, None, None, d=None),
-            ])
+        fn(a=0, b=0, c=0, d=0)
+        self.check_depr_star(fn, "a", b=0, c=0, d=0)
+        self.check_depr_star(fn, "a", "b", c=0, d=0)
+        self.check_depr_star(fn, "a", "b", "c", d=0)
 
     def test_depr_star_pos1_len1_opt(self):
         fn = ac_tester.depr_star_pos1_len1_opt
-        self.check_depr_star(
-            fname="depr_star_pos1_len1_opt", pnames="'b'",
-            good_calls=[
-                lambda: fn(a=None, b=None),
-                lambda: fn(None, b=None),
-                lambda: fn(a=None),
-            ],
-            bad_calls=[
-                lambda: fn(None, None),
-            ])
+        fn(a=0, b=0)
+        fn("a", b=0)
+        fn(a=0)  # b is optional
+        self.check_depr_star(fn, "a", "b")
 
     def test_depr_star_pos1_len1(self):
         fn = ac_tester.depr_star_pos1_len1
-        self.check_depr_star(
-            fname="depr_star_pos1_len1", pnames="'b'",
-            good_calls=[
-                lambda: fn(a=None, b=None),
-                lambda: fn(None, b=None),
-            ],
-            bad_calls=[
-                lambda: fn(None, None),
-            ])
+        fn(a=0, b=0)
+        fn("a", b=0)
+        self.check_depr_star(fn, "a", "b")
 
     def test_depr_star_pos1_len2_with_kwd(self):
         fn = ac_tester.depr_star_pos1_len2_with_kwd
-        self.check_depr_star(
-            fname="depr_star_pos1_len2_with_kwd", pnames="'b' and 'c'",
-            good_calls=[
-                lambda: fn(a=None, b=None, c=None, d=None),
-                lambda: fn(None, b=None, c=None, d=None),
-            ],
-            bad_calls=[
-                lambda: fn(None, None, c=None, d=None),
-                lambda: fn(None, None, None, d=None),
-            ])
+        fn(a=0, b=0, c=0, d=0),
+        fn("a", b=0, c=0, d=0),
+        self.check_depr_star(fn, "a", "b", c=0, d=0),
+        self.check_depr_star(fn, "a", "b", "c", d=0),
 
     def test_depr_star_pos2_len1(self):
         fn = ac_tester.depr_star_pos2_len1
-        self.check_depr_star(
-            fname="depr_star_pos2_len1", pnames="'c'",
-            good_calls=[
-                lambda: fn(a=None, b=None, c=None),
-                lambda: fn(None, b=None, c=None),
-                lambda: fn(None, None, c=None),
-            ],
-            bad_calls=[
-                lambda: fn(None, None, None),
-            ])
+        fn(a=0, b=0, c=0)
+        fn("a", b=0, c=0)
+        fn("a", "b", c=0)
+        self.check_depr_star(fn, "a", "b", "c")
 
     def test_depr_star_pos2_len2(self):
         fn = ac_tester.depr_star_pos2_len2
-        self.check_depr_star(
-            fname="depr_star_pos2_len2", pnames="'c' and 'd'",
-            good_calls=[
-                lambda: fn(a=None, b=None, c=None, d=None),
-                lambda: fn(None, b=None, c=None, d=None),
-                lambda: fn(None, None, c=None, d=None),
-            ],
-            bad_calls=[
-                lambda: fn(None, None, None, d=None),
-                lambda: fn(None, None, None, None),
-            ])
+        fn(a=0, b=0, c=0, d=0)
+        fn("a", b=0, c=0, d=0)
+        fn("a", "b", c=0, d=0)
+        self.check_depr_star(fn, "a", "b", "c", d=0)
+        self.check_depr_star(fn, "a", "b", "c", "d")
 
     def test_depr_star_pos2_len2_with_kwd(self):
         fn = ac_tester.depr_star_pos2_len2_with_kwd
-        self.check_depr_star(
-            fname="depr_star_pos2_len2", pnames="'c' and 'd'",
-            good_calls=[
-                lambda: fn(a=None, b=None, c=None, d=None, e=None),
-                lambda: fn(None, b=None, c=None, d=None, e=None),
-                lambda: fn(None, None, c=None, d=None, e=None),
-            ],
-            bad_calls=[
-                lambda: fn(None, None, None, d=None, e=None),
-                lambda: fn(None, None, None, None, e=None),
-            ])
+        fn(a=0, b=0, c=0, d=0, e=0)
+        fn("a", b=0, c=0, d=0, e=0)
+        fn("a", "b", c=0, d=0, e=0)
+        self.check_depr_star(fn, "a", "b", "c", d=0, e=0)
+        self.check_depr_star(fn, "a", "b", "c", "d", e=0)
 
 
 class PermutationTests(unittest.TestCase):
