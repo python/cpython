@@ -2665,7 +2665,6 @@ class Function:
     # functions with optional groups because we can't represent
     # those accurately with inspect.Signature in 3.4.
     docstring_only: bool = False
-    forced_text_signature: str | None = None
 
     def __post_init__(self) -> None:
         self.parent = self.cls or self.module
@@ -2725,12 +2724,12 @@ class Function:
         }
         return f
 
-    def format_docstring_signature(self) -> str:
+    def format_docstring_signature(self, *, forced_text_signature: str | None) -> str:
         parameters = self.render_parameters
         text, add, output = _text_accumulator()
         add(self.displayname)
-        if self.forced_text_signature:
-            add(self.forced_text_signature)
+        if forced_text_signature:
+            add(forced_text_signature)
         else:
             add('(')
 
@@ -2899,7 +2898,7 @@ class Function:
                 add('\n')
         return output()
 
-    def format_docstring(self) -> None:
+    def format_docstring(self, *, forced_text_signature: str | None) -> None:
         if self.kind.new_or_init and not self.docstring:
             # don't render a docstring at all, no signature, nothing.
             return
@@ -2939,7 +2938,9 @@ class Function:
 
         # finalize docstring
         parameters = self.format_docstring_parameters()
-        signature = self.format_docstring_signature()
+        signature = self.format_docstring_signature(
+            forced_text_signature=forced_text_signature
+        )
         docstring = "\n".join(lines)
         self.docstring = linear_format(docstring,
                                        signature=signature,
@@ -4802,6 +4803,7 @@ class DSLParser:
     indent: IndentStack
     kind: FunctionKind
     coexist: bool
+    forced_text_signature: str | None
     parameter_continuation: str
     preserve_output: bool
     star_from_version_re = create_regex(
@@ -4838,6 +4840,7 @@ class DSLParser:
         self.indent = IndentStack()
         self.kind = CALLABLE
         self.coexist = False
+        self.forced_text_signature = None
         self.parameter_continuation = ''
         self.preserve_output = False
 
@@ -4979,10 +4982,9 @@ class DSLParser:
         self.coexist = True
 
     def at_text_signature(self, text_signature: str) -> None:
-        assert self.function
-        if self.function.forced_text_signature:
+        if self.forced_text_signature:
             fail("Called @text_signature twice!")
-        self.function.forced_text_signature = text_signature
+        self.forced_text_signature = text_signature
 
     def parse(self, block: Block) -> None:
         self.reset()
@@ -5776,7 +5778,7 @@ class DSLParser:
         if self.deprecated_positional:
             check_remaining("* [from ...]", lambda p: not p.deprecated_positional)
 
-        self.function.format_docstring()
+        self.function.format_docstring(forced_text_signature=self.forced_text_signature)
 
 
 # maps strings to callables.
