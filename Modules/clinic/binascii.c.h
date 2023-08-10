@@ -448,7 +448,7 @@ binascii_b2a_hex(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
             goto skip_optional_pos;
         }
     }
-    bytes_per_sep = _PyLong_AsInt(args[2]);
+    bytes_per_sep = PyLong_AsInt(args[2]);
     if (bytes_per_sep == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -541,7 +541,7 @@ binascii_hexlify(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
             goto skip_optional_pos;
         }
     }
-    bytes_per_sep = _PyLong_AsInt(args[2]);
+    bytes_per_sep = PyLong_AsInt(args[2]);
     if (bytes_per_sep == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -795,4 +795,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=ab156917c9db79d2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bf950ef45a10928d input=a9049054013a1b77]*/

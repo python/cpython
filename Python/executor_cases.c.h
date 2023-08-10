@@ -8,17 +8,19 @@
         }
 
         case RESUME: {
-            #if TIER_ONE
             assert(frame == tstate->current_frame);
             /* Possibly combine this with eval breaker */
             if (_PyFrame_GetCode(frame)->_co_instrumentation_version != tstate->interp->monitoring_version) {
                 int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
                 if (err) goto error;
+                #if TIER_ONE
                 next_instr--;
+                #endif
+                #if TIER_TWO
+                goto deoptimize;
+                #endif
             }
-            else
-            #endif
-            if (oparg < 2) {
+            else if (oparg < 2) {
                 CHECK_EVAL_BREAKER();
             }
             break;
@@ -2190,6 +2192,32 @@
             STACK_GROW(1);
             stack_pointer[-2] = prev_exc;
             stack_pointer[-1] = new_exc;
+            break;
+        }
+
+        case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS: {
+            PyObject *null;
+            PyObject *callable;
+            null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            DEOPT_IF(null != NULL, CALL);
+            DEOPT_IF(Py_TYPE(callable) != &PyMethod_Type, CALL);
+            break;
+        }
+
+        case _INIT_CALL_BOUND_METHOD_EXACT_ARGS: {
+            PyObject *callable;
+            PyObject *func;
+            PyObject *self;
+            callable = stack_pointer[-2 - oparg];
+            STAT_INC(CALL, hit);
+            self = Py_NewRef(((PyMethodObject *)callable)->im_self);
+            stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _INIT_CALL_PY_EXACT_ARGS
+            func = Py_NewRef(((PyMethodObject *)callable)->im_func);
+            stack_pointer[-2 - oparg] = func;  // This is used by CALL, upon deoptimization
+            Py_DECREF(callable);
+            stack_pointer[-2 - oparg] = func;
+            stack_pointer[-1 - oparg] = self;
             break;
         }
 

@@ -621,6 +621,16 @@
             break;
         }
 
+        case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS: {
+            break;
+        }
+
+        case _INIT_CALL_BOUND_METHOD_EXACT_ARGS: {
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-2 - oparg)), true);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1 - oparg)), true);
+            break;
+        }
+
         case _CHECK_PEP_523: {
             break;
         }

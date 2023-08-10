@@ -133,17 +133,19 @@ dummy_func(
         }
 
         inst(RESUME, (--)) {
-            #if TIER_ONE
             assert(frame == tstate->current_frame);
             /* Possibly combine this with eval breaker */
             if (_PyFrame_GetCode(frame)->_co_instrumentation_version != tstate->interp->monitoring_version) {
                 int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
                 ERROR_IF(err, error);
+                #if TIER_ONE
                 next_instr--;
+                #endif
+                #if TIER_TWO
+                goto deoptimize;
+                #endif
             }
-            else
-            #endif
-            if (oparg < 2) {
+            else if (oparg < 2) {
                 CHECK_EVAL_BREAKER();
             }
         }
@@ -2943,19 +2945,18 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        // Start out with [NULL, bound_method, arg1, arg2, ...]
-        // Transform to [callable, self, arg1, arg2, ...]
-        // Then fall through to CALL_PY_EXACT_ARGS
-        inst(CALL_BOUND_METHOD_EXACT_ARGS, (unused/1, unused/2, callable, null, unused[oparg] -- unused)) {
+        op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(Py_TYPE(callable) != &PyMethod_Type, CALL);
+        }
+
+        op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, unused, unused[oparg] -- func, self, unused[oparg])) {
             STAT_INC(CALL, hit);
-            PyObject *self = ((PyMethodObject *)callable)->im_self;
-            PEEK(oparg + 1) = Py_NewRef(self);  // self_or_null
-            PyObject *meth = ((PyMethodObject *)callable)->im_func;
-            PEEK(oparg + 2) = Py_NewRef(meth);  // callable
+            self = Py_NewRef(((PyMethodObject *)callable)->im_self);
+            stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _INIT_CALL_PY_EXACT_ARGS
+            func = Py_NewRef(((PyMethodObject *)callable)->im_func);
+            stack_pointer[-2 - oparg] = func;  // This is used by CALL, upon deoptimization
             Py_DECREF(callable);
-            GO_TO_INSTRUCTION(CALL_PY_EXACT_ARGS);
         }
 
         op(_CHECK_PEP_523, (--)) {
@@ -3016,6 +3017,18 @@ dummy_func(
             stack_pointer = _PyFrame_GetStackPointer(frame);
             #endif
         }
+
+        macro(CALL_BOUND_METHOD_EXACT_ARGS) =
+            unused/1 + // Skip over the counter
+            _CHECK_PEP_523 +
+            _CHECK_CALL_BOUND_METHOD_EXACT_ARGS +
+            _INIT_CALL_BOUND_METHOD_EXACT_ARGS +
+            _CHECK_FUNCTION_EXACT_ARGS +
+            _CHECK_STACK_SPACE +
+            _INIT_CALL_PY_EXACT_ARGS +
+            SAVE_IP +  // Tier 2 only; special-cased oparg
+            SAVE_CURRENT_IP +  // Sets frame->prev_instr
+            _PUSH_FRAME;
 
         macro(CALL_PY_EXACT_ARGS) =
             unused/1 + // Skip over the counter

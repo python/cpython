@@ -2,8 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-PyAPI_FUNC(int) _PyLong_AsInt(PyObject *);
-
 PyAPI_FUNC(int) _PyLong_UnsignedShort_Converter(PyObject *, void *);
 PyAPI_FUNC(int) _PyLong_UnsignedInt_Converter(PyObject *, void *);
 PyAPI_FUNC(int) _PyLong_UnsignedLong_Converter(PyObject *, void *);

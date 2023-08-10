@@ -250,15 +250,15 @@ _multiprocessing_SemLock(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (!fastargs) {
         goto exit;
     }
-    kind = _PyLong_AsInt(fastargs[0]);
+    kind = PyLong_AsInt(fastargs[0]);
     if (kind == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    value = _PyLong_AsInt(fastargs[1]);
+    value = PyLong_AsInt(fastargs[1]);
     if (value == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    maxvalue = _PyLong_AsInt(fastargs[2]);
+    maxvalue = PyLong_AsInt(fastargs[2]);
     if (maxvalue == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -542,4 +542,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
     #define _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF) */
-/*[clinic end generated code: output=dae57a702cc01512 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0fcadfdd8d6944be input=a9049054013a1b77]*/

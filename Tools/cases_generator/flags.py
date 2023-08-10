@@ -3,6 +3,7 @@ import dataclasses
 from formatting import Formatter
 import lexer as lx
 import parsing
+from typing import AbstractSet
 
 
 @dataclasses.dataclass
@@ -15,6 +16,7 @@ class InstructionFlags:
     HAS_JUMP_FLAG: bool
     HAS_FREE_FLAG: bool
     HAS_LOCAL_FLAG: bool
+    HAS_EVAL_BREAK_FLAG: bool
 
     def __post_init__(self) -> None:
         self.bitmask = {name: (1 << i) for i, name in enumerate(self.names())}
@@ -37,11 +39,12 @@ class InstructionFlags:
                 variable_used(instr, "GETLOCAL") or variable_used(instr, "SETLOCAL")
             )
             and not has_free,
+            HAS_EVAL_BREAK_FLAG=variable_used(instr, "CHECK_EVAL_BREAKER"),
         )
 
     @staticmethod
     def newEmpty() -> "InstructionFlags":
-        return InstructionFlags(False, False, False, False, False, False)
+        return InstructionFlags(False, False, False, False, False, False, False)
 
     def add(self, other: "InstructionFlags") -> None:
         for name, value in dataclasses.asdict(other).items():
@@ -53,10 +56,11 @@ class InstructionFlags:
             return list(dataclasses.asdict(self).keys())
         return [n for n, v in dataclasses.asdict(self).items() if v == value]
 
-    def bitmap(self) -> int:
+    def bitmap(self, ignore: AbstractSet[str] = frozenset()) -> int:
         flags = 0
+        assert all(hasattr(self, name) for name in ignore)
         for name in self.names():
-            if getattr(self, name):
+            if getattr(self, name) and name not in ignore:
                 flags |= self.bitmask[name]
         return flags
 
