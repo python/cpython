@@ -4965,9 +4965,6 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
     return res;
 }
 
-extern void
-_PyDictKeys_DecRef(PyDictKeysObject *keys);
-
 
 static void
 type_dealloc_common(PyTypeObject *type)

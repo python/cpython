@@ -178,11 +178,17 @@ class Monitor:
         if self.verbose:
             print(self.status())
 
-if __name__ == '__main__':
-    for filename in sys.argv[1:]:
+
+def _main(filenames: list[str] | None = None) -> None:
+    filenames = filenames or sys.argv[1:]
+    for filename in filenames:
         with open(filename) as f:
             cpp = Monitor(filename, verbose=True)
             print()
             print(filename)
-            for line_number, line in enumerate(f.read().split('\n'), 1):
+            for line in f:
                 cpp.writeline(line)
+
+
+if __name__ == '__main__':
+    _main()
