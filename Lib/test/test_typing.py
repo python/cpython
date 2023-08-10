@@ -4092,15 +4092,17 @@ class GenericTests(BaseTestCase):
             C[()]
 
     def test_generic_subclass_checks(self):
-        for typ in [list[int], List[int], tuple[int, str], Tuple[int, str],
-                    dict[str, int], Dict[str, int], set[str], typing.Set[str]]:
+        for typ in [list[int], List[int],
+                    tuple[int, str], Tuple[int, str],
+                    typing.Callable[..., None],
+                    collections.abc.Callable[..., None]]:
             with self.subTest(typ=typ):
                 self.assertRaises(TypeError, issubclass, typ, object)
                 self.assertRaises(TypeError, issubclass, typ, type)
                 self.assertRaises(TypeError, issubclass, typ, typ)
+                self.assertRaises(TypeError, issubclass, object, typ)
 
                 # isinstance is fine:
-                self.assertTrue(isinstance(typ, object))
                 self.assertTrue(isinstance(typ, object))
                 # but, not when the right arg is also a generic:
                 self.assertRaises(TypeError, isinstance, typ, typ)
