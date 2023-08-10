@@ -144,6 +144,9 @@ dummy_func(
                 #if TIER_TWO
                 goto deoptimize;
                 #endif
+                #ifdef _PyJIT_ACTIVE  // XXX
+                goto deoptimize;
+                #endif
             }
             else if (oparg < 2) {
                 CHECK_EVAL_BREAKER();

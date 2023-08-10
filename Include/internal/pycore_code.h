@@ -485,7 +485,7 @@ extern uint32_t _Py_next_func_version;
 
 #define COMPARISON_NOT_EQUALS (COMPARISON_UNORDERED | COMPARISON_LESS_THAN | COMPARISON_GREATER_THAN)
 
-extern int _Py_Instrument(PyCodeObject *co, PyInterpreterState *interp);
+PyAPI_FUNC(int) _Py_Instrument(PyCodeObject *co, PyInterpreterState *interp);
 
 extern int _Py_GetBaseOpcode(PyCodeObject *code, int offset);
 
