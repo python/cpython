@@ -1076,11 +1076,12 @@ class TestLineAndInstructionEvents(CheckEvents):
             ('instruction', 'func2', 8),
             ('instruction', 'func2', 28),
             ('instruction', 'func2', 30),
-            ('instruction', 'func2', 38),
-            ('line', 'func2', 3),
+            ('instruction', 'func2', 32),
             ('instruction', 'func2', 40),
+            ('line', 'func2', 3),
             ('instruction', 'func2', 42),
             ('instruction', 'func2', 44),
+            ('instruction', 'func2', 46),
             ('line', 'get_events', 11)])
 
     def test_try_except(self):
@@ -1396,8 +1397,8 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('line', 'func', 5),
             ('line', 'meth', 1),
             ('jump', 'func', 5, 5),
-            ('jump', 'func', 5, '[offset=112]'),
-            ('branch', 'func', '[offset=118]', '[offset=120]'),
+            ('jump', 'func', 5, '[offset=116]'),
+            ('branch', 'func', '[offset=122]', '[offset=124]'),
             ('line', 'get_events', 11)])
 
         self.check_events(func, recorders = FLOW_AND_LINE_RECORDERS, expected = [
@@ -1412,8 +1413,8 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('line', 'meth', 1),
             ('return', None),
             ('jump', 'func', 5, 5),
-            ('jump', 'func', 5, '[offset=112]'),
-            ('branch', 'func', '[offset=118]', '[offset=120]'),
+            ('jump', 'func', 5, '[offset=116]'),
+            ('branch', 'func', '[offset=122]', '[offset=124]'),
             ('return', None),
             ('line', 'get_events', 11)])
 
