@@ -307,7 +307,7 @@ def write_macro_instr(
     parts = [part for part in mac.parts if isinstance(part, Component)]
 
     cache_adjust = 0
-    always_exits = False
+    always_exits = ""
     for part in mac.parts:
         match part:
             case CacheEffect(size=size):
