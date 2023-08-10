@@ -1258,12 +1258,6 @@ variants of :func:`functools.lru_cache`:
                 if len(self.requests) > self.maxrequests:
                     self.requests.popitem(last=False)
             else:
-                # no longer need to keep track of how many times this
-                # entry has been seen; in a single-threaded environment,
-                # the self.requests OrderedDict will always contain the value
-                # being removed, but use pop(args, None) to reduce
-                # complications in a multi-threaded environment where
-                # a race condition may cause an exception
                 self.requests.pop(args, None)
                 self.cache[args] = result
                 if len(self.cache) > self.maxsize:
