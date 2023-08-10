@@ -4,7 +4,7 @@ import smtplib
 
 from email.message import EmailMessage
 from email.headerregistry import Address
-from email.utils import make_msgid, formatdate
+from email.utils import make_msgid
 
 # Create the base text message.
 msg = EmailMessage()
@@ -12,7 +12,6 @@ msg['Subject'] = "Pourquoi pas des asperges pour ce midi ?"
 msg['From'] = Address("Pepé Le Pew", "pepe", "example.com")
 msg['To'] = (Address("Penelope Pussycat", "penelope", "example.com"),
              Address("Fabrette Pussycat", "fabrette", "example.com"))
-msg["Date"] = formatdate(localtime=True)
 msg.set_content("""\
 Salut!
 
