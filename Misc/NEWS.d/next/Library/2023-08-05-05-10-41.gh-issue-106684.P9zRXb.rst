@@ -1,0 +1,1 @@
+Close :class:`asyncio.StreamWriter` when it is not closed by application leading to memory leaks. Patch by Kumar Aditya.
