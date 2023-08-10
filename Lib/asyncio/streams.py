@@ -5,7 +5,6 @@ __all__ = (
 import collections
 import socket
 import sys
-import warnings
 import weakref
 
 if hasattr(socket, 'AF_UNIX'):
@@ -393,10 +392,9 @@ class StreamWriter:
         self._transport = new_transport
         protocol._replace_writer(self)
 
-    def __del__(self, warnings=warnings):
+    def __del__(self):
         if not self._transport.is_closing():
             self.close()
-            warnings.warn(f"unclosed {self!r}", ResourceWarning)
 
 
 class StreamReader:
