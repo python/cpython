@@ -305,31 +305,18 @@ def write_macro_instr(
     mac: MacroInstruction, out: Formatter, family: Family | None
 ) -> None:
     parts = [part for part in mac.parts if isinstance(part, Component)]
-
-    cache_adjust = 0
-    always_exits = ""
-    for part in mac.parts:
-        match part:
-            case CacheEffect(size=size):
-                cache_adjust += size
-            case Component(instr=instr):
-                cache_adjust += instr.cache_offset
-                always_exits = instr.always_exits
-            case _:
-                typing.assert_never(part)
-
     out.emit("")
     with out.block(f"TARGET({mac.name})"):
         if mac.predicted:
             out.emit(f"PREDICTED({mac.name});")
-        out.static_assert_family_size(mac.name, family, cache_adjust)
+        out.static_assert_family_size(mac.name, family, mac.cache_offset)
         try:
-            write_components(parts, out, TIER_ONE, cache_adjust)
+            write_components(parts, out, TIER_ONE, mac.cache_offset)
         except AssertionError as err:
             raise AssertionError(f"Error writing macro {mac.name}") from err
-        if not always_exits:
-            if cache_adjust:
-                out.emit(f"next_instr += {cache_adjust};")
+        if not parts[-1].instr.always_exits:
+            if mac.cache_offset:
+                out.emit(f"next_instr += {mac.cache_offset};")
             out.emit("DISPATCH();")
 
 
@@ -337,7 +324,7 @@ def write_components(
     parts: list[Component],
     out: Formatter,
     tier: Tiers,
-    cache_adjust: int,
+    cache_offset: int,
 ) -> None:
     managers = get_managers(parts)
 
@@ -386,8 +373,8 @@ def write_components(
             out.stack_adjust(mgr.min_offset.deep, mgr.min_offset.high)
             # Use clone() since adjust_inverse() mutates final_offset
             mgr.adjust_inverse(mgr.final_offset.clone())
-            if cache_adjust:
-                out.emit(f"next_instr += {cache_adjust};")
+            if cache_offset:
+                out.emit(f"next_instr += {cache_offset};")
 
         if len(parts) == 1:
             mgr.instr.write_body(out, 0, mgr.active_caches, tier)
