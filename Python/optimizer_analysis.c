@@ -848,14 +848,15 @@ _Py_uop_analyze_and_optimize(
                             temp_writebuffer[buffer_trace_len] = insert;
                             buffer_trace_len++;
                         }
+
+                        // Use the next SAVE_IP
+                        int temp = i;
+                        for (; trace[temp].opcode != SAVE_IP && temp < trace_len; temp++);
+                        assert(trace[temp].opcode == SAVE_IP);
+
 #if PARTITION_DEBUG
                         fprintf(stderr, "Emitting SAVE_IP\n");
 #endif
-                        // Use the next SAVE_IP
-                        int temp = i;
-                        for (; trace[temp].opcode != SAVE_IP && temp < trace_len; temp++) {
-                        }
-                        assert(trace[temp].opcode == SAVE_IP);
                         temp_writebuffer[buffer_trace_len] = trace[temp];
                         buffer_trace_len++;
                         num_dynamic_operands++;
@@ -876,9 +877,10 @@ _Py_uop_analyze_and_optimize(
 
 #ifdef PARTITION_DEBUG
 #ifdef Py_DEBUG
-        fprintf(stderr, "  [-] Type propagating across: %s{%d} : %d\n",
+        fprintf(stderr, "  [-] Type propagating across: %s{%d} : %d. {reader: %d, writer: %d}\n",
             (opcode >= 300 ? _PyOpcode_uop_name : _PyOpcode_OpName)[opcode],
-            opcode, oparg);
+            opcode, oparg,
+            i, buffer_trace_len);
 #endif
 #endif
         switch (opcode) {
@@ -997,7 +999,14 @@ _Py_uop_analyze_and_optimize(
 
         if (opcode == EXIT_TRACE) {
             // Copy the rest of the stubs over, then end.
+#if PARTITION_DEBUG
+            fprintf(stderr, "Exit trace encountered, emitting the rest of the stubs\n");
+#endif
+            i++; // We've already emitted an EXIT_TRACE
             for (; i < trace_len; i++) {
+#if PARTITION_DEBUG
+                fprintf(stderr, "Emitting %s\n", (opcode >= 300 ? _PyOpcode_uop_name : _PyOpcode_OpName)[opcode]);
+#endif
                 temp_writebuffer[buffer_trace_len] = trace[i];
                 buffer_trace_len++;
             }
@@ -1005,10 +1014,8 @@ _Py_uop_analyze_and_optimize(
         }
     }
     assert(STACK_SIZE() >= 0);
-
     buffer_trace_len = remove_duplicate_save_ips(temp_writebuffer, buffer_trace_len);
     fix_jump_side_exits(temp_writebuffer, buffer_trace_len, jump_id_to_instruction, max_jump_id);
-
     assert(buffer_trace_len <= trace_len);
 
 #if PARTITION_DEBUG
