@@ -142,7 +142,7 @@ class Instruction:
                 res = False
         return res
 
-    def write(self, out: Formatter, tier: Tiers = TIER_ONE) -> None:
+    def write_case_body(self, out: Formatter, tier: Tiers) -> None:
         """Write one instruction, sans prologue and epilogue."""
 
         # Write a static assertion that a family's cache size is correct
