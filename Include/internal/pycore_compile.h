@@ -54,6 +54,11 @@ typedef struct {
     int s_next_free_label; /* next free label id */
 } _PyCompile_InstructionSequence;
 
+int _PyCompile_InstructionSequence_UseLabel(_PyCompile_InstructionSequence *seq, int lbl);
+int _PyCompile_InstructionSequence_Addop(_PyCompile_InstructionSequence *seq,
+                                         int opcode, int oparg,
+                                         _PyCompilerSrcLocation loc);
+
 typedef struct {
     PyObject *u_name;
     PyObject *u_qualname;  /* dot-separated qualified name (lazy) */
