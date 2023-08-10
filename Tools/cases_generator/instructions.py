@@ -151,14 +151,6 @@ class Instruction:
         # Write input stack effect variable declarations and initializations
         stacking.write_single_instr(self, out, tier)
 
-        # Skip the rest if the block always exits
-        if self.always_exits:
-            return
-
-        # Write cache effect
-        if tier == TIER_ONE and self.cache_offset:
-            out.emit(f"next_instr += {self.cache_offset};")
-
     def write_body(
         self,
         out: Formatter,

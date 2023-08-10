@@ -633,6 +633,8 @@ class Generator(Analyzer):
                 self.out.emit(f"PREDICTED({name});")
             instr.write_case_body(self.out, tier=TIER_ONE)
             if not instr.always_exits:
+                if instr.cache_offset:
+                    self.out.emit(f"next_instr += {instr.cache_offset};")
                 if instr.check_eval_breaker:
                     self.out.emit("CHECK_EVAL_BREAKER();")
                 self.out.emit(f"DISPATCH();")
