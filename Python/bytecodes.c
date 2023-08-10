@@ -133,17 +133,19 @@ dummy_func(
         }
 
         inst(RESUME, (--)) {
-            #if TIER_ONE
             assert(frame == tstate->current_frame);
             /* Possibly combine this with eval breaker */
             if (_PyFrame_GetCode(frame)->_co_instrumentation_version != tstate->interp->monitoring_version) {
                 int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
                 ERROR_IF(err, error);
+            #if TIER_ONE
                 next_instr--;
-            }
-            else
             #endif
-            if (oparg < 2) {
+            #if TIER_TWO
+               goto deoptimize;
+            #endif
+            }
+            else if (oparg < 2) {
                 CHECK_EVAL_BREAKER();
             }
         }
