@@ -1537,31 +1537,26 @@ _winapi_PeekNamedPipe_impl(PyObject *module, HANDLE handle, int size)
 /*[clinic input]
 _winapi.LCMapStringEx
 
-    locale: unicode
+    locale: LPCWSTR
     flags: DWORD
     src: unicode
 
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_LCMapStringEx_impl(PyObject *module, PyObject *locale, DWORD flags,
+_winapi_LCMapStringEx_impl(PyObject *module, LPCWSTR locale, DWORD flags,
                            PyObject *src)
-/*[clinic end generated code: output=8ea4c9d85a4a1f23 input=2fa6ebc92591731b]*/
+/*[clinic end generated code: output=b90e6b26e028ff0a input=3e3dcd9b8164012f]*/
 {
     if (flags & (LCMAP_SORTHANDLE | LCMAP_HASH | LCMAP_BYTEREV |
                  LCMAP_SORTKEY)) {
         return PyErr_Format(PyExc_ValueError, "unsupported flags");
     }
 
-    wchar_t *locale_ = PyUnicode_AsWideCharString(locale, NULL);
-    if (!locale_) {
-        return NULL;
-    }
     Py_ssize_t srcLenAsSsize;
     int srcLen;
     wchar_t *src_ = PyUnicode_AsWideCharString(src, &srcLenAsSsize);
     if (!src_) {
-        PyMem_Free(locale_);
         return NULL;
     }
     srcLen = (int)srcLenAsSsize;
@@ -1569,33 +1564,29 @@ _winapi_LCMapStringEx_impl(PyObject *module, PyObject *locale, DWORD flags,
         srcLen = -1;
     }
 
-    int dest_size = LCMapStringEx(locale_, flags, src_, srcLen, NULL, 0,
+    int dest_size = LCMapStringEx(locale, flags, src_, srcLen, NULL, 0,
                                   NULL, NULL, 0);
     if (dest_size == 0) {
-        PyMem_Free(locale_);
         PyMem_Free(src_);
         return PyErr_SetFromWindowsErr(0);
     }
 
     wchar_t* dest = PyMem_NEW(wchar_t, dest_size);
     if (dest == NULL) {
-        PyMem_Free(locale_);
         PyMem_Free(src_);
         return PyErr_NoMemory();
     }
 
-    int nmapped = LCMapStringEx(locale_, flags, src_, srcLen, dest, dest_size,
+    int nmapped = LCMapStringEx(locale, flags, src_, srcLen, dest, dest_size,
                                 NULL, NULL, 0);
     if (nmapped == 0) {
         DWORD error = GetLastError();
-        PyMem_Free(locale_);
         PyMem_Free(src_);
         PyMem_DEL(dest);
         return PyErr_SetFromWindowsErr(error);
     }
 
     PyObject *ret = PyUnicode_FromWideChar(dest, dest_size);
-    PyMem_Free(locale_);
     PyMem_Free(src_);
     PyMem_DEL(dest);
 
