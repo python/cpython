@@ -2,17 +2,16 @@ import dataclasses
 import re
 import typing
 
-from flags import InstructionFlags, variable_used_unspecialized
+from flags import InstructionFlags, variable_used, variable_used_unspecialized
 from formatting import (
     Formatter,
     UNUSED,
-    string_effect_size,
     list_effect_size,
-    maybe_parenthesize,
 )
 import lexer as lx
 import parsing
 from parsing import StackEffect
+import stacking
 
 BITS_PER_CODE_UNIT = 16
 
@@ -61,6 +60,7 @@ class Instruction:
 
     # Computed by constructor
     always_exits: bool
+    has_deopt: bool
     cache_offset: int
     cache_effects: list[parsing.CacheEffect]
     input_effects: list[StackEffect]
@@ -83,6 +83,7 @@ class Instruction:
             self.block
         )
         self.always_exits = always_exits(self.block_text)
+        self.has_deopt = variable_used(self.inst, "DEOPT_IF")
         self.cache_effects = [
             effect for effect in inst.inputs if isinstance(effect, parsing.CacheEffect)
         ]
@@ -93,7 +94,7 @@ class Instruction:
         self.output_effects = inst.outputs  # For consistency/completeness
         unmoved_names: set[str] = set()
         for ieffect, oeffect in zip(self.input_effects, self.output_effects):
-            if ieffect.name == oeffect.name:
+            if ieffect == oeffect and ieffect.name == oeffect.name:
                 unmoved_names.add(ieffect.name)
             else:
                 break
@@ -141,83 +142,16 @@ class Instruction:
 
     def write(self, out: Formatter, tier: Tiers = TIER_ONE) -> None:
         """Write one instruction, sans prologue and epilogue."""
+
         # Write a static assertion that a family's cache size is correct
-        if family := self.family:
-            if self.name == family.name:
-                if cache_size := family.size:
-                    out.emit(
-                        f"static_assert({cache_size} == "
-                        f'{self.cache_offset}, "incorrect cache size");'
-                    )
+        out.static_assert_family_size(self.name, self.family, self.cache_offset)
 
         # Write input stack effect variable declarations and initializations
-        ieffects = list(reversed(self.input_effects))
-        for i, ieffect in enumerate(ieffects):
-            isize = string_effect_size(
-                list_effect_size([ieff for ieff in ieffects[: i + 1]])
-            )
-            if ieffect.size:
-                src = StackEffect(
-                    f"(stack_pointer - {maybe_parenthesize(isize)})", "PyObject **"
-                )
-            elif ieffect.cond:
-                src = StackEffect(
-                    f"({ieffect.cond}) ? stack_pointer[-{maybe_parenthesize(isize)}] : NULL",
-                    "",
-                )
-            else:
-                src = StackEffect(f"stack_pointer[-{maybe_parenthesize(isize)}]", "")
-            out.declare(ieffect, src)
-
-        # Write output stack effect variable declarations
-        isize = string_effect_size(list_effect_size(self.input_effects))
-        input_names = {ieffect.name for ieffect in self.input_effects}
-        for i, oeffect in enumerate(self.output_effects):
-            if oeffect.name not in input_names:
-                if oeffect.size:
-                    osize = string_effect_size(
-                        list_effect_size([oeff for oeff in self.output_effects[:i]])
-                    )
-                    offset = "stack_pointer"
-                    if isize != osize:
-                        if isize != "0":
-                            offset += f" - ({isize})"
-                        if osize != "0":
-                            offset += f" + {osize}"
-                    src = StackEffect(offset, "PyObject **")
-                    out.declare(oeffect, src)
-                else:
-                    out.declare(oeffect, None)
-
-        # out.emit(f"next_instr += OPSIZE({self.inst.name}) - 1;")
-
-        self.write_body(out, 0, self.active_caches, tier=tier)
+        stacking.write_single_instr(self, out, tier)
 
         # Skip the rest if the block always exits
         if self.always_exits:
             return
-
-        # Write net stack growth/shrinkage
-        out.stack_adjust(
-            [ieff for ieff in self.input_effects],
-            [oeff for oeff in self.output_effects],
-        )
-
-        # Write output stack effect assignments
-        oeffects = list(reversed(self.output_effects))
-        for i, oeffect in enumerate(oeffects):
-            if oeffect.name in self.unmoved_names:
-                continue
-            osize = string_effect_size(
-                list_effect_size([oeff for oeff in oeffects[: i + 1]])
-            )
-            if oeffect.size:
-                dst = StackEffect(
-                    f"stack_pointer - {maybe_parenthesize(osize)}", "PyObject **"
-                )
-            else:
-                dst = StackEffect(f"stack_pointer[-{maybe_parenthesize(osize)}]", "")
-            out.assign(dst, oeffect)
 
         # Write cache effect
         if tier == TIER_ONE and self.cache_offset:
@@ -274,7 +208,12 @@ class Instruction:
                 # These aren't DECREF'ed so they can stay.
                 ieffs = list(self.input_effects)
                 oeffs = list(self.output_effects)
-                while ieffs and oeffs and ieffs[0] == oeffs[0]:
+                while (
+                    ieffs
+                    and oeffs
+                    and ieffs[0] == oeffs[0]
+                    and ieffs[0].name == oeffs[0].name
+                ):
                     ieffs.pop(0)
                     oeffs.pop(0)
                 ninputs, symbolic = list_effect_size(ieffs)
@@ -307,29 +246,12 @@ class Instruction:
 
 
 InstructionOrCacheEffect = Instruction | parsing.CacheEffect
-StackEffectMapping = list[tuple[StackEffect, StackEffect]]
 
 
 @dataclasses.dataclass
 class Component:
     instr: Instruction
-    input_mapping: StackEffectMapping
-    output_mapping: StackEffectMapping
     active_caches: list[ActiveCacheEffect]
-
-    def write_body(self, out: Formatter) -> None:
-        with out.block(""):
-            input_names = {ieffect.name for _, ieffect in self.input_mapping}
-            for var, ieffect in self.input_mapping:
-                out.declare(ieffect, var)
-            for _, oeffect in self.output_mapping:
-                if oeffect.name not in input_names:
-                    out.declare(oeffect, None)
-
-            self.instr.write_body(out, -4, self.active_caches)
-
-            for var, oeffect in self.output_mapping:
-                out.assign(var, oeffect)
 
 
 MacroParts = list[Component | parsing.CacheEffect]
@@ -340,9 +262,6 @@ class MacroInstruction:
     """A macro instruction."""
 
     name: str
-    stack: list[StackEffect]
-    initial_sp: int
-    final_sp: int
     instr_fmt: str
     instr_flags: InstructionFlags
     macro: parsing.Macro

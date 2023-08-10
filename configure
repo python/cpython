@@ -11153,6 +11153,7 @@ fi
 
 
 # On Linux, netlink.h requires asm/types.h
+# On FreeBSD, netlink.h is located in netlink/netlink.h
 ac_fn_c_check_header_compile "$LINENO" "linux/netlink.h" "ac_cv_header_linux_netlink_h" "
 #ifdef HAVE_ASM_TYPES_H
 #include <asm/types.h>
@@ -11165,6 +11166,20 @@ ac_fn_c_check_header_compile "$LINENO" "linux/netlink.h" "ac_cv_header_linux_net
 if test "x$ac_cv_header_linux_netlink_h" = xyes
 then :
   printf "%s\n" "#define HAVE_LINUX_NETLINK_H 1" >>confdefs.h
+
+fi
+ac_fn_c_check_header_compile "$LINENO" "netlink/netlink.h" "ac_cv_header_netlink_netlink_h" "
+#ifdef HAVE_ASM_TYPES_H
+#include <asm/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+
+"
+if test "x$ac_cv_header_netlink_netlink_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_NETLINK_NETLINK_H 1" >>confdefs.h
 
 fi
 

@@ -546,7 +546,7 @@ state:
    .. note::
 
       Unlike other functions that steal references, ``PyModule_AddObject()``
-      only decrements the reference count of *value* **on success**.
+      only releases the reference to *value* **on success**.
 
       This means that its return value must be checked, and calling code must
       :c:func:`Py_XDECREF` *value* manually on error.

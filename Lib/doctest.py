@@ -1110,7 +1110,7 @@ class DocTestFinder:
             if source_lines is None:
                 return None
             pat = re.compile(r'^\s*class\s*%s\b' %
-                             getattr(obj, '__name__', '-'))
+                             re.escape(getattr(obj, '__name__', '-')))
             for i, line in enumerate(source_lines):
                 if pat.match(line):
                     lineno = i
