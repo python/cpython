@@ -7,6 +7,8 @@
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_sysmodule.h"     // _PySys_GetAttr()
+
 #include "clinic/_warnings.c.h"
 
 #define MODULE_NAME "_warnings"

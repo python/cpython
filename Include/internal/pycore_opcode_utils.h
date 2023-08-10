@@ -8,8 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_opcode.h"        // _PyOpcode_Jump
-
+#include "opcode_ids.h"
 
 #define MAX_REAL_OPCODE 254
 

@@ -1224,7 +1224,7 @@ variants of :func:`functools.lru_cache`:
             result = self.func(*args)
             self.cache[args] = time(), result
             if len(self.cache) > self.maxsize:
-                self.cache.popitem(0)
+                self.cache.popitem(last=False)
             return result
 
 
@@ -1256,12 +1256,12 @@ variants of :func:`functools.lru_cache`:
             if self.requests[args] <= self.cache_after:
                 self.requests.move_to_end(args)
                 if len(self.requests) > self.maxrequests:
-                    self.requests.popitem(0)
+                    self.requests.popitem(last=False)
             else:
                 self.requests.pop(args, None)
                 self.cache[args] = result
                 if len(self.cache) > self.maxsize:
-                    self.cache.popitem(0)
+                    self.cache.popitem(last=False)
             return result
 
 .. doctest::

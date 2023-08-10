@@ -4,10 +4,11 @@
 #include "Python.h"
 #include "pycore_frame.h"
 #include "pycore_function.h"
-#include "pycore_runtime.h"
 #include "pycore_global_objects.h"
 #include "pycore_intrinsics.h"
 #include "pycore_pyerrors.h"
+#include "pycore_runtime.h"
+#include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_typevarobject.h"
 
 
@@ -120,7 +121,7 @@ import_all_from(PyThreadState *tstate, PyObject *locals, PyObject *v)
 static PyObject *
 import_star(PyThreadState* tstate, PyObject *from)
 {
-    _PyInterpreterFrame *frame = tstate->cframe->current_frame;
+    _PyInterpreterFrame *frame = tstate->current_frame;
     if (_PyFrame_FastToLocalsWithError(frame) < 0) {
         return NULL;
     }
@@ -142,7 +143,7 @@ import_star(PyThreadState* tstate, PyObject *from)
 static PyObject *
 stopiteration_error(PyThreadState* tstate, PyObject *exc)
 {
-    _PyInterpreterFrame *frame = tstate->cframe->current_frame;
+    _PyInterpreterFrame *frame = tstate->current_frame;
     assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
     assert(PyExceptionInstance_Check(exc));
     const char *msg = NULL;

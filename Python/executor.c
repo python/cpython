@@ -1,5 +1,7 @@
 #include "Python.h"
 
+#include "opcode.h"
+
 #include "pycore_call.h"
 #include "pycore_ceval.h"
 #include "pycore_dict.h"
@@ -81,6 +83,7 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
         OBJECT_STAT_INC(optimization_uops_executed);
         switch (opcode) {
 
+#define TIER_TWO 2
 #include "executor_cases.c.h"
 
             default:
@@ -106,10 +109,11 @@ pop_3_error:
 pop_2_error:
     STACK_SHRINK(1);
 pop_1_error:
+pop_1_exit_unwind:
     STACK_SHRINK(1);
 error:
     // On ERROR_IF we return NULL as the frame.
-    // The caller recovers the frame from cframe.current_frame.
+    // The caller recovers the frame from tstate->current_frame.
     DPRINTF(2, "Error: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);

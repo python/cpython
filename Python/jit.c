@@ -1,8 +1,8 @@
 #include "Python.h"
 #include "pycore_abstract.h"
 #include "pycore_ceval.h"
-#include "pycore_opcode.h"
 #include "pycore_opcode_metadata.h"
+#include "pycore_opcode_utils.h"
 #include "pycore_uops.h"
 #include "pycore_jit.h"
 

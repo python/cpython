@@ -92,6 +92,7 @@ pop_3_error:
 pop_2_error:
     STACK_SHRINK(1);
 pop_1_error:
+pop_1_exit_unwind:
     STACK_SHRINK(1);
 error:
     _PyFrame_SetStackPointer(frame, stack_pointer);
