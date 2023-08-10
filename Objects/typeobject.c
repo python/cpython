@@ -1085,7 +1085,7 @@ type_module(PyTypeObject *type, void *context)
                 PyUnicode_InternInPlace(&mod);
         }
         else {
-            mod = Py_NewRef(&_Py_ID(builtins));
+            mod = &_Py_ID(builtins);
         }
     }
     return mod;
@@ -4964,9 +4964,6 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
     Py_DECREF(name);
     return res;
 }
-
-extern void
-_PyDictKeys_DecRef(PyDictKeysObject *keys);
 
 
 static void

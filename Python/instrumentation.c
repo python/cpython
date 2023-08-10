@@ -1082,16 +1082,6 @@ call_instrumentation_vector_protected(
 }
 
 void
-_Py_call_instrumentation_exc0(
-    PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr)
-{
-    assert(_PyErr_Occurred(tstate));
-    PyObject *args[3] = { NULL, NULL, NULL };
-    call_instrumentation_vector_protected(tstate, event, frame, instr, 2, args);
-}
-
-void
 _Py_call_instrumentation_exc2(
     PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1)
