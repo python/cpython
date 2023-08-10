@@ -3943,7 +3943,7 @@ def getmethparlist(ob):
             case inspect.Parameter.VAR_KEYWORD:
                 call_args.append(f'**{param.name}')
             case _:
-                raise RuntimeError('Unsupported parameter kind')
+                raise RuntimeError('Unsupported parameter kind', param.kind)
     call_text = f'({', '.join(call_args)})'
 
     return str(func_sig), call_text
