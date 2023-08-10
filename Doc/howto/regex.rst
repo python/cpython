@@ -544,12 +544,22 @@ Compilation Flags
 .. currentmodule:: re
 
 Compilation flags let you modify some aspects of how regular expressions work.
-Flags are available in the :mod:`re` module under two names, a long name such as
-:const:`IGNORECASE` and a short, one-letter form such as :const:`I`.  (If you're
-familiar with Perl's pattern modifiers, the one-letter forms use the same
-letters; the short form of :const:`re.VERBOSE` is :const:`re.X`, for example.)
-Multiple flags can be specified by bitwise OR-ing them; ``re.I | re.M`` sets
-both the :const:`I` and :const:`M` flags, for example.
+They can be passed as an argument to functions such as :func:`re.compile` and
+:func:`re.sub` or you can specify them in the regex pattern.
+
+Flags are available in the :mod:`re` module under two names, a long
+name such as :const:`IGNORECASE` and a short, one-letter form such as
+:const:`I`. Multiple flags can be specified by bitwise OR-ing them;
+``re.IGNORECASE | re.MULTILINE`` sets both the :const:`IGNORECASE` and
+:const:`MULTILINE` flags, for example.
+
+To specify them in the pattern, you can write them as an embedded
+modifier at the start of the pattern that uses the short one-letter
+form: `(?i)` for a single flag or `(?mxi)` to enable multiple flags.
+(If you're familiar with Perl's pattern modifiers, the one-letter
+forms use the same letters; the short form of :const:`re.VERBOSE` is
+:const:`re.X` because Perl calls these "extended regular expressions",
+for example.)
 
 Here's a table of the available flags, followed by a more detailed explanation
 of each one.
