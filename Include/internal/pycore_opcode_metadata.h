@@ -480,64 +480,62 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
             return 1;
         case LOAD_ATTR_METHOD_LAZY_DICT:
             return 1;
-        case KW_NAMES:
-            return 0;
         case INSTRUMENTED_CALL:
             return 0;
         case CALL:
-            return oparg + 2;
+            return oparg + 3;
         case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS:
-            return oparg + 2;
+            return oparg + 3;
         case _INIT_CALL_BOUND_METHOD_EXACT_ARGS:
-            return oparg + 2;
+            return oparg + 3;
         case _CHECK_PEP_523:
             return 0;
         case _CHECK_FUNCTION_EXACT_ARGS:
-            return oparg + 2;
+            return oparg + 3;
         case _CHECK_STACK_SPACE:
-            return oparg + 2;
+            return oparg + 3;
         case _INIT_CALL_PY_EXACT_ARGS:
-            return oparg + 2;
+            return oparg + 3;
         case _PUSH_FRAME:
             return 1;
         case CALL_BOUND_METHOD_EXACT_ARGS:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_PY_EXACT_ARGS:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_PY_WITH_DEFAULTS:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_NO_KW_TYPE_1:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_NO_KW_STR_1:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_NO_KW_TUPLE_1:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_NO_KW_ALLOC_AND_ENTER_INIT:
-            return oparg + 2;
+            return oparg + 3;
         case EXIT_INIT_CHECK:
             return 1;
         case CALL_BUILTIN_CLASS:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_NO_KW_BUILTIN_O:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_NO_KW_BUILTIN_FAST:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_BUILTIN_FAST_WITH_KEYWORDS:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_NO_KW_LEN:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_NO_KW_ISINSTANCE:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_NO_KW_LIST_APPEND:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_NO_KW_METHOD_DESCRIPTOR_O:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_NO_KW_METHOD_DESCRIPTOR_FAST:
-            return oparg + 2;
+            return oparg + 3;
         case INSTRUMENTED_CALL_FUNCTION_EX:
             return 0;
         case CALL_FUNCTION_EX:
@@ -1012,22 +1010,20 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 1;
         case LOAD_ATTR_METHOD_LAZY_DICT:
             return 2;
-        case KW_NAMES:
-            return 0;
         case INSTRUMENTED_CALL:
             return 0;
         case CALL:
             return 1;
         case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS:
-            return oparg + 2;
+            return oparg + 3;
         case _INIT_CALL_BOUND_METHOD_EXACT_ARGS:
-            return oparg + 2;
+            return oparg + 3;
         case _CHECK_PEP_523:
             return 0;
         case _CHECK_FUNCTION_EXACT_ARGS:
-            return oparg + 2;
+            return oparg + 3;
         case _CHECK_STACK_SPACE:
-            return oparg + 2;
+            return oparg + 3;
         case _INIT_CALL_PY_EXACT_ARGS:
             return 1;
         case _PUSH_FRAME:
@@ -1370,7 +1366,6 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG },
     [LOAD_ATTR_NONDESCRIPTOR_NO_DICT] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG },
     [LOAD_ATTR_METHOD_LAZY_DICT] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG },
-    [KW_NAMES] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_CONST_FLAG },
     [INSTRUMENTED_CALL] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [CALL] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG },
     [CALL_BOUND_METHOD_EXACT_ARGS] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG },
@@ -1536,11 +1531,14 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [CALL_NO_KW_STR_1] = { .nuops = 1, .uops = { { CALL_NO_KW_STR_1, 0, 0 } } },
     [CALL_NO_KW_TUPLE_1] = { .nuops = 1, .uops = { { CALL_NO_KW_TUPLE_1, 0, 0 } } },
     [EXIT_INIT_CHECK] = { .nuops = 1, .uops = { { EXIT_INIT_CHECK, 0, 0 } } },
+    [CALL_BUILTIN_CLASS] = { .nuops = 1, .uops = { { CALL_BUILTIN_CLASS, 0, 0 } } },
     [CALL_NO_KW_BUILTIN_O] = { .nuops = 1, .uops = { { CALL_NO_KW_BUILTIN_O, 0, 0 } } },
     [CALL_NO_KW_BUILTIN_FAST] = { .nuops = 1, .uops = { { CALL_NO_KW_BUILTIN_FAST, 0, 0 } } },
+    [CALL_BUILTIN_FAST_WITH_KEYWORDS] = { .nuops = 1, .uops = { { CALL_BUILTIN_FAST_WITH_KEYWORDS, 0, 0 } } },
     [CALL_NO_KW_LEN] = { .nuops = 1, .uops = { { CALL_NO_KW_LEN, 0, 0 } } },
     [CALL_NO_KW_ISINSTANCE] = { .nuops = 1, .uops = { { CALL_NO_KW_ISINSTANCE, 0, 0 } } },
     [CALL_NO_KW_METHOD_DESCRIPTOR_O] = { .nuops = 1, .uops = { { CALL_NO_KW_METHOD_DESCRIPTOR_O, 0, 0 } } },
+    [CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS] = { .nuops = 1, .uops = { { CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, 0, 0 } } },
     [CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS] = { .nuops = 1, .uops = { { CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS, 0, 0 } } },
     [CALL_NO_KW_METHOD_DESCRIPTOR_FAST] = { .nuops = 1, .uops = { { CALL_NO_KW_METHOD_DESCRIPTOR_FAST, 0, 0 } } },
     [MAKE_FUNCTION] = { .nuops = 1, .uops = { { MAKE_FUNCTION, 0, 0 } } },
@@ -1735,7 +1733,6 @@ const char *const _PyOpcode_OpName[268] = {
     [JUMP_BACKWARD] = "JUMP_BACKWARD",
     [JUMP_BACKWARD_NO_INTERRUPT] = "JUMP_BACKWARD_NO_INTERRUPT",
     [JUMP_FORWARD] = "JUMP_FORWARD",
-    [KW_NAMES] = "KW_NAMES",
     [LIST_APPEND] = "LIST_APPEND",
     [LIST_EXTEND] = "LIST_EXTEND",
     [LOAD_ATTR] = "LOAD_ATTR",
@@ -1963,7 +1960,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [JUMP_BACKWARD] = JUMP_BACKWARD,
     [JUMP_BACKWARD_NO_INTERRUPT] = JUMP_BACKWARD_NO_INTERRUPT,
     [JUMP_FORWARD] = JUMP_FORWARD,
-    [KW_NAMES] = KW_NAMES,
     [LIST_APPEND] = LIST_APPEND,
     [LIST_EXTEND] = LIST_EXTEND,
     [LOAD_ASSERTION_ERROR] = LOAD_ASSERTION_ERROR,
@@ -2062,6 +2058,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif // NEED_OPCODE_METADATA
 
 #define EXTRA_CASES \
+    case 187: \
     case 188: \
     case 189: \
     case 190: \

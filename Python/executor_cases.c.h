@@ -2195,8 +2195,8 @@
         case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS: {
             PyObject *null;
             PyObject *callable;
-            null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
+            null = stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(Py_TYPE(callable) != &PyMethod_Type, CALL);
             break;
@@ -2206,15 +2206,15 @@
             PyObject *callable;
             PyObject *func;
             PyObject *self;
-            callable = stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
             STAT_INC(CALL, hit);
             self = Py_NewRef(((PyMethodObject *)callable)->im_self);
-            stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _INIT_CALL_PY_EXACT_ARGS
+            stack_pointer[-2 - oparg] = self;  // Patch stack as it is used by _INIT_CALL_PY_EXACT_ARGS
             func = Py_NewRef(((PyMethodObject *)callable)->im_func);
-            stack_pointer[-2 - oparg] = func;  // This is used by CALL, upon deoptimization
+            stack_pointer[-3 - oparg] = func;  // This is used by CALL, upon deoptimization
             Py_DECREF(callable);
-            stack_pointer[-2 - oparg] = func;
-            stack_pointer[-1 - oparg] = self;
+            stack_pointer[-3 - oparg] = func;
+            stack_pointer[-2 - oparg] = self;
             break;
         }
 
@@ -2224,12 +2224,14 @@
         }
 
         case _CHECK_FUNCTION_EXACT_ARGS: {
+            PyObject *kwnames;
             PyObject *self_or_null;
             PyObject *callable;
-            self_or_null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
+            kwnames = stack_pointer[-1];
+            self_or_null = stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
             uint32_t func_version = (uint32_t)operand;
-            ASSERT_KWNAMES_IS_NULL();
+            assert(kwnames == NULL);
             DEOPT_IF(!PyFunction_Check(callable), CALL);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             DEOPT_IF(func->func_version != func_version, CALL);
@@ -2240,7 +2242,7 @@
 
         case _CHECK_STACK_SPACE: {
             PyObject *callable;
-            callable = stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
             PyFunctionObject *func = (PyFunctionObject *)callable;
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
@@ -2252,9 +2254,9 @@
             PyObject *self_or_null;
             PyObject *callable;
             _PyInterpreterFrame *new_frame;
-            args = stack_pointer - oparg;
-            self_or_null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
+            args = stack_pointer - 1 - oparg;
+            self_or_null = stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
             int argcount = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -2267,7 +2269,7 @@
                 new_frame->localsplus[i] = args[i];
             }
             STACK_SHRINK(oparg);
-            STACK_SHRINK(1);
+            STACK_SHRINK(2);
             stack_pointer[-1] = (PyObject *)new_frame;
             break;
         }
@@ -2296,14 +2298,16 @@
         }
 
         case CALL_NO_KW_TYPE_1: {
+            PyObject *kwnames;
             PyObject **args;
             PyObject *null;
             PyObject *callable;
             PyObject *res;
-            args = stack_pointer - oparg;
-            null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
-            ASSERT_KWNAMES_IS_NULL();
+            kwnames = stack_pointer[-1];
+            args = stack_pointer - 1 - oparg;
+            null = stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
+            assert(kwnames == NULL);
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             PyObject *obj = args[0];
@@ -2313,20 +2317,22 @@
             Py_DECREF(obj);
             Py_DECREF(&PyType_Type);  // I.e., callable
             STACK_SHRINK(oparg);
-            STACK_SHRINK(1);
+            STACK_SHRINK(2);
             stack_pointer[-1] = res;
             break;
         }
 
         case CALL_NO_KW_STR_1: {
+            PyObject *kwnames;
             PyObject **args;
             PyObject *null;
             PyObject *callable;
             PyObject *res;
-            args = stack_pointer - oparg;
-            null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
-            ASSERT_KWNAMES_IS_NULL();
+            kwnames = stack_pointer[-1];
+            args = stack_pointer - 1 - oparg;
+            null = stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
+            assert(kwnames == NULL);
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyUnicode_Type, CALL);
@@ -2335,23 +2341,25 @@
             res = PyObject_Str(arg);
             Py_DECREF(arg);
             Py_DECREF(&PyUnicode_Type);  // I.e., callable
-            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_3_error; }
             STACK_SHRINK(oparg);
-            STACK_SHRINK(1);
+            STACK_SHRINK(2);
             stack_pointer[-1] = res;
             CHECK_EVAL_BREAKER();
             break;
         }
 
         case CALL_NO_KW_TUPLE_1: {
+            PyObject *kwnames;
             PyObject **args;
             PyObject *null;
             PyObject *callable;
             PyObject *res;
-            args = stack_pointer - oparg;
-            null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
-            ASSERT_KWNAMES_IS_NULL();
+            kwnames = stack_pointer[-1];
+            args = stack_pointer - 1 - oparg;
+            null = stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
+            assert(kwnames == NULL);
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyTuple_Type, CALL);
@@ -2360,9 +2368,9 @@
             res = PySequence_Tuple(arg);
             Py_DECREF(arg);
             Py_DECREF(&PyTuple_Type);  // I.e., tuple
-            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_3_error; }
             STACK_SHRINK(oparg);
-            STACK_SHRINK(1);
+            STACK_SHRINK(2);
             stack_pointer[-1] = res;
             CHECK_EVAL_BREAKER();
             break;
@@ -2382,16 +2390,54 @@
             break;
         }
 
-        case CALL_NO_KW_BUILTIN_O: {
+        case CALL_BUILTIN_CLASS: {
+            PyObject *kwnames;
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
-            args = stack_pointer - oparg;
-            self_or_null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
+            kwnames = stack_pointer[-1];
+            args = stack_pointer - 1 - oparg;
+            self_or_null = stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
+            int total_args = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                total_args++;
+            }
+            int kwnames_len = KWNAMES_LEN();
+            DEOPT_IF(!PyType_Check(callable), CALL);
+            PyTypeObject *tp = (PyTypeObject *)callable;
+            DEOPT_IF(tp->tp_vectorcall == NULL, CALL);
+            STAT_INC(CALL, hit);
+            res = tp->tp_vectorcall((PyObject *)tp, args,
+                                    total_args - kwnames_len, kwnames);
+            Py_XDECREF(kwnames);
+            /* Free the arguments. */
+            for (int i = 0; i < total_args; i++) {
+                Py_DECREF(args[i]);
+            }
+            Py_DECREF(tp);
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_3_error; }
+            STACK_SHRINK(oparg);
+            STACK_SHRINK(2);
+            stack_pointer[-1] = res;
+            CHECK_EVAL_BREAKER();
+            break;
+        }
+
+        case CALL_NO_KW_BUILTIN_O: {
+            PyObject *kwnames;
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
+            kwnames = stack_pointer[-1];
+            args = stack_pointer - 1 - oparg;
+            self_or_null = stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
             /* Builtin METH_O functions */
-            ASSERT_KWNAMES_IS_NULL();
+            assert(kwnames == NULL);
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -2414,24 +2460,26 @@
 
             Py_DECREF(arg);
             Py_DECREF(callable);
-            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_3_error; }
             STACK_SHRINK(oparg);
-            STACK_SHRINK(1);
+            STACK_SHRINK(2);
             stack_pointer[-1] = res;
             CHECK_EVAL_BREAKER();
             break;
         }
 
         case CALL_NO_KW_BUILTIN_FAST: {
+            PyObject *kwnames;
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
-            args = stack_pointer - oparg;
-            self_or_null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
+            kwnames = stack_pointer[-1];
+            args = stack_pointer - 1 - oparg;
+            self_or_null = stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
             /* Builtin METH_FASTCALL functions, without keywords */
-            ASSERT_KWNAMES_IS_NULL();
+            assert(kwnames == NULL);
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -2453,28 +2501,76 @@
                 Py_DECREF(args[i]);
             }
             Py_DECREF(callable);
-            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_3_error; }
                 /* Not deopting because this doesn't mean our optimization was
                    wrong. `res` can be NULL for valid reasons. Eg. getattr(x,
                    'invalid'). In those cases an exception is set, so we must
                    handle it.
                 */
             STACK_SHRINK(oparg);
-            STACK_SHRINK(1);
+            STACK_SHRINK(2);
+            stack_pointer[-1] = res;
+            CHECK_EVAL_BREAKER();
+            break;
+        }
+
+        case CALL_BUILTIN_FAST_WITH_KEYWORDS: {
+            PyObject *kwnames;
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
+            kwnames = stack_pointer[-1];
+            args = stack_pointer - 1 - oparg;
+            self_or_null = stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
+            /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
+            int total_args = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                total_args++;
+            }
+            DEOPT_IF(!PyCFunction_CheckExact(callable), CALL);
+            DEOPT_IF(PyCFunction_GET_FLAGS(callable) !=
+                (METH_FASTCALL | METH_KEYWORDS), CALL);
+            STAT_INC(CALL, hit);
+            /* res = func(self, args, nargs, kwnames) */
+            _PyCFunctionFastWithKeywords cfunc =
+                (_PyCFunctionFastWithKeywords)(void(*)(void))
+                PyCFunction_GET_FUNCTION(callable);
+            res = cfunc(
+                PyCFunction_GET_SELF(callable),
+                args,
+                total_args - KWNAMES_LEN(),
+                kwnames
+            );
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            Py_XDECREF(kwnames);
+
+            /* Free the arguments. */
+            for (int i = 0; i < total_args; i++) {
+                Py_DECREF(args[i]);
+            }
+            Py_DECREF(callable);
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_3_error; }
+            STACK_SHRINK(oparg);
+            STACK_SHRINK(2);
             stack_pointer[-1] = res;
             CHECK_EVAL_BREAKER();
             break;
         }
 
         case CALL_NO_KW_LEN: {
+            PyObject *kwnames;
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
-            args = stack_pointer - oparg;
-            self_or_null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
-            ASSERT_KWNAMES_IS_NULL();
+            kwnames = stack_pointer[-1];
+            args = stack_pointer - 1 - oparg;
+            self_or_null = stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
+            assert(kwnames == NULL);
             /* len(o) */
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -2495,22 +2591,24 @@
 
             Py_DECREF(callable);
             Py_DECREF(arg);
-            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_3_error; }
             STACK_SHRINK(oparg);
-            STACK_SHRINK(1);
+            STACK_SHRINK(2);
             stack_pointer[-1] = res;
             break;
         }
 
         case CALL_NO_KW_ISINSTANCE: {
+            PyObject *kwnames;
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
-            args = stack_pointer - oparg;
-            self_or_null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
-            ASSERT_KWNAMES_IS_NULL();
+            kwnames = stack_pointer[-1];
+            args = stack_pointer - 1 - oparg;
+            self_or_null = stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
+            assert(kwnames == NULL);
             /* isinstance(o, o2) */
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -2533,22 +2631,24 @@
             Py_DECREF(inst);
             Py_DECREF(cls);
             Py_DECREF(callable);
-            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_3_error; }
             STACK_SHRINK(oparg);
-            STACK_SHRINK(1);
+            STACK_SHRINK(2);
             stack_pointer[-1] = res;
             break;
         }
 
         case CALL_NO_KW_METHOD_DESCRIPTOR_O: {
+            PyObject *kwnames;
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
-            args = stack_pointer - oparg;
-            self_or_null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
-            ASSERT_KWNAMES_IS_NULL();
+            kwnames = stack_pointer[-1];
+            args = stack_pointer - 1 - oparg;
+            self_or_null = stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
+            assert(kwnames == NULL);
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -2575,23 +2675,68 @@
             Py_DECREF(self);
             Py_DECREF(arg);
             Py_DECREF(callable);
-            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_3_error; }
             STACK_SHRINK(oparg);
-            STACK_SHRINK(1);
+            STACK_SHRINK(2);
+            stack_pointer[-1] = res;
+            CHECK_EVAL_BREAKER();
+            break;
+        }
+
+        case CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
+            PyObject *kwnames;
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
+            kwnames = stack_pointer[-1];
+            args = stack_pointer - 1 - oparg;
+            self_or_null = stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
+            int total_args = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                total_args++;
+            }
+            PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
+            DEOPT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type), CALL);
+            PyMethodDef *meth = method->d_method;
+            DEOPT_IF(meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS), CALL);
+            PyTypeObject *d_type = method->d_common.d_type;
+            PyObject *self = args[0];
+            DEOPT_IF(!Py_IS_TYPE(self, d_type), CALL);
+            STAT_INC(CALL, hit);
+            int nargs = total_args - 1;
+            _PyCFunctionFastWithKeywords cfunc =
+                (_PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
+            res = cfunc(self, args + 1, nargs - KWNAMES_LEN(), kwnames);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            Py_XDECREF(kwnames);
+
+            /* Free the arguments. */
+            for (int i = 0; i < total_args; i++) {
+                Py_DECREF(args[i]);
+            }
+            Py_DECREF(callable);
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_3_error; }
+            STACK_SHRINK(oparg);
+            STACK_SHRINK(2);
             stack_pointer[-1] = res;
             CHECK_EVAL_BREAKER();
             break;
         }
 
         case CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS: {
+            PyObject *kwnames;
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
-            args = stack_pointer - oparg;
-            self_or_null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
-            ASSERT_KWNAMES_IS_NULL();
+            kwnames = stack_pointer[-1];
+            args = stack_pointer - 1 - oparg;
+            self_or_null = stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
+            assert(kwnames == NULL);
             assert(oparg == 0 || oparg == 1);
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -2617,23 +2762,25 @@
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(self);
             Py_DECREF(callable);
-            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_3_error; }
             STACK_SHRINK(oparg);
-            STACK_SHRINK(1);
+            STACK_SHRINK(2);
             stack_pointer[-1] = res;
             CHECK_EVAL_BREAKER();
             break;
         }
 
         case CALL_NO_KW_METHOD_DESCRIPTOR_FAST: {
+            PyObject *kwnames;
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
-            args = stack_pointer - oparg;
-            self_or_null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
-            ASSERT_KWNAMES_IS_NULL();
+            kwnames = stack_pointer[-1];
+            args = stack_pointer - 1 - oparg;
+            self_or_null = stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
+            assert(kwnames == NULL);
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -2657,9 +2804,9 @@
                 Py_DECREF(args[i]);
             }
             Py_DECREF(callable);
-            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_3_error; }
             STACK_SHRINK(oparg);
-            STACK_SHRINK(1);
+            STACK_SHRINK(2);
             stack_pointer[-1] = res;
             CHECK_EVAL_BREAKER();
             break;
