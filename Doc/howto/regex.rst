@@ -1265,10 +1265,7 @@ hexadecimal::
    'Call 0xffd2 for printing, 0xc000 for user code.'
 
 When using the module-level :func:`re.sub` function, the pattern is passed as
-the first argument.  The pattern may be provided as an object or as a string; if
-you need to specify regular expression flags, you must either use a
-pattern object as the first parameter, or use embedded modifiers in the
-pattern string, e.g. ``sub("(?i)b+", "x", "bbbb BBBB")`` returns ``'x x'``.
+the first argument.  The pattern may be provided as an object or as a string.
 
 
 Common Problems
