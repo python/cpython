@@ -704,7 +704,7 @@ More Pattern Power
 ==================
 
 So far we've only covered a part of the features of regular expressions.  In
-this section, we'll cover some new metacharacters, and how to use groups to
+this section, we'll cover some additional metacharacters and how to
 retrieve portions of the text that was matched.
 
 
@@ -713,16 +713,8 @@ retrieve portions of the text that was matched.
 More Metacharacters
 -------------------
 
-There are some metacharacters that we haven't covered yet.  Most of them will be
-covered in this section.
-
-Some of the remaining metacharacters to be discussed are :dfn:`zero-width
-assertions`.  They don't cause the engine to advance through the string;
-instead, they consume no characters at all, and simply succeed or fail.  For
-example, ``\b`` is an assertion that the current position is located at a word
-boundary; the position isn't changed by the ``\b`` at all.  This means that
-zero-width assertions should never be repeated, because if they match once at a
-given location, they can obviously be matched an infinite number of times.
+There are more metacharacters that provide different capabilities. The first one
+allows matching two possible sub-patterns.
 
 ``|``
    Alternation, or the "or" operator.   If *A* and *B* are regular expressions,
@@ -733,6 +725,17 @@ given location, they can obviously be matched an infinite number of times.
 
    To match a literal ``'|'``, use ``\|``, or enclose it inside a character class,
    as in ``[|]``.
+
+The following metacharacters are all :dfn:`zero-width assertions`.
+They don't cause the engine to advance through the string;
+instead, they consume no characters at all and simply succeed or fail.  For
+example, ``\b`` is an assertion that the current position is located at a word
+boundary; the position isn't changed by the ``\b`` at all.
+
+Zero-width assertions can't be repeated, because if they match once at
+a given location, they could be matched an infinite number of times,
+so it's meaningless to repeat them. A pattern such as `^*` will raise
+an exception when you try to compile it.
 
 ``^``
    Matches at the beginning of lines.  Unless the :const:`MULTILINE` flag has been
