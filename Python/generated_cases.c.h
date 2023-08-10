@@ -13,12 +13,12 @@
             if (_PyFrame_GetCode(frame)->_co_instrumentation_version != tstate->interp->monitoring_version) {
                 int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
                 if (err) goto error;
-            #if TIER_ONE
+                #if TIER_ONE
                 next_instr--;
-            #endif
-            #if TIER_TWO
-               goto deoptimize;
-            #endif
+                #endif
+                #if TIER_TWO
+                goto deoptimize;
+                #endif
             }
             else if (oparg < 2) {
                 CHECK_EVAL_BREAKER();
