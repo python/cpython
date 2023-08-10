@@ -346,7 +346,9 @@ class Generator(Analyzer):
                             if instr.kind == "inst" and instr.is_viable_uop():
                                 # Construct a dummy Component -- input/output mappings are not used
                                 part = Component(instr, instr.active_caches)
-                                self.write_macro_expansions(instr.name, [part], instr.cache_offset)
+                                self.write_macro_expansions(
+                                    instr.name, [part], instr.cache_offset
+                                )
                             elif instr.kind == "inst" and variable_used(
                                 instr.inst, "oparg1"
                             ):
@@ -356,7 +358,9 @@ class Generator(Analyzer):
                                 self.write_super_expansions(instr.name)
                         case parsing.Macro():
                             mac = self.macro_instrs[thing.name]
-                            self.write_macro_expansions(mac.name, mac.parts, mac.cache_offset)
+                            self.write_macro_expansions(
+                                mac.name, mac.parts, mac.cache_offset
+                            )
                         case parsing.Pseudo():
                             pass
                         case _:
@@ -562,7 +566,9 @@ class Generator(Analyzer):
                     case parsing.Macro():
                         n_macros += 1
                         mac = self.macro_instrs[thing.name]
-                        stacking.write_macro_instr(mac, self.out, self.families.get(mac.name))
+                        stacking.write_macro_instr(
+                            mac, self.out, self.families.get(mac.name)
+                        )
                         # self.write_macro(self.macro_instrs[thing.name])
                     case parsing.Pseudo():
                         pass
