@@ -2436,7 +2436,7 @@ class ClinicFunctionalTest(unittest.TestCase):
         regex = (
             fr"Passing( more than)?( [0-9]+)? positional argument(s)? to "
             fr"{fn.__name__}\(\) is deprecated. Parameter(s)? {pnames} will "
-            fr"become( a)? keyword-only parameter(s)? in Python 3.14"
+            fr"become( a)? keyword-only parameter(s)? in Python 3\.14"
         )
         with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
             # Record the line number, so we're sure we've got the correct stack
@@ -2915,8 +2915,9 @@ class ClinicFunctionalTest(unittest.TestCase):
             "deprecated. Parameter 'a' will become a keyword-only parameter "
             "in Python 3.14."
         )
-        with self.assertWarnsRegex(DeprecationWarning, regex):
+        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
             ac_tester.DeprStarNew(None)
+        self.assertEqual(cm.filename, __file__)
 
     def test_depr_star_init(self):
         regex = re.escape(
@@ -2924,8 +2925,9 @@ class ClinicFunctionalTest(unittest.TestCase):
             "deprecated. Parameter 'a' will become a keyword-only parameter "
             "in Python 3.14."
         )
-        with self.assertWarnsRegex(DeprecationWarning, regex):
+        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
             ac_tester.DeprStarInit(None)
+        self.assertEqual(cm.filename, __file__)
 
     def test_depr_star_pos0_len1(self):
         fn = ac_tester.depr_star_pos0_len1

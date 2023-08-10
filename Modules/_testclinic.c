@@ -1227,11 +1227,7 @@ static PyObject *
 depr_star_new_impl(PyTypeObject *type, PyObject *a)
 /*[clinic end generated code: output=bdbb36244f90cf46 input=f4ae7dafbc23c378]*/
 {
-    PyObject *self = type->tp_alloc(type, 0);
-    if (self == NULL) {
-        return NULL;
-    }
-    return self;
+    return type->tp_alloc(type, 0);
 }
 
 static PyTypeObject DeprStarNew = {
