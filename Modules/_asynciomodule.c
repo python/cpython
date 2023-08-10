@@ -34,7 +34,6 @@ typedef enum {
     PyObject *prefix##_result;                                              \
     PyObject *prefix##_source_tb;                                           \
     PyObject *prefix##_cancel_msg;                                          \
-    PyObject *prefix##_weakreflist;                                         \
     PyObject *prefix##_cancelled_exc;                                       \
     fut_state prefix##_state;                                               \
     /* These bitfields need to be at the end of the struct
