@@ -38,7 +38,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET
-#include "structmember.h"         // PyMemberDef
+
 
 
 #ifndef WINDOWS_LEAN_AND_MEAN
@@ -54,13 +54,13 @@
     PyLong_FromUnsignedLong((unsigned long) handle)
 #define PYNUM_TO_HANDLE(obj) ((HANDLE)PyLong_AsUnsignedLong(obj))
 #define F_POINTER "k"
-#define T_POINTER T_ULONG
+#define T_POINTER Py_T_ULONG
 #else
 #define HANDLE_TO_PYNUM(handle) \
     PyLong_FromUnsignedLongLong((unsigned long long) handle)
 #define PYNUM_TO_HANDLE(obj) ((HANDLE)PyLong_AsUnsignedLongLong(obj))
 #define F_POINTER "K"
-#define T_POINTER T_ULONGLONG
+#define T_POINTER Py_T_ULONGLONG
 #endif
 
 #define F_HANDLE F_POINTER
@@ -322,7 +322,7 @@ static PyMethodDef overlapped_methods[] = {
 static PyMemberDef overlapped_members[] = {
     {"event", T_HANDLE,
      offsetof(OverlappedObject, overlapped) + offsetof(OVERLAPPED, hEvent),
-     READONLY, "overlapped event handle"},
+     Py_READONLY, "overlapped event handle"},
     {NULL}
 };
 

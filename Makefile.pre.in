@@ -381,6 +381,7 @@ PYTHON_OBJS=	\
 		Python/context.o \
 		Python/dynamic_annotations.o \
 		Python/errors.o \
+		Python/executor.o \
 		Python/flowgraph.o \
 		Python/frame.o \
 		Python/frozenmain.o \
@@ -774,8 +775,12 @@ coverage-report: regen-token regen-frozen
 # Run "Argument Clinic" over all source files
 .PHONY: clinic
 clinic: check-clean-src $(srcdir)/Modules/_blake2/blake2s_impl.c
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py --make --srcdir $(srcdir)
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py --make --exclude Lib/test/clinic.test.c --srcdir $(srcdir)
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_global_objects.py
+
+.PHONY: clinic-tests
+clinic-tests: check-clean-src $(srcdir)/Lib/test/clinic.test.c
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py -f $(srcdir)/Lib/test/clinic.test.c
 
 # Build the interpreter
 $(BUILDPYTHON):	Programs/python.o $(LINK_PYTHON_DEPS)
@@ -1315,7 +1320,7 @@ regen-limited-abi: all
 # Regenerate all generated files
 
 .PHONY: regen-all
-regen-all: regen-cases regen-opcode regen-opcode-targets regen-typeslots \
+regen-all: regen-cases regen-opcode regen-typeslots \
 	regen-token regen-ast regen-keyword regen-sre regen-frozen clinic \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
 	regen-test-levenshtein regen-global-objects
@@ -1427,11 +1432,11 @@ regen-opcode:
 		$(srcdir)/Lib/opcode.py \
 		$(srcdir)/Lib/_opcode_metadata.py \
 		$(srcdir)/Include/opcode.h.new \
-		$(srcdir)/Include/internal/pycore_opcode.h.new \
-		$(srcdir)/Include/internal/pycore_intrinsics.h.new
+                $(srcdir)/Python/opcode_targets.h.new \
+		$(srcdir)/Include/internal/pycore_opcode.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/opcode.h $(srcdir)/Include/opcode.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_opcode.h $(srcdir)/Include/internal/pycore_opcode.h.new
-	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_intrinsics.h $(srcdir)/Include/internal/pycore_intrinsics.h.new
 
 .PHONY: regen-token
 regen-token:
@@ -1532,13 +1537,6 @@ Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c $(UNICODE_DEPS)
 Objects/dictobject.o: $(srcdir)/Objects/stringlib/eq.h
 Objects/setobject.o: $(srcdir)/Objects/stringlib/eq.h
 
-.PHONY: regen-opcode-targets
-regen-opcode-targets:
-	# Regenerate Python/opcode_targets.h from Lib/opcode.py
-	# using Python/makeopcodetargets.py
-	$(PYTHON_FOR_REGEN) $(srcdir)/Python/makeopcodetargets.py \
-		$(srcdir)/Python/opcode_targets.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
 
 .PHONY: regen-cases
 regen-cases:
@@ -1564,9 +1562,12 @@ Python/ceval.o: \
 		$(srcdir)/Python/ceval_macros.h \
 		$(srcdir)/Python/condvar.h \
 		$(srcdir)/Python/generated_cases.c.h \
-		$(srcdir)/Python/executor_cases.c.h \
-		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
 		$(srcdir)/Python/opcode_targets.h
+
+Python/executor.o: \
+		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
+		$(srcdir)/Python/ceval_macros.h \
+		$(srcdir)/Python/executor_cases.c.h
 
 Python/flowgraph.o: \
 		$(srcdir)/Include/internal/pycore_opcode_metadata.h
@@ -1796,6 +1797,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_runtime.h \
 		$(srcdir)/Include/internal/pycore_runtime_init_generated.h \
 		$(srcdir)/Include/internal/pycore_runtime_init.h \
+		$(srcdir)/Include/internal/pycore_setobject.h \
 		$(srcdir)/Include/internal/pycore_signal.h \
 		$(srcdir)/Include/internal/pycore_sliceobject.h \
 		$(srcdir)/Include/internal/pycore_strhex.h \
@@ -1937,8 +1939,7 @@ altinstall: commoninstall
 .PHONY: commoninstall
 commoninstall:  check-clean-src @FRAMEWORKALTINSTALLFIRST@ \
 		altbininstall libinstall inclinstall libainstall \
-		sharedinstall altmaninstall \
-		@FRAMEWORKALTINSTALLLAST@
+		sharedinstall altmaninstall @FRAMEWORKALTINSTALLLAST@
 
 # Install shared libraries enabled by Setup
 DESTDIRS=	$(exec_prefix) $(LIBDIR) $(BINLIBDEST) $(DESTSHARED)

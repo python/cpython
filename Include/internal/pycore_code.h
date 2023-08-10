@@ -203,8 +203,8 @@ struct _PyCodeConstructor {
 // back to a regular function signature.  Regardless, this approach
 // wouldn't be appropriate if this weren't a strictly internal API.
 // (See the comments in https://github.com/python/cpython/pull/26258.)
-PyAPI_FUNC(int) _PyCode_Validate(struct _PyCodeConstructor *);
-PyAPI_FUNC(PyCodeObject *) _PyCode_New(struct _PyCodeConstructor *);
+extern int _PyCode_Validate(struct _PyCodeConstructor *);
+extern PyCodeObject* _PyCode_New(struct _PyCodeConstructor *);
 
 
 /* Private API */
@@ -228,6 +228,8 @@ extern void _PyLineTable_InitAddressRange(
 /** API for traversing the line number table. */
 extern int _PyLineTable_NextAddressRange(PyCodeAddressRange *range);
 extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
+
+#define ENABLE_SPECIALIZATION 1
 
 /* Specialization functions */
 
@@ -262,7 +264,6 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 
 #ifdef Py_STATS
 
-
 #define STAT_INC(opname, name) do { if (_py_stats) _py_stats->opcode_stats[opname].specialization.name++; } while (0)
 #define STAT_DEC(opname, name) do { if (_py_stats) _py_stats->opcode_stats[opname].specialization.name--; } while (0)
 #define OPCODE_EXE_INC(opname) do { if (_py_stats) _py_stats->opcode_stats[opname].execution_count++; } while (0)
@@ -273,8 +274,9 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 #define EVAL_CALL_STAT_INC(name) do { if (_py_stats) _py_stats->call_stats.eval_calls[name]++; } while (0)
 #define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) \
     do { if (_py_stats && PyFunction_Check(callable)) _py_stats->call_stats.eval_calls[name]++; } while (0)
+#define GC_STAT_ADD(gen, name, n) do { if (_py_stats) _py_stats->gc_stats[(gen)].name += (n); } while (0)
 
-// Used by the _opcode extension which is built as a shared library
+// Export for '_opcode' shared extension
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 
 #else
@@ -286,6 +288,7 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define OBJECT_STAT_INC_COND(name, cond) ((void)0)
 #define EVAL_CALL_STAT_INC(name) ((void)0)
 #define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) ((void)0)
+#define GC_STAT_ADD(gen, name, n) ((void)0)
 #endif  // !Py_STATS
 
 // Utility functions for reading/writing 32/64-bit values in the inline caches.

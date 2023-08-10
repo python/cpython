@@ -865,8 +865,10 @@ class TestRacesDoNotCrash(unittest.TestCase):
             items = []
             for _ in range(self.ITEMS):
                 item = C()
-                item.__dict__
                 item.a = None
+                # Resize into a combined unicode dict:
+                for i in range(29):
+                    setattr(item, f"_{i}", None)
                 items.append(item)
             return items
 
@@ -932,7 +934,9 @@ class TestRacesDoNotCrash(unittest.TestCase):
             items = []
             for _ in range(self.ITEMS):
                 item = C()
-                item.__dict__
+                # Resize into a combined unicode dict:
+                for i in range(29):
+                    setattr(item, f"_{i}", None)
                 items.append(item)
             return items
 

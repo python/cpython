@@ -5,11 +5,12 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_context.h"       // _PyContextTokenMissing_Type
+#include "pycore_descrobject.h"   // _PyMethodWrapper_Type
 #include "pycore_dict.h"          // _PyObject_MakeDictFromInstanceAttributes()
 #include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_namespace.h"     // _PyNamespace_Type
-#include "pycore_object.h"        // _PyType_CheckConsistency(), _Py_FatalRefcountError()
+#include "pycore_object.h"        // PyAPI_DATA() _Py_SwappedOp definition
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -158,11 +159,16 @@ _PyDebug_PrintTotalRefs(void) {
    Do not call them otherwise, they do not initialize the object! */
 
 #ifdef Py_TRACE_REFS
-/* Head of circular doubly-linked list of all objects.  These are linked
- * together via the _ob_prev and _ob_next members of a PyObject, which
- * exist only in a Py_TRACE_REFS build.
- */
-static PyObject refchain = {&refchain, &refchain};
+
+#define REFCHAIN(interp) &interp->object_state.refchain
+
+static inline void
+init_refchain(PyInterpreterState *interp)
+{
+    PyObject *refchain = REFCHAIN(interp);
+    refchain->_ob_prev = refchain;
+    refchain->_ob_next = refchain;
+}
 
 /* Insert op at the front of the list of all objects.  If force is true,
  * op is added even if _ob_prev and _ob_next are non-NULL already.  If
@@ -187,10 +193,11 @@ _Py_AddToAllObjects(PyObject *op, int force)
     }
 #endif
     if (force || op->_ob_prev == NULL) {
-        op->_ob_next = refchain._ob_next;
-        op->_ob_prev = &refchain;
-        refchain._ob_next->_ob_prev = op;
-        refchain._ob_next = op;
+        PyObject *refchain = REFCHAIN(_PyInterpreterState_GET());
+        op->_ob_next = refchain->_ob_next;
+        op->_ob_prev = refchain;
+        refchain->_ob_next->_ob_prev = op;
+        refchain->_ob_next = op;
     }
 }
 #endif  /* Py_TRACE_REFS */
@@ -206,14 +213,14 @@ _Py_NegativeRefcount(const char *filename, int lineno, PyObject *op)
 
 /* This is used strictly by Py_INCREF(). */
 void
-_Py_IncRefTotal_DO_NOT_USE_THIS(void)
+_Py_INCREF_IncRefTotal(void)
 {
     reftotal_increment(_PyInterpreterState_GET());
 }
 
 /* This is used strictly by Py_DECREF(). */
 void
-_Py_DecRefTotal_DO_NOT_USE_THIS(void)
+_Py_DECREF_DecRefTotal(void)
 {
     reftotal_decrement(_PyInterpreterState_GET());
 }
@@ -1576,9 +1583,18 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
         }
         if (dictptr == NULL) {
             if (descr == NULL) {
-                PyErr_Format(PyExc_AttributeError,
-                            "'%.100s' object has no attribute '%U'",
-                            tp->tp_name, name);
+                if (tp->tp_setattro == PyObject_GenericSetAttr) {
+                    PyErr_Format(PyExc_AttributeError,
+                                "'%.100s' object has no attribute '%U' and no "
+                                "__dict__ for setting new attributes",
+                                tp->tp_name, name);
+                }
+                else {
+                    PyErr_Format(PyExc_AttributeError,
+                                "'%.100s' object has no attribute '%U'",
+                                tp->tp_name, name);
+                }
+                set_attribute_error_context(obj, name);
             }
             else {
                 PyErr_Format(PyExc_AttributeError,
@@ -1611,6 +1627,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
                          "'%.100s' object has no attribute '%U'",
                          tp->tp_name, name);
         }
+        set_attribute_error_context(obj, name);
     }
   done:
     Py_XDECREF(descr);
@@ -2010,6 +2027,18 @@ PyObject _Py_NotImplementedStruct = {
     &_PyNotImplemented_Type
 };
 
+
+void
+_PyObject_InitState(PyInterpreterState *interp)
+{
+#ifdef Py_TRACE_REFS
+    if (!_Py_IsMainInterpreter(interp)) {
+        init_refchain(interp);
+    }
+#endif
+}
+
+
 extern PyTypeObject _Py_GenericAliasIterType;
 extern PyTypeObject _PyMemoryIter_Type;
 extern PyTypeObject _PyLineIterator;
@@ -2061,6 +2090,7 @@ static PyTypeObject* static_types[] = {
     &PyGen_Type,
     &PyGetSetDescr_Type,
     &PyInstanceMethod_Type,
+    &PyInterpreterID_Type,
     &PyListIter_Type,
     &PyListRevIter_Type,
     &PyList_Type,
@@ -2111,7 +2141,6 @@ static PyTypeObject* static_types[] = {
     &_PyHamt_CollisionNode_Type,
     &_PyHamt_Type,
     &_PyLegacyEventHandler_Type,
-    &_PyInterpreterID_Type,
     &_PyLineIterator,
     &_PyManagedBuffer_Type,
     &_PyMemoryIter_Type,
@@ -2218,7 +2247,8 @@ _Py_ForgetReference(PyObject *op)
         _PyObject_ASSERT_FAILED_MSG(op, "negative refcnt");
     }
 
-    if (op == &refchain ||
+    PyObject *refchain = REFCHAIN(_PyInterpreterState_GET());
+    if (op == refchain ||
         op->_ob_prev->_ob_next != op || op->_ob_next->_ob_prev != op)
     {
         _PyObject_ASSERT_FAILED_MSG(op, "invalid object chain");
@@ -2226,12 +2256,12 @@ _Py_ForgetReference(PyObject *op)
 
 #ifdef SLOW_UNREF_CHECK
     PyObject *p;
-    for (p = refchain._ob_next; p != &refchain; p = p->_ob_next) {
+    for (p = refchain->_ob_next; p != refchain; p = p->_ob_next) {
         if (p == op) {
             break;
         }
     }
-    if (p == &refchain) {
+    if (p == refchain) {
         /* Not found */
         _PyObject_ASSERT_FAILED_MSG(op,
                                     "object not found in the objects list");
@@ -2247,11 +2277,15 @@ _Py_ForgetReference(PyObject *op)
  * interpreter must be in a healthy state.
  */
 void
-_Py_PrintReferences(FILE *fp)
+_Py_PrintReferences(PyInterpreterState *interp, FILE *fp)
 {
     PyObject *op;
+    if (interp == NULL) {
+        interp = _PyInterpreterState_Main();
+    }
     fprintf(fp, "Remaining objects:\n");
-    for (op = refchain._ob_next; op != &refchain; op = op->_ob_next) {
+    PyObject *refchain = REFCHAIN(interp);
+    for (op = refchain->_ob_next; op != refchain; op = op->_ob_next) {
         fprintf(fp, "%p [%zd] ", (void *)op, Py_REFCNT(op));
         if (PyObject_Print(op, fp, 0) != 0) {
             PyErr_Clear();
@@ -2263,34 +2297,42 @@ _Py_PrintReferences(FILE *fp)
 /* Print the addresses of all live objects.  Unlike _Py_PrintReferences, this
  * doesn't make any calls to the Python C API, so is always safe to call.
  */
+// XXX This function is not safe to use if the interpreter has been
+// freed or is in an unhealthy state (e.g. late in finalization).
+// The call in Py_FinalizeEx() is okay since the main interpreter
+// is statically allocated.
 void
-_Py_PrintReferenceAddresses(FILE *fp)
+_Py_PrintReferenceAddresses(PyInterpreterState *interp, FILE *fp)
 {
     PyObject *op;
+    PyObject *refchain = REFCHAIN(interp);
     fprintf(fp, "Remaining object addresses:\n");
-    for (op = refchain._ob_next; op != &refchain; op = op->_ob_next)
+    for (op = refchain->_ob_next; op != refchain; op = op->_ob_next)
         fprintf(fp, "%p [%zd] %s\n", (void *)op,
             Py_REFCNT(op), Py_TYPE(op)->tp_name);
 }
 
+/* The implementation of sys.getobjects(). */
 PyObject *
 _Py_GetObjects(PyObject *self, PyObject *args)
 {
     int i, n;
     PyObject *t = NULL;
     PyObject *res, *op;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     if (!PyArg_ParseTuple(args, "i|O", &n, &t))
         return NULL;
-    op = refchain._ob_next;
+    PyObject *refchain = REFCHAIN(interp);
+    op = refchain->_ob_next;
     res = PyList_New(0);
     if (res == NULL)
         return NULL;
-    for (i = 0; (n == 0 || i < n) && op != &refchain; i++) {
+    for (i = 0; (n == 0 || i < n) && op != refchain; i++) {
         while (op == self || op == args || op == res || op == t ||
                (t != NULL && !Py_IS_TYPE(op, (PyTypeObject *) t))) {
             op = op->_ob_next;
-            if (op == &refchain)
+            if (op == refchain)
                 return res;
         }
         if (PyList_Append(res, op) < 0) {
@@ -2302,7 +2344,9 @@ _Py_GetObjects(PyObject *self, PyObject *args)
     return res;
 }
 
-#endif
+#undef REFCHAIN
+
+#endif  /* Py_TRACE_REFS */
 
 
 /* Hack to force loading of abstract.o */

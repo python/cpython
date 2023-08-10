@@ -1085,7 +1085,7 @@ class TestBaseExitStack:
 class TestExitStack(TestBaseExitStack, unittest.TestCase):
     exit_stack = ExitStack
     callback_error_internal_frames = [
-        ('__exit__', 'raise exc_details[1]'),
+        ('__exit__', 'raise exc'),
         ('__exit__', 'if cb(*exc_details):'),
     ]
 
