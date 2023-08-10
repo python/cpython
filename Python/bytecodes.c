@@ -2977,6 +2977,9 @@ dummy_func(
             }
         }
 
+        // The 'unused' output effect represents the return value
+        // (which will be pushed when the frame returns).
+        // It is needed so CALL_PY_EXACT_ARGS matches its family.
         op(_PUSH_FRAME, (new_frame: _PyInterpreterFrame* -- unused)) {
             frame->return_offset = 0;
             DISPATCH_INLINED(new_frame);
