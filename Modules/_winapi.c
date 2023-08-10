@@ -1553,18 +1553,18 @@ _winapi_LCMapStringEx_impl(PyObject *module, LPCWSTR locale, DWORD flags,
         return PyErr_Format(PyExc_ValueError, "unsupported flags");
     }
 
-    Py_ssize_t srcLenAsSsize;
-    int srcLen;
-    wchar_t *src_ = PyUnicode_AsWideCharString(src, &srcLenAsSsize);
+    Py_ssize_t src_size;
+    wchar_t *src_ = PyUnicode_AsWideCharString(src, &src_size);
     if (!src_) {
         return NULL;
     }
-    srcLen = (int)srcLenAsSsize;
-    if (srcLen != srcLenAsSsize) {
-        srcLen = -1;
+    if (src_size > INT_MAX) {
+        PyMem_Free(src_);
+        PyErr_SetString(PyExc_OverflowError, "input string is too long");
+        return NULL;
     }
 
-    int dest_size = LCMapStringEx(locale, flags, src_, srcLen, NULL, 0,
+    int dest_size = LCMapStringEx(locale, flags, src_, (int)src_size, NULL, 0,
                                   NULL, NULL, 0);
     if (dest_size == 0) {
         PyMem_Free(src_);
@@ -1577,7 +1577,7 @@ _winapi_LCMapStringEx_impl(PyObject *module, LPCWSTR locale, DWORD flags,
         return PyErr_NoMemory();
     }
 
-    int nmapped = LCMapStringEx(locale, flags, src_, srcLen, dest, dest_size,
+    int nmapped = LCMapStringEx(locale, flags, src_, (int)src_size, dest, dest_size,
                                 NULL, NULL, 0);
     if (nmapped == 0) {
         DWORD error = GetLastError();
