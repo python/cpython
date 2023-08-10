@@ -4437,9 +4437,9 @@
             callable = stack_pointer[-3 - oparg];
             assert(kwnames == NULL);
             assert(oparg == 1);
-            assert(self != NULL);
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.list_append, CALL);
+            assert(self != NULL);
             DEOPT_IF(!PyList_Check(self), CALL);
             STAT_INC(CALL, hit);
             if (_PyList_AppendTakeRef((PyListObject *)self, args[0]) < 0) {

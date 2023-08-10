@@ -86,9 +86,11 @@ The module defines three convenience functions and a public class:
    .. versionchanged:: 3.7
       Default value of *repeat* changed from 3 to 5.
 
+
 .. function:: default_timer()
 
-   The default timer, which is always :func:`time.perf_counter`.
+   The default timer, which is always time.perf_counter(), returns float seconds.
+   An alternative, time.perf_counter_ns, returns integer nanoseconds.
 
    .. versionchanged:: 3.3
       :func:`time.perf_counter` is now the default timer.
@@ -124,7 +126,7 @@ The module defines three convenience functions and a public class:
 
       Time *number* executions of the main statement.  This executes the setup
       statement once, and then returns the time it takes to execute the main
-      statement a number of times, measured in seconds as a float.
+      statement a number of times.  The default timer returns seconds as a float.
       The argument is the number of times through the loop, defaulting to one
       million.  The main statement, the setup statement and the timer function
       to be used are passed to the constructor.

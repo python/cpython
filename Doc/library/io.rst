@@ -1054,12 +1054,20 @@ Text I/O
 
       * ``seek(0, SEEK_SET)``: Rewind to the start of the stream.
       * ``seek(cookie, SEEK_SET)``: Restore a previous position;
-        *cookie* **must be** a number returned by :meth:`!tell`.
+        *cookie* **must be** a number returned by :meth:`tell`.
       * ``seek(0, SEEK_END)``: Fast-forward to the end of the stream.
       * ``seek(0, SEEK_CUR)``: Leave the current stream position unchanged.
 
       Any other argument combinations are invalid,
       and may raise exceptions.
+
+   .. method:: tell()
+
+      Return the stream position as an opaque number.
+      The return value of :meth:`!tell` can be given as input to :meth:`seek`,
+      to restore a previous stream position.
+
+
 
 .. class:: StringIO(initial_value='', newline='\n')
 

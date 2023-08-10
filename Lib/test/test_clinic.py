@@ -13,12 +13,20 @@ import inspect
 import os.path
 import re
 import sys
+import types
 import unittest
 
 test_tools.skip_if_missing('clinic')
 with test_tools.imports_under_tool('clinic'):
     import clinic
     from clinic import DSLParser
+
+
+def default_namespace():
+    ns = types.SimpleNamespace()
+    ns.force = False
+    ns.limited_capi = clinic.DEFAULT_LIMITED_CAPI
+    return ns
 
 
 def _make_clinic(*, filename='clinic_tests'):
@@ -50,6 +58,11 @@ def _expect_failure(tc, parser, code, errmsg, *, filename=None, lineno=None,
     if lineno is not None:
         tc.assertEqual(cm.exception.lineno, lineno)
     return cm.exception
+
+
+class MockClinic:
+    def __init__(self):
+        self.limited_capi = clinic.DEFAULT_LIMITED_CAPI
 
 
 class ClinicWholeFileTest(TestCase):
@@ -691,8 +704,9 @@ class ParseFileUnitTest(TestCase):
         self, *, filename, expected_error, verify=True, output=None
     ):
         errmsg = re.escape(dedent(expected_error).strip())
+        ns = default_namespace()
         with self.assertRaisesRegex(clinic.ClinicError, errmsg):
-            clinic.parse_file(filename)
+            clinic.parse_file(filename, ns=ns)
 
     def test_parse_file_no_extension(self) -> None:
         self.expect_parsing_failure(
@@ -832,8 +846,9 @@ class ClinicBlockParserTest(TestCase):
 
         blocks = list(clinic.BlockParser(input, language))
         writer = clinic.BlockPrinter(language)
+        mock_clinic = MockClinic()
         for block in blocks:
-            writer.print_block(block)
+            writer.print_block(block, clinic=mock_clinic)
         output = writer.f.getvalue()
         assert output == input, "output != input!\n\noutput " + repr(output) + "\n\n input " + repr(input)
 
@@ -2309,10 +2324,10 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=1)
 
     def test_parent_class_or_module_does_not_exist(self):
-        err = "Parent class or module 'z' does not exist"
+        err = "Parent class or module 'baz' does not exist"
         block = """
             module m
-            z.func
+            baz.func
         """
         self.expect_failure(block, err, lineno=1)
 
@@ -3506,6 +3521,38 @@ class ClinicFunctionalTest(unittest.TestCase):
         check("a", "b", c="c", d="d", e="e", f="f", g="g")
         check("a", b="b", c="c", d="d", e="e", f="f", g="g")
         self.assertRaises(TypeError, fn, a="a", b="b", c="c", d="d", e="e", f="f", g="g")
+
+
+try:
+    import _testclinic_limited
+except ImportError:
+    _testclinic_limited = None
+
+@unittest.skipIf(_testclinic_limited is None, "_testclinic_limited is missing")
+class LimitedCAPIFunctionalTest(unittest.TestCase):
+    locals().update((name, getattr(_testclinic_limited, name))
+                    for name in dir(_testclinic_limited) if name.startswith('test_'))
+
+    def test_my_int_func(self):
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_int_func()
+        self.assertEqual(_testclinic_limited.my_int_func(3), 3)
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_int_func(1.0)
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_int_func("xyz")
+
+    def test_my_int_sum(self):
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_int_sum()
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_int_sum(1)
+        self.assertEqual(_testclinic_limited.my_int_sum(1, 2), 3)
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_int_sum(1.0, 2)
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_int_sum(1, "str")
+
 
 
 class PermutationTests(unittest.TestCase):

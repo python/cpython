@@ -2799,11 +2799,13 @@ class TestSpecial(unittest.TestCase):
         class ThirdFailedStrEnum(CustomStrEnum):
             one = '1'
             two = 2  # this will become '2'
-        with self.assertRaisesRegex(TypeError, '.encoding. must be str, not '):
+        with self.assertRaisesRegex(TypeError,
+                r"argument (2|'encoding') must be str, not "):
             class ThirdFailedStrEnum(CustomStrEnum):
                 one = '1'
                 two = b'2', sys.getdefaultencoding
-        with self.assertRaisesRegex(TypeError, '.errors. must be str, not '):
+        with self.assertRaisesRegex(TypeError,
+                r"argument (3|'errors') must be str, not "):
             class ThirdFailedStrEnum(CustomStrEnum):
                 one = '1'
                 two = b'2', 'ascii', 9

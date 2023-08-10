@@ -566,7 +566,13 @@ de_instrument(PyCodeObject *code, int i, int event)
     _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
     uint8_t *opcode_ptr = &instr->op.code;
     int opcode = *opcode_ptr;
-    assert(opcode != ENTER_EXECUTOR);
+    if (opcode == ENTER_EXECUTOR) {
+        int oparg = instr->op.arg;
+        _PyExecutorObject *exec = code->co_executors->executors[oparg];
+        opcode_ptr = &exec->vm_data.opcode;
+        opcode = *opcode_ptr;
+        assert(opcode != ENTER_EXECUTOR);
+    }
     if (opcode == INSTRUMENTED_LINE) {
         opcode_ptr = &code->_co_monitoring->lines[i].original_opcode;
         opcode = *opcode_ptr;
@@ -711,7 +717,22 @@ remove_tools(PyCodeObject * code, int offset, int event, int tools)
     assert(event != PY_MONITORING_EVENT_LINE);
     assert(event != PY_MONITORING_EVENT_INSTRUCTION);
     assert(PY_MONITORING_IS_INSTRUMENTED_EVENT(event));
-    assert(opcode_has_event(_Py_GetBaseOpcode(code, offset)));
+    #ifndef NDEBUG
+    _Py_CODEUNIT co_instr = _PyCode_CODE(code)[offset];
+    uint8_t opcode = co_instr.op.code;
+    uint8_t oparg = co_instr.op.arg;
+    if (opcode == ENTER_EXECUTOR) {
+        _PyExecutorObject *exec = code->co_executors->executors[oparg];
+        assert(exec->vm_data.opcode != ENTER_EXECUTOR);
+        opcode = _PyOpcode_Deopt[exec->vm_data.opcode];
+        opcode = exec->vm_data.oparg;
+    }
+    else {
+        opcode = _Py_GetBaseOpcode(code, offset);
+    }
+    assert(opcode != ENTER_EXECUTOR);
+    assert(opcode_has_event(opcode));
+    #endif
     _PyCoMonitoringData *monitoring = code->_co_monitoring;
     if (monitoring && monitoring->tools) {
         monitoring->tools[offset] &= ~tools;
@@ -1282,9 +1303,16 @@ initialize_tools(PyCodeObject *code)
     for (int i = 0; i < code_len; i++) {
         _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
         int opcode = instr->op.code;
-        if (opcode == INSTRUMENTED_LINE) {
+        int oparg = instr->op.arg;
+        if (opcode == ENTER_EXECUTOR) {
+            _PyExecutorObject *exec = code->co_executors->executors[oparg];
+            opcode = exec->vm_data.opcode;
+            oparg = exec->vm_data.oparg;
+        }
+        else if (opcode == INSTRUMENTED_LINE) {
             opcode = code->_co_monitoring->lines[i].original_opcode;
         }
+        assert(opcode != ENTER_EXECUTOR);
         bool instrumented = is_instrumented(opcode);
         if (instrumented) {
             opcode = DE_INSTRUMENT[opcode];
@@ -1295,7 +1323,7 @@ initialize_tools(PyCodeObject *code)
             if (instrumented) {
                 int8_t event;
                 if (opcode == RESUME) {
-                    event = instr->op.arg != 0;
+                    event = oparg != 0;
                 }
                 else {
                     event = EVENT_FOR_OPCODE[opcode];

@@ -281,12 +281,10 @@ class NamespaceSeparatorTest(unittest.TestCase):
         expat.ParserCreate(namespace_separator=' ')
 
     def test_illegal(self):
-        try:
+        with self.assertRaisesRegex(TypeError,
+                r"ParserCreate\(\) argument (2|'namespace_separator') "
+                r"must be str or None, not int"):
             expat.ParserCreate(namespace_separator=42)
-            self.fail()
-        except TypeError as e:
-            self.assertEqual(str(e),
-                "ParserCreate() argument 'namespace_separator' must be str or None, not int")
 
         try:
             expat.ParserCreate(namespace_separator='too long')

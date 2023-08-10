@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_tracemalloc.h"  // _PyTraceMalloc_IsTracing
 
 #include "clinic/_tracemalloc.c.h"
 

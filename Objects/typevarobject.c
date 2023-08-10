@@ -201,6 +201,7 @@ typevar_dealloc(PyObject *self)
     Py_XDECREF(tv->constraints);
     Py_XDECREF(tv->evaluate_constraints);
     _PyObject_ClearManagedDict(self);
+    PyObject_ClearWeakRefs(self);
 
     Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);
@@ -743,6 +744,7 @@ paramspec_dealloc(PyObject *self)
     Py_DECREF(ps->name);
     Py_XDECREF(ps->bound);
     _PyObject_ClearManagedDict(self);
+    PyObject_ClearWeakRefs(self);
 
     Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);
@@ -1022,6 +1024,7 @@ typevartuple_dealloc(PyObject *self)
 
     Py_DECREF(tvt->name);
     _PyObject_ClearManagedDict(self);
+    PyObject_ClearWeakRefs(self);
 
     Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);

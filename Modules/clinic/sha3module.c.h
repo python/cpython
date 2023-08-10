@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"       // _Py_ID()
 #endif
 
+#include "pycore_long.h"           // _PyLong_UnsignedLong_Converter()
 
 PyDoc_STRVAR(py_sha3_new__doc__,
 "sha3_224(data=b\'\', /, *, usedforsecurity=True)\n"
@@ -193,4 +194,4 @@ _sha3_shake_128_hexdigest(SHA3object *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=907cb475f3dc9ee0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5188d9ae4af48c6d input=a9049054013a1b77]*/

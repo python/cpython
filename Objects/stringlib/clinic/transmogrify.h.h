@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"       // _Py_ID()
 #endif
 
+#include "pycore_abstract.h"       // _PyNumber_Index()
 
 PyDoc_STRVAR(stringlib_expandtabs__doc__,
 "expandtabs($self, /, tabsize=8)\n"
@@ -278,4 +279,4 @@ stringlib_zfill(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=00e34c03331699fe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a0338b2d41671b17 input=a9049054013a1b77]*/

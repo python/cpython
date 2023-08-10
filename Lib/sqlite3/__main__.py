@@ -62,7 +62,7 @@ class SqliteInteractiveConsole(InteractiveConsole):
         return False
 
 
-def main():
+def main(*args):
     parser = ArgumentParser(
         description="Python sqlite3 CLI",
         prog="python -m sqlite3",
@@ -86,7 +86,7 @@ def main():
         version=f"SQLite version {sqlite3.sqlite_version}",
         help="Print underlying SQLite library version",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(*args)
 
     if args.filename == ":memory:":
         db_name = "a transient in-memory database"
@@ -120,5 +120,8 @@ def main():
     finally:
         con.close()
 
+    sys.exit(0)
 
-main()
+
+if __name__ == "__main__":
+    main(sys.argv)

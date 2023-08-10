@@ -418,7 +418,12 @@ PyDoc_STRVAR(pysqlite_connection_create_function__doc__,
 "create_function($self, /, name, narg, func, *, deterministic=False)\n"
 "--\n"
 "\n"
-"Creates a new function.");
+"Creates a new function.\n"
+"\n"
+"Note: Passing keyword arguments \'name\', \'narg\' and \'func\' to\n"
+"_sqlite3.Connection.create_function() is deprecated. Parameters\n"
+"\'name\', \'narg\' and \'func\' will become positional-only in Python 3.15.\n"
+"");
 
 #define PYSQLITE_CONNECTION_CREATE_FUNCTION_METHODDEF    \
     {"create_function", _PyCFunction_CAST(pysqlite_connection_create_function), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_create_function__doc__},
@@ -428,6 +433,17 @@ pysqlite_connection_create_function_impl(pysqlite_Connection *self,
                                          PyTypeObject *cls, const char *name,
                                          int narg, PyObject *func,
                                          int deterministic);
+
+// Emit compiler warnings when we get to Python 3.15.
+#if PY_VERSION_HEX >= 0x030f00C0
+#  error "Update the clinic input of '_sqlite3.Connection.create_function'."
+#elif PY_VERSION_HEX >= 0x030f00A0
+#  ifdef _MSC_VER
+#    pragma message ("Update the clinic input of '_sqlite3.Connection.create_function'.")
+#  else
+#    warning "Update the clinic input of '_sqlite3.Connection.create_function'."
+#  endif
+#endif
 
 static PyObject *
 pysqlite_connection_create_function(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -468,6 +484,16 @@ pysqlite_connection_create_function(pysqlite_Connection *self, PyTypeObject *cls
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
     if (!args) {
         goto exit;
+    }
+    if (nargs < 3) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing keyword arguments 'name', 'narg' and 'func' to "
+                "_sqlite3.Connection.create_function() is deprecated. Parameters "
+                "'name', 'narg' and 'func' will become positional-only in Python "
+                "3.15.", 1))
+        {
+            goto exit;
+        }
     }
     if (!PyUnicode_Check(args[0])) {
         _PyArg_BadArgument("create_function", "argument 'name'", "str", args[0]);
@@ -582,7 +608,13 @@ PyDoc_STRVAR(pysqlite_connection_create_aggregate__doc__,
 "create_aggregate($self, /, name, n_arg, aggregate_class)\n"
 "--\n"
 "\n"
-"Creates a new aggregate.");
+"Creates a new aggregate.\n"
+"\n"
+"Note: Passing keyword arguments \'name\', \'n_arg\' and \'aggregate_class\'\n"
+"to _sqlite3.Connection.create_aggregate() is deprecated. Parameters\n"
+"\'name\', \'n_arg\' and \'aggregate_class\' will become positional-only in\n"
+"Python 3.15.\n"
+"");
 
 #define PYSQLITE_CONNECTION_CREATE_AGGREGATE_METHODDEF    \
     {"create_aggregate", _PyCFunction_CAST(pysqlite_connection_create_aggregate), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_create_aggregate__doc__},
@@ -592,6 +624,17 @@ pysqlite_connection_create_aggregate_impl(pysqlite_Connection *self,
                                           PyTypeObject *cls,
                                           const char *name, int n_arg,
                                           PyObject *aggregate_class);
+
+// Emit compiler warnings when we get to Python 3.15.
+#if PY_VERSION_HEX >= 0x030f00C0
+#  error "Update the clinic input of '_sqlite3.Connection.create_aggregate'."
+#elif PY_VERSION_HEX >= 0x030f00A0
+#  ifdef _MSC_VER
+#    pragma message ("Update the clinic input of '_sqlite3.Connection.create_aggregate'.")
+#  else
+#    warning "Update the clinic input of '_sqlite3.Connection.create_aggregate'."
+#  endif
+#endif
 
 static PyObject *
 pysqlite_connection_create_aggregate(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -630,6 +673,16 @@ pysqlite_connection_create_aggregate(pysqlite_Connection *self, PyTypeObject *cl
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
     if (!args) {
         goto exit;
+    }
+    if (nargs < 3) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing keyword arguments 'name', 'n_arg' and 'aggregate_class' "
+                "to _sqlite3.Connection.create_aggregate() is deprecated. "
+                "Parameters 'name', 'n_arg' and 'aggregate_class' will become "
+                "positional-only in Python 3.15.", 1))
+        {
+            goto exit;
+        }
     }
     if (!PyUnicode_Check(args[0])) {
         _PyArg_BadArgument("create_aggregate", "argument 'name'", "str", args[0]);
@@ -1681,4 +1734,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=bc31bec42067a8bf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f80eb1d02cf698e4 input=a9049054013a1b77]*/

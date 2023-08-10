@@ -220,6 +220,7 @@ class DWORD_converter(unsigned_long_converter):
 class HKEY_converter(CConverter):
     type = 'HKEY'
     converter = 'clinic_HKEY_converter'
+    broken_limited_capi = True
 
     def parse_arg(self, argname, displayname):
         return """
@@ -249,7 +250,7 @@ class self_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = (PyObject *)_return_value;\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=17e645060c7b8ae1]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=f8cb7034338aeaba]*/
 
 #include "clinic/winreg.c.h"
 

@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"       // _Py_ID()
 #endif
 
+#include "pycore_long.h"           // _PyLong_Size_t_Converter()
 
 PyDoc_STRVAR(_winapi_Overlapped_GetOverlappedResult__doc__,
 "GetOverlappedResult($self, wait, /)\n"
@@ -1478,4 +1479,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=ff91ab5cae8961dd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c7e08927e163ef13 input=a9049054013a1b77]*/

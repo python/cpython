@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"       // _Py_ID()
 #endif
 
+#include "pycore_abstract.h"       // _PyNumber_Index()
 
 PyDoc_STRVAR(Struct__doc__,
 "Struct(format)\n"
@@ -451,4 +452,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=f3d6e06f80368998 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9b48aeaa86898ec5 input=a9049054013a1b77]*/

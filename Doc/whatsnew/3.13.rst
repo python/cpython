@@ -252,7 +252,16 @@ Deprecated
 * Passing more than one positional argument to :func:`sqlite3.connect` and the
   :class:`sqlite3.Connection` constructor is deprecated. The remaining
   parameters will become keyword-only in Python 3.15.
-  (Contributed by Erlend E. Aasland in :gh:`107948`.)
+
+  Deprecate passing name, number of arguments, and the callable as keyword
+  arguments, for the following :class:`sqlite3.Connection` APIs:
+
+  * :meth:`~sqlite3.Connection.create_function`
+  * :meth:`~sqlite3.Connection.create_aggregate`
+
+  The affected parameters will become positional-only in Python 3.15.
+
+  (Contributed by Erlend E. Aasland in :gh:`107948` and :gh:`108278`.)
 
 Pending Removal in Python 3.14
 ------------------------------
@@ -435,8 +444,8 @@ although there is currently no date scheduled for their removal.
   * Delegation of ``int()`` to ``__trunc__()`` method.
 
 * :mod:`calendar`: ``calendar.January`` and ``calendar.February`` constants are
-  deprecated and replaced by :data:`calendar.Month.JANUARY` and
-  :data:`calendar.Month.FEBRUARY`.
+  deprecated and replaced by :data:`calendar.JANUARY` and
+  :data:`calendar.FEBRUARY`.
   (Contributed by Prince Roshan in :gh:`103636`.)
 
 * :mod:`datetime`:

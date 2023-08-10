@@ -7101,7 +7101,7 @@ decode_code_page_errors(UINT code_page,
             if (err != ERROR_NO_UNICODE_TRANSLATION
                 && err != ERROR_INSUFFICIENT_BUFFER)
             {
-                PyErr_SetFromWindowsErr(0);
+                PyErr_SetFromWindowsErr(err);
                 goto error;
             }
             insize++;

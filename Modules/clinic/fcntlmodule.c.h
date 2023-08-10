@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"       // _Py_ID()
 #endif
 
+#include "pycore_fileutils.h"      // _PyLong_FileDescriptor_Converter()
 
 PyDoc_STRVAR(fcntl_fcntl__doc__,
 "fcntl($module, fd, cmd, arg=0, /)\n"
@@ -249,4 +250,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=705976d5f53f2272 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5f096e8731fa38be input=a9049054013a1b77]*/
