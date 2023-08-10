@@ -1129,13 +1129,14 @@ whitespace or by a fixed string.  As you'd expect, there's a module-level
 :func:`re.split` function, too.
 
 
-.. method:: .split(string [, maxsplit=0])
+.. method:: .split(string [, maxsplit=0, flags=0])
    :noindex:
 
    Split *string* by the matches of the regular expression.  If capturing
    parentheses are used in the RE, then their contents will also be returned as
    part of the resulting list.  If *maxsplit* is nonzero, at most *maxsplit* splits
-   are performed.
+   are performed.  The *flags* argument is optional and may contain flag values such as
+   `re.MULTILINE` or `re.VERBOSE`.
 
 You can limit the number of splits made, by passing a value for *maxsplit*.
 When *maxsplit* is nonzero, at most *maxsplit* splits will be made, and the
@@ -1179,7 +1180,7 @@ Another common task is to find all the matches for a pattern, and replace them
 with a different string.  The :meth:`~re.Pattern.sub` method takes a replacement value,
 which can be either a string or a function, and the string to be processed.
 
-.. method:: .sub(replacement, string[, count=0])
+.. method:: .sub(replacement, string[, count=0, flags=0])
    :noindex:
 
    Returns the string obtained by replacing the leftmost non-overlapping
@@ -1188,7 +1189,8 @@ which can be either a string or a function, and the string to be processed.
 
    The optional argument *count* is the maximum number of pattern occurrences to be
    replaced; *count* must be a non-negative integer.  The default value of 0 means
-   to replace all occurrences.
+   to replace all occurrences.  The *flags* argument is also optional and may contain
+   flag values such as `re.MULTILINE` or `re.VERBOSE`.
 
 Here's a simple example of using the :meth:`~re.Pattern.sub` method.  It replaces colour
 names with the word ``colour``::
