@@ -1533,6 +1533,7 @@ compiler_call_exit_with_nones(struct compiler *c, location loc)
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADDOP_LOAD_CONST(c, loc, Py_None);
+    ADDOP(c, loc, PUSH_NULL);
     ADDOP_I(c, loc, CALL, 2);
     return SUCCESS;
 }
@@ -1933,6 +1934,7 @@ compiler_apply_decorators(struct compiler *c, asdl_expr_seq* decos)
 
     for (Py_ssize_t i = asdl_seq_LEN(decos) - 1; i > -1; i--) {
         location loc = LOC((expr_ty)asdl_seq_GET(decos, i));
+        ADDOP(c, loc, PUSH_NULL);
         ADDOP_I(c, loc, CALL, 0);
     }
     return SUCCESS;
@@ -2446,9 +2448,11 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         Py_DECREF(co);
         if (num_typeparam_args > 0) {
             ADDOP_I(c, loc, SWAP, num_typeparam_args + 1);
+            ADDOP(c, loc, PUSH_NULL);
             ADDOP_I(c, loc, CALL, num_typeparam_args - 1);
         }
         else {
+            ADDOP(c, loc, PUSH_NULL);
             ADDOP(c, loc, PUSH_NULL);
             ADDOP_I(c, loc, CALL, 0);
         }
@@ -2680,6 +2684,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         }
         Py_DECREF(co);
         ADDOP(c, loc, PUSH_NULL);
+        ADDOP(c, loc, PUSH_NULL);
         ADDOP_I(c, loc, CALL, 0);
     } else {
         RETURN_IF_ERROR(compiler_call_helper(c, loc, 2,
@@ -2769,6 +2774,7 @@ compiler_typealias(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         Py_DECREF(co);
+        ADDOP(c, loc, PUSH_NULL);
         ADDOP(c, loc, PUSH_NULL);
         ADDOP_I(c, loc, CALL, 0);
     }
@@ -3969,6 +3975,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
     ADDOP(c, LOC(s), LOAD_ASSERTION_ERROR);
     if (s->v.Assert.msg) {
         VISIT(c, expr, s->v.Assert.msg);
+        ADDOP(c, LOC(s), PUSH_NULL);
         ADDOP_I(c, LOC(s), CALL, 0);
     }
     ADDOP_I(c, LOC(s->v.Assert.test), RAISE_VARARGS, 1);
@@ -4982,6 +4989,9 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
         RETURN_IF_ERROR(
             compiler_call_simple_kw_helper(c, loc, kwds, kwdsl));
     }
+    else {
+        ADDOP(c, loc, PUSH_NULL);
+    }
     loc = update_start_location_to_match_attr(c, LOC(e), meth);
     ADDOP_I(c, loc, CALL, argsl + kwdsl);
     return 1;
@@ -5046,6 +5056,7 @@ compiler_joined_str(struct compiler *c, expr_ty e)
             VISIT(c, expr, asdl_seq_GET(e->v.JoinedStr.values, i));
             ADDOP_I(c, loc, LIST_APPEND, 1);
         }
+        ADDOP(c, loc, PUSH_NULL);
         ADDOP_I(c, loc, CALL, 1);
     }
     else {
@@ -5149,7 +5160,7 @@ compiler_subkwargs(struct compiler *c, location loc,
 }
 
 /* Used by compiler_call_helper and maybe_optimize_method_call to emit
- * KW_NAMES before CALL.
+ * kwnames before CALL.
  */
 static int
 compiler_call_simple_kw_helper(struct compiler *c, location loc,
@@ -5164,12 +5175,7 @@ compiler_call_simple_kw_helper(struct compiler *c, location loc,
         keyword_ty kw = asdl_seq_GET(keywords, i);
         PyTuple_SET_ITEM(names, i, Py_NewRef(kw->arg));
     }
-    Py_ssize_t arg = compiler_add_const(c->c_const_cache, c->u, names);
-    if (arg < 0) {
-        return ERROR;
-    }
-    Py_DECREF(names);
-    ADDOP_I(c, loc, KW_NAMES, arg);
+    ADDOP_LOAD_CONST_NEW(c, loc, names);
     return SUCCESS;
 }
 
@@ -5214,6 +5220,9 @@ compiler_call_helper(struct compiler *c, location loc,
         VISIT_SEQ(c, keyword, keywords);
         RETURN_IF_ERROR(
             compiler_call_simple_kw_helper(c, loc, keywords, nkwelts));
+    }
+    else {
+        ADDOP(c, loc, PUSH_NULL);
     }
     ADDOP_I(c, loc, CALL, n + nelts + nkwelts);
     return SUCCESS;
@@ -5820,6 +5829,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         goto error;
     }
 
+    ADDOP(c, loc, PUSH_NULL);
     ADDOP_I(c, loc, CALL, 0);
 
     if (is_async_generator && type != COMP_GENEXP) {
