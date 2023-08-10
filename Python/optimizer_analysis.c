@@ -539,6 +539,72 @@ op_is_pure(int opcode, int oparg, _Py_PARTITIONNODE_t *locals)
     }
 }
 
+static inline bool
+op_is_jump(int opcode)
+{
+    return (opcode == _POP_JUMP_IF_FALSE || opcode == _POP_JUMP_IF_TRUE);
+}
+
+
+// Number the jump targets and the jump instructions with a unique (negative) ID.
+// This replaces the instruction's opcode in the trace with their negative IDs.
+// Aids relocation later when we need to recompute jumps after optimization passes.
+static _PyUOpInstruction *
+number_jumps_and_targets(_PyUOpInstruction *trace, int trace_len, int *max_id)
+{
+    int jump_and_target_count = 0;
+    int jump_and_target_id = -1;
+    for (int i = 0; i < trace_len; i++) {
+        if (op_is_jump(trace[i].opcode)) {
+            // 1 for the jump, 1 for its target
+            jump_and_target_count += 2;
+        }
+    }
+
+    // +1 because 1-based indexing not zero based
+    _PyUOpInstruction *jump_id_to_instruction = PyMem_New(_PyUOpInstruction, jump_and_target_count + 1);
+    if (jump_id_to_instruction == NULL) {
+        return NULL;
+    }
+
+
+    for (int i = 0; i < trace_len; i++) {
+        if (op_is_jump(trace[i].opcode)) {
+            int target = trace[i].oparg;
+            int target_id = jump_and_target_id;
+
+            // 1 for the jump target
+            assert(jump_and_target_id < 0);
+            // Negative opcode!
+            assert(trace[target].opcode > 0);
+            // Already assigned a jump ID
+            if (trace[target].opcode < 0) {
+                target_id = trace[target].opcode;
+            }
+            else {
+                // Else, assign a new jump ID.
+                jump_id_to_instruction[-target_id] = trace[target];
+                trace[target].opcode = target_id;
+                jump_and_target_id--;
+                fprintf(stderr, "op %d oparg %d\n", jump_id_to_instruction[-target_id].opcode, jump_id_to_instruction[-target_id].oparg);
+            }
+
+            // 1 for the jump
+            assert(jump_and_target_id < 0);
+            jump_id_to_instruction[-jump_and_target_id] = trace[i];
+            // Negative opcode!
+            assert(trace[i].opcode >= 0);
+            trace[i].opcode = jump_and_target_id;
+            jump_and_target_id--;
+            // Point the jump to the target ID.
+            trace[i].oparg = target_id;
+
+        }
+    }
+    *max_id = jump_and_target_id;
+    return jump_id_to_instruction;
+}
+
 // Remove contiguous SAVE_IPs, leaving only the last one before a non-SAVE_IP instruction.
 static int
 remove_duplicate_save_ips(_PyUOpInstruction *trace, int trace_len)
@@ -570,20 +636,51 @@ remove_duplicate_save_ips(_PyUOpInstruction *trace, int trace_len)
 /**
  * Fixes all side exits due to jumps. This MUST be called as the last
  * pass over the trace. Otherwise jumps will point to invalid ends.
+ *
+ * Runtime complexity of O(n*k), where n is trace length and k is number of jump
+ * instructions. Since k is usually quite low, this is nearly linear.
 */
-static int
-fix_jump_side_exits(_PyUOpInstruction *trace, int trace_len)
+static void
+fix_jump_side_exits(_PyUOpInstruction *trace, int trace_len,
+    _PyUOpInstruction *jump_id_to_instruction, int max_jump_id)
 {
     for (int i = 0; i < trace_len; i++) {
         int oparg = trace[i].oparg;
         int opcode = trace[i].opcode;
-        switch (opcode) {
-        case _POP_JUMP_IF_TRUE:
-        case _POP_JUMP_IF_FALSE:
-            trace[i].oparg = trace_len - 2;
+        // Indicates it's a jump target or jump instruction
+        if (opcode < 0 && opcode > max_jump_id) {
+            opcode = -opcode;
+            int real_oparg = jump_id_to_instruction[opcode].oparg;
+            int real_opcode = jump_id_to_instruction[opcode].opcode;
+            if (op_is_jump(real_opcode)) {
+                trace[i].opcode = real_opcode;
+
+                // Search for our target ID.
+                int target_id = oparg;
+                for (int x = 0; x < trace_len; x++) {
+                    if (trace[x].opcode == target_id) {
+                        trace[i].oparg = x;
+                        break;
+                    }
+                }
+
+                assert(trace[i].oparg >= 0);
+            }
         }
     }
-    return trace_len;
+
+    // Final pass to swap out all the jump target IDs with their actual targets.
+    for (int i = 0; i < trace_len; i++) {
+        int oparg = trace[i].oparg;
+        int opcode = trace[i].opcode;
+        // Indicates it's a jump target or jump instruction
+        if (opcode < 0 && opcode > max_jump_id) {
+            int real_oparg = jump_id_to_instruction[-opcode].oparg;
+            int real_opcode = jump_id_to_instruction[-opcode].opcode;
+            trace[i].oparg = real_oparg;
+            trace[i].opcode = real_opcode;
+        }
+    }
 }
 
 #ifndef Py_DEBUG
@@ -631,6 +728,9 @@ _Py_uop_analyze_and_optimize(
 #define PARTITIONNODE_SET(src, dst, flag)        partitionnode_set((src), (dst), (flag))
 #define PARTITIONNODE_OVERWRITE(src, dst, flag)  partitionnode_overwrite(ctx, (src), (dst), (flag))
 #define MAKE_STATIC_ROOT(val)                    partitionnode_make_root(0, (val))
+    PyObject *co_const_copy = NULL;
+    _PyUOpInstruction *jump_id_to_instruction = NULL;
+
     _PyUOpInstruction *temp_writebuffer = PyMem_New(_PyUOpInstruction, trace_len);
     if (temp_writebuffer == NULL) {
         return trace_len;
@@ -644,7 +744,14 @@ _Py_uop_analyze_and_optimize(
         return trace_len;
     }
 
-    PyObject *co_const_copy = PyList_New(PyTuple_Size(co->co_consts));
+    int max_jump_id = 0;
+    jump_id_to_instruction = number_jumps_and_targets(trace, trace_len, &max_jump_id);
+    if (jump_id_to_instruction == NULL) {
+        goto abstract_error;
+    }
+
+
+    co_const_copy = PyList_New(PyTuple_Size(co->co_consts));
     if (co_const_copy == NULL) {
         goto abstract_error;
     }
@@ -663,6 +770,15 @@ _Py_uop_analyze_and_optimize(
     for (int i = 0; i < trace_len; i++) {
         oparg = trace[i].oparg;
         opcode = trace[i].opcode;
+
+        // Is a special jump/target ID, decode that
+        if (opcode < 0 && opcode > max_jump_id) {
+#if PARTITION_DEBUG
+            fprintf(stderr, "Special jump target/ID %d\n", opcode);
+#endif
+            oparg = jump_id_to_instruction[-opcode].oparg;
+            opcode = jump_id_to_instruction[-opcode].opcode;
+        }
 
         // Partial evaluation - the partition nodes already gave us the static-dynamic variable split.
         // For partial evaluation, we simply need to follow these rules:
@@ -878,12 +994,22 @@ _Py_uop_analyze_and_optimize(
         for (int y = stack_outputs; y > 0; y--) {
             stack_virtual_or_real[STACK_LEVEL() - y] = !should_emit;
         }
+
+        if (opcode == EXIT_TRACE) {
+            // Copy the rest of the stubs over, then end.
+            for (; i < trace_len; i++) {
+                temp_writebuffer[buffer_trace_len] = trace[i];
+                buffer_trace_len++;
+            }
+            break;
+        }
     }
     assert(STACK_SIZE() >= 0);
-    assert(buffer_trace_len <= trace_len);
 
     buffer_trace_len = remove_duplicate_save_ips(temp_writebuffer, buffer_trace_len);
-    buffer_trace_len = fix_jump_side_exits(temp_writebuffer, buffer_trace_len);
+    fix_jump_side_exits(temp_writebuffer, buffer_trace_len, jump_id_to_instruction, max_jump_id);
+
+    assert(buffer_trace_len <= trace_len);
 
 #if PARTITION_DEBUG
     if (buffer_trace_len < trace_len) {
@@ -906,11 +1032,14 @@ _Py_uop_analyze_and_optimize(
     Py_XDECREF(co_const_copy);
     memcpy(trace, temp_writebuffer, buffer_trace_len * sizeof(_PyUOpInstruction));
     PyMem_Free(temp_writebuffer);
+    PyMem_Free(jump_id_to_instruction);
     return buffer_trace_len;
 
 abstract_error:
     Py_XDECREF(co_const_copy);
     Py_DECREF(ctx);
+    PyMem_Free(temp_writebuffer);
+    PyMem_Free(jump_id_to_instruction);
     assert(PyErr_Occurred());
     PyErr_Clear();
     return trace_len;
