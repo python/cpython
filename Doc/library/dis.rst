@@ -58,8 +58,9 @@ the following command can be used to display the disassembly of
    <BLANKLINE>
      3           2 LOAD_GLOBAL              1 (len + NULL)
                 12 LOAD_FAST                0 (alist)
-                14 CALL                     1
-                22 RETURN_VALUE
+                14 PUSH_NULL
+                16 CALL                     1
+                24 RETURN_VALUE
 
 (The "2" is a line number).
 
@@ -138,6 +139,7 @@ Example:
     RESUME
     LOAD_GLOBAL
     LOAD_FAST
+    PUSH_NULL
     CALL
     RETURN_VALUE
 
@@ -1391,21 +1393,14 @@ iterations of the loop.
 .. opcode:: CALL (argc)
 
    Calls a callable object with the number of arguments specified by ``argc``,
-   including the named arguments specified by the preceding
-   :opcode:`KW_NAMES`, if any.
-   On the stack are (in ascending order), either:
-
-   * NULL
-   * The callable
-   * The positional arguments
-   * The named arguments
-
-   or:
+   including the named arguments, if any.
+   On the stack are (in ascending order):
 
    * The callable
-   * ``self``
+   * ``self`` (or ``NULL``)
    * The remaining positional arguments
    * The named arguments
+   * A tuple of keyword names (or ``NULL``)
 
    ``argc`` is the total of the positional and named arguments, excluding
    ``self`` when a ``NULL`` is not present.
@@ -1415,6 +1410,10 @@ iterations of the loop.
    returned by the callable object.
 
    .. versionadded:: 3.11
+
+   .. versionchanged:: 3.13
+      Keyword names are now pushed to the stack instead of being indicated by
+      a preceding ``KW_NAMES`` instruction.
 
 
 .. opcode:: CALL_FUNCTION_EX (flags)
@@ -1437,15 +1436,6 @@ iterations of the loop.
    Pushes a ``NULL`` to the stack.
    Used in the call sequence to match the ``NULL`` pushed by
    :opcode:`LOAD_METHOD` for non-method calls.
-
-   .. versionadded:: 3.11
-
-
-.. opcode:: KW_NAMES (consti)
-
-   Prefixes :opcode:`CALL`.
-   Stores a reference to ``co_consts[consti]`` into an internal variable
-   for use by :opcode:`CALL`. ``co_consts[consti]`` must be a tuple of strings.
 
    .. versionadded:: 3.11
 
