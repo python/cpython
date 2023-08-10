@@ -506,7 +506,9 @@ class FNTLEINTRTest(EINTRBaseTest):
             with open(os_helper.TESTFN, 'wb') as f:
                 # synchronize the subprocess
                 start_time = time.monotonic()
-                for _ in support.sleeping_retry(support.LONG_TIMEOUT, error=False):
+                # make sure to sleep significantly less than sleep_time
+                # between tries, to minimize the race with the subprocess
+                for _ in support.sleeping_retry(support.LONG_TIMEOUT, error=False, max_delay=self.sleep_time / 2):
                     try:
                         lock_func(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
                         lock_func(f, fcntl.LOCK_UN)
