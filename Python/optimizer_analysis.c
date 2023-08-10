@@ -18,6 +18,8 @@
 #define STATIC 0
 #define DYNAMIC 1
 
+#define OVERALLOCATE_FACTOR 2
+
 // TYPENODE is a tagged pointer that uses the last 2 LSB as the tag
 #define _Py_PARTITIONNODE_t uintptr_t
 
@@ -731,7 +733,7 @@ _Py_uop_analyze_and_optimize(
     PyObject *co_const_copy = NULL;
     _PyUOpInstruction *jump_id_to_instruction = NULL;
 
-    _PyUOpInstruction *temp_writebuffer = PyMem_New(_PyUOpInstruction, trace_len);
+    _PyUOpInstruction *temp_writebuffer = PyMem_New(_PyUOpInstruction, trace_len * OVERALLOCATE_FACTOR);
     if (temp_writebuffer == NULL) {
         return trace_len;
     }
@@ -836,11 +838,13 @@ _Py_uop_analyze_and_optimize(
 
 
                         // INSERT to the correct position in the stack
-                        int offset_from_target = x - num_dynamic_operands - 1;
+                        int target_entry = virtual_stack_size - x;
+
+                        int offset_from_target = real_stack_size - target_entry;
                         if (offset_from_target > 0) {
                             _PyUOpInstruction insert;
                             insert.opcode = INSERT;
-                            insert.oparg = -offset_from_target;
+                            insert.oparg = offset_from_target;
 
 #if PARTITION_DEBUG
                             fprintf(stderr, "Emitting INSERT %d\n", offset_from_target);
