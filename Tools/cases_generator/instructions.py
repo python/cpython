@@ -142,10 +142,6 @@ class Instruction:
                 res = False
         return res
 
-    def write_case_body(self, out: Formatter, tier: Tiers) -> None:
-        """Write one instruction, sans prologue and epilogue."""
-        stacking.write_single_instr(self, out, tier)
-
     def write_body(
         self,
         out: Formatter,

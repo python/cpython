@@ -604,7 +604,7 @@ class Generator(Analyzer):
                                 n_instrs += 1
                             self.out.emit("")
                             with self.out.block(f"case {thing.name}:"):
-                                instr.write_case_body(self.out, tier=TIER_TWO)
+                                stacking.write_single_instr(instr, self.out, tier=TIER_TWO)
                                 if instr.check_eval_breaker:
                                     self.out.emit("CHECK_EVAL_BREAKER();")
                                 self.out.emit("break;")
@@ -638,7 +638,7 @@ class Generator(Analyzer):
             if instr.predicted:
                 self.out.emit(f"PREDICTED({name});")
             self.out.static_assert_family_size(instr.name, instr.family, instr.cache_offset)
-            instr.write_case_body(self.out, tier=TIER_ONE)
+            stacking.write_single_instr(instr, self.out, tier=TIER_ONE)
             if not instr.always_exits:
                 if instr.cache_offset:
                     self.out.emit(f"next_instr += {instr.cache_offset};")
