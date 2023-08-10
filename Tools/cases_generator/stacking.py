@@ -382,9 +382,8 @@ def write_components(
         dispatch_inlined_special_case = False
         if mgr is managers[-1] and mgr.instr.always_exits.startswith("DISPATCH_INLINED") and mgr.instr.name == "_PUSH_FRAME":
             dispatch_inlined_special_case = True
-            temp = mgr.final_offset.clone()
-            temp.deeper(StackEffect(UNUSED))  # Hack
-            out.stack_adjust(temp.deep, temp.high)
+            # Adjust stack to min_offset (input effects materialized)
+            out.stack_adjust(mgr.min_offset.deep, mgr.min_offset.high)
             # Use clone() since adjust_inverse() mutates final_offset
             mgr.adjust_inverse(mgr.final_offset.clone())
             if cache_adjust:
@@ -397,6 +396,7 @@ def write_components(
                 mgr.instr.write_body(out, -4, mgr.active_caches, tier)
 
         if mgr is managers[-1] and not dispatch_inlined_special_case:
+            # TODO: Explain why this adjustment is needed.
             out.stack_adjust(mgr.final_offset.deep, mgr.final_offset.high)
             # Use clone() since adjust_inverse() mutates final_offset
             mgr.adjust_inverse(mgr.final_offset.clone())
