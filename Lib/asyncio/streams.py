@@ -391,6 +391,10 @@ class StreamWriter:
         self._transport = new_transport
         protocol._replace_writer(self)
 
+    def __del__(self):
+        if not self._transport.is_closing():
+            self.close()
+
 
 class StreamReader:
 
