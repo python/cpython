@@ -637,6 +637,7 @@ class Generator(Analyzer):
         with self.out.block(f"TARGET({name})"):
             if instr.predicted:
                 self.out.emit(f"PREDICTED({name});")
+            self.out.static_assert_family_size(instr.name, instr.family, instr.cache_offset)
             instr.write_case_body(self.out, tier=TIER_ONE)
             if not instr.always_exits:
                 if instr.cache_offset:

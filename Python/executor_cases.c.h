@@ -103,7 +103,6 @@
         }
 
         case TO_BOOL: {
-            static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -363,7 +362,6 @@
         }
 
         case BINARY_SUBSCR: {
-            static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
             PyObject *sub;
             PyObject *container;
             PyObject *res;
@@ -557,7 +555,6 @@
         }
 
         case STORE_SUBSCR: {
-            static_assert(INLINE_CACHE_ENTRIES_STORE_SUBSCR == 1, "incorrect cache size");
             PyObject *sub;
             PyObject *container;
             PyObject *v;
@@ -862,7 +859,6 @@
         }
 
         case UNPACK_SEQUENCE: {
-            static_assert(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE == 1, "incorrect cache size");
             PyObject *seq;
             seq = stack_pointer[-1];
             #if ENABLE_SPECIALIZATION
@@ -950,7 +946,6 @@
         }
 
         case STORE_ATTR: {
-            static_assert(INLINE_CACHE_ENTRIES_STORE_ATTR == 4, "incorrect cache size");
             PyObject *owner;
             PyObject *v;
             owner = stack_pointer[-1];
@@ -1061,7 +1056,6 @@
         }
 
         case LOAD_GLOBAL: {
-            static_assert(INLINE_CACHE_ENTRIES_LOAD_GLOBAL == 4, "incorrect cache size");
             PyObject *res;
             PyObject *null = NULL;
             #if ENABLE_SPECIALIZATION
@@ -1554,7 +1548,6 @@
         }
 
         case LOAD_ATTR: {
-            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             PyObject *owner;
             PyObject *attr;
             PyObject *self_or_null = NULL;
@@ -1648,7 +1641,6 @@
         }
 
         case COMPARE_OP: {
-            static_assert(INLINE_CACHE_ENTRIES_COMPARE_OP == 1, "incorrect cache size");
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -2717,7 +2709,6 @@
         }
 
         case BINARY_OP: {
-            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
             PyObject *rhs;
             PyObject *lhs;
             PyObject *res;

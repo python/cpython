@@ -144,11 +144,6 @@ class Instruction:
 
     def write_case_body(self, out: Formatter, tier: Tiers) -> None:
         """Write one instruction, sans prologue and epilogue."""
-
-        # Write a static assertion that a family's cache size is correct
-        out.static_assert_family_size(self.name, self.family, self.cache_offset)
-
-        # Write input stack effect variable declarations and initializations
         stacking.write_single_instr(self, out, tier)
 
     def write_body(
