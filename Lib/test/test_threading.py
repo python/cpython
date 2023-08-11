@@ -1768,7 +1768,9 @@ class CRLockTests(lock_tests.RLockTests):
             def __init__(self, a, *, b) -> None:
                 super().__init__()
 
-        CustomRLock(1, b=2)
+        with warnings.catch_warnings(record=True) as warnings_log:
+            CustomRLock(1, b=2)
+        self.assertEqual(warnings_log, [])
 
 class EventTests(lock_tests.EventTests):
     eventtype = staticmethod(threading.Event)
