@@ -1513,6 +1513,26 @@ class ClinicParserTest(TestCase):
             with self.subTest(block=block):
                 self.expect_failure(block, err)
 
+    def test_fulldisplayname_class(self):
+        block = self.parse("""
+            module m
+            class m.T "void *" ""
+            class m.T.C "void *" ""
+            m.T.C.__init__
+        """)
+        func = block.signatures[-1]
+        self.assertEqual(func.fulldisplayname, "m.T.C")
+
+    def test_fulldisplayname_meth(self):
+        block = self.parse("""
+            module m
+            class m.T "" ""
+            class m.T.C "" ""
+            m.T.C.func
+        """)
+        func = block.signatures[-1]
+        self.assertEqual(func.fulldisplayname, "m.T.C.func")
+
     def test_depr_star_invalid_format_1(self):
         block = """
             module foo

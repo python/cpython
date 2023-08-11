@@ -2682,9 +2682,18 @@ class Function:
 
     @functools.cached_property
     def fulldisplayname(self) -> str:
-        if isinstance(self.module, Module):
-            return f"{self.module.name}.{self.displayname}"
-        return self.displayname
+        name = self.displayname
+        try:
+            if self.kind.new_or_init:
+                parent = self.cls.parent
+            else:
+                parent = self.parent
+            while parent:
+                name = f"{parent.name}.{name}"
+                parent = parent.parent
+        except AttributeError:
+            pass
+        return name
 
     @property
     def render_parameters(self) -> list[Parameter]:
