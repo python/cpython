@@ -98,7 +98,7 @@ which is recognized by Bram Moolenaar's VIM.
 
 If no encoding declaration is found, the default encoding is UTF-8.  In
 addition, if the first bytes of the file are the UTF-8 byte-order mark
-(``b'\xef\xbb\xbf'``), the declared file encoding is UTF-8 (this is supported,
+(``b'\xef\xbb\xbf'``), the declared file encoding is UTF-8-Sig (this is supported,
 among others, by Microsoft's :program:`notepad`).
 
 If an encoding is declared, the encoding name must be recognized by Python
