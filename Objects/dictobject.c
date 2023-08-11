@@ -5762,10 +5762,8 @@ _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr,
         assert(dictptr != NULL);
         dict = *dictptr;
         if (dict == NULL) {
+            assert(!_PyType_HasFeature(tp, Py_TPFLAGS_MANAGED_DICT));
             dictkeys_incref(cached);
-            if (_PyType_HasFeature(tp, Py_TPFLAGS_MANAGED_DICT)) {
-                OBJECT_STAT_INC(dict_materialized_on_request);
-            }
             dict = new_dict_with_shared_keys(interp, cached);
             if (dict == NULL)
                 return -1;
