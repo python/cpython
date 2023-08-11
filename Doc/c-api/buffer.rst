@@ -168,7 +168,7 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
       The maximum number of dimensions the memory represents.
       Exporters MUST respect this limit, consumers of multi-dimensional
       buffers SHOULD be able to handle up to :c:macro:`!PyBUF_MAX_NDIM` dimensions.
-      Hard coded to 64.
+      Currently set to 64.
 
    .. c:member:: Py_ssize_t *shape
 
