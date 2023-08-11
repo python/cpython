@@ -91,9 +91,8 @@ def main(opcode_py,
         opname_including_specialized[next_op] = name
         used[next_op] = True
 
-    with open(outfile, 'w') as fobj, open(internaloutfile, 'w') as iobj:
+    with open(outfile, 'w') as fobj:
         fobj.write(header)
-        iobj.write(internal_header)
 
         for name in opname:
             if name in opmap:
@@ -106,6 +105,15 @@ def main(opcode_py,
 
         for name, op in specialized_opmap.items():
             fobj.write(DEFINE.format(name, op))
+
+        fobj.write("\n")
+        for i, (op, _) in enumerate(opcode["_nb_ops"]):
+            fobj.write(DEFINE.format(op, i))
+
+        fobj.write(footer)
+
+    with open(internaloutfile, 'w') as iobj:
+        iobj.write(internal_header)
 
         iobj.write("\nextern const uint8_t _PyOpcode_Caches[256];\n")
         iobj.write("\nextern const uint8_t _PyOpcode_Deopt[256];\n")
@@ -129,10 +137,6 @@ def main(opcode_py,
         iobj.write("};\n")
         iobj.write("#endif   // NEED_OPCODE_TABLES\n")
 
-        fobj.write("\n")
-        for i, (op, _) in enumerate(opcode["_nb_ops"]):
-            fobj.write(DEFINE.format(op, i))
-
         iobj.write("\n")
         iobj.write(f"\nextern const char *const _PyOpcode_OpName[{NUM_OPCODES}];\n")
         iobj.write("\n#ifdef NEED_OPCODE_TABLES\n")
@@ -151,7 +155,6 @@ def main(opcode_py,
                 iobj.write(f"    case {i}: \\\n")
         iobj.write("        ;\n")
 
-        fobj.write(footer)
         iobj.write(internal_footer)
 
     with open(opcode_targets_h, "w") as f:
