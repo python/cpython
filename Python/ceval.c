@@ -770,6 +770,7 @@ resume_frame:
 #endif
         {
 
+#define TIER_ONE 1
 #include "generated_cases.c.h"
 
     /* INSTRUMENTED_LINE has to be here, rather than in bytecodes.c,

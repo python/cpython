@@ -60,6 +60,7 @@ class Instruction:
 
     # Computed by constructor
     always_exits: str  # If the block always exits, its last line; else ""
+    save_frame_state: bool  # Whether the instruction uses SAVE_FRAME_STATE()
     has_deopt: bool
     cache_offset: int
     cache_effects: list[parsing.CacheEffect]
@@ -83,6 +84,7 @@ class Instruction:
             self.block
         )
         self.always_exits = always_exits(self.block_text)
+        self.save_frame_state = variable_used(self.inst, "SAVE_FRAME_STATE")
         self.has_deopt = variable_used(self.inst, "DEOPT_IF")
         self.cache_effects = [
             effect for effect in inst.inputs if isinstance(effect, parsing.CacheEffect)
@@ -120,15 +122,13 @@ class Instruction:
     def is_viable_uop(self) -> bool:
         """Whether this instruction is viable as a uop."""
         dprint: typing.Callable[..., None] = lambda *args, **kwargs: None
-        if "PY_EXACT" in self.name:
+        if "PUSH_FRAME" in self.name:
             dprint = print
 
         if self.name == "EXIT_TRACE":
             return True  # This has 'return frame' but it's okay
-        if self.name == "_PUSH_FRAME":
-            return True  # Has DISPATCH_INLINED but it's okay
         if self.always_exits:
-            dprint(f"Skipping {self.name} because it always exits")
+            dprint(f"Skipping {self.name} because it always exits: {self.always_exits}")
             return False
         if len(self.active_caches) > 1:
             # print(f"Skipping {self.name} because it has >1 cache entries")

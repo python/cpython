@@ -1,6 +1,7 @@
 import dataclasses
 import typing
 
+from flags import variable_used_unspecialized
 from formatting import (
     Formatter,
     UNUSED,
@@ -314,7 +315,7 @@ def write_macro_instr(
             write_components(parts, out, TIER_ONE, mac.cache_offset)
         except AssertionError as err:
             raise AssertionError(f"Error writing macro {mac.name}") from err
-        if not parts[-1].instr.always_exits:
+        if not parts[-1].instr.always_exits and not parts[-1].instr.save_frame_state:
             if mac.cache_offset:
                 out.emit(f"next_instr += {mac.cache_offset};")
             out.emit("DISPATCH();")
@@ -366,12 +367,7 @@ def write_components(
                     poke.as_stack_effect(lax=True),
                 )
 
-        dispatch_inlined_special_case = (
-            mgr is managers[-1]
-            and mgr.instr.always_exits.startswith("DISPATCH_INLINED")
-            and mgr.instr.name == "_PUSH_FRAME"
-        )
-        if dispatch_inlined_special_case:
+        if mgr.instr.save_frame_state:
             # Adjust stack to min_offset (input effects materialized)
             out.stack_adjust(mgr.min_offset.deep, mgr.min_offset.high)
             # Use clone() since adjust_inverse() mutates final_offset
@@ -385,7 +381,7 @@ def write_components(
             with out.block(""):
                 mgr.instr.write_body(out, -4, mgr.active_caches, tier)
 
-        if mgr is managers[-1] and not dispatch_inlined_special_case:
+        if mgr is managers[-1] and not mgr.instr.save_frame_state:
             # TODO: Explain why this adjustment is needed.
             out.stack_adjust(mgr.final_offset.deep, mgr.final_offset.high)
             # Use clone() since adjust_inverse() mutates final_offset

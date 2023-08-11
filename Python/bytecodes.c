@@ -2981,8 +2981,22 @@ dummy_func(
         // (which will be pushed when the frame returns).
         // It is needed so CALL_PY_EXACT_ARGS matches its family.
         op(_PUSH_FRAME, (new_frame: _PyInterpreterFrame* -- unused)) {
+            // Write it out explicitly because it's subtly different.
+            // Eventually this should be the only occurrence of this code.
             frame->return_offset = 0;
-            DISPATCH_INLINED(new_frame);
+            assert(tstate->interp->eval_frame == NULL);
+            SAVE_FRAME_STATE();  // Signals to the code generator
+            new_frame->previous = frame;
+            CALL_STAT_INC(inlined_py_calls);
+            #if TIER_ONE
+            frame = cframe.current_frame = new_frame;
+            goto start_frame;
+            #endif
+            #if TIER_TWO
+            frame = tstate->cframe->current_frame = new_frame;
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
+            #endif
         }
 
         macro(CALL_PY_EXACT_ARGS) =

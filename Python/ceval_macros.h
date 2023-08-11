@@ -103,11 +103,16 @@
         DISPATCH_GOTO(); \
     }
 
+#define SAVE_FRAME_STATE() \
+    do { \
+        frame->prev_instr = next_instr - 1; \
+        _PyFrame_SetStackPointer(frame, stack_pointer); \
+    } while (0)
+
 #define DISPATCH_INLINED(NEW_FRAME)                     \
     do {                                                \
         assert(tstate->interp->eval_frame == NULL);     \
-        _PyFrame_SetStackPointer(frame, stack_pointer); \
-        frame->prev_instr = next_instr - 1;             \
+        SAVE_FRAME_STATE();                             \
         (NEW_FRAME)->previous = frame;                  \
         frame = cframe.current_frame = (NEW_FRAME);     \
         CALL_STAT_INC(inlined_py_calls);                \
