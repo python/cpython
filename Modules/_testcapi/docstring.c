@@ -77,25 +77,6 @@ static PyMethodDef test_methods[] = {
     {"docstring_no_signature_o",
         (PyCFunction)test_with_docstring, METH_O,
         docstring_no_signature},
-//     {"docstring_no_signature_noargs_class",
-//         (PyCFunction)test_with_docstring, METH_NOARGS|METH_CLASS,
-//         docstring_no_signature},
-//     {"docstring_no_signature_o_class",
-//         (PyCFunction)test_with_docstring, METH_O|METH_CLASS,
-//         docstring_no_signature},
-//     {"docstring_no_signature_noargs_static",
-//         (PyCFunction)test_with_docstring, METH_NOARGS|METH_STATIC,
-//         docstring_no_signature},
-//     {"docstring_no_signature_o_static",
-//         (PyCFunction)test_with_docstring, METH_O|METH_STATIC,
-//         docstring_no_signature},
-//     {"docstring_no_signature_noargs_coexist",
-//         (PyCFunction)test_with_docstring, METH_NOARGS|METH_COEXIST,
-//         docstring_no_signature},
-//     {"docstring_no_signature_o_coexist",
-//         (PyCFunction)test_with_docstring, METH_O|METH_COEXIST,
-//         docstring_no_signature},
-
     {"docstring_with_invalid_signature",
         (PyCFunction)test_with_docstring, METH_VARARGS,
         docstring_with_invalid_signature},
@@ -122,10 +103,50 @@ static PyMethodDef test_methods[] = {
     {NULL},
 };
 
+static PyMethodDef DocStringNoSignatureTest_methods[] = {
+    {"meth_noargs",
+        (PyCFunction)test_with_docstring, METH_NOARGS,
+        docstring_no_signature},
+    {"meth_o",
+        (PyCFunction)test_with_docstring, METH_O,
+        docstring_no_signature},
+    {"meth_noargs_class",
+        (PyCFunction)test_with_docstring, METH_NOARGS|METH_CLASS,
+        docstring_no_signature},
+    {"meth_o_class",
+        (PyCFunction)test_with_docstring, METH_O|METH_CLASS,
+        docstring_no_signature},
+    {"meth_noargs_static",
+        (PyCFunction)test_with_docstring, METH_NOARGS|METH_STATIC,
+        docstring_no_signature},
+    {"meth_o_static",
+        (PyCFunction)test_with_docstring, METH_O|METH_STATIC,
+        docstring_no_signature},
+    {"meth_noargs_coexist",
+        (PyCFunction)test_with_docstring, METH_NOARGS|METH_COEXIST,
+        docstring_no_signature},
+    {"meth_o_coexist",
+        (PyCFunction)test_with_docstring, METH_O|METH_COEXIST,
+        docstring_no_signature},
+    {NULL},
+};
+
+static PyTypeObject DocStringNoSignatureTest = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_testcapi.DocStringNoSignatureTest",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_methods = DocStringNoSignatureTest_methods,
+    .tp_new = PyType_GenericNew,
+};
+
 int
 _PyTestCapi_Init_Docstring(PyObject *mod)
 {
     if (PyModule_AddFunctions(mod, test_methods) < 0) {
+        return -1;
+    }
+    if (PyModule_AddType(mod, &DocStringNoSignatureTest) < 0) {
         return -1;
     }
     return 0;

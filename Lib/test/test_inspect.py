@@ -1184,30 +1184,38 @@ class TestClassesAndFunctions(unittest.TestCase):
         with self.assertRaises(TypeError):
             inspect.getfullargspec(builtin)
 
-        self.assertEqual(inspect.getfullargspec(time.time),
-                         inspect.getfullargspec(meth_noargs))
-        self.assertEqual(inspect.getfullargspec(stat.S_IMODE),
-                         inspect.getfullargspec(meth_o))
-        self.assertEqual(inspect.getfullargspec(str.lower),
-                         inspect.getfullargspec(meth_self_noargs))
-        self.assertEqual(inspect.getfullargspec(''.lower),
-                         inspect.getfullargspec(meth_self_noargs))
-        self.assertEqual(inspect.getfullargspec(set.add),
-                         inspect.getfullargspec(meth_self_o))
-        self.assertEqual(inspect.getfullargspec(set().add),
-                         inspect.getfullargspec(meth_self_o))
-        self.assertEqual(inspect.getfullargspec(set.__contains__),
-                         inspect.getfullargspec(meth_self_o))
-        self.assertEqual(inspect.getfullargspec(set().__contains__),
-                         inspect.getfullargspec(meth_self_o))
-        self.assertEqual(inspect.getfullargspec(datetime.datetime.__dict__['utcnow']),
-                         inspect.getfullargspec(meth_type_noargs))
-        self.assertEqual(inspect.getfullargspec(datetime.datetime.utcnow),
-                         inspect.getfullargspec(meth_type_noargs))
-        self.assertEqual(inspect.getfullargspec(dict.__dict__['__class_getitem__']),
-                         inspect.getfullargspec(meth_type_o))
-        self.assertEqual(inspect.getfullargspec(dict.__class_getitem__),
-                         inspect.getfullargspec(meth_type_o))
+        cls = _testcapi.DocStringNoSignatureTest
+        obj = _testcapi.DocStringNoSignatureTest()
+        for builtin, template in [
+            (_testcapi.docstring_no_signature_noargs, meth_noargs),
+            (_testcapi.docstring_no_signature_o, meth_o),
+            (cls.meth_noargs, meth_self_noargs),
+            (cls.meth_o, meth_self_o),
+            (obj.meth_noargs, meth_self_noargs),
+            (obj.meth_o, meth_self_o),
+            (cls.meth_noargs_class, meth_type_noargs),
+            (cls.meth_o_class, meth_type_o),
+            (cls.meth_noargs_static, meth_noargs),
+            (cls.meth_o_static, meth_o),
+            (cls.meth_noargs_coexist, meth_self_noargs),
+            (cls.meth_o_coexist, meth_self_o),
+
+            (time.time, meth_noargs),
+            (stat.S_IMODE, meth_o),
+            (str.lower, meth_self_noargs),
+            (''.lower, meth_self_noargs),
+            (set.add, meth_self_o),
+            (set().add, meth_self_o),
+            (set.__contains__, meth_self_o),
+            (set().__contains__, meth_self_o),
+            (datetime.datetime.__dict__['utcnow'], meth_type_noargs),
+            (datetime.datetime.utcnow, meth_type_noargs),
+            (dict.__dict__['__class_getitem__'], meth_type_o),
+            (dict.__class_getitem__, meth_type_o),
+        ]:
+            with self.subTest(builtin):
+                self.assertEqual(inspect.getfullargspec(builtin),
+                                 inspect.getfullargspec(template))
 
     def test_getfullargspec_definition_order_preserved_on_kwonly(self):
         for fn in signatures_with_lexicographic_keyword_only_parameters():
@@ -2924,30 +2932,38 @@ class TestSignatureObject(unittest.TestCase):
                                     'no signature found for builtin'):
             inspect.signature(str)
 
-        self.assertEqual(inspect.signature(time.time),
-                         inspect.signature(meth_noargs))
-        self.assertEqual(inspect.signature(stat.S_IMODE),
-                         inspect.signature(meth_o))
-        self.assertEqual(inspect.signature(str.lower),
-                         inspect.signature(meth_self_noargs))
-        self.assertEqual(inspect.signature(''.lower),
-                         inspect.signature(meth_noargs))
-        self.assertEqual(inspect.signature(set.add),
-                         inspect.signature(meth_self_o))
-        self.assertEqual(inspect.signature(set().add),
-                         inspect.signature(meth_o))
-        self.assertEqual(inspect.signature(set.__contains__),
-                         inspect.signature(meth_self_o))
-        self.assertEqual(inspect.signature(set().__contains__),
-                         inspect.signature(meth_o))
-        self.assertEqual(inspect.signature(datetime.datetime.__dict__['utcnow']),
-                         inspect.signature(meth_type_noargs))
-        self.assertEqual(inspect.signature(datetime.datetime.utcnow),
-                         inspect.signature(meth_noargs))
-        self.assertEqual(inspect.signature(dict.__dict__['__class_getitem__']),
-                         inspect.signature(meth_type_o))
-        self.assertEqual(inspect.signature(dict.__class_getitem__),
-                         inspect.signature(meth_o))
+        cls = _testcapi.DocStringNoSignatureTest
+        obj = _testcapi.DocStringNoSignatureTest()
+        for builtin, template in [
+            (_testcapi.docstring_no_signature_noargs, meth_noargs),
+            (_testcapi.docstring_no_signature_o, meth_o),
+            (cls.meth_noargs, meth_self_noargs),
+            (cls.meth_o, meth_self_o),
+            (obj.meth_noargs, meth_noargs),
+            (obj.meth_o, meth_o),
+            (cls.meth_noargs_class, meth_noargs),
+            (cls.meth_o_class, meth_o),
+            (cls.meth_noargs_static, meth_noargs),
+            (cls.meth_o_static, meth_o),
+            (cls.meth_noargs_coexist, meth_self_noargs),
+            (cls.meth_o_coexist, meth_self_o),
+
+            (time.time, meth_noargs),
+            (stat.S_IMODE, meth_o),
+            (str.lower, meth_self_noargs),
+            (''.lower, meth_noargs),
+            (set.add, meth_self_o),
+            (set().add, meth_o),
+            (set.__contains__, meth_self_o),
+            (set().__contains__, meth_o),
+            (datetime.datetime.__dict__['utcnow'], meth_type_noargs),
+            (datetime.datetime.utcnow, meth_noargs),
+            (dict.__dict__['__class_getitem__'], meth_type_o),
+            (dict.__class_getitem__, meth_o),
+        ]:
+            with self.subTest(builtin):
+                self.assertEqual(inspect.signature(builtin),
+                                 inspect.signature(template))
 
     def test_signature_on_non_function(self):
         with self.assertRaisesRegex(TypeError, 'is not a callable object'):
