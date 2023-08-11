@@ -17,10 +17,10 @@ import types
 from typing import Dict, FrozenSet, TextIO, Tuple
 
 import umarshal
-from generate_global_objects import get_identifiers_and_strings
+
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 verbose = False
-identifiers, strings = get_identifiers_and_strings()
 
 # This must be kept in sync with opcode.py
 RESUME = 151
@@ -114,12 +114,26 @@ class Printer:
         self.hits, self.misses = 0, 0
         self.finis: list[str] = []
         self.inits: list[str] = []
+        self.identifiers, self.strings = self.get_identifiers_and_strings()
         self.write('#include "Python.h"')
         self.write('#include "internal/pycore_gc.h"')
         self.write('#include "internal/pycore_code.h"')
         self.write('#include "internal/pycore_frame.h"')
         self.write('#include "internal/pycore_long.h"')
         self.write("")
+
+    def get_identifiers_and_strings(self) -> tuple[set[str], dict[str, str]]:
+        filename = os.path.join(ROOT, "Include", "internal", "pycore_global_strings.h")
+        with open(filename) as fp:
+            lines = fp.readlines()
+        identifiers: set[str] = set()
+        strings: dict[str, str] = {}
+        for line in lines:
+            if m := re.search(r"STRUCT_FOR_ID\((\w+)\)", line):
+                identifiers.add(m.group(1))
+            if m := re.search(r'STRUCT_FOR_STR\((\w+), "(.*?)"\)', line):
+                strings[m.group(2)] = m.group(1)
+        return identifiers, strings
 
     @contextlib.contextmanager
     def indent(self) -> None:
@@ -171,9 +185,9 @@ class Printer:
         return f"& {name}.ob_base.ob_base"
 
     def generate_unicode(self, name: str, s: str) -> str:
-        if s in strings:
-            return f"&_Py_STR({strings[s]})"
-        if s in identifiers:
+        if s in self.strings:
+            return f"&_Py_STR({self.strings[s]})"
+        if s in self.identifiers:
             return f"&_Py_ID({s})"
         if len(s) == 1:
             c = ord(s)
