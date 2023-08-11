@@ -58,7 +58,7 @@ partitionnode_dealloc(PyObject *o)
     Py_TYPE(self)->tp_free(o);
 }
 
-PyTypeObject _Py_PartitionRootNode_Type = {
+static PyTypeObject _Py_PartitionRootNode_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uops abstract interpreter's root node",
     .tp_basicsize = sizeof(_Py_PartitionRootNode),
@@ -143,7 +143,7 @@ abstractinterp_dealloc(PyObject *o)
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
-PyTypeObject _Py_UOpsAbstractInterpContext_Type = {
+static PyTypeObject _Py_UOpsAbstractInterpContext_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uops abstract interpreter's context",
     .tp_basicsize = sizeof(_Py_UOpsAbstractInterpContext),
