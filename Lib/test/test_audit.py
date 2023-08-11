@@ -257,5 +257,18 @@ class AuditTest(unittest.TestCase):
             self.fail(stderr)
 
 
+    def test_sys_monitoring_register_callback(self):
+        returncode, events, stderr = self.run_python("test_sys_monitoring_register_callback")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [("sys.monitoring.register_callback", "(None,)")]
+
+        self.assertEqual(actual, expected)
+
+
 if __name__ == "__main__":
     unittest.main()
