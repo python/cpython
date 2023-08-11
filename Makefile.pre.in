@@ -775,8 +775,12 @@ coverage-report: regen-token regen-frozen
 # Run "Argument Clinic" over all source files
 .PHONY: clinic
 clinic: check-clean-src $(srcdir)/Modules/_blake2/blake2s_impl.c
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py --make --srcdir $(srcdir)
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py --make --exclude Lib/test/clinic.test.c --srcdir $(srcdir)
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_global_objects.py
+
+.PHONY: clinic-tests
+clinic-tests: check-clean-src $(srcdir)/Lib/test/clinic.test.c
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py -f $(srcdir)/Lib/test/clinic.test.c
 
 # Build the interpreter
 $(BUILDPYTHON):	Programs/python.o $(LINK_PYTHON_DEPS)
@@ -1427,9 +1431,11 @@ regen-opcode:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_opcode_h.py \
 		$(srcdir)/Lib/opcode.py \
 		$(srcdir)/Lib/_opcode_metadata.py \
+		$(srcdir)/Include/opcode_ids.h.new \
 		$(srcdir)/Include/opcode.h.new \
                 $(srcdir)/Python/opcode_targets.h.new \
 		$(srcdir)/Include/internal/pycore_opcode.h.new
+	$(UPDATE_FILE) $(srcdir)/Include/opcode_ids.h $(srcdir)/Include/opcode_ids.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/opcode.h $(srcdir)/Include/opcode.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_opcode.h $(srcdir)/Include/internal/pycore_opcode.h.new
