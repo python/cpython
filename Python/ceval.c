@@ -109,11 +109,24 @@ dump_stack(_PyInterpreterFrame *frame, PyObject **stack_pointer)
         if (ptr != stack_base) {
             printf(", ");
         }
-        if (PyObject_Print(*ptr, stdout, 0) != 0) {
-            PyErr_Clear();
-            printf("<%s object at %p>",
-                   Py_TYPE(*ptr)->tp_name, (void *)(*ptr));
+        if (*ptr == NULL) {
+            printf("<nil>");
+            continue;
         }
+        if (
+            *ptr == Py_None
+            || PyBool_Check(*ptr)
+            || PyLong_CheckExact(*ptr)
+            || PyFloat_CheckExact(*ptr)
+            || PyUnicode_CheckExact(*ptr)
+        ) {
+            if (PyObject_Print(*ptr, stdout, 0) == 0) {
+                continue;
+            }
+            PyErr_Clear();
+        }
+        // Don't call __repr__(), it might recurse into the interpreter.
+        printf("<%s at %p>", Py_TYPE(*ptr)->tp_name, (void *)(*ptr));
     }
     printf("]\n");
     fflush(stdout);
@@ -128,9 +141,6 @@ lltrace_instruction(_PyInterpreterFrame *frame,
     if (frame->owner == FRAME_OWNED_BY_CSTACK) {
         return;
     }
-    /* This dump_stack() operation is risky, since the repr() of some
-       objects enters the interpreter recursively. It is also slow.
-       So you might want to comment it out. */
     dump_stack(frame, stack_pointer);
     int oparg = next_instr->op.arg;
     int opcode = next_instr->op.code;
@@ -729,6 +739,13 @@ resume_frame:
                 goto exit_unwind;
             }
             lltrace = r;
+            if (!lltrace) {
+                // When tracing executed uops, also trace bytecode
+                char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
+                if (uop_debug != NULL && *uop_debug >= '0') {
+                    lltrace = (*uop_debug - '0') >= 4;  // TODO: Parse an int and all that
+                }
+            }
         }
         if (lltrace) {
             lltrace_resume_frame(frame);
@@ -896,6 +913,11 @@ exception_unwind:
                 goto exception_unwind;
             }
             /* Resume normal execution */
+#ifdef LLTRACE
+            if (lltrace) {
+                lltrace_resume_frame(frame);
+            }
+#endif
             DISPATCH();
         }
     }
@@ -2017,7 +2039,7 @@ monitor_throw(PyThreadState *tstate,
     if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_PY_THROW)) {
         return;
     }
-    _Py_call_instrumentation_exc0(tstate, PY_MONITORING_EVENT_PY_THROW, frame, instr);
+    do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_PY_THROW);
 }
 
 void
