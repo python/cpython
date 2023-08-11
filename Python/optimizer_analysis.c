@@ -345,7 +345,7 @@ partitionnode_overwrite(_Py_UOpsAbstractInterpContext *ctx,
             for (int i = 0; i < nlocals; i++) {
                 _Py_PARTITIONNODE_t *node_ptr = &(ctx->locals[i]);
                 if (*node_ptr == child_test) {
-                    if (new_root == (_Py_PARTITIONNODE_t)NULL) {
+                    if (new_root == NULL) {
                         // First child encountered! initialise root
                         new_root = node_ptr;
                         *node_ptr = old_dst;
@@ -363,7 +363,7 @@ partitionnode_overwrite(_Py_UOpsAbstractInterpContext *ctx,
             for (int i = 0; i < nstack; i++) {
                 _Py_PARTITIONNODE_t *node_ptr = &(ctx->stack[i]);
                 if (*node_ptr == child_test) {
-                    if (new_root == (_Py_PARTITIONNODE_t)NULL) {
+                    if (new_root == NULL) {
                         // First child encountered! initialise root
                         new_root = node_ptr;
                         *node_ptr = old_dst;
@@ -441,8 +441,6 @@ print_ctx_node(_Py_UOpsAbstractInterpContext *ctx, int i, bool is_printing_stack
     bool is_local = false;
     bool is_stack = false;
 
-    int locals_offset = -1;
-    int stack_offset = -1;
     int parent_idx = -1;
 
     _Py_PARTITIONNODE_t *node = is_printing_stack ? &ctx->stack[i] : &ctx->locals[i];
@@ -636,11 +634,9 @@ remove_duplicate_save_ips(_PyUOpInstruction *trace, int trace_len)
     }
 #endif
 
-    _PyUOpInstruction *temp_trace = PyMem_New(_PyUOpInstruction, trace_len);
-    if (temp_trace == NULL) {
-        return trace_len;
-    }
-    int temp_trace_len = 0;
+    // Don't have to allocate a temporary trace array
+    // because the writer is guaranteed to be behind the reader.
+    int new_temp_len = 0;
 
     _PyUOpInstruction curr;
     for (int i = 0; i < trace_len; i++) {
@@ -648,14 +644,14 @@ remove_duplicate_save_ips(_PyUOpInstruction *trace, int trace_len)
         if (i < trace_len && curr.opcode == SAVE_IP && trace[i+1].opcode == SAVE_IP) {
             continue;
         }
-        temp_trace[temp_trace_len] = curr;
-        temp_trace_len++;
+        trace[new_temp_len] = curr;
+        new_temp_len++;
     }
-    memcpy(trace, temp_trace, temp_trace_len * sizeof(_PyUOpInstruction));
-    PyMem_Free(temp_trace);
 
-    DPRINTF(3, "Removed %d SAVE_IPs\n", trace_len - temp_trace_len);
-    return temp_trace_len;
+
+    DPRINTF(2, "Removed %d SAVE_IPs\n", trace_len - new_temp_len);
+
+    return new_temp_len;
 }
 
 /**
@@ -675,7 +671,6 @@ fix_jump_side_exits(_PyUOpInstruction *trace, int trace_len,
         // Indicates it's a jump target or jump instruction
         if (opcode < 0 && opcode > max_jump_id) {
             opcode = -opcode;
-            int real_oparg = jump_id_to_instruction[opcode].oparg;
             int real_opcode = jump_id_to_instruction[opcode].opcode;
             if (op_is_jump(real_opcode)) {
                 trace[i].opcode = real_opcode;
@@ -696,7 +691,6 @@ fix_jump_side_exits(_PyUOpInstruction *trace, int trace_len,
 
     // Final pass to swap out all the jump target IDs with their actual targets.
     for (int i = 0; i < trace_len; i++) {
-        int oparg = trace[i].oparg;
         int opcode = trace[i].opcode;
         // Indicates it's a jump target or jump instruction
         if (opcode < 0 && opcode > max_jump_id) {
