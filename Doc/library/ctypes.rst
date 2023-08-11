@@ -2032,8 +2032,8 @@ Utility functions
 .. function:: POINTER(type, /)
 
    Create and return a new ctypes pointer type. Pointer types are cached and
-   reused internally, so calling this function repeatedly is cheap. *type*
-   must be a ctypes type.
+   reused internally, so calling this function repeatedly is cheap.
+   *type* must be a ctypes type.
 
 
 .. function:: pointer(obj, /)
