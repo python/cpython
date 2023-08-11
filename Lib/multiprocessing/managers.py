@@ -93,7 +93,7 @@ def dispatch(c, id, methodname, args=(), kwds={}):
     try:
         raise convert_to_error(kind, result)
     finally:
-        del result
+        del result  # break reference cycle
 
 def convert_to_error(kind, result):
     if kind == '#ERROR':
@@ -839,7 +839,7 @@ class BaseProxy(object):
         try:
             raise convert_to_error(kind, result)
         finally:
-            del result
+            del result   # break reference cycle
 
     def _getvalue(self):
         '''

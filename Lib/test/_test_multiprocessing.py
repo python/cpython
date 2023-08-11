@@ -3149,11 +3149,9 @@ class _TestManagerRestart(BaseTestCase):
             if hasattr(manager, "shutdown"):
                 self.addCleanup(manager.shutdown)
 
-#
-# Issue 106558: Manager exceptions should not create cyclic references.
-#
 
 class TestManagerExceptions(unittest.TestCase):
+    # Issue 106558: Manager exceptions avoids creating cyclic references.
     def setUp(self):
         self.mgr = multiprocessing.Manager()
 
