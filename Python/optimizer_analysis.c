@@ -429,7 +429,7 @@ partitionnode_overwrite(_Py_UOpsAbstractInterpContext *ctx,
 
 #ifdef Py_DEBUG
 
-void
+static void
 print_ctx_node(_Py_UOpsAbstractInterpContext *ctx, int i, bool is_printing_stack, int nstack_use, int nstack)
 {
     char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
