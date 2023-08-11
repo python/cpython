@@ -147,6 +147,8 @@ class EffectManager:
     # Track offsets from stack pointer
     min_offset: StackOffset
     final_offset: StackOffset
+    # Link to previous manager
+    pred: "EffectManager | None" = None
 
     def __init__(
         self,
@@ -168,7 +170,8 @@ class EffectManager:
             self.pokes.append(StackItem(offset=self.final_offset.clone(), effect=eff))
             self.final_offset.higher(eff)
 
-        if pred:
+        self.pred = pred
+        while pred:
             # Replace push(x) + pop(y) with copy(x, y).
             # Check that the sources and destinations are disjoint.
             sources: set[str] = set()
@@ -193,6 +196,11 @@ class EffectManager:
                 sources,
                 destinations,
             )
+            # See if we can get more copies of a earlier predecessor.
+            if self.peeks and not pred.pokes and not pred.peeks:
+                pred = pred.pred
+            else:
+                pred = None  # Break
 
     def adjust_deeper(self, eff: StackEffect) -> None:
         for peek in self.peeks:
@@ -305,7 +313,11 @@ def write_single_instr(
 def write_macro_instr(
     mac: MacroInstruction, out: Formatter, family: Family | None
 ) -> None:
-    parts = [part for part in mac.parts if isinstance(part, Component)]
+    parts = [
+        part
+        for part in mac.parts
+        if isinstance(part, Component) and part.instr.name != "SAVE_IP"
+    ]
     out.emit("")
     with out.block(f"TARGET({mac.name})"):
         if mac.predicted:

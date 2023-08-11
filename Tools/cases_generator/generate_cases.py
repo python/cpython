@@ -443,13 +443,6 @@ class Generator(Analyzer):
         expansions: list[tuple[str, int, int]] = []  # [(name, size, offset), ...]
         for part in parts:
             if isinstance(part, Component):
-                # _PUSH_FRAME is super special; it expands to SAVE_IP(next_instr) + _PUSH_FRAME
-                if part.instr.name == "_PUSH_FRAME":
-                    expansions.append(
-                        ("SAVE_IP", OPARG_SIZES["OPARG_SAVE_IP"], cache_offset)
-                    )
-                    expansions.append(("_PUSH_FRAME", OPARG_SIZES["OPARG_FULL"], 0))
-                    continue
                 # All component instructions must be viable uops
                 if not part.instr.is_viable_uop():
                     # This note just reminds us about macros that cannot
@@ -463,7 +456,10 @@ class Generator(Analyzer):
                     )
                     return
                 if not part.active_caches:
-                    size, offset = OPARG_SIZES["OPARG_FULL"], 0
+                    if part.instr.name == "SAVE_IP":
+                        size, offset = OPARG_SIZES["OPARG_SAVE_IP"], cache_offset
+                    else:
+                        size, offset = OPARG_SIZES["OPARG_FULL"], 0
                 else:
                     # If this assert triggers, is_viable_uops() lied
                     assert len(part.active_caches) == 1, (name, part.instr.name)
