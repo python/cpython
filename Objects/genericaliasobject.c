@@ -626,6 +626,7 @@ ga_vectorcall(PyObject *self, PyObject *const *args,
 
 static const char* const attr_exceptions[] = {
     "__class__",
+    "__bases__",
     "__origin__",
     "__args__",
     "__unpacked__",
