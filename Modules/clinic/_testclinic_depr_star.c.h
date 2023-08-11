@@ -92,6 +92,89 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(depr_star_new_clone__doc__,
+"cloned($self, /, a)\n"
+"--\n"
+"\n"
+"Note: Passing positional arguments to _testclinic.cloned() is\n"
+"deprecated. Parameter \'a\' will become a keyword-only parameter in\n"
+"Python 3.14.\n"
+"");
+
+#define DEPR_STAR_NEW_CLONE_METHODDEF    \
+    {"cloned", _PyCFunction_CAST(depr_star_new_clone), METH_FASTCALL|METH_KEYWORDS, depr_star_new_clone__doc__},
+
+static PyObject *
+depr_star_new_clone_impl(PyObject *type, PyObject *a);
+
+static PyObject *
+depr_star_new_clone(PyObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "cloned",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *a;
+
+    // Emit compiler warnings when we get to Python 3.14.
+    #if PY_VERSION_HEX >= 0x030e00C0
+    #  error \
+            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
+            " '_testclinic.DeprStarNew.cloned' to be keyword-only."
+    #elif PY_VERSION_HEX >= 0x030e00A0
+    #  ifdef _MSC_VER
+    #    pragma message ( \
+            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
+            " '_testclinic.DeprStarNew.cloned' to be keyword-only.")
+    #  else
+    #    warning \
+            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
+            " '_testclinic.DeprStarNew.cloned' to be keyword-only."
+    #  endif
+    #endif
+    if (nargs == 1) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing positional arguments to _testclinic.cloned() is "
+                "deprecated. Parameter 'a' will become a keyword-only parameter "
+                "in Python 3.14.", 1))
+        {
+                goto exit;
+        }
+    }
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    a = args[0];
+    return_value = depr_star_new_clone_impl(type, a);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(depr_star_init__doc__,
 "DeprStarInit(a)\n"
 "--\n"
@@ -171,6 +254,89 @@ depr_star_init(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     a = fastargs[0];
     return_value = depr_star_init_impl(self, a);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(depr_star_init_clone__doc__,
+"cloned($self, /, a)\n"
+"--\n"
+"\n"
+"Note: Passing positional arguments to _testclinic.cloned() is\n"
+"deprecated. Parameter \'a\' will become a keyword-only parameter in\n"
+"Python 3.14.\n"
+"");
+
+#define DEPR_STAR_INIT_CLONE_METHODDEF    \
+    {"cloned", _PyCFunction_CAST(depr_star_init_clone), METH_FASTCALL|METH_KEYWORDS, depr_star_init_clone__doc__},
+
+static PyObject *
+depr_star_init_clone_impl(PyObject *self, PyObject *a);
+
+static PyObject *
+depr_star_init_clone(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "cloned",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *a;
+
+    // Emit compiler warnings when we get to Python 3.14.
+    #if PY_VERSION_HEX >= 0x030e00C0
+    #  error \
+            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
+            " '_testclinic.DeprStarInit.cloned' to be keyword-only."
+    #elif PY_VERSION_HEX >= 0x030e00A0
+    #  ifdef _MSC_VER
+    #    pragma message ( \
+            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
+            " '_testclinic.DeprStarInit.cloned' to be keyword-only.")
+    #  else
+    #    warning \
+            "In _testclinic.c, update parameter(s) 'a' in the clinic input of" \
+            " '_testclinic.DeprStarInit.cloned' to be keyword-only."
+    #  endif
+    #endif
+    if (nargs == 1) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing positional arguments to _testclinic.cloned() is "
+                "deprecated. Parameter 'a' will become a keyword-only parameter "
+                "in Python 3.14.", 1))
+        {
+                goto exit;
+        }
+    }
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    a = args[0];
+    return_value = depr_star_init_clone_impl(self, a);
 
 exit:
     return return_value;
@@ -971,4 +1137,4 @@ depr_star_pos2_len2_with_kwd(PyObject *module, PyObject *const *args, Py_ssize_t
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=18ab056f6cc06d7e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=99335a5f23ceb368 input=a9049054013a1b77]*/

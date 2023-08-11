@@ -2919,6 +2919,17 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.DeprStarNew(None)
         self.assertEqual(cm.filename, __file__)
 
+    def test_depr_star_new_cloned(self):
+        regex = re.escape(
+            "Passing positional arguments to _testclinic.DeprStarNew.cloned() "
+            "is deprecated. Parameter 'a' will become a keyword-only parameter "
+            "in Python 3.14."
+        )
+        obj = ac_tester.DeprStarNew(a=None)
+        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+            obj.cloned(None)
+        self.assertEqual(cm.filename, __file__)
+
     def test_depr_star_init(self):
         regex = re.escape(
             "Passing positional arguments to _testclinic.DeprStarInit() is "
@@ -2927,6 +2938,17 @@ class ClinicFunctionalTest(unittest.TestCase):
         )
         with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
             ac_tester.DeprStarInit(None)
+        self.assertEqual(cm.filename, __file__)
+
+    def test_depr_star_init_cloned(self):
+        regex = re.escape(
+            "Passing positional arguments to _testclinic.DeprStarInit.cloned() "
+            "is deprecated. Parameter 'a' will become a keyword-only parameter "
+            "in Python 3.14."
+        )
+        obj = ac_tester.DeprStarInit(a=None)
+        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+            obj.cloned(None)
         self.assertEqual(cm.filename, __file__)
 
     def test_depr_star_pos0_len1(self):
