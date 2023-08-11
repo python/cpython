@@ -2005,7 +2005,7 @@ static PyObject *
 _winapi_BatchedWaitForMultipleObjects_impl(PyObject *module,
                                            PyObject *handle_seq,
                                            BOOL wait_all, DWORD milliseconds)
-/*[clinic end generated code: output=d21c1a4ad0a252fd input=261da6508e51fcbc]*/
+/*[clinic end generated code: output=d21c1a4ad0a252fd input=a9f8dfb7d49624b1]*/
 {
     Py_ssize_t thread_count = 0, handle_count = 0, i, j;
     Py_ssize_t nhandles;
@@ -2079,7 +2079,7 @@ _winapi_BatchedWaitForMultipleObjects_impl(PyObject *module,
             data->handles[data->handle_count++] = cancel_event;
         }
     }
-    
+
     DWORD err = 0;
 
     /* We need to use different strategies when waiting for ALL handles
@@ -2124,7 +2124,7 @@ _winapi_BatchedWaitForMultipleObjects_impl(PyObject *module,
         }
 
         CloseHandle(cancel_event);
-        
+
         Py_END_ALLOW_THREADS
     } else {
         Py_BEGIN_ALLOW_THREADS
@@ -2196,7 +2196,7 @@ _winapi_BatchedWaitForMultipleObjects_impl(PyObject *module,
         CloseHandle(cancel_event);
 
         Py_END_ALLOW_THREADS
-        
+
     }
 
     PyObject *triggered_indices;

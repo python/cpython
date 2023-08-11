@@ -1541,7 +1541,17 @@ PyDoc_STRVAR(_winapi_BatchedWaitForMultipleObjects__doc__,
 "BatchedWaitForMultipleObjects($module, /, handle_seq, wait_all,\n"
 "                              milliseconds=_winapi.INFINITE)\n"
 "--\n"
-"\n");
+"\n"
+"Supports a larger number of handles than WaitForMultipleObjects\n"
+"\n"
+"Note that the handles may be waited on other threads, which could cause\n"
+"issues for objects like mutexes that become associated with the thread\n"
+"that was waiting for them.\n"
+"\n"
+"It is generally recommended to use WaitForMultipleObjects whenever\n"
+"possible, and only switch to BatchedWaitForMultipleObjects for scenarios\n"
+"where you control all the handles involved, such as your own thread pool\n"
+"or files.");
 
 #define _WINAPI_BATCHEDWAITFORMULTIPLEOBJECTS_METHODDEF    \
     {"BatchedWaitForMultipleObjects", _PyCFunction_CAST(_winapi_BatchedWaitForMultipleObjects), METH_FASTCALL|METH_KEYWORDS, _winapi_BatchedWaitForMultipleObjects__doc__},
@@ -1962,4 +1972,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=831a1469791230cd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6a186187b9858247 input=a9049054013a1b77]*/

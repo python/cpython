@@ -994,8 +994,19 @@ if sys.platform == 'win32':
         # returning the first signalled might create starvation issues.)
         L = list(handles)
         ready = []
+        if len(L) > 60:
+            res = [1]
+            while res:
+                try:
+                    res = _winapi.BatchedWaitForMultipleObjects(L, False, timeout)
+                except TimeoutError:
+                    break
+                ready.extend(L[i] for i in res)
+                timeout = 0
+            return ready
         while L:
-            res = _winapi.WaitForMultipleObjects(L, False, timeout)
+            short_L = L[:60] if len(L) > 60 else L
+            res = _winapi.WaitForMultipleObjects(short_L, False, timeout)
             if res == WAIT_TIMEOUT:
                 break
             elif WAIT_OBJECT_0 <= res < WAIT_OBJECT_0 + len(L):
