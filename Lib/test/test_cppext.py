@@ -7,7 +7,6 @@ import unittest
 import subprocess
 import sysconfig
 from test import support
-from test.support import os_helper
 
 
 MS_WINDOWS = (sys.platform == 'win32')

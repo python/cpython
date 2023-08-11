@@ -7366,7 +7366,7 @@ PyDoc_STRVAR(os_pwrite__doc__,
 "Write bytes to a file descriptor starting at a particular offset.\n"
 "\n"
 "Write buffer to fd, starting at offset bytes from the beginning of\n"
-"the file.  Returns the number of bytes writte.  Does not change the\n"
+"the file.  Returns the number of bytes written.  Does not change the\n"
 "current file offset.");
 
 #define OS_PWRITE_METHODDEF    \
@@ -8282,15 +8282,9 @@ os_putenv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("putenv", "argument 1", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     name = args[0];
     if (!PyUnicode_Check(args[1])) {
         _PyArg_BadArgument("putenv", "argument 2", "str", args[1]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[1]) == -1) {
         goto exit;
     }
     value = args[1];
@@ -8367,9 +8361,6 @@ os_unsetenv(PyObject *module, PyObject *arg)
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("unsetenv", "argument", "str", arg);
-        goto exit;
-    }
-    if (PyUnicode_READY(arg) == -1) {
         goto exit;
     }
     name = arg;
@@ -11990,4 +11981,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=02bece83d20d497b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a85a386b212b0631 input=a9049054013a1b77]*/

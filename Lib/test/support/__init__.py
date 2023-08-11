@@ -6,7 +6,7 @@ if __name__ != 'test.support':
 import contextlib
 import functools
 import getpass
-import opcode
+import _opcode
 import os
 import re
 import stat
@@ -64,7 +64,8 @@ __all__ = [
     "run_with_tz", "PGO", "missing_compiler_executable",
     "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
-    "Py_DEBUG", "EXCEEDS_RECURSION_LIMIT",
+    "Py_DEBUG", "EXCEEDS_RECURSION_LIMIT", "C_RECURSION_LIMIT",
+    "skip_on_s390x",
     ]
 
 
@@ -414,7 +415,7 @@ def check_sanitizer(*, address=False, memory=False, ub=False):
     )
     address_sanitizer = (
         '-fsanitize=address' in _cflags or
-        '--with-memory-sanitizer' in _config_args
+        '--with-address-sanitizer' in _config_args
     )
     ub_sanitizer = (
         '-fsanitize=undefined' in _cflags or
@@ -1092,7 +1093,7 @@ def requires_limited_api(test):
 
 def requires_specialization(test):
     return unittest.skipUnless(
-        opcode.ENABLE_SPECIALIZATION, "requires specialization")(test)
+        _opcode.ENABLE_SPECIALIZATION, "requires specialization")(test)
 
 def _filter_suite(suite, pred):
     """Recursively filter test cases in a suite based on a predicate."""
@@ -1813,13 +1814,16 @@ def run_in_subinterp(code):
     return _testcapi.run_in_subinterp(code)
 
 
-def run_in_subinterp_with_config(code, **config):
+def run_in_subinterp_with_config(code, *, own_gil=None, **config):
     """
     Run code in a subinterpreter. Raise unittest.SkipTest if the tracemalloc
     module is enabled.
     """
     _check_tracemalloc()
     import _testcapi
+    if own_gil is not None:
+        assert 'gil' not in config, (own_gil, config)
+        config['gil'] = 2 if own_gil else 1
     return _testcapi.run_in_subinterp_with_config(code, **config)
 
 
@@ -2457,3 +2461,10 @@ def adjust_int_max_str_digits(max_digits):
 
 #For recursion tests, easily exceeds default recursion limit
 EXCEEDS_RECURSION_LIMIT = 5000
+
+# The default C recursion limit (from Include/cpython/pystate.h).
+C_RECURSION_LIMIT = 1500
+
+#Windows doesn't have os.uname() but it doesn't support s390x.
+skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == 's390x',
+                                'skipped on s390x')

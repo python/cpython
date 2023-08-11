@@ -3,6 +3,7 @@ import builtins
 import dis
 import enum
 import os
+import re
 import sys
 import textwrap
 import types
@@ -1083,6 +1084,7 @@ class AST_Tests(unittest.TestCase):
                     return self
         enum._test_simple_enum(_Precedence, ast._Precedence)
 
+    @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     @support.cpython_only
     def test_ast_recursion_limit(self):
         fail_depth = support.EXCEEDS_RECURSION_LIMIT
@@ -1109,6 +1111,32 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(SyntaxError,
             msg="source code string cannot contain null bytes"):
             ast.parse("a\0b")
+
+    def assert_none_check(self, node: type[ast.AST], attr: str, source: str) -> None:
+        with self.subTest(f"{node.__name__}.{attr}"):
+            tree = ast.parse(source)
+            found = 0
+            for child in ast.walk(tree):
+                if isinstance(child, node):
+                    setattr(child, attr, None)
+                    found += 1
+            self.assertEqual(found, 1)
+            e = re.escape(f"field '{attr}' is required for {node.__name__}")
+            with self.assertRaisesRegex(ValueError, f"^{e}$"):
+                compile(tree, "<test>", "exec")
+
+    def test_none_checks(self) -> None:
+        tests = [
+            (ast.alias, "name", "import spam as SPAM"),
+            (ast.arg, "arg", "def spam(SPAM): spam"),
+            (ast.comprehension, "target", "[spam for SPAM in spam]"),
+            (ast.comprehension, "iter", "[spam for spam in SPAM]"),
+            (ast.keyword, "value", "spam(**SPAM)"),
+            (ast.match_case, "pattern", "match spam:\n case SPAM: spam"),
+            (ast.withitem, "context_expr", "with SPAM: spam"),
+        ]
+        for node, attr, source in tests:
+            self.assert_none_check(node, attr, source)
 
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
@@ -1591,6 +1619,8 @@ class ASTValidatorTests(unittest.TestCase):
         f = ast.FunctionDef("x", a, [ast.Pass()], [],
                             ast.Name("x", ast.Store()), None, [])
         self.stmt(f, "must have Load context")
+        f = ast.FunctionDef("x", ast.arguments(), [ast.Pass()])
+        self.stmt(f)
         def fac(args):
             return ast.FunctionDef("x", args, [ast.Pass()], [], None, None, [])
         self._check_arguments(fac, self.stmt)

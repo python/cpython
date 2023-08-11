@@ -1621,6 +1621,22 @@ SyntaxError: Did you mean to use 'from ... import ...' instead?
 Traceback (most recent call last):
 SyntaxError: Did you mean to use 'from ... import ...' instead?
 
+>>> import a, b,c from b
+Traceback (most recent call last):
+SyntaxError: Did you mean to use 'from ... import ...' instead?
+
+>>> import a.y.z, b.y.z, c.y.z from b.y.z
+Traceback (most recent call last):
+SyntaxError: Did you mean to use 'from ... import ...' instead?
+
+>>> import a,b,c from b as bar
+Traceback (most recent call last):
+SyntaxError: Did you mean to use 'from ... import ...' instead?
+
+>>> import a.y.z, b.y.z, c.y.z from b.y.z as bar
+Traceback (most recent call last):
+SyntaxError: Did you mean to use 'from ... import ...' instead?
+
 # Check that we dont raise the "trailing comma" error if there is more
 # input to the left of the valid part that we parsed.
 

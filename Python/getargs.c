@@ -2,8 +2,9 @@
 /* New getargs implementation */
 
 #include "Python.h"
-#include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_dict.h"          // _PyDict_HasOnlyStringKeys()
 #include "pycore_pylifecycle.h"   // _PyArg_Fini
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
 #include <ctype.h>
 #include <float.h>
@@ -824,9 +825,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         if (!PyUnicode_Check(arg))
             return converterr("a unicode character", arg, msgbuf, bufsize);
 
-        if (PyUnicode_READY(arg))
-            RETURN_ERR_OCCURRED;
-
         if (PyUnicode_GET_LENGTH(arg) != 1)
             return converterr("a unicode character", arg, msgbuf, bufsize);
 
@@ -1144,8 +1142,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     case 'U': { /* PyUnicode object */
         PyObject **p = va_arg(*p_va, PyObject **);
         if (PyUnicode_Check(arg)) {
-            if (PyUnicode_READY(arg) == -1)
-                RETURN_ERR_OCCURRED;
             *p = arg;
         }
         else
@@ -1421,20 +1417,6 @@ _PyArg_ParseStackAndKeywords_SizeT(PyObject *const *args, Py_ssize_t nargs, PyOb
     return retval;
 }
 
-
-PyAPI_FUNC(int)
-_PyArg_VaParseTupleAndKeywordsFast(PyObject *args, PyObject *keywords,
-                            struct _PyArg_Parser *parser, va_list va)
-{
-    int retval;
-    va_list lva;
-
-    va_copy(lva, va);
-
-    retval = vgetargskeywordsfast(args, keywords, parser, &lva, 0);
-    va_end(lva);
-    return retval;
-}
 
 static void
 error_unexpected_keyword_arg(PyObject *kwargs, PyObject *kwnames, PyObject *kwtuple, const char *fname)

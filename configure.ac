@@ -2,13 +2,20 @@ dnl ***************************************************
 dnl * Please run autoreconf -if to test your changes! *
 dnl ***************************************************
 dnl
-dnl Python's configure.ac file requires autoconf 2.69 and autoconf-archive.
+dnl Python's configure script requires autoconf 2.71, autoconf-archive,
+dnl pkgconf's m4 macros.
+dnl
+dnl It is recommended to use a cpython_autoconf container to regenerate the
+dnl configure script:
+dnl
+dnl podman run --rm --pull=always -v $(pwd):/src:Z quay.io/tiran/cpython_autoconf:271
+dnl docker run --rm --pull=always -v $(pwd):/src quay.io/tiran/cpython_autoconf:271
 dnl
 
 # Set VERSION so we only need to edit in one place (i.e., here)
 m4_define([PYTHON_VERSION], [3.13])
 
-AC_PREREQ([2.69])
+AC_PREREQ([2.71])
 
 AC_INIT([python],[PYTHON_VERSION],[https://github.com/python/cpython/issues/])
 
@@ -1072,7 +1079,11 @@ cat > conftest.c <<EOF
 #  if defined(__EMSCRIPTEN__)
 	wasm32-emscripten
 #  elif defined(__wasi__)
+#    if defined(_REENTRANT)
+	wasm32-wasi-threads
+#    else
 	wasm32-wasi
+#    endif
 #  else
 #    error unknown wasm32 platform
 #  endif
@@ -1265,7 +1276,7 @@ AC_ARG_ENABLE([wasm-pthreads],
 [
   AS_CASE([$ac_sys_system],
     [Emscripten], [],
-    [WASI], [AC_MSG_ERROR([WASI threading is not implemented yet.])],
+    [WASI], [],
     [AC_MSG_ERROR([--enable-wasm-pthreads only applies to Emscripten and WASI])]
   )
 ], [
@@ -2302,6 +2313,18 @@ AS_CASE([$ac_sys_system],
     LIBS="$LIBS -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
     echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
 
+    AS_VAR_IF([enable_wasm_pthreads], [yes], [
+      # Note: update CFLAGS because ac_compile/ac_link needs this too.
+      # without this, configure fails to find pthread_create, sem_init,
+      # etc because they are only available in the sysroot for
+      # wasm32-wasi-threads.
+      AS_VAR_APPEND([CFLAGS], [" -target wasm32-wasi-threads -pthread"])
+      AS_VAR_APPEND([CFLAGS_NODIST], [" -target wasm32-wasi-threads -pthread"])
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -target wasm32-wasi-threads -pthread"])
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--import-memory"])
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--max-memory=10485760"])
+    ])
+
     dnl increase initial memory and stack size, move stack first
     dnl https://github.com/WebAssembly/wasi-libc/issues/233
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -z stack-size=524288 -Wl,--stack-first -Wl,--initial-memory=10485760"])
@@ -2609,7 +2632,7 @@ yes)
         AC_MSG_RESULT([$MACOSX_DEPLOYMENT_TARGET])
 
         AC_MSG_CHECKING([if specified universal architectures work])
-        AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>]], [[printf("%d", 42);]])],
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[@%:@include <stdio.h>]], [[printf("%d", 42);]])],
             [AC_MSG_RESULT([yes])],
             [AC_MSG_RESULT([no])
              AC_MSG_ERROR([check config.log and use the '--with-universal-archs' option])
@@ -2633,6 +2656,9 @@ yes)
 esac
 
 case "$CC" in
+*mpicc*)
+    CFLAGS_NODIST="$CFLAGS_NODIST"
+    ;;
 *icc*)
     # ICC needs -fp-model strict or floats behave badly
     CFLAGS_NODIST="$CFLAGS_NODIST -fp-model strict"
@@ -2822,7 +2848,7 @@ AC_DEFINE([STDC_HEADERS], [1],
 # checks for header files
 AC_CHECK_HEADERS([ \
   alloca.h asm/types.h bluetooth.h conio.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
-  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/memfd.h \
+  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/limits.h linux/memfd.h \
   linux/random.h linux/soundcard.h \
   linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
@@ -2854,7 +2880,8 @@ AC_CHECK_HEADERS([net/if.h], [], [],
 ])
 
 # On Linux, netlink.h requires asm/types.h
-AC_CHECK_HEADERS([linux/netlink.h], [], [], [
+# On FreeBSD, netlink.h is located in netlink/netlink.h
+AC_CHECK_HEADERS([linux/netlink.h netlink/netlink.h], [], [], [
 #ifdef HAVE_ASM_TYPES_H
 #include <asm/types.h>
 #endif
@@ -3050,7 +3077,7 @@ fi
 
 AC_CACHE_CHECK([for pthread_t], [ac_cv_have_pthread_t], [
 AC_COMPILE_IFELSE([
-  AC_LANG_PROGRAM([[#include <pthread.h>]], [[pthread_t x; x = *(pthread_t*)0;]])
+  AC_LANG_PROGRAM([[@%:@include <pthread.h>]], [[pthread_t x; x = *(pthread_t*)0;]])
 ], [ac_cv_have_pthread_t=yes], [ac_cv_have_pthread_t=no])
 ])
 AS_VAR_IF([ac_cv_have_pthread_t], [yes], [
@@ -3063,11 +3090,11 @@ AS_VAR_IF([ac_cv_have_pthread_t], [yes], [
 
 # Issue #25658: POSIX hasn't defined that pthread_key_t is compatible with int.
 # This checking will be unnecessary after removing deprecated TLS API.
-AC_CHECK_SIZEOF([pthread_key_t], [], [[#include <pthread.h>]])
+AC_CHECK_SIZEOF([pthread_key_t], [], [[@%:@include <pthread.h>]])
 AC_CACHE_CHECK([whether pthread_key_t is compatible with int], [ac_cv_pthread_key_t_is_arithmetic_type], [
 if test "$ac_cv_sizeof_pthread_key_t" -eq "$ac_cv_sizeof_int" ; then
   AC_COMPILE_IFELSE(
-    [AC_LANG_PROGRAM([[#include <pthread.h>]], [[pthread_key_t k; k * 1;]])],
+    [AC_LANG_PROGRAM([[@%:@include <pthread.h>]], [[pthread_key_t k; k * 1;]])],
     [ac_cv_pthread_key_t_is_arithmetic_type=yes],
     [ac_cv_pthread_key_t_is_arithmetic_type=no]
   )
@@ -3608,7 +3635,7 @@ AC_CHECK_LIB([intl], [textdomain],
 case "$ac_sys_system" in
 	AIX*)	AC_MSG_CHECKING([for genuine AIX C++ extensions support])
 		AC_LINK_IFELSE([
-		  AC_LANG_PROGRAM([[#include <load.h>]],
+		  AC_LANG_PROGRAM([[@%:@include <load.h>]],
 				  [[loadAndInit("", 0, "")]])
 		],[
 		  AC_DEFINE([AIX_GENUINE_CPLUSPLUS], [1],
@@ -3826,9 +3853,9 @@ AS_VAR_IF([have_libffi], [yes], [
     CFLAGS="$LIBFFI_CFLAGS $CFLAGS"
     LDFLAGS="$LIBFFI_LIBS $LDFLAGS"
 
-    PY_CHECK_FUNC([ffi_prep_cif_var], [#include <ffi.h>])
-    PY_CHECK_FUNC([ffi_prep_closure_loc], [#include <ffi.h>])
-    PY_CHECK_FUNC([ffi_closure_alloc], [#include <ffi.h>])
+    PY_CHECK_FUNC([ffi_prep_cif_var], [@%:@include <ffi.h>])
+    PY_CHECK_FUNC([ffi_prep_closure_loc], [@%:@include <ffi.h>])
+    PY_CHECK_FUNC([ffi_closure_alloc], [@%:@include <ffi.h>])
   ])
 ])
 
@@ -3945,7 +3972,7 @@ PY_CHECK_EMSCRIPTEN_PORT([LIBSQLITE3], [-sUSE_SQLITE3])
 
 dnl Check for SQLite library. Use pkg-config if available.
 PKG_CHECK_MODULES(
-  [LIBSQLITE3], [sqlite3 >= 3.7.15], [], [
+  [LIBSQLITE3], [sqlite3 >= 3.15.2], [], [
     LIBSQLITE3_CFLAGS=${LIBSQLITE3_CFLAGS-""}
     LIBSQLITE3_LIBS=${LIBSQLITE3_LIBS-"-lsqlite3"}
   ]
@@ -3971,8 +3998,8 @@ dnl hence CPPFLAGS instead of CFLAGS.
     AC_COMPILE_IFELSE([
       AC_LANG_PROGRAM([
         #include <sqlite3.h>
-        #if SQLITE_VERSION_NUMBER < 3007015
-        #  error "SQLite 3.7.15 or higher required"
+        #if SQLITE_VERSION_NUMBER < 3015002
+        #  error "SQLite 3.15.2 or higher required"
         #endif
       ], [])
     ], [
@@ -4438,7 +4465,7 @@ AC_ARG_ENABLE([ipv6],
 dnl the check does not work on cross compilation case...
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ /* AF_INET6 available check */
 #include <sys/types.h>
-#include <sys/socket.h>]],
+@%:@include <sys/socket.h>]],
 [[int domain = AF_INET6;]])],[
   ipv6=yes
 ],[
@@ -4455,7 +4482,7 @@ if test "$ipv6" = "yes"; then
 	AC_MSG_CHECKING([if RFC2553 API is available])
 	AC_COMPILE_IFELSE([
 	  AC_LANG_PROGRAM([[#include <sys/types.h>
-#include <netinet/in.h>]],
+@%:@include <netinet/in.h>]],
 			  [[struct sockaddr_in6 x;
 			    x.sin6_scope_id;]])
 	],[
@@ -4487,7 +4514,7 @@ if test "$ipv6" = "yes"; then
 #include <netinet/in.h>
 #ifdef IPV6_INRIA_VERSION
 yes
-#endif],
+@%:@endif],
 				[ipv6type=$i])
 			;;
 		kame)
@@ -4496,7 +4523,7 @@ yes
 #include <netinet/in.h>
 #ifdef __KAME__
 yes
-#endif],
+@%:@endif],
 				[ipv6type=$i;
 				ipv6lib=inet6
 				ipv6libdir=/usr/local/v6/lib
@@ -4508,7 +4535,7 @@ yes
 #include <features.h>
 #if defined(__GLIBC__) && ((__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1) || (__GLIBC__ > 2))
 yes
-#endif],
+@%:@endif],
 				[ipv6type=$i;
 				ipv6trylibc=yes])
 			;;
@@ -4534,7 +4561,7 @@ yes
 #include <sys/param.h>
 #ifdef _TOSHIBA_INET6
 yes
-#endif],
+@%:@endif],
 				[ipv6type=$i;
 				ipv6lib=inet6;
 				ipv6libdir=/usr/local/v6/lib])
@@ -4544,7 +4571,7 @@ yes
 #include </usr/local/v6/include/sys/v6config.h>
 #ifdef __V6D__
 yes
-#endif],
+@%:@endif],
 				[ipv6type=$i;
 				ipv6lib=v6;
 				ipv6libdir=/usr/local/v6/lib;
@@ -4555,7 +4582,7 @@ yes
 #include <sys/param.h>
 #ifdef _ZETA_MINAMI_INET6
 yes
-#endif],
+@%:@endif],
 				[ipv6type=$i;
 				ipv6lib=inet6;
 				ipv6libdir=/usr/local/v6/lib])
@@ -4588,7 +4615,7 @@ fi
 
 AC_CACHE_CHECK([CAN_RAW_FD_FRAMES], [ac_cv_can_raw_fd_frames], [
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ /* CAN_RAW_FD_FRAMES available check */
-#include <linux/can/raw.h>]],
+@%:@include <linux/can/raw.h>]],
 [[int can_raw_fd_frames = CAN_RAW_FD_FRAMES;]])],
 [ac_cv_can_raw_fd_frames=yes],
 [ac_cv_can_raw_fd_frames=no])
@@ -4600,7 +4627,7 @@ AS_VAR_IF([ac_cv_can_raw_fd_frames], [yes], [
 
 AC_CACHE_CHECK([for CAN_RAW_JOIN_FILTERS], [ac_cv_can_raw_join_filters], [
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <linux/can/raw.h>]],
+@%:@include <linux/can/raw.h>]],
 [[int can_raw_join_filters = CAN_RAW_JOIN_FILTERS;]])],
 [ac_cv_can_raw_join_filters=yes],
 [ac_cv_can_raw_join_filters=no])
@@ -4847,14 +4874,14 @@ AC_CHECK_DECL([dirfd],
 
 # For some functions, having a definition is not sufficient, since
 # we want to take their address.
-PY_CHECK_FUNC([chroot], [#include <unistd.h>])
-PY_CHECK_FUNC([link], [#include <unistd.h>])
-PY_CHECK_FUNC([symlink], [#include <unistd.h>])
-PY_CHECK_FUNC([fchdir], [#include <unistd.h>])
-PY_CHECK_FUNC([fsync], [#include <unistd.h>])
-PY_CHECK_FUNC([fdatasync], [#include <unistd.h>])
-PY_CHECK_FUNC([epoll_create], [#include <sys/epoll.h>], [HAVE_EPOLL])
-PY_CHECK_FUNC([epoll_create1], [#include <sys/epoll.h>])
+PY_CHECK_FUNC([chroot], [@%:@include <unistd.h>])
+PY_CHECK_FUNC([link], [@%:@include <unistd.h>])
+PY_CHECK_FUNC([symlink], [@%:@include <unistd.h>])
+PY_CHECK_FUNC([fchdir], [@%:@include <unistd.h>])
+PY_CHECK_FUNC([fsync], [@%:@include <unistd.h>])
+PY_CHECK_FUNC([fdatasync], [@%:@include <unistd.h>])
+PY_CHECK_FUNC([epoll_create], [@%:@include <sys/epoll.h>], [HAVE_EPOLL])
+PY_CHECK_FUNC([epoll_create1], [@%:@include <sys/epoll.h>])
 PY_CHECK_FUNC([kqueue],[
 #include <sys/types.h>
 #include <sys/event.h>
@@ -4864,7 +4891,7 @@ PY_CHECK_FUNC([prlimit], [
 #include <sys/resource.h>
 ])
 
-PY_CHECK_FUNC([_dyld_shared_cache_contains_path], [#include <mach-o/dyld.h>], [HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH])
+PY_CHECK_FUNC([_dyld_shared_cache_contains_path], [@%:@include <mach-o/dyld.h>], [HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH])
 
 PY_CHECK_FUNC([memfd_create], [
 #ifdef HAVE_SYS_MMAN_H
@@ -4887,12 +4914,12 @@ PY_CHECK_FUNC([eventfd], [
 # address to avoid compiler warnings and potential miscompilations
 # because of the missing prototypes.
 
-PY_CHECK_FUNC([ctermid_r], [#include <stdio.h>])
+PY_CHECK_FUNC([ctermid_r], [@%:@include <stdio.h>])
 
 AC_CACHE_CHECK([for flock declaration], [ac_cv_flock_decl],
   [AC_COMPILE_IFELSE(
     [AC_LANG_PROGRAM(
-      [#include <sys/file.h>],
+      [@%:@include <sys/file.h>],
       [void* p = flock]
     )],
     [ac_cv_flock_decl=yes],
@@ -4901,16 +4928,15 @@ AC_CACHE_CHECK([for flock declaration], [ac_cv_flock_decl],
 ])
 dnl Linking with libbsd may be necessary on AIX for flock function.
 AS_VAR_IF([ac_cv_flock_decl], [yes],
-  AC_CHECK_FUNCS([flock])
-  AC_CHECK_LIB([bsd], [flock], [FCNTL_LIBS="-lbsd"])
-)
+  [AC_CHECK_FUNCS([flock], [],
+    [AC_CHECK_LIB([bsd], [flock], [FCNTL_LIBS="-lbsd"])])])
 
-PY_CHECK_FUNC([getpagesize], [#include <unistd.h>])
+PY_CHECK_FUNC([getpagesize], [@%:@include <unistd.h>])
 
 AC_CACHE_CHECK([for broken unsetenv], [ac_cv_broken_unsetenv],
   [AC_COMPILE_IFELSE(
     [AC_LANG_PROGRAM(
-      [#include <stdlib.h>],
+      [@%:@include <stdlib.h>],
       [int res = unsetenv("DUMMY")])],
     [ac_cv_broken_unsetenv=no],
     [ac_cv_broken_unsetenv=yes]
@@ -5038,7 +5064,7 @@ PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
 ])
 
 dnl PY_CHECK_NETDB_FUNC(FUNCTION)
-AC_DEFUN([PY_CHECK_NETDB_FUNC], [PY_CHECK_FUNC([$1], [#include <netdb.h>])])
+AC_DEFUN([PY_CHECK_NETDB_FUNC], [PY_CHECK_FUNC([$1], [@%:@include <netdb.h>])])
 
 PY_CHECK_NETDB_FUNC([hstrerror])
 dnl not available in WASI yet
@@ -5305,12 +5331,6 @@ fi
 
 AC_CHECK_FUNCS([getnameinfo])
 
-dnl autoconf 2.71 deprecates AC_HEADER_TIME, keep for backwards compatibility
-dnl TIME_WITH_SYS_TIME works on all supported systems that have sys/time.h
-AS_VAR_IF([ac_cv_header_sys_time_h], [yes], [
-  AC_DEFINE([TIME_WITH_SYS_TIME], 1, [Define to 1 if you can safely include both <sys/time.h> and <time.h>.])
-])
-
 # checks for structures
 AC_STRUCT_TM
 AC_STRUCT_TIMEZONE
@@ -5325,10 +5345,10 @@ AC_CHECK_MEMBERS([struct passwd.pw_gecos, struct passwd.pw_passwd], [], [], [[
   #include <pwd.h>
 ]])
 # Issue #21085: In Cygwin, siginfo_t does not have si_band field.
-AC_CHECK_MEMBERS([siginfo_t.si_band], [], [], [[#include <signal.h>]])
+AC_CHECK_MEMBERS([siginfo_t.si_band], [], [], [[@%:@include <signal.h>]])
 
 AC_CACHE_CHECK([for time.h that defines altzone], [ac_cv_header_time_altzone], [
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]], [[return altzone;]])],
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[@%:@include <time.h>]], [[return altzone;]])],
     [ac_cv_header_time_altzone=yes],
     [ac_cv_header_time_altzone=no])
   ])
@@ -5338,7 +5358,7 @@ if test $ac_cv_header_time_altzone = yes; then
 fi
 
 AC_CACHE_CHECK([for addrinfo], [ac_cv_struct_addrinfo],
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <netdb.h>]], [[struct addrinfo a]])],
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[@%:@include <netdb.h>]], [[struct addrinfo a]])],
   [ac_cv_struct_addrinfo=yes],
   [ac_cv_struct_addrinfo=no]))
 if test $ac_cv_struct_addrinfo = yes; then
@@ -5348,7 +5368,7 @@ fi
 AC_CACHE_CHECK([for sockaddr_storage], [ac_cv_struct_sockaddr_storage],
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #		include <sys/types.h>
-#		include <sys/socket.h>]], [[struct sockaddr_storage s]])],
+@%:@		include <sys/socket.h>]], [[struct sockaddr_storage s]])],
   [ac_cv_struct_sockaddr_storage=yes],
   [ac_cv_struct_sockaddr_storage=no]))
 if test $ac_cv_struct_sockaddr_storage = yes; then
@@ -5360,7 +5380,7 @@ AC_CACHE_CHECK([for sockaddr_alg], [ac_cv_struct_sockaddr_alg],
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #		include <sys/types.h>
 #		include <sys/socket.h>
-#		include <linux/if_alg.h>]], [[struct sockaddr_alg s]])],
+@%:@		include <linux/if_alg.h>]], [[struct sockaddr_alg s]])],
   [ac_cv_struct_sockaddr_alg=yes],
   [ac_cv_struct_sockaddr_alg=no]))
 if test $ac_cv_struct_sockaddr_alg = yes; then
@@ -5399,7 +5419,7 @@ PY_CHECK_FUNC([socketpair], [
 # check if sockaddr has sa_len member
 AC_CACHE_CHECK([if sockaddr has sa_len member], [ac_cv_struct_sockaddr_sa_len], [
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
-#include <sys/socket.h>]], [[struct sockaddr x;
+@%:@include <sys/socket.h>]], [[struct sockaddr x;
 x.sa_len = 0;]])],
   [ac_cv_struct_sockaddr_sa_len=yes], [ac_cv_struct_sockaddr_sa_len=no])
 ])
@@ -5733,7 +5753,7 @@ AS_VAR_IF([ac_cv_broken_sem_getvalue], [yes], [
   )
 ])
 
-AC_CHECK_DECLS([RTLD_LAZY, RTLD_NOW, RTLD_GLOBAL, RTLD_LOCAL, RTLD_NODELETE, RTLD_NOLOAD, RTLD_DEEPBIND, RTLD_MEMBER], [], [], [[#include <dlfcn.h>]])
+AC_CHECK_DECLS([RTLD_LAZY, RTLD_NOW, RTLD_GLOBAL, RTLD_LOCAL, RTLD_NODELETE, RTLD_NOLOAD, RTLD_DEEPBIND, RTLD_MEMBER], [], [], [[@%:@include <dlfcn.h>]])
 
 # determine what size digit to use for Python's longs
 AC_MSG_CHECKING([digit size for Python's longs])
@@ -5950,7 +5970,7 @@ fi
 
 # check for getc_unlocked and related locking functions
 AC_CACHE_CHECK([for getc_unlocked() and friends], [ac_cv_have_getc_unlocked], [
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>]], [[
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[@%:@include <stdio.h>]], [[
 	FILE *f = fopen("/dev/null", "r");
 	flockfile(f);
 	getc_unlocked(f);
@@ -6256,7 +6276,7 @@ fi
 
 # Look for subsecond timestamps in struct stat
 AC_CACHE_CHECK([for tv_nsec in struct stat], [ac_cv_stat_tv_nsec],
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/stat.h>]], [[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[@%:@include <sys/stat.h>]], [[
 struct stat st;
 st.st_mtim.tv_nsec = 1;
 ]])],
@@ -6270,7 +6290,7 @@ fi
 
 # Look for BSD style subsecond timestamps in struct stat
 AC_CACHE_CHECK([for tv_nsec2 in struct stat], [ac_cv_stat_tv_nsec2],
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/stat.h>]], [[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[@%:@include <sys/stat.h>]], [[
 struct stat st;
 st.st_mtimespec.tv_nsec = 1;
 ]])],
@@ -6413,7 +6433,7 @@ AC_CHECK_HEADERS([term.h], [], [], [
 
 # On HP/UX 11.0, mvwdelch is a block with a return statement
 AC_CACHE_CHECK([whether mvwdelch is an expression], [ac_cv_mvwdelch_is_expression],
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[@%:@include <curses.h>]], [[
   int rtn;
   rtn = mvwdelch(0,0,0);
 ]])],
@@ -6457,7 +6477,7 @@ AC_DEFUN([PY_CHECK_CURSES_FUNC],
     [py_var],
     [AC_COMPILE_IFELSE(
       [AC_LANG_PROGRAM(
-        [#include <curses.h>], [
+        [@%:@include <curses.h>], [
         #ifndef $1
         void *x=$1
         #endif
@@ -6627,7 +6647,6 @@ SRCDIRS="\
   Modules/_hacl \
   Modules/_io \
   Modules/_multiprocessing \
-  Modules/_sha3 \
   Modules/_sqlite \
   Modules/_sre \
   Modules/_testcapi \
@@ -7296,7 +7315,9 @@ PY_STDLIB_MOD([syslog], [], [test "$ac_cv_header_syslog_h" = yes])
 PY_STDLIB_MOD([termios], [], [test "$ac_cv_header_termios_h" = yes])
 
 dnl _elementtree loads libexpat via CAPI hook in pyexpat
-PY_STDLIB_MOD([pyexpat], [], [], [$LIBEXPAT_CFLAGS], [$LIBEXPAT_LDFLAGS])
+PY_STDLIB_MOD([pyexpat],
+  [], [test "$ac_cv_header_sys_time_h" = "yes"],
+  [$LIBEXPAT_CFLAGS], [$LIBEXPAT_LDFLAGS])
 PY_STDLIB_MOD([_elementtree], [], [], [$LIBEXPAT_CFLAGS], [])
 PY_STDLIB_MOD_SIMPLE([_codecs_cn])
 PY_STDLIB_MOD_SIMPLE([_codecs_hk])

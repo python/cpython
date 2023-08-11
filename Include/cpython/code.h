@@ -10,13 +10,13 @@ extern "C" {
 
 
 /* Count of all "real" monitoring events (not derived from other events) */
-#define PY_MONITORING_UNGROUPED_EVENTS 14
+#define _PY_MONITORING_UNGROUPED_EVENTS 15
 /* Count of all  monitoring events */
-#define PY_MONITORING_EVENTS 16
+#define _PY_MONITORING_EVENTS 17
 
 /* Table of which tools are active for each monitored event. */
 typedef struct _Py_Monitors {
-    uint8_t tools[PY_MONITORING_UNGROUPED_EVENTS];
+    uint8_t tools[_PY_MONITORING_UNGROUPED_EVENTS];
 } _Py_Monitors;
 
 /* Each instruction in a code object is a fixed-width value,
@@ -75,6 +75,13 @@ typedef struct {
     uint8_t original_opcode;
     int8_t line_delta;
 } _PyCoLineInstrumentationData;
+
+
+typedef struct {
+    int size;
+    int capacity;
+    struct _PyExecutorObject *executors[1];
+} _PyExecutorArray;
 
 /* Main data structure used for instrumentation.
  * This is allocated when needed for instrumentation
@@ -153,6 +160,7 @@ typedef struct {
     PyObject *co_qualname;        /* unicode (qualname, for reference) */      \
     PyObject *co_linetable;       /* bytes object that holds location info */  \
     PyObject *co_weakreflist;     /* to support weakrefs to code objects */    \
+    _PyExecutorArray *co_executors;      /* executors from optimizer */        \
     _PyCoCached *_co_cached;      /* cached co_* attributes */                 \
     uint64_t _co_instrumentation_version; /* current instrumentation version */  \
     _PyCoMonitoringData *_co_monitoring; /* Monitoring data */                 \
