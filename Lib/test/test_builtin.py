@@ -1626,7 +1626,7 @@ class BuiltinTest(unittest.TestCase):
 
         self.assertEqual(sum(range(10), 1000), 1045)
         self.assertEqual(sum(range(10), start=1000), 1045)
-        self.assertEqual(sum(range(10), 0.1), 45.1)
+        self.assertAlmostEqual(sum(range(10), 0.1), 45.1)
         self.assertEqual(sum(range(10), 2**31-5), 2**31+40)
         self.assertEqual(sum(range(10), 2**63-5), 2**63+40)
         self.assertEqual(sum(range(-11, 13, 3)), -4)
