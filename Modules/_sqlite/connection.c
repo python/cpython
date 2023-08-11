@@ -140,8 +140,8 @@ sqlite3_int64_converter(PyObject *obj, sqlite3_int64 *result)
 #undef clinic_state
 
 /*[clinic input]
-module _sqlite3
-class _sqlite3.Connection "pysqlite_Connection *" "clinic_state()->ConnectionType"
+module sqlite3
+class sqlite3.Connection "pysqlite_Connection *" "clinic_state()->ConnectionType"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=67369db2faf80891]*/
 
@@ -214,7 +214,7 @@ class sqlite3_int64_converter(CConverter):
 
 // NB: This needs to be in sync with the sqlite3.connect docstring
 /*[clinic input]
-_sqlite3.Connection.__init__ as pysqlite_connection_init
+sqlite3.Connection.__init__ as pysqlite_connection_init
 
     database: object
     timeout: double = 5.0
@@ -451,7 +451,7 @@ connection_dealloc(pysqlite_Connection *self)
 }
 
 /*[clinic input]
-_sqlite3.Connection.cursor as pysqlite_connection_cursor
+sqlite3.Connection.cursor as pysqlite_connection_cursor
 
     factory: object = NULL
 
@@ -494,7 +494,7 @@ pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyObject *factory)
 }
 
 /*[clinic input]
-_sqlite3.Connection.blobopen as blobopen
+sqlite3.Connection.blobopen as blobopen
 
     table: str
         Table name.
@@ -568,7 +568,7 @@ error:
 }
 
 /*[clinic input]
-_sqlite3.Connection.close as pysqlite_connection_close
+sqlite3.Connection.close as pysqlite_connection_close
 
 Close the database connection.
 
@@ -622,7 +622,7 @@ int pysqlite_check_connection(pysqlite_Connection* con)
 }
 
 /*[clinic input]
-_sqlite3.Connection.commit as pysqlite_connection_commit
+sqlite3.Connection.commit as pysqlite_connection_commit
 
 Commit any pending transaction to the database.
 
@@ -656,7 +656,7 @@ pysqlite_connection_commit_impl(pysqlite_Connection *self)
 }
 
 /*[clinic input]
-_sqlite3.Connection.rollback as pysqlite_connection_rollback
+sqlite3.Connection.rollback as pysqlite_connection_rollback
 
 Roll back to the start of any pending transaction.
 
@@ -1054,7 +1054,7 @@ destructor_callback(void *ctx)
 }
 
 /*[clinic input]
-_sqlite3.Connection.create_function as pysqlite_connection_create_function
+sqlite3.Connection.create_function as pysqlite_connection_create_function
 
     cls: defining_class
     /
@@ -1192,7 +1192,7 @@ value_callback(sqlite3_context *context)
 }
 
 /*[clinic input]
-_sqlite3.Connection.create_window_function as create_window_function
+sqlite3.Connection.create_window_function as create_window_function
 
     cls: defining_class
     name: str
@@ -1256,7 +1256,7 @@ create_window_function_impl(pysqlite_Connection *self, PyTypeObject *cls,
 #endif
 
 /*[clinic input]
-_sqlite3.Connection.create_aggregate as pysqlite_connection_create_aggregate
+sqlite3.Connection.create_aggregate as pysqlite_connection_create_aggregate
 
     cls: defining_class
     /
@@ -1416,7 +1416,7 @@ exit:
 }
 
 /*[clinic input]
-_sqlite3.Connection.set_authorizer as pysqlite_connection_set_authorizer
+sqlite3.Connection.set_authorizer as pysqlite_connection_set_authorizer
 
     cls: defining_class
     /
@@ -1458,7 +1458,7 @@ pysqlite_connection_set_authorizer_impl(pysqlite_Connection *self,
 }
 
 /*[clinic input]
-_sqlite3.Connection.set_progress_handler as pysqlite_connection_set_progress_handler
+sqlite3.Connection.set_progress_handler as pysqlite_connection_set_progress_handler
 
     cls: defining_class
     /
@@ -1495,7 +1495,7 @@ pysqlite_connection_set_progress_handler_impl(pysqlite_Connection *self,
 }
 
 /*[clinic input]
-_sqlite3.Connection.set_trace_callback as pysqlite_connection_set_trace_callback
+sqlite3.Connection.set_trace_callback as pysqlite_connection_set_trace_callback
 
     cls: defining_class
     /
@@ -1539,7 +1539,7 @@ pysqlite_connection_set_trace_callback_impl(pysqlite_Connection *self,
 
 #ifdef PY_SQLITE_ENABLE_LOAD_EXTENSION
 /*[clinic input]
-_sqlite3.Connection.enable_load_extension as pysqlite_connection_enable_load_extension
+sqlite3.Connection.enable_load_extension as pysqlite_connection_enable_load_extension
 
     enable as onoff: bool
     /
@@ -1575,7 +1575,7 @@ pysqlite_connection_enable_load_extension_impl(pysqlite_Connection *self,
 }
 
 /*[clinic input]
-_sqlite3.Connection.load_extension as pysqlite_connection_load_extension
+sqlite3.Connection.load_extension as pysqlite_connection_load_extension
 
     name as extension_name: str
     /
@@ -1707,7 +1707,7 @@ pysqlite_connection_call(pysqlite_Connection *self, PyObject *args,
 }
 
 /*[clinic input]
-_sqlite3.Connection.execute as pysqlite_connection_execute
+sqlite3.Connection.execute as pysqlite_connection_execute
 
     sql: unicode
     parameters: object = NULL
@@ -1740,7 +1740,7 @@ error:
 }
 
 /*[clinic input]
-_sqlite3.Connection.executemany as pysqlite_connection_executemany
+sqlite3.Connection.executemany as pysqlite_connection_executemany
 
     sql: unicode
     parameters: object
@@ -1773,7 +1773,7 @@ error:
 }
 
 /*[clinic input]
-_sqlite3.Connection.executescript as pysqlite_connection_executescript
+sqlite3.Connection.executescript as pysqlite_connection_executescript
 
     sql_script as script_obj: object
     /
@@ -1865,7 +1865,7 @@ finally:
 }
 
 /*[clinic input]
-_sqlite3.Connection.interrupt as pysqlite_connection_interrupt
+sqlite3.Connection.interrupt as pysqlite_connection_interrupt
 
 Abort any pending database operation.
 [clinic start generated code]*/
@@ -1893,7 +1893,7 @@ finally:
  * of the sqlite3 module.
  */
 /*[clinic input]
-_sqlite3.Connection.iterdump as pysqlite_connection_iterdump
+sqlite3.Connection.iterdump as pysqlite_connection_iterdump
 
 Returns iterator to the dump of the database in an SQL text format.
 [clinic start generated code]*/
@@ -1921,7 +1921,7 @@ pysqlite_connection_iterdump_impl(pysqlite_Connection *self)
 }
 
 /*[clinic input]
-_sqlite3.Connection.backup as pysqlite_connection_backup
+sqlite3.Connection.backup as pysqlite_connection_backup
 
     target: object(type='pysqlite_Connection *', subclass_of='clinic_state()->ConnectionType')
     *
@@ -2020,7 +2020,7 @@ pysqlite_connection_backup_impl(pysqlite_Connection *self,
 }
 
 /*[clinic input]
-_sqlite3.Connection.create_collation as pysqlite_connection_create_collation
+sqlite3.Connection.create_collation as pysqlite_connection_create_collation
 
     cls: defining_class
     name: str
@@ -2079,7 +2079,7 @@ pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
 
 #ifdef PY_SQLITE_HAVE_SERIALIZE
 /*[clinic input]
-_sqlite3.Connection.serialize as serialize
+sqlite3.Connection.serialize as serialize
 
     *
     name: str = "main"
@@ -2129,7 +2129,7 @@ serialize_impl(pysqlite_Connection *self, const char *name)
 }
 
 /*[clinic input]
-_sqlite3.Connection.deserialize as deserialize
+sqlite3.Connection.deserialize as deserialize
 
     data: Py_buffer(accept={buffer, str})
         The serialized database content.
@@ -2197,7 +2197,7 @@ deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
 
 
 /*[clinic input]
-_sqlite3.Connection.__enter__ as pysqlite_connection_enter
+sqlite3.Connection.__enter__ as pysqlite_connection_enter
 
 Called when the connection is used as a context manager.
 
@@ -2215,7 +2215,7 @@ pysqlite_connection_enter_impl(pysqlite_Connection *self)
 }
 
 /*[clinic input]
-_sqlite3.Connection.__exit__ as pysqlite_connection_exit
+sqlite3.Connection.__exit__ as pysqlite_connection_exit
 
     type as exc_type: object
     value as exc_value: object
@@ -2265,7 +2265,7 @@ pysqlite_connection_exit_impl(pysqlite_Connection *self, PyObject *exc_type,
 }
 
 /*[clinic input]
-_sqlite3.Connection.setlimit as setlimit
+sqlite3.Connection.setlimit as setlimit
 
     category: int
         The limit category to be set.
@@ -2298,7 +2298,7 @@ setlimit_impl(pysqlite_Connection *self, int category, int limit)
 }
 
 /*[clinic input]
-_sqlite3.Connection.getlimit as getlimit
+sqlite3.Connection.getlimit as getlimit
 
     category: int
         The limit category to be queried.
@@ -2359,7 +2359,7 @@ is_int_config(const int op)
 }
 
 /*[clinic input]
-_sqlite3.Connection.setconfig as setconfig
+sqlite3.Connection.setconfig as setconfig
 
     op: int
         The configuration verb; one of the sqlite3.SQLITE_DBCONFIG codes.
@@ -2394,7 +2394,7 @@ setconfig_impl(pysqlite_Connection *self, int op, int enable)
 }
 
 /*[clinic input]
-_sqlite3.Connection.getconfig as getconfig -> bool
+sqlite3.Connection.getconfig as getconfig -> bool
 
     op: int
         The configuration verb; one of the sqlite3.SQLITE_DBCONFIG codes.
