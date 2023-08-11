@@ -151,7 +151,7 @@ import sys
 __all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "NoOptionError", "InterpolationError", "InterpolationDepthError",
            "InterpolationMissingOptionError", "InterpolationSyntaxError",
-           "ParsingError", "MissingSectionHeaderError",
+           "ParsingError", "MissingSectionHeaderError","MultilineContinuationError",
            "ConfigParser", "RawConfigParser",
            "Interpolation", "BasicInterpolation",  "ExtendedInterpolation",
            "SectionProxy", "ConverterMapping",
@@ -321,6 +321,19 @@ class MissingSectionHeaderError(ParsingError):
         self.line = line
         self.args = (filename, lineno, line)
 
+
+class MultilineContinuationError(ParsingError):
+    """Raised when a key is present without value if any extra space is present within section"""
+    def __init__(self, filename, lineno, line):
+        Error.__init__(
+            self,
+            "The file contains a key without value in the"
+            " unintended scenario, please don't add any extra space within the section..\nfile: %r, line: %d\n%r"
+            %(filename, lineno, line))
+        self.source = filename
+        self.lineno = lineno
+        self.line = line
+        self.args = (filename, lineno, line)
 
 # Used in parser getters to indicate the default behaviour when a specific
 # option is not found it to raise an exception. Created to enable `None` as
@@ -987,10 +1000,10 @@ class RawConfigParser(MutableMapping):
             cur_indent_level = first_nonspace.start() if first_nonspace else 0
             if (cursect is not None and optname and
                 cur_indent_level > indent_level):
-                if cursect[optname]:
-                    cursect[optname].append(value)
+                if not cursect[optname]:
+                    raise MultilineContinuationError(fpname,lineno,line)
                 else:
-                    raise ParsingError(f"No-value option {optname} cannot be continued")
+                    cursect[optname].append(value)
             # a section header or option header?
             else:
                 indent_level = cur_indent_level

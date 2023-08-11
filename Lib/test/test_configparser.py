@@ -1568,8 +1568,16 @@ class ReadFileTestCase(unittest.TestCase):
             delimiters=('=',),
             interpolation=None,
         )
-        with self.assertRaises(configparser.ParsingError):
+        with self.assertRaises(configparser.MultilineContinuationError) as dse:
             parser.read_file(lines)
+        self.assertEqual(
+            str(dse.exception),
+            "The file contains a key without value in the"
+            " unintended scenario, please don't add any extra space within the section..\nfile: '<???>', line: 3\n"
+            "' KEY2 = VAL2\\n'"
+        )
+
+
 
 
 class CoverageOneHundredTestCase(unittest.TestCase):

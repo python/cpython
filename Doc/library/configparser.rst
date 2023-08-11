@@ -956,7 +956,7 @@ ConfigParser Objects
    converter gets its own corresponding :meth:`get*()` method on the parser
    object and section proxies.
 
-   Raise a :exc:`ParsingError` instead of an :exc:`AttributeError` for
+   Raise a :exc:`MultilineContinuationError` instead of an :exc:`AttributeError` for
    :meth:`read` and :meth:`read_file` if the configuration contains
    a key without a corresponding value in scenarios where configuration
    contains extra space within a section.
@@ -1074,7 +1074,6 @@ ConfigParser Objects
 
       .. versionadded:: 3.2
          Replaces :meth:`readfp`.
-
 
    .. method:: read_string(string, source='<string>')
 
@@ -1352,6 +1351,12 @@ Exceptions
 .. exception:: ParsingError
 
    Exception raised when errors occur attempting to parse a file.
+
+.. exception:: MultilineContinuationError
+
+   Exception raised if the configuration contains a key without
+   a corresponding value in scenarios where configuration
+   contains extra space within a section.
 
 .. versionchanged:: 3.12
    The ``filename`` attribute and :meth:`__init__` constructor argument were
