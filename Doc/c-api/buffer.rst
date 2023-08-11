@@ -102,7 +102,9 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
    .. c:member:: PyObject *obj
 
       A new reference to the exporting object. The reference is owned by
-      the consumer and automatically decremented and set to ``NULL`` by
+      the consumer and automatically released
+      (i.e. reference count decremented)
+      and set to ``NULL`` by
       :c:func:`PyBuffer_Release`. The field is the equivalent of the return
       value of any standard C-API function.
 
@@ -454,7 +456,8 @@ Buffer-related functions
 
 .. c:function:: void PyBuffer_Release(Py_buffer *view)
 
-   Release the buffer *view* and decrement the reference count for
+   Release the buffer *view* and release the :term:`strong reference`
+   (i.e. decrement the reference count) to the view's supporting object,
    ``view->obj``. This function MUST be called when the buffer
    is no longer being used, otherwise reference leaks may occur.
 

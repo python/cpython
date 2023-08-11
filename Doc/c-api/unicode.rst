@@ -1715,11 +1715,11 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    Intern the argument *\*string* in place.  The argument must be the address of a
    pointer variable pointing to a Python Unicode string object.  If there is an
    existing interned string that is the same as *\*string*, it sets *\*string* to
-   it (decrementing the reference count of the old string object and incrementing
-   the reference count of the interned string object), otherwise it leaves
-   *\*string* alone and interns it (incrementing its reference count).
-   (Clarification: even though there is a lot of talk about reference counts, think
-   of this function as reference-count-neutral; you own the object after the call
+   it (releasing the reference to the old string object and creating a new
+   :term:`strong reference` to the interned string object), otherwise it leaves
+   *\*string* alone and interns it (creating a new :term:`strong reference`).
+   (Clarification: even though there is a lot of talk about references, think
+   of this function as reference-neutral; you own the object after the call
    if and only if you owned it before the call.)
 
 
