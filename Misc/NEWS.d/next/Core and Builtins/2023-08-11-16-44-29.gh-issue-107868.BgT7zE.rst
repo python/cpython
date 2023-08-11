@@ -1,0 +1,1 @@
+Reduce `sum(range(...))` from `O(n)` to `O(1)` time . Patch by Marco Cognetta.
