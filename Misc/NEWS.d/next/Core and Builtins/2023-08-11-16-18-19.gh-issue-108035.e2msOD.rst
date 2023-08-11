@@ -1,0 +1,4 @@
+Remove the `_PyCFrame`, moving the pointer to the current intepreter frame
+back to the threadstate, as it was for 3.10 and earlier. The ``_PyCFrame`
+exited as a performance optimization for tracing. Since PEP 669 has been
+implemented, this optimization no longer applies.
