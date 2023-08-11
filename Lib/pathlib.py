@@ -5,8 +5,8 @@ paths with operations that have semantics appropriate for different
 operating systems.
 """
 
-import fnmatch
 import functools
+import glob
 import io
 import ntpath
 import os
@@ -69,7 +69,8 @@ def _compile_pattern(pat, sep, case_sensitive):
     """Compile given glob pattern to a re.Pattern object (observing case
     sensitivity)."""
     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
-    return re.compile(fnmatch.translate(pat, sep), flags).match
+    regex = glob.translate(pat, recursive=True, include_hidden=True, seps=sep)
+    return re.compile(regex, flags).match
 
 
 def _select_children(parent_paths, dir_only, follow_symlinks, match):

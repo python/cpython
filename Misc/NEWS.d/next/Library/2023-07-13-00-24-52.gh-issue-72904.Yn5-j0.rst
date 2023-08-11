@@ -1,4 +1,2 @@
-Add optional *sep* argument to :func:`fnmatch.translate`. If a path separator
-character is given, the resulting pattern matches paths like
-:meth:`pathlib.PurePath.match` and :meth:`pathlib.Path.glob`. For example, the
-``*`` wildcard will not match path separators.
+Add :func:`glob.translate`. This function converts a pathname with shell-style
+wildcards to a regular expression.

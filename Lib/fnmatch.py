@@ -71,24 +71,13 @@ def fnmatchcase(name, pat):
     return match(name) is not None
 
 
-def translate(pat, sep=None):
+def translate(pat):
     """Translate a shell PATTERN to a regular expression.
-
-    A path separator character may be supplied to the *sep* argument. If
-    given, '*' and '?' wildcards will not match separators; '*' wildcards in
-    standalone pattern segments match precisely one path segment; and  '**'
-    wildcards in standalone segments match any number of path segments.
 
     There is no way to quote meta-characters.
     """
 
     STAR = object()
-    if sep:
-        SEP = re.escape(sep)
-        DOT = f'[^{SEP}]'
-    else:
-        SEP = None
-        DOT = '.'
     res = []
     add = res.append
     i, n = 0, len(pat)
@@ -97,29 +86,10 @@ def translate(pat, sep=None):
         i = i+1
         if c == '*':
             # compress consecutive `*` into one
-            h = i-1
-            while i < n and pat[i] == '*':
-                i = i+1
-            if sep:
-                star_count = i-h
-                is_segment = (h == 0 or pat[h-1] == sep) and (i == n or pat[i] == sep)
-                if star_count == 1:
-                    if is_segment:
-                        add(f'{DOT}+')
-                    else:
-                        add(f'{DOT}*')
-                elif star_count == 2 and is_segment:
-                    if i == n:
-                        add('.*')
-                    else:
-                        add(f'(.*{SEP})?')
-                        i = i+1
-                else:
-                    raise ValueError("Invalid pattern: '**' can only be an entire path component")
-            else:
+            if (not res) or res[-1] is not STAR:
                 add(STAR)
         elif c == '?':
-            add(DOT)
+            add('.')
         elif c == '[':
             j = i
             if j < n and pat[j] == '!':
@@ -166,7 +136,7 @@ def translate(pat, sep=None):
                     add('(?!)')
                 elif stuff == '!':
                     # Negated empty range: match any character.
-                    add(DOT)
+                    add('.')
                 else:
                     if stuff[0] == '!':
                         stuff = '^' + stuff[1:]

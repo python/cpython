@@ -349,6 +349,41 @@ class GlobTests(unittest.TestCase):
             for it in iters:
                 self.assertEqual(next(it), p)
 
+    def test_translate(self):
+        def fn(pat):
+            return glob.translate(pat, seps='/')
+        self.assertEqual(fn('foo'), r'(?s:foo)\Z')
+        self.assertEqual(fn('foo/bar'), r'(?s:foo/bar)\Z')
+        self.assertEqual(fn('*'), r'(?s:[^/]+)\Z')
+        self.assertEqual(fn('?'), r'(?s:[^/])\Z')
+        self.assertEqual(fn('a*'), r'(?s:a[^/]*)\Z')
+        self.assertEqual(fn('*a'), r'(?s:[^/]*a)\Z')
+        self.assertEqual(fn('.*'), r'(?s:\.[^/]*)\Z')
+        self.assertEqual(fn('?aa'), r'(?s:[^/]aa)\Z')
+        self.assertEqual(fn('aa?'), r'(?s:aa[^/])\Z')
+        self.assertEqual(fn('aa[ab]'), r'(?s:aa[ab])\Z')
+        self.assertEqual(fn('**'), r'(?s:[^/]+)\Z')
+        self.assertEqual(fn('***'), r'(?s:[^/]+)\Z')
+        self.assertEqual(fn('a**'), r'(?s:a[^/]*)\Z')
+        self.assertEqual(fn('**b'), r'(?s:[^/]*b)\Z')
+        self.assertEqual(fn('/**/*/*.*/**'), r'(?s:/[^/]+/[^/]+/[^/]*\.[^/]*/[^/]+)\Z')
+
+    def test_translate_recursive(self):
+        def fn(pat):
+            return glob.translate(pat, recursive=True, seps='/')
+        self.assertEqual(fn('*'), r'(?s:[^/]+)\Z')
+        self.assertEqual(fn('?'), r'(?s:[^/])\Z')
+        self.assertEqual(fn('**'), r'(?s:.*)\Z')
+        self.assertRaises(ValueError, fn, '***')
+        self.assertRaises(ValueError, fn, 'a**')
+        self.assertRaises(ValueError, fn, '**b')
+        self.assertEqual(fn('/**/*/*.*/**'), r'(?s:/(?:.*/)?[^/]+/[^/]*\.[^/]*/.*)\Z')
+
+    def test_translate_seps(self):
+        def fn(pat):
+            return glob.translate(pat, recursive=True, seps=['/', '\\'])
+        self.assertEqual(fn('foo/bar\\baz'), r'(?s:foo[/\\]bar[/\\]baz)\Z')
+        self.assertEqual(fn('**/**'), r'(?s:(?:.*[/\\])?.*)\Z')
 
 @skip_unless_symlink
 class SymlinkLoopGlobTests(unittest.TestCase):

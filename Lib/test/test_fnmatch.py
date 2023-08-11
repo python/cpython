@@ -250,18 +250,6 @@ class TranslateTestCase(unittest.TestCase):
         self.assertTrue(re.match(fatre, 'cbabcaxc'))
         self.assertFalse(re.match(fatre, 'dabccbad'))
 
-    def test_translate_sep(self):
-        self.assertEqual(translate('*', sep='/'), r'(?s:[^/]+)\Z')
-        self.assertEqual(translate('?', sep='/'), r'(?s:[^/])\Z')
-        self.assertEqual(translate('a?b*', sep='/'), r'(?s:a[^/]b[^/]*)\Z')
-        self.assertEqual(translate('/**/*/*.*/**', sep='/'),
-                         r'(?s:/(.*/)?[^/]+/[^/]*\.[^/]*/.*)\Z')
-        self.assertEqual(translate(r'\**\*\*.*\**', sep='\\'),
-                         r'(?s:\\(.*\\)?[^\\]+\\[^\\]*\.[^\\]*\\.*)\Z')
-        self.assertRaises(ValueError, translate, 'a**', sep='/')
-        self.assertRaises(ValueError, translate, '**b', sep='/')
-
-
 class FilterTestCase(unittest.TestCase):
 
     def test_filter(self):
