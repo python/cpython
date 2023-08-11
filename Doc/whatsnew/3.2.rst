@@ -566,7 +566,7 @@ Some smaller changes made to the core Python language are:
 
   (See :issue:`4617`.)
 
-* The internal :c:type:`structsequence` tool now creates subclasses of tuple.
+* :ref:`Struct sequence types <struct-sequence-objects>` are now subclasses of tuple.
   This means that C structures like those returned by :func:`os.stat`,
   :func:`time.gmtime`, and :data:`sys.version_info` now work like a
   :term:`named tuple` and now work with functions and methods that

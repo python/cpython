@@ -539,6 +539,7 @@ extern "C" {
     INIT_STR(anon_lambda, "<lambda>"), \
     INIT_STR(anon_listcomp, "<listcomp>"), \
     INIT_STR(anon_module, "<module>"), \
+    INIT_STR(anon_null, "<NULL>"), \
     INIT_STR(anon_setcomp, "<setcomp>"), \
     INIT_STR(anon_string, "<string>"), \
     INIT_STR(anon_unknown, "<unknown>"), \

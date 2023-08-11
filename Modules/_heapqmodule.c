@@ -672,9 +672,7 @@ From all times, sorting has always been a Great Art! :-)\n");
 static int
 heapq_exec(PyObject *m)
 {
-    PyObject *about = PyUnicode_FromString(__about__);
-    if (PyModule_AddObject(m, "__about__", about) < 0) {
-        Py_DECREF(about);
+    if (PyModule_Add(m, "__about__", PyUnicode_FromString(__about__)) < 0) {
         return -1;
     }
     return 0;
