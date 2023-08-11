@@ -1538,40 +1538,56 @@ _winapi.LCMapStringEx
 
     locale: LPCWSTR
     flags: DWORD
-    src: LPCWSTR
+    src: unicode
 
 [clinic start generated code]*/
 
 static PyObject *
 _winapi_LCMapStringEx_impl(PyObject *module, LPCWSTR locale, DWORD flags,
-                           LPCWSTR src)
-/*[clinic end generated code: output=cf4713d80e2b47c9 input=9fe26f95d5ab0001]*/
+                           PyObject *src)
+/*[clinic end generated code: output=b90e6b26e028ff0a input=3e3dcd9b8164012f]*/
 {
     if (flags & (LCMAP_SORTHANDLE | LCMAP_HASH | LCMAP_BYTEREV |
                  LCMAP_SORTKEY)) {
         return PyErr_Format(PyExc_ValueError, "unsupported flags");
     }
 
-    int dest_size = LCMapStringEx(locale, flags, src, -1, NULL, 0,
+    Py_ssize_t src_size;
+    wchar_t *src_ = PyUnicode_AsWideCharString(src, &src_size);
+    if (!src_) {
+        return NULL;
+    }
+    if (src_size > INT_MAX) {
+        PyMem_Free(src_);
+        PyErr_SetString(PyExc_OverflowError, "input string is too long");
+        return NULL;
+    }
+
+    int dest_size = LCMapStringEx(locale, flags, src_, (int)src_size, NULL, 0,
                                   NULL, NULL, 0);
-    if (dest_size == 0) {
-        return PyErr_SetFromWindowsErr(0);
+    if (dest_size <= 0) {
+        DWORD error = GetLastError();
+        PyMem_Free(src_);
+        return PyErr_SetFromWindowsErr(error);
     }
 
     wchar_t* dest = PyMem_NEW(wchar_t, dest_size);
     if (dest == NULL) {
+        PyMem_Free(src_);
         return PyErr_NoMemory();
     }
 
-    int nmapped = LCMapStringEx(locale, flags, src, -1, dest, dest_size,
+    int nmapped = LCMapStringEx(locale, flags, src_, (int)src_size, dest, dest_size,
                                 NULL, NULL, 0);
-    if (nmapped == 0) {
+    if (nmapped <= 0) {
         DWORD error = GetLastError();
+        PyMem_Free(src_);
         PyMem_DEL(dest);
         return PyErr_SetFromWindowsErr(error);
     }
 
-    PyObject *ret = PyUnicode_FromWideChar(dest, dest_size - 1);
+    PyMem_Free(src_);
+    PyObject *ret = PyUnicode_FromWideChar(dest, nmapped);
     PyMem_DEL(dest);
 
     return ret;
