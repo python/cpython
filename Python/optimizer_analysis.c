@@ -102,7 +102,7 @@ partitionnode_make_ref(_Py_PARTITIONNODE_t *node)
 }
 
 
-static _Py_PARTITIONNODE_t PARTITIONNODE_NULLROOT = (_Py_PARTITIONNODE_t)_Py_NULL | TYPE_ROOT;
+static const _Py_PARTITIONNODE_t PARTITIONNODE_NULLROOT = (_Py_PARTITIONNODE_t)_Py_NULL | TYPE_ROOT;
 
 // Tier 2 types meta interpreter
 typedef struct _Py_UOpsAbstractInterpContext {
