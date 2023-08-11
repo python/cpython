@@ -4242,9 +4242,9 @@ _PyType_FromMetaclass_impl(
         if (_allow_tp_new) {
             if (PyErr_WarnFormat(
                     PyExc_DeprecationWarning, 1,
-                    "Using PyType_Spec with metaclasses that have custom "
-                    "tp_new is deprecated and will no longer be allowed in "
-                    "Python 3.14.") < 0) {
+                    "Type %s uses PyType_Spec with a metaclass that has custom "
+                    "tp_new. This is deprecated and will no longer be allowed in "
+                    "Python 3.14.", spec->name) < 0) {
                 goto finally;
             }
         }

@@ -740,7 +740,7 @@ class CAPITest(unittest.TestCase):
 
         # Class creation from C
         with warnings_helper.check_warnings(
-                ('.*custom tp_new.*in Python 3.14.*', DeprecationWarning),
+                ('.* _testcapi.Subclass .* custom tp_new.*in Python 3.14.*', DeprecationWarning),
                 ):
             sub = _testcapi.make_type_with_base(Base)
         self.assertTrue(issubclass(sub, Base))
