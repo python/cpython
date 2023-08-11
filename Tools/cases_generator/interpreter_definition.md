@@ -108,7 +108,7 @@ and a piece of C code describing its semantics::
     NAME [":" type] [ "if" "(" C-expression ")" ]
 
   type:
-    NAME
+    NAME ["*"]
 
   stream:
     NAME "/" size
@@ -347,7 +347,7 @@ For explanations see "Generating the interpreter" below.)
 
 ### Defining an instruction family
 
-A _family_ represents a specializable instruction and its specializations.
+A _family_ maps a specializable instruction to its specializations.
 
 Example: These opcodes all share the same instruction format):
 ```C

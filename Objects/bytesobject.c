@@ -41,17 +41,12 @@ Py_LOCAL_INLINE(Py_ssize_t) _PyBytesWriter_GetSize(_PyBytesWriter *writer,
 #define EMPTY (&_Py_SINGLETON(bytes_empty))
 
 
-// Return a borrowed reference to the empty bytes string singleton.
+// Return a reference to the immortal empty bytes string singleton.
 static inline PyObject* bytes_get_empty(void)
 {
-    return &EMPTY->ob_base.ob_base;
-}
-
-
-// Return a strong reference to the empty bytes string singleton.
-static inline PyObject* bytes_new_empty(void)
-{
-    return Py_NewRef(EMPTY);
+    PyObject *empty = &EMPTY->ob_base.ob_base;
+    assert(_Py_IsImmortal(empty));
+    return empty;
 }
 
 
@@ -84,7 +79,7 @@ _PyBytes_FromSize(Py_ssize_t size, int use_calloc)
     assert(size >= 0);
 
     if (size == 0) {
-        return bytes_new_empty();
+        return bytes_get_empty();
     }
 
     if ((size_t)size > (size_t)PY_SSIZE_T_MAX - PyBytesObject_SIZE) {
@@ -123,10 +118,11 @@ PyBytes_FromStringAndSize(const char *str, Py_ssize_t size)
     }
     if (size == 1 && str != NULL) {
         op = CHARACTER(*str & 255);
-        return Py_NewRef(op);
+        assert(_Py_IsImmortal(op));
+        return (PyObject *)op;
     }
     if (size == 0) {
-        return bytes_new_empty();
+        return bytes_get_empty();
     }
 
     op = (PyBytesObject *)_PyBytes_FromSize(size, 0);
@@ -154,11 +150,12 @@ PyBytes_FromString(const char *str)
     }
 
     if (size == 0) {
-        return bytes_new_empty();
+        return bytes_get_empty();
     }
     else if (size == 1) {
         op = CHARACTER(*str & 255);
-        return Py_NewRef(op);
+        assert(_Py_IsImmortal(op));
+        return (PyObject *)op;
     }
 
     /* Inline PyObject_NewVar */
@@ -1272,8 +1269,25 @@ _PyBytes_Find(const char *haystack, Py_ssize_t len_haystack,
               const char *needle, Py_ssize_t len_needle,
               Py_ssize_t offset)
 {
-    return stringlib_find(haystack, len_haystack,
-                          needle, len_needle, offset);
+    assert(len_haystack >= 0);
+    assert(len_needle >= 0);
+    // Extra checks because stringlib_find accesses haystack[len_haystack].
+    if (len_needle == 0) {
+        return offset;
+    }
+    if (len_needle > len_haystack) {
+        return -1;
+    }
+    assert(len_haystack >= 1);
+    Py_ssize_t res = stringlib_find(haystack, len_haystack - 1,
+                                    needle, len_needle, offset);
+    if (res == -1) {
+        Py_ssize_t last_align = len_haystack - len_needle;
+        if (memcmp(haystack + last_align, needle, len_needle) == 0) {
+            return offset + last_align;
+        }
+    }
+    return res;
 }
 
 Py_ssize_t
@@ -3048,7 +3062,7 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
         goto error;
     }
     if (newsize == 0) {
-        *pv = bytes_new_empty();
+        *pv = bytes_get_empty();
         Py_DECREF(v);
         return 0;
     }

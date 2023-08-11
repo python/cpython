@@ -3,6 +3,7 @@ import textwrap
 import types
 import unittest
 import pickle
+import weakref
 from test.support import requires_working_socket, check_syntax_error, run_code
 
 from typing import Generic, Sequence, TypeVar, TypeVarTuple, ParamSpec, get_args
@@ -921,3 +922,33 @@ class TypeParamsPickleTest(unittest.TestCase):
                     # These instances are not equal,
                     # but class check is good enough:
                     self.assertIsInstance(pickle.loads(pickled), real_class)
+
+
+class TypeParamsWeakRefTest(unittest.TestCase):
+    def test_weakrefs(self):
+        T = TypeVar('T')
+        P = ParamSpec('P')
+        class OldStyle(Generic[T]):
+            pass
+
+        class NewStyle[T]:
+            pass
+
+        cases = [
+            T,
+            TypeVar('T', bound=int),
+            P,
+            P.args,
+            P.kwargs,
+            TypeVarTuple('Ts'),
+            OldStyle,
+            OldStyle[int],
+            OldStyle(),
+            NewStyle,
+            NewStyle[int],
+            NewStyle(),
+            Generic[T],
+        ]
+        for case in cases:
+            with self.subTest(case=case):
+                weakref.ref(case)
