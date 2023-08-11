@@ -4981,9 +4981,13 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
         VISIT_SEQ(c, keyword, kwds);
         RETURN_IF_ERROR(
             compiler_call_simple_kw_helper(c, loc, kwds, kwdsl));
+        loc = update_start_location_to_match_attr(c, LOC(e), meth);
+        ADDOP_I(c, loc, CALL_KW, argsl + kwdsl);
     }
-    loc = update_start_location_to_match_attr(c, LOC(e), meth);
-    ADDOP_I(c, loc, CALL, argsl + kwdsl);
+    else {
+        loc = update_start_location_to_match_attr(c, LOC(e), meth);
+        ADDOP_I(c, loc, CALL, argsl);
+    }
     return 1;
 }
 
@@ -5149,7 +5153,7 @@ compiler_subkwargs(struct compiler *c, location loc,
 }
 
 /* Used by compiler_call_helper and maybe_optimize_method_call to emit
- * KW_NAMES before CALL.
+ * a tuple of keyword names before CALL.
  */
 static int
 compiler_call_simple_kw_helper(struct compiler *c, location loc,
@@ -5164,12 +5168,7 @@ compiler_call_simple_kw_helper(struct compiler *c, location loc,
         keyword_ty kw = asdl_seq_GET(keywords, i);
         PyTuple_SET_ITEM(names, i, Py_NewRef(kw->arg));
     }
-    Py_ssize_t arg = compiler_add_const(c->c_const_cache, c->u, names);
-    if (arg < 0) {
-        return ERROR;
-    }
-    Py_DECREF(names);
-    ADDOP_I(c, loc, KW_NAMES, arg);
+    ADDOP_LOAD_CONST_NEW(c, loc, names);
     return SUCCESS;
 }
 
@@ -5214,8 +5213,11 @@ compiler_call_helper(struct compiler *c, location loc,
         VISIT_SEQ(c, keyword, keywords);
         RETURN_IF_ERROR(
             compiler_call_simple_kw_helper(c, loc, keywords, nkwelts));
+        ADDOP_I(c, loc, CALL_KW, n + nelts + nkwelts);
     }
-    ADDOP_I(c, loc, CALL, n + nelts + nkwelts);
+    else {
+        ADDOP_I(c, loc, CALL, n + nelts);
+    }
     return SUCCESS;
 
 ex_call:

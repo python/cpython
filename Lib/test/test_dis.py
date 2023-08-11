@@ -240,8 +240,8 @@ dis_kw_names = """\
            LOAD_CONST               1 (1)
            LOAD_CONST               2 (2)
            LOAD_CONST               3 (5)
-           KW_NAMES                 4 (('c',))
-           CALL                     3
+           LOAD_CONST               4 (('c',))
+           CALL_KW                  3
            POP_TOP
            RETURN_CONST             0 (None)
 """ % (wrap_func_w_kwargs.__code__.co_firstlineno,
@@ -1003,7 +1003,7 @@ class DisTests(DisTestBase):
         self.do_disassembly_test(bug46724, dis_bug46724)
 
     def test_kw_names(self):
-        # Test that value is displayed for KW_NAMES
+        # Test that value is displayed for keyword argument names:
         self.do_disassembly_test(wrap_func_w_kwargs, dis_kw_names)
 
     def test_intrinsic_1(self):

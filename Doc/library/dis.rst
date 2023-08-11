@@ -1390,10 +1390,8 @@ iterations of the loop.
 
 .. opcode:: CALL (argc)
 
-   Calls a callable object with the number of arguments specified by ``argc``,
-   including the named arguments specified by the preceding
-   :opcode:`KW_NAMES`, if any.
-   On the stack are (in ascending order), either:
+   Calls a callable object with the number of arguments specified by ``argc``.
+   On the stack are (in ascending order):
 
    * NULL
    * The callable
@@ -1403,11 +1401,10 @@ iterations of the loop.
    or:
 
    * The callable
-   * ``self``
+   * ``self`` (or ``NULL``)
    * The remaining positional arguments
-   * The named arguments
 
-   ``argc`` is the total of the positional and named arguments, excluding
+   ``argc`` is the total of the positional arguments, excluding
    ``self`` when a ``NULL`` is not present.
 
    ``CALL`` pops all arguments and the callable object off the stack,
@@ -1415,6 +1412,38 @@ iterations of the loop.
    returned by the callable object.
 
    .. versionadded:: 3.11
+
+   .. versionchanged:: 3.13
+      Calls with keyword arguments are now handled by :opcode:`CALL_KW`.
+
+
+.. opcode:: CALL_KW (argc)
+
+   Calls a callable object with the number of arguments specified by ``argc``,
+   including one or more named arguments.
+   On the stack are (in ascending order):
+
+   * NULL
+   * The callable
+   * The positional arguments
+   * The named arguments
+
+   or:
+
+   * The callable
+   * ``self`` (or ``NULL``)
+   * The remaining positional arguments
+   * The named arguments
+   * A :class:`tuple` of keyword argument names
+
+   ``argc`` is the total of the positional and named arguments, excluding
+   ``self`` when a ``NULL`` is not present.
+
+   ``CALL`` pops all arguments, the keyword names, and the callable object off the stack,
+   calls the callable object with those arguments, and pushes the return value
+   returned by the callable object.
+
+   .. versionadded:: 3.13
 
 
 .. opcode:: CALL_FUNCTION_EX (flags)
@@ -1437,15 +1466,6 @@ iterations of the loop.
    Pushes a ``NULL`` to the stack.
    Used in the call sequence to match the ``NULL`` pushed by
    :opcode:`LOAD_METHOD` for non-method calls.
-
-   .. versionadded:: 3.11
-
-
-.. opcode:: KW_NAMES (consti)
-
-   Prefixes :opcode:`CALL`.
-   Stores a reference to ``co_consts[consti]`` into an internal variable
-   for use by :opcode:`CALL`. ``co_consts[consti]`` must be a tuple of strings.
 
    .. versionadded:: 3.11
 

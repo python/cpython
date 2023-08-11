@@ -2229,7 +2229,6 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             uint32_t func_version = (uint32_t)operand;
-            ASSERT_KWNAMES_IS_NULL();
             DEOPT_IF(!PyFunction_Check(callable), CALL);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             DEOPT_IF(func->func_version != func_version, CALL);
@@ -2303,7 +2302,6 @@
             args = stack_pointer - oparg;
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             PyObject *obj = args[0];
@@ -2326,7 +2324,6 @@
             args = stack_pointer - oparg;
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyUnicode_Type, CALL);
@@ -2351,7 +2348,6 @@
             args = stack_pointer - oparg;
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyTuple_Type, CALL);
@@ -2391,7 +2387,6 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             /* Builtin METH_O functions */
-            ASSERT_KWNAMES_IS_NULL();
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -2431,7 +2426,6 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             /* Builtin METH_FASTCALL functions, without keywords */
-            ASSERT_KWNAMES_IS_NULL();
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -2474,7 +2468,6 @@
             args = stack_pointer - oparg;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            ASSERT_KWNAMES_IS_NULL();
             /* len(o) */
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -2510,7 +2503,6 @@
             args = stack_pointer - oparg;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            ASSERT_KWNAMES_IS_NULL();
             /* isinstance(o, o2) */
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -2548,7 +2540,6 @@
             args = stack_pointer - oparg;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            ASSERT_KWNAMES_IS_NULL();
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -2591,7 +2582,6 @@
             args = stack_pointer - oparg;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 0 || oparg == 1);
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -2633,7 +2623,6 @@
             args = stack_pointer - oparg;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            ASSERT_KWNAMES_IS_NULL();
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;

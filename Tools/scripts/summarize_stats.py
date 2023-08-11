@@ -234,6 +234,8 @@ def kind_to_text(kind, defines, opname):
         opname = "ITER"
     elif opname.endswith("SUBSCR"):
         opname = "SUBSCR"
+    elif opname in ("CALL", "CALL_KW"):
+        opname = "CALL"
     for name in defines[kind]:
         if name.startswith(opname):
             return pretty(name[len(opname)+1:])
