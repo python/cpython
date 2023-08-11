@@ -1578,7 +1578,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
             }
             dictptr = &dorv_ptr->dict;
             if (*dictptr == NULL) {
-                if (_PyObject_InitInlineValues(obj, tp)) {
+                if (_PyObject_InitInlineValues(obj, tp) < 0) {
                     goto done;
                 }
                 res = _PyObject_StoreInstanceAttribute(
