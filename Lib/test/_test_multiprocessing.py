@@ -3170,6 +3170,19 @@ class TestManagerExceptions(unittest.TestCase):
             wr = weakref.ref(e)
         self.assertEqual(wr(), None)
 
+    def test_dispatch(self):
+        queue = self.mgr.Queue()
+        queue._connect()
+        if gc.isenabled():
+            gc.disable()
+            self.addCleanup(gc.enable)
+        try:
+            multiprocessing.managers.dispatch(
+                queue._tls.connection, queue._id, 'get_nowait')
+        except pyqueue.Empty as e:
+            wr = weakref.ref(e)
+        self.assertEqual(wr(), None)
+
 #
 #
 #
