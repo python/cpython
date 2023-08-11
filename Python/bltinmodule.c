@@ -2494,7 +2494,7 @@ static PyObject* range_sum_fastpath(PyObject* module, PyObject *range)
     PyObject* length = builtin_len(module, range);
 
     if (PyObject_RichCompareBool(length, PyLong_FromLong(0), Py_EQ)) {
-        Py_DecRef(length);
+        Py_DECREF(length);
         return PyLong_FromLong(0);
     }
 
@@ -2523,17 +2523,17 @@ static PyObject* range_sum_fastpath(PyObject* module, PyObject *range)
 
     PyObject* result = PyNumber_Add(d, e);
 
-    Py_DecRef(length);
-    Py_DecRef(start);
-    Py_DecRef(step);
+    Py_DECREF(length);
+    Py_DECREF(start);
+    Py_DECREF(step);
 
-    Py_DecRef(one);
-    Py_DecRef(a);
-    Py_DecRef(b);
-    Py_DecRef(two);
-    Py_DecRef(c);
-    Py_DecRef(d);
-    Py_DecRef(e);
+    Py_DECREF(one);
+    Py_DECREF(a);
+    Py_DECREF(b);
+    Py_DECREF(two);
+    Py_DECREF(c);
+    Py_DECREF(d);
+    Py_DECREF(e);
 
     return result;
 }
@@ -2551,7 +2551,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
         }
         PyObject* rangesum =  range_sum_fastpath(module, iterable);
         result = PyNumber_Add(result, rangesum);
-        Py_DecRef(rangesum);
+        Py_DECREF(rangesum);
         return result;
     }
 
