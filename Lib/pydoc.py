@@ -205,18 +205,13 @@ def _getargspec(object):
     except (ValueError, TypeError):
         argspec = getattr(object, '__text_signature__', None)
         if argspec:
-            if argspec == '($module)':
-                argspec = '()'
-            elif argspec[:10] == '($module, ':
-                argspec = '(' + argspec[10:]
-            elif argspec == '($self)' and hasattr(object, '__self__'):
-                argspec = '()'
-            elif argspec[:8] == '($self, ' and hasattr(object, '__self__'):
-                argspec = '(' + argspec[8:]
-            elif argspec[:2] == '($':
+            if argspec[:2] == '($':
                 argspec = '(' + argspec[2:]
-            if argspec[:4] == '(/, ':
-                argspec = '(' + argspec[4:]
+            if getattr(object, '__self__', None) is not None:
+                # Strip the bound argument.
+                m = re.match(r'\(\w+(?:(?=\))|,\s*(?:/(?:(?=\))|,\s*))?)', argspec)
+                if m:
+                    argspec = '(' + argspec[m.end():]
         return argspec
     return None
 
