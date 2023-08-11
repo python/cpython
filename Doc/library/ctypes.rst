@@ -2040,6 +2040,7 @@ Utility functions
 
    Create a new pointer instance, pointing to *obj*.
    The returned object is of the type ``POINTER(type(obj))``.
+
    Note: If you just want to pass a pointer to an object to a foreign function
    call, you should use ``byref(obj)`` which is much faster.
 
