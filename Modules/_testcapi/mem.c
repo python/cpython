@@ -1,7 +1,12 @@
 #include "parts.h"
+#include "clinic/mem.c.h"
 
 #include <stddef.h>
 
+/*[clinic input]
+module _testcapi
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6361033e795369fc]*/
 
 typedef struct {
     PyMemAllocatorEx alloc;
@@ -155,23 +160,35 @@ fm_remove_hooks(void)
     }
 }
 
+/*[clinic input]
+_testcapi.set_nomemory
+    start: int
+    end as stop: int = 0
+    /
+[clinic start generated code]*/
+
 static PyObject *
-set_nomemory(PyObject *self, PyObject *args)
+_testcapi_set_nomemory_impl(PyObject *module, int start, int stop)
+/*[clinic end generated code: output=63269cdbe9b8bc74 input=5eb9a6321d41801e]*/
 {
     /* Memory allocation fails after 'start' allocation requests, and until
      * 'stop' allocation requests except when 'stop' is negative or equal
      * to 0 (default) in which case allocation failures never stop. */
     FmData.count = 0;
-    FmData.stop = 0;
-    if (!PyArg_ParseTuple(args, "i|i", &FmData.start, &FmData.stop)) {
-        return NULL;
-    }
+    FmData.start = start;
+    FmData.stop = stop;
+
     fm_setup_hooks();
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_testcapi.remove_mem_hooks
+[clinic start generated code]*/
+
 static PyObject *
-remove_mem_hooks(PyObject *self, PyObject *Py_UNUSED(ignored))
+_testcapi_remove_mem_hooks_impl(PyObject *module)
+/*[clinic end generated code: output=c9ef1a5cbc9f111e input=be328dd3aaa05fcb]*/
 {
     fm_remove_hooks();
     Py_RETURN_NONE;
@@ -336,14 +353,24 @@ finally:
 #undef CHECK_CTX
 }
 
+/*[clinic input]
+_testcapi.test_pyobject_setallocators
+[clinic start generated code]*/
+
 static PyObject *
-test_pyobject_setallocators(PyObject *self, PyObject *Py_UNUSED(ignored))
+_testcapi_test_pyobject_setallocators_impl(PyObject *module)
+/*[clinic end generated code: output=fa7b2959ec484b73 input=761913abd861dc85]*/
 {
     return test_setallocators(PYMEM_DOMAIN_OBJ);
 }
 
+/*[clinic input]
+_testcapi.test_pyobject_new
+[clinic start generated code]*/
+
 static PyObject *
-test_pyobject_new(PyObject *self, PyObject *Py_UNUSED(ignored))
+_testcapi_test_pyobject_new_impl(PyObject *module)
+/*[clinic end generated code: output=1c824f0a4c415f65 input=e96a497b57a96c04]*/
 {
     PyObject *obj;
     PyTypeObject *type = &PyBaseObject_Type;
@@ -384,8 +411,13 @@ alloc_failed:
     return NULL;
 }
 
+/*[clinic input]
+_testcapi.test_pymem_alloc0
+[clinic start generated code]*/
+
 static PyObject *
-test_pymem_alloc0(PyObject *self, PyObject *Py_UNUSED(ignored))
+_testcapi_test_pymem_alloc0_impl(PyObject *module)
+/*[clinic end generated code: output=5db0c9ea6b668a0d input=ab5befac960ec333]*/
 {
     void *ptr;
 
@@ -440,20 +472,35 @@ test_pymem_alloc0(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_testcapi.test_pymem_setrawallocators
+[clinic start generated code]*/
+
 static PyObject *
-test_pymem_setrawallocators(PyObject *self, PyObject *Py_UNUSED(ignored))
+_testcapi_test_pymem_setrawallocators_impl(PyObject *module)
+/*[clinic end generated code: output=a5f4483ab8bee291 input=0f7c60917d941582]*/
 {
     return test_setallocators(PYMEM_DOMAIN_RAW);
 }
 
+/*[clinic input]
+_testcapi.test_pymem_setallocators
+[clinic start generated code]*/
+
 static PyObject *
-test_pymem_setallocators(PyObject *self, PyObject *Py_UNUSED(ignored))
+_testcapi_test_pymem_setallocators_impl(PyObject *module)
+/*[clinic end generated code: output=93cfc7a5e184b19e input=a24e4766ebf66e13]*/
 {
     return test_setallocators(PYMEM_DOMAIN_MEM);
 }
 
+/*[clinic input]
+_testcapi.pyobject_malloc_without_gil
+[clinic start generated code]*/
+
 static PyObject *
-pyobject_malloc_without_gil(PyObject *self, PyObject *args)
+_testcapi_pyobject_malloc_without_gil_impl(PyObject *module)
+/*[clinic end generated code: output=9e990721ce72f6a4 input=4974132190035e68]*/
 {
     char *buffer;
 
@@ -468,8 +515,13 @@ pyobject_malloc_without_gil(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_testcapi.pymem_buffer_overflow
+[clinic start generated code]*/
+
 static PyObject *
-pymem_buffer_overflow(PyObject *self, PyObject *args)
+_testcapi_pymem_buffer_overflow_impl(PyObject *module)
+/*[clinic end generated code: output=0c142a3a0177340f input=e374bb743c6721d3]*/
 {
     char *buffer;
 
@@ -486,8 +538,13 @@ pymem_buffer_overflow(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_testcapi.pymem_api_misuse
+[clinic start generated code]*/
+
 static PyObject *
-pymem_api_misuse(PyObject *self, PyObject *args)
+_testcapi_pymem_api_misuse_impl(PyObject *module)
+/*[clinic end generated code: output=e96e27933186f2bc input=69317f9a91181283]*/
 {
     char *buffer;
 
@@ -499,8 +556,13 @@ pymem_api_misuse(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_testcapi.pymem_malloc_without_gil
+[clinic start generated code]*/
+
 static PyObject *
-pymem_malloc_without_gil(PyObject *self, PyObject *args)
+_testcapi_pymem_malloc_without_gil_impl(PyObject *module)
+/*[clinic end generated code: output=4700cb04720fc5f7 input=29f55895e29cbd10]*/
 {
     char *buffer;
 
@@ -515,21 +577,23 @@ pymem_malloc_without_gil(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_testcapi.tracemalloc_track
+    domain: unsigned_int(bitwise=True)
+    ptr_obj: object
+    size: Py_ssize_t
+    release_gil: int = 0
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_testcapi_tracemalloc_track_impl(PyObject *module, unsigned int domain,
+                                 PyObject *ptr_obj, Py_ssize_t size,
+                                 int release_gil)
+/*[clinic end generated code: output=9f945935ede4349c input=a913a86c49b28acc]*/
 
 // Tracemalloc tests
-static PyObject *
-tracemalloc_track(PyObject *self, PyObject *args)
 {
-    unsigned int domain;
-    PyObject *ptr_obj;
-    Py_ssize_t size;
-    int release_gil = 0;
-
-    if (!PyArg_ParseTuple(args, "IOn|i",
-                          &domain, &ptr_obj, &size, &release_gil))
-    {
-        return NULL;
-    }
     void *ptr = PyLong_AsVoidPtr(ptr_obj);
     if (PyErr_Occurred()) {
         return NULL;
@@ -552,15 +616,18 @@ tracemalloc_track(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static PyObject *
-tracemalloc_untrack(PyObject *self, PyObject *args)
-{
-    unsigned int domain;
-    PyObject *ptr_obj;
+/*[clinic input]
+_testcapi.tracemalloc_untrack
+    domain: int
+    ptr_obj: object
+    /
+[clinic start generated code]*/
 
-    if (!PyArg_ParseTuple(args, "IO", &domain, &ptr_obj)) {
-        return NULL;
-    }
+static PyObject *
+_testcapi_tracemalloc_untrack_impl(PyObject *module, int domain,
+                                   PyObject *ptr_obj)
+/*[clinic end generated code: output=4f5d256b1feb9b63 input=fc0a2852ba54ce82]*/
+{
     void *ptr = PyLong_AsVoidPtr(ptr_obj);
     if (PyErr_Occurred()) {
         return NULL;
@@ -576,23 +643,21 @@ tracemalloc_untrack(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef test_methods[] = {
-    {"pymem_api_misuse",              pymem_api_misuse,              METH_NOARGS},
-    {"pymem_buffer_overflow",         pymem_buffer_overflow,         METH_NOARGS},
-    {"pymem_malloc_without_gil",      pymem_malloc_without_gil,      METH_NOARGS},
-    {"pyobject_malloc_without_gil",   pyobject_malloc_without_gil,   METH_NOARGS},
-    {"remove_mem_hooks",              remove_mem_hooks,              METH_NOARGS,
-        PyDoc_STR("Remove memory hooks.")},
-    {"set_nomemory",                  (PyCFunction)set_nomemory,     METH_VARARGS,
-        PyDoc_STR("set_nomemory(start:int, stop:int = 0)")},
-    {"test_pymem_alloc0",             test_pymem_alloc0,             METH_NOARGS},
-    {"test_pymem_setallocators",      test_pymem_setallocators,      METH_NOARGS},
-    {"test_pymem_setrawallocators",   test_pymem_setrawallocators,   METH_NOARGS},
-    {"test_pyobject_new",             test_pyobject_new,             METH_NOARGS},
-    {"test_pyobject_setallocators",   test_pyobject_setallocators,   METH_NOARGS},
+    _TESTCAPI_PYMEM_API_MISUSE_METHODDEF
+    _TESTCAPI_PYMEM_BUFFER_OVERFLOW_METHODDEF
+    _TESTCAPI_PYMEM_MALLOC_WITHOUT_GIL_METHODDEF
+    _TESTCAPI_PYOBJECT_MALLOC_WITHOUT_GIL_METHODDEF
+    _TESTCAPI_REMOVE_MEM_HOOKS_METHODDEF
+    _TESTCAPI_SET_NOMEMORY_METHODDEF
+    _TESTCAPI_TEST_PYMEM_ALLOC0_METHODDEF
+    _TESTCAPI_TEST_PYOBJECT_SETALLOCATORS_METHODDEF
+    _TESTCAPI_TEST_PYMEM_SETRAWALLOCATORS_METHODDEF
+    _TESTCAPI_TEST_PYOBJECT_NEW_METHODDEF
+    _TESTCAPI_TEST_PYMEM_SETALLOCATORS_METHODDEF
 
     // Tracemalloc tests
-    {"tracemalloc_track",             tracemalloc_track,             METH_VARARGS},
-    {"tracemalloc_untrack",           tracemalloc_untrack,           METH_VARARGS},
+    _TESTCAPI_TRACEMALLOC_TRACK_METHODDEF
+    _TESTCAPI_TRACEMALLOC_UNTRACK_METHODDEF
     {NULL},
 };
 
