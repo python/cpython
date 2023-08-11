@@ -20,6 +20,13 @@
 
 #define OVERALLOCATE_FACTOR 2
 
+#ifdef Py_DEBUG
+#define DPRINTF(level, ...) \
+        if (lltrace >= (level)) { printf(__VA_ARGS__); }
+#else
+#define DPRINTF(level, ...)
+#endif
+
 // TYPENODE is a tagged pointer that uses the last 2 LSB as the tag
 #define _Py_PARTITIONNODE_t uintptr_t
 
@@ -420,11 +427,17 @@ partitionnode_overwrite(_Py_UOpsAbstractInterpContext *ctx,
     }
 }
 
-#if PARTITION_DEBUG
+#ifdef Py_DEBUG
 
 void
 print_ctx_node(_Py_UOpsAbstractInterpContext *ctx, int i, bool is_printing_stack, int nstack_use, int nstack)
 {
+    char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
+    int lltrace = 0;
+    if (uop_debug != NULL && *uop_debug >= '0') {
+        lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
+    }
+
     bool is_local = false;
     bool is_stack = false;
 
@@ -438,7 +451,7 @@ print_ctx_node(_Py_UOpsAbstractInterpContext *ctx, int i, bool is_printing_stack
     _Py_PARTITIONNODE_t *root = partitionnode_get_rootptr(node);
 
     if (is_printing_stack) {
-        fprintf(stderr, "%s", i == nstack_use - 1 ? "." : " ");
+        DPRINTF(3, "%s", i == nstack_use - 1 ? "." : " ");
     }
 
     if (tag == TYPE_REF) {
@@ -456,10 +469,10 @@ print_ctx_node(_Py_UOpsAbstractInterpContext *ctx, int i, bool is_printing_stack
 
 
     _Py_PartitionRootNode *ptr = (_Py_PartitionRootNode *)partitionnode_clear_tag(*root);
-    fprintf(stderr, "%s:",
+    DPRINTF(3, "%s:",
         ptr == NULL ? "?" : (ptr->static_or_dynamic == STATIC ? "static" : "dynamic"));
-    if (ptr != NULL && ptr->static_or_dynamic == STATIC) {
-        PyObject_Print(ptr->const_val, stderr, 0);
+    if (lltrace >= 4 && ptr != NULL && ptr->static_or_dynamic == STATIC) {
+        PyObject_Print(ptr->const_val, stdout, 0);
     }
 
     if (tag == TYPE_REF) {
@@ -468,8 +481,7 @@ print_ctx_node(_Py_UOpsAbstractInterpContext *ctx, int i, bool is_printing_stack
             : is_stack
             ? "stack"
             : "const";
-        fprintf(stderr, "->%s[%d]",
-            wher, parent_idx);
+        DPRINTF(3, "->%s[%d]", wher, parent_idx);
     }
 }
 
@@ -479,6 +491,12 @@ print_ctx_node(_Py_UOpsAbstractInterpContext *ctx, int i, bool is_printing_stack
 static void
 print_ctx(_Py_UOpsAbstractInterpContext *ctx)
 {
+    char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
+    int lltrace = 0;
+    if (uop_debug != NULL && *uop_debug >= '0') {
+        lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
+    }
+
     _Py_PARTITIONNODE_t *locals = ctx->locals;
     _Py_PARTITIONNODE_t *stackptr = ctx->stack_pointer;
 
@@ -486,19 +504,19 @@ print_ctx(_Py_UOpsAbstractInterpContext *ctx)
     int nstack = ctx->stack_len;
     int nlocals = ctx->locals_len;
 
-    fprintf(stderr, "      Stack: %p: [", ctx->stack);
+    DPRINTF(3, "      Stack: %p: [", ctx->stack);
     for (int i = 0; i < nstack; i++) {
         print_ctx_node(ctx, i, true, nstack_use, nstack);
-        fprintf(stderr, " | ");
+        DPRINTF(3, " | ");
     }
-    fprintf(stderr, "]\n");
+    DPRINTF(3, "]\n");
 
-    fprintf(stderr, "      Locals %p: [", locals);
+    DPRINTF(3, "      Locals %p: [", locals);
     for (int i = 0; i < nlocals; i++) {
         print_ctx_node(ctx, i, false, nstack_use, nstack);
-        fprintf(stderr, " | ");
+        DPRINTF(3, " | ");
     }
-    fprintf(stderr, "]\n");
+    DPRINTF(3, "]\n");
 }
 #endif
 
@@ -588,7 +606,6 @@ number_jumps_and_targets(_PyUOpInstruction *trace, int trace_len, int *max_id)
                 jump_id_to_instruction[-target_id] = trace[target];
                 trace[target].opcode = target_id;
                 jump_and_target_id--;
-                fprintf(stderr, "op %d oparg %d\n", jump_id_to_instruction[-target_id].opcode, jump_id_to_instruction[-target_id].oparg);
             }
 
             // 1 for the jump
@@ -611,6 +628,14 @@ number_jumps_and_targets(_PyUOpInstruction *trace, int trace_len, int *max_id)
 static int
 remove_duplicate_save_ips(_PyUOpInstruction *trace, int trace_len)
 {
+#ifdef Py_DEBUG
+    char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
+    int lltrace = 0;
+    if (uop_debug != NULL && *uop_debug >= '0') {
+        lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
+    }
+#endif
+
     _PyUOpInstruction *temp_trace = PyMem_New(_PyUOpInstruction, trace_len);
     if (temp_trace == NULL) {
         return trace_len;
@@ -629,9 +654,7 @@ remove_duplicate_save_ips(_PyUOpInstruction *trace, int trace_len)
     memcpy(trace, temp_trace, temp_trace_len * sizeof(_PyUOpInstruction));
     PyMem_Free(temp_trace);
 
-#if PARTITION_DEBUG
-    fprintf(stderr, "Removed %d SAVE_IPs\n", trace_len - temp_trace_len);
-#endif
+    DPRINTF(3, "Removed %d SAVE_IPs\n", trace_len - temp_trace_len);
     return temp_trace_len;
 }
 
@@ -730,6 +753,14 @@ _Py_uop_analyze_and_optimize(
 #define PARTITIONNODE_SET(src, dst, flag)        partitionnode_set((src), (dst), (flag))
 #define PARTITIONNODE_OVERWRITE(src, dst, flag)  partitionnode_overwrite(ctx, (src), (dst), (flag))
 #define MAKE_STATIC_ROOT(val)                    partitionnode_make_root(0, (val))
+#ifdef Py_DEBUG
+    char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
+    int lltrace = 0;
+    if (uop_debug != NULL && *uop_debug >= '0') {
+        lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
+    }
+#endif
+
     PyObject *co_const_copy = NULL;
     _PyUOpInstruction *jump_id_to_instruction = NULL;
 
@@ -740,7 +771,8 @@ _Py_uop_analyze_and_optimize(
 
     int buffer_trace_len = 0;
 
-    _Py_UOpsAbstractInterpContext *ctx = _Py_UOpsAbstractInterpContext_New(co->co_stacksize, co->co_nlocals, curr_stacklen);
+    _Py_UOpsAbstractInterpContext *ctx = _Py_UOpsAbstractInterpContext_New(
+        co->co_stacksize, co->co_nlocals, curr_stacklen);
     if (ctx == NULL) {
         PyMem_Free(temp_writebuffer);
         return trace_len;
@@ -775,9 +807,7 @@ _Py_uop_analyze_and_optimize(
 
         // Is a special jump/target ID, decode that
         if (opcode < 0 && opcode > max_jump_id) {
-#if PARTITION_DEBUG
-            fprintf(stderr, "Special jump target/ID %d\n", opcode);
-#endif
+            DPRINTF(2, "Special jump target/ID %d\n", opcode);
             oparg = jump_id_to_instruction[-opcode].oparg;
             opcode = jump_id_to_instruction[-opcode].opcode;
         }
@@ -830,9 +860,8 @@ _Py_uop_analyze_and_optimize(
                             goto abstract_error;
                         }
 
-#if PARTITION_DEBUG
-                        fprintf(stderr, "Emitting LOAD_CONST\n");
-#endif
+                        DPRINTF(2, "Emitting LOAD_CONST\n");
+
                         temp_writebuffer[buffer_trace_len] = load_const;
                         buffer_trace_len++;
 
@@ -846,9 +875,8 @@ _Py_uop_analyze_and_optimize(
                             insert.opcode = INSERT;
                             insert.oparg = offset_from_target;
 
-#if PARTITION_DEBUG
-                            fprintf(stderr, "Emitting INSERT %d\n", offset_from_target);
-#endif
+                            DPRINTF(2, "Emitting INSERT %d\n", offset_from_target);
+
                             temp_writebuffer[buffer_trace_len] = insert;
                             buffer_trace_len++;
                         }
@@ -858,9 +886,8 @@ _Py_uop_analyze_and_optimize(
                         for (; trace[temp].opcode != SAVE_IP && temp < trace_len; temp++);
                         assert(trace[temp].opcode == SAVE_IP);
 
-#if PARTITION_DEBUG
-                        fprintf(stderr, "Emitting SAVE_IP\n");
-#endif
+                        DPRINTF(2, "Emitting SAVE_IP\n");
+
                         temp_writebuffer[buffer_trace_len] = trace[temp];
                         buffer_trace_len++;
                         num_dynamic_operands++;
@@ -868,9 +895,9 @@ _Py_uop_analyze_and_optimize(
 
                 }
             }
-#if PARTITION_DEBUG
-            fprintf(stderr, "Emitting %s\n", (opcode >= 300 ? _PyOpcode_uop_name : _PyOpcode_OpName)[opcode]);
-#endif
+
+            DPRINTF(2, "Emitting %s\n", (opcode >= 300 ? _PyOpcode_uop_name : _PyOpcode_OpName)[opcode]);
+
             temp_writebuffer[buffer_trace_len] = trace[i];
             buffer_trace_len++;
         }
@@ -879,14 +906,12 @@ _Py_uop_analyze_and_optimize(
         * @TODO: shift these to the DSL
         */
 
-#ifdef PARTITION_DEBUG
-#ifdef Py_DEBUG
-        fprintf(stderr, "  [-] Type propagating across: %s{%d} : %d. {reader: %d, writer: %d}\n",
+
+        DPRINTF(2, "  [-] Type propagating across: %s{%d} : %d. {reader: %d, writer: %d}\n",
             (opcode >= 300 ? _PyOpcode_uop_name : _PyOpcode_OpName)[opcode],
             opcode, oparg,
             i, buffer_trace_len);
-#endif
-#endif
+
         switch (opcode) {
 #include "abstract_interp_cases.c.h"
         // @TODO convert these to autogenerated using DSL
@@ -987,11 +1012,11 @@ _Py_uop_analyze_and_optimize(
             }
         }
         default:
-            fprintf(stderr, "Unknown opcode in abstract interpreter\n");
+            DPRINTF(1, "Unknown opcode in abstract interpreter\n");
             Py_UNREACHABLE();
         }
 
-#if PARTITION_DEBUG
+#ifdef Py_DEBUG
         print_ctx(ctx);
 #endif
 
@@ -1003,14 +1028,14 @@ _Py_uop_analyze_and_optimize(
 
         if (opcode == EXIT_TRACE) {
             // Copy the rest of the stubs over, then end.
-#if PARTITION_DEBUG
-            fprintf(stderr, "Exit trace encountered, emitting the rest of the stubs\n");
-#endif
+
+            DPRINTF(2, "Exit trace encountered, emitting the rest of the stubs\n");
+
             i++; // We've already emitted an EXIT_TRACE
             for (; i < trace_len; i++) {
-#if PARTITION_DEBUG
-                fprintf(stderr, "Emitting %s\n", (opcode >= 300 ? _PyOpcode_uop_name : _PyOpcode_OpName)[opcode]);
-#endif
+
+                DPRINTF(2, "Emitting %s\n", (opcode >= 300 ? _PyOpcode_uop_name : _PyOpcode_OpName)[opcode]);
+
                 temp_writebuffer[buffer_trace_len] = trace[i];
                 buffer_trace_len++;
             }
@@ -1022,11 +1047,12 @@ _Py_uop_analyze_and_optimize(
     fix_jump_side_exits(temp_writebuffer, buffer_trace_len, jump_id_to_instruction, max_jump_id);
     assert(buffer_trace_len <= trace_len);
 
-#if PARTITION_DEBUG
+#ifdef Py_DEBUG
     if (buffer_trace_len < trace_len) {
-        fprintf(stderr, "Shortened trace by %d instructions\n", trace_len - buffer_trace_len);
+        DPRINTF(2, "Shortened trace by %d instructions\n", trace_len - buffer_trace_len);
     }
 #endif
+
     Py_DECREF(ctx);
 
     PyObject *co_const_final = PyTuple_New(PyList_Size(co_const_copy));
