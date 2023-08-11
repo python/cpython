@@ -87,7 +87,7 @@ def main(opcode_py,
          opcode_ids_h='Include/opcode_ids.h',
          opcode_h='Include/opcode.h',
          opcode_targets_h='Python/opcode_targets.h',
-         internaloutfile='Include/internal/pycore_opcode.h'):
+         internal_opcode_h='Include/internal/pycore_opcode.h'):
 
     _opcode_metadata = get_python_module_dict(_opcode_metadata_py)
 
@@ -139,7 +139,7 @@ def main(opcode_py,
 
         fobj.write(opcode_h_footer)
 
-    with open(internaloutfile, 'w') as iobj:
+    with open(internal_opcode_h, 'w') as iobj:
         iobj.write(internal_header)
 
         iobj.write("\nextern const uint8_t _PyOpcode_Caches[256];\n")
