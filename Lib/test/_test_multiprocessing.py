@@ -3153,6 +3153,7 @@ class _TestManagerRestart(BaseTestCase):
 class FakeConnection:
     def send(self, payload):
         pass
+
     def recv(self):
         return '#ERROR', pyqueue.Empty()
 
