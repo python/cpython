@@ -1,2 +1,1 @@
-Fix null-bytes handling in ``LCMapStringEx`` which affects
-:func:`ntpath.normcase`.
+Fix integer overflow and truncating by the null character in :func:`!_winapi.LCMapStringEx` which affects :func:`ntpath.normcase`.

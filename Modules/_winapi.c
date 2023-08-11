@@ -1566,9 +1566,10 @@ _winapi_LCMapStringEx_impl(PyObject *module, LPCWSTR locale, DWORD flags,
 
     int dest_size = LCMapStringEx(locale, flags, src_, (int)src_size, NULL, 0,
                                   NULL, NULL, 0);
-    if (dest_size == 0) {
+    if (dest_size <= 0) {
+        DWORD error = GetLastError();
         PyMem_Free(src_);
-        return PyErr_SetFromWindowsErr(0);
+        return PyErr_SetFromWindowsErr(error);
     }
 
     wchar_t* dest = PyMem_NEW(wchar_t, dest_size);
@@ -1579,15 +1580,15 @@ _winapi_LCMapStringEx_impl(PyObject *module, LPCWSTR locale, DWORD flags,
 
     int nmapped = LCMapStringEx(locale, flags, src_, (int)src_size, dest, dest_size,
                                 NULL, NULL, 0);
-    if (nmapped == 0) {
+    if (nmapped <= 0) {
         DWORD error = GetLastError();
         PyMem_Free(src_);
         PyMem_DEL(dest);
         return PyErr_SetFromWindowsErr(error);
     }
 
-    PyObject *ret = PyUnicode_FromWideChar(dest, dest_size);
     PyMem_Free(src_);
+    PyObject *ret = PyUnicode_FromWideChar(dest, nmapped);
     PyMem_DEL(dest);
 
     return ret;
