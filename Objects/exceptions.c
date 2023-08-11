@@ -3547,7 +3547,6 @@ SimpleExtendsException(PyExc_Warning, ResourceWarning,
 #undef EOPNOTSUPP
 #undef EPROTONOSUPPORT
 #undef EPROTOTYPE
-#undef ETIMEDOUT
 #undef EWOULDBLOCK
 
 #if defined(WSAEALREADY) && !defined(EALREADY)
@@ -3567,9 +3566,6 @@ SimpleExtendsException(PyExc_Warning, ResourceWarning,
 #endif
 #if defined(WSAESHUTDOWN) && !defined(ESHUTDOWN)
 #define ESHUTDOWN WSAESHUTDOWN
-#endif
-#if defined(WSAETIMEDOUT) && !defined(ETIMEDOUT)
-#define ETIMEDOUT WSAETIMEDOUT
 #endif
 #if defined(WSAEWOULDBLOCK) && !defined(EWOULDBLOCK)
 #define EWOULDBLOCK WSAEWOULDBLOCK
@@ -3758,6 +3754,9 @@ _PyExc_InitState(PyInterpreterState *interp)
 #endif
     ADD_ERRNO(ProcessLookupError, ESRCH);
     ADD_ERRNO(TimeoutError, ETIMEDOUT);
+#ifdef WSAETIMEDOUT
+    ADD_ERRNO(TimeoutError, WSAETIMEDOUT);
+#endif
 
     return _PyStatus_OK();
 
