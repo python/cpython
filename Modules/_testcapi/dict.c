@@ -175,14 +175,14 @@ _testcapi_dict_getitem_impl(PyObject *module, PyObject *mapping,
 /*[clinic input]
 _testcapi.dict_getitemstring
     mapping: object
-    key: str(accept={robuffer}, zeroes=True)
+    key: str(accept={robuffer, str, NoneType}, zeroes=True)
     /
 [clinic start generated code]*/
 
 static PyObject *
 _testcapi_dict_getitemstring_impl(PyObject *module, PyObject *mapping,
                                   const char *key, Py_ssize_t key_length)
-/*[clinic end generated code: output=13ef172dc70898df input=777403906725d839]*/
+/*[clinic end generated code: output=13ef172dc70898df input=fafe3be7e5953dcd]*/
 {
     NULLABLE(mapping);
     PyObject *value = PyDict_GetItemString(mapping, key);
@@ -225,15 +225,15 @@ _testcapi_dict_getitemwitherror_impl(PyObject *module, PyObject *mapping,
 _testcapi.dict_getitemref
     obj: object
     attr_name: object
-    value: object
     /
 [clinic start generated code]*/
 
 static PyObject *
 _testcapi_dict_getitemref_impl(PyObject *module, PyObject *obj,
-                               PyObject *attr_name, PyObject *value)
-/*[clinic end generated code: output=ba81181c4916a6a1 input=9871862311c904dd]*/
+                               PyObject *attr_name)
+/*[clinic end generated code: output=b0a392407285a25f input=d7dff7f43142387d]*/
 {
+    PyObject *value;
     NULLABLE(obj);
     NULLABLE(attr_name);
 
@@ -256,17 +256,18 @@ _testcapi_dict_getitemref_impl(PyObject *module, PyObject *obj,
 /*[clinic input]
 _testcapi.dict_getitemstringref
     obj: object
-    value: object
-    attr_name: str(accept={robuffer}, zeroes=True)
+    attr_name: str(accept={robuffer, str, NoneType}, zeroes=True)
     /
 [clinic start generated code]*/
 
 static PyObject *
 _testcapi_dict_getitemstringref_impl(PyObject *module, PyObject *obj,
-                                     PyObject *value, const char *attr_name,
+                                     const char *attr_name,
                                      Py_ssize_t attr_name_length)
-/*[clinic end generated code: output=22f68fcfb2d0e65e input=3613695804310a2e]*/
+/*[clinic end generated code: output=7b77e8da44d9d1dc input=103eee65f8f9841c]*/
 {
+    PyObject *value;
+    Py_ssize_t size;
     NULLABLE(obj);
 
     switch (PyDict_GetItemStringRef(obj, attr_name, &value)) {
@@ -308,16 +309,16 @@ _testcapi_dict_setitem_impl(PyObject *module, PyObject *mapping,
 /*[clinic input]
 _testcapi.dict_setitemstring
     mapping: object
+    key: str(accept={robuffer, str, NoneType}, zeroes=True)
     value: object
-    key: str(accept={robuffer}, zeroes=True)
     /
 [clinic start generated code]*/
 
 static PyObject *
 _testcapi_dict_setitemstring_impl(PyObject *module, PyObject *mapping,
-                                  PyObject *value, const char *key,
-                                  Py_ssize_t key_length)
-/*[clinic end generated code: output=65cdbcf61f17b87c input=4d5e4ea66f092051]*/
+                                  const char *key, Py_ssize_t key_length,
+                                  PyObject *value)
+/*[clinic end generated code: output=c684aeab1ee79d93 input=f5a6618dac763fba]*/
 {
     NULLABLE(mapping);
     NULLABLE(value);
@@ -366,14 +367,14 @@ _testcapi_dict_delitem_impl(PyObject *module, PyObject *mapping,
 /*[clinic input]
 _testcapi.dict_delitemstring
     mapping: object
-    key: str(accept={robuffer}, zeroes=True)
+    key: str(accept={robuffer, str, NoneType}, zeroes=True)
     /
 [clinic start generated code]*/
 
 static PyObject *
 _testcapi_dict_delitemstring_impl(PyObject *module, PyObject *mapping,
                                   const char *key, Py_ssize_t key_length)
-/*[clinic end generated code: output=9de0731724962620 input=5014e819b1836a3c]*/
+/*[clinic end generated code: output=9de0731724962620 input=296c0dab58190e6a]*/
 {
     NULLABLE(mapping);
     RETURN_INT(PyDict_DelItemString(mapping, key));

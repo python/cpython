@@ -152,7 +152,7 @@ _testcapi_dict_getitemstring(PyObject *module, PyObject *const *args, Py_ssize_t
     const char *key;
     Py_ssize_t key_length;
 
-    if (!_PyArg_ParseStack(args, nargs, "Oy#:dict_getitemstring",
+    if (!_PyArg_ParseStack(args, nargs, "Oz#:dict_getitemstring",
         &mapping, &key, &key_length)) {
         goto exit;
     }
@@ -193,7 +193,7 @@ exit:
 }
 
 PyDoc_STRVAR(_testcapi_dict_getitemref__doc__,
-"dict_getitemref($module, obj, attr_name, value, /)\n"
+"dict_getitemref($module, obj, attr_name, /)\n"
 "--\n"
 "\n");
 
@@ -202,7 +202,7 @@ PyDoc_STRVAR(_testcapi_dict_getitemref__doc__,
 
 static PyObject *
 _testcapi_dict_getitemref_impl(PyObject *module, PyObject *obj,
-                               PyObject *attr_name, PyObject *value);
+                               PyObject *attr_name);
 
 static PyObject *
 _testcapi_dict_getitemref(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -210,22 +210,20 @@ _testcapi_dict_getitemref(PyObject *module, PyObject *const *args, Py_ssize_t na
     PyObject *return_value = NULL;
     PyObject *obj;
     PyObject *attr_name;
-    PyObject *value;
 
-    if (!_PyArg_CheckPositional("dict_getitemref", nargs, 3, 3)) {
+    if (!_PyArg_CheckPositional("dict_getitemref", nargs, 2, 2)) {
         goto exit;
     }
     obj = args[0];
     attr_name = args[1];
-    value = args[2];
-    return_value = _testcapi_dict_getitemref_impl(module, obj, attr_name, value);
+    return_value = _testcapi_dict_getitemref_impl(module, obj, attr_name);
 
 exit:
     return return_value;
 }
 
 PyDoc_STRVAR(_testcapi_dict_getitemstringref__doc__,
-"dict_getitemstringref($module, obj, value, attr_name, /)\n"
+"dict_getitemstringref($module, obj, attr_name, /)\n"
 "--\n"
 "\n");
 
@@ -234,7 +232,7 @@ PyDoc_STRVAR(_testcapi_dict_getitemstringref__doc__,
 
 static PyObject *
 _testcapi_dict_getitemstringref_impl(PyObject *module, PyObject *obj,
-                                     PyObject *value, const char *attr_name,
+                                     const char *attr_name,
                                      Py_ssize_t attr_name_length);
 
 static PyObject *
@@ -242,15 +240,14 @@ _testcapi_dict_getitemstringref(PyObject *module, PyObject *const *args, Py_ssiz
 {
     PyObject *return_value = NULL;
     PyObject *obj;
-    PyObject *value;
     const char *attr_name;
     Py_ssize_t attr_name_length;
 
-    if (!_PyArg_ParseStack(args, nargs, "OOy#:dict_getitemstringref",
-        &obj, &value, &attr_name, &attr_name_length)) {
+    if (!_PyArg_ParseStack(args, nargs, "Oz#:dict_getitemstringref",
+        &obj, &attr_name, &attr_name_length)) {
         goto exit;
     }
-    return_value = _testcapi_dict_getitemstringref_impl(module, obj, value, attr_name, attr_name_length);
+    return_value = _testcapi_dict_getitemstringref_impl(module, obj, attr_name, attr_name_length);
 
 exit:
     return return_value;
@@ -289,7 +286,7 @@ exit:
 }
 
 PyDoc_STRVAR(_testcapi_dict_setitemstring__doc__,
-"dict_setitemstring($module, mapping, value, key, /)\n"
+"dict_setitemstring($module, mapping, key, value, /)\n"
 "--\n"
 "\n");
 
@@ -298,23 +295,23 @@ PyDoc_STRVAR(_testcapi_dict_setitemstring__doc__,
 
 static PyObject *
 _testcapi_dict_setitemstring_impl(PyObject *module, PyObject *mapping,
-                                  PyObject *value, const char *key,
-                                  Py_ssize_t key_length);
+                                  const char *key, Py_ssize_t key_length,
+                                  PyObject *value);
 
 static PyObject *
 _testcapi_dict_setitemstring(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *mapping;
-    PyObject *value;
     const char *key;
     Py_ssize_t key_length;
+    PyObject *value;
 
-    if (!_PyArg_ParseStack(args, nargs, "OOy#:dict_setitemstring",
-        &mapping, &value, &key, &key_length)) {
+    if (!_PyArg_ParseStack(args, nargs, "Oz#O:dict_setitemstring",
+        &mapping, &key, &key_length, &value)) {
         goto exit;
     }
-    return_value = _testcapi_dict_setitemstring_impl(module, mapping, value, key, key_length);
+    return_value = _testcapi_dict_setitemstring_impl(module, mapping, key, key_length, value);
 
 exit:
     return return_value;
@@ -402,7 +399,7 @@ _testcapi_dict_delitemstring(PyObject *module, PyObject *const *args, Py_ssize_t
     const char *key;
     Py_ssize_t key_length;
 
-    if (!_PyArg_ParseStack(args, nargs, "Oy#:dict_delitemstring",
+    if (!_PyArg_ParseStack(args, nargs, "Oz#:dict_delitemstring",
         &mapping, &key, &key_length)) {
         goto exit;
     }
@@ -575,4 +572,4 @@ _testcapi_dict_mergefromseq2(PyObject *module, PyObject *const *args, Py_ssize_t
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7dd6014310c98f76 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e3085a44dfe3d4e7 input=a9049054013a1b77]*/
