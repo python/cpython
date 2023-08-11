@@ -2489,12 +2489,71 @@ This function is intended specifically for use with numeric values and may
 reject non-numeric types.
 [clinic start generated code]*/
 
+static PyObject* range_sum_fastpath(PyObject* module, PyObject *range)
+{
+    PyObject* length = builtin_len(module, range);
+
+    if (PyObject_RichCompareBool(length, PyLong_FromLong(0), Py_EQ)) {
+        Py_DecRef(length);
+        return PyLong_FromLong(0);
+    }
+
+    // compute start * length + step * length * (length - 1) // 2
+    //                                          [    a     ]
+    //                                 [         b         ]
+    //                                 [             c           ]
+    //                         [                 d               ]
+    //        [       e      ]
+    //        [                      result                      ]
+
+    PyObject* start = PyObject_GetAttrString(range, "start");
+    PyObject* step = PyObject_GetAttrString(range, "step");
+
+    PyObject* one = PyLong_FromLong(1);
+    PyObject* a = PyNumber_Subtract(length, one);
+
+    PyObject* b = PyNumber_Multiply(a, length);
+
+    PyObject* two = PyLong_FromLong(2);
+    PyObject* c = PyNumber_FloorDivide(b, two);
+
+    PyObject* d = PyNumber_Multiply(step, c);
+
+    PyObject* e = PyNumber_Multiply(length, start);
+
+    PyObject* result = PyNumber_Add(d, e);
+
+    Py_DecRef(length);
+    Py_DecRef(start);
+    Py_DecRef(step);
+
+    Py_DecRef(one);
+    Py_DecRef(a);
+    Py_DecRef(b);
+    Py_DecRef(two);
+    Py_DecRef(c);
+    Py_DecRef(d);
+    Py_DecRef(e);
+
+    return result;
+}
+
 static PyObject *
 builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
 /*[clinic end generated code: output=df758cec7d1d302f input=162b50765250d222]*/
 {
     PyObject *result = start;
     PyObject *temp, *item, *iter;
+
+    if (PyRange_Check(iterable)) {
+        if (result == NULL) {
+            result = PyLong_FromLong(0);
+        }
+        PyObject* rangesum =  range_sum_fastpath(module, iterable);
+        result = PyNumber_Add(result, rangesum);
+        Py_DecRef(rangesum);
+        return result;
+    }
 
     iter = PyObject_GetIter(iterable);
     if (iter == NULL)
