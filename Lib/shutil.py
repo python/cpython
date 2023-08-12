@@ -40,6 +40,11 @@ if os.name == 'posix':
 elif _WINDOWS:
     import nt
 
+if sys.platform == 'win32':
+    import _winapi
+else:
+    _winapi = None
+
 COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 64 * 1024
 # This should never be removed, see rationale in:
 # https://bugs.python.org/issue43743#msg393429
@@ -329,7 +334,7 @@ if hasattr(os, 'listxattr'):
                 os.setxattr(dst, name, value, follow_symlinks=follow_symlinks)
             except OSError as e:
                 if e.errno not in (errno.EPERM, errno.ENOTSUP, errno.ENODATA,
-                                   errno.EINVAL):
+                                   errno.EINVAL, errno.EACCES):
                     raise
 else:
     def _copyxattr(*args, **kwargs):
@@ -432,6 +437,29 @@ def copy2(src, dst, *, follow_symlinks=True):
     """
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
+
+    if hasattr(_winapi, "CopyFile2"):
+        src_ = os.fsdecode(src)
+        dst_ = os.fsdecode(dst)
+        flags = _winapi.COPY_FILE_ALLOW_DECRYPTED_DESTINATION # for compat
+        if not follow_symlinks:
+            flags |= _winapi.COPY_FILE_COPY_SYMLINK
+        try:
+            _winapi.CopyFile2(src_, dst_, flags)
+            return dst
+        except OSError as exc:
+            if (exc.winerror == _winapi.ERROR_PRIVILEGE_NOT_HELD
+                and not follow_symlinks):
+                # Likely encountered a symlink we aren't allowed to create.
+                # Fall back on the old code
+                pass
+            elif exc.winerror == _winapi.ERROR_ACCESS_DENIED:
+                # Possibly encountered a hidden or readonly file we can't
+                # overwrite. Fall back on old code
+                pass
+            else:
+                raise
+
     copyfile(src, dst, follow_symlinks=follow_symlinks)
     copystat(src, dst, follow_symlinks=follow_symlinks)
     return dst
@@ -696,7 +724,7 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
 
     if onerror is not None:
         warnings.warn("onerror argument is deprecated, use onexc instead",
-                      DeprecationWarning)
+                      DeprecationWarning, stacklevel=2)
 
     sys.audit("shutil.rmtree", path, dir_fd)
     if ignore_errors:
@@ -1242,7 +1270,7 @@ def _unpack_zipfile(filename, extract_dir):
     finally:
         zip.close()
 
-def _unpack_tarfile(filename, extract_dir):
+def _unpack_tarfile(filename, extract_dir, *, filter=None):
     """Unpack tar/tar.gz/tar.bz2/tar.xz `filename` to `extract_dir`
     """
     import tarfile  # late import for breaking circular dependency
@@ -1252,7 +1280,7 @@ def _unpack_tarfile(filename, extract_dir):
         raise ReadError(
             "%s is not a compressed or uncompressed tar file" % filename)
     try:
-        tarobj.extractall(extract_dir)
+        tarobj.extractall(extract_dir, filter=filter)
     finally:
         tarobj.close()
 
@@ -1285,7 +1313,7 @@ def _find_unpack_format(filename):
                 return name
     return None
 
-def unpack_archive(filename, extract_dir=None, format=None):
+def unpack_archive(filename, extract_dir=None, format=None, *, filter=None):
     """Unpack an archive.
 
     `filename` is the name of the archive.
@@ -1299,6 +1327,9 @@ def unpack_archive(filename, extract_dir=None, format=None):
     was registered for that extension.
 
     In case none is found, a ValueError is raised.
+
+    If `filter` is given, it is passed to the underlying
+    extraction function.
     """
     sys.audit("shutil.unpack_archive", filename, extract_dir, format)
 
@@ -1308,6 +1339,10 @@ def unpack_archive(filename, extract_dir=None, format=None):
     extract_dir = os.fspath(extract_dir)
     filename = os.fspath(filename)
 
+    if filter is None:
+        filter_kwargs = {}
+    else:
+        filter_kwargs = {'filter': filter}
     if format is not None:
         try:
             format_info = _UNPACK_FORMATS[format]
@@ -1315,7 +1350,7 @@ def unpack_archive(filename, extract_dir=None, format=None):
             raise ValueError("Unknown unpack format '{0}'".format(format)) from None
 
         func = format_info[1]
-        func(filename, extract_dir, **dict(format_info[2]))
+        func(filename, extract_dir, **dict(format_info[2]), **filter_kwargs)
     else:
         # we need to look at the registered unpackers supported extensions
         format = _find_unpack_format(filename)
@@ -1323,7 +1358,7 @@ def unpack_archive(filename, extract_dir=None, format=None):
             raise ReadError("Unknown archive format '{0}'".format(filename))
 
         func = _UNPACK_FORMATS[format][1]
-        kwargs = dict(_UNPACK_FORMATS[format][2])
+        kwargs = dict(_UNPACK_FORMATS[format][2]) | filter_kwargs
         func(filename, extract_dir, **kwargs)
 
 
@@ -1449,6 +1484,16 @@ def _access_check(fn, mode):
             and not os.path.isdir(fn))
 
 
+def _win_path_needs_curdir(cmd, mode):
+    """
+    On Windows, we can use NeedCurrentDirectoryForExePath to figure out
+    if we should add the cwd to PATH when searching for executables if
+    the mode is executable.
+    """
+    return (not (mode & os.X_OK)) or _winapi.NeedCurrentDirectoryForExePath(
+                os.fsdecode(cmd))
+
+
 def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     """Given a command, mode, and a PATH string, return the path which
     conforms to the given mode on the PATH, or None if there is no such
@@ -1459,60 +1504,54 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     path.
 
     """
-    # If we're given a path with a directory part, look it up directly rather
-    # than referring to PATH directories. This includes checking relative to the
-    # current directory, e.g. ./script
-    if os.path.dirname(cmd):
-        if _access_check(cmd, mode):
-            return cmd
-        return None
-
     use_bytes = isinstance(cmd, bytes)
 
-    if path is None:
-        path = os.environ.get("PATH", None)
-        if path is None:
-            try:
-                path = os.confstr("CS_PATH")
-            except (AttributeError, ValueError):
-                # os.confstr() or CS_PATH is not available
-                path = os.defpath
-        # bpo-35755: Don't use os.defpath if the PATH environment variable is
-        # set to an empty string
-
-    # PATH='' doesn't match, whereas PATH=':' looks in the current directory
-    if not path:
-        return None
-
-    if use_bytes:
-        path = os.fsencode(path)
-        path = path.split(os.fsencode(os.pathsep))
+    # If we're given a path with a directory part, look it up directly rather
+    # than referring to PATH directories. This includes checking relative to
+    # the current directory, e.g. ./script
+    dirname, cmd = os.path.split(cmd)
+    if dirname:
+        path = [dirname]
     else:
-        path = os.fsdecode(path)
-        path = path.split(os.pathsep)
+        if path is None:
+            path = os.environ.get("PATH", None)
+            if path is None:
+                try:
+                    path = os.confstr("CS_PATH")
+                except (AttributeError, ValueError):
+                    # os.confstr() or CS_PATH is not available
+                    path = os.defpath
+            # bpo-35755: Don't use os.defpath if the PATH environment variable
+            # is set to an empty string
 
-    if sys.platform == "win32":
-        # The current directory takes precedence on Windows.
-        curdir = os.curdir
+        # PATH='' doesn't match, whereas PATH=':' looks in the current
+        # directory
+        if not path:
+            return None
+
         if use_bytes:
-            curdir = os.fsencode(curdir)
-        if curdir not in path:
+            path = os.fsencode(path)
+            path = path.split(os.fsencode(os.pathsep))
+        else:
+            path = os.fsdecode(path)
+            path = path.split(os.pathsep)
+
+        if sys.platform == "win32" and _win_path_needs_curdir(cmd, mode):
+            curdir = os.curdir
+            if use_bytes:
+                curdir = os.fsencode(curdir)
             path.insert(0, curdir)
 
+    if sys.platform == "win32":
         # PATHEXT is necessary to check on Windows.
         pathext_source = os.getenv("PATHEXT") or _WIN_DEFAULT_PATHEXT
         pathext = [ext for ext in pathext_source.split(os.pathsep) if ext]
 
         if use_bytes:
             pathext = [os.fsencode(ext) for ext in pathext]
-        # See if the given file matches any of the expected path extensions.
-        # This will allow us to short circuit when given "python.exe".
-        # If it does match, only test that one, otherwise we have to try
-        # others.
-        if any(cmd.lower().endswith(ext.lower()) for ext in pathext):
-            files = [cmd]
-        else:
-            files = [cmd + ext for ext in pathext]
+
+        # Always try checking the originally given cmd, if it doesn't match, try pathext
+        files = [cmd] + [cmd + ext for ext in pathext]
     else:
         # On other platforms you don't have things like PATHEXT to tell you
         # what file suffixes are executable, so just pass on cmd as-is.

@@ -1,1 +1,0 @@
-Fix a :mod:`pdb` bug where ``ll`` clears the changes to local variables.

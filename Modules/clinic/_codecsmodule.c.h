@@ -1790,9 +1790,6 @@ _codecs_utf_7_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("utf_7_encode", "argument 1", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     str = args[0];
     if (nargs < 2) {
         goto skip_optional;
@@ -1846,9 +1843,6 @@ _codecs_utf_8_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyUnicode_Check(args[0])) {
         _PyArg_BadArgument("utf_8_encode", "argument 1", "str", args[0]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[0]) == -1) {
         goto exit;
     }
     str = args[0];
@@ -1905,9 +1899,6 @@ _codecs_utf_16_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyUnicode_Check(args[0])) {
         _PyArg_BadArgument("utf_16_encode", "argument 1", "str", args[0]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[0]) == -1) {
         goto exit;
     }
     str = args[0];
@@ -1972,9 +1963,6 @@ _codecs_utf_16_le_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         _PyArg_BadArgument("utf_16_le_encode", "argument 1", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     str = args[0];
     if (nargs < 2) {
         goto skip_optional;
@@ -2028,9 +2016,6 @@ _codecs_utf_16_be_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     }
     if (!PyUnicode_Check(args[0])) {
         _PyArg_BadArgument("utf_16_be_encode", "argument 1", "str", args[0]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[0]) == -1) {
         goto exit;
     }
     str = args[0];
@@ -2087,9 +2072,6 @@ _codecs_utf_32_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyUnicode_Check(args[0])) {
         _PyArg_BadArgument("utf_32_encode", "argument 1", "str", args[0]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[0]) == -1) {
         goto exit;
     }
     str = args[0];
@@ -2154,9 +2136,6 @@ _codecs_utf_32_le_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         _PyArg_BadArgument("utf_32_le_encode", "argument 1", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     str = args[0];
     if (nargs < 2) {
         goto skip_optional;
@@ -2210,9 +2189,6 @@ _codecs_utf_32_be_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     }
     if (!PyUnicode_Check(args[0])) {
         _PyArg_BadArgument("utf_32_be_encode", "argument 1", "str", args[0]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[0]) == -1) {
         goto exit;
     }
     str = args[0];
@@ -2270,9 +2246,6 @@ _codecs_unicode_escape_encode(PyObject *module, PyObject *const *args, Py_ssize_
         _PyArg_BadArgument("unicode_escape_encode", "argument 1", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     str = args[0];
     if (nargs < 2) {
         goto skip_optional;
@@ -2326,9 +2299,6 @@ _codecs_raw_unicode_escape_encode(PyObject *module, PyObject *const *args, Py_ss
     }
     if (!PyUnicode_Check(args[0])) {
         _PyArg_BadArgument("raw_unicode_escape_encode", "argument 1", "str", args[0]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[0]) == -1) {
         goto exit;
     }
     str = args[0];
@@ -2386,9 +2356,6 @@ _codecs_latin_1_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         _PyArg_BadArgument("latin_1_encode", "argument 1", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     str = args[0];
     if (nargs < 2) {
         goto skip_optional;
@@ -2442,9 +2409,6 @@ _codecs_ascii_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyUnicode_Check(args[0])) {
         _PyArg_BadArgument("ascii_encode", "argument 1", "str", args[0]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[0]) == -1) {
         goto exit;
     }
     str = args[0];
@@ -2503,9 +2467,6 @@ _codecs_charmap_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         _PyArg_BadArgument("charmap_encode", "argument 1", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     str = args[0];
     if (nargs < 2) {
         goto skip_optional;
@@ -2560,9 +2521,6 @@ _codecs_charmap_build(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("charmap_build", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     map = arg;
     return_value = _codecs_charmap_build_impl(module, map);
 
@@ -2595,9 +2553,6 @@ _codecs_mbcs_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyUnicode_Check(args[0])) {
         _PyArg_BadArgument("mbcs_encode", "argument 1", "str", args[0]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[0]) == -1) {
         goto exit;
     }
     str = args[0];
@@ -2656,9 +2611,6 @@ _codecs_oem_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyUnicode_Check(args[0])) {
         _PyArg_BadArgument("oem_encode", "argument 1", "str", args[0]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[0]) == -1) {
         goto exit;
     }
     str = args[0];
@@ -2723,9 +2675,6 @@ _codecs_code_page_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     }
     if (!PyUnicode_Check(args[1])) {
         _PyArg_BadArgument("code_page_encode", "argument 2", "str", args[1]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[1]) == -1) {
         goto exit;
     }
     str = args[1];
@@ -2869,4 +2818,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=603da07cf8dfeb4b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0f52053d31533376 input=a9049054013a1b77]*/

@@ -1,0 +1,3 @@
+Add missing documentation for the ``max_group_depth`` and ``max_group_width``
+parameters and the ``exceptions`` attribute of the
+:class:`traceback.TracebackException` class.
