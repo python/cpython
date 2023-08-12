@@ -457,7 +457,7 @@ def decode_frozen_data(source: str) -> types.CodeType:
     values: list[int] = []
     for line in source.splitlines():
         if re.match(FROZEN_DATA_LINE, line):
-            values.extend(int(x) for x in line.split(",") if x.strip())
+            values.extend([int(x) for x in line.split(",") if x.strip()])
     data = bytes(values)
     return umarshal.loads(data)
 
