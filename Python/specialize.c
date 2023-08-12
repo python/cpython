@@ -1558,6 +1558,8 @@ success:
     cache->counter = adaptive_counter_cooldown();
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
 /* Returns a borrowed reference.
  * The reference is only valid if guarded by a type version check.
  */
@@ -1615,9 +1617,8 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
             }
         }
         if (tp->tp_vectorcall != NULL) {
-            // XXX
-            // instr->op.code = CALL_BUILTIN_CLASS;
-            // return 0;
+            instr->op.code = kwnames ? CALL_KW_BUILTIN_CLASS : CALL_BUILTIN_CLASS;
+            return 0;
         }
         SPECIALIZATION_FAIL(CALL, tp == &PyUnicode_Type ?
             SPEC_FAIL_CALL_STR : SPEC_FAIL_CALL_CLASS_NO_VECTORCALL);
@@ -1734,9 +1735,9 @@ specialize_method_descriptor(PyMethodDescrObject *descr, _Py_CODEUNIT *instr,
             return 0;
         }
         case METH_FASTCALL | METH_KEYWORDS: {
-            // XXX
-            // instr->op.code = CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS;
-            // return 0;
+            instr->op.code = kwnames ? CALL_KW_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS
+                                     : CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS;
+            return 0;
         }
     }
     SPECIALIZATION_FAIL(CALL, meth_descr_call_fail_kind(descr->d_method->ml_flags));
@@ -1838,9 +1839,9 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
             return 0;
         }
         case METH_FASTCALL | METH_KEYWORDS: {
-            // XXX
-            // instr->op.code = CALL_BUILTIN_FAST_WITH_KEYWORDS;
-            // return 0;
+            instr->op.code = kwnames ? CALL_KW_BUILTIN_FAST_WITH_KEYWORDS
+                                     : CALL_BUILTIN_FAST_WITH_KEYWORDS;
+            return 0;
         }
         default:
             SPECIALIZATION_FAIL(CALL,
@@ -1876,9 +1877,34 @@ call_fail_kind(PyObject *callable)
 #endif
 
 
-/* TODO:
-    - Specialize calling classes.
-*/
+int
+specialize_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs, PyObject *kwnames)
+{
+    if (PyCFunction_CheckExact(callable)) {
+        return specialize_c_call(callable, instr, nargs, kwnames);
+    }
+    if (PyFunction_Check(callable)) {
+        return specialize_py_call((PyFunctionObject *)callable, instr, nargs, kwnames, false);
+    }
+    if (PyType_Check(callable)) {
+        return specialize_class_call(callable, instr, nargs, kwnames);
+    }
+    if (Py_IS_TYPE(callable, &PyMethodDescr_Type)) {
+        return specialize_method_descriptor((PyMethodDescrObject *)callable, instr, nargs, kwnames);
+    }
+    if (PyMethod_Check(callable)) {
+        PyObject *func = ((PyMethodObject *)callable)->im_func;
+        if (PyFunction_Check(func)) {
+            return specialize_py_call((PyFunctionObject *)func, instr, nargs+1, kwnames, true);
+        }
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_BOUND_METHOD);
+    }
+    else {
+        SPECIALIZATION_FAIL(CALL, call_fail_kind(callable));
+    }
+    return -1;
+}
+
 void
 _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
 {
@@ -1886,36 +1912,7 @@ _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
     assert(_PyOpcode_Caches[CALL] == INLINE_CACHE_ENTRIES_CALL);
     assert(_Py_OPCODE(*instr) != INSTRUMENTED_CALL);
     _PyCallCache *cache = (_PyCallCache *)(instr + 1);
-    int fail;
-    if (PyCFunction_CheckExact(callable)) {
-        fail = specialize_c_call(callable, instr, nargs, NULL);
-    }
-    else if (PyFunction_Check(callable)) {
-        fail = specialize_py_call((PyFunctionObject *)callable, instr, nargs,
-                                  NULL, false);
-    }
-    else if (PyType_Check(callable)) {
-        fail = specialize_class_call(callable, instr, nargs, NULL);
-    }
-    else if (Py_IS_TYPE(callable, &PyMethodDescr_Type)) {
-        fail = specialize_method_descriptor((PyMethodDescrObject *)callable,
-                                            instr, nargs, NULL);
-    }
-    else if (PyMethod_Check(callable)) {
-        PyObject *func = ((PyMethodObject *)callable)->im_func;
-        if (PyFunction_Check(func)) {
-            fail = specialize_py_call((PyFunctionObject *)func,
-                                      instr, nargs+1, NULL, true);
-        } else {
-            SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_BOUND_METHOD);
-            fail = -1;
-        }
-    }
-    else {
-        SPECIALIZATION_FAIL(CALL, call_fail_kind(callable));
-        fail = -1;
-    }
-    if (fail) {
+    if (specialize_call(callable, instr, nargs, NULL)) {
         STAT_INC(CALL, failure);
         assert(!PyErr_Occurred());
         instr->op.code = CALL;
@@ -1929,18 +1926,26 @@ _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
 }
 
 void
-_Py_Specialize_CallKw(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
-                      PyObject *kwnames)
+_Py_Specialize_CallKw(PyObject *callable, _Py_CODEUNIT *instr, int nargs, PyObject *kwnames)
 {
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[CALL_KW] == INLINE_CACHE_ENTRIES_CALL);
     assert(_Py_OPCODE(*instr) != INSTRUMENTED_CALL_KW);
     _PyCallCache *cache = (_PyCallCache *)(instr + 1);
-    STAT_INC(CALL_KW, failure);
-    assert(!PyErr_Occurred());
-    instr->op.code = CALL_KW;
-    cache->counter = adaptive_counter_backoff(cache->counter);
+    if (specialize_call(callable, instr, nargs, kwnames)) {
+        STAT_INC(CALL_KW, failure);
+        assert(!PyErr_Occurred());
+        instr->op.code = CALL_KW;
+        cache->counter = adaptive_counter_backoff(cache->counter);
+    }
+    else {
+        STAT_INC(CALL_KW, success);
+        assert(!PyErr_Occurred());
+        cache->counter = adaptive_counter_cooldown();
+    }
 }
+
+////////////////////////////////////////////////////////////////////////////////
 
 #ifdef Py_STATS
 static int

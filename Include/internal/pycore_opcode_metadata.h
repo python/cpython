@@ -515,12 +515,16 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
         case EXIT_INIT_CHECK:
             return 1;
         case CALL_BUILTIN_CLASS:
+            return oparg + 2;
+        case CALL_KW_BUILTIN_CLASS:
             return oparg + 3;
         case CALL_NO_KW_BUILTIN_O:
             return oparg + 2;
         case CALL_NO_KW_BUILTIN_FAST:
             return oparg + 2;
         case CALL_BUILTIN_FAST_WITH_KEYWORDS:
+            return oparg + 2;
+        case CALL_KW_BUILTIN_FAST_WITH_KEYWORDS:
             return oparg + 3;
         case CALL_NO_KW_LEN:
             return oparg + 2;
@@ -531,6 +535,8 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
         case CALL_NO_KW_METHOD_DESCRIPTOR_O:
             return oparg + 2;
         case CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS:
+            return oparg + 2;
+        case CALL_KW_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS:
             return oparg + 3;
         case CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS:
             return oparg + 2;
@@ -1050,11 +1056,15 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 0;
         case CALL_BUILTIN_CLASS:
             return 1;
+        case CALL_KW_BUILTIN_CLASS:
+            return 1;
         case CALL_NO_KW_BUILTIN_O:
             return 1;
         case CALL_NO_KW_BUILTIN_FAST:
             return 1;
         case CALL_BUILTIN_FAST_WITH_KEYWORDS:
+            return 1;
+        case CALL_KW_BUILTIN_FAST_WITH_KEYWORDS:
             return 1;
         case CALL_NO_KW_LEN:
             return 1;
@@ -1065,6 +1075,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
         case CALL_NO_KW_METHOD_DESCRIPTOR_O:
             return 1;
         case CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS:
+            return 1;
+        case CALL_KW_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS:
             return 1;
         case CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS:
             return 1;
@@ -1385,14 +1397,17 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [CALL_NO_KW_ALLOC_AND_ENTER_INIT] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG },
     [EXIT_INIT_CHECK] = { true, INSTR_FMT_IX, 0 },
     [CALL_BUILTIN_CLASS] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG },
+    [CALL_KW_BUILTIN_CLASS] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG },
     [CALL_NO_KW_BUILTIN_O] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG },
     [CALL_NO_KW_BUILTIN_FAST] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG },
     [CALL_BUILTIN_FAST_WITH_KEYWORDS] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG },
+    [CALL_KW_BUILTIN_FAST_WITH_KEYWORDS] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG },
     [CALL_NO_KW_LEN] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG },
     [CALL_NO_KW_ISINSTANCE] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG },
     [CALL_NO_KW_LIST_APPEND] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG },
     [CALL_NO_KW_METHOD_DESCRIPTOR_O] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG },
     [CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG },
+    [CALL_KW_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG },
     [CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG },
     [CALL_NO_KW_METHOD_DESCRIPTOR_FAST] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG },
     [INSTRUMENTED_CALL_KW] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
@@ -1697,6 +1712,9 @@ const char *const _PyOpcode_OpName[268] = {
     [CALL_INTRINSIC_1] = "CALL_INTRINSIC_1",
     [CALL_INTRINSIC_2] = "CALL_INTRINSIC_2",
     [CALL_KW] = "CALL_KW",
+    [CALL_KW_BUILTIN_CLASS] = "CALL_KW_BUILTIN_CLASS",
+    [CALL_KW_BUILTIN_FAST_WITH_KEYWORDS] = "CALL_KW_BUILTIN_FAST_WITH_KEYWORDS",
+    [CALL_KW_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS] = "CALL_KW_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS",
     [CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS] = "CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS",
     [CALL_NO_KW_ALLOC_AND_ENTER_INIT] = "CALL_NO_KW_ALLOC_AND_ENTER_INIT",
     [CALL_NO_KW_BUILTIN_FAST] = "CALL_NO_KW_BUILTIN_FAST",
@@ -1887,13 +1905,16 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [CACHE] = CACHE,
     [CALL] = CALL,
     [CALL_BOUND_METHOD_EXACT_ARGS] = CALL,
-    [CALL_BUILTIN_CLASS] = CALL_KW,
-    [CALL_BUILTIN_FAST_WITH_KEYWORDS] = CALL_KW,
+    [CALL_BUILTIN_CLASS] = CALL,
+    [CALL_BUILTIN_FAST_WITH_KEYWORDS] = CALL,
     [CALL_FUNCTION_EX] = CALL_FUNCTION_EX,
     [CALL_INTRINSIC_1] = CALL_INTRINSIC_1,
     [CALL_INTRINSIC_2] = CALL_INTRINSIC_2,
     [CALL_KW] = CALL_KW,
-    [CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS] = CALL_KW,
+    [CALL_KW_BUILTIN_CLASS] = CALL_KW,
+    [CALL_KW_BUILTIN_FAST_WITH_KEYWORDS] = CALL_KW,
+    [CALL_KW_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS] = CALL_KW,
+    [CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS] = CALL,
     [CALL_NO_KW_ALLOC_AND_ENTER_INIT] = CALL,
     [CALL_NO_KW_BUILTIN_FAST] = CALL,
     [CALL_NO_KW_BUILTIN_O] = CALL,
@@ -2070,9 +2091,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif // NEED_OPCODE_METADATA
 
 #define EXTRA_CASES \
-    case 188: \
-    case 189: \
-    case 190: \
     case 191: \
     case 192: \
     case 193: \
