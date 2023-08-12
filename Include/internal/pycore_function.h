@@ -30,7 +30,7 @@ extern PyFunctionObject* _PyFunction_FromConstructor(PyFrameConstructor *constr)
 extern uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func);
 extern void _PyFunction_SetVersion(PyFunctionObject *func, uint32_t version);
 PyFunctionObject *_PyFunction_LookupByVersion(uint32_t version);
-void _PyFunction_ClearByVersionCache(void);
+void _PyFunction_ClearByVersionCache(PyInterpreterState *interp);
 
 extern PyObject *_Py_set_function_type_params(
     PyThreadState* unused, PyObject *func, PyObject *type_params);

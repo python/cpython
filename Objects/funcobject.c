@@ -250,9 +250,8 @@ _PyFunction_LookupByVersion(uint32_t version)
 }
 
 void
-_PyFunction_ClearByVersionCache(void)
+_PyFunction_ClearByVersionCache(PyInterpreterState *interp)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
     for (int i = 0; i < FUNC_VERSION_CACHE_SIZE; i++) {
         PyFunctionObject **slot = interp->func_state.func_version_cache + i;
         Py_CLEAR(*slot);
