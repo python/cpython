@@ -188,6 +188,11 @@ The CLI supports the following options:
 
    The directory tree to walk in :option:`--make` mode.
 
+.. option:: --exclude EXCLUDE
+
+   A file to exclude in :option:`--make` mode.
+   This option can be given multiple times.
+
 .. option:: FILE ...
 
    The list of files to process.
@@ -1900,6 +1905,41 @@ blocks embedded in Python files look slightly different.  They look like this:
     #/*[python checksum:...]*/
 
 
+.. _clinic-howto-override-signature:
+
+How to override the generated signature
+---------------------------------------
+
+You can use the ``@text_signature`` directive to override the default generated
+signature in the docstring.
+This can be useful for complex signatures that Argument Clinic cannot handle.
+The ``@text_signature`` directive takes one argument:
+the custom signature as a string.
+The provided signature is copied verbatim to the generated docstring.
+
+Example from :source:`Objects/codeobject.c`::
+
+   /*[clinic input]
+   @text_signature "($self, /, **changes)"
+   code.replace
+       *
+       co_argcount: int(c_default="self->co_argcount") = unchanged
+       co_posonlyargcount: int(c_default="self->co_posonlyargcount") = unchanged
+       # etc ...
+
+       Return a copy of the code object with new values for the specified fields.
+   [clinic start generated output]*/
+
+The generated docstring ends up looking like this:
+
+.. code-block:: none
+
+   replace($self, /, **changes)
+   --
+
+   Return a copy of the code object with new values for the specified fields.
+
+
 .. _clinic-howto-deprecate-positional:
 
 How to deprecate passing parameters positionally
@@ -1929,7 +1969,7 @@ whenever the *b* parameter is passed positionally,
 and we'll be allowed to make it keyword-only in Python 3.14 at the earliest.
 
 We can use Argument Clinic to emit the desired deprecation warnings
-using the ``* [from ...]``` syntax,
+using the ``* [from ...]`` syntax,
 by adding the line ``* [from 3.14]`` right above the *b* parameter::
 
    /*[clinic input]
@@ -1961,12 +2001,12 @@ Luckily for us, compiler warnings are now generated:
 .. code-block:: none
 
    In file included from Modules/foomodule.c:139:
-   Modules/clinic/foomodule.c.h:83:8: warning: Update 'b' in 'myfunc' in 'foomodule.c' to be keyword-only. [-W#warnings]
-    #    warning "Update 'b' in 'myfunc' in 'foomodule.c' to be keyword-only."
+   Modules/clinic/foomodule.c.h:139:8: warning: In 'foomodule.c', update parameter(s) 'a' and 'b' in the clinic input of 'mymod.myfunc' to be keyword-only. [-W#warnings]
+    #    warning "In 'foomodule.c', update parameter(s) 'a' and 'b' in the clinic input of 'mymod.myfunc' to be keyword-only. [-W#warnings]"
          ^
 
 We now close the deprecation phase by making *b* keyword-only;
-replace the ``* [from ...]``` line above *b*
+replace the ``* [from ...]`` line above *b*
 with the ``*`` from the line above *c*::
 
    /*[clinic input]

@@ -41,7 +41,7 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
         lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
     }
     #define DPRINTF(level, ...) \
-        if (lltrace >= (level)) { fprintf(stderr, __VA_ARGS__); }
+        if (lltrace >= (level)) { printf(__VA_ARGS__); }
 #else
     #define DPRINTF(level, ...)
 #endif

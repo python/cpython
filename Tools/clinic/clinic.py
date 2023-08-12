@@ -850,6 +850,7 @@ class CLanguage(Language):
         #endif /* !defined({methoddef_name}) */
     """)
     DEPRECATED_POSITIONAL_PROTOTYPE: Final[str] = r"""
+        // Emit compiler warnings when we get to Python {major}.{minor}.
         #if PY_VERSION_HEX >= 0x{major:02x}{minor:02x}00C0
         #  error \
                 {cpp_message}
@@ -927,7 +928,7 @@ class CLanguage(Language):
             if first_pos:
                 preamble = f"Passing {first_pos+1} positional arguments to "
             depr_message = preamble + (
-                f"{func.full_name}() is deprecated. Parameter {pstr} will "
+                f"{func.fulldisplayname}() is deprecated. Parameter {pstr} will "
                 f"become a keyword-only parameter in Python {major}.{minor}."
             )
         else:
@@ -938,9 +939,15 @@ class CLanguage(Language):
                     f"argument{'s' if first_pos != 1 else ''} to "
                 )
             depr_message = preamble + (
-                f"{func.full_name}() is deprecated. Parameters {pstr} will "
+                f"{func.fulldisplayname}() is deprecated. Parameters {pstr} will "
                 f"become keyword-only parameters in Python {major}.{minor}."
             )
+
+        # Append deprecation warning to docstring.
+        lines = textwrap.wrap(f"Note: {depr_message}")
+        docstring = "\n".join(lines)
+        func.docstring += f"\n\n{docstring}\n"
+
         # Format and return the code block.
         code = self.DEPRECATED_POSITIONAL_PROTOTYPE.format(
             condition=condition,
@@ -1666,14 +1673,7 @@ class CLanguage(Language):
 
         full_name = f.full_name
         template_dict = {'full_name': full_name}
-
-        if new_or_init:
-            assert isinstance(f.cls, Class)
-            name = f.cls.name
-        else:
-            name = f.name
-
-        template_dict['name'] = name
+        template_dict['name'] = f.displayname
 
         if f.c_basename:
             c_basename = f.c_basename
@@ -2671,6 +2671,21 @@ class Function:
         self.self_converter: self_converter | None = None
         self.__render_parameters__: list[Parameter] | None = None
 
+    @functools.cached_property
+    def displayname(self) -> str:
+        """Pretty-printable name."""
+        if self.kind.new_or_init:
+            assert isinstance(self.cls, Class)
+            return self.cls.name
+        else:
+            return self.name
+
+    @functools.cached_property
+    def fulldisplayname(self) -> str:
+        if isinstance(self.module, Module):
+            return f"{self.module.name}.{self.displayname}"
+        return self.displayname
+
     @property
     def render_parameters(self) -> list[Parameter]:
         if not self.__render_parameters__:
@@ -2767,6 +2782,13 @@ class Parameter:
             return f'"argument {self.name!r}"'
         else:
             return f'"argument {i}"'
+
+    def render_docstring(self) -> str:
+        add, out = text_accumulator()
+        add(f"  {self.name}\n")
+        for line in self.docstring.split("\n"):
+            add(f"    {line}\n")
+        return out().rstrip()
 
 
 CConverterClassT = TypeVar("CConverterClassT", bound=type["CConverter"])
@@ -4595,6 +4617,7 @@ class DSLParser:
         self.indent = IndentStack()
         self.kind = CALLABLE
         self.coexist = False
+        self.forced_text_signature: str | None = None
         self.parameter_continuation = ''
         self.preserve_output = False
 
@@ -4734,6 +4757,11 @@ class DSLParser:
         if self.coexist:
             fail("Called @coexist twice!")
         self.coexist = True
+
+    def at_text_signature(self, text_signature: str) -> None:
+        if self.forced_text_signature:
+            fail("Called @text_signature twice!")
+        self.forced_text_signature = text_signature
 
     def parse(self, block: Block) -> None:
         self.reset()
@@ -5194,13 +5222,14 @@ class DSLParser:
                     # but at least make an attempt at ensuring it's a valid expression.
                     try:
                         value = eval(default)
-                        if value is unspecified:
-                            fail("'unspecified' is not a legal default value!")
                     except NameError:
                         pass # probably a named constant
                     except Exception as e:
                         fail("Malformed expression given as default value "
                              f"{default!r} caused {e!r}")
+                    else:
+                        if value is unspecified:
+                            fail("'unspecified' is not a legal default value!")
                 if bad:
                     fail(f"Unsupported expression as default value: {default!r}")
 
@@ -5447,6 +5476,11 @@ class DSLParser:
 
     def docstring_append(self, obj: Function | Parameter, line: str) -> None:
         """Add a rstripped line to the current docstring."""
+        # gh-80282: We filter out non-ASCII characters from the docstring,
+        # since historically, some compilers may balk on non-ASCII input.
+        # If you're using Argument Clinic in an external project,
+        # you may not need to support the same array of platforms as CPython,
+        # so you may be able to remove this restriction.
         matches = re.finditer(r'[^\x00-\x7F]', line)
         if offending := ", ".join([repr(m[0]) for m in matches]):
             warn("Non-ascii characters are not allowed in docstrings:",
@@ -5492,165 +5526,150 @@ class DSLParser:
 
         self.docstring_append(self.function, line)
 
-    def format_docstring(self) -> str:
-        f = self.function
-        assert f is not None
-
-        new_or_init = f.kind.new_or_init
-        if new_or_init and not f.docstring:
-            # don't render a docstring at all, no signature, nothing.
-            return f.docstring
-
+    def format_docstring_signature(
+        self, f: Function, parameters: list[Parameter]
+    ) -> str:
         text, add, output = _text_accumulator()
-        parameters = f.render_parameters
-
-        ##
-        ## docstring first line
-        ##
-
-        if new_or_init:
-            # classes get *just* the name of the class
-            # not __new__, not __init__, and not module.classname
-            assert f.cls
-            add(f.cls.name)
+        add(f.displayname)
+        if self.forced_text_signature:
+            add(self.forced_text_signature)
         else:
-            add(f.name)
-        add('(')
+            add('(')
 
-        # populate "right_bracket_count" field for every parameter
-        assert parameters, "We should always have a self parameter. " + repr(f)
-        assert isinstance(parameters[0].converter, self_converter)
-        # self is always positional-only.
-        assert parameters[0].is_positional_only()
-        assert parameters[0].right_bracket_count == 0
-        positional_only = True
-        for p in parameters[1:]:
-            if not p.is_positional_only():
-                positional_only = False
-            else:
-                assert positional_only
-            if positional_only:
-                p.right_bracket_count = abs(p.group)
-            else:
-                # don't put any right brackets around non-positional-only parameters, ever.
-                p.right_bracket_count = 0
+            # populate "right_bracket_count" field for every parameter
+            assert parameters, "We should always have a self parameter. " + repr(f)
+            assert isinstance(parameters[0].converter, self_converter)
+            # self is always positional-only.
+            assert parameters[0].is_positional_only()
+            assert parameters[0].right_bracket_count == 0
+            positional_only = True
+            for p in parameters[1:]:
+                if not p.is_positional_only():
+                    positional_only = False
+                else:
+                    assert positional_only
+                if positional_only:
+                    p.right_bracket_count = abs(p.group)
+                else:
+                    # don't put any right brackets around non-positional-only parameters, ever.
+                    p.right_bracket_count = 0
 
-        right_bracket_count = 0
+            right_bracket_count = 0
 
-        def fix_right_bracket_count(desired: int) -> str:
-            nonlocal right_bracket_count
-            s = ''
-            while right_bracket_count < desired:
-                s += '['
-                right_bracket_count += 1
-            while right_bracket_count > desired:
-                s += ']'
-                right_bracket_count -= 1
-            return s
+            def fix_right_bracket_count(desired: int) -> str:
+                nonlocal right_bracket_count
+                s = ''
+                while right_bracket_count < desired:
+                    s += '['
+                    right_bracket_count += 1
+                while right_bracket_count > desired:
+                    s += ']'
+                    right_bracket_count -= 1
+                return s
 
-        need_slash = False
-        added_slash = False
-        need_a_trailing_slash = False
+            need_slash = False
+            added_slash = False
+            need_a_trailing_slash = False
 
-        # we only need a trailing slash:
-        #   * if this is not a "docstring_only" signature
-        #   * and if the last *shown* parameter is
-        #     positional only
-        if not f.docstring_only:
-            for p in reversed(parameters):
+            # we only need a trailing slash:
+            #   * if this is not a "docstring_only" signature
+            #   * and if the last *shown* parameter is
+            #     positional only
+            if not f.docstring_only:
+                for p in reversed(parameters):
+                    if not p.converter.show_in_signature:
+                        continue
+                    if p.is_positional_only():
+                        need_a_trailing_slash = True
+                    break
+
+
+            added_star = False
+
+            first_parameter = True
+            last_p = parameters[-1]
+            line_length = len(''.join(text))
+            indent = " " * line_length
+            def add_parameter(text: str) -> None:
+                nonlocal line_length
+                nonlocal first_parameter
+                if first_parameter:
+                    s = text
+                    first_parameter = False
+                else:
+                    s = ' ' + text
+                    if line_length + len(s) >= 72:
+                        add('\n')
+                        add(indent)
+                        line_length = len(indent)
+                        s = text
+                line_length += len(s)
+                add(s)
+
+            for p in parameters:
                 if not p.converter.show_in_signature:
                     continue
+                assert p.name
+
+                is_self = isinstance(p.converter, self_converter)
+                if is_self and f.docstring_only:
+                    # this isn't a real machine-parsable signature,
+                    # so let's not print the "self" parameter
+                    continue
+
                 if p.is_positional_only():
-                    need_a_trailing_slash = True
-                break
+                    need_slash = not f.docstring_only
+                elif need_slash and not (added_slash or p.is_positional_only()):
+                    added_slash = True
+                    add_parameter('/,')
 
+                if p.is_keyword_only() and not added_star:
+                    added_star = True
+                    add_parameter('*,')
 
-        added_star = False
+                p_add, p_output = text_accumulator()
+                p_add(fix_right_bracket_count(p.right_bracket_count))
 
-        first_parameter = True
-        last_p = parameters[-1]
-        line_length = len(''.join(text))
-        indent = " " * line_length
-        def add_parameter(text: str) -> None:
-            nonlocal line_length
-            nonlocal first_parameter
-            if first_parameter:
-                s = text
-                first_parameter = False
-            else:
-                s = ' ' + text
-                if line_length + len(s) >= 72:
-                    add('\n')
-                    add(indent)
-                    line_length = len(indent)
-                    s = text
-            line_length += len(s)
-            add(s)
+                if isinstance(p.converter, self_converter):
+                    # annotate first parameter as being a "self".
+                    #
+                    # if inspect.Signature gets this function,
+                    # and it's already bound, the self parameter
+                    # will be stripped off.
+                    #
+                    # if it's not bound, it should be marked
+                    # as positional-only.
+                    #
+                    # note: we don't print "self" for __init__,
+                    # because this isn't actually the signature
+                    # for __init__.  (it can't be, __init__ doesn't
+                    # have a docstring.)  if this is an __init__
+                    # (or __new__), then this signature is for
+                    # calling the class to construct a new instance.
+                    p_add('$')
 
-        for p in parameters:
-            if not p.converter.show_in_signature:
-                continue
-            assert p.name
+                if p.is_vararg():
+                    p_add("*")
 
-            is_self = isinstance(p.converter, self_converter)
-            if is_self and f.docstring_only:
-                # this isn't a real machine-parsable signature,
-                # so let's not print the "self" parameter
-                continue
+                name = p.converter.signature_name or p.name
+                p_add(name)
 
-            if p.is_positional_only():
-                need_slash = not f.docstring_only
-            elif need_slash and not (added_slash or p.is_positional_only()):
-                added_slash = True
-                add_parameter('/,')
+                if not p.is_vararg() and p.converter.is_optional():
+                    p_add('=')
+                    value = p.converter.py_default
+                    if not value:
+                        value = repr(p.converter.default)
+                    p_add(value)
 
-            if p.is_keyword_only() and not added_star:
-                added_star = True
-                add_parameter('*,')
+                if (p != last_p) or need_a_trailing_slash:
+                    p_add(',')
 
-            p_add, p_output = text_accumulator()
-            p_add(fix_right_bracket_count(p.right_bracket_count))
+                add_parameter(p_output())
 
-            if isinstance(p.converter, self_converter):
-                # annotate first parameter as being a "self".
-                #
-                # if inspect.Signature gets this function,
-                # and it's already bound, the self parameter
-                # will be stripped off.
-                #
-                # if it's not bound, it should be marked
-                # as positional-only.
-                #
-                # note: we don't print "self" for __init__,
-                # because this isn't actually the signature
-                # for __init__.  (it can't be, __init__ doesn't
-                # have a docstring.)  if this is an __init__
-                # (or __new__), then this signature is for
-                # calling the class to construct a new instance.
-                p_add('$')
-
-            if p.is_vararg():
-                p_add("*")
-
-            name = p.converter.signature_name or p.name
-            p_add(name)
-
-            if not p.is_vararg() and p.converter.is_optional():
-                p_add('=')
-                value = p.converter.py_default
-                if not value:
-                    value = repr(p.converter.default)
-                p_add(value)
-
-            if (p != last_p) or need_a_trailing_slash:
-                p_add(',')
-
-            add_parameter(p_output())
-
-        add(fix_right_bracket_count(0))
-        if need_a_trailing_slash:
-            add_parameter('/')
-        add(')')
+            add(fix_right_bracket_count(0))
+            if need_a_trailing_slash:
+                add_parameter('/')
+            add(')')
 
         # PEP 8 says:
         #
@@ -5668,35 +5687,27 @@ class DSLParser:
         if not f.docstring_only:
             add("\n" + sig_end_marker + "\n")
 
-        docstring_first_line = output()
+        signature_line = output()
 
         # now fix up the places where the brackets look wrong
-        docstring_first_line = docstring_first_line.replace(', ]', ',] ')
+        return signature_line.replace(', ]', ',] ')
 
-        # okay.  now we're officially building the "parameters" section.
-        # create substitution text for {parameters}
-        spacer_line = False
-        for p in parameters:
-            if not p.docstring.strip():
-                continue
-            if spacer_line:
+    @staticmethod
+    def format_docstring_parameters(params: list[Parameter]) -> str:
+        """Create substitution text for {parameters}"""
+        add, output = text_accumulator()
+        for p in params:
+            if p.docstring:
+                add(p.render_docstring())
                 add('\n')
-            else:
-                spacer_line = True
-            add("  ")
-            add(p.name)
-            add('\n')
-            add(textwrap.indent(rstrip_lines(p.docstring.rstrip()), "    "))
-        parameters_output = output()
-        if parameters_output:
-            parameters_output += '\n'
+        return output()
 
-        ##
-        ## docstring body
-        ##
-
-        docstring = f.docstring.rstrip()
-        lines = [line.rstrip() for line in docstring.split('\n')]
+    def format_docstring(self) -> str:
+        assert self.function is not None
+        f = self.function
+        if f.kind.new_or_init and not f.docstring:
+            # don't render a docstring at all, no signature, nothing.
+            return f.docstring
 
         # Enforce the summary line!
         # The first line of a docstring should be a summary of the function.
@@ -5710,6 +5721,7 @@ class DSLParser:
         # Guido said Clinic should enforce this:
         # http://mail.python.org/pipermail/python-dev/2013-June/127110.html
 
+        lines = f.docstring.split('\n')
         if len(lines) >= 2:
             if lines[1]:
                 fail(f"Docstring for {f.full_name!r} does not have a summary line!\n"
@@ -5721,26 +5733,23 @@ class DSLParser:
             # between it and the {parameters} we're about to add.
             lines.append('')
 
-        parameters_marker_count = len(docstring.split('{parameters}')) - 1
+        parameters_marker_count = len(f.docstring.split('{parameters}')) - 1
         if parameters_marker_count > 1:
             fail('You may not specify {parameters} more than once in a docstring!')
 
+        # insert signature at front and params after the summary line
         if not parameters_marker_count:
-            # insert after summary line
             lines.insert(2, '{parameters}')
+        lines.insert(0, '{signature}')
 
-        # insert at front of docstring
-        lines.insert(0, docstring_first_line)
-
+        # finalize docstring
+        params = f.render_parameters
+        parameters = self.format_docstring_parameters(params)
+        signature = self.format_docstring_signature(f, params)
         docstring = "\n".join(lines)
-
-        add(docstring)
-        docstring = output()
-
-        docstring = linear_format(docstring, parameters=parameters_output)
-        docstring = docstring.rstrip()
-
-        return docstring
+        return linear_format(docstring,
+                             signature=signature,
+                             parameters=parameters).rstrip()
 
     def do_post_block_processing_cleanup(self, lineno: int) -> None:
         """
@@ -5817,6 +5826,9 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
                          help="walk --srcdir to run over all relevant files")
     cmdline.add_argument("--srcdir", type=str, default=os.curdir,
                          help="the directory tree to walk in --make mode")
+    cmdline.add_argument("--exclude", type=str, action="append",
+                         help=("a file to exclude in --make mode; "
+                               "can be given multiple times"))
     cmdline.add_argument("filename", metavar="FILE", type=str, nargs="*",
                          help="the list of files to process")
     return cmdline
@@ -5888,6 +5900,11 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
             parser.error("can't use -o or filenames with --make")
         if not ns.srcdir:
             parser.error("--srcdir must not be empty with --make")
+        if ns.exclude:
+            excludes = [os.path.join(ns.srcdir, f) for f in ns.exclude]
+            excludes = [os.path.normpath(f) for f in excludes]
+        else:
+            excludes = []
         for root, dirs, files in os.walk(ns.srcdir):
             for rcs_dir in ('.svn', '.git', '.hg', 'build', 'externals'):
                 if rcs_dir in dirs:
@@ -5897,6 +5914,9 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
                 if not filename.endswith(('.c', '.cpp', '.h')):
                     continue
                 path = os.path.join(root, filename)
+                path = os.path.normpath(path)
+                if path in excludes:
+                    continue
                 if ns.verbose:
                     print(path)
                 parse_file(path, verify=not ns.force)

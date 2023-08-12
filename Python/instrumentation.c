@@ -961,7 +961,7 @@ call_instrumentation_vector(
     /* Offset visible to user should be the offset in bytes, as that is the
      * convention for APIs involving code offsets. */
     int bytes_offset = offset * (int)sizeof(_Py_CODEUNIT);
-    PyObject *offset_obj = PyLong_FromSsize_t(bytes_offset);
+    PyObject *offset_obj = PyLong_FromLong(bytes_offset);
     if (offset_obj == NULL) {
         return -1;
     }
@@ -1082,16 +1082,6 @@ call_instrumentation_vector_protected(
 }
 
 void
-_Py_call_instrumentation_exc0(
-    PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr)
-{
-    assert(_PyErr_Occurred(tstate));
-    PyObject *args[3] = { NULL, NULL, NULL };
-    call_instrumentation_vector_protected(tstate, event, frame, instr, 2, args);
-}
-
-void
 _Py_call_instrumentation_exc2(
     PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1)
@@ -1151,14 +1141,46 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
         (interp->monitors.tools[PY_MONITORING_EVENT_LINE] |
          code->_co_monitoring->local_monitors.tools[PY_MONITORING_EVENT_LINE]
         );
-    PyObject *line_obj = PyLong_FromSsize_t(line);
+    /* Special case sys.settrace to avoid boxing the line number,
+     * only to immediately unbox it. */
+    if (tools & (1 << PY_MONITORING_SYS_TRACE_ID)) {
+        if (tstate->c_tracefunc != NULL && line >= 0) {
+            PyFrameObject *frame_obj = _PyFrame_GetFrameObject(frame);
+            if (frame_obj == NULL) {
+                return -1;
+            }
+            if (frame_obj->f_trace_lines) {
+                /* Need to set tracing and what_event as if using
+                 * the instrumentation call. */
+                int old_what = tstate->what_event;
+                tstate->what_event = PY_MONITORING_EVENT_LINE;
+                tstate->tracing++;
+                /* Call c_tracefunc directly, having set the line number. */
+                Py_INCREF(frame_obj);
+                frame_obj->f_lineno = line;
+                int err = tstate->c_tracefunc(tstate->c_traceobj, frame_obj, PyTrace_LINE, Py_None);
+                frame_obj->f_lineno = 0;
+                tstate->tracing--;
+                tstate->what_event = old_what;
+                Py_DECREF(frame_obj);
+                if (err) {
+                    return -1;
+                }
+            }
+        }
+        tools &= (255 - (1 << PY_MONITORING_SYS_TRACE_ID));
+    }
+    if (tools == 0) {
+        goto done;
+    }
+    PyObject *line_obj = PyLong_FromLong(line);
     if (line_obj == NULL) {
         return -1;
     }
     PyObject *args[3] = { NULL, (PyObject *)code, line_obj };
-    while (tools) {
+    do {
         int tool = most_significant_bit(tools);
-        assert(tool >= 0 && tool < 8);
+        assert(tool >= 0 && tool < PY_MONITORING_SYS_PROFILE_ID);
         assert(tools & (1 << tool));
         tools &= ~(1 << tool);
         int res = call_one_instrument(interp, tstate, &args[1],
@@ -1176,7 +1198,7 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
             /* DISABLE  */
             remove_line_tools(code, i, 1 << tool);
         }
-    }
+    } while (tools);
     Py_DECREF(line_obj);
 done:
     assert(original_opcode != 0);
@@ -1205,7 +1227,7 @@ _Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame*
          code->_co_monitoring->local_monitors.tools[PY_MONITORING_EVENT_INSTRUCTION]
         );
     int bytes_offset = offset * (int)sizeof(_Py_CODEUNIT);
-    PyObject *offset_obj = PyLong_FromSsize_t(bytes_offset);
+    PyObject *offset_obj = PyLong_FromLong(bytes_offset);
     if (offset_obj == NULL) {
         return -1;
     }
@@ -1859,6 +1881,9 @@ monitoring_register_callback_impl(PyObject *module, int tool_id, int event,
     int event_id = _Py_bit_length(event)-1;
     if (event_id < 0 || event_id >= _PY_MONITORING_EVENTS) {
         PyErr_Format(PyExc_ValueError, "invalid event %d", event);
+        return NULL;
+    }
+    if (PySys_Audit("sys.monitoring.register_callback", "O", func) < 0) {
         return NULL;
     }
     if (func == Py_None) {
