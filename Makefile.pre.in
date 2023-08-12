@@ -1253,7 +1253,7 @@ regen-frozen: Tools/build/freeze_modules.py $(FROZEN_FILES_IN)
 .PHONY: regen-deepfreeze
 regen-deepfreeze: $(DEEPFREEZE_OBJS)
 
-DEEPFREEZE_DEPS=$(srcdir)/Tools/build/deepfreeze.py $(FREEZE_MODULE_DEPS) $(FROZEN_FILES_OUT)
+DEEPFREEZE_DEPS=$(srcdir)/Tools/build/deepfreeze.py Include/internal/pycore_global_strings.h $(FREEZE_MODULE_DEPS) $(FROZEN_FILES_OUT)
 
 # BEGIN: deepfreeze modules
 Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)
