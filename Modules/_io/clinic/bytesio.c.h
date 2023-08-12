@@ -385,16 +385,12 @@ exit:
 }
 
 PyDoc_STRVAR(_io_BytesIO_seek__doc__,
-"seek($self, pos, whence=0, /)\n"
+"seek($self, offset, whence=io.SEEK_SET, /)\n"
 "--\n"
 "\n"
-"Change stream position.\n"
+"Change stream position and return the new absolute position.\n"
 "\n"
-"Seek to byte offset pos relative to position indicated by whence:\n"
-"     0  Start of stream (the default).  pos should be >= 0;\n"
-"     1  Current position - pos may be negative;\n"
-"     2  End of stream - pos usually negative.\n"
-"Returns the new absolute position.");
+"Set the byte offset \'offset\', relative to position indicated by \'whence\':");
 
 #define _IO_BYTESIO_SEEK_METHODDEF    \
     {"seek", _PyCFunction_CAST(_io_BytesIO_seek), METH_FASTCALL, _io_BytesIO_seek__doc__},
@@ -407,7 +403,7 @@ _io_BytesIO_seek(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t pos;
-    int whence = 0;
+    int whence = SEEK_SET;
 
     if (!_PyArg_CheckPositional("seek", nargs, 1, 2)) {
         goto exit;
@@ -538,4 +534,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=098584d485420b65 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9be4c337bcf59c97 input=a9049054013a1b77]*/

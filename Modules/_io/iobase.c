@@ -82,26 +82,32 @@ iobase_unsupported(_PyIO_State *state, const char *message)
 /*[clinic input]
 _io._IOBase.seek
     cls: defining_class
-    offset: int(unused=True)
-    whence: int(unused=True, c_default='0') = os.SEEK_SET
+    offset: object(unused=True)
+      Offset as byte count.
+      Relative to the position given by 'whence'.
+    whence: int(unused=True, c_default='SEEK_SET') = io.SEEK_SET
+      Relative position, used by 'offset'. Valid values are:
+      * io.SEEK_SET -- Start of stream (the default)
+      * io.SEEK_CUR -- Current position
+      * io.SEEK_END -- End of stream
     /
 
-Change the stream position to the given byte offset.
+Change the stream position and return the new absolute position.
 
-The offset is interpreted relative to the position indicated by whence.
-Values for whence are:
+Offsets relative to the start of the stream are usually zero or
+positive, offsets relative to the current stream position may be
+zero, positive or negative, and offsets relative to the end of the
+stream are usually zero or negative.
 
-* os.SEEK_SET or 0 -- start of stream (the default); offset should be zero or positive
-* os.SEEK_CUR or 1 -- current stream position; offset may be negative
-* os.SEEK_END or 2 -- end of stream; offset is usually negative
+Some platforms allow seeking beyond the end of a file.
 
-Return the new absolute position.
+Note that not all file objects are seekable.
 [clinic start generated code]*/
 
 static PyObject *
 _io__IOBase_seek_impl(PyObject *self, PyTypeObject *cls,
-                      int Py_UNUSED(offset), int Py_UNUSED(whence))
-/*[clinic end generated code: output=8bd74ea6538ded53 input=8d4e6adcd08292f2]*/
+                      PyObject *Py_UNUSED(offset), int Py_UNUSED(whence))
+/*[clinic end generated code: output=ce3f9d90fd587b34 input=32e671d402f6e69f]*/
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return iobase_unsupported(state, "seek");

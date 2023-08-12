@@ -2427,14 +2427,25 @@ _textiowrapper_encoder_setstate(textio *self, cookie_type *cookie)
 
 /*[clinic input]
 _io.TextIOWrapper.seek
-    cookie as cookieObj: object
-    whence: int = 0
+    offset as cookieObj: object
+    whence: int(c_default='SEEK_SET') = io.SEEK_SET
     /
+
+Change the file position and return the new absolute position.
+
+Offsets relative to the start of the file are usually zero or positive.
+Offsets relative to the current and end of file positions must zero;
+any other values are unsupported, and will raise the
+io.UnsupportedOperation exception.
+
+Some platforms allow seeking beyond the end of a file.
+
+Note that not all file objects are seekable.
 [clinic start generated code]*/
 
 static PyObject *
 _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
-/*[clinic end generated code: output=0a15679764e2d04d input=0458abeb3d7842be]*/
+/*[clinic end generated code: output=0a15679764e2d04d input=0e4b087bfcf07780]*/
 {
     PyObject *posobj;
     cookie_type cookie;

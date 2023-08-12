@@ -9,26 +9,35 @@ preserve
 
 
 PyDoc_STRVAR(_io__IOBase_seek__doc__,
-"seek($self, offset, whence=os.SEEK_SET, /)\n"
+"seek($self, offset, whence=io.SEEK_SET, /)\n"
 "--\n"
 "\n"
-"Change the stream position to the given byte offset.\n"
+"Change the stream position and return the new absolute position.\n"
 "\n"
-"The offset is interpreted relative to the position indicated by whence.\n"
-"Values for whence are:\n"
+"  offset\n"
+"    Offset as byte count.\n"
+"    Relative to the position given by \'whence\'.\n"
+"  whence\n"
+"    Relative position, used by \'offset\'. Valid values are:\n"
+"    * io.SEEK_SET -- Start of stream (the default)\n"
+"    * io.SEEK_CUR -- Current position\n"
+"    * io.SEEK_END -- End of stream\n"
 "\n"
-"* os.SEEK_SET or 0 -- start of stream (the default); offset should be zero or positive\n"
-"* os.SEEK_CUR or 1 -- current stream position; offset may be negative\n"
-"* os.SEEK_END or 2 -- end of stream; offset is usually negative\n"
+"Offsets relative to the start of the stream are usually zero or\n"
+"positive, offsets relative to the current stream position may be\n"
+"zero, positive or negative, and offsets relative to the end of the\n"
+"stream are usually zero or negative.\n"
 "\n"
-"Return the new absolute position.");
+"Some platforms allow seeking beyond the end of a file.\n"
+"\n"
+"Note that not all file objects are seekable.");
 
 #define _IO__IOBASE_SEEK_METHODDEF    \
     {"seek", _PyCFunction_CAST(_io__IOBase_seek), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__IOBase_seek__doc__},
 
 static PyObject *
 _io__IOBase_seek_impl(PyObject *self, PyTypeObject *cls,
-                      int Py_UNUSED(offset), int Py_UNUSED(whence));
+                      PyObject *Py_UNUSED(offset), int Py_UNUSED(whence));
 
 static PyObject *
 _io__IOBase_seek(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -48,17 +57,14 @@ _io__IOBase_seek(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ss
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
-    int offset;
-    int whence = 0;
+    PyObject *offset;
+    int whence = SEEK_SET;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    offset = _PyLong_AsInt(args[0]);
-    if (offset == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
+    offset = args[0];
     if (nargs < 2) {
         goto skip_optional_posonly;
     }
@@ -436,4 +442,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=301b22f8f75ce3dc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ab5aa4e6d7f3e785 input=a9049054013a1b77]*/

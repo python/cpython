@@ -756,9 +756,19 @@ exit:
 }
 
 PyDoc_STRVAR(_io_TextIOWrapper_seek__doc__,
-"seek($self, cookie, whence=0, /)\n"
+"seek($self, offset, whence=io.SEEK_SET, /)\n"
 "--\n"
-"\n");
+"\n"
+"Change the file position and return the new absolute position.\n"
+"\n"
+"Offsets relative to the start of the file are usually zero or positive.\n"
+"Offsets relative to the current and end of file positions must zero;\n"
+"any other values are unsupported, and will raise the\n"
+"io.UnsupportedOperation exception.\n"
+"\n"
+"Some platforms allow seeking beyond the end of a file.\n"
+"\n"
+"Note that not all file objects are seekable.");
 
 #define _IO_TEXTIOWRAPPER_SEEK_METHODDEF    \
     {"seek", _PyCFunction_CAST(_io_TextIOWrapper_seek), METH_FASTCALL, _io_TextIOWrapper_seek__doc__},
@@ -771,7 +781,7 @@ _io_TextIOWrapper_seek(textio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *cookieObj;
-    int whence = 0;
+    int whence = SEEK_SET;
 
     if (!_PyArg_CheckPositional("seek", nargs, 1, 2)) {
         goto exit;
@@ -957,4 +967,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=e1060638b65e8a63 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=50c6d193d7c6c9ca input=a9049054013a1b77]*/

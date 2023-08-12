@@ -168,6 +168,19 @@ High-level Module Interface
    :func:`os.stat`) if possible.
 
 
+.. data:: SEEK_SET
+          SEEK_CUR
+          SEEK_END
+
+   Parameters to the :meth:`~IOBase.seek` method,
+   used to specify the relative position
+   Their values are 0, 1, and 2, respectively.
+
+   .. seealso::
+
+      :data:`os.SEEK_SET`, :data:`os.SEEK_CUR`, and :data:`os.SEEK_END`.
+
+
 .. function:: open(file, mode='r', buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None)
 
    This is an alias for the builtin :func:`open` function.
@@ -405,18 +418,17 @@ I/O Base Classes
 
    .. method:: seek(offset, whence=SEEK_SET, /)
 
-      Change the stream position to the given byte *offset*.  *offset* is
-      interpreted relative to the position indicated by *whence*.  The default
-      value for *whence* is :data:`SEEK_SET`.  Values for *whence* are:
+      Change the stream position to the given byte *offset*,
+      and return the new absolute position as an integer.
+      *offset* is interpreted relative to the position indicated by *whence*.
+      Valid values for *whence* are:
 
-      * :data:`SEEK_SET` or ``0`` -- start of the stream (the default);
+      * :data:`SEEK_SET` -- seek from the start of the stream (the default);
         *offset* should be zero or positive
-      * :data:`SEEK_CUR` or ``1`` -- current stream position; *offset* may
-        be negative
-      * :data:`SEEK_END` or ``2`` -- end of the stream; *offset* is usually
-        negative
-
-      Return the new absolute position.
+      * :data:`SEEK_CUR` -- seek from current stream position;
+        *offset* may be negative
+      * :data:`SEEK_END` -- seek from the end of the stream;
+        *offset* is usually negative
 
       .. versionadded:: 3.1
          The ``SEEK_*`` constants.
@@ -911,21 +923,22 @@ Text I/O
 
    .. method:: seek(offset, whence=SEEK_SET, /)
 
-      Change the stream position to the given *offset*.  Behaviour depends on
-      the *whence* parameter.  The default value for *whence* is
-      :data:`SEEK_SET`.
+      Change the stream position to the given byte *offset*,
+      and return the new absolute position as an opaque number.
+      *offset* is interpreted relative to the position indicated by *whence*.
+      Valid values for *whence* are:
 
-      * :data:`SEEK_SET` or ``0``: seek from the start of the stream
-        (the default); *offset* must either be a number returned by
-        :meth:`TextIOBase.tell`, or zero.  Any other *offset* value
-        produces undefined behaviour.
-      * :data:`SEEK_CUR` or ``1``: "seek" to the current position;
-        *offset* must be zero, which is a no-operation (all other values
-        are unsupported).
-      * :data:`SEEK_END` or ``2``: seek to the end of the stream;
-        *offset* must be zero (all other values are unsupported).
+      * :data:`SEEK_SET` -- seek from the start of the stream (the default);
+        *offset* must either be a number returned by
+        :meth:`TextIOBase.tell`, or zero.
+        Any other *offset* value produces undefined behaviour.
+      * :data:`SEEK_CUR` -- seek from current stream position;
+        *offset* must be zero, which is a no-operation.
+        All other values are unsupported.
+      * :data:`SEEK_END` -- seek from the end of the stream;
+        *offset* must be zero.
+        All other values are unsupported.
 
-      Return the new absolute position as an opaque number.
 
       .. versionadded:: 3.1
          The ``SEEK_*`` constants.

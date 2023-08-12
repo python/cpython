@@ -953,24 +953,14 @@ portable_lseek(fileio *self, PyObject *posobj, int whence, bool suppress_pipe_er
 
 /*[clinic input]
 _io.FileIO.seek
-    pos: object
-    whence: int = 0
+    offset as pos: object
+    whence: int(c_default='SEEK_SET') = io.SEEK_SET
     /
-
-Move to new file position and return the file position.
-
-Argument offset is a byte count.  Optional argument whence defaults to
-SEEK_SET or 0 (offset from start of file, offset should be >= 0); other values
-are SEEK_CUR or 1 (move relative to current position, positive or negative),
-and SEEK_END or 2 (move relative to end of file, usually negative, although
-many platforms allow seeking beyond the end of a file).
-
-Note that not all file objects are seekable.
 [clinic start generated code]*/
 
 static PyObject *
 _io_FileIO_seek_impl(fileio *self, PyObject *pos, int whence)
-/*[clinic end generated code: output=c976acdf054e6655 input=0439194b0774d454]*/
+/*[clinic end generated code: output=c976acdf054e6655 input=ec74977caf7c656b]*/
 {
     if (self->fd < 0)
         return err_closed();

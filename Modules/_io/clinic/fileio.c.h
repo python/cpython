@@ -397,18 +397,9 @@ exit:
 }
 
 PyDoc_STRVAR(_io_FileIO_seek__doc__,
-"seek($self, pos, whence=0, /)\n"
+"seek($self, offset, whence=io.SEEK_SET, /)\n"
 "--\n"
-"\n"
-"Move to new file position and return the file position.\n"
-"\n"
-"Argument offset is a byte count.  Optional argument whence defaults to\n"
-"SEEK_SET or 0 (offset from start of file, offset should be >= 0); other values\n"
-"are SEEK_CUR or 1 (move relative to current position, positive or negative),\n"
-"and SEEK_END or 2 (move relative to end of file, usually negative, although\n"
-"many platforms allow seeking beyond the end of a file).\n"
-"\n"
-"Note that not all file objects are seekable.");
+"\n");
 
 #define _IO_FILEIO_SEEK_METHODDEF    \
     {"seek", _PyCFunction_CAST(_io_FileIO_seek), METH_FASTCALL, _io_FileIO_seek__doc__},
@@ -421,7 +412,7 @@ _io_FileIO_seek(fileio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *pos;
-    int whence = 0;
+    int whence = SEEK_SET;
 
     if (!_PyArg_CheckPositional("seek", nargs, 1, 2)) {
         goto exit;
@@ -536,4 +527,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=bef47b31b644996a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7450ee2e06306599 input=a9049054013a1b77]*/

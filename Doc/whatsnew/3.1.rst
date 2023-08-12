@@ -367,8 +367,8 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Benjamin Peterson and Antoine Pitrou.)
 
-* The :mod:`io` module has three new constants for the :meth:`seek`
-  method :data:`SEEK_SET`, :data:`SEEK_CUR`, and :data:`SEEK_END`.
+* The :mod:`io` module has three new constants for the :meth:`~io.IOBase.seek`
+  method :data:`~io.SEEK_SET`, :data:`~io.SEEK_CUR`, and :data:`~io.SEEK_END`.
 
 * The :data:`sys.version_info` tuple is now a named tuple::
 

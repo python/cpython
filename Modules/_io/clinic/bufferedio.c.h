@@ -697,7 +697,7 @@ _io__Buffered_tell(buffered *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_io__Buffered_seek__doc__,
-"seek($self, target, whence=0, /)\n"
+"seek($self, offset, whence=io.SEEK_SET, /)\n"
 "--\n"
 "\n");
 
@@ -712,7 +712,7 @@ _io__Buffered_seek(buffered *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *targetobj;
-    int whence = 0;
+    int whence = SEEK_SET;
 
     if (!_PyArg_CheckPositional("seek", nargs, 1, 2)) {
         goto exit;
@@ -1098,4 +1098,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b7ddf84a5bc2bf34 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4fc5f6e43e6e8af0 input=a9049054013a1b77]*/

@@ -1284,14 +1284,14 @@ _io__Buffered_tell_impl(buffered *self)
 
 /*[clinic input]
 _io._Buffered.seek
-    target as targetobj: object
-    whence: int = 0
+    offset as targetobj: object
+    whence: int(c_default='SEEK_SET') = io.SEEK_SET
     /
 [clinic start generated code]*/
 
 static PyObject *
 _io__Buffered_seek_impl(buffered *self, PyObject *targetobj, int whence)
-/*[clinic end generated code: output=7ae0e8dc46efdefb input=a9c4920bfcba6163]*/
+/*[clinic end generated code: output=7ae0e8dc46efdefb input=51b4741b1f355115]*/
 {
     Py_off_t target, n;
     PyObject *res = NULL;

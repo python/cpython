@@ -156,16 +156,18 @@ exit:
 }
 
 PyDoc_STRVAR(_io_StringIO_seek__doc__,
-"seek($self, pos, whence=0, /)\n"
+"seek($self, offset, whence=io.SEEK_SET, /)\n"
 "--\n"
 "\n"
-"Change stream position.\n"
+"Change the stream position and return the new absolute position.\n"
 "\n"
-"Seek to character offset pos relative to position indicated by whence:\n"
-"    0  Start of stream (the default).  pos should be >= 0;\n"
-"    1  Current position - pos must be 0;\n"
-"    2  End of stream - pos must be 0.\n"
-"Returns the new absolute position.");
+"Offsets relative to the start of the stream are usually zero or positive.\n"
+"Offsets relative to the current and end of file positions must zero;\n"
+"any other values are unsupported, and will raise OSError.\n"
+"\n"
+"Some platforms allow seeking beyond the end of a file.\n"
+"\n"
+"Note that not all file objects are seekable.");
 
 #define _IO_STRINGIO_SEEK_METHODDEF    \
     {"seek", _PyCFunction_CAST(_io_StringIO_seek), METH_FASTCALL, _io_StringIO_seek__doc__},
@@ -178,7 +180,7 @@ _io_StringIO_seek(stringio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t pos;
-    int whence = 0;
+    int whence = SEEK_SET;
 
     if (!_PyArg_CheckPositional("seek", nargs, 1, 2)) {
         goto exit;
@@ -367,4 +369,4 @@ _io_StringIO_seekable(stringio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_StringIO_seekable_impl(self);
 }
-/*[clinic end generated code: output=533f20ae9b773126 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=125add5258df3e4b input=a9049054013a1b77]*/

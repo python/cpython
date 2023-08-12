@@ -463,22 +463,24 @@ _io_StringIO_truncate_impl(stringio *self, Py_ssize_t size)
 
 /*[clinic input]
 _io.StringIO.seek
-    pos: Py_ssize_t
-    whence: int = 0
+    offset as pos: Py_ssize_t
+    whence: int(c_default='SEEK_SET') = io.SEEK_SET
     /
 
-Change stream position.
+Change the stream position and return the new absolute position.
 
-Seek to character offset pos relative to position indicated by whence:
-    0  Start of stream (the default).  pos should be >= 0;
-    1  Current position - pos must be 0;
-    2  End of stream - pos must be 0.
-Returns the new absolute position.
+Offsets relative to the start of the stream are usually zero or positive.
+Offsets relative to the current and end of file positions must zero;
+any other values are unsupported, and will raise OSError.
+
+Some platforms allow seeking beyond the end of a file.
+
+Note that not all file objects are seekable.
 [clinic start generated code]*/
 
 static PyObject *
 _io_StringIO_seek_impl(stringio *self, Py_ssize_t pos, int whence)
-/*[clinic end generated code: output=e9e0ac9a8ae71c25 input=e3855b24e7cae06a]*/
+/*[clinic end generated code: output=e9e0ac9a8ae71c25 input=40a33f8f64ddc34e]*/
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);

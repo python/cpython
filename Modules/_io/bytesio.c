@@ -636,22 +636,18 @@ bytesio_iternext(bytesio *self)
 
 /*[clinic input]
 _io.BytesIO.seek
-    pos: Py_ssize_t
-    whence: int = 0
+    offset as pos: Py_ssize_t
+    whence: int(c_default='SEEK_SET') = io.SEEK_SET
     /
 
-Change stream position.
+Change stream position and return the new absolute position.
 
-Seek to byte offset pos relative to position indicated by whence:
-     0  Start of stream (the default).  pos should be >= 0;
-     1  Current position - pos may be negative;
-     2  End of stream - pos usually negative.
-Returns the new absolute position.
+Set the byte offset 'offset', relative to position indicated by 'whence':
 [clinic start generated code]*/
 
 static PyObject *
 _io_BytesIO_seek_impl(bytesio *self, Py_ssize_t pos, int whence)
-/*[clinic end generated code: output=c26204a68e9190e4 input=1e875e6ebc652948]*/
+/*[clinic end generated code: output=c26204a68e9190e4 input=2dd44abb89ad75fb]*/
 {
     CHECK_CLOSED(self);
 
