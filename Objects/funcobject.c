@@ -223,6 +223,48 @@ error:
     return NULL;
 }
 
+/*
+Function versions
+-----------------
+
+Function versions are used to detect when a function object has been
+updated, invalidating inline cache data used by the `CALL` bytecode
+(notably `CALL_PY_EXACT_ARGS` and a few other `CALL` specializations).
+
+They are also used by the Tier 2 superblock creation code to find
+the function being called (and from there the code object).
+
+How does a function's `func_version` field get initialized?
+
+- `PyFunction_New` and friends initialize it to 0.
+- The `MAKE_FUNCTION` instruction sets it from the code's `co_version`.
+- It is reset to 0 when various attributes like `__code__` are set.
+- A new version is allocated by `_PyFunction_GetVersionForCurrentState`
+  when the specializer needs a version and the version is 0.
+
+The latter allocates versions using a counter in the interpreter state;
+when the counter wraps around to 0, no more versions are allocated.
+There is one other special case: functions with a non-standard
+`vectorcall` field are not given a version.
+
+When the function version is 0, the `CALL` bytecode is not specialized.
+
+Code object versions
+--------------------
+
+So where to code objects get their `co_version`? There is a single
+static global counter, `_Py_next_func_version`. This is initialized in
+the generated (!) file `Python/deepfreeze/deepfreeze.c`, to 1 plus the
+number of deep-frozen function objects in that file.
+(In `_bootstrap_python.c` and `freeze_module.c` it is initialized to 1.)
+
+Code objects get a new `co_version` allocated from this counter upon
+creation. Since code objects are nominally immutable, `co_version` can
+not be invalidated. The only way it can be 0 is when 2**32 or more
+code objects have been created during the process's lifetime.
+(The counter isn't reset by `fork()`, extending the lifetime.)
+*/
+
 void
 _PyFunction_SetVersion(PyFunctionObject *func, uint32_t version)
 {
