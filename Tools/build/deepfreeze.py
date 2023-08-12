@@ -6,7 +6,6 @@ On Windows, and in cross-compilation cases, it is executed
 by Python 3.10, and 3.11 features are not available.
 """
 import argparse
-import ast
 import builtins
 import collections
 import contextlib
@@ -455,12 +454,10 @@ def is_frozen_header(source: str) -> bool:
 
 
 def decode_frozen_data(source: str) -> types.CodeType:
-    lines = source.splitlines()
-    while lines and re.match(FROZEN_DATA_LINE, lines[0]) is None:
-        del lines[0]
-    while lines and re.match(FROZEN_DATA_LINE, lines[-1]) is None:
-        del lines[-1]
-    values: Tuple[int, ...] = ast.literal_eval("".join(lines).strip())
+    values: list[int] = []
+    for line in source.splitlines():
+        if re.match(FROZEN_DATA_LINE, line):
+            values.extend(int(x) for x in line.split(",") if x.strip())
     data = bytes(values)
     return umarshal.loads(data)
 
