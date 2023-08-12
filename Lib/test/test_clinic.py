@@ -1516,7 +1516,6 @@ class ClinicParserTest(TestCase):
     def test_fulldisplayname_class(self):
         dataset = (
             ("T", """
-                module m
                 class T "void *" ""
                 T.__init__
             """),
