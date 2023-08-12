@@ -1514,24 +1514,55 @@ class ClinicParserTest(TestCase):
                 self.expect_failure(block, err)
 
     def test_fulldisplayname_class(self):
-        block = self.parse("""
-            module m
-            class m.T "void *" ""
-            class m.T.C "void *" ""
-            m.T.C.__init__
-        """)
-        func = block.signatures[-1]
-        self.assertEqual(func.fulldisplayname, "m.T.C")
+        dataset = (
+            ("T", """
+                module m
+                class T "void *" ""
+                T.__init__
+            """),
+            ("m.T", """
+                module m
+                class m.T "void *" ""
+                @classmethod
+                m.T.__new__
+            """),
+            ("m.T.C", """
+                module m
+                class m.T "void *" ""
+                class m.T.C "void *" ""
+                m.T.C.__init__
+            """),
+        )
+        for name, code in dataset:
+            with self.subTest(name=name, code=code):
+                block = self.parse(code)
+                func = block.signatures[-1]
+                self.assertEqual(func.fulldisplayname, name)
 
     def test_fulldisplayname_meth(self):
-        block = self.parse("""
-            module m
-            class m.T "" ""
-            class m.T.C "" ""
-            m.T.C.func
-        """)
-        func = block.signatures[-1]
-        self.assertEqual(func.fulldisplayname, "m.T.C.func")
+        dataset = (
+            ("func", "func"),
+            ("m.func", """
+                module m
+                m.func
+            """),
+            ("m.T.meth", """
+                module m
+                class m.T "void *" ""
+                m.T.meth
+            """),
+            ("m.T.C.meth", """
+                module m
+                class m.T "void *" ""
+                class m.T.C "void *" ""
+                m.T.C.meth
+            """),
+        )
+        for name, code in dataset:
+            with self.subTest(name=name, code=code):
+                block = self.parse(code)
+                func = block.signatures[-1]
+                self.assertEqual(func.fulldisplayname, name)
 
     def test_depr_star_invalid_format_1(self):
         block = """
