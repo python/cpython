@@ -8,6 +8,7 @@
         }
 
         TARGET(RESUME) {
+            #if TIER_ONE
             assert(tstate->cframe == &cframe);
             assert(frame == cframe.current_frame);
             /* Possibly combine this with eval breaker */
@@ -16,7 +17,9 @@
                 if (err) goto error;
                 next_instr--;
             }
-            else if (oparg < 2) {
+            else
+            #endif
+            if (oparg < 2) {
                 CHECK_EVAL_BREAKER();
             }
             DISPATCH();
