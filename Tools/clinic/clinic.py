@@ -928,7 +928,7 @@ class CLanguage(Language):
             if first_pos:
                 preamble = f"Passing {first_pos+1} positional arguments to "
             depr_message = preamble + (
-                f"{func.full_name}() is deprecated. Parameter {pstr} will "
+                f"{func.fulldisplayname}() is deprecated. Parameter {pstr} will "
                 f"become a keyword-only parameter in Python {major}.{minor}."
             )
         else:
@@ -939,7 +939,7 @@ class CLanguage(Language):
                     f"argument{'s' if first_pos != 1 else ''} to "
                 )
             depr_message = preamble + (
-                f"{func.full_name}() is deprecated. Parameters {pstr} will "
+                f"{func.fulldisplayname}() is deprecated. Parameters {pstr} will "
                 f"become keyword-only parameters in Python {major}.{minor}."
             )
 
@@ -1673,14 +1673,7 @@ class CLanguage(Language):
 
         full_name = f.full_name
         template_dict = {'full_name': full_name}
-
-        if new_or_init:
-            assert isinstance(f.cls, Class)
-            name = f.cls.name
-        else:
-            name = f.name
-
-        template_dict['name'] = name
+        template_dict['name'] = f.displayname
 
         if f.c_basename:
             c_basename = f.c_basename
@@ -2678,6 +2671,21 @@ class Function:
         self.self_converter: self_converter | None = None
         self.__render_parameters__: list[Parameter] | None = None
 
+    @functools.cached_property
+    def displayname(self) -> str:
+        """Pretty-printable name."""
+        if self.kind.new_or_init:
+            assert isinstance(self.cls, Class)
+            return self.cls.name
+        else:
+            return self.name
+
+    @functools.cached_property
+    def fulldisplayname(self) -> str:
+        if isinstance(self.module, Module):
+            return f"{self.module.name}.{self.displayname}"
+        return self.displayname
+
     @property
     def render_parameters(self) -> list[Parameter]:
         if not self.__render_parameters__:
@@ -2774,6 +2782,13 @@ class Parameter:
             return f'"argument {self.name!r}"'
         else:
             return f'"argument {i}"'
+
+    def render_docstring(self) -> str:
+        add, out = text_accumulator()
+        add(f"  {self.name}\n")
+        for line in self.docstring.split("\n"):
+            add(f"    {line}\n")
+        return out().rstrip()
 
 
 CConverterClassT = TypeVar("CConverterClassT", bound=type["CConverter"])
@@ -5515,13 +5530,7 @@ class DSLParser:
         self, f: Function, parameters: list[Parameter]
     ) -> str:
         text, add, output = _text_accumulator()
-        if f.kind.new_or_init:
-            # classes get *just* the name of the class
-            # not __new__, not __init__, and not module.classname
-            assert f.cls
-            add(f.cls.name)
-        else:
-            add(f.name)
+        add(f.displayname)
         if self.forced_text_signature:
             add(self.forced_text_signature)
         else:
@@ -5686,23 +5695,11 @@ class DSLParser:
     @staticmethod
     def format_docstring_parameters(params: list[Parameter]) -> str:
         """Create substitution text for {parameters}"""
-        text, add, output = _text_accumulator()
-        spacer_line = False
-        for param in params:
-            docstring = param.docstring.strip()
-            if not docstring:
-                continue
-            if spacer_line:
+        add, output = text_accumulator()
+        for p in params:
+            if p.docstring:
+                add(p.render_docstring())
                 add('\n')
-            else:
-                spacer_line = True
-            add("  ")
-            add(param.name)
-            add('\n')
-            stripped = rstrip_lines(docstring)
-            add(textwrap.indent(stripped, "    "))
-        if text:
-            add('\n')
         return output()
 
     def format_docstring(self) -> str:

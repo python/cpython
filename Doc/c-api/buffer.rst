@@ -161,10 +161,14 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
       If it is ``0``, :c:member:`~Py_buffer.buf` points to a single item representing
       a scalar. In this case, :c:member:`~Py_buffer.shape`, :c:member:`~Py_buffer.strides`
       and :c:member:`~Py_buffer.suboffsets` MUST be ``NULL``.
+      The maximum number of dimensions is given by :c:macro:`PyBUF_MAX_NDIM`.
 
-      The macro :c:macro:`PyBUF_MAX_NDIM` limits the maximum number of dimensions
-      to 64. Exporters MUST respect this limit, consumers of multi-dimensional
-      buffers SHOULD be able to handle up to :c:macro:`PyBUF_MAX_NDIM` dimensions.
+   .. :c:macro:: PyBUF_MAX_NDIM
+
+      The maximum number of dimensions the memory represents.
+      Exporters MUST respect this limit, consumers of multi-dimensional
+      buffers SHOULD be able to handle up to :c:macro:`!PyBUF_MAX_NDIM` dimensions.
+      Currently set to 64.
 
    .. c:member:: Py_ssize_t *shape
 

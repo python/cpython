@@ -13,7 +13,9 @@ from os.path import normcase
 import _pickle
 import pickle
 import shutil
+import stat
 import sys
+import time
 import types
 import tempfile
 import textwrap
@@ -21,6 +23,7 @@ import unicodedata
 import unittest
 import unittest.mock
 import warnings
+
 
 try:
     from concurrent.futures import ThreadPoolExecutor
@@ -135,6 +138,14 @@ async def coroutine_function_example(self):
 def gen_coroutine_function_example(self):
     yield
     return 'spam'
+
+def meth_noargs(): pass
+def meth_o(object, /): pass
+def meth_self_noargs(self, /): pass
+def meth_self_o(self, object, /): pass
+def meth_type_noargs(type, /): pass
+def meth_type_o(type, object, /): pass
+
 
 class TestPredicates(IsTestBase):
 
@@ -1172,6 +1183,39 @@ class TestClassesAndFunctions(unittest.TestCase):
         builtin = _testcapi.docstring_no_signature
         with self.assertRaises(TypeError):
             inspect.getfullargspec(builtin)
+
+        cls = _testcapi.DocStringNoSignatureTest
+        obj = _testcapi.DocStringNoSignatureTest()
+        for builtin, template in [
+            (_testcapi.docstring_no_signature_noargs, meth_noargs),
+            (_testcapi.docstring_no_signature_o, meth_o),
+            (cls.meth_noargs, meth_self_noargs),
+            (cls.meth_o, meth_self_o),
+            (obj.meth_noargs, meth_self_noargs),
+            (obj.meth_o, meth_self_o),
+            (cls.meth_noargs_class, meth_type_noargs),
+            (cls.meth_o_class, meth_type_o),
+            (cls.meth_noargs_static, meth_noargs),
+            (cls.meth_o_static, meth_o),
+            (cls.meth_noargs_coexist, meth_self_noargs),
+            (cls.meth_o_coexist, meth_self_o),
+
+            (time.time, meth_noargs),
+            (stat.S_IMODE, meth_o),
+            (str.lower, meth_self_noargs),
+            (''.lower, meth_self_noargs),
+            (set.add, meth_self_o),
+            (set().add, meth_self_o),
+            (set.__contains__, meth_self_o),
+            (set().__contains__, meth_self_o),
+            (datetime.datetime.__dict__['utcnow'], meth_type_noargs),
+            (datetime.datetime.utcnow, meth_type_noargs),
+            (dict.__dict__['__class_getitem__'], meth_type_o),
+            (dict.__class_getitem__, meth_type_o),
+        ]:
+            with self.subTest(builtin):
+                self.assertEqual(inspect.getfullargspec(builtin),
+                                 inspect.getfullargspec(template))
 
     def test_getfullargspec_definition_order_preserved_on_kwonly(self):
         for fn in signatures_with_lexicographic_keyword_only_parameters():
@@ -2887,6 +2931,39 @@ class TestSignatureObject(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,
                                     'no signature found for builtin'):
             inspect.signature(str)
+
+        cls = _testcapi.DocStringNoSignatureTest
+        obj = _testcapi.DocStringNoSignatureTest()
+        for builtin, template in [
+            (_testcapi.docstring_no_signature_noargs, meth_noargs),
+            (_testcapi.docstring_no_signature_o, meth_o),
+            (cls.meth_noargs, meth_self_noargs),
+            (cls.meth_o, meth_self_o),
+            (obj.meth_noargs, meth_noargs),
+            (obj.meth_o, meth_o),
+            (cls.meth_noargs_class, meth_noargs),
+            (cls.meth_o_class, meth_o),
+            (cls.meth_noargs_static, meth_noargs),
+            (cls.meth_o_static, meth_o),
+            (cls.meth_noargs_coexist, meth_self_noargs),
+            (cls.meth_o_coexist, meth_self_o),
+
+            (time.time, meth_noargs),
+            (stat.S_IMODE, meth_o),
+            (str.lower, meth_self_noargs),
+            (''.lower, meth_noargs),
+            (set.add, meth_self_o),
+            (set().add, meth_o),
+            (set.__contains__, meth_self_o),
+            (set().__contains__, meth_o),
+            (datetime.datetime.__dict__['utcnow'], meth_type_noargs),
+            (datetime.datetime.utcnow, meth_noargs),
+            (dict.__dict__['__class_getitem__'], meth_type_o),
+            (dict.__class_getitem__, meth_o),
+        ]:
+            with self.subTest(builtin):
+                self.assertEqual(inspect.signature(builtin),
+                                 inspect.signature(template))
 
     def test_signature_on_non_function(self):
         with self.assertRaisesRegex(TypeError, 'is not a callable object'):
