@@ -1545,6 +1545,10 @@ class ClinicParserTest(TestCase):
                 module m
                 m.func
             """),
+            ("T.meth", """
+                class T "void *" ""
+                T.meth
+            """),
             ("m.T.meth", """
                 module m
                 class m.T "void *" ""
