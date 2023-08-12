@@ -840,9 +840,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
      */
     // XXX Make sure we properly deal with problematic finalizers.
 
-    interp->func_state.next_version = 0;  // No more new versions
-    _PyFunction_ClearByVersionCache(interp);
-
     Py_CLEAR(interp->audit_hooks);
 
     for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {

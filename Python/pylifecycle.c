@@ -1767,6 +1767,11 @@ Py_FinalizeEx(void)
     // XXX assert(_Py_IsMainInterpreter(tstate->interp));
     // XXX assert(_Py_IsMainThread());
 
+    // The function version cache keeps functions alive, so clear it.
+    // It's used for optimizations, which we don't need in this stage.
+    tstate->interp->func_state.next_version = 0;  // No more new versions
+    _PyFunction_ClearByVersionCache(tstate->interp);
+
     // Block some operations.
     tstate->interp->finalizing = 1;
 
