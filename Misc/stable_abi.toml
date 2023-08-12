@@ -2478,3 +2478,5 @@
     added = '3.13'
 [function.PySys_AuditTuple]
     added = '3.13'
+[function.PyErr_FormatUnraisable]
+    added = '3.13'

@@ -231,6 +231,9 @@ PyAPI_FUNC(PyObject *) PyErr_NewException(
 PyAPI_FUNC(PyObject *) PyErr_NewExceptionWithDoc(
     const char *name, const char *doc, PyObject *base, PyObject *dict);
 PyAPI_FUNC(void) PyErr_WriteUnraisable(PyObject *);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030D0000
+PyAPI_FUNC(void) PyErr_FormatUnraisable(const char *, ...);
+#endif
 
 
 /* In signalmodule.c */

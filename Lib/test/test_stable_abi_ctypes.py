@@ -171,6 +171,7 @@ SYMBOL_NAMES = (
     "PyErr_ExceptionMatches",
     "PyErr_Fetch",
     "PyErr_Format",
+    "PyErr_FormatUnraisable",
     "PyErr_FormatV",
     "PyErr_GetExcInfo",
     "PyErr_GetHandledException",
