@@ -2080,7 +2080,8 @@ sys__clear_type_cache_impl(PyObject *module)
 {
     PyType_ClearCache();
     // Also clear the function-by-version cache
-    _PyFunction_ClearByVersionCache();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyFunction_ClearByVersionCache(interp);
     Py_RETURN_NONE;
 }
 
