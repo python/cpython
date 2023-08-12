@@ -69,7 +69,7 @@ def _compile_pattern(pat, sep, case_sensitive):
     """Compile given glob pattern to a re.Pattern object (observing case
     sensitivity)."""
     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
-    regex = glob.translate(pat, recursive=True, include_hidden=True, seps=sep)
+    regex = glob.translate(pat, recursive=True, seps=sep)
     return re.compile(regex, flags).match
 
 
