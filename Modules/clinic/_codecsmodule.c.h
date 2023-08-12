@@ -3,10 +3,9 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
 
 PyDoc_STRVAR(_codecs_register__doc__,
 "register($module, search_function, /)\n"
@@ -2818,4 +2817,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=6d9bc20c8dd36134 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3473564544f10403 input=a9049054013a1b77]*/

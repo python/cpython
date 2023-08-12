@@ -3,10 +3,9 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
 
 PyDoc_STRVAR(datetime_date_fromtimestamp__doc__,
 "fromtimestamp($type, timestamp, /)\n"
@@ -146,4 +145,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=720c99f24a9aa41c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e422c25b1c28f38b input=a9049054013a1b77]*/

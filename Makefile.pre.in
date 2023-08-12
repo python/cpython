@@ -1713,6 +1713,9 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/optimizer.h \
 		$(srcdir)/Include/cpython/picklebufobject.h \
 		$(srcdir)/Include/cpython/pthread_stubs.h \
+		$(srcdir)/Include/cpython/pyatomic.h \
+		$(srcdir)/Include/cpython/pyatomic_gcc.h \
+		$(srcdir)/Include/cpython/pyatomic_std.h \
 		$(srcdir)/Include/cpython/pyctype.h \
 		$(srcdir)/Include/cpython/pydebug.h \
 		$(srcdir)/Include/cpython/pyerrors.h \
@@ -1743,6 +1746,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_bytes_methods.h \
 		$(srcdir)/Include/internal/pycore_bytesobject.h \
 		$(srcdir)/Include/internal/pycore_call.h \
+		$(srcdir)/Include/internal/pycore_capsule.h \
 		$(srcdir)/Include/internal/pycore_ceval.h \
 		$(srcdir)/Include/internal/pycore_ceval_state.h \
 		$(srcdir)/Include/internal/pycore_code.h \
@@ -1769,6 +1773,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_global_objects_fini_generated.h \
 		$(srcdir)/Include/internal/pycore_hamt.h \
 		$(srcdir)/Include/internal/pycore_hashtable.h \
+		$(srcdir)/Include/internal/pycore_identifier.h \
 		$(srcdir)/Include/internal/pycore_import.h \
 		$(srcdir)/Include/internal/pycore_initconfig.h \
 		$(srcdir)/Include/internal/pycore_interp.h \
@@ -1793,6 +1798,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_pymem.h \
 		$(srcdir)/Include/internal/pycore_pymem_init.h \
 		$(srcdir)/Include/internal/pycore_pystate.h \
+		$(srcdir)/Include/internal/pycore_pythonrun.h \
 		$(srcdir)/Include/internal/pycore_pythread.h \
 		$(srcdir)/Include/internal/pycore_range.h \
 		$(srcdir)/Include/internal/pycore_runtime.h \

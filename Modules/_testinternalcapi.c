@@ -25,6 +25,7 @@
 #include "pycore_interp.h"        // _PyInterpreterState_GetConfigCopy()
 #include "pycore_object.h"        // _PyObject_IsFreed()
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
+#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pyerrors.h"      // _Py_UTF8_Edit_Cost()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
@@ -1593,6 +1594,105 @@ dict_getitem_knownhash(PyObject *self, PyObject *args)
 }
 
 
+/* To run some code in a sub-interpreter. */
+static PyObject *
+run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    const char *code;
+    int use_main_obmalloc = -1;
+    int allow_fork = -1;
+    int allow_exec = -1;
+    int allow_threads = -1;
+    int allow_daemon_threads = -1;
+    int check_multi_interp_extensions = -1;
+    int gil = -1;
+    int r;
+    PyThreadState *substate, *mainstate;
+    /* only initialise 'cflags.cf_flags' to test backwards compatibility */
+    PyCompilerFlags cflags = {0};
+
+    static char *kwlist[] = {"code",
+                             "use_main_obmalloc",
+                             "allow_fork",
+                             "allow_exec",
+                             "allow_threads",
+                             "allow_daemon_threads",
+                             "check_multi_interp_extensions",
+                             "gil",
+                             NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                    "s$ppppppi:run_in_subinterp_with_config", kwlist,
+                    &code, &use_main_obmalloc,
+                    &allow_fork, &allow_exec,
+                    &allow_threads, &allow_daemon_threads,
+                    &check_multi_interp_extensions,
+                    &gil)) {
+        return NULL;
+    }
+    if (use_main_obmalloc < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing use_main_obmalloc");
+        return NULL;
+    }
+    if (allow_fork < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing allow_fork");
+        return NULL;
+    }
+    if (allow_exec < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing allow_exec");
+        return NULL;
+    }
+    if (allow_threads < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing allow_threads");
+        return NULL;
+    }
+    if (gil < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing gil");
+        return NULL;
+    }
+    if (allow_daemon_threads < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing allow_daemon_threads");
+        return NULL;
+    }
+    if (check_multi_interp_extensions < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing check_multi_interp_extensions");
+        return NULL;
+    }
+
+    mainstate = PyThreadState_Get();
+
+    PyThreadState_Swap(NULL);
+
+    const PyInterpreterConfig config = {
+        .use_main_obmalloc = use_main_obmalloc,
+        .allow_fork = allow_fork,
+        .allow_exec = allow_exec,
+        .allow_threads = allow_threads,
+        .allow_daemon_threads = allow_daemon_threads,
+        .check_multi_interp_extensions = check_multi_interp_extensions,
+        .gil = gil,
+    };
+    PyStatus status = Py_NewInterpreterFromConfig(&substate, &config);
+    if (PyStatus_Exception(status)) {
+        /* Since no new thread state was created, there is no exception to
+           propagate; raise a fresh one after swapping in the old thread
+           state. */
+        PyThreadState_Swap(mainstate);
+        _PyErr_SetFromPyStatus(status);
+        PyObject *exc = PyErr_GetRaisedException();
+        PyErr_SetString(PyExc_RuntimeError, "sub-interpreter creation failed");
+        _PyErr_ChainExceptions1(exc);
+        return NULL;
+    }
+    assert(substate != NULL);
+    r = PyRun_SimpleStringFlags(code, &cflags);
+    Py_EndInterpreter(substate);
+
+    PyThreadState_Swap(mainstate);
+
+    return PyLong_FromLong(r);
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -1659,6 +1759,9 @@ static PyMethodDef module_functions[] = {
     {"get_object_dict_values", get_object_dict_values, METH_O},
     {"hamt", new_hamt, METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
+    {"run_in_subinterp_with_config",
+     _PyCFunction_CAST(run_in_subinterp_with_config),
+     METH_VARARGS | METH_KEYWORDS},
     {NULL, NULL} /* sentinel */
 };
 

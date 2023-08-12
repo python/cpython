@@ -1186,7 +1186,7 @@ class TestClassesAndFunctions(unittest.TestCase):
 
         cls = _testcapi.DocStringNoSignatureTest
         obj = _testcapi.DocStringNoSignatureTest()
-        for builtin, template in [
+        tests = [
             (_testcapi.docstring_no_signature_noargs, meth_noargs),
             (_testcapi.docstring_no_signature_o, meth_o),
             (cls.meth_noargs, meth_self_noargs),
@@ -1201,7 +1201,6 @@ class TestClassesAndFunctions(unittest.TestCase):
             (cls.meth_o_coexist, meth_self_o),
 
             (time.time, meth_noargs),
-            (stat.S_IMODE, meth_o),
             (str.lower, meth_self_noargs),
             (''.lower, meth_self_noargs),
             (set.add, meth_self_o),
@@ -1212,7 +1211,16 @@ class TestClassesAndFunctions(unittest.TestCase):
             (datetime.datetime.utcnow, meth_type_noargs),
             (dict.__dict__['__class_getitem__'], meth_type_o),
             (dict.__class_getitem__, meth_type_o),
-        ]:
+        ]
+        try:
+            import _stat
+        except ImportError:
+            # if the _stat extension is not available, stat.S_IMODE() is
+            # implemented in Python, not in C
+            pass
+        else:
+            tests.append((stat.S_IMODE, meth_o))
+        for builtin, template in tests:
             with self.subTest(builtin):
                 self.assertEqual(inspect.getfullargspec(builtin),
                                  inspect.getfullargspec(template))
@@ -2934,7 +2942,7 @@ class TestSignatureObject(unittest.TestCase):
 
         cls = _testcapi.DocStringNoSignatureTest
         obj = _testcapi.DocStringNoSignatureTest()
-        for builtin, template in [
+        tests = [
             (_testcapi.docstring_no_signature_noargs, meth_noargs),
             (_testcapi.docstring_no_signature_o, meth_o),
             (cls.meth_noargs, meth_self_noargs),
@@ -2949,7 +2957,6 @@ class TestSignatureObject(unittest.TestCase):
             (cls.meth_o_coexist, meth_self_o),
 
             (time.time, meth_noargs),
-            (stat.S_IMODE, meth_o),
             (str.lower, meth_self_noargs),
             (''.lower, meth_noargs),
             (set.add, meth_self_o),
@@ -2960,7 +2967,16 @@ class TestSignatureObject(unittest.TestCase):
             (datetime.datetime.utcnow, meth_noargs),
             (dict.__dict__['__class_getitem__'], meth_type_o),
             (dict.__class_getitem__, meth_o),
-        ]:
+        ]
+        try:
+            import _stat
+        except ImportError:
+            # if the _stat extension is not available, stat.S_IMODE() is
+            # implemented in Python, not in C
+            pass
+        else:
+            tests.append((stat.S_IMODE, meth_o))
+        for builtin, template in tests:
             with self.subTest(builtin):
                 self.assertEqual(inspect.signature(builtin),
                                  inspect.signature(template))

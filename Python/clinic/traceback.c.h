@@ -3,10 +3,9 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
 
 PyDoc_STRVAR(tb_new__doc__,
 "TracebackType(tb_next, tb_frame, tb_lasti, tb_lineno)\n"
@@ -78,4 +77,4 @@ tb_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6303f910c04227a4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=57e27eb68d04d842 input=a9049054013a1b77]*/

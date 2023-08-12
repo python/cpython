@@ -26,7 +26,6 @@ Doc/glossary.rst
 Doc/howto/descriptor.rst
 Doc/howto/enum.rst
 Doc/howto/isolating-extensions.rst
-Doc/howto/logging-cookbook.rst
 Doc/howto/logging.rst
 Doc/howto/urllib2.rst
 Doc/library/__future__.rst
@@ -125,7 +124,6 @@ Doc/library/tarfile.rst
 Doc/library/tempfile.rst
 Doc/library/termios.rst
 Doc/library/test.rst
-Doc/library/threading.rst
 Doc/library/time.rst
 Doc/library/tkinter.rst
 Doc/library/tkinter.scrolledtext.rst

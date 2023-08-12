@@ -1,11 +1,12 @@
 import itertools
+import logging
 import os
 import pathlib
 import sys
 import sysconfig
 import tempfile
 import tokenize
-from typing import IO, Dict, List, Optional, Set, Tuple
+from typing import IO, Any, Dict, List, Optional, Set, Tuple
 
 from pegen.c_generator import CParserGenerator
 from pegen.grammar import Grammar
@@ -18,6 +19,7 @@ from pegen.tokenizer import Tokenizer
 MOD_DIR = pathlib.Path(__file__).resolve().parent
 
 TokenDefinitions = Tuple[Dict[int, str], Dict[str, int], Set[str]]
+Incomplete = Any  # TODO: install `types-setuptools` and remove this alias
 
 
 def get_extra_flags(compiler_flags: str, compiler_py_flags_nodist: str) -> List[str]:
@@ -28,7 +30,7 @@ def get_extra_flags(compiler_flags: str, compiler_py_flags_nodist: str) -> List[
     return f"{flags} {py_flags_nodist}".split()
 
 
-def fixup_build_ext(cmd):
+def fixup_build_ext(cmd: Incomplete) -> None:
     """Function needed to make build_ext tests pass.
 
     When Python was built with --enable-shared on Unix, -L. is not enough to
@@ -74,7 +76,7 @@ def compile_c_extension(
     keep_asserts: bool = True,
     disable_optimization: bool = False,
     library_dir: Optional[str] = None,
-) -> str:
+) -> pathlib.Path:
     """Compile the generated source for a parser generator into an extension module.
 
     The extension module will be generated in the same directory as the provided path
@@ -89,6 +91,7 @@ def compile_c_extension(
     static library of the common parser sources (this is useful in case you are
     creating multiple extensions).
     """
+    import setuptools.command.build_ext
     import setuptools.logging
 
     from setuptools import Extension, Distribution
@@ -97,7 +100,7 @@ def compile_c_extension(
     from setuptools._distutils.sysconfig import customize_compiler
 
     if verbose:
-        setuptools.logging.set_threshold(setuptools.logging.logging.DEBUG)
+        setuptools.logging.set_threshold(logging.DEBUG)
 
     source_file_path = pathlib.Path(generated_source_path)
     extension_name = source_file_path.stem
@@ -139,6 +142,7 @@ def compile_c_extension(
     )
     dist = Distribution({"name": extension_name, "ext_modules": [extension]})
     cmd = dist.get_command_obj("build_ext")
+    assert isinstance(cmd, setuptools.command.build_ext.build_ext)
     fixup_build_ext(cmd)
     cmd.build_lib = str(source_file_path.parent)
     cmd.include_dirs = include_dirs
@@ -155,6 +159,7 @@ def compile_c_extension(
         library_filename = compiler.library_filename(extension_name, output_dir=library_dir)
         if newer_group(common_sources, library_filename, "newer"):
             if sys.platform == "win32":
+                assert compiler.static_lib_format
                 pdb = compiler.static_lib_format % (extension_name, ".pdb")
                 compile_opts = [f"/Fd{library_dir}\\{pdb}"]
                 compile_opts.extend(extra_compile_args)
@@ -207,7 +212,7 @@ def compile_c_extension(
         ext_path,
         libraries=cmd.get_libraries(extension),
         extra_postargs=extra_link_args,
-        export_symbols=cmd.get_export_symbols(extension),
+        export_symbols=cmd.get_export_symbols(extension),  # type: ignore[no-untyped-call]
         debug=cmd.debug,
         build_temp=cmd.build_temp,
     )

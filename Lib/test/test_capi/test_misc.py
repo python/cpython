@@ -2478,7 +2478,7 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc([1, 2, 3])
+            testfunc(range(10))
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -2493,7 +2493,7 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc([1, 2, 3])
+            testfunc(range(10))
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)

@@ -426,9 +426,16 @@ enumeration, with the exception of special methods (:meth:`__str__`,
 :meth:`__add__`, etc.), descriptors (methods are also descriptors), and
 variable names listed in :attr:`_ignore_`.
 
-Note:  if your enumeration defines :meth:`__new__` and/or :meth:`__init__` then
+Note:  if your enumeration defines :meth:`__new__` and/or :meth:`__init__`,
 any value(s) given to the enum member will be passed into those methods.
 See `Planet`_ for an example.
+
+.. note::
+
+    The :meth:`__new__` method, if defined, is used during creation of the Enum
+    members; it is then replaced by Enum's :meth:`__new__` which is used after
+    class creation for lookup of existing members.  See :ref:`new-vs-init` for
+    more details.
 
 
 Restricted Enum subclassing
@@ -895,6 +902,8 @@ Some rules:
    :meth:`__str__` method has been reset to their data types'
    :meth:`__str__` method.
 
+.. _new-vs-init:
+
 When to use :meth:`__new__` vs. :meth:`__init__`
 ------------------------------------------------
 
@@ -926,6 +935,11 @@ want one of them to be the value::
 
     >>> print(Coordinate(3))
     Coordinate.VY
+
+.. warning::
+
+    *Do not* call ``super().__new__()``, as the lookup-only ``__new__`` is the one
+    that is found; instead, use the data type directly.
 
 
 Finer Points
@@ -1352,6 +1366,13 @@ to handle any extra arguments::
     The :meth:`__new__` method, if defined, is used during creation of the Enum
     members; it is then replaced by Enum's :meth:`__new__` which is used after
     class creation for lookup of existing members.
+
+.. warning::
+
+    *Do not* call ``super().__new__()``, as the lookup-only ``__new__`` is the one
+    that is found; instead, use the data type directly -- e.g.::
+
+       obj = int.__new__(cls, value)
 
 
 OrderedEnum

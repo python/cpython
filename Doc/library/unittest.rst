@@ -2017,7 +2017,7 @@ Loading and running tests
 
    .. attribute:: collectedDurations
 
-      A list containing 2-tuples of :class:`TestCase` instances and floats
+      A list containing 2-tuples of test case names and floats
       representing the elapsed time of each test which was run.
 
       .. versionadded:: 3.12

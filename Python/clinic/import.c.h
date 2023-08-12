@@ -3,10 +3,9 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
 
 PyDoc_STRVAR(_imp_lock_held__doc__,
 "lock_held($module, /)\n"
@@ -627,4 +626,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=d97b56ef622cb28a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=058f6aa1c9f4ebe4 input=a9049054013a1b77]*/

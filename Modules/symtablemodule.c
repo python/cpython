@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_pythonrun.h"     // _Py_SourceAsString()
 #include "pycore_symtable.h"      // struct symtable
 
 #include "clinic/symtablemodule.c.h"

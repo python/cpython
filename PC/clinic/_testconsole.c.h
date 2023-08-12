@@ -3,10 +3,9 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
 
 #if defined(MS_WINDOWS)
 
@@ -140,4 +139,4 @@ exit:
 #ifndef _TESTCONSOLE_READ_OUTPUT_METHODDEF
     #define _TESTCONSOLE_READ_OUTPUT_METHODDEF
 #endif /* !defined(_TESTCONSOLE_READ_OUTPUT_METHODDEF) */
-/*[clinic end generated code: output=208c72e2c873555b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f59fe72cd4e73704 input=a9049054013a1b77]*/

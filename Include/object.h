@@ -58,23 +58,6 @@ whose size is determined when the object is allocated.
 #  define Py_REF_DEBUG
 #endif
 
-#if defined(Py_LIMITED_API) && defined(Py_TRACE_REFS)
-#  error Py_LIMITED_API is incompatible with Py_TRACE_REFS
-#endif
-
-#ifdef Py_TRACE_REFS
-/* Define pointers to support a doubly-linked list of all live heap objects. */
-#define _PyObject_HEAD_EXTRA            \
-    PyObject *_ob_next;           \
-    PyObject *_ob_prev;
-
-#define _PyObject_EXTRA_INIT _Py_NULL, _Py_NULL,
-
-#else
-#  define _PyObject_HEAD_EXTRA
-#  define _PyObject_EXTRA_INIT
-#endif
-
 /* PyObject_HEAD defines the initial segment of every PyObject. */
 #define PyObject_HEAD                   PyObject ob_base;
 
@@ -130,14 +113,12 @@ check by comparing the reference count field to the immortality reference count.
 #ifdef Py_BUILD_CORE
 #define PyObject_HEAD_INIT(type)    \
     {                               \
-        _PyObject_EXTRA_INIT        \
         { _Py_IMMORTAL_REFCNT },    \
         (type)                      \
     },
 #else
 #define PyObject_HEAD_INIT(type) \
     {                            \
-        _PyObject_EXTRA_INIT     \
         { 1 },                   \
         (type)                   \
     },
@@ -164,8 +145,6 @@ check by comparing the reference count field to the immortality reference count.
  * in addition, be cast to PyVarObject*.
  */
 struct _object {
-    _PyObject_HEAD_EXTRA
-
 #if (defined(__GNUC__) || defined(__clang__)) \
         && !(defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L)
     // On C99 and older, anonymous union is a GCC and clang extension
@@ -436,12 +415,6 @@ PyAPI_FUNC(void) PyObject_ClearWeakRefs(PyObject *);
    no current locals, NULL is returned, and PyErr_Occurred() is false.
 */
 PyAPI_FUNC(PyObject *) PyObject_Dir(PyObject *);
-
-/* Pickle support. */
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _PyObject_GetState(PyObject *);
-#endif
-
 
 /* Helpers for printing recursive container types */
 PyAPI_FUNC(int) Py_ReprEnter(PyObject *);

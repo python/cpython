@@ -27,6 +27,7 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"     // _PyIsSelectable_fd()
+#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 /* Include symbols from _socket module */

@@ -122,8 +122,11 @@ class TestFilemode:
             st_mode, modestr = self.get_mode()
             self.assertEqual(modestr, '-rwx------')
             self.assertS_IS("REG", st_mode)
-            self.assertEqual(self.statmod.S_IMODE(st_mode),
+            imode = self.statmod.S_IMODE(st_mode)
+            self.assertEqual(imode,
                              self.statmod.S_IRWXU)
+            self.assertEqual(self.statmod.filemode(imode),
+                             '?rwx------')
 
             os.chmod(TESTFN, 0o070)
             st_mode, modestr = self.get_mode()
@@ -238,6 +241,7 @@ class TestFilemode:
             self.assertEqual(value, modvalue, key)
 
 
+@unittest.skipIf(c_stat is None, 'need _stat extension')
 class TestFilemodeCStat(TestFilemode, unittest.TestCase):
     statmod = c_stat
 

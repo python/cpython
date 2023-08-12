@@ -2,12 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
-
 PyDoc_STRVAR(subprocess_fork_exec__doc__,
 "fork_exec($module, args, executable_list, close_fds, pass_fds, cwd,\n"
 "          env, p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite,\n"
@@ -159,4 +153,4 @@ subprocess_fork_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=be0e9b5d8c0217fa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a83b11467169b97b input=a9049054013a1b77]*/

@@ -192,7 +192,7 @@ extern PyTypeObject _PyExc_MemoryError;
 #ifdef Py_TRACE_REFS
 # define _py_object_state_INIT(INTERP) \
     { \
-        .refchain = {&INTERP.object_state.refchain, &INTERP.object_state.refchain}, \
+        .refchain = NULL, \
     }
 #else
 # define _py_object_state_INIT(INTERP) \

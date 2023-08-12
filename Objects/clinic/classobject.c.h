@@ -2,12 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
-
 PyDoc_STRVAR(method___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
@@ -86,4 +80,4 @@ instancemethod_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2a5e7fa5947a86cb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a0d17bad3b0734d9 input=a9049054013a1b77]*/

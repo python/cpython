@@ -158,7 +158,7 @@ process a single source file, like this:
 The CLI supports the following options:
 
 .. program:: ./Tools/clinic/clinic.py [-h] [-f] [-o OUTPUT] [-v] \
-             [--converters] [--make] [--srcdir SRCDIR] [FILE ...]
+             [--converters] [--make] [--srcdir SRCDIR] [--limited] [FILE ...]
 
 .. option:: -h, --help
 
@@ -192,6 +192,11 @@ The CLI supports the following options:
 
    A file to exclude in :option:`--make` mode.
    This option can be given multiple times.
+
+.. option:: --limited
+
+    Use the :ref:`Limited API <limited-c-api>` to parse arguments in the generated C code.
+    See :ref:`clinic-howto-limited-capi`.
 
 .. option:: FILE ...
 
@@ -1903,6 +1908,22 @@ blocks embedded in Python files look slightly different.  They look like this:
     #[python start generated code]*/
     def foo(): pass
     #/*[python checksum:...]*/
+
+
+.. _clinic-howto-limited-capi:
+
+How to use the Limited C API
+----------------------------
+
+If Argument Clinic :term:`input` is located within a C source file
+that contains ``#define Py_LIMITED_API``, Argument Clinic will generate C code
+that uses the :ref:`Limited API <limited-c-api>` to parse arguments. The
+advantage of this is that the generated code will not use private functions.
+However, this *can* result in Argument Clinic generating less efficient code
+in some cases. The extent of the performance penalty will depend
+on the parameters (types, number, etc.).
+
+.. versionadded:: 3.13
 
 
 .. _clinic-howto-override-signature:

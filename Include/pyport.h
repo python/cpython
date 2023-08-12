@@ -684,12 +684,6 @@ extern char * _getpty(int *, int, mode_t, int);
 #  endif
 #endif
 
-/* Check that ALT_SOABI is consistent with Py_TRACE_REFS:
-   ./configure --with-trace-refs should must be used to define Py_TRACE_REFS */
-#if defined(ALT_SOABI) && defined(Py_TRACE_REFS)
-#  error "Py_TRACE_REFS ABI is not compatible with release and debug ABI"
-#endif
-
 #if defined(__ANDROID__) || defined(__VXWORKS__)
    // Use UTF-8 as the locale encoding, ignore the LC_CTYPE locale.
    // See _Py_GetLocaleEncoding(), PyUnicode_DecodeLocale()

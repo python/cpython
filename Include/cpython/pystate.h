@@ -227,15 +227,6 @@ PyAPI_FUNC(void) PyThreadState_LeaveTracing(PyThreadState *tstate);
    The function returns 1 if _PyGILState_check_enabled is non-zero. */
 PyAPI_FUNC(int) PyGILState_Check(void);
 
-/* Get the single PyInterpreterState used by this process' GILState
-   implementation.
-
-   This function doesn't check for error. Return NULL before _PyGILState_Init()
-   is called and after _PyGILState_Fini() is called.
-
-   See also PyInterpreterState_Get() and _PyInterpreterState_GET(). */
-PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
-
 /* Routines for advanced debuggers, requested by David Beazley.
    Don't use unless you know what you are doing! */
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Main(void);

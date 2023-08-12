@@ -1270,7 +1270,7 @@ an :term:`importer`.
 
    You can get the same effect as this function by implementing the
    basic interface of multi-phase init (:pep:`489`) and lying about
-   support for mulitple interpreters (or per-interpreter GIL).
+   support for multiple interpreters (or per-interpreter GIL).
 
    .. warning::
       Using this function to disable the check can lead to

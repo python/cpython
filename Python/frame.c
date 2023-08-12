@@ -167,10 +167,10 @@ PyUnstable_InterpreterFrame_GetLine(_PyInterpreterFrame *frame)
     return PyCode_Addr2Line(_PyFrame_GetCode(frame), addr);
 }
 
-const PyTypeObject *const PyUnstable_ExecutableKinds[PY_EXECUTABLE_KINDS+1] = {
-    [PY_EXECUTABLE_KIND_SKIP] = &_PyNone_Type,
-    [PY_EXECUTABLE_KIND_PY_FUNCTION] = &PyCode_Type,
-    [PY_EXECUTABLE_KIND_BUILTIN_FUNCTION] = &PyMethod_Type,
-    [PY_EXECUTABLE_KIND_METHOD_DESCRIPTOR] = &PyMethodDescr_Type,
-    [PY_EXECUTABLE_KINDS] = NULL,
+const PyTypeObject *const PyUnstable_ExecutableKinds[PyUnstable_EXECUTABLE_KINDS+1] = {
+    [PyUnstable_EXECUTABLE_KIND_SKIP] = &_PyNone_Type,
+    [PyUnstable_EXECUTABLE_KIND_PY_FUNCTION] = &PyCode_Type,
+    [PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION] = &PyMethod_Type,
+    [PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR] = &PyMethodDescr_Type,
+    [PyUnstable_EXECUTABLE_KINDS] = NULL,
 };

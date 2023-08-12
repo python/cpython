@@ -126,6 +126,8 @@ SF_SNAPSHOT  = 0x00200000  # file is a snapshot file
 
 
 _filemode_table = (
+    # File type chars according to:
+    # http://en.wikibooks.org/wiki/C_Programming/POSIX_Reference/sys/stat.h
     ((S_IFLNK,         "l"),
      (S_IFSOCK,        "s"),  # Must appear before IFREG and IFDIR as IFSOCK == IFREG | IFDIR
      (S_IFREG,         "-"),
@@ -156,13 +158,17 @@ _filemode_table = (
 def filemode(mode):
     """Convert a file's mode to a string of the form '-rwxrwxrwx'."""
     perm = []
-    for table in _filemode_table:
+    for index, table in enumerate(_filemode_table):
         for bit, char in table:
             if mode & bit == bit:
                 perm.append(char)
                 break
         else:
-            perm.append("-")
+            if index == 0:
+                # Unknown filetype
+                perm.append("?")
+            else:
+                perm.append("-")
     return "".join(perm)
 
 

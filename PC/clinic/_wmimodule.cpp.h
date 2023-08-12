@@ -3,10 +3,9 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
 
 PyDoc_STRVAR(_wmi_exec_query__doc__,
 "exec_query($module, /, query)\n"
@@ -69,4 +68,4 @@ _wmi_exec_query(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=923d09bee1d15c5f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=53821e597fc2aca4 input=a9049054013a1b77]*/

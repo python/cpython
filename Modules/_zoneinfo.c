@@ -4,7 +4,7 @@
 
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetOne()
-
+#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 
 #include <ctype.h>
 #include <stddef.h>

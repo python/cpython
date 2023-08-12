@@ -88,15 +88,6 @@ typedef PyOSErrorObject PyEnvironmentErrorObject;
 typedef PyOSErrorObject PyWindowsErrorObject;
 #endif
 
-/* Error handling definitions */
-
-PyAPI_FUNC(void) _PyErr_SetKeyError(PyObject *);
-
-/* Context manipulation (PEP 3134) */
-
-Py_DEPRECATED(3.12) PyAPI_FUNC(void) _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
-PyAPI_FUNC(void) _PyErr_ChainExceptions1(PyObject *);
-
 /* In exceptions.c */
 
 PyAPI_FUNC(PyObject*) PyUnstable_Exc_PrepReraiseStar(

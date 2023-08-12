@@ -311,14 +311,6 @@ PyGenObject *_PyFrame_GetGenerator(_PyInterpreterFrame *frame)
     return (PyGenObject *)(((char *)frame) - offset_in_gen);
 }
 
-#define PY_EXECUTABLE_KIND_SKIP 0
-#define PY_EXECUTABLE_KIND_PY_FUNCTION 1
-#define PY_EXECUTABLE_KIND_BUILTIN_FUNCTION 3
-#define PY_EXECUTABLE_KIND_METHOD_DESCRIPTOR 4
-#define PY_EXECUTABLE_KINDS 5
-
-PyAPI_DATA(const PyTypeObject *) const PyUnstable_ExecutableKinds[PY_EXECUTABLE_KINDS+1];
-
 #ifdef __cplusplus
 }
 #endif

@@ -2,12 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
-
 PyDoc_STRVAR(_testcapi_watch_dict__doc__,
 "watch_dict($module, watcher_id, dict, /)\n"
 "--\n"
@@ -195,4 +189,4 @@ _testcapi_set_func_kwdefaults_via_capi(PyObject *module, PyObject *const *args, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b7564a84c5815b46 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5ad5771d6b29dfb9 input=a9049054013a1b77]*/

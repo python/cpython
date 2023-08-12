@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 
 #include <stdbool.h>
 #ifdef HAVE_SYS_TYPES_H

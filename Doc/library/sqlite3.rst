@@ -763,10 +763,10 @@ Connection objects
          ...     print(row)
          ('acbd18db4cc2f85cedef654fccc4a4d8',)
 
-   .. versionchanged:: 3.13
+      .. versionchanged:: 3.13
 
-      Passing *name*, *narg*, and *func* as keyword arguments is deprecated.
-      These parameters will become positional-only in Python 3.15.
+         Passing *name*, *narg*, and *func* as keyword arguments is deprecated.
+         These parameters will become positional-only in Python 3.15.
 
 
    .. method:: create_aggregate(name, n_arg, aggregate_class)
@@ -822,10 +822,10 @@ Connection objects
 
          3
 
-   .. versionchanged:: 3.13
+      .. versionchanged:: 3.13
 
-      Passing *name*, *n_arg*, and *aggregate_class* as keyword arguments is deprecated.
-      These parameters will become positional-only in Python 3.15.
+         Passing *name*, *n_arg*, and *aggregate_class* as keyword arguments is deprecated.
+         These parameters will become positional-only in Python 3.15.
 
 
    .. method:: create_window_function(name, num_params, aggregate_class, /)
@@ -991,6 +991,11 @@ Connection objects
       .. versionchanged:: 3.11
          Added support for disabling the authorizer using ``None``.
 
+      .. versionchanged:: 3.13
+
+      Passing *authorizer_callback* as a keyword argument to is deprecated.
+      The parameter will become positional-only in Python 3.15.
+
 
    .. method:: set_progress_handler(progress_handler, n)
 
@@ -1005,6 +1010,11 @@ Connection objects
       Returning a non-zero value from the handler function will terminate the
       currently executing query and cause it to raise a :exc:`DatabaseError`
       exception.
+
+      .. versionchanged:: 3.13
+
+      Passing *progress_handler* as a keyword argument to is deprecated.
+      The parameter will become positional-only in Python 3.15.
 
 
    .. method:: set_trace_callback(trace_callback)
@@ -1029,6 +1039,11 @@ Connection objects
          tracebacks from exceptions raised in the trace callback.
 
       .. versionadded:: 3.3
+
+      .. versionchanged:: 3.13
+
+      Passing *trace_callback* as a keyword argument to is deprecated.
+      The parameter will become positional-only in Python 3.15.
 
 
    .. method:: enable_load_extension(enabled, /)
@@ -1566,7 +1581,7 @@ Cursor objects
 
       :raises ProgrammingError:
          If *sql* contains more than one SQL statement,
-         or is not a DML statment.
+         or is not a DML statement.
 
       Example:
 
