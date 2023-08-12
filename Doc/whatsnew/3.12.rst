@@ -1576,7 +1576,7 @@ Changes in the Python API
       1,13-1,17:          FSTRING_MIDDLE ' end'
       1,17-1,18:          FSTRING_END    '"'
 
-  Additionally, there may be some minor behavioral changes as a consecuence of the
+  Additionally, there may be some minor behavioral changes as a consequence of the
   changes required to support :pep:`701`. Some of these changes include:
 
   * The ``type`` attribute of the tokens emitted when tokenizing some invalid Python
