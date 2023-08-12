@@ -61,14 +61,14 @@ class StackOffset:
         for eff in self.deep:
             if eff.size:
                 terms.append(("-", maybe_parenthesize(eff.size)))
-            elif eff.cond and eff.cond != "1":
+            elif eff.cond and eff.cond not in ("0", "1"):
                 terms.append(("-", f"({parenthesize_cond(eff.cond)} ? 1 : 0)"))
             elif eff.cond != "0":
                 num -= 1
         for eff in self.high:
             if eff.size:
                 terms.append(("+", maybe_parenthesize(eff.size)))
-            elif eff.cond and eff.cond != "1":
+            elif eff.cond and eff.cond not in ("0", "1"):
                 terms.append(("+", f"({parenthesize_cond(eff.cond)} ? 1 : 0)"))
             elif eff.cond != "0":
                 num += 1
