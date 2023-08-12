@@ -37,7 +37,7 @@ PyDoc_STRVAR(_io__IOBase_seek__doc__,
 
 static PyObject *
 _io__IOBase_seek_impl(PyObject *self, PyTypeObject *cls,
-                      PyObject *Py_UNUSED(offset), int Py_UNUSED(whence));
+                      int Py_UNUSED(offset), int Py_UNUSED(whence));
 
 static PyObject *
 _io__IOBase_seek(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -57,14 +57,17 @@ _io__IOBase_seek(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ss
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
-    PyObject *offset;
+    int offset;
     int whence = SEEK_SET;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    offset = args[0];
+    offset = _PyLong_AsInt(args[0]);
+    if (offset == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
     if (nargs < 2) {
         goto skip_optional_posonly;
     }
@@ -442,4 +445,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=ab5aa4e6d7f3e785 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a150ac0137172a4e input=a9049054013a1b77]*/

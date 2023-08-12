@@ -82,7 +82,7 @@ iobase_unsupported(_PyIO_State *state, const char *message)
 /*[clinic input]
 _io._IOBase.seek
     cls: defining_class
-    offset: object(unused=True)
+    offset: int(unused=True)
       Offset as byte count.
       Relative to the position given by 'whence'.
     whence: int(unused=True, c_default='SEEK_SET') = io.SEEK_SET
@@ -106,8 +106,8 @@ Note that not all file objects are seekable.
 
 static PyObject *
 _io__IOBase_seek_impl(PyObject *self, PyTypeObject *cls,
-                      PyObject *Py_UNUSED(offset), int Py_UNUSED(whence))
-/*[clinic end generated code: output=ce3f9d90fd587b34 input=32e671d402f6e69f]*/
+                      int Py_UNUSED(offset), int Py_UNUSED(whence))
+/*[clinic end generated code: output=8bd74ea6538ded53 input=d7bfaaec026b9090]*/
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return iobase_unsupported(state, "seek");
