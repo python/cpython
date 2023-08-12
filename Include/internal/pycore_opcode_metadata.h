@@ -1395,6 +1395,7 @@ extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACR
 #ifdef NEED_OPCODE_METADATA
 const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE] = {
     [NOP] = { .nuops = 1, .uops = { { NOP, 0, 0 } } },
+    [RESUME] = { .nuops = 1, .uops = { { RESUME, 0, 0 } } },
     [LOAD_FAST_CHECK] = { .nuops = 1, .uops = { { LOAD_FAST_CHECK, 0, 0 } } },
     [LOAD_FAST] = { .nuops = 1, .uops = { { LOAD_FAST, 0, 0 } } },
     [LOAD_FAST_AND_CLEAR] = { .nuops = 1, .uops = { { LOAD_FAST_AND_CLEAR, 0, 0 } } },
