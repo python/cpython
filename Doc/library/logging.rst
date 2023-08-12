@@ -400,13 +400,21 @@ name is lost.
 +-----------------------+---------------+-------------------------------------+
 | Level                 | Numeric value | What it means / When to use it      |
 +=======================+===============+=====================================+
-| .. py:data:: CRITICAL | 50            | A serious error, indicating that the|
-|                       |               | program itself may be unable to     |
-|                       |               | continue running.                   |
+| .. py:data:: NOTSET   | 0             | When set on a logger, indicates that|
+|                       |               | ancestor loggers are to be consulted|
+|                       |               | to determine the effective level. If|
+|                       |               | If that still resolves to           |
+|                       |               | :const:`NOTSET`, then all events are|
+|                       |               | logged. When set on a handler, all  |
+|                       |               | events are handled.                 |
 +-----------------------+---------------+-------------------------------------+
-| .. py:data:: ERROR    | 40            | Due to a more serious problem, the  |
-|                       |               | software has not been able to       |
-|                       |               | perform some function.              |
+| .. py:data:: DEBUG    | 10            | Detailed information, typically of  |
+|                       |               | interest only when diagnosing       |
+|                       |               | problems, usually just for          |
+|                       |               | developers.                         |
++-----------------------+---------------+-------------------------------------+
+| .. py:data:: INFO     | 20            | Confirmation that things are working|
+|                       |               | as expected.                        |
 +-----------------------+---------------+-------------------------------------+
 | .. py:data:: WARNING  | 30            | An indication that something        |
 |                       |               | unexpected happened, or indicative  |
@@ -415,21 +423,13 @@ name is lost.
 |                       |               | software is still working as        |
 |                       |               | expected.                           |
 +-----------------------+---------------+-------------------------------------+
-| .. py:data:: INFO     | 20            | Confirmation that things are working|
-|                       |               | as expected.                        |
+| .. py:data:: ERROR    | 40            | Due to a more serious problem, the  |
+|                       |               | software has not been able to       |
+|                       |               | perform some function.              |
 +-----------------------+---------------+-------------------------------------+
-| .. py:data:: DEBUG    | 10            | Detailed information, typically of  |
-|                       |               | interest only when diagnosing       |
-|                       |               | problems, usually just for          |
-|                       |               | developers.                         |
-+-----------------------+---------------+-------------------------------------+
-| .. py:data:: NOTSET   | 0             | When set on a logger, indicates that|
-|                       |               | ancestor loggers are to be consulted|
-|                       |               | to determine the effective level. If|
-|                       |               | If that still resolves to           |
-|                       |               | :const:`NOTSET`, then all events are|
-|                       |               | logged. Wehn set on a handler, all  |
-|                       |               | events are handled.                 |
+| .. py:data:: CRITICAL | 50            | A serious error, indicating that the|
+|                       |               | program itself may be unable to     |
+|                       |               | continue running.                   |
 +-----------------------+---------------+-------------------------------------+
 
 
