@@ -2682,17 +2682,15 @@ class Function:
 
     @functools.cached_property
     def fulldisplayname(self) -> str:
+        parent: Class | Module | Clinic | None
+        if self.kind.new_or_init:
+            parent = getattr(self.cls, "parent", None)
+        else:
+            parent = self.parent
         name = self.displayname
-        try:
-            if self.kind.new_or_init:
-                parent = self.cls.parent
-            else:
-                parent = self.parent
-            while parent:
-                name = f"{parent.name}.{name}"
-                parent = parent.parent
-        except AttributeError:
-            pass
+        while isinstance(parent, (Module, Class)):
+            name = f"{parent.name}.{name}"
+            parent = parent.parent
         return name
 
     @property
