@@ -4,7 +4,7 @@ labels: ["type-feature"]
 body:
   - type: markdown
     attributes:
-      value: |
+      value: >
         # Proposing a feature to CPython?
 
         You'll need to demonstrate widespread support for your idea among the community.
@@ -31,7 +31,7 @@ body:
   - type: textarea
     attributes:
       label: Pitch
-      description: |
+      description: >
         Explain why this feature or enhancement should be implemented and how it would be used.
         Add examples, if applicable.
         Put any code blocks inside triple backticks.

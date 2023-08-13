@@ -7,8 +7,7 @@ body:
       value: |
           # New to Python?
 
-          The issue tracker isn't the right place to get help.
-          Consider instead:
+          The issue tracker isn't the right place to get help. Consider instead:
 
             - reading the [Python tutorial](https://docs.python.org/3/tutorial/)
             - posting on [Discourse](https://discuss.python.org/c/users/7)
@@ -21,7 +20,7 @@ body:
         - label: I am confident this is a bug in CPython, not a bug in a third-party project
           required: true
         - label: |
-            I have searched the [CPython issue tracker](https://github.com/python/cpython/issues),
+            I have searched the [CPython issue tracker](https://github.com/python/cpython/issues?q=is%3Aissue+sort%3Acreated-desc),
             and am confident this bug has not been reported before
           required: true
   - type: textarea

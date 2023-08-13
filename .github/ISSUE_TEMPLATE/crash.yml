@@ -13,7 +13,7 @@ body:
   - type: textarea
     attributes:
       label: What happened?
-      description: |
+      description: >
         Include a [minimal, reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) if possible.
         Put any code blocks inside triple backticks.
 
