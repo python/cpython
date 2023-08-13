@@ -1230,12 +1230,29 @@ depr_star_new_impl(PyTypeObject *type, PyObject *a)
     return type->tp_alloc(type, 0);
 }
 
+/*[clinic input]
+_testclinic.DeprStarNew.cloned as depr_star_new_clone = _testclinic.DeprStarNew.__new__
+[clinic start generated code]*/
+
+static PyObject *
+depr_star_new_clone_impl(PyObject *type, PyObject *a)
+/*[clinic end generated code: output=3b17bf885fa736bc input=ea659285d5dbec6c]*/
+{
+    Py_RETURN_NONE;
+}
+
+static struct PyMethodDef depr_star_new_methods[] = {
+    DEPR_STAR_NEW_CLONE_METHODDEF
+    {NULL, NULL}
+};
+
 static PyTypeObject DeprStarNew = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "_testclinic.DeprStarNew",
     .tp_basicsize = sizeof(PyObject),
     .tp_new = depr_star_new,
     .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_methods = depr_star_new_methods,
 };
 
 
@@ -1254,6 +1271,22 @@ depr_star_init_impl(PyObject *self, PyObject *a)
     return 0;
 }
 
+/*[clinic input]
+_testclinic.DeprStarInit.cloned as depr_star_init_clone = _testclinic.DeprStarInit.__init__
+[clinic start generated code]*/
+
+static PyObject *
+depr_star_init_clone_impl(PyObject *self, PyObject *a)
+/*[clinic end generated code: output=ddfe8a1b5531e7cc input=561e103fe7f8e94f]*/
+{
+    Py_RETURN_NONE;
+}
+
+static struct PyMethodDef depr_star_init_methods[] = {
+    DEPR_STAR_INIT_CLONE_METHODDEF
+    {NULL, NULL}
+};
+
 static PyTypeObject DeprStarInit = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "_testclinic.DeprStarInit",
@@ -1261,6 +1294,7 @@ static PyTypeObject DeprStarInit = {
     .tp_new = PyType_GenericNew,
     .tp_init = depr_star_init,
     .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_methods = depr_star_init_methods,
 };
 
 
