@@ -1513,6 +1513,60 @@ class ClinicParserTest(TestCase):
             with self.subTest(block=block):
                 self.expect_failure(block, err)
 
+    def test_fulldisplayname_class(self):
+        dataset = (
+            ("T", """
+                class T "void *" ""
+                T.__init__
+            """),
+            ("m.T", """
+                module m
+                class m.T "void *" ""
+                @classmethod
+                m.T.__new__
+            """),
+            ("m.T.C", """
+                module m
+                class m.T "void *" ""
+                class m.T.C "void *" ""
+                m.T.C.__init__
+            """),
+        )
+        for name, code in dataset:
+            with self.subTest(name=name, code=code):
+                block = self.parse(code)
+                func = block.signatures[-1]
+                self.assertEqual(func.fulldisplayname, name)
+
+    def test_fulldisplayname_meth(self):
+        dataset = (
+            ("func", "func"),
+            ("m.func", """
+                module m
+                m.func
+            """),
+            ("T.meth", """
+                class T "void *" ""
+                T.meth
+            """),
+            ("m.T.meth", """
+                module m
+                class m.T "void *" ""
+                m.T.meth
+            """),
+            ("m.T.C.meth", """
+                module m
+                class m.T "void *" ""
+                class m.T.C "void *" ""
+                m.T.C.meth
+            """),
+        )
+        for name, code in dataset:
+            with self.subTest(name=name, code=code):
+                block = self.parse(code)
+                func = block.signatures[-1]
+                self.assertEqual(func.fulldisplayname, name)
+
     def test_depr_star_invalid_format_1(self):
         block = """
             module foo
@@ -2919,6 +2973,17 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.DeprStarNew(None)
         self.assertEqual(cm.filename, __file__)
 
+    def test_depr_star_new_cloned(self):
+        regex = re.escape(
+            "Passing positional arguments to _testclinic.DeprStarNew.cloned() "
+            "is deprecated. Parameter 'a' will become a keyword-only parameter "
+            "in Python 3.14."
+        )
+        obj = ac_tester.DeprStarNew(a=None)
+        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+            obj.cloned(None)
+        self.assertEqual(cm.filename, __file__)
+
     def test_depr_star_init(self):
         regex = re.escape(
             "Passing positional arguments to _testclinic.DeprStarInit() is "
@@ -2927,6 +2992,17 @@ class ClinicFunctionalTest(unittest.TestCase):
         )
         with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
             ac_tester.DeprStarInit(None)
+        self.assertEqual(cm.filename, __file__)
+
+    def test_depr_star_init_cloned(self):
+        regex = re.escape(
+            "Passing positional arguments to _testclinic.DeprStarInit.cloned() "
+            "is deprecated. Parameter 'a' will become a keyword-only parameter "
+            "in Python 3.14."
+        )
+        obj = ac_tester.DeprStarInit(a=None)
+        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+            obj.cloned(None)
         self.assertEqual(cm.filename, __file__)
 
     def test_depr_star_pos0_len1(self):
