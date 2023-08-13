@@ -24,7 +24,7 @@ body:
   - type: input
     attributes:
       label: "Summary of proposal:"
-      description: A one-line summary of your proposal
+      description: A one-line summary of your proposal.
     validations:
       required: true
   - type: textarea
