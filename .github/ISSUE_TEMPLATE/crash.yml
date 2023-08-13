@@ -38,7 +38,7 @@ body:
     attributes:
       label: Output from `python -VV`
       description: (If you tested with multiple operating systems or architectures, feel free to provide details in the main bug description.)
-    validation:
+    validations:
       required: false
   - type: textarea
     attributes:
