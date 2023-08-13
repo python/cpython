@@ -1001,7 +1001,7 @@ Text I/O
 
    .. versionchanged:: 3.3
       The default *encoding* is now ``locale.getpreferredencoding(False)``
-      instead of ``locale.getpreferredencoding``. Don't change temporary the
+      instead of ``locale.getpreferredencoding()``. Don't change temporary the
       locale encoding using :func:`locale.setlocale`, use the current locale
       encoding instead of the user preferred encoding.
 
