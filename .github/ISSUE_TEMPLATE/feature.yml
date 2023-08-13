@@ -4,13 +4,12 @@ labels: ["type-feature"]
 body:
   - type: markdown
     attributes:
-      value: >
+      value: |
         # Proposing a feature to CPython?
 
         You'll need to demonstrate widespread support for your idea among the community.
 
-        Major feature proposals should generally be discussed on [Discourse](https://discuss.python.org/c/ideas/6) before opening a GitHub issue.
-        Wait until it's clear that most people support your idea before filling in this form.
+        Major feature proposals should generally be discussed on [Discourse](https://discuss.python.org/c/ideas/6) before opening a GitHub issue. Wait until it's clear that most people support your idea before filling in this form.
   - type: checkboxes
     attributes:
       label: Has this already been discussed elsewhere?        

@@ -5,11 +5,9 @@ body:
   - type: markdown
     attributes:
       value: |
-          This form is for hard crashes of the Python interpreter, segmentation faults, failed C-level assertions, and similar.
-          Unexpected exceptions raised from Python functions in the standard library count as bugs rather than crashes.
+          This form is for hard crashes of the Python interpreter, segmentation faults, failed C-level assertions, and similar. Unexpected exceptions raised from Python functions in the standard library count as bugs rather than crashes.
 
-          The CPython interpreter is written in a different programming language, C.
-          A "CPython crash" is when Python itself fails, leading to a traceback in the C stack.
+          The CPython interpreter is written in a different programming language, C. A "CPython crash" is when Python itself fails, leading to a traceback in the C stack.
   - type: dropdown
     attributes:
       label: "CPython versions tested on:"
