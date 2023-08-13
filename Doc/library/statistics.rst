@@ -922,6 +922,10 @@ of applications in statistics.
 :class:`NormalDist` Examples and Recipes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+
+Classic probability problems
+****************************
+
 :class:`NormalDist` readily solves classic probability problems.
 
 For example, given `historical data for SAT exams
@@ -947,6 +951,10 @@ Find the `quartiles <https://en.wikipedia.org/wiki/Quartile>`_ and `deciles
     >>> list(map(round, sat.quantiles(n=10)))
     [810, 896, 958, 1011, 1060, 1109, 1162, 1224, 1310]
 
+
+Monte Carlo inputs for simulations
+**********************************
+
 To estimate the distribution for a model than isn't easy to solve
 analytically, :class:`NormalDist` can generate input samples for a `Monte
 Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_:
@@ -962,6 +970,9 @@ Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_:
     >>> Z = NormalDist(50, 1.25).samples(n, seed=6582483453)
     >>> quantiles(map(model, X, Y, Z))       # doctest: +SKIP
     [1.4591308524824727, 1.8035946855390597, 2.175091447274739]
+
+Approximating binomial distributions
+************************************
 
 Normal distributions can be used to approximate `Binomial
 distributions <https://mathworld.wolfram.com/BinomialDistribution.html>`_
@@ -999,6 +1010,10 @@ probability that the Python room will stay within its capacity limits?
     ...
     >>> mean(trial() <= k for i in range(10_000))
     0.8398
+
+
+Naive bayesian classifier
+*************************
 
 Normal distributions commonly arise in machine learning problems.
 
