@@ -18,11 +18,11 @@ body:
       description: A bug in a third-party project (for example, `pip` or `requests`) should be reported to that project's issue tracker, not CPython
       options:
         - label: I am confident this is a bug in CPython, not a bug in a third-party project
-          required: true
+          required: false
         - label: |
             I have searched the [CPython issue tracker](https://github.com/python/cpython/issues?q=is%3Aissue+sort%3Acreated-desc),
             and am confident this bug has not been reported before
-          required: true
+          required: false
   - type: dropdown
     attributes:
       label: "CPython versions tested on:"
