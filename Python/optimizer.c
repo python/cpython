@@ -619,6 +619,12 @@ pop_jump_if_bool:
                                         expansion->uops[i].offset);
                                 Py_FatalError("garbled expansion");
                         }
+                        if (expansion->uops[i].uop == _POP_FRAME) {
+                            // TODO: Move this code *after* adding it to the trace
+                            // TODO: Continue in the previous code object, if any
+                            ADD_TO_TRACE(SAVE_IP, INSTR_IP(instr, code), 0);
+                            goto done;
+                        }
                         ADD_TO_TRACE(expansion->uops[i].uop, oparg, operand);
                         if (expansion->uops[i].uop == _PUSH_FRAME) {
                             assert(i + 1 == nuops);

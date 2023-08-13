@@ -195,6 +195,11 @@
             break;
         }
 
+        case _POP_FRAME: {
+            STACK_SHRINK(1);
+            break;
+        }
+
         case GET_AITER: {
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
             break;
