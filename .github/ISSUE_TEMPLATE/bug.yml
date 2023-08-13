@@ -5,15 +5,15 @@ body:
   - type: markdown
     attributes:
       value: |
-          # Bug report
+        # Bug report
 
-          ## New to Python?
+        ## New to Python?
 
-          The issue tracker isn't the right place to get help. Consider instead:
+        For help or advice on using Python, try one of the following options instead of filing a GitHub issue:
 
-            - reading the [Python tutorial](https://docs.python.org/3/tutorial/)
-            - posting on [Discourse](https://discuss.python.org/c/users/7)
-            - emailing [python-list](https://mail.python.org/mailman/listinfo/python-list)
+          - Posting on [Discourse](https://discuss.python.org/c/users/7)
+          - Reading the [Python tutorial](https://docs.python.org/3/tutorial/)
+          - Emailing [python-list](https://mail.python.org/mailman/listinfo/python-list)
   - type: checkboxes
     attributes:
       label: Checklist
