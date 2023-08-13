@@ -118,11 +118,6 @@ typedef struct _Py_UOpsAbstractInterpContext {
     // Indicates whether the stack entry is real or virtualised.
     // true - virtual false - real
     bool *stack_virtual_or_real;
-    // The following represent the real (emitted instructions) stack and locals.
-    // points to one element after the abstract stack
-    _Py_PARTITIONNODE_t *real_stack_pointer;
-    _Py_PARTITIONNODE_t *real_stack;
-    _Py_PARTITIONNODE_t *real_locals;
 } _Py_UOpsAbstractInterpContext;
 
 static void
@@ -165,8 +160,7 @@ _Py_UOpsAbstractInterpContext_New(int stack_len, int locals_len, int curr_stackl
     self->stack_len = stack_len;
     self->locals_len = locals_len;
 
-    // Double the size needed because we also need a representation for the real stack and locals.
-    _Py_PARTITIONNODE_t *locals_with_stack = PyMem_New(_Py_PARTITIONNODE_t, (locals_len + stack_len) * 2);
+    _Py_PARTITIONNODE_t *locals_with_stack = PyMem_New(_Py_PARTITIONNODE_t, (locals_len + stack_len));
     if (locals_with_stack == NULL) {
         Py_DECREF(self);
         return NULL;
@@ -183,15 +177,16 @@ _Py_UOpsAbstractInterpContext_New(int stack_len, int locals_len, int curr_stackl
         locals_with_stack[i] = PARTITIONNODE_NULLROOT;
     }
 
+    for (int i = 0; i < stack_len; i++) {
+        virtual_or_real[i] = false;
+    }
+
     self->locals = locals_with_stack;
     self->stack = locals_with_stack + locals_len;
     self->stack_pointer = self->stack + curr_stacklen;
 
     self->stack_virtual_or_real = virtual_or_real;
 
-    self->real_locals = self->locals + locals_len + stack_len;
-    self->real_stack = self->stack + locals_len + stack_len;
-    self->real_stack_pointer = self->stack_pointer + locals_len + stack_len;
     return self;
 }
 
@@ -778,7 +773,7 @@ _Py_uop_analyze_and_optimize(
         goto abstract_error;
     }
 
-
+    // We will be adding more constants due to partial evaluation.
     co_const_copy = PyList_New(PyTuple_Size(co->co_consts));
     if (co_const_copy == NULL) {
         goto abstract_error;
