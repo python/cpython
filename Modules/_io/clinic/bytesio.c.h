@@ -403,7 +403,7 @@ _io_BytesIO_seek(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t pos;
-    int whence = SEEK_SET;
+    int whence = 0;
 
     if (!_PyArg_CheckPositional("seek", nargs, 1, 2)) {
         goto exit;
@@ -534,4 +534,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9be4c337bcf59c97 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f9239531031159de input=a9049054013a1b77]*/

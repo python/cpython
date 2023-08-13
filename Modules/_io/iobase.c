@@ -85,7 +85,7 @@ _io._IOBase.seek
     offset: int(unused=True)
       Offset as byte count.
       Relative to the position given by 'whence'.
-    whence: int(unused=True, c_default='SEEK_SET') = io.SEEK_SET
+    whence: int(unused=True, c_default='0') = io.SEEK_SET
       Relative position, used by 'offset'. Valid values are:
       * io.SEEK_SET -- Start of stream (the default)
       * io.SEEK_CUR -- Current position
@@ -107,7 +107,7 @@ Note that not all file objects are seekable.
 static PyObject *
 _io__IOBase_seek_impl(PyObject *self, PyTypeObject *cls,
                       int Py_UNUSED(offset), int Py_UNUSED(whence))
-/*[clinic end generated code: output=8bd74ea6538ded53 input=d7bfaaec026b9090]*/
+/*[clinic end generated code: output=8bd74ea6538ded53 input=bcdff2c6dd398df8]*/
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return iobase_unsupported(state, "seek");

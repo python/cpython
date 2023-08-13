@@ -712,7 +712,7 @@ _io__Buffered_seek(buffered *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *targetobj;
-    int whence = SEEK_SET;
+    int whence = 0;
 
     if (!_PyArg_CheckPositional("seek", nargs, 1, 2)) {
         goto exit;
@@ -1098,4 +1098,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4fc5f6e43e6e8af0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=24202f17f6d2f4f7 input=a9049054013a1b77]*/

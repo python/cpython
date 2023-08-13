@@ -2428,7 +2428,7 @@ _textiowrapper_encoder_setstate(textio *self, cookie_type *cookie)
 /*[clinic input]
 _io.TextIOWrapper.seek
     offset as cookieObj: object
-    whence: int(c_default='SEEK_SET') = io.SEEK_SET
+    whence: int(c_default='0') = io.SEEK_SET
     /
 
 Change the file position and return the new absolute position.
@@ -2445,7 +2445,7 @@ Note that not all file objects are seekable.
 
 static PyObject *
 _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
-/*[clinic end generated code: output=0a15679764e2d04d input=0e4b087bfcf07780]*/
+/*[clinic end generated code: output=0a15679764e2d04d input=35d7e7156afb3e56]*/
 {
     PyObject *posobj;
     cookie_type cookie;

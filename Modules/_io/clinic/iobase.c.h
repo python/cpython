@@ -58,7 +58,7 @@ _io__IOBase_seek(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ss
     #undef KWTUPLE
     PyObject *argsbuf[2];
     int offset;
-    int whence = SEEK_SET;
+    int whence = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
     if (!args) {
@@ -445,4 +445,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=a150ac0137172a4e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=386caf503869c9c2 input=a9049054013a1b77]*/

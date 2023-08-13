@@ -464,7 +464,7 @@ _io_StringIO_truncate_impl(stringio *self, Py_ssize_t size)
 /*[clinic input]
 _io.StringIO.seek
     offset as pos: Py_ssize_t
-    whence: int(c_default='SEEK_SET') = io.SEEK_SET
+    whence: int(c_default='0') = io.SEEK_SET
     /
 
 Change the stream position and return the new absolute position.
@@ -480,7 +480,7 @@ Note that not all file objects are seekable.
 
 static PyObject *
 _io_StringIO_seek_impl(stringio *self, Py_ssize_t pos, int whence)
-/*[clinic end generated code: output=e9e0ac9a8ae71c25 input=40a33f8f64ddc34e]*/
+/*[clinic end generated code: output=e9e0ac9a8ae71c25 input=50823fbdc8782825]*/
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);

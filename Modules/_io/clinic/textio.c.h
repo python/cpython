@@ -781,7 +781,7 @@ _io_TextIOWrapper_seek(textio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *cookieObj;
-    int whence = SEEK_SET;
+    int whence = 0;
 
     if (!_PyArg_CheckPositional("seek", nargs, 1, 2)) {
         goto exit;
@@ -967,4 +967,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=50c6d193d7c6c9ca input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6bdd72dabb204764 input=a9049054013a1b77]*/

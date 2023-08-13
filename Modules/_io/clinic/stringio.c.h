@@ -180,7 +180,7 @@ _io_StringIO_seek(stringio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t pos;
-    int whence = SEEK_SET;
+    int whence = 0;
 
     if (!_PyArg_CheckPositional("seek", nargs, 1, 2)) {
         goto exit;
@@ -369,4 +369,4 @@ _io_StringIO_seekable(stringio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_StringIO_seekable_impl(self);
 }
-/*[clinic end generated code: output=125add5258df3e4b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e57b92b21538d3df input=a9049054013a1b77]*/
