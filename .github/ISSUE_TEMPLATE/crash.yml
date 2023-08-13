@@ -27,6 +27,15 @@ body:
     attributes:
       label: Error messages
       description: Enter any error messages caused by the crash, including a core dump if there is one
+      value: |
+        <details>
+        <summary>Error messages/core dump</summary>
+
+        ```
+        [paste error here]
+        ```
+
+        </details>
     validations:
       required: false
   - type: dropdown

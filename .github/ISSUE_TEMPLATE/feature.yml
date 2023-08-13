@@ -22,10 +22,10 @@ body:
       label: Links to previous discussion of this feature
     validations:
       required: false
-  - type: textarea
+  - type: input
     attributes:
       label: Summary of proposal
-      description: A clear and concise summary of your proposal
+      description: A one-line summary of your proposal
     validations:
       required: true
   - type: textarea
