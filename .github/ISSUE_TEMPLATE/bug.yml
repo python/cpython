@@ -34,8 +34,8 @@ body:
         Put any code blocks inside triple backticks.
 
       value: |
-        ```py
-        your code here
+        ```python
+        # Add your code block here!
         ```
     validations:
       required: true
