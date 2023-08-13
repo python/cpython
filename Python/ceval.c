@@ -736,7 +736,7 @@ resume_frame:
                 // When tracing executed uops, also trace bytecode
                 char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
                 if (uop_debug != NULL && *uop_debug >= '0') {
-                    lltrace = (*uop_debug - '0') >= 4;  // TODO: Parse an int and all that
+                    lltrace = (*uop_debug - '0') >= 5;  // TODO: Parse an int and all that
                 }
             }
         }
