@@ -2682,9 +2682,16 @@ class Function:
 
     @functools.cached_property
     def fulldisplayname(self) -> str:
-        if isinstance(self.module, Module):
-            return f"{self.module.name}.{self.displayname}"
-        return self.displayname
+        parent: Class | Module | Clinic | None
+        if self.kind.new_or_init:
+            parent = getattr(self.cls, "parent", None)
+        else:
+            parent = self.parent
+        name = self.displayname
+        while isinstance(parent, (Module, Class)):
+            name = f"{parent.name}.{name}"
+            parent = parent.parent
+        return name
 
     @property
     def render_parameters(self) -> list[Parameter]:

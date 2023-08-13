@@ -2251,7 +2251,7 @@
             Py_DECREF(self);
             if (attr == NULL) goto pop_3_error;
             STACK_SHRINK(2);
-            stack_pointer[-1 - (0 ? 1 : 0)] = attr;
+            stack_pointer[-1] = attr;
             next_instr += 1;
             DISPATCH();
         }
@@ -3574,7 +3574,7 @@
             assert(descr != NULL);
             Py_DECREF(owner);
             attr = Py_NewRef(descr);
-            stack_pointer[-1 - (0 ? 1 : 0)] = attr;
+            stack_pointer[-1] = attr;
             next_instr += 9;
             DISPATCH();
         }
@@ -3594,7 +3594,7 @@
             assert(descr != NULL);
             Py_DECREF(owner);
             attr = Py_NewRef(descr);
-            stack_pointer[-1 - (0 ? 1 : 0)] = attr;
+            stack_pointer[-1] = attr;
             next_instr += 9;
             DISPATCH();
         }
