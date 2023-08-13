@@ -96,8 +96,8 @@ PyDoc_STRVAR(depr_star_new_clone__doc__,
 "cloned($self, /, a)\n"
 "--\n"
 "\n"
-"Note: Passing positional arguments to _testclinic.cloned() is\n"
-"deprecated. Parameter \'a\' will become a keyword-only parameter in\n"
+"Note: Passing positional arguments to _testclinic.DeprStarNew.cloned()\n"
+"is deprecated. Parameter \'a\' will become a keyword-only parameter in\n"
 "Python 3.14.\n"
 "");
 
@@ -157,9 +157,9 @@ depr_star_new_clone(PyObject *type, PyObject *const *args, Py_ssize_t nargs, PyO
     #endif
     if (nargs == 1) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                "Passing positional arguments to _testclinic.cloned() is "
-                "deprecated. Parameter 'a' will become a keyword-only parameter "
-                "in Python 3.14.", 1))
+                "Passing positional arguments to _testclinic.DeprStarNew.cloned()"
+                " is deprecated. Parameter 'a' will become a keyword-only "
+                "parameter in Python 3.14.", 1))
         {
                 goto exit;
         }
@@ -263,9 +263,9 @@ PyDoc_STRVAR(depr_star_init_clone__doc__,
 "cloned($self, /, a)\n"
 "--\n"
 "\n"
-"Note: Passing positional arguments to _testclinic.cloned() is\n"
-"deprecated. Parameter \'a\' will become a keyword-only parameter in\n"
-"Python 3.14.\n"
+"Note: Passing positional arguments to\n"
+"_testclinic.DeprStarInit.cloned() is deprecated. Parameter \'a\' will\n"
+"become a keyword-only parameter in Python 3.14.\n"
 "");
 
 #define DEPR_STAR_INIT_CLONE_METHODDEF    \
@@ -324,9 +324,9 @@ depr_star_init_clone(PyObject *self, PyObject *const *args, Py_ssize_t nargs, Py
     #endif
     if (nargs == 1) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                "Passing positional arguments to _testclinic.cloned() is "
-                "deprecated. Parameter 'a' will become a keyword-only parameter "
-                "in Python 3.14.", 1))
+                "Passing positional arguments to "
+                "_testclinic.DeprStarInit.cloned() is deprecated. Parameter 'a' "
+                "will become a keyword-only parameter in Python 3.14.", 1))
         {
                 goto exit;
         }
@@ -1137,4 +1137,4 @@ depr_star_pos2_len2_with_kwd(PyObject *module, PyObject *const *args, Py_ssize_t
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=99335a5f23ceb368 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7a16fee4d6742d54 input=a9049054013a1b77]*/
