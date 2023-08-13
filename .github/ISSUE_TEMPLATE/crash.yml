@@ -47,7 +47,9 @@ body:
   - type: textarea
     attributes:
       label: Error messages
-      description: Enter any error messages caused by the crash, including a core dump if there is one
+      description: >
+        Enter any error messages caused by the crash, including a core dump if there is one.
+        Feel free to leave this bit blank if it isn't relevant.
       placeholder: |
         Error messages should be formatted like this:
 
