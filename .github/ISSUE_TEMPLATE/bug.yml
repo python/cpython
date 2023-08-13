@@ -35,7 +35,7 @@ body:
 
       value: |
         ```python
-        # Add your code block here!
+        # Add a code block here, if required
         ```
     validations:
       required: true
@@ -57,7 +57,7 @@ body:
       label: Operating systems and architectures tested on
       description: >
         Feel free to leave this bit blank if the bug obviously isn't OS-specific.
-        Find out the architecture of your machine by running `python --version --version` on the command line.
+        Find out the architecture of your machine by running `python -VV` on the command line.
     validations:
       required: false
   - type: textarea

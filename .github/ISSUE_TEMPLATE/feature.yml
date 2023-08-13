@@ -36,8 +36,8 @@ body:
         Add examples, if applicable.
         Put any code blocks inside triple backticks.
       value: |
-        ```py
-        your code here
+        ```python
+        # Add a code block here, if required
         ```
     validations:
       required: true
