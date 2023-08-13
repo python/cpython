@@ -26,7 +26,7 @@ body:
   - type: textarea
     attributes:
       label: A clear and concise description of the bug
-      description: |
+      description: >
         Tell us what happened.
         Include a [minimal, reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) if possible.
         Put any code blocks inside triple backticks.

@@ -4,7 +4,7 @@ labels: ["type-crash"]
 body:
   - type: markdown
     attributes:
-      value: |
+      value: >
           This form is for hard crashes of the Python interpreter, segmentation faults, failed C-level assertions, and similar.
           Exceptions unexpectedly raised from stdlib Python functions count as bugs rather than crashes.
 
