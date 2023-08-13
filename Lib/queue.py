@@ -226,7 +226,7 @@ class PriorityQueue(Queue):
     Entries are typically tuples of the form:  (priority number, data).
     '''
 
-    def _init(self, maxsize):
+    def _init(self):
         self.queue = []
 
     def _qsize(self):
@@ -242,7 +242,7 @@ class PriorityQueue(Queue):
 class LifoQueue(Queue):
     '''Variant of Queue that retrieves most recently added entries first.'''
 
-    def _init(self, maxsize):
+    def _init(self):
         self.queue = []
 
     def _qsize(self):
