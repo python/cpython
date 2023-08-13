@@ -4,9 +4,9 @@ labels: ["type-crash"]
 body:
   - type: markdown
     attributes:
-      value: >
+      value: |
           This form is for hard crashes of the Python interpreter, segmentation faults, failed C-level assertions, and similar.
-          Exceptions unexpectedly raised from stdlib Python functions count as bugs rather than crashes.
+          Unexpected exceptions raised from Python functions in the standard library count as bugs rather than crashes.
 
           The CPython interpreter is written in a different programming language, C.
           A "CPython crash" is when Python itself fails, leading to a traceback in the C stack.
@@ -54,6 +54,9 @@ body:
   - type: textarea
     attributes:
       label: Operating system and architecture tested on
+      description: >
+        Feel free to leave this bit blank if the bug obviously isn't OS-specific.
+        Find out the architecture of your machine by running `python --version --version` on the command line.
     validations:
       required: false
   - type: textarea
