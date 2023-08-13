@@ -44,7 +44,7 @@ class Queue(mixins._LoopBoundMixin):
 
     # These three are overridable in subclasses.
 
-    def _init(self, maxsize):
+    def _init(self):
         self._queue = collections.deque()
 
     def _get(self):
@@ -221,7 +221,7 @@ class PriorityQueue(Queue):
     Entries are typically tuples of the form: (priority number, data).
     """
 
-    def _init(self, maxsize):
+    def _init(self):
         self._queue = []
 
     def _put(self, item, heappush=heapq.heappush):
@@ -234,7 +234,7 @@ class PriorityQueue(Queue):
 class LifoQueue(Queue):
     """A subclass of Queue that retrieves most recently added entries first."""
 
-    def _init(self, maxsize):
+    def _init(self):
         self._queue = []
 
     def _put(self, item):
