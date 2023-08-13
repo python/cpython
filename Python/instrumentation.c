@@ -1554,6 +1554,9 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
         return 0;
     }
     int code_len = (int)Py_SIZE(code);
+    if (code->_co_firsttraceable >= code_len) {
+        return 0;
+    }
     if (update_instrumentation_data(code, interp)) {
         return -1;
     }

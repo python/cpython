@@ -1702,3 +1702,19 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
             self.assertEqual(caught, "inner")
         finally:
             sys.monitoring.set_events(TEST_TOOL, 0)
+
+    def test_108390(self):
+
+        class Foo:
+            def __init__(self, set_event):
+                if set_event:
+                    sys.monitoring.set_events(TEST_TOOL, E.PY_RESUME)
+
+        def make_foo_optimized_then_set_event():
+            for i in range(100):
+                Foo(i == 99)
+
+        try:
+            make_foo_optimized_then_set_event()
+        finally:
+            sys.monitoring.set_events(TEST_TOOL, 0)
