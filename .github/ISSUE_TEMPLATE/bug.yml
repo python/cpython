@@ -25,20 +25,6 @@ body:
             I have searched the [CPython issue tracker](https://github.com/python/cpython/issues?q=is%3Aissue+sort%3Acreated-desc),
             and am confident this bug has not been reported before
           required: true
-  - type: textarea
-    attributes:
-      label: A clear and concise description of the bug
-      description: >
-        Tell us what happened.
-        Include a [minimal, reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) if possible.
-        Put any code blocks inside triple backticks.
-
-      value: |
-        ```python
-        # Add a code block here, if required
-        ```
-    validations:
-      required: true
   - type: dropdown
     attributes:
       label: CPython versions tested on
@@ -62,6 +48,15 @@ body:
       required: false
   - type: textarea
     attributes:
-      label: Any other relevant information
+      label: A clear and concise description of the bug
+      description: >
+        Tell us what happened.
+        Include a [minimal, reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) if possible.
+        Put any code blocks inside triple backticks.
+
+      value: |
+        ```python
+        # Add a code block here, if required
+        ```
     validations:
-      required: false
+      required: true

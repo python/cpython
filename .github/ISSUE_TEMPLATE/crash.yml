@@ -10,6 +10,27 @@ body:
 
           The CPython interpreter is written in a different programming language, C.
           A "CPython crash" is when Python itself fails, leading to a traceback in the C stack.
+  - type: dropdown
+    attributes:
+      label: CPython versions tested on
+      multiple: true
+      options:
+        - "3.8"
+        - "3.9"
+        - "3.10"
+        - "3.11"
+        - "3.12"
+        - "3.13 (main branch or an alpha release)"
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Operating system and architecture tested on
+      description: >
+        Feel free to leave this bit blank if the bug obviously isn't OS-specific.
+        Find out the architecture of your machine by running `python --VV` on the command line.
+    validations:
+      required: false
   - type: textarea
     attributes:
       label: What happened?
@@ -38,31 +59,5 @@ body:
         ```
 
         </details>
-    validations:
-      required: false
-  - type: dropdown
-    attributes:
-      label: CPython versions tested on
-      multiple: true
-      options:
-        - "3.8"
-        - "3.9"
-        - "3.10"
-        - "3.11"
-        - "3.12"
-        - "3.13 (main branch or an alpha release)"
-    validations:
-      required: true
-  - type: textarea
-    attributes:
-      label: Operating system and architecture tested on
-      description: >
-        Feel free to leave this bit blank if the bug obviously isn't OS-specific.
-        Find out the architecture of your machine by running `python --VV` on the command line.
-    validations:
-      required: false
-  - type: textarea
-    attributes:
-      label: Any other relevant information
     validations:
       required: false
