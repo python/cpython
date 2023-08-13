@@ -1,0 +1,3 @@
+Remove ref cycle in callers of
+:func:`~multiprocessing.managers.convert_to_error` by deleting ``result``
+from scope in a ``finally`` block.

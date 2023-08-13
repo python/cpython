@@ -142,7 +142,7 @@ class Printer:
 
     def object_head(self, typename: str) -> None:
         with self.block(".ob_base =", ","):
-            self.write(f".ob_refcnt = 999999999,")
+            self.write(f".ob_refcnt = _Py_IMMORTAL_REFCNT,")
             self.write(f".ob_type = &{typename},")
 
     def object_var_head(self, typename: str, size: int) -> None:
@@ -175,6 +175,12 @@ class Printer:
             return f"&_Py_STR({strings[s]})"
         if s in identifiers:
             return f"&_Py_ID({s})"
+        if len(s) == 1:
+            c = ord(s)
+            if c < 128:
+                return f"(PyObject *)&_Py_SINGLETON(strings).ascii[{c}]"
+            elif c < 256:
+                return f"(PyObject *)&_Py_SINGLETON(strings).latin1[{c - 128}]"
         if re.match(r'\A[A-Za-z0-9_]+\Z', s):
             name = f"const_str_{s}"
         kind, ascii = analyze_character_width(s)
@@ -202,6 +208,7 @@ class Printer:
                         self.write(".kind = 1,")
                         self.write(".compact = 1,")
                         self.write(".ascii = 1,")
+                        self.write(".statically_allocated = 1,")
                 self.write(f"._data = {make_string_literal(s.encode('ascii'))},")
                 return f"& {name}._ascii.ob_base"
             else:
@@ -214,6 +221,7 @@ class Printer:
                             self.write(f".kind = {kind},")
                             self.write(".compact = 1,")
                             self.write(".ascii = 0,")
+                            self.write(".statically_allocated = 1,")
                     utf8 = s.encode('utf-8')
                     self.write(f'.utf8 = {make_string_literal(utf8)},')
                     self.write(f'.utf8_length = {len(utf8)},')
@@ -255,7 +263,6 @@ class Printer:
             self.write(f".co_names = {co_names},")
             self.write(f".co_exceptiontable = {co_exceptiontable},")
             self.field(code, "co_flags")
-            self.write("._co_linearray_entry_size = 0,")
             self.field(code, "co_argcount")
             self.field(code, "co_posonlyargcount")
             self.field(code, "co_kwonlyargcount")
@@ -276,7 +283,6 @@ class Printer:
             self.write(f".co_qualname = {co_qualname},")
             self.write(f".co_linetable = {co_linetable},")
             self.write(f"._co_cached = NULL,")
-            self.write("._co_linearray = NULL,")
             self.write(f".co_code_adaptive = {co_code_adaptive},")
             for i, op in enumerate(code.co_code[::2]):
                 if op == RESUME:
@@ -309,7 +315,7 @@ class Printer:
         return f"& {name}._object.ob_base.ob_base"
 
     def _generate_int_for_bits(self, name: str, i: int, digit: int) -> None:
-        sign = -1 if i < 0 else 0 if i == 0 else +1
+        sign = (i > 0) - (i < 0)
         i = abs(i)
         digits: list[int] = []
         while i:
@@ -318,10 +324,12 @@ class Printer:
         self.write("static")
         with self.indent():
             with self.block("struct"):
-                self.write("PyObject_VAR_HEAD")
+                self.write("PyObject ob_base;")
+                self.write("uintptr_t lv_tag;")
                 self.write(f"digit ob_digit[{max(1, len(digits))}];")
         with self.block(f"{name} =", ";"):
-            self.object_var_head("PyLong_Type", sign*len(digits))
+            self.object_head("PyLong_Type")
+            self.write(f".lv_tag = TAG_FROM_SIGN_AND_SIZE({sign}, {len(digits)}),")
             if digits:
                 ds = ", ".join(map(str, digits))
                 self.write(f".ob_digit = {{ {ds} }},")
@@ -345,7 +353,7 @@ class Printer:
             self.write('#error "PYLONG_BITS_IN_DIGIT should be 15 or 30"')
             self.write("#endif")
             # If neither clause applies, it won't compile
-        return f"& {name}.ob_base.ob_base"
+        return f"& {name}.ob_base"
 
     def generate_float(self, name: str, x: float) -> str:
         with self.block(f"static PyFloatObject {name} =", ";"):

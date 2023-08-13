@@ -1,8 +1,6 @@
 #ifndef MULTIPROCESSING_H
 #define MULTIPROCESSING_H
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #include "structmember.h"
 #include "pythread.h"
@@ -12,7 +10,9 @@
  */
 
 #ifdef MS_WINDOWS
-#  define WIN32_LEAN_AND_MEAN
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
 #  include <windows.h>
 #  include <winsock2.h>
 #  include <process.h>               /* getpid() */

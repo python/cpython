@@ -1601,6 +1601,184 @@ exit:
 
 #if defined(MS_WINDOWS)
 
+PyDoc_STRVAR(os_listdrives__doc__,
+"listdrives($module, /)\n"
+"--\n"
+"\n"
+"Return a list containing the names of drives in the system.\n"
+"\n"
+"A drive name typically looks like \'C:\\\\\'.");
+
+#define OS_LISTDRIVES_METHODDEF    \
+    {"listdrives", (PyCFunction)os_listdrives, METH_NOARGS, os_listdrives__doc__},
+
+static PyObject *
+os_listdrives_impl(PyObject *module);
+
+static PyObject *
+os_listdrives(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return os_listdrives_impl(module);
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os_listvolumes__doc__,
+"listvolumes($module, /)\n"
+"--\n"
+"\n"
+"Return a list containing the volumes in the system.\n"
+"\n"
+"Volumes are typically represented as a GUID path.");
+
+#define OS_LISTVOLUMES_METHODDEF    \
+    {"listvolumes", (PyCFunction)os_listvolumes, METH_NOARGS, os_listvolumes__doc__},
+
+static PyObject *
+os_listvolumes_impl(PyObject *module);
+
+static PyObject *
+os_listvolumes(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return os_listvolumes_impl(module);
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os_listmounts__doc__,
+"listmounts($module, /, volume)\n"
+"--\n"
+"\n"
+"Return a list containing mount points for a particular volume.\n"
+"\n"
+"\'volume\' should be a GUID path as returned from os.listvolumes.");
+
+#define OS_LISTMOUNTS_METHODDEF    \
+    {"listmounts", _PyCFunction_CAST(os_listmounts), METH_FASTCALL|METH_KEYWORDS, os_listmounts__doc__},
+
+static PyObject *
+os_listmounts_impl(PyObject *module, path_t *volume);
+
+static PyObject *
+os_listmounts(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(volume), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"volume", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "listmounts",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    path_t volume = PATH_T_INITIALIZE("listmounts", "volume", 0, 0);
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &volume)) {
+        goto exit;
+    }
+    return_value = os_listmounts_impl(module, &volume);
+
+exit:
+    /* Cleanup for volume */
+    path_cleanup(&volume);
+
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os__path_isdevdrive__doc__,
+"_path_isdevdrive($module, /, path)\n"
+"--\n"
+"\n"
+"Determines whether the specified path is on a Windows Dev Drive.");
+
+#define OS__PATH_ISDEVDRIVE_METHODDEF    \
+    {"_path_isdevdrive", _PyCFunction_CAST(os__path_isdevdrive), METH_FASTCALL|METH_KEYWORDS, os__path_isdevdrive__doc__},
+
+static PyObject *
+os__path_isdevdrive_impl(PyObject *module, path_t *path);
+
+static PyObject *
+os__path_isdevdrive(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_path_isdevdrive",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    path_t path = PATH_T_INITIALIZE("_path_isdevdrive", "path", 0, 0);
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    return_value = os__path_isdevdrive_impl(module, &path);
+
+exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
 PyDoc_STRVAR(os__getfullpathname__doc__,
 "_getfullpathname($module, path, /)\n"
 "--\n"
@@ -2615,7 +2793,7 @@ PyDoc_STRVAR(os_system__doc__,
     {"system", _PyCFunction_CAST(os_system), METH_FASTCALL|METH_KEYWORDS, os_system__doc__},
 
 static long
-os_system_impl(PyObject *module, const Py_UNICODE *command);
+os_system_impl(PyObject *module, const wchar_t *command);
 
 static PyObject *
 os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -2647,7 +2825,7 @@ os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    const Py_UNICODE *command = NULL;
+    const wchar_t *command = NULL;
     long _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
@@ -7188,7 +7366,7 @@ PyDoc_STRVAR(os_pwrite__doc__,
 "Write bytes to a file descriptor starting at a particular offset.\n"
 "\n"
 "Write buffer to fd, starting at offset bytes from the beginning of\n"
-"the file.  Returns the number of bytes writte.  Does not change the\n"
+"the file.  Returns the number of bytes written.  Does not change the\n"
 "current file offset.");
 
 #define OS_PWRITE_METHODDEF    \
@@ -8104,15 +8282,9 @@ os_putenv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("putenv", "argument 1", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     name = args[0];
     if (!PyUnicode_Check(args[1])) {
         _PyArg_BadArgument("putenv", "argument 2", "str", args[1]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[1]) == -1) {
         goto exit;
     }
     value = args[1];
@@ -8189,9 +8361,6 @@ os_unsetenv(PyObject *module, PyObject *arg)
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("unsetenv", "argument", "str", arg);
-        goto exit;
-    }
-    if (PyUnicode_READY(arg) == -1) {
         goto exit;
     }
     name = arg;
@@ -9189,7 +9358,7 @@ PyDoc_STRVAR(os_startfile__doc__,
 
 static PyObject *
 os_startfile_impl(PyObject *module, path_t *filepath,
-                  const Py_UNICODE *operation, const Py_UNICODE *arguments,
+                  const wchar_t *operation, const wchar_t *arguments,
                   path_t *cwd, int show_cmd);
 
 static PyObject *
@@ -9224,8 +9393,8 @@ os_startfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t filepath = PATH_T_INITIALIZE("startfile", "filepath", 0, 0);
-    const Py_UNICODE *operation = NULL;
-    const Py_UNICODE *arguments = NULL;
+    const wchar_t *operation = NULL;
+    const wchar_t *arguments = NULL;
     path_t cwd = PATH_T_INITIALIZE("startfile", "cwd", 1, 0);
     int show_cmd = 1;
 
@@ -10988,7 +11157,7 @@ exit:
 
 #endif /* defined(HAVE_GETRANDOM_SYSCALL) */
 
-#if defined(MS_WINDOWS)
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
 
 PyDoc_STRVAR(os__add_dll_directory__doc__,
 "_add_dll_directory($module, /, path)\n"
@@ -11057,9 +11226,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)) */
 
-#if defined(MS_WINDOWS)
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
 
 PyDoc_STRVAR(os__remove_dll_directory__doc__,
 "_remove_dll_directory($module, /, cookie)\n"
@@ -11120,7 +11289,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)) */
 
 #if (defined(WIFEXITED) || defined(MS_WINDOWS))
 
@@ -11252,6 +11421,22 @@ exit:
 #ifndef OS_LINK_METHODDEF
     #define OS_LINK_METHODDEF
 #endif /* !defined(OS_LINK_METHODDEF) */
+
+#ifndef OS_LISTDRIVES_METHODDEF
+    #define OS_LISTDRIVES_METHODDEF
+#endif /* !defined(OS_LISTDRIVES_METHODDEF) */
+
+#ifndef OS_LISTVOLUMES_METHODDEF
+    #define OS_LISTVOLUMES_METHODDEF
+#endif /* !defined(OS_LISTVOLUMES_METHODDEF) */
+
+#ifndef OS_LISTMOUNTS_METHODDEF
+    #define OS_LISTMOUNTS_METHODDEF
+#endif /* !defined(OS_LISTMOUNTS_METHODDEF) */
+
+#ifndef OS__PATH_ISDEVDRIVE_METHODDEF
+    #define OS__PATH_ISDEVDRIVE_METHODDEF
+#endif /* !defined(OS__PATH_ISDEVDRIVE_METHODDEF) */
 
 #ifndef OS__GETFULLPATHNAME_METHODDEF
     #define OS__GETFULLPATHNAME_METHODDEF
@@ -11796,4 +11981,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=1b0eb6a76b1a0e28 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a85a386b212b0631 input=a9049054013a1b77]*/
