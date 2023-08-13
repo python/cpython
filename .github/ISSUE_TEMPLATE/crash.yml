@@ -66,9 +66,8 @@ body:
         <summary>Error messages/core dump</summary>
 
         ```
-        [paste error here]
+        # paste errors here, if you have any
         ```
-
         </details>
     validations:
       required: false
