@@ -1075,8 +1075,8 @@ Kernel density estimation
 It is possible to estimate a continuous probability density function
 from a fixed number of discrete samples.
 
-The basic idea is to smooth the data using a kernel function such as a
-`normal distribution, triangular distribution, or uniform distribution
+The basic idea is to smooth the data using `a kernel function such as a
+normal distribution, triangular distribution, or uniform distribution
 <https://en.wikipedia.org/wiki/Kernel_(statistics)#Kernel_functions_in_common_use>`_.
 The degree of smoothing is controlled by a single
 parameter, ``h``, representing the variance of the kernel function.
