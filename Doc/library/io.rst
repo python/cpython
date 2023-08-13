@@ -258,7 +258,7 @@ standard stream implementations.
       The abstract base classes also provide default implementations of some
       methods in order to help implementation of concrete stream classes.  For
       example, :class:`BufferedIOBase` provides unoptimized implementations of
-      :meth:`~BufferedIOBase.readinto` and :meth:`~IOBase.readline`.
+      :meth:`!readinto` and :meth:`!readline`.
 
 At the top of the I/O hierarchy is the abstract base class :class:`IOBase`.  It
 defines the basic interface to a stream.  Note, however, that there is no
