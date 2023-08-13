@@ -33,7 +33,7 @@ class Queue:
 
     def __init__(self, maxsize=0):
         self.maxsize = maxsize
-        self._init(maxsize)
+        self._init()
 
         # mutex must be held whenever the queue is mutating.  All methods
         # that acquire mutex must release it before returning.  mutex
@@ -203,7 +203,7 @@ class Queue:
     # These will only be called with appropriate locks held
 
     # Initialize the queue representation
-    def _init(self, maxsize):
+    def _init(self):
         self.queue = deque()
 
     def _qsize(self):
