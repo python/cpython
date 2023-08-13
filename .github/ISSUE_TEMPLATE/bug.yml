@@ -5,9 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        # Bug report
-
-        ## New to Python?
+        **New to Python?**
 
         For help or advice on using Python, try one of the following options instead of filing a GitHub issue:
 
@@ -38,13 +36,22 @@ body:
         - "3.13 (main branch or an alpha release)"
     validations:
       required: true
-  - type: textarea
+  - type: dropdown
     attributes:
-      label: Operating systems and architectures tested on
-      description: >
-        Feel free to leave this bit blank if the bug obviously isn't OS-specific.
-        Find out the architecture of your machine by running `python -VV` on the command line.
+      label: Operating systems tested on
+      multiple: true
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Other
     validations:
+      required: false
+  - type: input
+    attributes:
+      label: Output from `python -VV`
+      description: (If you tested with multiple operating systems or architectures, feel free to provide details in the main bug description.)
+    validation:
       required: false
   - type: textarea
     attributes:
