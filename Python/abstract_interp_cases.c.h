@@ -7,6 +7,10 @@
             break;
         }
 
+        case RESUME: {
+            break;
+        }
+
         case POP_TOP: {
             STACK_SHRINK(1);
             break;

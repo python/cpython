@@ -271,10 +271,8 @@ _PyFunction_SetVersion(PyFunctionObject *func, uint32_t version)
     func->func_version = version;
     if (version != 0) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
-        PyFunctionObject **slot =
-            interp->func_state.func_version_cache
-            + (version % FUNC_VERSION_CACHE_SIZE);
-        Py_XSETREF(*slot, (PyFunctionObject *)Py_NewRef(func));
+        interp->func_state.func_version_cache[
+            version % FUNC_VERSION_CACHE_SIZE] = func;
     }
 }
 
@@ -282,22 +280,12 @@ PyFunctionObject *
 _PyFunction_LookupByVersion(uint32_t version)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyFunctionObject **slot =
-        interp->func_state.func_version_cache
-        + (version % FUNC_VERSION_CACHE_SIZE);
-    if (*slot != NULL && (*slot)->func_version == version) {
-        return (PyFunctionObject *)Py_NewRef(*slot);
+    PyFunctionObject *func = interp->func_state.func_version_cache[
+        version % FUNC_VERSION_CACHE_SIZE];
+    if (func != NULL && func->func_version == version) {
+        return (PyFunctionObject *)Py_NewRef(func);
     }
     return NULL;
-}
-
-void
-_PyFunction_ClearByVersionCache(PyInterpreterState *interp)
-{
-    for (int i = 0; i < FUNC_VERSION_CACHE_SIZE; i++) {
-        PyFunctionObject **slot = interp->func_state.func_version_cache + i;
-        Py_CLEAR(*slot);
-    }
 }
 
 uint32_t
@@ -928,6 +916,15 @@ func_dealloc(PyFunctionObject *op)
     _PyObject_GC_UNTRACK(op);
     if (op->func_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) op);
+    }
+    if (op->func_version != 0) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        PyFunctionObject **slot =
+            interp->func_state.func_version_cache
+            + (op->func_version % FUNC_VERSION_CACHE_SIZE);
+        if (*slot == op) {
+            *slot = NULL;
+        }
     }
     (void)func_clear(op);
     // These aren't cleared by func_clear().
