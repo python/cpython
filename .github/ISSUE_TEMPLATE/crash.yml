@@ -48,7 +48,7 @@ body:
         - "3.10"
         - "3.11"
         - "3.12"
-        - "CPython main branch"
+        - "3.13 (main branch or an alpha release)"
     validations:
       required: true
   - type: textarea
