@@ -2079,9 +2079,6 @@ sys__clear_type_cache_impl(PyObject *module)
 /*[clinic end generated code: output=20e48ca54a6f6971 input=127f3e04a8d9b555]*/
 {
     PyType_ClearCache();
-    // Also clear the function-by-version cache
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyFunction_ClearByVersionCache(interp);
     Py_RETURN_NONE;
 }
 
