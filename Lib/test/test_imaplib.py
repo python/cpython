@@ -387,42 +387,6 @@ class NewIMAPTestsMixin():
         self.assertEqual(code, 'OK')
         self.assertEqual(server.response, b'ZmFrZQ==\r\n')  # b64 encoded 'fake'
 
-    @hashlib_helper.requires_hashdigest('md5', openssl=True)
-    def test_login_cram_md5_bytes(self):
-        class AuthHandler(SimpleIMAPHandler):
-            capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
-            def cmd_AUTHENTICATE(self, tag, args):
-                self._send_textline('+ PDE4OTYuNjk3MTcwOTUyQHBvc3RvZmZpY2Uucm'
-                                    'VzdG9uLm1jaS5uZXQ=')
-                r = yield
-                if (r == b'dGltIGYxY2E2YmU0NjRiOWVmYT'
-                         b'FjY2E2ZmZkNmNmMmQ5ZjMy\r\n'):
-                    self._send_tagged(tag, 'OK', 'CRAM-MD5 successful')
-                else:
-                    self._send_tagged(tag, 'NO', 'No access')
-        client, _ = self._setup(AuthHandler)
-        self.assertTrue('AUTH=CRAM-MD5' in client.capabilities)
-        ret, _ = client.login_cram_md5("tim", b"tanstaaftanstaaf")
-        self.assertEqual(ret, "OK")
-
-    @hashlib_helper.requires_hashdigest('md5', openssl=True)
-    def test_login_cram_md5_plain_text(self):
-        class AuthHandler(SimpleIMAPHandler):
-            capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
-            def cmd_AUTHENTICATE(self, tag, args):
-                self._send_textline('+ PDE4OTYuNjk3MTcwOTUyQHBvc3RvZmZpY2Uucm'
-                                    'VzdG9uLm1jaS5uZXQ=')
-                r = yield
-                if (r == b'dGltIGYxY2E2YmU0NjRiOWVmYT'
-                         b'FjY2E2ZmZkNmNmMmQ5ZjMy\r\n'):
-                    self._send_tagged(tag, 'OK', 'CRAM-MD5 successful')
-                else:
-                    self._send_tagged(tag, 'NO', 'No access')
-        client, _ = self._setup(AuthHandler)
-        self.assertTrue('AUTH=CRAM-MD5' in client.capabilities)
-        ret, _ = client.login_cram_md5("tim", "tanstaaftanstaaf")
-        self.assertEqual(ret, "OK")
-
     def test_aborted_authentication(self):
         class MyServer(SimpleIMAPHandler):
             def cmd_AUTHENTICATE(self, tag, args):
@@ -839,34 +803,6 @@ class ThreadedNetworkedTests(unittest.TestCase):
             self.assertEqual(code, 'OK')
             self.assertEqual(server.response,
                              b'ZmFrZQ==\r\n')  # b64 encoded 'fake'
-
-    @threading_helper.reap_threads
-    @hashlib_helper.requires_hashdigest('md5', openssl=True)
-    def test_login_cram_md5(self):
-
-        class AuthHandler(SimpleIMAPHandler):
-
-            capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
-
-            def cmd_AUTHENTICATE(self, tag, args):
-                self._send_textline('+ PDE4OTYuNjk3MTcwOTUyQHBvc3RvZmZpY2Uucm'
-                                    'VzdG9uLm1jaS5uZXQ=')
-                r = yield
-                if (r == b'dGltIGYxY2E2YmU0NjRiOWVmYT'
-                         b'FjY2E2ZmZkNmNmMmQ5ZjMy\r\n'):
-                    self._send_tagged(tag, 'OK', 'CRAM-MD5 successful')
-                else:
-                    self._send_tagged(tag, 'NO', 'No access')
-
-        with self.reaped_pair(AuthHandler) as (server, client):
-            self.assertTrue('AUTH=CRAM-MD5' in client.capabilities)
-            ret, data = client.login_cram_md5("tim", "tanstaaftanstaaf")
-            self.assertEqual(ret, "OK")
-
-        with self.reaped_pair(AuthHandler) as (server, client):
-            self.assertTrue('AUTH=CRAM-MD5' in client.capabilities)
-            ret, data = client.login_cram_md5("tim", b"tanstaaftanstaaf")
-            self.assertEqual(ret, "OK")
 
 
     @threading_helper.reap_threads

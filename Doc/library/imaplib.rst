@@ -319,13 +319,6 @@ An :class:`IMAP4` instance has the following methods:
    Identify the client using a plaintext password. The *password* will be quoted.
 
 
-.. method:: IMAP4.login_cram_md5(user, password)
-
-   Force use of ``CRAM-MD5`` authentication when identifying the client to protect
-   the password.  Will only work if the server ``CAPABILITY`` response includes the
-   phrase ``AUTH=CRAM-MD5``.
-
-
 .. method:: IMAP4.logout()
 
    Shutdown connection to server. Returns server ``BYE`` response.
@@ -610,6 +603,10 @@ The following attributes are defined on instances of :class:`IMAP4`:
    capability.
 
    .. versionadded:: 3.5
+
+   .. versionadded:: 3.13
+
+      :meth:`login_cram_md5` is removed from :class:`IMAP4`
 
 
 .. _imap4-example:

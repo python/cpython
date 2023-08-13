@@ -614,23 +614,6 @@ class IMAP4:
         return typ, dat
 
 
-    def login_cram_md5(self, user, password):
-        """ Force use of CRAM-MD5 authentication.
-
-        (typ, [data]) = <instance>.login_cram_md5(user, password)
-        """
-        self.user, self.password = user, password
-        return self.authenticate('CRAM-MD5', self._CRAM_MD5_AUTH)
-
-
-    def _CRAM_MD5_AUTH(self, challenge):
-        """ Authobject to use with CRAM-MD5 authentication. """
-        import hmac
-        pwd = (self.password.encode('utf-8') if isinstance(self.password, str)
-                                             else self.password)
-        return self.user + " " + hmac.HMAC(pwd, challenge, 'md5').hexdigest()
-
-
     def logout(self):
         """Shutdown connection to server.
 
