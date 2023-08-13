@@ -12,7 +12,7 @@ body:
           A "CPython crash" is when Python itself fails, leading to a traceback in the C stack.
   - type: dropdown
     attributes:
-      label: CPython versions tested on
+      label: CPython versions tested on:
       multiple: true
       options:
         - "3.8"
@@ -25,7 +25,7 @@ body:
       required: true
   - type: dropdown
     attributes:
-      label: Operating systems tested on
+      label: Operating systems tested on:
       multiple: true
       options:
         - Linux
@@ -36,7 +36,7 @@ body:
       required: false
   - type: input
     attributes:
-      label: Output from `python -VV`
+      label: Output from running `python -VV` on the command line:
       description: (If you tested with multiple operating systems or architectures, feel free to provide details in the main bug description.)
     validations:
       required: false

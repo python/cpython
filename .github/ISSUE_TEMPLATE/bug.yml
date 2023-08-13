@@ -25,7 +25,7 @@ body:
           required: true
   - type: dropdown
     attributes:
-      label: CPython versions tested on
+      label: CPython versions tested on:
       multiple: true
       options:
         - "3.8"
@@ -38,7 +38,7 @@ body:
       required: true
   - type: dropdown
     attributes:
-      label: Operating systems tested on
+      label: Operating systems tested on:
       multiple: true
       options:
         - Linux
@@ -49,13 +49,13 @@ body:
       required: false
   - type: input
     attributes:
-      label: Output from `python -VV`
+      label: Output from running `python -VV` on the command line:
       description: (If you tested with multiple operating systems or architectures, feel free to provide details in the main bug description.)
     validations:
       required: false
   - type: textarea
     attributes:
-      label: A clear and concise description of the bug
+      label: A clear and concise description of the bug:
       description: >
         Tell us what happened.
         Include a [minimal, reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) if possible.
