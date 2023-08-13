@@ -1069,6 +1069,46 @@ The final prediction goes to the largest posterior. This is known as the
   'female'
 
 
+Kernel density estimation
+*************************
+
+It is possible to estimate a continuous probability density function
+from a fixed number of discrete samples.
+
+The basic idea is to smooth the data with using a kernel function
+such as a normal distribution, triangular distribution, or uniform
+distribution.  The degree of smoothing is controlled by a single
+parameter, ``h``, representing the variance of the kernel function.
+
+.. testcode::
+
+   import math
+
+   def kde_normal(sample, h):
+       "Create a continous probability density function from a sample."
+       # Smooth the sample with a normal distribution of variance h.
+       kernel_h = NormalDist(0.0, math.sqrt(h)).pdf
+       n = len(sample)
+       def pdf(x):
+           return sum(kernel_h(x - x_i) for x_i in sample) / n
+       return pdf
+
+Wikipedia has an `example`
+<https://en.wikipedia.org/wiki/Kernel_density_estimation#Example>`_
+where we can use this recipe to generate and plot a probability
+density function from a small sample:
+
+.. doctest::
+
+   >>> sample = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
+   >>> f_hat = kde_normal(sample, h=2.25)
+   >>> xarr = [i/100 for i in range(-750, 1100)
+   >>> yarr = [f_hat(x) for x in xarr]
+
+That data produces this plot:
+
+.. image:: kde_example.png
+
 ..
    # This modelines must appear within the last ten lines of the file.
    kate: indent-width 3; remove-trailing-space on; replace-tabs on; encoding utf-8;
