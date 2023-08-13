@@ -402,24 +402,23 @@ name is lost.
 +=======================+===============+=====================================+
 | .. py:data:: NOTSET   | 0             | When set on a logger, indicates that|
 |                       |               | ancestor loggers are to be consulted|
-|                       |               | to determine the effective level. If|
+|                       |               | to determine the effective level.   |
 |                       |               | If that still resolves to           |
-|                       |               | :const:`NOTSET`, then all events are|
-|                       |               | logged. When set on a handler, all  |
-|                       |               | events are handled.                 |
+|                       |               | :const:`!NOTSET`, then all events   |
+|                       |               | are logged. When set on a handler,  |
+|                       |               | all events are handled.             |
 +-----------------------+---------------+-------------------------------------+
-| .. py:data:: DEBUG    | 10            | Detailed information, typically of  |
-|                       |               | interest only when diagnosing       |
-|                       |               | problems, usually just for          |
-|                       |               | developers.                         |
+| .. py:data:: DEBUG    | 10            | Detailed information, typically only|
+|                       |               | of interest to a developer trying to|
+|                       |               | diagnose a problem.                 |
 +-----------------------+---------------+-------------------------------------+
 | .. py:data:: INFO     | 20            | Confirmation that things are working|
 |                       |               | as expected.                        |
 +-----------------------+---------------+-------------------------------------+
 | .. py:data:: WARNING  | 30            | An indication that something        |
-|                       |               | unexpected happened, or indicative  |
-|                       |               | of a problem in the near future     |
-|                       |               | (e.g. 'disk space low'). The        |
+|                       |               | unexpected happened, or that a      |
+|                       |               | problem might occur in the near     |
+|                       |               | future (e.g. 'disk space low'). The |
 |                       |               | software is still working as        |
 |                       |               | expected.                           |
 +-----------------------+---------------+-------------------------------------+
