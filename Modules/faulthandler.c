@@ -414,11 +414,10 @@ faulthandler_allocate_stack(void)
 
     int err = sigaltstack(&stack, &old_stack);
     if (err) {
+        PyErr_SetFromErrno(PyExc_OSError);
         /* Release the stack to retry sigaltstack() next time */
         PyMem_Free(stack.ss_sp);
         stack.ss_sp = NULL;
-
-        PyErr_SetFromErrno(PyExc_OSError);
         return -1;
     }
     return 0;

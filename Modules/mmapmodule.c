@@ -1355,15 +1355,18 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     m_obj->data = mmap(NULL, map_size, prot, flags, fd, offset);
     Py_END_ALLOW_THREADS
 
-    if (devzero != -1) {
-        close(devzero);
-    }
-
     if (m_obj->data == (char *)-1) {
         m_obj->data = NULL;
-        Py_DECREF(m_obj);
+        /* Should be called immediately after function which set errno. */
         PyErr_SetFromErrno(PyExc_OSError);
+        if (devzero != -1) {
+            close(devzero);
+        }
+        Py_DECREF(m_obj);
         return NULL;
+    }
+    if (devzero != -1) {
+        close(devzero);
     }
     m_obj->access = (access_mode)access;
     return (PyObject *)m_obj;
