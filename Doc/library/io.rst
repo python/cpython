@@ -992,7 +992,7 @@ Text I/O
    If *line_buffering* is ``True``, :meth:`~IOBase.flush` is implied when a call to
    write contains a newline character or a carriage return.
 
-   If *write_through* is ``True``, calls to :meth:`~BufferedIOBase..write` are guaranteed
+   If *write_through* is ``True``, calls to :meth:`~BufferedIOBase.write` are guaranteed
    not to be buffered: any data written on the :class:`TextIOWrapper`
    object is immediately handled to its underlying binary *buffer*.
 
