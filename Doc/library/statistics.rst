@@ -1106,7 +1106,7 @@ a probability density function estimated from a small sample:
    >>> xarr = [i/100 for i in range(-750, 1100)]
    >>> yarr = [f_hat(x) for x in xarr]
 
-That data produces this pdf plot:
+The points in ``xarr`` and ``yarr`` can be used to make this PDF plot:
 
 .. image:: kde_example.png
 
