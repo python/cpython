@@ -52,6 +52,7 @@ import hmac
 import copy
 import datetime
 import sys
+import warnings
 from email.base64mime import body_encode as encode_base64
 
 __all__ = ["SMTPException", "SMTPNotSupportedError", "SMTPServerDisconnected", "SMTPResponseException",
@@ -661,6 +662,17 @@ class SMTP:
             return (code, resp)
         raise SMTPAuthenticationError(code, resp)
 
+    def auth_cram_md5(self, challenge=None):
+        """ Authobject to use with CRAM-MD5 authentication. Requires self.user
+        and self.password to be set."""
+        # CRAM-MD5 does not support initial-response.
+        warnings.warn("This function is deprecated and will be removed in Python 3.15.",
+                       DeprecationWarning, stacklevel=2)
+        if challenge is None:
+            return None
+        return self.user + " " + hmac.HMAC(
+            self.password.encode('ascii'), challenge, 'md5').hexdigest()
+
     def auth_plain(self, challenge=None):
         """ Authobject to use with PLAIN authentication. Requires self.user and
         self.password to be set."""
@@ -711,7 +723,7 @@ class SMTP:
         advertised_authlist = self.esmtp_features["auth"].split()
 
         # Authentication methods we can handle in our preferred order:
-        preferred_auths = ['PLAIN', 'LOGIN']
+        preferred_auths = ['CRAM-MD5', 'PLAIN', 'LOGIN']
 
         # We try the supported authentications in our preferred order, if
         # the server supports them.

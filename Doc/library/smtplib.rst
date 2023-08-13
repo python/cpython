@@ -385,7 +385,7 @@ An :class:`SMTP` instance has the following methods:
 
    .. versionchanged:: 3.13
 
-      Historic auth mechanism ``CRAM-MD5`` is removed
+      Historic auth mechanism ``CRAM-MD5`` is deprecated
 
 
 .. method:: SMTP.starttls(*, context=None)
