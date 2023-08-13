@@ -258,7 +258,7 @@ standard stream implementations.
       The abstract base classes also provide default implementations of some
       methods in order to help implementation of concrete stream classes.  For
       example, :class:`BufferedIOBase` provides unoptimized implementations of
-      :meth:`~RawIOBase.readinto` and :meth:`~IOBase.readline`.
+      :meth:`~BufferedIOBase.readinto` and :meth:`~IOBase.readline`.
 
 At the top of the I/O hierarchy is the abstract base class :class:`IOBase`.  It
 defines the basic interface to a stream.  Note, however, that there is no
@@ -320,8 +320,8 @@ I/O Base Classes
    implementations represent a file that cannot be read, written or
    seeked.
 
-   Even though :class:`IOBase` does not declare :meth:`~RawIOBase.read`
-   or :meth:`~RawIOBase.write` because their signatures will vary, implementations and
+   Even though :class:`IOBase` does not declare :meth:`!read`
+   or :meth:`!write` because their signatures will vary, implementations and
    clients should consider those methods part of the interface.  Also,
    implementations may raise a :exc:`ValueError` (or :exc:`UnsupportedOperation`)
    when operations they do not support are called.
@@ -380,7 +380,7 @@ I/O Base Classes
    .. method:: readable()
 
       Return ``True`` if the stream can be read from.
-      If ``False``, :meth:`~RawIOBase.read` will raise :exc:`OSError`.
+      If ``False``, :meth:`!read` will raise :exc:`OSError`.
 
    .. method:: readline(size=-1, /)
 
@@ -423,7 +423,7 @@ I/O Base Classes
 
       .. versionadded:: 3.3
          Some operating systems could support additional values, like
-         :const:`!os.SEEK_HOLE` or :const:`!os.SEEK_DATA`. The valid values
+         :const:`!SEEK_HOLE` or :const:`!SEEK_DATA`. The valid values
          for a file could depend on it being open in text or binary mode.
 
    .. method:: seekable()
@@ -450,7 +450,7 @@ I/O Base Classes
    .. method:: writable()
 
       Return ``True`` if the stream supports writing.  If ``False``,
-      :meth:`~RawIOBase.write` and :meth:`truncate` will raise :exc:`OSError`.
+      :meth:`!write` and :meth:`truncate` will raise :exc:`OSError`.
 
    .. method:: writelines(lines, /)
 
@@ -992,7 +992,7 @@ Text I/O
    If *line_buffering* is ``True``, :meth:`~IOBase.flush` is implied when a call to
    write contains a newline character or a carriage return.
 
-   If *write_through* is ``True``, calls to :meth:`~RawIOBase.write` are guaranteed
+   If *write_through* is ``True``, calls to :meth:`~BufferedIOBase..write` are guaranteed
    not to be buffered: any data written on the :class:`TextIOWrapper`
    object is immediately handled to its underlying binary *buffer*.
 
@@ -1000,8 +1000,8 @@ Text I/O
       The *write_through* argument has been added.
 
    .. versionchanged:: 3.3
-      The default *encoding* is now :meth:`!locale.getpreferredencoding(False)`
-      instead of :meth:`!locale.getpreferredencoding`. Don't change temporary the
+      The default *encoding* is now ``locale.getpreferredencoding(False)``
+      instead of ``locale.getpreferredencoding``. Don't change temporary the
       locale encoding using :func:`locale.setlocale`, use the current locale
       encoding instead of the user preferred encoding.
 
@@ -1059,7 +1059,7 @@ Text I/O
    buffer which emulates opening an existing file in a ``w+`` mode, making it
    ready for an immediate write from the beginning or for a write that
    would overwrite the initial value.  To emulate opening a file in an ``a+``
-   mode ready for appending, use :meth:`!f.seek(0, io.SEEK_END)` to reposition the
+   mode ready for appending, use ``f.seek(0, io.SEEK_END)`` to reposition the
    stream at the end of the buffer.
 
    The *newline* argument works like that of :class:`TextIOWrapper`,
@@ -1126,7 +1126,7 @@ Text I/O over a binary storage (such as a file) is significantly slower than
 binary I/O over the same storage, because it requires conversions between
 unicode and binary data using a character codec.  This can become noticeable
 handling huge amounts of text data like large log files.  Also,
-:meth:`~IOBase.tell` and :meth:`~IOBase.seek` are both quite slow
+:meth:`~TextIOBase.tell` and :meth:`~TextIOBase.seek` are both quite slow
 due to the reconstruction algorithm used.
 
 :class:`StringIO`, however, is a native in-memory unicode container and will
@@ -1136,7 +1136,7 @@ Multi-threading
 ^^^^^^^^^^^^^^^
 
 :class:`FileIO` objects are thread-safe to the extent that the operating system
-calls (such as :meth:`!read(2)` under Unix) they wrap are thread-safe too.
+calls (such as :manpage:`read(2)` under Unix) they wrap are thread-safe too.
 
 Binary buffered objects (instances of :class:`BufferedReader`,
 :class:`BufferedWriter`, :class:`BufferedRandom` and :class:`BufferedRWPair`)
