@@ -1,0 +1,1 @@
+Remove historic auth mechanism ``CRAM-MD5`` from smtplib
