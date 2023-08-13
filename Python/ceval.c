@@ -222,8 +222,6 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
 static  _PyInterpreterFrame *
 _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
     PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs);
-static void
-_PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
@@ -925,7 +923,7 @@ exit_unwind:
     // GH-99729: We need to unlink the frame *before* clearing it:
     _PyInterpreterFrame *dying = frame;
     frame = cframe.current_frame = dying->previous;
-    _PyEvalFrameClearAndPop(tstate, dying);
+    _PyEval_FrameClearAndPop(tstate, dying);
     frame->return_offset = 0;
     if (frame == &entry_frame) {
         /* Restore previous cframe and exit */
@@ -1495,8 +1493,8 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     frame->previous = NULL;
 }
 
-static void
-_PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
+void
+_PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
     if (frame->owner == FRAME_OWNED_BY_THREAD) {
         clear_thread_frame(tstate, frame);

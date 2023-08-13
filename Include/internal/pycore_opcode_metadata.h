@@ -33,35 +33,36 @@
 #define _BINARY_OP_SUBTRACT_FLOAT 309
 #define _GUARD_BOTH_UNICODE 310
 #define _BINARY_OP_ADD_UNICODE 311
-#define _LOAD_LOCALS 312
-#define _LOAD_FROM_DICT_OR_GLOBALS 313
-#define _GUARD_GLOBALS_VERSION 314
-#define _GUARD_BUILTINS_VERSION 315
-#define _LOAD_GLOBAL_MODULE 316
-#define _LOAD_GLOBAL_BUILTINS 317
-#define _GUARD_TYPE_VERSION 318
-#define _CHECK_MANAGED_OBJECT_HAS_VALUES 319
-#define _LOAD_ATTR_INSTANCE_VALUE 320
-#define IS_NONE 321
-#define _ITER_CHECK_LIST 322
-#define _IS_ITER_EXHAUSTED_LIST 323
-#define _ITER_NEXT_LIST 324
-#define _ITER_CHECK_TUPLE 325
-#define _IS_ITER_EXHAUSTED_TUPLE 326
-#define _ITER_NEXT_TUPLE 327
-#define _ITER_CHECK_RANGE 328
-#define _IS_ITER_EXHAUSTED_RANGE 329
-#define _ITER_NEXT_RANGE 330
-#define _CHECK_PEP_523 331
-#define _CHECK_FUNCTION_EXACT_ARGS 332
-#define _CHECK_STACK_SPACE 333
-#define _INIT_CALL_PY_EXACT_ARGS 334
-#define _PUSH_FRAME 335
-#define _POP_JUMP_IF_FALSE 336
-#define _POP_JUMP_IF_TRUE 337
-#define JUMP_TO_TOP 338
-#define SAVE_CURRENT_IP 339
-#define INSERT 340
+#define _POP_FRAME 312
+#define _LOAD_LOCALS 313
+#define _LOAD_FROM_DICT_OR_GLOBALS 314
+#define _GUARD_GLOBALS_VERSION 315
+#define _GUARD_BUILTINS_VERSION 316
+#define _LOAD_GLOBAL_MODULE 317
+#define _LOAD_GLOBAL_BUILTINS 318
+#define _GUARD_TYPE_VERSION 319
+#define _CHECK_MANAGED_OBJECT_HAS_VALUES 320
+#define _LOAD_ATTR_INSTANCE_VALUE 321
+#define IS_NONE 322
+#define _ITER_CHECK_LIST 323
+#define _IS_ITER_EXHAUSTED_LIST 324
+#define _ITER_NEXT_LIST 325
+#define _ITER_CHECK_TUPLE 326
+#define _IS_ITER_EXHAUSTED_TUPLE 327
+#define _ITER_NEXT_TUPLE 328
+#define _ITER_CHECK_RANGE 329
+#define _IS_ITER_EXHAUSTED_RANGE 330
+#define _ITER_NEXT_RANGE 331
+#define _CHECK_PEP_523 332
+#define _CHECK_FUNCTION_EXACT_ARGS 333
+#define _CHECK_STACK_SPACE 334
+#define _INIT_CALL_PY_EXACT_ARGS 335
+#define _PUSH_FRAME 336
+#define _POP_JUMP_IF_FALSE 337
+#define _POP_JUMP_IF_TRUE 338
+#define JUMP_TO_TOP 339
+#define SAVE_CURRENT_IP 340
+#define INSERT 341
 
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
 #ifdef NEED_OPCODE_METADATA
@@ -196,6 +197,8 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
         case RAISE_VARARGS:
             return oparg;
         case INTERPRETER_EXIT:
+            return 1;
+        case _POP_FRAME:
             return 1;
         case RETURN_VALUE:
             return 1;
@@ -722,6 +725,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
         case RAISE_VARARGS:
             return 0;
         case INTERPRETER_EXIT:
+            return 0;
+        case _POP_FRAME:
             return 0;
         case RETURN_VALUE:
             return 0;
@@ -1445,6 +1450,8 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [DELETE_SUBSCR] = { .nuops = 1, .uops = { { DELETE_SUBSCR, 0, 0 } } },
     [CALL_INTRINSIC_1] = { .nuops = 1, .uops = { { CALL_INTRINSIC_1, 0, 0 } } },
     [CALL_INTRINSIC_2] = { .nuops = 1, .uops = { { CALL_INTRINSIC_2, 0, 0 } } },
+    [RETURN_VALUE] = { .nuops = 1, .uops = { { _POP_FRAME, 0, 0 } } },
+    [RETURN_CONST] = { .nuops = 2, .uops = { { LOAD_CONST, 0, 0 }, { _POP_FRAME, 0, 0 } } },
     [GET_AITER] = { .nuops = 1, .uops = { { GET_AITER, 0, 0 } } },
     [GET_ANEXT] = { .nuops = 1, .uops = { { GET_ANEXT, 0, 0 } } },
     [GET_AWAITABLE] = { .nuops = 1, .uops = { { GET_AWAITABLE, 0, 0 } } },
@@ -1546,6 +1553,7 @@ const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
     [_BINARY_OP_SUBTRACT_FLOAT] = "_BINARY_OP_SUBTRACT_FLOAT",
     [_GUARD_BOTH_UNICODE] = "_GUARD_BOTH_UNICODE",
     [_BINARY_OP_ADD_UNICODE] = "_BINARY_OP_ADD_UNICODE",
+    [_POP_FRAME] = "_POP_FRAME",
     [_LOAD_LOCALS] = "_LOAD_LOCALS",
     [_LOAD_FROM_DICT_OR_GLOBALS] = "_LOAD_FROM_DICT_OR_GLOBALS",
     [_GUARD_GLOBALS_VERSION] = "_GUARD_GLOBALS_VERSION",
