@@ -19,18 +19,18 @@ body:
         - label: This is a minor feature, which does not need previous discussion elsewhere
   - type: textarea
     attributes:
-      label: Links to previous discussion of this feature
+      label: "Links to previous discussion of this feature:"
     validations:
       required: false
   - type: input
     attributes:
-      label: Summary of proposal
+      label: "Summary of proposal:"
       description: A one-line summary of your proposal
     validations:
       required: true
   - type: textarea
     attributes:
-      label: Pitch
+      label: "Pitch:"
       description: >
         Explain why this feature or enhancement should be implemented and how it would be used.
         Add examples, if applicable.
