@@ -22,7 +22,7 @@ Public functions:       Internaldate2tuple
 
 __version__ = "2.58"
 
-import binascii, errno, random, re, socket, subprocess, sys, time, calendar
+import binascii, errno, random, re, socket, subprocess, sys, time, calendar, warnings
 from datetime import datetime, timezone, timedelta
 from io import DEFAULT_BUFFER_SIZE
 
@@ -612,6 +612,25 @@ class IMAP4:
             raise self.error(dat[-1])
         self.state = 'AUTH'
         return typ, dat
+
+
+    def login_cram_md5(self, user, password):
+        """ Force use of CRAM-MD5 authentication.
+
+        (typ, [data]) = <instance>.login_cram_md5(user, password)
+        """
+        warnings.warn("This function is deprecated and will be removed in Python 3.15.",
+                       DeprecationWarning, stacklevel=2)
+        self.user, self.password = user, password
+        return self.authenticate('CRAM-MD5', self._CRAM_MD5_AUTH)
+
+
+    def _CRAM_MD5_AUTH(self, challenge):
+        """ Authobject to use with CRAM-MD5 authentication. """
+        import hmac
+        pwd = (self.password.encode('utf-8') if isinstance(self.password, str)
+                                             else self.password)
+        return self.user + " " + hmac.HMAC(pwd, challenge, 'md5').hexdigest()
 
 
     def logout(self):
