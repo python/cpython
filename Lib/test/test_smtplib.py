@@ -808,8 +808,6 @@ sim_users = {'Mr.A@somewhere.com':'John A',
             }
 
 sim_auth = ('Mr.A@somewhere.com', 'somepassword')
-sim_cram_md5_challenge = ('PENCeUxFREJoU0NnbmhNWitOMjNGNn'
-                          'dAZWx3b29kLmlubm9zb2Z0LmNvbT4=')
 sim_lists = {'list-1':['Mr.A@somewhere.com','Mrs.C@somewhereesle.com'],
              'list-2':['Ms.B@xn--fo-fka.com',],
             }
@@ -916,24 +914,6 @@ class SimSMTPChannel(smtpd.SMTPChannel):
         # This AUTH mechanism will 'trap' client in a neverending 334
         # base64 encoded 'BuGgYbUgGy'
         self.push('334 QnVHZ1liVWdHeQ==')
-
-    def _auth_cram_md5(self, arg=None):
-        if arg is None:
-            self.push('334 {}'.format(sim_cram_md5_challenge))
-        else:
-            logpass = self._decode_base64(arg)
-            try:
-                user, hashed_pass = logpass.split()
-            except ValueError as e:
-                self.push('535 Splitting response {!r} into user and password '
-                          'failed: {}'.format(logpass, e))
-                return False
-            valid_hashed_pass = hmac.HMAC(
-                sim_auth[1].encode('ascii'),
-                self._decode_base64(sim_cram_md5_challenge).encode('ascii'),
-                'md5').hexdigest()
-            self._authenticated(user, hashed_pass == valid_hashed_pass)
-    # end AUTH related stuff.
 
     def smtp_EHLO(self, arg):
         resp = ('250-testhost\r\n'
@@ -1174,18 +1154,9 @@ class SMTPSimTests(unittest.TestCase):
             smtp.close()
 
     @hashlib_helper.requires_hashdigest('md5', openssl=True)
-    def testAUTH_CRAM_MD5(self):
-        self.serv.add_feature("AUTH CRAM-MD5")
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
-                            timeout=support.LOOPBACK_TIMEOUT)
-        resp = smtp.login(sim_auth[0], sim_auth[1])
-        self.assertEqual(resp, (235, b'Authentication Succeeded'))
-        smtp.close()
-
-    @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def testAUTH_multiple(self):
         # Test that multiple authentication methods are tried.
-        self.serv.add_feature("AUTH BOGUS PLAIN LOGIN CRAM-MD5")
+        self.serv.add_feature("AUTH BOGUS PLAIN LOGIN")
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
                             timeout=support.LOOPBACK_TIMEOUT)
         resp = smtp.login(sim_auth[0], sim_auth[1])
@@ -1194,12 +1165,6 @@ class SMTPSimTests(unittest.TestCase):
 
     def test_auth_function(self):
         supported = {'PLAIN', 'LOGIN'}
-        try:
-            hashlib.md5()
-        except ValueError:
-            pass
-        else:
-            supported.add('CRAM-MD5')
         for mechanism in supported:
             self.serv.add_feature("AUTH {}".format(mechanism))
         for mechanism in supported:
