@@ -369,10 +369,10 @@ An :class:`SMTP` instance has the following methods:
    should return ASCII ``str`` *data* that will be base64 encoded and sent to the
    server.
 
-   The ``SMTP`` class provides ``authobjects`` for the ``PLAIN``,
-   and ``LOGIN`` mechanisms; they are named ``SMTP.auth_plain``,
-   and ``SMTP.auth_login`` respectively.  They all require that the
-   ``user`` and ``password`` properties of the ``SMTP`` instance are
+   The ``SMTP`` class provides ``authobjects`` for the ``CRAM-MD5``, ``PLAIN``,
+   and ``LOGIN`` mechanisms; they are named ``SMTP.auth_cram_md5``,
+   ``SMTP.auth_plain``, and ``SMTP.auth_login`` respectively.  They all require
+   that the ``user`` and ``password`` properties of the ``SMTP`` instance are
    set to appropriate values.
 
    User code does not normally need to call ``auth`` directly, but can instead
@@ -386,7 +386,6 @@ An :class:`SMTP` instance has the following methods:
    .. versionchanged:: 3.13
 
       Historic auth mechanism ``CRAM-MD5`` is deprecated
-
 
 .. method:: SMTP.starttls(*, context=None)
 
