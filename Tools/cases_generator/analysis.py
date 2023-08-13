@@ -367,7 +367,7 @@ class Analyzer:
                     flags.add(instr.instr_flags)
                 case _:
                     typing.assert_never(component)
-        format = "IB"
+        format = "IB" if flags.HAS_ARG_FLAG else "IX"
         if offset:
             format += "C" + "0" * (offset - 1)
         return MacroInstruction(macro.name, format, flags, macro, parts, offset)
