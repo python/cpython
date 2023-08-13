@@ -604,7 +604,7 @@ The following attributes are defined on instances of :class:`IMAP4`:
 
    .. versionadded:: 3.5
 
-   .. versionadded:: 3.13
+   .. versionchanged:: 3.13
 
       auth mechanism ``login_cram_md5`` is removed from :class:`IMAP4`
 
