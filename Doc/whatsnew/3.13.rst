@@ -148,9 +148,7 @@ sqlite3
 -------
 
 * Passing more than one positional argument to :func:`sqlite3.connect` is
-  deprecated. Parameters *timeout*, *detect_types*, *isolation_level*,
-  *check_same_thread*, *factory*, *cached_statements*, and *uri* is deprecated.
-  They will become keyword-only parameters in Python 3.15.
+  deprecated. The remaining parameters will become keyword-only in Python 3.15.
   (Contributed by Erlend E. Aasland :gh:`93057`.)
 
 traceback
@@ -229,10 +227,7 @@ Deprecated
   (Contributed by Victor Stinner in :gh:`105096`.)
 
 * Passing more than one positional argument to :func:`sqlite3.connect` is
-  deprecated. Parameters *timeout*, *detect_types*, *isolation_level*,
-  *check_same_thread*, *factory*, *cached_statements*, and *uri* is deprecated.
-  They will become keyword-only parameters in Python 3.15.
-  (Contributed by Erlend E. Aasland :gh:`93057`.)
+  deprecated. The remaining parameters will become keyword-only in Python 3.15.
 
 Pending Removal in Python 3.14
 ------------------------------
