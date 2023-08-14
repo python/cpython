@@ -376,8 +376,9 @@ class Instruction(_Instruction):
         fields = []
         # Column: Source code line number
         if lineno_width:
-            if self.starts_line is not None:
-                lineno_fmt = "%%%dd" % lineno_width
+            if self.starts_line is not False:
+                lineno_fmt = "%%%dd" if self.starts_line is not None else "%%%ds"
+                lineno_fmt = lineno_fmt % lineno_width
                 fields.append(lineno_fmt % self.starts_line)
             else:
                 fields.append(' ' * lineno_width)
@@ -527,11 +528,11 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
     for start, end, target, _, _ in exception_entries:
         for i in range(start, end):
             labels.add(target)
-    starts_line = None
+    starts_line = False
     for offset, start_offset, op, arg in _unpack_opargs(original_code):
         if linestarts is not None:
-            starts_line = linestarts.get(offset, None)
-            if starts_line is not None:
+            starts_line = linestarts.get(offset, False)
+            if starts_line is not False and starts_line is not None:
                 starts_line += line_offset
         is_jump_target = offset in labels
         argval = None
@@ -651,13 +652,21 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
                        *, file=None, line_offset=0, exception_entries=(),
                        co_positions=None, show_caches=False, original_code=None):
     # Omit the line number column entirely if we have no line number info
-    show_lineno = bool(linestarts)
+    if bool(linestarts):
+        linestarts_ints = [line for line in linestarts.values() if line is not None]
+        show_lineno = len(linestarts_ints) > 0
+    else:
+        show_lineno = False
+
     if show_lineno:
-        maxlineno = max(linestarts.values()) + line_offset
+        maxlineno = max(linestarts_ints) + line_offset
         if maxlineno >= 1000:
             lineno_width = len(str(maxlineno))
         else:
             lineno_width = 3
+
+        if lineno_width < len(str(None)) and None in linestarts.values():
+            lineno_width = len(str(None))
     else:
         lineno_width = 0
     maxoffset = len(code) - 2
@@ -673,7 +682,7 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
                                          show_caches=show_caches,
                                          original_code=original_code):
         new_source_line = (show_lineno and
-                           instr.starts_line is not None and
+                           instr.starts_line is not False and
                            instr.offset > 0)
         if new_source_line:
             print(file=file)
@@ -755,10 +764,12 @@ def findlinestarts(code):
     """Find the offsets in a byte code which are start of lines in the source.
 
     Generate pairs (offset, lineno)
+    lineno will be an integer or None the offset does not have a source line.
     """
-    lastline = None
+
+    lastline = False # None is a valid line number
     for start, end, line in code.co_lines():
-        if line is not None and line != lastline:
+        if line is not lastline:
             lastline = line
             yield start, line
     return
