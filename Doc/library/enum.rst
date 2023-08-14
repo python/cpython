@@ -207,11 +207,15 @@ Data Types
 
    .. method:: EnumType.__dir__(cls)
 
-      Returns ``['__class__', '__doc__', '__members__', '__module__']`` and the
-      names of the members in *cls*::
+      Returns ``['__class__', '__contains__', '__doc__', '__getitem__', '__iter__', '__len__', '__members__', '__module__', '__name__', '__qualname__']``
+      and the names of the members in *cls*::
 
         >>> dir(Color)
         ['BLUE', 'GREEN', 'RED', '__class__', '__contains__', '__doc__', '__getitem__', '__init_subclass__', '__iter__', '__len__', '__members__', '__module__', '__name__', '__qualname__']
+
+      .. versionchanged:: 3.11
+         '__contains__', '__getitem__', '__iter__', '__len__', '__name__', and
+         '__qualname__' are also returned.
 
    .. method:: EnumType.__getitem__(cls, name)
 
@@ -278,8 +282,8 @@ Data Types
 
    .. method:: Enum.__dir__(self)
 
-      Returns ``['__class__', '__doc__', '__module__', 'name', 'value']`` and
-      any public methods defined on *self.__class__*::
+      Returns ``['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'value']``,
+      enum members, and any public methods defined on *self.__class__*::
 
          >>> from datetime import date
          >>> class Weekday(Enum):
@@ -295,7 +299,10 @@ Data Types
          ...         print('today is %s' % cls(date.today().isoweekday()).name)
          ...
          >>> dir(Weekday.SATURDAY)
-         ['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'today', 'value']
+         ['FRIDAY', 'MONDAY', 'SATURDAY', 'SUNDAY', 'THURSDAY', 'TUESDAY', 'WEDNESDAY', '__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'today', 'value']
+
+      .. versionchanged:: 3.11
+         '__eq__', '__hash__', and enum members are also returned.
 
    .. method:: Enum._generate_next_value_(name, start, count, last_values)
 
