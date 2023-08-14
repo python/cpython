@@ -1045,18 +1045,19 @@ Text I/O
 
    .. method:: seek(cookie, whence, /)
 
-      Set the stream position and return the current position.
+      Set the stream position, and return the new stream position.
 
       Four operations are supported,
       given by the following argument combinations:
 
       * ``seek(0, SEEK_SET)``: Rewind to the start of the stream.
-      * ``seek(n, SEEK_SET)``: Restore a previous position;
-        'n' is a number returned by :meth:`!tell`.
+      * ``seek(cookie, SEEK_SET)``: Restore a previous position;
+        *cookie* **must be** a number returned by :meth:`!tell`.
       * ``seek(0, SEEK_END)``: Fast-forward to the end of the stream.
       * ``seek(0, SEEK_CUR)``: Leave the current stream position unchanged.
 
-      Any other argument combinations are undefined behaviour.
+      Any other argument combinations are invalid,
+      and may raise exceptions.
 
 .. class:: StringIO(initial_value='', newline='\n')
 
