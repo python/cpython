@@ -1252,24 +1252,26 @@ class Path(PurePath):
                 check_eloop(e)
         return p
 
-    def owner(self):
+    def owner(self, *, follow_symlinks=True):
         """
         Return the login name of the file owner.
         """
         try:
             import pwd
-            return pwd.getpwuid(self.stat().st_uid).pw_name
+            uid = self.stat(follow_symlinks=follow_symlinks).st_uid
+            return pwd.getpwuid(uid).pw_name
         except ImportError:
             raise UnsupportedOperation("Path.owner() is unsupported on this system")
 
-    def group(self):
+    def group(self, *, follow_symlinks=True):
         """
         Return the group name of the file gid.
         """
 
         try:
             import grp
-            return grp.getgrgid(self.stat().st_gid).gr_name
+            gid = self.stat(follow_symlinks=follow_symlinks).st_gid
+            return grp.getgrgid(gid).gr_name
         except ImportError:
             raise UnsupportedOperation("Path.group() is unsupported on this system")
 
