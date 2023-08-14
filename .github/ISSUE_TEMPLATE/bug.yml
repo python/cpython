@@ -49,7 +49,7 @@ body:
       required: false
   - type: input
     attributes:
-      label: "Output from running `python -VV` on the command line:"
+      label: "Output from running 'python -VV' on the command line:"
       description: If you tested with multiple operating systems or architectures, feel free to provide details in the main bug description.
     validations:
       required: false
