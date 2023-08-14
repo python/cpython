@@ -179,7 +179,7 @@ class Availability(SphinxDirective):
         if unknown:
             cls = type(self)
             logger = logging.getLogger(cls.__qualname__)
-            logger.warn(
+            logger.warning(
                 f"Unknown platform(s) or syntax '{' '.join(sorted(unknown))}' "
                 f"in '.. availability:: {self.arguments[0]}', see "
                 f"{__file__}:{cls.__qualname__}.known_platforms for a set "
@@ -266,7 +266,7 @@ class AuditEvent(Directive):
         info = env.all_audit_events.setdefault(name, new_info)
         if info is not new_info:
             if not self._do_args_match(info['args'], new_info['args']):
-                self.logger.warn(
+                self.logger.warning(
                     "Mismatched arguments for audit-event {}: {!r} != {!r}"
                     .format(name, info['args'], new_info['args'])
                 )
@@ -542,7 +542,7 @@ class PydocTopicsBuilder(Builder):
                                      'building topics... ',
                                      length=len(pydoc_topic_labels)):
             if label not in self.env.domaindata['std']['labels']:
-                self.env.logger.warn('label %r not in documentation' % label)
+                self.env.logger.warning(f'label {label!r} not in documentation')
                 continue
             docname, labelid, sectname = self.env.domaindata['std']['labels'][label]
             doctree = self.env.get_and_resolve_doctree(docname, self)
