@@ -213,7 +213,7 @@ class sqlite3_int64_converter(CConverter):
 /*[python end generated code: output=da39a3ee5e6b4b0d input=dff8760fb1eba6a1]*/
 
 /*[clinic input]
-sqlite3.Connection.__init__ as pysqlite_connection_init
+_sqlite3.Connection.__init__ as pysqlite_connection_init
 
     database: object
     * [from 3.15]
