@@ -7,6 +7,7 @@
 #include "pycore_namespace.h"
 #include "pycore_object.h"
 #include "pycore_opcode.h"
+#include "pycore_opcode_metadata.h" // IS_VALID_OPCODE
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
@@ -437,11 +438,10 @@ dump_instrumentation_data(PyCodeObject *code, int star, FILE*out)
 static bool
 valid_opcode(int opcode)
 {
-    if (opcode > 0 &&
+    if (IS_VALID_OPCODE(opcode) &&
+        opcode != CACHE &&
         opcode != RESERVED &&
-        opcode < 255 &&
-        _PyOpcode_OpName[opcode] &&
-        _PyOpcode_OpName[opcode][0] != '<')
+        opcode < 255)
     {
        return true;
     }
