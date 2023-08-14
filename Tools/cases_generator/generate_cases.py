@@ -4,6 +4,7 @@ Writes the cases to generated_cases.c.h, which is #included in ceval.c.
 """
 
 import argparse
+import contextlib
 import os
 import posixpath
 import sys
@@ -141,6 +142,15 @@ class Generator(Analyzer):
                 typing.assert_never(thing)
         return instr, popped, pushed
 
+    @contextlib.contextmanager
+    def metadata_item(self, signature, open, close):
+        self.out.emit("")
+        self.out.emit(f"extern {signature};")
+        self.out.emit("#ifdef NEED_OPCODE_METADATA")
+        with self.out.block(f"{signature} {open}", close):
+            yield
+        self.out.emit("#endif // NEED_OPCODE_METADATA")
+
     def write_stack_effect_functions(self) -> None:
         popped_data: list[tuple[AnyInstruction, str]] = []
         pushed_data: list[tuple[AnyInstruction, str]] = []
@@ -156,25 +166,16 @@ class Generator(Analyzer):
         def write_function(
             direction: str, data: list[tuple[AnyInstruction, str]]
         ) -> None:
-            self.out.emit("")
-            self.out.emit("#ifndef NEED_OPCODE_METADATA")
-            self.out.emit(
-                f"extern int _PyOpcode_num_{direction}(int opcode, int oparg, bool jump);"
-            )
-            self.out.emit("#else")
-            self.out.emit("int")
-            self.out.emit(
-                f"_PyOpcode_num_{direction}(int opcode, int oparg, bool jump) {{"
-            )
-            self.out.emit("    switch(opcode) {")
-            for instr, effect in data:
-                self.out.emit(f"        case {instr.name}:")
-                self.out.emit(f"            return {effect};")
-            self.out.emit("        default:")
-            self.out.emit("            return -1;")
-            self.out.emit("    }")
-            self.out.emit("}")
-            self.out.emit("#endif")
+
+            with self.metadata_item(
+                f"int _PyOpcode_num_{direction}(int opcode, int oparg, bool jump)", "", ""
+            ):
+                with self.out.block("switch(opcode)"):
+                    for instr, effect in data:
+                        self.out.emit(f"case {instr.name}:")
+                        self.out.emit(f"    return {effect};")
+                    self.out.emit("default:")
+                    self.out.emit("    return -1;")
 
         write_function("popped", popped_data)
         write_function("pushed", pushed_data)
@@ -290,48 +291,33 @@ class Generator(Analyzer):
             self.out.emit("#define OPCODE_METADATA_SIZE 512")
             self.out.emit("#define OPCODE_UOP_NAME_SIZE 512")
             self.out.emit("#define OPCODE_MACRO_EXPANSION_SIZE 256")
-            self.out.emit("")
-            self.out.emit("#ifndef NEED_OPCODE_METADATA")
-            self.out.emit(
-                "extern const struct opcode_metadata "
-                "_PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE];"
-            )
-            self.out.emit(
-                "extern const struct opcode_macro_expansion "
-                "_PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE];"
-            )
-            self.out.emit(
-                "extern const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE];"
-            )
-            self.out.emit("#else // if NEED_OPCODE_METADATA")
 
-            self.out.emit(
+            with self.metadata_item(
                 "const struct opcode_metadata "
-                "_PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {"
-            )
+                "_PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE]",
+                "=",
+                ";"
+            ):
+                # Write metadata for each instruction
+                for thing in self.everything:
+                    match thing:
+                        case OverriddenInstructionPlaceHolder():
+                            continue
+                        case parsing.InstDef():
+                            if thing.kind != "op":
+                                self.write_metadata_for_inst(self.instrs[thing.name])
+                        case parsing.Macro():
+                            self.write_metadata_for_macro(self.macro_instrs[thing.name])
+                        case parsing.Pseudo():
+                            self.write_metadata_for_pseudo(self.pseudo_instrs[thing.name])
+                        case _:
+                            typing.assert_never(thing)
 
-            # Write metadata for each instruction
-            for thing in self.everything:
-                match thing:
-                    case OverriddenInstructionPlaceHolder():
-                        continue
-                    case parsing.InstDef():
-                        if thing.kind != "op":
-                            self.write_metadata_for_inst(self.instrs[thing.name])
-                    case parsing.Macro():
-                        self.write_metadata_for_macro(self.macro_instrs[thing.name])
-                    case parsing.Pseudo():
-                        self.write_metadata_for_pseudo(self.pseudo_instrs[thing.name])
-                    case _:
-                        typing.assert_never(thing)
-
-            # Write end of array
-            self.out.emit("};")
-
-            with self.out.block(
+            with self.metadata_item(
                 "const struct opcode_macro_expansion "
-                "_PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE] =",
-                ";",
+                "_PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE]",
+                "=",
+                ";"
             ):
                 # Write macro expansion for each non-pseudo instruction
                 for thing in self.everything:
@@ -360,12 +346,10 @@ class Generator(Analyzer):
                         case _:
                             typing.assert_never(thing)
 
-            with self.out.block(
-                "const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] =", ";"
+            with self.metadata_item(
+                "const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE]", "=", ";"
             ):
                 self.write_uop_items(lambda name, counter: f'[{name}] = "{name}",')
-
-            self.out.emit("#endif // NEED_OPCODE_METADATA")
 
         with open(pymetadata_filename, "w") as f:
             # Create formatter
@@ -511,7 +495,7 @@ class Generator(Analyzer):
         if not flag_names:
             flag_names.append("0")
         self.out.emit(
-            f"    [{name}] = {{ true, {INSTR_FMT_PREFIX}{fmt},"
+            f"[{name}] = {{ true, {INSTR_FMT_PREFIX}{fmt},"
             f" {' | '.join(flag_names)} }},"
         )
 
