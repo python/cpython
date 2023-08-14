@@ -1899,7 +1899,7 @@ class LoggerAdapter(object):
         over the LoggerAdapter instance extra
 
         .. versionchanged:: 3.13
-           Added the ``merge_extras`` parameter.
+           The *merge_extra* argument was added.
         """
         self.logger = logger
         self.extra = extra
