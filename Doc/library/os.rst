@@ -1184,7 +1184,8 @@ as internal buffering of data.
           SEEK_DATA
 
    Parameters to the :func:`lseek` function and the :meth:`~io.IOBase.seek`
-   method on file objects, for seeking file data and holes.
+   method on file objects, for seeking file data and holes on sparsely
+   allocated files.
 
    :data:`!SEEK_DATA`
       Adjust the file offset to the next location in the file containing data.
