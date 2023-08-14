@@ -1200,7 +1200,7 @@ as internal buffering of data.
 
    .. availability:: Linux >= 3.1, macOS, Unix
 
-   .. versionadded:: 3.1
+   .. versionadded:: 3.3
 
 
 .. function:: open(path, flags, mode=0o777, *, dir_fd=None)
