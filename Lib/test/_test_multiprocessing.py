@@ -3149,6 +3149,44 @@ class _TestManagerRestart(BaseTestCase):
             if hasattr(manager, "shutdown"):
                 self.addCleanup(manager.shutdown)
 
+
+class FakeConnection:
+    def send(self, payload):
+        pass
+
+    def recv(self):
+        return '#ERROR', pyqueue.Empty()
+
+class TestManagerExceptions(unittest.TestCase):
+    # Issue 106558: Manager exceptions avoids creating cyclic references.
+    def setUp(self):
+        self.mgr = multiprocessing.Manager()
+
+    def tearDown(self):
+        self.mgr.shutdown()
+        self.mgr.join()
+
+    def test_queue_get(self):
+        queue = self.mgr.Queue()
+        if gc.isenabled():
+            gc.disable()
+            self.addCleanup(gc.enable)
+        try:
+            queue.get_nowait()
+        except pyqueue.Empty as e:
+            wr = weakref.ref(e)
+        self.assertEqual(wr(), None)
+
+    def test_dispatch(self):
+        if gc.isenabled():
+            gc.disable()
+            self.addCleanup(gc.enable)
+        try:
+            multiprocessing.managers.dispatch(FakeConnection(), None, None)
+        except pyqueue.Empty as e:
+            wr = weakref.ref(e)
+        self.assertEqual(wr(), None)
+
 #
 #
 #

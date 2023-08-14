@@ -1153,7 +1153,7 @@ PyDoc_STRVAR(_winapi_LCMapStringEx__doc__,
 
 static PyObject *
 _winapi_LCMapStringEx_impl(PyObject *module, LPCWSTR locale, DWORD flags,
-                           LPCWSTR src);
+                           PyObject *src);
 
 static PyObject *
 _winapi_LCMapStringEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1180,16 +1180,16 @@ _winapi_LCMapStringEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     static const char * const _keywords[] = {"locale", "flags", "src", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .format = "O&kO&:LCMapStringEx",
+        .format = "O&kU:LCMapStringEx",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
     LPCWSTR locale = NULL;
     DWORD flags;
-    LPCWSTR src = NULL;
+    PyObject *src;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        _PyUnicode_WideCharString_Converter, &locale, &flags, _PyUnicode_WideCharString_Converter, &src)) {
+        _PyUnicode_WideCharString_Converter, &locale, &flags, &src)) {
         goto exit;
     }
     return_value = _winapi_LCMapStringEx_impl(module, locale, flags, src);
@@ -1197,8 +1197,6 @@ _winapi_LCMapStringEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
 exit:
     /* Cleanup for locale */
     PyMem_Free((void *)locale);
-    /* Cleanup for src */
-    PyMem_Free((void *)src);
 
     return return_value;
 }
@@ -1972,4 +1970,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=6a186187b9858247 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f9fdcf6226d41e6b input=a9049054013a1b77]*/
