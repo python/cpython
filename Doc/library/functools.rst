@@ -226,8 +226,9 @@ The :mod:`functools` module defines the following functions:
 
    In general, the LRU cache should only be used when you want to reuse
    previously computed values.  Accordingly, it doesn't make sense to cache
-   functions with side-effects, generators and async functions that need to create distinct mutable
-   objects on each call, or impure functions such as time() or random().
+   functions with side-effects, generators and async functions that
+   need to create distinct mutable objects on each call,
+   or impure functions such as time() or random().
 
    Example of an LRU cache for static web content::
 
