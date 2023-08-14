@@ -600,6 +600,14 @@ pop_jump_if_bool:
                     // Reserve space for nuops (+ SAVE_IP + EXIT_TRACE)
                     int nuops = expansion->nuops;
                     RESERVE(nuops, 0);
+                    if (expansion->uops[nuops-1].uop == _POP_FRAME) {
+                        // Check for trace stack underflow now:
+                        // We can't bail e.g. in the middle of
+                        // LOAD_CONST + _POP_FRAME.
+                        if (trace_stack_depth == 0) {
+                            DPRINTF(2, "Trace stack underflow\n");
+                            goto done;}
+                    }
                     uint32_t orig_oparg = oparg;  // For OPARG_TOP/BOTTOM
                     for (int i = 0; i < nuops; i++) {
                         oparg = orig_oparg;
