@@ -423,6 +423,17 @@ class Generator(Analyzer):
                 for name in self.opmap:
                     self.out.emit(f'[{name}] = "{name}",')
 
+            self.out.emit("")
+            self.out.emit("#if USE_COMPUTED_GOTOS")
+            self.out.emit("/* Static jump table */")
+            with self.out.block("static void *new_opcode_targets[256]=", ";"):
+                targets = ["_unknown_opcode"] * 256
+                for name, op in self.opmap.items():
+                    if op < 256:
+                        targets[op] = f"TARGET_{name}"
+                f.write(",\n".join([f"    &&{s}" for s in targets]))
+            self.out.emit("#endif  /* USE_COMPUTED_GOTOS */")
+
             with self.metadata_item(
                 f"const uint8_t _PyOpcode_Deopt[256]", "=", ";"
             ):
