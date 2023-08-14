@@ -1,0 +1,2 @@
+Forbid using :func:`builtins.issubclass` with :class:`types.GenericAlias` as
+the first argument.
