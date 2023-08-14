@@ -56,12 +56,10 @@
 #define _POP_JUMP_IF_TRUE 332
 #define JUMP_TO_TOP 333
 
-#ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
-#else
-int
-_PyOpcode_num_popped(int opcode, int oparg, bool jump) {
-    switch(opcode) {
+#ifdef NEED_OPCODE_METADATA
+int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
+        switch(opcode) {
         case NOP:
             return 0;
         case RESUME:
@@ -500,14 +498,12 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return -1;
     }
 }
-#endif
+#endif // NEED_OPCODE_METADATA
 
-#ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_pushed(int opcode, int oparg, bool jump);
-#else
-int
-_PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
-    switch(opcode) {
+#ifdef NEED_OPCODE_METADATA
+int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
+        switch(opcode) {
         case NOP:
             return 0;
         case RESUME:
@@ -946,7 +942,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return -1;
     }
 }
-#endif
+#endif // NEED_OPCODE_METADATA
 
 enum InstructionFormat {
     INSTR_FMT_IB,
@@ -1004,11 +1000,8 @@ struct opcode_macro_expansion {
 #define OPCODE_UOP_NAME_SIZE 512
 #define OPCODE_MACRO_EXPANSION_SIZE 256
 
-#ifndef NEED_OPCODE_METADATA
 extern const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE];
-extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE];
-extern const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE];
-#else // if NEED_OPCODE_METADATA
+#ifdef NEED_OPCODE_METADATA
 const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [NOP] = { true, INSTR_FMT_IX, 0 },
     [RESUME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
@@ -1228,6 +1221,10 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [CACHE] = { true, INSTR_FMT_IX, 0 },
     [RESERVED] = { true, INSTR_FMT_IX, 0 },
 };
+#endif // NEED_OPCODE_METADATA
+
+extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE];
+#ifdef NEED_OPCODE_METADATA
 const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE] = {
     [NOP] = { .nuops = 1, .uops = { { NOP, 0, 0 } } },
     [LOAD_FAST_CHECK] = { .nuops = 1, .uops = { { LOAD_FAST_CHECK, 0, 0 } } },
@@ -1357,6 +1354,10 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [BINARY_OP] = { .nuops = 1, .uops = { { BINARY_OP, 0, 0 } } },
     [SWAP] = { .nuops = 1, .uops = { { SWAP, 0, 0 } } },
 };
+#endif // NEED_OPCODE_METADATA
+
+extern const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE];
+#ifdef NEED_OPCODE_METADATA
 const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
     [EXIT_TRACE] = "EXIT_TRACE",
     [SAVE_IP] = "SAVE_IP",
