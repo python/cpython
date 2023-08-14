@@ -170,13 +170,12 @@ class Generator(Analyzer):
             with self.metadata_item(
                 f"int _PyOpcode_num_{direction}(int opcode, int oparg, bool jump)", "", ""
             ):
-                self.out.emit("    switch(opcode) {")
-                for instr, effect in data:
-                    self.out.emit(f"    case {instr.name}:")
-                    self.out.emit(f"        return {effect};")
-                self.out.emit("    default:")
-                self.out.emit("        return -1;")
-                self.out.emit("}")
+                with self.out.block("switch(opcode)"):
+                    for instr, effect in data:
+                        self.out.emit(f"case {instr.name}:")
+                        self.out.emit(f"    return {effect};")
+                    self.out.emit("default:")
+                    self.out.emit("    return -1;")
 
         write_function("popped", popped_data)
         write_function("pushed", pushed_data)

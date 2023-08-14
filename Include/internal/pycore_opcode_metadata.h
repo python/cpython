@@ -59,7 +59,7 @@
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
 #ifdef NEED_OPCODE_METADATA
 int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
-        switch(opcode) {
+    switch(opcode) {
         case NOP:
             return 0;
         case RESUME:
@@ -503,7 +503,7 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
 extern int _PyOpcode_num_pushed(int opcode, int oparg, bool jump);
 #ifdef NEED_OPCODE_METADATA
 int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
-        switch(opcode) {
+    switch(opcode) {
         case NOP:
             return 0;
         case RESUME:
