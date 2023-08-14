@@ -1001,7 +1001,7 @@ if sys.platform == 'win32':
                 return []
             ready.extend(L[i] for i in res)
             if res:
-                L = L[res[0] + 1:]
+                L = [h for i, h in enumerate(L) if i > res[0] & i not in res]
             timeout = 0
         while L:
             short_L = L[:60] if len(L) > 60 else L
