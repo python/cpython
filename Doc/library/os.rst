@@ -1578,6 +1578,28 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       Parameters *out* and *in* was renamed to *out_fd* and *in_fd*.
 
 
+.. data:: SF_NODISKIO
+          SF_MNOWAIT
+          SF_SYNC
+
+   Parameters to the :func:`sendfile` function, if the implementation supports
+   them.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+   .. versionadded:: 3.3
+
+
+.. data:: SF_NOCACHE
+
+   Parameter to the :func:`sendfile` function, if the implementation supports
+   it. The data won't be cached in the virtual memory and will be freed afterwards.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+   .. versionadded:: 3.11
+
+
 .. function:: set_blocking(fd, blocking, /)
 
    Set the blocking mode of the specified file descriptor. Set the
@@ -1596,26 +1618,6 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    .. versionchanged:: 3.12
       Added support for pipes on Windows.
-
-.. data:: SF_NODISKIO
-          SF_MNOWAIT
-          SF_SYNC
-
-   Parameters to the :func:`sendfile` function, if the implementation supports
-   them.
-
-   .. availability:: Unix, not Emscripten, not WASI.
-
-   .. versionadded:: 3.3
-
-.. data:: SF_NOCACHE
-
-   Parameter to the :func:`sendfile` function, if the implementation supports
-   it. The data won't be cached in the virtual memory and will be freed afterwards.
-
-   .. availability:: Unix, not Emscripten, not WASI.
-
-   .. versionadded:: 3.11
 
 
 .. function:: splice(src, dst, count, offset_src=None, offset_dst=None)
