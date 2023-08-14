@@ -36,6 +36,12 @@ THIS = os.path.relpath(__file__, ROOT).replace(os.path.sep, posixpath.sep)
 
 DEFAULT_INPUT = os.path.relpath(os.path.join(ROOT, "Python/bytecodes.c"))
 DEFAULT_OUTPUT = os.path.relpath(os.path.join(ROOT, "Python/generated_cases.c.h"))
+DEFAULT_OPCODE_IDS_H_OUTPUT = os.path.relpath(
+    os.path.join(ROOT, "Include/opcode_ids.h")
+)
+DEFAULT_OPCODE_TARGETS_H_OUTPUT = os.path.relpath(
+    os.path.join(ROOT, "Python/opcode_targets.h")
+)
 DEFAULT_METADATA_OUTPUT = os.path.relpath(
     os.path.join(ROOT, "Include/internal/pycore_opcode_metadata.h")
 )
@@ -65,6 +71,20 @@ arg_parser = argparse.ArgumentParser(
 )
 arg_parser.add_argument(
     "-o", "--output", type=str, help="Generated code", default=DEFAULT_OUTPUT
+)
+arg_parser.add_argument(
+    "-n",
+    "--opcode_ids_h",
+    type=str,
+    help="Header file with opcode number definitions",
+    default=DEFAULT_OPCODE_IDS_H_OUTPUT,
+)
+arg_parser.add_argument(
+    "-t",
+    "--opcode_targets_h",
+    type=str,
+    help="File with opcode targets for computed gotos",
+    default=DEFAULT_OPCODE_TARGETS_H_OUTPUT,
 )
 arg_parser.add_argument(
     "-m",
@@ -263,6 +283,53 @@ class Generator(Analyzer):
             map_op(256 + i, op)
 
         self.opmap = opmap
+        self.markers = markers
+
+    def write_opcode_ids(self, opcode_ids_h_filename, opcode_targets_filename):
+        """Write header file that defined the opcode IDs"""
+
+        with open(opcode_ids_h_filename, "w") as f:
+            # Create formatter
+            self.out = Formatter(f, 0)
+
+            self.write_provenance_header()
+
+            self.out.emit("")
+            self.out.emit("#ifndef Py_OPCODE_IDS_H")
+            self.out.emit("#define Py_OPCODE_IDS_H")
+            self.out.emit("#ifdef __cplusplus")
+            self.out.emit("extern \"C\" {")
+            self.out.emit("#endif")
+            self.out.emit("")
+            self.out.emit("/* Instruction opcodes for compiled code */")
+
+            def define(name, opcode):
+                self.out.emit(f"#define {name:<38} {opcode:>3}")
+
+            all_pairs = []
+            all_pairs.extend((i, 0, name) for (name, i) in self.markers.items())
+            all_pairs.extend((i, 1, name) for (name, i) in self.opmap.items())
+            for i, _, name in sorted(all_pairs):
+                assert name is not None
+                define(name, i)
+
+            self.out.emit("")
+            self.out.emit("#ifdef __cplusplus")
+            self.out.emit("}")
+            self.out.emit("#endif")
+            self.out.emit("#endif /* !Py_OPCODE_IDS_H */")
+
+        with open(opcode_targets_filename, "w") as f:
+            # Create formatter
+            self.out = Formatter(f, 0)
+
+            with self.out.block("static void *opcode_targets[256] =", ";"):
+                targets = ["_unknown_opcode"] * 256
+                for name, op in self.opmap.items():
+                    if op < 256:
+                        targets[op] = f"TARGET_{name}"
+                f.write(",\n".join([f"    &&{s}" for s in targets]))
+
 
     def write_metadata(self, metadata_filename: str, pymetadata_filename: str) -> None:
         """Write instruction metadata to output file."""
@@ -423,17 +490,6 @@ class Generator(Analyzer):
                 for name in self.opmap:
                     self.out.emit(f'[{name}] = "{name}",')
 
-            self.out.emit("")
-            self.out.emit("#if USE_COMPUTED_GOTOS")
-            self.out.emit("/* Static jump table */")
-            with self.out.block("static void *new_opcode_targets[256]=", ";"):
-                targets = ["_unknown_opcode"] * 256
-                for name, op in self.opmap.items():
-                    if op < 256:
-                        targets[op] = f"TARGET_{name}"
-                f.write(",\n".join([f"    &&{s}" for s in targets]))
-            self.out.emit("#endif  /* USE_COMPUTED_GOTOS */")
-
             with self.metadata_item(
                 f"const uint8_t _PyOpcode_Deopt[256]", "=", ";"
             ):
@@ -449,6 +505,15 @@ class Generator(Analyzer):
 
                 for opt, deopt in sorted(deoptcodes.items()):
                     self.out.emit(f"    [{opt}] = {deopt},")
+
+            self.out.emit("")
+            self.out.emit("#define EXTRA_CASES \\")
+            valid_opcodes = set(self.opmap.values())
+            with self.out.indent():
+                for op in range(256):
+                    if op not in valid_opcodes:
+                        self.out.emit(f"case {op}: \\")
+                self.out.emit("    ;\n")
 
         with open(pymetadata_filename, "w") as f:
             # Create formatter
@@ -728,6 +793,7 @@ def main():
     a.write_instructions(args.output, args.emit_line_directives)
 
     a.assign_op_ids()
+    a.write_opcode_ids(args.opcode_ids_h, args.opcode_targets_h)
     a.write_metadata(args.metadata, args.pymetadata)
     a.write_executor_instructions(args.executor_cases, args.emit_line_directives)
 
