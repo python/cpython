@@ -1043,6 +1043,20 @@ Text I/O
       .. versionchanged:: 3.11
          The method supports ``encoding="locale"`` option.
 
+   .. method:: seek(cookie, whence, /)
+
+      Set the stream position and return the current position.
+
+      Four operations are supported,
+      given by the following argument combinations:
+
+      * ``seek(0, SEEK_SET)``: Rewind to the start of the stream.
+      * ``seek(n, SEEK_SET)``: Restore a previous position;
+        'n' is a number returned by meth:`tell`.
+      * ``seek(0, SEEK_END)``: Fast-forward to the end of the stream.
+      * ``seek(0, SEEK_CUR)``: Leave the current stream position unchanged.
+
+      Any other argument combinations are undefined behaviour.
 
 .. class:: StringIO(initial_value='', newline='\n')
 

@@ -2428,13 +2428,28 @@ _textiowrapper_encoder_setstate(textio *self, cookie_type *cookie)
 /*[clinic input]
 _io.TextIOWrapper.seek
     cookie as cookieObj: object
-    whence: int = 0
+      Zero or an opaque number returned by tell().
+    whence: int(c_default='0') = os.SEEK_SET
+      The relative position to seek from.
     /
+
+Set the stream position and return the current position.
+
+Four operations are supported, given by the following argument
+combinations:
+
+- seek(0, SEEK_SET): Rewind to the start of the stream.
+- seek(n, SEEK_SET): Restore a previous position;
+  'n' is a number returned by tell().
+- seek(0, SEEK_END): Fast-forward to the end of the stream.
+- seek(0, SEEK_CUR): Leave the current stream position unchanged.
+
+Any other argument combinations are undefined behaviour.
 [clinic start generated code]*/
 
 static PyObject *
 _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
-/*[clinic end generated code: output=0a15679764e2d04d input=0458abeb3d7842be]*/
+/*[clinic end generated code: output=0a15679764e2d04d input=10ce5c609984638a]*/
 {
     PyObject *posobj;
     cookie_type cookie;
