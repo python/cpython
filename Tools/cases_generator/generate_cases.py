@@ -5,6 +5,7 @@ Writes the cases to generated_cases.c.h, which is #included in ceval.c.
 
 import argparse
 import contextlib
+import itertools
 import os
 import posixpath
 import sys
@@ -198,6 +199,71 @@ class Generator(Analyzer):
         self.out.write_raw(self.from_source_files())
         self.out.write_raw(f"{self.out.comment} Do not edit!\n")
 
+    def assign_op_ids(self):
+        """Assign IDs to opcodes"""
+
+        ops: list[(bool, str)] = []  # (has_arg, name) for each opcode
+        instrumented_ops: list[str] = []
+
+        for instr in itertools.chain(
+            [instr for instr in self.instrs.values() if instr.kind != "op"],
+            self.macro_instrs.values()):
+
+            name = instr.name
+            if name.startswith('INSTRUMENTED_'):
+                instrumented_ops.append(name)
+            else:
+                ops.append((instr.instr_flags.HAS_ARG_FLAG, name))
+
+        # Special case: this instruction is implemented in ceval.c
+        # rather than bytecodes.c, so we need to add it explicitly
+        # here (at least until we add something to bytecodes.c to
+        # declare external instructions).
+        instrumented_ops.append('INSTRUMENTED_LINE')
+
+        # assert lists are unique
+        assert len(set(ops)) == len(ops)
+        assert len(set(instrumented_ops)) == len(instrumented_ops)
+
+        opname: list[str or None] = [None] * 512
+        opmap: dict = {}
+        markers: dict = {}
+
+        def map_op(op, name):
+            assert op < len(opname)
+            assert opname[op] is None
+            assert name not in opmap
+            opname[op] = name
+            opmap[name] = op
+
+        map_op(0, 'CACHE')
+        map_op(17, 'RESERVED')
+        next_opcode = 1
+
+        for has_arg, name in sorted(ops):
+            if name in opmap:
+                continue  # an anchored name, like CACHE
+            while opname[next_opcode] is not None:
+                next_opcode += 1
+            assert next_opcode < 255
+            map_op(next_opcode, name)
+
+            if has_arg and 'HAVE_ARGUMENT' not in markers:
+                markers['HAVE_ARGUMENT'] = next_opcode
+
+        # Instrumented opcodes are at the end of the valid range
+        min_instrumented = 254 - (len(instrumented_ops) - 1)
+        assert next_opcode <= min_instrumented
+        markers['MIN_INSTRUMENTED_OPCODE'] = min_instrumented
+        for i, op in enumerate(sorted(instrumented_ops)):
+            map_op(min_instrumented + i, op)
+
+        # Pseudo opcodes are after the valid range
+        for i, op in enumerate(sorted(self.pseudos)):
+            map_op(256 + i, op)
+
+        self.opmap = opmap
+
     def write_metadata(self, metadata_filename: str, pymetadata_filename: str) -> None:
         """Write instruction metadata to output file."""
 
@@ -350,6 +416,22 @@ class Generator(Analyzer):
                 "const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE]", "=", ";"
             ):
                 self.write_uop_items(lambda name, counter: f'[{name}] = "{name}",')
+
+            with self.metadata_item(
+                f"const uint8_t _PyOpcode_Deopt[256]", "=", ";"
+            ):
+                deoptcodes = {}
+                for name, op in self.opmap.items():
+                    if op < 256:
+                        deoptcodes[name] = name
+                for name, family in self.families.items():
+                    for m in family.members:
+                        deoptcodes[m] = name
+                # special case:
+                deoptcodes['BINARY_OP_INPLACE_ADD_UNICODE'] = 'BINARY_OP'
+
+                for opt, deopt in sorted(deoptcodes.items()):
+                    self.out.emit(f"    [{opt}] = {deopt},")
 
         with open(pymetadata_filename, "w") as f:
             # Create formatter
@@ -627,6 +709,8 @@ def main():
 
     # These raise OSError if output can't be written
     a.write_instructions(args.output, args.emit_line_directives)
+
+    a.assign_op_ids()
     a.write_metadata(args.metadata, args.pymetadata)
     a.write_executor_instructions(args.executor_cases, args.emit_line_directives)
 
