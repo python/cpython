@@ -1198,7 +1198,7 @@ as internal buffering of data.
 
       These operations only make sense for filesystems that support them.
 
-   .. availability: Linux >= 3.1, macOS, Unix
+   .. availability:: Linux >= 3.1, macOS, Unix
 
    .. versionadded:: 3.1
 
