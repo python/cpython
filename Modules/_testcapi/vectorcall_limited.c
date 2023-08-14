@@ -1,9 +1,8 @@
 #define Py_LIMITED_API 0x030c0000 // 3.12
 #include "parts.h"
-#include "clinic/vectorcall_limited.c.h"
 
 #ifdef LIMITED_API_AVAILABLE
-
+#include "clinic/vectorcall_limited.c.h"
 
 
 /* Test Vectorcall in the limited API */
