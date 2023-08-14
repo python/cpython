@@ -2643,5 +2643,6 @@ class TestUopsOptimization(unittest.TestCase):
         binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
         self.assertEqual(len(binop_count), 1)
 
+
 if __name__ == "__main__":
     unittest.main()

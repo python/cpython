@@ -173,7 +173,7 @@ _Py_UOpsAbstractInterpContext_New(int stack_len, int locals_len, int curr_stackl
         return NULL;
     }
 
-    for (int i = 0; i < (locals_len + stack_len) * 2; i++) {
+    for (int i = 0; i < (locals_len + stack_len); i++) {
         locals_with_stack[i] = PARTITIONNODE_NULLROOT;
     }
 

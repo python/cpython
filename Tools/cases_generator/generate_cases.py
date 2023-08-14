@@ -61,7 +61,7 @@ OPARG_SIZES = {
 
 INSTR_FMT_PREFIX = "INSTR_FMT_"
 
-# @TODO generate all these after updating the DSL
+# TODO: generate all these after updating the DSL
 SPECIALLY_HANDLED_ABSTRACT_INSTR = {
     "LOAD_FAST",
     "LOAD_FAST_CHECK",
@@ -135,7 +135,7 @@ class Generator(Analyzer):
         pushed: str | None
         match thing:
             case parsing.InstDef():
-                if thing.kind != "op" or (thing.kind != "inst" and self.instrs[thing.name].is_viable_uop()):
+                if thing.kind == "instr" or self.instrs[thing.name].is_viable_uop():
                     instr = self.instrs[thing.name]
                     popped = effect_str(instr.input_effects)
                     pushed = effect_str(instr.output_effects)
@@ -641,8 +641,7 @@ class Generator(Analyzer):
             for thing in self.everything:
                 match thing:
                     case OverriddenInstructionPlaceHolder():
-                        # TODO: Is this helpful?
-                        self.write_overridden_instr_place_holder(thing)
+                        pass
                     case parsing.InstDef():
                         instr = AbstractInstruction(self.instrs[thing.name].inst)
                         if instr.is_viable_uop() and instr.name not in SPECIALLY_HANDLED_ABSTRACT_INSTR:
@@ -650,8 +649,6 @@ class Generator(Analyzer):
                             with self.out.block(f"case {thing.name}:"):
                                 instr.write(self.out, tier=TIER_TWO)
                                 self.out.emit("break;")
-                            # elif instr.kind != "op":
-                            #     print(f"NOTE: {thing.name} is not a viable uop")
                     case parsing.Macro():
                         pass
                     case parsing.Pseudo():

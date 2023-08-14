@@ -2735,11 +2735,16 @@
         }
 
         case INSERT: {
+            PyObject *top;
+            PyObject **stuff;
+            top = stack_pointer[-1];
+            stuff = stack_pointer - 1 - oparg;
+            stuff = stack_pointer - oparg;
             // Inserts TOS at position specified by oparg
             PyObject *tos = TOP();
             for (int i = 1; i < oparg + 1; i++) {
                 stack_pointer[i] = stack_pointer[i - 1];
             }
-            POKE(oparg, tos);
+            stack_pointer[-1 - oparg] = top;
             break;
         }

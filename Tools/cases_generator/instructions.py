@@ -255,15 +255,6 @@ class AbstractInstruction(Instruction):
 
     def write(self, out: Formatter, tier: Tiers = TIER_ONE) -> None:
         """Write one abstract instruction, sans prologue and epilogue."""
-        # Write a static assertion that a family's cache size is correct
-        if family := self.family:
-            if self.name == family.name:
-                if cache_size := family.size:
-                    out.emit(
-                        f"static_assert({cache_size} == "
-                        f'{self.cache_offset}, "incorrect cache size");'
-                    )
-
         stacking.write_single_instr_for_abstract_interp(self, out)
 
     def write_body(
