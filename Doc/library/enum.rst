@@ -213,10 +213,6 @@ Data Types
         >>> dir(Color)
         ['BLUE', 'GREEN', 'RED', '__class__', '__contains__', '__doc__', '__getitem__', '__init_subclass__', '__iter__', '__len__', '__members__', '__module__', '__name__', '__qualname__']
 
-      .. versionchanged:: 3.11
-         '__contains__', '__getitem__', '__iter__', '__len__', '__name__', and
-         '__qualname__' are also returned.
-
    .. method:: EnumType.__getitem__(cls, name)
 
       Returns the Enum member in *cls* matching *name*, or raises a :exc:`KeyError`::
