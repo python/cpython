@@ -863,8 +863,8 @@ static PyGetSetDef iobase_getset[] = {
 };
 
 static struct PyMemberDef iobase_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(iobase, weakreflist), READONLY},
-    {"__dictoffset__", T_PYSSIZET, offsetof(iobase, dict), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(iobase, weakreflist), Py_READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(iobase, dict), Py_READONLY},
     {NULL},
 };
 

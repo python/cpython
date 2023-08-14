@@ -26,7 +26,7 @@
 #endif
 
 #include "module.h"
-#include "structmember.h"         // PyMemberDef
+
 #include "connection.h"
 #include "statement.h"
 #include "cursor.h"
@@ -212,7 +212,6 @@ class sqlite3_int64_converter(CConverter):
 [python start generated code]*/
 /*[python end generated code: output=da39a3ee5e6b4b0d input=dff8760fb1eba6a1]*/
 
-// NB: This needs to be in sync with the sqlite3.connect docstring
 /*[clinic input]
 _sqlite3.Connection.__init__ as pysqlite_connection_init
 
@@ -345,6 +344,34 @@ error:
     assert(rc == SQLITE_OK);
     return -1;
 }
+
+/*[clinic input]
+# Create a new destination 'connect' for the docstring and methoddef only.
+# This makes it possible to keep the signatures for Connection.__init__ and
+# sqlite3.connect() synchronised.
+output push
+destination connect new file '{dirname}/clinic/_sqlite3.connect.c.h'
+
+# Only output the docstring and the PyMethodDef entry.
+output everything suppress
+output docstring_definition connect
+output methoddef_define connect
+
+# Define the sqlite3.connect function by cloning Connection.__init__.
+_sqlite3.connect as pysqlite_connect = _sqlite3.Connection.__init__
+
+Open a connection to the SQLite database file 'database'.
+
+You can use ":memory:" to open a database connection to a database that
+resides in RAM instead of on disk.
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=92260edff95d1720]*/
+
+/*[clinic input]
+# Restore normal Argument Clinic operation for the rest of this file.
+output pop
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b899ba9273edcce7]*/
 
 #define VISIT_CALLBACK_CONTEXT(ctx) \
 do {                                \
@@ -2511,18 +2538,18 @@ static PyMethodDef connection_methods[] = {
 
 static struct PyMemberDef connection_members[] =
 {
-    {"Warning", T_OBJECT, offsetof(pysqlite_Connection, Warning), READONLY},
-    {"Error", T_OBJECT, offsetof(pysqlite_Connection, Error), READONLY},
-    {"InterfaceError", T_OBJECT, offsetof(pysqlite_Connection, InterfaceError), READONLY},
-    {"DatabaseError", T_OBJECT, offsetof(pysqlite_Connection, DatabaseError), READONLY},
-    {"DataError", T_OBJECT, offsetof(pysqlite_Connection, DataError), READONLY},
-    {"OperationalError", T_OBJECT, offsetof(pysqlite_Connection, OperationalError), READONLY},
-    {"IntegrityError", T_OBJECT, offsetof(pysqlite_Connection, IntegrityError), READONLY},
-    {"InternalError", T_OBJECT, offsetof(pysqlite_Connection, InternalError), READONLY},
-    {"ProgrammingError", T_OBJECT, offsetof(pysqlite_Connection, ProgrammingError), READONLY},
-    {"NotSupportedError", T_OBJECT, offsetof(pysqlite_Connection, NotSupportedError), READONLY},
-    {"row_factory", T_OBJECT, offsetof(pysqlite_Connection, row_factory)},
-    {"text_factory", T_OBJECT, offsetof(pysqlite_Connection, text_factory)},
+    {"Warning", _Py_T_OBJECT, offsetof(pysqlite_Connection, Warning), Py_READONLY},
+    {"Error", _Py_T_OBJECT, offsetof(pysqlite_Connection, Error), Py_READONLY},
+    {"InterfaceError", _Py_T_OBJECT, offsetof(pysqlite_Connection, InterfaceError), Py_READONLY},
+    {"DatabaseError", _Py_T_OBJECT, offsetof(pysqlite_Connection, DatabaseError), Py_READONLY},
+    {"DataError", _Py_T_OBJECT, offsetof(pysqlite_Connection, DataError), Py_READONLY},
+    {"OperationalError", _Py_T_OBJECT, offsetof(pysqlite_Connection, OperationalError), Py_READONLY},
+    {"IntegrityError", _Py_T_OBJECT, offsetof(pysqlite_Connection, IntegrityError), Py_READONLY},
+    {"InternalError", _Py_T_OBJECT, offsetof(pysqlite_Connection, InternalError), Py_READONLY},
+    {"ProgrammingError", _Py_T_OBJECT, offsetof(pysqlite_Connection, ProgrammingError), Py_READONLY},
+    {"NotSupportedError", _Py_T_OBJECT, offsetof(pysqlite_Connection, NotSupportedError), Py_READONLY},
+    {"row_factory", _Py_T_OBJECT, offsetof(pysqlite_Connection, row_factory)},
+    {"text_factory", _Py_T_OBJECT, offsetof(pysqlite_Connection, text_factory)},
     {NULL}
 };
 

@@ -44,7 +44,7 @@ Any object can be tested for truth value, for use in an :keyword:`if` or
 .. index:: single: true
 
 By default, an object is considered true unless its class defines either a
-:meth:`__bool__` method that returns ``False`` or a :meth:`__len__` method that
+:meth:`~object.__bool__` method that returns ``False`` or a :meth:`__len__` method that
 returns zero, when called with the object. [1]_  Here are most of the built-in
 objects considered false:
 
@@ -5632,7 +5632,7 @@ From code, you can inspect the current limit and set a new one using these
   a getter and setter for the interpreter-wide limit. Subinterpreters have
   their own limit.
 
-Information about the default and minimum can be found in :attr:`sys.int_info`:
+Information about the default and minimum can be found in :data:`sys.int_info`:
 
 * :data:`sys.int_info.default_max_str_digits <sys.int_info>` is the compiled-in
   default limit.

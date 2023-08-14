@@ -69,6 +69,7 @@ Python/traceback.c            @iritkatriel
 
 # Import (including importlib).
 **/*import*                   @brettcannon @ericsnowcurrently @ncoghlan @warsaw
+/Python/import.c              @kumaraditya303
 **/*importlib/resources/*      @jaraco @warsaw @FFY00
 **/importlib/metadata/*       @jaraco @warsaw
 
@@ -177,3 +178,4 @@ Doc/c-api/stable.rst          @encukou
 # Argument Clinic
 /Tools/clinic/**              @erlend-aasland @AlexWaygood
 /Lib/test/test_clinic.py      @erlend-aasland @AlexWaygood
+Doc/howto/clinic.rst          @erlend-aasland

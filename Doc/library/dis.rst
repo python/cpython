@@ -56,7 +56,7 @@ the following command can be used to display the disassembly of
    >>> dis.dis(myfunc)
      2           0 RESUME                   0
    <BLANKLINE>
-     3           2 LOAD_GLOBAL              1 (NULL + len)
+     3           2 LOAD_GLOBAL              1 (len + NULL)
                 12 LOAD_FAST                0 (alist)
                 14 CALL                     1
                 22 RETURN_VALUE
@@ -876,7 +876,7 @@ iterations of the loop.
 .. opcode:: MATCH_MAPPING
 
    If ``STACK[-1]`` is an instance of :class:`collections.abc.Mapping` (or, more
-   technically: if it has the :const:`Py_TPFLAGS_MAPPING` flag set in its
+   technically: if it has the :c:macro:`Py_TPFLAGS_MAPPING` flag set in its
    :c:member:`~PyTypeObject.tp_flags`), push ``True`` onto the stack.  Otherwise,
    push ``False``.
 
@@ -887,7 +887,7 @@ iterations of the loop.
 
    If ``STACK[-1]`` is an instance of :class:`collections.abc.Sequence` and is *not* an instance
    of :class:`str`/:class:`bytes`/:class:`bytearray` (or, more technically: if it has
-   the :const:`Py_TPFLAGS_SEQUENCE` flag set in its :c:member:`~PyTypeObject.tp_flags`),
+   the :c:macro:`Py_TPFLAGS_SEQUENCE` flag set in its :c:member:`~PyTypeObject.tp_flags`),
    push ``True`` onto the stack.  Otherwise, push ``False``.
 
    .. versionadded:: 3.10
@@ -922,9 +922,10 @@ iterations of the loop.
 .. opcode:: UNPACK_SEQUENCE (count)
 
    Unpacks ``STACK[-1]`` into *count* individual values, which are put onto the stack
-   right-to-left::
+   right-to-left. Require there to be exactly *count* values.::
 
-      STACK.extend(STACK.pop()[:count:-1])
+      assert(len(STACK[-1]) == count)
+      STACK.extend(STACK.pop()[:-count-1:-1])
 
 
 .. opcode:: UNPACK_EX (counts)
@@ -1803,15 +1804,12 @@ instructions:
    Sequence of bytecodes that access an attribute by name.
 
 
-.. data:: hasjrel
+.. data:: hasjump
 
-   Sequence of bytecodes that have a relative jump target.
+   Sequence of bytecodes that have a jump target. All jumps
+   are relative.
 
-
-.. data:: hasjabs
-
-   Sequence of bytecodes that have an absolute jump target.
-
+   .. versionadded:: 3.13
 
 .. data:: haslocal
 
@@ -1827,3 +1825,20 @@ instructions:
    Sequence of bytecodes that set an exception handler.
 
    .. versionadded:: 3.12
+
+
+.. data:: hasjrel
+
+   Sequence of bytecodes that have a relative jump target.
+
+   .. deprecated:: 3.13
+      All jumps are now relative. Use :data:`hasjump`.
+
+
+.. data:: hasjabs
+
+   Sequence of bytecodes that have an absolute jump target.
+
+   .. deprecated:: 3.13
+      All jumps are now relative. This list is empty.
+
