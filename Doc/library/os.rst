@@ -1166,7 +1166,7 @@ as internal buffering of data.
 .. function:: lseek(fd, pos, whence, /)
 
    Set the current position of file descriptor *fd* to position *pos*, modified
-   by *whence*, and return the new position in bytes, relative to
+   by *whence*, and return the new position in bytes relative to
    the start of the file.
    Valid values for *whence* are:
 
