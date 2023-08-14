@@ -135,7 +135,7 @@ class Generator(Analyzer):
         pushed: str | None
         match thing:
             case parsing.InstDef():
-                if thing.kind == "instr" or self.instrs[thing.name].is_viable_uop():
+                if thing.kind != "op" or self.instrs[thing.name].is_viable_uop():
                     instr = self.instrs[thing.name]
                     popped = effect_str(instr.input_effects)
                     pushed = effect_str(instr.output_effects)
