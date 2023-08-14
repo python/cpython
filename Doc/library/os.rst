@@ -1180,8 +1180,27 @@ as internal buffering of data.
    respectively.
 
    .. versionadded:: 3.3
-      Some operating systems could support additional values, like
-      :const:`os.SEEK_HOLE` or :const:`os.SEEK_DATA`.
+
+.. data:: SEEK_HOLE
+          SEEK_DATA
+
+   Parameters to the :func:`lseek` function and the :meth:`~io.IOBase.seek`
+   method on file objects, for seeking file data and holes.
+
+   :data:`!SEEK_DATA`
+      Adjust the file offset to the next location in the file containing data.
+
+   :data:`!SEEK_HOLE`
+      Adjust the file offset to the next hole in the file.
+      A hole is defined as a sequence of zeros.
+
+   .. note::
+
+      These operations only make sense for filesystems that support them.
+
+   .. availability: Linux >= 3.1, macOS, Unix
+
+   .. versionadded:: 3.1
 
 
 .. function:: open(path, flags, mode=0o777, *, dir_fd=None)
