@@ -1052,7 +1052,7 @@ Text I/O
 
       * ``seek(0, SEEK_SET)``: Rewind to the start of the stream.
       * ``seek(n, SEEK_SET)``: Restore a previous position;
-        'n' is a number returned by meth:`tell`.
+        'n' is a number returned by meth:`!tell`.
       * ``seek(0, SEEK_END)``: Fast-forward to the end of the stream.
       * ``seek(0, SEEK_CUR)``: Leave the current stream position unchanged.
 
