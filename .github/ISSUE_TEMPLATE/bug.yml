@@ -33,7 +33,7 @@ body:
         - "3.10"
         - "3.11"
         - "3.12"
-        - "3.13 (main branch or an alpha release)"
+        - "CPython main branch"
     validations:
       required: true
   - type: dropdown

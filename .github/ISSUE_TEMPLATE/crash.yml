@@ -18,7 +18,7 @@ body:
         - "3.10"
         - "3.11"
         - "3.12"
-        - "3.13 (main branch or an alpha release)"
+        - "CPython main branch"
     validations:
       required: true
   - type: dropdown
@@ -34,7 +34,7 @@ body:
       required: false
   - type: input
     attributes:
-      label: "Output from running `python -VV` on the command line:"
+      label: "Output from running 'python -VV' on the command line:"
       description: If you tested with multiple operating systems or architectures, feel free to provide details in the main bug description.
     validations:
       required: false
