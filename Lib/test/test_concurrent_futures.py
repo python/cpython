@@ -16,6 +16,7 @@ import os
 import queue
 import signal
 import sys
+import traceback
 import threading
 import time
 import unittest
@@ -1011,6 +1012,27 @@ class ProcessPoolExecutorTest(ExecutorTest):
             self.assertRaises(BrokenProcessPool, fut.result)
         # Submitting other jobs fails as well.
         self.assertRaises(BrokenProcessPool, self.executor.submit, pow, 2, 8)
+
+    def test_broken_process_pool_traceback(self):
+        # When a child process is abruptly terminated, the whole pool gets
+        # "broken", and a BrokenProcessPool exception should be created
+        # for each future instead of sharing one exception among all futures.
+        futures = [self.executor.submit(time.sleep, 3) for _ in range(3)]
+        # Get one of the processes, and terminate (kill) it.
+        p = next(iter(self.executor._processes.values()))
+        p.terminate()
+        for fut in futures:
+            count = None
+            try:
+                fut.result()
+            except BrokenProcessPool as e:
+                count = sum(
+                    1
+                    for frame_summary in traceback.extract_tb(e.__traceback__)
+                    if frame_summary.filename == __file__
+                )
+            # This code file should appear exactly once in the traceback.
+            self.assertEqual(count, 1)
 
     def test_map_chunksize(self):
         def bad_map():
