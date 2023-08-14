@@ -10439,7 +10439,7 @@ The return value is the number of bytes relative to the beginning of the file.
 
 static Py_off_t
 os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
-/*[clinic end generated code: output=971e1efb6b30bd2f input=902654ad3f96a6d3]*/
+/*[clinic end generated code: output=971e1efb6b30bd2f input=0642ea3d1c708c40]*/
 {
     Py_off_t result;
 
