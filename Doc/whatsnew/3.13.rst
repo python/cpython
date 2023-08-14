@@ -144,13 +144,6 @@ pathlib
   :meth:`~pathlib.Path.is_dir`.
   (Contributed by Barney Gale in :gh:`77609` and :gh:`105793`.)
 
-sqlite3
--------
-
-* Passing more than one positional argument to :func:`sqlite3.connect` is
-  deprecated. The remaining parameters will become keyword-only in Python 3.15.
-  (Contributed by Erlend E. Aasland :gh:`93057`.)
-
 traceback
 ---------
 
