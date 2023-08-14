@@ -5452,7 +5452,7 @@ class LoggerAdapterTest(unittest.TestCase):
     def test_extra_merged(self):
         self.adapter = logging.LoggerAdapter(logger=self.logger,
                                              extra={'foo': '1'},
-                                             merge_extras=True)
+                                             merge_extra=True)
 
         self.adapter.critical('foo and bar should be here', extra={'bar': '2'})
         self.assertEqual(len(self.recording.records), 1)
@@ -5465,7 +5465,7 @@ class LoggerAdapterTest(unittest.TestCase):
     def test_extra_merged_log_call_has_precedence(self):
         self.adapter = logging.LoggerAdapter(logger=self.logger,
                                              extra={'foo': '1'},
-                                             merge_extras=True)
+                                             merge_extra=True)
 
         self.adapter.critical('foo shall be min', extra={'foo': '2'})
         self.assertEqual(len(self.recording.records), 1)
