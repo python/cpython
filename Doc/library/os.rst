@@ -1179,6 +1179,7 @@ as internal buffering of data.
    Parameters to the :func:`lseek` function. Their values are 0, 1, and 2,
    respectively.
 
+
 .. data:: SEEK_HOLE
           SEEK_DATA
 
