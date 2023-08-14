@@ -2618,7 +2618,7 @@ class TestUops(unittest.TestCase):
             with self.assertRaises(StopIteration):
                 next(it)
 
-
+@unittest.skipIf(os.getenv("PYTHONUOPSOPTIMIZE") is None, "UOps optimization isn't enabled")
 class TestUopsOptimization(unittest.TestCase):
 
     def test_int_constant_propagation(self):
