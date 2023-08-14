@@ -1043,9 +1043,10 @@ Text I/O
       .. versionchanged:: 3.11
          The method supports ``encoding="locale"`` option.
 
-   .. method:: seek(cookie, whence, /)
+   .. method:: seek(cookie, whence=os.SEEK_SET, /)
 
-      Set the stream position, and return the new stream position.
+      Set the stream position.
+      Return the new stream position as an :class:`int`.
 
       Four operations are supported,
       given by the following argument combinations:
