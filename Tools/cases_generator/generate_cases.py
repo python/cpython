@@ -418,6 +418,12 @@ class Generator(Analyzer):
                 self.write_uop_items(lambda name, counter: f'[{name}] = "{name}",')
 
             with self.metadata_item(
+                f"const char *const _PyOpcode_OpName[{1 + max(self.opmap.values())}]", "=", ";"
+            ):
+                for name in self.opmap:
+                    self.out.emit(f'[{name}] = "{name}",')
+
+            with self.metadata_item(
                 f"const uint8_t _PyOpcode_Deopt[256]", "=", ";"
             ):
                 deoptcodes = {}
