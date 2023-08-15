@@ -73,8 +73,9 @@ class ConnectionFactoryTests(unittest.TestCase):
             r"'cached_statements' and 'uri' will become keyword-only "
             r"parameters in Python 3.15."
         )
-        with self.assertWarnsRegex(DeprecationWarning, regex):
+        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
             con = sqlite.connect(":memory:", 5.0, 0, None, True, Factory)
+        self.assertEqual(cm.filename, __file__)
         self.assertIsNone(con.isolation_level)
         self.assertIsInstance(con, Factory)
 
