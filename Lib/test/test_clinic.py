@@ -615,16 +615,14 @@ class ClinicWholeFileTest(TestCase):
     def test_no_c_basename_cloned(self):
         block = """
             /*[clinic input]
-            output everything block
             foo2
             [clinic start generated code]*/
             /*[clinic input]
-            output everything block
             foo as = foo2
             [clinic start generated code]*/
         """
         err = "No C basename provided after 'as' keyword"
-        self.expect_failure(block, err, lineno=7)
+        self.expect_failure(block, err, lineno=5)
 
 
 class ParseFileUnitTest(TestCase):
