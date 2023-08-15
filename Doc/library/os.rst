@@ -1192,10 +1192,12 @@ as internal buffering of data.
    allocated files.
 
    :data:`!SEEK_DATA`
-      Adjust the file offset to the next location in the file containing data.
+      Adjust the file offset to the next location containing data,
+      relative to the seek position.
 
    :data:`!SEEK_HOLE`
-      Adjust the file offset to the next hole in the file.
+      Adjust the file offset to the next location containing a hole,
+      relative to the seek position.
       A hole is defined as a sequence of zeros.
 
    .. note::
