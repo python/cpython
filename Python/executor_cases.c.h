@@ -2733,3 +2733,12 @@
             return frame;
             break;
         }
+
+        case INSERT: {
+            PyObject *top;
+            top = stack_pointer[-1];
+            // Inserts TOS at position specified by oparg;
+            memmove(&stack_pointer[-1 - oparg], &stack_pointer[-oparg], oparg * sizeof(stack_pointer[0]));
+            stack_pointer[-1 - oparg] = top;
+            break;
+        }
