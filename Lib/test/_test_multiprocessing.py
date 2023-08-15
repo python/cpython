@@ -5373,7 +5373,7 @@ class TestStartMethod(unittest.TestCase):
         try:
             ctx = multiprocessing.get_context('forkserver')
         except ValueError:
-            raise unittest.SkipTest("forkserver should be available")
+            raise unittest.SkipTest('forkserver should be available')
         with self.assertRaisesRegex(TypeError, 'module_names must be a list of strings'):
             ctx.set_forkserver_preload([1, 2, 3])
 
