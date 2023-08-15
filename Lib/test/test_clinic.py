@@ -609,6 +609,35 @@ class ClinicWholeFileTest(TestCase):
         """
         self.expect_failure(block, err, lineno=2)
 
+    def test_validate_cloned_init(self):
+        block = """
+            /*[clinic input]
+            class C "void *" ""
+            C.meth
+              a: int
+            [clinic start generated code]*/
+            /*[clinic input]
+            @classmethod
+            C.__init__ = C.meth
+            [clinic start generated code]*/
+        """
+        err = "'__init__' must be a normal method, not a class or static method"
+        self.expect_failure(block, err, lineno=8)
+
+    def test_validate_cloned_new(self):
+        block = """
+            /*[clinic input]
+            class C "void *" ""
+            C.meth
+              a: int
+            [clinic start generated code]*/
+            /*[clinic input]
+            C.__new__ = C.meth
+            [clinic start generated code]*/
+        """
+        err = "'__new__' must be a class method"
+        self.expect_failure(block, err, lineno=7)
+
 
 class ParseFileUnitTest(TestCase):
     def expect_parsing_failure(
@@ -1918,7 +1947,7 @@ class ClinicParserTest(TestCase):
             self.parse_function(block)
 
     def test_new_must_be_a_class_method(self):
-        err = "__new__ must be a class method!"
+        err = "'__new__' must be a class method!"
         block = """
             module foo
             class Foo "" ""
@@ -1927,7 +1956,7 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=2)
 
     def test_init_must_be_a_normal_method(self):
-        err = "__init__ must be a normal method, not a class or static method!"
+        err = "'__init__' must be a normal method, not a class or static method!"
         block = """
             module foo
             class Foo "" ""
@@ -2030,7 +2059,7 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=2)
 
     def test_cannot_convert_special_method(self):
-        err = "__len__ is a special method and cannot be converted"
+        err = "'__len__' is a special method and cannot be converted"
         block = """
             class T "" ""
             T.__len__
