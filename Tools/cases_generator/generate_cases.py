@@ -287,6 +287,7 @@ class Generator(Analyzer):
         for i, op in enumerate(sorted(self.pseudos)):
             map_op(256 + i, op)
 
+        assert 255 not in opmap  # 255 is reserved
         self.opmap = opmap
         self.markers = markers
 
