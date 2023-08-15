@@ -2994,6 +2994,7 @@ dummy_func(
             #endif
             #if TIER_TWO
             frame = tstate->cframe->current_frame = new_frame;
+            ERROR_IF(_Py_EnterRecursivePy(tstate), xz);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
             #endif
