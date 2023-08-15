@@ -2618,31 +2618,6 @@ class TestUops(unittest.TestCase):
             with self.assertRaises(StopIteration):
                 next(it)
 
-@unittest.skipIf(os.getenv("PYTHONUOPSOPTIMIZE") is None, "UOps optimization isn't enabled")
-class TestUopsOptimization(unittest.TestCase):
-
-    def test_int_constant_propagation(self):
-        def testfunc(loops):
-            num = 0
-            while num < loops:
-                x = 0
-                y = 1
-                z = 2
-                a = x + y + z + x + y + z + x + y + z
-                num += 1
-            return a
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        res = None
-        with temporary_optimizer(opt):
-            res = testfunc(3)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        self.assertEqual(res, 9)
-        binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
-        self.assertEqual(len(binop_count), 1)
-
 
 if __name__ == "__main__":
     unittest.main()
