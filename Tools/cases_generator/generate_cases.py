@@ -256,7 +256,12 @@ class Generator(Analyzer):
             opname[op] = name
             opmap[name] = op
 
+
+        # 0 is reserved for cache entries. This helps debugging.
         map_op(0, 'CACHE')
+
+        # 17 is reserved as it is the initial value for the specializing counter.
+        # This helps catch cases where we attempt to execute a cache.
         map_op(17, 'RESERVED')
         next_opcode = 1
 
@@ -275,7 +280,7 @@ class Generator(Analyzer):
         min_instrumented = 254 - (len(instrumented_ops) - 1)
         assert next_opcode <= min_instrumented
         markers['MIN_INSTRUMENTED_OPCODE'] = min_instrumented
-        for i, op in enumerate(sorted(instrumented_ops)):
+        for i, op in enumerate(instrumented_ops):
             map_op(min_instrumented + i, op)
 
         # Pseudo opcodes are after the valid range
@@ -521,6 +526,9 @@ class Generator(Analyzer):
 
             self.write_provenance_header()
 
+            # emit specializations
+            specialized_ops = set()
+
             self.out.emit("")
             self.out.emit("_specializations = {")
             for name, family in self.families.items():
@@ -529,6 +537,7 @@ class Generator(Analyzer):
                     with self.out.indent():
                         for m in family.members:
                             self.out.emit(f'"{m}",')
+                        specialized_ops.update(family.members)
                     self.out.emit(f"],")
             self.out.emit("}")
 
@@ -539,6 +548,7 @@ class Generator(Analyzer):
                 '_specializations["BINARY_OP"].append('
                 '"BINARY_OP_INPLACE_ADD_UNICODE")'
             )
+            specialized_ops.add("BINARY_OP_INPLACE_ADD_UNICODE")
 
             # Make list of specialized instructions
             self.out.emit("")
@@ -547,6 +557,24 @@ class Generator(Analyzer):
                 "opcode for family in _specializations.values() for opcode in family"
                 "]"
             )
+
+            # emit specialized opmap
+            self.out.emit("")
+            with self.out.block("_specialized_opmap ="):
+                for name, op in self.opmap.items():
+                    if name in specialized_ops:
+                        self.out.emit(f"'{name}': {op},")
+
+            # emit opmap
+            self.out.emit("")
+            with self.out.block("opmap ="):
+                for name, op in self.opmap.items():
+                    if name not in specialized_ops:
+                        self.out.emit(f"'{name}': {op},")
+
+            for name in ['MIN_INSTRUMENTED_OPCODE', 'HAVE_ARGUMENT']:
+                self.out.emit(f"{name} = {self.markers[name]}")
+
 
     def write_pseudo_instrs(self) -> None:
         """Write the IS_PSEUDO_INSTR macro"""
