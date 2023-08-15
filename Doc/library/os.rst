@@ -1171,7 +1171,7 @@ as internal buffering of data.
    current position; :const:`SEEK_END` or ``2`` to set it relative to the end of
    the file. Return the new cursor position in bytes, starting from the beginning.
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
 
       Add support for :const:`SEEK_HOLE` and :const:`SEEK_DATA`.
 
