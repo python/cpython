@@ -612,6 +612,20 @@ class ClinicWholeFileTest(TestCase):
         """
         self.expect_failure(block, err, lineno=2)
 
+    def test_no_c_basename_cloned(self):
+        block = """
+            /*[clinic input]
+            output everything block
+            foo2
+            [clinic start generated code]*/
+            /*[clinic input]
+            output everything block
+            foo as = foo2
+            [clinic start generated code]*/
+        """
+        err = "No C basename provided after 'as' keyword"
+        self.expect_failure(block, err, lineno=7)
+
 
 class ParseFileUnitTest(TestCase):
     def expect_parsing_failure(
@@ -1499,11 +1513,6 @@ class ClinicParserTest(TestCase):
         block = "foo as "
         err = "No C basename provided after 'as' keyword"
         self.expect_failure(block, err, strip=False)
-
-    def test_no_c_basename_cloned(self):
-        block = "foo as = foo2"
-        err = "No C basename provided after 'as' keyword"
-        self.expect_failure(block, err)
 
     def test_single_star(self):
         block = """
