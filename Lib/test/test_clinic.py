@@ -641,6 +641,19 @@ class ClinicWholeFileTest(TestCase):
         err = "'__new__' must be a class method"
         self.expect_failure(block, err, lineno=7)
 
+    def test_no_c_basename_cloned(self):
+        block = """
+            /*[clinic input]
+            foo2
+            [clinic start generated code]*/
+            /*[clinic input]
+            foo as = foo2
+            [clinic start generated code]*/
+        """
+        err = "No C basename provided after 'as' keyword"
+        self.expect_failure(block, err, lineno=5)
+
+
 
 class ParseFileUnitTest(TestCase):
     def expect_parsing_failure(
