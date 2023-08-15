@@ -2121,7 +2121,11 @@ features:
 
    .. audit-event:: os.chmod path,mode,dir_fd os.lchmod
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Linux, FreeBSD >= 1.3, NetBSD >= 1.3, not OpenBSD
+
+   .. note::
+      ``lchmod()`` is not part of POSIX, but Unix implementations may have it
+      if changing the mode of symbolic links is supported.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
