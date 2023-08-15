@@ -1681,7 +1681,7 @@ print(f'''{{
 
             _, stdout, stderr = assert_python_ok(script)
             self.assertIn(rb'\1', stdout)
-            self.assertEqual(len(stderr.decode('utf-8').strip().splitlines()), 2)
+            self.assertEqual(len(stderr.strip().splitlines()), 2)
 
 if __name__ == '__main__':
     unittest.main()
