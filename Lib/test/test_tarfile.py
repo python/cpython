@@ -3496,8 +3496,15 @@ class TestExtractionFilters(unittest.TestCase):
         # Test interplaying symlinks
         # Inspired by 'dirsymlink2a' in jwilk/traversal-archives
         with ArchiveMaker() as arc:
+
+            # links to `.` which is both:
+            #   - the destination directory
+            #   - `current` itself
             arc.add('current', symlink_to='.')
+
+            # effectively points to ./../
             arc.add('parent', symlink_to='current/..')
+
             arc.add('parent/evil')
 
         if os_helper.can_symlink():
@@ -3540,8 +3547,15 @@ class TestExtractionFilters(unittest.TestCase):
         # Test interplaying symlinks
         # Inspired by 'dirsymlink2b' in jwilk/traversal-archives
         with ArchiveMaker() as arc:
+
+            # links to `.` which is both:
+            #   - the destination directory
+            #   - `current` itself
             arc.add('current', symlink_to='.')
+
+            # available as `./parent`, effectively points to `./../`
             arc.add('current/parent', symlink_to='..')
+
             arc.add('parent/evil')
 
         with self.check_context(arc.open(), 'fully_trusted'):
@@ -3553,17 +3567,29 @@ class TestExtractionFilters(unittest.TestCase):
                 self.expect_file('current/')
                 self.expect_file('parent/evil')
 
-        for filter in 'tar', 'data':
-            with self.check_context(arc.open(), filter):
-                if os_helper.can_symlink():
-                    self.expect_exception(
-                            tarfile.OutsideDestinationError,
-                            "'parent/evil' would be extracted to "
-                            + """['"].*evil['"], which is outside """
-                            + "the destination")
-                else:
-                    self.expect_file('current/')
-                    self.expect_file('parent/evil')
+        with self.check_context(arc.open(), 'tar'):
+            if os_helper.can_symlink():
+                # Fail when extracting a file outside destination
+                self.expect_exception(
+                        tarfile.OutsideDestinationError,
+                        "'parent/evil' would be extracted to "
+                        + """['"].*evil['"], which is outside """
+                        + "the destination")
+            else:
+                self.expect_file('current/')
+                self.expect_file('parent/evil')
+
+        with self.check_context(arc.open(), 'data'):
+            if os_helper.can_symlink():
+                # Fail as soon as we have a symlink outside the destination
+                self.expect_exception(
+                        tarfile.LinkOutsideDestinationError,
+                        "'current/parent' would link to "
+                        + """['"].*outerdir['"], which is outside """
+                        + "the destination")
+            else:
+                self.expect_file('current/')
+                self.expect_file('parent/evil')
 
     @symlink_test
     def test_absolute_symlink(self):
@@ -3593,12 +3619,30 @@ class TestExtractionFilters(unittest.TestCase):
         with self.check_context(arc.open(), 'data'):
             self.expect_exception(
                 tarfile.AbsoluteLinkError,
-                "'parent' is a symlink to an absolute path")
+                "'parent' is a link to an absolute path")
+
+    def test_absolute_hardlink(self):
+        # Test hardlink to an absolute path
+        # Inspired by 'dirsymlink' in jwilk/traversal-archives
+        with ArchiveMaker() as arc:
+            arc.add('parent', hardlink_to=self.outerdir / 'foo')
+
+        with self.check_context(arc.open(), 'fully_trusted'):
+            self.expect_exception(KeyError, ".*foo. not found")
+
+        with self.check_context(arc.open(), 'tar'):
+            self.expect_exception(KeyError, ".*foo. not found")
+
+        with self.check_context(arc.open(), 'data'):
+            self.expect_exception(
+                tarfile.AbsoluteLinkError,
+                "'parent' is a link to an absolute path")
 
     @symlink_test
     def test_sly_relative0(self):
         # Inspired by 'relative0' in jwilk/traversal-archives
         with ArchiveMaker() as arc:
+            # points to `../../tmp/moo`
             arc.add('../moo', symlink_to='..//tmp/moo')
 
         try:
@@ -3651,10 +3695,15 @@ class TestExtractionFilters(unittest.TestCase):
 
     @symlink_test
     def test_deep_symlink(self):
+        # Test that symlinks and hardlinks inside a directory
+        # point to the correct file (`target` of size 3).
+        # If links aren't supported we get a copy of the file.
         with ArchiveMaker() as arc:
             arc.add('targetdir/target', size=3)
+            # a hardlink's linkname is relative to the archive
             arc.add('linkdir/hardlink', hardlink_to=os.path.join(
                 'targetdir', 'target'))
+            # a symlink's  linkname is relative to the link's directory
             arc.add('linkdir/symlink', symlink_to=os.path.join(
                 '..', 'targetdir', 'target'))
 
