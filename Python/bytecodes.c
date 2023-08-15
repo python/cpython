@@ -3743,6 +3743,11 @@ dummy_func(
             return frame;
         }
 
+        op(INSERT, (unused[oparg], top -- top, unused[oparg])) {
+            // Inserts TOS at position specified by oparg;
+            memmove(&stack_pointer[-1 - oparg], &stack_pointer[-oparg], oparg * sizeof(stack_pointer[0]));
+        }
+
 
 // END BYTECODES //
 
