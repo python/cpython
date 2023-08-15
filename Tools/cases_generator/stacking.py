@@ -62,14 +62,14 @@ class StackOffset:
         for eff in self.deep:
             if eff.size:
                 terms.append(("-", maybe_parenthesize(eff.size)))
-            elif eff.cond and eff.cond != "1":
+            elif eff.cond and eff.cond not in ("0", "1"):
                 terms.append(("-", f"({parenthesize_cond(eff.cond)} ? 1 : 0)"))
             elif eff.cond != "0":
                 num -= 1
         for eff in self.high:
             if eff.size:
                 terms.append(("+", maybe_parenthesize(eff.size)))
-            elif eff.cond and eff.cond != "1":
+            elif eff.cond and eff.cond not in ("0", "1"):
                 terms.append(("+", f"({parenthesize_cond(eff.cond)} ? 1 : 0)"))
             elif eff.cond != "0":
                 num += 1
@@ -405,3 +405,32 @@ def write_components(
                     poke.as_stack_effect(),
                     poke.effect,
                 )
+
+
+def write_single_instr_for_abstract_interp(
+    instr: Instruction, out: Formatter
+):
+    try:
+        _write_components_for_abstract_interp(
+            [Component(instr, instr.active_caches)],
+            out,
+        )
+    except AssertionError as err:
+        raise AssertionError(f"Error writing abstract instruction {instr.name}") from err
+
+
+def _write_components_for_abstract_interp(
+    parts: list[Component],
+    out: Formatter,
+):
+    managers = get_managers(parts)
+    for mgr in managers:
+        if mgr is managers[-1]:
+            out.stack_adjust(mgr.final_offset.deep, mgr.final_offset.high)
+            # Use clone() since adjust_inverse() mutates final_offset
+            mgr.adjust_inverse(mgr.final_offset.clone())
+        # NULL out the output stack effects
+        for poke in mgr.pokes:
+            if not poke.effect.size and poke.effect.name not in mgr.instr.unmoved_names:
+                out.emit(f"PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)"
+                         f"PARTITIONNODE_NULLROOT, PEEK(-({poke.offset.as_index()})), true);")

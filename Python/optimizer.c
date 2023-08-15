@@ -4,6 +4,7 @@
 #include "pycore_opcode.h"
 #include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"
+#include "pycore_optimizer.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_uops.h"
 #include "cpython/optimizer.h"
@@ -103,7 +104,8 @@ error_optimize(
     _PyOptimizerObject* self,
     PyCodeObject *code,
     _Py_CODEUNIT *instr,
-    _PyExecutorObject **exec)
+    _PyExecutorObject **exec,
+    int Py_UNUSED(stack_entries))
 {
     PyErr_Format(PyExc_SystemError, "Should never call error_optimize");
     return -1;
@@ -164,7 +166,7 @@ _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNI
     }
     _PyOptimizerObject *opt = interp->optimizer;
     _PyExecutorObject *executor = NULL;
-    int err = opt->optimize(opt, code, dest, &executor);
+    int err = opt->optimize(opt, code, dest, &executor, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
     if (err <= 0) {
         assert(executor == NULL);
         if (err < 0) {
@@ -254,7 +256,9 @@ counter_optimize(
     _PyOptimizerObject* self,
     PyCodeObject *code,
     _Py_CODEUNIT *instr,
-    _PyExecutorObject **exec_ptr)
+    _PyExecutorObject **exec_ptr,
+    int Py_UNUSED(curr_stackentries)
+)
 {
     _PyCounterExecutorObject *executor = (_PyCounterExecutorObject *)_PyObject_New(&CounterExecutor_Type);
     if (executor == NULL) {
@@ -693,7 +697,8 @@ uop_optimize(
     _PyOptimizerObject *self,
     PyCodeObject *code,
     _Py_CODEUNIT *instr,
-    _PyExecutorObject **exec_ptr)
+    _PyExecutorObject **exec_ptr,
+    int curr_stackentries)
 {
     _PyUOpInstruction trace[_Py_UOP_MAX_TRACE_LENGTH];
     int trace_length = translate_bytecode_to_trace(code, instr, trace, _Py_UOP_MAX_TRACE_LENGTH);
@@ -702,6 +707,10 @@ uop_optimize(
         return trace_length;
     }
     OBJECT_STAT_INC(optimization_traces_created);
+    char *uop_optimize = Py_GETENV("PYTHONUOPSOPTIMIZE");
+    if (uop_optimize != NULL && *uop_optimize > '0') {
+        trace_length = _Py_uop_analyze_and_optimize(code, trace, trace_length, curr_stackentries);
+    }
     _PyUOpExecutorObject *executor = PyObject_NewVar(_PyUOpExecutorObject, &UOpExecutor_Type, trace_length);
     if (executor == NULL) {
         return -1;

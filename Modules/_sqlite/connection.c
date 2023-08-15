@@ -212,11 +212,11 @@ class sqlite3_int64_converter(CConverter):
 [python start generated code]*/
 /*[python end generated code: output=da39a3ee5e6b4b0d input=dff8760fb1eba6a1]*/
 
-// NB: This needs to be in sync with the sqlite3.connect docstring
 /*[clinic input]
 _sqlite3.Connection.__init__ as pysqlite_connection_init
 
     database: object
+    * [from 3.15]
     timeout: double = 5.0
     detect_types: int = 0
     isolation_level: IsolationLevel = ""
@@ -235,7 +235,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
                               int check_same_thread, PyObject *factory,
                               int cache_size, int uri,
                               enum autocommit_mode autocommit)
-/*[clinic end generated code: output=cba057313ea7712f input=9b0ab6c12f674fa3]*/
+/*[clinic end generated code: output=cba057313ea7712f input=219c3dbecbae7d99]*/
 {
     if (PySys_Audit("sqlite3.connect", "O", database) < 0) {
         return -1;
@@ -345,6 +345,34 @@ error:
     assert(rc == SQLITE_OK);
     return -1;
 }
+
+/*[clinic input]
+# Create a new destination 'connect' for the docstring and methoddef only.
+# This makes it possible to keep the signatures for Connection.__init__ and
+# sqlite3.connect() synchronised.
+output push
+destination connect new file '{dirname}/clinic/_sqlite3.connect.c.h'
+
+# Only output the docstring and the PyMethodDef entry.
+output everything suppress
+output docstring_definition connect
+output methoddef_define connect
+
+# Define the sqlite3.connect function by cloning Connection.__init__.
+_sqlite3.connect as pysqlite_connect = _sqlite3.Connection.__init__
+
+Open a connection to the SQLite database file 'database'.
+
+You can use ":memory:" to open a database connection to a database that
+resides in RAM instead of on disk.
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=92260edff95d1720]*/
+
+/*[clinic input]
+# Restore normal Argument Clinic operation for the rest of this file.
+output pop
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b899ba9273edcce7]*/
 
 #define VISIT_CALLBACK_CONTEXT(ctx) \
 do {                                \
