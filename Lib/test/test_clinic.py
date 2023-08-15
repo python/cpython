@@ -3171,39 +3171,39 @@ class ClinicFunctionalTest(unittest.TestCase):
 
     def test_depr_star_new(self):
         cls = ac_tester.DeprStarNew
+        cls()
         cls(a=None)
         self.check_depr_star("'a'", cls, None)
-        self.assertRaises(TypeError, cls)
 
     def test_depr_star_new_cloned(self):
-        fn = ac_tester.DeprStarNew(a=None).cloned
+        fn = ac_tester.DeprStarNew().cloned
+        fn()
         fn(a=None)
         self.check_depr_star("'a'", fn, None, name='_testclinic.DeprStarNew.cloned')
-        self.assertRaises(TypeError, fn)
 
     def test_depr_star_init(self):
         cls = ac_tester.DeprStarInit
+        cls()
         cls(a=None)
         self.check_depr_star("'a'", cls, None)
-        self.assertRaises(TypeError, cls)
 
     def test_depr_star_init_cloned(self):
-        fn = ac_tester.DeprStarInit(a=None).cloned
+        fn = ac_tester.DeprStarInit().cloned
+        fn()
         fn(a=None)
         self.check_depr_star("'a'", fn, None, name='_testclinic.DeprStarInit.cloned')
-        self.assertRaises(TypeError, fn)
 
     def test_depr_kwd_new(self):
         cls = ac_tester.DeprKwdNew
+        cls()
         cls(None)
         self.check_depr_kwd("'a'", cls, a=None)
-        self.assertRaises(TypeError, cls)
 
     def test_depr_kwd_init(self):
         cls = ac_tester.DeprKwdInit
+        cls()
         cls(None)
         self.check_depr_kwd("'a'", cls, a=None)
-        self.assertRaises(TypeError, cls)
 
     def test_depr_star_pos0_len1(self):
         fn = ac_tester.depr_star_pos0_len1

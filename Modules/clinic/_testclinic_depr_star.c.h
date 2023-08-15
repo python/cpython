@@ -9,7 +9,7 @@ preserve
 
 
 PyDoc_STRVAR(depr_star_new__doc__,
-"DeprStarNew(a)\n"
+"DeprStarNew(a=None)\n"
 "--\n"
 "\n"
 "The deprecation message should use the class name instead of __new__.\n"
@@ -70,7 +70,8 @@ depr_star_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    PyObject *a;
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
+    PyObject *a = Py_None;
 
     if (nargs == 1) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
@@ -81,11 +82,15 @@ depr_star_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto exit;
         }
     }
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
     a = fastargs[0];
+skip_optional_pos:
     return_value = depr_star_new_impl(type, a);
 
 exit:
@@ -93,7 +98,7 @@ exit:
 }
 
 PyDoc_STRVAR(depr_star_new_clone__doc__,
-"cloned($self, /, a)\n"
+"cloned($self, /, a=None)\n"
 "--\n"
 "\n"
 "Note: Passing positional arguments to _testclinic.DeprStarNew.cloned()\n"
@@ -153,7 +158,8 @@ depr_star_new_clone(PyObject *type, PyObject *const *args, Py_ssize_t nargs, PyO
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    PyObject *a;
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *a = Py_None;
 
     if (nargs == 1) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
@@ -164,11 +170,15 @@ depr_star_new_clone(PyObject *type, PyObject *const *args, Py_ssize_t nargs, PyO
             goto exit;
         }
     }
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
     a = args[0];
+skip_optional_pos:
     return_value = depr_star_new_clone_impl(type, a);
 
 exit:
@@ -176,7 +186,7 @@ exit:
 }
 
 PyDoc_STRVAR(depr_star_init__doc__,
-"DeprStarInit(a)\n"
+"DeprStarInit(a=None)\n"
 "--\n"
 "\n"
 "The deprecation message should use the class name instead of __init__.\n"
@@ -237,7 +247,8 @@ depr_star_init(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    PyObject *a;
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
+    PyObject *a = Py_None;
 
     if (nargs == 1) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
@@ -248,11 +259,15 @@ depr_star_init(PyObject *self, PyObject *args, PyObject *kwargs)
             goto exit;
         }
     }
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
     a = fastargs[0];
+skip_optional_pos:
     return_value = depr_star_init_impl(self, a);
 
 exit:
@@ -260,7 +275,7 @@ exit:
 }
 
 PyDoc_STRVAR(depr_star_init_clone__doc__,
-"cloned($self, /, a)\n"
+"cloned($self, /, a=None)\n"
 "--\n"
 "\n"
 "Note: Passing positional arguments to\n"
@@ -320,7 +335,8 @@ depr_star_init_clone(PyObject *self, PyObject *const *args, Py_ssize_t nargs, Py
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    PyObject *a;
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *a = Py_None;
 
     if (nargs == 1) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
@@ -331,11 +347,15 @@ depr_star_init_clone(PyObject *self, PyObject *const *args, Py_ssize_t nargs, Py
             goto exit;
         }
     }
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
     a = args[0];
+skip_optional_pos:
     return_value = depr_star_init_clone_impl(self, a);
 
 exit:
@@ -343,7 +363,7 @@ exit:
 }
 
 PyDoc_STRVAR(depr_kwd_new__doc__,
-"DeprKwdNew(a)\n"
+"DeprKwdNew(a=None)\n"
 "--\n"
 "\n"
 "The deprecation message should use the class name instead of __new__.");
@@ -399,13 +419,17 @@ depr_kwd_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    PyObject *a;
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
+    PyObject *a = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
-    if (nargs < 1) {
+    if (nargs < 1 && kwargs && PyDict_Contains(kwargs, &_Py_ID(a))) {
+        if (PyErr_Occurred()) { // PyDict_Contains() above can fail
+            goto exit;
+        }
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing keyword argument 'a' to _testclinic.DeprKwdNew() is "
                 "deprecated. Corresponding parameter will become positional-only "
@@ -414,7 +438,11 @@ depr_kwd_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto exit;
         }
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
     a = fastargs[0];
+skip_optional_pos:
     return_value = depr_kwd_new_impl(type, a);
 
 exit:
@@ -422,7 +450,7 @@ exit:
 }
 
 PyDoc_STRVAR(depr_kwd_init__doc__,
-"DeprKwdInit(a)\n"
+"DeprKwdInit(a=None)\n"
 "--\n"
 "\n"
 "The deprecation message should use the class name instead of __init__.");
@@ -478,13 +506,17 @@ depr_kwd_init(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    PyObject *a;
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
+    PyObject *a = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
-    if (nargs < 1) {
+    if (nargs < 1 && kwargs && PyDict_Contains(kwargs, &_Py_ID(a))) {
+        if (PyErr_Occurred()) { // PyDict_Contains() above can fail
+            goto exit;
+        }
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing keyword argument 'a' to _testclinic.DeprKwdInit() is "
                 "deprecated. Corresponding parameter will become positional-only "
@@ -493,7 +525,11 @@ depr_kwd_init(PyObject *self, PyObject *args, PyObject *kwargs)
             goto exit;
         }
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
     a = fastargs[0];
+skip_optional_pos:
     return_value = depr_kwd_init_impl(self, a);
 
 exit:
@@ -1886,4 +1922,4 @@ depr_kwd_noinline(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b68c191569031144 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7df75e794cccde22 input=a9049054013a1b77]*/

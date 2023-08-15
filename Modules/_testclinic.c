@@ -1219,13 +1219,13 @@ class _testclinic.DeprStarNew "PyObject *" "PyObject"
 @classmethod
 _testclinic.DeprStarNew.__new__ as depr_star_new
     * [from 3.14]
-    a: object
+    a: object = None
 The deprecation message should use the class name instead of __new__.
 [clinic start generated code]*/
 
 static PyObject *
 depr_star_new_impl(PyTypeObject *type, PyObject *a)
-/*[clinic end generated code: output=bdbb36244f90cf46 input=f4ae7dafbc23c378]*/
+/*[clinic end generated code: output=bdbb36244f90cf46 input=fdd640db964b4dc1]*/
 {
     return type->tp_alloc(type, 0);
 }
@@ -1260,13 +1260,13 @@ static PyTypeObject DeprStarNew = {
 class _testclinic.DeprStarInit "PyObject *" "PyObject"
 _testclinic.DeprStarInit.__init__ as depr_star_init
     * [from 3.14]
-    a: object
+    a: object = None
 The deprecation message should use the class name instead of __init__.
 [clinic start generated code]*/
 
 static int
 depr_star_init_impl(PyObject *self, PyObject *a)
-/*[clinic end generated code: output=8d27b43c286d3ecc input=659ebc748d87fa86]*/
+/*[clinic end generated code: output=8d27b43c286d3ecc input=5575b77229d5e2be]*/
 {
     return 0;
 }
@@ -1302,14 +1302,14 @@ static PyTypeObject DeprStarInit = {
 class _testclinic.DeprKwdNew "PyObject *" "PyObject"
 @classmethod
 _testclinic.DeprKwdNew.__new__ as depr_kwd_new
-    a: object
+    a: object = None
     / [from 3.14]
 The deprecation message should use the class name instead of __new__.
 [clinic start generated code]*/
 
 static PyObject *
 depr_kwd_new_impl(PyTypeObject *type, PyObject *a)
-/*[clinic end generated code: output=618d07afc5616149 input=831cfc26b33703a6]*/
+/*[clinic end generated code: output=618d07afc5616149 input=6c7d13c471013c10]*/
 {
     return type->tp_alloc(type, 0);
 }
@@ -1326,14 +1326,14 @@ static PyTypeObject DeprKwdNew = {
 /*[clinic input]
 class _testclinic.DeprKwdInit "PyObject *" "PyObject"
 _testclinic.DeprKwdInit.__init__ as depr_kwd_init
-    a: object
+    a: object = None
     / [from 3.14]
 The deprecation message should use the class name instead of __init__.
 [clinic start generated code]*/
 
 static int
 depr_kwd_init_impl(PyObject *self, PyObject *a)
-/*[clinic end generated code: output=6e02eb724a85d840 input=2e85cfe2845593f6]*/
+/*[clinic end generated code: output=6e02eb724a85d840 input=b9bf3c20f012d539]*/
 {
     return 0;
 }
