@@ -103,8 +103,6 @@ _specializations = {
 # An irregular case:
 _specializations["BINARY_OP"].append("BINARY_OP_INPLACE_ADD_UNICODE")
 
-_specialized_instructions = [opcode for family in _specializations.values() for opcode in family]
-
 _specialized_opmap = {
     'BINARY_OP_ADD_FLOAT': 3,
     'BINARY_OP_ADD_INT': 4,

@@ -1942,7 +1942,7 @@ class InstructionTests(InstructionTestCase):
             self.assertEqual(code, baseopcode)
 
         # Specialized instructions
-        for name in opcode._specialized_instructions:
+        for name in opcode._specialized_opmap:
             instruction = Instruction(opname=name, opcode=dis._all_opmap[name], arg=None, argval=None, argrepr='',
                                       offset=0, start_offset=0, starts_line=1, is_jump_target=False, positions=None)
             baseopname = instruction.baseopname

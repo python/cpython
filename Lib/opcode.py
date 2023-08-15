@@ -14,7 +14,7 @@ from _opcode import stack_effect
 import sys
 # The build uses older versions of Python which do not have _opcode_metadata
 if sys.version_info[:2] >= (3, 13):
-    from _opcode_metadata import _specializations, _specialized_instructions, _specialized_opmap
+    from _opcode_metadata import _specializations, _specialized_opmap
     from _opcode_metadata import opmap, HAVE_ARGUMENT, MIN_INSTRUMENTED_OPCODE
     EXTENDED_ARG = opmap['EXTENDED_ARG']
 

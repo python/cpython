@@ -550,14 +550,6 @@ class Generator(Analyzer):
             )
             specialized_ops.add("BINARY_OP_INPLACE_ADD_UNICODE")
 
-            # Make list of specialized instructions
-            self.out.emit("")
-            self.out.emit(
-                "_specialized_instructions = ["
-                "opcode for family in _specializations.values() for opcode in family"
-                "]"
-            )
-
             # emit specialized opmap
             self.out.emit("")
             with self.out.block("_specialized_opmap ="):

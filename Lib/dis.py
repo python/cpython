@@ -14,7 +14,6 @@ from opcode import (
     _intrinsic_1_descs,
     _intrinsic_2_descs,
     _specializations,
-    _specialized_instructions,
     _specialized_opmap,
 )
 
