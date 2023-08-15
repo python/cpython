@@ -3546,14 +3546,44 @@ class TestExtractionFilters(unittest.TestCase):
     def test_parent_symlink2(self):
         # Test interplaying symlinks
         # Inspired by 'dirsymlink2b' in jwilk/traversal-archives
+
+        # Posix and Windows have different pathname resolution:
+        # either symlink or a '..' component resolve first.
+        # Let's see which we are on.
+        if os_helper.can_symlink():
+            testpath = os.path.join(TEMPDIR, 'resolution_test')
+            os.mkdir(testpath)
+
+            # testpath/current links to `.` which is all of:
+            #   - `testpath`
+            #   - `testpath/current`
+            #   - `testpath/current/current`
+            #   - etc.
+            os.symlink('.', os.path.join(testpath, 'current'))
+
+            # we'll test where `testpath/current/../file` ends up
+            with open(os.path.join(testpath, 'current', '..', 'file'), 'w'):
+                pass
+
+            if os.path.exists(os.path.join(testpath, 'file')):
+                # Windows collapses 'current\..' to '.' first, leaving
+                # 'testpath\file'
+                dotdot_resolves_early = True
+            elif os.path.exists(os.path.join(testpath, '..', 'file')):
+                # Posix resolves 'current' to '.' first, leaving
+                # 'testpath/../file'
+                dotdot_resolves_early = False
+            else:
+                raise AssertionError('Could not determine link resolution')
+
         with ArchiveMaker() as arc:
 
-            # links to `.` which is both:
-            #   - the destination directory
-            #   - `current` itself
+            # `current` links to `.` which is both the destination directory
+            # and `current` itself
             arc.add('current', symlink_to='.')
 
-            # available as `./parent`, effectively points to `./../`
+            # `current/parent` is also available as `./parent`,
+            # and effectively points to `./../`
             arc.add('current/parent', symlink_to='..')
 
             arc.add('parent/evil')
@@ -3581,12 +3611,20 @@ class TestExtractionFilters(unittest.TestCase):
 
         with self.check_context(arc.open(), 'data'):
             if os_helper.can_symlink():
-                # Fail as soon as we have a symlink outside the destination
-                self.expect_exception(
-                        tarfile.LinkOutsideDestinationError,
-                        "'current/parent' would link to "
-                        + """['"].*outerdir['"], which is outside """
-                        + "the destination")
+                if dotdot_resolves_early:
+                    # Fail when extracting a file outside destination
+                    self.expect_exception(
+                            tarfile.OutsideDestinationError,
+                            "'parent/evil' would be extracted to "
+                            + """['"].*evil['"], which is outside """
+                            + "the destination")
+                else:
+                    # Fail as soon as we have a symlink outside the destination
+                    self.expect_exception(
+                            tarfile.LinkOutsideDestinationError,
+                            "'current/parent' would link to "
+                            + """['"].*outerdir['"], which is outside """
+                            + "the destination")
             else:
                 self.expect_file('current/')
                 self.expect_file('parent/evil')
