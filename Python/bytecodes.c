@@ -3743,11 +3743,10 @@ dummy_func(
             return frame;
         }
 
-        op(INSERT, (stuff[oparg], top -- top, stuff[oparg])) {
-            // Inserts TOS at position specified by oparg
-            PyObject *tos = TOP();
+        op(INSERT, (unused[oparg], top -- top, unused[oparg])) {
+            // Inserts TOS at position specified by oparg;
             for (int i = 1; i < oparg + 1; i++) {
-                stack_pointer[i] = stack_pointer[i - 1];
+                stack_pointer[-i] = stack_pointer[-(i - 1)];
             }
         }
 
