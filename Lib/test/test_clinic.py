@@ -28,7 +28,8 @@ def _make_clinic(*, filename='clinic_tests'):
     return c
 
 
-def _expect_failure(tc, parser, code, errmsg, *, filename=None, lineno=None):
+def _expect_failure(tc, parser, code, errmsg, *, filename=None, lineno=None,
+                    strip=True):
     """Helper for the parser tests.
 
     tc: unittest.TestCase; passed self in the wrapper
@@ -38,7 +39,9 @@ def _expect_failure(tc, parser, code, errmsg, *, filename=None, lineno=None):
     filename: str, optional filename
     lineno: int, optional line number
     """
-    code = dedent(code).strip()
+    code = dedent(code)
+    if strip:
+        code = code.strip()
     errmsg = re.escape(errmsg)
     with tc.assertRaisesRegex(clinic.ClinicError, errmsg) as cm:
         parser(code)
@@ -828,9 +831,10 @@ class ClinicParserTest(TestCase):
         assert isinstance(s[function_index], clinic.Function)
         return s[function_index]
 
-    def expect_failure(self, block, err, *, filename=None, lineno=None):
+    def expect_failure(self, block, err, *,
+                       filename=None, lineno=None, strip=True):
         return _expect_failure(self, self.parse_function, block, err,
-                               filename=filename, lineno=lineno)
+                               filename=filename, lineno=lineno, strip=strip)
 
     def checkDocstring(self, fn, expected):
         self.assertTrue(hasattr(fn, "docstring"))
@@ -1490,6 +1494,11 @@ class ClinicParserTest(TestCase):
         """
         err = "Illegal C basename: '935'"
         self.expect_failure(block, err)
+
+    def test_no_c_basename(self):
+        block = "foo as "
+        err = "No C basename provided after 'as' keyword"
+        self.expect_failure(block, err, strip=False)
 
     def test_single_star(self):
         block = """
