@@ -1,0 +1,2 @@
+Fix a potential crash in os.chdir() and os.getcwd() if another thread is
+calling os.chdir() concurrently.

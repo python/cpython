@@ -1723,6 +1723,41 @@ posix_fildes_fd(int fd, int (*func)(int))
 
 
 #ifdef MS_WINDOWS
+static wchar_t *
+win32_wgetcwd(wchar_t *buf, DWORD buf_size)
+{
+    wchar_t *local_buf = buf;
+    while (1) {
+        wchar_t *temp;
+        DWORD result = GetCurrentDirectoryW(buf_size, local_buf);
+        if (!result) {
+            goto fail;
+        }
+
+        /* L'\0' is not counted in result on success. */
+        if (result < buf_size) {
+            break;
+        }
+
+        buf_size = result;
+        temp = PyMem_RawRealloc(local_buf != buf ? local_buf : NULL,
+                                buf_size * sizeof(wchar_t));
+        if (!temp) {
+            SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+            goto fail;
+        }
+        local_buf = temp;
+    }
+
+    return local_buf;
+
+fail:
+    if (local_buf != buf) {
+        PyMem_RawFree(local_buf);
+    }
+    return NULL;
+}
+
 /* This is a reimplementation of the C library's chdir function,
    but one that produces Win32 errors instead of DOS error codes.
    chdir is essentially a wrapper around SetCurrentDirectory; however,
@@ -1731,36 +1766,28 @@ posix_fildes_fd(int fd, int (*func)(int))
 static BOOL __stdcall
 win32_wchdir(LPCWSTR path)
 {
-    wchar_t path_buf[MAX_PATH], *new_path = path_buf;
+    wchar_t path_buf[MAX_PATH], *new_path;
     int result;
     wchar_t env[4] = L"=x:";
 
     if(!SetCurrentDirectoryW(path))
         return FALSE;
-    result = GetCurrentDirectoryW(Py_ARRAY_LENGTH(path_buf), new_path);
-    if (!result)
+
+    new_path = win32_wgetcwd(path_buf, (DWORD)Py_ARRAY_LENGTH(path_buf));
+    if (!new_path)
         return FALSE;
-    if (result > Py_ARRAY_LENGTH(path_buf)) {
-        new_path = PyMem_RawMalloc(result * sizeof(wchar_t));
-        if (!new_path) {
-            SetLastError(ERROR_OUTOFMEMORY);
-            return FALSE;
-        }
-        result = GetCurrentDirectoryW(result, new_path);
-        if (!result) {
-            PyMem_RawFree(new_path);
-            return FALSE;
-        }
-    }
+
     int is_unc_like_path = (wcsncmp(new_path, L"\\\\", 2) == 0 ||
                             wcsncmp(new_path, L"//", 2) == 0);
     if (!is_unc_like_path) {
         env[1] = new_path[0];
         result = SetEnvironmentVariableW(env, new_path);
+    } else {
+        result = TRUE;
     }
     if (new_path != path_buf)
         PyMem_RawFree(new_path);
-    return result ? TRUE : FALSE;
+    return result;
 }
 #endif
 
@@ -3849,50 +3876,24 @@ static PyObject *
 posix_getcwd(int use_bytes)
 {
 #ifdef MS_WINDOWS
-    wchar_t wbuf[MAXPATHLEN];
-    wchar_t *wbuf2 = wbuf;
-    DWORD len;
+    wchar_t wbuf[MAX_PATH];
+    wchar_t *wbuf2;
 
     Py_BEGIN_ALLOW_THREADS
-    len = GetCurrentDirectoryW(Py_ARRAY_LENGTH(wbuf), wbuf);
-    /* If the buffer is large enough, len does not include the
-       terminating \0. If the buffer is too small, len includes
-       the space needed for the terminator. */
-    if (len >= Py_ARRAY_LENGTH(wbuf)) {
-        if (len <= PY_SSIZE_T_MAX / sizeof(wchar_t)) {
-            wbuf2 = PyMem_RawMalloc(len * sizeof(wchar_t));
-        }
-        else {
-            wbuf2 = NULL;
-        }
-        if (wbuf2) {
-            len = GetCurrentDirectoryW(len, wbuf2);
-        }
-    }
+    wbuf2 = win32_wgetcwd(wbuf, (DWORD)Py_ARRAY_LENGTH(wbuf));
     Py_END_ALLOW_THREADS
 
     if (!wbuf2) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    if (!len) {
-        if (wbuf2 != wbuf)
-            PyMem_RawFree(wbuf2);
         return PyErr_SetFromWindowsErr(0);
     }
 
-    PyObject *resobj = PyUnicode_FromWideChar(wbuf2, len);
+    PyObject *resobj = PyUnicode_FromWideChar(wbuf2, -1);
+    if (use_bytes && resobj) {
+        Py_SETREF(resobj, PyUnicode_EncodeFSDefault(resobj));
+    }
     if (wbuf2 != wbuf) {
         PyMem_RawFree(wbuf2);
     }
-
-    if (use_bytes) {
-        if (resobj == NULL) {
-            return NULL;
-        }
-        Py_SETREF(resobj, PyUnicode_EncodeFSDefault(resobj));
-    }
-
     return resobj;
 #else
     const size_t chunk = 1024;
