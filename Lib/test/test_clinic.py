@@ -1503,7 +1503,7 @@ class ClinicParserTest(TestCase):
     def test_no_c_basename_cloned(self):
         block = "foo as = foo2"
         err = "No C basename provided after 'as' keyword"
-        self.expect_failure(block, err, strip=False)
+        self.expect_failure(block, err)
 
     def test_single_star(self):
         block = """
