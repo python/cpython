@@ -3565,6 +3565,31 @@ _asyncio_current_task_impl(PyObject *module, PyObject *loop)
 }
 
 
+static inline int
+add_one_task(asyncio_state *state, PyObject *tasks, PyObject *task, PyObject *loop)
+{
+    PyObject *done = PyObject_CallMethodNoArgs(task, &_Py_ID(done));
+    if (done == NULL) {
+        return -1;
+    }
+    if (Py_IsTrue(done)) {
+        return 0;
+    }
+    Py_DECREF(done);
+    PyObject *task_loop = get_future_loop(state, task);
+    if (task_loop == NULL) {
+        return -1;
+    }
+    if (task_loop == loop) {
+        if (PySet_Add(tasks, task) < 0) {
+            Py_DECREF(task_loop);
+            return -1;
+        }
+    }
+    Py_DECREF(task_loop);
+    return 0;
+}
+
 /*********************** Module **************************/
 
 /*[clinic input]
@@ -3582,7 +3607,7 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
 {
 
     asyncio_state *state = get_asyncio_state(module);
-    PyObject *tasks = PySet_New(state->eager_tasks);
+    PyObject *tasks = PySet_New(NULL);
     if (tasks == NULL) {
         return NULL;
     }
@@ -3601,70 +3626,48 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     TaskObj *tail = &state->asyncio_tasks.tail;
     while (head != tail)
     {
-        PyObject *done = _asyncio_Future_done_impl((FutureObj *)head);
-        if (done == NULL) {
+        if (add_one_task(state, tasks, (PyObject *)head, loop) < 0) {
             Py_DECREF(tasks);
             Py_DECREF(loop);
             return NULL;
         }
-        if (Py_IsTrue(done)) {
-            Py_DECREF(done);
-            head = head->prev;
-            continue;
-        }
-        if (head->task_loop == loop) {
-            if (PySet_Add(tasks, (PyObject *)head) < 0) {
-                Py_DECREF(tasks);
-                Py_DECREF(loop);
-                return NULL;
-            }
-        }
         head = head->prev;
     }
-    PyObject *iter = PyObject_GetIter(state->scheduled_tasks);
-    if (iter == NULL) {
+    PyObject *scheduled_iter = PyObject_GetIter(state->scheduled_tasks);
+    if (scheduled_iter == NULL) {
         Py_DECREF(tasks);
         Py_DECREF(loop);
         return NULL;
     }
     PyObject *item;
-    while ((item = PyIter_Next(iter)) != NULL) {
-        PyObject *task_loop = get_future_loop(state, item);
-        if (task_loop == NULL) {
+    while ((item = PyIter_Next(scheduled_iter)) != NULL) {
+        if (add_one_task(state, tasks, item, loop) < 0) {
             Py_DECREF(tasks);
             Py_DECREF(loop);
-            Py_DECREF(iter);
             Py_DECREF(item);
+            Py_DECREF(scheduled_iter);
             return NULL;
         }
-        PyObject *done = PyObject_CallMethodNoArgs(item, &_Py_ID(done));
-        if (done == NULL) {
-            Py_DECREF(tasks);
-            Py_DECREF(loop);
-            Py_DECREF(iter);
-            Py_DECREF(item);
-            Py_DECREF(task_loop);
-            return NULL;
-        }
-        if (Py_IsTrue(done)) {
-            Py_DECREF(done);
-            Py_DECREF(task_loop);
-            Py_DECREF(item);
-            continue;
-        }
-        if (task_loop == loop) {
-            if (PySet_Add(tasks, item) < 0) {
-                Py_DECREF(tasks);
-                Py_DECREF(loop);
-                Py_DECREF(iter);
-                Py_DECREF(item);
-                return NULL;
-            }
-        }
-        Py_DECREF(task_loop);
         Py_DECREF(item);
     }
-    Py_DECREF(iter);
+    Py_DECREF(scheduled_iter);
+    PyObject *eager_iter = PyObject_GetIter(state->eager_tasks);
+    if (eager_iter == NULL) {
+        Py_DECREF(tasks);
+        Py_DECREF(loop);
+        return NULL;
+    }
+    while ((item = PyIter_Next(eager_iter)) != NULL) {
+        if (add_one_task(state, tasks, item, loop) < 0) {
+            Py_DECREF(tasks);
+            Py_DECREF(loop);
+            Py_DECREF(item);
+            Py_DECREF(eager_iter);
+            return NULL;
+        }
+        Py_DECREF(item);
+    }
+    Py_DECREF(eager_iter);
     Py_DECREF(loop);
     return tasks;
 }
