@@ -661,6 +661,7 @@ class ClinicWholeFileTest(TestCase):
             output everything suppress
             foo2
             [clinic start generated code]*/
+
             /*[clinic input]
             foo as foo1 = foo2
             [clinic start generated code]*/
