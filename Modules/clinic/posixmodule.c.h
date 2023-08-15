@@ -6499,7 +6499,7 @@ PyDoc_STRVAR(os_lseek__doc__,
 "lseek($module, fd, position, whence, /)\n"
 "--\n"
 "\n"
-"Set the position of a file descriptor, and return the new position.\n"
+"Set the position of a file descriptor.  Return the new position.\n"
 "\n"
 "  fd\n"
 "    An open file descriptor, as returned by os.open().\n"
@@ -11990,4 +11990,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=23dfb68866509e02 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9a5f78bb65470528 input=a9049054013a1b77]*/

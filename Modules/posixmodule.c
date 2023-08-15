@@ -10432,14 +10432,14 @@ os.lseek -> Py_off_t
         - SEEK_END: seek from the end of the file.
     /
 
-Set the position of a file descriptor, and return the new position.
+Set the position of a file descriptor.  Return the new position.
 
 The return value is the number of bytes relative to the beginning of the file.
 [clinic start generated code]*/
 
 static Py_off_t
 os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
-/*[clinic end generated code: output=971e1efb6b30bd2f input=0642ea3d1c708c40]*/
+/*[clinic end generated code: output=971e1efb6b30bd2f input=f096e754c5367504]*/
 {
     Py_off_t result;
 
