@@ -1,0 +1,1 @@
+Added :data:`errno.EHWPOISON` descriptions into :mod:`errno`
