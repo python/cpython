@@ -656,6 +656,9 @@ class ClinicWholeFileTest(TestCase):
     def test_cloned_with_custom_c_basename(self):
         raw = dedent("""
             /*[clinic input]
+            # Suppress output, to make sure we don't create spurious clinic/
+            # directories.
+            output everything suppress
             foo2
             [clinic start generated code]*/
             /*[clinic input]
