@@ -2738,9 +2738,7 @@
             PyObject *top;
             top = stack_pointer[-1];
             // Inserts TOS at position specified by oparg;
-            for (int i = 1; i < oparg + 1; i++) {
-                stack_pointer[-i] = stack_pointer[-(i - 1)];
-            }
+            memmove(&stack_pointer[-1 - oparg], &stack_pointer[-oparg], oparg * sizeof(stack_pointer[0]));
             stack_pointer[-1 - oparg] = top;
             break;
         }
