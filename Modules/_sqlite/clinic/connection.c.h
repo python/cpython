@@ -59,6 +59,39 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
     int uri = 0;
     enum autocommit_mode autocommit = LEGACY_TRANSACTION_CONTROL;
 
+    // Emit compiler warnings when we get to Python 3.15.
+    #if PY_VERSION_HEX >= 0x030f00C0
+    #  error \
+            "In connection.c, update parameter(s) 'timeout', 'detect_types', " \
+            "'isolation_level', 'check_same_thread', 'factory', " \
+            "'cached_statements' and 'uri' in the clinic input of " \
+            "'_sqlite3.Connection.__init__' to be keyword-only."
+    #elif PY_VERSION_HEX >= 0x030f00A0
+    #  ifdef _MSC_VER
+    #    pragma message ( \
+            "In connection.c, update parameter(s) 'timeout', 'detect_types', " \
+            "'isolation_level', 'check_same_thread', 'factory', " \
+            "'cached_statements' and 'uri' in the clinic input of " \
+            "'_sqlite3.Connection.__init__' to be keyword-only.")
+    #  else
+    #    warning \
+            "In connection.c, update parameter(s) 'timeout', 'detect_types', " \
+            "'isolation_level', 'check_same_thread', 'factory', " \
+            "'cached_statements' and 'uri' in the clinic input of " \
+            "'_sqlite3.Connection.__init__' to be keyword-only."
+    #  endif
+    #endif
+    if (nargs > 1 && nargs <= 8) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing more than 1 positional argument to _sqlite3.Connection()"
+                " is deprecated. Parameters 'timeout', 'detect_types', "
+                "'isolation_level', 'check_same_thread', 'factory', "
+                "'cached_statements' and 'uri' will become keyword-only "
+                "parameters in Python 3.15.", 1))
+        {
+                goto exit;
+        }
+    }
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 8, 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -1659,4 +1692,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=d3c6cb9326736ea5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5a05e5294ad9d2ce input=a9049054013a1b77]*/
