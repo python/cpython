@@ -1,1 +1,1 @@
-Fix sample outputs for :func:`dir()` function in :module:`enum` docs.
+Fix sample outputs for :func:`dir()` function in :mod:`enum` docs.
