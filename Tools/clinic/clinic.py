@@ -1674,18 +1674,8 @@ class CLanguage(Language):
         full_name = f.full_name
         template_dict = {'full_name': full_name}
         template_dict['name'] = f.displayname
-
-        if f.c_basename:
-            c_basename = f.c_basename
-        else:
-            fields = full_name.split(".")
-            if fields[-1] == '__new__':
-                fields.pop()
-            c_basename = "_".join(fields)
-
-        template_dict['c_basename'] = c_basename
-
-        template_dict['methoddef_name'] = c_basename.upper() + "_METHODDEF"
+        template_dict['c_basename'] = f.c_basename
+        template_dict['methoddef_name'] = f.c_basename.upper() + "_METHODDEF"
 
         template_dict['docstring'] = self.docstring_for_c_string(f)
 
@@ -2653,7 +2643,7 @@ class Function:
     name: str
     module: Module | Clinic
     cls: Class | None
-    c_basename: str | None
+    c_basename: str
     full_name: str
     return_converter: CReturnConverter
     kind: FunctionKind
@@ -4840,6 +4830,22 @@ class DSLParser:
 
         self.next(self.state_modulename_name, line)
 
+    @staticmethod
+    def parse_names(line: str) -> tuple[str, str]:
+        left, _, right = line.partition(' as ')
+        full_name = left.strip()
+        c_basename = right.strip()
+        if not c_basename:
+            fields = full_name.split(".")
+            if fields[-1] == '__new__':
+                fields.pop()
+            c_basename = "_".join(fields)
+        if not is_legal_py_identifier(full_name):
+            fail(f"Illegal function name: {full_name!r}")
+        if not is_legal_c_identifier(c_basename):
+            fail(f"Illegal C basename: {c_basename!r}")
+        return full_name, c_basename
+
     def state_modulename_name(self, line: str) -> None:
         # looking for declaration, which establishes the leftmost column
         # line should be
@@ -4862,15 +4868,10 @@ class DSLParser:
 
         # are we cloning?
         before, equals, existing = line.rpartition('=')
-        c_basename: str | None
         if equals:
-            full_name, _, c_basename = before.partition(' as ')
-            full_name = full_name.strip()
-            c_basename = c_basename.strip()
+            full_name, c_basename = self.parse_names(before)
             existing = existing.strip()
-            if (is_legal_py_identifier(full_name) and
-                (not c_basename or is_legal_c_identifier(c_basename)) and
-                is_legal_py_identifier(existing)):
+            if is_legal_py_identifier(existing):
                 # we're cloning!
                 fields = [x.strip() for x in existing.split('.')]
                 function_name = fields.pop()
@@ -4915,15 +4916,7 @@ class DSLParser:
 
         line, _, returns = line.partition('->')
         returns = returns.strip()
-
-        full_name, _, c_basename = line.partition(' as ')
-        full_name = full_name.strip()
-        c_basename = c_basename.strip() or None
-
-        if not is_legal_py_identifier(full_name):
-            fail(f"Illegal function name: {full_name!r}")
-        if c_basename and not is_legal_c_identifier(c_basename):
-            fail(f"Illegal C basename: {c_basename!r}")
+        full_name, c_basename = self.parse_names(line)
 
         return_converter = None
         if returns:
