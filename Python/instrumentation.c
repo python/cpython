@@ -121,7 +121,7 @@ static inline bool
 opcode_has_event(int opcode)
 {
     return (
-        opcode < INSTRUMENTED_LINE &&
+        opcode != INSTRUMENTED_LINE &&
         INSTRUMENTED_OPCODES[opcode] > 0
     );
 }
@@ -1202,7 +1202,7 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
     Py_DECREF(line_obj);
 done:
     assert(original_opcode != 0);
-    assert(original_opcode < INSTRUMENTED_LINE);
+    assert(original_opcode != INSTRUMENTED_LINE);
     assert(_PyOpcode_Deopt[original_opcode] == original_opcode);
     return original_opcode;
 }
