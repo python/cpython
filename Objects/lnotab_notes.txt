@@ -1,4 +1,5 @@
-Description of the internal format of the line number table in Python 3.10. 
+Description of the internal format of the line number table in Python 3.10
+and earlier.
 
 (For 3.11 onwards, see Objects/locations.md)
 
