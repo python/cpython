@@ -2644,7 +2644,7 @@ class PathTest(unittest.TestCase):
         expected_gid = link.stat(follow_symlinks=False).st_gid
         expected_name = self._get_pw_name_or_skip_test(expected_gid)
 
-        self.assertEqual(expected_name, link.owner(follow_symlinks=False))
+        self.assertEqual(expected_name, link.group(follow_symlinks=False))
 
     def test_unlink(self):
         p = self.cls(BASE) / 'fileA'
