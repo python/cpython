@@ -638,6 +638,21 @@ class ClinicWholeFileTest(TestCase):
         err = "'__new__' must be a class method"
         self.expect_failure(block, err, lineno=7)
 
+    def test_cloned_with_custom_c_basename(self):
+        raw = dedent("""
+            /*[clinic input]
+            foo2
+            [clinic start generated code]*/
+            /*[clinic input]
+            foo as foo1 = foo2
+            [clinic start generated code]*/
+        """)
+        self.clinic.parse(raw)
+        funcs = self.clinic.functions
+        self.assertEqual(len(funcs), 2)
+        self.assertEqual(funcs[1].name, "foo")
+        self.assertEqual(funcs[1].c_basename, "foo1")
+
 
 class ParseFileUnitTest(TestCase):
     def expect_parsing_failure(
