@@ -4965,7 +4965,7 @@ class DSLParser:
         module, cls = self.clinic._module_and_class(fields)
 
         self.update_function_kind(full_name)
-        if self.kind == METHOD_INIT and not return_converter:
+        if self.kind is METHOD_INIT and not return_converter:
             return_converter = init_return_converter()
 
         if not return_converter:
