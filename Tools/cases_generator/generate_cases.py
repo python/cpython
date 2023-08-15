@@ -219,7 +219,7 @@ class Generator(Analyzer):
         self.out.write_raw(self.from_source_files())
         self.out.write_raw(f"{self.out.comment} Do not edit!\n")
 
-    def assign_op_ids(self):
+    def assign_opcode_ids(self):
         """Assign IDs to opcodes"""
 
         ops: list[(bool, str)] = []  # (has_arg, name) for each opcode
@@ -820,7 +820,7 @@ def main():
     # These raise OSError if output can't be written
     a.write_instructions(args.output, args.emit_line_directives)
 
-    a.assign_op_ids()
+    a.assign_opcode_ids()
     a.write_opcode_ids(args.opcode_ids_h, args.opcode_targets_h)
     a.write_metadata(args.metadata, args.pymetadata)
     a.write_executor_instructions(args.executor_cases, args.emit_line_directives)
