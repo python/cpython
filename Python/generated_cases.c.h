@@ -978,13 +978,11 @@
             retval = stack_pointer[-1];
             assert(EMPTY());
             SAVE_FRAME_STATE();  // Signals to the code generator
-            #if TIER_ONE
             _Py_LeaveRecursiveCallPy(tstate);
-            assert(frame != &entry_frame);
-            #endif
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
             #if TIER_ONE
+            assert(frame != &entry_frame);
             frame = cframe.current_frame = dying->previous;
             #endif
             #if TIER_TWO
@@ -1039,13 +1037,11 @@
             {
                 assert(EMPTY());
                 SAVE_FRAME_STATE();  // Signals to the code generator
-                #if TIER_ONE
                 _Py_LeaveRecursiveCallPy(tstate);
-                assert(frame != &entry_frame);
-                #endif
                 // GH-99729: We need to unlink the frame *before* clearing it:
                 _PyInterpreterFrame *dying = frame;
                 #if TIER_ONE
+                assert(frame != &entry_frame);
                 frame = cframe.current_frame = dying->previous;
                 #endif
                 #if TIER_TWO
