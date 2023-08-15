@@ -4840,6 +4840,21 @@ class DSLParser:
 
         self.next(self.state_modulename_name, line)
 
+    def update_function_kind(self, fullname: str) -> None:
+        fields = fullname.split('.')
+        name = fields.pop()
+        _, cls = self.clinic._module_and_class(fields)
+        if name in unsupported_special_methods:
+            fail(f"{name!r} is a special method and cannot be converted to Argument Clinic!")
+        if name == '__new__':
+            if (self.kind is not CLASS_METHOD) or (not cls):
+                fail("'__new__' must be a class method!")
+            self.kind = METHOD_NEW
+        elif name == '__init__':
+            if (self.kind is not CALLABLE) or (not cls):
+                fail("'__init__' must be a normal method, not a class or static method!")
+            self.kind = METHOD_INIT
+
     def state_modulename_name(self, line: str) -> None:
         # looking for declaration, which establishes the leftmost column
         # line should be
@@ -4890,6 +4905,7 @@ class DSLParser:
                 function_name = fields.pop()
                 module, cls = self.clinic._module_and_class(fields)
 
+                self.update_function_kind(full_name)
                 overrides: dict[str, Any] = {
                     "name": function_name,
                     "full_name": full_name,
@@ -4951,20 +4967,9 @@ class DSLParser:
         function_name = fields.pop()
         module, cls = self.clinic._module_and_class(fields)
 
-        fields = full_name.split('.')
-        if fields[-1] in unsupported_special_methods:
-            fail(f"{fields[-1]} is a special method and cannot be converted to Argument Clinic!  (Yet.)")
-
-        if fields[-1] == '__new__':
-            if (self.kind is not CLASS_METHOD) or (not cls):
-                fail("__new__ must be a class method!")
-            self.kind = METHOD_NEW
-        elif fields[-1] == '__init__':
-            if (self.kind is not CALLABLE) or (not cls):
-                fail("__init__ must be a normal method, not a class or static method!")
-            self.kind = METHOD_INIT
-            if not return_converter:
-                return_converter = init_return_converter()
+        self.update_function_kind(full_name)
+        if self.kind is METHOD_INIT and not return_converter:
+            return_converter = init_return_converter()
 
         if not return_converter:
             return_converter = CReturnConverter()
