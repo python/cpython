@@ -5139,6 +5139,8 @@ static PyObject *
 Pointer_get_contents(CDataObject *self, void *closure)
 {
     StgDictObject *stgdict;
+    PyObject *ptr2ptr;
+    CDataObject *p2p;
 
     if (*(void **)self->b_ptr == NULL) {
         PyErr_SetString(PyExc_ValueError,
@@ -5148,38 +5150,36 @@ Pointer_get_contents(CDataObject *self, void *closure)
 
     stgdict = PyObject_stgdict((PyObject *)self);
     assert(stgdict); /* Cannot be NULL for pointer instances */
+    assert(stgdict->proto);
 
-    PyObject *keep = GetKeepedObjects(self);
-    if (keep != NULL) {
-        // check if it's a pointer to a pointer:
-        // pointers will have '0' key in the _objects
-        int ptr_probe = PyDict_ContainsString(keep, "0");
-        if (ptr_probe < 0) {
+    if (self->b_objects != NULL && PyDict_CheckExact(self->b_objects)) {
+        // Pointer_set_contents uses KeepRef(self, 1, value); we retrieve that
+        ptr2ptr = PyDict_GetItemString(self->b_objects, "1");
+        if (ptr2ptr ==  NULL) {
+            PyErr_SetString(PyExc_ValueError,
+            "Unexpected NULL pointer in _objects");
             return NULL;
         }
-        if (ptr_probe) {
-            PyObject *item;
-            if (PyDict_GetItemStringRef(keep, "1", &item) < 0) {
-                return NULL;
-            }
-            if (item == NULL) {
-                PyErr_SetString(PyExc_ValueError,
-                                "Unexpected NULL pointer in _objects");
-                return NULL;
-            }
-#ifndef NDEBUG
-            CDataObject *ptr2ptr = (CDataObject *)item;
-            // Don't construct a new object,
-            // return existing one instead to preserve refcount.
-            // Double-check that we are returning the same thing.
+        // if our base pointer is cast from another type,
+        // its `_type_` proto will be incompatible with the
+        // type of the object stored in `b_objects["1"]` because
+        // `_objects` is shared between casts and the original.
+        int res = PyObject_IsInstance(ptr2ptr, stgdict->proto);
+        if (res == -1) {
+            return NULL;
+        }
+        if (res) {
+            // It's not a cast: don't construct a new object,
+            // return existing one instead to preserve refcount
+            p2p = (CDataObject*) ptr2ptr;
             assert(
-                *(void**) self->b_ptr == ptr2ptr->b_ptr ||
-                *(void**) self->b_value.c == ptr2ptr->b_ptr ||
-                *(void**) self->b_ptr == ptr2ptr->b_value.c ||
-                *(void**) self->b_value.c == ptr2ptr->b_value.c
-            );
-#endif
-            return item;
+                *(void**) self->b_ptr == p2p->b_ptr ||
+                *(void**) self->b_value.c == p2p->b_ptr ||
+                *(void**) self->b_ptr == p2p->b_value.c ||
+                *(void**) self->b_value.c == p2p->b_value.c
+            ); // double-check that we are returning the same thing
+            Py_INCREF(ptr2ptr);
+            return ptr2ptr;
         }
     }
 
