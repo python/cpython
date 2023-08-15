@@ -207,8 +207,8 @@ Data Types
 
    .. method:: EnumType.__dir__(cls)
 
-      Returns ``['__class__', '__contains__', '__doc__', '__getitem__', '__iter__', '__len__', '__members__', '__module__', '__name__', '__qualname__']``
-      and the names of the members in *cls*::
+      Returns the names of the members in *cls* and
+      ``['__class__', '__contains__', '__doc__', '__getitem__', '__iter__', '__len__', '__members__', '__module__', '__name__', '__qualname__']``::
 
         >>> dir(Color)
         ['BLUE', 'GREEN', 'RED', '__class__', '__contains__', '__doc__', '__getitem__', '__init_subclass__', '__iter__', '__len__', '__members__', '__module__', '__name__', '__qualname__']
@@ -278,8 +278,8 @@ Data Types
 
    .. method:: Enum.__dir__(self)
 
-      Returns ``['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'value']``,
-      enum members, and any public methods defined on *self.__class__*::
+      Returns the names of the enum members and any public methods defined on
+      *self.__class__*, as well as ``['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'value']``::
 
          >>> from datetime import date
          >>> class Weekday(Enum):
