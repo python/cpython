@@ -4879,9 +4879,11 @@ class DSLParser:
         before, equals, existing = line.rpartition('=')
         c_basename: str | None
         if equals:
-            full_name, _, c_basename = before.partition(' as ')
+            full_name, as_, c_basename = before.partition(' as ')
             full_name = full_name.strip()
             c_basename = c_basename.strip()
+            if as_ and not c_basename:
+                fail("No C basename provided after 'as' keyword")
             existing = existing.strip()
             if (is_legal_py_identifier(full_name) and
                 (not c_basename or is_legal_c_identifier(c_basename)) and
@@ -4932,10 +4934,11 @@ class DSLParser:
         line, _, returns = line.partition('->')
         returns = returns.strip()
 
-        full_name, _, c_basename = line.partition(' as ')
+        full_name, as_, c_basename = line.partition(' as ')
         full_name = full_name.strip()
         c_basename = c_basename.strip() or None
-
+        if as_ and not c_basename:
+            fail("No C basename provided after 'as' keyword")
         if not is_legal_py_identifier(full_name):
             fail(f"Illegal function name: {full_name!r}")
         if c_basename and not is_legal_c_identifier(c_basename):
