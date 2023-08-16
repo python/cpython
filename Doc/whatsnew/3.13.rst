@@ -144,6 +144,13 @@ pathlib
   :meth:`~pathlib.Path.is_dir`.
   (Contributed by Barney Gale in :gh:`77609` and :gh:`105793`.)
 
+sqlite3
+-------
+
+* A :exc:`ResourceWarning` is now emitted if a :class:`sqlite3.Connection`
+  object is not :meth:`closed <sqlite3.connection.close>` explicitly.
+  (Contributed by Erlend E. Aasland in :gh:`105539`.)
+
 traceback
 ---------
 
