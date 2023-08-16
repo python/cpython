@@ -3,5 +3,5 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "newtypes_tutorial"
+name = "custom"
 version = "1"

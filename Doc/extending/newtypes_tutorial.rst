@@ -194,35 +194,31 @@ This adds the type to the module dictionary.  This allows us to create
    >>> mycustom = custom.Custom()
 
 That's it!  All that remains is to build it; put the above code in a file called
-:file:`custom.c` and:
+:file:`custom.c`,
+
+.. literalinclude:: ../includes/newtypes/pyproject.toml
+
+in a file called :file:`pyproject.toml`, and
 
 .. code-block:: python
 
-   from distutils.core import setup, Extension
-   setup(name="custom", version="1.0",
-         ext_modules=[Extension("custom", ["custom.c"])])
+   from setuptools import Extension, setup
+   setup(ext_modules=[Extension("custom", ["custom.c"])])
 
 in a file called :file:`setup.py`; then typing
 
 .. code-block:: shell-session
 
-   $ python setup.py build
+   $ python -m pip install .
 
-at a shell should produce a file :file:`custom.so` in a subdirectory; move to
-that directory and fire up Python --- you should be able to ``import custom`` and
-play around with Custom objects.
+in a shell should produce a file :file:`custom.so` in a subdirectory
+and install it; now fire up Python --- you should be able to ``import custom``
+and play around with ``Custom`` objects.
 
 That wasn't so hard, was it?
 
 Of course, the current Custom type is pretty uninteresting. It has no data and
 doesn't do anything. It can't even be subclassed.
-
-.. note::
-   While this documentation showcases the standard :mod:`!distutils` module
-   for building C extensions, it is recommended in real-world use cases to
-   use the newer and better-maintained ``setuptools`` library.  Documentation
-   on how to do this is out of scope for this document and can be found in
-   the `Python Packaging User's Guide <https://packaging.python.org/tutorials/distributing-packages/>`_.
 
 
 Adding data and methods to the Basic example
@@ -514,17 +510,21 @@ We rename :c:func:`!PyInit_custom` to :c:func:`!PyInit_custom2`, update the
 module name in the :c:type:`PyModuleDef` struct, and update the full class
 name in the :c:type:`PyTypeObject` struct.
 
-Finally, we update our :file:`setup.py` file to build the new module:
+Finally, we update our :file:`setup.py` file to include the new module,
 
 .. code-block:: python
 
-   from distutils.core import setup, Extension
-   setup(name="custom", version="1.0",
-         ext_modules=[
-            Extension("custom", ["custom.c"]),
-            Extension("custom2", ["custom2.c"]),
-            ])
+   from setuptools import Extension, setup
+   setup(ext_modules=[
+       Extension("custom", ["custom.c"]),
+       Extension("custom2", ["custom2.c"]),
+   ])
 
+and then we re-install so that we can ``import custom2``:
+
+.. code-block:: shell-session
+
+   $ python -m pip install .
 
 Providing finer control over data attributes
 ============================================
