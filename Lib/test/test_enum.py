@@ -38,7 +38,7 @@ def load_tests(loader, tests, ignore):
                 ))
     return tests
 
-def reraise_enum_exceptions(*enum_types_or_exceptions):
+def reraise_if_not_enum(*enum_types_or_exceptions):
     from functools import wraps
 
     def decorator(func):
@@ -1164,7 +1164,7 @@ class TestSpecial(unittest.TestCase):
                 green = 2
                 blue = 3
 
-    @reraise_enum_exceptions(Theory)
+    @reraise_if_not_enum(Theory)
     def test_enum_function_with_qualname(self):
         self.assertEqual(Theory.__qualname__, 'spanish_inquisition')
 
@@ -1394,7 +1394,7 @@ class TestSpecial(unittest.TestCase):
         test_pickle_dump_load(self.assertIs, MyUnBrokenEnum.I)
         test_pickle_dump_load(self.assertIs, MyUnBrokenEnum)
 
-    @reraise_enum_exceptions(FloatStooges)
+    @reraise_if_not_enum(FloatStooges)
     def test_floatenum_fromhex(self):
         h = float.hex(FloatStooges.MOE.value)
         self.assertIs(FloatStooges.fromhex(h), FloatStooges.MOE)
@@ -1515,7 +1515,7 @@ class TestSpecial(unittest.TestCase):
         self.assertIs(ThreePart((3, 3.0, 'three')), ThreePart.THREE)
         self.assertIs(ThreePart(3, 3.0, 'three'), ThreePart.THREE)
 
-    @reraise_enum_exceptions(IntStooges)
+    @reraise_if_not_enum(IntStooges)
     def test_intenum_from_bytes(self):
         self.assertIs(IntStooges.from_bytes(b'\x00\x03', 'big'), IntStooges.MOE)
         with self.assertRaises(ValueError):
@@ -1544,27 +1544,27 @@ class TestSpecial(unittest.TestCase):
             class Huh(MyStr, MyInt, Enum):
                 One = 1
 
-    @reraise_enum_exceptions(Stooges)
+    @reraise_if_not_enum(Stooges)
     def test_pickle_enum(self):
         test_pickle_dump_load(self.assertIs, Stooges.CURLY)
         test_pickle_dump_load(self.assertIs, Stooges)
 
-    @reraise_enum_exceptions(IntStooges)
+    @reraise_if_not_enum(IntStooges)
     def test_pickle_int(self):
         test_pickle_dump_load(self.assertIs, IntStooges.CURLY)
         test_pickle_dump_load(self.assertIs, IntStooges)
 
-    @reraise_enum_exceptions(FloatStooges)
+    @reraise_if_not_enum(FloatStooges)
     def test_pickle_float(self):
         test_pickle_dump_load(self.assertIs, FloatStooges.CURLY)
         test_pickle_dump_load(self.assertIs, FloatStooges)
 
-    @reraise_enum_exceptions(Answer)
+    @reraise_if_not_enum(Answer)
     def test_pickle_enum_function(self):
         test_pickle_dump_load(self.assertIs, Answer.him)
         test_pickle_dump_load(self.assertIs, Answer)
 
-    @reraise_enum_exceptions(Question)
+    @reraise_if_not_enum(Question)
     def test_pickle_enum_function_with_module(self):
         test_pickle_dump_load(self.assertIs, Question.who)
         test_pickle_dump_load(self.assertIs, Question)
@@ -1628,7 +1628,7 @@ class TestSpecial(unittest.TestCase):
                 [Season.SUMMER, Season.WINTER, Season.AUTUMN, Season.SPRING],
                 )
 
-    @reraise_enum_exceptions(Name)
+    @reraise_if_not_enum(Name)
     def test_subclassing(self):
         self.assertEqual(Name.BDFL, 'Guido van Rossum')
         self.assertTrue(Name.BDFL, Name('Guido van Rossum'))
@@ -3365,7 +3365,7 @@ class OldTestFlag(unittest.TestCase):
             self.assertIn(e, Perm)
             self.assertIs(type(e), Perm)
 
-    @reraise_enum_exceptions(
+    @reraise_if_not_enum(
         FlagStooges,
         FlagStoogesWithZero,
         IntFlagStooges,
@@ -3676,7 +3676,7 @@ class OldTestIntFlag(unittest.TestCase):
         self.assertTrue(isinstance(Open.WO | Open.RW, Open))
         self.assertEqual(Open.WO | Open.RW, 3)
 
-    @reraise_enum_exceptions(HeadlightsK)
+    @reraise_if_not_enum(HeadlightsK)
     def test_global_repr_keep(self):
         self.assertEqual(
                 repr(HeadlightsK(0)),
@@ -3691,7 +3691,7 @@ class OldTestIntFlag(unittest.TestCase):
                 '%(m)s.HeadlightsK(8)' % {'m': SHORT_MODULE},
                 )
 
-    @reraise_enum_exceptions(HeadlightsC)
+    @reraise_if_not_enum(HeadlightsC)
     def test_global_repr_conform1(self):
         self.assertEqual(
                 repr(HeadlightsC(0)),
@@ -3706,7 +3706,7 @@ class OldTestIntFlag(unittest.TestCase):
                 '%(m)s.OFF_C' % {'m': SHORT_MODULE},
                 )
 
-    @reraise_enum_exceptions(NoName)
+    @reraise_if_not_enum(NoName)
     def test_global_enum_str(self):
         self.assertEqual(str(NoName.ONE & NoName.TWO), 'NoName(0)')
         self.assertEqual(str(NoName(0)), 'NoName(0)')
