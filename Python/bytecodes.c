@@ -2990,12 +2990,11 @@ dummy_func(
             _PyFrame_SetStackPointer(frame, stack_pointer);
             new_frame->previous = frame;
             CALL_STAT_INC(inlined_py_calls);
+            frame = tstate->current_frame = new_frame;
             #if TIER_ONE
-            frame = cframe.current_frame = new_frame;
             goto start_frame;
             #endif
             #if TIER_TWO
-            frame = tstate->cframe->current_frame = new_frame;
             ERROR_IF(_Py_EnterRecursivePy(tstate), exit_unwind);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
