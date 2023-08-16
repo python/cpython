@@ -2454,7 +2454,6 @@ ATOMIC_GROUP
 17: SUCCESS
 ''')
 
-    @unittest.expectedFailure  # gh-106052
     def test_possesive_repeat_one(self):
         self.assertEqual(get_debug_out(r'a?+'), '''\
 POSSESSIVE_REPEAT 0 1
@@ -2467,7 +2466,6 @@ POSSESSIVE_REPEAT 0 1
 12: SUCCESS
 ''')
 
-    @unittest.expectedFailure  # gh-106052
     def test_possesive_repeat(self):
         self.assertEqual(get_debug_out(r'(?:ab)?+'), '''\
 POSSESSIVE_REPEAT 0 1
