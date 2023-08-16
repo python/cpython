@@ -172,6 +172,10 @@ class TypeParamsAliasValueTest(unittest.TestCase):
         type MissingName = list[_My_X]
         with self.assertRaisesRegex(NameError, "name '_My_X' is not defined"):
             MissingName.__value__
+        _My_X = int
+        self.assertEquals(MissingName.__value__,  list[int])
+        del _My_X
+        self.assertEquals(MissingName.__value__,  list[int])        
 
         type ExprException = 1 / 0
         with self.assertRaises(ZeroDivisionError):
