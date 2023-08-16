@@ -74,8 +74,6 @@ jobs:
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@v3
-    - name: Register Sphinx problem matcher
-      run: echo "::add-matcher::.github/problem-matchers/sphinx.json"
     - uses: actions/cache@v3
       with:
         path: ~/.cache/pip
