@@ -148,7 +148,7 @@ sqlite3
 -------
 
 * A :exc:`ResourceWarning` is now emitted if a :class:`sqlite3.Connection`
-  object is not :meth:`closed <sqlite3.connection.close>` explicitly.
+  object is not :meth:`closed <sqlite3.Connection.close>` explicitly.
   (Contributed by Erlend E. Aasland in :gh:`105539`.)
 
 traceback
