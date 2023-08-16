@@ -51,6 +51,8 @@ _testcapi = import_helper.import_module('_testcapi')
 import _testinternalcapi
 
 
+NULL = None
+
 def decode_stderr(err):
     return err.decode('utf-8', 'replace').replace('\r', '')
 
@@ -298,137 +300,6 @@ class CAPITest(unittest.TestCase):
 
     def test_buildvalue_N(self):
         _testcapi.test_buildvalue_N()
-
-    def test_mapping_keys_values_items(self):
-        class Mapping1(dict):
-            def keys(self):
-                return list(super().keys())
-            def values(self):
-                return list(super().values())
-            def items(self):
-                return list(super().items())
-        class Mapping2(dict):
-            def keys(self):
-                return tuple(super().keys())
-            def values(self):
-                return tuple(super().values())
-            def items(self):
-                return tuple(super().items())
-        dict_obj = {'foo': 1, 'bar': 2, 'spam': 3}
-
-        for mapping in [{}, OrderedDict(), Mapping1(), Mapping2(),
-                        dict_obj, OrderedDict(dict_obj),
-                        Mapping1(dict_obj), Mapping2(dict_obj)]:
-            self.assertListEqual(_testcapi.get_mapping_keys(mapping),
-                                 list(mapping.keys()))
-            self.assertListEqual(_testcapi.get_mapping_values(mapping),
-                                 list(mapping.values()))
-            self.assertListEqual(_testcapi.get_mapping_items(mapping),
-                                 list(mapping.items()))
-
-    def test_mapping_keys_values_items_bad_arg(self):
-        self.assertRaises(AttributeError, _testcapi.get_mapping_keys, None)
-        self.assertRaises(AttributeError, _testcapi.get_mapping_values, None)
-        self.assertRaises(AttributeError, _testcapi.get_mapping_items, None)
-
-        class BadMapping:
-            def keys(self):
-                return None
-            def values(self):
-                return None
-            def items(self):
-                return None
-        bad_mapping = BadMapping()
-        self.assertRaises(TypeError, _testcapi.get_mapping_keys, bad_mapping)
-        self.assertRaises(TypeError, _testcapi.get_mapping_values, bad_mapping)
-        self.assertRaises(TypeError, _testcapi.get_mapping_items, bad_mapping)
-
-    def test_mapping_has_key(self):
-        dct = {'a': 1}
-        self.assertTrue(_testcapi.mapping_has_key(dct, 'a'))
-        self.assertFalse(_testcapi.mapping_has_key(dct, 'b'))
-
-        class SubDict(dict):
-            pass
-
-        dct2 = SubDict({'a': 1})
-        self.assertTrue(_testcapi.mapping_has_key(dct2, 'a'))
-        self.assertFalse(_testcapi.mapping_has_key(dct2, 'b'))
-
-    def test_sequence_set_slice(self):
-        # Correct case:
-        data = [1, 2, 3, 4, 5]
-        data_copy = data.copy()
-
-        _testcapi.sequence_set_slice(data, 1, 3, [8, 9])
-        data_copy[1:3] = [8, 9]
-        self.assertEqual(data, data_copy)
-        self.assertEqual(data, [1, 8, 9, 4, 5])
-
-        # Custom class:
-        class Custom:
-            def __setitem__(self, index, value):
-                self.index = index
-                self.value = value
-
-        c = Custom()
-        _testcapi.sequence_set_slice(c, 0, 5, 'abc')
-        self.assertEqual(c.index, slice(0, 5))
-        self.assertEqual(c.value, 'abc')
-
-        # Immutable sequences must raise:
-        bad_seq1 = (1, 2, 3, 4)
-        with self.assertRaises(TypeError):
-            _testcapi.sequence_set_slice(bad_seq1, 1, 3, (8, 9))
-        self.assertEqual(bad_seq1, (1, 2, 3, 4))
-
-        bad_seq2 = 'abcd'
-        with self.assertRaises(TypeError):
-            _testcapi.sequence_set_slice(bad_seq2, 1, 3, 'xy')
-        self.assertEqual(bad_seq2, 'abcd')
-
-        # Not a sequence:
-        with self.assertRaises(TypeError):
-            _testcapi.sequence_set_slice(None, 1, 3, 'xy')
-
-    def test_sequence_del_slice(self):
-        # Correct case:
-        data = [1, 2, 3, 4, 5]
-        data_copy = data.copy()
-
-        _testcapi.sequence_del_slice(data, 1, 3)
-        del data_copy[1:3]
-        self.assertEqual(data, data_copy)
-        self.assertEqual(data, [1, 4, 5])
-
-        # Custom class:
-        class Custom:
-            def __delitem__(self, index):
-                self.index = index
-
-        c = Custom()
-        _testcapi.sequence_del_slice(c, 0, 5)
-        self.assertEqual(c.index, slice(0, 5))
-
-        # Immutable sequences must raise:
-        bad_seq1 = (1, 2, 3, 4)
-        with self.assertRaises(TypeError):
-            _testcapi.sequence_del_slice(bad_seq1, 1, 3)
-        self.assertEqual(bad_seq1, (1, 2, 3, 4))
-
-        bad_seq2 = 'abcd'
-        with self.assertRaises(TypeError):
-            _testcapi.sequence_del_slice(bad_seq2, 1, 3)
-        self.assertEqual(bad_seq2, 'abcd')
-
-        # Not a sequence:
-        with self.assertRaises(TypeError):
-            _testcapi.sequence_del_slice(None, 1, 3)
-
-        mapping = {1: 'a', 2: 'b', 3: 'c'}
-        with self.assertRaises(KeyError):
-            _testcapi.sequence_del_slice(mapping, 1, 3)
-        self.assertEqual(mapping, {1: 'a', 2: 'b', 3: 'c'})
 
     @unittest.skipUnless(hasattr(_testcapi, 'negative_refcount'),
                          'need _testcapi.negative_refcount')
@@ -1120,6 +991,46 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(d.extra, 30)
         del d.extra
         self.assertIsNone(d.extra)
+
+    def test_sys_getobject(self):
+        getobject = _testcapi.sys_getobject
+
+        self.assertIs(getobject(b'stdout'), sys.stdout)
+        with support.swap_attr(sys, '\U0001f40d', 42):
+            self.assertEqual(getobject('\U0001f40d'.encode()), 42)
+
+        self.assertIs(getobject(b'nonexisting'), AttributeError)
+        self.assertIs(getobject(b'\xff'), AttributeError)
+        # CRASHES getobject(NULL)
+
+    def test_sys_setobject(self):
+        setobject = _testcapi.sys_setobject
+
+        value = ['value']
+        value2 = ['value2']
+        try:
+            self.assertEqual(setobject(b'newattr', value), 0)
+            self.assertIs(sys.newattr, value)
+            self.assertEqual(setobject(b'newattr', value2), 0)
+            self.assertIs(sys.newattr, value2)
+            self.assertEqual(setobject(b'newattr', NULL), 0)
+            self.assertFalse(hasattr(sys, 'newattr'))
+            self.assertEqual(setobject(b'newattr', NULL), 0)
+        finally:
+            with contextlib.suppress(AttributeError):
+                del sys.newattr
+        try:
+            self.assertEqual(setobject('\U0001f40d'.encode(), value), 0)
+            self.assertIs(getattr(sys, '\U0001f40d'), value)
+            self.assertEqual(setobject('\U0001f40d'.encode(), NULL), 0)
+            self.assertFalse(hasattr(sys, '\U0001f40d'))
+        finally:
+            with contextlib.suppress(AttributeError):
+                delattr(sys, '\U0001f40d')
+
+        with self.assertRaises(UnicodeDecodeError):
+            setobject(b'\xff', value)
+        # CRASHES setobject(NULL, value)
 
 
 @requires_limited_api
