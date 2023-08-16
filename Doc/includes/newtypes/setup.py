@@ -1,9 +1,8 @@
-from distutils.core import setup, Extension
-setup(name="noddy", version="1.0",
-      ext_modules=[
-         Extension("noddy", ["noddy.c"]),
-         Extension("noddy2", ["noddy2.c"]),
-         Extension("noddy3", ["noddy3.c"]),
-         Extension("noddy4", ["noddy4.c"]),
-         Extension("shoddy", ["shoddy.c"]),
-         ])
+from setuptools import Extension, setup
+setup(ext_modules=[
+   Extension("custom", ["custom.c"]),
+   Extension("custom2", ["custom2.c"]),
+   Extension("custom3", ["custom3.c"]),
+   Extension("custom4", ["custom4.c"]),
+   Extension("sublist", ["sublist.c"]),
+])
