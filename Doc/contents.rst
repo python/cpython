@@ -21,10 +21,3 @@
    bugs.rst
    copyright.rst
    license.rst
-
-.. to include legacy packaging docs in build
-
-.. toctree::
-   :hidden:
-
-   install/index.rst
