@@ -606,6 +606,10 @@ pop_jump_if_bool:
                             case OPARG_BOTTOM:  // Second half of super-instr
                                 oparg = orig_oparg & 0xF;
                                 break;
+                            case OPARG_SAVE_IP:  // op==SAVE_IP; oparg=next instr
+                                oparg = INSTR_IP(instr + offset, code);
+                                break;
+
                             default:
                                 fprintf(stderr,
                                         "opcode=%d, oparg=%d; nuops=%d, i=%d; size=%d, offset=%d\n",
@@ -615,6 +619,11 @@ pop_jump_if_bool:
                                 Py_FatalError("garbled expansion");
                         }
                         ADD_TO_TRACE(expansion->uops[i].uop, oparg, operand);
+                        if (expansion->uops[i].uop == _PUSH_FRAME) {
+                            assert(i + 1 == nuops);
+                            ADD_TO_TRACE(SAVE_IP, 0, 0);
+                            goto done;
+                        }
                     }
                     break;
                 }
