@@ -2357,7 +2357,7 @@ Buffer Object Structures
    Except for point (3), an implementation of this function MUST take these
    steps:
 
-   (1) Check if the request can be met. If not, raise :c:data:`PyExc_BufferError`,
+   (1) Check if the request can be met. If not, raise :exc:`BufferError`,
        set :c:expr:`view->obj` to ``NULL`` and return ``-1``.
 
    (2) Fill in the requested fields.
