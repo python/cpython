@@ -297,10 +297,12 @@ class Printer:
             self.write(f".co_linetable = {co_linetable},")
             self.write(f"._co_cached = NULL,")
             self.write(f".co_code_adaptive = {co_code_adaptive},")
-            for i, op in enumerate(code.co_code[::2]):
+            first_traceable = 0
+            for op in code.co_code[::2]:
                 if op == RESUME:
-                    self.write(f"._co_firsttraceable = {i},")
                     break
+                first_traceable += 1
+            self.write(f"._co_firsttraceable = {first_traceable},")
         name_as_code = f"(PyCodeObject *)&{name}"
         self.finis.append(f"_PyStaticCode_Fini({name_as_code});")
         self.inits.append(f"_PyStaticCode_Init({name_as_code})")
