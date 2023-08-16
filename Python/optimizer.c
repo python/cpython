@@ -684,6 +684,14 @@ pop_jump_if_bool:
                                     ADD_TO_TRACE(SAVE_IP, 0, 0);
                                     goto done;
                                 }
+                                if (new_code->co_version != func_version) {
+                                    // func.__code__ was updated.
+                                    // Perhaps it may happen again, so don't bother tracing.
+                                    // TODO: Reason about this -- is it better to bail or not?
+                                    DPRINTF(2, "Bailing because co_version != func_version\n");
+                                    ADD_TO_TRACE(SAVE_IP, 0, 0);
+                                    goto done;
+                                }
                                 // Increment IP to the return address
                                 instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + 1;
                                 TRACE_STACK_PUSH();
