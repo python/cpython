@@ -45,12 +45,14 @@ See the *"Multiple modules in one library"* section in :pep:`489` for details.
 
 .. highlight:: c
 
+.. _building-on-windows:
 .. _setuptools-index:
 
 Building C and C++ Extensions with setuptools
 =============================================
 
 Python 3.12 and newer no longer come with distutils. Please refer to the
-``setuptools`` documentation at
-https://setuptools.pypa.io/en/latest/userguide/ext_modules.html
+``setuptools`` documentation for `building extension modules`_
 to learn more about how build and distribute C/C++ extensions with setuptools.
+
+.. _building extension modules: https://setuptools.pypa.io/en/latest/userguide/ext_modules.html
