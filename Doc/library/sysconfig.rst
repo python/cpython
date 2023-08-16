@@ -103,13 +103,159 @@ identifier.  Python currently uses eight paths:
 - *platstdlib*: directory containing the standard Python library files that are
   platform-specific.
 - *platlib*: directory for site-specific, platform-specific files.
-- *purelib*: directory for site-specific, non-platform-specific files.
+- *purelib*: directory for site-specific, non-platform-specific files ('pure' Python).
 - *include*: directory for non-platform-specific header files for
   the Python C-API.
 - *platinclude*: directory for platform-specific header files for
   the Python C-API.
 - *scripts*: directory for script files.
 - *data*: directory for data files.
+
+
+.. _sysconfig-user-scheme:
+
+User scheme
+---------------
+
+This scheme is designed to be the most convenient solution for users that don't
+have write permission to the global site-packages directory or don't want to
+install into it.
+
+Files will be installed into subdirectories of :const:`site.USER_BASE` (written
+as :file:`{userbase}` hereafter).  This scheme installs pure Python modules and
+extension modules in the same location (also known as :const:`site.USER_SITE`).
+
+``posix_user``
+^^^^^^^^^^^^^^
+
+============== ===========================================================
+Path           Installation directory
+============== ===========================================================
+*stdlib*       :file:`{userbase}/lib/python{X.Y}`
+*platstdlib*   :file:`{userbase}/lib/python{X.Y}`
+*platlib*      :file:`{userbase}/lib/python{X.Y}/site-packages`
+*purelib*      :file:`{userbase}/lib/python{X.Y}/site-packages`
+*include*      :file:`{userbase}/include/python{X.Y}`
+*scripts*      :file:`{userbase}/bin`
+*data*         :file:`{userbase}`
+============== ===========================================================
+
+``nt_user``
+^^^^^^^^^^^
+
+============== ===========================================================
+Path           Installation directory
+============== ===========================================================
+*stdlib*       :file:`{userbase}\\Python{XY}`
+*platstdlib*   :file:`{userbase}\\Python{XY}`
+*platlib*      :file:`{userbase}\\Python{XY}\\site-packages`
+*purelib*      :file:`{userbase}\\Python{XY}\\site-packages`
+*include*      :file:`{userbase}\\Python{XY}\\Include`
+*scripts*      :file:`{userbase}\\Python{XY}\\Scripts`
+*data*         :file:`{userbase}`
+============== ===========================================================
+
+``osx_framework_user``
+^^^^^^^^^^^^^^^^^^^^^^
+
+============== ===========================================================
+Path           Installation directory
+============== ===========================================================
+*stdlib*       :file:`{userbase}/lib/python`
+*platstdlib*   :file:`{userbase}/lib/python`
+*platlib*      :file:`{userbase}/lib/python/site-packages`
+*purelib*      :file:`{userbase}/lib/python/site-packages`
+*include*      :file:`{userbase}/include/python{X.Y}`
+*scripts*      :file:`{userbase}/bin`
+*data*         :file:`{userbase}`
+============== ===========================================================
+
+
+.. _sysconfig-home-scheme:
+
+Home scheme
+-----------
+
+The idea behind the "home scheme" is that you build and maintain a personal
+stash of Python modules.  This scheme's name is derived from the idea of a
+"home" directory on Unix, since it's not unusual for a Unix user to make their
+home directory have a layout similar to :file:`/usr/` or :file:`/usr/local/`.
+This scheme can be used by anyone, regardless of the operating system they
+are installing for.
+
+``posix_home``
+^^^^^^^^^^^^^^
+
+============== ===========================================================
+Path           Installation directory
+============== ===========================================================
+*stdlib*       :file:`{home}/lib/python`
+*platstdlib*   :file:`{home}/lib/python`
+*platlib*      :file:`{home}/lib/python`
+*purelib*      :file:`{home}/lib/python`
+*include*      :file:`{home}/include/python`
+*platinclude*  :file:`{home}/include/python`
+*scripts*      :file:`{home}/bin`
+*data*         :file:`{home}`
+==============  ===========================================================
+
+
+.. _sysconfig-prefix-scheme:
+
+Prefix scheme
+-------------
+
+The "prefix scheme" is useful when you wish to use one Python installation to
+perform the build/install (i.e., to run the setup script), but install modules
+into the third-party module directory of a different Python installation (or
+something that looks like a different Python installation).  If this sounds a
+trifle unusual, it is---that's why the user and home schemes come before.  However,
+there are at least two known cases where the prefix scheme will be useful.
+
+First, consider that many Linux distributions put Python in :file:`/usr`, rather
+than the more traditional :file:`/usr/local`.  This is entirely appropriate,
+since in those cases Python is part of "the system" rather than a local add-on.
+However, if you are installing Python modules from source, you probably want
+them to go in :file:`/usr/local/lib/python2.{X}` rather than
+:file:`/usr/lib/python2.{X}`.
+
+Another possibility is a network filesystem where the name used to write to a
+remote directory is different from the name used to read it: for example, the
+Python interpreter accessed as :file:`/usr/local/bin/python` might search for
+modules in :file:`/usr/local/lib/python2.{X}`, but those modules would have to
+be installed to, say, :file:`/mnt/{@server}/export/lib/python2.{X}`.
+
+``posix_prefix``
+^^^^^^^^^^^^^^^^
+
+============== ==========================================================
+Path           Installation directory
+============== ==========================================================
+*stdlib*       :file:`{prefix}/lib/python{X.Y}`
+*platstdlib*   :file:`{prefix}/lib/python{X.Y}`
+*platlib*      :file:`{prefix}/lib/python{X.Y}/site-packages`
+*purelib*      :file:`{prefix}/lib/python{X.Y}/site-packages`
+*include*      :file:`{prefix}/include/python{X.Y}`
+*platinclude*  :file:`{prefix}/include/python{X.Y}`
+*scripts*      :file:`{prefix}/bin`
+*data*         :file:`{prefix}`
+============== ==========================================================
+
+``nt``
+^^^^^^
+
+============== ==========================================================
+Path           Installation directory
+============== ==========================================================
+*stdlib*       :file:`{prefix}\\Lib`
+*platstdlib*   :file:`{prefix}\\Lib`
+*platlib*      :file:`{prefix}\\Lib\\site-packages`
+*purelib*      :file:`{prefix}\\Lib\\site-packages`
+*include*      :file:`{prefix}\\Include`
+*platinclude*  :file:`{prefix}\\Include`
+*scripts*      :file:`{prefix}\\Scripts`
+*data*         :file:`{prefix}`
+============== ==========================================================
 
 
 Installation path functions
