@@ -100,13 +100,6 @@ def _compile(code, pattern, flags):
                 emit(ANY_ALL)
             else:
                 emit(ANY)
-        elif op is POSSESSIVE_REPEAT:
-            # gh-106052: Possessive quantifiers do not work when the
-            # subpattern contains backtracking, i.e. "(?:ab?c)*+".
-            # Implement it as equivalent greedy qualifier in atomic group.
-            p = [(MAX_REPEAT, av)]
-            p = [(ATOMIC_GROUP, p)]
-            _compile(code, p, flags)
         elif op in REPEATING_CODES:
             if flags & SRE_FLAG_TEMPLATE:
                 raise error("internal: unsupported template operator %r" % (op,))
