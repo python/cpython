@@ -86,8 +86,9 @@ You can get the version string for ``wheel`` by running the following:
     >>> version('wheel')  # doctest: +SKIP
     '0.32.3'
 
-You can also get a collection of entry points selectable by properties of the EntryPoint (typically 'group' or 'name'), such as
-``console_scripts``, ``distutils.commands`` and others.  Each group contains a
+You can also get a collection of entry points selectable by properties of
+the EntryPoint (typically 'group' or 'name'), such as
+``console_scripts``, ``gui_scripts`` and others.  Each group contains a
 collection of :ref:`EntryPoint <entry-points>` objects.
 
 You can get the :ref:`metadata for a distribution <metadata>`::
@@ -127,7 +128,7 @@ a collection of all ``EntryPoint`` objects with ``names`` and ``groups``
 attributes for convenience::
 
     >>> sorted(eps.groups)  # doctest: +SKIP
-    ['console_scripts', 'distutils.commands', 'distutils.setup_keywords', 'egg_info.writers', 'setuptools.installation']
+    {'array_api', 'console_scripts', 'gui_scripts', 'pytest11', 'sphinx.html_themes'}
 
 ``EntryPoints`` has a ``select`` method to select entry points
 matching specific properties. Select entry points in the
