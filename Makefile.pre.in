@@ -1545,12 +1545,16 @@ regen-cases:
 	    $(srcdir)/Tools/cases_generator/generate_cases.py \
 		$(CASESFLAG) \
 		-o $(srcdir)/Python/generated_cases.c.h.new \
+		-n $(srcdir)/Include/opcode_ids.h.new \
+		-t $(srcdir)/Python/opcode_targets.h.new \
 		-m $(srcdir)/Include/internal/pycore_opcode_metadata.h.new \
 		-e $(srcdir)/Python/executor_cases.c.h.new \
 		-p $(srcdir)/Lib/_opcode_metadata.py.new \
 		-a $(srcdir)/Python/abstract_interp_cases.c.h.new \
 		$(srcdir)/Python/bytecodes.c
 	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
+	$(UPDATE_FILE) $(srcdir)/Include/opcode_ids.h $(srcdir)/Include/opcode_ids.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_opcode_metadata.h $(srcdir)/Include/internal/pycore_opcode_metadata.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/executor_cases.c.h $(srcdir)/Python/executor_cases.c.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/abstract_interp_cases.c.h $(srcdir)/Python/abstract_interp_cases.c.h.new

@@ -528,21 +528,21 @@ class Generator(Analyzer):
                 for name in self.opmap:
                     self.out.emit(f'[{name}] = "{name}",')
 
+            deoptcodes = {}
+            for name, op in self.opmap.items():
+                if op < 256:
+                    deoptcodes[name] = name
+            for name, family in self.families.items():
+                for m in family.members:
+                    deoptcodes[m] = name
+            # special case:
+            deoptcodes['BINARY_OP_INPLACE_ADD_UNICODE'] = 'BINARY_OP'
+
             with self.metadata_item(
                 f"const uint8_t _PyOpcode_Deopt[256]", "=", ";"
             ):
-                deoptcodes = {}
-                for name, op in self.opmap.items():
-                    if op < 256:
-                        deoptcodes[name] = name
-                for name, family in self.families.items():
-                    for m in family.members:
-                        deoptcodes[m] = name
-                # special case:
-                deoptcodes['BINARY_OP_INPLACE_ADD_UNICODE'] = 'BINARY_OP'
-
                 for opt, deopt in sorted(deoptcodes.items()):
-                    self.out.emit(f"    [{opt}] = {deopt},")
+                    self.out.emit(f"[{opt}] = {deopt},")
 
             self.out.emit("")
             self.out.emit("#define EXTRA_CASES \\")
