@@ -191,7 +191,7 @@ Module contents
    :file:`~/Library/Python/{X.Y}` for macOS framework builds, and
    :file:`{%APPDATA%}\\Python` for Windows.  This value is used by Distutils to
    compute the installation directories for scripts, data files, Python modules,
-   etc. for the :ref:`user installation scheme <inst-alt-install-user>`.
+   etc. for the :ref:`user installation scheme <!inst-alt-install-user>`.
    See also :envvar:`PYTHONUSERBASE`.
 
 
