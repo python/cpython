@@ -148,7 +148,7 @@ class Annotations:
                     # Stable ABI was introduced in 3.2.
                     pass
                 else:
-                    emph_node += nodes.Text(sphinx_gettext(f' since version %s') % stable_added)
+                    emph_node += nodes.Text(sphinx_gettext(' since version %s') % stable_added)
                 emph_node += nodes.Text('.')
                 if struct_abi_kind == 'members':
                     emph_node += nodes.Text(
