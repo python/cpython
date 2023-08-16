@@ -132,14 +132,14 @@ class TransactionTests(unittest.TestCase):
 
     def test_rollback_cursor_consistency(self):
         """Check that cursors behave correctly after rollback."""
-        con = sqlite.connect(":memory:")
-        cur = con.cursor()
-        cur.execute("create table test(x)")
-        cur.execute("insert into test(x) values (5)")
-        cur.execute("select 1 union select 2 union select 3")
+        with memory_database() as con:
+            cur = con.cursor()
+            cur.execute("create table test(x)")
+            cur.execute("insert into test(x) values (5)")
+            cur.execute("select 1 union select 2 union select 3")
 
-        con.rollback()
-        self.assertEqual(cur.fetchall(), [(1,), (2,), (3,)])
+            con.rollback()
+            self.assertEqual(cur.fetchall(), [(1,), (2,), (3,)])
 
     def test_multiple_cursors_and_iternext(self):
         # gh-94028: statements are cleared and reset in cursor iternext.

@@ -24,6 +24,8 @@ import unittest
 import sqlite3 as sqlite
 from collections.abc import Sequence
 
+from .test_dbapi import memory_database
+
 
 def dict_factory(cursor, row):
     d = {}
@@ -45,10 +47,12 @@ class ConnectionFactoryTests(unittest.TestCase):
             def __init__(self, *args, **kwargs):
                 sqlite.Connection.__init__(self, *args, **kwargs)
 
-        for factory in DefectFactory, OkFactory:
-            with self.subTest(factory=factory):
-                con = sqlite.connect(":memory:", factory=factory)
-                self.assertIsInstance(con, factory)
+        with memory_database(factory=OkFactory) as con:
+            self.assertIsInstance(con, OkFactory)
+        regex = "Base Connection.__init__ not called."
+        with self.assertRaisesRegex(sqlite.ProgrammingError, regex):
+            with memory_database(factory=DefectFactory) as con:
+                self.assertIsInstance(con, DefectFactory)
 
     def test_connection_factory_relayed_call(self):
         # gh-95132: keyword args must not be passed as positional args
@@ -57,9 +61,9 @@ class ConnectionFactoryTests(unittest.TestCase):
                 kwargs["isolation_level"] = None
                 super(Factory, self).__init__(*args, **kwargs)
 
-        con = sqlite.connect(":memory:", factory=Factory)
-        self.assertIsNone(con.isolation_level)
-        self.assertIsInstance(con, Factory)
+        with memory_database(factory=Factory) as con:
+            self.assertIsNone(con.isolation_level)
+            self.assertIsInstance(con, Factory)
 
     def test_connection_factory_as_positional_arg(self):
         class Factory(sqlite.Connection):
@@ -74,10 +78,10 @@ class ConnectionFactoryTests(unittest.TestCase):
             r"parameters in Python 3.15."
         )
         with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
-            con = sqlite.connect(":memory:", 5.0, 0, None, True, Factory)
+            with memory_database(5.0, 0, None, True, Factory) as con:
+                self.assertIsNone(con.isolation_level)
+                self.assertIsInstance(con, Factory)
         self.assertEqual(cm.filename, __file__)
-        self.assertIsNone(con.isolation_level)
-        self.assertIsInstance(con, Factory)
 
 
 class CursorFactoryTests(unittest.TestCase):

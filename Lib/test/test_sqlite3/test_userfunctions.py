@@ -32,7 +32,7 @@ import sqlite3 as sqlite
 from unittest.mock import Mock, patch
 from test.support import bigmemtest, catch_unraisable_exception, gc_collect
 
-from test.test_sqlite3.test_dbapi import cx_limit
+from test.test_sqlite3.test_dbapi import cx_limit, memory_database
 
 
 def with_tracebacks(exc, regex="", name=""):
@@ -405,19 +405,19 @@ class FunctionTests(unittest.TestCase):
     def test_function_destructor_via_gc(self):
         # See bpo-44304: The destructor of the user function can
         # crash if is called without the GIL from the gc functions
-        dest = sqlite.connect(':memory:')
-        def md5sum(t):
-            return
+        with memory_database() as dest:
+            def md5sum(t):
+                return
 
-        dest.create_function("md5", 1, md5sum)
-        x = dest("create table lang (name, first_appeared)")
-        del md5sum, dest
+            dest.create_function("md5", 1, md5sum)
+            x = dest("create table lang (name, first_appeared)")
+            del md5sum, dest
 
-        y = [x]
-        y.append(y)
+            y = [x]
+            y.append(y)
 
-        del x,y
-        gc_collect()
+            del x,y
+            gc_collect()
 
     @with_tracebacks(OverflowError)
     def test_func_return_too_large_int(self):
@@ -513,6 +513,10 @@ class WindowFunctionTests(unittest.TestCase):
             from test order by x
         """
         self.con.create_window_function("sumint", 1, WindowSumInt)
+
+    def tearDown(self):
+        self.cur.close()
+        self.con.close()
 
     def test_win_sum_int(self):
         self.cur.execute(self.query % "sumint")
@@ -634,6 +638,7 @@ class AggregateTests(unittest.TestCase):
             """)
         cur.execute("insert into test(t, i, f, n, b) values (?, ?, ?, ?, ?)",
             ("foo", 5, 3.14, None, memoryview(b"blob"),))
+        cur.close()
 
         self.con.create_aggregate("nostep", 1, AggrNoStep)
         self.con.create_aggregate("nofinalize", 1, AggrNoFinalize)
@@ -646,9 +651,7 @@ class AggregateTests(unittest.TestCase):
         self.con.create_aggregate("aggtxt", 1, AggrText)
 
     def tearDown(self):
-        #self.cur.close()
-        #self.con.close()
-        pass
+        self.con.close()
 
     def test_aggr_error_on_create(self):
         with self.assertRaises(sqlite.OperationalError):
@@ -775,7 +778,7 @@ class AuthorizerTests(unittest.TestCase):
         self.con.set_authorizer(self.authorizer_cb)
 
     def tearDown(self):
-        pass
+        self.con.close()
 
     def test_table_access(self):
         with self.assertRaises(sqlite.DatabaseError) as cm:
