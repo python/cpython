@@ -30,14 +30,6 @@
 #undef ENABLE_SPECIALIZATION
 #define ENABLE_SPECIALIZATION 0
 
-#undef SAVE_FRAME_STATE
-#define SAVE_FRAME_STATE() \
-    do { \
-        /* Assume preceding SAVE_IP has set frame->prev_instr */ \
-        frame->prev_instr--; \
-        _PyFrame_SetStackPointer(frame, stack_pointer); \
-    } while (0)
-
 
 _PyInterpreterFrame *
 _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)

@@ -2991,7 +2991,7 @@ dummy_func(
             // Eventually this should be the only occurrence of this code.
             frame->return_offset = 0;
             assert(tstate->interp->eval_frame == NULL);
-            SAVE_FRAME_STATE();  // Signals to the code generator
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             new_frame->previous = frame;
             CALL_STAT_INC(inlined_py_calls);
             #if TIER_ONE
@@ -3013,6 +3013,7 @@ dummy_func(
             _CHECK_STACK_SPACE +
             _INIT_CALL_PY_EXACT_ARGS +
             SAVE_IP +  // Tier 2 only; special-cased oparg
+            SAVE_CURRENT_IP +  // Sets frame->prev_instr
             _PUSH_FRAME;
 
         inst(CALL_PY_WITH_DEFAULTS, (unused/1, func_version/2, callable, self_or_null, args[oparg] -- unused)) {
@@ -3773,6 +3774,16 @@ dummy_func(
 
         op(SAVE_IP, (--)) {
             frame->prev_instr = ip_offset + oparg;
+        }
+
+        op(SAVE_CURRENT_IP, (--)) {
+            #if TIER_ONE
+            frame->prev_instr = next_instr - 1;
+            #endif
+            #if TIER_TWO
+            // Relies on a preceding SAVE_IP
+            frame->prev_instr--;
+            #endif
         }
 
         op(EXIT_TRACE, (--)) {

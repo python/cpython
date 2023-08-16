@@ -775,6 +775,10 @@
             break;
         }
 
+        case SAVE_CURRENT_IP: {
+            break;
+        }
+
         case EXIT_TRACE: {
             break;
         }

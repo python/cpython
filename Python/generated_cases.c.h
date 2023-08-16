@@ -3808,16 +3808,26 @@
                     new_frame->localsplus[i] = args[i];
                 }
             }
+            // SAVE_CURRENT_IP
+            next_instr += 3;
+            {
+                #if TIER_ONE
+                frame->prev_instr = next_instr - 1;
+                #endif
+                #if TIER_TWO
+                // Relies on a preceding SAVE_IP
+                frame->prev_instr--;
+                #endif
+            }
             // _PUSH_FRAME
             STACK_SHRINK(oparg);
             STACK_SHRINK(2);
-            next_instr += 3;
             {
                 // Write it out explicitly because it's subtly different.
                 // Eventually this should be the only occurrence of this code.
                 frame->return_offset = 0;
                 assert(tstate->interp->eval_frame == NULL);
-                SAVE_FRAME_STATE();  // Signals to the code generator
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 new_frame->previous = frame;
                 CALL_STAT_INC(inlined_py_calls);
                 #if TIER_ONE

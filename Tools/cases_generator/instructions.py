@@ -60,7 +60,6 @@ class Instruction:
 
     # Computed by constructor
     always_exits: str  # If the block always exits, its last line; else ""
-    save_frame_state: bool  # Whether the instruction uses SAVE_FRAME_STATE()
     has_deopt: bool
     cache_offset: int
     cache_effects: list[parsing.CacheEffect]
@@ -84,7 +83,6 @@ class Instruction:
             self.block
         )
         self.always_exits = always_exits(self.block_text)
-        self.save_frame_state = variable_used(self.inst, "SAVE_FRAME_STATE")
         self.has_deopt = variable_used(self.inst, "DEOPT_IF")
         self.cache_effects = [
             effect for effect in inst.inputs if isinstance(effect, parsing.CacheEffect)
@@ -122,7 +120,7 @@ class Instruction:
     def is_viable_uop(self) -> bool:
         """Whether this instruction is viable as a uop."""
         dprint: typing.Callable[..., None] = lambda *args, **kwargs: None
-        if "PUSH_FRAME" in self.name:
+        if "FRAME" in self.name:
             dprint = print
 
         if self.name == "EXIT_TRACE":

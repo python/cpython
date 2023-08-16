@@ -324,10 +324,10 @@ def write_macro_instr(
             out.emit(f"PREDICTED({mac.name});")
         out.static_assert_family_size(mac.name, family, mac.cache_offset)
         try:
-            write_components(parts, out, TIER_ONE, mac.cache_offset)
+            next_instr_is_set = write_components(parts, out, TIER_ONE, mac.cache_offset)
         except AssertionError as err:
             raise AssertionError(f"Error writing macro {mac.name}") from err
-        if not parts[-1].instr.always_exits and not parts[-1].instr.save_frame_state:
+        if not parts[-1].instr.always_exits and not next_instr_is_set:
             if mac.cache_offset:
                 out.emit(f"next_instr += {mac.cache_offset};")
             out.emit("DISPATCH();")
@@ -338,7 +338,7 @@ def write_components(
     out: Formatter,
     tier: Tiers,
     cache_offset: int,
-) -> None:
+) -> bool:
     managers = get_managers(parts)
 
     all_vars: dict[str, StackEffect] = {}
@@ -359,6 +359,7 @@ def write_components(
     for name, eff in all_vars.items():
         out.declare(eff, None)
 
+    next_instr_is_set = False
     for mgr in managers:
         if len(parts) > 1:
             out.emit(f"// {mgr.instr.name}")
@@ -379,11 +380,14 @@ def write_components(
                     poke.as_stack_effect(lax=True),
                 )
 
-        if mgr.instr.save_frame_state:
+        if mgr.instr.name == "_PUSH_FRAME":
             # Adjust stack to min_offset (input effects materialized)
             out.stack_adjust(mgr.min_offset.deep, mgr.min_offset.high)
             # Use clone() since adjust_inverse() mutates final_offset
             mgr.adjust_inverse(mgr.final_offset.clone())
+
+        if mgr.instr.name == "SAVE_CURRENT_IP":
+            next_instr_is_set = True
             if cache_offset:
                 out.emit(f"next_instr += {cache_offset};")
 
@@ -393,7 +397,7 @@ def write_components(
             with out.block(""):
                 mgr.instr.write_body(out, -4, mgr.active_caches, tier)
 
-        if mgr is managers[-1] and not mgr.instr.save_frame_state:
+        if mgr is managers[-1] and not next_instr_is_set:
             # TODO: Explain why this adjustment is needed.
             out.stack_adjust(mgr.final_offset.deep, mgr.final_offset.high)
             # Use clone() since adjust_inverse() mutates final_offset
@@ -405,6 +409,8 @@ def write_components(
                     poke.as_stack_effect(),
                     poke.effect,
                 )
+
+    return next_instr_is_set
 
 
 def write_single_instr_for_abstract_interp(
