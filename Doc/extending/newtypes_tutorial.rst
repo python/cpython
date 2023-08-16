@@ -45,7 +45,7 @@ extension module :mod:`!custom`:
    allows defining heap-allocated extension types using the
    :c:func:`PyType_FromSpec` function, which isn't covered in this tutorial.
 
-.. literalinclude:: ../includes/custom.c
+.. literalinclude:: ../includes/newtypes/custom.c
 
 Now that's quite a bit to take in at once, but hopefully bits will seem familiar
 from the previous chapter.  This file defines three things:
@@ -232,7 +232,7 @@ Let's extend the basic example to add some data and methods.  Let's also make
 the type usable as a base class. We'll create a new module, :mod:`!custom2` that
 adds these capabilities:
 
-.. literalinclude:: ../includes/custom2.c
+.. literalinclude:: ../includes/newtypes/custom2.c
 
 
 This version of the module has a number of changes.
@@ -535,7 +535,7 @@ version of our module, the instance variables :attr:`!first` and :attr:`!last`
 could be set to non-string values or even deleted. We want to make sure that
 these attributes always contain strings.
 
-.. literalinclude:: ../includes/custom3.c
+.. literalinclude:: ../includes/newtypes/custom3.c
 
 
 To provide greater control, over the :attr:`!first` and :attr:`!last` attributes,
@@ -682,7 +682,7 @@ To allow a :class:`!Custom` instance participating in a reference cycle to
 be properly detected and collected by the cyclic GC, our :class:`!Custom` type
 needs to fill two additional slots and to enable a flag that enables these slots:
 
-.. literalinclude:: ../includes/custom4.c
+.. literalinclude:: ../includes/newtypes/custom4.c
 
 
 First, the traversal method lets the cyclic GC know about subobjects that could
@@ -806,7 +806,7 @@ increases an internal counter:
    >>> print(s.increment())
    2
 
-.. literalinclude:: ../includes/sublist.c
+.. literalinclude:: ../includes/newtypes/sublist.c
 
 
 As you can see, the source code closely resembles the :class:`!Custom` examples in
