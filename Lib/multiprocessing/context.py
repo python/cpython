@@ -258,6 +258,7 @@ class DefaultContext(BaseContext):
         return self._actual_context._name
 
     def get_all_start_methods(self):
+        """Returns a list of the supported start methods, default first."""
         if sys.platform == 'win32':
             return ['spawn']
         else:

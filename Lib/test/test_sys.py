@@ -14,9 +14,19 @@ from test.support import os_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import threading_helper
 from test.support import import_helper
+try:
+    from test.support import interpreters
+except ImportError:
+    interpreters = None
 import textwrap
 import unittest
 import warnings
+
+
+def requires_subinterpreters(meth):
+    """Decorator to skip a test if subinterpreters are not supported."""
+    return unittest.skipIf(interpreters is None,
+                           'subinterpreters required')(meth)
 
 
 # count the number of test runs, used to create unique
@@ -385,7 +395,8 @@ class SysModuleTest(unittest.TestCase):
         self.assertRaises(TypeError, sys.getrefcount)
         c = sys.getrefcount(None)
         n = None
-        self.assertEqual(sys.getrefcount(None), c+1)
+        # Singleton refcnts don't change
+        self.assertEqual(sys.getrefcount(None), c)
         del n
         self.assertEqual(sys.getrefcount(None), c)
         if hasattr(sys, "gettotalrefcount"):
@@ -445,46 +456,47 @@ class SysModuleTest(unittest.TestCase):
         t.start()
         entered_g.wait()
 
-        # At this point, t has finished its entered_g.set(), although it's
-        # impossible to guess whether it's still on that line or has moved on
-        # to its leave_g.wait().
-        self.assertEqual(len(thread_info), 1)
-        thread_id = thread_info[0]
+        try:
+            # At this point, t has finished its entered_g.set(), although it's
+            # impossible to guess whether it's still on that line or has moved on
+            # to its leave_g.wait().
+            self.assertEqual(len(thread_info), 1)
+            thread_id = thread_info[0]
 
-        d = sys._current_frames()
-        for tid in d:
-            self.assertIsInstance(tid, int)
-            self.assertGreater(tid, 0)
+            d = sys._current_frames()
+            for tid in d:
+                self.assertIsInstance(tid, int)
+                self.assertGreater(tid, 0)
 
-        main_id = threading.get_ident()
-        self.assertIn(main_id, d)
-        self.assertIn(thread_id, d)
+            main_id = threading.get_ident()
+            self.assertIn(main_id, d)
+            self.assertIn(thread_id, d)
 
-        # Verify that the captured main-thread frame is _this_ frame.
-        frame = d.pop(main_id)
-        self.assertTrue(frame is sys._getframe())
+            # Verify that the captured main-thread frame is _this_ frame.
+            frame = d.pop(main_id)
+            self.assertTrue(frame is sys._getframe())
 
-        # Verify that the captured thread frame is blocked in g456, called
-        # from f123.  This is a little tricky, since various bits of
-        # threading.py are also in the thread's call stack.
-        frame = d.pop(thread_id)
-        stack = traceback.extract_stack(frame)
-        for i, (filename, lineno, funcname, sourceline) in enumerate(stack):
-            if funcname == "f123":
-                break
-        else:
-            self.fail("didn't find f123() on thread's call stack")
+            # Verify that the captured thread frame is blocked in g456, called
+            # from f123.  This is a little tricky, since various bits of
+            # threading.py are also in the thread's call stack.
+            frame = d.pop(thread_id)
+            stack = traceback.extract_stack(frame)
+            for i, (filename, lineno, funcname, sourceline) in enumerate(stack):
+                if funcname == "f123":
+                    break
+            else:
+                self.fail("didn't find f123() on thread's call stack")
 
-        self.assertEqual(sourceline, "g456()")
+            self.assertEqual(sourceline, "g456()")
 
-        # And the next record must be for g456().
-        filename, lineno, funcname, sourceline = stack[i+1]
-        self.assertEqual(funcname, "g456")
-        self.assertIn(sourceline, ["leave_g.wait()", "entered_g.set()"])
-
-        # Reap the spawned thread.
-        leave_g.set()
-        t.join()
+            # And the next record must be for g456().
+            filename, lineno, funcname, sourceline = stack[i+1]
+            self.assertEqual(funcname, "g456")
+            self.assertIn(sourceline, ["leave_g.wait()", "entered_g.set()"])
+        finally:
+            # Reap the spawned thread.
+            leave_g.set()
+            t.join()
 
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
@@ -516,43 +528,44 @@ class SysModuleTest(unittest.TestCase):
         t.start()
         entered_g.wait()
 
-        # At this point, t has finished its entered_g.set(), although it's
-        # impossible to guess whether it's still on that line or has moved on
-        # to its leave_g.wait().
-        self.assertEqual(len(thread_info), 1)
-        thread_id = thread_info[0]
+        try:
+            # At this point, t has finished its entered_g.set(), although it's
+            # impossible to guess whether it's still on that line or has moved on
+            # to its leave_g.wait().
+            self.assertEqual(len(thread_info), 1)
+            thread_id = thread_info[0]
 
-        d = sys._current_exceptions()
-        for tid in d:
-            self.assertIsInstance(tid, int)
-            self.assertGreater(tid, 0)
+            d = sys._current_exceptions()
+            for tid in d:
+                self.assertIsInstance(tid, int)
+                self.assertGreater(tid, 0)
 
-        main_id = threading.get_ident()
-        self.assertIn(main_id, d)
-        self.assertIn(thread_id, d)
-        self.assertEqual((None, None, None), d.pop(main_id))
+            main_id = threading.get_ident()
+            self.assertIn(main_id, d)
+            self.assertIn(thread_id, d)
+            self.assertEqual(None, d.pop(main_id))
 
-        # Verify that the captured thread frame is blocked in g456, called
-        # from f123.  This is a little tricky, since various bits of
-        # threading.py are also in the thread's call stack.
-        exc_type, exc_value, exc_tb = d.pop(thread_id)
-        stack = traceback.extract_stack(exc_tb.tb_frame)
-        for i, (filename, lineno, funcname, sourceline) in enumerate(stack):
-            if funcname == "f123":
-                break
-        else:
-            self.fail("didn't find f123() on thread's call stack")
+            # Verify that the captured thread frame is blocked in g456, called
+            # from f123.  This is a little tricky, since various bits of
+            # threading.py are also in the thread's call stack.
+            exc_value = d.pop(thread_id)
+            stack = traceback.extract_stack(exc_value.__traceback__.tb_frame)
+            for i, (filename, lineno, funcname, sourceline) in enumerate(stack):
+                if funcname == "f123":
+                    break
+            else:
+                self.fail("didn't find f123() on thread's call stack")
 
-        self.assertEqual(sourceline, "g456()")
+            self.assertEqual(sourceline, "g456()")
 
-        # And the next record must be for g456().
-        filename, lineno, funcname, sourceline = stack[i+1]
-        self.assertEqual(funcname, "g456")
-        self.assertTrue(sourceline.startswith("if leave_g.wait("))
-
-        # Reap the spawned thread.
-        leave_g.set()
-        t.join()
+            # And the next record must be for g456().
+            filename, lineno, funcname, sourceline = stack[i+1]
+            self.assertEqual(funcname, "g456")
+            self.assertTrue(sourceline.startswith("if leave_g.wait("))
+        finally:
+            # Reap the spawned thread.
+            leave_g.set()
+            t.join()
 
     def test_attributes(self):
         self.assertIsInstance(sys.api_version, int)
@@ -695,6 +708,37 @@ class SysModuleTest(unittest.TestCase):
                 return 123
 
         self.assertRaises(TypeError, sys.intern, S("abc"))
+
+    @requires_subinterpreters
+    def test_subinterp_intern_dynamically_allocated(self):
+        global INTERN_NUMRUNS
+        INTERN_NUMRUNS += 1
+        s = "never interned before" + str(INTERN_NUMRUNS)
+        t = sys.intern(s)
+        self.assertIs(t, s)
+
+        interp = interpreters.create()
+        interp.run(textwrap.dedent(f'''
+            import sys
+            t = sys.intern({s!r})
+            assert id(t) != {id(s)}, (id(t), {id(s)})
+            assert id(t) != {id(t)}, (id(t), {id(t)})
+            '''))
+
+    @requires_subinterpreters
+    def test_subinterp_intern_statically_allocated(self):
+        # See Tools/build/generate_global_objects.py for the list
+        # of strings that are always statically allocated.
+        s = '__init__'
+        t = sys.intern(s)
+
+        print('------------------------')
+        interp = interpreters.create()
+        interp.run(textwrap.dedent(f'''
+            import sys
+            t = sys.intern({s!r})
+            assert id(t) == {id(t)}, (id(t), {id(t)})
+            '''))
 
     def test_sys_flags(self):
         self.assertTrue(sys.flags)
@@ -957,12 +1001,12 @@ class SysModuleTest(unittest.TestCase):
                          "sys.getallocatedblocks unavailable on this build")
     def test_getallocatedblocks(self):
         try:
-            import _testcapi
+            import _testinternalcapi
         except ImportError:
             with_pymalloc = support.with_pymalloc()
         else:
             try:
-                alloc_name = _testcapi.pymem_getallocatorsname()
+                alloc_name = _testinternalcapi.pymem_getallocatorsname()
             except RuntimeError as exc:
                 # "cannot get allocators name" (ex: tracemalloc is used)
                 with_pymalloc = True
@@ -1446,7 +1490,7 @@ class SizeofTest(unittest.TestCase):
         check(x, size('3Pi3c7P2ic??2P'))
         # function
         def func(): pass
-        check(func, size('14Pi'))
+        check(func, size('15Pi'))
         class c():
             @staticmethod
             def foo():
@@ -1460,7 +1504,7 @@ class SizeofTest(unittest.TestCase):
             check(bar, size('PP'))
         # generator
         def get_gen(): yield 1
-        check(get_gen(), size('P2P4P4c7P2ic??2P'))
+        check(get_gen(), size('PP4P4c7P2ic??2P'))
         # iterator
         check(iter('abc'), size('lP'))
         # callable-iterator
@@ -1554,7 +1598,7 @@ class SizeofTest(unittest.TestCase):
                   '10P'                 # PySequenceMethods
                   '2P'                  # PyBufferProcs
                   '6P'
-                  '1P'                  # Specializer cache
+                  '1PIP'                 # Specializer cache
                   )
         class newstyleclass(object): pass
         # Separate block for PyDictKeysObject with 8 keys and 5 entries
@@ -1647,8 +1691,8 @@ class SizeofTest(unittest.TestCase):
         check(_ast.AST(), size('P'))
         try:
             raise TypeError
-        except TypeError:
-            tb = sys.exc_info()[2]
+        except TypeError as e:
+            tb = e.__traceback__
             # traceback
             if tb is not None:
                 check(tb, size('2P2i'))

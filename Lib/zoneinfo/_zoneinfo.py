@@ -302,7 +302,7 @@ class ZoneInfo(tzinfo):
         # difference between utcoffset() and the "standard" offset, but
         # the "base offset" and "DST offset" are not encoded in the file;
         # we can infer what they are from the isdst flag, but it is not
-        # sufficient to to just look at the last standard offset, because
+        # sufficient to just look at the last standard offset, because
         # occasionally countries will shift both DST offset and base offset.
 
         typecnt = len(isdsts)

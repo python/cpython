@@ -73,7 +73,7 @@ def reflow_c_string(s, depth):
 def is_simple(sum_type):
     """Return True if a sum is a simple.
 
-    A sum is simple if it's types have no fields and itself
+    A sum is simple if its types have no fields and itself
     doesn't have any attributes. Instances of these types are
     cached at C level, and they act like singletons when propagating
     parser generated nodes into Python level, e.g.
@@ -352,7 +352,7 @@ class PrototypeVisitor(EmitVisitor):
                 self.visit(t, name, sum.attributes)
 
     def get_args(self, fields):
-        """Return list of C argument into, one for each field.
+        """Return list of C argument info, one for each field.
 
         Argument info is 3-tuple of a C type, variable name, and flag
         that is true if type can be NULL.
@@ -601,6 +601,7 @@ class Obj2ModVisitor(PickleVisitor):
         args = [f.name for f in prod.fields]
         args.extend([a.name for a in prod.attributes])
         self.emit("*out = %s(%s);" % (ast_func_name(name), self.buildArgs(args)), 1)
+        self.emit("if (*out == NULL) goto failed;", 1)
         self.emit("return 0;", 1)
         self.emit("failed:", 0)
         self.emit("Py_XDECREF(tmp);", 1)
@@ -628,33 +629,42 @@ class Obj2ModVisitor(PickleVisitor):
 
     def visitField(self, field, name, sum=None, prod=None, depth=0):
         ctype = get_c_type(field.type)
-        line = "if (_PyObject_LookupAttr(obj, state->%s, &tmp) < 0) {"
+        line = "if (PyObject_GetOptionalAttr(obj, state->%s, &tmp) < 0) {"
         self.emit(line % field.name, depth)
         self.emit("return 1;", depth+1)
         self.emit("}", depth)
-        if not field.opt:
+        if field.seq:
             self.emit("if (tmp == NULL) {", depth)
-            message = "required field \\\"%s\\\" missing from %s" % (field.name, name)
-            format = "PyErr_SetString(PyExc_TypeError, \"%s\");"
-            self.emit(format % message, depth+1, reflow=False)
-            self.emit("return 1;", depth+1)
+            self.emit("tmp = PyList_New(0);", depth+1)
+            self.emit("if (tmp == NULL) {", depth+1)
+            self.emit("return 1;", depth+2)
+            self.emit("}", depth+1)
+            self.emit("}", depth)
+            self.emit("{", depth)
         else:
-            self.emit("if (tmp == NULL || tmp == Py_None) {", depth)
-            self.emit("Py_CLEAR(tmp);", depth+1)
-            if self.isNumeric(field):
-                if field.name in self.attribute_special_defaults:
-                    self.emit(
-                        "%s = %s;" % (field.name, self.attribute_special_defaults[field.name]),
-                        depth+1,
-                    )
-                else:
-                    self.emit("%s = 0;" % field.name, depth+1)
-            elif not self.isSimpleType(field):
-                self.emit("%s = NULL;" % field.name, depth+1)
+            if not field.opt:
+                self.emit("if (tmp == NULL) {", depth)
+                message = "required field \\\"%s\\\" missing from %s" % (field.name, name)
+                format = "PyErr_SetString(PyExc_TypeError, \"%s\");"
+                self.emit(format % message, depth+1, reflow=False)
+                self.emit("return 1;", depth+1)
             else:
-                raise TypeError("could not determine the default value for %s" % field.name)
-        self.emit("}", depth)
-        self.emit("else {", depth)
+                self.emit("if (tmp == NULL || tmp == Py_None) {", depth)
+                self.emit("Py_CLEAR(tmp);", depth+1)
+                if self.isNumeric(field):
+                    if field.name in self.attribute_special_defaults:
+                        self.emit(
+                            "%s = %s;" % (field.name, self.attribute_special_defaults[field.name]),
+                            depth+1,
+                        )
+                    else:
+                        self.emit("%s = 0;" % field.name, depth+1)
+                elif not self.isSimpleType(field):
+                    self.emit("%s = NULL;" % field.name, depth+1)
+                else:
+                    raise TypeError("could not determine the default value for %s" % field.name)
+            self.emit("}", depth)
+            self.emit("else {", depth)
 
         self.emit("int res;", depth+1)
         if field.seq:
@@ -803,7 +813,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t i, numfields = 0;
     int res = -1;
     PyObject *key, *value, *fields;
-    if (_PyObject_LookupAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
+    if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
         goto cleanup;
     }
     if (fields) {
@@ -877,7 +887,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
     }
 
     PyObject *dict;
-    if (_PyObject_LookupAttr(self, state->__dict__, &dict) < 0) {
+    if (PyObject_GetOptionalAttr(self, state->__dict__, &dict) < 0) {
         return NULL;
     }
     if (dict) {
@@ -887,7 +897,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
 }
 
 static PyMemberDef ast_type_members[] = {
-    {"__dictoffset__", T_PYSSIZET, offsetof(AST_object, dict), READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(AST_object, dict), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -1206,6 +1216,7 @@ class ASTModuleVisitor(PickleVisitor):
         self.emit("""
 static PyModuleDef_Slot astmodule_slots[] = {
     {Py_mod_exec, astmodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
@@ -1382,7 +1393,7 @@ PyObject* PyAST_mod2obj(mod_ty t)
 
     int starting_recursion_depth;
     /* Be careful here to prevent overflow. */
-    int COMPILER_STACK_FRAME_SCALE = 3;
+    int COMPILER_STACK_FRAME_SCALE = 2;
     PyThreadState *tstate = _PyThreadState_GET();
     if (!tstate) {
         return 0;
@@ -1484,9 +1495,7 @@ def generate_ast_fini(module_state, f):
     for s in module_state:
         f.write("    Py_CLEAR(state->" + s + ');\n')
     f.write(textwrap.dedent("""
-                if (_PyInterpreterState_Get() == _PyInterpreterState_Main()) {
-                    Py_CLEAR(_Py_CACHED_OBJECT(str_replace_inf));
-                }
+                Py_CLEAR(_Py_INTERP_CACHED_OBJECT(interp, str_replace_inf));
 
             #if !defined(NDEBUG)
                 state->initialized = -1;
@@ -1533,7 +1542,6 @@ def generate_module_def(mod, metadata, f, internal_h):
         #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
         #include "pycore_interp.h"        // _PyInterpreterState.ast
         #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-        #include "structmember.h"
         #include <stddef.h>
 
         // Forward declaration

@@ -264,7 +264,7 @@ Some tips for experts:
 Standard Modules
 ================
 
-.. index:: module: sys
+.. index:: pair: module; sys
 
 Python comes with a library of standard modules, described in a separate
 document, the Python Library Reference ("Library Reference" hereafter).  Some
@@ -345,7 +345,7 @@ Without arguments, :func:`dir` lists the names you have defined currently::
 
 Note that it lists all types of names: variables, modules, functions, etc.
 
-.. index:: module: builtins
+.. index:: pair: module; builtins
 
 :func:`dir` does not list the names of built-in functions and variables.  If you
 want a list of those, they are defined in the standard module
@@ -438,7 +438,7 @@ When importing the package, Python searches through the directories on
 
 The :file:`__init__.py` files are required to make Python treat directories
 containing the file as packages.  This prevents directories with a common name,
-such as ``string``, unintentionally hiding valid modules that occur later
+such as ``string``, from unintentionally hiding valid modules that occur later
 on the module search path. In the simplest case, :file:`__init__.py` can just be
 an empty file, but it can also execute initialization code for the package or
 set the ``__all__`` variable, described later.
@@ -511,6 +511,22 @@ code::
 
 This would mean that ``from sound.effects import *`` would import the three
 named submodules of the :mod:`sound.effects` package.
+
+Be aware that submodules might become shadowed by locally defined names. For
+example, if you added a ``reverse`` function to the
+:file:`sound/effects/__init__.py` file, the ``from sound.effects import *``
+would only import the two submodules ``echo`` and ``surround``, but *not* the
+``reverse`` submodule, because it is shadowed by the locally defined
+``reverse`` function::
+
+    __all__ = [
+        "echo",      # refers to the 'echo.py' file
+        "surround",  # refers to the 'surround.py' file
+        "reverse",   # !!! refers to the 'reverse' function now !!!
+    ]
+
+    def reverse(msg: str):  # <-- this name shadows the 'reverse.py' submodule
+        return msg[::-1]    #     in the case of a 'from sound.effects import *'
 
 If ``__all__`` is not defined, the statement ``from sound.effects import *``
 does *not* import all submodules from the package :mod:`sound.effects` into the

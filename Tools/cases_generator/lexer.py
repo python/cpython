@@ -3,8 +3,6 @@
 # https://gist.github.com/markshannon/db7ab649440b5af765451bb77c7dba34
 
 import re
-import sys
-import collections
 from dataclasses import dataclass
 
 def choice(*opts):
@@ -119,7 +117,7 @@ letter = re.compile(r'[a-zA-Z_]')
 kwds = (
     'AUTO', 'BREAK', 'CASE', 'CHAR', 'CONST',
     'CONTINUE', 'DEFAULT', 'DO', 'DOUBLE', 'ELSE', 'ENUM', 'EXTERN',
-    'FLOAT', 'FOR', 'GOTO', 'IF', 'INLINE', 'INT', 'LONG',
+    'FLOAT', 'FOR', 'GOTO', 'IF', 'INLINE', 'INT', 'LONG', 'OVERRIDE',
     'REGISTER', 'OFFSETOF',
     'RESTRICT', 'RETURN', 'SHORT', 'SIGNED', 'SIZEOF', 'STATIC', 'STRUCT',
     'SWITCH', 'TYPEDEF', 'UNION', 'UNSIGNED', 'VOID',

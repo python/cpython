@@ -7,7 +7,7 @@ import os
 import pickle
 import random
 import sys
-from test.support import bigmemtest, _1G, _4G
+from test.support import bigmemtest, _1G, _4G, skip_on_s390x
 
 
 zlib = import_helper.import_module('zlib')
@@ -44,10 +44,7 @@ requires_Decompress_copy = unittest.skipUnless(
 #   zlib.decompress(func1(data)) == zlib.decompress(func2(data)) == data
 #
 # Make the assumption that s390x always has an accelerator to simplify the skip
-# condition. Windows doesn't have os.uname() but it doesn't support s390x.
-skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == 's390x',
-                                'skipped on s390x')
-
+# condition.
 
 class VersionTestCase(unittest.TestCase):
 
@@ -944,13 +941,18 @@ LAERTES
 """
 
 
-class ZlibDecompressorTest():
+class ZlibDecompressorTest(unittest.TestCase):
     # Test adopted from test_bz2.py
     TEXT = HAMLET_SCENE
     DATA = zlib.compress(HAMLET_SCENE)
     BAD_DATA = b"Not a valid deflate block"
+    BIG_TEXT = DATA * ((128 * 1024 // len(DATA)) + 1)
+    BIG_DATA = zlib.compress(BIG_TEXT)
+
     def test_Constructor(self):
-        self.assertRaises(TypeError, zlib._ZlibDecompressor, 42)
+        self.assertRaises(TypeError, zlib._ZlibDecompressor, "ASDA")
+        self.assertRaises(TypeError, zlib._ZlibDecompressor, -15, "notbytes")
+        self.assertRaises(TypeError, zlib._ZlibDecompressor, -15, b"bytes", 5)
 
     def testDecompress(self):
         zlibd = zlib._ZlibDecompressor()

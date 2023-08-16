@@ -307,7 +307,7 @@ Suppose you configure logging with the following JSON:
                 "class": "logging.StreamHandler",
                 "level": "INFO",
                 "formatter": "simple",
-                "stream": "ext://sys.stdout",
+                "stream": "ext://sys.stdout"
             },
             "stderr": {
                 "class": "logging.StreamHandler",
@@ -340,10 +340,12 @@ adding a ``filters`` section parallel to ``formatters`` and ``handlers``:
 
 .. code-block:: json
 
-    "filters": {
-        "warnings_and_below": {
-            "()" : "__main__.filter_maker",
-            "level": "WARNING"
+    {
+        "filters": {
+            "warnings_and_below": {
+                "()" : "__main__.filter_maker",
+                "level": "WARNING"
+            }
         }
     }
 
@@ -351,12 +353,14 @@ and changing the section on the ``stdout`` handler to add it:
 
 .. code-block:: json
 
-    "stdout": {
-        "class": "logging.StreamHandler",
-        "level": "INFO",
-        "formatter": "simple",
-        "stream": "ext://sys.stdout",
-        "filters": ["warnings_and_below"]
+    {
+        "stdout": {
+            "class": "logging.StreamHandler",
+            "level": "INFO",
+            "formatter": "simple",
+            "stream": "ext://sys.stdout",
+            "filters": ["warnings_and_below"]
+        }
     }
 
 A filter is just a function, so we can define the ``filter_maker`` (a factory
@@ -2538,7 +2542,7 @@ should be logged, or the ``extra`` keyword parameter to indicate additional
 contextual information to be added to the log). So you cannot directly make
 logging calls using :meth:`str.format` or :class:`string.Template` syntax,
 because internally the logging package uses %-formatting to merge the format
-string and the variable arguments. There would no changing this while preserving
+string and the variable arguments. There would be no changing this while preserving
 backward compatibility, since all logging calls which are out there in existing
 code will be using %-format strings.
 

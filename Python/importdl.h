@@ -12,12 +12,6 @@ extern PyObject *_PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *);
 
 typedef PyObject *(*PyModInitFunction)(void);
 
-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-extern PyObject *_PyImport_InitFunc_TrampolineCall(PyModInitFunction func);
-#else
-#define _PyImport_InitFunc_TrampolineCall(func) (func)()
-#endif
-
 /* Max length of module suffix searched for -- accommodates "module.slb" */
 #define MAXSUFFIXSIZE 12
 

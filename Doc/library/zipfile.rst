@@ -7,7 +7,7 @@
 .. moduleauthor:: James C. Ahlstrom <jim@interet.com>
 .. sectionauthor:: James C. Ahlstrom <jim@interet.com>
 
-**Source code:** :source:`Lib/zipfile.py`
+**Source code:** :source:`Lib/zipfile/`
 
 --------------
 
@@ -55,8 +55,9 @@ The module defines the following items:
 .. class:: Path
    :noindex:
 
-   A pathlib-compatible wrapper for zip files. See section
-   :ref:`path-objects` for details.
+   Class that implements a subset of the interface provided by
+   :class:`pathlib.Path`, including the full
+   :class:`importlib.resources.abc.Traversable` interface.
 
    .. versionadded:: 3.8
 
@@ -127,7 +128,7 @@ The module defines the following items:
       Documentation on the ZIP file format by Phil Katz, the creator of the format and
       algorithms used.
 
-   `Info-ZIP Home Page <http://www.info-zip.org/>`_
+   `Info-ZIP Home Page <https://infozip.sourceforge.net/>`_
       Information about the Info-ZIP project's ZIP archive programs and development
       libraries.
 
@@ -287,7 +288,7 @@ ZipFile Objects
    (``ZipExtFile``) is read-only and provides the following methods:
    :meth:`~io.BufferedIOBase.read`, :meth:`~io.IOBase.readline`,
    :meth:`~io.IOBase.readlines`, :meth:`~io.IOBase.seek`,
-   :meth:`~io.IOBase.tell`, :meth:`__iter__`, :meth:`~iterator.__next__`.
+   :meth:`~io.IOBase.tell`, :meth:`~container.__iter__`, :meth:`~iterator.__next__`.
    These objects can operate independently of the ZipFile.
 
    With ``mode='w'``, a writable file handle is returned, which supports the
@@ -576,7 +577,8 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
 
 .. data:: Path.suffix
 
-   The file extension of the final component.
+   The last dot-separated portion of the final component, if any.
+   This is commonly called the file extension.
 
    .. versionadded:: 3.11
       Added :data:`Path.suffix` property.
@@ -590,7 +592,7 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
 
 .. data:: Path.suffixes
 
-   A list of the path’s file extensions.
+   A list of the path’s suffixes, commonly called file extensions.
 
    .. versionadded:: 3.11
       Added :data:`Path.suffixes` property.

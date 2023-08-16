@@ -1,1 +1,0 @@
-Preserve more detailed error messages in :mod:`ctypes`.

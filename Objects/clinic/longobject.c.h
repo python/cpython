@@ -107,9 +107,6 @@ int___format__(PyObject *self, PyObject *arg)
         _PyArg_BadArgument("__format__", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     format_spec = arg;
     return_value = int___format___impl(self, format_spec);
 
@@ -231,10 +228,9 @@ PyDoc_STRVAR(int_as_integer_ratio__doc__,
 "as_integer_ratio($self, /)\n"
 "--\n"
 "\n"
-"Return integer ratio.\n"
+"Return a pair of integers, whose ratio is equal to the original int.\n"
 "\n"
-"Return a pair of integers, whose ratio is exactly equal to the original int\n"
-"and with a positive denominator.\n"
+"The ratio is in lowest terms and has a positive denominator.\n"
 "\n"
 ">>> (10).as_integer_ratio()\n"
 "(10, 1)\n"
@@ -347,9 +343,6 @@ int_to_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
             _PyArg_BadArgument("to_bytes", "argument 'byteorder'", "str", args[1]);
             goto exit;
         }
-        if (PyUnicode_READY(args[1]) == -1) {
-            goto exit;
-        }
         byteorder = args[1];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -445,9 +438,6 @@ int_from_bytes(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyOb
             _PyArg_BadArgument("from_bytes", "argument 'byteorder'", "str", args[1]);
             goto exit;
         }
-        if (PyUnicode_READY(args[1]) == -1) {
-            goto exit;
-        }
         byteorder = args[1];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -485,4 +475,4 @@ int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return int_is_integer_impl(self);
 }
-/*[clinic end generated code: output=e518fe2b5d519322 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=75ed306fff493ba1 input=a9049054013a1b77]*/

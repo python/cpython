@@ -231,9 +231,9 @@ platform-dependent.
 | ``Q``  | :c:expr:`unsigned long   | integer            | 8              | \(2)       |
 |        | long`                    |                    |                |            |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``n``  | :c:expr:`ssize_t`        | integer            |                | \(3)       |
+| ``n``  | :c:type:`ssize_t`        | integer            |                | \(3)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``N``  | :c:expr:`size_t`         | integer            |                | \(3)       |
+| ``N``  | :c:type:`size_t`         | integer            |                | \(3)       |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``e``  | \(6)                     | float              | 2              | \(4)       |
 +--------+--------------------------+--------------------+----------------+------------+
@@ -266,11 +266,11 @@ Notes:
 
 (2)
    When attempting to pack a non-integer using any of the integer conversion
-   codes, if the non-integer has a :meth:`__index__` method then that method is
+   codes, if the non-integer has a :meth:`~object.__index__` method then that method is
    called to convert the argument to an integer before packing.
 
    .. versionchanged:: 3.2
-      Added use of the :meth:`__index__` method for non-integers.
+      Added use of the :meth:`~object.__index__` method for non-integers.
 
 (3)
    The ``'n'`` and ``'N'`` conversion codes are only available for the native
@@ -371,7 +371,7 @@ ordering::
     >>> from struct import *
     >>> pack(">bhl", 1, 2, 3)
     b'\x01\x00\x02\x00\x00\x00\x03'
-    >>> unpack('>bhl', b'\x01\x00\x02\x00\x00\x00\x03'
+    >>> unpack('>bhl', b'\x01\x00\x02\x00\x00\x00\x03')
     (1, 2, 3)
     >>> calcsize('>bhl')
     7
@@ -602,4 +602,4 @@ The :mod:`struct` module also defines the following type:
 
 .. _ieee 754 standard: https://en.wikipedia.org/wiki/IEEE_754-2008_revision
 
-.. _IETF RFC 1700: https://tools.ietf.org/html/rfc1700
+.. _IETF RFC 1700: https://datatracker.ietf.org/doc/html/rfc1700

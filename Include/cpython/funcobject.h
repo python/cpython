@@ -41,6 +41,7 @@ typedef struct {
     PyObject *func_weakreflist; /* List of weak references */
     PyObject *func_module;      /* The __module__ attribute, can be anything */
     PyObject *func_annotations; /* Annotations, a dict or NULL */
+    PyObject *func_typeparams;  /* Tuple of active type variables or NULL */
     vectorcallfunc vectorcall;
     /* Version number for use by specializer.
      * Can set to non-zero when we want to specialize.
@@ -77,12 +78,6 @@ PyAPI_FUNC(PyObject *) PyFunction_GetClosure(PyObject *);
 PyAPI_FUNC(int) PyFunction_SetClosure(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetAnnotations(PyObject *);
 PyAPI_FUNC(int) PyFunction_SetAnnotations(PyObject *, PyObject *);
-
-PyAPI_FUNC(PyObject *) _PyFunction_Vectorcall(
-    PyObject *func,
-    PyObject *const *stack,
-    size_t nargsf,
-    PyObject *kwnames);
 
 #define _PyFunction_CAST(func) \
     (assert(PyFunction_Check(func)), _Py_CAST(PyFunctionObject*, func))
@@ -131,17 +126,17 @@ PyAPI_DATA(PyTypeObject) PyStaticMethod_Type;
 PyAPI_FUNC(PyObject *) PyClassMethod_New(PyObject *);
 PyAPI_FUNC(PyObject *) PyStaticMethod_New(PyObject *);
 
-#define FOREACH_FUNC_EVENT(V) \
-    V(CREATE)                 \
-    V(DESTROY)                \
-    V(MODIFY_CODE)            \
-    V(MODIFY_DEFAULTS)        \
+#define PY_FOREACH_FUNC_EVENT(V) \
+    V(CREATE)                    \
+    V(DESTROY)                   \
+    V(MODIFY_CODE)               \
+    V(MODIFY_DEFAULTS)           \
     V(MODIFY_KWDEFAULTS)
 
 typedef enum {
-    #define DEF_EVENT(EVENT) PyFunction_EVENT_##EVENT,
-    FOREACH_FUNC_EVENT(DEF_EVENT)
-    #undef DEF_EVENT
+    #define PY_DEF_EVENT(EVENT) PyFunction_EVENT_##EVENT,
+    PY_FOREACH_FUNC_EVENT(PY_DEF_EVENT)
+    #undef PY_DEF_EVENT
 } PyFunction_WatchEvent;
 
 /*

@@ -1146,7 +1146,6 @@ class MathTests(unittest.TestCase):
         self.ftest('log(1/e)', math.log(1/math.e), -1)
         self.ftest('log(1)', math.log(1), 0)
         self.ftest('log(e)', math.log(math.e), 1)
-        self.ftest('log(e, None)', math.log(math.e, None), 1)
         self.ftest('log(32,2)', math.log(32,2), 5)
         self.ftest('log(10**40, 10)', math.log(10**40, 10), 40)
         self.ftest('log(10**40, 10**20)', math.log(10**40, 10**20), 2)
@@ -1450,6 +1449,11 @@ class MathTests(unittest.TestCase):
         n = 20                # Length of vectors
         c = 1e30              # Target condition number
 
+        # If the following test fails, it means that the C math library
+        # implementation of fma() is not compliant with the C99 standard
+        # and is inaccurate.  To solve this problem, make a new build
+        # with the symbol UNRELIABLE_FMA defined.  That will enable a
+        # slower but accurate code path that avoids the fma() call.
         relative_err = median(Trial(math.sumprod, c, n) for i in range(times))
         self.assertLess(relative_err, 1e-16)
 
@@ -1877,11 +1881,11 @@ class MathTests(unittest.TestCase):
         self.assertFalse(math.isinf(0.))
         self.assertFalse(math.isinf(1.))
 
-    @requires_IEEE_754
     def test_nan_constant(self):
+        # `math.nan` must be a quiet NaN with positive sign bit
         self.assertTrue(math.isnan(math.nan))
+        self.assertEqual(math.copysign(1., math.nan), 1.)
 
-    @requires_IEEE_754
     def test_inf_constant(self):
         self.assertTrue(math.isinf(math.inf))
         self.assertGreater(math.inf, 0.0)
@@ -2292,11 +2296,20 @@ class MathTests(unittest.TestCase):
                          float.fromhex('0x1.fffffffffffffp-1'))
         self.assertEqual(math.nextafter(1.0, INF),
                          float.fromhex('0x1.0000000000001p+0'))
+        self.assertEqual(math.nextafter(1.0, -INF, steps=1),
+                         float.fromhex('0x1.fffffffffffffp-1'))
+        self.assertEqual(math.nextafter(1.0, INF, steps=1),
+                         float.fromhex('0x1.0000000000001p+0'))
+        self.assertEqual(math.nextafter(1.0, -INF, steps=3),
+                         float.fromhex('0x1.ffffffffffffdp-1'))
+        self.assertEqual(math.nextafter(1.0, INF, steps=3),
+                         float.fromhex('0x1.0000000000003p+0'))
 
         # x == y: y is returned
-        self.assertEqual(math.nextafter(2.0, 2.0), 2.0)
-        self.assertEqualSign(math.nextafter(-0.0, +0.0), +0.0)
-        self.assertEqualSign(math.nextafter(+0.0, -0.0), -0.0)
+        for steps in range(1, 5):
+            self.assertEqual(math.nextafter(2.0, 2.0, steps=steps), 2.0)
+            self.assertEqualSign(math.nextafter(-0.0, +0.0, steps=steps), +0.0)
+            self.assertEqualSign(math.nextafter(+0.0, -0.0, steps=steps), -0.0)
 
         # around 0.0
         smallest_subnormal = sys.float_info.min * sys.float_info.epsilon
@@ -2320,6 +2333,11 @@ class MathTests(unittest.TestCase):
         self.assertIsNaN(math.nextafter(NAN, 1.0))
         self.assertIsNaN(math.nextafter(1.0, NAN))
         self.assertIsNaN(math.nextafter(NAN, NAN))
+
+        self.assertEqual(1.0, math.nextafter(1.0, INF, steps=0))
+        with self.assertRaises(ValueError):
+            math.nextafter(1.0, INF, steps=-1)
+
 
     @requires_IEEE_754
     def test_ulp(self):

@@ -61,7 +61,7 @@ Yes.
 `Pyflakes <https://github.com/PyCQA/pyflakes>`_ do basic checking that will
 help you catch bugs sooner.
 
-Static type checkers such as `Mypy <http://mypy-lang.org/>`_,
+Static type checkers such as `Mypy <https://mypy-lang.org/>`_,
 `Pyre <https://pyre-check.org/>`_, and
 `Pytype <https://github.com/google/pytype>`_ can check type hints in Python
 source code.
@@ -924,12 +924,12 @@ module::
    'Hello, there!'
 
    >>> import array
-   >>> a = array.array('u', s)
+   >>> a = array.array('w', s)
    >>> print(a)
-   array('u', 'Hello, world')
+   array('w', 'Hello, world')
    >>> a[0] = 'y'
    >>> print(a)
-   array('u', 'yello, world')
+   array('w', 'yello, world')
    >>> a.tounicode()
    'yello, world'
 
@@ -1979,7 +1979,7 @@ method result will be released right away.  The disadvantage is that if
 instances accumulate, so too will the accumulated method results.  They
 can grow without bound.
 
-The *lru_cache* approach works with methods that have hashable
+The *lru_cache* approach works with methods that have :term:`hashable`
 arguments.  It creates a reference to the instance unless special
 efforts are made to pass in weak references.
 

@@ -49,6 +49,8 @@ import os
 from concurrent.futures import _base
 import queue
 import multiprocessing as mp
+# This import is required to load the multiprocessing.connection submodule
+# so that it can be accessed later as `mp.connection`
 import multiprocessing.connection
 from multiprocessing.queues import Queue
 import threading
@@ -364,6 +366,11 @@ class _ExecutorManagerThread(threading.Thread):
             if self.is_shutting_down():
                 self.flag_executor_shutting_down()
 
+                # When only canceled futures remain in pending_work_items, our
+                # next call to wait_result_broken_or_wakeup would hang forever.
+                # This makes sure we have some running futures or none at all.
+                self.add_call_item_to_queue()
+
                 # Since no new work items can be added, it is safe to shutdown
                 # this thread if there are no pending work items.
                 if not self.pending_work_items:
@@ -492,6 +499,10 @@ class _ExecutorManagerThread(threading.Thread):
         for p in self.processes.values():
             p.terminate()
 
+        # Prevent queue writing to a pipe which is no longer read.
+        # https://github.com/python/cpython/issues/94777
+        self.call_queue._reader.close()
+
         # clean up resources
         self.join_executor_internals()
 
@@ -616,9 +627,9 @@ class ProcessPoolExecutor(_base.Executor):
             max_workers: The maximum number of processes that can be used to
                 execute the given calls. If None or not given then as many
                 worker processes will be created as the machine has processors.
-            mp_context: A multiprocessing context to launch the workers. This
-                object should provide SimpleQueue, Queue and Process. Useful
-                to allow specific multiprocessing start methods.
+            mp_context: A multiprocessing context to launch the workers created
+                using the multiprocessing.get_context('start method') API. This
+                object should provide SimpleQueue, Queue and Process.
             initializer: A callable used to initialize worker processes.
             initargs: A tuple of arguments to pass to the initializer.
             max_tasks_per_child: The maximum number of tasks a worker process

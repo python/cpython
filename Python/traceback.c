@@ -11,13 +11,13 @@
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_parser.h"        // _PyParser_ASTFromString
 #include "pycore_pyarena.h"       // _PyArena_Free()
-#include "pycore_pyerrors.h"      // _PyErr_Fetch()
+#include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_traceback.h"     // EXCEPTION_TB_HEADER
 
 #include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 #include "frameobject.h"          // PyFrame_New()
-#include "structmember.h"         // PyMemberDef
+
 #include "osdefs.h"               // SEP
 #ifdef HAVE_FCNTL_H
 #  include <fcntl.h>
@@ -148,9 +148,9 @@ static PyMethodDef tb_methods[] = {
 };
 
 static PyMemberDef tb_memberlist[] = {
-    {"tb_frame",        T_OBJECT,       OFF(tb_frame),  READONLY|PY_AUDIT_READ},
-    {"tb_lasti",        T_INT,          OFF(tb_lasti),  READONLY},
-    {"tb_lineno",       T_INT,          OFF(tb_lineno), READONLY},
+    {"tb_frame",        _Py_T_OBJECT,       OFF(tb_frame),  Py_READONLY|Py_AUDIT_READ},
+    {"tb_lasti",        Py_T_INT,          OFF(tb_lasti),  Py_READONLY},
+    {"tb_lineno",       Py_T_INT,          OFF(tb_lineno), Py_READONLY},
     {NULL}      /* Sentinel */
 };
 
@@ -242,15 +242,18 @@ _PyTraceBack_FromFrame(PyObject *tb_next, PyFrameObject *frame)
 int
 PyTraceBack_Here(PyFrameObject *frame)
 {
-    PyObject *exc, *val, *tb, *newtb;
-    PyErr_Fetch(&exc, &val, &tb);
-    newtb = _PyTraceBack_FromFrame(tb, frame);
+    PyObject *exc = PyErr_GetRaisedException();
+    assert(PyExceptionInstance_Check(exc));
+    PyObject *tb = PyException_GetTraceback(exc);
+    PyObject *newtb = _PyTraceBack_FromFrame(tb, frame);
+    Py_XDECREF(tb);
     if (newtb == NULL) {
-        _PyErr_ChainExceptions(exc, val, tb);
+        _PyErr_ChainExceptions1(exc);
         return -1;
     }
-    PyErr_Restore(exc, val, newtb);
-    Py_XDECREF(tb);
+    PyException_SetTraceback(exc, newtb);
+    Py_XDECREF(newtb);
+    PyErr_SetRaisedException(exc);
     return 0;
 }
 
@@ -260,13 +263,12 @@ void _PyTraceback_Add(const char *funcname, const char *filename, int lineno)
     PyObject *globals;
     PyCodeObject *code;
     PyFrameObject *frame;
-    PyObject *exc, *val, *tb;
     PyThreadState *tstate = _PyThreadState_GET();
 
     /* Save and clear the current exception. Python functions must not be
        called with an exception set. Calling Python functions happens when
        the codec of the filesystem encoding is implemented in pure Python. */
-    _PyErr_Fetch(tstate, &exc, &val, &tb);
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
 
     globals = PyDict_New();
     if (!globals)
@@ -283,13 +285,13 @@ void _PyTraceback_Add(const char *funcname, const char *filename, int lineno)
         goto error;
     frame->f_lineno = lineno;
 
-    _PyErr_Restore(tstate, exc, val, tb);
+    _PyErr_SetRaisedException(tstate, exc);
     PyTraceBack_Here(frame);
     Py_DECREF(frame);
     return;
 
 error:
-    _PyErr_ChainExceptions(exc, val, tb);
+    _PyErr_ChainExceptions1(exc);
 }
 
 static PyObject *
@@ -673,16 +675,12 @@ extract_anchors_from_line(PyObject *filename, PyObject *line,
 
     PyCompilerFlags flags = _PyCompilerFlags_INIT;
 
-    _PyASTOptimizeState state;
-    state.optimize = _Py_GetConfig()->optimization_level;
-    state.ff_features = 0;
-
     mod_ty module = _PyParser_ASTFromString(segment_str, filename, Py_file_input,
                                             &flags, arena);
     if (!module) {
         goto done;
     }
-    if (!_PyAST_Optimize(module, arena, &state)) {
+    if (!_PyAST_Optimize(module, arena, _Py_GetConfig()->optimization_level, 0)) {
         goto done;
     }
 
@@ -787,7 +785,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     }
 
     int code_offset = tb->tb_lasti;
-    PyCodeObject* code = frame->f_frame->f_code;
+    PyCodeObject* code = _PyFrame_GetCode(frame->f_frame);
     const Py_ssize_t source_line_len = PyUnicode_GET_LENGTH(source_line);
 
     int start_line;
@@ -1166,7 +1164,7 @@ done:
 static void
 dump_frame(int fd, _PyInterpreterFrame *frame)
 {
-    PyCodeObject *code = frame->f_code;
+    PyCodeObject *code =_PyFrame_GetCode(frame);
     PUTS(fd, "  File ");
     if (code->co_filename != NULL
         && PyUnicode_Check(code->co_filename))
@@ -1178,7 +1176,7 @@ dump_frame(int fd, _PyInterpreterFrame *frame)
         PUTS(fd, "???");
     }
 
-    int lineno = _PyInterpreterFrame_GetLine(frame);
+    int lineno = PyUnstable_InterpreterFrame_GetLine(frame);
     PUTS(fd, ", line ");
     if (lineno >= 0) {
         _Py_DumpDecimal(fd, (size_t)lineno);

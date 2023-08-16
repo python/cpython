@@ -31,12 +31,12 @@ Core Functionality
 
 The :mod:`argparse` module's support for command-line interfaces is built
 around an instance of :class:`argparse.ArgumentParser`.  It is a container for
-argument specifications and has options that apply the parser as whole::
+argument specifications and has options that apply to the parser as whole::
 
    parser = argparse.ArgumentParser(
-                       prog = 'ProgramName',
-                       description = 'What the program does',
-                       epilog = 'Text at the bottom of help')
+                       prog='ProgramName',
+                       description='What the program does',
+                       epilog='Text at the bottom of help')
 
 The :meth:`ArgumentParser.add_argument` method attaches individual argument
 specifications to the parser.  It supports positional arguments, options that
@@ -57,20 +57,20 @@ the extracted data in a :class:`argparse.Namespace` object::
 Quick Links for add_argument()
 ------------------------------
 
-====================== =========================================================== ==========================================================================================================================
-Name                   Description                                                 Values
-====================== =========================================================== ==========================================================================================================================
-action_                Specify how an argument should be handled                   ``'store'``, ``'store_const'``, ``'store_true'``, ``'append'``, ``'append_const'``, ``'count'``, ``'help'``, ``'version'``
-choices_               Limit values to a specific set of choices                   ``['foo', 'bar']``, ``range(1, 10)``, or :class:`~collections.abc.Container` instance
-const_                 Store a constant value
-default_               Default value used when an argument is not provided         Defaults to ``None``
-dest_                  Specify the attribute name used in the result namespace
-help_                  Help message for an argument
-metavar_               Alternate display name for the argument as shown in help
-nargs_                 Number of times the argument can be used                    :class:`int`, ``'?'``, ``'*'``, ``'+'``, or ``argparse.REMAINDER``
-required_              Indicate whether an argument is required or optional        ``True`` or ``False``
-type_                  Automatically convert an argument to the given type         :class:`int`, :class:`float`, ``argparse.FileType('w')``, or callable function
-====================== =========================================================== ==========================================================================================================================
+============================ =========================================================== ==========================================================================================================================
+Name                         Description                                                 Values
+============================ =========================================================== ==========================================================================================================================
+action_                      Specify how an argument should be handled                   ``'store'``, ``'store_const'``, ``'store_true'``, ``'append'``, ``'append_const'``, ``'count'``, ``'help'``, ``'version'``
+choices_                     Limit values to a specific set of choices                   ``['foo', 'bar']``, ``range(1, 10)``, or :class:`~collections.abc.Container` instance
+const_                       Store a constant value
+default_                     Default value used when an argument is not provided         Defaults to ``None``
+dest_                        Specify the attribute name used in the result namespace
+help_                        Help message for an argument
+metavar_                     Alternate display name for the argument as shown in help
+nargs_                       Number of times the argument can be used                    :class:`int`, ``'?'``, ``'*'``, or ``'+'``
+required_                    Indicate whether an argument is required or optional        ``True`` or ``False``
+:ref:`type <argparse-type>`  Automatically convert an argument to the given type         :class:`int`, :class:`float`, ``argparse.FileType('w')``, or callable function
+============================ =========================================================== ==========================================================================================================================
 
 
 Example
@@ -585,7 +585,7 @@ arguments will never be treated as file references.
 
 .. versionchanged:: 3.12
    :class:`ArgumentParser` changed encoding and errors to read arguments files
-   from default (e.g. :func:`locale.getpreferredencoding(False)` and
+   from default (e.g. :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>` and
    ``"strict"``) to :term:`filesystem encoding and error handler`.
    Arguments file should be encoded in UTF-8 instead of ANSI Codepage on Windows.
 
@@ -1132,7 +1132,7 @@ command-line argument was not present::
    Namespace(foo='1')
 
 
-.. _type:
+.. _argparse-type:
 
 type
 ^^^^
@@ -1191,7 +1191,7 @@ done downstream after the arguments are parsed.
 For example, JSON or YAML conversions have complex error cases that require
 better reporting than can be given by the ``type`` keyword.  A
 :exc:`~json.JSONDecodeError` would not be well formatted and a
-:exc:`FileNotFound` exception would not be handled at all.
+:exc:`FileNotFoundError` exception would not be handled at all.
 
 Even :class:`~argparse.FileType` has its limitations for use with the ``type``
 keyword.  If one argument uses *FileType* and then a subsequent argument fails,
@@ -1445,7 +1445,7 @@ Action classes
 Action classes implement the Action API, a callable which returns a callable
 which processes arguments from the command-line. Any object which follows
 this API may be passed as the ``action`` parameter to
-:meth:`add_argument`.
+:meth:`~ArgumentParser.add_argument`.
 
 .. class:: Action(option_strings, dest, nargs=None, const=None, default=None, \
                   type=None, choices=None, required=False, help=None, \
@@ -1723,7 +1723,7 @@ Sub-commands
    :class:`ArgumentParser` supports the creation of such sub-commands with the
    :meth:`add_subparsers` method.  The :meth:`add_subparsers` method is normally
    called with no arguments and returns a special action object.  This object
-   has a single method, :meth:`~ArgumentParser.add_parser`, which takes a
+   has a single method, :meth:`~_SubParsersAction.add_parser`, which takes a
    command name and any :class:`ArgumentParser` constructor arguments, and
    returns an :class:`ArgumentParser` object that can be modified as usual.
 
@@ -1789,7 +1789,7 @@ Sub-commands
    for that particular parser will be printed.  The help message will not
    include parent parser or sibling parser messages.  (A help message for each
    subparser command, however, can be given by supplying the ``help=`` argument
-   to :meth:`add_parser` as above.)
+   to :meth:`~_SubParsersAction.add_parser` as above.)
 
    ::
 
@@ -1867,7 +1867,7 @@ Sub-commands
      ...
      >>> # create the top-level parser
      >>> parser = argparse.ArgumentParser()
-     >>> subparsers = parser.add_subparsers()
+     >>> subparsers = parser.add_subparsers(required=True)
      >>>
      >>> # create the parser for the "foo" command
      >>> parser_foo = subparsers.add_parser('foo')
@@ -2157,7 +2157,7 @@ the populated namespace and the list of remaining argument strings.
 
 .. warning::
    :ref:`Prefix matching <prefix-matching>` rules apply to
-   :meth:`parse_known_args`. The parser may consume an option even if it's just
+   :meth:`~ArgumentParser.parse_known_args`. The parser may consume an option even if it's just
    a prefix of one of its known options, instead of leaving it in the remaining
    arguments list.
 
@@ -2218,7 +2218,7 @@ support this parsing style.
 
 These parsers do not support all the argparse features, and will raise
 exceptions if unsupported features are used.  In particular, subparsers,
-``argparse.REMAINDER``, and mutually exclusive groups that include both
+and mutually exclusive groups that include both
 optionals and positionals are not supported.
 
 The following example shows the difference between
@@ -2295,3 +2295,17 @@ A partial upgrade path from :mod:`optparse` to :mod:`argparse`:
 
 * Replace the OptionParser constructor ``version`` argument with a call to
   ``parser.add_argument('--version', action='version', version='<the version>')``.
+
+Exceptions
+----------
+
+.. exception:: ArgumentError
+
+   An error from creating or using an argument (optional or positional).
+
+   The string value of this exception is the message, augmented with
+   information about the argument that caused it.
+
+.. exception:: ArgumentTypeError
+
+   Raised when something goes wrong converting a command line string to a type.

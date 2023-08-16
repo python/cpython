@@ -19,9 +19,9 @@ extern "C" {
 
 typedef struct {
     uint16_t counter;
-    uint16_t index;
-    uint16_t module_keys_version[2];
+    uint16_t module_keys_version;
     uint16_t builtin_keys_version;
+    uint16_t index;
 } _PyLoadGlobalCache;
 
 #define INLINE_CACHE_ENTRIES_LOAD_GLOBAL CACHE_ENTRIES(_PyLoadGlobalCache)
@@ -47,11 +47,15 @@ typedef struct {
 
 typedef struct {
     uint16_t counter;
-    uint16_t type_version[2];
-    uint16_t func_version;
 } _PyBinarySubscrCache;
 
 #define INLINE_CACHE_ENTRIES_BINARY_SUBSCR CACHE_ENTRIES(_PyBinarySubscrCache)
+
+typedef struct {
+    uint16_t counter;
+} _PySuperAttrCache;
+
+#define INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR CACHE_ENTRIES(_PySuperAttrCache)
 
 typedef struct {
     uint16_t counter;
@@ -75,7 +79,6 @@ typedef struct {
 typedef struct {
     uint16_t counter;
     uint16_t func_version[2];
-    uint16_t min_args;
 } _PyCallCache;
 
 #define INLINE_CACHE_ENTRIES_CALL CACHE_ENTRIES(_PyCallCache)
@@ -91,6 +94,19 @@ typedef struct {
 } _PyForIterCache;
 
 #define INLINE_CACHE_ENTRIES_FOR_ITER CACHE_ENTRIES(_PyForIterCache)
+
+typedef struct {
+    uint16_t counter;
+} _PySendCache;
+
+#define INLINE_CACHE_ENTRIES_SEND CACHE_ENTRIES(_PySendCache)
+
+typedef struct {
+    uint16_t counter;
+    uint16_t version[2];
+} _PyToBoolCache;
+
+#define INLINE_CACHE_ENTRIES_TO_BOOL CACHE_ENTRIES(_PyToBoolCache)
 
 // Borrowed references to common callables:
 struct callable_cache {
@@ -119,6 +135,7 @@ struct callable_cache {
 // Note that these all fit within a byte, as do combinations.
 // Later, we will use the smaller numbers to differentiate the different
 // kinds of locals (e.g. pos-only arg, varkwargs, local-only).
+#define CO_FAST_HIDDEN  0x10
 #define CO_FAST_LOCAL   0x20
 #define CO_FAST_CELL    0x40
 #define CO_FAST_FREE    0x80
@@ -186,8 +203,8 @@ struct _PyCodeConstructor {
 // back to a regular function signature.  Regardless, this approach
 // wouldn't be appropriate if this weren't a strictly internal API.
 // (See the comments in https://github.com/python/cpython/pull/26258.)
-PyAPI_FUNC(int) _PyCode_Validate(struct _PyCodeConstructor *);
-PyAPI_FUNC(PyCodeObject *) _PyCode_New(struct _PyCodeConstructor *);
+extern int _PyCode_Validate(struct _PyCodeConstructor *);
+extern PyCodeObject* _PyCode_New(struct _PyCodeConstructor *);
 
 
 /* Private API */
@@ -212,8 +229,12 @@ extern void _PyLineTable_InitAddressRange(
 extern int _PyLineTable_NextAddressRange(PyCodeAddressRange *range);
 extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 
+#define ENABLE_SPECIALIZATION 1
+
 /* Specialization functions */
 
+extern void _Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *cls,
+                                         _Py_CODEUNIT *instr, int load_method);
 extern void _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr,
                                     PyObject *name);
 extern void _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr,
@@ -228,11 +249,13 @@ extern void _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr,
                                 int nargs, PyObject *kwnames);
 extern void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                                     int oparg, PyObject **locals);
-extern void _Py_Specialize_CompareAndBranch(PyObject *lhs, PyObject *rhs,
+extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
                                      _Py_CODEUNIT *instr, int oparg);
 extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
                                           int oparg);
 extern void _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg);
+extern void _Py_Specialize_Send(PyObject *receiver, _Py_CODEUNIT *instr);
+extern void _Py_Specialize_ToBool(PyObject *value, _Py_CODEUNIT *instr);
 
 /* Finalizer function for static codeobjects used in deepfreeze.py */
 extern void _PyStaticCode_Fini(PyCodeObject *co);
@@ -240,7 +263,6 @@ extern void _PyStaticCode_Fini(PyCodeObject *co);
 extern int _PyStaticCode_Init(PyCodeObject *co);
 
 #ifdef Py_STATS
-
 
 #define STAT_INC(opname, name) do { if (_py_stats) _py_stats->opcode_stats[opname].specialization.name++; } while (0)
 #define STAT_DEC(opname, name) do { if (_py_stats) _py_stats->opcode_stats[opname].specialization.name--; } while (0)
@@ -252,8 +274,9 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 #define EVAL_CALL_STAT_INC(name) do { if (_py_stats) _py_stats->call_stats.eval_calls[name]++; } while (0)
 #define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) \
     do { if (_py_stats && PyFunction_Check(callable)) _py_stats->call_stats.eval_calls[name]++; } while (0)
+#define GC_STAT_ADD(gen, name, n) do { if (_py_stats) _py_stats->gc_stats[(gen)].name += (n); } while (0)
 
-// Used by the _opcode extension which is built as a shared library
+// Export for '_opcode' shared extension
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 
 #else
@@ -265,6 +288,7 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define OBJECT_STAT_INC_COND(name, cond) ((void)0)
 #define EVAL_CALL_STAT_INC(name) ((void)0)
 #define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) ((void)0)
+#define GC_STAT_ADD(gen, name, n) ((void)0)
 #endif  // !Py_STATS
 
 // Utility functions for reading/writing 32/64-bit values in the inline caches.
@@ -434,45 +458,6 @@ adaptive_counter_backoff(uint16_t counter) {
     return adaptive_counter_bits(value, backoff);
 }
 
-
-/* Line array cache for tracing */
-
-extern int _PyCode_CreateLineArray(PyCodeObject *co);
-
-static inline int
-_PyCode_InitLineArray(PyCodeObject *co)
-{
-    if (co->_co_linearray) {
-        return 0;
-    }
-    return _PyCode_CreateLineArray(co);
-}
-
-static inline int
-_PyCode_LineNumberFromArray(PyCodeObject *co, int index)
-{
-    assert(co->_co_linearray != NULL);
-    assert(index >= 0);
-    assert(index < Py_SIZE(co));
-    if (co->_co_linearray_entry_size == 2) {
-        return ((int16_t *)co->_co_linearray)[index];
-    }
-    else {
-        assert(co->_co_linearray_entry_size == 4);
-        return ((int32_t *)co->_co_linearray)[index];
-    }
-}
-
-typedef struct _PyShimCodeDef {
-    const uint8_t *code;
-    int codelen;
-    int stacksize;
-    const char *cname;
-} _PyShimCodeDef;
-
-extern PyCodeObject *
-_Py_MakeShimCode(const _PyShimCodeDef *code);
-
 extern uint32_t _Py_next_func_version;
 
 
@@ -496,6 +481,11 @@ extern uint32_t _Py_next_func_version;
 
 #define COMPARISON_NOT_EQUALS (COMPARISON_UNORDERED | COMPARISON_LESS_THAN | COMPARISON_GREATER_THAN)
 
+extern int _Py_Instrument(PyCodeObject *co, PyInterpreterState *interp);
+
+extern int _Py_GetBaseOpcode(PyCodeObject *code, int offset);
+
+extern int _PyInstruction_GetLength(PyCodeObject *code, int offset);
 
 #ifdef __cplusplus
 }
