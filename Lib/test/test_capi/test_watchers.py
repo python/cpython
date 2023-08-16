@@ -351,12 +351,10 @@ class TestTypeWatchers(unittest.TestCase):
             self.clear_watcher(1)
 
     def test_no_more_ids_available(self):
-        contexts = [self.watcher() for i in range(self.TYPE_MAX_WATCHERS)]
-        with ExitStack() as stack:
-            for ctx in contexts:
-                stack.enter_context(ctx)
-            with self.assertRaisesRegex(RuntimeError, r"no more type watcher IDs"):
-                self.add_watcher()
+        with self.assertRaisesRegex(RuntimeError, r"no more type watcher IDs"):
+            with ExitStack() as stack:
+                for _ in range(self.TYPE_MAX_WATCHERS + 1):
+                    stack.enter_context(self.watcher())
 
 
 class TestCodeObjectWatchers(unittest.TestCase):

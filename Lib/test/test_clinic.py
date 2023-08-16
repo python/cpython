@@ -682,7 +682,7 @@ class ClinicWholeFileTest(TestCase):
             foo2 as .illegal. = foo1
             [clinic start generated code]*/
         """
-        err = "Illegal C basename: '.illegal. = foo1'"
+        err = "Illegal C basename: '.illegal.'"
         self.expect_failure(block, err, lineno=7)
 
 

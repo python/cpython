@@ -54,6 +54,7 @@ See the *"Multiple modules in one library"* section in :pep:`489` for details.
 .. highlight:: c
 
 .. _building-on-windows:
+.. _install-index:
 .. _setuptools-index:
 
 Building C and C++ Extensions with setuptools
