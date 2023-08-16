@@ -161,7 +161,7 @@ nitpick_ignore = [
 
 # Temporary undocumented names.
 # In future this list must be empty.
-nitpick_ignore = [
+nitpick_ignore += [
     # C API: Standard Python exception classes
     ('c:data', 'PyExc_ArithmeticError'),
     ('c:data', 'PyExc_AssertionError'),
