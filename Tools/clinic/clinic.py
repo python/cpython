@@ -4567,6 +4567,11 @@ class ParamState(enum.IntEnum):
     RIGHT_SQUARE_AFTER = 6
 
 
+class FunctionNames(NamedTuple):
+    full_name: str
+    c_basename: str
+
+
 class DSLParser:
     function: Function | None
     state: StateKeeper
@@ -4846,7 +4851,7 @@ class DSLParser:
             fail(f"Illegal function name: {full_name!r}")
         if not is_legal_c_identifier(c_basename):
             fail(f"Illegal C basename: {c_basename!r}")
-        return full_name, c_basename
+        return FunctionNames(full_name=full_name, c_basename=c_basename)
 
     def update_function_kind(self, fullname: str) -> None:
         fields = fullname.split('.')
