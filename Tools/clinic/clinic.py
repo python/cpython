@@ -4832,10 +4832,10 @@ class DSLParser:
 
     @staticmethod
     def parse_names(line: str) -> tuple[str, str]:
-        left, _as, right = line.partition(' as ')
+        left, as_, right = line.partition(' as ')
         full_name = left.strip()
         c_basename = right.strip()
-        if _as and not c_basename:
+        if as_ and not c_basename:
             fail("No C basename provided after 'as' keyword")
         if not c_basename:
             fields = full_name.split(".")
