@@ -128,7 +128,7 @@ Installing Additional Python Packages
 
 This section has moved to the `Python Packaging User Guide`_.
 
-   .. _Python Packaging User Guide: https://packaging.python.org/en/latest/tutorials/installing-packages/
+.. _Python Packaging User Guide: https://packaging.python.org/en/latest/tutorials/installing-packages/
 
 
 GUI Programming on the Mac
