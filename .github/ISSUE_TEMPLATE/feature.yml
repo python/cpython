@@ -14,7 +14,7 @@ body:
     attributes:
       label: Has this already been discussed elsewhere?
       options:
-        - No response given
+        - None
         - I have already discussed this feature proposal on Discourse
         - This is a minor feature, which does not need previous discussion elsewhere
       multiple: false
