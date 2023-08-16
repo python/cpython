@@ -1,0 +1,1 @@
+Fix :mod:`doctest` collection of :func:`functools.cached_property` objects.
