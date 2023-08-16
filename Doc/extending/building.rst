@@ -14,6 +14,7 @@ See :ref:`extension-modules` for details.
 
 .. highlight:: c
 
+.. _building-on-windows:
 .. _install-index:
 .. _setuptools-index:
 
