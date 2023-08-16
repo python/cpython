@@ -197,7 +197,7 @@ Path           Installation directory
 *platinclude*  :file:`{home}/include/python`
 *scripts*      :file:`{home}/bin`
 *data*         :file:`{home}`
-==============  ===========================================================
+============== ===========================================================
 
 
 .. _sysconfig-prefix-scheme:
