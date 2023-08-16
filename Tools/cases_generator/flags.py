@@ -92,7 +92,7 @@ def variable_used_unspecialized(node: parsing.Node, name: str) -> bool:
             if text == "#if":
                 if (
                     i + 1 < len(node.tokens)
-                    and node.tokens[i + 1].text == "ENABLE_SPECIALIZATION"
+                    and node.tokens[i + 1].text in ("ENABLE_SPECIALIZATION", "TIER_ONE")
                 ):
                     skipping = True
             elif text in ("#else", "#endif"):

@@ -25,6 +25,7 @@ from instructions import (
     PseudoInstruction,
     StackEffect,
     OverriddenInstructionPlaceHolder,
+    TIER_ONE,
     TIER_TWO,
 )
 import parsing
@@ -65,6 +66,7 @@ OPARG_SIZES = {
     "OPARG_CACHE_4": 4,
     "OPARG_TOP": 5,
     "OPARG_BOTTOM": 6,
+    "OPARG_SAVE_IP": 7,
 }
 
 INSTR_FMT_PREFIX = "INSTR_FMT_"
@@ -501,7 +503,9 @@ class Generator(Analyzer):
                             if instr.kind == "inst" and instr.is_viable_uop():
                                 # Construct a dummy Component -- input/output mappings are not used
                                 part = Component(instr, instr.active_caches)
-                                self.write_macro_expansions(instr.name, [part])
+                                self.write_macro_expansions(
+                                    instr.name, [part], instr.cache_offset
+                                )
                             elif instr.kind == "inst" and variable_used(
                                 instr.inst, "oparg1"
                             ):
@@ -511,7 +515,9 @@ class Generator(Analyzer):
                                 self.write_super_expansions(instr.name)
                         case parsing.Macro():
                             mac = self.macro_instrs[thing.name]
-                            self.write_macro_expansions(mac.name, mac.parts)
+                            self.write_macro_expansions(
+                                mac.name, mac.parts, mac.cache_offset
+                            )
                         case parsing.Pseudo():
                             pass
                         case _:
@@ -630,7 +636,9 @@ class Generator(Analyzer):
             if instr.kind == "op" and instr.is_viable_uop():
                 add(instr.name)
 
-    def write_macro_expansions(self, name: str, parts: MacroParts) -> None:
+    def write_macro_expansions(
+        self, name: str, parts: MacroParts, cache_offset: int
+    ) -> None:
         """Write the macro expansions for a macro-instruction."""
         # TODO: Refactor to share code with write_cody(), is_viaible_uop(), etc.
         offset = 0  # Cache effect offset
@@ -650,7 +658,10 @@ class Generator(Analyzer):
                     )
                     return
                 if not part.active_caches:
-                    size, offset = OPARG_SIZES["OPARG_FULL"], 0
+                    if part.instr.name == "SAVE_IP":
+                        size, offset = OPARG_SIZES["OPARG_SAVE_IP"], cache_offset
+                    else:
+                        size, offset = OPARG_SIZES["OPARG_FULL"], 0
                 else:
                     # If this assert triggers, is_viable_uops() lied
                     assert len(part.active_caches) == 1, (name, part.instr.name)
@@ -753,7 +764,9 @@ class Generator(Analyzer):
                     case parsing.Macro():
                         n_macros += 1
                         mac = self.macro_instrs[thing.name]
-                        stacking.write_macro_instr(mac, self.out, self.families.get(mac.name))
+                        stacking.write_macro_instr(
+                            mac, self.out, self.families.get(mac.name)
+                        )
                         # self.write_macro(self.macro_instrs[thing.name])
                     case parsing.Pseudo():
                         pass
@@ -789,7 +802,9 @@ class Generator(Analyzer):
                                 n_instrs += 1
                             self.out.emit("")
                             with self.out.block(f"case {thing.name}:"):
-                                instr.write(self.out, tier=TIER_TWO)
+                                stacking.write_single_instr(
+                                    instr, self.out, tier=TIER_TWO
+                                )
                                 if instr.check_eval_breaker:
                                     self.out.emit("CHECK_EVAL_BREAKER();")
                                 self.out.emit("break;")
@@ -851,8 +866,13 @@ class Generator(Analyzer):
         with self.out.block(f"TARGET({name})"):
             if instr.predicted:
                 self.out.emit(f"PREDICTED({name});")
-            instr.write(self.out)
+            self.out.static_assert_family_size(
+                instr.name, instr.family, instr.cache_offset
+            )
+            stacking.write_single_instr(instr, self.out, tier=TIER_ONE)
             if not instr.always_exits:
+                if instr.cache_offset:
+                    self.out.emit(f"next_instr += {instr.cache_offset};")
                 if instr.check_eval_breaker:
                     self.out.emit("CHECK_EVAL_BREAKER();")
                 self.out.emit(f"DISPATCH();")
