@@ -18,6 +18,8 @@ jobs:
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
     - name: 'Set up Python'
       uses: actions/setup-python@v4
       with:
@@ -28,13 +30,6 @@ jobs:
       run: make -C Doc/ venv
 
     # To annotate PRs with Sphinx nitpicks (missing references)
-    - name: 'Get list of changed files'
-      if: github.event_name == 'pull_request'
-      id: changed_files
-      uses: Ana06/get-changed-files@v2.2.0
-      with:
-        filter: "Doc/**"
-        format: csv  # works for paths with spaces
     - name: 'Build HTML documentation'
       continue-on-error: true
       run: |
@@ -45,7 +40,7 @@ jobs:
       if: github.event_name == 'pull_request'
       run: |
         python Doc/tools/check-warnings.py \
-          --check-and-annotate '${{ steps.changed_files.outputs.added_modified }}' \
+          --check-and-annotate-changed 'origin/${{ github.base_ref }}' '${{ github.sha }}' \
           --fail-if-regression \
           --fail-if-improved
 
