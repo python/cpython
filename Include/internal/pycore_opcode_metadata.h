@@ -1543,6 +1543,7 @@ extern const char *const _PyOpcode_OpName[268];
 const char *const _PyOpcode_OpName[268] = {
     [CACHE] = "CACHE",
     [RESERVED] = "RESERVED",
+    [RESUME] = "RESUME",
     [BEFORE_ASYNC_WITH] = "BEFORE_ASYNC_WITH",
     [BEFORE_WITH] = "BEFORE_WITH",
     [BINARY_OP_ADD_FLOAT] = "BINARY_OP_ADD_FLOAT",
@@ -1707,7 +1708,6 @@ const char *const _PyOpcode_OpName[268] = {
     [POP_JUMP_IF_TRUE] = "POP_JUMP_IF_TRUE",
     [RAISE_VARARGS] = "RAISE_VARARGS",
     [RERAISE] = "RERAISE",
-    [RESUME] = "RESUME",
     [RETURN_CONST] = "RETURN_CONST",
     [SEND] = "SEND",
     [SEND_GEN] = "SEND_GEN",

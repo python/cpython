@@ -290,6 +290,10 @@ class Generator(Analyzer):
         # 17 is reserved as it is the initial value for the specializing counter.
         # This helps catch cases where we attempt to execute a cache.
         map_op(17, 'RESERVED')
+
+        # 166 is RESUME - it is hard coded as such in Tools/build/deepfreeze.py
+        map_op(166, 'RESUME')
+
         next_opcode = 1
 
         for has_arg, name in sorted(ops):
@@ -340,8 +344,9 @@ class Generator(Analyzer):
                 self.out.emit(f"#define {name:<38} {opcode:>3}")
 
             all_pairs = []
-            all_pairs.extend((i, 0, name) for (name, i) in self.markers.items())
-            all_pairs.extend((i, 1, name) for (name, i) in self.opmap.items())
+            # the second item in the tuple sorts the markers before the ops
+            all_pairs.extend((i, 1, name) for (name, i) in self.markers.items())
+            all_pairs.extend((i, 2, name) for (name, i) in self.opmap.items())
             for i, _, name in sorted(all_pairs):
                 assert name is not None
                 define(name, i)
@@ -578,17 +583,18 @@ class Generator(Analyzer):
             )
             specialized_ops.add("BINARY_OP_INPLACE_ADD_UNICODE")
 
+            ops = sorted((id, name) for (name, id) in self.opmap.items())
             # emit specialized opmap
             self.out.emit("")
             with self.out.block("_specialized_opmap ="):
-                for name, op in self.opmap.items():
+                for op, name in ops:
                     if name in specialized_ops:
                         self.out.emit(f"'{name}': {op},")
 
             # emit opmap
             self.out.emit("")
             with self.out.block("opmap ="):
-                for name, op in self.opmap.items():
+                for op, name in ops:
                     if name not in specialized_ops:
                         self.out.emit(f"'{name}': {op},")
 

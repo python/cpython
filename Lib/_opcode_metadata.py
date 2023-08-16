@@ -177,11 +177,11 @@ _specialized_opmap = {
 
 opmap = {
     'CACHE': 0,
-    'RESERVED': 17,
     'BEFORE_ASYNC_WITH': 1,
     'BEFORE_WITH': 2,
     'BINARY_SLICE': 11,
     'BINARY_SUBSCR': 12,
+    'RESERVED': 17,
     'CHECK_EG_MATCH': 19,
     'CHECK_EXC_MATCH': 20,
     'CLEANUP_THROW': 21,
