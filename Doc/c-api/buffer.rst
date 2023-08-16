@@ -217,7 +217,7 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
 
 Constants:
 
-.. :c:macro:: PyBUF_MAX_NDIM
+.. c:macro:: PyBUF_MAX_NDIM
 
    The maximum number of dimensions the memory represents.
    Exporters MUST respect this limit, consumers of multi-dimensional
