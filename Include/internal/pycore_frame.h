@@ -5,8 +5,8 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
-#include <stddef.h>
-#include "pycore_code.h"         // STATS
+#include <stddef.h>               // offsetof()
+#include "pycore_code.h"          // STATS
 
 /* See Objects/frame_layout.md for an explanation of the frame stack
  * including explanation of the PyFrameObject and _PyInterpreterFrame
@@ -233,6 +233,9 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame * frame);
 
 int
 _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg);
+
+PyObject *
+_PyFrame_GetLocals(_PyInterpreterFrame *frame, int include_hidden);
 
 int
 _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame);

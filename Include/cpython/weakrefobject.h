@@ -32,7 +32,8 @@ struct _PyWeakReference {
     vectorcallfunc vectorcall;
 };
 
-static inline PyObject* PyWeakref_GET_OBJECT(PyObject *ref_obj) {
+Py_DEPRECATED(3.13) static inline PyObject* PyWeakref_GET_OBJECT(PyObject *ref_obj)
+{
     PyWeakReference *ref;
     PyObject *obj;
     assert(PyWeakref_Check(ref_obj));

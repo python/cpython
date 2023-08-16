@@ -36,7 +36,9 @@
 
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "structmember.h"         // PyMemberDef
+#include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET
+
 
 
 #ifndef WINDOWS_LEAN_AND_MEAN
@@ -52,13 +54,13 @@
     PyLong_FromUnsignedLong((unsigned long) handle)
 #define PYNUM_TO_HANDLE(obj) ((HANDLE)PyLong_AsUnsignedLong(obj))
 #define F_POINTER "k"
-#define T_POINTER T_ULONG
+#define T_POINTER Py_T_ULONG
 #else
 #define HANDLE_TO_PYNUM(handle) \
     PyLong_FromUnsignedLongLong((unsigned long long) handle)
 #define PYNUM_TO_HANDLE(obj) ((HANDLE)PyLong_AsUnsignedLongLong(obj))
 #define F_POINTER "K"
-#define T_POINTER T_ULONGLONG
+#define T_POINTER Py_T_ULONGLONG
 #endif
 
 #define F_HANDLE F_POINTER
@@ -133,7 +135,7 @@ overlapped_dealloc(OverlappedObject *self)
         {
             /* The operation is no longer pending -- nothing to do. */
         }
-        else if (_Py_IsInterpreterFinalizing(PyInterpreterState_Get()))
+        else if (_Py_IsInterpreterFinalizing(_PyInterpreterState_GET()))
         {
             /* The operation is still pending -- give a warning.  This
                will probably only happen on Windows XP. */
@@ -320,7 +322,7 @@ static PyMethodDef overlapped_methods[] = {
 static PyMemberDef overlapped_members[] = {
     {"event", T_HANDLE,
      offsetof(OverlappedObject, overlapped) + offsetof(OVERLAPPED, hEvent),
-     READONLY, "overlapped event handle"},
+     Py_READONLY, "overlapped event handle"},
     {NULL}
 };
 
@@ -1537,40 +1539,56 @@ _winapi.LCMapStringEx
 
     locale: LPCWSTR
     flags: DWORD
-    src: LPCWSTR
+    src: unicode
 
 [clinic start generated code]*/
 
 static PyObject *
 _winapi_LCMapStringEx_impl(PyObject *module, LPCWSTR locale, DWORD flags,
-                           LPCWSTR src)
-/*[clinic end generated code: output=cf4713d80e2b47c9 input=9fe26f95d5ab0001]*/
+                           PyObject *src)
+/*[clinic end generated code: output=b90e6b26e028ff0a input=3e3dcd9b8164012f]*/
 {
     if (flags & (LCMAP_SORTHANDLE | LCMAP_HASH | LCMAP_BYTEREV |
                  LCMAP_SORTKEY)) {
         return PyErr_Format(PyExc_ValueError, "unsupported flags");
     }
 
-    int dest_size = LCMapStringEx(locale, flags, src, -1, NULL, 0,
+    Py_ssize_t src_size;
+    wchar_t *src_ = PyUnicode_AsWideCharString(src, &src_size);
+    if (!src_) {
+        return NULL;
+    }
+    if (src_size > INT_MAX) {
+        PyMem_Free(src_);
+        PyErr_SetString(PyExc_OverflowError, "input string is too long");
+        return NULL;
+    }
+
+    int dest_size = LCMapStringEx(locale, flags, src_, (int)src_size, NULL, 0,
                                   NULL, NULL, 0);
-    if (dest_size == 0) {
-        return PyErr_SetFromWindowsErr(0);
+    if (dest_size <= 0) {
+        DWORD error = GetLastError();
+        PyMem_Free(src_);
+        return PyErr_SetFromWindowsErr(error);
     }
 
     wchar_t* dest = PyMem_NEW(wchar_t, dest_size);
     if (dest == NULL) {
+        PyMem_Free(src_);
         return PyErr_NoMemory();
     }
 
-    int nmapped = LCMapStringEx(locale, flags, src, -1, dest, dest_size,
+    int nmapped = LCMapStringEx(locale, flags, src_, (int)src_size, dest, dest_size,
                                 NULL, NULL, 0);
-    if (nmapped == 0) {
+    if (nmapped <= 0) {
         DWORD error = GetLastError();
+        PyMem_Free(src_);
         PyMem_DEL(dest);
         return PyErr_SetFromWindowsErr(error);
     }
 
-    PyObject *ret = PyUnicode_FromWideChar(dest, dest_size - 1);
+    PyMem_Free(src_);
+    PyObject *ret = PyUnicode_FromWideChar(dest, nmapped);
     PyMem_DEL(dest);
 
     return ret;

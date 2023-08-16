@@ -2079,17 +2079,17 @@ class SysLogHandlerTest(BaseTest):
         # The log message sent to the SysLogHandler is properly received.
         logger = logging.getLogger("slh")
         logger.error("sp\xe4m")
-        self.handled.wait()
+        self.handled.wait(support.LONG_TIMEOUT)
         self.assertEqual(self.log_output, b'<11>sp\xc3\xa4m\x00')
         self.handled.clear()
         self.sl_hdlr.append_nul = False
         logger.error("sp\xe4m")
-        self.handled.wait()
+        self.handled.wait(support.LONG_TIMEOUT)
         self.assertEqual(self.log_output, b'<11>sp\xc3\xa4m')
         self.handled.clear()
         self.sl_hdlr.ident = "h\xe4m-"
         logger.error("sp\xe4m")
-        self.handled.wait()
+        self.handled.wait(support.LONG_TIMEOUT)
         self.assertEqual(self.log_output, b'<11>h\xc3\xa4m-sp\xc3\xa4m')
 
     def test_udp_reconnection(self):
@@ -2097,7 +2097,7 @@ class SysLogHandlerTest(BaseTest):
         self.sl_hdlr.close()
         self.handled.clear()
         logger.error("sp\xe4m")
-        self.handled.wait(0.1)
+        self.handled.wait(support.LONG_TIMEOUT)
         self.assertEqual(self.log_output, b'<11>sp\xc3\xa4m\x00')
 
 @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
@@ -5432,6 +5432,46 @@ class LoggerAdapterTest(unittest.TestCase):
         self.assertIs(adapter_adapter.manager, orig_manager)
         self.assertIs(adapter.manager, orig_manager)
         self.assertIs(self.logger.manager, orig_manager)
+
+    def test_extra_in_records(self):
+        self.adapter = logging.LoggerAdapter(logger=self.logger,
+                                             extra={'foo': '1'})
+
+        self.adapter.critical('foo should be here')
+        self.assertEqual(len(self.recording.records), 1)
+        record = self.recording.records[0]
+        self.assertTrue(hasattr(record, 'foo'))
+        self.assertEqual(record.foo, '1')
+
+    def test_extra_not_merged_by_default(self):
+        self.adapter.critical('foo should NOT be here', extra={'foo': 'nope'})
+        self.assertEqual(len(self.recording.records), 1)
+        record = self.recording.records[0]
+        self.assertFalse(hasattr(record, 'foo'))
+
+    def test_extra_merged(self):
+        self.adapter = logging.LoggerAdapter(logger=self.logger,
+                                             extra={'foo': '1'},
+                                             merge_extra=True)
+
+        self.adapter.critical('foo and bar should be here', extra={'bar': '2'})
+        self.assertEqual(len(self.recording.records), 1)
+        record = self.recording.records[0]
+        self.assertTrue(hasattr(record, 'foo'))
+        self.assertTrue(hasattr(record, 'bar'))
+        self.assertEqual(record.foo, '1')
+        self.assertEqual(record.bar, '2')
+
+    def test_extra_merged_log_call_has_precedence(self):
+        self.adapter = logging.LoggerAdapter(logger=self.logger,
+                                             extra={'foo': '1'},
+                                             merge_extra=True)
+
+        self.adapter.critical('foo shall be min', extra={'foo': '2'})
+        self.assertEqual(len(self.recording.records), 1)
+        record = self.recording.records[0]
+        self.assertTrue(hasattr(record, 'foo'))
+        self.assertEqual(record.foo, '2')
 
 
 class LoggerTest(BaseTest, AssertErrorMessage):

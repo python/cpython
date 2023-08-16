@@ -1,7 +1,6 @@
 #ifndef PEGEN_H
 #define PEGEN_H
 
-#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <pycore_ast.h>
 #include <pycore_token.h>
@@ -21,7 +20,6 @@
 #define PyPARSE_IGNORE_COOKIE 0x0010
 #define PyPARSE_BARRY_AS_BDFL 0x0020
 #define PyPARSE_TYPE_COMMENTS 0x0040
-#define PyPARSE_ASYNC_HACKS   0x0080
 #define PyPARSE_ALLOW_INCOMPLETE_INPUT 0x0100
 
 #define CURRENT_POS (-5)

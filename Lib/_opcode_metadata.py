@@ -4,6 +4,14 @@
 # Do not edit!
 
 _specializations = {
+    "TO_BOOL": [
+        "TO_BOOL_ALWAYS_TRUE",
+        "TO_BOOL_BOOL",
+        "TO_BOOL_INT",
+        "TO_BOOL_LIST",
+        "TO_BOOL_NONE",
+        "TO_BOOL_STR",
+    ],
     "BINARY_OP": [
         "BINARY_OP_MULTIPLY_INT",
         "BINARY_OP_ADD_INT",
@@ -17,6 +25,7 @@ _specializations = {
         "BINARY_SUBSCR_DICT",
         "BINARY_SUBSCR_GETITEM",
         "BINARY_SUBSCR_LIST_INT",
+        "BINARY_SUBSCR_STR_INT",
         "BINARY_SUBSCR_TUPLE_INT",
     ],
     "STORE_SUBSCR": [
@@ -55,6 +64,8 @@ _specializations = {
         "LOAD_ATTR_METHOD_WITH_VALUES",
         "LOAD_ATTR_METHOD_NO_DICT",
         "LOAD_ATTR_METHOD_LAZY_DICT",
+        "LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES",
+        "LOAD_ATTR_NONDESCRIPTOR_NO_DICT",
     ],
     "COMPARE_OP": [
         "COMPARE_OP_FLOAT",
