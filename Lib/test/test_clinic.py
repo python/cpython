@@ -682,7 +682,7 @@ class ClinicWholeFileTest(TestCase):
             foo2 as .illegal. = foo1
             [clinic start generated code]*/
         """
-        err = "Illegal C basename: '.illegal. = foo1'"
+        err = "Illegal C basename: '.illegal.'"
         self.expect_failure(block, err, lineno=7)
 
 
@@ -1523,6 +1523,27 @@ class ClinicParserTest(TestCase):
         """
         err = "Function 'empty_group' has a ']' without a matching '['"
         self.expect_failure(block, err)
+
+    def test_disallowed_grouping__must_be_position_only(self):
+        dataset = ("""
+            with_kwds
+                [
+                *
+                a: object
+                ]
+        """, """
+            with_kwds
+                [
+                a: object
+                ]
+        """)
+        err = (
+            "You cannot use optional groups ('[' and ']') unless all "
+            "parameters are positional-only ('/')"
+        )
+        for block in dataset:
+            with self.subTest(block=block):
+                self.expect_failure(block, err)
 
     def test_no_parameters(self):
         function = self.parse_function("""
