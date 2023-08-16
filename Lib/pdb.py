@@ -85,6 +85,7 @@ import functools
 import traceback
 import linecache
 
+from contextlib import contextmanager
 from typing import Union
 
 
@@ -418,13 +419,19 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     self.message('display %s: %r  [old: %r]' %
                                  (expr, newvalue, oldvalue))
 
-    def interaction(self, frame, tb_or_exc):
-        # Restore the previous signal handler at the Pdb prompt.
+    def _get_tb_and_exceptions(self, tb_or_exc):
+        """
+        Given a tracecack or an exception, return a tuple of chained exceptions
+        and current traceback to inspect.
 
+        This will deal with selecting the right ``__cause__`` or ``__context__``
+        as well as handling cycles, and return a flattened list of exceptions we
+        can jump to with do_exceptions.
+
+        """
         _exceptions = []
         if isinstance(tb_or_exc, BaseException):
-            traceback, exception = tb_or_exc.__traceback__, tb_or_exc
-            current = exception
+            traceback, current = tb_or_exc.__traceback__, tb_or_exc
 
             while current is not None:
                 if current in _exceptions:
@@ -446,29 +453,49 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     break
         else:
             traceback = tb_or_exc
-        self._chained_exceptions = tuple(reversed(_exceptions))
-        self._chained_exception_index = len(_exceptions) - 1
+        return tuple(reversed(_exceptions)), traceback
 
-        if Pdb._previous_sigint_handler:
-            try:
-                signal.signal(signal.SIGINT, Pdb._previous_sigint_handler)
-            except ValueError:  # ValueError: signal only works in main thread
-                pass
-            else:
-                Pdb._previous_sigint_handler = None
-        if self.setup(frame, traceback):
-            # no interaction desired at this time (happens if .pdbrc contains
-            # a command like "continue")
+    @contextmanager
+    def _hold_exceptions(self, exceptions):
+        """
+        Context manager to ensure proper cleaning of exceptions references
+
+        When given a chained exception instead of a traceback,
+        pdb may hold references to many objects which may leak memory.
+
+        We use this context manager to make sure everything is properly cleaned
+
+        """
+        try:
+            self._chained_exceptions = exceptions
+            self._chained_exception_index = len(exceptions) - 1
+            yield
+        finally:
+            # we can't put those in forget as otherwise they would
+            # be cleared on exception change
+            self._chained_exceptions = tuple()
+            self._chained_exception_index = 0
+
+    def interaction(self, frame, tb_or_exc):
+        # Restore the previous signal handler at the Pdb prompt.
+        _chained_exceptions, tb = self._get_tb_and_exceptions(tb_or_exc)
+        with self._hold_exceptions(_chained_exceptions):
+            if Pdb._previous_sigint_handler:
+                try:
+                    signal.signal(signal.SIGINT, Pdb._previous_sigint_handler)
+                except ValueError:  # ValueError: signal only works in main thread
+                    pass
+                else:
+                    Pdb._previous_sigint_handler = None
+            if self.setup(frame, tb):
+                # no interaction desired at this time (happens if .pdbrc contains
+                # a command like "continue")
+                self.forget()
+                return
+            self.print_stack_entry(self.stack[self.curindex])
+            self._cmdloop()
             self.forget()
-            return
-        self.print_stack_entry(self.stack[self.curindex])
-        self._cmdloop()
-        self.forget()
 
-        # we can't put those in forget as otherwise they would
-        # be cleared on exception change
-        self._chained_exceptions = tuple()
-        self._chained_exception_index = 0
 
 
     def displayhook(self, obj):
