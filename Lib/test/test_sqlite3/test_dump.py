@@ -2,16 +2,12 @@
 
 import unittest
 import sqlite3 as sqlite
-from .test_dbapi import memory_database
+
+from test.test_sqlite3.util import memory_database
+from test.test_sqlite3.util import MemoryDatabaseMixin
 
 
-class DumpTests(unittest.TestCase):
-    def setUp(self):
-        self.cx = sqlite.connect(":memory:")
-        self.cu = self.cx.cursor()
-
-    def tearDown(self):
-        self.cx.close()
+class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
 
     def test_table_dump(self):
         expected_sqls = [

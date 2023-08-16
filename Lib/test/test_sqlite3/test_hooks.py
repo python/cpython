@@ -26,16 +26,11 @@ import unittest
 
 from test.support.os_helper import TESTFN, unlink
 
-from test.test_sqlite3.test_dbapi import memory_database, cx_limit
-from test.test_sqlite3.test_userfunctions import with_tracebacks
+from test.test_sqlite3.util import memory_database, cx_limit, with_tracebacks
+from test.test_sqlite3.util import MemoryDatabaseMixin
 
 
-class CollationTests(unittest.TestCase):
-    def setUp(self):
-        self.con = sqlite.connect(":memory:")
-
-    def tearDown(self):
-        self.con.close()
+class CollationTests(MemoryDatabaseMixin, unittest.TestCase):
 
     def test_create_collation_not_string(self):
         with self.assertRaises(TypeError):
@@ -133,12 +128,8 @@ class CollationTests(unittest.TestCase):
             con.execute("select 'a' as x union select 'b' as x order by x collate mycoll")
         self.assertEqual(str(cm.exception), 'no such collation sequence: mycoll')
 
-class ProgressTests(unittest.TestCase):
-    def setUp(self):
-        self.con = sqlite.connect(":memory:")
 
-    def tearDown(self):
-        self.con.close()
+class ProgressTests(MemoryDatabaseMixin, unittest.TestCase):
 
     def test_progress_handler_used(self):
         """
@@ -229,12 +220,7 @@ class ProgressTests(unittest.TestCase):
                 """)
 
 
-class TraceCallbackTests(unittest.TestCase):
-    def setUp(self):
-        self.con = sqlite.connect(":memory:")
-
-    def tearDown(self):
-        self.con.close()
+class TraceCallbackTests(MemoryDatabaseMixin, unittest.TestCase):
 
     @contextlib.contextmanager
     def check_stmt_trace(self, cx, expected):

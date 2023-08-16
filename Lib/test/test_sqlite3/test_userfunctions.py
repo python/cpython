@@ -21,54 +21,15 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
-import contextlib
-import functools
-import io
-import re
 import sys
 import unittest
 import sqlite3 as sqlite
 
 from unittest.mock import Mock, patch
-from test.support import bigmemtest, catch_unraisable_exception, gc_collect
+from test.support import bigmemtest, gc_collect
 
-from test.test_sqlite3.test_dbapi import cx_limit, memory_database
-
-
-def with_tracebacks(exc, regex="", name=""):
-    """Convenience decorator for testing callback tracebacks."""
-    def decorator(func):
-        _regex = re.compile(regex) if regex else None
-        @functools.wraps(func)
-        def wrapper(self, *args, **kwargs):
-            with catch_unraisable_exception() as cm:
-                # First, run the test with traceback enabled.
-                with check_tracebacks(self, cm, exc, _regex, name):
-                    func(self, *args, **kwargs)
-
-            # Then run the test with traceback disabled.
-            func(self, *args, **kwargs)
-        return wrapper
-    return decorator
-
-
-@contextlib.contextmanager
-def check_tracebacks(self, cm, exc, regex, obj_name):
-    """Convenience context manager for testing callback tracebacks."""
-    sqlite.enable_callback_tracebacks(True)
-    try:
-        buf = io.StringIO()
-        with contextlib.redirect_stderr(buf):
-            yield
-
-        self.assertEqual(cm.unraisable.exc_type, exc)
-        if regex:
-            msg = str(cm.unraisable.exc_value)
-            self.assertIsNotNone(regex.search(msg))
-        if obj_name:
-            self.assertEqual(cm.unraisable.object.__name__, obj_name)
-    finally:
-        sqlite.enable_callback_tracebacks(False)
+from test.test_sqlite3.util import cx_limit, memory_database
+from test.test_sqlite3.util import with_tracebacks, check_tracebacks
 
 
 def func_returntext():
@@ -405,10 +366,10 @@ class FunctionTests(unittest.TestCase):
     def test_function_destructor_via_gc(self):
         # See bpo-44304: The destructor of the user function can
         # crash if is called without the GIL from the gc functions
-        with memory_database() as dest:
-            def md5sum(t):
-                return
+        def md5sum(t):
+            return
 
+        with memory_database() as dest:
             dest.create_function("md5", 1, md5sum)
             x = dest("create table lang (name, first_appeared)")
             del md5sum, dest

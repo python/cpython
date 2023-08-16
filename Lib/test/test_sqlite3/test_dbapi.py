@@ -39,21 +39,7 @@ from _testcapi import INT_MAX, ULLONG_MAX
 from os import SEEK_SET, SEEK_CUR, SEEK_END
 from test.support.os_helper import TESTFN, TESTFN_UNDECODABLE, unlink, temp_dir, FakePath
 
-
-# Helper for temporary memory databases
-def memory_database(*args, **kwargs):
-    cx = sqlite.connect(":memory:", *args, **kwargs)
-    return contextlib.closing(cx)
-
-
-# Temporarily limit a database connection parameter
-@contextlib.contextmanager
-def cx_limit(cx, category=sqlite.SQLITE_LIMIT_SQL_LENGTH, limit=128):
-    try:
-        _prev = cx.setlimit(category, limit)
-        yield limit
-    finally:
-        cx.setlimit(category, _prev)
+from test.test_sqlite3.util import memory_database, cx_limit
 
 
 class ModuleTests(unittest.TestCase):
@@ -593,8 +579,8 @@ class ConnectionTests(unittest.TestCase):
             "parameters in Python 3.15."
         )
         with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
-            with memory_database(1.0):
-                pass
+            cx = sqlite.connect(":memory:", 1.0)
+            cx.close()
         self.assertEqual(cm.filename, __file__)
 
 
@@ -1695,8 +1681,12 @@ class ExtensionTests(unittest.TestCase):
         result = con.execute("select foo from test").fetchone()[0]
         self.assertEqual(result, 5, "Basic test of Connection.executescript")
 
+
 class ClosedConTests(unittest.TestCase):
-    REGEX = "Cannot operate on a closed database."
+    def check(self, fn, *args, **kwds):
+        regex = "Cannot operate on a closed database."
+        with self.assertRaisesRegex(sqlite.ProgrammingError, regex):
+            fn(*args, **kwds)
 
     def setUp(self):
         self.con = sqlite.connect(":memory:")
@@ -1704,25 +1694,21 @@ class ClosedConTests(unittest.TestCase):
         self.con.close()
 
     def test_closed_con_cursor(self):
-        with self.assertRaisesRegex(sqlite.ProgrammingError, self.REGEX):
-            self.con.cursor()
+        self.check(self.con.cursor)
 
     def test_closed_con_commit(self):
-        with self.assertRaisesRegex(sqlite.ProgrammingError, self.REGEX):
-            self.con.commit()
+        self.check(self.con.commit)
 
     def test_closed_con_rollback(self):
-        with self.assertRaisesRegex(sqlite.ProgrammingError, self.REGEX):
-            self.con.rollback()
+        self.check(self.con.rollback)
 
     def test_closed_cur_execute(self):
-        with self.assertRaisesRegex(sqlite.ProgrammingError, self.REGEX):
-            self.cur.execute("select 4")
+        self.check(self.cur.execute, "select 4")
 
     def test_closed_create_function(self):
-        def f(x): return 17
-        with self.assertRaisesRegex(sqlite.ProgrammingError, self.REGEX):
-            self.con.create_function("foo", 1, f)
+        def f(x):
+            return 17
+        self.check(self.con.create_function, "foo", 1, f)
 
     def test_closed_create_aggregate(self):
         class Agg:
@@ -1732,23 +1718,21 @@ class ClosedConTests(unittest.TestCase):
                 pass
             def finalize(self):
                 return 17
-        with self.assertRaisesRegex(sqlite.ProgrammingError, self.REGEX):
-            self.con.create_aggregate("foo", 1, Agg)
+        self.check(self.con.create_aggregate, "foo", 1, Agg)
 
     def test_closed_set_authorizer(self):
         def authorizer(*args):
             return sqlite.DENY
-        with self.assertRaisesRegex(sqlite.ProgrammingError, self.REGEX):
-            self.con.set_authorizer(authorizer)
+        self.check(self.con.set_authorizer, authorizer)
 
     def test_closed_set_progress_callback(self):
-        def progress(): pass
-        with self.assertRaisesRegex(sqlite.ProgrammingError, self.REGEX):
-            self.con.set_progress_handler(progress, 100)
+        def progress():
+            pass
+        self.check(self.con.set_progress_handler, progress, 100)
 
     def test_closed_call(self):
-        with self.assertRaisesRegex(sqlite.ProgrammingError, self.REGEX):
-            self.con()
+        self.check(self.con)
+
 
 class ClosedCurTests(unittest.TestCase):
     def test_closed(self):
