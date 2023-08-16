@@ -189,7 +189,7 @@ Module contents
    :func:`getuserbase` hasn't been called yet.  Default value is
    :file:`~/.local` for UNIX and macOS non-framework builds,
    :file:`~/Library/Python/{X.Y}` for macOS framework builds, and
-   :file:`{%APPDATA%}\\Python` for Windows.  This value is used by Distutils to
+   :file:`{%APPDATA%}\\Python` for Windows.  This value is used to
    compute the installation directories for scripts, data files, Python modules,
    etc. for the :ref:`user installation scheme <inst-alt-install-user>`.
    See also :envvar:`PYTHONUSERBASE`.
