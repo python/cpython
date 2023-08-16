@@ -1,12 +1,13 @@
 /* Return the initial module search path. */
 
 #include "Python.h"
+#include "pycore_fileutils.h"     // _Py_abspath()
+#include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_pathconfig.h"    // _PyPathConfig_ReadGlobal()
+#include "pycore_pymem.h"         // _PyMem_RawWcsdup()
+
 #include "marshal.h"              // PyMarshal_ReadObjectFromString
 #include "osdefs.h"               // DELIM
-#include "pycore_initconfig.h"
-#include "pycore_fileutils.h"
-#include "pycore_pathconfig.h"
-#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include <wchar.h>
 
 #ifdef MS_WINDOWS
@@ -446,7 +447,10 @@ getpath_realpath(PyObject *Py_UNUSED(self) , PyObject *args)
             if (s) {
                 *s = L'\0';
             }
-            path2 = _Py_normpath(_Py_join_relfile(path, resolved), -1);
+            path2 = _Py_join_relfile(path, resolved);
+            if (path2) {
+                path2 = _Py_normpath(path2, -1);
+            }
             PyMem_RawFree((void *)path);
             path = path2;
         }

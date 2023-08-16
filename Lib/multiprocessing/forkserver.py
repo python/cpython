@@ -61,7 +61,7 @@ class ForkServer(object):
 
     def set_forkserver_preload(self, modules_names):
         '''Set list of module names to try to load in forkserver process.'''
-        if not all(type(mod) is str for mod in self._preload_modules):
+        if not all(type(mod) is str for mod in modules_names):
             raise TypeError('module_names must be a list of strings')
         self._preload_modules = modules_names
 
