@@ -353,7 +353,7 @@ class TestTypeWatchers(unittest.TestCase):
     def test_no_more_ids_available(self):
         with self.assertRaisesRegex(RuntimeError, r"no more type watcher IDs"):
             with ExitStack() as stack:
-                while True:
+                for _ in range(self.TYPE_MAX_WATCHERS + 1):
                     stack.enter_context(self.watcher())
 
 
