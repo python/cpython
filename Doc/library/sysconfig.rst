@@ -76,18 +76,18 @@ Python currently supports nine schemes:
 
 - *posix_prefix*: scheme for POSIX platforms like Linux or macOS.  This is
   the default scheme used when Python or a component is installed.
-- *posix_home*: scheme for POSIX platforms used when a *home* option is used
-  upon installation.  This scheme is used when a component is installed through
-  Distutils with a specific home prefix.
-- *posix_user*: scheme for POSIX platforms used when a component is installed
-  through Distutils and the *user* option is used.  This scheme defines paths
-  located under the user home directory.
+- *posix_home*: scheme for POSIX platforms, when the *home* option is used.
+  This scheme defines paths located under a specific home prefix.
+- *posix_user*: scheme for POSIX platforms, when the *user* option is used.
+  This scheme defines paths located under the user's home directory
+  (:const:`site.USER_BASE`).
 - *posix_venv*: scheme for :mod:`Python virtual environments <venv>` on POSIX
   platforms; by default it is the same as *posix_prefix* .
-- *nt*: scheme for NT platforms like Windows.
-- *nt_user*: scheme for NT platforms, when the *user* option is used.
-- *nt_venv*: scheme for :mod:`Python virtual environments <venv>` on NT
-  platforms; by default it is the same as *nt* .
+- *nt*: scheme for Windows.
+  This is the default scheme used when Python or a component is installed.
+- *nt_user*: scheme for Windows, when the *user* option is used.
+- *nt_venv*: scheme for :mod:`Python virtual environments <venv>` on Windows;
+  by default it is the same as *nt* .
 - *venv*: a scheme with values from ether *posix_venv* or *nt_venv* depending
   on the platform Python runs on
 - *osx_framework_user*: scheme for macOS, when the *user* option is used.
