@@ -143,35 +143,11 @@ def main(opcode_py,
         iobj.write(internal_header)
 
         iobj.write("\nextern const uint8_t _PyOpcode_Caches[256];\n")
-        iobj.write("\nextern const uint8_t _PyOpcode_Deopt[256];\n")
         iobj.write("\n#ifdef NEED_OPCODE_TABLES\n")
 
         iobj.write("\nconst uint8_t _PyOpcode_Caches[256] = {\n")
         for name, entries in opcode["_inline_cache_entries"].items():
             iobj.write(f"    [{name}] = {entries},\n")
-        iobj.write("};\n")
-
-        deoptcodes = {}
-        for basic, op in opmap.items():
-            if op < 256:
-                deoptcodes[basic] = basic
-        for basic, family in _opcode_metadata["_specializations"].items():
-            for specialized in family:
-                deoptcodes[specialized] = basic
-        iobj.write("\nconst uint8_t _PyOpcode_Deopt[256] = {\n")
-        for opt, deopt in sorted(deoptcodes.items()):
-            iobj.write(f"    [{opt}] = {deopt},\n")
-        iobj.write("};\n")
-        iobj.write("#endif   // NEED_OPCODE_TABLES\n")
-
-        iobj.write("\n")
-        iobj.write(f"\nextern const char *const _PyOpcode_OpName[{NUM_OPCODES}];\n")
-        iobj.write("\n#ifdef NEED_OPCODE_TABLES\n")
-        iobj.write(f"const char *const _PyOpcode_OpName[{NUM_OPCODES}] = {{\n")
-        for op, name in enumerate(opname_including_specialized):
-            if name[0] != "<":
-                op = name
-            iobj.write(f'''    [{op}] = "{name}",\n''')
         iobj.write("};\n")
         iobj.write("#endif   // NEED_OPCODE_TABLES\n")
 

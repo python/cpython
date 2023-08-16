@@ -7,6 +7,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetDict()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_opcode.h"        // _PyOpcode_Caches
+#include "pycore_opcode_metadata.h" // _PyOpcode_Deopt
 
 #include "frameobject.h"          // PyFrameObject
 #include "pycore_frame.h"

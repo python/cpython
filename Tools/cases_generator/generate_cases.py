@@ -5,6 +5,7 @@ Writes the cases to generated_cases.c.h, which is #included in ceval.c.
 
 import argparse
 import contextlib
+import itertools
 import os
 import posixpath
 import sys
@@ -372,6 +373,48 @@ class Generator(Analyzer):
                             pass
                         case _:
                             typing.assert_never(thing)
+
+            def get_opcodes():
+                """
+                Return a list of opcode names.
+
+                This function is temporary, it will be replaced by a function
+                that generates IDs for the opcodes and constructs an opmap.
+                """
+
+                res = [instr.name for instr in itertools.chain(
+                    [instr for instr in self.instrs.values() if instr.kind != "op"],
+                     self.macro_instrs.values())]
+
+                # Special case: this instruction is implemented in ceval.c
+                # rather than bytecodes.c, so we need to add it explicitly
+                # here (at least until we add something to bytecodes.c to
+                # declare external instructions).
+                res.append("INSTRUMENTED_LINE")
+                return res
+
+            opcodes = get_opcodes()
+
+            with self.metadata_item(
+                f"const uint8_t _PyOpcode_Deopt[]", "=", ";"
+            ):
+                deoptcodes = {}
+                for name in opcodes:
+                    deoptcodes[name] = name
+                for name, family in self.families.items():
+                    for m in family.members:
+                        deoptcodes[m] = name
+                # special case:
+                deoptcodes['BINARY_OP_INPLACE_ADD_UNICODE'] = 'BINARY_OP'
+
+                for opt, deopt in sorted(deoptcodes.items()):
+                    self.out.emit(f"    [{opt}] = {deopt},")
+
+            with self.metadata_item(
+                f"const char *const _PyOpcode_OpName[]", "=", ";"
+            ):
+                for name in opcodes:
+                    self.out.emit(f'[{name}] = "{name}",')
 
             with self.metadata_item(
                 "const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE]", "=", ";"
