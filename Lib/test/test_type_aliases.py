@@ -168,6 +168,15 @@ class TypeParamsAliasValueTest(unittest.TestCase):
         self.assertEqual(repr(GenericRecursive[GenericRecursive[int]]),
                          "GenericRecursive[GenericRecursive[int]]")
 
+    def test_raising(self):
+        type MissingName = list[_My_X]
+        with self.assertRaisesRegex(NameError, "name '_My_X' is not defined"):
+            MissingName.__value__
+
+        type ExprException = 1 / 0
+        with self.assertRaises(ZeroDivisionError):
+            ExprException.__value__
+
 
 class TypeAliasConstructorTest(unittest.TestCase):
     def test_basic(self):
