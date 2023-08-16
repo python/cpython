@@ -1,3 +1,11 @@
+..
+   The guides to building C and C++ extensions are fairly out of date
+   and would benefit from re-writing in terms of a simple primer,
+   with specific reference to sysconfig, and how a modules can be build
+   'by hand', rather than via setuptools, CMake, meson, etc.
+   If you're reading this and would like to have a go, please do!
+   See https://github.com/python/cpython/issues/108064 for discussion.
+
 .. highlight:: c
 
 .. _building:
