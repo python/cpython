@@ -1,3 +1,0 @@
-:func:`copy.copy` and :func:`copy.deepcopy` now always raise a TypeError if
-``__reduce__()`` returns a tuple with length 6 instead of silently ignore
-the 6th item or produce incorrect result.

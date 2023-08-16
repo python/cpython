@@ -1,2 +1,0 @@
-Fix an issue when reading line numbers from code objects if the encoded line
-numbers are close to ``INT_MIN``. Patch by Pablo Galindo

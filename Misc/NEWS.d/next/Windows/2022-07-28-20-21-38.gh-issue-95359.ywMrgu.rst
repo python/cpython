@@ -1,3 +1,0 @@
-Fix :ref:`launcher` handling of :file:`py.ini` commands (it was incorrectly
-expecting a ``py_`` prefix on keys) and crashes when reading per-user
-configuration file.

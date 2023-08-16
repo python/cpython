@@ -1,2 +1,0 @@
-Fixes some issues where the Windows installer would incorrectly detect
-certain features of an existing install when upgrading.

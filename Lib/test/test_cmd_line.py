@@ -717,11 +717,11 @@ class CmdLineTest(unittest.TestCase):
 
         # Memory allocator debug hooks
         try:
-            import _testcapi
+            import _testinternalcapi
         except ImportError:
             pass
         else:
-            code = "import _testcapi; print(_testcapi.pymem_getallocatorsname())"
+            code = "import _testinternalcapi; print(_testinternalcapi.pymem_getallocatorsname())"
             with support.SuppressCrashReport():
                 out = self.run_xdev("-c", code, check_exitcode=False)
             if support.with_pymalloc():
@@ -783,7 +783,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(out, expected_filters)
 
     def check_pythonmalloc(self, env_var, name):
-        code = 'import _testcapi; print(_testcapi.pymem_getallocatorsname())'
+        code = 'import _testinternalcapi; print(_testinternalcapi.pymem_getallocatorsname())'
         env = dict(os.environ)
         env.pop('PYTHONDEVMODE', None)
         if env_var is not None:
@@ -864,6 +864,42 @@ class CmdLineTest(unittest.TestCase):
         err_msg = "unknown option --unknown-option\nusage: "
         self.assertTrue(proc.stderr.startswith(err_msg), proc.stderr)
         self.assertNotEqual(proc.returncode, 0)
+
+    def test_int_max_str_digits(self):
+        code = "import sys; print(sys.flags.int_max_str_digits, sys.get_int_max_str_digits())"
+
+        assert_python_failure('-X', 'int_max_str_digits', '-c', code)
+        assert_python_failure('-X', 'int_max_str_digits=foo', '-c', code)
+        assert_python_failure('-X', 'int_max_str_digits=100', '-c', code)
+        assert_python_failure('-X', 'int_max_str_digits', '-c', code,
+                              PYTHONINTMAXSTRDIGITS='4000')
+
+        assert_python_failure('-c', code, PYTHONINTMAXSTRDIGITS='foo')
+        assert_python_failure('-c', code, PYTHONINTMAXSTRDIGITS='100')
+
+        def res2int(res):
+            out = res.out.strip().decode("utf-8")
+            return tuple(int(i) for i in out.split())
+
+        res = assert_python_ok('-c', code)
+        current_max = sys.get_int_max_str_digits()
+        self.assertEqual(res2int(res), (current_max, current_max))
+        res = assert_python_ok('-X', 'int_max_str_digits=0', '-c', code)
+        self.assertEqual(res2int(res), (0, 0))
+        res = assert_python_ok('-X', 'int_max_str_digits=4000', '-c', code)
+        self.assertEqual(res2int(res), (4000, 4000))
+        res = assert_python_ok('-X', 'int_max_str_digits=100000', '-c', code)
+        self.assertEqual(res2int(res), (100000, 100000))
+
+        res = assert_python_ok('-c', code, PYTHONINTMAXSTRDIGITS='0')
+        self.assertEqual(res2int(res), (0, 0))
+        res = assert_python_ok('-c', code, PYTHONINTMAXSTRDIGITS='4000')
+        self.assertEqual(res2int(res), (4000, 4000))
+        res = assert_python_ok(
+            '-X', 'int_max_str_digits=6000', '-c', code,
+            PYTHONINTMAXSTRDIGITS='4000'
+        )
+        self.assertEqual(res2int(res), (6000, 6000))
 
 
 @unittest.skipIf(interpreter_requires_environment(),

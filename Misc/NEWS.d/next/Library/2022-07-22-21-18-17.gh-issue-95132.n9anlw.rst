@@ -1,4 +1,0 @@
-Fix a :mod:`sqlite3` regression where ``*args`` and ``**kwds`` were
-incorrectly relayed from :py:func:`~sqlite3.connect` to the
-:class:`~sqlite3.Connection` factory. The regression was introduced in 3.11a1
-with PR 24421 (:gh:`85128`). Patch by Erlend E. Aasland.`

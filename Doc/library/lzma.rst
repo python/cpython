@@ -100,7 +100,8 @@ Reading and writing compressed files
    *filters* arguments have the same meanings as for :class:`LZMACompressor`.
 
    :class:`LZMAFile` supports all the members specified by
-   :class:`io.BufferedIOBase`, except for :meth:`detach` and :meth:`truncate`.
+   :class:`io.BufferedIOBase`, except for :meth:`~io.BufferedIOBase.detach`
+   and :meth:`~io.IOBase.truncate`.
    Iteration and the :keyword:`with` statement are supported.
 
    The following method is also provided:
@@ -147,7 +148,7 @@ Compressing and decompressing data in memory
       This format is more limited than ``.xz`` -- it does not support integrity
       checks or multiple filters.
 
-   * :const:`FORMAT_RAW`: A raw data stream, not using sequences format.
+   * :const:`FORMAT_RAW`: A raw data stream, not using any container format.
       This format specifier does not support integrity checks, and requires that
       you always specify a custom filter chain (for both compression and
       decompression). Additionally, data compressed in this manner cannot be
@@ -258,7 +259,7 @@ Compressing and decompressing data in memory
       will be set to ``True``.
 
       Attempting to decompress data after the end of stream is reached
-      raises an `EOFError`.  Any data found after the end of the
+      raises an :exc:`EOFError`.  Any data found after the end of the
       stream is ignored and saved in the :attr:`~.unused_data` attribute.
 
       .. versionchanged:: 3.5

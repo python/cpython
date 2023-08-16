@@ -8,7 +8,7 @@ import sys
 import unittest
 import weakref
 from test import support
-from test.support import import_helper
+from test.support import import_helper, C_RECURSION_LIMIT
 
 
 class DictTest(unittest.TestCase):
@@ -596,7 +596,7 @@ class DictTest(unittest.TestCase):
 
     def test_repr_deep(self):
         d = {}
-        for i in range(sys.getrecursionlimit() + 100):
+        for i in range(C_RECURSION_LIMIT + 1):
             d = {1: d}
         self.assertRaises(RecursionError, repr, d)
 
@@ -1093,6 +1093,21 @@ class DictTest(unittest.TestCase):
         d = {}
         d.update(o.__dict__)
         self.assertEqual(list(d), ["c", "b", "a"])
+
+    @support.cpython_only
+    def test_splittable_to_generic_combinedtable(self):
+        """split table must be correctly resized and converted to generic combined table"""
+        class C:
+            pass
+
+        a = C()
+        a.x = 1
+        d = a.__dict__
+        before_resize = sys.getsizeof(d)
+        d[2] = 2 # split table is resized to a generic combined table
+
+        self.assertGreater(sys.getsizeof(d), before_resize)
+        self.assertEqual(list(d), ['x', 2])
 
     def test_iterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):

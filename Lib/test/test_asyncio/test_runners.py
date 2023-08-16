@@ -243,6 +243,8 @@ class RunTests(BaseTest):
             def get_loop(self, *args, **kwargs):
                 return self._task.get_loop(*args, **kwargs)
 
+            def set_name(self, *args, **kwargs):
+                return self._task.set_name(*args, **kwargs)
 
         async def main():
             interrupt_self()
@@ -256,6 +258,16 @@ class RunTests(BaseTest):
         asyncio.set_event_loop_policy(TestPolicy(new_event_loop))
         with self.assertRaises(asyncio.CancelledError):
             asyncio.run(main())
+
+    def test_asyncio_run_loop_factory(self):
+        factory = mock.Mock()
+        loop = factory.return_value = self.new_loop()
+
+        async def main():
+            self.assertEqual(asyncio.get_running_loop(), loop)
+
+        asyncio.run(main(), loop_factory=factory)
+        factory.assert_called_once_with()
 
 
 class RunnerTests(BaseTest):
@@ -454,6 +466,20 @@ class RunnerTests(BaseTest):
                 )
             ):
                 runner.run(coro())
+
+    def test_set_event_loop_called_once(self):
+        # See https://github.com/python/cpython/issues/95736
+        async def coro():
+            pass
+
+        policy = asyncio.get_event_loop_policy()
+        policy.set_event_loop = mock.Mock()
+        runner = asyncio.Runner()
+        runner.run(coro())
+        runner.run(coro())
+
+        self.assertEqual(1, policy.set_event_loop.call_count)
+        runner.close()
 
 
 if __name__ == '__main__':

@@ -235,11 +235,12 @@ class PyCompileCLITestCase(unittest.TestCase):
         # assert_python_* helpers don't return proc object. We'll just use
         # subprocess.run() instead of spawn_python() and its friends to test
         # stdin support of the CLI.
+        opts = '-m' if __debug__ else '-Om'
         if args and args[0] == '-' and 'input' in kwargs:
-            return subprocess.run([sys.executable, '-m', 'py_compile', '-'],
+            return subprocess.run([sys.executable, opts, 'py_compile', '-'],
                                   input=kwargs['input'].encode(),
                                   capture_output=True)
-        return script_helper.assert_python_ok('-m', 'py_compile', *args, **kwargs)
+        return script_helper.assert_python_ok(opts, 'py_compile', *args, **kwargs)
 
     def pycompilecmd_failure(self, *args):
         return script_helper.assert_python_failure('-m', 'py_compile', *args)

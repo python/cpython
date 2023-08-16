@@ -1,2 +1,0 @@
-:func:`os.get_terminal_size` now attempts to read the size from any provided
-handle, rather than only supporting file descriptors 0, 1 and 2.

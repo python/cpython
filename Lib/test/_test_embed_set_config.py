@@ -84,7 +84,6 @@ class SetConfigTests(unittest.TestCase):
             'skip_source_first_line',
             '_install_importlib',
             '_init_main',
-            '_isolated_interpreter',
         ]
         if MS_WINDOWS:
             options.append('legacy_windows_stdio')

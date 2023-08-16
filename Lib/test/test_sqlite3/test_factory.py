@@ -66,7 +66,16 @@ class ConnectionFactoryTests(unittest.TestCase):
             def __init__(self, *args, **kwargs):
                 super(Factory, self).__init__(*args, **kwargs)
 
-        con = sqlite.connect(":memory:", 5.0, 0, None, True, Factory)
+        regex = (
+            r"Passing more than 1 positional argument to _sqlite3.Connection\(\) "
+            r"is deprecated. Parameters 'timeout', 'detect_types', "
+            r"'isolation_level', 'check_same_thread', 'factory', "
+            r"'cached_statements' and 'uri' will become keyword-only "
+            r"parameters in Python 3.15."
+        )
+        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+            con = sqlite.connect(":memory:", 5.0, 0, None, True, Factory)
+        self.assertEqual(cm.filename, __file__)
         self.assertIsNone(con.isolation_level)
         self.assertIsInstance(con, Factory)
 
@@ -179,8 +188,14 @@ class RowFactoryTests(unittest.TestCase):
         """Checks if the row object is iterable"""
         self.con.row_factory = sqlite.Row
         row = self.con.execute("select 1 as a, 2 as b").fetchone()
-        for col in row:
-            pass
+
+        # Is iterable in correct order and produces valid results:
+        items = [col for col in row]
+        self.assertEqual(items, [1, 2])
+
+        # Is iterable the second time:
+        items = [col for col in row]
+        self.assertEqual(items, [1, 2])
 
     def test_sqlite_row_as_tuple(self):
         """Checks if the row object can be converted to a tuple"""

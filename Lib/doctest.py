@@ -207,7 +207,13 @@ def _normalize_module(module, depth=2):
     elif isinstance(module, str):
         return __import__(module, globals(), locals(), ["*"])
     elif module is None:
-        return sys.modules[sys._getframe(depth).f_globals['__name__']]
+        try:
+            try:
+                return sys.modules[sys._getframemodulename(depth)]
+            except AttributeError:
+                return sys.modules[sys._getframe(depth).f_globals['__name__']]
+        except KeyError:
+            pass
     else:
         raise TypeError("Expected a module, string, or None")
 
@@ -956,7 +962,8 @@ class DocTestFinder:
             return module is inspect.getmodule(object)
         elif inspect.isfunction(object):
             return module.__dict__ is object.__globals__
-        elif inspect.ismethoddescriptor(object):
+        elif (inspect.ismethoddescriptor(object) or
+              inspect.ismethodwrapper(object)):
             if hasattr(object, '__objclass__'):
                 obj_mod = object.__objclass__.__module__
             elif hasattr(object, '__module__'):
@@ -1103,7 +1110,7 @@ class DocTestFinder:
             if source_lines is None:
                 return None
             pat = re.compile(r'^\s*class\s*%s\b' %
-                             getattr(obj, '__name__', '-'))
+                             re.escape(getattr(obj, '__name__', '-')))
             for i, line in enumerate(source_lines):
                 if pat.match(line):
                     lineno = i

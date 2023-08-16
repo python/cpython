@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(_ssl_Certificate_public_bytes__doc__,
 "public_bytes($self, /, format=Encoding.PEM)\n"
 "--\n"
@@ -17,8 +23,31 @@ static PyObject *
 _ssl_Certificate_public_bytes(PySSLCertificate *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(format), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"format", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "public_bytes", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "public_bytes",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int format = PY_SSL_ENCODING_PEM;
@@ -57,4 +86,4 @@ _ssl_Certificate_get_info(PySSLCertificate *self, PyObject *Py_UNUSED(ignored))
 {
     return _ssl_Certificate_get_info_impl(self);
 }
-/*[clinic end generated code: output=18885c4d167d5244 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=82efada014f9b7fe input=a9049054013a1b77]*/

@@ -259,3 +259,54 @@ def all_markers_with_args_and_kwargs(a, b, /, c, d, *args, e, f, **kwargs):
 #line 259
 def all_markers_with_defaults(a, b=1, /, c=2, d=3, *, e=4, f=5):
     pass
+
+# line 263
+def deco_factory(**kwargs):
+    def deco(f):
+        @wraps(f)
+        def wrapper(*a, **kwd):
+            kwd.update(kwargs)
+            return f(*a, **kwd)
+        return wrapper
+    return deco
+
+@deco_factory(foo=(1 + 2), bar=lambda: 1)
+def complex_decorated(foo=0, bar=lambda: 0):
+    return foo + bar()
+
+# line 276
+parenthesized_lambda = (
+    lambda: ())
+parenthesized_lambda2 = [
+    lambda: ()][0]
+parenthesized_lambda3 = {0:
+    lambda: ()}[0]
+
+# line 285
+post_line_parenthesized_lambda1 = (lambda: ()
+)
+
+# line 289
+nested_lambda = (
+    lambda right: [].map(
+        lambda length: ()))
+
+# line 294
+if True:
+    class cls296:
+        def f():
+            pass
+else:
+    class cls296:
+        def g():
+            pass
+
+# line 304
+if False:
+    class cls310:
+        def f():
+            pass
+else:
+    class cls310:
+        def g():
+            pass

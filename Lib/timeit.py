@@ -259,10 +259,9 @@ def main(args=None, *, _wrap_timer=None):
         args = sys.argv[1:]
     import getopt
     try:
-        opts, args = getopt.getopt(args, "n:u:s:r:tcpvh",
+        opts, args = getopt.getopt(args, "n:u:s:r:pvh",
                                    ["number=", "setup=", "repeat=",
-                                    "time", "clock", "process",
-                                    "verbose", "unit=", "help"])
+                                    "process", "verbose", "unit=", "help"])
     except getopt.error as err:
         print(err)
         print("use -h/--help for command line help")

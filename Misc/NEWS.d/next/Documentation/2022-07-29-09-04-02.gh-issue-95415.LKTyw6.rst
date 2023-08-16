@@ -1,2 +1,0 @@
-Use consistent syntax for platform availability. The directive now supports
-a content body and emits a warning when it encounters an unknown platform.

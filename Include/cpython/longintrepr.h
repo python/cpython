@@ -71,20 +71,59 @@ typedef long stwodigits; /* signed variant of twodigits */
         0 <= ob_digit[i] <= MASK.
    The allocation function takes care of allocating extra memory
    so that ob_digit[0] ... ob_digit[abs(ob_size)-1] are actually available.
+   We always allocate memory for at least one digit, so accessing ob_digit[0]
+   is always safe. However, in the case ob_size == 0, the contents of
+   ob_digit[0] may be undefined.
 
    CAUTION:  Generic code manipulating subtypes of PyVarObject has to
    aware that ints abuse  ob_size's sign bit.
 */
 
-struct _longobject {
-    PyObject_VAR_HEAD
+typedef struct _PyLongValue {
+    uintptr_t lv_tag; /* Number of digits, sign and flags */
     digit ob_digit[1];
+} _PyLongValue;
+
+struct _longobject {
+    PyObject_HEAD
+    _PyLongValue long_value;
 };
 
 PyAPI_FUNC(PyLongObject *) _PyLong_New(Py_ssize_t);
 
 /* Return a copy of src. */
 PyAPI_FUNC(PyObject *) _PyLong_Copy(PyLongObject *src);
+
+PyAPI_FUNC(PyLongObject *)
+_PyLong_FromDigits(int negative, Py_ssize_t digit_count, digit *digits);
+
+
+/* Inline some internals for speed. These should be in pycore_long.h
+ * if user code didn't need them inlined. */
+
+#define _PyLong_SIGN_MASK 3
+#define _PyLong_NON_SIZE_BITS 3
+
+
+static inline int
+_PyLong_IsCompact(const PyLongObject* op) {
+    assert(PyType_HasFeature((op)->ob_base.ob_type, Py_TPFLAGS_LONG_SUBCLASS));
+    return op->long_value.lv_tag < (2 << _PyLong_NON_SIZE_BITS);
+}
+
+#define PyUnstable_Long_IsCompact _PyLong_IsCompact
+
+static inline Py_ssize_t
+_PyLong_CompactValue(const PyLongObject *op)
+{
+    assert(PyType_HasFeature((op)->ob_base.ob_type, Py_TPFLAGS_LONG_SUBCLASS));
+    assert(PyUnstable_Long_IsCompact(op));
+    Py_ssize_t sign = 1 - (op->long_value.lv_tag & _PyLong_SIGN_MASK);
+    return sign * (Py_ssize_t)op->long_value.ob_digit[0];
+}
+
+#define PyUnstable_Long_CompactValue _PyLong_CompactValue
+
 
 #ifdef __cplusplus
 }

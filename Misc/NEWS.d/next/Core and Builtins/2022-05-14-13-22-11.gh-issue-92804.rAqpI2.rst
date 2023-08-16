@@ -1,1 +1,0 @@
-Fix memory leak in ``memoryview`` iterator as it was not finalized at exit. Patch by Kumar Aditya.

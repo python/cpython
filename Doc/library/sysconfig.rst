@@ -69,7 +69,7 @@ Python uses an installation scheme that differs depending on the platform and on
 the installation options.  These schemes are stored in :mod:`sysconfig` under
 unique identifiers based on the value returned by :const:`os.name`.
 
-Every new component that is installed using :mod:`distutils` or a
+Every new component that is installed using :mod:`!distutils` or a
 Distutils-based system will follow the same scheme to copy its file in the right
 places.
 
@@ -121,7 +121,7 @@ identifier.  Python currently uses eight paths:
 
    Return the default scheme name for the current platform.
 
-   .. versionchanged:: 3.10
+   .. versionadded:: 3.10
       This function was previously named ``_get_default_scheme()`` and
       considered an implementation detail.
 

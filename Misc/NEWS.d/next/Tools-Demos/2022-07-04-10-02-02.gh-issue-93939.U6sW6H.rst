@@ -1,3 +1,0 @@
-Add script ``Tools/scripts/check_modules.py`` to check and validate builtin
-and shared extension modules. The script also handles ``Modules/Setup`` and
-will eventually replace ``setup.py``.

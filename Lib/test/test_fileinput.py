@@ -855,29 +855,29 @@ class Test_hook_compressed(unittest.TestCase):
         self.fake_open = InvocationRecorder()
 
     def test_empty_string(self):
-        self.do_test_use_builtin_open("", 1)
+        self.do_test_use_builtin_open_text("", "r")
 
     def test_no_ext(self):
-        self.do_test_use_builtin_open("abcd", 2)
+        self.do_test_use_builtin_open_text("abcd", "r")
 
     @unittest.skipUnless(gzip, "Requires gzip and zlib")
     def test_gz_ext_fake(self):
         original_open = gzip.open
         gzip.open = self.fake_open
         try:
-            result = fileinput.hook_compressed("test.gz", "3")
+            result = fileinput.hook_compressed("test.gz", "r")
         finally:
             gzip.open = original_open
 
         self.assertEqual(self.fake_open.invocation_count, 1)
-        self.assertEqual(self.fake_open.last_invocation, (("test.gz", "3"), {}))
+        self.assertEqual(self.fake_open.last_invocation, (("test.gz", "r"), {}))
 
     @unittest.skipUnless(gzip, "Requires gzip and zlib")
     def test_gz_with_encoding_fake(self):
         original_open = gzip.open
         gzip.open = lambda filename, mode: io.BytesIO(b'Ex-binary string')
         try:
-            result = fileinput.hook_compressed("test.gz", "3", encoding="utf-8")
+            result = fileinput.hook_compressed("test.gz", "r", encoding="utf-8")
         finally:
             gzip.open = original_open
         self.assertEqual(list(result), ['Ex-binary string'])
@@ -887,23 +887,40 @@ class Test_hook_compressed(unittest.TestCase):
         original_open = bz2.BZ2File
         bz2.BZ2File = self.fake_open
         try:
-            result = fileinput.hook_compressed("test.bz2", "4")
+            result = fileinput.hook_compressed("test.bz2", "r")
         finally:
             bz2.BZ2File = original_open
 
         self.assertEqual(self.fake_open.invocation_count, 1)
-        self.assertEqual(self.fake_open.last_invocation, (("test.bz2", "4"), {}))
+        self.assertEqual(self.fake_open.last_invocation, (("test.bz2", "r"), {}))
 
     def test_blah_ext(self):
-        self.do_test_use_builtin_open("abcd.blah", "5")
+        self.do_test_use_builtin_open_binary("abcd.blah", "rb")
 
     def test_gz_ext_builtin(self):
-        self.do_test_use_builtin_open("abcd.Gz", "6")
+        self.do_test_use_builtin_open_binary("abcd.Gz", "rb")
 
     def test_bz2_ext_builtin(self):
-        self.do_test_use_builtin_open("abcd.Bz2", "7")
+        self.do_test_use_builtin_open_binary("abcd.Bz2", "rb")
 
-    def do_test_use_builtin_open(self, filename, mode):
+    def test_binary_mode_encoding(self):
+        self.do_test_use_builtin_open_binary("abcd", "rb")
+
+    def test_text_mode_encoding(self):
+        self.do_test_use_builtin_open_text("abcd", "r")
+
+    def do_test_use_builtin_open_binary(self, filename, mode):
+        original_open = self.replace_builtin_open(self.fake_open)
+        try:
+            result = fileinput.hook_compressed(filename, mode)
+        finally:
+            self.replace_builtin_open(original_open)
+
+        self.assertEqual(self.fake_open.invocation_count, 1)
+        self.assertEqual(self.fake_open.last_invocation,
+                         ((filename, mode), {'encoding': None, 'errors': None}))
+
+    def do_test_use_builtin_open_text(self, filename, mode):
         original_open = self.replace_builtin_open(self.fake_open)
         try:
             result = fileinput.hook_compressed(filename, mode)
