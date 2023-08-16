@@ -4836,7 +4836,7 @@ class DSLParser:
         self.next(self.state_modulename_name, line)
 
     @staticmethod
-    def parse_names(line: str) -> tuple[str, str]:
+    def parse_names(line: str) -> FunctionNames:
         left, as_, right = line.partition(' as ')
         full_name = left.strip()
         c_basename = right.strip()
