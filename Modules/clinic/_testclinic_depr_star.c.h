@@ -24,20 +24,15 @@ depr_star_new_impl(PyTypeObject *type, PyObject *a);
 
 // Emit compiler warnings when we get to Python 3.14.
 #if PY_VERSION_HEX >= 0x030e00C0
-#  error \
-        "In _testclinic.c, update the clinic input of " \
-        "'_testclinic.DeprStarNew.__new__'."
+#  error "Update the clinic input of '_testclinic.DeprStarNew.__new__'."
 #elif PY_VERSION_HEX >= 0x030e00A0
 #  ifdef _MSC_VER
-#    pragma message ( \
-        "In _testclinic.c, update the clinic input of " \
-        "'_testclinic.DeprStarNew.__new__'.")
+#    pragma message ("Update the clinic input of '_testclinic.DeprStarNew.__new__'.")
 #  else
-#    warning \
-        "In _testclinic.c, update the clinic input of " \
-        "'_testclinic.DeprStarNew.__new__'."
+#    warning "Update the clinic input of '_testclinic.DeprStarNew.__new__'."
 #  endif
 #endif
+
 static PyObject *
 depr_star_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
@@ -114,20 +109,15 @@ depr_star_new_clone_impl(PyObject *type, PyObject *a);
 
 // Emit compiler warnings when we get to Python 3.14.
 #if PY_VERSION_HEX >= 0x030e00C0
-#  error \
-        "In _testclinic.c, update the clinic input of " \
-        "'_testclinic.DeprStarNew.cloned'."
+#  error "Update the clinic input of '_testclinic.DeprStarNew.cloned'."
 #elif PY_VERSION_HEX >= 0x030e00A0
 #  ifdef _MSC_VER
-#    pragma message ( \
-        "In _testclinic.c, update the clinic input of " \
-        "'_testclinic.DeprStarNew.cloned'.")
+#    pragma message ("Update the clinic input of '_testclinic.DeprStarNew.cloned'.")
 #  else
-#    warning \
-        "In _testclinic.c, update the clinic input of " \
-        "'_testclinic.DeprStarNew.cloned'."
+#    warning "Update the clinic input of '_testclinic.DeprStarNew.cloned'."
 #  endif
 #endif
+
 static PyObject *
 depr_star_new_clone(PyObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -201,20 +191,15 @@ depr_star_init_impl(PyObject *self, PyObject *a);
 
 // Emit compiler warnings when we get to Python 3.14.
 #if PY_VERSION_HEX >= 0x030e00C0
-#  error \
-        "In _testclinic.c, update the clinic input of " \
-        "'_testclinic.DeprStarInit.__init__'."
+#  error "Update the clinic input of '_testclinic.DeprStarInit.__init__'."
 #elif PY_VERSION_HEX >= 0x030e00A0
 #  ifdef _MSC_VER
-#    pragma message ( \
-        "In _testclinic.c, update the clinic input of " \
-        "'_testclinic.DeprStarInit.__init__'.")
+#    pragma message ("Update the clinic input of '_testclinic.DeprStarInit.__init__'.")
 #  else
-#    warning \
-        "In _testclinic.c, update the clinic input of " \
-        "'_testclinic.DeprStarInit.__init__'."
+#    warning "Update the clinic input of '_testclinic.DeprStarInit.__init__'."
 #  endif
 #endif
+
 static int
 depr_star_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
@@ -291,20 +276,15 @@ depr_star_init_clone_impl(PyObject *self, PyObject *a);
 
 // Emit compiler warnings when we get to Python 3.14.
 #if PY_VERSION_HEX >= 0x030e00C0
-#  error \
-        "In _testclinic.c, update the clinic input of " \
-        "'_testclinic.DeprStarInit.cloned'."
+#  error "Update the clinic input of '_testclinic.DeprStarInit.cloned'."
 #elif PY_VERSION_HEX >= 0x030e00A0
 #  ifdef _MSC_VER
-#    pragma message ( \
-        "In _testclinic.c, update the clinic input of " \
-        "'_testclinic.DeprStarInit.cloned'.")
+#    pragma message ("Update the clinic input of '_testclinic.DeprStarInit.cloned'.")
 #  else
-#    warning \
-        "In _testclinic.c, update the clinic input of " \
-        "'_testclinic.DeprStarInit.cloned'."
+#    warning "Update the clinic input of '_testclinic.DeprStarInit.cloned'."
 #  endif
 #endif
+
 static PyObject *
 depr_star_init_clone(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -366,27 +346,27 @@ PyDoc_STRVAR(depr_kwd_new__doc__,
 "DeprKwdNew(a=None)\n"
 "--\n"
 "\n"
-"The deprecation message should use the class name instead of __new__.");
+"The deprecation message should use the class name instead of __new__.\n"
+"\n"
+"Note: Passing keyword argument \'a\' to _testclinic.DeprKwdNew() is\n"
+"deprecated. Corresponding parameter will become positional-only in\n"
+"Python 3.14.\n"
+"");
 
 static PyObject *
 depr_kwd_new_impl(PyTypeObject *type, PyObject *a);
 
 // Emit compiler warnings when we get to Python 3.14.
 #if PY_VERSION_HEX >= 0x030e00C0
-#  error \
-        "In _testclinic.c, update the clinic input of " \
-        "'_testclinic.DeprKwdNew.__new__'."
+#  error "Update the clinic input of '_testclinic.DeprKwdNew.__new__'."
 #elif PY_VERSION_HEX >= 0x030e00A0
 #  ifdef _MSC_VER
-#    pragma message ( \
-        "In _testclinic.c, update the clinic input of " \
-        "'_testclinic.DeprKwdNew.__new__'.")
+#    pragma message ("Update the clinic input of '_testclinic.DeprKwdNew.__new__'.")
 #  else
-#    warning \
-        "In _testclinic.c, update the clinic input of " \
-        "'_testclinic.DeprKwdNew.__new__'."
+#    warning "Update the clinic input of '_testclinic.DeprKwdNew.__new__'."
 #  endif
 #endif
+
 static PyObject *
 depr_kwd_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
@@ -453,27 +433,27 @@ PyDoc_STRVAR(depr_kwd_init__doc__,
 "DeprKwdInit(a=None)\n"
 "--\n"
 "\n"
-"The deprecation message should use the class name instead of __init__.");
+"The deprecation message should use the class name instead of __init__.\n"
+"\n"
+"Note: Passing keyword argument \'a\' to _testclinic.DeprKwdInit() is\n"
+"deprecated. Corresponding parameter will become positional-only in\n"
+"Python 3.14.\n"
+"");
 
 static int
 depr_kwd_init_impl(PyObject *self, PyObject *a);
 
 // Emit compiler warnings when we get to Python 3.14.
 #if PY_VERSION_HEX >= 0x030e00C0
-#  error \
-        "In _testclinic.c, update the clinic input of " \
-        "'_testclinic.DeprKwdInit.__init__'."
+#  error "Update the clinic input of '_testclinic.DeprKwdInit.__init__'."
 #elif PY_VERSION_HEX >= 0x030e00A0
 #  ifdef _MSC_VER
-#    pragma message ( \
-        "In _testclinic.c, update the clinic input of " \
-        "'_testclinic.DeprKwdInit.__init__'.")
+#    pragma message ("Update the clinic input of '_testclinic.DeprKwdInit.__init__'.")
 #  else
-#    warning \
-        "In _testclinic.c, update the clinic input of " \
-        "'_testclinic.DeprKwdInit.__init__'."
+#    warning "Update the clinic input of '_testclinic.DeprKwdInit.__init__'."
 #  endif
 #endif
+
 static int
 depr_kwd_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
@@ -553,17 +533,15 @@ depr_star_pos0_len1_impl(PyObject *module, PyObject *a);
 
 // Emit compiler warnings when we get to Python 3.14.
 #if PY_VERSION_HEX >= 0x030e00C0
-#  error \
-        "In _testclinic.c, update the clinic input of 'depr_star_pos0_len1'."
+#  error "Update the clinic input of 'depr_star_pos0_len1'."
 #elif PY_VERSION_HEX >= 0x030e00A0
 #  ifdef _MSC_VER
-#    pragma message ( \
-        "In _testclinic.c, update the clinic input of 'depr_star_pos0_len1'.")
+#    pragma message ("Update the clinic input of 'depr_star_pos0_len1'.")
 #  else
-#    warning \
-        "In _testclinic.c, update the clinic input of 'depr_star_pos0_len1'."
+#    warning "Update the clinic input of 'depr_star_pos0_len1'."
 #  endif
 #endif
+
 static PyObject *
 depr_star_pos0_len1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -633,17 +611,15 @@ depr_star_pos0_len2_impl(PyObject *module, PyObject *a, PyObject *b);
 
 // Emit compiler warnings when we get to Python 3.14.
 #if PY_VERSION_HEX >= 0x030e00C0
-#  error \
-        "In _testclinic.c, update the clinic input of 'depr_star_pos0_len2'."
+#  error "Update the clinic input of 'depr_star_pos0_len2'."
 #elif PY_VERSION_HEX >= 0x030e00A0
 #  ifdef _MSC_VER
-#    pragma message ( \
-        "In _testclinic.c, update the clinic input of 'depr_star_pos0_len2'.")
+#    pragma message ("Update the clinic input of 'depr_star_pos0_len2'.")
 #  else
-#    warning \
-        "In _testclinic.c, update the clinic input of 'depr_star_pos0_len2'."
+#    warning "Update the clinic input of 'depr_star_pos0_len2'."
 #  endif
 #endif
+
 static PyObject *
 depr_star_pos0_len2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -716,20 +692,15 @@ depr_star_pos0_len3_with_kwd_impl(PyObject *module, PyObject *a, PyObject *b,
 
 // Emit compiler warnings when we get to Python 3.14.
 #if PY_VERSION_HEX >= 0x030e00C0
-#  error \
-        "In _testclinic.c, update the clinic input of " \
-        "'depr_star_pos0_len3_with_kwd'."
+#  error "Update the clinic input of 'depr_star_pos0_len3_with_kwd'."
 #elif PY_VERSION_HEX >= 0x030e00A0
 #  ifdef _MSC_VER
-#    pragma message ( \
-        "In _testclinic.c, update the clinic input of " \
-        "'depr_star_pos0_len3_with_kwd'.")
+#    pragma message ("Update the clinic input of 'depr_star_pos0_len3_with_kwd'.")
 #  else
-#    warning \
-        "In _testclinic.c, update the clinic input of " \
-        "'depr_star_pos0_len3_with_kwd'."
+#    warning "Update the clinic input of 'depr_star_pos0_len3_with_kwd'."
 #  endif
 #endif
+
 static PyObject *
 depr_star_pos0_len3_with_kwd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -805,17 +776,15 @@ depr_star_pos1_len1_opt_impl(PyObject *module, PyObject *a, PyObject *b);
 
 // Emit compiler warnings when we get to Python 3.14.
 #if PY_VERSION_HEX >= 0x030e00C0
-#  error \
-        "In _testclinic.c, update the clinic input of 'depr_star_pos1_len1_opt'."
+#  error "Update the clinic input of 'depr_star_pos1_len1_opt'."
 #elif PY_VERSION_HEX >= 0x030e00A0
 #  ifdef _MSC_VER
-#    pragma message ( \
-        "In _testclinic.c, update the clinic input of 'depr_star_pos1_len1_opt'.")
+#    pragma message ("Update the clinic input of 'depr_star_pos1_len1_opt'.")
 #  else
-#    warning \
-        "In _testclinic.c, update the clinic input of 'depr_star_pos1_len1_opt'."
+#    warning "Update the clinic input of 'depr_star_pos1_len1_opt'."
 #  endif
 #endif
+
 static PyObject *
 depr_star_pos1_len1_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -892,17 +861,15 @@ depr_star_pos1_len1_impl(PyObject *module, PyObject *a, PyObject *b);
 
 // Emit compiler warnings when we get to Python 3.14.
 #if PY_VERSION_HEX >= 0x030e00C0
-#  error \
-        "In _testclinic.c, update the clinic input of 'depr_star_pos1_len1'."
+#  error "Update the clinic input of 'depr_star_pos1_len1'."
 #elif PY_VERSION_HEX >= 0x030e00A0
 #  ifdef _MSC_VER
-#    pragma message ( \
-        "In _testclinic.c, update the clinic input of 'depr_star_pos1_len1'.")
+#    pragma message ("Update the clinic input of 'depr_star_pos1_len1'.")
 #  else
-#    warning \
-        "In _testclinic.c, update the clinic input of 'depr_star_pos1_len1'."
+#    warning "Update the clinic input of 'depr_star_pos1_len1'."
 #  endif
 #endif
+
 static PyObject *
 depr_star_pos1_len1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -975,20 +942,15 @@ depr_star_pos1_len2_with_kwd_impl(PyObject *module, PyObject *a, PyObject *b,
 
 // Emit compiler warnings when we get to Python 3.14.
 #if PY_VERSION_HEX >= 0x030e00C0
-#  error \
-        "In _testclinic.c, update the clinic input of " \
-        "'depr_star_pos1_len2_with_kwd'."
+#  error "Update the clinic input of 'depr_star_pos1_len2_with_kwd'."
 #elif PY_VERSION_HEX >= 0x030e00A0
 #  ifdef _MSC_VER
-#    pragma message ( \
-        "In _testclinic.c, update the clinic input of " \
-        "'depr_star_pos1_len2_with_kwd'.")
+#    pragma message ("Update the clinic input of 'depr_star_pos1_len2_with_kwd'.")
 #  else
-#    warning \
-        "In _testclinic.c, update the clinic input of " \
-        "'depr_star_pos1_len2_with_kwd'."
+#    warning "Update the clinic input of 'depr_star_pos1_len2_with_kwd'."
 #  endif
 #endif
+
 static PyObject *
 depr_star_pos1_len2_with_kwd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -1065,17 +1027,15 @@ depr_star_pos2_len1_impl(PyObject *module, PyObject *a, PyObject *b,
 
 // Emit compiler warnings when we get to Python 3.14.
 #if PY_VERSION_HEX >= 0x030e00C0
-#  error \
-        "In _testclinic.c, update the clinic input of 'depr_star_pos2_len1'."
+#  error "Update the clinic input of 'depr_star_pos2_len1'."
 #elif PY_VERSION_HEX >= 0x030e00A0
 #  ifdef _MSC_VER
-#    pragma message ( \
-        "In _testclinic.c, update the clinic input of 'depr_star_pos2_len1'.")
+#    pragma message ("Update the clinic input of 'depr_star_pos2_len1'.")
 #  else
-#    warning \
-        "In _testclinic.c, update the clinic input of 'depr_star_pos2_len1'."
+#    warning "Update the clinic input of 'depr_star_pos2_len1'."
 #  endif
 #endif
+
 static PyObject *
 depr_star_pos2_len1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -1150,17 +1110,15 @@ depr_star_pos2_len2_impl(PyObject *module, PyObject *a, PyObject *b,
 
 // Emit compiler warnings when we get to Python 3.14.
 #if PY_VERSION_HEX >= 0x030e00C0
-#  error \
-        "In _testclinic.c, update the clinic input of 'depr_star_pos2_len2'."
+#  error "Update the clinic input of 'depr_star_pos2_len2'."
 #elif PY_VERSION_HEX >= 0x030e00A0
 #  ifdef _MSC_VER
-#    pragma message ( \
-        "In _testclinic.c, update the clinic input of 'depr_star_pos2_len2'.")
+#    pragma message ("Update the clinic input of 'depr_star_pos2_len2'.")
 #  else
-#    warning \
-        "In _testclinic.c, update the clinic input of 'depr_star_pos2_len2'."
+#    warning "Update the clinic input of 'depr_star_pos2_len2'."
 #  endif
 #endif
+
 static PyObject *
 depr_star_pos2_len2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -1237,20 +1195,15 @@ depr_star_pos2_len2_with_kwd_impl(PyObject *module, PyObject *a, PyObject *b,
 
 // Emit compiler warnings when we get to Python 3.14.
 #if PY_VERSION_HEX >= 0x030e00C0
-#  error \
-        "In _testclinic.c, update the clinic input of " \
-        "'depr_star_pos2_len2_with_kwd'."
+#  error "Update the clinic input of 'depr_star_pos2_len2_with_kwd'."
 #elif PY_VERSION_HEX >= 0x030e00A0
 #  ifdef _MSC_VER
-#    pragma message ( \
-        "In _testclinic.c, update the clinic input of " \
-        "'depr_star_pos2_len2_with_kwd'.")
+#    pragma message ("Update the clinic input of 'depr_star_pos2_len2_with_kwd'.")
 #  else
-#    warning \
-        "In _testclinic.c, update the clinic input of " \
-        "'depr_star_pos2_len2_with_kwd'."
+#    warning "Update the clinic input of 'depr_star_pos2_len2_with_kwd'."
 #  endif
 #endif
+
 static PyObject *
 depr_star_pos2_len2_with_kwd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -1314,7 +1267,11 @@ exit:
 PyDoc_STRVAR(depr_kwd_required_1__doc__,
 "depr_kwd_required_1($module, a, /, b)\n"
 "--\n"
-"\n");
+"\n"
+"Note: Passing keyword argument \'b\' to depr_kwd_required_1() is\n"
+"deprecated. Corresponding parameter will become positional-only in\n"
+"Python 3.14.\n"
+"");
 
 #define DEPR_KWD_REQUIRED_1_METHODDEF    \
     {"depr_kwd_required_1", _PyCFunction_CAST(depr_kwd_required_1), METH_FASTCALL|METH_KEYWORDS, depr_kwd_required_1__doc__},
@@ -1324,17 +1281,15 @@ depr_kwd_required_1_impl(PyObject *module, PyObject *a, PyObject *b);
 
 // Emit compiler warnings when we get to Python 3.14.
 #if PY_VERSION_HEX >= 0x030e00C0
-#  error \
-        "In _testclinic.c, update the clinic input of 'depr_kwd_required_1'."
+#  error "Update the clinic input of 'depr_kwd_required_1'."
 #elif PY_VERSION_HEX >= 0x030e00A0
 #  ifdef _MSC_VER
-#    pragma message ( \
-        "In _testclinic.c, update the clinic input of 'depr_kwd_required_1'.")
+#    pragma message ("Update the clinic input of 'depr_kwd_required_1'.")
 #  else
-#    warning \
-        "In _testclinic.c, update the clinic input of 'depr_kwd_required_1'."
+#    warning "Update the clinic input of 'depr_kwd_required_1'."
 #  endif
 #endif
+
 static PyObject *
 depr_kwd_required_1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -1392,7 +1347,11 @@ exit:
 PyDoc_STRVAR(depr_kwd_required_2__doc__,
 "depr_kwd_required_2($module, a, /, b, c)\n"
 "--\n"
-"\n");
+"\n"
+"Note: Passing keyword arguments \'b\' and \'c\' to depr_kwd_required_2()\n"
+"is deprecated. Corresponding parameters will become positional-only in\n"
+"Python 3.14.\n"
+"");
 
 #define DEPR_KWD_REQUIRED_2_METHODDEF    \
     {"depr_kwd_required_2", _PyCFunction_CAST(depr_kwd_required_2), METH_FASTCALL|METH_KEYWORDS, depr_kwd_required_2__doc__},
@@ -1403,17 +1362,15 @@ depr_kwd_required_2_impl(PyObject *module, PyObject *a, PyObject *b,
 
 // Emit compiler warnings when we get to Python 3.14.
 #if PY_VERSION_HEX >= 0x030e00C0
-#  error \
-        "In _testclinic.c, update the clinic input of 'depr_kwd_required_2'."
+#  error "Update the clinic input of 'depr_kwd_required_2'."
 #elif PY_VERSION_HEX >= 0x030e00A0
 #  ifdef _MSC_VER
-#    pragma message ( \
-        "In _testclinic.c, update the clinic input of 'depr_kwd_required_2'.")
+#    pragma message ("Update the clinic input of 'depr_kwd_required_2'.")
 #  else
-#    warning \
-        "In _testclinic.c, update the clinic input of 'depr_kwd_required_2'."
+#    warning "Update the clinic input of 'depr_kwd_required_2'."
 #  endif
 #endif
+
 static PyObject *
 depr_kwd_required_2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -1473,7 +1430,11 @@ exit:
 PyDoc_STRVAR(depr_kwd_optional_1__doc__,
 "depr_kwd_optional_1($module, a, /, b=None)\n"
 "--\n"
-"\n");
+"\n"
+"Note: Passing keyword argument \'b\' to depr_kwd_optional_1() is\n"
+"deprecated. Corresponding parameter will become positional-only in\n"
+"Python 3.14.\n"
+"");
 
 #define DEPR_KWD_OPTIONAL_1_METHODDEF    \
     {"depr_kwd_optional_1", _PyCFunction_CAST(depr_kwd_optional_1), METH_FASTCALL|METH_KEYWORDS, depr_kwd_optional_1__doc__},
@@ -1483,17 +1444,15 @@ depr_kwd_optional_1_impl(PyObject *module, PyObject *a, PyObject *b);
 
 // Emit compiler warnings when we get to Python 3.14.
 #if PY_VERSION_HEX >= 0x030e00C0
-#  error \
-        "In _testclinic.c, update the clinic input of 'depr_kwd_optional_1'."
+#  error "Update the clinic input of 'depr_kwd_optional_1'."
 #elif PY_VERSION_HEX >= 0x030e00A0
 #  ifdef _MSC_VER
-#    pragma message ( \
-        "In _testclinic.c, update the clinic input of 'depr_kwd_optional_1'.")
+#    pragma message ("Update the clinic input of 'depr_kwd_optional_1'.")
 #  else
-#    warning \
-        "In _testclinic.c, update the clinic input of 'depr_kwd_optional_1'."
+#    warning "Update the clinic input of 'depr_kwd_optional_1'."
 #  endif
 #endif
+
 static PyObject *
 depr_kwd_optional_1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -1559,7 +1518,11 @@ exit:
 PyDoc_STRVAR(depr_kwd_optional_2__doc__,
 "depr_kwd_optional_2($module, a, /, b=None, c=None)\n"
 "--\n"
-"\n");
+"\n"
+"Note: Passing keyword arguments \'b\' and \'c\' to depr_kwd_optional_2()\n"
+"is deprecated. Corresponding parameters will become positional-only in\n"
+"Python 3.14.\n"
+"");
 
 #define DEPR_KWD_OPTIONAL_2_METHODDEF    \
     {"depr_kwd_optional_2", _PyCFunction_CAST(depr_kwd_optional_2), METH_FASTCALL|METH_KEYWORDS, depr_kwd_optional_2__doc__},
@@ -1570,17 +1533,15 @@ depr_kwd_optional_2_impl(PyObject *module, PyObject *a, PyObject *b,
 
 // Emit compiler warnings when we get to Python 3.14.
 #if PY_VERSION_HEX >= 0x030e00C0
-#  error \
-        "In _testclinic.c, update the clinic input of 'depr_kwd_optional_2'."
+#  error "Update the clinic input of 'depr_kwd_optional_2'."
 #elif PY_VERSION_HEX >= 0x030e00A0
 #  ifdef _MSC_VER
-#    pragma message ( \
-        "In _testclinic.c, update the clinic input of 'depr_kwd_optional_2'.")
+#    pragma message ("Update the clinic input of 'depr_kwd_optional_2'.")
 #  else
-#    warning \
-        "In _testclinic.c, update the clinic input of 'depr_kwd_optional_2'."
+#    warning "Update the clinic input of 'depr_kwd_optional_2'."
 #  endif
 #endif
+
 static PyObject *
 depr_kwd_optional_2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -1653,7 +1614,11 @@ exit:
 PyDoc_STRVAR(depr_kwd_optional_3__doc__,
 "depr_kwd_optional_3($module, /, a=None, b=None, c=None)\n"
 "--\n"
-"\n");
+"\n"
+"Note: Passing keyword arguments \'a\', \'b\' and \'c\' to\n"
+"depr_kwd_optional_3() is deprecated. Corresponding parameters will\n"
+"become positional-only in Python 3.14.\n"
+"");
 
 #define DEPR_KWD_OPTIONAL_3_METHODDEF    \
     {"depr_kwd_optional_3", _PyCFunction_CAST(depr_kwd_optional_3), METH_FASTCALL|METH_KEYWORDS, depr_kwd_optional_3__doc__},
@@ -1664,17 +1629,15 @@ depr_kwd_optional_3_impl(PyObject *module, PyObject *a, PyObject *b,
 
 // Emit compiler warnings when we get to Python 3.14.
 #if PY_VERSION_HEX >= 0x030e00C0
-#  error \
-        "In _testclinic.c, update the clinic input of 'depr_kwd_optional_3'."
+#  error "Update the clinic input of 'depr_kwd_optional_3'."
 #elif PY_VERSION_HEX >= 0x030e00A0
 #  ifdef _MSC_VER
-#    pragma message ( \
-        "In _testclinic.c, update the clinic input of 'depr_kwd_optional_3'.")
+#    pragma message ("Update the clinic input of 'depr_kwd_optional_3'.")
 #  else
-#    warning \
-        "In _testclinic.c, update the clinic input of 'depr_kwd_optional_3'."
+#    warning "Update the clinic input of 'depr_kwd_optional_3'."
 #  endif
 #endif
+
 static PyObject *
 depr_kwd_optional_3(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -1752,7 +1715,11 @@ exit:
 PyDoc_STRVAR(depr_kwd_required_optional__doc__,
 "depr_kwd_required_optional($module, a, /, b, c=None)\n"
 "--\n"
-"\n");
+"\n"
+"Note: Passing keyword arguments \'b\' and \'c\' to\n"
+"depr_kwd_required_optional() is deprecated. Corresponding parameters\n"
+"will become positional-only in Python 3.14.\n"
+"");
 
 #define DEPR_KWD_REQUIRED_OPTIONAL_METHODDEF    \
     {"depr_kwd_required_optional", _PyCFunction_CAST(depr_kwd_required_optional), METH_FASTCALL|METH_KEYWORDS, depr_kwd_required_optional__doc__},
@@ -1763,20 +1730,15 @@ depr_kwd_required_optional_impl(PyObject *module, PyObject *a, PyObject *b,
 
 // Emit compiler warnings when we get to Python 3.14.
 #if PY_VERSION_HEX >= 0x030e00C0
-#  error \
-        "In _testclinic.c, update the clinic input of " \
-        "'depr_kwd_required_optional'."
+#  error "Update the clinic input of 'depr_kwd_required_optional'."
 #elif PY_VERSION_HEX >= 0x030e00A0
 #  ifdef _MSC_VER
-#    pragma message ( \
-        "In _testclinic.c, update the clinic input of " \
-        "'depr_kwd_required_optional'.")
+#    pragma message ("Update the clinic input of 'depr_kwd_required_optional'.")
 #  else
-#    warning \
-        "In _testclinic.c, update the clinic input of " \
-        "'depr_kwd_required_optional'."
+#    warning "Update the clinic input of 'depr_kwd_required_optional'."
 #  endif
 #endif
+
 static PyObject *
 depr_kwd_required_optional(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -1844,7 +1806,11 @@ exit:
 PyDoc_STRVAR(depr_kwd_noinline__doc__,
 "depr_kwd_noinline($module, a, /, b, c=None, d=\'\')\n"
 "--\n"
-"\n");
+"\n"
+"Note: Passing keyword arguments \'b\' and \'c\' to depr_kwd_noinline() is\n"
+"deprecated. Corresponding parameters will become positional-only in\n"
+"Python 3.14.\n"
+"");
 
 #define DEPR_KWD_NOINLINE_METHODDEF    \
     {"depr_kwd_noinline", _PyCFunction_CAST(depr_kwd_noinline), METH_FASTCALL|METH_KEYWORDS, depr_kwd_noinline__doc__},
@@ -1855,17 +1821,15 @@ depr_kwd_noinline_impl(PyObject *module, PyObject *a, PyObject *b,
 
 // Emit compiler warnings when we get to Python 3.14.
 #if PY_VERSION_HEX >= 0x030e00C0
-#  error \
-        "In _testclinic.c, update the clinic input of 'depr_kwd_noinline'."
+#  error "Update the clinic input of 'depr_kwd_noinline'."
 #elif PY_VERSION_HEX >= 0x030e00A0
 #  ifdef _MSC_VER
-#    pragma message ( \
-        "In _testclinic.c, update the clinic input of 'depr_kwd_noinline'.")
+#    pragma message ("Update the clinic input of 'depr_kwd_noinline'.")
 #  else
-#    warning \
-        "In _testclinic.c, update the clinic input of 'depr_kwd_noinline'."
+#    warning "Update the clinic input of 'depr_kwd_noinline'."
 #  endif
 #endif
+
 static PyObject *
 depr_kwd_noinline(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
@@ -1922,4 +1886,4 @@ depr_kwd_noinline(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7df75e794cccde22 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e9c6f2420b14f1fa input=a9049054013a1b77]*/

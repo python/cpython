@@ -852,15 +852,12 @@ class CLanguage(Language):
     COMPILER_DEPRECATION_WARNING_PROTOTYPE: Final[str] = r"""
         // Emit compiler warnings when we get to Python {major}.{minor}.
         #if PY_VERSION_HEX >= 0x{major:02x}{minor:02x}00C0
-        #  error \
-                {message}
+        #  error {message}
         #elif PY_VERSION_HEX >= 0x{major:02x}{minor:02x}00A0
         #  ifdef _MSC_VER
-        #    pragma message ( \
-                {message})
+        #    pragma message ({message})
         #  else
-        #    warning \
-                {message}
+        #    warning {message}
         #  endif
         #endif
     """
@@ -911,15 +908,11 @@ class CLanguage(Language):
         # Format the preprocessor warning and error messages.
         assert isinstance(self.cpp.filename, str)
         source = os.path.basename(self.cpp.filename)
-        message = (
-            f"In {source}, update the clinic input of {func.full_name!r}."
-        )
+        message = f"Update the clinic input of {func.full_name!r}."
         code = self.COMPILER_DEPRECATION_WARNING_PROTOTYPE.format(
             major=minversion[0],
             minor=minversion[1],
-            message=wrapped_c_string_literal(message, suffix=" \\",
-                                             width=72,
-                                             subsequent_indent=16),
+            message=c_repr(message),
         )
         return normalize_snippet(code)
 
@@ -943,24 +936,28 @@ class CLanguage(Language):
         major, minor = thenceforth
 
         # Format the deprecation message.
-        amount = ""
-        what = "arguments"
+        if first_pos == 0:
+            preamble = "Passing positional arguments to "
         if len(params) == 1:
             condition = f"nargs == {first_pos+1}"
             if first_pos:
-                amount = f"{first_pos+1} "
-            message = f"Parameter {pstr} will become a keyword-only parameter"
+                preamble = f"Passing {first_pos+1} positional arguments to "
+            message = preamble + (
+                f"{func.fulldisplayname}() is deprecated. Parameter {pstr} will "
+                f"become a keyword-only parameter in Python {major}.{minor}."
+            )
         else:
             condition = f"nargs > {first_pos} && nargs <= {last_pos+1}"
             if first_pos:
-                amount = f"more than {first_pos} "
-                if first_pos == 1:
-                    what = "argument"
-            message = f"Parameters {pstr} will become keyword-only parameters"
-        message = (
-            f"Passing {amount}positional {what} to {func.fulldisplayname}() is deprecated. "
-            f"{message} in Python {major}.{minor}."
-        )
+                preamble = (
+                    f"Passing more than {first_pos} positional "
+                    f"argument{'s' if first_pos != 1 else ''} to "
+                )
+            message = preamble + (
+                f"{func.fulldisplayname}() is deprecated. Parameters {pstr} will "
+                f"become keyword-only parameters in Python {major}.{minor}."
+            )
+
         # Append deprecation warning to docstring.
         docstring = textwrap.fill(f"Note: {message}")
         func.docstring += f"\n\n{docstring}\n"
@@ -980,8 +977,8 @@ class CLanguage(Language):
     ) -> str:
         assert len(params) > 0
         names = [repr(p.name) for p in params.values()]
-        first_pos, first_param = next(iter(params.items()))
-        last_pos, last_param = next(reversed(params.items()))
+        first_param = next(iter(params.values()))
+        last_param = next(reversed(params.values()))
 
         # Pretty-print list of names.
         pstr = pprint_words(names)
@@ -997,7 +994,6 @@ class CLanguage(Language):
         conditions = []
         for i, p in params.items():
             if p.is_optional():
-                #conditions.append(f"nargs < {i+1} && {argname_fmt % i}")
                 if func.kind.new_or_init:
                     conditions.append(f"nargs < {i+1} && kwargs && PyDict_Contains(kwargs, &_Py_ID({p.name}))")
                     containscheck = "PyDict_Contains"
@@ -1026,6 +1022,9 @@ class CLanguage(Language):
             }}}}"""
         else:
             errcheck = ""
+        # Append deprecation warning to docstring.
+        docstring = textwrap.fill(f"Note: {message}")
+        func.docstring += f"\n\n{docstring}\n"
         # Format and return the code block.
         code = self.DEPRECATION_WARNING_PROTOTYPE.format(
             condition=condition,
@@ -1564,7 +1563,7 @@ class CLanguage(Language):
 
         compiler_warning = self.compiler_deprecated_warning(f, parameters)
         if compiler_warning:
-            parser_definition = compiler_warning + "\n" + parser_definition
+            parser_definition = compiler_warning + "\n\n" + parser_definition
 
         d = {
             "docstring_prototype" : docstring_prototype,
@@ -5560,18 +5559,22 @@ class DSLParser:
         """Parse positional-only parameter marker '/'."""
         if version is None:
             if self.deprecated_keyword:
-                fail(f"Function {function.full_name!r}: '/ [from ...]' must come after '/'")
+                fail(f"Function {function.name!r}: '/' must precede '/ [from ...]'")
+            if self.deprecated_positional:
+                fail(f"Function {function.name!r}: '/' must precede '* [from ...]'")
+            if self.keyword_only:
+                fail(f"Function {function.name!r}: '/' must precede '*'")
             if self.positional_only:
                 fail(f"Function {function.name!r} uses '/' more than once.")
         else:
             if self.deprecated_keyword:
                 fail(f"Function {function.name!r} uses '/ [from ...]' more than once.")
-
+            if self.deprecated_positional:
+                fail(f"Function {function.name!r}: '/ [from ...]' must precede '* [from ...]'")
+            if self.keyword_only:
+                fail(f"Function {function.name!r}: '/ [from ...]' must precede '*'")
         self.positional_only = True
         self.deprecated_keyword = version
-        if self.keyword_only or self.deprecated_positional:
-            fail(f"Function {function.name!r} mixes keyword-only and "
-                 f"positional-only parameters, which is unsupported.")
         if version is not None:
             found = False
             for p in reversed(function.parameters.values()):
@@ -5579,7 +5582,7 @@ class DSLParser:
                 break
             if not found:
                 fail(f"Function {function.name!r} specifies '/ [from ...]' "
-                     f"without any parameters beforehead.")
+                     f"without preceding parameters.")
         # REQUIRED and OPTIONAL are allowed here, that allows positional-only
         # without option groups to work (and have default values!)
         allowed = {
@@ -5904,7 +5907,7 @@ class DSLParser:
 
         fname = self.function.full_name
         fail(f"Function {fname!r} specifies {symbol!r} "
-                "without any parameters afterwards.", line_number=lineno)
+             f"without following parameters.", line_number=lineno)
 
     def do_post_block_processing_cleanup(self, lineno: int) -> None:
         """

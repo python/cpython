@@ -2003,8 +2003,6 @@ The generated code will now emit a :exc:`DeprecationWarning`
 when an :term:`argument` for the :term:`parameter` *d* is passed positionally
 (e.g ``myfunc(1, 2, 3, 4, e=5)``) or an argument for the parameter *b* is
 passed by keyword (e.g ``myfunc(1, b=2, c=3, d=4, e=5)``).
-Although ``myfunc(1, 2, 3, d=4, e=5)`` and ``myfunc(1, 2, c=3, d=4, e=5)``
-will pass without warning.
 C preprocessor directives are also generated for emitting
 compiler warnings if the ``[from ...]`` lines have not been removed
 from the Argument Clinic input when the deprecation period is over,

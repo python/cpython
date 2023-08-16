@@ -18,20 +18,15 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
 
 // Emit compiler warnings when we get to Python 3.15.
 #if PY_VERSION_HEX >= 0x030f00C0
-#  error \
-        "In connection.c, update the clinic input of " \
-        "'_sqlite3.Connection.__init__'."
+#  error "Update the clinic input of '_sqlite3.Connection.__init__'."
 #elif PY_VERSION_HEX >= 0x030f00A0
 #  ifdef _MSC_VER
-#    pragma message ( \
-        "In connection.c, update the clinic input of " \
-        "'_sqlite3.Connection.__init__'.")
+#    pragma message ("Update the clinic input of '_sqlite3.Connection.__init__'.")
 #  else
-#    warning \
-        "In connection.c, update the clinic input of " \
-        "'_sqlite3.Connection.__init__'."
+#    warning "Update the clinic input of '_sqlite3.Connection.__init__'."
 #  endif
 #endif
+
 static int
 pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
@@ -1686,4 +1681,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=08b3a3d33755994a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0ad9d55977a51b8f input=a9049054013a1b77]*/

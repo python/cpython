@@ -1559,7 +1559,7 @@ class ClinicParserTest(TestCase):
             "module foo\nfoo.bar\n  this: int\n  *",
             "module foo\nfoo.bar\n  this: int\n  *\nDocstring.",
         )
-        err = "Function 'foo.bar' specifies '*' without any parameters afterwards."
+        err = "Function 'foo.bar' specifies '*' without following parameters."
         for block in dataset:
             with self.subTest(block=block):
                 self.expect_failure(block, err)
@@ -1670,7 +1670,7 @@ class ClinicParserTest(TestCase):
         """
         err = (
             "Function 'foo.bar' specifies '* [from ...]' without "
-            "any parameters afterwards"
+            "following parameters."
         )
         self.expect_failure(block, err, lineno=4)
 
@@ -1686,7 +1686,7 @@ class ClinicParserTest(TestCase):
         """
         err = (
             "Function 'foo.bar' specifies '* [from ...]' without "
-            "any parameters afterwards"
+            "following parameters."
         )
         self.expect_failure(block, err, lineno=4)
 
@@ -1716,6 +1716,20 @@ class ClinicParserTest(TestCase):
         err = "Function 'foo.bar' uses '* [from ...]' more than once."
         self.expect_failure(block, err, lineno=5)
 
+    def test_depr_star_duplicate2(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                * [from 3.14]
+                b: int
+                * [from 3.15]
+                c: int
+            Docstring.
+        """
+        err = "Function 'foo.bar' uses '* [from ...]' more than once."
+        self.expect_failure(block, err, lineno=5)
+
     def test_depr_slash_duplicate(self):
         block = """
             module foo
@@ -1724,6 +1738,20 @@ class ClinicParserTest(TestCase):
                 / [from 3.14]
                 b: int
                 / [from 3.14]
+                c: int
+            Docstring.
+        """
+        err = "Function 'bar' uses '/ [from ...]' more than once."
+        self.expect_failure(block, err, lineno=5)
+
+    def test_depr_slash_duplicate2(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                / [from 3.14]
+                b: int
+                / [from 3.15]
                 c: int
             Docstring.
         """
@@ -1752,25 +1780,11 @@ class ClinicParserTest(TestCase):
         """
         err = (
             "Function 'bar' specifies '/ [from ...]' without "
-            "any parameters beforehead."
+            "preceding parameters."
         )
         self.expect_failure(block, err, lineno=2)
 
     def test_parameters_required_before_depr_slash2(self):
-        block = """
-            module foo
-            foo.bar
-                /
-                / [from 3.14]
-            Docstring.
-        """
-        err = (
-            "Function 'bar' has an unsupported group configuration. "
-            "(Unexpected state 0.d)"
-        )
-        self.expect_failure(block, err, lineno=2)
-
-    def test_parameters_required_before_depr_slash3(self):
         block = """
             module foo
             foo.bar
@@ -1781,7 +1795,7 @@ class ClinicParserTest(TestCase):
         """
         err = (
             "Function 'bar' specifies '/ [from ...]' without "
-            "any parameters beforehead."
+            "preceding parameters."
         )
         self.expect_failure(block, err, lineno=4)
 
@@ -1807,10 +1821,7 @@ class ClinicParserTest(TestCase):
                z: int
                /
         """
-        err = (
-            "Function 'bar' mixes keyword-only and positional-only parameters, "
-            "which is unsupported."
-        )
+        err = "Function 'bar': '/' must precede '*'"
         self.expect_failure(block, err)
 
     def test_depr_star_must_come_after_slash(self):
@@ -1823,10 +1834,7 @@ class ClinicParserTest(TestCase):
                 b: int
             Docstring.
         """
-        err = (
-            "Function 'bar' mixes keyword-only and positional-only parameters, "
-            "which is unsupported."
-        )
+        err = "Function 'bar': '/' must precede '* [from ...]'"
         self.expect_failure(block, err, lineno=4)
 
     def test_depr_star_must_come_after_depr_slash(self):
@@ -1839,10 +1847,7 @@ class ClinicParserTest(TestCase):
                 b: int
             Docstring.
         """
-        err = (
-            "Function 'bar' mixes keyword-only and positional-only parameters, "
-            "which is unsupported."
-        )
+        err = "Function 'bar': '/ [from ...]' must precede '* [from ...]'"
         self.expect_failure(block, err, lineno=4)
 
     def test_star_must_come_after_depr_slash(self):
@@ -1855,10 +1860,7 @@ class ClinicParserTest(TestCase):
                 b: int
             Docstring.
         """
-        err = (
-            "Function 'bar' mixes keyword-only and positional-only parameters, "
-            "which is unsupported."
-        )
+        err = "Function 'bar': '/ [from ...]' must precede '*'"
         self.expect_failure(block, err, lineno=4)
 
     def test_depr_slash_must_come_after_slash(self):
@@ -1871,7 +1873,7 @@ class ClinicParserTest(TestCase):
                 b: int
             Docstring.
         """
-        err = "Function 'foo.bar': '/ [from ...]' must come after '/'"
+        err = "Function 'bar': '/' must precede '/ [from ...]'"
         self.expect_failure(block, err, lineno=4)
 
     def test_parameters_not_permitted_after_slash_for_now(self):
