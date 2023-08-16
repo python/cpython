@@ -355,6 +355,12 @@ Module functions
    .. versionadded:: 3.12
       The *autocommit* parameter.
 
+   .. versionchanged:: 3.13
+      Positional use of the parameters *timeout*, *detect_types*,
+      *isolation_level*, *check_same_thread*, *factory*, *cached_statements*,
+      and *uri* is deprecated.
+      They will become keyword-only parameters in Python 3.15.
+
 .. function:: complete_statement(statement)
 
    Return ``True`` if the string *statement* appears to contain

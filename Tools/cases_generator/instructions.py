@@ -248,6 +248,25 @@ class Instruction:
 InstructionOrCacheEffect = Instruction | parsing.CacheEffect
 
 
+# Instruction used for abstract interpretation.
+class AbstractInstruction(Instruction):
+    def __init__(self, inst: parsing.InstDef):
+        super().__init__(inst)
+
+    def write(self, out: Formatter, tier: Tiers = TIER_ONE) -> None:
+        """Write one abstract instruction, sans prologue and epilogue."""
+        stacking.write_single_instr_for_abstract_interp(self, out)
+
+    def write_body(
+        self,
+        out: Formatter,
+        dedent: int,
+        active_caches: list[ActiveCacheEffect],
+        tier: Tiers = TIER_ONE,
+    ) -> None:
+        pass
+
+
 @dataclasses.dataclass
 class Component:
     instr: Instruction

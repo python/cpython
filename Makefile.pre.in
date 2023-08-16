@@ -405,6 +405,7 @@ PYTHON_OBJS=	\
 		Python/mysnprintf.o \
 		Python/mystrtoul.o \
 		Python/optimizer.o \
+		Python/optimizer_analysis.o \
 		Python/pathconfig.o \
 		Python/preconfig.o \
 		Python/pyarena.o \
@@ -1547,10 +1548,12 @@ regen-cases:
 		-m $(srcdir)/Include/internal/pycore_opcode_metadata.h.new \
 		-e $(srcdir)/Python/executor_cases.c.h.new \
 		-p $(srcdir)/Lib/_opcode_metadata.py.new \
+		-a $(srcdir)/Python/abstract_interp_cases.c.h.new \
 		$(srcdir)/Python/bytecodes.c
 	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_opcode_metadata.h $(srcdir)/Include/internal/pycore_opcode_metadata.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/executor_cases.c.h $(srcdir)/Python/executor_cases.c.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/abstract_interp_cases.c.h $(srcdir)/Python/abstract_interp_cases.c.h.new
 	$(UPDATE_FILE) $(srcdir)/Lib/_opcode_metadata.py $(srcdir)/Lib/_opcode_metadata.py.new
 
 Python/compile.o: $(srcdir)/Include/internal/pycore_opcode_metadata.h
@@ -1563,6 +1566,7 @@ Python/ceval.o: \
 
 Python/executor.o: \
 		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
+		$(srcdir)/Include/internal/pycore_optimizer.h \
 		$(srcdir)/Python/ceval_macros.h \
 		$(srcdir)/Python/executor_cases.c.h
 
@@ -1571,7 +1575,12 @@ Python/flowgraph.o: \
 
 Python/optimizer.o: \
 		$(srcdir)/Python/executor_cases.c.h \
-		$(srcdir)/Include/internal/pycore_opcode_metadata.h
+		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
+		$(srcdir)/Include/internal/pycore_optimizer.h
+
+Python/optimizer_analysis.o: \
+		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
+		$(srcdir)/Include/internal/pycore_optimizer.h
 
 Python/frozen.o: $(FROZEN_FILES_OUT)
 
@@ -1781,6 +1790,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_obmalloc_init.h \
 		$(srcdir)/Include/internal/pycore_opcode.h \
 		$(srcdir)/Include/internal/pycore_opcode_utils.h \
+		$(srcdir)/Include/internal/pycore_optimizer.h \
 		$(srcdir)/Include/internal/pycore_pathconfig.h \
 		$(srcdir)/Include/internal/pycore_pyarena.h \
 		$(srcdir)/Include/internal/pycore_pyerrors.h \

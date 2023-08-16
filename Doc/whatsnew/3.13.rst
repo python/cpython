@@ -219,6 +219,11 @@ Deprecated
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
 
+* Passing more than one positional argument to :func:`sqlite3.connect` and the
+  :class:`sqlite3.Connection` constructor is deprecated. The remaining
+  parameters will become keyword-only in Python 3.15.
+  (Contributed by Erlend E. Aasland in :gh:`107948`.)
+
 Pending Removal in Python 3.14
 ------------------------------
 
@@ -936,7 +941,9 @@ Removed
   * ``Py_SetPath()``: set :c:member:`PyConfig.module_search_paths` instead.
   * ``Py_SetProgramName()``: set :c:member:`PyConfig.program_name` instead.
   * ``Py_SetPythonHome()``: set :c:member:`PyConfig.home` instead.
-  * ``Py_SetStandardStreamEncoding()``: set :c:member:`PyConfig.stdio_encoding` instead.
+  * ``Py_SetStandardStreamEncoding()``: set :c:member:`PyConfig.stdio_encoding`
+    instead, and set also maybe :c:member:`PyConfig.legacy_windows_stdio` (on
+    Windows).
   * ``_Py_SetProgramFullPath()``: set :c:member:`PyConfig.executable` instead.
 
   Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization

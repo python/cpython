@@ -17,6 +17,7 @@ from formatting import Formatter, list_effect_size
 from flags import InstructionFlags, variable_used
 from instructions import (
     AnyInstruction,
+    AbstractInstruction,
     Component,
     Instruction,
     MacroInstruction,
@@ -51,6 +52,9 @@ DEFAULT_PYMETADATA_OUTPUT = os.path.relpath(
 DEFAULT_EXECUTOR_OUTPUT = os.path.relpath(
     os.path.join(ROOT, "Python/executor_cases.c.h")
 )
+DEFAULT_ABSTRACT_INTERPRETER_OUTPUT = os.path.relpath(
+    os.path.join(ROOT, "Python/abstract_interp_cases.c.h")
+)
 
 # Constants used instead of size for macro expansions.
 # Note: 1, 2, 4 must match actual cache entry sizes.
@@ -64,6 +68,23 @@ OPARG_SIZES = {
 }
 
 INSTR_FMT_PREFIX = "INSTR_FMT_"
+
+# TODO: generate all these after updating the DSL
+SPECIALLY_HANDLED_ABSTRACT_INSTR = {
+    "LOAD_FAST",
+    "LOAD_FAST_CHECK",
+    "LOAD_FAST_AND_CLEAR",
+    "LOAD_CONST",
+    "STORE_FAST",
+    "STORE_FAST_MAYBE_NULL",
+    "COPY",
+
+    # Arithmetic
+    "_BINARY_OP_MULTIPLY_INT",
+    "_BINARY_OP_ADD_INT",
+    "_BINARY_OP_SUBTRACT_INT",
+
+}
 
 arg_parser = argparse.ArgumentParser(
     description="Generate the code for the interpreter switch.",
@@ -113,7 +134,13 @@ arg_parser.add_argument(
     help="Write executor cases to this file",
     default=DEFAULT_EXECUTOR_OUTPUT,
 )
-
+arg_parser.add_argument(
+    "-a",
+    "--abstract-interpreter-cases",
+    type=str,
+    help="Write abstract interpreter cases to this file",
+    default=DEFAULT_ABSTRACT_INTERPRETER_OUTPUT,
+)
 
 class Generator(Analyzer):
     def get_stack_effect_info(
@@ -130,7 +157,7 @@ class Generator(Analyzer):
         pushed: str | None
         match thing:
             case parsing.InstDef():
-                if thing.kind != "op":
+                if thing.kind != "op" or self.instrs[thing.name].is_viable_uop():
                     instr = self.instrs[thing.name]
                     popped = effect_str(instr.input_effects)
                     pushed = effect_str(instr.output_effects)
@@ -773,6 +800,35 @@ class Generator(Analyzer):
             file=sys.stderr,
         )
 
+    def write_abstract_interpreter_instructions(
+        self, abstract_interpreter_filename: str, emit_line_directives: bool
+    ) -> None:
+        """Generate cases for the Tier 2 abstract interpreter/analzyer."""
+        with open(abstract_interpreter_filename, "w") as f:
+            self.out = Formatter(f, 8, emit_line_directives)
+            self.write_provenance_header()
+            for thing in self.everything:
+                match thing:
+                    case OverriddenInstructionPlaceHolder():
+                        pass
+                    case parsing.InstDef():
+                        instr = AbstractInstruction(self.instrs[thing.name].inst)
+                        if instr.is_viable_uop() and instr.name not in SPECIALLY_HANDLED_ABSTRACT_INSTR:
+                            self.out.emit("")
+                            with self.out.block(f"case {thing.name}:"):
+                                instr.write(self.out, tier=TIER_TWO)
+                                self.out.emit("break;")
+                    case parsing.Macro():
+                        pass
+                    case parsing.Pseudo():
+                        pass
+                    case _:
+                        typing.assert_never(thing)
+        print(
+            f"Wrote some stuff to {abstract_interpreter_filename}",
+            file=sys.stderr,
+        )
+
     def write_overridden_instr_place_holder(
         self, place_holder: OverriddenInstructionPlaceHolder
     ) -> None:
@@ -817,6 +873,8 @@ def main():
     a.write_opcode_ids(args.opcode_ids_h, args.opcode_targets_h)
     a.write_metadata(args.metadata, args.pymetadata)
     a.write_executor_instructions(args.executor_cases, args.emit_line_directives)
+    a.write_abstract_interpreter_instructions(args.abstract_interpreter_cases,
+                                              args.emit_line_directives)
 
 
 if __name__ == "__main__":
