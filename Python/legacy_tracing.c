@@ -65,6 +65,16 @@ sys_profile_func3(
 }
 
 static PyObject *
+sys_profile_unwind(
+    _PyLegacyEventHandler *self, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames
+) {
+    assert(kwnames == NULL);
+    assert(PyVectorcall_NARGS(nargsf) == 3);
+    return call_profile_func(self, Py_None);
+}
+
+static PyObject *
 sys_profile_call_or_return(
     _PyLegacyEventHandler *self, PyObject *const *args,
     size_t nargsf, PyObject *kwnames
@@ -149,6 +159,16 @@ sys_trace_func2(
 ) {
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 2);
+    return call_trace_func(self, Py_None);
+}
+
+static PyObject *
+sys_trace_func3(
+    _PyLegacyEventHandler *self, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames
+) {
+    assert(kwnames == NULL);
+    assert(PyVectorcall_NARGS(nargsf) == 3);
     return call_trace_func(self, Py_None);
 }
 
@@ -244,7 +264,7 @@ sys_trace_line_func(
                         "Missing frame when calling trace function.");
         return NULL;
     }
-    assert(args[0] == (PyObject *)frame->f_frame->f_code);
+    assert(args[0] == (PyObject *)_PyFrame_GetCode(frame->f_frame));
     return trace_line(tstate, self, frame, line);
 }
 
@@ -286,7 +306,6 @@ sys_trace_jump_func(
                         "Missing frame when calling trace function.");
         return NULL;
     }
-    assert(code == frame->f_frame->f_code);
     if (!frame->f_trace_lines) {
         Py_RETURN_NONE;
     }
@@ -363,7 +382,7 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
             return -1;
         }
         if (set_callbacks(PY_MONITORING_SYS_PROFILE_ID,
-            (vectorcallfunc)sys_profile_func2, PyTrace_RETURN,
+            (vectorcallfunc)sys_profile_unwind, PyTrace_RETURN,
                         PY_MONITORING_EVENT_PY_UNWIND, -1)) {
             return -1;
         }
@@ -426,7 +445,7 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
             return -1;
         }
         if (set_callbacks(PY_MONITORING_SYS_TRACE_ID,
-            (vectorcallfunc)sys_trace_func2, PyTrace_CALL,
+            (vectorcallfunc)sys_trace_func3, PyTrace_CALL,
                         PY_MONITORING_EVENT_PY_THROW, -1)) {
             return -1;
         }
@@ -451,7 +470,7 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
             return -1;
         }
         if (set_callbacks(PY_MONITORING_SYS_TRACE_ID,
-            (vectorcallfunc)sys_trace_func2, PyTrace_RETURN,
+            (vectorcallfunc)sys_trace_func3, PyTrace_RETURN,
                         PY_MONITORING_EVENT_PY_UNWIND, -1)) {
             return -1;
         }

@@ -1061,6 +1061,12 @@ def _fspath(path):
         else:
             raise TypeError("expected str, bytes or os.PathLike object, "
                             "not " + path_type.__name__)
+    except TypeError:
+        if path_type.__fspath__ is None:
+            raise TypeError("expected str, bytes or os.PathLike object, "
+                            "not " + path_type.__name__) from None
+        else:
+            raise
     if isinstance(path_repr, (str, bytes)):
         return path_repr
     else:

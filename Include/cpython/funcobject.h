@@ -79,12 +79,6 @@ PyAPI_FUNC(int) PyFunction_SetClosure(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetAnnotations(PyObject *);
 PyAPI_FUNC(int) PyFunction_SetAnnotations(PyObject *, PyObject *);
 
-PyAPI_FUNC(PyObject *) _PyFunction_Vectorcall(
-    PyObject *func,
-    PyObject *const *stack,
-    size_t nargsf,
-    PyObject *kwnames);
-
 #define _PyFunction_CAST(func) \
     (assert(PyFunction_Check(func)), _Py_CAST(PyFunctionObject*, func))
 
