@@ -28,8 +28,8 @@ import sqlite3 as sqlite
 from unittest.mock import Mock, patch
 from test.support import bigmemtest, gc_collect
 
-from test.test_sqlite3.util import cx_limit, memory_database
-from test.test_sqlite3.util import with_tracebacks, check_tracebacks
+from .util import cx_limit, memory_database
+from .util import with_tracebacks, check_tracebacks
 
 
 def func_returntext():

@@ -28,8 +28,8 @@ from test.support import LOOPBACK_TIMEOUT
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok
 
-from test.test_sqlite3.util import memory_database
-from test.test_sqlite3.util import MemoryDatabaseMixin
+from .util import memory_database
+from .util import MemoryDatabaseMixin
 
 
 TIMEOUT = LOOPBACK_TIMEOUT / 10

@@ -39,7 +39,7 @@ from _testcapi import INT_MAX, ULLONG_MAX
 from os import SEEK_SET, SEEK_CUR, SEEK_END
 from test.support.os_helper import TESTFN, TESTFN_UNDECODABLE, unlink, temp_dir, FakePath
 
-from test.test_sqlite3.util import memory_database, cx_limit
+from .util import memory_database, cx_limit
 
 
 class ModuleTests(unittest.TestCase):

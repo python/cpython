@@ -24,8 +24,8 @@ import unittest
 import sqlite3 as sqlite
 from collections.abc import Sequence
 
-from test.test_sqlite3.util import memory_database
-from test.test_sqlite3.util import MemoryDatabaseMixin
+from .util import memory_database
+from .util import MemoryDatabaseMixin
 
 
 def dict_factory(cursor, row):

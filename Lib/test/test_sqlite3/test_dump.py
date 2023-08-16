@@ -3,8 +3,8 @@
 import unittest
 import sqlite3 as sqlite
 
-from test.test_sqlite3.util import memory_database
-from test.test_sqlite3.util import MemoryDatabaseMixin
+from .util import memory_database
+from .util import MemoryDatabaseMixin
 
 
 class DumpTests(MemoryDatabaseMixin, unittest.TestCase):

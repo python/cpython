@@ -26,8 +26,8 @@ import unittest
 
 from test.support.os_helper import TESTFN, unlink
 
-from test.test_sqlite3.util import memory_database, cx_limit, with_tracebacks
-from test.test_sqlite3.util import MemoryDatabaseMixin
+from .util import memory_database, cx_limit, with_tracebacks
+from .util import MemoryDatabaseMixin
 
 
 class CollationTests(MemoryDatabaseMixin, unittest.TestCase):

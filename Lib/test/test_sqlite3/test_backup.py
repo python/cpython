@@ -1,7 +1,7 @@
 import sqlite3 as sqlite
 import unittest
 
-from test.test_sqlite3.util import memory_database
+from .util import memory_database
 
 
 class BackupTests(unittest.TestCase):

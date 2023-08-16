@@ -29,8 +29,8 @@ import functools
 from test import support
 from unittest.mock import patch
 
-from test.test_sqlite3.util import memory_database, cx_limit
-from test.test_sqlite3.util import MemoryDatabaseMixin
+from .util import memory_database, cx_limit
+from .util import MemoryDatabaseMixin
 
 
 class RegressionTests(MemoryDatabaseMixin, unittest.TestCase):
