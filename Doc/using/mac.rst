@@ -125,7 +125,6 @@ http://www.hashcollision.org/hkn/python/idle_intro/index.html.
 Installing Additional Python Packages
 =====================================
 
-.. note::
 
    This section has moved to the `Python Packaging User Guide`_.
 
