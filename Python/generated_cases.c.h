@@ -1189,13 +1189,13 @@
             {
                 PyGenObject *gen = (PyGenObject *)receiver;
                 _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
-                frame->return_offset = oparg;
                 STACK_SHRINK(1);
                 _PyFrame_StackPush(gen_frame, v);
                 gen->gi_frame_state = FRAME_EXECUTING;
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
                 SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
+                frame->return_offset = oparg;
                 DISPATCH_INLINED(gen_frame);
             }
             if (Py_IsNone(v) && PyIter_Check(receiver)) {
@@ -1235,13 +1235,13 @@
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, SEND);
             STAT_INC(SEND, hit);
             _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
-            frame->return_offset = oparg;
             STACK_SHRINK(1);
             _PyFrame_StackPush(gen_frame, v);
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
             SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
+            frame->return_offset = oparg;
             DISPATCH_INLINED(gen_frame);
         }
 
@@ -3341,7 +3341,6 @@
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, FOR_ITER);
             STAT_INC(FOR_ITER, hit);
             _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
-            frame->return_offset = oparg;
             _PyFrame_StackPush(gen_frame, Py_None);
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
@@ -3349,6 +3348,7 @@
             SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
             assert(next_instr[oparg].op.code == END_FOR ||
                    next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
+            frame->return_offset = oparg;
             DISPATCH_INLINED(gen_frame);
             STACK_GROW(1);
         }
@@ -3762,38 +3762,83 @@
 
         TARGET(CALL_PY_EXACT_ARGS) {
             PREDICTED(CALL_PY_EXACT_ARGS);
-            PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
+            PyObject **args;
+            _PyInterpreterFrame *new_frame;
+            // _CHECK_PEP_523
+            {
+                DEOPT_IF(tstate->interp->eval_frame, CALL);
+            }
+            // _CHECK_FUNCTION_EXACT_ARGS
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            {
+                uint32_t func_version = read_u32(&next_instr[1].cache);
+                ASSERT_KWNAMES_IS_NULL();
+                DEOPT_IF(!PyFunction_Check(callable), CALL);
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                DEOPT_IF(func->func_version != func_version, CALL);
+                PyCodeObject *code = (PyCodeObject *)func->func_code;
+                DEOPT_IF(code->co_argcount != oparg + (self_or_null != NULL), CALL);
+            }
+            // _CHECK_STACK_SPACE
+            callable = stack_pointer[-2 - oparg];
+            {
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                PyCodeObject *code = (PyCodeObject *)func->func_code;
+                DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
+            }
+            // _INIT_CALL_PY_EXACT_ARGS
             args = stack_pointer - oparg;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            uint32_t func_version = read_u32(&next_instr[1].cache);
-            ASSERT_KWNAMES_IS_NULL();
-            DEOPT_IF(tstate->interp->eval_frame, CALL);
-            int argcount = oparg;
-            if (self_or_null != NULL) {
-                args--;
-                argcount++;
+            {
+                int argcount = oparg;
+                if (self_or_null != NULL) {
+                    args--;
+                    argcount++;
+                }
+                STAT_INC(CALL, hit);
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
+                for (int i = 0; i < argcount; i++) {
+                    new_frame->localsplus[i] = args[i];
+                }
             }
-            DEOPT_IF(!PyFunction_Check(callable), CALL);
-            PyFunctionObject *func = (PyFunctionObject *)callable;
-            DEOPT_IF(func->func_version != func_version, CALL);
-            PyCodeObject *code = (PyCodeObject *)func->func_code;
-            DEOPT_IF(code->co_argcount != argcount, CALL);
-            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
-            STAT_INC(CALL, hit);
-            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
-            for (int i = 0; i < argcount; i++) {
-                new_frame->localsplus[i] = args[i];
+            // SAVE_CURRENT_IP
+            next_instr += 3;
+            {
+                #if TIER_ONE
+                frame->prev_instr = next_instr - 1;
+                #endif
+                #if TIER_TWO
+                // Relies on a preceding SAVE_IP
+                frame->prev_instr--;
+                #endif
             }
-            // Manipulate stack directly since we leave using DISPATCH_INLINED().
-            STACK_SHRINK(oparg + 2);
-            SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
-            frame->return_offset = 0;
-            DISPATCH_INLINED(new_frame);
+            // _PUSH_FRAME
             STACK_SHRINK(oparg);
-            STACK_SHRINK(1);
+            STACK_SHRINK(2);
+            {
+                // Write it out explicitly because it's subtly different.
+                // Eventually this should be the only occurrence of this code.
+                frame->return_offset = 0;
+                assert(tstate->interp->eval_frame == NULL);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                new_frame->previous = frame;
+                CALL_STAT_INC(inlined_py_calls);
+                #if TIER_ONE
+                frame = cframe.current_frame = new_frame;
+                goto start_frame;
+                #endif
+                #if TIER_TWO
+                frame = tstate->cframe->current_frame = new_frame;
+                if (_Py_EnterRecursivePy(tstate)) goto pop_1_exit_unwind;
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
+                #endif
+            }
         }
 
         TARGET(CALL_PY_WITH_DEFAULTS) {
