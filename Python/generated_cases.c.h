@@ -975,31 +975,43 @@
 
         TARGET(RETURN_VALUE) {
             PyObject *retval;
+            // SAVE_CURRENT_IP
+            {
+                #if TIER_ONE
+                frame->prev_instr = next_instr - 1;
+                #endif
+                #if TIER_TWO
+                // Relies on a preceding SAVE_IP
+                frame->prev_instr--;
+                #endif
+            }
+            // _POP_FRAME
             retval = stack_pointer[-1];
-            assert(EMPTY());
-            SAVE_FRAME_STATE();  // Signals to the code generator
-            _Py_LeaveRecursiveCallPy(tstate);
-            // GH-99729: We need to unlink the frame *before* clearing it:
-            _PyInterpreterFrame *dying = frame;
-            #if TIER_ONE
-            assert(frame != &entry_frame);
-            frame = cframe.current_frame = dying->previous;
-            #endif
-            #if TIER_TWO
-            frame = tstate->cframe->current_frame = dying->previous;
-            #endif
-            _PyEval_FrameClearAndPop(tstate, dying);
-            frame->prev_instr += frame->return_offset;
-            _PyFrame_StackPush(frame, retval);
-            #if TIER_ONE
-            goto resume_frame;
-            #endif
-            #if TIER_TWO
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
-            #endif
             STACK_SHRINK(1);
-            DISPATCH();
+            {
+                assert(EMPTY());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _Py_LeaveRecursiveCallPy(tstate);
+                // GH-99729: We need to unlink the frame *before* clearing it:
+                _PyInterpreterFrame *dying = frame;
+                #if TIER_ONE
+                assert(frame != &entry_frame);
+                frame = cframe.current_frame = dying->previous;
+                #endif
+                #if TIER_TWO
+                frame = tstate->cframe->current_frame = dying->previous;
+                #endif
+                _PyEval_FrameClearAndPop(tstate, dying);
+                frame->prev_instr += frame->return_offset;
+                _PyFrame_StackPush(frame, retval);
+                #if TIER_ONE
+                goto resume_frame;
+                #endif
+                #if TIER_TWO
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
+                #endif
+            }
         }
 
         TARGET(INSTRUMENTED_RETURN_VALUE) {
@@ -1032,11 +1044,21 @@
                 value = GETITEM(FRAME_CO_CONSTS, oparg);
                 Py_INCREF(value);
             }
+            // SAVE_CURRENT_IP
+            {
+                #if TIER_ONE
+                frame->prev_instr = next_instr - 1;
+                #endif
+                #if TIER_TWO
+                // Relies on a preceding SAVE_IP
+                frame->prev_instr--;
+                #endif
+            }
             // _POP_FRAME
             retval = value;
             {
                 assert(EMPTY());
-                SAVE_FRAME_STATE();  // Signals to the code generator
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 _Py_LeaveRecursiveCallPy(tstate);
                 // GH-99729: We need to unlink the frame *before* clearing it:
                 _PyInterpreterFrame *dying = frame;
@@ -1058,7 +1080,6 @@
                 ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
                 #endif
             }
-            DISPATCH();
         }
 
         TARGET(INSTRUMENTED_RETURN_CONST) {

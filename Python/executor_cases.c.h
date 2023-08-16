@@ -687,8 +687,9 @@
         case _POP_FRAME: {
             PyObject *retval;
             retval = stack_pointer[-1];
+            STACK_SHRINK(1);
             assert(EMPTY());
-            SAVE_FRAME_STATE();  // Signals to the code generator
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             _Py_LeaveRecursiveCallPy(tstate);
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
@@ -709,7 +710,6 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
             #endif
-            STACK_SHRINK(1);
             break;
         }
 

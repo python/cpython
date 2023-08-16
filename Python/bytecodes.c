@@ -769,7 +769,7 @@ dummy_func(
         // different frame, and it's accounted for by _PUSH_FRAME.
         op(_POP_FRAME, (retval --)) {
             assert(EMPTY());
-            SAVE_FRAME_STATE();  // Signals to the code generator
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             _Py_LeaveRecursiveCallPy(tstate);
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
@@ -792,7 +792,10 @@ dummy_func(
             #endif
         }
 
-        macro(RETURN_VALUE) = _POP_FRAME;
+        macro(RETURN_VALUE) =
+            SAVE_IP +  // Tier 2 only; special-cased oparg
+            SAVE_CURRENT_IP +  // Sets frame->prev_instr
+            _POP_FRAME;
 
         inst(INSTRUMENTED_RETURN_VALUE, (retval --)) {
             int err = _Py_call_instrumentation_arg(
@@ -813,7 +816,11 @@ dummy_func(
             goto resume_frame;
         }
 
-        macro(RETURN_CONST) = LOAD_CONST + _POP_FRAME;
+        macro(RETURN_CONST) =
+            LOAD_CONST +
+            SAVE_IP +  // Tier 2 only; special-cased oparg
+            SAVE_CURRENT_IP +  // Sets frame->prev_instr
+            _POP_FRAME;
 
         inst(INSTRUMENTED_RETURN_CONST, (--)) {
             PyObject *retval = GETITEM(FRAME_CO_CONSTS, oparg);
