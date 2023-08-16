@@ -14,10 +14,12 @@ Windows programmer learning to build Python extensions and the Unix programmer
 interested in producing software which can be successfully built on both Unix
 and Windows.
 
-Module authors are encouraged to use the distutils approach for building
-extension modules, instead of the one described in this section. You will still
+Module authors are encouraged to use the ``setuptools`` approach for `building
+extension modules`_, instead of the one described in this section. You will still
 need the C compiler that was used to build Python; typically Microsoft Visual
 C++.
+
+.. _building extension modules: https://setuptools.pypa.io/en/latest/userguide/ext_modules.html
 
 .. note::
 
