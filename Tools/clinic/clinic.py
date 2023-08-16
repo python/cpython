@@ -4836,7 +4836,7 @@ class DSLParser:
         self.next(self.state_modulename_name, line)
 
     @staticmethod
-    def parse_names(line: str) -> FunctionNames:
+    def parse_function_names(line: str) -> FunctionNames:
         left, as_, right = line.partition(' as ')
         full_name = left.strip()
         c_basename = right.strip()
@@ -4891,7 +4891,7 @@ class DSLParser:
         # are we cloning?
         before, equals, existing = line.rpartition('=')
         if equals:
-            full_name, c_basename = self.parse_names(before)
+            full_name, c_basename = self.parse_function_names(before)
             existing = existing.strip()
             if is_legal_py_identifier(existing):
                 # we're cloning!
@@ -4939,7 +4939,7 @@ class DSLParser:
 
         line, _, returns = line.partition('->')
         returns = returns.strip()
-        full_name, c_basename = self.parse_names(line)
+        full_name, c_basename = self.parse_function_names(line)
 
         return_converter = None
         if returns:
