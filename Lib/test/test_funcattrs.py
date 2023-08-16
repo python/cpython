@@ -199,7 +199,7 @@ class FunctionPropertiesTest(FuncAttrsTest):
         self.assertIsInstance(T, typing.TypeVar)
         self.assertEqual(generic.__type_params__, (T,))
         for func in (not_generic, lambda_):
-            with self.subTest(func):
+            with self.subTest(func=func):
                 self.assertEqual(func.__type_params__, ())
                 with self.assertRaises(TypeError):
                     del func.__type_params__
