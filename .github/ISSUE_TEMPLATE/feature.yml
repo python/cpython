@@ -29,7 +29,7 @@ body:
     attributes:
       label: "Proposal:"
       description: >
-        Explain what your proposal is, why it should be implemented and how it would be used.
+        Explain your proposal, why it should be implemented, and how it would be used.
         Add examples, if applicable.
         Put any code blocks inside triple backticks.
       value: |
