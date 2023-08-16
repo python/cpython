@@ -57,7 +57,6 @@ C extensions.
    newtypes_tutorial.rst
    newtypes.rst
    building.rst
-   windows.rst
 
 Embedding the CPython runtime in a larger application
 =====================================================
