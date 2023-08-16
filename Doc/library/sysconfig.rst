@@ -20,6 +20,7 @@ The :mod:`sysconfig` module provides access to Python's configuration
 information like the list of installation paths and the configuration variables
 relevant for the current platform.
 
+
 Configuration variables
 -----------------------
 
@@ -59,6 +60,7 @@ Example of usage::
    '/usr/local/lib'
    >>> sysconfig.get_config_vars('AR', 'CXX')
    ['ar', 'g++']
+
 
 .. _installation_paths:
 
@@ -109,7 +111,11 @@ identifier.  Python currently uses eight paths:
 - *scripts*: directory for script files.
 - *data*: directory for data files.
 
-:mod:`sysconfig` provides some functions to determine these paths.
+
+Installation path functions
+---------------------------
+
+:mod:`sysconfig` provides some functions to determine these installation paths.
 
 .. function:: get_scheme_names()
 
