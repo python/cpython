@@ -826,7 +826,7 @@ New Features
   not needed.
   (Contributed by Victor Stinner in :gh:`106004`.)
 
-* Add :c:func:`Py_IsFinalizing` function: check if the Python interpreter is
+* Add :c:func:`Py_IsFinalizing` function: check if the main Python interpreter is
   :term:`shutting down <interpreter shutdown>`.
   (Contributed by Victor Stinner in :gh:`108014`.)
 
