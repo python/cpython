@@ -375,8 +375,8 @@ Initializing and finalizing the interpreter
 
 .. c:function:: int Py_IsFinalizing()
 
-   Return true (non-zero) if the Python interpreter is :term:`shutting down
-   <interpreter shutdown>`, return false (zero) otherwise.
+   Return true (non-zero) if the main Python interpreter is
+   :term:`shutting down <interpreter shutdown>`. Return false (zero) otherwise.
 
    .. versionadded:: 3.13
 
