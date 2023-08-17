@@ -583,12 +583,18 @@ bind_param(pysqlite_state *state, pysqlite_Statement *self, int pos,
             string = PyUnicode_AsUTF8AndSize(parameter, &buflen);
             if (string == NULL)
                 return -1;
-            if (buflen > INT_MAX) {
-                PyErr_SetString(PyExc_OverflowError,
-                                "string longer than INT_MAX bytes");
+#if SIZEOF_SIZE_T > 8
+            if (buflen > 0xffffffffffffffff) {
+                PyErr_Format(PyExc_OverflowError,
+                             "Error binding parameter %d: "
+                             "string is longer than 2**64-1 bytes",
+                             Py_TYPE(parameter)->tp_name);
                 return -1;
             }
-            rc = sqlite3_bind_text(self->st, pos, string, (int)buflen, SQLITE_TRANSIENT);
+#endif
+            rc = sqlite3_bind_text64(self->st, pos, string,
+                                     (sqlite3_uint64)buflen,
+                                     SQLITE_TRANSIENT, SQLITE_UTF8);
             break;
         case TYPE_BUFFER: {
             Py_buffer view;
