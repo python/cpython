@@ -24,6 +24,9 @@ import unittest
 import sqlite3 as sqlite
 from collections.abc import Sequence
 
+from .util import memory_database
+from .util import MemoryDatabaseMixin
+
 
 def dict_factory(cursor, row):
     d = {}
@@ -45,10 +48,12 @@ class ConnectionFactoryTests(unittest.TestCase):
             def __init__(self, *args, **kwargs):
                 sqlite.Connection.__init__(self, *args, **kwargs)
 
-        for factory in DefectFactory, OkFactory:
-            with self.subTest(factory=factory):
-                con = sqlite.connect(":memory:", factory=factory)
-                self.assertIsInstance(con, factory)
+        with memory_database(factory=OkFactory) as con:
+            self.assertIsInstance(con, OkFactory)
+        regex = "Base Connection.__init__ not called."
+        with self.assertRaisesRegex(sqlite.ProgrammingError, regex):
+            with memory_database(factory=DefectFactory) as con:
+                self.assertIsInstance(con, DefectFactory)
 
     def test_connection_factory_relayed_call(self):
         # gh-95132: keyword args must not be passed as positional args
@@ -57,9 +62,9 @@ class ConnectionFactoryTests(unittest.TestCase):
                 kwargs["isolation_level"] = None
                 super(Factory, self).__init__(*args, **kwargs)
 
-        con = sqlite.connect(":memory:", factory=Factory)
-        self.assertIsNone(con.isolation_level)
-        self.assertIsInstance(con, Factory)
+        with memory_database(factory=Factory) as con:
+            self.assertIsNone(con.isolation_level)
+            self.assertIsInstance(con, Factory)
 
     def test_connection_factory_as_positional_arg(self):
         class Factory(sqlite.Connection):
@@ -74,18 +79,13 @@ class ConnectionFactoryTests(unittest.TestCase):
             r"parameters in Python 3.15."
         )
         with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
-            con = sqlite.connect(":memory:", 5.0, 0, None, True, Factory)
+            with memory_database(5.0, 0, None, True, Factory) as con:
+                self.assertIsNone(con.isolation_level)
+                self.assertIsInstance(con, Factory)
         self.assertEqual(cm.filename, __file__)
-        self.assertIsNone(con.isolation_level)
-        self.assertIsInstance(con, Factory)
 
 
-class CursorFactoryTests(unittest.TestCase):
-    def setUp(self):
-        self.con = sqlite.connect(":memory:")
-
-    def tearDown(self):
-        self.con.close()
+class CursorFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
 
     def test_is_instance(self):
         cur = self.con.cursor()
@@ -103,9 +103,8 @@ class CursorFactoryTests(unittest.TestCase):
         # invalid callable returning non-cursor
         self.assertRaises(TypeError, self.con.cursor, lambda con: None)
 
-class RowFactoryTestsBackwardsCompat(unittest.TestCase):
-    def setUp(self):
-        self.con = sqlite.connect(":memory:")
+
+class RowFactoryTestsBackwardsCompat(MemoryDatabaseMixin, unittest.TestCase):
 
     def test_is_produced_by_factory(self):
         cur = self.con.cursor(factory=MyCursor)
@@ -114,12 +113,8 @@ class RowFactoryTestsBackwardsCompat(unittest.TestCase):
         self.assertIsInstance(row, dict)
         cur.close()
 
-    def tearDown(self):
-        self.con.close()
 
-class RowFactoryTests(unittest.TestCase):
-    def setUp(self):
-        self.con = sqlite.connect(":memory:")
+class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
 
     def test_custom_factory(self):
         self.con.row_factory = lambda cur, row: list(row)
@@ -265,12 +260,8 @@ class RowFactoryTests(unittest.TestCase):
         self.assertRaises(TypeError, self.con.cursor, FakeCursor)
         self.assertRaises(TypeError, sqlite.Row, FakeCursor(), ())
 
-    def tearDown(self):
-        self.con.close()
 
-class TextFactoryTests(unittest.TestCase):
-    def setUp(self):
-        self.con = sqlite.connect(":memory:")
+class TextFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
 
     def test_unicode(self):
         austria = "Österreich"
@@ -291,14 +282,16 @@ class TextFactoryTests(unittest.TestCase):
         self.assertEqual(type(row[0]), str, "type of row[0] must be unicode")
         self.assertTrue(row[0].endswith("reich"), "column must contain original data")
 
-    def tearDown(self):
-        self.con.close()
 
 class TextFactoryTestsWithEmbeddedZeroBytes(unittest.TestCase):
+
     def setUp(self):
         self.con = sqlite.connect(":memory:")
         self.con.execute("create table test (value text)")
         self.con.execute("insert into test (value) values (?)", ("a\x00b",))
+
+    def tearDown(self):
+        self.con.close()
 
     def test_string(self):
         # text_factory defaults to str
@@ -324,9 +317,6 @@ class TextFactoryTestsWithEmbeddedZeroBytes(unittest.TestCase):
         row = self.con.execute("select value from test").fetchone()
         self.assertIs(type(row[0]), bytes)
         self.assertEqual(row[0], b"a\x00b")
-
-    def tearDown(self):
-        self.con.close()
 
 
 if __name__ == "__main__":
