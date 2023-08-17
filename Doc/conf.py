@@ -346,8 +346,6 @@ _stdauthor = 'Guido van Rossum and the Python development team'
 latex_documents = [
     ('c-api/index', 'c-api.tex',
      'The Python/C API', _stdauthor, 'manual'),
-    ('distributing/index', 'distributing.tex',
-     'Distributing Python Modules', _stdauthor, 'manual'),
     ('extending/index', 'extending.tex',
      'Extending and Embedding Python', _stdauthor, 'manual'),
     ('installing/index', 'installing.tex',
