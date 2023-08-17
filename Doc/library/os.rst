@@ -1181,7 +1181,8 @@ as internal buffering of data.
           SEEK_END
 
    Parameters to the :func:`lseek` function and the :meth:`~io.IOBase.seek`
-   method on file object, for whence to adjust the file position indicator.
+   method on :term:`file-like objects <file object>`,
+   for whence to adjust the file position indicator.
 
    :const:`SEEK_SET`
       Adjust the file position relative to the beginning of the file.
@@ -1197,8 +1198,8 @@ as internal buffering of data.
           SEEK_DATA
 
    Parameters to the :func:`lseek` function and the :meth:`~io.IOBase.seek`
-   method on file objects, for seeking file data and holes on sparsely
-   allocated files.
+   method on :term:`file-like objects <file object>`,
+   for seeking file data and holes on sparsely allocated files.
 
    :data:`!SEEK_DATA`
       Adjust the file offset to the next location containing data,
