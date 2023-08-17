@@ -1088,7 +1088,7 @@ checkShebang(SearchInfo *search)
             }
             // If we had 'python3_d' then we want to strip the '_d' (any
             // '.exe' is already gone)
-            if (search->tagLength > 2) {
+            if (search->tagLength >= 2) {
                 const wchar_t *suffix = &search->tag[search->tagLength - 2];
                 if (0 == _comparePath(suffix, 2, L"_d", -1)) {
                     search->tagLength -= 2;

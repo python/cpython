@@ -623,7 +623,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                     [script, "-postarg"],
                     env={"PATH": f"{Path(sys.executable).parent};{os.getenv('PATH')}"},
                 )
-        self.assertEqual(f"{sys.executable} -prearg {script} -postarg", data["stdout"].strip())
+        self.assertEqual(f"X.Y.exe -prearg {script} -postarg", data["stdout"].strip())
 
     def test_search_path_exe(self):
         # Leave the .exe on the name to ensure we don't add it a second time
@@ -634,7 +634,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                     [script, "-postarg"],
                     env={"PATH": f"{Path(sys.executable).parent};{os.getenv('PATH')}"},
                 )
-        self.assertEqual(f"{sys.executable} -prearg {script} -postarg", data["stdout"].strip())
+        self.assertEqual(f"X.Y.exe -prearg {script} -postarg", data["stdout"].strip())
 
     def test_recursive_search_path(self):
         stem = self.get_py_exe().stem
@@ -717,3 +717,9 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
             f"{expect} arg1 {script}",
             data["stdout"].strip(),
         )
+
+    def test_shebang_command_in_venv(self):
+        with self.fake_venv() as (venv_exe, env):
+            with self.script('#! /usr/bin/env pythonanythingatall arg1') as script:
+                data = self.run_py([script], env=env)
+        self.assertEqual(data["stdout"].strip(), f"{venv_exe} arg1 {script}")
