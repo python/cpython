@@ -4,6 +4,7 @@
    Direct readers to the PPUG instead.
 
 .. _distributing-index:
+.. _publishing-python-packages:
 
 ###############################
   Distributing Python Modules
