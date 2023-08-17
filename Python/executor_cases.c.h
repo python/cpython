@@ -7,6 +7,23 @@
             break;
         }
 
+        case RESUME: {
+            #if TIER_ONE
+            assert(frame == tstate->current_frame);
+            /* Possibly combine this with eval breaker */
+            if (_PyFrame_GetCode(frame)->_co_instrumentation_version != tstate->interp->monitoring_version) {
+                int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
+                if (err) goto error;
+                next_instr--;
+            }
+            else
+            #endif
+            if (oparg < 2) {
+                CHECK_EVAL_BREAKER();
+            }
+            break;
+        }
+
         case LOAD_FAST_CHECK: {
             PyObject *value;
             value = GETLOCAL(oparg);
@@ -663,6 +680,32 @@
             if (res == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
+            break;
+        }
+
+        case _POP_FRAME: {
+            PyObject *retval;
+            retval = stack_pointer[-1];
+            STACK_SHRINK(1);
+            assert(EMPTY());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            _Py_LeaveRecursiveCallPy(tstate);
+            // GH-99729: We need to unlink the frame *before* clearing it:
+            _PyInterpreterFrame *dying = frame;
+            #if TIER_ONE
+            assert(frame != &entry_frame);
+            #endif
+            frame = tstate->current_frame = dying->previous;
+            _PyEval_FrameClearAndPop(tstate, dying);
+            frame->prev_instr += frame->return_offset;
+            _PyFrame_StackPush(frame, retval);
+            #if TIER_ONE
+            goto resume_frame;
+            #endif
+            #if TIER_TWO
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
+            #endif
             break;
         }
 
@@ -2607,7 +2650,8 @@
                 goto error;
             }
 
-            func_obj->func_version = ((PyCodeObject *)codeobj)->co_version;
+            _PyFunction_SetVersion(
+                func_obj, ((PyCodeObject *)codeobj)->co_version);
             func = (PyObject *)func_obj;
             stack_pointer[-1] = func;
             break;
