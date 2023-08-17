@@ -334,7 +334,9 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
     self->initialized = 1;
 
     if (autocommit == AUTOCOMMIT_DISABLED) {
-        (void)connection_exec_stmt(self, "BEGIN");
+        if (connection_exec_stmt(self, "BEGIN") < 0) {
+            return -1;
+        }
     }
     return 0;
 
@@ -449,7 +451,9 @@ connection_close(pysqlite_Connection *self)
             if (_Py_IsInterpreterFinalizing(PyInterpreterState_Get())) {
                 remove_callbacks(self->db);
             }
-            (void)connection_exec_stmt(self, "ROLLBACK");
+            if (connection_exec_stmt(self, "ROLLBACK") < 0) {
+                PyErr_WriteUnraisable(self);
+            }
         }
 
         free_callback_contexts(self);
