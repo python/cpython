@@ -5498,14 +5498,13 @@ class DSLParser:
 
     def parse_version(self, thenceforth: str) -> VersionTuple:
         assert isinstance(self.function, Function)
-        fname = self.function.full_name
 
         try:
             major, minor = thenceforth.split(".")
             return int(major), int(minor)
         except ValueError:
             fail(
-                f"Function {fname!r}: expected format '[from major.minor]' "
+                f"Function {self.function.name!r}: expected format '[from major.minor]' "
                 f"where 'major' and 'minor' are integers; got {thenceforth!r}"
             )
 
@@ -5518,9 +5517,9 @@ class DSLParser:
             self.keyword_only = True
         else:
             if self.keyword_only:
-                fail(f"Function {function.full_name!r}: '* [from ...]' must come before '*'")
+                fail(f"Function {function.name!r}: '* [from ...]' must come before '*'")
             if self.deprecated_positional:
-                fail(f"Function {function.full_name!r} uses '* [from ...]' more than once.")
+                fail(f"Function {function.name!r} uses '* [from ...]' more than once.")
         self.deprecated_positional = version
 
     def parse_opening_square_bracket(self, function: Function) -> None:
@@ -5905,8 +5904,7 @@ class DSLParser:
                     return
             break
 
-        fname = self.function.full_name
-        fail(f"Function {fname!r} specifies {symbol!r} "
+        fail(f"Function {self.function.name!r} specifies {symbol!r} "
              f"without following parameters.", line_number=lineno)
 
     def do_post_block_processing_cleanup(self, lineno: int) -> None:
