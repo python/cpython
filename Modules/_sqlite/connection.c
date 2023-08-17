@@ -446,11 +446,6 @@ connection_close(pysqlite_Connection *self)
     if (self->autocommit == AUTOCOMMIT_DISABLED &&
         !sqlite3_get_autocommit(self->db))
     {
-        /* If close is implicitly called as a result of interpreter
-         * tear-down, we must not call back into Python. */
-        if (_Py_IsInterpreterFinalizing(PyInterpreterState_Get())) {
-            remove_callbacks(self->db);
-        }
         (void)connection_exec_stmt(self, "ROLLBACK");
     }
 
@@ -468,6 +463,15 @@ connection_close(pysqlite_Connection *self)
 static void
 connection_finalize(PyObject *self)
 {
+    /*
+     * Before implicitly closing, make sure we're not accidentally part
+     * of the interpreter tear-down; in that case, we must not call back
+     * into Python code.
+     */
+    if (_Py_IsInterpreterFinalizing(PyInterpreterState_Get())) {
+        remove_callbacks(self->db);
+    }
+
     pysqlite_Connection *con = (pysqlite_Connection *)self;
     PyObject *exc = PyErr_GetRaisedException();
     /* Clean up if user has not called .close() explicitly. */
