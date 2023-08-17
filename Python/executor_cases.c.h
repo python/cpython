@@ -9,8 +9,7 @@
 
         case RESUME: {
             #if TIER_ONE
-            assert(tstate->cframe == &cframe);
-            assert(frame == cframe.current_frame);
+            assert(frame == tstate->current_frame);
             /* Possibly combine this with eval breaker */
             if (_PyFrame_GetCode(frame)->_co_instrumentation_version != tstate->interp->monitoring_version) {
                 int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
@@ -695,11 +694,8 @@
             _PyInterpreterFrame *dying = frame;
             #if TIER_ONE
             assert(frame != &entry_frame);
-            frame = cframe.current_frame = dying->previous;
             #endif
-            #if TIER_TWO
-            frame = tstate->cframe->current_frame = dying->previous;
-            #endif
+            frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
             frame->prev_instr += frame->return_offset;
             _PyFrame_StackPush(frame, retval);
@@ -2259,12 +2255,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             new_frame->previous = frame;
             CALL_STAT_INC(inlined_py_calls);
+            frame = tstate->current_frame = new_frame;
             #if TIER_ONE
-            frame = cframe.current_frame = new_frame;
             goto start_frame;
             #endif
             #if TIER_TWO
-            frame = tstate->cframe->current_frame = new_frame;
             if (_Py_EnterRecursivePy(tstate)) goto pop_1_exit_unwind;
             stack_pointer = _PyFrame_GetStackPointer(frame);
             ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
