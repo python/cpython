@@ -195,6 +195,13 @@ join(wchar_t *buffer, size_t bufferLength, const wchar_t *fragment)
 }
 
 
+bool
+split_parent(wchar_t *buffer, size_t bufferLength)
+{
+    return SUCCEEDED(PathCchRemoveFileSpec(buffer, bufferLength));
+}
+
+
 int
 _compare(const wchar_t *x, int xLen, const wchar_t *y, int yLen)
 {
@@ -414,8 +421,8 @@ typedef struct {
     // if true, treats 'tag' as a non-PEP 514 filter
     bool oldStyleTag;
     // if true, ignores 'tag' when a high priority environment is found
-    // gh-92817: This is currently set when a tag is read from configuration or
-    // the environment, rather than the command line or a shebang line, and the
+    // gh-92817: This is currently set when a tag is read from configuration,
+    // the environment, or a shebang, rather than the command line, and the
     // only currently possible high priority environment is an active virtual
     // environment
     bool lowPriorityTag;
@@ -794,6 +801,8 @@ searchPath(SearchInfo *search, const wchar_t *shebang, int shebangLength)
         }
     }
 
+    debug(L"# Search PATH for %s\n", filename);
+
     wchar_t pathVariable[MAXLEN];
     int n = GetEnvironmentVariableW(L"PATH", pathVariable, MAXLEN);
     if (!n) {
@@ -1031,8 +1040,12 @@ checkShebang(SearchInfo *search)
     debug(L"Shebang: %s\n", shebang);
 
     // Handle shebangs that we should search PATH for
+    int executablePathWasSetByUsrBinEnv = 0;
     exitCode = searchPath(search, shebang, shebangLength);
-    if (exitCode != RC_NO_SHEBANG) {
+    if (exitCode == 0) {
+        // We might need to clear executable path later if we match a template
+        executablePathWasSetByUsrBinEnv = 1;
+    } else if (exitCode != RC_NO_SHEBANG) {
         return exitCode;
     }
 
@@ -1082,6 +1095,13 @@ checkShebang(SearchInfo *search)
                 }
             }
             search->oldStyleTag = true;
+            search->lowPriorityTag = true;
+            if (executablePathWasSetByUsrBinEnv) {
+                // If it was allocated, it's in a free list, so just clear it
+                debug(L"# Shebang template made us forget executablePath %s\n",
+                      search->executablePath);
+                search->executablePath = NULL;
+            }
             search->executableArgs = &command[commandLength];
             search->executableArgsLength = shebangLength - commandLength;
             if (search->tag && search->tagLength) {
@@ -1765,7 +1785,15 @@ virtualenvSearch(const SearchInfo *search, EnvironmentInfo **result)
         return 0;
     }
 
-    if (INVALID_FILE_ATTRIBUTES == GetFileAttributesW(buffer)) {
+    DWORD attr = GetFileAttributesW(buffer);
+    if (INVALID_FILE_ATTRIBUTES == attr && search->lowPriorityTag) {
+        if (!split_parent(buffer, MAXLEN) || !join(buffer, MAXLEN, L"python.exe")) {
+            return 0;
+        }
+        attr = GetFileAttributesW(buffer);
+    }
+
+    if (INVALID_FILE_ATTRIBUTES == attr) {
         debug(L"Python executable %s missing from virtual env\n", buffer);
         return 0;
     }
