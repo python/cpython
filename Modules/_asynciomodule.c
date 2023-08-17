@@ -90,8 +90,9 @@ typedef struct {
        all running event loops.  {EventLoop: Task} */
     PyObject *current_tasks;
 
-    /* WeakSet containing all tasks scheduled to run on event loops. */
-    PyObject *scheduled_tasks;
+    /* WeakSet containing scheduled 3rd party tasks which don't
+       inherit from native asyncio.Task */
+    PyObject *non_asyncio_tasks;
 
     /* Set containing all eagerly executing tasks. */
     PyObject *eager_tasks;
@@ -1952,7 +1953,6 @@ register_task(asyncio_state *state, TaskObj *task)
         // already registered
         return;
     }
-    assert(task->prev == NULL);
     assert(task->next == NULL);
     assert(state->asyncio_tasks.head != NULL);
 
@@ -3372,7 +3372,9 @@ _asyncio__register_task_impl(PyObject *module, PyObject *task)
 {
     asyncio_state *state = get_asyncio_state(module);
     if (!Task_Check(state, task)) {
-        PyObject *res = PyObject_CallMethodOneArg(state->scheduled_tasks,
+        // As task does not inherit from asyncio.Task, fallback to less efficient
+        // weakset implementation.
+        PyObject *res = PyObject_CallMethodOneArg(state->non_asyncio_tasks,
                                                   &_Py_ID(add), task);
         if (res == NULL) {
             return NULL;
@@ -3380,6 +3382,8 @@ _asyncio__register_task_impl(PyObject *module, PyObject *task)
         Py_DECREF(res);
         Py_RETURN_NONE;
     }
+    // task is an asyncio.Task instance or subclass, use efficient
+    // linked-list implementation.
     register_task(state, (TaskObj *)task);
     Py_RETURN_NONE;
 }
@@ -3422,7 +3426,7 @@ _asyncio__unregister_task_impl(PyObject *module, PyObject *task)
 {
     asyncio_state *state = get_asyncio_state(module);
     if (!Task_Check(state, task)) {
-        PyObject *res = PyObject_CallMethodOneArg(state->scheduled_tasks,
+        PyObject *res = PyObject_CallMethodOneArg(state->non_asyncio_tasks,
                                                   &_Py_ID(discard), task);
         if (res == NULL) {
             return NULL;
@@ -3597,7 +3601,7 @@ _asyncio.all_tasks
 
     loop: object = None
 
-Return set of tasks associated for loop.
+Return a set of all tasks for the loop.
 
 [clinic start generated code]*/
 
@@ -3633,7 +3637,7 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
         }
         head = head->prev;
     }
-    PyObject *scheduled_iter = PyObject_GetIter(state->scheduled_tasks);
+    PyObject *scheduled_iter = PyObject_GetIter(state->non_asyncio_tasks);
     if (scheduled_iter == NULL) {
         Py_DECREF(tasks);
         Py_DECREF(loop);
@@ -3712,7 +3716,7 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->asyncio_InvalidStateError);
     Py_VISIT(state->asyncio_CancelledError);
 
-    Py_VISIT(state->scheduled_tasks);
+    Py_VISIT(state->non_asyncio_tasks);
     Py_VISIT(state->eager_tasks);
     Py_VISIT(state->current_tasks);
     Py_VISIT(state->iscoroutine_typecache);
@@ -3750,7 +3754,7 @@ module_clear(PyObject *mod)
     Py_CLEAR(state->asyncio_InvalidStateError);
     Py_CLEAR(state->asyncio_CancelledError);
 
-    Py_CLEAR(state->scheduled_tasks);
+    Py_CLEAR(state->non_asyncio_tasks);
     Py_CLEAR(state->eager_tasks);
     Py_CLEAR(state->current_tasks);
     Py_CLEAR(state->iscoroutine_typecache);
@@ -3831,9 +3835,9 @@ module_init(asyncio_state *state)
     PyObject *weak_set;
     WITH_MOD("weakref")
     GET_MOD_ATTR(weak_set, "WeakSet");
-    state->scheduled_tasks = PyObject_CallNoArgs(weak_set);
+    state->non_asyncio_tasks = PyObject_CallNoArgs(weak_set);
     Py_CLEAR(weak_set);
-    if (state->scheduled_tasks == NULL) {
+    if (state->non_asyncio_tasks == NULL) {
         goto fail;
     }
 
@@ -3906,7 +3910,7 @@ module_exec(PyObject *mod)
         return -1;
     }
 
-    if (PyModule_AddObjectRef(mod, "_scheduled_tasks", state->scheduled_tasks) < 0) {
+    if (PyModule_AddObjectRef(mod, "_scheduled_tasks", state->non_asyncio_tasks) < 0) {
         return -1;
     }
 
