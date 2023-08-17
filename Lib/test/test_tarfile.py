@@ -3661,7 +3661,7 @@ class TestExtractionFilters(unittest.TestCase):
 
     def test_absolute_hardlink(self):
         # Test hardlink to an absolute path
-        # Inspired by 'dirsymlink' in jwilk/traversal-archives
+        # Inspired by 'dirsymlink' in https://github.com/jwilk/traversal-archives
         with ArchiveMaker() as arc:
             arc.add('parent', hardlink_to=self.outerdir / 'foo')
 
