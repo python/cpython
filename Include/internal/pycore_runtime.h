@@ -80,7 +80,7 @@ typedef struct _Py_DebugOffsets {
         off_t prev;
         off_t next;
         off_t interp;
-        off_t cframe;
+        off_t current_frame;
         off_t thread_id;
         off_t native_thread_id;
     } thread_state;

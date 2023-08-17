@@ -1,17 +1,11 @@
 #define Py_LIMITED_API 0x030c0000 // 3.12
 #include "parts.h"
-#include "clinic/vectorcall_limited.c.h"
 
 #ifdef LIMITED_API_AVAILABLE
 
 
 
 /* Test Vectorcall in the limited API */
-
-/*[clinic input]
-module _testcapi
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6361033e795369fc]*/
 
 static PyObject *
 LimitedVectorCallClass_tpcall(PyObject *self, PyObject *args, PyObject *kwargs) {
@@ -38,16 +32,8 @@ LimitedVectorCallClass_new(PyTypeObject *tp, PyTypeObject *a, PyTypeObject *kw)
     return self;
 }
 
-/*[clinic input]
-_testcapi.call_vectorcall
-
-    callable: object
-    /
-[clinic start generated code]*/
-
 static PyObject *
-_testcapi_call_vectorcall(PyObject *module, PyObject *callable)
-/*[clinic end generated code: output=bae81eec97fcaad7 input=55d88f92240957ee]*/
+call_vectorcall(PyObject* self, PyObject *callable)
 {
     PyObject *args[3] = { NULL, NULL, NULL };
     PyObject *kwname = NULL, *kwnames = NULL, *result = NULL;
@@ -91,16 +77,8 @@ leave:
     return result;
 }
 
-/*[clinic input]
-_testcapi.call_vectorcall_method
-
-    callable: object
-    /
-[clinic start generated code]*/
-
 static PyObject *
-_testcapi_call_vectorcall_method(PyObject *module, PyObject *callable)
-/*[clinic end generated code: output=e661f48dda08b6fb input=5ba81c27511395b6]*/
+call_vectorcall_method(PyObject* self, PyObject *callable)
 {
     PyObject *args[3] = { NULL, NULL, NULL };
     PyObject *name = NULL, *kwname = NULL,
@@ -175,8 +153,8 @@ static PyType_Spec LimitedVectorCallClass_spec = {
 };
 
 static PyMethodDef TestMethods[] = {
-    _TESTCAPI_CALL_VECTORCALL_METHODDEF
-    _TESTCAPI_CALL_VECTORCALL_METHOD_METHODDEF
+    {"call_vectorcall", call_vectorcall, METH_O},
+    {"call_vectorcall_method", call_vectorcall_method, METH_O},
     {NULL},
 };
 

@@ -602,11 +602,6 @@ int _Py_CheckRecursiveCallPy(
     return 0;
 }
 
-static inline int _Py_EnterRecursivePy(PyThreadState *tstate) {
-    return (tstate->py_recursion_remaining-- <= 0) &&
-        _Py_CheckRecursiveCallPy(tstate);
-}
-
 
 static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
     tstate->py_recursion_remaining++;
@@ -661,17 +656,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     int lltrace = 0;
 #endif
 
-    _PyCFrame cframe;
     _PyInterpreterFrame  entry_frame;
     PyObject *kwnames = NULL; // Borrowed reference. Reset by CALL instructions.
 
-    /* WARNING: Because the _PyCFrame lives on the C stack,
-     * but can be accessed from a heap allocated object (tstate)
-     * strict stack discipline must be maintained.
-     */
-    _PyCFrame *prev_cframe = tstate->cframe;
-    cframe.previous = prev_cframe;
-    tstate->cframe = &cframe;
+
 
 #ifdef Py_DEBUG
     /* Set these to invalid but identifiable values for debugging. */
@@ -687,9 +675,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry_frame.owner = FRAME_OWNED_BY_CSTACK;
     entry_frame.return_offset = 0;
     /* Push frame */
-    entry_frame.previous = prev_cframe->current_frame;
+    entry_frame.previous = tstate->current_frame;
     frame->previous = &entry_frame;
-    cframe.current_frame = frame;
+    tstate->current_frame = frame;
 
     tstate->c_recursion_remaining -= (PY_EVAL_C_STACK_UNITS - 1);
     if (_Py_EnterRecursiveCallTstate(tstate, "")) {
@@ -770,6 +758,7 @@ resume_frame:
 #endif
         {
 
+#define TIER_ONE 1
 #include "generated_cases.c.h"
 
     /* INSTRUMENTED_LINE has to be here, rather than in bytecodes.c,
@@ -928,13 +917,12 @@ exit_unwind:
     assert(frame != &entry_frame);
     // GH-99729: We need to unlink the frame *before* clearing it:
     _PyInterpreterFrame *dying = frame;
-    frame = cframe.current_frame = dying->previous;
+    frame = tstate->current_frame = dying->previous;
     _PyEvalFrameClearAndPop(tstate, dying);
     frame->return_offset = 0;
     if (frame == &entry_frame) {
-        /* Restore previous cframe and exit */
-        tstate->cframe = cframe.previous;
-        assert(tstate->cframe->current_frame == frame->previous);
+        /* Restore previous frame and exit */
+        tstate->current_frame = frame->previous;
         tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
         return NULL;
     }
@@ -2301,7 +2289,7 @@ int
 PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyInterpreterFrame *current_frame = tstate->cframe->current_frame;
+    _PyInterpreterFrame *current_frame = tstate->current_frame;
     int result = cf->cf_flags != 0;
 
     if (current_frame != NULL) {

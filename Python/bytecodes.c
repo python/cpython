@@ -17,7 +17,6 @@
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
-#include "pycore_opcode.h"        // EXTRA_CASES
 #include "pycore_opcode_metadata.h"  // uop names
 #include "pycore_opcode_utils.h"  // MAKE_FUNCTION_*
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
@@ -73,7 +72,6 @@ dummy_func(
     _PyInterpreterFrame *frame,
     unsigned char opcode,
     unsigned int oparg,
-    _PyCFrame cframe,
     _Py_CODEUNIT *next_instr,
     PyObject **stack_pointer,
     PyObject *kwnames,
@@ -135,8 +133,7 @@ dummy_func(
         }
 
         inst(RESUME, (--)) {
-            assert(tstate->cframe == &cframe);
-            assert(frame == cframe.current_frame);
+            assert(frame == tstate->current_frame);
             /* Possibly combine this with eval breaker */
             if (_PyFrame_GetCode(frame)->_co_instrumentation_version != tstate->interp->monitoring_version) {
                 int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
@@ -753,9 +750,8 @@ dummy_func(
         inst(INTERPRETER_EXIT, (retval --)) {
             assert(frame == &entry_frame);
             assert(_PyFrame_IsIncomplete(frame));
-            /* Restore previous cframe and return. */
-            tstate->cframe = cframe.previous;
-            assert(tstate->cframe->current_frame == frame->previous);
+            /* Restore previous frame and return. */
+            tstate->current_frame = frame->previous;
             assert(!_PyErr_Occurred(tstate));
             tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
             return retval;
@@ -769,7 +765,7 @@ dummy_func(
             assert(frame != &entry_frame);
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
-            frame = cframe.current_frame = dying->previous;
+            frame = tstate->current_frame = dying->previous;
             _PyEvalFrameClearAndPop(tstate, dying);
             frame->prev_instr += frame->return_offset;
             _PyFrame_StackPush(frame, retval);
@@ -788,7 +784,7 @@ dummy_func(
             assert(frame != &entry_frame);
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
-            frame = cframe.current_frame = dying->previous;
+            frame = tstate->current_frame = dying->previous;
             _PyEvalFrameClearAndPop(tstate, dying);
             frame->prev_instr += frame->return_offset;
             _PyFrame_StackPush(frame, retval);
@@ -804,7 +800,7 @@ dummy_func(
             assert(frame != &entry_frame);
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
-            frame = cframe.current_frame = dying->previous;
+            frame = tstate->current_frame = dying->previous;
             _PyEvalFrameClearAndPop(tstate, dying);
             frame->prev_instr += frame->return_offset;
             _PyFrame_StackPush(frame, retval);
@@ -824,7 +820,7 @@ dummy_func(
             assert(frame != &entry_frame);
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
-            frame = cframe.current_frame = dying->previous;
+            frame = tstate->current_frame = dying->previous;
             _PyEvalFrameClearAndPop(tstate, dying);
             frame->prev_instr += frame->return_offset;
             _PyFrame_StackPush(frame, retval);
@@ -957,13 +953,13 @@ dummy_func(
             {
                 PyGenObject *gen = (PyGenObject *)receiver;
                 _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
-                frame->return_offset = oparg;
                 STACK_SHRINK(1);
                 _PyFrame_StackPush(gen_frame, v);
                 gen->gi_frame_state = FRAME_EXECUTING;
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
                 SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
+                frame->return_offset = oparg;
                 DISPATCH_INLINED(gen_frame);
             }
             if (Py_IsNone(v) && PyIter_Check(receiver)) {
@@ -996,13 +992,13 @@ dummy_func(
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, SEND);
             STAT_INC(SEND, hit);
             _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
-            frame->return_offset = oparg;
             STACK_SHRINK(1);
             _PyFrame_StackPush(gen_frame, v);
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
             SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
+            frame->return_offset = oparg;
             DISPATCH_INLINED(gen_frame);
         }
 
@@ -1020,7 +1016,7 @@ dummy_func(
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
             _PyInterpreterFrame *gen_frame = frame;
-            frame = cframe.current_frame = frame->previous;
+            frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
@@ -1039,7 +1035,7 @@ dummy_func(
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
             _PyInterpreterFrame *gen_frame = frame;
-            frame = cframe.current_frame = frame->previous;
+            frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
@@ -2208,10 +2204,10 @@ dummy_func(
                 OBJECT_STAT_INC(optimization_attempts);
                 frame = _PyOptimizer_BackEdge(frame, here, next_instr, stack_pointer);
                 if (frame == NULL) {
-                    frame = cframe.current_frame;
+                    frame = tstate->current_frame;
                     goto resume_with_error;
                 }
-                assert(frame == cframe.current_frame);
+                assert(frame == tstate->current_frame);
                 here[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) -1);
                 goto resume_frame;
             }
@@ -2239,7 +2235,7 @@ dummy_func(
             Py_INCREF(executor);
             frame = executor->execute(executor, frame, stack_pointer);
             if (frame == NULL) {
-                frame = cframe.current_frame;
+                frame = tstate->current_frame;
                 goto resume_with_error;
             }
             goto resume_frame;
@@ -2588,7 +2584,6 @@ dummy_func(
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, FOR_ITER);
             STAT_INC(FOR_ITER, hit);
             _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
-            frame->return_offset = oparg;
             _PyFrame_StackPush(gen_frame, Py_None);
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
@@ -2596,6 +2591,7 @@ dummy_func(
             SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
             assert(next_instr[oparg].op.code == END_FOR ||
                    next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
+            frame->return_offset = oparg;
             DISPATCH_INLINED(gen_frame);
         }
 
@@ -2950,31 +2946,70 @@ dummy_func(
             GO_TO_INSTRUCTION(CALL_PY_EXACT_ARGS);
         }
 
-        inst(CALL_PY_EXACT_ARGS, (unused/1, func_version/2, callable, self_or_null, args[oparg] -- unused)) {
-            ASSERT_KWNAMES_IS_NULL();
+        op(_CHECK_PEP_523, (--)) {
             DEOPT_IF(tstate->interp->eval_frame, CALL);
+        }
+
+        op(_CHECK_FUNCTION_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+            ASSERT_KWNAMES_IS_NULL();
+            DEOPT_IF(!PyFunction_Check(callable), CALL);
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            DEOPT_IF(func->func_version != func_version, CALL);
+            PyCodeObject *code = (PyCodeObject *)func->func_code;
+            DEOPT_IF(code->co_argcount != oparg + (self_or_null != NULL), CALL);
+        }
+
+        op(_CHECK_STACK_SPACE, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            PyCodeObject *code = (PyCodeObject *)func->func_code;
+            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
+        }
+
+        op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
             int argcount = oparg;
             if (self_or_null != NULL) {
                 args--;
                 argcount++;
             }
-            DEOPT_IF(!PyFunction_Check(callable), CALL);
-            PyFunctionObject *func = (PyFunctionObject *)callable;
-            DEOPT_IF(func->func_version != func_version, CALL);
-            PyCodeObject *code = (PyCodeObject *)func->func_code;
-            DEOPT_IF(code->co_argcount != argcount, CALL);
-            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
             STAT_INC(CALL, hit);
-            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
             for (int i = 0; i < argcount; i++) {
                 new_frame->localsplus[i] = args[i];
             }
-            // Manipulate stack directly since we leave using DISPATCH_INLINED().
-            STACK_SHRINK(oparg + 2);
-            SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
-            frame->return_offset = 0;
-            DISPATCH_INLINED(new_frame);
         }
+
+        // The 'unused' output effect represents the return value
+        // (which will be pushed when the frame returns).
+        // It is needed so CALL_PY_EXACT_ARGS matches its family.
+        op(_PUSH_FRAME, (new_frame: _PyInterpreterFrame* -- unused)) {
+            // Write it out explicitly because it's subtly different.
+            // Eventually this should be the only occurrence of this code.
+            frame->return_offset = 0;
+            assert(tstate->interp->eval_frame == NULL);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            new_frame->previous = frame;
+            CALL_STAT_INC(inlined_py_calls);
+            frame = tstate->current_frame = new_frame;
+            #if TIER_ONE
+            goto start_frame;
+            #endif
+            #if TIER_TWO
+            ERROR_IF(_Py_EnterRecursivePy(tstate), exit_unwind);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
+            #endif
+        }
+
+        macro(CALL_PY_EXACT_ARGS) =
+            unused/1 + // Skip over the counter
+            _CHECK_PEP_523 +
+            _CHECK_FUNCTION_EXACT_ARGS +
+            _CHECK_STACK_SPACE +
+            _INIT_CALL_PY_EXACT_ARGS +
+            SAVE_IP +  // Tier 2 only; special-cased oparg
+            SAVE_CURRENT_IP +  // Sets frame->prev_instr
+            _PUSH_FRAME;
 
         inst(CALL_PY_WITH_DEFAULTS, (unused/1, func_version/2, callable, self_or_null, args[oparg] -- unused)) {
             ASSERT_KWNAMES_IS_NULL();
@@ -3096,7 +3131,7 @@ dummy_func(
             /* Link frames */
             init_frame->previous = shim;
             shim->previous = frame;
-            frame = cframe.current_frame = init_frame;
+            frame = tstate->current_frame = init_frame;
             CALL_STAT_INC(inlined_py_calls);
             /* Account for pushing the extra frame.
              * We don't check recursion depth here,
@@ -3559,7 +3594,7 @@ dummy_func(
             assert(frame != &entry_frame);
             _PyInterpreterFrame *prev = frame->previous;
             _PyThreadState_PopFrame(tstate, frame);
-            frame = cframe.current_frame = prev;
+            frame = tstate->current_frame = prev;
             _PyFrame_StackPush(frame, (PyObject *)gen);
             goto resume_frame;
         }
@@ -3736,11 +3771,26 @@ dummy_func(
             frame->prev_instr = ip_offset + oparg;
         }
 
+        op(SAVE_CURRENT_IP, (--)) {
+            #if TIER_ONE
+            frame->prev_instr = next_instr - 1;
+            #endif
+            #if TIER_TWO
+            // Relies on a preceding SAVE_IP
+            frame->prev_instr--;
+            #endif
+        }
+
         op(EXIT_TRACE, (--)) {
             frame->prev_instr--;  // Back up to just before destination
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
             return frame;
+        }
+
+        op(INSERT, (unused[oparg], top -- top, unused[oparg])) {
+            // Inserts TOS at position specified by oparg;
+            memmove(&stack_pointer[-1 - oparg], &stack_pointer[-oparg], oparg * sizeof(stack_pointer[0]));
         }
 
 

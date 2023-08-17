@@ -7,6 +7,7 @@
 #include "pycore_namespace.h"
 #include "pycore_object.h"
 #include "pycore_opcode.h"
+#include "pycore_opcode_metadata.h" // IS_VALID_OPCODE
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
@@ -120,7 +121,7 @@ static inline bool
 opcode_has_event(int opcode)
 {
     return (
-        opcode < INSTRUMENTED_LINE &&
+        opcode != INSTRUMENTED_LINE &&
         INSTRUMENTED_OPCODES[opcode] > 0
     );
 }
@@ -437,11 +438,10 @@ dump_instrumentation_data(PyCodeObject *code, int star, FILE*out)
 static bool
 valid_opcode(int opcode)
 {
-    if (opcode > 0 &&
+    if (IS_VALID_OPCODE(opcode) &&
+        opcode != CACHE &&
         opcode != RESERVED &&
-        opcode < 255 &&
-        _PyOpcode_OpName[opcode] &&
-        _PyOpcode_OpName[opcode][0] != '<')
+        opcode < 255)
     {
        return true;
     }
@@ -1202,7 +1202,7 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
     Py_DECREF(line_obj);
 done:
     assert(original_opcode != 0);
-    assert(original_opcode < INSTRUMENTED_LINE);
+    assert(original_opcode != INSTRUMENTED_LINE);
     assert(_PyOpcode_Deopt[original_opcode] == original_opcode);
     return original_opcode;
 }
@@ -1677,7 +1677,7 @@ instrument_all_executing_code_objects(PyInterpreterState *interp) {
     PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
     HEAD_UNLOCK(runtime);
     while (ts) {
-        _PyInterpreterFrame *frame = ts->cframe->current_frame;
+        _PyInterpreterFrame *frame = ts->current_frame;
         while (frame) {
             if (frame->owner != FRAME_OWNED_BY_CSTACK) {
                 if (_Py_Instrument(_PyFrame_GetCode(frame), interp)) {

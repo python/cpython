@@ -1674,18 +1674,8 @@ class CLanguage(Language):
         full_name = f.full_name
         template_dict = {'full_name': full_name}
         template_dict['name'] = f.displayname
-
-        if f.c_basename:
-            c_basename = f.c_basename
-        else:
-            fields = full_name.split(".")
-            if fields[-1] == '__new__':
-                fields.pop()
-            c_basename = "_".join(fields)
-
-        template_dict['c_basename'] = c_basename
-
-        template_dict['methoddef_name'] = c_basename.upper() + "_METHODDEF"
+        template_dict['c_basename'] = f.c_basename
+        template_dict['methoddef_name'] = f.c_basename.upper() + "_METHODDEF"
 
         template_dict['docstring'] = self.docstring_for_c_string(f)
 
@@ -2653,7 +2643,7 @@ class Function:
     name: str
     module: Module | Clinic
     cls: Class | None
-    c_basename: str | None
+    c_basename: str
     full_name: str
     return_converter: CReturnConverter
     kind: FunctionKind
@@ -2682,9 +2672,16 @@ class Function:
 
     @functools.cached_property
     def fulldisplayname(self) -> str:
-        if isinstance(self.module, Module):
-            return f"{self.module.name}.{self.displayname}"
-        return self.displayname
+        parent: Class | Module | Clinic | None
+        if self.kind.new_or_init:
+            parent = getattr(self.cls, "parent", None)
+        else:
+            parent = self.parent
+        name = self.displayname
+        while isinstance(parent, (Module, Class)):
+            name = f"{parent.name}.{name}"
+            parent = parent.parent
+        return name
 
     @property
     def render_parameters(self) -> list[Parameter]:
@@ -4570,6 +4567,11 @@ class ParamState(enum.IntEnum):
     RIGHT_SQUARE_AFTER = 6
 
 
+class FunctionNames(NamedTuple):
+    full_name: str
+    c_basename: str
+
+
 class DSLParser:
     function: Function | None
     state: StateKeeper
@@ -4833,6 +4835,39 @@ class DSLParser:
 
         self.next(self.state_modulename_name, line)
 
+    @staticmethod
+    def parse_function_names(line: str) -> FunctionNames:
+        left, as_, right = line.partition(' as ')
+        full_name = left.strip()
+        c_basename = right.strip()
+        if as_ and not c_basename:
+            fail("No C basename provided after 'as' keyword")
+        if not c_basename:
+            fields = full_name.split(".")
+            if fields[-1] == '__new__':
+                fields.pop()
+            c_basename = "_".join(fields)
+        if not is_legal_py_identifier(full_name):
+            fail(f"Illegal function name: {full_name!r}")
+        if not is_legal_c_identifier(c_basename):
+            fail(f"Illegal C basename: {c_basename!r}")
+        return FunctionNames(full_name=full_name, c_basename=c_basename)
+
+    def update_function_kind(self, fullname: str) -> None:
+        fields = fullname.split('.')
+        name = fields.pop()
+        _, cls = self.clinic._module_and_class(fields)
+        if name in unsupported_special_methods:
+            fail(f"{name!r} is a special method and cannot be converted to Argument Clinic!")
+        if name == '__new__':
+            if (self.kind is not CLASS_METHOD) or (not cls):
+                fail("'__new__' must be a class method!")
+            self.kind = METHOD_NEW
+        elif name == '__init__':
+            if (self.kind is not CALLABLE) or (not cls):
+                fail("'__init__' must be a normal method, not a class or static method!")
+            self.kind = METHOD_INIT
+
     def state_modulename_name(self, line: str) -> None:
         # looking for declaration, which establishes the leftmost column
         # line should be
@@ -4855,15 +4890,10 @@ class DSLParser:
 
         # are we cloning?
         before, equals, existing = line.rpartition('=')
-        c_basename: str | None
         if equals:
-            full_name, _, c_basename = before.partition(' as ')
-            full_name = full_name.strip()
-            c_basename = c_basename.strip()
+            full_name, c_basename = self.parse_function_names(before)
             existing = existing.strip()
-            if (is_legal_py_identifier(full_name) and
-                (not c_basename or is_legal_c_identifier(c_basename)) and
-                is_legal_py_identifier(existing)):
+            if is_legal_py_identifier(existing):
                 # we're cloning!
                 fields = [x.strip() for x in existing.split('.')]
                 function_name = fields.pop()
@@ -4881,13 +4911,26 @@ class DSLParser:
                 function_name = fields.pop()
                 module, cls = self.clinic._module_and_class(fields)
 
-                if not (existing_function.kind is self.kind and existing_function.coexist == self.coexist):
-                    fail("'kind' of function and cloned function don't match! "
-                         "(@classmethod/@staticmethod/@coexist)")
-                function = existing_function.copy(
-                    name=function_name, full_name=full_name, module=module,
-                    cls=cls, c_basename=c_basename, docstring=''
-                )
+                self.update_function_kind(full_name)
+                overrides: dict[str, Any] = {
+                    "name": function_name,
+                    "full_name": full_name,
+                    "module": module,
+                    "cls": cls,
+                    "c_basename": c_basename,
+                    "docstring": "",
+                }
+                if not (existing_function.kind is self.kind and
+                        existing_function.coexist == self.coexist):
+                    # Allow __new__ or __init__ methods.
+                    if existing_function.kind.new_or_init:
+                        overrides["kind"] = self.kind
+                        # Future enhancement: allow custom return converters
+                        overrides["return_converter"] = CReturnConverter()
+                    else:
+                        fail("'kind' of function and cloned function don't match! "
+                             "(@classmethod/@staticmethod/@coexist)")
+                function = existing_function.copy(**overrides)
                 self.function = function
                 self.block.signatures.append(function)
                 (cls or module).functions.append(function)
@@ -4896,15 +4939,7 @@ class DSLParser:
 
         line, _, returns = line.partition('->')
         returns = returns.strip()
-
-        full_name, _, c_basename = line.partition(' as ')
-        full_name = full_name.strip()
-        c_basename = c_basename.strip() or None
-
-        if not is_legal_py_identifier(full_name):
-            fail(f"Illegal function name: {full_name!r}")
-        if c_basename and not is_legal_c_identifier(c_basename):
-            fail(f"Illegal C basename: {c_basename!r}")
+        full_name, c_basename = self.parse_function_names(line)
 
         return_converter = None
         if returns:
@@ -4929,20 +4964,9 @@ class DSLParser:
         function_name = fields.pop()
         module, cls = self.clinic._module_and_class(fields)
 
-        fields = full_name.split('.')
-        if fields[-1] in unsupported_special_methods:
-            fail(f"{fields[-1]} is a special method and cannot be converted to Argument Clinic!  (Yet.)")
-
-        if fields[-1] == '__new__':
-            if (self.kind is not CLASS_METHOD) or (not cls):
-                fail("__new__ must be a class method!")
-            self.kind = METHOD_NEW
-        elif fields[-1] == '__init__':
-            if (self.kind is not CALLABLE) or (not cls):
-                fail("__init__ must be a normal method, not a class or static method!")
-            self.kind = METHOD_INIT
-            if not return_converter:
-                return_converter = init_return_converter()
+        self.update_function_kind(full_name)
+        if self.kind is METHOD_INIT and not return_converter:
+            return_converter = init_return_converter()
 
         if not return_converter:
             return_converter = CReturnConverter()

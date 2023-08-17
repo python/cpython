@@ -103,7 +103,6 @@
         }
 
         case TO_BOOL: {
-            static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -363,7 +362,6 @@
         }
 
         case BINARY_SUBSCR: {
-            static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
             PyObject *sub;
             PyObject *container;
             PyObject *res;
@@ -557,7 +555,6 @@
         }
 
         case STORE_SUBSCR: {
-            static_assert(INLINE_CACHE_ENTRIES_STORE_SUBSCR == 1, "incorrect cache size");
             PyObject *sub;
             PyObject *container;
             PyObject *v;
@@ -862,7 +859,6 @@
         }
 
         case UNPACK_SEQUENCE: {
-            static_assert(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE == 1, "incorrect cache size");
             PyObject *seq;
             seq = stack_pointer[-1];
             #if ENABLE_SPECIALIZATION
@@ -950,7 +946,6 @@
         }
 
         case STORE_ATTR: {
-            static_assert(INLINE_CACHE_ENTRIES_STORE_ATTR == 4, "incorrect cache size");
             PyObject *owner;
             PyObject *v;
             owner = stack_pointer[-1];
@@ -1061,7 +1056,6 @@
         }
 
         case LOAD_GLOBAL: {
-            static_assert(INLINE_CACHE_ENTRIES_LOAD_GLOBAL == 4, "incorrect cache size");
             PyObject *res;
             PyObject *null = NULL;
             #if ENABLE_SPECIALIZATION
@@ -1513,7 +1507,7 @@
             Py_DECREF(self);
             if (attr == NULL) goto pop_3_error;
             STACK_SHRINK(2);
-            stack_pointer[-1 - (0 ? 1 : 0)] = attr;
+            stack_pointer[-1] = attr;
             break;
         }
 
@@ -1554,7 +1548,6 @@
         }
 
         case LOAD_ATTR: {
-            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             PyObject *owner;
             PyObject *attr;
             PyObject *self_or_null = NULL;
@@ -1650,7 +1643,6 @@
         }
 
         case COMPARE_OP: {
-            static_assert(INLINE_CACHE_ENTRIES_COMPARE_OP == 1, "incorrect cache size");
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -2155,6 +2147,83 @@
             break;
         }
 
+        case _CHECK_PEP_523: {
+            DEOPT_IF(tstate->interp->eval_frame, CALL);
+            break;
+        }
+
+        case _CHECK_FUNCTION_EXACT_ARGS: {
+            PyObject *self_or_null;
+            PyObject *callable;
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            uint32_t func_version = (uint32_t)operand;
+            ASSERT_KWNAMES_IS_NULL();
+            DEOPT_IF(!PyFunction_Check(callable), CALL);
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            DEOPT_IF(func->func_version != func_version, CALL);
+            PyCodeObject *code = (PyCodeObject *)func->func_code;
+            DEOPT_IF(code->co_argcount != oparg + (self_or_null != NULL), CALL);
+            break;
+        }
+
+        case _CHECK_STACK_SPACE: {
+            PyObject *callable;
+            callable = stack_pointer[-2 - oparg];
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            PyCodeObject *code = (PyCodeObject *)func->func_code;
+            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
+            break;
+        }
+
+        case _INIT_CALL_PY_EXACT_ARGS: {
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            _PyInterpreterFrame *new_frame;
+            args = stack_pointer - oparg;
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            int argcount = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                argcount++;
+            }
+            STAT_INC(CALL, hit);
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
+            for (int i = 0; i < argcount; i++) {
+                new_frame->localsplus[i] = args[i];
+            }
+            STACK_SHRINK(oparg);
+            STACK_SHRINK(1);
+            stack_pointer[-1] = (PyObject *)new_frame;
+            break;
+        }
+
+        case _PUSH_FRAME: {
+            _PyInterpreterFrame *new_frame;
+            new_frame = (_PyInterpreterFrame *)stack_pointer[-1];
+            STACK_SHRINK(1);
+            // Write it out explicitly because it's subtly different.
+            // Eventually this should be the only occurrence of this code.
+            frame->return_offset = 0;
+            assert(tstate->interp->eval_frame == NULL);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            new_frame->previous = frame;
+            CALL_STAT_INC(inlined_py_calls);
+            frame = tstate->current_frame = new_frame;
+            #if TIER_ONE
+            goto start_frame;
+            #endif
+            #if TIER_TWO
+            if (_Py_EnterRecursivePy(tstate)) goto pop_1_exit_unwind;
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
+            #endif
+            break;
+        }
+
         case CALL_NO_KW_TYPE_1: {
             PyObject **args;
             PyObject *null;
@@ -2656,7 +2725,6 @@
         }
 
         case BINARY_OP: {
-            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
             PyObject *rhs;
             PyObject *lhs;
             PyObject *res;
@@ -2726,10 +2794,30 @@
             break;
         }
 
+        case SAVE_CURRENT_IP: {
+            #if TIER_ONE
+            frame->prev_instr = next_instr - 1;
+            #endif
+            #if TIER_TWO
+            // Relies on a preceding SAVE_IP
+            frame->prev_instr--;
+            #endif
+            break;
+        }
+
         case EXIT_TRACE: {
             frame->prev_instr--;  // Back up to just before destination
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
             return frame;
+            break;
+        }
+
+        case INSERT: {
+            PyObject *top;
+            top = stack_pointer[-1];
+            // Inserts TOS at position specified by oparg;
+            memmove(&stack_pointer[-1 - oparg], &stack_pointer[-oparg], oparg * sizeof(stack_pointer[0]));
+            stack_pointer[-1 - oparg] = top;
             break;
         }
