@@ -143,12 +143,29 @@ typedef struct {
         - asyncio_tasks.head->prev == NULL
         - asyncio_tasks.tail->next == NULL
 
-        * After adding a new task 'task':
-        - asyncio_tasks.head == task
-        - task->prev == &asyncio_tasks.tail
-        - task->next == NULL
-        - asyncio_tasks.tail->next == task
+        * After adding a new task 'task1':
+        - asyncio_tasks.head == task1
+        - task1->prev == &asyncio_tasks.tail
+        - task1->next == NULL
+        - asyncio_tasks.tail->next == task1
 
+        * After adding a second task 'task2':
+        - asyncio_tasks.head == task2
+        - task2->prev == task1
+        - task2->next == NULL
+        - task1->next == task2
+        - asyncio_tasks.tail->next == task1
+
+        * After removing task 'task1':
+        - asyncio_tasks.head == task2
+        - task2->prev == &asyncio_tasks.tail
+        - task2->next == NULL
+        - asyncio_tasks.tail->next == task2
+
+        * After removing task 'task2', list is empty:
+        - asyncio_tasks.head == &asyncio_tasks.tail
+        - asyncio_tasks.head->prev == NULL
+        - asyncio_tasks.tail->next == NULL
     */
 
     struct {
