@@ -1190,6 +1190,8 @@ as internal buffering of data.
    :const:`SEEK_END`
       Adjust the file position relative to the end of the file.
 
+   Their values are 0, 1, and 2, respectively.
+
 
 .. data:: SEEK_HOLE
           SEEK_DATA
