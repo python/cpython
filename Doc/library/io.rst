@@ -423,7 +423,7 @@ I/O Base Classes
 
       .. versionadded:: 3.3
          Some operating systems could support additional values, like
-         :const:`SEEK_HOLE` or :const:`SEEK_DATA`. The valid values
+         :const:`os.SEEK_HOLE` or :const:`os.SEEK_DATA`. The valid values
          for a file could depend on it being open in text or binary mode.
 
    .. method:: seekable()
