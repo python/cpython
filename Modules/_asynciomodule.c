@@ -3645,7 +3645,7 @@ Return a set of all tasks for the loop.
 
 static PyObject *
 _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
-/*[clinic end generated code: output=0e107cbb7f72aa7b input=02fab144171b1879]*/
+/*[clinic end generated code: output=0e107cbb7f72aa7b input=43a1b423c2d95bfa]*/
 {
 
     asyncio_state *state = get_asyncio_state(module);

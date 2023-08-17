@@ -1492,7 +1492,7 @@ PyDoc_STRVAR(_asyncio_all_tasks__doc__,
 "all_tasks($module, /, loop=None)\n"
 "--\n"
 "\n"
-"Return set of tasks associated for loop.");
+"Return a set of all tasks for the loop.");
 
 #define _ASYNCIO_ALL_TASKS_METHODDEF    \
     {"all_tasks", _PyCFunction_CAST(_asyncio_all_tasks), METH_FASTCALL|METH_KEYWORDS, _asyncio_all_tasks__doc__},
@@ -1547,4 +1547,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ad9ae2a27dcb1fe3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5b69c70834ee0bfb input=a9049054013a1b77]*/
