@@ -1,0 +1,1 @@
+Add experimental wasi-threads support. Patch by Takashi Yamamoto.

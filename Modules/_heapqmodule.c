@@ -672,9 +672,7 @@ From all times, sorting has always been a Great Art! :-)\n");
 static int
 heapq_exec(PyObject *m)
 {
-    PyObject *about = PyUnicode_FromString(__about__);
-    if (PyModule_AddObject(m, "__about__", about) < 0) {
-        Py_DECREF(about);
+    if (PyModule_Add(m, "__about__", PyUnicode_FromString(__about__)) < 0) {
         return -1;
     }
     return 0;
@@ -682,6 +680,7 @@ heapq_exec(PyObject *m)
 
 static struct PyModuleDef_Slot heapq_slots[] = {
     {Py_mod_exec, heapq_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

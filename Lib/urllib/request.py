@@ -136,7 +136,7 @@ __version__ = '%d.%d' % sys.version_info[:2]
 
 _opener = None
 def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
-            *, cafile=None, capath=None, cadefault=False, context=None):
+            *, context=None):
     '''Open the URL url, which can be either a string or a Request object.
 
     *data* must be an object specifying additional data to be sent to
@@ -153,14 +153,6 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
 
     If *context* is specified, it must be a ssl.SSLContext instance describing
     the various SSL options. See HTTPSConnection for more details.
-
-    The optional *cafile* and *capath* parameters specify a set of trusted CA
-    certificates for HTTPS requests. cafile should point to a single file
-    containing a bundle of CA certificates, whereas capath should point to a
-    directory of hashed certificate files. More information can be found in
-    ssl.SSLContext.load_verify_locations().
-
-    The *cadefault* parameter is ignored.
 
 
     This function always returns an object which can work as a
@@ -187,25 +179,7 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
 
     '''
     global _opener
-    if cafile or capath or cadefault:
-        import warnings
-        warnings.warn("cafile, capath and cadefault are deprecated, use a "
-                      "custom context instead.", DeprecationWarning, 2)
-        if context is not None:
-            raise ValueError(
-                "You can't pass both context and any of cafile, capath, and "
-                "cadefault"
-            )
-        if not _have_ssl:
-            raise ValueError('SSL support not available')
-        context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH,
-                                             cafile=cafile,
-                                             capath=capath)
-        # send ALPN extension to indicate HTTP/1.1 protocol
-        context.set_alpn_protocols(['http/1.1'])
-        https_handler = HTTPSHandler(context=context)
-        opener = build_opener(https_handler)
-    elif context:
+    if context:
         https_handler = HTTPSHandler(context=context)
         opener = build_opener(https_handler)
     elif _opener is None:

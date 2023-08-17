@@ -23,6 +23,7 @@ import types
 import unittest
 from unittest import mock
 import _testinternalcapi
+import _imp
 
 from test.support import os_helper
 from test.support import (
@@ -96,7 +97,6 @@ def require_frozen(module, *, skip=True):
 def require_pure_python(module, *, skip=False):
     _require_loader(module, SourceFileLoader, skip)
 
-
 def remove_files(name):
     for f in (name + ".py",
               name + ".pyc",
@@ -104,6 +104,25 @@ def remove_files(name):
               name + "$py.class"):
         unlink(f)
     rmtree('__pycache__')
+
+
+def no_rerun(reason):
+    """Skip rerunning for a particular test.
+
+    WARNING: Use this decorator with care; skipping rerunning makes it
+    impossible to find reference leaks. Provide a clear reason for skipping the
+    test using the 'reason' parameter.
+    """
+    def deco(func):
+        _has_run = False
+        def wrapper(self):
+            nonlocal _has_run
+            if _has_run:
+                self.skipTest(reason)
+            func(self)
+            _has_run = True
+        return wrapper
+    return deco
 
 
 @contextlib.contextmanager
@@ -127,17 +146,33 @@ def _ready_to_import(name=None, source=""):
                 del sys.modules[name]
 
 
-def requires_subinterpreters(meth):
-    """Decorator to skip a test if subinterpreters are not supported."""
-    return unittest.skipIf(_interpreters is None,
-                           'subinterpreters required')(meth)
+if _testsinglephase is not None:
+    def restore__testsinglephase(*, _orig=_testsinglephase):
+        # We started with the module imported and want to restore
+        # it to its nominal state.
+        sys.modules.pop('_testsinglephase', None)
+        _orig._clear_globals()
+        _testinternalcapi.clear_extension('_testsinglephase', _orig.__file__)
+        import _testsinglephase
 
 
 def requires_singlephase_init(meth):
     """Decorator to skip if single-phase init modules are not supported."""
+    if not isinstance(meth, type):
+        def meth(self, _meth=meth):
+            try:
+                return _meth(self)
+            finally:
+                restore__testsinglephase()
     meth = cpython_only(meth)
     return unittest.skipIf(_testsinglephase is None,
                            'test requires _testsinglephase module')(meth)
+
+
+def requires_subinterpreters(meth):
+    """Decorator to skip a test if subinterpreters are not supported."""
+    return unittest.skipIf(_interpreters is None,
+                           'subinterpreters required')(meth)
 
 
 class ModuleSnapshot(types.SimpleNamespace):
@@ -762,6 +797,13 @@ class ImportTests(unittest.TestCase):
                                     stderr=subprocess.STDOUT,
                                     env=env,
                                     cwd=os.path.dirname(pyexe))
+
+    def test_issue105979(self):
+        # this used to crash
+        with self.assertRaises(ImportError) as cm:
+            _imp.get_frozen_object("x", b"6\'\xd5Cu\x12")
+        self.assertIn("Frozen object named 'x' is invalid",
+                      str(cm.exception))
 
 
 @skip_if_dont_write_bytecode
@@ -1640,8 +1682,10 @@ class SubinterpImportTests(unittest.TestCase):
     )
     ISOLATED = dict(
         use_main_obmalloc=False,
+        gil=2,
     )
     NOT_ISOLATED = {k: not v for k, v in ISOLATED.items()}
+    NOT_ISOLATED['gil'] = 1
 
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def pipe(self):
@@ -1652,26 +1696,44 @@ class SubinterpImportTests(unittest.TestCase):
             os.set_blocking(r, False)
         return (r, w)
 
-    def import_script(self, name, fd, check_override=None):
+    def import_script(self, name, fd, filename=None, check_override=None):
         override_text = ''
         if check_override is not None:
             override_text = f'''
-            import _imp
-            _imp._override_multi_interp_extensions_check({check_override})
-            '''
-        return textwrap.dedent(f'''
-            import os, sys
-            {override_text}
-            try:
-                import {name}
-            except ImportError as exc:
-                text = 'ImportError: ' + str(exc)
-            else:
-                text = 'okay'
-            os.write({fd}, text.encode('utf-8'))
-            ''')
+                import _imp
+                _imp._override_multi_interp_extensions_check({check_override})
+                '''
+        if filename:
+            return textwrap.dedent(f'''
+                from importlib.util import spec_from_loader, module_from_spec
+                from importlib.machinery import ExtensionFileLoader
+                import os, sys
+                {override_text}
+                loader = ExtensionFileLoader({name!r}, {filename!r})
+                spec = spec_from_loader({name!r}, loader)
+                try:
+                    module = module_from_spec(spec)
+                    loader.exec_module(module)
+                except ImportError as exc:
+                    text = 'ImportError: ' + str(exc)
+                else:
+                    text = 'okay'
+                os.write({fd}, text.encode('utf-8'))
+                ''')
+        else:
+            return textwrap.dedent(f'''
+                import os, sys
+                {override_text}
+                try:
+                    import {name}
+                except ImportError as exc:
+                    text = 'ImportError: ' + str(exc)
+                else:
+                    text = 'okay'
+                os.write({fd}, text.encode('utf-8'))
+                ''')
 
-    def run_here(self, name, *,
+    def run_here(self, name, filename=None, *,
                  check_singlephase_setting=False,
                  check_singlephase_override=None,
                  isolated=False,
@@ -1700,26 +1762,30 @@ class SubinterpImportTests(unittest.TestCase):
         )
 
         r, w = self.pipe()
-        script = self.import_script(name, w, check_singlephase_override)
+        script = self.import_script(name, w, filename,
+                                    check_singlephase_override)
 
         ret = run_in_subinterp_with_config(script, **kwargs)
         self.assertEqual(ret, 0)
         return os.read(r, 100)
 
-    def check_compatible_here(self, name, *, strict=False, isolated=False):
+    def check_compatible_here(self, name, filename=None, *,
+                              strict=False,
+                              isolated=False,
+                              ):
         # Verify that the named module may be imported in a subinterpreter.
         # (See run_here() for more info.)
-        out = self.run_here(name,
+        out = self.run_here(name, filename,
                             check_singlephase_setting=strict,
                             isolated=isolated,
                             )
         self.assertEqual(out, b'okay')
 
-    def check_incompatible_here(self, name, *, isolated=False):
+    def check_incompatible_here(self, name, filename=None, *, isolated=False):
         # Differences from check_compatible_here():
         #  * verify that import fails
         #  * "strict" is always True
-        out = self.run_here(name,
+        out = self.run_here(name, filename,
                             check_singlephase_setting=True,
                             isolated=isolated,
                             )
@@ -1820,6 +1886,44 @@ class SubinterpImportTests(unittest.TestCase):
         with self.subTest(f'{module}: strict, fresh'):
             self.check_compatible_fresh(module, strict=True)
 
+    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    def test_multi_init_extension_non_isolated_compat(self):
+        modname = '_test_non_isolated'
+        filename = _testmultiphase.__file__
+        loader = ExtensionFileLoader(modname, filename)
+        spec = importlib.util.spec_from_loader(modname, loader)
+        module = importlib.util.module_from_spec(spec)
+        loader.exec_module(module)
+        sys.modules[modname] = module
+
+        require_extension(module)
+        with self.subTest(f'{modname}: isolated'):
+            self.check_incompatible_here(modname, filename, isolated=True)
+        with self.subTest(f'{modname}: not isolated'):
+            self.check_incompatible_here(modname, filename, isolated=False)
+        with self.subTest(f'{modname}: not strict'):
+            self.check_compatible_here(modname, filename, strict=False)
+
+    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    def test_multi_init_extension_per_interpreter_gil_compat(self):
+        modname = '_test_shared_gil_only'
+        filename = _testmultiphase.__file__
+        loader = ExtensionFileLoader(modname, filename)
+        spec = importlib.util.spec_from_loader(modname, loader)
+        module = importlib.util.module_from_spec(spec)
+        loader.exec_module(module)
+        sys.modules[modname] = module
+
+        require_extension(module)
+        with self.subTest(f'{modname}: isolated, strict'):
+            self.check_incompatible_here(modname, filename, isolated=True)
+        with self.subTest(f'{modname}: not isolated, strict'):
+            self.check_compatible_here(modname, filename,
+                                       strict=True, isolated=False)
+        with self.subTest(f'{modname}: not isolated, not strict'):
+            self.check_compatible_here(modname, filename,
+                                       strict=False, isolated=False)
+
     def test_python_compat(self):
         module = 'threading'
         require_pure_python(module)
@@ -1873,6 +1977,20 @@ class SubinterpImportTests(unittest.TestCase):
         with self.subTest(f'{module}: strict, fresh'):
             self.check_compatible_fresh(module, strict=True, isolated=True)
 
+    @requires_subinterpreters
+    @requires_singlephase_init
+    def test_disallowed_reimport(self):
+        # See https://github.com/python/cpython/issues/104621.
+        script = textwrap.dedent('''
+            import _testsinglephase
+            print(_testsinglephase)
+            ''')
+        interpid = _interpreters.create()
+        with self.assertRaises(_interpreters.RunFailedError):
+            _interpreters.run_string(interpid, script)
+        with self.assertRaises(_interpreters.RunFailedError):
+            _interpreters.run_string(interpid, script)
+
 
 class TestSinglePhaseSnapshot(ModuleSnapshot):
 
@@ -1919,10 +2037,6 @@ class SinglephaseInitTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        if '-R' in sys.argv or '--huntrleaks' in sys.argv:
-            # https://github.com/python/cpython/issues/102251
-            raise unittest.SkipTest('unresolved refleaks (see gh-102251)')
-
         spec = importlib.util.find_spec(cls.NAME)
         from importlib.machinery import ExtensionFileLoader
         cls.FILE = spec.origin
@@ -1931,6 +2045,10 @@ class SinglephaseInitTests(unittest.TestCase):
 
         # Start fresh.
         cls.clean_up()
+
+    @classmethod
+    def tearDownClass(cls):
+        restore__testsinglephase()
 
     def tearDown(self):
         # Clean up the module.
@@ -2008,7 +2126,7 @@ class SinglephaseInitTests(unittest.TestCase):
             _interpreters.run_string(interpid, textwrap.dedent(f'''
                 name = {self.NAME!r}
                 if name in sys.modules:
-                    sys.modules[name]._clear_globals()
+                    sys.modules.pop(name)._clear_globals()
                 _testinternalcapi.clear_extension(name, {self.FILE!r})
                 '''))
             _interpreters.destroy(interpid)
@@ -2259,6 +2377,7 @@ class SinglephaseInitTests(unittest.TestCase):
         self.add_module_cleanup(name)
         with self.subTest(name):
             loaded = self.load(name)
+            self.addCleanup(loaded.module._clear_module_state)
 
             self.check_common(loaded)
             self.assertIsNot(loaded.snapshot.state_initialized, None)
@@ -2318,14 +2437,19 @@ class SinglephaseInitTests(unittest.TestCase):
         # Keep a reference around.
         basic = self.load(self.NAME)
 
-        for name in [
-            f'{self.NAME}_with_reinit',  # m_size == 0
-            f'{self.NAME}_with_state',  # m_size > 0
+        for name, has_state in [
+            (f'{self.NAME}_with_reinit', False),  # m_size == 0
+            (f'{self.NAME}_with_state', True),    # m_size > 0
         ]:
             self.add_module_cleanup(name)
-            with self.subTest(name):
+            with self.subTest(name=name, has_state=has_state):
                 loaded = self.load(name)
+                if has_state:
+                    self.addCleanup(loaded.module._clear_module_state)
+
                 reloaded = self.re_load(name, loaded.module)
+                if has_state:
+                    self.addCleanup(reloaded.module._clear_module_state)
 
                 self.check_common(loaded)
                 self.check_common(reloaded)
@@ -2426,9 +2550,16 @@ class SinglephaseInitTests(unittest.TestCase):
         #  * m_copy was copied from interp2 (was from interp1)
         #  * module's global state was updated, not reset
 
+    @no_rerun(reason="rerun not possible; module state is never cleared (see gh-102251)")
     @requires_subinterpreters
     def test_basic_multiple_interpreters_deleted_no_reset(self):
         # without resetting; already loaded in a deleted interpreter
+
+        if hasattr(sys, 'getobjects'):
+            # It's a Py_TRACE_REFS build.
+            # This test breaks interpreter isolation a little,
+            # which causes problems on Py_TRACE_REF builds.
+            raise unittest.SkipTest('crashes on Py_TRACE_REFS builds')
 
         # At this point:
         #  * alive in 0 interpreters
@@ -2551,6 +2682,30 @@ class SinglephaseInitTests(unittest.TestCase):
         #  * mod init func ran again
         #  * m_copy was copied from interp2 (was from interp1)
         #  * module's global state was initialized, not reset
+
+
+@cpython_only
+class CAPITests(unittest.TestCase):
+    def test_pyimport_addmodule(self):
+        # gh-105922: Test PyImport_AddModuleRef(), PyImport_AddModule()
+        # and PyImport_AddModuleObject()
+        import _testcapi
+        for name in (
+            'sys',     # frozen module
+            'test',    # package
+            __name__,  # package.module
+        ):
+            _testcapi.check_pyimport_addmodule(name)
+
+    def test_pyimport_addmodule_create(self):
+        # gh-105922: Test PyImport_AddModuleRef(), create a new module
+        import _testcapi
+        name = 'dontexist'
+        self.assertNotIn(name, sys.modules)
+        self.addCleanup(unload, name)
+
+        mod = _testcapi.check_pyimport_addmodule(name)
+        self.assertIs(mod, sys.modules[name])
 
 
 if __name__ == '__main__':
