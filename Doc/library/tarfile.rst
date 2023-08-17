@@ -742,7 +742,7 @@ A ``TarInfo`` object has the following public data attributes:
 
    For symbolic links (``SYMTYPE``), the linkname is relative to the directory
    that contains the link.
-   For hard links (``LNKTYPE``), the linkname is relative to the root of
+   For hard links (``LNKTYPE``), the *linkname* is relative to the root of
    the archive.
 
 

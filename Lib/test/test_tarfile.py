@@ -3497,7 +3497,7 @@ class TestExtractionFilters(unittest.TestCase):
         # Inspired by 'dirsymlink2a' in jwilk/traversal-archives
         with ArchiveMaker() as arc:
 
-            # links to `.` which is both:
+            # `current` links to `.` which is both:
             #   - the destination directory
             #   - `current` itself
             arc.add('current', symlink_to='.')
