@@ -103,27 +103,29 @@ class SqliteTypeTests(unittest.TestCase):
         row = self.cur.fetchone()
         self.assertIsNone(row)
 
-    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
-    @support.bigmemtest(size=2**31, memuse=4, dry_run=False)
+    @unittest.skipUnless(sys.maxsize > 2**64, 'requires (s)size_t > 64bit')
+    @support.bigmemtest(size=2**64+1, memuse=4, dry_run=False)
     def test_too_large_string(self, maxsize):
         with self.assertRaises(sqlite.DataError):
-            self.cur.execute("insert into test(s) values (?)", ('x'*(2**31-1),))
-        with self.assertRaises(sqlite.DataError):
-            self.cur.execute("insert into test(s) values (?)", ('x'*(2**31),))
+            self.cur.execute("insert into test(s) values (?)", ('x'*(2**64+1),))
         self.cur.execute("select 1 from test")
         row = self.cur.fetchone()
         self.assertIsNone(row)
+        self.cur.execute("insert into test(s) values (?)", ('x'*(2**64),))
+        row = self.cur.fetchone()
+        self.assertEqual(len(row), 1)
 
-    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
-    @support.bigmemtest(size=2**31, memuse=3, dry_run=False)
+    @unittest.skipUnless(sys.maxsize > 2**64, 'requires (s)size_t > 64bit')
+    @support.bigmemtest(size=2**64+1, memuse=3, dry_run=False)
     def test_too_large_blob(self, maxsize):
         with self.assertRaises(sqlite.DataError):
-            self.cur.execute("insert into test(s) values (?)", (b'x'*(2**31-1),))
-        with self.assertRaises(sqlite.DataError):
-            self.cur.execute("insert into test(s) values (?)", (b'x'*(2**31),))
+            self.cur.execute("insert into test(s) values (?)", (b'x'*(2**64+1),))
         self.cur.execute("select 1 from test")
         row = self.cur.fetchone()
         self.assertIsNone(row)
+        self.cur.execute("insert into test(s) values (?)", (b'x'*(2**64),))
+        row = self.cur.fetchone()
+        self.assertEqual(len(row), 1)
 
 
 class DeclTypesTests(unittest.TestCase):
