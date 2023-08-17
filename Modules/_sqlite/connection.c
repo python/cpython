@@ -739,12 +739,16 @@ _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
         if (str == NULL) {
             return -1;
         }
-        if (sz > INT_MAX) {
+#if SIZEOF_SIZE_T > 8
+        if (sz > 0xffffffffffffffff) {
             PyErr_SetString(PyExc_OverflowError,
-                            "string is longer than INT_MAX bytes");
+                            "Error setting result value: "
+                            "string is longer than 2**64-1 bytes");
             return -1;
         }
-        sqlite3_result_text(context, str, (int)sz, SQLITE_TRANSIENT);
+#endif
+        sqlite3_result_text64(context, str, (sqlite3_uint64)sz,
+                              SQLITE_TRANSIENT, SQLITE_UTF8);
     } else if (PyObject_CheckBuffer(py_val)) {
         Py_buffer view;
         if (PyObject_GetBuffer(py_val, &view, PyBUF_SIMPLE) != 0) {
