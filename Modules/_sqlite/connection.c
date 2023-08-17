@@ -750,13 +750,17 @@ _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
         if (PyObject_GetBuffer(py_val, &view, PyBUF_SIMPLE) != 0) {
             return -1;
         }
-        if (view.len > INT_MAX) {
+#if SIZEOF_SIZE_T > 8
+        if (view.len > 0xffffffffffffffff) {
             PyErr_SetString(PyExc_OverflowError,
-                            "BLOB longer than INT_MAX bytes");
+                            "Error setting result value: "
+                            "buffer is larger than 2**64-1 bytes");
             PyBuffer_Release(&view);
             return -1;
         }
-        sqlite3_result_blob(context, view.buf, (int)view.len, SQLITE_TRANSIENT);
+#endif
+        sqlite3_result_blob64(context, view.buf, (sqlite3_uint64)view.len,
+                              SQLITE_TRANSIENT);
         PyBuffer_Release(&view);
     } else {
         callback_context *ctx = (callback_context *)sqlite3_user_data(context);
