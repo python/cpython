@@ -3755,6 +3755,32 @@ class TestExtractionFilters(unittest.TestCase):
                 else:
                     self.expect_file('linkdir/symlink', size=3)
 
+    @symlink_test
+    def test_chains(self):
+        # Test chaining of symlinks/hardlinks.
+        # Symlinks are created before the files they point to.
+        with ArchiveMaker() as arc:
+            arc.add('linkdir/symlink', symlink_to='hardlink')
+            arc.add('symlink2', symlink_to=os.path.join(
+                'linkdir', 'hardlink2'))
+            arc.add('targetdir/target', size=3)
+            arc.add('linkdir/hardlink', hardlink_to='targetdir/target')
+            arc.add('linkdir/hardlink2', hardlink_to='linkdir/symlink')
+
+        for filter in 'tar', 'data', 'fully_trusted':
+            with self.check_context(arc.open(), filter):
+                self.expect_file('targetdir/target', size=3)
+                self.expect_file('linkdir/hardlink', size=3)
+                self.expect_file('linkdir/hardlink2', size=3)
+                if os_helper.can_symlink():
+                    self.expect_file('linkdir/symlink', size=3,
+                                     symlink_to='hardlink')
+                    self.expect_file('symlink2', size=3,
+                                     symlink_to='linkdir/hardlink2')
+                else:
+                    self.expect_file('linkdir/symlink', size=3)
+                    self.expect_file('symlink2', size=3)
+
     def test_modes(self):
         # Test how file modes are extracted
         # (Note that the modes are ignored on platforms without working chmod)
