@@ -130,6 +130,27 @@ typedef struct {
     futureiterobject *fi_freelist;
     Py_ssize_t fi_freelist_len;
 
+    /* Linked-list of all tasks which are instances of asyncio.Task or subclasses
+       of it. Third party tasks implementations which don't inherit from
+       asyncio.Task are managed by the 'non_asyncio_tasks' WeakSet separately.
+       `tail` is used as sentinel to mark end of linked-list and it avoids one
+       branch in checking for empty list when adding a new task, the list is
+       initialized with `head` pointing to `tail` to mark an empty list.
+
+       Invariants:
+        * When the list is empty:
+        - asyncio_tasks.head == &asyncio_tasks.tail
+        - asyncio_tasks.head->prev == NULL
+        - asyncio_tasks.tail->next == NULL
+
+        * After adding a new task 'task':
+        - asyncio_tasks.head == task
+        - task->prev == &asyncio_tasks.tail
+        - task->next == NULL
+        - asyncio_tasks.tail->next == task
+
+    */
+
     struct {
         TaskObj tail;
         TaskObj *head;
