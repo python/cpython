@@ -397,21 +397,26 @@ class FunctionTests(unittest.TestCase):
             with self.assertRaises(sqlite.OperationalError):
                 cur.execute("select pychr(?)", (value,))
 
-    @unittest.skipUnless(sys.maxsize > 2**64, 'requires (s)size_t > 64bit')
-    @bigmemtest(size=2**64+1, memuse=3, dry_run=False)
-    def test_func_return_too_large_text(self, size):
-        cur = self.con.cursor()
-        self.con.create_function("largetext", 0, lambda: "b" * 2**64+1)
-        with self.assertRaises(sqlite.DataError):
-            cur.execute("select largetext()")
+    def test_func_return_too_large_text(self):
+        def return_a_lot_of_data():
+            ret = "b" * 2**64+1
+            print("HERE -- large text", len(ret))
+            return ret
 
-    @unittest.skipUnless(sys.maxsize > 2**64, 'requires (s)size_t > 64bit')
-    @bigmemtest(size=2**64+1, memuse=2, dry_run=False)
-    def test_func_return_too_large_blob(self, size):
-        cur = self.con.cursor()
-        self.con.create_function("largeblob", 0, lambda: b"b" * 2**64+1)
+        self.con.create_function("largetext", 0, return_a_lot_of_data)
         with self.assertRaises(sqlite.DataError):
-            cur.execute("select largeblob()")
+            self.con.execute("select largetext()")
+
+    def test_func_return_too_large_blob(self):
+        def return_a_lot_of_data():
+            print("ENTER")
+            ret = b"b" * 2**64+1
+            print("HERE -- large blob:", len(ret))
+            return ret
+
+        self.con.create_function("largeblob", 0, return_a_lot_of_data)
+        with self.assertRaises(sqlite.DataError):
+            self.con.execute("select largeblob()")
 
     def test_func_return_illegal_value(self):
         self.con.create_function("badreturn", 0, lambda: self)

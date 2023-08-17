@@ -739,8 +739,9 @@ _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
         if (str == NULL) {
             return -1;
         }
-#if SIZEOF_SIZE_T > 8
-        if (sz > 0xffffffffffffffff) {
+        fprintf(stderr, "CON\n");
+#if SIZEOF_SIZE_T > 8 || 1
+        if ((size_t)sz > _SQLITE_UINT64_SIZE) {
             PyErr_SetString(PyExc_OverflowError,
                             "Error setting result value: "
                             "string is longer than 2**64-1 bytes");
@@ -754,8 +755,8 @@ _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
         if (PyObject_GetBuffer(py_val, &view, PyBUF_SIMPLE) != 0) {
             return -1;
         }
-#if SIZEOF_SIZE_T > 8
-        if (view.len > 0xffffffffffffffff) {
+#if SIZEOF_SIZE_T > 8 || 1
+        if ((size_t)(view.len) > _SQLITE_UINT64_SIZE) {
             PyErr_SetString(PyExc_OverflowError,
                             "Error setting result value: "
                             "buffer is larger than 2**64-1 bytes");

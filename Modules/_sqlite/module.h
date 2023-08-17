@@ -95,4 +95,8 @@ extern const char *pysqlite_error_name(int rc);
 
 #define PARSE_DECLTYPES 1
 #define PARSE_COLNAMES 2
+
+#define _SQLITE_INT64_SIZE  0x7fffffffffffffffu
+#define _SQLITE_UINT64_SIZE 0xffffffffffffffffu
+
 #endif

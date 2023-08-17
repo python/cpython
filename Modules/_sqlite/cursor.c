@@ -583,8 +583,8 @@ bind_param(pysqlite_state *state, pysqlite_Statement *self, int pos,
             string = PyUnicode_AsUTF8AndSize(parameter, &buflen);
             if (string == NULL)
                 return -1;
-#if SIZEOF_SIZE_T > 8
-            if (buflen > 0xffffffffffffffff) {
+#if SIZEOF_SIZE_T > 8 || 1
+            if ((size_t)buflen > _SQLITE_UINT64_SIZE) {
                 PyErr_Format(PyExc_OverflowError,
                              "Error binding parameter %d: "
                              "string is longer than 2**64-1 bytes",
@@ -601,8 +601,8 @@ bind_param(pysqlite_state *state, pysqlite_Statement *self, int pos,
             if (PyObject_GetBuffer(parameter, &view, PyBUF_SIMPLE) != 0) {
                 return -1;
             }
-#if SIZEOF_SIZE_T > 8
-            if (view.len > 0xffffffffffffffff) {
+#if SIZEOF_SIZE_T > 8 || 1
+            if ((size_t)(view.len) > _SQLITE_UINT64_SIZE) {
                 PyErr_Format(PyExc_OverflowError,
                              "Error binding parameter %d: "
                              "buffer is larger than 2**64-1 bytes",
