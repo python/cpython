@@ -215,7 +215,7 @@ High-level Module Interface
               return f.read()
 
    In this example, an :class:`EncodingWarning` is emitted for the caller of
-  ``read_text()``
+   :func:`!read_text`.
 
    See :ref:`io-text-encoding` for more information.
 
