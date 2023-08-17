@@ -1114,7 +1114,7 @@ Modules (see :pep:`594`):
 
 Other modules:
 
-* :mod:`!lib2to3`, and the ``2to3`` program (:gh:`84540`)
+* :mod:`!lib2to3`, and the :program:`2to3` program (:gh:`84540`)
 
 APIs:
 
