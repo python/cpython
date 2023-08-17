@@ -3409,20 +3409,20 @@ _asyncio__register_task_impl(PyObject *module, PyObject *task)
 /*[clinic end generated code: output=8672dadd69a7d4e2 input=21075aaea14dfbad]*/
 {
     asyncio_state *state = get_asyncio_state(module);
-    if (!Task_Check(state, task)) {
-        // As task does not inherit from asyncio.Task, fallback to less efficient
-        // weakset implementation.
-        PyObject *res = PyObject_CallMethodOneArg(state->non_asyncio_tasks,
-                                                  &_Py_ID(add), task);
-        if (res == NULL) {
-            return NULL;
-        }
-        Py_DECREF(res);
+    if (Task_Check(state, task)) {
+        // task is an asyncio.Task instance or subclass, use efficient
+        // linked-list implementation.
+        register_task(state, (TaskObj *)task);
         Py_RETURN_NONE;
     }
-    // task is an asyncio.Task instance or subclass, use efficient
-    // linked-list implementation.
-    register_task(state, (TaskObj *)task);
+    // As task does not inherit from asyncio.Task, fallback to less efficient
+    // weakset implementation.
+    PyObject *res = PyObject_CallMethodOneArg(state->non_asyncio_tasks,
+                                              &_Py_ID(add), task);
+    if (res == NULL) {
+        return NULL;
+    }
+    Py_DECREF(res);
     Py_RETURN_NONE;
 }
 
@@ -3463,16 +3463,16 @@ _asyncio__unregister_task_impl(PyObject *module, PyObject *task)
 /*[clinic end generated code: output=6e5585706d568a46 input=28fb98c3975f7bdc]*/
 {
     asyncio_state *state = get_asyncio_state(module);
-    if (!Task_Check(state, task)) {
-        PyObject *res = PyObject_CallMethodOneArg(state->non_asyncio_tasks,
-                                                  &_Py_ID(discard), task);
-        if (res == NULL) {
-            return NULL;
-        }
-        Py_DECREF(res);
+    if (Task_Check(state, task)) {
+        unregister_task(state, (TaskObj *)task);
         Py_RETURN_NONE;
     }
-    unregister_task(state, (TaskObj *)task);
+    PyObject *res = PyObject_CallMethodOneArg(state->non_asyncio_tasks,
+                                              &_Py_ID(discard), task);
+    if (res == NULL) {
+        return NULL;
+    }
+    Py_DECREF(res);
     Py_RETURN_NONE;
 }
 
