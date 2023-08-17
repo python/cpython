@@ -1171,6 +1171,10 @@ as internal buffering of data.
    current position; :const:`SEEK_END` or ``2`` to set it relative to the end of
    the file. Return the new cursor position in bytes, starting from the beginning.
 
+   .. versionchanged:: 3.3
+
+      Add support for :const:`SEEK_HOLE` and :const:`SEEK_DATA`.
+
 
 .. data:: SEEK_SET
           SEEK_CUR
@@ -1179,9 +1183,30 @@ as internal buffering of data.
    Parameters to the :func:`lseek` function. Their values are 0, 1, and 2,
    respectively.
 
+
+.. data:: SEEK_HOLE
+          SEEK_DATA
+
+   Parameters to the :func:`lseek` function and the :meth:`~io.IOBase.seek`
+   method on file objects, for seeking file data and holes on sparsely
+   allocated files.
+
+   :data:`!SEEK_DATA`
+      Adjust the file offset to the next location containing data,
+      relative to the seek position.
+
+   :data:`!SEEK_HOLE`
+      Adjust the file offset to the next location containing a hole,
+      relative to the seek position.
+      A hole is defined as a sequence of zeros.
+
+   .. note::
+
+      These operations only make sense for filesystems that support them.
+
+   .. availability:: Linux >= 3.1, macOS, Unix
+
    .. versionadded:: 3.3
-      Some operating systems could support additional values, like
-      :const:`os.SEEK_HOLE` or :const:`os.SEEK_DATA`.
 
 
 .. function:: open(path, flags, mode=0o777, *, dir_fd=None)
