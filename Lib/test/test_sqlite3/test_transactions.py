@@ -28,7 +28,8 @@ from test.support import LOOPBACK_TIMEOUT
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok
 
-from test.test_sqlite3.test_dbapi import memory_database
+from .util import memory_database
+from .util import MemoryDatabaseMixin
 
 
 TIMEOUT = LOOPBACK_TIMEOUT / 10
@@ -218,10 +219,7 @@ class RollbackTests(unittest.TestCase):
 
 
 
-class SpecialCommandTests(unittest.TestCase):
-    def setUp(self):
-        self.con = sqlite.connect(":memory:")
-        self.cur = self.con.cursor()
+class SpecialCommandTests(MemoryDatabaseMixin, unittest.TestCase):
 
     def test_drop_table(self):
         self.cur.execute("create table test(i)")
@@ -233,14 +231,8 @@ class SpecialCommandTests(unittest.TestCase):
         self.cur.execute("insert into test(i) values (5)")
         self.cur.execute("pragma count_changes=1")
 
-    def tearDown(self):
-        self.cur.close()
-        self.con.close()
 
-
-class TransactionalDDL(unittest.TestCase):
-    def setUp(self):
-        self.con = sqlite.connect(":memory:")
+class TransactionalDDL(MemoryDatabaseMixin, unittest.TestCase):
 
     def test_ddl_does_not_autostart_transaction(self):
         # For backwards compatibility reasons, DDL statements should not
@@ -267,9 +259,6 @@ class TransactionalDDL(unittest.TestCase):
         self.con.rollback()
         with self.assertRaises(sqlite.OperationalError):
             self.con.execute("select * from test")
-
-    def tearDown(self):
-        self.con.close()
 
 
 class IsolationLevelFromInit(unittest.TestCase):

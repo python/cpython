@@ -28,15 +28,12 @@ import functools
 
 from test import support
 from unittest.mock import patch
-from test.test_sqlite3.test_dbapi import memory_database, cx_limit
+
+from .util import memory_database, cx_limit
+from .util import MemoryDatabaseMixin
 
 
-class RegressionTests(unittest.TestCase):
-    def setUp(self):
-        self.con = sqlite.connect(":memory:")
-
-    def tearDown(self):
-        self.con.close()
+class RegressionTests(MemoryDatabaseMixin, unittest.TestCase):
 
     def test_pragma_user_version(self):
         # This used to crash pysqlite because this pragma command returns NULL for the column name
@@ -232,7 +229,8 @@ class RegressionTests(unittest.TestCase):
         be created.
         """
         with memory_database(isolation_level=None) as con:
-            pass
+            self.assertIsNone(con.isolation_level)
+            self.assertFalse(con.in_transaction)
 
     def test_pragma_autocommit(self):
         """
@@ -310,8 +308,7 @@ class RegressionTests(unittest.TestCase):
         # isolation level is a string, not an integer
         regex = "isolation_level must be str or None"
         with self.assertRaisesRegex(TypeError, regex):
-            with memory_database(isolation_level=123):
-                pass
+            memory_database(isolation_level=123).__enter__()
 
 
     def test_null_character(self):
