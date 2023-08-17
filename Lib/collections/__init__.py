@@ -95,10 +95,9 @@ class OrderedDict(dict):
     # Individual links are kept alive by the hard reference in self.__map.
     # Those hard references disappear when a key is deleted from an OrderedDict.
 
-    def __init__(self, other=(), /, **kwds):
-        '''Initialize an ordered dictionary.  The signature is the same as
-        regular dictionaries.  Keyword argument order is preserved.
-        '''
+    def __new__(cls, /, *args, **kwds):
+        "Create the ordered dict object and set up the underlying structures."
+        self = dict.__new__(cls)
         try:
             self.__root
         except AttributeError:
@@ -106,6 +105,12 @@ class OrderedDict(dict):
             self.__root = root = _proxy(self.__hardroot)
             root.prev = root.next = root
             self.__map = {}
+        return self
+
+    def __init__(self, other=(), /, **kwds):
+        '''Initialize an ordered dictionary.  The signature is the same as
+        regular dictionaries.  Keyword argument order is preserved.
+        '''
         self.__update(other, **kwds)
 
     def __setitem__(self, key, value,
