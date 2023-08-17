@@ -2427,8 +2427,6 @@ impl_definition block
                 if child:
                     parent = module = child
                     continue
-            if not hasattr(parent, 'classes'):
-                return module, cls
             child = parent.classes.get(field)
             if not child:
                 fullname = ".".join(so_far)
