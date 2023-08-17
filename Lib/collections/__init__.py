@@ -46,11 +46,6 @@ else:
     _collections_abc.MutableSequence.register(deque)
 
 try:
-    from _collections import _deque_iterator
-except ImportError:
-    pass
-
-try:
     from _collections import defaultdict
 except ImportError:
     pass
