@@ -98,13 +98,10 @@ class OrderedDict(dict):
     def __new__(cls, /, *args, **kwds):
         "Create the ordered dict object and set up the underlying structures."
         self = dict.__new__(cls)
-        try:
-            self.__root
-        except AttributeError:
-            self.__hardroot = _Link()
-            self.__root = root = _proxy(self.__hardroot)
-            root.prev = root.next = root
-            self.__map = {}
+        self.__hardroot = _Link()
+        self.__root = root = _proxy(self.__hardroot)
+        root.prev = root.next = root
+        self.__map = {}
         return self
 
     def __init__(self, other=(), /, **kwds):
