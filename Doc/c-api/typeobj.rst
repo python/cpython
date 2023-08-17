@@ -1697,7 +1697,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
        to a pointer, are valid C99 address constants.
 
        However, the unary '&' operator applied to a non-static variable
-       like :c:func:`PyBaseObject_Type` is not required to produce an address
+       like :c:data:`PyBaseObject_Type` is not required to produce an address
        constant.  Compilers may support this (gcc does), MSVC does not.
        Both compilers are strictly standard conforming in this particular
        behavior.
