@@ -170,13 +170,18 @@ class TypeParamsAliasValueTest(unittest.TestCase):
 
     def test_raising(self):
         type MissingName = list[_My_X]
-        with self.assertRaisesRegex(NameError, "name '_My_X' is not defined"):
+        with self.assertRaisesRegex(
+            NameError,
+            "cannot access free variable '_My_X' where it is not associated with a value",
+        ):
             MissingName.__value__
         _My_X = int
         self.assertEquals(MissingName.__value__,  list[int])
         del _My_X
-        self.assertEquals(MissingName.__value__,  list[int])        
+        # Cache should still work:
+        self.assertEquals(MissingName.__value__,  list[int])
 
+        # Explicit exception:
         type ExprException = 1 / 0
         with self.assertRaises(ZeroDivisionError):
             ExprException.__value__
