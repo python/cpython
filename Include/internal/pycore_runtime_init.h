@@ -45,7 +45,7 @@ extern PyTypeObject _PyExc_MemoryError;
                 .prev = offsetof(PyThreadState, prev), \
                 .next = offsetof(PyThreadState, next), \
                 .interp = offsetof(PyThreadState, interp), \
-                .cframe = offsetof(PyThreadState, cframe), \
+                .current_frame = offsetof(PyThreadState, current_frame), \
                 .thread_id = offsetof(PyThreadState, thread_id), \
                 .native_thread_id = offsetof(PyThreadState, native_thread_id), \
             }, \
@@ -55,10 +55,6 @@ extern PyTypeObject _PyExc_MemoryError;
                 .prev_instr = offsetof(_PyInterpreterFrame, prev_instr), \
                 .localsplus = offsetof(_PyInterpreterFrame, localsplus), \
                 .owner = offsetof(_PyInterpreterFrame, owner), \
-            }, \
-            .cframe = { \
-                .current_frame = offsetof(_PyCFrame, current_frame), \
-                .previous = offsetof(_PyCFrame, previous), \
             }, \
             .code_object = { \
                 .filename = offsetof(PyCodeObject, co_filename), \

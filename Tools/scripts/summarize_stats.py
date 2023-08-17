@@ -17,7 +17,7 @@ else:
     DEFAULT_DIR = "/tmp/py_stats/"
 
 #Create list of all instruction names
-specialized = iter(opcode._specialized_instructions)
+specialized = iter(opcode._specialized_opmap.keys())
 opname = ["<0>"]
 for name in opcode.opname[1:]:
     if name.startswith("<"):
@@ -244,7 +244,7 @@ def categorized_counts(opcode_stats):
     specialized = 0
     not_specialized = 0
     specialized_instructions = {
-        op for op in opcode._specialized_instructions
+        op for op in opcode._specialized_opmap.keys()
         if "__" not in op}
     for i, opcode_stat in enumerate(opcode_stats):
         if "execution_count" not in opcode_stat:
