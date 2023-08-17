@@ -176,10 +176,10 @@ class TypeParamsAliasValueTest(unittest.TestCase):
         ):
             MissingName.__value__
         _My_X = int
-        self.assertEquals(MissingName.__value__,  list[int])
+        self.assertEqual(MissingName.__value__,  list[int])
         del _My_X
         # Cache should still work:
-        self.assertEquals(MissingName.__value__,  list[int])
+        self.assertEqual(MissingName.__value__,  list[int])
 
         # Explicit exception:
         type ExprException = 1 / 0
