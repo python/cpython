@@ -19,7 +19,7 @@ body:
       options:
         - label: I am confident this is a bug in CPython, not a bug in a third-party project
           required: false
-        - label: |
+        - label: >
             I have searched the [CPython issue tracker](https://github.com/python/cpython/issues?q=is%3Aissue+sort%3Acreated-desc),
             and am confident this bug has not been reported before
           required: false
@@ -55,9 +55,9 @@ body:
       required: false
   - type: textarea
     attributes:
-      label: "A clear and concise description of the bug:"
+      label: "Bug description:"
       description: >
-        Tell us what happened.
+        Give a clear and concise description of what happened.
         Include a [minimal, reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) if possible.
         Put any code blocks inside triple backticks.
 
