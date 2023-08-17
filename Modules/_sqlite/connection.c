@@ -436,6 +436,9 @@ free_callback_contexts(pysqlite_Connection *self)
 static void
 remove_callbacks(sqlite3 *db)
 {
+    if (db == NULL) {
+        return;
+    }
     sqlite3_trace_v2(db, SQLITE_TRACE_STMT, 0, 0);
     sqlite3_progress_handler(db, 0, 0, (void *)0);
     (void)sqlite3_set_authorizer(db, NULL, NULL);
@@ -448,17 +451,10 @@ connection_close(pysqlite_Connection *self)
         if (self->autocommit == AUTOCOMMIT_DISABLED &&
             !sqlite3_get_autocommit(self->db))
         {
-            /* If close is implicitly called as a result of interpreter
-             * tear-down, we must not call back into Python. */
-            if (_Py_IsInterpreterFinalizing(PyInterpreterState_Get())) {
-                remove_callbacks(self->db);
-            }
             if (connection_exec_stmt(self, "ROLLBACK") < 0) {
                 return -1;
             }
         }
-
-        free_callback_contexts(self);
 
         sqlite3 *db = self->db;
         self->db = NULL;
@@ -467,23 +463,48 @@ connection_close(pysqlite_Connection *self)
         int rc = sqlite3_close_v2(db);
         assert(rc == SQLITE_OK), (void)rc;
         Py_END_ALLOW_THREADS
+
+        free_callback_contexts(self);
     }
     return 0;
 }
 
 static void
-connection_dealloc(PyObject *self)
+connection_finalize(PyObject *self)
 {
     pysqlite_Connection *con = (pysqlite_Connection *)self;
-    PyTypeObject *tp = Py_TYPE(self);
-    PyObject_GC_UnTrack(self);
-    tp->tp_clear(self);
+    PyObject *exc = PyErr_GetRaisedException();
+
+    /* If close is implicitly called as a result of interpreter
+     * tear-down, we must not call back into Python. */
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    int teardown = _Py_IsInterpreterFinalizing(interp);
+    if (teardown) {
+        remove_callbacks(con->db);
+    }
 
     /* Clean up if user has not called .close() explicitly. */
     if (connection_close(con) < 0) {
-        PyErr_WriteUnraisable((PyObject *)self);
+        if (teardown) {
+            PyErr_Clear();
+        }
+        else {
+            PyErr_WriteUnraisable((PyObject *)self);
+        }
     }
 
+    PyErr_SetRaisedException(exc);
+}
+
+static void
+connection_dealloc(PyObject *self)
+{
+    if (PyObject_CallFinalizerFromDealloc(self) < 0) {
+        return;
+    }
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+    tp->tp_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -2567,6 +2588,7 @@ static struct PyMemberDef connection_members[] =
 };
 
 static PyType_Slot connection_slots[] = {
+    {Py_tp_finalize, connection_finalize},
     {Py_tp_dealloc, connection_dealloc},
     {Py_tp_doc, (void *)connection_doc},
     {Py_tp_methods, connection_methods},
