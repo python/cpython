@@ -1886,7 +1886,7 @@ Changes to Python's build process and to the C API include:
   (:file:`libpython2.3.so`) by supplying :option:`!--enable-shared` when running
   Python's :program:`configure` script.  (Contributed by Ondrej Palkovsky.)
 
-* The :c:macro:`DL_EXPORT` and :c:macro:`DL_IMPORT` macros are now deprecated.
+* The :c:macro:`!DL_EXPORT` and :c:macro:`!DL_IMPORT` macros are now deprecated.
   Initialization functions for Python extension modules should now be declared
   using the new macro :c:macro:`PyMODINIT_FUNC`, while the Python core will
   generally use the :c:macro:`PyAPI_FUNC` and :c:macro:`PyAPI_DATA` macros.
