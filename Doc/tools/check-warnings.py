@@ -107,7 +107,7 @@ def get_para_line_numbers(file_obj: TextIO) -> list[list[int]]:
     return paragraphs
 
 
-def parse_and_filter_warnings(
+def filter_and_parse_warnings(
     warnings: list[str], files: set[Path]
 ) -> list[re.Match[str]]:
     """Get the warnings matching passed files and parse them with regex."""
@@ -124,6 +124,30 @@ def parse_and_filter_warnings(
     return non_null_matches
 
 
+def filter_warnings_by_diff(
+    warnings: list[re.Match[str]], ref_a: str, ref_b: str, file: Path
+) -> list[re.Match[str]]:
+    """Filter the passed per-file warnings to just those on changed lines."""
+    diff_lines = get_diff_lines(ref_a, ref_b, file)
+    with file.open(encoding="UTF-8") as file_obj:
+        paragraphs = get_para_line_numbers(file_obj)
+    touched_paras = [
+        para_lines
+        for para_lines in paragraphs
+        if set(diff_lines) & set(para_lines)
+    ]
+    touched_para_lines = set(itertools.chain(*touched_paras))
+    warnings_infile = [
+        warning for warning in warnings if str(file) in warning["file"]
+    ]
+    warnings_touched = [
+        warning
+        for warning in warnings_infile
+        if int(warning["line"]) in touched_para_lines
+    ]
+    return warnings_touched
+
+
 def process_touched_warnings(
     warnings: list[str], ref_a: str, ref_b: str
 ) -> list[re.Match[str]]:
@@ -132,8 +156,8 @@ def process_touched_warnings(
         get_diff_files(ref_a, ref_b, filter_mode=mode) for mode in ("A", "M")
     )
 
-    warnings_added = parse_and_filter_warnings(warnings, added_files)
-    warnings_modified = parse_and_filter_warnings(warnings, modified_files)
+    warnings_added = filter_and_parse_warnings(warnings, added_files)
+    warnings_modified = filter_and_parse_warnings(warnings, modified_files)
 
     modified_files_warned = {
         file
@@ -141,27 +165,13 @@ def process_touched_warnings(
         if any(str(file) in warning["file"] for warning in warnings_modified)
     }
 
-    warnings_touched = warnings_added.copy()
-    for file in modified_files_warned:
-        diff_lines = get_diff_lines(ref_a, ref_b, file)
-        with file.open(encoding="UTF-8") as file_obj:
-            paragraphs = get_para_line_numbers(file_obj)
-        touched_paras = [
-            para_lines
-            for para_lines in paragraphs
-            if set(diff_lines) & set(para_lines)
-        ]
-        touched_para_lines = set(itertools.chain(*touched_paras))
-        warnings_infile = [
-            warning
-            for warning in warnings_modified
-            if str(file) in warning["file"]
-        ]
-        warnings_touched += [
-            warning
-            for warning in warnings_infile
-            if int(warning["line"]) in touched_para_lines
-        ]
+    warnings_modified_touched = [
+        filter_warnings_by_diff(warnings_modified, ref_a, ref_b, file)
+        for file in modified_files_warned
+    ]
+    warnings_touched = warnings_added + list(
+        itertools.chain(*warnings_modified_touched)
+    )
 
     return warnings_touched
 
