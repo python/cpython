@@ -875,7 +875,7 @@ to the C API.
 * Renamed the boolean conversion C-level slot and method:
   ``nb_nonzero`` is now ``nb_bool``.
 
-* Removed :c:macro:`METH_OLDARGS` and :c:macro:`WITH_CYCLE_GC` from the C API.
+* Removed :c:macro:`!METH_OLDARGS` and :c:macro:`!WITH_CYCLE_GC` from the C API.
 
 .. ======================================================================
 
