@@ -149,7 +149,7 @@ static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self);
 static void free_callback_context(callback_context *ctx);
 static void set_callback_context(callback_context **ctx_pp,
                                  callback_context *ctx);
-static void connection_close(pysqlite_Connection *self);
+static int connection_close(pysqlite_Connection *self);
 PyObject *_pysqlite_query_execute(pysqlite_Cursor *, int, PyObject *, PyObject *);
 
 static PyObject *
@@ -249,7 +249,9 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
     if (self->initialized) {
         PyTypeObject *tp = Py_TYPE(self);
         tp->tp_clear((PyObject *)self);
-        connection_close(self);
+        if (connection_close(self) < 0) {
+            return -1;
+        }
         self->initialized = 0;
     }
 
@@ -439,7 +441,7 @@ remove_callbacks(sqlite3 *db)
     (void)sqlite3_set_authorizer(db, NULL, NULL);
 }
 
-static void
+static int
 connection_close(pysqlite_Connection *self)
 {
     if (self->db) {
@@ -452,7 +454,7 @@ connection_close(pysqlite_Connection *self)
                 remove_callbacks(self->db);
             }
             if (connection_exec_stmt(self, "ROLLBACK") < 0) {
-                PyErr_WriteUnraisable((PyObject *)self);
+                return -1;
             }
         }
 
@@ -466,17 +468,21 @@ connection_close(pysqlite_Connection *self)
         assert(rc == SQLITE_OK), (void)rc;
         Py_END_ALLOW_THREADS
     }
+    return 0;
 }
 
 static void
-connection_dealloc(pysqlite_Connection *self)
+connection_dealloc(PyObject *self)
 {
+    pysqlite_Connection *con = (pysqlite_Connection *)self;
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    tp->tp_clear((PyObject *)self);
+    tp->tp_clear(self);
 
     /* Clean up if user has not called .close() explicitly. */
-    connection_close(self);
+    if (connection_close(con) < 0) {
+        PyErr_WriteUnraisable((PyObject *)self);
+    }
 
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -625,7 +631,9 @@ pysqlite_connection_close_impl(pysqlite_Connection *self)
 
     pysqlite_close_all_blobs(self);
     Py_CLEAR(self->statement_cache);
-    connection_close(self);
+    if (connection_close(self) < 0) {
+        return NULL;
+    }
 
     Py_RETURN_NONE;
 }
