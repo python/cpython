@@ -380,7 +380,7 @@ def write_components(
                     poke.as_stack_effect(lax=True),
                 )
 
-        if mgr.instr.name == "_PUSH_FRAME":
+        if mgr.instr.name in ("_PUSH_FRAME", "_POP_FRAME"):
             # Adjust stack to min_offset (input effects materialized)
             out.stack_adjust(mgr.min_offset.deep, mgr.min_offset.high)
             # Use clone() since adjust_inverse() mutates final_offset

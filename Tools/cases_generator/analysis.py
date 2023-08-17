@@ -364,10 +364,12 @@ class Analyzer:
                 case Instruction() as instr:
                     part, offset = self.analyze_instruction(instr, offset)
                     parts.append(part)
-                    flags.add(instr.instr_flags)
+                    if instr.name != "SAVE_IP":
+                        # SAVE_IP in a macro is a no-op in Tier 1
+                        flags.add(instr.instr_flags)
                 case _:
                     typing.assert_never(component)
-        format = "IB"
+        format = "IB" if flags.HAS_ARG_FLAG else "IX"
         if offset:
             format += "C" + "0" * (offset - 1)
         return MacroInstruction(macro.name, format, flags, macro, parts, offset)
