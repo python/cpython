@@ -463,17 +463,18 @@ connection_close(pysqlite_Connection *self)
 static void
 connection_finalize(PyObject *self)
 {
+    pysqlite_Connection *con = (pysqlite_Connection *)self;
+    PyObject *exc = PyErr_GetRaisedException();
+
     /*
      * Before implicitly closing, make sure we're not accidentally part
      * of the interpreter tear-down; in that case, we must not call back
      * into Python code.
      */
     if (_Py_IsInterpreterFinalizing(PyInterpreterState_Get())) {
-        remove_callbacks(self->db);
+        remove_callbacks(con->db);
     }
 
-    pysqlite_Connection *con = (pysqlite_Connection *)self;
-    PyObject *exc = PyErr_GetRaisedException();
     /* Clean up if user has not called .close() explicitly. */
     if (con->db) {
         if (PyErr_ResourceWarning(self, 1, "unclosed %R", self)) {
