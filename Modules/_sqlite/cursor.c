@@ -595,13 +595,19 @@ bind_param(pysqlite_state *state, pysqlite_Statement *self, int pos,
             if (PyObject_GetBuffer(parameter, &view, PyBUF_SIMPLE) != 0) {
                 return -1;
             }
-            if (view.len > INT_MAX) {
-                PyErr_SetString(PyExc_OverflowError,
-                                "BLOB longer than INT_MAX bytes");
+#if SIZEOF_SIZE_T > 8
+            if (view.len > 0xffffffffffffffff) {
+                PyErr_Format(PyExc_OverflowError,
+                             "Error binding parameter %d: "
+                             "buffer is larger than 2**64-1 bytes",
+                             Py_TYPE(parameter)->tp_name);
                 PyBuffer_Release(&view);
                 return -1;
             }
-            rc = sqlite3_bind_blob(self->st, pos, view.buf, (int)view.len, SQLITE_TRANSIENT);
+#endif
+            rc = sqlite3_bind_blob64(self->st, pos, view.buf,
+                                     (sqlite3_uint64)view.len,
+                                     SQLITE_TRANSIENT);
             PyBuffer_Release(&view);
             break;
         }
