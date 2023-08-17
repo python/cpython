@@ -126,7 +126,8 @@ class OrderedDictTests:
         # Sync-up pure Python OD class with C class where
         # a consistent internal state is created in __new__
         # rather than __init__.
-        class ODNI:
+        OrderedDict = self.OrderedDict
+        class ODNI(OrderedDict):
             def __init__(*args, **kwargs):
                 pass
         od = ODNI()
