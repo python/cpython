@@ -100,7 +100,6 @@ Doc/library/http.server.rst
 Doc/library/importlib.resources.rst
 Doc/library/importlib.rst
 Doc/library/inspect.rst
-Doc/library/io.rst
 Doc/library/locale.rst
 Doc/library/logging.config.rst
 Doc/library/logging.handlers.rst
