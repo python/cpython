@@ -2287,10 +2287,10 @@ object, and then get the ``void *`` pointer, which will usually point
 to an array of pointers to the module's various API functions.
 
 There is an existing data type already used for this,
-:c:type:`PyCObject`, but it doesn't provide type safety.  Evil code
+:c:type:`!PyCObject`, but it doesn't provide type safety.  Evil code
 written in pure Python could cause a segmentation fault by taking a
-:c:type:`PyCObject` from module A and somehow substituting it for the
-:c:type:`PyCObject` in module B.   Capsules know their own name,
+:c:type:`!PyCObject` from module A and somehow substituting it for the
+:c:type:`!PyCObject` in module B.   Capsules know their own name,
 and getting the pointer requires providing the name:
 
 .. code-block:: c
@@ -2310,10 +2310,10 @@ detect the mismatched name and return false.  Refer to
 :ref:`using-capsules` for more information on using these objects.
 
 Python 2.7 now uses capsules internally to provide various
-extension-module APIs, but the :c:func:`PyCObject_AsVoidPtr` was
+extension-module APIs, but the :c:func:`!PyCObject_AsVoidPtr` was
 modified to handle capsules, preserving compile-time compatibility
-with the :c:type:`CObject` interface.  Use of
-:c:func:`PyCObject_AsVoidPtr` will signal a
+with the :c:type:`!PyCObject` interface.  Use of
+:c:func:`!PyCObject_AsVoidPtr` will signal a
 :exc:`PendingDeprecationWarning`, which is silent by default.
 
 Implemented in Python 3.1 and backported to 2.7 by Larry Hastings;
