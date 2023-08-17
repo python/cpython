@@ -1427,7 +1427,7 @@ regen-ast:
 
 .PHONY: regen-opcode
 regen-opcode:
-	# Regenerate Include/internal/pycode_opcode.h from Lib/opcode.py
+	# Regenerate Include/internal/pycore_opcode.h from Lib/opcode.py
 	# using Tools/build/generate_opcode_h.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_opcode_h.py \
 		$(srcdir)/Lib/opcode.py \
