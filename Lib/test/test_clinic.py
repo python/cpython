@@ -3276,6 +3276,19 @@ class ClinicFunctionalTest(unittest.TestCase):
         check("a", "b", "c", d=0, e=0)
         check("a", "b", "c", "d", e=0)
 
+    def test_depr_star_noinline(self):
+        fn = ac_tester.depr_star_noinline
+        self.assertRaises(TypeError, fn, "a")
+        fn(a="a", b="b")
+        fn(a="a", b="b", c="c")
+        fn("a", b="b")
+        fn("a", b="b", c="c")
+        check = partial(self.check_depr_star, "'b' and 'c'", fn)
+        check("a", "b")
+        check("a", "b", "c")
+        check("a", "b", c="c")
+        self.assertRaises(TypeError, fn, "a", "b", "c", "d")
+
     def test_depr_kwd_required_1(self):
         fn = ac_tester.depr_kwd_required_1
         fn("a", "b")

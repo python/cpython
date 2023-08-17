@@ -1264,6 +1264,87 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(depr_star_noinline__doc__,
+"depr_star_noinline($module, /, a, b, c=None, *, d=\'\')\n"
+"--\n"
+"\n"
+"Note: Passing more than 1 positional argument to depr_star_noinline()\n"
+"is deprecated. Parameters \'b\' and \'c\' will become keyword-only\n"
+"parameters in Python 3.14.\n"
+"");
+
+#define DEPR_STAR_NOINLINE_METHODDEF    \
+    {"depr_star_noinline", _PyCFunction_CAST(depr_star_noinline), METH_FASTCALL|METH_KEYWORDS, depr_star_noinline__doc__},
+
+static PyObject *
+depr_star_noinline_impl(PyObject *module, PyObject *a, PyObject *b,
+                        PyObject *c, const char *d, Py_ssize_t d_length);
+
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error "Update the clinic input of 'depr_star_noinline'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ("Update the clinic input of 'depr_star_noinline'.")
+#  else
+#    warning "Update the clinic input of 'depr_star_noinline'."
+#  endif
+#endif
+
+static PyObject *
+depr_star_noinline(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", "b", "c", "d", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .format = "OO|O$s#:depr_star_noinline",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *a;
+    PyObject *b;
+    PyObject *c = Py_None;
+    const char *d = "";
+    Py_ssize_t d_length;
+
+    if (nargs > 1 && nargs <= 3) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing more than 1 positional argument to depr_star_noinline() "
+                "is deprecated. Parameters 'b' and 'c' will become keyword-only "
+                "parameters in Python 3.14.", 1))
+        {
+            goto exit;
+        }
+    }
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &a, &b, &c, &d, &d_length)) {
+        goto exit;
+    }
+    return_value = depr_star_noinline_impl(module, a, b, c, d, d_length);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(depr_kwd_required_1__doc__,
 "depr_kwd_required_1($module, a, /, b)\n"
 "--\n"
@@ -1886,4 +1967,4 @@ depr_kwd_noinline(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e9c6f2420b14f1fa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1e8128d3fce5869f input=a9049054013a1b77]*/

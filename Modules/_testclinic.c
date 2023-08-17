@@ -1501,6 +1501,26 @@ depr_star_pos2_len2_with_kwd_impl(PyObject *module, PyObject *a, PyObject *b,
 
 
 /*[clinic input]
+depr_star_noinline
+    a: object
+    * [from 3.14]
+    b: object
+    c: object = None
+    *
+    # Force to use _PyArg_ParseStackAndKeywords.
+    d: str(accept={str, robuffer}, zeroes=True) = ''
+[clinic start generated code]*/
+
+static PyObject *
+depr_star_noinline_impl(PyObject *module, PyObject *a, PyObject *b,
+                        PyObject *c, const char *d, Py_ssize_t d_length)
+/*[clinic end generated code: output=cc27dacf5c2754af input=d36cc862a2daef98]*/
+{
+    Py_RETURN_NONE;
+}
+
+
+/*[clinic input]
 depr_kwd_required_1
     a: object
     /
@@ -1698,6 +1718,7 @@ static PyMethodDef tester_methods[] = {
     DEPR_STAR_POS2_LEN1_METHODDEF
     DEPR_STAR_POS2_LEN2_METHODDEF
     DEPR_STAR_POS2_LEN2_WITH_KWD_METHODDEF
+    DEPR_STAR_NOINLINE_METHODDEF
     DEPR_KWD_REQUIRED_1_METHODDEF
     DEPR_KWD_REQUIRED_2_METHODDEF
     DEPR_KWD_OPTIONAL_1_METHODDEF
