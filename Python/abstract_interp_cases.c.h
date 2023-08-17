@@ -7,6 +7,10 @@
             break;
         }
 
+        case RESUME: {
+            break;
+        }
+
         case POP_TOP: {
             STACK_SHRINK(1);
             break;
@@ -188,6 +192,11 @@
         case CALL_INTRINSIC_2: {
             STACK_SHRINK(1);
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+            break;
+        }
+
+        case _POP_FRAME: {
+            STACK_SHRINK(1);
             break;
         }
 
