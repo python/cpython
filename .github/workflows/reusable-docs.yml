@@ -40,7 +40,7 @@ jobs:
       if: github.event_name == 'pull_request'
       run: |
         python Doc/tools/check-warnings.py \
-          --check-and-annotate-changed 'origin/${{ github.base_ref }}' '${{ github.sha }}' \
+          --annotate-diff 'origin/${{ github.base_ref }}' '${{ github.sha }}' \
           --fail-if-regression \
           --fail-if-improved
 

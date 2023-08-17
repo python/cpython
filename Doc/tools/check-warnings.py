@@ -39,7 +39,7 @@ DIFF_PATTERN = re.compile(
 
 
 def get_diff_files(ref_a: str, ref_b: str, filter_mode: str = "") -> set[Path]:
-    """List the files changed between two Gif refs, filtered by change type."""
+    """List the files changed between two Git refs, filtered by change type."""
     added_files_result = subprocess.run(
         [
             "git",
@@ -60,7 +60,7 @@ def get_diff_files(ref_a: str, ref_b: str, filter_mode: str = "") -> set[Path]:
 
 
 def get_diff_lines(ref_a: str, ref_b: str, file: Path) -> list[int]:
-    """List the lines changed between two Gif refs for a specific file."""
+    """List the lines changed between two Git refs for a specific file."""
     diff_output = subprocess.run(
         [
             "git",
@@ -166,7 +166,7 @@ def process_touched_warnings(
     return warnings_touched
 
 
-def check_and_annotate_changed(
+def annotate_diff(
     warnings: list[str], ref_a: str = "main", ref_b: str = "HEAD"
 ) -> None:
     """
@@ -183,8 +183,8 @@ def check_and_annotate_changed(
     warnings_touched = process_touched_warnings(warnings, ref_a, ref_b)
     print("Emitting doc warnings matching modified lines:")
     for warning in warnings_touched:
-        print(warning[0])
         print("::warning file={file},line={line}::{msg}".format_map(warning))
+        print(warning[0])
     if not warnings_touched:
         print("None")
 
@@ -232,13 +232,14 @@ def fail_if_improved(
     return 0
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--check-and-annotate-changed",
-        nargs=2,
-        help="Annotate lines changed between two refs "
-        "with warnings on GitHub Actions",
+        "--annotate-diff",
+        nargs="*",
+        metavar=("BASE_REF", "HEAD_REF"),
+        help="Add GitHub Actions annotations on the diff for warnings on "
+        "lines changed between the given refs (main and HEAD, by default)",
     )
     parser.add_argument(
         "--fail-if-regression",
@@ -250,7 +251,13 @@ def main() -> int:
         action="store_true",
         help="Fail if new files with no nits are found",
     )
-    args = parser.parse_args()
+
+    args = parser.parse_args(argv)
+    if args.annotate_diff is not None and len(args.annotate_diff) > 2:
+        parser.error(
+            "--annotate-diff takes between 0 and 2 ref args, not "
+            f"{len(args.annotate_diff)} {tuple(args.annotate_diff)}"
+        )
     exit_code = 0
 
     wrong_directory_msg = "Must run this script from the repo root"
@@ -273,8 +280,8 @@ def main() -> int:
             if filename.strip() and not filename.startswith("#")
         }
 
-    if args.check_and_annotate_changed:
-        check_and_annotate_changed(warnings, *args.check_and_annotate_changed)
+    if args.annotate_diff is not None:
+        annotate_diff(warnings, *args.annotate_diff)
 
     if args.fail_if_regression:
         exit_code += fail_if_regression(
