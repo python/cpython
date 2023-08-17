@@ -44,38 +44,9 @@ if sys.version_info[:2] >= (3, 13):
 
     _intrinsic_1_descs = _opcode.get_intrinsic1_descs()
     _intrinsic_2_descs = _opcode.get_intrinsic2_descs()
+    _nb_ops = _opcode.get_nb_ops()
 
     hascompare = [opmap["COMPARE_OP"]]
-
-_nb_ops = [
-    ("NB_ADD", "+"),
-    ("NB_AND", "&"),
-    ("NB_FLOOR_DIVIDE", "//"),
-    ("NB_LSHIFT", "<<"),
-    ("NB_MATRIX_MULTIPLY", "@"),
-    ("NB_MULTIPLY", "*"),
-    ("NB_REMAINDER", "%"),
-    ("NB_OR", "|"),
-    ("NB_POWER", "**"),
-    ("NB_RSHIFT", ">>"),
-    ("NB_SUBTRACT", "-"),
-    ("NB_TRUE_DIVIDE", "/"),
-    ("NB_XOR", "^"),
-    ("NB_INPLACE_ADD", "+="),
-    ("NB_INPLACE_AND", "&="),
-    ("NB_INPLACE_FLOOR_DIVIDE", "//="),
-    ("NB_INPLACE_LSHIFT", "<<="),
-    ("NB_INPLACE_MATRIX_MULTIPLY", "@="),
-    ("NB_INPLACE_MULTIPLY", "*="),
-    ("NB_INPLACE_REMAINDER", "%="),
-    ("NB_INPLACE_OR", "|="),
-    ("NB_INPLACE_POWER", "**="),
-    ("NB_INPLACE_RSHIFT", ">>="),
-    ("NB_INPLACE_SUBTRACT", "-="),
-    ("NB_INPLACE_TRUE_DIVIDE", "/="),
-    ("NB_INPLACE_XOR", "^="),
-]
-
 
 _cache_format = {
     "LOAD_GLOBAL": {
