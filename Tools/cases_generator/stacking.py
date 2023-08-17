@@ -415,7 +415,7 @@ def write_components(
 
 def write_single_instr_for_abstract_interp(
     instr: Instruction, out: Formatter
-):
+) -> None:
     try:
         _write_components_for_abstract_interp(
             [Component(instr, instr.active_caches)],
@@ -428,7 +428,7 @@ def write_single_instr_for_abstract_interp(
 def _write_components_for_abstract_interp(
     parts: list[Component],
     out: Formatter,
-):
+) -> None:
     managers = get_managers(parts)
     for mgr in managers:
         if mgr is managers[-1]:

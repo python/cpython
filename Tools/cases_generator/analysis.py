@@ -171,8 +171,6 @@ class Analyzer:
                 case parsing.Pseudo(name):
                     self.pseudos[name] = thing
                     self.everything.append(thing)
-                case _:
-                    typing.assert_never(thing)
         if not psr.eof():
             raise psr.make_syntax_error(f"Extra stuff at the end of {filename}")
 
@@ -408,6 +406,4 @@ class Analyzer:
                     components.append(self.instrs[name])
                 case parsing.CacheEffect():
                     components.append(uop)
-                case _:
-                    typing.assert_never(uop)
         return components

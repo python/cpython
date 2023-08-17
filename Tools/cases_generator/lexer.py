@@ -4,8 +4,10 @@
 
 import re
 from dataclasses import dataclass
+from collections.abc import Iterator
 
-def choice(*opts):
+
+def choice(*opts: str) -> str:
     return "|".join("(%s)" % opt for opt in opts)
 
 # Regexes
@@ -123,13 +125,19 @@ kwds = (
     'SWITCH', 'TYPEDEF', 'UNION', 'UNSIGNED', 'VOID',
     'VOLATILE', 'WHILE'
 )
+
+# For mypy
+REGISTER = 'REGISTER'
+OVERRIDE = 'OVERRIDE'
+IF = 'IF'
+
 for name in kwds:
     globals()[name] = name
 keywords = { name.lower() : name for name in kwds }
 
 
 def make_syntax_error(
-    message: str, filename: str, line: int, column: int, line_text: str,
+    message: str, filename: str | None, line: int, column: int, line_text: str,
 ) -> SyntaxError:
     return SyntaxError(message, (filename, line, column, line_text))
 
@@ -142,30 +150,30 @@ class Token:
     end: tuple[int, int]
 
     @property
-    def line(self):
+    def line(self) -> int:
         return self.begin[0]
 
     @property
-    def column(self):
+    def column(self) -> int:
         return self.begin[1]
 
     @property
-    def end_line(self):
+    def end_line(self) -> int:
         return self.end[0]
 
     @property
-    def end_column(self):
+    def end_column(self) -> int:
         return self.end[1]
 
     @property
-    def width(self):
+    def width(self) -> int:
         return self.end[1] - self.begin[1]
 
-    def replaceText(self, txt):
+    def replaceText(self, txt: str) -> 'Token':
         assert isinstance(txt, str)
         return Token(self.kind, txt, self.begin, self.end)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         b0, b1 = self.begin
         e0, e1 = self.end
         if b0 == e0:
@@ -174,7 +182,7 @@ class Token:
             return f"{self.kind}({self.text!r}, {b0}:{b1}, {e0}:{e1})"
 
 
-def tokenize(src, line=1, filename=None):
+def tokenize(src: str, line: int = 1, filename: str | None = None) -> Iterator[Token]:
     linestart = -1
     for m in matcher.finditer(src):
         start, end = m.span()

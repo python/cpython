@@ -8,6 +8,7 @@ on:
   pull_request:
     paths:
       - "Tools/clinic/**"
+      - "Tools/cases_generator/**"
       - ".github/workflows/mypy.yml"
   workflow_dispatch:
 
@@ -24,7 +25,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  mypy:
+  mypy-clinic:
     name: Run mypy on Tools/clinic/
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -37,3 +38,17 @@ jobs:
           cache-dependency-path: Tools/clinic/requirements-dev.txt
       - run: pip install -r Tools/clinic/requirements-dev.txt
       - run: mypy --config-file Tools/clinic/mypy.ini
+
+  mypy-cases-generator:
+    name: Run mypy on Tools/cases_generator/
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+          cache: pip
+          cache-dependency-path: Tools/cases_generator/requirements-dev.txt
+      - run: pip install -r Tools/cases_generator/requirements-dev.txt
+      - run: mypy --config-file Tools/cases_generator/mypy.ini
