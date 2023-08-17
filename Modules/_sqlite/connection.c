@@ -452,7 +452,7 @@ connection_close(pysqlite_Connection *self)
                 remove_callbacks(self->db);
             }
             if (connection_exec_stmt(self, "ROLLBACK") < 0) {
-                PyErr_WriteUnraisable(self);
+                PyErr_WriteUnraisable((PyObject *)self);
             }
         }
 
