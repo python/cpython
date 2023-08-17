@@ -1,0 +1,3 @@
+:mod:`sqlite3` now supports strings and BLOB sizes up to ``2**64-1`` bytes
+long, both when binding parameters to queries, and when returning values
+from user-defined functions. Patch by Erlend E. Aasland.

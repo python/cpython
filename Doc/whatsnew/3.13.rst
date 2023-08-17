@@ -144,6 +144,14 @@ pathlib
   :meth:`~pathlib.Path.is_dir`.
   (Contributed by Barney Gale in :gh:`77609` and :gh:`105793`.)
 
+sqlite3
+-------
+
+* :mod:`!sqlite3` now supports strings and BLOB sizes up to ``2**64-1`` bytes
+  long, both when binding parameters to queries, and when returning values
+  from user-defined functions.
+  (Contributed by Erlend E. Aasland in :gh:`108021`.)
+
 traceback
 ---------
 
