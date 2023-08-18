@@ -851,6 +851,8 @@ class Generator(Analyzer):
                         pass
                     case parsing.Pseudo():
                         pass
+                    case _:
+                        typing.assert_never(thing)
         print(
             f"Wrote some stuff to {abstract_interpreter_filename}",
             file=sys.stderr,
