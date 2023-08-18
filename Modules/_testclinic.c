@@ -1195,14 +1195,14 @@ clone_with_conv_f2_impl(PyObject *module, custom_t path)
 
 /*[clinic input]
 output push
-destination deprstar new file '{dirname}/clinic/_testclinic_depr_star.c.h'
+destination deprstar new file '{dirname}/clinic/_testclinic_depr.c.h'
 output everything deprstar
 #output methoddef_ifndef buffer 1
 output docstring_prototype suppress
 output parser_prototype suppress
 output impl_definition block
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f88f37038e00fb0a]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=32116eac48a42d34]*/
 
 
 // Mock Python version 3.8
@@ -1211,7 +1211,7 @@ output impl_definition block
 #define PY_VERSION_HEX 0x03080000
 
 
-#include "clinic/_testclinic_depr_star.c.h"
+#include "clinic/_testclinic_depr.c.h"
 
 
 /*[clinic input]
