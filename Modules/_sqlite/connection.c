@@ -446,7 +446,7 @@ remove_callbacks(sqlite3 *db)
     sqlite3_progress_handler(db, 0, 0, (void *)0);
 
     rc = sqlite3_set_authorizer(db, NULL, NULL);
-    assert(rc == SQLITE_OK);
+    assert(rc == SQLITE_OK), (void)rc;
 }
 
 static int
