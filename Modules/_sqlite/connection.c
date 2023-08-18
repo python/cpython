@@ -452,27 +452,29 @@ remove_callbacks(sqlite3 *db)
 static int
 connection_close(pysqlite_Connection *self)
 {
-    int rc = 0;
-    if (self->db) {
-        if (self->autocommit == AUTOCOMMIT_DISABLED &&
-            !sqlite3_get_autocommit(self->db))
-        {
-            if (connection_exec_stmt(self, "ROLLBACK") < 0) {
-                rc = -1;
-            }
-        }
-
-        sqlite3 *db = self->db;
-        self->db = NULL;
-
-        Py_BEGIN_ALLOW_THREADS
-        /* The v2 close call always returns SQLITE_OK if given a valid database
-         * pointer (which we do), so we can safely ignore the return value */
-        (void)sqlite3_close_v2(db);
-        Py_END_ALLOW_THREADS
-
-        free_callback_contexts(self);
+    if (self->db == NULL) {
+        return 0;
     }
+
+    int rc = 0;
+    if (self->autocommit == AUTOCOMMIT_DISABLED &&
+        !sqlite3_get_autocommit(self->db))
+    {
+        if (connection_exec_stmt(self, "ROLLBACK") < 0) {
+            rc = -1;
+        }
+    }
+
+    sqlite3 *db = self->db;
+    self->db = NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    /* The v2 close call always returns SQLITE_OK if given a valid database
+     * pointer (which we do), so we can safely ignore the return value */
+    (void)sqlite3_close_v2(db);
+    Py_END_ALLOW_THREADS
+
+    free_callback_contexts(self);
     return rc;
 }
 
