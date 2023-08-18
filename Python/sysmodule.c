@@ -2095,7 +2095,7 @@ static PyObject *
 sys_is_finalizing_impl(PyObject *module)
 /*[clinic end generated code: output=735b5ff7962ab281 input=f0df747a039948a5]*/
 {
-    return PyBool_FromLong(_Py_IsFinalizing());
+    return PyBool_FromLong(Py_IsFinalizing());
 }
 
 #ifdef Py_STATS

@@ -357,6 +357,12 @@ Pending Removal in Python 3.15
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
 
+* Passing any arguments to :func:`threading.RLock` is now deprecated.
+  C version allows any numbers of args and kwargs,
+  but they are just ignored. Python version does not allow any arguments.
+  All arguments will be removed from :func:`threading.RLock` in Python 3.15.
+  (Contributed by Nikita Sobolev in :gh:`102029`.)
+
 Pending Removal in Python 3.16
 ------------------------------
 
@@ -825,6 +831,10 @@ New Features
   these functions return -1 on error and so checking ``PyErr_Occurred()`` is
   not needed.
   (Contributed by Victor Stinner in :gh:`106004`.)
+
+* Add :c:func:`Py_IsFinalizing` function: check if the main Python interpreter is
+  :term:`shutting down <interpreter shutdown>`.
+  (Contributed by Victor Stinner in :gh:`108014`.)
 
 Porting to Python 3.13
 ----------------------
