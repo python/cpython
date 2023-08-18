@@ -181,7 +181,8 @@ class Generator(Analyzer):
                     assert target_instr
                     target_popped = effect_str(target_instr.input_effects)
                     target_pushed = effect_str(target_instr.output_effects)
-                if popped is None and pushed is None:
+                if pushed is None:
+                    assert popped is None
                     popped, pushed = target_popped, target_pushed
                 else:
                     assert popped == target_popped
