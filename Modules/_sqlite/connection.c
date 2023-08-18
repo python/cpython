@@ -247,12 +247,13 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
     }
 
     if (self->initialized) {
+        self->initialized = 0;
+
         PyTypeObject *tp = Py_TYPE(self);
         tp->tp_clear((PyObject *)self);
         if (connection_close(self) < 0) {
             return -1;
         }
-        self->initialized = 0;
     }
 
     // Create and configure SQLite database object.
