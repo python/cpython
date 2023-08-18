@@ -1,3 +1,4 @@
+import collections
 import contextlib
 import re
 import typing
@@ -58,13 +59,13 @@ class Formatter:
             self.set_lineno(self.lineno + 1, self.filename)
 
     @contextlib.contextmanager
-    def indent(self) -> typing.Iterator[None]:
+    def indent(self) -> collections.abc.Iterator[None]:
         self.prefix += "    "
         yield
         self.prefix = self.prefix[:-4]
 
     @contextlib.contextmanager
-    def block(self, head: str, tail: str = "") -> typing.Iterator[None]:
+    def block(self, head: str, tail: str = "") -> collections.abc.Iterator[None]:
         if head:
             self.emit(head + " {")
         else:

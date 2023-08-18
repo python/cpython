@@ -35,8 +35,8 @@ jobs:
         with:
           python-version: "3.x"
           cache: pip
-          cache-dependency-path: Tools/clinic/requirements-dev.txt
-      - run: pip install -r Tools/clinic/requirements-dev.txt
+          cache-dependency-path: Tools/requirements-dev.txt
+      - run: pip install -r Tools/requirements-dev.txt
       - run: mypy --config-file Tools/clinic/mypy.ini
 
   mypy-cases-generator:
@@ -49,6 +49,8 @@ jobs:
         with:
           python-version: "3.x"
           cache: pip
-          cache-dependency-path: Tools/cases_generator/requirements-dev.txt
-      - run: pip install -r Tools/cases_generator/requirements-dev.txt
+          cache-dependency-path: Tools/requirements-dev.txt
+      - run: pip install -r Tools/requirements-dev.txt
+      - name: Lint with black
+        run: black Tools/cases_generator
       - run: mypy --config-file Tools/cases_generator/mypy.ini

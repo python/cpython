@@ -413,16 +413,16 @@ def write_components(
     return next_instr_is_set
 
 
-def write_single_instr_for_abstract_interp(
-    instr: Instruction, out: Formatter
-) -> None:
+def write_single_instr_for_abstract_interp(instr: Instruction, out: Formatter) -> None:
     try:
         _write_components_for_abstract_interp(
             [Component(instr, instr.active_caches)],
             out,
         )
     except AssertionError as err:
-        raise AssertionError(f"Error writing abstract instruction {instr.name}") from err
+        raise AssertionError(
+            f"Error writing abstract instruction {instr.name}"
+        ) from err
 
 
 def _write_components_for_abstract_interp(
@@ -438,5 +438,7 @@ def _write_components_for_abstract_interp(
         # NULL out the output stack effects
         for poke in mgr.pokes:
             if not poke.effect.size and poke.effect.name not in mgr.instr.unmoved_names:
-                out.emit(f"PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)"
-                         f"PARTITIONNODE_NULLROOT, PEEK(-({poke.offset.as_index()})), true);")
+                out.emit(
+                    f"PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)"
+                    f"PARTITIONNODE_NULLROOT, PEEK(-({poke.offset.as_index()})), true);"
+                )

@@ -79,12 +79,10 @@ SPECIALLY_HANDLED_ABSTRACT_INSTR = {
     "STORE_FAST",
     "STORE_FAST_MAYBE_NULL",
     "COPY",
-
     # Arithmetic
     "_BINARY_OP_MULTIPLY_INT",
     "_BINARY_OP_ADD_INT",
     "_BINARY_OP_SUBTRACT_INT",
-
 }
 
 arg_parser = argparse.ArgumentParser(
@@ -143,6 +141,7 @@ arg_parser.add_argument(
     default=DEFAULT_ABSTRACT_INTERPRETER_OUTPUT,
 )
 
+
 class Generator(Analyzer):
     def get_stack_effect_info(
         self, thing: parsing.InstDef | parsing.Macro | parsing.Pseudo
@@ -183,10 +182,14 @@ class Generator(Analyzer):
                     target_popped = effect_str(target_instr.input_effects)
                     target_pushed = effect_str(target_instr.output_effects)
                     popped, pushed = target_popped, target_pushed
+            case _:
+                typing.assert_never(thing)
         return instr, popped, pushed
 
     @contextlib.contextmanager
-    def metadata_item(self, signature: str, open: str, close: str) -> typing.Iterator[None]:
+    def metadata_item(
+        self, signature: str, open: str, close: str
+    ) -> typing.Iterator[None]:
         self.out.emit("")
         self.out.emit(f"extern {signature};")
         self.out.emit("#ifdef NEED_OPCODE_METADATA")
@@ -211,7 +214,9 @@ class Generator(Analyzer):
         ) -> None:
 
             with self.metadata_item(
-                f"int _PyOpcode_num_{direction}(int opcode, int oparg, bool jump)", "", ""
+                f"int _PyOpcode_num_{direction}(int opcode, int oparg, bool jump)",
+                "",
+                "",
             ):
                 with self.out.block("switch(opcode)"):
                     for instr, effect in data:
@@ -249,10 +254,11 @@ class Generator(Analyzer):
 
         for instr in itertools.chain(
             [instr for instr in self.instrs.values() if instr.kind != "op"],
-            self.macro_instrs.values()):
+            self.macro_instrs.values(),
+        ):
             assert isinstance(instr, (Instruction, MacroInstruction, PseudoInstruction))
             name = instr.name
-            if name.startswith('INSTRUMENTED_'):
+            if name.startswith("INSTRUMENTED_"):
                 instrumented_ops.append(name)
             else:
                 ops.append((instr.instr_flags.HAS_ARG_FLAG, name))
@@ -261,13 +267,13 @@ class Generator(Analyzer):
         # rather than bytecodes.c, so we need to add it explicitly
         # here (at least until we add something to bytecodes.c to
         # declare external instructions).
-        instrumented_ops.append('INSTRUMENTED_LINE')
+        instrumented_ops.append("INSTRUMENTED_LINE")
 
         # assert lists are unique
         assert len(set(ops)) == len(ops)
         assert len(set(instrumented_ops)) == len(instrumented_ops)
 
-        opname: list[str|None] = [None] * 512
+        opname: list[str | None] = [None] * 512
         opmap: dict[str, int] = {}
         markers: dict[str, int] = {}
 
@@ -278,16 +284,15 @@ class Generator(Analyzer):
             opname[op] = name
             opmap[name] = op
 
-
         # 0 is reserved for cache entries. This helps debugging.
-        map_op(0, 'CACHE')
+        map_op(0, "CACHE")
 
         # 17 is reserved as it is the initial value for the specializing counter.
         # This helps catch cases where we attempt to execute a cache.
-        map_op(17, 'RESERVED')
+        map_op(17, "RESERVED")
 
         # 166 is RESUME - it is hard coded as such in Tools/build/deepfreeze.py
-        map_op(166, 'RESUME')
+        map_op(166, "RESUME")
 
         next_opcode = 1
 
@@ -299,13 +304,13 @@ class Generator(Analyzer):
             assert next_opcode < 255
             map_op(next_opcode, name)
 
-            if has_arg and 'HAVE_ARGUMENT' not in markers:
-                markers['HAVE_ARGUMENT'] = next_opcode
+            if has_arg and "HAVE_ARGUMENT" not in markers:
+                markers["HAVE_ARGUMENT"] = next_opcode
 
         # Instrumented opcodes are at the end of the valid range
         min_instrumented = 254 - (len(instrumented_ops) - 1)
         assert next_opcode <= min_instrumented
-        markers['MIN_INSTRUMENTED_OPCODE'] = min_instrumented
+        markers["MIN_INSTRUMENTED_OPCODE"] = min_instrumented
         for i, op in enumerate(instrumented_ops):
             map_op(min_instrumented + i, op)
 
@@ -317,7 +322,9 @@ class Generator(Analyzer):
         self.opmap = opmap
         self.markers = markers
 
-    def write_opcode_ids(self, opcode_ids_h_filename: str, opcode_targets_filename: str) -> None:
+    def write_opcode_ids(
+        self, opcode_ids_h_filename: str, opcode_targets_filename: str
+    ) -> None:
         """Write header file that defined the opcode IDs"""
 
         with open(opcode_ids_h_filename, "w") as f:
@@ -330,7 +337,7 @@ class Generator(Analyzer):
             self.out.emit("#ifndef Py_OPCODE_IDS_H")
             self.out.emit("#define Py_OPCODE_IDS_H")
             self.out.emit("#ifdef __cplusplus")
-            self.out.emit("extern \"C\" {")
+            self.out.emit('extern "C" {')
             self.out.emit("#endif")
             self.out.emit("")
             self.out.emit("/* Instruction opcodes for compiled code */")
@@ -362,7 +369,6 @@ class Generator(Analyzer):
                     if op < 256:
                         targets[op] = f"TARGET_{name}"
                 f.write(",\n".join([f"    &&{s}" for s in targets]))
-
 
     def write_metadata(self, metadata_filename: str, pymetadata_filename: str) -> None:
         """Write instruction metadata to output file."""
@@ -458,7 +464,7 @@ class Generator(Analyzer):
                 "const struct opcode_metadata "
                 "_PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE]",
                 "=",
-                ";"
+                ";",
             ):
                 # Write metadata for each instruction
                 for thing in self.everything:
@@ -471,13 +477,15 @@ class Generator(Analyzer):
                         case parsing.Macro():
                             self.write_metadata_for_macro(self.macro_instrs[thing.name])
                         case parsing.Pseudo():
-                            self.write_metadata_for_pseudo(self.pseudo_instrs[thing.name])
+                            self.write_metadata_for_pseudo(
+                                self.pseudo_instrs[thing.name]
+                            )
 
             with self.metadata_item(
                 "const struct opcode_macro_expansion "
                 "_PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE]",
                 "=",
-                ";"
+                ";",
             ):
                 # Write macro expansion for each non-pseudo instruction
                 for thing in self.everything:
@@ -514,7 +522,9 @@ class Generator(Analyzer):
                 self.write_uop_items(lambda name, counter: f'[{name}] = "{name}",')
 
             with self.metadata_item(
-                f"const char *const _PyOpcode_OpName[{1 + max(self.opmap.values())}]", "=", ";"
+                f"const char *const _PyOpcode_OpName[{1 + max(self.opmap.values())}]",
+                "=",
+                ";",
             ):
                 for name in self.opmap:
                     self.out.emit(f'[{name}] = "{name}",')
@@ -527,11 +537,9 @@ class Generator(Analyzer):
                 for m in family.members:
                     deoptcodes[m] = name
             # special case:
-            deoptcodes['BINARY_OP_INPLACE_ADD_UNICODE'] = 'BINARY_OP'
+            deoptcodes["BINARY_OP_INPLACE_ADD_UNICODE"] = "BINARY_OP"
 
-            with self.metadata_item(
-                f"const uint8_t _PyOpcode_Deopt[256]", "=", ";"
-            ):
+            with self.metadata_item(f"const uint8_t _PyOpcode_Deopt[256]", "=", ";"):
                 for opt, deopt in sorted(deoptcodes.items()):
                     self.out.emit(f"[{opt}] = {deopt},")
 
@@ -589,9 +597,8 @@ class Generator(Analyzer):
                     if name not in specialized_ops:
                         self.out.emit(f"'{name}': {op},")
 
-            for name in ['MIN_INSTRUMENTED_OPCODE', 'HAVE_ARGUMENT']:
+            for name in ["MIN_INSTRUMENTED_OPCODE", "HAVE_ARGUMENT"]:
                 self.out.emit(f"{name} = {self.markers[name]}")
-
 
     def write_pseudo_instrs(self) -> None:
         """Write the IS_PSEUDO_INSTR macro"""
@@ -815,7 +822,10 @@ class Generator(Analyzer):
                         pass
                     case parsing.InstDef():
                         instr = AbstractInstruction(self.instrs[thing.name].inst)
-                        if instr.is_viable_uop() and instr.name not in SPECIALLY_HANDLED_ABSTRACT_INSTR:
+                        if (
+                            instr.is_viable_uop()
+                            and instr.name not in SPECIALLY_HANDLED_ABSTRACT_INSTR
+                        ):
                             self.out.emit("")
                             with self.out.block(f"case {thing.name}:"):
                                 instr.write(self.out, tier=TIER_TWO)
@@ -878,8 +888,9 @@ def main() -> None:
     a.write_opcode_ids(args.opcode_ids_h, args.opcode_targets_h)
     a.write_metadata(args.metadata, args.pymetadata)
     a.write_executor_instructions(args.executor_cases, args.emit_line_directives)
-    a.write_abstract_interpreter_instructions(args.abstract_interpreter_cases,
-                                              args.emit_line_directives)
+    a.write_abstract_interpreter_instructions(
+        args.abstract_interpreter_cases, args.emit_line_directives
+    )
 
 
 if __name__ == "__main__":

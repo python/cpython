@@ -20,7 +20,7 @@ class InstructionFlags:
         self.bitmask = {name: (1 << i) for i, name in enumerate(self.names())}
 
     @staticmethod
-    def fromInstruction(instr: parsing.Node) -> 'InstructionFlags':
+    def fromInstruction(instr: parsing.Node) -> "InstructionFlags":
 
         has_free = (
             variable_used(instr, "PyCell_New")
@@ -41,7 +41,7 @@ class InstructionFlags:
         )
 
     @staticmethod
-    def newEmpty() -> 'InstructionFlags':
+    def newEmpty() -> "InstructionFlags":
         return InstructionFlags(False, False, False, False, False, False)
 
     def add(self, other: "InstructionFlags") -> None:
@@ -49,7 +49,7 @@ class InstructionFlags:
             if value:
                 setattr(self, name, value)
 
-    def names(self, value: bool|None = None) -> list[str]:
+    def names(self, value: bool | None = None) -> list[str]:
         if value is None:
             return list(dataclasses.asdict(self).keys())
         return [n for n, v in dataclasses.asdict(self).items() if v == value]
@@ -90,9 +90,9 @@ def variable_used_unspecialized(node: parsing.Node, name: str) -> bool:
             text = "".join(token.text.split())
             # TODO: Handle nested #if
             if text == "#if":
-                if (
-                    i + 1 < len(node.tokens)
-                    and node.tokens[i + 1].text in ("ENABLE_SPECIALIZATION", "TIER_ONE")
+                if i + 1 < len(node.tokens) and node.tokens[i + 1].text in (
+                    "ENABLE_SPECIALIZATION",
+                    "TIER_ONE",
                 ):
                     skipping = True
             elif text in ("#else", "#endif"):
