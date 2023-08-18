@@ -1121,8 +1121,8 @@ always available.
 
 .. function:: is_finalizing()
 
-   Return :const:`True` if the Python interpreter is
-   :term:`shutting down <interpreter shutdown>`, :const:`False` otherwise.
+   Return :const:`True` if the main Python interpreter is
+   :term:`shutting down <interpreter shutdown>`. Return :const:`False` otherwise.
 
    .. versionadded:: 3.5
 
