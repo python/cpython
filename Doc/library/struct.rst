@@ -597,6 +597,11 @@ The :mod:`struct` module also defines the following type:
       The calculated size of the struct (and hence of the bytes object produced
       by the :meth:`pack` method) corresponding to :attr:`format`.
 
+   .. versionchanged:: 3.13 The *repr()* of structs has changed.  It
+      is now:
+
+         >>> struct.Struct('i')
+         Struct('i')
 
 .. _half precision format: https://en.wikipedia.org/wiki/Half-precision_floating-point_format
 
