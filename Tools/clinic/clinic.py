@@ -998,16 +998,21 @@ class CLanguage(Language):
                 if argname_fmt:
                     conditions.append(f"nargs < {i+1} && {argname_fmt % i}")
                 elif func.kind.new_or_init:
-                    conditions.append(f"nargs < {i+1} && kwargs && PyDict_Contains(kwargs, &_Py_ID({p.name}))")
+                    conditions.append(f"nargs < {i+1} && PyDict_Contains(kwargs, &_Py_ID({p.name}))")
                     containscheck = "PyDict_Contains"
                 else:
-                    conditions.append(f"nargs < {i+1} && kwnames && PySequence_Contains(kwnames, &_Py_ID({p.name}))")
+                    conditions.append(f"nargs < {i+1} && PySequence_Contains(kwnames, &_Py_ID({p.name}))")
                     containscheck = "PySequence_Contains"
             else:
                 conditions = [f"nargs < {i+1}"]
         condition = ") || (".join(conditions)
         if len(conditions) > 1:
-            condition = f"({condition})"
+            condition = f"(({condition}))"
+        if last_param.is_optional():
+            if func.kind.new_or_init:
+                condition = f"kwargs && PyDict_GET_SIZE(kwargs) && {condition}"
+            else:
+                condition = f"kwnames && PyTuple_GET_SIZE(kwnames) && {condition}"
         if len(params) == 1:
             what1 = "argument"
             what2 = "parameter"

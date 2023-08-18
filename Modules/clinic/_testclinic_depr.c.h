@@ -476,7 +476,7 @@ depr_kwd_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (!fastargs) {
         goto exit;
     }
-    if (nargs < 1 && fastargs[0]) {
+    if (kwargs && PyDict_GET_SIZE(kwargs) && nargs < 1 && fastargs[0]) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing keyword argument 'a' to _testclinic.DeprKwdNew() is "
                 "deprecated. Corresponding parameter will become positional-only "
@@ -560,7 +560,7 @@ depr_kwd_init(PyObject *self, PyObject *args, PyObject *kwargs)
     if (!fastargs) {
         goto exit;
     }
-    if (nargs < 1 && fastargs[0]) {
+    if (kwargs && PyDict_GET_SIZE(kwargs) && nargs < 1 && fastargs[0]) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing keyword argument 'a' to _testclinic.DeprKwdInit() is "
                 "deprecated. Corresponding parameter will become positional-only "
@@ -635,7 +635,7 @@ depr_kwd_init_noinline(PyObject *self, PyObject *args, PyObject *kwargs)
         &a, &b, &c, &d, &d_length)) {
         goto exit;
     }
-    if ((nargs < 2) || (nargs < 3 && kwargs && PyDict_Contains(kwargs, &_Py_ID(c)))) {
+    if (kwargs && PyDict_GET_SIZE(kwargs) && ((nargs < 2) || (nargs < 3 && PyDict_Contains(kwargs, &_Py_ID(c))))) {
         if (PyErr_Occurred()) { // PyDict_Contains() above can fail
             goto exit;
         }
@@ -1709,7 +1709,7 @@ depr_kwd_optional_1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if (!args) {
         goto exit;
     }
-    if (nargs < 2 && args[1]) {
+    if (kwnames && PyTuple_GET_SIZE(kwnames) && nargs < 2 && args[1]) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing keyword argument 'b' to depr_kwd_optional_1() is "
                 "deprecated. Corresponding parameter will become positional-only "
@@ -1796,7 +1796,7 @@ depr_kwd_optional_2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if (!args) {
         goto exit;
     }
-    if ((nargs < 2 && args[1]) || (nargs < 3 && args[2])) {
+    if (kwnames && PyTuple_GET_SIZE(kwnames) && ((nargs < 2 && args[1]) || (nargs < 3 && args[2]))) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing keyword arguments 'b' and 'c' to depr_kwd_optional_2() "
                 "is deprecated. Corresponding parameters will become "
@@ -1889,7 +1889,7 @@ depr_kwd_optional_3(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if (!args) {
         goto exit;
     }
-    if ((nargs < 1 && args[0]) || (nargs < 2 && args[1]) || (nargs < 3 && args[2])) {
+    if (kwnames && PyTuple_GET_SIZE(kwnames) && ((nargs < 1 && args[0]) || (nargs < 2 && args[1]) || (nargs < 3 && args[2]))) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing keyword arguments 'a', 'b' and 'c' to "
                 "depr_kwd_optional_3() is deprecated. Corresponding parameters "
@@ -1987,7 +1987,7 @@ depr_kwd_required_optional(PyObject *module, PyObject *const *args, Py_ssize_t n
     if (!args) {
         goto exit;
     }
-    if ((nargs < 2) || (nargs < 3 && args[2])) {
+    if (kwnames && PyTuple_GET_SIZE(kwnames) && ((nargs < 2) || (nargs < 3 && args[2]))) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing keyword arguments 'b' and 'c' to "
                 "depr_kwd_required_optional() is deprecated. Corresponding "
@@ -2075,7 +2075,7 @@ depr_kwd_noinline(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
         &a, &b, &c, &d, &d_length)) {
         goto exit;
     }
-    if ((nargs < 2) || (nargs < 3 && kwnames && PySequence_Contains(kwnames, &_Py_ID(c)))) {
+    if (kwnames && PyTuple_GET_SIZE(kwnames) && ((nargs < 2) || (nargs < 3 && PySequence_Contains(kwnames, &_Py_ID(c))))) {
         if (PyErr_Occurred()) { // PySequence_Contains() above can fail
             goto exit;
         }
@@ -2092,4 +2092,4 @@ depr_kwd_noinline(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3a52de3a72a21d91 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fc558c1efdcab076 input=a9049054013a1b77]*/
