@@ -2,6 +2,8 @@
 """
 Check the output of running Sphinx in nit-picky mode (missing references).
 """
+from __future__ import annotations
+
 import argparse
 import itertools
 import os
@@ -78,6 +80,7 @@ def get_diff_lines(ref_a: str, ref_b: str, file: Path) -> list[int]:
 
     # Scrape line offsets + lengths from diff and convert to line numbers
     line_matches = DIFF_PATTERN.finditer(diff_output.stdout)
+    # Removed and added line counts are 1 if not printed
     line_match_values = [
         line_match.groupdict(default=1) for line_match in line_matches
     ]
