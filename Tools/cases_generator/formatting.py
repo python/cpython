@@ -1,7 +1,7 @@
-import collections
 import contextlib
 import re
 import typing
+from collections.abc import Iterator
 
 from parsing import StackEffect, Family
 
@@ -59,13 +59,13 @@ class Formatter:
             self.set_lineno(self.lineno + 1, self.filename)
 
     @contextlib.contextmanager
-    def indent(self) -> collections.abc.Iterator[None]:
+    def indent(self) -> Iterator[None]:
         self.prefix += "    "
         yield
         self.prefix = self.prefix[:-4]
 
     @contextlib.contextmanager
-    def block(self, head: str, tail: str = "") -> collections.abc.Iterator[None]:
+    def block(self, head: str, tail: str = "") -> Iterator[None]:
         if head:
             self.emit(head + " {")
         else:

@@ -4,13 +4,13 @@ Writes the cases to generated_cases.c.h, which is #included in ceval.c.
 """
 
 import argparse
-import collections
 import contextlib
 import itertools
 import os
 import posixpath
 import sys
 import typing
+from collections.abc import Iterator
 
 import stacking  # Early import to avoid circular import
 from analysis import Analyzer
@@ -193,9 +193,7 @@ class Generator(Analyzer):
         return instr, popped, pushed
 
     @contextlib.contextmanager
-    def metadata_item(
-        self, signature: str, open: str, close: str
-    ) -> collections.abc.Iterator[None]:
+    def metadata_item(self, signature: str, open: str, close: str) -> Iterator[None]:
         self.out.emit("")
         self.out.emit(f"extern {signature};")
         self.out.emit("#ifdef NEED_OPCODE_METADATA")
