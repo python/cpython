@@ -285,7 +285,7 @@ corresponding Unix manual entries for more information on calls.");
 #  undef HAVE_SCHED_SETAFFINITY
 #endif
 
-#if defined(HAVE_SYS_XATTR_H) && defined(__linux__) && !defined(__FreeBSD_kernel__) && !defined(__GNU__)
+#if defined(HAVE_SYS_XATTR_H) && defined(HAVE_LINUX_LIMITS_H) && !defined(__FreeBSD_kernel__) && !defined(__GNU__)
 #  define USE_XATTRS
 #  include <linux/limits.h>  // Needed for XATTR_SIZE_MAX on musl libc.
 #endif
@@ -5274,7 +5274,9 @@ os__path_normpath_impl(PyObject *module, PyObject *path)
     if (!buffer) {
         return NULL;
     }
-    PyObject *result = PyUnicode_FromWideChar(_Py_normpath(buffer, len), -1);
+    Py_ssize_t norm_len;
+    wchar_t *norm_path = _Py_normpath_and_size(buffer, len, &norm_len);
+    PyObject *result = PyUnicode_FromWideChar(norm_path, norm_len);
     PyMem_Free(buffer);
     return result;
 }

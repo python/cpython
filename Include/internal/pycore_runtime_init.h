@@ -45,7 +45,7 @@ extern PyTypeObject _PyExc_MemoryError;
                 .prev = offsetof(PyThreadState, prev), \
                 .next = offsetof(PyThreadState, next), \
                 .interp = offsetof(PyThreadState, interp), \
-                .cframe = offsetof(PyThreadState, cframe), \
+                .current_frame = offsetof(PyThreadState, current_frame), \
                 .thread_id = offsetof(PyThreadState, thread_id), \
                 .native_thread_id = offsetof(PyThreadState, native_thread_id), \
             }, \
@@ -55,10 +55,6 @@ extern PyTypeObject _PyExc_MemoryError;
                 .prev_instr = offsetof(_PyInterpreterFrame, prev_instr), \
                 .localsplus = offsetof(_PyInterpreterFrame, localsplus), \
                 .owner = offsetof(_PyInterpreterFrame, owner), \
-            }, \
-            .cframe = { \
-                .current_frame = offsetof(_PyCFrame, current_frame), \
-                .previous = offsetof(_PyCFrame, previous), \
             }, \
             .code_object = { \
                 .filename = offsetof(PyCodeObject, co_filename), \
@@ -97,11 +93,6 @@ extern PyTypeObject _PyExc_MemoryError;
            in accordance with the specification. */ \
         .autoTSSkey = Py_tss_NEEDS_INIT, \
         .parser = _parser_runtime_state_INIT, \
-        .imports = { \
-            .extensions = { \
-                .main_tstate = _PyThreadState_INIT, \
-            }, \
-        }, \
         .ceval = { \
             .perf = _PyEval_RUNTIME_PERF_INIT, \
         }, \
@@ -162,6 +153,7 @@ extern PyTypeObject _PyExc_MemoryError;
                 { .threshold = 10, }, \
             }, \
         }, \
+        .object_state = _py_object_state_INIT(INTERP), \
         .dtoa = _dtoa_state_INIT(&(INTERP)), \
         .dict_state = _dict_state_INIT, \
         .func_state = { \
@@ -190,6 +182,16 @@ extern PyTypeObject _PyExc_MemoryError;
         .py_recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         .context_ver = 1, \
     }
+
+#ifdef Py_TRACE_REFS
+# define _py_object_state_INIT(INTERP) \
+    { \
+        .refchain = {&INTERP.object_state.refchain, &INTERP.object_state.refchain}, \
+    }
+#else
+# define _py_object_state_INIT(INTERP) \
+    { 0 }
+#endif
 
 
 // global objects

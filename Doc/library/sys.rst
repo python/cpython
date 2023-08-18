@@ -770,6 +770,15 @@ always available.
    higher than you might expect, because it includes the (temporary) reference as
    an argument to :func:`getrefcount`.
 
+   Note that the returned value may not actually reflect how many
+   references to the object are actually held.  For example, some
+   objects are "immortal" and have a very high refcount that does not
+   reflect the actual number of references.  Consequently, do not rely
+   on the returned value to be accurate, other than a value of 0 or 1.
+
+   .. versionchanged:: 3.12
+      Immortal objects have very large refcounts that do not match
+      the actual number of references to the object.
 
 .. function:: getrecursionlimit()
 
@@ -1112,8 +1121,8 @@ always available.
 
 .. function:: is_finalizing()
 
-   Return :const:`True` if the Python interpreter is
-   :term:`shutting down <interpreter shutdown>`, :const:`False` otherwise.
+   Return :const:`True` if the main Python interpreter is
+   :term:`shutting down <interpreter shutdown>`. Return :const:`False` otherwise.
 
    .. versionadded:: 3.5
 
@@ -1802,35 +1811,39 @@ always available.
 
    The *unraisable* argument has the following attributes:
 
-   * *exc_type*: Exception type.
-   * *exc_value*: Exception value, can be ``None``.
-   * *exc_traceback*: Exception traceback, can be ``None``.
-   * *err_msg*: Error message, can be ``None``.
-   * *object*: Object causing the exception, can be ``None``.
+   * :attr:`!exc_type`: Exception type.
+   * :attr:`!exc_value`: Exception value, can be ``None``.
+   * :attr:`!exc_traceback`: Exception traceback, can be ``None``.
+   * :attr:`!err_msg`: Error message, can be ``None``.
+   * :attr:`!object`: Object causing the exception, can be ``None``.
 
-   The default hook formats *err_msg* and *object* as:
+   The default hook formats :attr:`!err_msg` and :attr:`!object` as:
    ``f'{err_msg}: {object!r}'``; use "Exception ignored in" error message
-   if *err_msg* is ``None``.
+   if :attr:`!err_msg` is ``None``.
 
    :func:`sys.unraisablehook` can be overridden to control how unraisable
    exceptions are handled.
 
-   Storing *exc_value* using a custom hook can create a reference cycle. It
-   should be cleared explicitly to break the reference cycle when the
-   exception is no longer needed.
+   .. seealso::
 
-   Storing *object* using a custom hook can resurrect it if it is set to an
-   object which is being finalized. Avoid storing *object* after the custom
-   hook completes to avoid resurrecting objects.
+      :func:`excepthook` which handles uncaught exceptions.
 
-   See also :func:`excepthook` which handles uncaught exceptions.
+   .. warning::
+
+      Storing :attr:`!exc_value` using a custom hook can create a reference cycle.
+      It should be cleared explicitly to break the reference cycle when the
+      exception is no longer needed.
+
+      Storing :attr:`!object` using a custom hook can resurrect it if it is set to an
+      object which is being finalized. Avoid storing :attr:`!object` after the custom
+      hook completes to avoid resurrecting objects.
 
    .. audit-event:: sys.unraisablehook hook,unraisable sys.unraisablehook
 
       Raise an auditing event ``sys.unraisablehook`` with arguments
-      ``hook``, ``unraisable`` when an exception that cannot be handled occurs.
-      The ``unraisable`` object is the same as what will be passed to the hook.
-      If no hook has been set, ``hook`` may be ``None``.
+      *hook*, *unraisable* when an exception that cannot be handled occurs.
+      The *unraisable* object is the same as what will be passed to the hook.
+      If no hook has been set, *hook* may be ``None``.
 
    .. versionadded:: 3.8
 

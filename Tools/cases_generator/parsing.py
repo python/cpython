@@ -69,11 +69,17 @@ class Block(Node):
 
 @dataclass
 class StackEffect(Node):
-    name: str
+    name: str = field(compare=False)  # __eq__ only uses type, cond, size
     type: str = ""  # Optional `:type`
     cond: str = ""  # Optional `if (cond)`
     size: str = ""  # Optional `[size]`
     # Note: size cannot be combined with type or cond
+
+    def __repr__(self):
+        items = [self.name, self.type, self.cond, self.size]
+        while items and items[-1] == "":
+            del items[-1]
+        return f"StackEffect({', '.join(repr(item) for item in items)})"
 
 
 @dataclass
@@ -130,6 +136,7 @@ class Family(Node):
     size: str  # Variable giving the cache size in code units
     members: list[str]
 
+
 @dataclass
 class Pseudo(Node):
     name: str
@@ -154,7 +161,13 @@ class Parser(PLexer):
         if hdr := self.inst_header():
             if block := self.block():
                 return InstDef(
-                    hdr.override, hdr.register, hdr.kind, hdr.name, hdr.inputs, hdr.outputs, block
+                    hdr.override,
+                    hdr.register,
+                    hdr.kind,
+                    hdr.name,
+                    hdr.inputs,
+                    hdr.outputs,
+                    block,
                 )
             raise self.make_syntax_error("Expected block")
         return None
@@ -239,12 +252,14 @@ class Parser(PLexer):
 
     @contextual
     def stack_effect(self) -> StackEffect | None:
-        #   IDENTIFIER [':' IDENTIFIER] ['if' '(' expression ')']
+        #   IDENTIFIER [':' IDENTIFIER [TIMES]] ['if' '(' expression ')']
         # | IDENTIFIER '[' expression ']'
         if tkn := self.expect(lx.IDENTIFIER):
             type_text = ""
             if self.expect(lx.COLON):
                 type_text = self.require(lx.IDENTIFIER).text.strip()
+                if self.expect(lx.TIMES):
+                    type_text += " *"
             cond_text = ""
             if self.expect(lx.IF):
                 self.require(lx.LPAREN)
@@ -371,9 +386,7 @@ class Parser(PLexer):
                                 raise self.make_syntax_error("Expected {")
                             if members := self.members():
                                 if self.expect(lx.RBRACE) and self.expect(lx.SEMI):
-                                    return Pseudo(
-                                        tkn.text, members
-                                    )
+                                    return Pseudo(tkn.text, members)
         return None
 
     def members(self) -> list[str] | None:

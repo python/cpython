@@ -49,9 +49,9 @@ class InstructionFlags:
             if value:
                 setattr(self, name, value)
 
-    def names(self, value=None):
+    def names(self, value=None) -> list[str]:
         if value is None:
-            return dataclasses.asdict(self).keys()
+            return list(dataclasses.asdict(self).keys())
         return [n for n, v in dataclasses.asdict(self).items() if v == value]
 
     def bitmap(self) -> int:
@@ -92,7 +92,7 @@ def variable_used_unspecialized(node: parsing.Node, name: str) -> bool:
             if text == "#if":
                 if (
                     i + 1 < len(node.tokens)
-                    and node.tokens[i + 1].text == "ENABLE_SPECIALIZATION"
+                    and node.tokens[i + 1].text in ("ENABLE_SPECIALIZATION", "TIER_ONE")
                 ):
                     skipping = True
             elif text in ("#else", "#endif"):

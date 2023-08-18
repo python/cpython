@@ -674,6 +674,7 @@ init_interpreter(PyInterpreterState *interp,
                 _obmalloc_pools_INIT(interp->obmalloc.pools);
         memcpy(&interp->obmalloc.pools.used, temp, sizeof(temp));
     }
+    _PyObject_InitState(interp);
 
     _PyEval_InitState(interp, pending_lock);
     _PyGC_InitState(&interp->gc);
@@ -1309,7 +1310,7 @@ init_threadstate(PyThreadState *tstate,
     // This is cleared when PyGILState_Ensure() creates the thread state.
     tstate->gilstate_counter = 1;
 
-    tstate->cframe = &tstate->root_cframe;
+    tstate->current_frame = NULL;
     tstate->datastack_chunk = NULL;
     tstate->datastack_top = NULL;
     tstate->datastack_limit = NULL;
@@ -1451,7 +1452,7 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
 
-    if (verbose && tstate->cframe->current_frame != NULL) {
+    if (verbose && tstate->current_frame != NULL) {
         /* bpo-20526: After the main thread calls
            _PyInterpreterState_SetFinalizing() in Py_FinalizeEx()
            (or in Py_EndInterpreter() for subinterpreters),
@@ -1637,75 +1638,6 @@ _PyThreadState_DeleteExcept(PyThreadState *tstate)
         PyThreadState_Clear(p);
         free_threadstate(p);
     }
-}
-
-
-//-------------------------
-// "detached" thread states
-//-------------------------
-
-void
-_PyThreadState_InitDetached(PyThreadState *tstate, PyInterpreterState *interp)
-{
-    _PyRuntimeState *runtime = interp->runtime;
-
-    HEAD_LOCK(runtime);
-    interp->threads.next_unique_id += 1;
-    uint64_t id = interp->threads.next_unique_id;
-    HEAD_UNLOCK(runtime);
-
-    init_threadstate(tstate, interp, id);
-    // We do not call add_threadstate().
-}
-
-void
-_PyThreadState_ClearDetached(PyThreadState *tstate)
-{
-    assert(!tstate->_status.bound);
-    assert(!tstate->_status.bound_gilstate);
-    assert(tstate->datastack_chunk == NULL);
-    assert(tstate->thread_id == 0);
-    assert(tstate->native_thread_id == 0);
-    assert(tstate->next == NULL);
-    assert(tstate->prev == NULL);
-
-    PyThreadState_Clear(tstate);
-    clear_datastack(tstate);
-}
-
-void
-_PyThreadState_BindDetached(PyThreadState *tstate)
-{
-    assert(!_Py_IsMainInterpreter(
-        current_fast_get(tstate->interp->runtime)->interp));
-    assert(_Py_IsMainInterpreter(tstate->interp));
-    bind_tstate(tstate);
-    /* Unlike _PyThreadState_Bind(), we do not modify gilstate TSS. */
-}
-
-void
-_PyThreadState_UnbindDetached(PyThreadState *tstate)
-{
-    assert(!_Py_IsMainInterpreter(
-        current_fast_get(tstate->interp->runtime)->interp));
-    assert(_Py_IsMainInterpreter(tstate->interp));
-    assert(tstate_is_alive(tstate));
-    assert(!tstate->_status.active);
-    assert(gilstate_tss_get(tstate->interp->runtime) != tstate);
-
-    unbind_tstate(tstate);
-
-    /* This thread state may be bound/unbound repeatedly,
-       so we must erase evidence that it was ever bound (or unbound). */
-    tstate->_status.bound = 0;
-    tstate->_status.unbound = 0;
-
-    /* We must fully unlink the thread state from any OS thread,
-       to allow it to be bound more than once. */
-    tstate->thread_id = 0;
-#ifdef PY_HAVE_THREAD_NATIVE_ID
-    tstate->native_thread_id = 0;
-#endif
 }
 
 
@@ -2021,7 +1953,7 @@ _PyThread_CurrentFrames(void)
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
         PyThreadState *t;
         for (t = i->threads.head; t != NULL; t = t->next) {
-            _PyInterpreterFrame *frame = t->cframe->current_frame;
+            _PyInterpreterFrame *frame = t->current_frame;
             frame = _PyFrame_GetFirstComplete(frame);
             if (frame == NULL) {
                 continue;

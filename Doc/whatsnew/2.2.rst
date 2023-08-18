@@ -1109,7 +1109,7 @@ code, none of the changes described here will affect you very much.
   definition tables to simplify implementation of methods with no arguments or a
   single untyped argument. Calling such methods is more efficient than calling a
   corresponding method that uses :c:macro:`METH_VARARGS`.  Also, the old
-  :c:macro:`METH_OLDARGS` style of writing C methods is  now officially deprecated.
+  :c:macro:`!METH_OLDARGS` style of writing C methods is  now officially deprecated.
 
 * Two new wrapper functions, :c:func:`PyOS_snprintf` and :c:func:`PyOS_vsnprintf`
   were added to provide  cross-platform implementations for the relatively new
