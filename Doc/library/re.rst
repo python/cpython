@@ -898,7 +898,7 @@ Functions
       ['Words', 'words', 'words', '']
       >>> re.split(r'(\W+)', 'Words, words, words.')
       ['Words', ', ', 'words', ', ', 'words', '.', '']
-      >>> re.split(r'\W+', 'Words, words, words.', 1)
+      >>> re.split(r'\W+', 'Words, words, words.', maxsplit=1)
       ['Words', 'words, words.']
       >>> re.split('[a-f]+', '0a3B9', flags=re.IGNORECASE)
       ['0', '3', '9']
@@ -928,6 +928,11 @@ Functions
 
    .. versionchanged:: 3.7
       Added support of splitting on a pattern that could match an empty string.
+
+   .. deprecated:: 3.13
+      Passing *maxsplit* and *flags* as positional arguments is deprecated.
+      In future Python versions they will be
+      :ref:`keyword-only parameters <keyword-only_parameter>`.
 
 
 .. function:: findall(pattern, string, flags=0)
@@ -1027,8 +1032,6 @@ Functions
    .. versionchanged:: 3.7
       Unknown escapes in *repl* consisting of ``'\'`` and an ASCII letter
       now are errors.
-
-   .. versionchanged:: 3.7
       Empty matches for the pattern are replaced when adjacent to a previous
       non-empty match.
 
@@ -1037,17 +1040,16 @@ Functions
       In :class:`bytes` replacement strings, group *name* can only contain bytes
       in the ASCII range (``b'\x00'``-``b'\x7f'``).
 
+   .. deprecated:: 3.13
+      Passing *count* and *flags* as positional arguments is deprecated.
+      In future Python versions they will be
+      :ref:`keyword-only parameters <keyword-only_parameter>`.
+
 
 .. function:: subn(pattern, repl, string, count=0, flags=0)
 
    Perform the same operation as :func:`sub`, but return a tuple ``(new_string,
    number_of_subs_made)``.
-
-   .. versionchanged:: 3.1
-      Added the optional flags argument.
-
-   .. versionchanged:: 3.5
-      Unmatched groups are replaced with an empty string.
 
 
 .. function:: escape(pattern)
@@ -1656,7 +1658,7 @@ because the address has spaces, our splitting pattern, in it:
 .. doctest::
    :options: +NORMALIZE_WHITESPACE
 
-   >>> [re.split(":? ", entry, 3) for entry in entries]
+   >>> [re.split(":? ", entry, maxsplit=3) for entry in entries]
    [['Ross', 'McFluff', '834.345.1254', '155 Elm Street'],
    ['Ronald', 'Heathmore', '892.345.3428', '436 Finley Avenue'],
    ['Frank', 'Burger', '925.541.7625', '662 South Dogwood Way'],
@@ -1669,7 +1671,7 @@ house number from the street name:
 .. doctest::
    :options: +NORMALIZE_WHITESPACE
 
-   >>> [re.split(":? ", entry, 4) for entry in entries]
+   >>> [re.split(":? ", entry, maxsplit=4) for entry in entries]
    [['Ross', 'McFluff', '834.345.1254', '155', 'Elm Street'],
    ['Ronald', 'Heathmore', '892.345.3428', '436', 'Finley Avenue'],
    ['Frank', 'Burger', '925.541.7625', '662', 'South Dogwood Way'],

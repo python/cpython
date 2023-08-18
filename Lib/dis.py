@@ -14,7 +14,7 @@ from opcode import (
     _intrinsic_1_descs,
     _intrinsic_2_descs,
     _specializations,
-    _specialized_instructions,
+    _specialized_opmap,
 )
 
 __all__ = ["code_info", "dis", "disassemble", "distb", "disco",
@@ -49,11 +49,11 @@ CACHE = opmap["CACHE"]
 
 _all_opname = list(opname)
 _all_opmap = dict(opmap)
-_empty_slot = [slot for slot, name in enumerate(_all_opname) if name.startswith("<")]
-for spec_op, specialized in zip(_empty_slot, _specialized_instructions):
+for name, op in _specialized_opmap.items():
     # fill opname and opmap
-    _all_opname[spec_op] = specialized
-    _all_opmap[specialized] = spec_op
+    assert op < len(_all_opname)
+    _all_opname[op] = name
+    _all_opmap[name] = op
 
 deoptmap = {
     specialized: base for base, family in _specializations.items() for specialized in family

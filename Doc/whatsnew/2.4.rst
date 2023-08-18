@@ -1476,7 +1476,7 @@ Some of the changes to Python's build process and to the C API are:
   :c:func:`PyArg_ParseTupleAndKeywords` but takes a  :c:type:`va_list` instead of a
   number of arguments. (Contributed by Greg Chapman.)
 
-* A new method flag, :c:macro:`METH_COEXISTS`, allows a function defined in slots
+* A new method flag, :c:macro:`METH_COEXIST`, allows a function defined in slots
   to co-exist with a :c:type:`PyCFunction` having the same name.  This can halve
   the access time for a method such as :meth:`set.__contains__`.  (Contributed by
   Raymond Hettinger.)

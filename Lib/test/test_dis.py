@@ -196,11 +196,11 @@ dis_bug42562 = """\
 
 # Extended arg followed by NOP
 code_bug_45757 = bytes([
-        0x90, 0x01,  # EXTENDED_ARG 0x01
-        0x09, 0xFF,  # NOP 0xFF
-        0x90, 0x01,  # EXTENDED_ARG 0x01
-        0x64, 0x29,  # LOAD_CONST 0x29
-        0x53, 0x00,  # RETURN_VALUE 0x00
+        opcode.opmap['EXTENDED_ARG'], 0x01,  # EXTENDED_ARG 0x01
+        opcode.opmap['NOP'],          0xFF,  # NOP 0xFF
+        opcode.opmap['EXTENDED_ARG'], 0x01,  # EXTENDED_ARG 0x01
+        opcode.opmap['LOAD_CONST'],   0x29,  # LOAD_CONST 0x29
+        opcode.opmap['RETURN_VALUE'], 0x00,  # RETURN_VALUE 0x00
     ])
 
 dis_bug_45757 = """\
@@ -955,7 +955,7 @@ class DisTests(DisTestBase):
                                         with_offsets)
 
     def test_opmap(self):
-        self.assertEqual(dis.opmap["NOP"], 9)
+        self.assertEqual(dis.opmap["CACHE"], 0)
         self.assertIn(dis.opmap["LOAD_CONST"], dis.hasconst)
         self.assertIn(dis.opmap["STORE_NAME"], dis.hasname)
 
@@ -964,7 +964,6 @@ class DisTests(DisTestBase):
 
     def test_boundaries(self):
         self.assertEqual(dis.opmap["EXTENDED_ARG"], dis.EXTENDED_ARG)
-        self.assertEqual(dis.opmap["STORE_NAME"], dis.HAVE_ARGUMENT)
 
     def test_widths(self):
         long_opcodes = set(['JUMP_BACKWARD_NO_INTERRUPT',
@@ -1967,7 +1966,7 @@ class InstructionTests(InstructionTestCase):
             self.assertEqual(code, baseopcode)
 
         # Specialized instructions
-        for name in opcode._specialized_instructions:
+        for name in opcode._specialized_opmap:
             instruction = Instruction(opname=name, opcode=dis._all_opmap[name], arg=None, argval=None, argrepr='',
                                       offset=0, start_offset=0, starts_line=True, line_number=1, is_jump_target=False, positions=None)
             baseopname = instruction.baseopname
