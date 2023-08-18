@@ -25,17 +25,17 @@ def findall(patterns, line):
             m = pat.search(line, i)
             if m is not None:
                 # Find the longest of the first matches.
-                best_span = min(best_span, (m.begin(), -m.end()))
+                best_span = min(best_span, (m.start(), -m.end()))
                 if best_span == (i, -len(line)):
                     # Matches the rest of line.
                     break
-        begin = best_span[0]
+        start = best_span[0]
         end = -best_span[1]
         if end < 0:
             break
-        yield line[begin:end]
+        yield line[start:end]
         i = end
-        if begin == end:
+        if start == end:
             i += 1
 
 def grep(opts, patterns, file, filename):
@@ -98,7 +98,7 @@ def read_from_file(filename):
               errors=sys.stdin.errors) as f:
         return [line.removesuffix('\n') for line in f.readlines()]
 
-def main():
+def make_parser():
     parser = argparse.ArgumentParser(add_help=False)
     # Add --help option explicitly to avoid conflict in the -h option.
     parser.add_argument('--help',
@@ -188,18 +188,11 @@ def main():
     grp.add_argument('-C', '--context',
             type=int, default=0, metavar='NUM',
             help='Print NUM lines of output context.')
+    return parser
 
+def parse_args():
+    parser = make_parser()
     opts = parser.parse_args()
-
-    patterns = opts.patterns or []
-    if opts.fixed_strings:
-        patterns = [re.escape(pat) for pat in patterns]
-    if opts.line_regexp:
-        patterns = [fr'\A(?:{pat})\Z' for pat in patterns]
-    elif opts.word_regexp:
-        patterns = [fr'\b(?:{pat})\b' for pat in patterns]
-    flags = re.IGNORECASE if opts.ignore_case else 0
-    patterns = [re.compile(pat, flags) for pat in patterns]
 
     # By default print filenames only if more than one file is specified.
     if opts.filename is None:
@@ -223,6 +216,22 @@ def main():
     # Only print group separator for non-zero context.
     if not (opts.after_context or opts.before_context):
         opts.group_separator = None
+    return opts
+
+def compile_patterns(opts):
+    patterns = opts.patterns or []
+    if opts.fixed_strings:
+        patterns = [re.escape(pat) for pat in patterns]
+    if opts.line_regexp:
+        patterns = [fr'\A(?:{pat})\Z' for pat in patterns]
+    elif opts.word_regexp:
+        patterns = [fr'\b(?:{pat})\b' for pat in patterns]
+    flags = re.IGNORECASE if opts.ignore_case else 0
+    return [re.compile(pat, flags) for pat in patterns]
+
+def main():
+    opts = parse_args()
+    patterns = compile_patterns(opts)
 
     found = False
     for filename in opts.files or ['-']:
