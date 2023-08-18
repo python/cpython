@@ -342,6 +342,76 @@ exit:
     return return_value;
 }
 
+static int
+depr_star_init_noinline_impl(PyObject *self, PyObject *a, PyObject *b,
+                             PyObject *c, const char *d, Py_ssize_t d_length);
+
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error "Update the clinic input of '_testclinic.DeprStarInitNoInline.__init__'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ("Update the clinic input of '_testclinic.DeprStarInitNoInline.__init__'.")
+#  else
+#    warning "Update the clinic input of '_testclinic.DeprStarInitNoInline.__init__'."
+#  endif
+#endif
+
+static int
+depr_star_init_noinline(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int return_value = -1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", "b", "c", "d", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .format = "OO|O$s#:DeprStarInitNoInline",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    PyObject *a;
+    PyObject *b;
+    PyObject *c = Py_None;
+    const char *d = "";
+    Py_ssize_t d_length;
+
+    if (nargs > 1 && nargs <= 3) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing more than 1 positional argument to "
+                "_testclinic.DeprStarInitNoInline() is deprecated. Parameters 'b'"
+                " and 'c' will become keyword-only parameters in Python 3.14.", 1))
+        {
+            goto exit;
+        }
+    }
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+        &a, &b, &c, &d, &d_length)) {
+        goto exit;
+    }
+    return_value = depr_star_init_noinline_impl(self, a, b, c, d, d_length);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(depr_kwd_new__doc__,
 "DeprKwdNew(a=None)\n"
 "--\n"
@@ -505,6 +575,79 @@ depr_kwd_init(PyObject *self, PyObject *args, PyObject *kwargs)
     a = fastargs[0];
 skip_optional_pos:
     return_value = depr_kwd_init_impl(self, a);
+
+exit:
+    return return_value;
+}
+
+static int
+depr_kwd_init_noinline_impl(PyObject *self, PyObject *a, PyObject *b,
+                            PyObject *c, const char *d, Py_ssize_t d_length);
+
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error "Update the clinic input of '_testclinic.DeprKwdInitNoInline.__init__'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ("Update the clinic input of '_testclinic.DeprKwdInitNoInline.__init__'.")
+#  else
+#    warning "Update the clinic input of '_testclinic.DeprKwdInitNoInline.__init__'."
+#  endif
+#endif
+
+static int
+depr_kwd_init_noinline(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int return_value = -1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "b", "c", "d", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .format = "OO|Os#:DeprKwdInitNoInline",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    PyObject *a;
+    PyObject *b;
+    PyObject *c = Py_None;
+    const char *d = "";
+    Py_ssize_t d_length;
+
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+        &a, &b, &c, &d, &d_length)) {
+        goto exit;
+    }
+    if ((nargs < 2) || (nargs < 3 && kwargs && PyDict_Contains(kwargs, &_Py_ID(c)))) {
+        if (PyErr_Occurred()) { // PyDict_Contains() above can fail
+            goto exit;
+        }
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing keyword arguments 'b' and 'c' to "
+                "_testclinic.DeprKwdInitNoInline() is deprecated. Corresponding "
+                "parameters will become positional-only in Python 3.14.", 1))
+        {
+            goto exit;
+        }
+    }
+    return_value = depr_kwd_init_noinline_impl(self, a, b, c, d, d_length);
 
 exit:
     return return_value;
@@ -1949,4 +2092,4 @@ depr_kwd_noinline(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b3d2164287f7ab27 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3a52de3a72a21d91 input=a9049054013a1b77]*/

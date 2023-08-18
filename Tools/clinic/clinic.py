@@ -1476,6 +1476,8 @@ class CLanguage(Language):
                             goto exit;
                         }}
                         """, indent=4)]
+                    if deprecated_positionals or deprecated_keywords:
+                        declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"
                 if deprecated_keywords:
                     code = self.deprecate_keyword_use(f, deprecated_keywords, None)
                     parser_code.append(code)

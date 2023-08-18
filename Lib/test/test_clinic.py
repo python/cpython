@@ -3247,6 +3247,19 @@ class ClinicFunctionalTest(unittest.TestCase):
         fn(a=None)
         self.check_depr_star("'a'", fn, None, name='_testclinic.DeprStarInit.cloned')
 
+    def test_depr_star_init_noinline(self):
+        cls = ac_tester.DeprStarInitNoInline
+        self.assertRaises(TypeError, cls, "a")
+        cls(a="a", b="b")
+        cls(a="a", b="b", c="c")
+        cls("a", b="b")
+        cls("a", b="b", c="c")
+        check = partial(self.check_depr_star, "'b' and 'c'", cls)
+        check("a", "b")
+        check("a", "b", "c")
+        check("a", "b", c="c")
+        self.assertRaises(TypeError, cls, "a", "b", "c", "d")
+
     def test_depr_kwd_new(self):
         cls = ac_tester.DeprKwdNew
         cls()
@@ -3258,6 +3271,20 @@ class ClinicFunctionalTest(unittest.TestCase):
         cls()
         cls(None)
         self.check_depr_kwd("'a'", cls, a=None)
+
+    def test_depr_kwd_init_noinline(self):
+        cls = ac_tester.DeprKwdInitNoInline
+        cls = ac_tester.depr_star_noinline
+        self.assertRaises(TypeError, cls, "a")
+        cls(a="a", b="b")
+        cls(a="a", b="b", c="c")
+        cls("a", b="b")
+        cls("a", b="b", c="c")
+        check = partial(self.check_depr_star, "'b' and 'c'", cls)
+        check("a", "b")
+        check("a", "b", "c")
+        check("a", "b", c="c")
+        self.assertRaises(TypeError, cls, "a", "b", "c", "d")
 
     def test_depr_star_pos0_len1(self):
         fn = ac_tester.depr_star_pos0_len1

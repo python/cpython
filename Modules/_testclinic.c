@@ -1299,6 +1299,36 @@ static PyTypeObject DeprStarInit = {
 
 
 /*[clinic input]
+class _testclinic.DeprStarInitNoInline "PyObject *" "PyObject"
+_testclinic.DeprStarInitNoInline.__init__ as depr_star_init_noinline
+    a: object
+    * [from 3.14]
+    b: object
+    c: object = None
+    *
+    # Force to use _PyArg_ParseTupleAndKeywordsFast.
+    d: str(accept={str, robuffer}, zeroes=True) = ''
+[clinic start generated code]*/
+
+static int
+depr_star_init_noinline_impl(PyObject *self, PyObject *a, PyObject *b,
+                             PyObject *c, const char *d, Py_ssize_t d_length)
+/*[clinic end generated code: output=9b31fc167f1bf9f7 input=5a887543122bca48]*/
+{
+    return 0;
+}
+
+static PyTypeObject DeprStarInitNoInline = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_testclinic.DeprStarInitNoInline",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_new = PyType_GenericNew,
+    .tp_init = depr_star_init_noinline,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+};
+
+
+/*[clinic input]
 class _testclinic.DeprKwdNew "PyObject *" "PyObject"
 @classmethod
 _testclinic.DeprKwdNew.__new__ as depr_kwd_new
@@ -1344,6 +1374,36 @@ static PyTypeObject DeprKwdInit = {
     .tp_basicsize = sizeof(PyObject),
     .tp_new = PyType_GenericNew,
     .tp_init = depr_kwd_init,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+};
+
+
+/*[clinic input]
+class _testclinic.DeprKwdInitNoInline "PyObject *" "PyObject"
+_testclinic.DeprKwdInitNoInline.__init__ as depr_kwd_init_noinline
+    a: object
+    /
+    b: object
+    c: object = None
+    / [from 3.14]
+    # Force to use _PyArg_ParseTupleAndKeywordsFast.
+    d: str(accept={str, robuffer}, zeroes=True) = ''
+[clinic start generated code]*/
+
+static int
+depr_kwd_init_noinline_impl(PyObject *self, PyObject *a, PyObject *b,
+                            PyObject *c, const char *d, Py_ssize_t d_length)
+/*[clinic end generated code: output=27759d70ddd25873 input=c19d982c8c70a930]*/
+{
+    return 0;
+}
+
+static PyTypeObject DeprKwdInitNoInline = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_testclinic.DeprKwdInitNoInline",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_new = PyType_GenericNew,
+    .tp_init = depr_kwd_init_noinline,
     .tp_flags = Py_TPFLAGS_DEFAULT,
 };
 
@@ -1749,10 +1809,16 @@ PyInit__testclinic(void)
     if (PyModule_AddType(m, &DeprStarInit) < 0) {
         goto error;
     }
+    if (PyModule_AddType(m, &DeprStarInitNoInline) < 0) {
+        goto error;
+    }
     if (PyModule_AddType(m, &DeprKwdNew) < 0) {
         goto error;
     }
     if (PyModule_AddType(m, &DeprKwdInit) < 0) {
+        goto error;
+    }
+    if (PyModule_AddType(m, &DeprKwdInitNoInline) < 0) {
         goto error;
     }
     return m;
