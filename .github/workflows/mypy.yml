@@ -51,6 +51,4 @@ jobs:
           cache: pip
           cache-dependency-path: Tools/requirements-dev.txt
       - run: pip install -r Tools/requirements-dev.txt
-      - name: Lint with black
-        run: black Tools/cases_generator
       - run: mypy --config-file Tools/cases_generator/mypy.ini
