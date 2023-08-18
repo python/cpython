@@ -600,6 +600,7 @@ The :mod:`struct` module also defines the following type:
    .. versionchanged:: 3.13 The *repr()* of structs has changed.  It
       is now:
 
+         >>> import struct
          >>> struct.Struct('i')
          Struct('i')
 
