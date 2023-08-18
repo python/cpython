@@ -26,10 +26,8 @@ jobs:
         cache-dependency-path: 'Doc/requirements.txt'
     - name: 'Install build dependencies'
       run: make -C Doc/ venv
-    - name: 'Build HTML documentation'
-      run: make -C Doc/ SPHINXOPTS="-q" SPHINXERRORHANDLING="-W --keep-going" html
 
-    # Add pull request annotations for Sphinx nitpicks (missing references)
+    # To annotate PRs with Sphinx nitpicks (missing references)
     - name: 'Get list of changed files'
       if: github.event_name == 'pull_request'
       id: changed_files
@@ -37,24 +35,19 @@ jobs:
       with:
         filter: "Doc/**"
         format: csv  # works for paths with spaces
-    - name: 'Build changed files in nit-picky mode'
-      if: github.event_name == 'pull_request'
+    - name: 'Build HTML documentation'
       continue-on-error: true
       run: |
         set -Eeuo pipefail
-        # Mark files the pull request modified
-        python Doc/tools/touch-clean-files.py --clean '${{ steps.changed_files.outputs.added_modified }}'
-        # Build docs with the '-n' (nit-picky) option; convert warnings to annotations
-        make -C Doc/ PYTHON=../python SPHINXOPTS="-q -n --keep-going" html 2>&1 |
-            python Doc/tools/warnings-to-gh-actions.py
-
-    # Ensure some files always pass Sphinx nit-picky mode (no missing references)
-    - name: 'Build known-good files in nit-picky mode'
+        # Build docs with the '-n' (nit-picky) option; write warnings to file
+        make -C Doc/ PYTHON=../python SPHINXOPTS="-q -n -W --keep-going -w sphinx-warnings.txt" html
+    - name: 'Check warnings'
+      if: github.event_name == 'pull_request'
       run: |
-        # Mark files that must pass nit-picky
-        python Doc/tools/touch-clean-files.py
-        # Build docs with the '-n' (nit-picky) option, convert warnings to errors (-W)
-        make -C Doc/ PYTHON=../python SPHINXOPTS="-q -n -W --keep-going" html 2>&1
+        python Doc/tools/check-warnings.py \
+          --check-and-annotate '${{ steps.changed_files.outputs.added_modified }}' \
+          --fail-if-regression \
+          --fail-if-improved
 
   # This build doesn't use problem matchers or check annotations
   build_doc_oldest_supported_sphinx:
