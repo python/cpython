@@ -406,10 +406,7 @@ depr_kwd_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (!fastargs) {
         goto exit;
     }
-    if (nargs < 1 && kwargs && PyDict_Contains(kwargs, &_Py_ID(a))) {
-        if (PyErr_Occurred()) { // PyDict_Contains() above can fail
-            goto exit;
-        }
+    if (nargs < 1 && fastargs[0]) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing keyword argument 'a' to _testclinic.DeprKwdNew() is "
                 "deprecated. Corresponding parameter will become positional-only "
@@ -493,10 +490,7 @@ depr_kwd_init(PyObject *self, PyObject *args, PyObject *kwargs)
     if (!fastargs) {
         goto exit;
     }
-    if (nargs < 1 && kwargs && PyDict_Contains(kwargs, &_Py_ID(a))) {
-        if (PyErr_Occurred()) { // PyDict_Contains() above can fail
-            goto exit;
-        }
+    if (nargs < 1 && fastargs[0]) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing keyword argument 'a' to _testclinic.DeprKwdInit() is "
                 "deprecated. Corresponding parameter will become positional-only "
@@ -1572,10 +1566,7 @@ depr_kwd_optional_1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if (!args) {
         goto exit;
     }
-    if (nargs < 2 && kwnames && PySequence_Contains(kwnames, &_Py_ID(b))) {
-        if (PyErr_Occurred()) { // PySequence_Contains() above can fail
-            goto exit;
-        }
+    if (nargs < 2 && args[1]) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing keyword argument 'b' to depr_kwd_optional_1() is "
                 "deprecated. Corresponding parameter will become positional-only "
@@ -1662,10 +1653,7 @@ depr_kwd_optional_2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if (!args) {
         goto exit;
     }
-    if ((nargs < 2 && kwnames && PySequence_Contains(kwnames, &_Py_ID(b))) || (nargs < 3 && kwnames && PySequence_Contains(kwnames, &_Py_ID(c)))) {
-        if (PyErr_Occurred()) { // PySequence_Contains() above can fail
-            goto exit;
-        }
+    if ((nargs < 2 && args[1]) || (nargs < 3 && args[2])) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing keyword arguments 'b' and 'c' to depr_kwd_optional_2() "
                 "is deprecated. Corresponding parameters will become "
@@ -1758,10 +1746,7 @@ depr_kwd_optional_3(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if (!args) {
         goto exit;
     }
-    if ((nargs < 1 && kwnames && PySequence_Contains(kwnames, &_Py_ID(a))) || (nargs < 2 && kwnames && PySequence_Contains(kwnames, &_Py_ID(b))) || (nargs < 3 && kwnames && PySequence_Contains(kwnames, &_Py_ID(c)))) {
-        if (PyErr_Occurred()) { // PySequence_Contains() above can fail
-            goto exit;
-        }
+    if ((nargs < 1 && args[0]) || (nargs < 2 && args[1]) || (nargs < 3 && args[2])) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing keyword arguments 'a', 'b' and 'c' to "
                 "depr_kwd_optional_3() is deprecated. Corresponding parameters "
@@ -1859,10 +1844,7 @@ depr_kwd_required_optional(PyObject *module, PyObject *const *args, Py_ssize_t n
     if (!args) {
         goto exit;
     }
-    if ((nargs < 2) || (nargs < 3 && kwnames && PySequence_Contains(kwnames, &_Py_ID(c)))) {
-        if (PyErr_Occurred()) { // PySequence_Contains() above can fail
-            goto exit;
-        }
+    if ((nargs < 2) || (nargs < 3 && args[2])) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing keyword arguments 'b' and 'c' to "
                 "depr_kwd_required_optional() is deprecated. Corresponding "
@@ -1967,4 +1949,4 @@ depr_kwd_noinline(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1e8128d3fce5869f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b3d2164287f7ab27 input=a9049054013a1b77]*/

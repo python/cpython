@@ -974,6 +974,7 @@ class CLanguage(Language):
             self,
             func: Function,
             params: dict[int, Parameter],
+            argname_fmt: str | None,
     ) -> str:
         assert len(params) > 0
         names = [repr(p.name) for p in params.values()]
@@ -994,7 +995,9 @@ class CLanguage(Language):
         conditions = []
         for i, p in params.items():
             if p.is_optional():
-                if func.kind.new_or_init:
+                if argname_fmt:
+                    conditions.append(f"nargs < {i+1} && {argname_fmt % i}")
+                elif func.kind.new_or_init:
                     conditions.append(f"nargs < {i+1} && kwargs && PyDict_Contains(kwargs, &_Py_ID({p.name}))")
                     containscheck = "PyDict_Contains"
                 else:
@@ -1022,9 +1025,10 @@ class CLanguage(Language):
             }}}}"""
         else:
             errcheck = ""
-        # Append deprecation warning to docstring.
-        docstring = textwrap.fill(f"Note: {message}")
-        func.docstring += f"\n\n{docstring}\n"
+        if argname_fmt:
+            # Append deprecation warning to docstring.
+            docstring = textwrap.fill(f"Note: {message}")
+            func.docstring += f"\n\n{docstring}\n"
         # Format and return the code block.
         code = self.DEPRECATION_WARNING_PROTOTYPE.format(
             condition=condition,
@@ -1338,10 +1342,6 @@ class CLanguage(Language):
                     deprecated_positionals[i] = p
                 if p.deprecated_keyword:
                     deprecated_keywords[i] = p
-            deprecated: list[str] = []
-            if deprecated_keywords:
-                code = self.deprecate_keyword_use(f, deprecated_keywords)
-                deprecated.append(code)
 
             has_optional_kw = (max(pos_only, min_pos) + min_kw_only < len(converters) - int(vararg != NO_VARARG))
             if vararg == NO_VARARG:
@@ -1395,7 +1395,9 @@ class CLanguage(Language):
                 flags = 'METH_METHOD|' + flags
                 parser_prototype = self.PARSER_PROTOTYPE_DEF_CLASS
 
-            parser_code.extend(deprecated)
+            if deprecated_keywords:
+                code = self.deprecate_keyword_use(f, deprecated_keywords, argname_fmt)
+                parser_code.append(code)
 
             add_label: str | None = None
             for i, p in enumerate(parameters):
@@ -1474,7 +1476,9 @@ class CLanguage(Language):
                             goto exit;
                         }}
                         """, indent=4)]
-                parser_code.extend(deprecated)
+                if deprecated_keywords:
+                    code = self.deprecate_keyword_use(f, deprecated_keywords, None)
+                    parser_code.append(code)
 
             if deprecated_positionals:
                 code = self.deprecate_positional_use(f, deprecated_positionals)
