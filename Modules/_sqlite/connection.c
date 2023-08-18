@@ -436,12 +436,14 @@ free_callback_contexts(pysqlite_Connection *self)
 static void
 remove_callbacks(sqlite3 *db)
 {
-    if (db == NULL) {
-        return;
-    }
-    sqlite3_trace_v2(db, SQLITE_TRACE_STMT, 0, 0);
+    assert(db != NULL);
+    int rc = sqlite3_trace_v2(db, SQLITE_TRACE_STMT, 0, 0);
+    assert(rc == SQLITE_OK), (void)rc;
+
     sqlite3_progress_handler(db, 0, 0, (void *)0);
-    (void)sqlite3_set_authorizer(db, NULL, NULL);
+
+    rc = sqlite3_set_authorizer(db, NULL, NULL);
+    assert(rc == SQLITE_OK);
 }
 
 static int
@@ -479,7 +481,7 @@ connection_finalize(PyObject *self)
      * tear-down, we must not call back into Python. */
     PyInterpreterState *interp = PyInterpreterState_Get();
     int teardown = _Py_IsInterpreterFinalizing(interp);
-    if (teardown) {
+    if (teardown && con->db) {
         remove_callbacks(con->db);
     }
 
