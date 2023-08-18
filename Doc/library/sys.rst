@@ -338,16 +338,16 @@ always available.
    +-----------------------------+----------------------------------------------+
    | Attribute                   | Explanation                                  |
    +=============================+==============================================+
-   | :const:`emscripten_version` | Emscripten version as tuple of ints          |
+   | :attr:`!emscripten_version` | Emscripten version as tuple of ints          |
    |                             | (major, minor, micro), e.g. ``(3, 1, 8)``.   |
    +-----------------------------+----------------------------------------------+
-   | :const:`runtime`            | Runtime string, e.g. browser user agent,     |
+   | :attr:`!runtime`            | Runtime string, e.g. browser user agent,     |
    |                             | ``'Node.js v14.18.2'``, or ``'UNKNOWN'``.    |
    +-----------------------------+----------------------------------------------+
-   | :const:`pthreads`           | ``True`` if Python is compiled with          |
+   | :attr:`!pthreads`           | ``True`` if Python is compiled with          |
    |                             | Emscripten pthreads support.                 |
    +-----------------------------+----------------------------------------------+
-   | :const:`shared_memory`      | ``True`` if Python is compiled with shared   |
+   | :attr:`!shared_memory`      | ``True`` if Python is compiled with shared   |
    |                             | memory support.                              |
    +-----------------------------+----------------------------------------------+
 
@@ -518,24 +518,24 @@ always available.
    ==============================  ==============================================================================================================
    attribute                       flag
    ==============================  ==============================================================================================================
-   :const:`debug`                  :option:`-d`
-   :const:`inspect`                :option:`-i`
-   :const:`interactive`            :option:`-i`
-   :const:`isolated`               :option:`-I`
-   :const:`optimize`               :option:`-O` or :option:`-OO`
-   :const:`dont_write_bytecode`    :option:`-B`
-   :const:`no_user_site`           :option:`-s`
-   :const:`no_site`                :option:`-S`
-   :const:`ignore_environment`     :option:`-E`
-   :const:`verbose`                :option:`-v`
-   :const:`bytes_warning`          :option:`-b`
-   :const:`quiet`                  :option:`-q`
-   :const:`hash_randomization`     :option:`-R`
-   :const:`dev_mode`               :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
-   :const:`utf8_mode`              :option:`-X utf8 <-X>`
-   :const:`safe_path`              :option:`-P`
-   :const:`int_max_str_digits`     :option:`-X int_max_str_digits <-X>` (:ref:`integer string conversion length limitation <int_max_str_digits>`)
-   :const:`warn_default_encoding`  :option:`-X warn_default_encoding <-X>`
+   :attr:`!debug`                  :option:`-d`
+   :attr:`!inspect`                :option:`-i`
+   :attr:`!interactive`            :option:`-i`
+   :attr:`!isolated`               :option:`-I`
+   :attr:`!optimize`               :option:`-O` or :option:`-OO`
+   :attr:`!dont_write_bytecode`    :option:`-B`
+   :attr:`!no_user_site`           :option:`-s`
+   :attr:`!no_site`                :option:`-S`
+   :attr:`!ignore_environment`     :option:`-E`
+   :attr:`!verbose`                :option:`-v`
+   :attr:`!bytes_warning`          :option:`-b`
+   :attr:`!quiet`                  :option:`-q`
+   :attr:`!hash_randomization`     :option:`-R`
+   :attr:`!dev_mode`               :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
+   :attr:`!utf8_mode`              :option:`-X utf8 <-X>`
+   :attr:`!safe_path`              :option:`-P`
+   :attr:`!int_max_str_digits`     :option:`-X int_max_str_digits <-X>` (:ref:`integer string conversion length limitation <int_max_str_digits>`)
+   :attr:`!warn_default_encoding`  :option:`-X warn_default_encoding <-X>`
    ==============================  ==============================================================================================================
 
    .. versionchanged:: 3.2
@@ -626,9 +626,9 @@ always available.
    |                     |                     | implementation-defined rounding behavior.        |
    +---------------------+---------------------+--------------------------------------------------+
 
-   The attribute :attr:`sys.float_info.dig` needs further explanation.  If
-   ``s`` is any string representing a decimal number with at most
-   :attr:`sys.float_info.dig` significant digits, then converting ``s`` to a
+   The attribute :attr:`!sys.float_info.dig` needs further explanation.
+   If ``s`` is any string representing a decimal number with at most
+   :attr:`!sys.float_info.dig` significant digits, then converting ``s`` to a
    float and back again will recover a string representing the same decimal
    value::
 
@@ -639,7 +639,7 @@ always available.
       >>> format(float(s), '.15g')  # convert to float and back -> same value
       '3.14159265358979'
 
-   But for strings with more than :attr:`sys.float_info.dig` significant digits,
+   But for strings with more than :attr:`!sys.float_info.dig` significant digits,
    this isn't always true::
 
       >>> s = '9876543211234567'    # 16 significant digits is too many!
@@ -902,8 +902,8 @@ always available.
    |                                       | a domain controller.            |
    +---------------------------------------+---------------------------------+
 
-   This function wraps the Win32 :c:func:`GetVersionEx` function; see the
-   Microsoft documentation on :c:func:`OSVERSIONINFOEX` for more information
+   This function wraps the Win32 :c:func:`!GetVersionEx` function; see the
+   Microsoft documentation on :c:func:`!OSVERSIONINFOEX` for more information
    about these fields.
 
    *platform_version* returns the major version, minor version and
@@ -964,23 +964,23 @@ always available.
    +---------------------+--------------------------------------------------+
    | attribute           | explanation                                      |
    +=====================+==================================================+
-   | :const:`width`      | width in bits used for hash values               |
+   | :attr:`!width`      | width in bits used for hash values               |
    +---------------------+--------------------------------------------------+
-   | :const:`modulus`    | prime modulus P used for numeric hash scheme     |
+   | :attr:`!modulus`    | prime modulus P used for numeric hash scheme     |
    +---------------------+--------------------------------------------------+
-   | :const:`inf`        | hash value returned for a positive infinity      |
+   | :attr:`!inf`        | hash value returned for a positive infinity      |
    +---------------------+--------------------------------------------------+
-   | :const:`nan`        | (this attribute is no longer used)               |
+   | :attr:`!nan`        | (this attribute is no longer used)               |
    +---------------------+--------------------------------------------------+
-   | :const:`imag`       | multiplier used for the imaginary part of a      |
+   | :attr:`!imag`       | multiplier used for the imaginary part of a      |
    |                     | complex number                                   |
    +---------------------+--------------------------------------------------+
-   | :const:`algorithm`  | name of the algorithm for hashing of str, bytes, |
+   | :attr:`!algorithm`  | name of the algorithm for hashing of str, bytes, |
    |                     | and memoryview                                   |
    +---------------------+--------------------------------------------------+
-   | :const:`hash_bits`  | internal output size of the hash algorithm       |
+   | :attr:`!hash_bits`  | internal output size of the hash algorithm       |
    +---------------------+--------------------------------------------------+
-   | :const:`seed_bits`  | size of the seed key of the hash algorithm       |
+   | :attr:`!seed_bits`  | size of the seed key of the hash algorithm       |
    +---------------------+--------------------------------------------------+
 
 
@@ -1065,18 +1065,18 @@ always available.
    +----------------------------------------+-----------------------------------------------+
    | Attribute                              | Explanation                                   |
    +========================================+===============================================+
-   | :const:`bits_per_digit`                | number of bits held in each digit.  Python    |
+   | :attr:`!bits_per_digit`                | number of bits held in each digit.  Python    |
    |                                        | integers are stored internally in base        |
    |                                        | ``2**int_info.bits_per_digit``                |
    +----------------------------------------+-----------------------------------------------+
-   | :const:`sizeof_digit`                  | size in bytes of the C type used to           |
+   | :attr:`!sizeof_digit`                  | size in bytes of the C type used to           |
    |                                        | represent a digit                             |
    +----------------------------------------+-----------------------------------------------+
-   | :const:`default_max_str_digits`        | default value for                             |
+   | :attr:`!default_max_str_digits`        | default value for                             |
    |                                        | :func:`sys.get_int_max_str_digits` when it    |
    |                                        | is not otherwise explicitly configured.       |
    +----------------------------------------+-----------------------------------------------+
-   | :const:`str_digits_check_threshold`    | minimum non-zero value for                    |
+   | :attr:`!str_digits_check_threshold`    | minimum non-zero value for                    |
    |                                        | :func:`sys.set_int_max_str_digits`,           |
    |                                        | :envvar:`PYTHONINTMAXSTRDIGITS`, or           |
    |                                        | :option:`-X int_max_str_digits <-X>`.         |
@@ -1512,7 +1512,7 @@ always available.
       :file:`Objects/lnotab_notes.txt` for a detailed explanation of how this
       works.
       Per-line events may be disabled for a frame by setting
-      :attr:`f_trace_lines` to :const:`False` on that frame.
+      :attr:`!f_trace_lines` to :const:`False` on that frame.
 
    ``'return'``
       A function (or other code block) is about to return.  The local trace
@@ -1530,7 +1530,7 @@ always available.
       opcode details).  The local trace function is called; *arg* is
       ``None``; the return value specifies the new local trace function.
       Per-opcode events are not emitted by default: they must be explicitly
-      requested by setting :attr:`f_trace_opcodes` to :const:`True` on the
+      requested by setting :attr:`!f_trace_opcodes` to :const:`True` on the
       frame.
 
    Note that as an exception is propagated down the chain of callers, an
@@ -1560,8 +1560,8 @@ always available.
 
    .. versionchanged:: 3.7
 
-      ``'opcode'`` event type added; :attr:`f_trace_lines` and
-      :attr:`f_trace_opcodes` attributes added to frames
+      ``'opcode'`` event type added; :attr:`!f_trace_lines` and
+      :attr:`!f_trace_opcodes` attributes added to frames
 
 .. function:: set_asyncgen_hooks(firstiter, finalizer)
 
@@ -1718,7 +1718,7 @@ always available.
       However, if you are writing a library (and do not control in which
       context its code will be executed), be aware that the standard streams
       may be replaced with file-like objects like :class:`io.StringIO` which
-      do not support the :attr:`~io.BufferedIOBase.buffer` attribute.
+      do not support the :attr:!buffer` attribute.
 
 
 .. data:: __stdin__
@@ -1771,7 +1771,7 @@ always available.
    +------------------+---------------------------------------------------------+
    | Attribute        | Explanation                                             |
    +==================+=========================================================+
-   | :const:`name`    | Name of the thread implementation:                      |
+   | :attr:`!name`    | Name of the thread implementation:                      |
    |                  |                                                         |
    |                  |  * ``'nt'``: Windows threads                            |
    |                  |  * ``'pthread'``: POSIX threads                         |
@@ -1779,14 +1779,14 @@ always available.
    |                  |    (on WebAssembly platforms without threading support) |
    |                  |  * ``'solaris'``: Solaris threads                       |
    +------------------+---------------------------------------------------------+
-   | :const:`lock`    | Name of the lock implementation:                        |
+   | :attr:`!lock`    | Name of the lock implementation:                        |
    |                  |                                                         |
    |                  |  * ``'semaphore'``: a lock uses a semaphore             |
    |                  |  * ``'mutex+cond'``: a lock uses a mutex                |
    |                  |    and a condition variable                             |
    |                  |  * ``None`` if this information is unknown              |
    +------------------+---------------------------------------------------------+
-   | :const:`version` | Name and version of the thread library. It is a string, |
+   | :attr:`!version` | Name and version of the thread library. It is a string, |
    |                  | or ``None`` if this information is unknown.             |
    +------------------+---------------------------------------------------------+
 
