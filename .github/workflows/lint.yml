@@ -18,9 +18,5 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
-          cache: pip
-          cache-dependency-path: Tools/requirements-dev.txt
+          python-version: "3.x"
       - uses: pre-commit/action@v3.0.0
-      - run: pip install -r Tools/requirements-dev.txt
-      - run: black --check Tools/cases_generator
