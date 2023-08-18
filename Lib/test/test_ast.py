@@ -21,8 +21,8 @@ from test.support.ast_helper import ASTTestMixin
 def to_tuple(t):
     if t is None or isinstance(t, (str, int, complex)) or t is Ellipsis:
         return t
-    elif isinstance(t, list):
-        return [to_tuple(e) for e in t]
+    elif isinstance(t, (list, tuple)):
+        return type(t)([to_tuple(e) for e in t])
     result = [t.__class__.__name__]
     if hasattr(t, 'lineno') and hasattr(t, 'col_offset'):
         result.append((t.lineno, t.col_offset))
@@ -274,7 +274,7 @@ eval_tests = [
   # Tuple
   "1,2,3",
   # Tuple
-  "(1,2,3)",
+  "(1,x,3)",
   # Empty tuple
   "()",
   # Combination
@@ -356,6 +356,15 @@ class AST_Tests(unittest.TestCase):
         for snippet in snippets_to_validate:
             tree = ast.parse(snippet)
             compile(tree, '<string>', 'exec')
+
+    def test_optimization_levels(self):
+        cases = [(-1, __debug__), (0, True), (1, False), (2, False)]
+        for (optval, expected) in cases:
+            with self.subTest(optval=optval, expected=expected):
+                res = ast.parse("__debug__", optimize=optval)
+                self.assertIsInstance(res.body[0], ast.Expr)
+                self.assertIsInstance(res.body[0].value, ast.Constant)
+                self.assertEqual(res.body[0].value.value, expected)
 
     def test_invalid_position_information(self):
         invalid_linenos = [
@@ -948,7 +957,7 @@ class AST_Tests(unittest.TestCase):
             self.assertRaises(TypeError, ast.parse, '\u03D5')
 
     def test_issue18374_binop_col_offset(self):
-        tree = ast.parse('4+5+6+7')
+        tree = ast.parse('a+b+c+d')
         parent_binop = tree.body[0].value
         child_binop = parent_binop.left
         grandchild_binop = child_binop.left
@@ -959,7 +968,7 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(grandchild_binop.col_offset, 0)
         self.assertEqual(grandchild_binop.end_col_offset, 3)
 
-        tree = ast.parse('4+5-\\\n 6-7')
+        tree = ast.parse('a+b-\\\n c-d')
         parent_binop = tree.body[0].value
         child_binop = parent_binop.left
         grandchild_binop = child_binop.left
@@ -1266,13 +1275,14 @@ Module(
         )
 
     def test_copy_location(self):
-        src = ast.parse('1 + 1', mode='eval')
+        src = ast.parse('x + 1', mode='eval')
         src.body.right = ast.copy_location(ast.Constant(2), src.body.right)
         self.assertEqual(ast.dump(src, include_attributes=True),
-            'Expression(body=BinOp(left=Constant(value=1, lineno=1, col_offset=0, '
-            'end_lineno=1, end_col_offset=1), op=Add(), right=Constant(value=2, '
-            'lineno=1, col_offset=4, end_lineno=1, end_col_offset=5), lineno=1, '
-            'col_offset=0, end_lineno=1, end_col_offset=5))'
+            "Expression(body=BinOp(left=Name(id='x', ctx=Load(), lineno=1, "
+            "col_offset=0, end_lineno=1, end_col_offset=1), op=Add(), "
+            "right=Constant(value=2, lineno=1, col_offset=4, end_lineno=1, "
+            "end_col_offset=5), lineno=1, col_offset=0, end_lineno=1, "
+            "end_col_offset=5))"
         )
         src = ast.Call(col_offset=1, lineno=1, end_lineno=1, end_col_offset=1)
         new = ast.copy_location(src, ast.Call(col_offset=None, lineno=None))
@@ -1302,20 +1312,22 @@ Module(
         )
 
     def test_increment_lineno(self):
-        src = ast.parse('1 + 1', mode='eval')
+        src = ast.parse('x + 1', mode='eval')
         self.assertEqual(ast.increment_lineno(src, n=3), src)
         self.assertEqual(ast.dump(src, include_attributes=True),
-            'Expression(body=BinOp(left=Constant(value=1, lineno=4, col_offset=0, '
-            'end_lineno=4, end_col_offset=1), op=Add(), right=Constant(value=1, '
+            'Expression(body=BinOp(left=Name(id=\'x\', ctx=Load(), '
+            'lineno=4, col_offset=0, end_lineno=4, end_col_offset=1), '
+            'op=Add(), right=Constant(value=1, '
             'lineno=4, col_offset=4, end_lineno=4, end_col_offset=5), lineno=4, '
             'col_offset=0, end_lineno=4, end_col_offset=5))'
         )
         # issue10869: do not increment lineno of root twice
-        src = ast.parse('1 + 1', mode='eval')
+        src = ast.parse('y + 2', mode='eval')
         self.assertEqual(ast.increment_lineno(src.body, n=3), src.body)
         self.assertEqual(ast.dump(src, include_attributes=True),
-            'Expression(body=BinOp(left=Constant(value=1, lineno=4, col_offset=0, '
-            'end_lineno=4, end_col_offset=1), op=Add(), right=Constant(value=1, '
+            'Expression(body=BinOp(left=Name(id=\'y\', ctx=Load(), '
+            'lineno=4, col_offset=0, end_lineno=4, end_col_offset=1), '
+            'op=Add(), right=Constant(value=2, '
             'lineno=4, col_offset=4, end_lineno=4, end_col_offset=5), lineno=4, '
             'col_offset=0, end_lineno=4, end_col_offset=5))'
         )
@@ -1446,9 +1458,9 @@ Module(
         self.assertEqual(ast.literal_eval('+3.25'), 3.25)
         self.assertEqual(ast.literal_eval('-3.25'), -3.25)
         self.assertEqual(repr(ast.literal_eval('-0.0')), '-0.0')
-        self.assertRaises(ValueError, ast.literal_eval, '++6')
-        self.assertRaises(ValueError, ast.literal_eval, '+True')
-        self.assertRaises(ValueError, ast.literal_eval, '2+3')
+        self.assertEqual(ast.literal_eval('++6'), 6)
+        self.assertEqual(ast.literal_eval('+True'), 1)
+        self.assertEqual(ast.literal_eval('2+3'), 5)
 
     def test_literal_eval_str_int_limit(self):
         with support.adjust_int_max_str_digits(4000):
@@ -1473,11 +1485,11 @@ Module(
         self.assertEqual(ast.literal_eval('3.25-6.75j'), 3.25-6.75j)
         self.assertEqual(ast.literal_eval('-3.25-6.75j'), -3.25-6.75j)
         self.assertEqual(ast.literal_eval('(3+6j)'), 3+6j)
-        self.assertRaises(ValueError, ast.literal_eval, '-6j+3')
-        self.assertRaises(ValueError, ast.literal_eval, '-6j+3j')
-        self.assertRaises(ValueError, ast.literal_eval, '3+-6j')
-        self.assertRaises(ValueError, ast.literal_eval, '3+(0+6j)')
-        self.assertRaises(ValueError, ast.literal_eval, '-(3+6j)')
+        self.assertEqual(ast.literal_eval('-6j+3'), 3-6j)
+        self.assertEqual(ast.literal_eval('-6j+3j'), -3j)
+        self.assertEqual(ast.literal_eval('3+-6j'), 3-6j)
+        self.assertEqual(ast.literal_eval('3+(0+6j)'), 3+6j)
+        self.assertEqual(ast.literal_eval('-(3+6j)'), -3-6j)
 
     def test_literal_eval_malformed_dict_nodes(self):
         malformed = ast.Dict(keys=[ast.Constant(1), ast.Constant(2)], values=[ast.Constant(3)])
@@ -1494,7 +1506,7 @@ Module(
     def test_literal_eval_malformed_lineno(self):
         msg = r'malformed node or string on line 3:'
         with self.assertRaisesRegex(ValueError, msg):
-            ast.literal_eval("{'a': 1,\n'b':2,\n'c':++3,\n'd':4}")
+            ast.literal_eval("{'a': 1,\n'b':2,\n'c':++x,\n'd':4}")
 
         node = ast.UnaryOp(
             ast.UAdd(), ast.UnaryOp(ast.UAdd(), ast.Constant(6)))
@@ -2265,7 +2277,7 @@ class ConstantTests(unittest.TestCase):
                          consts)
 
     def test_literal_eval(self):
-        tree = ast.parse("1 + 2")
+        tree = ast.parse("x + 2")
         binop = tree.body[0].value
 
         new_left = ast.Constant(value=10)
@@ -2479,14 +2491,14 @@ class EndPositionTests(unittest.TestCase):
 
     def test_binop(self):
         s = dedent('''
-            (1 * 2 + (3 ) +
+            (1 * x + (3 ) +
                  4
             )
         ''').strip()
         binop = self._parse_value(s)
         self._check_end_pos(binop, 2, 6)
         self._check_content(s, binop.right, '4')
-        self._check_content(s, binop.left, '1 * 2 + (3 )')
+        self._check_content(s, binop.left, '1 * x + (3 )')
         self._check_content(s, binop.left.right, '3')
 
     def test_boolop(self):
@@ -3039,7 +3051,7 @@ exec_results = [
 ('Module', [('FunctionDef', (1, 0, 1, 38), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (1, 34, 1, 38))], [], None, None, [('TypeVar', (1, 6, 1, 19), 'T', ('Tuple', (1, 9, 1, 19), [('Name', (1, 10, 1, 13), 'int', ('Load',)), ('Name', (1, 15, 1, 18), 'str', ('Load',))], ('Load',))), ('TypeVarTuple', (1, 21, 1, 24), 'Ts'), ('ParamSpec', (1, 26, 1, 29), 'P')])], []),
 ]
 single_results = [
-('Interactive', [('Expr', (1, 0, 1, 3), ('BinOp', (1, 0, 1, 3), ('Constant', (1, 0, 1, 1), 1, None), ('Add',), ('Constant', (1, 2, 1, 3), 2, None)))]),
+('Interactive', [('Expr', (1, 0, 1, 3), ('Constant', (1, 0, 1, 3), 3, None))]),
 ]
 eval_results = [
 ('Expression', ('Constant', (1, 0, 1, 4), None, None)),
@@ -3073,9 +3085,9 @@ eval_results = [
 ('Expression', ('Name', (1, 0, 1, 1), 'v', ('Load',))),
 ('Expression', ('List', (1, 0, 1, 7), [('Constant', (1, 1, 1, 2), 1, None), ('Constant', (1, 3, 1, 4), 2, None), ('Constant', (1, 5, 1, 6), 3, None)], ('Load',))),
 ('Expression', ('List', (1, 0, 1, 2), [], ('Load',))),
-('Expression', ('Tuple', (1, 0, 1, 5), [('Constant', (1, 0, 1, 1), 1, None), ('Constant', (1, 2, 1, 3), 2, None), ('Constant', (1, 4, 1, 5), 3, None)], ('Load',))),
-('Expression', ('Tuple', (1, 0, 1, 7), [('Constant', (1, 1, 1, 2), 1, None), ('Constant', (1, 3, 1, 4), 2, None), ('Constant', (1, 5, 1, 6), 3, None)], ('Load',))),
-('Expression', ('Tuple', (1, 0, 1, 2), [], ('Load',))),
+('Expression', ('Constant', (1, 0, 1, 5), (1, 2, 3), None)),
+('Expression', ('Tuple', (1, 0, 1, 7), [('Constant', (1, 1, 1, 2), 1, None), ('Name', (1, 3, 1, 4), 'x', ('Load',)), ('Constant', (1, 5, 1, 6), 3, None)], ('Load',))),
+('Expression', ('Constant', (1, 0, 1, 2), (), None)),
 ('Expression', ('Call', (1, 0, 1, 17), ('Attribute', (1, 0, 1, 7), ('Attribute', (1, 0, 1, 5), ('Attribute', (1, 0, 1, 3), ('Name', (1, 0, 1, 1), 'a', ('Load',)), 'b', ('Load',)), 'c', ('Load',)), 'd', ('Load',)), [('Subscript', (1, 8, 1, 16), ('Attribute', (1, 8, 1, 11), ('Name', (1, 8, 1, 9), 'a', ('Load',)), 'b', ('Load',)), ('Slice', (1, 12, 1, 15), ('Constant', (1, 12, 1, 13), 1, None), ('Constant', (1, 14, 1, 15), 2, None), None), ('Load',))], [])),
 ]
 main()

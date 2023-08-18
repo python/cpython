@@ -32,7 +32,7 @@ from enum import IntEnum, auto, _simple_enum
 
 
 def parse(source, filename='<unknown>', mode='exec', *,
-          type_comments=False, feature_version=None):
+          type_comments=False, feature_version=None, optimize=-1):
     """
     Parse the source into an AST node.
     Equivalent to compile(source, filename, mode, PyCF_ONLY_AST).
@@ -50,7 +50,7 @@ def parse(source, filename='<unknown>', mode='exec', *,
         feature_version = minor
     # Else it should be an int giving the minor version for 3.x.
     return compile(source, filename, mode, flags,
-                   _feature_version=feature_version)
+                   _feature_version=feature_version, optimize=optimize)
 
 
 def literal_eval(node_or_string):
@@ -63,7 +63,7 @@ def literal_eval(node_or_string):
     Caution: A complex expression can overflow the C stack and cause a crash.
     """
     if isinstance(node_or_string, str):
-        node_or_string = parse(node_or_string.lstrip(" \t"), mode='eval')
+        node_or_string = parse(node_or_string.lstrip(" \t"), mode='eval', optimize=0)
     if isinstance(node_or_string, Expression):
         node_or_string = node_or_string.body
     def _raise_malformed_node(node):

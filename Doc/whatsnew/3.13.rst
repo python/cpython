@@ -85,6 +85,10 @@ Other Language Changes
   This change will affect tools using docstrings, like :mod:`doctest`.
   (Contributed by Inada Naoki in :gh:`81283`.)
 
+* The :func:`compile` built-in no longer ignores the ``optimize`` argument
+  when called with the ``ast.PyCF_ONLY_AST`` flag.
+  (Contributed by Irit Katriel in :gh:`108113`).
+
 New Modules
 ===========
 
@@ -93,6 +97,16 @@ New Modules
 
 Improved Modules
 ================
+
+ast
+---
+
+* :func:`ast.parse` and :func:`ast.literal_eval` now perform constant folding
+  and other AST optimizations. This means that AST are more concise, and
+  :func:`ast.literal_eval` understands and collapses const expressions.
+  :func:`ast.parse` also accepts a new optional argument ``optimize``, which
+  it forwards to the :func:`compile` built-in.
+  (Contributed by Irit Katriel in :gh:`108113`).
 
 array
 -----
