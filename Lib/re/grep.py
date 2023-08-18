@@ -1,7 +1,9 @@
-import sys
 import argparse
-import re
 from collections import deque
+import fnmatch
+import os
+import re
+import sys
 
 
 def find(patterns, line):
@@ -188,6 +190,15 @@ def make_parser():
     grp.add_argument('-C', '--context',
             type=int, default=0, metavar='NUM',
             help='Print NUM lines of output context.')
+
+    grp = parser.add_argument_group('File and Directory Selection')
+    grp.add_argument('-r', '--recursive',
+            action='store_true',
+            help='Read all files under each directory, recursively.')
+    grp.add_argument('--include',
+            action='append',
+            metavar='GLOB',
+            help='Search only files whose base name matches GLOB (using wildcard matching).')
     return parser
 
 def parse_args():
@@ -229,13 +240,35 @@ def compile_patterns(opts):
     flags = re.IGNORECASE if opts.ignore_case else 0
     return [re.compile(pat, flags) for pat in patterns]
 
+def filter_file(opts, filename):
+    return not opts.include or any(fnmatch.fnmatch(filename, pat)
+                                   for pat in opts.include)
+
+def iter_files(opts):
+    for arg in opts.files or ['-']:
+        if arg == '-':
+            yield None
+        elif os.path.isfile(arg):
+            if filter_file(opts, os.path.basename(arg)):
+                yield arg
+        elif os.path.isdir(arg):
+            if not opts.recursive:
+                print(f'error: {arg!r} is a directory', file=sys.stderr)
+                continue
+            for dirpath, dirnames, filenames in os.walk(arg):
+                for filename in filenames:
+                    if filter_file(opts, filename):
+                        yield os.path.join(dirpath, filename)
+        else:
+            print(f'error: {arg!r} has unsupported type', file=sys.stderr)
+
 def main():
     opts = parse_args()
     patterns = compile_patterns(opts)
 
     found = False
-    for filename in opts.files or ['-']:
-        if filename == '-':
+    for filename in iter_files(opts):
+        if filename is None:
             found |= grep(opts, patterns, sys.stdin, opts.label)
         else:
             with open(filename, encoding=sys.stdin.encoding,
@@ -252,6 +285,6 @@ if __name__ == '__main__':
     except SystemExit:
         raise
     except BaseException as e:
-        print(f'error: {e!r}')
+        print(f'error: {e!r}', file=sys.stderr)
         sys.exit(2)
     sys.exit(0 if found else 1)
