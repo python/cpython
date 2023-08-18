@@ -1,6 +1,10 @@
 :mod:`struct` --- Interpret bytes as packed binary data
 =======================================================
 
+.. testsetup:: *
+
+   from struct import *
+
 .. module:: struct
    :synopsis: Interpret bytes as packed binary data.
 
