@@ -41,11 +41,13 @@ class EnvBuilder:
                      environment
     :param prompt: Alternative terminal prefix for the environment.
     :param upgrade_deps: Update the base venv modules to the latest on PyPI
+    :param gitignore: Create a .gitignore file in the environment directory
+                      which causes it to be ignored by git.
     """
 
     def __init__(self, system_site_packages=False, clear=False,
                  symlinks=False, upgrade=False, with_pip=False, prompt=None,
-                 upgrade_deps=False):
+                 upgrade_deps=False, *, gitignore=False):
         self.system_site_packages = system_site_packages
         self.clear = clear
         self.symlinks = symlinks
@@ -56,6 +58,7 @@ class EnvBuilder:
             prompt = os.path.basename(os.getcwd())
         self.prompt = prompt
         self.upgrade_deps = upgrade_deps
+        self.gitignore = gitignore
 
     def create(self, env_dir):
         """
@@ -66,6 +69,8 @@ class EnvBuilder:
         """
         env_dir = os.path.abspath(env_dir)
         context = self.ensure_directories(env_dir)
+        if self.gitignore:
+            self._setup_gitignore(context)
         # See issue 24875. We need system_site_packages to be False
         # until after pip is installed.
         true_system_site_packages = self.system_site_packages
@@ -210,6 +215,8 @@ class EnvBuilder:
                 args.append('--upgrade-deps')
             if self.orig_prompt is not None:
                 args.append(f'--prompt="{self.orig_prompt}"')
+            if not self.gitignore:
+                args.append('--without-gitignore')
 
             args.append(context.env_dir)
             args = ' '.join(args)
@@ -277,6 +284,19 @@ class EnvBuilder:
                 return
 
             shutil.copyfile(src, dst)
+
+    def _setup_gitignore(self, context):
+        """
+        Create a .gitignore file in the environment directory.
+
+        The contents of the file cause the entire environment directory to be
+        ignored by git.
+        """
+        gitignore_path = os.path.join(context.env_dir, '.gitignore')
+        with open(gitignore_path, 'w', encoding='utf-8') as file:
+            file.write('# Created by venv; '
+                       'see https://docs.python.org/3/library/venv.html\n')
+            file.write('*\n')
 
     def setup_python(self, context):
         """
@@ -461,11 +481,13 @@ class EnvBuilder:
 
 
 def create(env_dir, system_site_packages=False, clear=False,
-           symlinks=False, with_pip=False, prompt=None, upgrade_deps=False):
+           symlinks=False, with_pip=False, prompt=None, upgrade_deps=False,
+           *, gitignore=False):
     """Create a virtual environment in a directory."""
     builder = EnvBuilder(system_site_packages=system_site_packages,
                          clear=clear, symlinks=symlinks, with_pip=with_pip,
-                         prompt=prompt, upgrade_deps=upgrade_deps)
+                         prompt=prompt, upgrade_deps=upgrade_deps,
+                         gitignore=gitignore)
     builder.create(env_dir)
 
 
@@ -525,6 +547,11 @@ def main(args=None):
                         dest='upgrade_deps',
                         help=f'Upgrade core dependencies ({", ".join(CORE_VENV_DEPS)}) '
                              'to the latest version in PyPI')
+    parser.add_argument('--without-gitignore', dest='gitignore',
+                        default=True, action='store_false',
+                        help='Skips adding a .gitignore file to the '
+                             'environment directory which causes git to ignore '
+                             'the environment directory.')
     options = parser.parse_args(args)
     if options.upgrade and options.clear:
         raise ValueError('you cannot supply --upgrade and --clear together.')
@@ -534,7 +561,8 @@ def main(args=None):
                          upgrade=options.upgrade,
                          with_pip=options.with_pip,
                          prompt=options.prompt,
-                         upgrade_deps=options.upgrade_deps)
+                         upgrade_deps=options.upgrade_deps,
+                         gitignore=options.gitignore)
     for d in options.dirs:
         builder.create(d)
 

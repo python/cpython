@@ -137,7 +137,8 @@ class BasicTest(BaseTest):
         self.assertIn('executable = %s' %
                       os.path.realpath(sys.executable), data)
         copies = '' if os.name=='nt' else ' --copies'
-        cmd = f'command = {sys.executable} -m venv{copies} --without-pip {self.env_dir}'
+        cmd = (f'command = {sys.executable} -m venv{copies} --without-pip '
+               f'--without-gitignore {self.env_dir}')
         self.assertIn(cmd, data)
         fn = self.get_env_file(self.bindir, self.exe)
         if not os.path.exists(fn):  # diagnostics for Windows buildbot failures
@@ -156,14 +157,16 @@ class BasicTest(BaseTest):
             ('upgrade', '--upgrade'),
             ('upgrade_deps', '--upgrade-deps'),
             ('prompt', '--prompt'),
+            ('gitignore', '--without-gitignore'),
         ]
+        negated_attrs = {'with_pip', 'symlinks', 'gitignore'}
         for attr, opt in attrs:
             rmtree(self.env_dir)
             if not attr:
                 b = venv.EnvBuilder()
             else:
                 b = venv.EnvBuilder(
-                    **{attr: False if attr in ('with_pip', 'symlinks') else True})
+                    **{attr: False if attr in negated_attrs else True})
             b.upgrade_dependencies = Mock() # avoid pip command to upgrade deps
             b._setup_pip = Mock() # avoid pip setup
             self.run_with_capture(b.create, self.env_dir)
@@ -586,6 +589,7 @@ class BasicTest(BaseTest):
                "-m",
                "venv",
                "--without-pip",
+               "--without-gitignore",
                self.env_dir]
         # Our fake non-installed python is not fully functional because
         # it cannot find the extensions. Set PYTHONPATH so it can run the
@@ -632,6 +636,16 @@ class BasicTest(BaseTest):
             for i, line in enumerate(script, 1):
                 error_message = f"CR LF found in line {i}"
                 self.assertFalse(line.endswith(b'\r\n'), error_message)
+
+    def test_gitignore(self):
+        """
+        Test that a .gitignore file is created when requested.
+        The file should contain a `*\n` line.
+        """
+        self.run_with_capture(venv.create, self.env_dir, gitignore=True)
+        file_lines = self.get_text_file_contents('.gitignore').splitlines()
+        self.assertIn('*', file_lines)
+
 
 @requireVenvCreate
 class EnsurePipTest(BaseTest):

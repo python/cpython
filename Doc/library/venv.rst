@@ -143,7 +143,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
 .. class:: EnvBuilder(system_site_packages=False, clear=False, \
                       symlinks=False, upgrade=False, with_pip=False, \
-                      prompt=None, upgrade_deps=False)
+                      prompt=None, upgrade_deps=False, \*, gitignore=False)
 
     The :class:`EnvBuilder` class accepts the following keyword arguments on
     instantiation:
@@ -172,6 +172,10 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
     * ``upgrade_deps`` -- Update the base venv modules to the latest on PyPI
 
+    * ``gitignore`` -- a Boolean value which, if true, will create a
+      ``.gitignore`` file in the target directory, containing ``*`` to have the
+      environment ignored by git.
+
     .. versionchanged:: 3.4
        Added the ``with_pip`` parameter
 
@@ -180,6 +184,9 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
     .. versionadded:: 3.9
        Added the ``upgrade_deps`` parameter
+
+    .. versionadded:: 3.13
+       Added the ``gitignore`` parameter
 
     Creators of third-party virtual environment tools will be free to use the
     provided :class:`EnvBuilder` class as a base class.
@@ -343,7 +350,7 @@ There is also a module-level convenience function:
 
 .. function:: create(env_dir, system_site_packages=False, clear=False, \
                      symlinks=False, with_pip=False, prompt=None, \
-                     upgrade_deps=False)
+                     upgrade_deps=False, \*, gitignore=False)
 
     Create an :class:`EnvBuilder` with the given keyword arguments, and call its
     :meth:`~EnvBuilder.create` method with the *env_dir* argument.
