@@ -437,6 +437,8 @@ free_callback_contexts(pysqlite_Connection *self)
 static void
 remove_callbacks(sqlite3 *db)
 {
+    /* None of these APIs can fail, as long as they are given a valid
+     * database pointer. */
     assert(db != NULL);
     int rc = sqlite3_trace_v2(db, SQLITE_TRACE_STMT, 0, 0);
     assert(rc == SQLITE_OK), (void)rc;
