@@ -379,7 +379,7 @@ class Generator(Analyzer):
         # Compute the set of all instruction formats.
         all_formats: set[str] = set()
         for thing in self.everything:
-            format: str | None
+            format: str | None = None
             match thing:
                 case OverriddenInstructionPlaceHolder():
                     continue
