@@ -1968,18 +1968,18 @@ parameter *e*::
 
 We now want to make the *b* parameter positional-only and the *d* parameter
 keyword-only;
-however, we'll have to wait two releases before making this change,
+however, we'll have to wait two releases before making these changes,
 as mandated by Python's backwards-compatibility policy (see :pep:`387`).
 For this example, imagine we're in the development phase for Python 3.12:
 that means we'll be allowed to introduce deprecation warnings in Python 3.12
 whenever an argument for the *b* parameter is passed by keyword or an argument
 for the *d* parameter is passed positionally, and we'll be allowed to make
-them positional-only and keyword-only correspondingly in Python 3.14 at
+them positional-only and keyword-only respectively in Python 3.14 at
 the earliest.
 
 We can use Argument Clinic to emit the desired deprecation warnings
 using the ``[from ...]`` syntax, by adding the line ``/ [from 3.14]`` right
-below the *b* parameter and adding the line ``/ [from 3.14]`` right above
+below the *b* parameter and adding the line ``* [from 3.14]`` right above
 the *d* parameter::
 
    /*[clinic input]

@@ -5497,6 +5497,7 @@ class DSLParser:
                 )
 
     def parse_version(self, thenceforth: str) -> VersionTuple:
+        """Parse Python version in `[from ...]` marker."""
         assert isinstance(self.function, Function)
 
         try:
@@ -5509,7 +5510,11 @@ class DSLParser:
             )
 
     def parse_star(self, function: Function, version: VersionTuple | None) -> None:
-        """Parse keyword-only parameter marker '*'."""
+        """Parse keyword-only parameter marker '*'.
+
+        The 'version' parameter signifies the future version from which
+        the marker will take effect (None means it is already in effect).
+        """
         if version is None:
             if self.keyword_only:
                 fail(f"Function {function.name!r} uses '*' more than once.")
@@ -5555,7 +5560,11 @@ class DSLParser:
                      f"(Unexpected state {st}.c)")
 
     def parse_slash(self, function: Function, version: VersionTuple | None) -> None:
-        """Parse positional-only parameter marker '/'."""
+        """Parse positional-only parameter marker '/'.
+
+        The 'version' parameter signifies the future version from which
+        the marker will take effect (None means it is already in effect).
+        """
         if version is None:
             if self.deprecated_keyword:
                 fail(f"Function {function.name!r}: '/' must precede '/ [from ...]'")
