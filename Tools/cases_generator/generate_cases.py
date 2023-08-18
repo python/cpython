@@ -181,7 +181,11 @@ class Generator(Analyzer):
                     assert target_instr
                     target_popped = effect_str(target_instr.input_effects)
                     target_pushed = effect_str(target_instr.output_effects)
+                if popped is None and pushed is None:
                     popped, pushed = target_popped, target_pushed
+                else:
+                    assert popped == target_popped
+                    assert pushed == target_pushed
             case _:
                 typing.assert_never(thing)
         return instr, popped, pushed
@@ -391,7 +395,11 @@ class Generator(Analyzer):
                         assert target_instr
                         if format is None:
                             format = target_instr.instr_fmt
+                        else:
+                            assert format == target_instr.instr_fmt
                     assert format is not None
+                case _:
+                    typing.assert_never(thing)
             all_formats.add(format)
 
         # Turn it into a sorted list of enum values.
@@ -480,6 +488,8 @@ class Generator(Analyzer):
                             self.write_metadata_for_pseudo(
                                 self.pseudo_instrs[thing.name]
                             )
+                        case _:
+                            typing.assert_never(thing)
 
             with self.metadata_item(
                 "const struct opcode_macro_expansion "
@@ -515,6 +525,8 @@ class Generator(Analyzer):
                             )
                         case parsing.Pseudo():
                             pass
+                        case _:
+                            typing.assert_never(thing)
 
             with self.metadata_item(
                 "const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE]", "=", ";"
@@ -762,6 +774,8 @@ class Generator(Analyzer):
                         # self.write_macro(self.macro_instrs[thing.name])
                     case parsing.Pseudo():
                         pass
+                    case _:
+                        typing.assert_never(thing)
 
         print(
             f"Wrote {n_instrs} instructions and {n_macros} macros "
@@ -804,6 +818,8 @@ class Generator(Analyzer):
                         pass
                     case parsing.Pseudo():
                         pass
+                    case _:
+                        typing.assert_never(thing)
         print(
             f"Wrote {n_instrs} instructions and {n_uops} ops to {executor_filename}",
             file=sys.stderr,
