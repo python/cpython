@@ -4,6 +4,7 @@ Writes the cases to generated_cases.c.h, which is #included in ceval.c.
 """
 
 import argparse
+import collections
 import contextlib
 import itertools
 import os
@@ -194,7 +195,7 @@ class Generator(Analyzer):
     @contextlib.contextmanager
     def metadata_item(
         self, signature: str, open: str, close: str
-    ) -> typing.Iterator[None]:
+    ) -> collections.abc.Iterator[None]:
         self.out.emit("")
         self.out.emit(f"extern {signature};")
         self.out.emit("#ifdef NEED_OPCODE_METADATA")
