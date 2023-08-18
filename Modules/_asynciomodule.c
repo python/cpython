@@ -141,7 +141,7 @@ typedef struct {
         * When the list is empty:
         - asyncio_tasks.head == &asyncio_tasks.tail
         - asyncio_tasks.head->prev == NULL
-        - asyncio_tasks.tail->next == NULL
+        - asyncio_tasks.head->next == NULL
 
         * After adding a new task 'task1':
         - asyncio_tasks.head == task1
