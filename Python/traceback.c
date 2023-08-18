@@ -839,6 +839,105 @@ print_error_location_carets(PyObject *f, int offset, Py_ssize_t start_offset, Py
     return 0;
 }
 
+// C implementation of textwrap.dedent.
+// Returns a new reference to the dedented string, NULL on failure.
+// Sets `truncation` to the number of characters truncated.
+// In abnormal cases (errors, whitespace-only input), `truncation` is set to 0.
+static PyObject*
+dedent(PyObject *lines, Py_ssize_t *truncation) {
+    *truncation = 0;
+    PyObject *split = PyUnicode_Splitlines(lines, 0);
+    if (!split) {
+        return NULL;
+    }
+    // Replace whitespace only lines with empty lines
+    Py_ssize_t num_lines = PyList_Size(split);
+    assert(num_lines > 0);
+    for (Py_ssize_t i = 0; i < num_lines; i++) {
+        PyObject* line = PyList_GET_ITEM(split, i);
+        int kind = PyUnicode_KIND(line);
+        const void *data = PyUnicode_DATA(line);
+        bool has_non_ws = 0;
+        for (Py_ssize_t j = 0; j < PyUnicode_GET_LENGTH(line); j++) {
+            Py_UCS4 ch = PyUnicode_READ(kind, data, j);
+            if (!IS_WHITESPACE(ch)) {
+                has_non_ws = 1;
+                break;
+            }
+        }
+        if (!has_non_ws) {
+            PyObject *empty = PyUnicode_FromString("");
+            if (!empty) {
+                goto error;
+            }
+            PyList_SET_ITEM(split, i, empty);
+        }
+    }
+
+    // Find a reference line - the first non-empty line.
+    // It is guaranteed to have a non-whitespace character.
+    Py_ssize_t ref_lineno = 0;
+    for (; ref_lineno < num_lines; ref_lineno++) {
+        if (PyUnicode_GET_LENGTH(PyList_GET_ITEM(split, ref_lineno)) > 0) {
+            break;
+        }
+    }
+    if (ref_lineno == num_lines) {
+        // empty input
+        goto done;
+    }
+
+    // Compute the number of characters to dedent by.
+    // Increment `col` until either lines[ref_line][col] is non-ws,
+    // or there is another line i with lines[i][col] != lines[ref_line][col].
+    Py_ssize_t col = 0;
+    PyObject *ref_line = PyList_GET_ITEM(split, ref_lineno);
+    Py_ssize_t ref_line_len = PyUnicode_GET_LENGTH(ref_line);
+    for (; col < ref_line_len; col++) {
+        Py_UCS4 ref_ch = PyUnicode_READ_CHAR(ref_line, col);
+        if (!IS_WHITESPACE(ref_ch)) {
+            goto dedent_compute_end;
+        }
+        // every line before ref_line is empty
+        for (Py_ssize_t i = ref_line + 1; i < num_lines; i++) {
+            PyObject* line = PyList_GET_ITEM(split, i);
+            if (PyUnicode_GET_LENGTH(line) == 0) {
+                continue;
+            }
+            assert(col < PyUnicode_GET_LENGTH(line));
+            Py_UCS4 ch = PyUnicode_READ_CHAR(line, col);
+            if (ch != ref_ch) {
+                goto dedent_compute_end;
+            }
+        }
+    }
+dedent_compute_end:
+
+    // truncate strings
+    if (col == 0) {
+        goto done;
+    }
+    for (Py_ssize_t i = 0; i < num_lines; i++) {
+        PyObject* line = PyList_GET_ITEM(split, i);
+        Py_ssize_t line_len = PyUnicode_GET_LENGTH(line);
+        if (line_len == 0) {
+            continue;
+        }
+        assert(col < line_len);
+        PyObject* truncated_line = PyUnicode_Substring(line, col, line_len);
+        if (!truncated_line) {
+            goto error;
+        }
+        PyList_SET_ITEM(split, i, truncated_line);
+    }
+
+done:
+    return split;
+error:
+    Py_XDECREF(split);
+    return NULL;
+}
+
 static int
 tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int lineno,
                PyFrameObject *frame, PyObject *name, int margin_indent, const char *margin)
@@ -864,7 +963,6 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     }
 
     int err = 0;
-    bool done_dedent = 0;
 
     int code_offset = tb->tb_lasti;
     PyCodeObject* code = _PyFrame_GetCode(frame->f_frame);
@@ -885,74 +983,26 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     if (end_line < 0) {
         end_line = lineno;
     }
-    PyObject* source_lines = NULL;
-    PyObject* source_lines_dedented = NULL;
+
+    PyObject* lines_original = NULL;
+    PyObject* lines = NULL;
     Py_ssize_t num_source_lines;
-    PyObject* markers = NULL;
-    int rc = get_source_lines(filename, start_line, end_line, &source_lines);
+    int rc = get_source_lines(filename, start_line, end_line, &lines_original);
     if (rc != 0 || !source_lines) {
         /* ignore errors since we can't report them, can we? */
         err = ignore_source_errors();
         goto done;
     }
 
-    num_source_lines = PyList_Size(source_lines);
-    if (num_source_lines == 0) {
-        // error
-    }
-
-    // fix error lines (replace None's with "")
-    for (Py_ssize_t i = 0; i < num_source_lines; ++i) {
-        PyObject* line = PyList_GET_ITEM(source_lines, i);
-        if (line == NULL || !PyUnicode_Check(line)) {
-            // check for errors
-            PyList_SetItem(source_lines, i, PyUnicode_FromString(""));
-        }
-    }
-
-    // dedent lines
     int truncation = 0;
-    Py_ssize_t reference_lineno = 0;
-    for (;; ++truncation) {
-        PyObject* reference_line = PyList_GET_ITEM(source_lines, reference_lineno);
-        while (truncation >= PyUnicode_GET_LENGTH(reference_line)) {
-            ++reference_lineno;
-            if (reference_line >= num_source_lines) {
-                goto dedent_compute_end;
-            }
-            reference_line = PyList_GET_ITEM(source_lines, reference_lineno);
-        }
-        Py_UCS4 reference_ch = PyUnicode_READ_CHAR(reference_line, truncation);
-        if (!IS_WHITESPACE(reference_ch)) {
-            goto dedent_compute_end;
-        }
-        for (Py_ssize_t i = reference_line + 1; i < num_source_lines; ++i) {
-            PyObject* line = PyList_GET_ITEM(source_lines, i);
-            if (truncation < PyUnicode_GET_LENGTH(line)) {
-                Py_UCS4 ch = PyUnicode_READ_CHAR(line, truncation);
-                if (!IS_WHITESPACE(ch) || ch != reference_ch) {
-                    goto dedent_compute_end;
-                }
-            }
-        }
-    }
-dedent_compute_end:
-    source_lines_dedented = PyList_New(num_source_lines);
-    if (source_lines_dedented == NULL) {
+    lines = dedent(lines_original, &truncation);
+    if (!lines) {
         goto done;
     }
-    for (Py_ssize_t i = 0; i < num_source_lines; ++i) {
-        PyObject* truncated_line;
-        PyObject* line = PyList_GET_ITEM(source_lines, i);
-        Py_ssize_t line_len = PyUnicode_GET_LENGTH(line);
-        if (truncation >= line_len) {
-            truncated_line = PyUnicode_FromString("");
-        } else {
-            truncated_line = PyUnicode_Substring(line, truncation, line_len);
-        }
-        PyList_SET_ITEM(source_lines_dedented_tmp, i, truncated_line);
+    PyObject *lines_split = PyUnicode_Splitlines(lines, 0);
+    if (!lines_split) {
+        goto done;
     }
-    done_dedent = 1;
 
     if (start_col_byte_offset < 0
         || end_col_byte_offset < 0)
