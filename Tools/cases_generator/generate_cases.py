@@ -13,6 +13,7 @@ import typing
 from collections.abc import Iterator
 
 import stacking  # Early import to avoid circular import
+from _typing_backports import assert_never
 from analysis import Analyzer
 from formatting import Formatter, list_effect_size
 from flags import InstructionFlags, variable_used
@@ -154,8 +155,8 @@ class Generator(Analyzer):
             return str(n_effect)
 
         instr: AnyInstruction | None
-        popped: str | None
-        pushed: str | None
+        popped: str | None = None
+        pushed: str | None = None
         match thing:
             case parsing.InstDef():
                 if thing.kind != "op" or self.instrs[thing.name].is_viable_uop():
@@ -171,7 +172,6 @@ class Generator(Analyzer):
                 popped, pushed = stacking.get_stack_effect_info_for_macro(instr)
             case parsing.Pseudo():
                 instr = self.pseudo_instrs[thing.name]
-                popped = pushed = None
                 # Calculate stack effect, and check that it's the the same
                 # for all targets.
                 for target in self.pseudos[thing.name].targets:
@@ -189,7 +189,7 @@ class Generator(Analyzer):
                         assert popped == target_popped
                         assert pushed == target_pushed
             case _:
-                typing.assert_never(thing)
+                assert_never(thing)
         return instr, popped, pushed
 
     @contextlib.contextmanager
@@ -388,7 +388,6 @@ class Generator(Analyzer):
                 case parsing.Macro():
                     format = self.macro_instrs[thing.name].instr_fmt
                 case parsing.Pseudo():
-                    format = None
                     for target in self.pseudos[thing.name].targets:
                         target_instr = self.instrs.get(target)
                         assert target_instr
@@ -398,7 +397,7 @@ class Generator(Analyzer):
                             assert format == target_instr.instr_fmt
                     assert format is not None
                 case _:
-                    typing.assert_never(thing)
+                    assert_never(thing)
             all_formats.add(format)
 
         # Turn it into a sorted list of enum values.
@@ -488,7 +487,7 @@ class Generator(Analyzer):
                                 self.pseudo_instrs[thing.name]
                             )
                         case _:
-                            typing.assert_never(thing)
+                            assert_never(thing)
 
             with self.metadata_item(
                 "const struct opcode_macro_expansion "
@@ -525,7 +524,7 @@ class Generator(Analyzer):
                         case parsing.Pseudo():
                             pass
                         case _:
-                            typing.assert_never(thing)
+                            assert_never(thing)
 
             with self.metadata_item(
                 "const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE]", "=", ";"
@@ -774,7 +773,7 @@ class Generator(Analyzer):
                     case parsing.Pseudo():
                         pass
                     case _:
-                        typing.assert_never(thing)
+                        assert_never(thing)
 
         print(
             f"Wrote {n_instrs} instructions and {n_macros} macros "
@@ -818,7 +817,7 @@ class Generator(Analyzer):
                     case parsing.Pseudo():
                         pass
                     case _:
-                        typing.assert_never(thing)
+                        assert_never(thing)
         print(
             f"Wrote {n_instrs} instructions and {n_uops} ops to {executor_filename}",
             file=sys.stderr,
@@ -850,7 +849,7 @@ class Generator(Analyzer):
                     case parsing.Pseudo():
                         pass
                     case _:
-                        typing.assert_never(thing)
+                        assert_never(thing)
         print(
             f"Wrote some stuff to {abstract_interpreter_filename}",
             file=sys.stderr,
