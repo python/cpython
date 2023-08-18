@@ -98,7 +98,6 @@ extern int _Py_FdIsInteractive(FILE *fp, PyObject *filename);
 extern const char* _Py_gitidentifier(void);
 extern const char* _Py_gitversion(void);
 
-extern int _Py_IsFinalizing(void);
 PyAPI_FUNC(int) _Py_IsInterpreterFinalizing(PyInterpreterState *interp);
 
 /* Random */
