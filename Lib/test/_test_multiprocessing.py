@@ -13,6 +13,7 @@ import sys
 import os
 import gc
 import errno
+import functools
 import signal
 import array
 import socket
@@ -31,6 +32,7 @@ from test import support
 from test.support import hashlib_helper
 from test.support import import_helper
 from test.support import os_helper
+from test.support import script_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
@@ -48,6 +50,7 @@ import multiprocessing.heap
 import multiprocessing.managers
 import multiprocessing.pool
 import multiprocessing.queues
+from multiprocessing.connection import wait
 
 from multiprocessing import util
 
@@ -131,8 +134,6 @@ HAVE_GETVALUE = not getattr(_multiprocessing,
 
 WIN32 = (sys.platform == "win32")
 
-from multiprocessing.connection import wait
-
 def wait_for_handle(handle, timeout):
     if timeout is not None and timeout < 0.0:
         timeout = None
@@ -170,6 +171,59 @@ def check_enough_semaphores():
         return
     raise unittest.SkipTest("The OS doesn't support enough semaphores "
                             "to run the test (required: %d)." % nsems_min)
+
+
+def only_run_in_spawn_testsuite(reason):
+    """Returns a decorator: raises SkipTest when SM != spawn at test time.
+
+    This can be useful to save overall Python test suite execution time.
+    "spawn" is the universal mode available on all platforms so this limits the
+    decorated test to only execute within test_multiprocessing_spawn.
+
+    This would not be necessary if we refactored our test suite to split things
+    into other test files when they are not start method specific to be rerun
+    under all start methods.
+    """
+
+    def decorator(test_item):
+
+        @functools.wraps(test_item)
+        def spawn_check_wrapper(*args, **kwargs):
+            if (start_method := multiprocessing.get_start_method()) != "spawn":
+                raise unittest.SkipTest(f"{start_method=}, not 'spawn'; {reason}")
+            return test_item(*args, **kwargs)
+
+        return spawn_check_wrapper
+
+    return decorator
+
+
+class TestInternalDecorators(unittest.TestCase):
+    """Logic within a test suite that could errantly skip tests? Test it!"""
+
+    @unittest.skipIf(sys.platform == "win32", "test requires that fork exists.")
+    def test_only_run_in_spawn_testsuite(self):
+        if multiprocessing.get_start_method() != "spawn":
+            raise unittest.SkipTest("only run in test_multiprocessing_spawn.")
+
+        try:
+            @only_run_in_spawn_testsuite("testing this decorator")
+            def return_four_if_spawn():
+                return 4
+        except Exception as err:
+            self.fail(f"expected decorated `def` not to raise; caught {err}")
+
+        orig_start_method = multiprocessing.get_start_method(allow_none=True)
+        try:
+            multiprocessing.set_start_method("spawn", force=True)
+            self.assertEqual(return_four_if_spawn(), 4)
+            multiprocessing.set_start_method("fork", force=True)
+            with self.assertRaises(unittest.SkipTest) as ctx:
+                return_four_if_spawn()
+            self.assertIn("testing this decorator", str(ctx.exception))
+            self.assertIn("start_method=", str(ctx.exception))
+        finally:
+            multiprocessing.set_start_method(orig_start_method, force=True)
 
 
 #
@@ -3042,7 +3096,7 @@ class _TestRemoteManager(BaseTestCase):
         del queue
 
 
-@hashlib_helper.requires_hashdigest('md5')
+@hashlib_helper.requires_hashdigest('sha256')
 class _TestManagerRestart(BaseTestCase):
 
     @classmethod
@@ -3094,6 +3148,44 @@ class _TestManagerRestart(BaseTestCase):
                 shutdown_timeout=SHUTDOWN_TIMEOUT)
             if hasattr(manager, "shutdown"):
                 self.addCleanup(manager.shutdown)
+
+
+class FakeConnection:
+    def send(self, payload):
+        pass
+
+    def recv(self):
+        return '#ERROR', pyqueue.Empty()
+
+class TestManagerExceptions(unittest.TestCase):
+    # Issue 106558: Manager exceptions avoids creating cyclic references.
+    def setUp(self):
+        self.mgr = multiprocessing.Manager()
+
+    def tearDown(self):
+        self.mgr.shutdown()
+        self.mgr.join()
+
+    def test_queue_get(self):
+        queue = self.mgr.Queue()
+        if gc.isenabled():
+            gc.disable()
+            self.addCleanup(gc.enable)
+        try:
+            queue.get_nowait()
+        except pyqueue.Empty as e:
+            wr = weakref.ref(e)
+        self.assertEqual(wr(), None)
+
+    def test_dispatch(self):
+        if gc.isenabled():
+            gc.disable()
+            self.addCleanup(gc.enable)
+        try:
+            multiprocessing.managers.dispatch(FakeConnection(), None, None)
+        except pyqueue.Empty as e:
+            wr = weakref.ref(e)
+        self.assertEqual(wr(), None)
 
 #
 #
@@ -3531,7 +3623,7 @@ class _TestPoll(BaseTestCase):
 #
 
 @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
-@hashlib_helper.requires_hashdigest('md5')
+@hashlib_helper.requires_hashdigest('sha256')
 class _TestPicklingConnections(BaseTestCase):
 
     ALLOWED_TYPES = ('processes',)
@@ -3834,7 +3926,7 @@ class _TestSharedCTypes(BaseTestCase):
 
 
 @unittest.skipUnless(HAS_SHMEM, "requires multiprocessing.shared_memory")
-@hashlib_helper.requires_hashdigest('md5')
+@hashlib_helper.requires_hashdigest('sha256')
 class _TestSharedMemory(BaseTestCase):
 
     ALLOWED_TYPES = ('processes',)
@@ -4636,7 +4728,7 @@ class TestInvalidHandle(unittest.TestCase):
 
 
 
-@hashlib_helper.requires_hashdigest('md5')
+@hashlib_helper.requires_hashdigest('sha256')
 class OtherTest(unittest.TestCase):
     # TODO: add more tests for deliver/answer challenge.
     def test_deliver_challenge_auth_failure(self):
@@ -4656,7 +4748,7 @@ class OtherTest(unittest.TestCase):
             def recv_bytes(self, size):
                 self.count += 1
                 if self.count == 1:
-                    return multiprocessing.connection.CHALLENGE
+                    return multiprocessing.connection._CHALLENGE
                 elif self.count == 2:
                     return b'something bogus'
                 return b''
@@ -4666,6 +4758,44 @@ class OtherTest(unittest.TestCase):
                           multiprocessing.connection.answer_challenge,
                           _FakeConnection(), b'abc')
 
+
+@hashlib_helper.requires_hashdigest('md5')
+@hashlib_helper.requires_hashdigest('sha256')
+class ChallengeResponseTest(unittest.TestCase):
+    authkey = b'supadupasecretkey'
+
+    def create_response(self, message):
+        return multiprocessing.connection._create_response(
+            self.authkey, message
+        )
+
+    def verify_challenge(self, message, response):
+        return multiprocessing.connection._verify_challenge(
+            self.authkey, message, response
+        )
+
+    def test_challengeresponse(self):
+        for algo in [None, "md5", "sha256"]:
+            with self.subTest(f"{algo=}"):
+                msg = b'is-twenty-bytes-long'  # The length of a legacy message.
+                if algo:
+                    prefix = b'{%s}' % algo.encode("ascii")
+                else:
+                    prefix = b''
+                msg = prefix + msg
+                response = self.create_response(msg)
+                if not response.startswith(prefix):
+                    self.fail(response)
+                self.verify_challenge(msg, response)
+
+    # TODO(gpshead): We need integration tests for handshakes between modern
+    # deliver_challenge() and verify_response() code and connections running a
+    # test-local copy of the legacy Python <=3.11 implementations.
+
+    # TODO(gpshead): properly annotate tests for requires_hashdigest rather than
+    # only running these on a platform supporting everything.  otherwise logic
+    # issues preventing it from working on FIPS mode setups will be hidden.
+
 #
 # Test Manager.start()/Pool.__init__() initializer feature - see issue 5585
 #
@@ -4673,7 +4803,7 @@ class OtherTest(unittest.TestCase):
 def initializer(ns):
     ns.test += 1
 
-@hashlib_helper.requires_hashdigest('md5')
+@hashlib_helper.requires_hashdigest('sha256')
 class TestInitializers(unittest.TestCase):
     def setUp(self):
         self.mgr = multiprocessing.Manager()
@@ -5239,6 +5369,14 @@ class TestStartMethod(unittest.TestCase):
             self.assertRaises(ValueError, ctx.set_start_method, None)
             self.check_context(ctx)
 
+    def test_context_check_module_types(self):
+        try:
+            ctx = multiprocessing.get_context('forkserver')
+        except ValueError:
+            raise unittest.SkipTest('forkserver should be available')
+        with self.assertRaisesRegex(TypeError, 'module_names must be a list of strings'):
+            ctx.set_forkserver_preload([1, 2, 3])
+
     def test_set_get(self):
         multiprocessing.set_forkserver_preload(PRELOAD)
         count = 0
@@ -5537,7 +5675,7 @@ class TestPoolNotLeakOnFailure(unittest.TestCase):
             any(process.is_alive() for process in forked_processes))
 
 
-@hashlib_helper.requires_hashdigest('md5')
+@hashlib_helper.requires_hashdigest('sha256')
 class TestSyncManagerTypes(unittest.TestCase):
     """Test all the types which can be shared between a parent and a
     child process by using a manager which acts as an intermediary
@@ -5778,6 +5916,7 @@ class TestSyncManagerTypes(unittest.TestCase):
 
 
 class TestNamedResource(unittest.TestCase):
+    @only_run_in_spawn_testsuite("spawn specific test.")
     def test_global_named_resource_spawn(self):
         #
         # gh-90549: Check that global named resources in main module
@@ -5788,22 +5927,18 @@ class TestNamedResource(unittest.TestCase):
         with open(testfn, 'w', encoding='utf-8') as f:
             f.write(textwrap.dedent('''\
                 import multiprocessing as mp
-
                 ctx = mp.get_context('spawn')
-
                 global_resource = ctx.Semaphore()
-
                 def submain(): pass
-
                 if __name__ == '__main__':
                     p = ctx.Process(target=submain)
                     p.start()
                     p.join()
             '''))
-        rc, out, err = test.support.script_helper.assert_python_ok(testfn)
+        rc, out, err = script_helper.assert_python_ok(testfn)
         # on error, err = 'UserWarning: resource_tracker: There appear to
         # be 1 leaked semaphore objects to clean up at shutdown'
-        self.assertEqual(err, b'')
+        self.assertFalse(err, msg=err.decode('utf-8'))
 
 
 class MiscTestCase(unittest.TestCase):
@@ -5811,6 +5946,24 @@ class MiscTestCase(unittest.TestCase):
         # Just make sure names in not_exported are excluded
         support.check__all__(self, multiprocessing, extra=multiprocessing.__all__,
                              not_exported=['SUBDEBUG', 'SUBWARNING'])
+
+    @only_run_in_spawn_testsuite("avoids redundant testing.")
+    def test_spawn_sys_executable_none_allows_import(self):
+        # Regression test for a bug introduced in
+        # https://github.com/python/cpython/issues/90876 that caused an
+        # ImportError in multiprocessing when sys.executable was None.
+        # This can be true in embedded environments.
+        rc, out, err = script_helper.assert_python_ok(
+            "-c",
+            """if 1:
+            import sys
+            sys.executable = None
+            assert "multiprocessing" not in sys.modules, "already imported!"
+            import multiprocessing
+            import multiprocessing.spawn  # This should not fail\n""",
+        )
+        self.assertEqual(rc, 0)
+        self.assertFalse(err, msg=err.decode('utf-8'))
 
 
 #
@@ -5969,7 +6122,7 @@ def install_tests_in_module_dict(remote_globs, start_method):
                 class Temp(base, Mixin, unittest.TestCase):
                     pass
                 if type_ == 'manager':
-                    Temp = hashlib_helper.requires_hashdigest('md5')(Temp)
+                    Temp = hashlib_helper.requires_hashdigest('sha256')(Temp)
                 Temp.__name__ = Temp.__qualname__ = newname
                 Temp.__module__ = __module__
                 remote_globs[newname] = Temp

@@ -61,12 +61,11 @@ FLAGS = {
     "x": SRE_FLAG_VERBOSE,
     # extensions
     "a": SRE_FLAG_ASCII,
-    "t": SRE_FLAG_TEMPLATE,
     "u": SRE_FLAG_UNICODE,
 }
 
 TYPE_FLAGS = SRE_FLAG_ASCII | SRE_FLAG_LOCALE | SRE_FLAG_UNICODE
-GLOBAL_FLAGS = SRE_FLAG_DEBUG | SRE_FLAG_TEMPLATE
+GLOBAL_FLAGS = SRE_FLAG_DEBUG
 
 class State:
     # keeps track of state for parsing
@@ -114,7 +113,6 @@ class SubPattern:
         self.width = None
 
     def dump(self, level=0):
-        nl = True
         seqtypes = (tuple, list)
         for op, av in self.data:
             print(level*"  " + str(op), end='')
@@ -136,6 +134,9 @@ class SubPattern:
                 if item_no:
                     print(level*"  " + "ELSE")
                     item_no.dump(level+1)
+            elif isinstance(av, SubPattern):
+                print()
+                av.dump(level+1)
             elif isinstance(av, seqtypes):
                 nl = False
                 for a in av:
@@ -772,8 +773,10 @@ def _parse(source, state, verbose, nested, first=False):
                                            source.tell() - start)
                     if char == "=":
                         subpatternappend((ASSERT, (dir, p)))
-                    else:
+                    elif p:
                         subpatternappend((ASSERT_NOT, (dir, p)))
+                    else:
+                        subpatternappend((FAILURE, ()))
                     continue
 
                 elif char == "(":
