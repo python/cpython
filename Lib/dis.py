@@ -609,7 +609,8 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                 argrepr = _intrinsic_2_descs[arg]
         yield Instruction(_all_opname[op], op,
                           arg, argval, argrepr,
-                          offset, start_offset, starts_line, line_number, is_jump_target, positions)
+                          offset, start_offset, starts_line, line_number,
+                          is_jump_target, positions)
         if not caches:
             continue
         if not show_caches:
@@ -628,7 +629,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                 else:
                     argrepr = ""
                 yield Instruction(
-                    "CACHE", CACHE, 0, None, argrepr, offset, offset, None, False,
+                    "CACHE", CACHE, 0, None, argrepr, offset, offset, False, None, False,
                     Positions(*next(co_positions, ()))
                 )
 
