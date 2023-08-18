@@ -21,7 +21,6 @@ class InstructionFlags:
 
     @staticmethod
     def fromInstruction(instr: parsing.Node) -> "InstructionFlags":
-
         has_free = (
             variable_used(instr, "PyCell_New")
             or variable_used(instr, "PyCell_GET")

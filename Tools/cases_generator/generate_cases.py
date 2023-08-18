@@ -218,7 +218,6 @@ class Generator(Analyzer):
         def write_function(
             direction: str, data: list[tuple[AnyInstruction, str]]
         ) -> None:
-
             with self.metadata_item(
                 f"int _PyOpcode_num_{direction}(int opcode, int oparg, bool jump)",
                 "",
