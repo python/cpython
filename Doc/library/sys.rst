@@ -581,58 +581,58 @@ always available.
         - float.h macro
         - explanation
 
-      * - :attr:`!epsilon`
+      * - .. attribute:: float_info.epsilon
         - :c:macro:`!DBL_EPSILON`
         - difference between 1.0 and the least value greater than 1.0 that is
           representable as a float.
 
           See also :func:`math.ulp`.
 
-      * - :attr:`!dig`
+      * - .. attribute:: float_info.dig
         - :c:macro:`!DBL_DIG`
         - The maximum number of decimal digits that can be faithfully
           represented in a float; see below.
 
-      * - :attr:`!mant_dig`
+      * - .. attribute:: float_info.mant_dig
         - :c:macro:`!DBL_MANT_DIG`
         - Float precision: the number of base-``radix`` digits in the
           significand of a float.
 
-      * - :attr:`!max`
+      * - .. attribute:: float_info.max
         - :c:macro:`!DBL_MAX`
         - The maximum representable positive finite float.
 
-      * - :attr:`!max_exp`
+      * - .. attribute:: float_info.max_exp
         - :c:macro:`!DBL_MAX_EXP`
         - The maximum integer *e* such that ``radix**(e-1)`` is a representable
           finite float.
 
-      * - :attr:`!max_10_exp`
+      * - .. attribute:: float_info.max_10_exp
         - :c:macro:`!DBL_MAX_10_EXP`
         - The maximum integer *e* such that ``10**e`` is in the range of
           representable finite floats.
 
-      * - :attr:`!min`
+      * - .. attribute:: float_info.min
         - :c:macro:`!DBL_MIN`
         - The minimum representable positive *normalized* float.
 
           Use :func:`math.ulp(0.0) <math.ulp>` to get the smallest positive
           *denormalized* representable float.
 
-      * - :attr:`!min_exp`
+      * - .. attribute:: float_info.min_exp
         - :c:macro:`!DBL_MIN_EXP`
         - The minimum integer *e* such that ``radix**(e-1)`` is a normalized
           float.
 
-      * - :attr:`!min_10_exp`
+      * - .. attribute:: float_info.min_10_exp
         - :c:macro:`!DBL_MIN_10_EXP`
         - The minimum integer *e* such that ``10**e`` is a normalized float.
 
-      * - :attr:`!radix`
+      * - .. attribute:: float_info.radix
         - :c:macro:`!FLT_RADIX`
         - The radix of exponent representation.
 
-      * - :attr:`!rounds`
+      * - .. attribute:: float_info.rounds
         - :c:macro:`!FLT_ROUNDS`
         - An integer representing the rounding mode for floating-point arithmetic.
           This reflects the value of the system :c:macro:`!FLT_ROUNDS` macro
