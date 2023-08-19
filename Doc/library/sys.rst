@@ -333,23 +333,21 @@ always available.
    *wasm32-emscripten* platform. The named tuple is provisional and may change
    in the future.
 
-   .. tabularcolumns:: |l|L|
+   .. attribute:: _emscripten_info.emscripten_version
 
-   +-----------------------------+----------------------------------------------+
-   | Attribute                   | Explanation                                  |
-   +=============================+==============================================+
-   | :attr:`!emscripten_version` | Emscripten version as tuple of ints          |
-   |                             | (major, minor, micro), e.g. ``(3, 1, 8)``.   |
-   +-----------------------------+----------------------------------------------+
-   | :attr:`!runtime`            | Runtime string, e.g. browser user agent,     |
-   |                             | ``'Node.js v14.18.2'``, or ``'UNKNOWN'``.    |
-   +-----------------------------+----------------------------------------------+
-   | :attr:`!pthreads`           | ``True`` if Python is compiled with          |
-   |                             | Emscripten pthreads support.                 |
-   +-----------------------------+----------------------------------------------+
-   | :attr:`!shared_memory`      | ``True`` if Python is compiled with shared   |
-   |                             | memory support.                              |
-   +-----------------------------+----------------------------------------------+
+      Emscripten version as tuple of ints (major, minor, micro), e.g. ``(3, 1, 8)``.
+
+   .. attribute:: _emscripten_info.runtime
+
+      Runtime string, e.g. browser user agent, ``'Node.js v14.18.2'``, or ``'UNKNOWN'``.
+
+   .. attribute:: _emscripten_info.pthreads
+
+      ``True`` if Python is compiled with Emscripten pthreads support.
+
+   .. attribute:: _emscripten_info.shared_memory
+
+      ``True`` if Python is compiled with shared memory support.
 
    .. availability:: Emscripten.
 
@@ -515,28 +513,62 @@ always available.
    The :term:`named tuple` *flags* exposes the status of command line
    flags. The attributes are read only.
 
-   ==============================  ==============================================================================================================
-   attribute                       flag
-   ==============================  ==============================================================================================================
-   :attr:`!debug`                  :option:`-d`
-   :attr:`!inspect`                :option:`-i`
-   :attr:`!interactive`            :option:`-i`
-   :attr:`!isolated`               :option:`-I`
-   :attr:`!optimize`               :option:`-O` or :option:`-OO`
-   :attr:`!dont_write_bytecode`    :option:`-B`
-   :attr:`!no_user_site`           :option:`-s`
-   :attr:`!no_site`                :option:`-S`
-   :attr:`!ignore_environment`     :option:`-E`
-   :attr:`!verbose`                :option:`-v`
-   :attr:`!bytes_warning`          :option:`-b`
-   :attr:`!quiet`                  :option:`-q`
-   :attr:`!hash_randomization`     :option:`-R`
-   :attr:`!dev_mode`               :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
-   :attr:`!utf8_mode`              :option:`-X utf8 <-X>`
-   :attr:`!safe_path`              :option:`-P`
-   :attr:`!int_max_str_digits`     :option:`-X int_max_str_digits <-X>` (:ref:`integer string conversion length limitation <int_max_str_digits>`)
-   :attr:`!warn_default_encoding`  :option:`-X warn_default_encoding <-X>`
-   ==============================  ==============================================================================================================
+   .. list-table::
+
+      * - .. attribute:: flags.debug
+        - :option:`-d`
+
+      * - .. attribute:: flags.inspect
+        - :option:`-i`
+
+      * - .. attribute:: flags.interactive
+        - :option:`-i`
+
+      * - .. attribute:: flags.isolated
+        - :option:`-I`
+
+      * - .. attribute:: flags.optimize
+        - :option:`-O` or :option:`-OO`
+
+      * - .. attribute:: flags.dont_write_bytecode
+        - :option:`-B`
+
+      * - .. attribute:: flags.no_user_site
+        - :option:`-s`
+
+      * - .. attribute:: flags.no_site
+        - :option:`-S`
+
+      * - .. attribute:: flags.ignore_environment
+        - :option:`-E`
+
+      * - .. attribute:: flags.verbose
+        - :option:`-v`
+
+      * - .. attribute:: flags.bytes_warning
+        - :option:`-b`
+
+      * - .. attribute:: flags.quiet
+        - :option:`-q`
+
+      * - .. attribute:: flags.hash_randomization
+        - :option:`-R`
+
+      * - .. attribute:: flags.dev_mode
+        - :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
+
+      * - .. attribute:: flags.utf8_mode
+        - :option:`-X utf8 <-X>`
+
+      * - .. attribute:: flags.safe_path
+        - :option:`-P`
+
+      * - .. attribute:: flags.int_max_str_digits
+        - :option:`-X int_max_str_digits <-X>`
+          (:ref:`integer string conversion length limitation <int_max_str_digits>`)
+
+      * - .. attribute:: flags.warn_default_encoding
+        - :option:`-X warn_default_encoding <-X>`
 
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
@@ -982,28 +1014,37 @@ always available.
    implementation.  For more details about hashing of numeric types, see
    :ref:`numeric-hash`.
 
-   +---------------------+--------------------------------------------------+
-   | attribute           | explanation                                      |
-   +=====================+==================================================+
-   | :attr:`!width`      | width in bits used for hash values               |
-   +---------------------+--------------------------------------------------+
-   | :attr:`!modulus`    | prime modulus P used for numeric hash scheme     |
-   +---------------------+--------------------------------------------------+
-   | :attr:`!inf`        | hash value returned for a positive infinity      |
-   +---------------------+--------------------------------------------------+
-   | :attr:`!nan`        | (this attribute is no longer used)               |
-   +---------------------+--------------------------------------------------+
-   | :attr:`!imag`       | multiplier used for the imaginary part of a      |
-   |                     | complex number                                   |
-   +---------------------+--------------------------------------------------+
-   | :attr:`!algorithm`  | name of the algorithm for hashing of str, bytes, |
-   |                     | and memoryview                                   |
-   +---------------------+--------------------------------------------------+
-   | :attr:`!hash_bits`  | internal output size of the hash algorithm       |
-   +---------------------+--------------------------------------------------+
-   | :attr:`!seed_bits`  | size of the seed key of the hash algorithm       |
-   +---------------------+--------------------------------------------------+
+   .. attribute:: hash_info.width
 
+      The width in bits used for hash values
+
+   .. attribute:: hash_info.modulus
+
+      The prime modulus P used for numeric hash scheme
+
+   .. attribute:: hash_info.inf
+
+      The hash value returned for a positive infinity
+
+   .. attribute:: hash_info.nan
+
+      (This attribute is no longer used)
+
+   .. attribute:: hash_info.imag
+
+      The multiplier used for the imaginary part of a complex number
+
+   .. attribute:: hash_info.algorithm
+
+      The name of the algorithm for hashing of str, bytes, and memoryview
+
+   .. attribute:: hash_info.hash_bits
+
+      The internal output size of the hash algorithm
+
+   .. attribute:: hash_info.seed_bits
+
+      The size of the seed key of the hash algorithm
 
    .. versionadded:: 3.2
 
@@ -1081,32 +1122,30 @@ always available.
    A :term:`named tuple` that holds information about Python's internal
    representation of integers.  The attributes are read only.
 
-   .. tabularcolumns:: |l|L|
+   .. attribute:: int_info.bits_per_digit
 
-   +----------------------------------------+-----------------------------------------------+
-   | Attribute                              | Explanation                                   |
-   +========================================+===============================================+
-   | :attr:`!bits_per_digit`                | number of bits held in each digit.  Python    |
-   |                                        | integers are stored internally in base        |
-   |                                        | ``2**int_info.bits_per_digit``                |
-   +----------------------------------------+-----------------------------------------------+
-   | :attr:`!sizeof_digit`                  | size in bytes of the C type used to           |
-   |                                        | represent a digit                             |
-   +----------------------------------------+-----------------------------------------------+
-   | :attr:`!default_max_str_digits`        | default value for                             |
-   |                                        | :func:`sys.get_int_max_str_digits` when it    |
-   |                                        | is not otherwise explicitly configured.       |
-   +----------------------------------------+-----------------------------------------------+
-   | :attr:`!str_digits_check_threshold`    | minimum non-zero value for                    |
-   |                                        | :func:`sys.set_int_max_str_digits`,           |
-   |                                        | :envvar:`PYTHONINTMAXSTRDIGITS`, or           |
-   |                                        | :option:`-X int_max_str_digits <-X>`.         |
-   +----------------------------------------+-----------------------------------------------+
+      The number of bits held in each digit.
+      Python integers are stored internally in base ``2**int_info.bits_per_digit``.
+
+   .. attribute:: int_info.sizeof_digit
+
+      The size in bytes of the C type used to represent a digit.
+
+   .. attribute:: int_info.default_max_str_digits
+
+      The default value for :func:`sys.get_int_max_str_digits`
+      when it is not otherwise explicitly configured.
+
+   .. attribute:: int_info.str_digits_check_threshold
+
+      The minimum non-zero value for :func:`sys.set_int_max_str_digits`,
+      :envvar:`PYTHONINTMAXSTRDIGITS`, or :option:`-X int_max_str_digits <-X>`.
 
    .. versionadded:: 3.1
 
    .. versionchanged:: 3.11
-      Added ``default_max_str_digits`` and ``str_digits_check_threshold``.
+
+      Added :attr:`int_info.default_max_str_digits` and :attr:`int_info.str_digits_check_threshold`.
 
 
 .. data:: __interactivehook__
@@ -1787,29 +1826,28 @@ always available.
    A :term:`named tuple` holding information about the thread
    implementation.
 
-   .. tabularcolumns:: |l|p{0.7\linewidth}|
+   .. attribute:: thread_info.name
 
-   +------------------+---------------------------------------------------------+
-   | Attribute        | Explanation                                             |
-   +==================+=========================================================+
-   | :attr:`!name`    | Name of the thread implementation:                      |
-   |                  |                                                         |
-   |                  |  * ``'nt'``: Windows threads                            |
-   |                  |  * ``'pthread'``: POSIX threads                         |
-   |                  |  * ``'pthread-stubs'``: stub POSIX threads              |
-   |                  |    (on WebAssembly platforms without threading support) |
-   |                  |  * ``'solaris'``: Solaris threads                       |
-   +------------------+---------------------------------------------------------+
-   | :attr:`!lock`    | Name of the lock implementation:                        |
-   |                  |                                                         |
-   |                  |  * ``'semaphore'``: a lock uses a semaphore             |
-   |                  |  * ``'mutex+cond'``: a lock uses a mutex                |
-   |                  |    and a condition variable                             |
-   |                  |  * ``None`` if this information is unknown              |
-   +------------------+---------------------------------------------------------+
-   | :attr:`!version` | Name and version of the thread library. It is a string, |
-   |                  | or ``None`` if this information is unknown.             |
-   +------------------+---------------------------------------------------------+
+      Name of the thread implementation:
+
+      * ``"nt"``: Windows threads
+      * ``"pthread"``: POSIX threads
+      * ``"pthread-stubs"``: stub POSIX threads
+        (on WebAssembly platforms without threading support)
+      * ``"solaris"``: Solaris threads
+
+   .. attribute:: thread_info.lock
+
+      Name of the lock implementation:
+
+      * ``"semaphore"``: a lock uses a semaphore
+      * ``"mutex+cond"``: a lock uses a mutex and a condition variable
+      * ``None`` if this information is unknown
+
+   .. attribute:: thread_info.version
+
+      Name and version of the thread library.
+      It is a string, or ``None`` if this information is unknown.
 
    .. versionadded:: 3.3
 
