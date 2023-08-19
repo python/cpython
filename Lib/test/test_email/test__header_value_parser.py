@@ -2588,6 +2588,11 @@ class TestParser(TestParserMixin, TestEmailBase):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_msg_id('')
 
+    def test_get_msg_id_botched(self):
+        # gh-105802: ditto for broken Microsoft Message-Id
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_msg_id('<[83c48dddbea7492e873224a5ae1c04be-JFBVALKQOJXWILKNK4YVA7CBPJ2XEZKEMV3E64DTPRCW2YLJNR6EK6DPKNWXI4A=@microsoft.com]>')
+
     def test_get_msg_id_valid(self):
         msg_id = self._test_get_x(
             parser.get_msg_id,
