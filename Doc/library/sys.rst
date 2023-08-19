@@ -574,61 +574,82 @@ always available.
    programming language; see section 5.2.4.2.2 of the 1999 ISO/IEC C standard
    [C99]_, 'Characteristics of floating types', for details.
 
-   .. tabularcolumns:: |l|l|L|
+   .. list-table:: Attributes of the :data:`!float_info` :term:`named tuple`
+      :header-rows: 1
 
-   +---------------------+---------------------+--------------------------------------------------+
-   | attribute           | float.h macro       | explanation                                      |
-   +=====================+=====================+==================================================+
-   | ``epsilon``         | ``DBL_EPSILON``     | difference between 1.0 and the least value       |
-   |                     |                     | greater than 1.0 that is representable as a float|
-   |                     |                     |                                                  |
-   |                     |                     | See also :func:`math.ulp`.                       |
-   +---------------------+---------------------+--------------------------------------------------+
-   | ``dig``             | ``DBL_DIG``         | maximum number of decimal digits that can be     |
-   |                     |                     | faithfully represented in a float;  see below    |
-   +---------------------+---------------------+--------------------------------------------------+
-   | ``mant_dig``        | ``DBL_MANT_DIG``    | float precision: the number of base-``radix``    |
-   |                     |                     | digits in the significand of a float             |
-   +---------------------+---------------------+--------------------------------------------------+
-   | ``max``             | ``DBL_MAX``         | maximum representable positive finite float      |
-   +---------------------+---------------------+--------------------------------------------------+
-   | ``max_exp``         | ``DBL_MAX_EXP``     | maximum integer *e* such that ``radix**(e-1)`` is|
-   |                     |                     | a representable finite float                     |
-   +---------------------+---------------------+--------------------------------------------------+
-   | ``max_10_exp``      | ``DBL_MAX_10_EXP``  | maximum integer *e* such that ``10**e`` is in the|
-   |                     |                     | range of representable finite floats             |
-   +---------------------+---------------------+--------------------------------------------------+
-   | ``min``             | ``DBL_MIN``         | minimum representable positive *normalized* float|
-   |                     |                     |                                                  |
-   |                     |                     | Use :func:`math.ulp(0.0) <math.ulp>` to get the  |
-   |                     |                     | smallest positive *denormalized* representable   |
-   |                     |                     | float.                                           |
-   +---------------------+---------------------+--------------------------------------------------+
-   | ``min_exp``         | ``DBL_MIN_EXP``     | minimum integer *e* such that ``radix**(e-1)`` is|
-   |                     |                     | a normalized float                               |
-   +---------------------+---------------------+--------------------------------------------------+
-   | ``min_10_exp``      | ``DBL_MIN_10_EXP``  | minimum integer *e* such that ``10**e`` is a     |
-   |                     |                     | normalized float                                 |
-   +---------------------+---------------------+--------------------------------------------------+
-   | ``radix``           | ``FLT_RADIX``       | radix of exponent representation                 |
-   +---------------------+---------------------+--------------------------------------------------+
-   | ``rounds``          | ``FLT_ROUNDS``      | integer representing the rounding mode for       |
-   |                     |                     | floating-point arithmetic. This reflects the     |
-   |                     |                     | value of the system ``FLT_ROUNDS`` macro at      |
-   |                     |                     | interpreter startup time:                        |
-   |                     |                     | ``-1`` indeterminable,                           |
-   |                     |                     | ``0`` toward zero,                               |
-   |                     |                     | ``1`` to nearest,                                |
-   |                     |                     | ``2`` toward positive infinity,                  |
-   |                     |                     | ``3`` toward negative infinity                   |
-   |                     |                     |                                                  |
-   |                     |                     | All other values for ``FLT_ROUNDS`` characterize |
-   |                     |                     | implementation-defined rounding behavior.        |
-   +---------------------+---------------------+--------------------------------------------------+
+      * - attribute
+        - float.h macro
+        - explanation
+
+      * - .. attribute:: float_info.epsilon
+        - :c:macro:`!DBL_EPSILON`
+        - difference between 1.0 and the least value greater than 1.0 that is
+          representable as a float.
+
+          See also :func:`math.ulp`.
+
+      * - .. attribute:: float_info.dig
+        - :c:macro:`!DBL_DIG`
+        - The maximum number of decimal digits that can be faithfully
+          represented in a float; see below.
+
+      * - .. attribute:: float_info.mant_dig
+        - :c:macro:`!DBL_MANT_DIG`
+        - Float precision: the number of base-``radix`` digits in the
+          significand of a float.
+
+      * - .. attribute:: float_info.max
+        - :c:macro:`!DBL_MAX`
+        - The maximum representable positive finite float.
+
+      * - .. attribute:: float_info.max_exp
+        - :c:macro:`!DBL_MAX_EXP`
+        - The maximum integer *e* such that ``radix**(e-1)`` is a representable
+          finite float.
+
+      * - .. attribute:: float_info.max_10_exp
+        - :c:macro:`!DBL_MAX_10_EXP`
+        - The maximum integer *e* such that ``10**e`` is in the range of
+          representable finite floats.
+
+      * - .. attribute:: float_info.min
+        - :c:macro:`!DBL_MIN`
+        - The minimum representable positive *normalized* float.
+
+          Use :func:`math.ulp(0.0) <math.ulp>` to get the smallest positive
+          *denormalized* representable float.
+
+      * - .. attribute:: float_info.min_exp
+        - :c:macro:`!DBL_MIN_EXP`
+        - The minimum integer *e* such that ``radix**(e-1)`` is a normalized
+          float.
+
+      * - .. attribute:: float_info.min_10_exp
+        - :c:macro:`!DBL_MIN_10_EXP`
+        - The minimum integer *e* such that ``10**e`` is a normalized float.
+
+      * - .. attribute:: float_info.radix
+        - :c:macro:`!FLT_RADIX`
+        - The radix of exponent representation.
+
+      * - .. attribute:: float_info.rounds
+        - :c:macro:`!FLT_ROUNDS`
+        - An integer representing the rounding mode for floating-point arithmetic.
+          This reflects the value of the system :c:macro:`!FLT_ROUNDS` macro
+          at interpreter startup time:
+
+          * ``-1``: indeterminable
+          * ``0``: toward zero
+          * ``1``: to nearest
+          * ``2``: toward positive infinity
+          * ``3``: toward negative infinity
+
+          All other values for :c:macro:`!FLT_ROUNDS` characterize
+          implementation-defined rounding behavior.
 
    The attribute :attr:`sys.float_info.dig` needs further explanation.  If
    ``s`` is any string representing a decimal number with at most
-   :attr:`sys.float_info.dig` significant digits, then converting ``s`` to a
+   :attr:`!sys.float_info.dig` significant digits, then converting ``s`` to a
    float and back again will recover a string representing the same decimal
    value::
 
