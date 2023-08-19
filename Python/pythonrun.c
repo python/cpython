@@ -1792,8 +1792,8 @@ error:
 }
 
 static int
-call_ast_optimize(mod_ty mod, PyObject *filename, PyCompilerFlags *cf,
-                  int optimize, PyArena *arena)
+ast_optimize(mod_ty mod, PyObject *filename, PyCompilerFlags *cf,
+             int optimize, PyArena *arena)
 {
     PyFutureFeatures future;
     if (!_PyFuture_FromAST(mod, filename, &future)) {
@@ -1825,9 +1825,11 @@ Py_CompileStringObject(const char *str, PyObject *filename, int start,
         return NULL;
     }
     if (flags && (flags->cf_flags & PyCF_ONLY_AST)) {
-        if (call_ast_optimize(mod, filename, flags, optimize, arena) < 0) {
-            _PyArena_Free(arena);
-            return NULL;
+        if ((flags->cf_flags & PyCF_OPTIMIZED_AST) == PyCF_OPTIMIZED_AST) {
+            if (ast_optimize(mod, filename, flags, optimize, arena) < 0) {
+                _PyArena_Free(arena);
+                return NULL;
+            }
         }
         PyObject *result = PyAST_mod2obj(mod);
         _PyArena_Free(arena);
