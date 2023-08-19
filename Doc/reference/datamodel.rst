@@ -218,7 +218,10 @@ properties:
 Python distinguishes between integers, floating point numbers, and complex
 numbers:
 
+
 :class:`numbers.Integral`
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
    .. index:: pair: object; integer
 
    These represent elements from the mathematical set of integers (positive and
@@ -250,7 +253,10 @@ numbers:
    The rules for integer representation are intended to give the most meaningful
    interpretation of shift and mask operations involving negative integers.
 
+
 :class:`numbers.Real` (:class:`float`)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
    .. index::
       pair: object; floating point
       pair: floating point; number
@@ -265,7 +271,10 @@ numbers:
    overhead of using objects in Python, so there is no reason to complicate the
    language with two kinds of floating point numbers.
 
+
 :class:`numbers.Complex` (:class:`complex`)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
    .. index::
       pair: object; complex
       pair: complex; number
@@ -304,7 +313,10 @@ Some sequences also support "extended slicing" with a third "step" parameter:
 
 Sequences are distinguished according to their mutability:
 
+
 Immutable sequences
+^^^^^^^^^^^^^^^^^^^
+
    .. index::
       pair: object; immutable sequence
       pair: object; immutable
@@ -361,7 +373,10 @@ Immutable sequences
       can be used to create bytes objects.  Also, bytes objects can be
       decoded to strings via the :meth:`~bytes.decode` method.
 
+
 Mutable sequences
+^^^^^^^^^^^^^^^^^
+
    .. index::
       pair: object; mutable sequence
       pair: object; mutable
@@ -417,14 +432,20 @@ set.
 
 There are currently two intrinsic set types:
 
+
 Sets
+^^^^
+
    .. index:: pair: object; set
 
    These represent a mutable set. They are created by the built-in :func:`set`
    constructor and can be modified afterwards by several methods, such as
    :meth:`~set.add`.
 
+
 Frozen sets
+^^^^^^^^^^^
+
    .. index:: pair: object; frozenset
 
    These represent an immutable set.  They are created by the built-in
@@ -449,7 +470,10 @@ of items in a mapping.
 
 There is currently a single intrinsic mapping type:
 
+
 Dictionaries
+^^^^^^^^^^^^
+
    .. index:: pair: object; dictionary
 
    These represent finite sets of objects indexed by nearly arbitrary values.  The
@@ -495,7 +519,10 @@ Callable types
 These are the types to which the function call operation (see section
 :ref:`calls`) can be applied:
 
+
 User-defined functions
+^^^^^^^^^^^^^^^^^^^^^^
+
    .. index::
       pair: user-defined; function
       pair: object; function
@@ -607,7 +634,10 @@ User-defined functions
    :data:`cell <types.CellType>` type can be accessed in the :mod:`types`
    module.
 
+
 Instance methods
+^^^^^^^^^^^^^^^^
+
    .. index::
       pair: object; method
       pair: object; user-defined method
@@ -670,7 +700,10 @@ Instance methods
    methods; this *only* happens when the function is an attribute of the
    class.
 
+
 Generator functions
+^^^^^^^^^^^^^^^^^^^
+
    .. index::
       single: generator; function
       single: generator; iterator
@@ -685,7 +718,10 @@ Generator functions
    :exc:`StopIteration` exception is raised and the iterator will have
    reached the end of the set of values to be returned.
 
+
 Coroutine functions
+^^^^^^^^^^^^^^^^^^^
+
    .. index::
       single: coroutine; function
 
@@ -695,7 +731,10 @@ Coroutine functions
    as well as :keyword:`async with` and :keyword:`async for` statements. See
    also the :ref:`coroutine-objects` section.
 
+
 Asynchronous generator functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
    .. index::
       single: asynchronous generator; function
       single: asynchronous generator; asynchronous iterator
@@ -715,7 +754,10 @@ Asynchronous generator functions
    is raised and the asynchronous iterator will have reached the end of
    the set of values to be yielded.
 
+
 Built-in functions
+^^^^^^^^^^^^^^^^^^
+
    .. index::
       pair: object; built-in function
       pair: object; function
@@ -730,7 +772,10 @@ Built-in functions
    set to ``None`` (but see the next item); :attr:`__module__` is the name of
    the module the function was defined in or ``None`` if unavailable.
 
+
 Built-in methods
+^^^^^^^^^^^^^^^^
+
    .. index::
       pair: object; built-in method
       pair: object; method
@@ -742,14 +787,20 @@ Built-in methods
    this case, the special read-only attribute :attr:`__self__` is set to the object
    denoted by *alist*.
 
+
 Classes
+^^^^^^^
+
    Classes are callable.  These objects normally act as factories for new
    instances of themselves, but variations are possible for class types that
    override :meth:`~object.__new__`.  The arguments of the call are passed to
    :meth:`__new__` and, in the typical case, to :meth:`~object.__init__` to
    initialize the new instance.
 
+
 Class Instances
+^^^^^^^^^^^^^^^
+
    Instances of arbitrary classes can be made callable by defining a
    :meth:`~object.__call__` method in their class.
 
@@ -991,7 +1042,10 @@ mentioned here for completeness.
 
 .. index:: bytecode, object; code, code object
 
+
 Code objects
+^^^^^^^^^^^^
+
    Code objects represent *byte-compiled* executable Python code, or :term:`bytecode`.
    The difference between a code object and a function object is that the function
    object contains an explicit reference to the function's globals (the module in
@@ -1098,9 +1152,12 @@ Code objects
          :option:`-X` ``no_debug_ranges`` command line flag or the :envvar:`PYTHONNODEBUGRANGES`
          environment variable can be used.
 
+
 .. _frame-objects:
 
 Frame objects
+^^^^^^^^^^^^^
+
    .. index:: pair: object; frame
 
    Frame objects represent execution frames.  They may occur in traceback objects
@@ -1160,9 +1217,12 @@ Frame objects
 
       .. versionadded:: 3.4
 
+
 .. _traceback-objects:
 
 Traceback objects
+^^^^^^^^^^^^^^^^^
+
    .. index::
       pair: object; traceback
       pair: stack; trace
@@ -1224,7 +1284,10 @@ Traceback objects
       Traceback objects can now be explicitly instantiated from Python code,
       and the ``tb_next`` attribute of existing instances can be updated.
 
+
 Slice objects
+^^^^^^^^^^^^^
+
    .. index:: pair: built-in function; slice
 
    Slice objects are used to represent slices for
@@ -1251,7 +1314,10 @@ Slice objects
       *step* or stride length of the slice. Missing or out-of-bounds indices
       are handled in a manner consistent with regular slices.
 
+
 Static method objects
+^^^^^^^^^^^^^^^^^^^^^
+
    Static method objects provide a way of defeating the transformation of function
    objects to method objects described above. A static method object is a wrapper
    around any other object, usually a user-defined method object. When a static
@@ -1260,7 +1326,10 @@ Static method objects
    transformation. Static method objects are also callable. Static method
    objects are created by the built-in :func:`staticmethod` constructor.
 
+
 Class method objects
+^^^^^^^^^^^^^^^^^^^^
+
    A class method object, like a static method object, is a wrapper around another
    object that alters the way in which that object is retrieved from classes and
    class instances. The behaviour of class method objects upon such retrieval is
