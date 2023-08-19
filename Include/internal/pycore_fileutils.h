@@ -109,7 +109,8 @@ PyAPI_FUNC(int) _Py_stat(
     PyObject *path,
     struct stat *status);
 
-extern int _Py_open(
+// Export for 'select' shared extension (Solaris newDevPollObject() uses it)
+PyAPI_FUNC(int) _Py_open(
     const char *pathname,
     int flags);
 
@@ -126,7 +127,8 @@ extern Py_ssize_t _Py_read(
     void *buf,
     size_t count);
 
-extern Py_ssize_t _Py_write(
+// Export for 'select' shared extension (Solaris devpoll_flush() uses it)
+PyAPI_FUNC(Py_ssize_t) _Py_write(
     int fd,
     const void *buf,
     size_t count);
@@ -260,6 +262,7 @@ extern int _Py_add_relfile(wchar_t *dirname,
                            size_t bufsize);
 extern size_t _Py_find_basename(const wchar_t *filename);
 PyAPI_FUNC(wchar_t*) _Py_normpath(wchar_t *path, Py_ssize_t size);
+extern wchar_t *_Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t *length);
 
 // The Windows Games API family does not provide these functions
 // so provide our own implementations. Remove them in case they get added

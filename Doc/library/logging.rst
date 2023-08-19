@@ -1002,10 +1002,14 @@ LoggerAdapter Objects
 information into logging calls. For a usage example, see the section on
 :ref:`adding contextual information to your logging output <context-info>`.
 
-.. class:: LoggerAdapter(logger, extra)
+.. class:: LoggerAdapter(logger, extra, merge_extra=False)
 
    Returns an instance of :class:`LoggerAdapter` initialized with an
-   underlying :class:`Logger` instance and a dict-like object.
+   underlying :class:`Logger` instance, a dict-like object (*extra*), and a
+   boolean (*merge_extra*) indicating whether or not the *extra* argument of
+   individual log calls should be merged with the :class:`LoggerAdapter` extra.
+   The default behavior is to ignore the *extra* argument of individual log
+   calls and only use the one of the :class:`LoggerAdapter` instance
 
    .. method:: process(msg, kwargs)
 
@@ -1036,6 +1040,9 @@ interchangeably.
 .. versionchanged:: 3.13
    Remove the undocumented ``warn()`` method which was an alias to the
    ``warning()`` method.
+
+.. versionchanged:: 3.13
+   The *merge_extra* argument was added.
 
 
 Thread Safety

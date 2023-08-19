@@ -264,7 +264,7 @@ class CodeTest(unittest.TestCase):
             ("co_posonlyargcount", 0),
             ("co_kwonlyargcount", 0),
             ("co_nlocals", 1),
-            ("co_stacksize", 0),
+            ("co_stacksize", 1),
             ("co_flags", code.co_flags | inspect.CO_COROUTINE),
             ("co_firstlineno", 100),
             ("co_code", code2.co_code),
