@@ -1019,14 +1019,14 @@ information into logging calls. For a usage example, see the section on
       'extra'. The return value is a (*msg*, *kwargs*) tuple which has the
       (possibly modified) versions of the arguments passed in.
 
-In addition to the above, :class:`LoggerAdapter` supports the following
-methods of :class:`Logger`: :meth:`~Logger.debug`, :meth:`~Logger.info`,
-:meth:`~Logger.warning`, :meth:`~Logger.error`, :meth:`~Logger.exception`,
-:meth:`~Logger.critical`, :meth:`~Logger.log`, :meth:`~Logger.isEnabledFor`,
-:meth:`~Logger.getEffectiveLevel`, :meth:`~Logger.setLevel` and
-:meth:`~Logger.hasHandlers`. These methods have the same signatures as their
-counterparts in :class:`Logger`, so you can use the two types of instances
-interchangeably.
+   In addition to the above, :class:`LoggerAdapter` supports the following
+   methods of :class:`Logger`: :meth:`~Logger.debug`, :meth:`~Logger.info`,
+   :meth:`~Logger.warning`, :meth:`~Logger.error`, :meth:`~Logger.exception`,
+   :meth:`~Logger.critical`, :meth:`~Logger.log`, :meth:`~Logger.isEnabledFor`,
+   :meth:`~Logger.getEffectiveLevel`, :meth:`~Logger.setLevel` and
+   :meth:`~Logger.hasHandlers`. These methods have the same signatures as their
+   counterparts in :class:`Logger`, so you can use the two types of instances
+   interchangeably.
 
    .. versionchanged:: 3.2
 
