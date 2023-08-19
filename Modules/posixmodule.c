@@ -10421,19 +10421,24 @@ os_lockf_impl(PyObject *module, int fd, int command, Py_off_t length)
 os.lseek -> Py_off_t
 
     fd: int
+        An open file descriptor, as returned by os.open().
     position: Py_off_t
-    how: int
+        Position, interpreted relative to 'whence'.
+    whence as how: int
+        The relative position to seek from. Valid values are:
+        - SEEK_SET: seek from the start of the file.
+        - SEEK_CUR: seek from the current file position.
+        - SEEK_END: seek from the end of the file.
     /
 
 Set the position of a file descriptor.  Return the new position.
 
-Return the new cursor position in number of bytes
-relative to the beginning of the file.
+The return value is the number of bytes relative to the beginning of the file.
 [clinic start generated code]*/
 
 static Py_off_t
 os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
-/*[clinic end generated code: output=971e1efb6b30bd2f input=902654ad3f96a6d3]*/
+/*[clinic end generated code: output=971e1efb6b30bd2f input=f096e754c5367504]*/
 {
     Py_off_t result;
 
