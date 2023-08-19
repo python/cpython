@@ -65,7 +65,7 @@ def literal_eval(node_or_string):
     Caution: A complex expression can overflow the C stack and cause a crash.
     """
     if isinstance(node_or_string, str):
-        node_or_string = parse(node_or_string.lstrip(" \t"), mode='eval', optimize=0)
+        node_or_string = parse(node_or_string.lstrip(" \t"), mode='eval')
     if isinstance(node_or_string, Expression):
         node_or_string = node_or_string.body
     def _raise_malformed_node(node):

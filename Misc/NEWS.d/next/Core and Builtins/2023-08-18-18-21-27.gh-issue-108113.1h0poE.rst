@@ -1,6 +1,8 @@
-The :func:`compile` built-in no longer ignores the ``optimize`` argument
-when called with the ``ast.PyCF_ONLY_AST`` flag. The :func:`ast.parse`
-function now accepts an optional argument ``optimize``, which it forwards to
-:func:`compile`. :func:`ast.parse` and :func:`ast.literal_eval` perform
-const folding, so ASTs are more concise and :func:`ast.literal_eval`
-accepts const expressions.
+The :func:`compile` built-in can now accept a new flag,
+``ast.PyCF_OPTIMIZED_AST``, which is similar to ``ast.PyCF_ONLY_AST``
+except that the returned ``AST`` is optimized according to the value
+of the ``optimize`` argument.
+
+:func:`ast.parse` now accepts an optional argument ``optimize``
+which is passed on to the :func:`compile` built-in. This makes it
+possible to obtain an optimized ``AST``.

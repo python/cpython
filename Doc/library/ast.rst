@@ -2125,7 +2125,9 @@ and classes for traversing abstract syntax trees:
 .. function:: parse(source, filename='<unknown>', mode='exec', *, type_comments=False, feature_version=None, optimize=-1)
 
    Parse the source into an AST node.  Equivalent to ``compile(source,
-   filename, mode, flags=ast.PyCF_ONLY_AST, optimize=optimize)``.
+   filename, mode, flags=FLAGS_VALUE, optimize=optimize)``,
+   where ``FLAGS_VALUE`` is ``ast.PyCF_ONLY_AST`` if ``optimize <= 0``
+   and ``ast.PyCF_OPTIMIZED_AST`` otherwise.
 
    If ``type_comments=True`` is given, the parser is modified to check
    and return type comments as specified by :pep:`484` and :pep:`526`.
@@ -2171,10 +2173,7 @@ and classes for traversing abstract syntax trees:
 
    .. versionchanged:: 3.13
       The minimum supported version for feature_version is now (3,7)
-
-      The output AST is now optimized with constant folding.
-      The ``optimize`` argument was added to control additional
-      optimizations.
+      The ``optimize`` argument was added.
 
 
 .. function:: unparse(ast_obj)
@@ -2233,8 +2232,6 @@ and classes for traversing abstract syntax trees:
    .. versionchanged:: 3.10
       For string inputs, leading spaces and tabs are now stripped.
 
-   .. versionchanged:: 3.13
-      This function now understands and collapses const expressions.
 
 .. function:: get_docstring(node, clean=True)
 
