@@ -141,7 +141,10 @@ Some of the type descriptions below contain a paragraph listing 'special
 attributes.'  These are attributes that provide access to the implementation and
 are not intended for general use.  Their definition may change in the future.
 
+
 None
+----
+
    .. index:: pair: object; None
 
    This type has a single value.  There is a single object with this value. This
@@ -149,7 +152,10 @@ None
    absence of a value in many situations, e.g., it is returned from functions that
    don't explicitly return anything. Its truth value is false.
 
+
 NotImplemented
+--------------
+
    .. index:: pair: object; NotImplemented
 
    This type has a single value.  There is a single object with this value. This
@@ -170,6 +176,7 @@ NotImplemented
 
 
 Ellipsis
+--------
    .. index::
       pair: object; Ellipsis
       single: ...; ellipsis literal
@@ -178,7 +185,10 @@ Ellipsis
    object is accessed through the literal ``...`` or the built-in name
    ``Ellipsis``.  Its truth value is true.
 
+
 :class:`numbers.Number`
+-----------------------
+
    .. index:: pair: object; numeric
 
    These are created by numeric literals and returned as results by arithmetic
@@ -265,7 +275,10 @@ Ellipsis
       The real and imaginary parts of a complex number ``z`` can be retrieved through
       the read-only attributes ``z.real`` and ``z.imag``.
 
+
 Sequences
+---------
+
    .. index::
       pair: built-in function; len
       pair: object; sequence
@@ -382,7 +395,10 @@ Sequences
       The extension module :mod:`array` provides an additional example of a
       mutable sequence type, as does the :mod:`collections` module.
 
+
 Set types
+---------
+
    .. index::
       pair: built-in function; len
       pair: object; set type
@@ -416,7 +432,10 @@ Set types
       :term:`hashable`, it can be used again as an element of another set, or as
       a dictionary key.
 
+
 Mappings
+--------
+
    .. index::
       pair: built-in function; len
       single: subscription
@@ -463,7 +482,10 @@ Mappings
          In CPython 3.6, insertion order was preserved, but it was considered
          an implementation detail at that time rather than a language guarantee.
 
+
 Callable types
+--------------
+
    .. index::
       pair: object; callable
       pair: function; call
@@ -733,6 +755,8 @@ Callable types
 
 
 Modules
+-------
+
    .. index::
       pair: statement; import
       pair: object; module
@@ -795,7 +819,10 @@ Modules
       dictionary still has live references.  To avoid this, copy the dictionary
       or keep the module around while using its dictionary directly.
 
+
 Custom classes
+--------------
+
    Custom class types are typically created by class definitions (see section
    :ref:`class`).  A class has a namespace implemented by a dictionary object.
    Class attribute references are translated to lookups in this dictionary, e.g.,
@@ -875,7 +902,10 @@ Custom classes
          A tuple containing the :ref:`type parameters <type-params>` of
          a :ref:`generic class <generic-classes>`.
 
+
 Class instances
+---------------
+
    .. index::
       pair: object; class instance
       pair: object; instance
@@ -918,7 +948,10 @@ Class instances
    Special attributes: :attr:`~object.__dict__` is the attribute dictionary;
    :attr:`~instance.__class__` is the instance's class.
 
+
 I/O objects (also known as file objects)
+----------------------------------------
+
    .. index::
       pair: built-in function; open
       pair: module; io
@@ -944,7 +977,10 @@ I/O objects (also known as file objects)
    therefore follow the interface defined by the :class:`io.TextIOBase`
    abstract class.
 
+
 Internal types
+--------------
+
    .. index::
       single: internal type
       single: types, internal
