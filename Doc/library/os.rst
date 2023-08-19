@@ -3153,7 +3153,7 @@ features:
 
    .. attribute:: st_reparse_tag
 
-      When :attr:`st_file_attributes` has the :const:`FILE_ATTRIBUTE_REPARSE_POINT`
+      When :attr:`st_file_attributes` has the :const:`~stat.FILE_ATTRIBUTE_REPARSE_POINT`
       set, this field contains the tag identifying the type of reparse point.
       See the :const:`IO_REPARSE_TAG_* <stat.IO_REPARSE_TAG_SYMLINK>`
       constants in the :mod:`stat` module.
