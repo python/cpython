@@ -939,7 +939,7 @@ class CLanguage(Language):
             f"{func.fulldisplayname}() is deprecated."
         )
 
-        for (major, minor), group in itertools.groupby(params.values(),
+        for (major, minor), group in itertools.groupby(params.values(),  # type: ignore
                                         lambda p: p.deprecated_positional):
             names = [repr(p.name) for p in group]
             pstr = pprint_words(names)
@@ -1006,7 +1006,7 @@ class CLanguage(Language):
             f"{func.fulldisplayname}() is deprecated."
         )
 
-        for (major, minor), group in itertools.groupby(params.values(),
+        for (major, minor), group in itertools.groupby(params.values(),  # type: ignore
                                         lambda p: p.deprecated_keyword):
             names = [repr(p.name) for p in group]
             pstr = pprint_words(names)
