@@ -357,7 +357,7 @@ class AST_Tests(unittest.TestCase):
             tree = ast.parse(snippet)
             compile(tree, '<string>', 'exec')
 
-    def test_optimization_levels(self):
+    def test_optimization_levels__debug__(self):
         cases = [(-1, '__debug__'), (0, '__debug__'), (1, False), (2, False)]
         for (optval, expected) in cases:
             with self.subTest(optval=optval, expected=expected):
@@ -369,6 +369,21 @@ class AST_Tests(unittest.TestCase):
                 else:
                     self.assertIsInstance(res.body[0].value, ast.Name)
                     self.assertEqual(res.body[0].value.id, expected)
+
+    def test_optimization_levels_const_folding(self):
+        folded = ('Expr', (1, 0, 1, 5), ('Constant', (1, 0, 1, 5), 3, None))
+        not_folded = ('Expr', (1, 0, 1, 5),
+                         ('BinOp', (1, 0, 1, 5),
+                             ('Constant', (1, 0, 1, 1), 1, None),
+                             ('Add',),
+                             ('Constant', (1, 4, 1, 5), 2, None)))
+
+        cases = [(-1, not_folded), (0, not_folded), (1, folded), (2, folded)]
+        for (optval, expected) in cases:
+            with self.subTest(optval=optval):
+                tree = ast.parse("1 + 2", optimize=optval)
+                res = to_tuple(tree.body[0])
+                self.assertEqual(res, expected)
 
     def test_invalid_position_information(self):
         invalid_linenos = [

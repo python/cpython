@@ -518,6 +518,28 @@ class BuiltinTest(unittest.TestCase):
         exec(co, glob)
         self.assertEqual(type(glob['ticker']()), AsyncGeneratorType)
 
+    def test_compile_ast(self):
+        args = ("a*(1+2)", "f.py", "exec")
+        raw = compile(*args, flags = ast.PyCF_ONLY_AST).body[0]
+        opt = compile(*args, flags = ast.PyCF_OPTIMIZED_AST).body[0]
+
+        for tree in (raw, opt):
+            self.assertIsInstance(tree.value, ast.BinOp)
+            self.assertIsInstance(tree.value.op, ast.Mult)
+            self.assertIsInstance(tree.value.left, ast.Name)
+            self.assertEqual(tree.value.left.id, 'a')
+
+        raw_right = raw.value.right  # expect BinOp(1, '+', 2)
+        self.assertIsInstance(raw_right, ast.BinOp)
+        self.assertIsInstance(raw_right.left, ast.Constant)
+        self.assertEqual(raw_right.left.value, 1)
+        self.assertIsInstance(raw_right.right, ast.Constant)
+        self.assertEqual(raw_right.right.value, 2)
+
+        opt_right = opt.value.right  # expect Constant(3)
+        self.assertIsInstance(opt_right, ast.Constant)
+        self.assertEqual(opt_right.value, 3)
+
     def test_delattr(self):
         sys.spam = 1
         delattr(sys, 'spam')
