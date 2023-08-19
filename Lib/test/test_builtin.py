@@ -369,10 +369,11 @@ class BuiltinTest(unittest.TestCase):
                   (1, False, 'doc', False, False),
                   (2, False, None, False, False)]
         for optval, *expected in values:
+          with self.subTest(opt = optval):
             # test both direct compilation and compilation via AST
             codeobjs = []
             codeobjs.append(compile(codestr, "<test>", "exec", optimize=optval))
-            tree = ast.parse(codestr, optimize=optval)
+            tree = ast.parse(codestr)
             codeobjs.append(compile(tree, "<test>", "exec", optimize=optval))
             for code in codeobjs:
                 ns = {}
