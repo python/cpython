@@ -227,10 +227,11 @@ numbers:
 These represent elements from the mathematical set of integers (positive and
 negative).
 
-.. index:: pair: integer; representation
+.. note::
+   .. index:: pair: integer; representation
 
-The rules for integer representation are intended to give the most meaningful
-interpretation of shift and mask operations involving negative integers.
+   The rules for integer representation are intended to give the most meaningful
+   interpretation of shift and mask operations involving negative integers.
 
 There are two types of integers:
 
@@ -403,10 +404,12 @@ Mutable sequences can be changed after they are created.  The subscription and
 slicing notations can be used as the target of assignment and :keyword:`del`
 (delete) statements.
 
-.. index:: pair: module; array
+.. note::
+   .. index:: pair: module; array
+   .. index:: pair: module; collections
 
-The extension module :mod:`array` provides an additional example of a
-mutable sequence type, as does the :mod:`collections` module.
+   The :mod:`collections` and :mod:`array` module provide
+   additional examples of mutable sequence types.
 
 There are currently two intrinsic mutable sequence types:
 
