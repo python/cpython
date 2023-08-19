@@ -1145,7 +1145,8 @@ always available.
 
    .. versionchanged:: 3.11
 
-      Added :attr:`int_info.default_max_str_digits` and :attr:`int_info.str_digits_check_threshold`.
+      Added :attr:`~int_info.default_max_str_digits` and 
+      :attr:`~int_info.str_digits_check_threshold`.
 
 
 .. data:: __interactivehook__
