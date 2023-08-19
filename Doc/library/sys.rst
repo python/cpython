@@ -649,7 +649,7 @@ always available.
 
    The attribute :attr:`sys.float_info.dig` needs further explanation.  If
    ``s`` is any string representing a decimal number with at most
-   :attr:`sys.float_info.dig` significant digits, then converting ``s`` to a
+   :attr:`!sys.float_info.dig` significant digits, then converting ``s`` to a
    float and back again will recover a string representing the same decimal
    value::
 
