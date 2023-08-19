@@ -738,18 +738,30 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
 }
 
 /*[clinic input]
+@text_signature "()"
+@text_signature "(source)"
+@text_signature "(source, encoding)"
+@text_signature "(source, encoding, errors)"
 bytearray.__init__
 
     source as arg: object = NULL
     encoding: str = NULL
     errors: str = NULL
 
+Construct a mutable bytearray object.
+
+If there are no arguments, create an empty bytearray object.  If the first
+argument is an integer, create a zero-filled bytearray object of the
+specified size.  If it is an iterable of integers, fill the new bytearray
+object with them.  If it is an object implementing the buffer protocol,
+copy its content in the new bytearray object.  If it is a text string,
+encode it with the specified encoding and errors handler.
 [clinic start generated code]*/
 
 static int
 bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
                         const char *encoding, const char *errors)
-/*[clinic end generated code: output=4ce1304649c2f8b3 input=1141a7122eefd7b9]*/
+/*[clinic end generated code: output=4ce1304649c2f8b3 input=d2ed9273070b926c]*/
 {
     Py_ssize_t count;
     PyObject *it;
@@ -2099,6 +2111,8 @@ bytearray_fromhex_impl(PyTypeObject *type, PyObject *string)
 }
 
 /*[clinic input]
+@text_signature "($self, *, bytes_per_sep=1, /)"
+@text_signature "($self, sep, bytes_per_sep=1, /)"
 bytearray.hex
 
     sep: object = NULL
@@ -2123,7 +2137,7 @@ Example:
 
 static PyObject *
 bytearray_hex_impl(PyByteArrayObject *self, PyObject *sep, int bytes_per_sep)
-/*[clinic end generated code: output=29c4e5ef72c565a0 input=808667e49bcccb54]*/
+/*[clinic end generated code: output=29c4e5ef72c565a0 input=719afde525c65958]*/
 {
     char* argbuf = PyByteArray_AS_STRING(self);
     Py_ssize_t arglen = PyByteArray_GET_SIZE(self);
@@ -2310,20 +2324,6 @@ static PyNumberMethods bytearray_as_number = {
     bytearray_mod,  /*nb_remainder*/
 };
 
-PyDoc_STRVAR(bytearray_doc,
-"bytearray(iterable_of_ints) -> bytearray\n\
-bytearray(string, encoding[, errors]) -> bytearray\n\
-bytearray(bytes_or_buffer) -> mutable copy of bytes_or_buffer\n\
-bytearray(int) -> bytes array of size given by the parameter initialized with null bytes\n\
-bytearray() -> empty bytes array\n\
-\n\
-Construct a mutable bytearray object from:\n\
-  - an iterable yielding integers in range(256)\n\
-  - a text string encoded using the specified encoding\n\
-  - a bytes or a buffer object\n\
-  - any object implementing the buffer API.\n\
-  - an integer");
-
 
 static PyObject *bytearray_iter(PyObject *seq);
 
@@ -2349,7 +2349,7 @@ PyTypeObject PyByteArray_Type = {
     &bytearray_as_buffer,               /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
         _Py_TPFLAGS_MATCH_SELF,       /* tp_flags */
-    bytearray_doc,                      /* tp_doc */
+    bytearray___init____doc__,          /* tp_doc */
     0,                                  /* tp_traverse */
     0,                                  /* tp_clear */
     (richcmpfunc)bytearray_richcompare, /* tp_richcompare */

@@ -3000,10 +3000,6 @@ class TestSignatureObject(unittest.TestCase):
                                     'no signature found for builtin'):
             inspect.signature(_testcapi.docstring_no_signature)
 
-        with self.assertRaisesRegex(ValueError,
-                                    'no signature found for builtin'):
-            inspect.signature(str)
-
         cls = _testcapi.DocStringNoSignatureTest
         obj = _testcapi.DocStringNoSignatureTest()
         tests = [
@@ -5171,13 +5167,9 @@ class TestBoundArguments(unittest.TestCase):
         self.assertIs(type(ba.arguments), dict)
 
 class TestSignaturePrivateHelpers(unittest.TestCase):
-    def _strip_non_python_syntax(self, input,
-        clean_signature, self_parameter):
-        computed_clean_signature, \
-            computed_self_parameter = \
-            inspect._signature_strip_non_python_syntax(input)
-        self.assertEqual(computed_clean_signature, clean_signature)
-        self.assertEqual(computed_self_parameter, self_parameter)
+    def _strip_non_python_syntax(self, input, clean_signature, self_parameter):
+        self.assertEqual(list(inspect._signature_split(input)),
+                         [(clean_signature, self_parameter)])
 
     def test_signature_strip_non_python_syntax(self):
         self._strip_non_python_syntax(
@@ -5234,21 +5226,12 @@ class TestSignatureDefinitions(unittest.TestCase):
         # the test to fail in order to indicate when it needs to be
         # updated.
         no_signature = set()
-        # These need PEP 457 groups
-        needs_groups = {"range", "slice", "dir", "getattr",
-                        "next", "iter", "vars"}
-        no_signature |= needs_groups
-        # These have unrepresentable parameter default values of NULL
-        needs_null = {"anext"}
-        no_signature |= needs_null
-        # These need *args support in Argument Clinic
-        needs_varargs = {"min", "max", "__build_class__"}
-        no_signature |= needs_varargs
         # These builtin types are expected to provide introspection info
         types_with_signatures = {
-            'bool', 'classmethod', 'complex', 'enumerate', 'filter', 'float',
-            'frozenset', 'list', 'map', 'memoryview', 'object', 'property',
-            'reversed', 'set', 'staticmethod', 'tuple', 'zip'
+            '__loader__', 'bool', 'bytearray', 'bytes', 'classmethod',
+            'complex', 'dict', 'enumerate', 'filter', 'float', 'frozenset',
+            'int', 'list', 'map', 'memoryview', 'object', 'property', 'range',
+            'reversed', 'set', 'slice', 'staticmethod', 'str', 'tuple', 'zip'
         }
         # Check the signatures we expect to be there
         ns = vars(builtins)
@@ -5261,6 +5244,8 @@ class TestSignatureDefinitions(unittest.TestCase):
                 no_signature.add(name)
             if (name in no_signature):
                 # Not yet converted
+                with self.subTest(builtin=name):
+                    self.assertRaises(ValueError, inspect.signature, obj)
                 continue
             if name in {'classmethod', 'staticmethod'}:
                 # Bug gh-112006: inspect.unwrap() does not work with types
@@ -5272,7 +5257,7 @@ class TestSignatureDefinitions(unittest.TestCase):
         # This ensures this test will start failing as more signatures are
         # added, so the affected items can be moved into the scope of the
         # regression test above
-        for name in no_signature - needs_null:
+        for name in no_signature:
             with self.subTest(builtin=name):
                 self.assertIsNone(ns[name].__text_signature__)
 

@@ -107,6 +107,14 @@ static PyMethodDef test_methods[] = {
             "--\n\n"
             "This docstring has a signature with unrepresentable default."
         )},
+    {"func_with_unrepresentable_multisignature",
+        (PyCFunction)test_with_docstring, METH_VARARGS,
+        PyDoc_STR(
+            "func_with_unrepresentable_multisignature($module, /)\n"
+            "($module, /, a, b=<x>)\n"
+            "--\n\n"
+            "This docstring has a multisignature with unrepresentable default."
+        )},
     {NULL},
 };
 
@@ -168,6 +176,13 @@ static PyMethodDef DocStringUnrepresentableSignatureTest_methods[] = {
             "staticmeth(a, b=<x>)\n"
             "--\n\n"
             "This docstring has a signature with unrepresentable default."
+        )},
+    {"meth_multi",
+        (PyCFunction)test_with_docstring, METH_VARARGS,
+        PyDoc_STR(
+            "meth_multi($self, /, a, b=<x>)\n"
+            "--\n\n"
+            "This docstring has a multisignature with unrepresentable default."
         )},
     {NULL},
 };

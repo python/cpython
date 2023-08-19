@@ -154,8 +154,11 @@ range_vectorcall(PyTypeObject *type, PyObject *const *args,
 }
 
 PyDoc_STRVAR(range_doc,
-"range(stop) -> range object\n\
-range(start, stop[, step]) -> range object\n\
+"range(stop, /)\n\
+(start, stop, step=1, /)\n\
+--\n\
+\n\
+Create a range object.\n\
 \n\
 Return an object that produces a sequence of integers from start (inclusive)\n\
 to stop (exclusive) by step.  range(i, j) produces i, i+1, i+2, ..., j-1.\n\

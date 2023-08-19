@@ -67,6 +67,7 @@ __all__ = [
     "GEN_CREATED",
     "GEN_RUNNING",
     "GEN_SUSPENDED",
+    "MultiSignature",
     "Parameter",
     "Signature",
     "TPFLAGS_IS_ABSTRACT",
@@ -134,6 +135,7 @@ __all__ = [
     "istraceback",
     "markcoroutinefunction",
     "signature",
+    "signatures",
     "stack",
     "trace",
     "unwrap",
@@ -2189,19 +2191,20 @@ def _signature_is_functionlike(obj):
             (isinstance(annotations, (dict)) or annotations is None) )
 
 
-def _signature_strip_non_python_syntax(signature):
+def _signature_split(signature):
     """
     Private helper function. Takes a signature in Argument Clinic's
     extended signature format.
 
-    Returns a tuple of two things:
+    Yields pairs:
       * that signature re-rendered in standard Python syntax, and
       * the index of the "self" parameter (generally 0), or None if
         the function does not have a "self" parameter.
     """
 
     if not signature:
-        return signature, None
+        yield (signature, None)
+        return
 
     self_parameter = None
 
@@ -2214,7 +2217,8 @@ def _signature_strip_non_python_syntax(signature):
 
     current_parameter = 0
     OP = token.OP
-    ERRORTOKEN = token.ERRORTOKEN
+    NEWLINE = token.NEWLINE
+    NL = token.NL
 
     # token stream always starts with ENCODING token, skip it
     t = next(token_stream)
@@ -2222,30 +2226,38 @@ def _signature_strip_non_python_syntax(signature):
 
     for t in token_stream:
         type, string = t.type, t.string
-
-        if type == OP:
+        if type == NEWLINE:
+            yield (''.join(text), self_parameter)
+            text.clear()
+            self_parameter = None
+            current_parameter = 0
+            continue
+        elif type == NL:
+            continue
+        elif type == OP:
             if string == ',':
                 current_parameter += 1
-
-        if (type == OP) and (string == '$'):
-            assert self_parameter is None
-            self_parameter = current_parameter
-            continue
-
+                string = ', '
+            elif string == '$' and self_parameter is None:
+                self_parameter = current_parameter
+                continue
         add(string)
-        if (string == ','):
-            add(' ')
-    clean_signature = ''.join(text).strip().replace("\n", "")
-    return clean_signature, self_parameter
-
 
 def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
     """Private helper to parse content of '__text_signature__'
     and return a Signature based on it.
     """
-    Parameter = cls._parameter_cls
+    signatures = [_signature_fromstr1(cls, obj,
+                                      clean_signature, self_parameter,
+                                      skip_bound_arg)
+        for clean_signature, self_parameter in _signature_split(s)]
+    if len(signatures) == 1:
+        return signatures[0]
+    else:
+        return MultiSignature(signatures)
 
-    clean_signature, self_parameter = _signature_strip_non_python_syntax(s)
+def _signature_fromstr1(cls, obj, clean_signature, self_parameter, skip_bound_arg):
+    Parameter = cls._parameter_cls
 
     program = "def foo" + clean_signature + ": pass"
 
@@ -2830,6 +2842,8 @@ class Parameter:
 
         return type(self)(name, kind, default=default, annotation=annotation)
 
+    __replace__ = replace
+
     def __str__(self):
         kind = self.kind
         formatted = self._name
@@ -2851,8 +2865,6 @@ class Parameter:
             formatted = '**' + formatted
 
         return formatted
-
-    __replace__ = replace
 
     def __repr__(self):
         return '<{} "{}">'.format(self.__class__.__name__, self)
@@ -3133,7 +3145,7 @@ class Signature:
     def __eq__(self, other):
         if self is other:
             return True
-        if not isinstance(other, Signature):
+        if not isinstance(other, Signature) or isinstance(other, MultiSignature):
             return NotImplemented
         return self._hash_basis() == other._hash_basis()
 
@@ -3355,10 +3367,105 @@ class Signature:
         return rendered
 
 
+class MultiSignature(Signature):
+    __slots__ = ('_signatures',)
+
+    def __init__(self, signatures):
+        signatures = tuple(signatures)
+        if not signatures:
+            raise ValueError('No signatures')
+        self._signatures = signatures
+
+    @staticmethod
+    def from_callable(obj, *,
+                      follow_wrapped=True, globals=None, locals=None, eval_str=False):
+        """Constructs MultiSignature for the given callable object."""
+        signature = Signature.from_callable(obj, follow_wrapped=follow_wrapped,
+                                            globals=globals, locals=locals,
+                                            eval_str=eval_str)
+        if not isinstance(signature, MultiSignature):
+            signature = MultiSignature((signature,))
+        return signature
+
+    @property
+    def parameters(self):
+        try:
+            return self._parameters
+        except AttributeError:
+            pass
+        params = {}
+        for s in self._signatures:
+            params.update(s.parameters)
+        self._parameters = types.MappingProxyType(params)
+        return self._parameters
+
+    @property
+    def return_annotation(self):
+        try:
+            return self._return_annotation
+        except AttributeError:
+            pass
+        self._return_annotation = types.UnionType(tuple(s.return_annotation
+                                    for s in self._signatures
+                                    if s.return_annotation != _empty))
+        return self._return_annotation
+
+    def replace(self):
+        raise NotImplementedError
+
+    __replace__ = replace
+
+    def __iter__(self):
+        return iter(self._signatures)
+
+    def __hash__(self):
+        if len(self._signatures) == 1:
+            return hash(self._signatures[0])
+        return hash(self._signatures)
+
+    def __eq__(self, other):
+        if self is other:
+            return True
+        if isinstance(other, MultiSignature):
+            return self._signatures == other._signatures
+        if len(self._signatures) == 1 and isinstance(other, Signature):
+            return self._signatures[0] == other
+        return NotImplemented
+
+    def _bind(self, args, kwargs, *, partial=False):
+        """Private method. Don't use directly."""
+        for i, s in enumerate(self._signatures):
+            try:
+                return s._bind(args, kwargs, partial=partial)
+            except TypeError:
+                if i == len(self._signatures) - 1:
+                    raise
+
+    def __reduce__(self):
+        return type(self), (self._signatures,)
+
+    def __repr__(self):
+        return '<%s %s>' % (self.__class__.__name__,
+                            '|'.join(map(str, self._signatures)))
+
+    def __str__(self):
+        return '\n'.join(map(str, self._signatures))
+
+    def format(self, *, max_width=None):
+        return '\n'.join(sig.format(max_width=max_width)
+                         for sig in self._signatures)
+
+
 def signature(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=False):
     """Get a signature object for the passed callable."""
     return Signature.from_callable(obj, follow_wrapped=follow_wrapped,
                                    globals=globals, locals=locals, eval_str=eval_str)
+
+def signatures(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=False):
+    """Get a multi-signature object for the passed callable."""
+    return MultiSignature.from_callable(obj, follow_wrapped=follow_wrapped,
+                                        globals=globals, locals=locals,
+                                        eval_str=eval_str)
 
 
 class BufferFlags(enum.IntFlag):

@@ -3,6 +3,7 @@
 from idlelib import calltip
 import unittest
 from unittest.mock import Mock
+import builtins
 import textwrap
 import types
 import re
@@ -151,17 +152,48 @@ you\'ll probably have to override _wrap_chunks().''')
                      "Signature information for builtins requires docstrings")
     def test_multiline_docstring(self):
         # Test fewer lines than max.
+        def range():
+            """range(stop) -> range object
+            range(start, stop[, step]) -> range object
+
+            Return an object that produces a sequence of integers from start
+            (inclusive) to stop (exclusive) by step.
+            """
+        range.__text_signature__ = '<no signature>'
         self.assertEqual(get_spec(range),
                 "range(stop) -> range object\n"
                 "range(start, stop[, step]) -> range object")
+        self.assertEqual(get_spec(builtins.range),
+                "(stop, /)\n"
+                "(start, stop, step=1, /)\n"
+                "Create a range object.")
 
         # Test max lines
+        def bytes():
+            """bytes(iterable_of_ints) -> bytes
+            bytes(string, encoding[, errors]) -> bytes
+            bytes(bytes_or_buffer) -> immutable copy of bytes_or_buffer
+            bytes(int) -> bytes object of size given by the parameter initialized with null bytes
+            bytes() -> empty bytes object
+
+            Construct an immutable array of bytes from:
+              - an iterable yielding integers in range(256)
+              - a text string encoded using the specified encoding
+              - any object implementing the buffer API.
+              - an integer"""
+        bytes.__text_signature__ = '<no signature>'
         self.assertEqual(get_spec(bytes), '''\
 bytes(iterable_of_ints) -> bytes
 bytes(string, encoding[, errors]) -> bytes
 bytes(bytes_or_buffer) -> immutable copy of bytes_or_buffer
 bytes(int) -> bytes object of size given by the parameter initialized with null bytes
 bytes() -> empty bytes object''')
+        self.assertEqual(get_spec(builtins.bytes), '''\
+()
+(source)
+(source, encoding)
+(source, encoding, errors)
+Construct an immutable array of bytes.''')
 
     def test_multiline_docstring_2(self):
         # Test more than max lines

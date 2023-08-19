@@ -6032,6 +6032,8 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
 }
 
 /*[clinic input]
+@text_signature "($self, /)"
+@text_signature "($self, ndigits, /)"
 int.__round__
 
     ndigits as o_ndigits: object = NULL
@@ -6044,7 +6046,7 @@ Rounding with an ndigits argument also returns an integer.
 
 static PyObject *
 int___round___impl(PyObject *self, PyObject *o_ndigits)
-/*[clinic end generated code: output=954fda6b18875998 input=1614cf23ec9e18c3]*/
+/*[clinic end generated code: output=954fda6b18875998 input=c39d8036d189bdea]*/
 {
     PyObject *temp, *result, *ndigits;
 
@@ -6484,8 +6486,9 @@ static PyGetSetDef long_getset[] = {
 };
 
 PyDoc_STRVAR(long_doc,
-"int([x]) -> integer\n\
-int(x, base=10) -> integer\n\
+"int(x=0, /)\n\
+(x, /, base=10)\n\
+--\n\
 \n\
 Convert a number or string to an integer, or return 0 if no arguments\n\
 are given.  If x is a number, return x.__int__().  For floating point\n\

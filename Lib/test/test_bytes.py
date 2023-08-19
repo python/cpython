@@ -1870,9 +1870,13 @@ class AssortedBytesTest(unittest.TestCase):
     @test.support.requires_docstrings
     def test_doc(self):
         self.assertIsNotNone(bytearray.__doc__)
-        self.assertTrue(bytearray.__doc__.startswith("bytearray("), bytearray.__doc__)
+        self.assertTrue(bytearray.__doc__.startswith(
+            "Construct a mutable bytearray object.\n\n"),
+            bytearray.__doc__)
         self.assertIsNotNone(bytes.__doc__)
-        self.assertTrue(bytes.__doc__.startswith("bytes("), bytes.__doc__)
+        self.assertTrue(bytes.__doc__.startswith(
+            "Construct an immutable array of bytes.\n\n"),
+            bytes.__doc__)
 
     def test_from_bytearray(self):
         sample = bytes(b"Hello world\n\x80\x81\xfe\xff")

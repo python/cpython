@@ -1162,10 +1162,11 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         try:
             # In some cases fetching a signature is not possible.
             # But, we surely should not fail in this case.
-            text_sig = str(inspect.signature(cls)).replace(' -> None', '')
+            doc = '\n'.join(cls.__name__ + str(sig).replace(' -> None', '')
+                            for sig in inspect.signatures(cls))
         except (TypeError, ValueError):
-            text_sig = ''
-        cls.__doc__ = (cls.__name__ + text_sig)
+            doc = cls.__name__
+        cls.__doc__ = doc
 
     if match_args:
         # I could probably compute this once.

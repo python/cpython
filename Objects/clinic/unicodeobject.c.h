@@ -1521,7 +1521,8 @@ unicode_swapcase(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(unicode_maketrans__doc__,
-"maketrans(x, y=<unrepresentable>, z=<unrepresentable>, /)\n"
+"maketrans($self, x, /)\n"
+"($self, x, y, z=\'\', /)\n"
 "--\n"
 "\n"
 "Return a translation table usable for str.translate().\n"
@@ -1888,4 +1889,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3aa49013ffa3fa93 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d1a9ade94836dfaa input=a9049054013a1b77]*/
