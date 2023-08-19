@@ -922,41 +922,37 @@ class CLanguage(Language):
             params: dict[int, Parameter],
     ) -> str:
         assert len(params) > 0
-        names = [repr(p.name) for p in params.values()]
-        first_pos, first_param = next(iter(params.items()))
-        last_pos, last_param = next(reversed(params.items()))
-
-        # Pretty-print list of names.
-        pstr = pprint_words(names)
-
-        # For now, assume there's only one deprecation level.
-        assert first_param.deprecated_positional == last_param.deprecated_positional
-        thenceforth = first_param.deprecated_positional
-        assert thenceforth is not None
-        major, minor = thenceforth
+        first_pos = next(iter(params))
+        last_pos = next(reversed(params))
 
         # Format the deprecation message.
-        if first_pos == 0:
-            preamble = "Passing positional arguments to "
         if len(params) == 1:
             condition = f"nargs == {first_pos+1}"
-            if first_pos:
-                preamble = f"Passing {first_pos+1} positional arguments to "
-            message = preamble + (
-                f"{func.fulldisplayname}() is deprecated. Parameter {pstr} will "
-                f"become a keyword-only parameter in Python {major}.{minor}."
-            )
+            amount = f"{first_pos+1} " if first_pos else ""
+            pl = "s"
         else:
             condition = f"nargs > {first_pos} && nargs <= {last_pos+1}"
-            if first_pos:
-                preamble = (
-                    f"Passing more than {first_pos} positional "
-                    f"argument{'s' if first_pos != 1 else ''} to "
+            amount = f"more than {first_pos} " if first_pos else ""
+            pl = "s" if first_pos != 1 else ""
+        message = (
+            f"Passing {amount}positional argument{pl} to "
+            f"{func.fulldisplayname}() is deprecated."
+        )
+
+        for (major, minor), group in itertools.groupby(params.values(),
+                                        lambda p: p.deprecated_positional):
+            names = [repr(p.name) for p in group]
+            pstr = pprint_words(names)
+            if len(names) == 1:
+                message += (
+                    f" Parameter {pstr} will become a keyword-only parameter "
+                    f"in Python {major}.{minor}."
                 )
-            message = preamble + (
-                f"{func.fulldisplayname}() is deprecated. Parameters {pstr} will "
-                f"become keyword-only parameters in Python {major}.{minor}."
-            )
+            else:
+                message += (
+                    f" Parameters {pstr} will become keyword-only parameters "
+                    f"in Python {major}.{minor}."
+                )
 
         # Append deprecation warning to docstring.
         docstring = textwrap.fill(f"Note: {message}")
@@ -977,18 +973,7 @@ class CLanguage(Language):
             argname_fmt: str | None,
     ) -> str:
         assert len(params) > 0
-        names = [repr(p.name) for p in params.values()]
-        first_param = next(iter(params.values()))
         last_param = next(reversed(params.values()))
-
-        # Pretty-print list of names.
-        pstr = pprint_words(names)
-
-        # For now, assume there's only one deprecation level.
-        assert first_param.deprecated_keyword == last_param.deprecated_keyword
-        thenceforth = first_param.deprecated_keyword
-        assert thenceforth is not None
-        major, minor = thenceforth
 
         # Format the deprecation message.
         containscheck = ""
@@ -1013,16 +998,24 @@ class CLanguage(Language):
                 condition = f"kwargs && PyDict_GET_SIZE(kwargs) && {condition}"
             else:
                 condition = f"kwnames && PyTuple_GET_SIZE(kwnames) && {condition}"
-        if len(params) == 1:
-            what1 = "argument"
-            what2 = "parameter"
-        else:
-            what1 = "arguments"
-            what2 = "parameters"
+        names = [repr(p.name) for p in params.values()]
+        pstr = pprint_words(names)
+        pl = 's' if len(params) != 1 else ''
         message = (
-            f"Passing keyword {what1} {pstr} to {func.fulldisplayname}() is deprecated. "
-            f"Corresponding {what2} will become positional-only in Python {major}.{minor}."
+            f"Passing keyword argument{pl} {pstr} to "
+            f"{func.fulldisplayname}() is deprecated."
         )
+
+        for (major, minor), group in itertools.groupby(params.values(),
+                                        lambda p: p.deprecated_keyword):
+            names = [repr(p.name) for p in group]
+            pstr = pprint_words(names)
+            pl = 's' if len(names) != 1 else ''
+            message += (
+                f" Parameter{pl} {pstr} will become positional-only "
+                f"in Python {major}.{minor}."
+            )
+
         if containscheck:
             errcheck = f"""
             if (PyErr_Occurred()) {{{{ // {containscheck}() above can fail
@@ -5530,7 +5523,13 @@ class DSLParser:
             if self.keyword_only:
                 fail(f"Function {function.name!r}: '* [from ...]' must come before '*'")
             if self.deprecated_positional:
-                fail(f"Function {function.name!r} uses '* [from ...]' more than once.")
+                if self.deprecated_positional == version:
+                    fail(f"Function {function.name!r} uses '* [from "
+                         f"{version[0]}.{version[1]}]' more than once.")
+                if self.deprecated_positional < version:
+                    fail(f"Function {function.name!r}: '* [from "
+                         f"{version[0]}.{version[1]}]' must come before '* [from "
+                         f"{self.deprecated_positional[0]}.{self.deprecated_positional[1]}]'")
         self.deprecated_positional = version
 
     def parse_opening_square_bracket(self, function: Function) -> None:
@@ -5582,7 +5581,13 @@ class DSLParser:
                 fail(f"Function {function.name!r} uses '/' more than once.")
         else:
             if self.deprecated_keyword:
-                fail(f"Function {function.name!r} uses '/ [from ...]' more than once.")
+                if self.deprecated_keyword == version:
+                    fail(f"Function {function.name!r} uses '/ [from "
+                         f"{version[0]}.{version[1]}]' more than once.")
+                if self.deprecated_keyword > version:
+                    fail(f"Function {function.name!r}: '/ [from "
+                         f"{version[0]}.{version[1]}]' must precede '/ [from "
+                         f"{self.deprecated_keyword[0]}.{self.deprecated_keyword[1]}]'")
             if self.deprecated_positional:
                 fail(f"Function {function.name!r}: '/ [from ...]' must precede '* [from ...]'")
             if self.keyword_only:
@@ -5613,7 +5618,7 @@ class DSLParser:
             if p.kind is inspect.Parameter.POSITIONAL_OR_KEYWORD:
                 if version is None:
                     p.kind = inspect.Parameter.POSITIONAL_ONLY
-                else:
+                elif p.deprecated_keyword is None:
                     p.deprecated_keyword = version
 
     def state_parameter_docstring_start(self, line: str) -> None:
