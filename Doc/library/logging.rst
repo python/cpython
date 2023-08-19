@@ -1028,21 +1028,25 @@ methods of :class:`Logger`: :meth:`~Logger.debug`, :meth:`~Logger.info`,
 counterparts in :class:`Logger`, so you can use the two types of instances
 interchangeably.
 
-.. versionchanged:: 3.2
-   The :meth:`~Logger.isEnabledFor`, :meth:`~Logger.getEffectiveLevel`,
-   :meth:`~Logger.setLevel` and :meth:`~Logger.hasHandlers` methods were added
-   to :class:`LoggerAdapter`.  These methods delegate to the underlying logger.
+   .. versionchanged:: 3.2
 
-.. versionchanged:: 3.6
-   Attribute :attr:`!manager` and method :meth:`!_log` were added, which
-   delegate to the underlying logger and allow adapters to be nested.
+      The :meth:`~Logger.isEnabledFor`, :meth:`~Logger.getEffectiveLevel`,
+      :meth:`~Logger.setLevel` and :meth:`~Logger.hasHandlers` methods were added
+      to :class:`LoggerAdapter`.  These methods delegate to the underlying logger.
 
-.. versionchanged:: 3.13
-   Remove the undocumented :meth:`!warn`` method which was an alias to the
-   :meth:`!warning` method.
+   .. versionchanged:: 3.6
 
-.. versionchanged:: 3.13
-   The *merge_extra* argument was added.
+      Attribute :attr:`!manager` and method :meth:`!_log` were added, which
+      delegate to the underlying logger and allow adapters to be nested.
+
+   .. versionchanged:: 3.13
+
+      Remove the undocumented :meth:`!warn`` method which was an alias to the
+      :meth:`!warning` method.
+
+   .. versionchanged:: 3.13
+
+      The *merge_extra* argument was added.
 
 
 Thread Safety
