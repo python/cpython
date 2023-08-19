@@ -227,6 +227,11 @@ numbers:
 These represent elements from the mathematical set of integers (positive and
 negative).
 
+.. index:: pair: integer; representation
+
+The rules for integer representation are intended to give the most meaningful
+interpretation of shift and mask operations involving negative integers.
+
 There are two types of integers:
 
 
@@ -253,11 +258,6 @@ the values ``False`` and ``True`` are the only Boolean objects. The Boolean type
 subtype of the integer type, and Boolean values behave like the values 0 and 1,
 respectively, in almost all contexts, the exception being that when converted to
 a string, the strings ``"False"`` or ``"True"`` are returned, respectively.
-
-.. index:: pair: integer; representation
-
-The rules for integer representation are intended to give the most meaningful
-interpretation of shift and mask operations involving negative integers.
 
 
 :class:`numbers.Real` (:class:`float`)
@@ -403,6 +403,11 @@ Mutable sequences can be changed after they are created.  The subscription and
 slicing notations can be used as the target of assignment and :keyword:`del`
 (delete) statements.
 
+.. index:: pair: module; array
+
+The extension module :mod:`array` provides an additional example of a
+mutable sequence type, as does the :mod:`collections` module.
+
 There are currently two intrinsic mutable sequence types:
 
 
@@ -425,11 +430,6 @@ A bytearray object is a mutable array. They are created by the built-in
 :func:`bytearray` constructor.  Aside from being mutable
 (and hence unhashable), byte arrays otherwise provide the same interface
 and functionality as immutable :class:`bytes` objects.
-
-.. index:: pair: module; array
-
-The extension module :mod:`array` provides an additional example of a
-mutable sequence type, as does the :mod:`collections` module.
 
 
 Set types
