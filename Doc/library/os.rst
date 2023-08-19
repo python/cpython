@@ -1163,17 +1163,22 @@ as internal buffering of data.
    .. versionadded:: 3.11
 
 
-.. function:: lseek(fd, pos, how, /)
+.. function:: lseek(fd, pos, whence, /)
 
    Set the current position of file descriptor *fd* to position *pos*, modified
-   by *how*: :const:`SEEK_SET` or ``0`` to set the position relative to the
-   beginning of the file; :const:`SEEK_CUR` or ``1`` to set it relative to the
-   current position; :const:`SEEK_END` or ``2`` to set it relative to the end of
-   the file. Return the new cursor position in bytes, starting from the beginning.
+   by *whence*, and return the new position in bytes relative to
+   the start of the file.
+   Valid values for *whence* are:
+
+   * :const:`SEEK_SET` or ``0`` -- set *pos* relative to the beginning of the file
+   * :const:`SEEK_CUR` or ``1`` -- set *pos* relative to the current file position
+   * :const:`SEEK_END` or ``2`` -- set *pos* relative to the end of the file
+   * :const:`SEEK_HOLE` -- set *pos* to the next data location, relative to *pos*
+   * :const:`SEEK_DATA` -- set *pos* to the next data hole, relative to *pos*
 
    .. versionchanged:: 3.3
 
-      Add support for :const:`SEEK_HOLE` and :const:`SEEK_DATA`.
+      Add support for :const:`!SEEK_HOLE` and :const:`!SEEK_DATA`.
 
 
 .. data:: SEEK_SET

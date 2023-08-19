@@ -144,6 +144,15 @@ pathlib
   :meth:`~pathlib.Path.is_dir`.
   (Contributed by Barney Gale in :gh:`77609` and :gh:`105793`.)
 
+tkinter
+-------
+
+* Add :mod:`tkinter` widget methods:
+  :meth:`!tk_busy_hold`, :meth:`!tk_busy_configure`,
+  :meth:`!tk_busy_cget`, :meth:`!tk_busy_forget`,
+  :meth:`!tk_busy_current`, and :meth:`!tk_busy_status`.
+  (Contributed by Miguel, klappnase and Serhiy Storchaka in :gh:`72684`.)
+
 traceback
 ---------
 
@@ -831,6 +840,10 @@ New Features
   these functions return -1 on error and so checking ``PyErr_Occurred()`` is
   not needed.
   (Contributed by Victor Stinner in :gh:`106004`.)
+
+* Add :c:func:`Py_IsFinalizing` function: check if the main Python interpreter is
+  :term:`shutting down <interpreter shutdown>`.
+  (Contributed by Victor Stinner in :gh:`108014`.)
 
 Porting to Python 3.13
 ----------------------

@@ -129,7 +129,7 @@ _PyRuntime_Finalize(void)
 }
 
 int
-_Py_IsFinalizing(void)
+Py_IsFinalizing(void)
 {
     return _PyRuntimeState_GetFinalizing(&_PyRuntime) != NULL;
 }
