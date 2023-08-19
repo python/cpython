@@ -1,0 +1,4 @@
+Correct usage should be "IFPkgFlagUpdateInstalledLanguages"
+
+Example
+https://opensource.apple.com/source/Heimdal/Heimdal-172.27/packages/mac/Info.plist.auto.html
