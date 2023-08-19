@@ -1828,7 +1828,7 @@ always available.
 
    .. attribute:: thread_info.name
 
-      Name of the thread implementation:
+      The name of the thread implementation:
 
       * ``"nt"``: Windows threads
       * ``"pthread"``: POSIX threads
@@ -1838,7 +1838,7 @@ always available.
 
    .. attribute:: thread_info.lock
 
-      Name of the lock implementation:
+      The name of the lock implementation:
 
       * ``"semaphore"``: a lock uses a semaphore
       * ``"mutex+cond"``: a lock uses a mutex and a condition variable
@@ -1846,7 +1846,7 @@ always available.
 
    .. attribute:: thread_info.version
 
-      Name and version of the thread library.
+      The name and version of the thread library.
       It is a string, or ``None`` if this information is unknown.
 
    .. versionadded:: 3.3
