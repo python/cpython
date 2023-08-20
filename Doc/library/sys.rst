@@ -333,23 +333,21 @@ always available.
    *wasm32-emscripten* platform. The named tuple is provisional and may change
    in the future.
 
-   .. tabularcolumns:: |l|L|
+   .. attribute:: _emscripten_info.emscripten_version
 
-   +-----------------------------+----------------------------------------------+
-   | Attribute                   | Explanation                                  |
-   +=============================+==============================================+
-   | :const:`emscripten_version` | Emscripten version as tuple of ints          |
-   |                             | (major, minor, micro), e.g. ``(3, 1, 8)``.   |
-   +-----------------------------+----------------------------------------------+
-   | :const:`runtime`            | Runtime string, e.g. browser user agent,     |
-   |                             | ``'Node.js v14.18.2'``, or ``'UNKNOWN'``.    |
-   +-----------------------------+----------------------------------------------+
-   | :const:`pthreads`           | ``True`` if Python is compiled with          |
-   |                             | Emscripten pthreads support.                 |
-   +-----------------------------+----------------------------------------------+
-   | :const:`shared_memory`      | ``True`` if Python is compiled with shared   |
-   |                             | memory support.                              |
-   +-----------------------------+----------------------------------------------+
+      Emscripten version as tuple of ints (major, minor, micro), e.g. ``(3, 1, 8)``.
+
+   .. attribute:: _emscripten_info.runtime
+
+      Runtime string, e.g. browser user agent, ``'Node.js v14.18.2'``, or ``'UNKNOWN'``.
+
+   .. attribute:: _emscripten_info.pthreads
+
+      ``True`` if Python is compiled with Emscripten pthreads support.
+
+   .. attribute:: _emscripten_info.shared_memory
+
+      ``True`` if Python is compiled with shared memory support.
 
    .. availability:: Emscripten.
 
@@ -515,28 +513,62 @@ always available.
    The :term:`named tuple` *flags* exposes the status of command line
    flags. The attributes are read only.
 
-   ==============================  ==============================================================================================================
-   attribute                       flag
-   ==============================  ==============================================================================================================
-   :const:`debug`                  :option:`-d`
-   :const:`inspect`                :option:`-i`
-   :const:`interactive`            :option:`-i`
-   :const:`isolated`               :option:`-I`
-   :const:`optimize`               :option:`-O` or :option:`-OO`
-   :const:`dont_write_bytecode`    :option:`-B`
-   :const:`no_user_site`           :option:`-s`
-   :const:`no_site`                :option:`-S`
-   :const:`ignore_environment`     :option:`-E`
-   :const:`verbose`                :option:`-v`
-   :const:`bytes_warning`          :option:`-b`
-   :const:`quiet`                  :option:`-q`
-   :const:`hash_randomization`     :option:`-R`
-   :const:`dev_mode`               :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
-   :const:`utf8_mode`              :option:`-X utf8 <-X>`
-   :const:`safe_path`              :option:`-P`
-   :const:`int_max_str_digits`     :option:`-X int_max_str_digits <-X>` (:ref:`integer string conversion length limitation <int_max_str_digits>`)
-   :const:`warn_default_encoding`  :option:`-X warn_default_encoding <-X>`
-   ==============================  ==============================================================================================================
+   .. list-table::
+
+      * - .. attribute:: flags.debug
+        - :option:`-d`
+
+      * - .. attribute:: flags.inspect
+        - :option:`-i`
+
+      * - .. attribute:: flags.interactive
+        - :option:`-i`
+
+      * - .. attribute:: flags.isolated
+        - :option:`-I`
+
+      * - .. attribute:: flags.optimize
+        - :option:`-O` or :option:`-OO`
+
+      * - .. attribute:: flags.dont_write_bytecode
+        - :option:`-B`
+
+      * - .. attribute:: flags.no_user_site
+        - :option:`-s`
+
+      * - .. attribute:: flags.no_site
+        - :option:`-S`
+
+      * - .. attribute:: flags.ignore_environment
+        - :option:`-E`
+
+      * - .. attribute:: flags.verbose
+        - :option:`-v`
+
+      * - .. attribute:: flags.bytes_warning
+        - :option:`-b`
+
+      * - .. attribute:: flags.quiet
+        - :option:`-q`
+
+      * - .. attribute:: flags.hash_randomization
+        - :option:`-R`
+
+      * - .. attribute:: flags.dev_mode
+        - :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
+
+      * - .. attribute:: flags.utf8_mode
+        - :option:`-X utf8 <-X>`
+
+      * - .. attribute:: flags.safe_path
+        - :option:`-P`
+
+      * - .. attribute:: flags.int_max_str_digits
+        - :option:`-X int_max_str_digits <-X>`
+          (:ref:`integer string conversion length limitation <int_max_str_digits>`)
+
+      * - .. attribute:: flags.warn_default_encoding
+        - :option:`-X warn_default_encoding <-X>`
 
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
@@ -923,8 +955,8 @@ always available.
    |                                       | a domain controller.            |
    +---------------------------------------+---------------------------------+
 
-   This function wraps the Win32 :c:func:`GetVersionEx` function; see the
-   Microsoft documentation on :c:func:`OSVERSIONINFOEX` for more information
+   This function wraps the Win32 :c:func:`!GetVersionEx` function; see the
+   Microsoft documentation on :c:func:`!OSVERSIONINFOEX` for more information
    about these fields.
 
    *platform_version* returns the major version, minor version and
@@ -982,28 +1014,37 @@ always available.
    implementation.  For more details about hashing of numeric types, see
    :ref:`numeric-hash`.
 
-   +---------------------+--------------------------------------------------+
-   | attribute           | explanation                                      |
-   +=====================+==================================================+
-   | :const:`width`      | width in bits used for hash values               |
-   +---------------------+--------------------------------------------------+
-   | :const:`modulus`    | prime modulus P used for numeric hash scheme     |
-   +---------------------+--------------------------------------------------+
-   | :const:`inf`        | hash value returned for a positive infinity      |
-   +---------------------+--------------------------------------------------+
-   | :const:`nan`        | (this attribute is no longer used)               |
-   +---------------------+--------------------------------------------------+
-   | :const:`imag`       | multiplier used for the imaginary part of a      |
-   |                     | complex number                                   |
-   +---------------------+--------------------------------------------------+
-   | :const:`algorithm`  | name of the algorithm for hashing of str, bytes, |
-   |                     | and memoryview                                   |
-   +---------------------+--------------------------------------------------+
-   | :const:`hash_bits`  | internal output size of the hash algorithm       |
-   +---------------------+--------------------------------------------------+
-   | :const:`seed_bits`  | size of the seed key of the hash algorithm       |
-   +---------------------+--------------------------------------------------+
+   .. attribute:: hash_info.width
 
+      The width in bits used for hash values
+
+   .. attribute:: hash_info.modulus
+
+      The prime modulus P used for numeric hash scheme
+
+   .. attribute:: hash_info.inf
+
+      The hash value returned for a positive infinity
+
+   .. attribute:: hash_info.nan
+
+      (This attribute is no longer used)
+
+   .. attribute:: hash_info.imag
+
+      The multiplier used for the imaginary part of a complex number
+
+   .. attribute:: hash_info.algorithm
+
+      The name of the algorithm for hashing of str, bytes, and memoryview
+
+   .. attribute:: hash_info.hash_bits
+
+      The internal output size of the hash algorithm
+
+   .. attribute:: hash_info.seed_bits
+
+      The size of the seed key of the hash algorithm
 
    .. versionadded:: 3.2
 
@@ -1081,32 +1122,31 @@ always available.
    A :term:`named tuple` that holds information about Python's internal
    representation of integers.  The attributes are read only.
 
-   .. tabularcolumns:: |l|L|
+   .. attribute:: int_info.bits_per_digit
 
-   +----------------------------------------+-----------------------------------------------+
-   | Attribute                              | Explanation                                   |
-   +========================================+===============================================+
-   | :const:`bits_per_digit`                | number of bits held in each digit.  Python    |
-   |                                        | integers are stored internally in base        |
-   |                                        | ``2**int_info.bits_per_digit``                |
-   +----------------------------------------+-----------------------------------------------+
-   | :const:`sizeof_digit`                  | size in bytes of the C type used to           |
-   |                                        | represent a digit                             |
-   +----------------------------------------+-----------------------------------------------+
-   | :const:`default_max_str_digits`        | default value for                             |
-   |                                        | :func:`sys.get_int_max_str_digits` when it    |
-   |                                        | is not otherwise explicitly configured.       |
-   +----------------------------------------+-----------------------------------------------+
-   | :const:`str_digits_check_threshold`    | minimum non-zero value for                    |
-   |                                        | :func:`sys.set_int_max_str_digits`,           |
-   |                                        | :envvar:`PYTHONINTMAXSTRDIGITS`, or           |
-   |                                        | :option:`-X int_max_str_digits <-X>`.         |
-   +----------------------------------------+-----------------------------------------------+
+      The number of bits held in each digit.
+      Python integers are stored internally in base ``2**int_info.bits_per_digit``.
+
+   .. attribute:: int_info.sizeof_digit
+
+      The size in bytes of the C type used to represent a digit.
+
+   .. attribute:: int_info.default_max_str_digits
+
+      The default value for :func:`sys.get_int_max_str_digits`
+      when it is not otherwise explicitly configured.
+
+   .. attribute:: int_info.str_digits_check_threshold
+
+      The minimum non-zero value for :func:`sys.set_int_max_str_digits`,
+      :envvar:`PYTHONINTMAXSTRDIGITS`, or :option:`-X int_max_str_digits <-X>`.
 
    .. versionadded:: 3.1
 
    .. versionchanged:: 3.11
-      Added ``default_max_str_digits`` and ``str_digits_check_threshold``.
+
+      Added :attr:`~int_info.default_max_str_digits` and
+      :attr:`~int_info.str_digits_check_threshold`.
 
 
 .. data:: __interactivehook__
@@ -1533,7 +1573,7 @@ always available.
       :file:`Objects/lnotab_notes.txt` for a detailed explanation of how this
       works.
       Per-line events may be disabled for a frame by setting
-      :attr:`f_trace_lines` to :const:`False` on that frame.
+      :attr:`!f_trace_lines` to :const:`False` on that :ref:`frame <frame-objects>`.
 
    ``'return'``
       A function (or other code block) is about to return.  The local trace
@@ -1551,8 +1591,8 @@ always available.
       opcode details).  The local trace function is called; *arg* is
       ``None``; the return value specifies the new local trace function.
       Per-opcode events are not emitted by default: they must be explicitly
-      requested by setting :attr:`f_trace_opcodes` to :const:`True` on the
-      frame.
+      requested by setting :attr:`!f_trace_opcodes` to :const:`True` on the
+      :ref:`frame <frame-objects>`.
 
    Note that as an exception is propagated down the chain of callers, an
    ``'exception'`` event is generated at each level.
@@ -1581,8 +1621,8 @@ always available.
 
    .. versionchanged:: 3.7
 
-      ``'opcode'`` event type added; :attr:`f_trace_lines` and
-      :attr:`f_trace_opcodes` attributes added to frames
+      ``'opcode'`` event type added; :attr:`!f_trace_lines` and
+      :attr:`!f_trace_opcodes` attributes added to frames
 
 .. function:: set_asyncgen_hooks(firstiter, finalizer)
 
@@ -1739,7 +1779,7 @@ always available.
       However, if you are writing a library (and do not control in which
       context its code will be executed), be aware that the standard streams
       may be replaced with file-like objects like :class:`io.StringIO` which
-      do not support the :attr:`~io.BufferedIOBase.buffer` attribute.
+      do not support the :attr:!buffer` attribute.
 
 
 .. data:: __stdin__
@@ -1787,29 +1827,28 @@ always available.
    A :term:`named tuple` holding information about the thread
    implementation.
 
-   .. tabularcolumns:: |l|p{0.7\linewidth}|
+   .. attribute:: thread_info.name
 
-   +------------------+---------------------------------------------------------+
-   | Attribute        | Explanation                                             |
-   +==================+=========================================================+
-   | :const:`name`    | Name of the thread implementation:                      |
-   |                  |                                                         |
-   |                  |  * ``'nt'``: Windows threads                            |
-   |                  |  * ``'pthread'``: POSIX threads                         |
-   |                  |  * ``'pthread-stubs'``: stub POSIX threads              |
-   |                  |    (on WebAssembly platforms without threading support) |
-   |                  |  * ``'solaris'``: Solaris threads                       |
-   +------------------+---------------------------------------------------------+
-   | :const:`lock`    | Name of the lock implementation:                        |
-   |                  |                                                         |
-   |                  |  * ``'semaphore'``: a lock uses a semaphore             |
-   |                  |  * ``'mutex+cond'``: a lock uses a mutex                |
-   |                  |    and a condition variable                             |
-   |                  |  * ``None`` if this information is unknown              |
-   +------------------+---------------------------------------------------------+
-   | :const:`version` | Name and version of the thread library. It is a string, |
-   |                  | or ``None`` if this information is unknown.             |
-   +------------------+---------------------------------------------------------+
+      The name of the thread implementation:
+
+      * ``"nt"``: Windows threads
+      * ``"pthread"``: POSIX threads
+      * ``"pthread-stubs"``: stub POSIX threads
+        (on WebAssembly platforms without threading support)
+      * ``"solaris"``: Solaris threads
+
+   .. attribute:: thread_info.lock
+
+      The name of the lock implementation:
+
+      * ``"semaphore"``: a lock uses a semaphore
+      * ``"mutex+cond"``: a lock uses a mutex and a condition variable
+      * ``None`` if this information is unknown
+
+   .. attribute:: thread_info.version
+
+      The name and version of the thread library.
+      It is a string, or ``None`` if this information is unknown.
 
    .. versionadded:: 3.3
 
