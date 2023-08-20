@@ -269,8 +269,9 @@ typedef struct pyruntimestate {
     PyInterpreterState _main_interpreter;
 
 #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-    /* Choose between trampoline based on type reflection vs based on EM_JS */
-    int wasm_type_reflection_available;
+    // Used in "Python/emscripten_trampoline.c" to choose between type
+    // reflection trampoline and EM_JS trampoline.
+    bool wasm_type_reflection_available;
 #endif
 
 } _PyRuntimeState;
