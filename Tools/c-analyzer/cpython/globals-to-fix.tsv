@@ -323,7 +323,11 @@ Modules/_testcapi/vectorcall.c	-	MethodDescriptorDerived_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorNopGet_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptor2_Type	-
 Modules/_testclinic.c	-	DeprStarInit	-
+Modules/_testclinic.c	-	DeprStarInitNoInline	-
 Modules/_testclinic.c	-	DeprStarNew	-
+Modules/_testclinic.c	-	DeprKwdInit	-
+Modules/_testclinic.c	-	DeprKwdInitNoInline	-
+Modules/_testclinic.c	-	DeprKwdNew	-
 
 
 ##################################
