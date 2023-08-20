@@ -738,8 +738,8 @@ finished yet.  Different OSes will return different values, so you're going to
 have to check what's returned on your system.
 
 You can use the :meth:`~socket.socket.connect_ex` method
-to avoid creating an exception.  It will
-just return the errno value.
+to avoid creating an exception.
+It will just return the errno value.
 To poll, you can call :meth:`~socket.socket.connect_ex` again later
 -- ``0`` or ``errno.EISCONN`` indicate that you're connected -- or you can pass this
 socket to :meth:`select.select` to check if it's writable.
