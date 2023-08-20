@@ -361,7 +361,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                 for instruction in dis.get_instructions(f, adaptive=True):
                     opname = instruction.opname
                     if (
-                        opname in opcode._specialized_instructions
+                        opname in opcode._specialized_opmap
                         # Exclude superinstructions:
                         and "__" not in opname
                     ):

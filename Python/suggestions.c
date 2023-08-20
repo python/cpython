@@ -126,8 +126,8 @@ levenshtein_distance(const char *a, size_t a_size,
     return result;
 }
 
-static inline PyObject *
-calculate_suggestions(PyObject *dir,
+PyObject *
+_Py_CalculateSuggestions(PyObject *dir,
                       PyObject *name)
 {
     assert(!PyErr_Occurred());
@@ -195,7 +195,7 @@ get_suggestions_for_attribute_error(PyAttributeErrorObject *exc)
         return NULL;
     }
 
-    PyObject *suggestions = calculate_suggestions(dir, name);
+    PyObject *suggestions = _Py_CalculateSuggestions(dir, name);
     Py_DECREF(dir);
     return suggestions;
 }
@@ -259,7 +259,7 @@ get_suggestions_for_name_error(PyObject* name, PyFrameObject* frame)
         }
     }
 
-    PyObject *suggestions = calculate_suggestions(dir, name);
+    PyObject *suggestions = _Py_CalculateSuggestions(dir, name);
     Py_DECREF(dir);
     if (suggestions != NULL || PyErr_Occurred()) {
         return suggestions;
@@ -269,7 +269,7 @@ get_suggestions_for_name_error(PyObject* name, PyFrameObject* frame)
     if (dir == NULL) {
         return NULL;
     }
-    suggestions = calculate_suggestions(dir, name);
+    suggestions = _Py_CalculateSuggestions(dir, name);
     Py_DECREF(dir);
     if (suggestions != NULL || PyErr_Occurred()) {
         return suggestions;
@@ -279,7 +279,7 @@ get_suggestions_for_name_error(PyObject* name, PyFrameObject* frame)
     if (dir == NULL) {
         return NULL;
     }
-    suggestions = calculate_suggestions(dir, name);
+    suggestions = _Py_CalculateSuggestions(dir, name);
     Py_DECREF(dir);
 
     return suggestions;
@@ -371,7 +371,7 @@ offer_suggestions_for_import_error(PyImportErrorObject *exc)
         return NULL;
     }
 
-    PyObject *suggestion = calculate_suggestions(dir, name);
+    PyObject *suggestion = _Py_CalculateSuggestions(dir, name);
     Py_DECREF(dir);
     if (!suggestion) {
         return NULL;

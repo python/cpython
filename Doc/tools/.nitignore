@@ -2,7 +2,6 @@
 # as tested on the CI via check-warnings.py in reusable-docs.yml.
 # Keep lines sorted lexicographically to help avoid merge conflicts.
 
-Doc/c-api/buffer.rst
 Doc/c-api/datetime.rst
 Doc/c-api/descriptor.rst
 Doc/c-api/exceptions.rst
@@ -59,7 +58,6 @@ Doc/library/configparser.rst
 Doc/library/contextlib.rst
 Doc/library/copy.rst
 Doc/library/csv.rst
-Doc/library/ctypes.rst
 Doc/library/datetime.rst
 Doc/library/dbm.rst
 Doc/library/decimal.rst
@@ -91,7 +89,6 @@ Doc/library/http.server.rst
 Doc/library/importlib.resources.rst
 Doc/library/importlib.rst
 Doc/library/inspect.rst
-Doc/library/io.rst
 Doc/library/locale.rst
 Doc/library/logging.config.rst
 Doc/library/logging.handlers.rst
