@@ -92,7 +92,6 @@ Doc/library/inspect.rst
 Doc/library/locale.rst
 Doc/library/logging.config.rst
 Doc/library/logging.handlers.rst
-Doc/library/logging.rst
 Doc/library/lzma.rst
 Doc/library/mailbox.rst
 Doc/library/mmap.rst
