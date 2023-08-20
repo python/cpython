@@ -176,7 +176,6 @@ Doc/library/xml.sax.rst
 Doc/library/xmlrpc.client.rst
 Doc/library/xmlrpc.server.rst
 Doc/library/zlib.rst
-Doc/license.rst
 Doc/reference/compound_stmts.rst
 Doc/reference/datamodel.rst
 Doc/reference/expressions.rst
