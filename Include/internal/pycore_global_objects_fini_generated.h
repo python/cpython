@@ -547,6 +547,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(anon_lambda));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(anon_listcomp));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(anon_module));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(anon_null));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(anon_setcomp));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(anon_string));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(anon_unknown));

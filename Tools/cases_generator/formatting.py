@@ -1,8 +1,9 @@
 import contextlib
 import re
 import typing
+from collections.abc import Iterator
 
-from parsing import StackEffect
+from parsing import StackEffect, Family
 
 UNUSED = "unused"
 
@@ -19,8 +20,11 @@ class Formatter:
     nominal_filename: str
 
     def __init__(
-            self, stream: typing.TextIO, indent: int,
-                  emit_line_directives: bool = False, comment: str = "//",
+        self,
+        stream: typing.TextIO,
+        indent: int,
+        emit_line_directives: bool = False,
+        comment: str = "//",
     ) -> None:
         self.stream = stream
         self.prefix = " " * indent
@@ -55,13 +59,13 @@ class Formatter:
             self.set_lineno(self.lineno + 1, self.filename)
 
     @contextlib.contextmanager
-    def indent(self):
+    def indent(self) -> Iterator[None]:
         self.prefix += "    "
         yield
         self.prefix = self.prefix[:-4]
 
     @contextlib.contextmanager
-    def block(self, head: str, tail: str = ""):
+    def block(self, head: str, tail: str = "") -> Iterator[None]:
         if head:
             self.emit(head + " {")
         else:
@@ -74,7 +78,7 @@ class Formatter:
         self,
         input_effects: list[StackEffect],
         output_effects: list[StackEffect],
-    ):
+    ) -> None:
         shrink, isym = list_effect_size(input_effects)
         grow, osym = list_effect_size(output_effects)
         diff = grow - shrink
@@ -87,25 +91,25 @@ class Formatter:
         if osym and osym != isym:
             self.emit(f"STACK_GROW({osym});")
 
-    def declare(self, dst: StackEffect, src: StackEffect | None):
+    def declare(self, dst: StackEffect, src: StackEffect | None) -> None:
         if dst.name == UNUSED or dst.cond == "0":
             return
         typ = f"{dst.type}" if dst.type else "PyObject *"
         if src:
             cast = self.cast(dst, src)
-            init = f" = {cast}{src.name}"
-        elif dst.cond:
+            initexpr = f"{cast}{src.name}"
+            if src.cond and src.cond != "1":
+                initexpr = f"{parenthesize_cond(src.cond)} ? {initexpr} : NULL"
+            init = f" = {initexpr}"
+        elif dst.cond and dst.cond != "1":
             init = " = NULL"
         else:
             init = ""
         sepa = "" if typ.endswith("*") else " "
         self.emit(f"{typ}{sepa}{dst.name}{init};")
 
-    def assign(self, dst: StackEffect, src: StackEffect):
-        if src.name == UNUSED:
-            return
-        if src.size:
-            # Don't write sized arrays -- it's up to the user code.
+    def assign(self, dst: StackEffect, src: StackEffect) -> None:
+        if src.name == UNUSED or dst.name == UNUSED:
             return
         cast = self.cast(dst, src)
         if re.match(r"^REG\(oparg(\d+)\)$", dst.name):
@@ -121,6 +125,23 @@ class Formatter:
 
     def cast(self, dst: StackEffect, src: StackEffect) -> str:
         return f"({dst.type or 'PyObject *'})" if src.type != dst.type else ""
+
+    def static_assert_family_size(
+        self, name: str, family: Family | None, cache_offset: int
+    ) -> None:
+        """Emit a static_assert for the size of a family, if known.
+
+        This will fail at compile time if the cache size computed from
+        the instruction definition does not match the size of the struct
+        used by specialize.c.
+        """
+        if family and name == family.name:
+            cache_size = family.size
+            if cache_size:
+                self.emit(
+                    f"static_assert({cache_size} == {cache_offset}, "
+                    f'"incorrect cache size");'
+                )
 
 
 def prettify_filename(filename: str) -> str:
@@ -178,11 +199,8 @@ def maybe_parenthesize(sym: str) -> str:
         return f"({sym})"
 
 
-def string_effect_size(arg: tuple[int, str]) -> str:
-    numeric, symbolic = arg
-    if numeric and symbolic:
-        return f"{numeric} + {symbolic}"
-    elif symbolic:
-        return symbolic
-    else:
-        return str(numeric)
+def parenthesize_cond(cond: str) -> str:
+    """Parenthesize a condition, but only if it contains ?: itself."""
+    if "?" in cond:
+        cond = f"({cond})"
+    return cond
