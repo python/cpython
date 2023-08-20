@@ -215,7 +215,7 @@ process and user.
 
       On some platforms, including FreeBSD and macOS, setting ``environ`` may
       cause memory leaks.  Refer to the system documentation for
-      :c:func:`putenv`.
+      :c:func:`!putenv`.
 
    You can delete items in this mapping to unset environment variables.
    :func:`unsetenv` will be called automatically when an item is deleted from
@@ -564,7 +564,7 @@ process and user.
    .. note::
 
       On some platforms, including FreeBSD and macOS, setting ``environ`` may
-      cause memory leaks. Refer to the system documentation for :c:func:`putenv`.
+      cause memory leaks. Refer to the system documentation for :c:func:`!putenv`.
 
    .. audit-event:: os.putenv key,value os.putenv
 
@@ -646,7 +646,7 @@ process and user.
 
 .. function:: setpgrp()
 
-   Call the system call :c:func:`setpgrp` or ``setpgrp(0, 0)`` depending on
+   Call the system call :c:func:`!setpgrp` or ``setpgrp(0, 0)`` depending on
    which version is implemented (if any).  See the Unix manual for the semantics.
 
    .. availability:: Unix, not Emscripten, not WASI.
@@ -654,7 +654,7 @@ process and user.
 
 .. function:: setpgid(pid, pgrp, /)
 
-   Call the system call :c:func:`setpgid` to set the process group id of the
+   Call the system call :c:func:`!setpgid` to set the process group id of the
    process with id *pid* to the process group with id *pgrp*.  See the Unix manual
    for the semantics.
 
@@ -1077,7 +1077,7 @@ as internal buffering of data.
 .. function:: fsync(fd)
 
    Force write of file with filedescriptor *fd* to disk.  On Unix, this calls the
-   native :c:func:`fsync` function; on Windows, the MS :c:func:`_commit` function.
+   native :c:func:`!fsync` function; on Windows, the MS :c:func:`!_commit` function.
 
    If you're starting with a buffered Python :term:`file object` *f*, first do
    ``f.flush()``, and then do ``os.fsync(f.fileno())``, to ensure that all internal
@@ -1163,17 +1163,22 @@ as internal buffering of data.
    .. versionadded:: 3.11
 
 
-.. function:: lseek(fd, pos, how, /)
+.. function:: lseek(fd, pos, whence, /)
 
    Set the current position of file descriptor *fd* to position *pos*, modified
-   by *how*: :const:`SEEK_SET` or ``0`` to set the position relative to the
-   beginning of the file; :const:`SEEK_CUR` or ``1`` to set it relative to the
-   current position; :const:`SEEK_END` or ``2`` to set it relative to the end of
-   the file. Return the new cursor position in bytes, starting from the beginning.
+   by *whence*, and return the new position in bytes relative to
+   the start of the file.
+   Valid values for *whence* are:
+
+   * :const:`SEEK_SET` or ``0`` -- set *pos* relative to the beginning of the file
+   * :const:`SEEK_CUR` or ``1`` -- set *pos* relative to the current file position
+   * :const:`SEEK_END` or ``2`` -- set *pos* relative to the end of the file
+   * :const:`SEEK_HOLE` -- set *pos* to the next data location, relative to *pos*
+   * :const:`SEEK_DATA` -- set *pos* to the next data hole, relative to *pos*
 
    .. versionchanged:: 3.3
 
-      Add support for :const:`SEEK_HOLE` and :const:`SEEK_DATA`.
+      Add support for :const:`!SEEK_HOLE` and :const:`!SEEK_DATA`.
 
 
 .. data:: SEEK_SET
@@ -2299,7 +2304,7 @@ features:
 
 .. function:: lstat(path, *, dir_fd=None)
 
-   Perform the equivalent of an :c:func:`lstat` system call on the given path.
+   Perform the equivalent of an :c:func:`!lstat` system call on the given path.
    Similar to :func:`~os.stat`, but does not follow symbolic links. Return a
    :class:`stat_result` object.
 
@@ -3142,14 +3147,16 @@ features:
 
       Windows file attributes: ``dwFileAttributes`` member of the
       ``BY_HANDLE_FILE_INFORMATION`` structure returned by
-      :c:func:`GetFileInformationByHandle`. See the ``FILE_ATTRIBUTE_*``
+      :c:func:`!GetFileInformationByHandle`.
+      See the :const:`!FILE_ATTRIBUTE_* <stat.FILE_ATTRIBUTE_ARCHIVE>`
       constants in the :mod:`stat` module.
 
    .. attribute:: st_reparse_tag
 
-      When :attr:`st_file_attributes` has the ``FILE_ATTRIBUTE_REPARSE_POINT``
+      When :attr:`st_file_attributes` has the :const:`~stat.FILE_ATTRIBUTE_REPARSE_POINT`
       set, this field contains the tag identifying the type of reparse point.
-      See the ``IO_REPARSE_TAG_*`` constants in the :mod:`stat` module.
+      See the :const:`IO_REPARSE_TAG_* <stat.IO_REPARSE_TAG_SYMLINK>`
+      constants in the :mod:`stat` module.
 
    The standard module :mod:`stat` defines functions and constants that are
    useful for extracting information from a :c:struct:`stat` structure. (On
@@ -3207,7 +3214,7 @@ features:
 
 .. function:: statvfs(path)
 
-   Perform a :c:func:`statvfs` system call on the given path.  The return value is
+   Perform a :c:func:`!statvfs` system call on the given path.  The return value is
    an object whose attributes describe the filesystem on the given path, and
    correspond to the members of the :c:struct:`statvfs` structure, namely:
    :attr:`f_bsize`, :attr:`f_frsize`, :attr:`f_blocks`, :attr:`f_bfree`,
@@ -4298,7 +4305,7 @@ written in Python, such as a mail server's external command delivery program.
                           setpgroup=None, resetids=False, setsid=False, setsigmask=(), \
                           setsigdef=(), scheduler=None)
 
-   Wraps the :c:func:`posix_spawn` C library API for use from Python.
+   Wraps the :c:func:`!posix_spawn` C library API for use from Python.
 
    Most users should use :func:`subprocess.run` instead of :func:`posix_spawn`.
 
@@ -4334,16 +4341,16 @@ written in Python, such as a mail server's external command delivery program.
       Performs ``os.dup2(fd, new_fd)``.
 
    These tuples correspond to the C library
-   :c:func:`posix_spawn_file_actions_addopen`,
-   :c:func:`posix_spawn_file_actions_addclose`, and
-   :c:func:`posix_spawn_file_actions_adddup2` API calls used to prepare
-   for the :c:func:`posix_spawn` call itself.
+   :c:func:`!posix_spawn_file_actions_addopen`,
+   :c:func:`!posix_spawn_file_actions_addclose`, and
+   :c:func:`!posix_spawn_file_actions_adddup2` API calls used to prepare
+   for the :c:func:`!posix_spawn` call itself.
 
    The *setpgroup* argument will set the process group of the child to the value
    specified. If the value specified is 0, the child's process group ID will be
    made the same as its process ID. If the value of *setpgroup* is not set, the
    child will inherit the parent's process group ID. This argument corresponds
-   to the C library :c:macro:`POSIX_SPAWN_SETPGROUP` flag.
+   to the C library :c:macro:`!POSIX_SPAWN_SETPGROUP` flag.
 
    If the *resetids* argument is ``True`` it will reset the effective UID and
    GID of the child to the real UID and GID of the parent process. If the
@@ -4351,27 +4358,27 @@ written in Python, such as a mail server's external command delivery program.
    the parent. In either case, if the set-user-ID and set-group-ID permission
    bits are enabled on the executable file, their effect will override the
    setting of the effective UID and GID. This argument corresponds to the C
-   library :c:macro:`POSIX_SPAWN_RESETIDS` flag.
+   library :c:macro:`!POSIX_SPAWN_RESETIDS` flag.
 
    If the *setsid* argument is ``True``, it will create a new session ID
-   for ``posix_spawn``. *setsid* requires :c:macro:`POSIX_SPAWN_SETSID`
-   or :c:macro:`POSIX_SPAWN_SETSID_NP` flag. Otherwise, :exc:`NotImplementedError`
+   for ``posix_spawn``. *setsid* requires :c:macro:`!POSIX_SPAWN_SETSID`
+   or :c:macro:`!POSIX_SPAWN_SETSID_NP` flag. Otherwise, :exc:`NotImplementedError`
    is raised.
 
    The *setsigmask* argument will set the signal mask to the signal set
    specified. If the parameter is not used, then the child inherits the
    parent's signal mask. This argument corresponds to the C library
-   :c:macro:`POSIX_SPAWN_SETSIGMASK` flag.
+   :c:macro:`!POSIX_SPAWN_SETSIGMASK` flag.
 
    The *sigdef* argument will reset the disposition of all signals in the set
    specified. This argument corresponds to the C library
-   :c:macro:`POSIX_SPAWN_SETSIGDEF` flag.
+   :c:macro:`!POSIX_SPAWN_SETSIGDEF` flag.
 
    The *scheduler* argument must be a tuple containing the (optional) scheduler
    policy and an instance of :class:`sched_param` with the scheduler parameters.
    A value of ``None`` in the place of the scheduler policy indicates that is
    not being provided. This argument is a combination of the C library
-   :c:macro:`POSIX_SPAWN_SETSCHEDPARAM` and :c:macro:`POSIX_SPAWN_SETSCHEDULER`
+   :c:macro:`!POSIX_SPAWN_SETSCHEDPARAM` and :c:macro:`!POSIX_SPAWN_SETSCHEDULER`
    flags.
 
    .. audit-event:: os.posix_spawn path,argv,env os.posix_spawn
@@ -4384,7 +4391,7 @@ written in Python, such as a mail server's external command delivery program.
                           setpgroup=None, resetids=False, setsid=False, setsigmask=(), \
                           setsigdef=(), scheduler=None)
 
-   Wraps the :c:func:`posix_spawnp` C library API for use from Python.
+   Wraps the :c:func:`!posix_spawnp` C library API for use from Python.
 
    Similar to :func:`posix_spawn` except that the system searches
    for the *executable* file in the list of directories specified by the
@@ -4565,7 +4572,7 @@ written in Python, such as a mail server's external command delivery program.
 
    Use *show_cmd* to override the default window style. Whether this has any
    effect will depend on the application being launched. Values are integers as
-   supported by the Win32 :c:func:`ShellExecute` function.
+   supported by the Win32 :c:func:`!ShellExecute` function.
 
    :func:`startfile` returns as soon as the associated application is launched.
    There is no option to wait for the application to close, and no way to retrieve
@@ -4575,7 +4582,7 @@ written in Python, such as a mail server's external command delivery program.
    :func:`os.path.normpath` function to ensure that paths are properly encoded for
    Win32.
 
-   To reduce interpreter startup overhead, the Win32 :c:func:`ShellExecute`
+   To reduce interpreter startup overhead, the Win32 :c:func:`!ShellExecute`
    function is not resolved until this function is first called.  If the function
    cannot be resolved, :exc:`NotImplementedError` will be raised.
 
