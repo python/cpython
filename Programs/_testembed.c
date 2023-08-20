@@ -237,6 +237,11 @@ static void check_stdio_details(const wchar_t *encoding, const wchar_t *errors)
     if (errors) {
         config_set_string(&config, &config.stdio_errors, errors);
     }
+#ifdef MS_WINDOWS
+    // gh-106659: On Windows, don't use _io._WindowsConsoleIO which always
+    // announce UTF-8 for sys.stdin.encoding.
+    config.legacy_windows_stdio = 1;
+#endif
     config_set_program_name(&config);
     init_from_config_clear(&config);
 

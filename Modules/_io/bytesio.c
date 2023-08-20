@@ -1028,8 +1028,8 @@ static struct PyMethodDef bytesio_methods[] = {
 };
 
 static PyMemberDef bytesio_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(bytesio, weakreflist), READONLY},
-    {"__dictoffset__", T_PYSSIZET, offsetof(bytesio, dict), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(bytesio, weakreflist), Py_READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(bytesio, dict), Py_READONLY},
     {NULL}
 };
 

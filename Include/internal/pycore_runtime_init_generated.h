@@ -539,6 +539,7 @@ extern "C" {
     INIT_STR(anon_lambda, "<lambda>"), \
     INIT_STR(anon_listcomp, "<listcomp>"), \
     INIT_STR(anon_module, "<module>"), \
+    INIT_STR(anon_null, "<NULL>"), \
     INIT_STR(anon_setcomp, "<setcomp>"), \
     INIT_STR(anon_string, "<string>"), \
     INIT_STR(anon_unknown, "<unknown>"), \
@@ -663,6 +664,7 @@ extern "C" {
     INIT_ID(__lshift__), \
     INIT_ID(__lt__), \
     INIT_ID(__main__), \
+    INIT_ID(__match_args__), \
     INIT_ID(__matmul__), \
     INIT_ID(__missing__), \
     INIT_ID(__mod__), \

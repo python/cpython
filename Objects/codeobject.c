@@ -2,12 +2,14 @@
 
 #include "Python.h"
 #include "opcode.h"
-#include "structmember.h"         // PyMemberDef
+
 #include "pycore_code.h"          // _PyCodeConstructor
 #include "pycore_frame.h"         // FRAME_SPECIALS_SIZE
 #include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
-#include "pycore_opcode.h"        // _PyOpcode_Deopt
+#include "pycore_opcode.h"        // _PyOpcode_Caches
+#include "pycore_opcode_metadata.h" // _PyOpcode_Deopt
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "clinic/codeobject.c.h"
 
@@ -394,6 +396,9 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     int nlocals, ncellvars, nfreevars;
     get_localsplus_counts(con->localsplusnames, con->localspluskinds,
                           &nlocals, &ncellvars, &nfreevars);
+    if (con->stacksize == 0) {
+        con->stacksize = 1;
+    }
 
     co->co_filename = Py_NewRef(con->filename);
     co->co_name = Py_NewRef(con->name);
@@ -1466,11 +1471,27 @@ PyCode_GetFreevars(PyCodeObject *code)
 }
 
 static void
+clear_executors(PyCodeObject *co)
+{
+    for (int i = 0; i < co->co_executors->size; i++) {
+        Py_CLEAR(co->co_executors->executors[i]);
+    }
+    PyMem_Free(co->co_executors);
+    co->co_executors = NULL;
+}
+
+static void
 deopt_code(PyCodeObject *code, _Py_CODEUNIT *instructions)
 {
     Py_ssize_t len = Py_SIZE(code);
     for (int i = 0; i < len; i++) {
         int opcode = _Py_GetBaseOpcode(code, i);
+        if (opcode == ENTER_EXECUTOR) {
+            _PyExecutorObject *exec = code->co_executors->executors[instructions[i].op.arg];
+            opcode = exec->vm_data.opcode;
+            instructions[i].op.arg = exec->vm_data.oparg;
+        }
+        assert(opcode != ENTER_EXECUTOR);
         int caches = _PyOpcode_Caches[opcode];
         instructions[i].op.code = opcode;
         for (int j = 1; j <= caches; j++) {
@@ -1679,10 +1700,7 @@ code_dealloc(PyCodeObject *co)
         PyMem_Free(co_extra);
     }
     if (co->co_executors != NULL) {
-        for (int i = 0; i < co->co_executors->size; i++) {
-            Py_CLEAR(co->co_executors->executors[i]);
-        }
-        PyMem_Free(co->co_executors);
+        clear_executors(co);
     }
 
     Py_XDECREF(co->co_consts);
@@ -1863,20 +1881,20 @@ code_hash(PyCodeObject *co)
 #define OFF(x) offsetof(PyCodeObject, x)
 
 static PyMemberDef code_memberlist[] = {
-    {"co_argcount",        T_INT,    OFF(co_argcount),        READONLY},
-    {"co_posonlyargcount", T_INT,    OFF(co_posonlyargcount), READONLY},
-    {"co_kwonlyargcount",  T_INT,    OFF(co_kwonlyargcount),  READONLY},
-    {"co_stacksize",       T_INT,    OFF(co_stacksize),       READONLY},
-    {"co_flags",           T_INT,    OFF(co_flags),           READONLY},
-    {"co_nlocals",         T_INT,    OFF(co_nlocals),         READONLY},
-    {"co_consts",          T_OBJECT, OFF(co_consts),          READONLY},
-    {"co_names",           T_OBJECT, OFF(co_names),           READONLY},
-    {"co_filename",        T_OBJECT, OFF(co_filename),        READONLY},
-    {"co_name",            T_OBJECT, OFF(co_name),            READONLY},
-    {"co_qualname",        T_OBJECT, OFF(co_qualname),        READONLY},
-    {"co_firstlineno",     T_INT,    OFF(co_firstlineno),     READONLY},
-    {"co_linetable",       T_OBJECT, OFF(co_linetable),       READONLY},
-    {"co_exceptiontable",  T_OBJECT, OFF(co_exceptiontable),  READONLY},
+    {"co_argcount",        Py_T_INT,     OFF(co_argcount),        Py_READONLY},
+    {"co_posonlyargcount", Py_T_INT,     OFF(co_posonlyargcount), Py_READONLY},
+    {"co_kwonlyargcount",  Py_T_INT,     OFF(co_kwonlyargcount),  Py_READONLY},
+    {"co_stacksize",       Py_T_INT,     OFF(co_stacksize),       Py_READONLY},
+    {"co_flags",           Py_T_INT,     OFF(co_flags),           Py_READONLY},
+    {"co_nlocals",         Py_T_INT,     OFF(co_nlocals),         Py_READONLY},
+    {"co_consts",          _Py_T_OBJECT, OFF(co_consts),          Py_READONLY},
+    {"co_names",           _Py_T_OBJECT, OFF(co_names),           Py_READONLY},
+    {"co_filename",        _Py_T_OBJECT, OFF(co_filename),        Py_READONLY},
+    {"co_name",            _Py_T_OBJECT, OFF(co_name),            Py_READONLY},
+    {"co_qualname",        _Py_T_OBJECT, OFF(co_qualname),        Py_READONLY},
+    {"co_firstlineno",     Py_T_INT,     OFF(co_firstlineno),     Py_READONLY},
+    {"co_linetable",       _Py_T_OBJECT, OFF(co_linetable),       Py_READONLY},
+    {"co_exceptiontable",  _Py_T_OBJECT, OFF(co_exceptiontable),  Py_READONLY},
     {NULL}      /* Sentinel */
 };
 
@@ -1954,27 +1972,28 @@ code_linesiterator(PyCodeObject *code, PyObject *Py_UNUSED(args))
 }
 
 /*[clinic input]
+@text_signature "($self, /, **changes)"
 code.replace
 
     *
-    co_argcount: int(c_default="self->co_argcount") = -1
-    co_posonlyargcount: int(c_default="self->co_posonlyargcount") = -1
-    co_kwonlyargcount: int(c_default="self->co_kwonlyargcount") = -1
-    co_nlocals: int(c_default="self->co_nlocals") = -1
-    co_stacksize: int(c_default="self->co_stacksize") = -1
-    co_flags: int(c_default="self->co_flags") = -1
-    co_firstlineno: int(c_default="self->co_firstlineno") = -1
-    co_code: PyBytesObject(c_default="NULL") = None
-    co_consts: object(subclass_of="&PyTuple_Type", c_default="self->co_consts") = None
-    co_names: object(subclass_of="&PyTuple_Type", c_default="self->co_names") = None
-    co_varnames: object(subclass_of="&PyTuple_Type", c_default="NULL") = None
-    co_freevars: object(subclass_of="&PyTuple_Type", c_default="NULL") = None
-    co_cellvars: object(subclass_of="&PyTuple_Type", c_default="NULL") = None
-    co_filename: unicode(c_default="self->co_filename") = None
-    co_name: unicode(c_default="self->co_name") = None
-    co_qualname: unicode(c_default="self->co_qualname") = None
-    co_linetable: PyBytesObject(c_default="(PyBytesObject *)self->co_linetable") = None
-    co_exceptiontable: PyBytesObject(c_default="(PyBytesObject *)self->co_exceptiontable") = None
+    co_argcount: int(c_default="self->co_argcount") = unchanged
+    co_posonlyargcount: int(c_default="self->co_posonlyargcount") = unchanged
+    co_kwonlyargcount: int(c_default="self->co_kwonlyargcount") = unchanged
+    co_nlocals: int(c_default="self->co_nlocals") = unchanged
+    co_stacksize: int(c_default="self->co_stacksize") = unchanged
+    co_flags: int(c_default="self->co_flags") = unchanged
+    co_firstlineno: int(c_default="self->co_firstlineno") = unchanged
+    co_code: object(subclass_of="&PyBytes_Type", c_default="NULL") = unchanged
+    co_consts: object(subclass_of="&PyTuple_Type", c_default="self->co_consts") = unchanged
+    co_names: object(subclass_of="&PyTuple_Type", c_default="self->co_names") = unchanged
+    co_varnames: object(subclass_of="&PyTuple_Type", c_default="NULL") = unchanged
+    co_freevars: object(subclass_of="&PyTuple_Type", c_default="NULL") = unchanged
+    co_cellvars: object(subclass_of="&PyTuple_Type", c_default="NULL") = unchanged
+    co_filename: unicode(c_default="self->co_filename") = unchanged
+    co_name: unicode(c_default="self->co_name") = unchanged
+    co_qualname: unicode(c_default="self->co_qualname") = unchanged
+    co_linetable: object(subclass_of="&PyBytes_Type", c_default="self->co_linetable") = unchanged
+    co_exceptiontable: object(subclass_of="&PyBytes_Type", c_default="self->co_exceptiontable") = unchanged
 
 Return a copy of the code object with new values for the specified fields.
 [clinic start generated code]*/
@@ -1983,14 +2002,13 @@ static PyObject *
 code_replace_impl(PyCodeObject *self, int co_argcount,
                   int co_posonlyargcount, int co_kwonlyargcount,
                   int co_nlocals, int co_stacksize, int co_flags,
-                  int co_firstlineno, PyBytesObject *co_code,
-                  PyObject *co_consts, PyObject *co_names,
-                  PyObject *co_varnames, PyObject *co_freevars,
-                  PyObject *co_cellvars, PyObject *co_filename,
-                  PyObject *co_name, PyObject *co_qualname,
-                  PyBytesObject *co_linetable,
-                  PyBytesObject *co_exceptiontable)
-/*[clinic end generated code: output=b6cd9988391d5711 input=f6f68e03571f8d7c]*/
+                  int co_firstlineno, PyObject *co_code, PyObject *co_consts,
+                  PyObject *co_names, PyObject *co_varnames,
+                  PyObject *co_freevars, PyObject *co_cellvars,
+                  PyObject *co_filename, PyObject *co_name,
+                  PyObject *co_qualname, PyObject *co_linetable,
+                  PyObject *co_exceptiontable)
+/*[clinic end generated code: output=e75c48a15def18b9 input=18e280e07846c122]*/
 {
 #define CHECK_INT_ARG(ARG) \
         if (ARG < 0) { \
@@ -2015,13 +2033,14 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
         if (code == NULL) {
             return NULL;
         }
-        co_code = (PyBytesObject *)code;
+        co_code = code;
     }
 
     if (PySys_Audit("code.__new__", "OOOiiiiii",
                     co_code, co_filename, co_name, co_argcount,
                     co_posonlyargcount, co_kwonlyargcount, co_nlocals,
                     co_stacksize, co_flags) < 0) {
+        Py_XDECREF(code);
         return NULL;
     }
 
@@ -2053,10 +2072,10 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
 
     co = PyCode_NewWithPosOnlyArgs(
         co_argcount, co_posonlyargcount, co_kwonlyargcount, co_nlocals,
-        co_stacksize, co_flags, (PyObject*)co_code, co_consts, co_names,
+        co_stacksize, co_flags, co_code, co_consts, co_names,
         co_varnames, co_freevars, co_cellvars, co_filename, co_name,
         co_qualname, co_firstlineno,
-        (PyObject*)co_linetable, (PyObject*)co_exceptiontable);
+        co_linetable, co_exceptiontable);
 
 error:
     Py_XDECREF(code);
@@ -2278,6 +2297,9 @@ void
 _PyStaticCode_Fini(PyCodeObject *co)
 {
     deopt_code(co, _PyCode_CODE(co));
+    if (co->co_executors != NULL) {
+        clear_executors(co);
+    }
     PyMem_Free(co->co_extra);
     if (co->_co_cached != NULL) {
         Py_CLEAR(co->_co_cached->_co_code);

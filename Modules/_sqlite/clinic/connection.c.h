@@ -16,6 +16,17 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
                               int cache_size, int uri,
                               enum autocommit_mode autocommit);
 
+// Emit compiler warnings when we get to Python 3.15.
+#if PY_VERSION_HEX >= 0x030f00C0
+#  error "Update the clinic input of '_sqlite3.Connection.__init__'."
+#elif PY_VERSION_HEX >= 0x030f00A0
+#  ifdef _MSC_VER
+#    pragma message ("Update the clinic input of '_sqlite3.Connection.__init__'.")
+#  else
+#    warning "Update the clinic input of '_sqlite3.Connection.__init__'."
+#  endif
+#endif
+
 static int
 pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
@@ -59,6 +70,17 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
     int uri = 0;
     enum autocommit_mode autocommit = LEGACY_TRANSACTION_CONTROL;
 
+    if (nargs > 1 && nargs <= 8) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing more than 1 positional argument to _sqlite3.Connection()"
+                " is deprecated. Parameters 'timeout', 'detect_types', "
+                "'isolation_level', 'check_same_thread', 'factory', "
+                "'cached_statements' and 'uri' will become keyword-only "
+                "parameters in Python 3.15.", 1))
+        {
+            goto exit;
+        }
+    }
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 8, 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -1659,4 +1681,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=d3c6cb9326736ea5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0ad9d55977a51b8f input=a9049054013a1b77]*/

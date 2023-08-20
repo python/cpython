@@ -2,10 +2,12 @@
 
 #include "Python.h"
 
+#include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
+#include "pycore_codecs.h"        // _PyCodec_Lookup()
 #include "pycore_context.h"       // _PyContext_Init()
-#include "pycore_exceptions.h"    // _PyExc_InitTypes()
 #include "pycore_dict.h"          // _PyDict_Fini()
+#include "pycore_exceptions.h"    // _PyExc_InitTypes()
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
 #include "pycore_floatobject.h"   // _PyFloat_InitTypes()
 #include "pycore_genobject.h"     // _PyAsyncGen_Fini()
@@ -22,12 +24,14 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
+#include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_sliceobject.h"   // _PySlice_Fini()
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
+#include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 #include "opcode.h"
 
 #include <locale.h>               // setlocale()
@@ -125,7 +129,7 @@ _PyRuntime_Finalize(void)
 }
 
 int
-_Py_IsFinalizing(void)
+Py_IsFinalizing(void)
 {
     return _PyRuntimeState_GetFinalizing(&_PyRuntime) != NULL;
 }
@@ -1180,6 +1184,23 @@ init_interp_main(PyThreadState *tstate)
 #endif
     }
 
+    // Turn on experimental tier 2 (uops-based) optimizer
+    if (is_main_interp) {
+        char *envvar = Py_GETENV("PYTHONUOPS");
+        int enabled = envvar != NULL && *envvar > '0';
+        if (_Py_get_xoption(&config->xoptions, L"uops") != NULL) {
+            enabled = 1;
+        }
+        if (enabled) {
+            PyObject *opt = PyUnstable_Optimizer_NewUOpOptimizer();
+            if (opt == NULL) {
+                return _PyStatus_ERR("can't initialize optimizer");
+            }
+            PyUnstable_SetOptimizer((_PyOptimizerObject *)opt);
+            Py_DECREF(opt);
+        }
+    }
+
     assert(!_PyErr_Occurred(tstate));
 
     return _PyStatus_OK();
@@ -1464,16 +1485,16 @@ finalize_modules_clear_weaklist(PyInterpreterState *interp,
     for (Py_ssize_t i = PyList_GET_SIZE(weaklist) - 1; i >= 0; i--) {
         PyObject *tup = PyList_GET_ITEM(weaklist, i);
         PyObject *name = PyTuple_GET_ITEM(tup, 0);
-        PyObject *mod = PyWeakref_GET_OBJECT(PyTuple_GET_ITEM(tup, 1));
-        if (mod == Py_None) {
+        PyObject *mod = _PyWeakref_GET_REF(PyTuple_GET_ITEM(tup, 1));
+        if (mod == NULL) {
             continue;
         }
         assert(PyModule_Check(mod));
-        PyObject *dict = PyModule_GetDict(mod);
+        PyObject *dict = _PyModule_GetDict(mod);  // borrowed reference
         if (dict == interp->builtins || dict == interp->sysdict) {
+            Py_DECREF(mod);
             continue;
         }
-        Py_INCREF(mod);
         if (verbose && PyUnicode_Check(name)) {
             PySys_FormatStderr("# cleanup[3] wiping %U\n", name);
         }
@@ -1900,11 +1921,11 @@ Py_FinalizeEx(void)
     }
 
     if (dump_refs) {
-        _Py_PrintReferences(stderr);
+        _Py_PrintReferences(tstate->interp, stderr);
     }
 
     if (dump_refs_fp != NULL) {
-        _Py_PrintReferences(dump_refs_fp);
+        _Py_PrintReferences(tstate->interp, dump_refs_fp);
     }
 #endif /* Py_TRACE_REFS */
 
@@ -1940,11 +1961,11 @@ Py_FinalizeEx(void)
      */
 
     if (dump_refs) {
-        _Py_PrintReferenceAddresses(stderr);
+        _Py_PrintReferenceAddresses(tstate->interp, stderr);
     }
 
     if (dump_refs_fp != NULL) {
-        _Py_PrintReferenceAddresses(dump_refs_fp);
+        _Py_PrintReferenceAddresses(tstate->interp, dump_refs_fp);
         fclose(dump_refs_fp);
     }
 #endif /* Py_TRACE_REFS */
@@ -2054,6 +2075,8 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
     }
     has_gil = 1;
 
+    /* No objects have been created yet. */
+
     status = pycore_interp_init(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
@@ -2124,7 +2147,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     if (tstate != _PyThreadState_GET()) {
         Py_FatalError("thread is not current");
     }
-    if (tstate->cframe->current_frame != NULL) {
+    if (tstate->current_frame != NULL) {
         Py_FatalError("thread still has a frame");
     }
     interp->finalizing = 1;
