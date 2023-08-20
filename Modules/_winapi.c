@@ -799,7 +799,7 @@ normalize_environment(PyObject* environment) {
     args = PyTuple_New(0);
     kwargs = PyDict_New();
     PyDict_SetItemString(kwargs, "key", keyfunc);
-    if (PyObject_Call(sort, args, NULL) == NULL) {
+    if (PyObject_Call(sort, args, kwargs) == NULL) {
         goto error;
     }
 

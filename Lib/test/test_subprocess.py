@@ -796,7 +796,7 @@ class ProcessTestCase(BaseTestCase):
                               stdout=subprocess.PIPE,
                               env=newenv) as p:
             stdout, stderr = p.communicate()
-            self.assertEqual(stdout, b"fruit=lemon\r\n")
+            self.assertEqual(stdout, b"fRUit=cherry\r\n")
 
     # Windows requires at least the SYSTEMROOT environment variable to start
     # Python
