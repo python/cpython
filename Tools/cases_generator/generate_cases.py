@@ -375,7 +375,6 @@ class Generator(Analyzer):
         # Compute the set of all instruction formats.
         all_formats: set[str] = set()
         for thing in self.everything:
-            format: str | None = None
             match thing:
                 case OverriddenInstructionPlaceHolder():
                     continue
@@ -384,14 +383,13 @@ class Generator(Analyzer):
                 case parsing.Macro():
                     format = self.macro_instrs[thing.name].instr_fmt
                 case parsing.Pseudo():
-                    for target in self.pseudos[thing.name].targets:
+                    for idx, target in enumerate(self.pseudos[thing.name].targets):
                         target_instr = self.instrs.get(target)
                         assert target_instr
-                        if format is None:
+                        if idx == 0:
                             format = target_instr.instr_fmt
                         else:
                             assert format == target_instr.instr_fmt
-                    assert format is not None
                 case _:
                     assert_never(thing)
             all_formats.add(format)
