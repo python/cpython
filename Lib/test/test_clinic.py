@@ -1611,7 +1611,7 @@ class ClinicParserTest(TestCase):
             "module foo\nfoo.bar\n  this: int\n  *",
             "module foo\nfoo.bar\n  this: int\n  *\nDocstring.",
         )
-        err = "Function 'foo.bar' specifies '*' without any parameters afterwards."
+        err = "Function 'bar' specifies '*' without following parameters."
         for block in dataset:
             with self.subTest(block=block):
                 self.expect_failure(block, err)
@@ -1679,7 +1679,7 @@ class ClinicParserTest(TestCase):
             Docstring.
         """
         err = (
-            "Function 'foo.bar': expected format '* [from major.minor]' "
+            "Function 'bar': expected format '[from major.minor]' "
             "where 'major' and 'minor' are integers; got '3'"
         )
         self.expect_failure(block, err, lineno=3)
@@ -1693,7 +1693,7 @@ class ClinicParserTest(TestCase):
             Docstring.
         """
         err = (
-            "Function 'foo.bar': expected format '* [from major.minor]' "
+            "Function 'bar': expected format '[from major.minor]' "
             "where 'major' and 'minor' are integers; got 'a.b'"
         )
         self.expect_failure(block, err, lineno=3)
@@ -1707,7 +1707,7 @@ class ClinicParserTest(TestCase):
             Docstring.
         """
         err = (
-            "Function 'foo.bar': expected format '* [from major.minor]' "
+            "Function 'bar': expected format '[from major.minor]' "
             "where 'major' and 'minor' are integers; got '1.2.3'"
         )
         self.expect_failure(block, err, lineno=3)
@@ -1721,8 +1721,24 @@ class ClinicParserTest(TestCase):
             Docstring.
         """
         err = (
-            "Function 'foo.bar' specifies '* [from ...]' without "
-            "any parameters afterwards"
+            "Function 'bar' specifies '* [from ...]' without "
+            "following parameters."
+        )
+        self.expect_failure(block, err, lineno=4)
+
+    def test_parameters_required_after_depr_star2(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                * [from 3.14]
+                *
+                b: int
+            Docstring.
+        """
+        err = (
+            "Function 'bar' specifies '* [from ...]' without "
+            "following parameters."
         )
         self.expect_failure(block, err, lineno=4)
 
@@ -1735,7 +1751,7 @@ class ClinicParserTest(TestCase):
                 * [from 3.14]
             Docstring.
         """
-        err = "Function 'foo.bar': '* [from ...]' must come before '*'"
+        err = "Function 'bar': '* [from ...]' must come before '*'"
         self.expect_failure(block, err, lineno=4)
 
     def test_depr_star_duplicate(self):
@@ -1749,7 +1765,49 @@ class ClinicParserTest(TestCase):
                 c: int
             Docstring.
         """
-        err = "Function 'foo.bar' uses '[from ...]' more than once"
+        err = "Function 'bar' uses '* [from ...]' more than once."
+        self.expect_failure(block, err, lineno=5)
+
+    def test_depr_star_duplicate2(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                * [from 3.14]
+                b: int
+                * [from 3.15]
+                c: int
+            Docstring.
+        """
+        err = "Function 'bar' uses '* [from ...]' more than once."
+        self.expect_failure(block, err, lineno=5)
+
+    def test_depr_slash_duplicate(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                / [from 3.14]
+                b: int
+                / [from 3.14]
+                c: int
+            Docstring.
+        """
+        err = "Function 'bar' uses '/ [from ...]' more than once."
+        self.expect_failure(block, err, lineno=5)
+
+    def test_depr_slash_duplicate2(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                / [from 3.14]
+                b: int
+                / [from 3.15]
+                c: int
+            Docstring.
+        """
+        err = "Function 'bar' uses '/ [from ...]' more than once."
         self.expect_failure(block, err, lineno=5)
 
     def test_single_slash(self):
@@ -1764,6 +1822,34 @@ class ClinicParserTest(TestCase):
             "(Unexpected state 0.d)"
         )
         self.expect_failure(block, err)
+
+    def test_parameters_required_before_depr_slash(self):
+        block = """
+            module foo
+            foo.bar
+                / [from 3.14]
+            Docstring.
+        """
+        err = (
+            "Function 'bar' specifies '/ [from ...]' without "
+            "preceding parameters."
+        )
+        self.expect_failure(block, err, lineno=2)
+
+    def test_parameters_required_before_depr_slash2(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                /
+                / [from 3.14]
+            Docstring.
+        """
+        err = (
+            "Function 'bar' specifies '/ [from ...]' without "
+            "preceding parameters."
+        )
+        self.expect_failure(block, err, lineno=4)
 
     def test_double_slash(self):
         block = """
@@ -1787,11 +1873,60 @@ class ClinicParserTest(TestCase):
                z: int
                /
         """
-        err = (
-            "Function 'bar' mixes keyword-only and positional-only parameters, "
-            "which is unsupported."
-        )
+        err = "Function 'bar': '/' must precede '*'"
         self.expect_failure(block, err)
+
+    def test_depr_star_must_come_after_slash(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                * [from 3.14]
+                /
+                b: int
+            Docstring.
+        """
+        err = "Function 'bar': '/' must precede '* [from ...]'"
+        self.expect_failure(block, err, lineno=4)
+
+    def test_depr_star_must_come_after_depr_slash(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                * [from 3.14]
+                / [from 3.14]
+                b: int
+            Docstring.
+        """
+        err = "Function 'bar': '/ [from ...]' must precede '* [from ...]'"
+        self.expect_failure(block, err, lineno=4)
+
+    def test_star_must_come_after_depr_slash(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                *
+                / [from 3.14]
+                b: int
+            Docstring.
+        """
+        err = "Function 'bar': '/ [from ...]' must precede '*'"
+        self.expect_failure(block, err, lineno=4)
+
+    def test_depr_slash_must_come_after_slash(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                / [from 3.14]
+                /
+                b: int
+            Docstring.
+        """
+        err = "Function 'bar': '/' must precede '/ [from ...]'"
+        self.expect_failure(block, err, lineno=4)
 
     def test_parameters_not_permitted_after_slash_for_now(self):
         block = """
@@ -2589,11 +2724,33 @@ class ClinicFunctionalTest(unittest.TestCase):
     locals().update((name, getattr(ac_tester, name))
                     for name in dir(ac_tester) if name.startswith('test_'))
 
-    def check_depr_star(self, pnames, fn, *args, **kwds):
+    def check_depr_star(self, pnames, fn, *args, name=None, **kwds):
+        if name is None:
+            name = fn.__qualname__
+            if isinstance(fn, type):
+                name = f'{fn.__module__}.{name}'
         regex = (
             fr"Passing( more than)?( [0-9]+)? positional argument(s)? to "
-            fr"{fn.__name__}\(\) is deprecated. Parameter(s)? {pnames} will "
-            fr"become( a)? keyword-only parameter(s)? in Python 3\.14"
+            fr"{re.escape(name)}\(\) is deprecated. Parameters? {pnames} will "
+            fr"become( a)? keyword-only parameters? in Python 3\.14"
+        )
+        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+            # Record the line number, so we're sure we've got the correct stack
+            # level on the deprecation warning.
+            _, lineno = fn(*args, **kwds), sys._getframe().f_lineno
+        self.assertEqual(cm.filename, __file__)
+        self.assertEqual(cm.lineno, lineno)
+
+    def check_depr_kwd(self, pnames, fn, *args, name=None, **kwds):
+        if name is None:
+            name = fn.__qualname__
+            if isinstance(fn, type):
+                name = f'{fn.__module__}.{name}'
+        pl = 's' if ' ' in pnames else ''
+        regex = (
+            fr"Passing keyword argument{pl} {pnames} to "
+            fr"{re.escape(name)}\(\) is deprecated. Corresponding parameter{pl} "
+            fr"will become positional-only in Python 3\.14."
         )
         with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
             # Record the line number, so we're sure we've got the correct stack
@@ -3067,46 +3224,67 @@ class ClinicFunctionalTest(unittest.TestCase):
                 self.assertEqual(func(), name)
 
     def test_depr_star_new(self):
-        regex = re.escape(
-            "Passing positional arguments to _testclinic.DeprStarNew() is "
-            "deprecated. Parameter 'a' will become a keyword-only parameter "
-            "in Python 3.14."
-        )
-        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
-            ac_tester.DeprStarNew(None)
-        self.assertEqual(cm.filename, __file__)
+        cls = ac_tester.DeprStarNew
+        cls()
+        cls(a=None)
+        self.check_depr_star("'a'", cls, None)
 
     def test_depr_star_new_cloned(self):
-        regex = re.escape(
-            "Passing positional arguments to _testclinic.DeprStarNew.cloned() "
-            "is deprecated. Parameter 'a' will become a keyword-only parameter "
-            "in Python 3.14."
-        )
-        obj = ac_tester.DeprStarNew(a=None)
-        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
-            obj.cloned(None)
-        self.assertEqual(cm.filename, __file__)
+        fn = ac_tester.DeprStarNew().cloned
+        fn()
+        fn(a=None)
+        self.check_depr_star("'a'", fn, None, name='_testclinic.DeprStarNew.cloned')
 
     def test_depr_star_init(self):
-        regex = re.escape(
-            "Passing positional arguments to _testclinic.DeprStarInit() is "
-            "deprecated. Parameter 'a' will become a keyword-only parameter "
-            "in Python 3.14."
-        )
-        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
-            ac_tester.DeprStarInit(None)
-        self.assertEqual(cm.filename, __file__)
+        cls = ac_tester.DeprStarInit
+        cls()
+        cls(a=None)
+        self.check_depr_star("'a'", cls, None)
 
     def test_depr_star_init_cloned(self):
-        regex = re.escape(
-            "Passing positional arguments to _testclinic.DeprStarInit.cloned() "
-            "is deprecated. Parameter 'a' will become a keyword-only parameter "
-            "in Python 3.14."
-        )
-        obj = ac_tester.DeprStarInit(a=None)
-        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
-            obj.cloned(None)
-        self.assertEqual(cm.filename, __file__)
+        fn = ac_tester.DeprStarInit().cloned
+        fn()
+        fn(a=None)
+        self.check_depr_star("'a'", fn, None, name='_testclinic.DeprStarInit.cloned')
+
+    def test_depr_star_init_noinline(self):
+        cls = ac_tester.DeprStarInitNoInline
+        self.assertRaises(TypeError, cls, "a")
+        cls(a="a", b="b")
+        cls(a="a", b="b", c="c")
+        cls("a", b="b")
+        cls("a", b="b", c="c")
+        check = partial(self.check_depr_star, "'b' and 'c'", cls)
+        check("a", "b")
+        check("a", "b", "c")
+        check("a", "b", c="c")
+        self.assertRaises(TypeError, cls, "a", "b", "c", "d")
+
+    def test_depr_kwd_new(self):
+        cls = ac_tester.DeprKwdNew
+        cls()
+        cls(None)
+        self.check_depr_kwd("'a'", cls, a=None)
+
+    def test_depr_kwd_init(self):
+        cls = ac_tester.DeprKwdInit
+        cls()
+        cls(None)
+        self.check_depr_kwd("'a'", cls, a=None)
+
+    def test_depr_kwd_init_noinline(self):
+        cls = ac_tester.DeprKwdInitNoInline
+        cls = ac_tester.depr_star_noinline
+        self.assertRaises(TypeError, cls, "a")
+        cls(a="a", b="b")
+        cls(a="a", b="b", c="c")
+        cls("a", b="b")
+        cls("a", b="b", c="c")
+        check = partial(self.check_depr_star, "'b' and 'c'", cls)
+        check("a", "b")
+        check("a", "b", "c")
+        check("a", "b", c="c")
+        self.assertRaises(TypeError, cls, "a", "b", "c", "d")
 
     def test_depr_star_pos0_len1(self):
         fn = ac_tester.depr_star_pos0_len1
@@ -3176,6 +3354,103 @@ class ClinicFunctionalTest(unittest.TestCase):
         check = partial(self.check_depr_star, "'c' and 'd'", fn)
         check("a", "b", "c", d=0, e=0)
         check("a", "b", "c", "d", e=0)
+
+    def test_depr_star_noinline(self):
+        fn = ac_tester.depr_star_noinline
+        self.assertRaises(TypeError, fn, "a")
+        fn(a="a", b="b")
+        fn(a="a", b="b", c="c")
+        fn("a", b="b")
+        fn("a", b="b", c="c")
+        check = partial(self.check_depr_star, "'b' and 'c'", fn)
+        check("a", "b")
+        check("a", "b", "c")
+        check("a", "b", c="c")
+        self.assertRaises(TypeError, fn, "a", "b", "c", "d")
+
+    def test_depr_kwd_required_1(self):
+        fn = ac_tester.depr_kwd_required_1
+        fn("a", "b")
+        self.assertRaises(TypeError, fn, "a")
+        self.assertRaises(TypeError, fn, "a", "b", "c")
+        check = partial(self.check_depr_kwd, "'b'", fn)
+        check("a", b="b")
+        self.assertRaises(TypeError, fn, a="a", b="b")
+
+    def test_depr_kwd_required_2(self):
+        fn = ac_tester.depr_kwd_required_2
+        fn("a", "b", "c")
+        self.assertRaises(TypeError, fn, "a", "b")
+        self.assertRaises(TypeError, fn, "a", "b", "c", "d")
+        check = partial(self.check_depr_kwd, "'b' and 'c'", fn)
+        check("a", "b", c="c")
+        check("a", b="b", c="c")
+        self.assertRaises(TypeError, fn, a="a", b="b", c="c")
+
+    def test_depr_kwd_optional_1(self):
+        fn = ac_tester.depr_kwd_optional_1
+        fn("a")
+        fn("a", "b")
+        self.assertRaises(TypeError, fn)
+        self.assertRaises(TypeError, fn, "a", "b", "c")
+        check = partial(self.check_depr_kwd, "'b'", fn)
+        check("a", b="b")
+        self.assertRaises(TypeError, fn, a="a", b="b")
+
+    def test_depr_kwd_optional_2(self):
+        fn = ac_tester.depr_kwd_optional_2
+        fn("a")
+        fn("a", "b")
+        fn("a", "b", "c")
+        self.assertRaises(TypeError, fn)
+        self.assertRaises(TypeError, fn, "a", "b", "c", "d")
+        check = partial(self.check_depr_kwd, "'b' and 'c'", fn)
+        check("a", b="b")
+        check("a", c="c")
+        check("a", b="b", c="c")
+        check("a", c="c", b="b")
+        check("a", "b", c="c")
+        self.assertRaises(TypeError, fn, a="a", b="b", c="c")
+
+    def test_depr_kwd_optional_3(self):
+        fn = ac_tester.depr_kwd_optional_3
+        fn()
+        fn("a")
+        fn("a", "b")
+        fn("a", "b", "c")
+        self.assertRaises(TypeError, fn, "a", "b", "c", "d")
+        check = partial(self.check_depr_kwd, "'a', 'b' and 'c'", fn)
+        check("a", "b", c="c")
+        check("a", b="b")
+        check(a="a")
+
+    def test_depr_kwd_required_optional(self):
+        fn = ac_tester.depr_kwd_required_optional
+        fn("a", "b")
+        fn("a", "b", "c")
+        self.assertRaises(TypeError, fn)
+        self.assertRaises(TypeError, fn, "a")
+        self.assertRaises(TypeError, fn, "a", "b", "c", "d")
+        check = partial(self.check_depr_kwd, "'b' and 'c'", fn)
+        check("a", b="b")
+        check("a", b="b", c="c")
+        check("a", c="c", b="b")
+        check("a", "b", c="c")
+        self.assertRaises(TypeError, fn, "a", c="c")
+        self.assertRaises(TypeError, fn, a="a", b="b", c="c")
+
+    def test_depr_kwd_noinline(self):
+        fn = ac_tester.depr_kwd_noinline
+        fn("a", "b")
+        fn("a", "b", "c")
+        self.assertRaises(TypeError, fn, "a")
+        check = partial(self.check_depr_kwd, "'b' and 'c'", fn)
+        check("a", b="b")
+        check("a", b="b", c="c")
+        check("a", c="c", b="b")
+        check("a", "b", c="c")
+        self.assertRaises(TypeError, fn, "a", c="c")
+        self.assertRaises(TypeError, fn, a="a", b="b", c="c")
 
 
 class PermutationTests(unittest.TestCase):
