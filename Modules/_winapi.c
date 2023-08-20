@@ -775,12 +775,7 @@ gethandle(PyObject* obj, const char* name)
 }
 
 static PyObject* sortenvironmentkey(PyObject *module, PyObject *item) {
-    Py_ssize_t n;
-    wchar_t* s = PyUnicode_AsWideCharString(item, &n);
-    if (s == NULL) {
-        return NULL;
-    }
-    return _winapi_LCMapStringEx_impl(NULL, LOCALE_NAME_INVARIANT, LCMAP_UPPERCASE, s);
+    return _winapi_LCMapStringEx_impl(NULL, LOCALE_NAME_INVARIANT, LCMAP_UPPERCASE, item);
 }
 
 static PyMethodDef sortenvironmentkey_def = {
@@ -802,6 +797,7 @@ normalize_environment(PyObject* environment) {
     keyfunc = PyCFunction_New(&sortenvironmentkey_def, NULL);
     sort = PyObject_GetAttrString(keys, "sort");
     args = PyTuple_New(0);
+    kwargs = PyDict_New();
     PyDict_SetItemString(kwargs, "key", keyfunc);
     if (PyObject_Call(sort, args, NULL) == NULL) {
         goto error;
