@@ -8,8 +8,9 @@ Operating System Utilities
 .. c:function:: PyObject* PyOS_FSPath(PyObject *path)
 
    Return the file system representation for *path*. If the object is a
-   :class:`str` or :class:`bytes` object, then its reference count is
-   incremented. If the object implements the :class:`os.PathLike` interface,
+   :class:`str` or :class:`bytes` object, then a new
+   :term:`strong reference` is returned.
+   If the object implements the :class:`os.PathLike` interface,
    then :meth:`~os.PathLike.__fspath__` is returned as long as it is a
    :class:`str` or :class:`bytes` object. Otherwise :exc:`TypeError` is raised
    and ``NULL`` is returned.
@@ -97,16 +98,16 @@ Operating System Utilities
 .. c:function:: int PyOS_CheckStack()
 
    Return true when the interpreter runs out of stack space.  This is a reliable
-   check, but is only available when :const:`USE_STACKCHECK` is defined (currently
+   check, but is only available when :c:macro:`USE_STACKCHECK` is defined (currently
    on certain versions of Windows using the Microsoft Visual C++ compiler).
-   :const:`USE_STACKCHECK` will be defined automatically; you should never
+   :c:macro:`USE_STACKCHECK` will be defined automatically; you should never
    change the definition in your own code.
 
 
 .. c:function:: PyOS_sighandler_t PyOS_getsig(int i)
 
    Return the current signal handler for signal *i*.  This is a thin wrapper around
-   either :c:func:`sigaction` or :c:func:`signal`.  Do not call those functions
+   either :c:func:`!sigaction` or :c:func:`!signal`.  Do not call those functions
    directly! :c:type:`PyOS_sighandler_t` is a typedef alias for :c:expr:`void
    (\*)(int)`.
 
@@ -114,7 +115,7 @@ Operating System Utilities
 .. c:function:: PyOS_sighandler_t PyOS_setsig(int i, PyOS_sighandler_t h)
 
    Set the signal handler for signal *i* to be *h*; return the old signal handler.
-   This is a thin wrapper around either :c:func:`sigaction` or :c:func:`signal`.  Do
+   This is a thin wrapper around either :c:func:`!sigaction` or :c:func:`!signal`.  Do
    not call those functions directly!  :c:type:`PyOS_sighandler_t` is a typedef
    alias for :c:expr:`void (\*)(int)`.
 
@@ -167,7 +168,7 @@ Operating System Utilities
 
    .. versionchanged:: 3.8
       The function now uses the UTF-8 encoding on Windows if
-      :c:member:`PyConfig.legacy_windows_fs_encoding` is zero;
+      :c:member:`PyPreConfig.legacy_windows_fs_encoding` is zero;
 
 
 .. c:function:: char* Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
@@ -209,7 +210,7 @@ Operating System Utilities
 
    .. versionchanged:: 3.8
       The function now uses the UTF-8 encoding on Windows if
-      :c:member:`PyConfig.legacy_windows_fs_encoding` is zero.
+      :c:member:`PyPreConfig.legacy_windows_fs_encoding` is zero.
 
 
 .. _systemfunctions:
@@ -363,7 +364,7 @@ Process Control
    This function should only be invoked when a condition is detected that would
    make it dangerous to continue using the Python interpreter; e.g., when the
    object administration appears to be corrupted.  On Unix, the standard C library
-   function :c:func:`abort` is called which will attempt to produce a :file:`core`
+   function :c:func:`!abort` is called which will attempt to produce a :file:`core`
    file.
 
    The ``Py_FatalError()`` function is replaced with a macro which logs

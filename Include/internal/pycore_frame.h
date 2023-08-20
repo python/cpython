@@ -5,8 +5,8 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
-#include <stddef.h>
-#include "pycore_code.h"         // STATS
+#include <stddef.h>               // offsetof()
+#include "pycore_code.h"          // STATS
 
 /* See Objects/frame_layout.md for an explanation of the frame stack
  * including explanation of the PyFrameObject and _PyInterpreterFrame
@@ -196,7 +196,7 @@ _PyFrame_GetFirstComplete(_PyInterpreterFrame *frame)
 static inline _PyInterpreterFrame *
 _PyThreadState_GetFrame(PyThreadState *tstate)
 {
-    return _PyFrame_GetFirstComplete(tstate->cframe->current_frame);
+    return _PyFrame_GetFirstComplete(tstate->current_frame);
 }
 
 /* For use by _PyFrame_GetFrameObject

@@ -159,8 +159,9 @@ Glossary
       :class:`str` objects.
 
    borrowed reference
-      In Python's C API, a borrowed reference is a reference to an object.
-      It does not modify the object reference count. It becomes a dangling
+      In Python's C API, a borrowed reference is a reference to an object,
+      where the code using the object does not own the reference.
+      It becomes a dangling
       pointer if the object is destroyed. For example, a garbage collection can
       remove the last :term:`strong reference` to the object and so destroy it.
 
@@ -1054,7 +1055,9 @@ Glossary
 
    reference count
       The number of references to an object.  When the reference count of an
-      object drops to zero, it is deallocated.  Reference counting is
+      object drops to zero, it is deallocated.  Some objects are
+      "immortal" and have reference counts that are never modified, and
+      therefore the objects are never deallocated.  Reference counting is
       generally not visible to Python code, but it is a key element of the
       :term:`CPython` implementation.  Programmers can call the
       :func:`sys.getrefcount` function to return the
@@ -1107,6 +1110,21 @@ Glossary
       when several are given, such as in ``variable_name[1:3:5]``.  The bracket
       (subscript) notation uses :class:`slice` objects internally.
 
+   soft deprecated
+      A soft deprecation can be used when using an API which should no longer
+      be used to write new code, but it remains safe to continue using it in
+      existing code. The API remains documented and tested, but will not be
+      developed further (no enhancement).
+
+      The main difference between a "soft" and a (regular) "hard" deprecation
+      is that the soft deprecation does not imply scheduling the removal of the
+      deprecated API.
+
+      Another difference is that a soft deprecation does not issue a warning.
+
+      See `PEP 387: Soft Deprecation
+      <https://peps.python.org/pep-0387/#soft-deprecation>`_.
+
    special method
       .. index:: pair: special; method
 
@@ -1122,8 +1140,10 @@ Glossary
 
    strong reference
       In Python's C API, a strong reference is a reference to an object
-      which increments the object's reference count when it is created and
-      decrements the object's reference count when it is deleted.
+      which is owned by the code holding the reference.  The strong
+      reference is taken by calling :c:func:`Py_INCREF` when the
+      reference is created and released with :c:func:`Py_DECREF`
+      when the reference is deleted.
 
       The :c:func:`Py_NewRef` function can be used to create a strong reference
       to an object. Usually, the :c:func:`Py_DECREF` function must be called on

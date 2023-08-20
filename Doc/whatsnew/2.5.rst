@@ -954,7 +954,7 @@ The return value must be either a Python integer or long integer. The
 interpreter will check that the type returned is correct, and raises a
 :exc:`TypeError` if this requirement isn't met.
 
-A corresponding :attr:`nb_index` slot was added to the C-level
+A corresponding :c:member:`~PyNumberMethods.nb_index` slot was added to the C-level
 :c:type:`PyNumberMethods` structure to let C extensions implement this protocol.
 ``PyNumber_Index(obj)`` can be used in extension code to call the
 :meth:`__index__` function and retrieve its result.
@@ -1448,10 +1448,10 @@ complete list of changes, or look through the SVN logs for all the details.
   return times that are precise to fractions of a second; not all systems support
   such precision.)
 
-  Constants named :attr:`os.SEEK_SET`, :attr:`os.SEEK_CUR`, and
-  :attr:`os.SEEK_END` have been added; these are the parameters to the
+  Constants named :const:`os.SEEK_SET`, :const:`os.SEEK_CUR`, and
+  :const:`os.SEEK_END` have been added; these are the parameters to the
   :func:`os.lseek` function.  Two new constants for locking are
-  :attr:`os.O_SHLOCK` and :attr:`os.O_EXLOCK`.
+  :const:`os.O_SHLOCK` and :const:`os.O_EXLOCK`.
 
   Two new functions, :func:`wait3` and :func:`wait4`, were added.  They're similar
   the :func:`waitpid` function which waits for a child process to exit and returns
@@ -1602,7 +1602,7 @@ complete list of changes, or look through the SVN logs for all the details.
 
 * The :mod:`unicodedata` module has been updated to use version 4.1.0 of the
   Unicode character database.  Version 3.2.0 is required  by some specifications,
-  so it's still available as  :attr:`unicodedata.ucd_3_2_0`.
+  so it's still available as  :data:`unicodedata.ucd_3_2_0`.
 
 * New module: the  :mod:`uuid` module generates  universally unique identifiers
   (UUIDs) according to :rfc:`4122`.  The RFC defines several different UUID
@@ -2151,8 +2151,8 @@ Changes to Python's build process and to the C API include:
 
   Previously these different families all reduced to the platform's
   :c:func:`malloc` and :c:func:`free` functions.  This meant  it didn't matter if
-  you got things wrong and allocated memory with the :c:func:`PyMem` function but
-  freed it with the :c:func:`PyObject` function.  With 2.5's changes to obmalloc,
+  you got things wrong and allocated memory with the ``PyMem`` function but
+  freed it with the ``PyObject`` function.  With 2.5's changes to obmalloc,
   these families now do different things and mismatches will probably result in a
   segfault.  You should carefully test your C extension modules with Python 2.5.
 

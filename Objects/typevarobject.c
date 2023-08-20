@@ -3,7 +3,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK/UNTRACK
 #include "pycore_typevarobject.h"
 #include "pycore_unionobject.h"   // _Py_union_type_or
-#include "structmember.h"
+
 
 /*[clinic input]
 class typevar "typevarobject *" "&_PyTypeVar_Type"
@@ -107,7 +107,7 @@ make_union(PyObject *self, PyObject *other)
 static PyObject *
 caller(void)
 {
-    _PyInterpreterFrame *f = _PyThreadState_GET()->cframe->current_frame;
+    _PyInterpreterFrame *f = _PyThreadState_GET()->current_frame;
     if (f == NULL) {
         Py_RETURN_NONE;
     }
@@ -244,10 +244,10 @@ typevar_repr(PyObject *self)
 }
 
 static PyMemberDef typevar_members[] = {
-    {"__name__", T_OBJECT, offsetof(typevarobject, name), READONLY},
-    {"__covariant__", T_BOOL, offsetof(typevarobject, covariant), READONLY},
-    {"__contravariant__", T_BOOL, offsetof(typevarobject, contravariant), READONLY},
-    {"__infer_variance__", T_BOOL, offsetof(typevarobject, infer_variance), READONLY},
+    {"__name__", _Py_T_OBJECT, offsetof(typevarobject, name), Py_READONLY},
+    {"__covariant__", Py_T_BOOL, offsetof(typevarobject, covariant), Py_READONLY},
+    {"__contravariant__", Py_T_BOOL, offsetof(typevarobject, contravariant), Py_READONLY},
+    {"__infer_variance__", Py_T_BOOL, offsetof(typevarobject, infer_variance), Py_READONLY},
     {0}
 };
 
@@ -500,7 +500,7 @@ PyType_Spec typevar_spec = {
     .name = "typing.TypeVar",
     .basicsize = sizeof(typevarobject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE
-        | Py_TPFLAGS_MANAGED_DICT,
+        | Py_TPFLAGS_MANAGED_DICT | Py_TPFLAGS_MANAGED_WEAKREF,
     .slots = typevar_slots,
 };
 
@@ -555,7 +555,7 @@ paramspecattr_richcompare(PyObject *a, PyObject *b, int op)
 }
 
 static PyMemberDef paramspecattr_members[] = {
-    {"__origin__", T_OBJECT, offsetof(paramspecattrobject, __origin__), READONLY},
+    {"__origin__", _Py_T_OBJECT, offsetof(paramspecattrobject, __origin__), Py_READONLY},
     {0}
 };
 
@@ -647,7 +647,8 @@ static PyType_Slot paramspecargs_slots[] = {
 PyType_Spec paramspecargs_spec = {
     .name = "typing.ParamSpecArgs",
     .basicsize = sizeof(paramspecattrobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_MANAGED_WEAKREF,
     .slots = paramspecargs_slots,
 };
 
@@ -726,7 +727,8 @@ static PyType_Slot paramspeckwargs_slots[] = {
 PyType_Spec paramspeckwargs_spec = {
     .name = "typing.ParamSpecKwargs",
     .basicsize = sizeof(paramspecattrobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_MANAGED_WEAKREF,
     .slots = paramspeckwargs_slots,
 };
 
@@ -778,11 +780,11 @@ paramspec_repr(PyObject *self)
 }
 
 static PyMemberDef paramspec_members[] = {
-    {"__name__", T_OBJECT, offsetof(paramspecobject, name), READONLY},
-    {"__bound__", T_OBJECT, offsetof(paramspecobject, bound), READONLY},
-    {"__covariant__", T_BOOL, offsetof(paramspecobject, covariant), READONLY},
-    {"__contravariant__", T_BOOL, offsetof(paramspecobject, contravariant), READONLY},
-    {"__infer_variance__", T_BOOL, offsetof(paramspecobject, infer_variance), READONLY},
+    {"__name__", _Py_T_OBJECT, offsetof(paramspecobject, name), Py_READONLY},
+    {"__bound__", _Py_T_OBJECT, offsetof(paramspecobject, bound), Py_READONLY},
+    {"__covariant__", Py_T_BOOL, offsetof(paramspecobject, covariant), Py_READONLY},
+    {"__contravariant__", Py_T_BOOL, offsetof(paramspecobject, contravariant), Py_READONLY},
+    {"__infer_variance__", Py_T_BOOL, offsetof(paramspecobject, infer_variance), Py_READONLY},
     {0}
 };
 
@@ -1007,7 +1009,7 @@ PyType_Spec paramspec_spec = {
     .name = "typing.ParamSpec",
     .basicsize = sizeof(paramspecobject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE
-        | Py_TPFLAGS_MANAGED_DICT,
+        | Py_TPFLAGS_MANAGED_DICT | Py_TPFLAGS_MANAGED_WEAKREF,
     .slots = paramspec_slots,
 };
 
@@ -1052,7 +1054,7 @@ typevartuple_repr(PyObject *self)
 }
 
 static PyMemberDef typevartuple_members[] = {
-    {"__name__", T_OBJECT, offsetof(typevartupleobject, name), READONLY},
+    {"__name__", _Py_T_OBJECT, offsetof(typevartupleobject, name), Py_READONLY},
     {0}
 };
 
@@ -1228,7 +1230,7 @@ PyType_Spec typevartuple_spec = {
     .name = "typing.TypeVarTuple",
     .basicsize = sizeof(typevartupleobject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_MANAGED_DICT
-        | Py_TPFLAGS_HAVE_GC,
+        | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_MANAGED_WEAKREF,
     .slots = typevartuple_slots,
 };
 
@@ -1290,7 +1292,7 @@ typealias_repr(PyObject *self)
 }
 
 static PyMemberDef typealias_members[] = {
-    {"__name__", T_OBJECT, offsetof(typealiasobject, name), READONLY},
+    {"__name__", _Py_T_OBJECT, offsetof(typealiasobject, name), Py_READONLY},
     {0}
 };
 
