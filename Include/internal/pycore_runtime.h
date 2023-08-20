@@ -165,12 +165,6 @@ typedef struct pyruntimestate {
 
     /* Is Python fully initialized? Set to 1 by Py_Initialize() */
     int initialized;
-
-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-    /* Choose between trampoline based on type reflection vs based on EM_JS */
-    int wasm_type_reflection_available;
-#endif
-
     /* Set by Py_FinalizeEx(). Only reset to NULL if Py_Initialize()
        is called again.
 
@@ -273,6 +267,12 @@ typedef struct pyruntimestate {
 
     /* PyInterpreterState.interpreters.main */
     PyInterpreterState _main_interpreter;
+
+#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
+    /* Choose between trampoline based on type reflection vs based on EM_JS */
+    int wasm_type_reflection_available;
+#endif
+
 } _PyRuntimeState;
 
 
