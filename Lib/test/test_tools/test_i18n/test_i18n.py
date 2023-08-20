@@ -340,13 +340,13 @@ class Test_pygettext(unittest.TestCase):
 
         for input_file, output_file in filenames:
             with self.subTest(f'Input file: data/{input_file}'):
-                contents = (data_dir / input_file).read_text()
+                contents = (data_dir / input_file).read_text(encoding='utf-8')
                 with temp_cwd(None):
-                    Path(input_file).write_text(contents)
+                    Path(input_file).write_text(contents, encoding='utf-8')
                     assert_python_ok(self.script, '-D', input_file)
-                    output = Path('messages.pot').read_text()
+                    output = Path('messages.pot').read_text(encoding='utf-8')
 
-                expected = (data_dir / output_file).read_text()
+                expected = (data_dir / output_file).read_text(encoding='utf-8')
                 self.assert_POT_equal(expected, output)
 
     def test_files_list(self):
