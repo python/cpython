@@ -786,6 +786,7 @@ class ProcessTestCase(BaseTestCase):
     @unittest.skipUnless(sys.platform == "win32", "Windows only issue")
     def test_win32_duplicate_envs(self):
         newenv = os.environ.copy()
+        newenv["fRUit"] = "cherry"
         newenv["fruit"] = "lemon"
         newenv["FRUIT"] = "orange"
         newenv["frUit"] = "banana"
