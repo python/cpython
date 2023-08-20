@@ -800,7 +800,6 @@ normalize_environment(PyObject* environment) {
     keyfunc = PyCFunction_New(&sortenvironmentkey_def, NULL);
     sort = PyObject_GetAttrString(keys, "sort");
     args = PyTuple_New(0);
-    kwargs = PyDict_New();
     PyDict_SetItemString(kwargs, "key", keyfunc);
     if (PyObject_Call(sort, args, kwargs) == NULL) {
         goto error;
