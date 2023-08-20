@@ -25,7 +25,6 @@ Doc/c-api/unicode.rst
 Doc/extending/extending.rst
 Doc/extending/newtypes.rst
 Doc/faq/gui.rst
-Doc/faq/library.rst
 Doc/glossary.rst
 Doc/howto/descriptor.rst
 Doc/howto/enum.rst
