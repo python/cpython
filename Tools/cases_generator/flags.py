@@ -16,12 +16,11 @@ class InstructionFlags:
     HAS_FREE_FLAG: bool
     HAS_LOCAL_FLAG: bool
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.bitmask = {name: (1 << i) for i, name in enumerate(self.names())}
 
     @staticmethod
-    def fromInstruction(instr: parsing.Node):
-
+    def fromInstruction(instr: parsing.Node) -> "InstructionFlags":
         has_free = (
             variable_used(instr, "PyCell_New")
             or variable_used(instr, "PyCell_GET")
@@ -41,7 +40,7 @@ class InstructionFlags:
         )
 
     @staticmethod
-    def newEmpty():
+    def newEmpty() -> "InstructionFlags":
         return InstructionFlags(False, False, False, False, False, False)
 
     def add(self, other: "InstructionFlags") -> None:
@@ -49,7 +48,7 @@ class InstructionFlags:
             if value:
                 setattr(self, name, value)
 
-    def names(self, value=None) -> list[str]:
+    def names(self, value: bool | None = None) -> list[str]:
         if value is None:
             return list(dataclasses.asdict(self).keys())
         return [n for n, v in dataclasses.asdict(self).items() if v == value]
@@ -62,7 +61,7 @@ class InstructionFlags:
         return flags
 
     @classmethod
-    def emit_macros(cls, out: Formatter):
+    def emit_macros(cls, out: Formatter) -> None:
         flags = cls.newEmpty()
         for name, value in flags.bitmask.items():
             out.emit(f"#define {name} ({value})")
@@ -90,9 +89,9 @@ def variable_used_unspecialized(node: parsing.Node, name: str) -> bool:
             text = "".join(token.text.split())
             # TODO: Handle nested #if
             if text == "#if":
-                if (
-                    i + 1 < len(node.tokens)
-                    and node.tokens[i + 1].text == "ENABLE_SPECIALIZATION"
+                if i + 1 < len(node.tokens) and node.tokens[i + 1].text in (
+                    "ENABLE_SPECIALIZATION",
+                    "TIER_ONE",
                 ):
                     skipping = True
             elif text in ("#else", "#endif"):

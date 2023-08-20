@@ -5464,6 +5464,37 @@ _PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values)
     return make_dict_from_instance_attributes(interp, keys, values);
 }
 
+// Return true if the dict was dematerialized, false otherwise.
+bool
+_PyObject_MakeInstanceAttributesFromDict(PyObject *obj, PyDictOrValues *dorv)
+{
+    assert(_PyObject_DictOrValuesPointer(obj) == dorv);
+    assert(!_PyDictOrValues_IsValues(*dorv));
+    PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(*dorv);
+    if (dict == NULL) {
+        return false;
+    }
+    // It's likely that this dict still shares its keys (if it was materialized
+    // on request and not heavily modified):
+    if (!PyDict_CheckExact(dict)) {
+        return false;
+    }
+    assert(_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_HEAPTYPE));
+    if (dict->ma_keys != CACHED_KEYS(Py_TYPE(obj)) || Py_REFCNT(dict) != 1) {
+        return false;
+    }
+    assert(dict->ma_values);
+    // We have an opportunity to do something *really* cool: dematerialize it!
+    _PyDictKeys_DecRef(dict->ma_keys);
+    _PyDictOrValues_SetValues(dorv, dict->ma_values);
+    OBJECT_STAT_INC(dict_dematerialized);
+    // Don't try this at home, kids:
+    dict->ma_keys = NULL;
+    dict->ma_values = NULL;
+    Py_DECREF(dict);
+    return true;
+}
+
 int
 _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
                               PyObject *name, PyObject *value)
@@ -5688,6 +5719,7 @@ PyObject_GenericGetDict(PyObject *obj, void *context)
             dict = _PyDictOrValues_GetDict(*dorv_ptr);
             if (dict == NULL) {
                 dictkeys_incref(CACHED_KEYS(tp));
+                OBJECT_STAT_INC(dict_materialized_on_request);
                 dict = new_dict_with_shared_keys(interp, CACHED_KEYS(tp));
                 dorv_ptr->dict = dict;
             }
@@ -5730,6 +5762,7 @@ _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr,
         assert(dictptr != NULL);
         dict = *dictptr;
         if (dict == NULL) {
+            assert(!_PyType_HasFeature(tp, Py_TPFLAGS_MANAGED_DICT));
             dictkeys_incref(cached);
             dict = new_dict_with_shared_keys(interp, cached);
             if (dict == NULL)
