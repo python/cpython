@@ -63,6 +63,12 @@ class Test_pygettext(unittest.TestCase):
         expected = re.sub(date_pattern, header, expected)
         actual = re.sub(date_pattern, header, actual)
 
+        # Normalize charset (currently there's no way to specify the output charset)
+        charset_pattern = re.compile(r'"Content-Type: text/plain; charset=.+?\n"')
+        charset = "Content-Type: text/plain; charset=UTF-8\\n"
+        expected = re.sub(charset_pattern, charset, expected)
+        actual = re.sub(charset_pattern, charset, actual)
+
         # Normalize the file location path separators in case this test is
         # running on a platform which does not use '/' as a default separator
         fileloc_pattern = re.compile(r'#:.+')
@@ -342,9 +348,9 @@ class Test_pygettext(unittest.TestCase):
             with self.subTest(f'Input file: data/{input_file}'):
                 contents = (data_dir / input_file).read_text(encoding='utf-8')
                 with temp_cwd(None):
-                    Path(input_file).write_text(contents, encoding='utf-8')
+                    Path(input_file).write_text(contents)
                     assert_python_ok(self.script, '-D', input_file)
-                    output = Path('messages.pot').read_text(encoding='utf-8')
+                    output = Path('messages.pot').read_text()
 
                 expected = (data_dir / output_file).read_text(encoding='utf-8')
                 self.assert_POT_equal(expected, output)
