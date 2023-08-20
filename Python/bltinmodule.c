@@ -893,7 +893,6 @@ eval as builtin_eval
     source: object
     globals: object = None
     locals: object = None
-    /
 
 Evaluate the given source in the context of globals and locals.
 
@@ -907,7 +906,7 @@ If only globals is given, locals defaults to it.
 static PyObject *
 builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
                   PyObject *locals)
-/*[clinic end generated code: output=0a0824aa70093116 input=11ee718a8640e527]*/
+/*[clinic end generated code: output=0a0824aa70093116 input=4cbfb23dd7cbe2a9]*/
 {
     PyObject *result = NULL, *source_copy;
     const char *str;
@@ -992,7 +991,6 @@ exec as builtin_exec
     source: object
     globals: object = None
     locals: object = None
-    /
     *
     closure: object(c_default="NULL") = None
 
@@ -1010,11 +1008,12 @@ when source is a code object requiring exactly that many cellvars.
 static PyObject *
 builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
                   PyObject *locals, PyObject *closure)
-/*[clinic end generated code: output=7579eb4e7646743d input=f13a7e2b503d1d9a]*/
+/*[clinic end generated code: output=7579eb4e7646743d input=99951d1832fece9e]*/
 {
     PyObject *v;
 
     if (globals == Py_None) {
+
         globals = PyEval_GetGlobals();
         if (locals == Py_None) {
             locals = _PyEval_GetFrameLocals();
