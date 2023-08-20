@@ -27,7 +27,6 @@ Doc/extending/newtypes.rst
 Doc/faq/design.rst
 Doc/faq/gui.rst
 Doc/faq/library.rst
-Doc/faq/programming.rst
 Doc/glossary.rst
 Doc/howto/descriptor.rst
 Doc/howto/enum.rst
@@ -92,7 +91,6 @@ Doc/library/inspect.rst
 Doc/library/locale.rst
 Doc/library/logging.config.rst
 Doc/library/logging.handlers.rst
-Doc/library/logging.rst
 Doc/library/lzma.rst
 Doc/library/mailbox.rst
 Doc/library/mmap.rst
@@ -127,7 +125,6 @@ Doc/library/ssl.rst
 Doc/library/stdtypes.rst
 Doc/library/string.rst
 Doc/library/subprocess.rst
-Doc/library/sys.rst
 Doc/library/sys_path_init.rst
 Doc/library/syslog.rst
 Doc/library/tarfile.rst
@@ -161,7 +158,6 @@ Doc/library/xml.sax.rst
 Doc/library/xmlrpc.client.rst
 Doc/library/xmlrpc.server.rst
 Doc/library/zlib.rst
-Doc/license.rst
 Doc/reference/compound_stmts.rst
 Doc/reference/datamodel.rst
 Doc/reference/expressions.rst
