@@ -147,7 +147,7 @@ arg_parser.add_argument(
 class Generator(Analyzer):
     def get_stack_effect_info(
         self, thing: parsing.InstDef | parsing.Macro | parsing.Pseudo
-    ) -> tuple[AnyInstruction | None, str | None, str | None]:
+    ) -> tuple[AnyInstruction | None, str, str]:
         def effect_str(effects: list[StackEffect]) -> str:
             n_effect, sym_effect = list_effect_size(effects)
             if sym_effect:
@@ -155,8 +155,6 @@ class Generator(Analyzer):
             return str(n_effect)
 
         instr: AnyInstruction | None
-        popped: str | None = None
-        pushed: str | None = None
         match thing:
             case parsing.InstDef():
                 if thing.kind != "op" or self.instrs[thing.name].is_viable_uop():
@@ -174,7 +172,7 @@ class Generator(Analyzer):
                 instr = self.pseudo_instrs[thing.name]
                 # Calculate stack effect, and check that it's the the same
                 # for all targets.
-                for target in self.pseudos[thing.name].targets:
+                for idx, target in enumerate(self.pseudos[thing.name].targets):
                     target_instr = self.instrs.get(target)
                     # Currently target is always an instr. This could change
                     # in the future, e.g., if we have a pseudo targetting a
@@ -182,8 +180,7 @@ class Generator(Analyzer):
                     assert target_instr
                     target_popped = effect_str(target_instr.input_effects)
                     target_pushed = effect_str(target_instr.output_effects)
-                    if pushed is None:
-                        assert popped is None
+                    if idx == 0:
                         popped, pushed = target_popped, target_pushed
                     else:
                         assert popped == target_popped
@@ -209,7 +206,6 @@ class Generator(Analyzer):
                 continue
             instr, popped, pushed = self.get_stack_effect_info(thing)
             if instr is not None:
-                assert popped is not None and pushed is not None
                 popped_data.append((instr, popped))
                 pushed_data.append((instr, pushed))
 
