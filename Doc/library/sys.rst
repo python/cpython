@@ -1572,7 +1572,7 @@ always available.
       :file:`Objects/lnotab_notes.txt` for a detailed explanation of how this
       works.
       Per-line events may be disabled for a frame by setting
-      :attr:`!f_trace_lines` to :const:`False` on that frame.
+      :attr:`!f_trace_lines` to :const:`False` on that :ref:`frame <frame-objects>`.
 
    ``'return'``
       A function (or other code block) is about to return.  The local trace
@@ -1591,7 +1591,7 @@ always available.
       ``None``; the return value specifies the new local trace function.
       Per-opcode events are not emitted by default: they must be explicitly
       requested by setting :attr:`!f_trace_opcodes` to :const:`True` on the
-      frame.
+      :ref:`frame <frame-objects>`.
 
    Note that as an exception is propagated down the chain of callers, an
    ``'exception'`` event is generated at each level.
