@@ -2616,6 +2616,12 @@ static void
 TaskObj_finalize(TaskObj *task)
 {
     asyncio_state *state = get_asyncio_state_by_def((PyObject *)task);
+    // Unregister the task from the linked list of tasks.
+    // Since task is a native task, we directly call the
+    // unregister_task function. Third party event loops
+    // should use the asyncio._unregister_task function.
+    // See https://docs.python.org/3/library/asyncio-extending.html#task-lifetime-support
+
     unregister_task(state, task);
 
     PyObject *context;
