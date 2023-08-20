@@ -292,8 +292,10 @@ _PyErr_SetString(PyThreadState *tstate, PyObject *exception,
                  const char *string)
 {
     PyObject *value = PyUnicode_FromString(string);
-    _PyErr_SetObject(tstate, exception, value);
-    Py_XDECREF(value);
+    if (value != NULL) {
+        _PyErr_SetObject(tstate, exception, value);
+        Py_DECREF(value);
+    }
 }
 
 void
@@ -915,7 +917,13 @@ PyErr_SetFromErrnoWithFilenameObjects(PyObject *exc, PyObject *filenameObject, P
 PyObject *
 PyErr_SetFromErrnoWithFilename(PyObject *exc, const char *filename)
 {
-    PyObject *name = filename ? PyUnicode_DecodeFSDefault(filename) : NULL;
+    PyObject *name = NULL;
+    if (filename) {
+        name = PyUnicode_DecodeFSDefault(filename);
+        if (name == NULL) {
+            return NULL;
+        }
+    }
     PyObject *result = PyErr_SetFromErrnoWithFilenameObjects(exc, name, NULL);
     Py_XDECREF(name);
     return result;
@@ -1012,7 +1020,13 @@ PyObject *PyErr_SetExcFromWindowsErrWithFilename(
     int ierr,
     const char *filename)
 {
-    PyObject *name = filename ? PyUnicode_DecodeFSDefault(filename) : NULL;
+    PyObject *name = NULL;
+    if (filename) {
+        name = PyUnicode_DecodeFSDefault(filename);
+        if (name == NULL) {
+            return NULL;
+        }
+    }
     PyObject *ret = PyErr_SetExcFromWindowsErrWithFilenameObjects(exc,
                                                                  ierr,
                                                                  name,
@@ -1036,7 +1050,13 @@ PyObject *PyErr_SetFromWindowsErrWithFilename(
     int ierr,
     const char *filename)
 {
-    PyObject *name = filename ? PyUnicode_DecodeFSDefault(filename) : NULL;
+    PyObject *name = NULL;
+    if (filename) {
+        name = PyUnicode_DecodeFSDefault(filename);
+        if (name == NULL) {
+            return NULL;
+        }
+    }
     PyObject *result = PyErr_SetExcFromWindowsErrWithFilenameObjects(
                                                   PyExc_OSError,
                                                   ierr, name, NULL);
@@ -1161,9 +1181,10 @@ _PyErr_FormatV(PyThreadState *tstate, PyObject *exception,
     _PyErr_Clear(tstate);
 
     string = PyUnicode_FromFormatV(format, vargs);
-
-    _PyErr_SetObject(tstate, exception, string);
-    Py_XDECREF(string);
+    if (string != NULL) {
+        _PyErr_SetObject(tstate, exception, string);
+        Py_DECREF(string);
+    }
     return NULL;
 }
 

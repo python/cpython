@@ -1,5 +1,8 @@
+#define PY_SSIZE_T_CLEAN
 #include "parts.h"
 #include "clinic/exceptions.c.h"
+
+#define NULLABLE(x) do { if (x == Py_None) x = NULL; } while (0);
 
 /*[clinic input]
 module _testcapi
@@ -127,6 +130,43 @@ _testcapi_exc_set_object_fetch_impl(PyObject *module, PyObject *exc,
     Py_XDECREF(type);
     Py_XDECREF(tb);
     return value;
+}
+
+/*[clinic input]
+_testcapi.err_setstring
+    exc: object
+    value: str(zeroes=True, accept={robuffer, str, NoneType})
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_testcapi_err_setstring_impl(PyObject *module, PyObject *exc,
+                             const char *value, Py_ssize_t value_length)
+/*[clinic end generated code: output=fba8705e5703dd3f input=e8a95fad66d9004b]*/
+{
+    NULLABLE(exc);
+    PyErr_SetString(exc, value);
+    return NULL;
+}
+
+/*[clinic input]
+_testcapi.err_setfromerrnowithfilename
+    error: int
+    exc: object
+    value: str(zeroes=True, accept={robuffer, str, NoneType})
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_testcapi_err_setfromerrnowithfilename_impl(PyObject *module, int error,
+                                            PyObject *exc, const char *value,
+                                            Py_ssize_t value_length)
+/*[clinic end generated code: output=d02df5749a01850e input=ff7c384234bf097f]*/
+{
+    NULLABLE(exc);
+    errno = error;
+    PyErr_SetFromErrnoWithFilename(exc, value);
+    return NULL;
 }
 
 /*[clinic input]
@@ -338,6 +378,8 @@ static PyMethodDef test_methods[] = {
     _TESTCAPI_MAKE_EXCEPTION_WITH_DOC_METHODDEF
     _TESTCAPI_EXC_SET_OBJECT_METHODDEF
     _TESTCAPI_EXC_SET_OBJECT_FETCH_METHODDEF
+    _TESTCAPI_ERR_SETSTRING_METHODDEF
+    _TESTCAPI_ERR_SETFROMERRNOWITHFILENAME_METHODDEF
     _TESTCAPI_RAISE_EXCEPTION_METHODDEF
     _TESTCAPI_RAISE_MEMORYERROR_METHODDEF
     _TESTCAPI_SET_EXC_INFO_METHODDEF
