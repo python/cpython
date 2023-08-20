@@ -14,6 +14,7 @@ import logging
 from logging.handlers import QueueHandler
 import os
 import queue
+import signal
 import sys
 import threading
 import time
@@ -396,6 +397,33 @@ class ExecutorShutdownTest:
                        context=getattr(self, 'ctx', None)))
         self.assertFalse(err)
         self.assertEqual(out.strip(), b"apple")
+
+    def test_hang_gh94440(self):
+        """shutdown(wait=True) doesn't hang when a future was submitted and
+        quickly canceled right before shutdown.
+
+        See https://github.com/python/cpython/issues/94440.
+        """
+        if not hasattr(signal, 'alarm'):
+            raise unittest.SkipTest(
+                "Tested platform does not support the alarm signal")
+
+        def timeout(_signum, _frame):
+            raise RuntimeError("timed out waiting for shutdown")
+
+        kwargs = {}
+        if getattr(self, 'ctx', None):
+            kwargs['mp_context'] = self.get_context()
+        executor = self.executor_type(max_workers=1, **kwargs)
+        executor.submit(int).result()
+        old_handler = signal.signal(signal.SIGALRM, timeout)
+        try:
+            signal.alarm(5)
+            executor.submit(int).cancel()
+            executor.shutdown(wait=True)
+        finally:
+            signal.alarm(0)
+            signal.signal(signal.SIGALRM, old_handler)
 
 
 class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase):
@@ -1144,6 +1172,11 @@ def _crash(delay=None):
     faulthandler._sigsegv()
 
 
+def _crash_with_data(data):
+    """Induces a segfault with dummy data in input."""
+    _crash()
+
+
 def _exit():
     """Induces a sys exit with exitcode 1."""
     sys.exit(1)
@@ -1342,6 +1375,19 @@ class ExecutorDeadlockTest:
         # Make sure the executor is eventually shutdown and do not leave
         # dangling threads
         executor_manager.join()
+
+    def test_crash_big_data(self):
+        # Test that there is a clean exception instad of a deadlock when a
+        # child process crashes while some data is being written into the
+        # queue.
+        # https://github.com/python/cpython/issues/94777
+        self.executor.shutdown(wait=True)
+        data = "a" * support.PIPE_MAX_SIZE
+        with self.executor_type(max_workers=2,
+                                mp_context=self.get_context()) as executor:
+            self.executor = executor  # Allow clean up in fail_on_deadlock
+            with self.assertRaises(BrokenProcessPool):
+                list(executor.map(_crash_with_data, [data] * 10))
 
 
 create_executor_tests(ExecutorDeadlockTest,

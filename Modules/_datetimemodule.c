@@ -15,7 +15,7 @@
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
 #include "datetime.h"
-#include "structmember.h"         // PyMemberDef
+
 
 #include <time.h>
 
@@ -2727,13 +2727,13 @@ delta_reduce(PyDateTime_Delta* self, PyObject *Py_UNUSED(ignored))
 
 static PyMemberDef delta_members[] = {
 
-    {"days",         T_INT, OFFSET(days),         READONLY,
+    {"days",         Py_T_INT, OFFSET(days),         Py_READONLY,
      PyDoc_STR("Number of days.")},
 
-    {"seconds",      T_INT, OFFSET(seconds),      READONLY,
+    {"seconds",      Py_T_INT, OFFSET(seconds),      Py_READONLY,
      PyDoc_STR("Number of seconds (>= 0 and less than 1 day).")},
 
-    {"microseconds", T_INT, OFFSET(microseconds), READONLY,
+    {"microseconds", Py_T_INT, OFFSET(microseconds), Py_READONLY,
      PyDoc_STR("Number of microseconds (>= 0 and less than 1 second).")},
     {NULL}
 };
@@ -2901,9 +2901,6 @@ date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
             }
         }
         else if (PyUnicode_Check(state)) {
-            if (PyUnicode_READY(state)) {
-                return NULL;
-            }
             if (PyUnicode_GET_LENGTH(state) == _PyDateTime_DATE_DATASIZE &&
                 MONTH_IS_SANE(PyUnicode_READ_CHAR(state, 2)))
             {
@@ -3794,7 +3791,7 @@ tzinfo_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
     PyObject *args, *state;
     PyObject *getinitargs;
 
-    if (_PyObject_LookupAttr(self, &_Py_ID(__getinitargs__), &getinitargs) < 0) {
+    if (PyObject_GetOptionalAttr(self, &_Py_ID(__getinitargs__), &getinitargs) < 0) {
         return NULL;
     }
     if (getinitargs != NULL) {
@@ -4234,9 +4231,6 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
             }
         }
         else if (PyUnicode_Check(state)) {
-            if (PyUnicode_READY(state)) {
-                return NULL;
-            }
             if (PyUnicode_GET_LENGTH(state) == _PyDateTime_TIME_DATASIZE &&
                 (0x7F & PyUnicode_READ_CHAR(state, 0)) < 24)
             {
@@ -4909,9 +4903,6 @@ datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
             }
         }
         else if (PyUnicode_Check(state)) {
-            if (PyUnicode_READY(state)) {
-                return NULL;
-            }
             if (PyUnicode_GET_LENGTH(state) == _PyDateTime_DATETIME_DATASIZE &&
                 MONTH_IS_SANE(PyUnicode_READ_CHAR(state, 2) & 0x7F))
             {
@@ -5144,6 +5135,13 @@ datetime_datetime_now_impl(PyTypeObject *type, PyObject *tz)
 static PyObject *
 datetime_utcnow(PyObject *cls, PyObject *dummy)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+        "datetime.utcnow() is deprecated and scheduled for removal in a "
+        "future version. Use timezone-aware objects to represent datetimes "
+        "in UTC: datetime.now(datetime.UTC).", 1))
+    {
+        return NULL;
+    }
     return datetime_best_possible(cls, _PyTime_gmtime, Py_None);
 }
 
@@ -5180,6 +5178,13 @@ datetime_fromtimestamp(PyObject *cls, PyObject *args, PyObject *kw)
 static PyObject *
 datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+        "datetime.utcfromtimestamp() is deprecated and scheduled for removal "
+        "in a future version. Use timezone-aware objects to represent "
+        "datetimes in UTC: datetime.fromtimestamp(timestamp, datetime.UTC).", 1))
+    {
+        return NULL;
+    }
     PyObject *timestamp;
     PyObject *result = NULL;
 
@@ -6153,17 +6158,31 @@ local_to_seconds(int year, int month, int day,
 static PyObject *
 local_timezone_from_local(PyDateTime_DateTime *local_dt)
 {
-    long long seconds;
+    long long seconds, seconds2;
     time_t timestamp;
+    int fold = DATE_GET_FOLD(local_dt);
     seconds = local_to_seconds(GET_YEAR(local_dt),
                                GET_MONTH(local_dt),
                                GET_DAY(local_dt),
                                DATE_GET_HOUR(local_dt),
                                DATE_GET_MINUTE(local_dt),
                                DATE_GET_SECOND(local_dt),
-                               DATE_GET_FOLD(local_dt));
+                               fold);
     if (seconds == -1)
         return NULL;
+    seconds2 = local_to_seconds(GET_YEAR(local_dt),
+                                GET_MONTH(local_dt),
+                                GET_DAY(local_dt),
+                                DATE_GET_HOUR(local_dt),
+                                DATE_GET_MINUTE(local_dt),
+                                DATE_GET_SECOND(local_dt),
+                                !fold);
+    if (seconds2 == -1)
+        return NULL;
+    /* Detect gap */
+    if (seconds2 != seconds && (seconds2 > seconds) == fold)
+        seconds = seconds2;
+
     /* XXX: add bounds check */
     timestamp = seconds - epoch;
     return local_timezone_from_timestamp(timestamp);
@@ -6815,8 +6834,7 @@ _datetime_exec(PyObject *module)
         return -1;
     }
 
-    if (PyModule_AddObject(module, "datetime_CAPI", x) < 0) {
-        Py_DECREF(x);
+    if (PyModule_Add(module, "datetime_CAPI", x) < 0) {
         return -1;
     }
 
@@ -6843,24 +6861,49 @@ _datetime_exec(PyObject *module)
     assert(DI100Y == days_before_year(100+1));
 
     us_per_ms = PyLong_FromLong(1000);
+    if (us_per_ms == NULL) {
+        goto error;
+    }
     us_per_second = PyLong_FromLong(1000000);
+    if (us_per_second == NULL) {
+        goto error;
+    }
     us_per_minute = PyLong_FromLong(60000000);
+    if (us_per_minute == NULL) {
+        goto error;
+    }
     seconds_per_day = PyLong_FromLong(24 * 3600);
-    if (us_per_ms == NULL || us_per_second == NULL ||
-        us_per_minute == NULL || seconds_per_day == NULL) {
-        return -1;
+    if (seconds_per_day == NULL) {
+        goto error;
     }
 
     /* The rest are too big for 32-bit ints, but even
      * us_per_week fits in 40 bits, so doubles should be exact.
      */
     us_per_hour = PyLong_FromDouble(3600000000.0);
-    us_per_day = PyLong_FromDouble(86400000000.0);
-    us_per_week = PyLong_FromDouble(604800000000.0);
-    if (us_per_hour == NULL || us_per_day == NULL || us_per_week == NULL) {
-        return -1;
+    if (us_per_hour == NULL) {
+        goto error;
     }
+    us_per_day = PyLong_FromDouble(86400000000.0);
+    if (us_per_day == NULL) {
+        goto error;
+    }
+    us_per_week = PyLong_FromDouble(604800000000.0);
+    if (us_per_week == NULL) {
+        goto error;
+    }
+
     return 0;
+
+error:
+    Py_XDECREF(us_per_ms);
+    Py_XDECREF(us_per_second);
+    Py_XDECREF(us_per_minute);
+    Py_XDECREF(us_per_hour);
+    Py_XDECREF(us_per_day);
+    Py_XDECREF(us_per_week);
+    Py_XDECREF(seconds_per_day);
+    return -1;
 }
 
 static struct PyModuleDef datetimemodule = {

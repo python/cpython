@@ -1,15 +1,8 @@
-
 /* interpreters module */
 /* low-level access to interpreter primitives */
-#ifndef Py_BUILD_CORE_BUILTIN
-#  define Py_BUILD_CORE_MODULE 1
-#endif
 
 #include "Python.h"
-// XXX This module should not rely on internal API.
-#include "pycore_frame.h"
-#include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_interpreteridobject.h"
+#include "interpreteridobject.h"
 
 
 #define MODULE_NAME "_xxsubinterpreters"
@@ -67,16 +60,7 @@ _release_xid_data(_PyCrossInterpreterData *data, int ignoreexc)
     }
     int res = _PyCrossInterpreterData_Release(data);
     if (res < 0) {
-        // XXX Fix this!
-        /* The owning interpreter is already destroyed.
-         * Ideally, this shouldn't ever happen.  (It's highly unlikely.)
-         * For now we hack around that to resolve refleaks, by decref'ing
-         * the released object here, even if its the wrong interpreter.
-         * The owning interpreter has already been destroyed
-         * so we should be okay, especially since the currently
-         * shareable types are all very basic, with no GC.
-         * That said, it becomes much messier once interpreters
-         * no longer share a GIL, so this needs to be fixed before then. */
+        /* The owning interpreter is already destroyed. */
         _PyCrossInterpreterData_Clear(NULL, data);
         if (ignoreexc) {
             // XXX Emit a warning?
@@ -284,7 +268,7 @@ _sharedexception_bind(PyObject *exc, _sharedexception *sharedexc)
     assert(exc != NULL);
     const char *failure = NULL;
 
-    PyObject *nameobj = PyUnicode_FromFormat("%S", Py_TYPE(exc));
+    PyObject *nameobj = PyUnicode_FromString(Py_TYPE(exc)->tp_name);
     if (nameobj == NULL) {
         failure = "unable to format exception type name";
         goto error;
@@ -385,7 +369,7 @@ _is_running(PyInterpreterState *interp)
     }
 
     assert(!PyErr_Occurred());
-    _PyInterpreterFrame *frame = tstate->cframe->current_frame;
+    struct _PyInterpreterFrame *frame = tstate->current_frame;
     if (frame == NULL) {
         return 0;
     }
@@ -411,7 +395,7 @@ _run_script(PyInterpreterState *interp, const char *codestr,
             _sharedns *shared, _sharedexception *sharedexc)
 {
     PyObject *excval = NULL;
-    PyObject *main_mod = _PyInterpreterState_GetMainModule(interp);
+    PyObject *main_mod = PyUnstable_InterpreterState_GetMainModule(interp);
     if (main_mod == NULL) {
         goto error;
     }
@@ -481,7 +465,7 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
     }
 
     // Run the script.
-    _sharedexception exc;
+    _sharedexception exc = {NULL, NULL};
     int result = _run_script(interp, codestr, shared, &exc);
 
     // Switch back.
@@ -521,22 +505,28 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Create and initialize the new interpreter.
-    PyThreadState *save_tstate = _PyThreadState_GET();
-    const _PyInterpreterConfig config = isolated
-        ? (_PyInterpreterConfig)_PyInterpreterConfig_INIT
-        : (_PyInterpreterConfig)_PyInterpreterConfig_LEGACY_INIT;
+    PyThreadState *save_tstate = PyThreadState_Get();
+    assert(save_tstate != NULL);
+    const PyInterpreterConfig config = isolated
+        ? (PyInterpreterConfig)_PyInterpreterConfig_INIT
+        : (PyInterpreterConfig)_PyInterpreterConfig_LEGACY_INIT;
     // XXX Possible GILState issues?
-    PyThreadState *tstate = _Py_NewInterpreterFromConfig(&config);
+    PyThreadState *tstate = NULL;
+    PyStatus status = Py_NewInterpreterFromConfig(&tstate, &config);
     PyThreadState_Swap(save_tstate);
-    if (tstate == NULL) {
+    if (PyStatus_Exception(status)) {
         /* Since no new thread state was created, there is no exception to
            propagate; raise a fresh one after swapping in the old thread
            state. */
+        _PyErr_SetFromPyStatus(status);
+        PyObject *exc = PyErr_GetRaisedException();
         PyErr_SetString(PyExc_RuntimeError, "interpreter creation failed");
+        _PyErr_ChainExceptions1(exc);
         return NULL;
     }
+    assert(tstate != NULL);
     PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
-    PyObject *idobj = _PyInterpreterState_GetIDObject(interp);
+    PyObject *idobj = PyInterpreterState_GetIDObject(interp);
     if (idobj == NULL) {
         // XXX Possible GILState issues?
         save_tstate = PyThreadState_Swap(tstate);
@@ -566,7 +556,7 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Look up the interpreter.
-    PyInterpreterState *interp = _PyInterpreterID_LookUp(id);
+    PyInterpreterState *interp = PyInterpreterID_LookUp(id);
     if (interp == NULL) {
         return NULL;
     }
@@ -621,7 +611,7 @@ interp_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     interp = PyInterpreterState_Head();
     while (interp != NULL) {
-        id = _PyInterpreterState_GetIDObject(interp);
+        id = PyInterpreterState_GetIDObject(interp);
         if (id == NULL) {
             Py_DECREF(ids);
             return NULL;
@@ -653,7 +643,7 @@ interp_get_current(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (interp == NULL) {
         return NULL;
     }
-    return _PyInterpreterState_GetIDObject(interp);
+    return PyInterpreterState_GetIDObject(interp);
 }
 
 PyDoc_STRVAR(get_current_doc,
@@ -667,7 +657,7 @@ interp_get_main(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     // Currently, 0 is always the main interpreter.
     int64_t id = 0;
-    return _PyInterpreterID_New(id);
+    return PyInterpreterID_New(id);
 }
 
 PyDoc_STRVAR(get_main_doc,
@@ -689,7 +679,7 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Look up the interpreter.
-    PyInterpreterState *interp = _PyInterpreterID_LookUp(id);
+    PyInterpreterState *interp = PyInterpreterID_LookUp(id);
     if (interp == NULL) {
         return NULL;
     }
@@ -755,7 +745,7 @@ interp_is_running(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyInterpreterState *interp = _PyInterpreterID_LookUp(id);
+    PyInterpreterState *interp = PyInterpreterID_LookUp(id);
     if (interp == NULL) {
         return NULL;
     }
@@ -813,7 +803,7 @@ module_exec(PyObject *mod)
     }
 
     // PyInterpreterID
-    if (PyModule_AddType(mod, &_PyInterpreterID_Type) < 0) {
+    if (PyModule_AddType(mod, &PyInterpreterID_Type) < 0) {
         goto error;
     }
 
@@ -825,6 +815,7 @@ error:
 
 static struct PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL},
 };
 

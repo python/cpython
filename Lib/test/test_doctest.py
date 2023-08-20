@@ -111,6 +111,14 @@ class SampleClass:
         """
         return cls.a_class_attribute
 
+    @functools.cached_property
+    def a_cached_property(self):
+        """
+        >>> print(SampleClass(29).get())
+        29
+        """
+        return "hello"
+
     class NestedClass:
         """
         >>> x = SampleClass.NestedClass(5)
@@ -515,6 +523,7 @@ methods, classmethods, staticmethods, properties, and nested classes.
      3  SampleClass.NestedClass
      1  SampleClass.NestedClass.__init__
      1  SampleClass.__init__
+     1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
      1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
@@ -571,6 +580,7 @@ functions, classes, and the `__test__` dictionary, if it exists:
      3  some_module.SampleClass.NestedClass
      1  some_module.SampleClass.NestedClass.__init__
      1  some_module.SampleClass.__init__
+     1  some_module.SampleClass.a_cached_property
      2  some_module.SampleClass.a_classmethod
      1  some_module.SampleClass.a_classmethod_property
      1  some_module.SampleClass.a_property
@@ -613,6 +623,7 @@ By default, an object with no doctests doesn't create any tests:
      3  SampleClass.NestedClass
      1  SampleClass.NestedClass.__init__
      1  SampleClass.__init__
+     1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
      1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
@@ -634,6 +645,7 @@ displays.
      0  SampleClass.NestedClass.get
      0  SampleClass.NestedClass.square
      1  SampleClass.__init__
+     1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
      1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
@@ -707,7 +719,7 @@ plain ol' Python and is guaranteed to be available.
 
     >>> import builtins
     >>> tests = doctest.DocTestFinder().find(builtins)
-    >>> 830 < len(tests) < 850 # approximate number of objects with docstrings
+    >>> 830 < len(tests) < 860 # approximate number of objects with docstrings
     True
     >>> real_tests = [t for t in tests if len(t.examples) > 0]
     >>> len(real_tests) # objects that actually have doctests
@@ -1287,14 +1299,14 @@ The NORMALIZE_WHITESPACE flag causes all sequences of whitespace to be
 treated as equal:
 
     >>> def f(x):
-    ...     '>>> print(1, 2, 3)\n  1   2\n 3'
+    ...     '\n>>> print(1, 2, 3)\n  1   2\n 3'
 
     >>> # Without the flag:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
     ... # doctest: +ELLIPSIS
     **********************************************************************
-    File ..., line 2, in f
+    File ..., line 3, in f
     Failed example:
         print(1, 2, 3)
     Expected:

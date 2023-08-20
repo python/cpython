@@ -97,7 +97,7 @@ sends logging output to a disk file.  It inherits the output functionality from
 
    Returns a new instance of the :class:`FileHandler` class. The specified file is
    opened and used as the stream for logging. If *mode* is not specified,
-   :const:`'a'` is used.  If *encoding* is not ``None``, it is used to open the file
+   ``'a'`` is used.  If *encoding* is not ``None``, it is used to open the file
    with that encoding.  If *delay* is true, then file opening is deferred until the
    first call to :meth:`emit`. By default, the file grows indefinitely. If
    *errors* is specified, it's used to determine how encoding errors are handled.
@@ -182,7 +182,7 @@ for this value.
 
    Returns a new instance of the :class:`WatchedFileHandler` class. The specified
    file is opened and used as the stream for logging. If *mode* is not specified,
-   :const:`'a'` is used.  If *encoding* is not ``None``, it is used to open the file
+   ``'a'`` is used.  If *encoding* is not ``None``, it is used to open the file
    with that encoding.  If *delay* is true, then file opening is deferred until the
    first call to :meth:`emit`.  By default, the file grows indefinitely. If
    *errors* is provided, it determines how encoding errors are handled.
@@ -917,8 +917,9 @@ should, then :meth:`flush` is expected to do the flushing.
 
    .. method:: flush()
 
-      You can override this to implement custom flushing behavior. This version
-      just zaps the buffer to empty.
+      For a :class:`BufferingHandler` instance, flushing means that it sets the
+      buffer to an empty list. This method can be overwritten to implement more useful
+      flushing behavior.
 
 
    .. method:: shouldFlush(record)
@@ -950,9 +951,9 @@ should, then :meth:`flush` is expected to do the flushing.
 
    .. method:: flush()
 
-      For a :class:`MemoryHandler`, flushing means just sending the buffered
+      For a :class:`MemoryHandler` instance, flushing means just sending the buffered
       records to the target, if there is one. The buffer is also cleared when
-      this happens. Override if you want different behavior.
+      buffered records are sent to the target. Override if you want different behavior.
 
 
    .. method:: setTarget(target)
@@ -1051,8 +1052,8 @@ possible, while any potentially slow operations (such as sending an email via
       occur (e.g. because a bounded queue has filled up), the
       :meth:`~logging.Handler.handleError` method is called to handle the
       error. This can result in the record silently being dropped (if
-      :attr:`logging.raiseExceptions` is ``False``) or a message printed to
-      ``sys.stderr`` (if :attr:`logging.raiseExceptions` is ``True``).
+      :data:`logging.raiseExceptions` is ``False``) or a message printed to
+      ``sys.stderr`` (if :data:`logging.raiseExceptions` is ``True``).
 
    .. method:: prepare(record)
 

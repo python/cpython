@@ -166,7 +166,7 @@ always available.
    Python interpreter.  (This information is not available in any other way ---
    ``modules.keys()`` only lists the imported modules.)
 
-   See also the :attr:`sys.stdlib_module_names` list.
+   See also the :data:`sys.stdlib_module_names` list.
 
 
 .. function:: call_tracing(func, args)
@@ -219,6 +219,10 @@ always available.
    This function should be used for internal and specialized purposes only.
 
    .. audit-event:: sys._current_exceptions "" sys._current_exceptions
+
+   .. versionchanged:: 3.12
+      Each value in the dictionary is now a single exception instance, rather
+      than a 3-tuple as returned from ``sys.exc_info()``.
 
 .. function:: breakpointhook()
 
@@ -440,7 +444,7 @@ always available.
    object <traceback-objects>` which typically encapsulates the call
    stack at the point where the exception last occurred.
 
-   .. index:: object: traceback
+   .. index:: pair: object; traceback
 
    If no exception is being handled anywhere on the stack, this function
    return a tuple containing three ``None`` values.
@@ -511,27 +515,28 @@ always available.
    The :term:`named tuple` *flags* exposes the status of command line
    flags. The attributes are read only.
 
-   ============================= ==============================================================================================================
-   attribute                     flag
-   ============================= ==============================================================================================================
-   :const:`debug`                :option:`-d`
-   :const:`inspect`              :option:`-i`
-   :const:`interactive`          :option:`-i`
-   :const:`isolated`             :option:`-I`
-   :const:`optimize`             :option:`-O` or :option:`-OO`
-   :const:`dont_write_bytecode`  :option:`-B`
-   :const:`no_user_site`         :option:`-s`
-   :const:`no_site`              :option:`-S`
-   :const:`ignore_environment`   :option:`-E`
-   :const:`verbose`              :option:`-v`
-   :const:`bytes_warning`        :option:`-b`
-   :const:`quiet`                :option:`-q`
-   :const:`hash_randomization`   :option:`-R`
-   :const:`dev_mode`             :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
-   :const:`utf8_mode`            :option:`-X utf8 <-X>`
-   :const:`safe_path`            :option:`-P`
-   :const:`int_max_str_digits`   :option:`-X int_max_str_digits <-X>` (:ref:`integer string conversion length limitation <int_max_str_digits>`)
-   ============================= ==============================================================================================================
+   ==============================  ==============================================================================================================
+   attribute                       flag
+   ==============================  ==============================================================================================================
+   :const:`debug`                  :option:`-d`
+   :const:`inspect`                :option:`-i`
+   :const:`interactive`            :option:`-i`
+   :const:`isolated`               :option:`-I`
+   :const:`optimize`               :option:`-O` or :option:`-OO`
+   :const:`dont_write_bytecode`    :option:`-B`
+   :const:`no_user_site`           :option:`-s`
+   :const:`no_site`                :option:`-S`
+   :const:`ignore_environment`     :option:`-E`
+   :const:`verbose`                :option:`-v`
+   :const:`bytes_warning`          :option:`-b`
+   :const:`quiet`                  :option:`-q`
+   :const:`hash_randomization`     :option:`-R`
+   :const:`dev_mode`               :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
+   :const:`utf8_mode`              :option:`-X utf8 <-X>`
+   :const:`safe_path`              :option:`-P`
+   :const:`int_max_str_digits`     :option:`-X int_max_str_digits <-X>` (:ref:`integer string conversion length limitation <int_max_str_digits>`)
+   :const:`warn_default_encoding`  :option:`-X warn_default_encoding <-X>`
+   ==============================  ==============================================================================================================
 
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
@@ -550,6 +555,9 @@ always available.
       Mode <devmode>` and the ``utf8_mode`` attribute for the new  :option:`-X`
       ``utf8`` flag.
 
+   .. versionchanged:: 3.10
+      Added ``warn_default_encoding`` attribute for :option:`-X` ``warn_default_encoding`` flag.
+
    .. versionchanged:: 3.11
       Added the ``safe_path`` attribute for :option:`-P` option.
 
@@ -566,61 +574,82 @@ always available.
    programming language; see section 5.2.4.2.2 of the 1999 ISO/IEC C standard
    [C99]_, 'Characteristics of floating types', for details.
 
-   .. tabularcolumns:: |l|l|L|
+   .. list-table:: Attributes of the :data:`!float_info` :term:`named tuple`
+      :header-rows: 1
 
-   +---------------------+---------------------+--------------------------------------------------+
-   | attribute           | float.h macro       | explanation                                      |
-   +=====================+=====================+==================================================+
-   | ``epsilon``         | ``DBL_EPSILON``     | difference between 1.0 and the least value       |
-   |                     |                     | greater than 1.0 that is representable as a float|
-   |                     |                     |                                                  |
-   |                     |                     | See also :func:`math.ulp`.                       |
-   +---------------------+---------------------+--------------------------------------------------+
-   | ``dig``             | ``DBL_DIG``         | maximum number of decimal digits that can be     |
-   |                     |                     | faithfully represented in a float;  see below    |
-   +---------------------+---------------------+--------------------------------------------------+
-   | ``mant_dig``        | ``DBL_MANT_DIG``    | float precision: the number of base-``radix``    |
-   |                     |                     | digits in the significand of a float             |
-   +---------------------+---------------------+--------------------------------------------------+
-   | ``max``             | ``DBL_MAX``         | maximum representable positive finite float      |
-   +---------------------+---------------------+--------------------------------------------------+
-   | ``max_exp``         | ``DBL_MAX_EXP``     | maximum integer *e* such that ``radix**(e-1)`` is|
-   |                     |                     | a representable finite float                     |
-   +---------------------+---------------------+--------------------------------------------------+
-   | ``max_10_exp``      | ``DBL_MAX_10_EXP``  | maximum integer *e* such that ``10**e`` is in the|
-   |                     |                     | range of representable finite floats             |
-   +---------------------+---------------------+--------------------------------------------------+
-   | ``min``             | ``DBL_MIN``         | minimum representable positive *normalized* float|
-   |                     |                     |                                                  |
-   |                     |                     | Use :func:`math.ulp(0.0) <math.ulp>` to get the  |
-   |                     |                     | smallest positive *denormalized* representable   |
-   |                     |                     | float.                                           |
-   +---------------------+---------------------+--------------------------------------------------+
-   | ``min_exp``         | ``DBL_MIN_EXP``     | minimum integer *e* such that ``radix**(e-1)`` is|
-   |                     |                     | a normalized float                               |
-   +---------------------+---------------------+--------------------------------------------------+
-   | ``min_10_exp``      | ``DBL_MIN_10_EXP``  | minimum integer *e* such that ``10**e`` is a     |
-   |                     |                     | normalized float                                 |
-   +---------------------+---------------------+--------------------------------------------------+
-   | ``radix``           | ``FLT_RADIX``       | radix of exponent representation                 |
-   +---------------------+---------------------+--------------------------------------------------+
-   | ``rounds``          | ``FLT_ROUNDS``      | integer representing the rounding mode for       |
-   |                     |                     | floating-point arithmetic. This reflects the     |
-   |                     |                     | value of the system ``FLT_ROUNDS`` macro at      |
-   |                     |                     | interpreter startup time:                        |
-   |                     |                     | ``-1`` indeterminable,                           |
-   |                     |                     | ``0`` toward zero,                               |
-   |                     |                     | ``1`` to nearest,                                |
-   |                     |                     | ``2`` toward positive infinity,                  |
-   |                     |                     | ``3`` toward negative infinity                   |
-   |                     |                     |                                                  |
-   |                     |                     | All other values for ``FLT_ROUNDS`` characterize |
-   |                     |                     | implementation-defined rounding behavior.        |
-   +---------------------+---------------------+--------------------------------------------------+
+      * - attribute
+        - float.h macro
+        - explanation
+
+      * - .. attribute:: float_info.epsilon
+        - :c:macro:`!DBL_EPSILON`
+        - difference between 1.0 and the least value greater than 1.0 that is
+          representable as a float.
+
+          See also :func:`math.ulp`.
+
+      * - .. attribute:: float_info.dig
+        - :c:macro:`!DBL_DIG`
+        - The maximum number of decimal digits that can be faithfully
+          represented in a float; see below.
+
+      * - .. attribute:: float_info.mant_dig
+        - :c:macro:`!DBL_MANT_DIG`
+        - Float precision: the number of base-``radix`` digits in the
+          significand of a float.
+
+      * - .. attribute:: float_info.max
+        - :c:macro:`!DBL_MAX`
+        - The maximum representable positive finite float.
+
+      * - .. attribute:: float_info.max_exp
+        - :c:macro:`!DBL_MAX_EXP`
+        - The maximum integer *e* such that ``radix**(e-1)`` is a representable
+          finite float.
+
+      * - .. attribute:: float_info.max_10_exp
+        - :c:macro:`!DBL_MAX_10_EXP`
+        - The maximum integer *e* such that ``10**e`` is in the range of
+          representable finite floats.
+
+      * - .. attribute:: float_info.min
+        - :c:macro:`!DBL_MIN`
+        - The minimum representable positive *normalized* float.
+
+          Use :func:`math.ulp(0.0) <math.ulp>` to get the smallest positive
+          *denormalized* representable float.
+
+      * - .. attribute:: float_info.min_exp
+        - :c:macro:`!DBL_MIN_EXP`
+        - The minimum integer *e* such that ``radix**(e-1)`` is a normalized
+          float.
+
+      * - .. attribute:: float_info.min_10_exp
+        - :c:macro:`!DBL_MIN_10_EXP`
+        - The minimum integer *e* such that ``10**e`` is a normalized float.
+
+      * - .. attribute:: float_info.radix
+        - :c:macro:`!FLT_RADIX`
+        - The radix of exponent representation.
+
+      * - .. attribute:: float_info.rounds
+        - :c:macro:`!FLT_ROUNDS`
+        - An integer representing the rounding mode for floating-point arithmetic.
+          This reflects the value of the system :c:macro:`!FLT_ROUNDS` macro
+          at interpreter startup time:
+
+          * ``-1``: indeterminable
+          * ``0``: toward zero
+          * ``1``: to nearest
+          * ``2``: toward positive infinity
+          * ``3``: toward negative infinity
+
+          All other values for :c:macro:`!FLT_ROUNDS` characterize
+          implementation-defined rounding behavior.
 
    The attribute :attr:`sys.float_info.dig` needs further explanation.  If
    ``s`` is any string representing a decimal number with at most
-   :attr:`sys.float_info.dig` significant digits, then converting ``s`` to a
+   :attr:`!sys.float_info.dig` significant digits, then converting ``s`` to a
    float and back again will recover a string representing the same decimal
    value::
 
@@ -666,6 +695,13 @@ always available.
    .. versionadded:: 3.4
 
 
+.. function:: getunicodeinternedsize()
+
+   Return the number of unicode objects that have been interned.
+
+   .. versionadded:: 3.12
+
+
 .. function:: getandroidapilevel()
 
    Return the build time API version of Android as an integer.
@@ -686,7 +722,7 @@ always available.
    Return the current value of the flags that are used for
    :c:func:`dlopen` calls.  Symbolic names for the flag values can be
    found in the :mod:`os` module (``RTLD_xxx`` constants, e.g.
-   :data:`os.RTLD_LAZY`).
+   :const:`os.RTLD_LAZY`).
 
    .. availability:: Unix.
 
@@ -697,7 +733,7 @@ always available.
    the encoding used with the :term:`filesystem error handler <filesystem
    encoding and error handler>` to convert between Unicode filenames and bytes
    filenames. The filesystem error handler is returned from
-   :func:`getfilesystemencoding`.
+   :func:`getfilesystemencodeerrors`.
 
    For best compatibility, str should be used for filenames in all cases,
    although representing filenames as bytes is also supported. Functions
@@ -755,6 +791,15 @@ always available.
    higher than you might expect, because it includes the (temporary) reference as
    an argument to :func:`getrefcount`.
 
+   Note that the returned value may not actually reflect how many
+   references to the object are actually held.  For example, some
+   objects are "immortal" and have a very high refcount that does not
+   reflect the actual number of references.  Consequently, do not rely
+   on the returned value to be accurate, other than a value of 0 or 1.
+
+   .. versionchanged:: 3.12
+      Immortal objects have very large refcounts that do not match
+      the actual number of references to the object.
 
 .. function:: getrecursionlimit()
 
@@ -781,7 +826,7 @@ always available.
    additional garbage collector overhead if the object is managed by the garbage
    collector.
 
-   See `recursive sizeof recipe <https://code.activestate.com/recipes/577504>`_
+   See `recursive sizeof recipe <https://code.activestate.com/recipes/577504/>`_
    for an example of using :func:`getsizeof` recursively to find the size of
    containers and all their contents.
 
@@ -862,19 +907,19 @@ always available.
    ``sys.getwindowsversion().major``. For compatibility with prior
    versions, only the first 5 elements are retrievable by indexing.
 
-   *platform* will be :const:`2 (VER_PLATFORM_WIN32_NT)`.
+   *platform* will be ``2`` (VER_PLATFORM_WIN32_NT).
 
    *product_type* may be one of the following values:
 
    +---------------------------------------+---------------------------------+
    | Constant                              | Meaning                         |
    +=======================================+=================================+
-   | :const:`1 (VER_NT_WORKSTATION)`       | The system is a workstation.    |
+   | ``1`` (VER_NT_WORKSTATION)            | The system is a workstation.    |
    +---------------------------------------+---------------------------------+
-   | :const:`2 (VER_NT_DOMAIN_CONTROLLER)` | The system is a domain          |
+   | ``2`` (VER_NT_DOMAIN_CONTROLLER)      | The system is a domain          |
    |                                       | controller.                     |
    +---------------------------------------+---------------------------------+
-   | :const:`3 (VER_NT_SERVER)`            | The system is a server, but not |
+   | ``3`` (VER_NT_SERVER)                 | The system is a server, but not |
    |                                       | a domain controller.            |
    +---------------------------------------+---------------------------------+
 
@@ -1097,27 +1142,30 @@ always available.
 
 .. function:: is_finalizing()
 
-   Return :const:`True` if the Python interpreter is
-   :term:`shutting down <interpreter shutdown>`, :const:`False` otherwise.
+   Return :const:`True` if the main Python interpreter is
+   :term:`shutting down <interpreter shutdown>`. Return :const:`False` otherwise.
 
    .. versionadded:: 3.5
 
+.. data:: last_exc
+
+   This variable is not always defined; it is set to the exception instance
+   when an exception is not handled and the interpreter prints an error message
+   and a stack traceback.  Its intended use is to allow an interactive user to
+   import a debugger module and engage in post-mortem debugging without having
+   to re-execute the command that caused the error.  (Typical use is
+   ``import pdb; pdb.pm()`` to enter the post-mortem debugger; see :mod:`pdb`
+   module for more information.)
+
+   .. versionadded:: 3.12
 
 .. data:: last_type
           last_value
           last_traceback
 
-   These three variables are not always defined; they are set when an exception is
-   not handled and the interpreter prints an error message and a stack traceback.
-   Their intended use is to allow an interactive user to import a debugger module
-   and engage in post-mortem debugging without having to re-execute the command
-   that caused the error.  (Typical use is ``import pdb; pdb.pm()`` to enter the
-   post-mortem debugger; see :mod:`pdb` module for
-   more information.)
-
-   The meaning of the variables is the same as that of the return values from
-   :func:`exc_info` above.
-
+   These three variables are deprecated; use :data:`sys.last_exc` instead.
+   They hold the legacy representation of ``sys.last_exc``, as returned
+   from :func:`exc_info` above.
 
 .. data:: maxsize
 
@@ -1163,7 +1211,7 @@ always available.
 
         :term:`Module specs <module spec>` were introduced in Python 3.4, by
         :pep:`451`. Earlier versions of Python looked for a method called
-        :meth:`~importlib.abc.MetaPathFinder.find_module`.
+        :meth:`!find_module`.
         This is still called as a fallback if a :data:`meta_path` entry doesn't
         have a :meth:`~importlib.abc.MetaPathFinder.find_spec` method.
 
@@ -1239,10 +1287,6 @@ always available.
 
     Originally specified in :pep:`302`.
 
-    .. versionchanged:: 3.3
-       ``None`` is stored instead of :class:`imp.NullImporter` when no finder
-       is found.
-
 
 .. data:: platform
 
@@ -1277,20 +1321,20 @@ always available.
    ================ ===========================
 
    .. versionchanged:: 3.3
-      On Linux, :attr:`sys.platform` doesn't contain the major version anymore.
+      On Linux, :data:`sys.platform` doesn't contain the major version anymore.
       It is always ``'linux'``, instead of ``'linux2'`` or ``'linux3'``.  Since
       older Python versions include the version number, it is recommended to
       always use the ``startswith`` idiom presented above.
 
    .. versionchanged:: 3.8
-      On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
+      On AIX, :data:`sys.platform` doesn't contain the major version anymore.
       It is always ``'aix'``, instead of ``'aix5'`` or ``'aix7'``.  Since
       older Python versions include the version number, it is recommended to
       always use the ``startswith`` idiom presented above.
 
    .. seealso::
 
-      :attr:`os.name` has a coarser granularity.  :func:`os.uname` gives
+      :data:`os.name` has a coarser granularity.  :func:`os.uname` gives
       system-dependent version information.
 
       The :mod:`platform` module provides detailed checks for the
@@ -1358,7 +1402,7 @@ always available.
    ``sys.setdlopenflags(0)``.  To share symbols across extension modules, call as
    ``sys.setdlopenflags(os.RTLD_GLOBAL)``.  Symbolic names for the flag values
    can be found in the :mod:`os` module (``RTLD_xxx`` constants, e.g.
-   :data:`os.RTLD_LAZY`).
+   :const:`os.RTLD_LAZY`).
 
    .. availability:: Unix.
 
@@ -1733,7 +1777,7 @@ always available.
    ``email.mime`` sub-package and the ``email.message`` sub-module are not
    listed.
 
-   See also the :attr:`sys.builtin_module_names` list.
+   See also the :data:`sys.builtin_module_names` list.
 
    .. versionadded:: 3.10
 
@@ -1788,35 +1832,39 @@ always available.
 
    The *unraisable* argument has the following attributes:
 
-   * *exc_type*: Exception type.
-   * *exc_value*: Exception value, can be ``None``.
-   * *exc_traceback*: Exception traceback, can be ``None``.
-   * *err_msg*: Error message, can be ``None``.
-   * *object*: Object causing the exception, can be ``None``.
+   * :attr:`!exc_type`: Exception type.
+   * :attr:`!exc_value`: Exception value, can be ``None``.
+   * :attr:`!exc_traceback`: Exception traceback, can be ``None``.
+   * :attr:`!err_msg`: Error message, can be ``None``.
+   * :attr:`!object`: Object causing the exception, can be ``None``.
 
-   The default hook formats *err_msg* and *object* as:
+   The default hook formats :attr:`!err_msg` and :attr:`!object` as:
    ``f'{err_msg}: {object!r}'``; use "Exception ignored in" error message
-   if *err_msg* is ``None``.
+   if :attr:`!err_msg` is ``None``.
 
    :func:`sys.unraisablehook` can be overridden to control how unraisable
    exceptions are handled.
 
-   Storing *exc_value* using a custom hook can create a reference cycle. It
-   should be cleared explicitly to break the reference cycle when the
-   exception is no longer needed.
+   .. seealso::
 
-   Storing *object* using a custom hook can resurrect it if it is set to an
-   object which is being finalized. Avoid storing *object* after the custom
-   hook completes to avoid resurrecting objects.
+      :func:`excepthook` which handles uncaught exceptions.
 
-   See also :func:`excepthook` which handles uncaught exceptions.
+   .. warning::
+
+      Storing :attr:`!exc_value` using a custom hook can create a reference cycle.
+      It should be cleared explicitly to break the reference cycle when the
+      exception is no longer needed.
+
+      Storing :attr:`!object` using a custom hook can resurrect it if it is set to an
+      object which is being finalized. Avoid storing :attr:`!object` after the custom
+      hook completes to avoid resurrecting objects.
 
    .. audit-event:: sys.unraisablehook hook,unraisable sys.unraisablehook
 
       Raise an auditing event ``sys.unraisablehook`` with arguments
-      ``hook``, ``unraisable`` when an exception that cannot be handled occurs.
-      The ``unraisable`` object is the same as what will be passed to the hook.
-      If no hook has been set, ``hook`` may be ``None``.
+      *hook*, *unraisable* when an exception that cannot be handled occurs.
+      The *unraisable* object is the same as what will be passed to the hook.
+      If no hook has been set, *hook* may be ``None``.
 
    .. versionadded:: 3.8
 

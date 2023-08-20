@@ -11,6 +11,7 @@ Copyright (c) Corporation for National Research Initiatives.
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_interp.h"        // PyInterpreterState.codec_search_path
+#include "pycore_pyerrors.h"      // _PyErr_FormatNote()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include <ctype.h>
@@ -54,7 +55,7 @@ int PyCodec_Register(PyObject *search_function)
 int
 PyCodec_Unregister(PyObject *search_function)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *codec_search_path = interp->codec_search_path;
     /* Do nothing if codec_search_path is not created yet or was cleared. */
     if (codec_search_path == NULL) {
@@ -382,22 +383,6 @@ PyObject *PyCodec_StreamWriter(const char *encoding,
     return codec_getstreamcodec(encoding, stream, errors, 3);
 }
 
-/* Helper that tries to ensure the reported exception chain indicates the
- * codec that was invoked to trigger the failure without changing the type
- * of the exception raised.
- */
-static void
-wrap_codec_error(const char *operation,
-                 const char *encoding)
-{
-    /* TrySetFromCause will replace the active exception with a suitably
-     * updated clone if it can, otherwise it will leave the original
-     * exception alone.
-     */
-    _PyErr_TrySetFromCause("%s with '%s' codec failed",
-                           operation, encoding);
-}
-
 /* Encode an object (e.g. a Unicode object) using the given encoding
    and return the resulting encoded object (usually a Python string).
 
@@ -418,7 +403,7 @@ _PyCodec_EncodeInternal(PyObject *object,
 
     result = PyObject_Call(encoder, args, NULL);
     if (result == NULL) {
-        wrap_codec_error("encoding", encoding);
+        _PyErr_FormatNote("%s with '%s' codec failed", "encoding", encoding);
         goto onError;
     }
 
@@ -463,7 +448,7 @@ _PyCodec_DecodeInternal(PyObject *object,
 
     result = PyObject_Call(decoder, args, NULL);
     if (result == NULL) {
-        wrap_codec_error("decoding", encoding);
+        _PyErr_FormatNote("%s with '%s' codec failed", "decoding", encoding);
         goto onError;
     }
     if (!PyTuple_Check(result) ||
@@ -531,7 +516,7 @@ PyObject * _PyCodec_LookupTextEncoding(const char *encoding,
      * attribute.
      */
     if (!PyTuple_CheckExact(codec)) {
-        if (_PyObject_LookupAttr(codec, &_Py_ID(_is_text_encoding), &attr) < 0) {
+        if (PyObject_GetOptionalAttr(codec, &_Py_ID(_is_text_encoding), &attr) < 0) {
             Py_DECREF(codec);
             return NULL;
         }

@@ -275,6 +275,10 @@ is the module's name in the Python package namespace.
       .. versionchanged:: 3.8
          The *stacklevel* parameter was added.
 
+      .. versionchanged:: 3.13
+         Remove the undocumented ``warn()`` method which was an alias to the
+         :meth:`warning` method.
+
 
    .. method:: Logger.info(msg, *args, **kwargs)
 
@@ -286,10 +290,6 @@ is the module's name in the Python package namespace.
 
       Logs a message with level :const:`WARNING` on this logger. The arguments are
       interpreted as for :meth:`debug`.
-
-      .. note:: There is an obsolete method ``warn`` which is functionally
-         identical to ``warning``. As ``warn`` is deprecated, please do not use
-         it - use ``warning`` instead.
 
    .. method:: Logger.error(msg, *args, **kwargs)
 
@@ -397,21 +397,39 @@ have specific values relative to the predefined levels. If you define a level
 with the same numeric value, it overwrites the predefined value; the predefined
 name is lost.
 
-+--------------+---------------+
-| Level        | Numeric value |
-+==============+===============+
-| ``CRITICAL`` | 50            |
-+--------------+---------------+
-| ``ERROR``    | 40            |
-+--------------+---------------+
-| ``WARNING``  | 30            |
-+--------------+---------------+
-| ``INFO``     | 20            |
-+--------------+---------------+
-| ``DEBUG``    | 10            |
-+--------------+---------------+
-| ``NOTSET``   | 0             |
-+--------------+---------------+
++-----------------------+---------------+-------------------------------------+
+| Level                 | Numeric value | What it means / When to use it      |
++=======================+===============+=====================================+
+| .. py:data:: NOTSET   | 0             | When set on a logger, indicates that|
+|                       |               | ancestor loggers are to be consulted|
+|                       |               | to determine the effective level.   |
+|                       |               | If that still resolves to           |
+|                       |               | :const:`!NOTSET`, then all events   |
+|                       |               | are logged. When set on a handler,  |
+|                       |               | all events are handled.             |
++-----------------------+---------------+-------------------------------------+
+| .. py:data:: DEBUG    | 10            | Detailed information, typically only|
+|                       |               | of interest to a developer trying to|
+|                       |               | diagnose a problem.                 |
++-----------------------+---------------+-------------------------------------+
+| .. py:data:: INFO     | 20            | Confirmation that things are working|
+|                       |               | as expected.                        |
++-----------------------+---------------+-------------------------------------+
+| .. py:data:: WARNING  | 30            | An indication that something        |
+|                       |               | unexpected happened, or that a      |
+|                       |               | problem might occur in the near     |
+|                       |               | future (e.g. 'disk space low'). The |
+|                       |               | software is still working as        |
+|                       |               | expected.                           |
++-----------------------+---------------+-------------------------------------+
+| .. py:data:: ERROR    | 40            | Due to a more serious problem, the  |
+|                       |               | software has not been able to       |
+|                       |               | perform some function.              |
++-----------------------+---------------+-------------------------------------+
+| .. py:data:: CRITICAL | 50            | A serious error, indicating that the|
+|                       |               | program itself may be unable to     |
+|                       |               | continue running.                   |
++-----------------------+---------------+-------------------------------------+
 
 
 .. _handler:
@@ -813,8 +831,9 @@ wire).
    :type lineno: int
 
    :param msg: The event description message,
-      which can be a %-format string with placeholders for variable data.
-   :type msg: str
+      which can be a %-format string with placeholders for variable data,
+      or an arbitrary object (see :ref:`arbitrary-object-messages`).
+   :type msg: typing.Any
 
    :param args: Variable data to merge into the *msg* argument
       to obtain the event description.
@@ -983,10 +1002,14 @@ LoggerAdapter Objects
 information into logging calls. For a usage example, see the section on
 :ref:`adding contextual information to your logging output <context-info>`.
 
-.. class:: LoggerAdapter(logger, extra)
+.. class:: LoggerAdapter(logger, extra, merge_extra=False)
 
    Returns an instance of :class:`LoggerAdapter` initialized with an
-   underlying :class:`Logger` instance and a dict-like object.
+   underlying :class:`Logger` instance, a dict-like object (*extra*), and a
+   boolean (*merge_extra*) indicating whether or not the *extra* argument of
+   individual log calls should be merged with the :class:`LoggerAdapter` extra.
+   The default behavior is to ignore the *extra* argument of individual log
+   calls and only use the one of the :class:`LoggerAdapter` instance
 
    .. method:: process(msg, kwargs)
 
@@ -1013,6 +1036,13 @@ interchangeably.
 .. versionchanged:: 3.6
    Attribute :attr:`manager` and method :meth:`_log` were added, which
    delegate to the underlying logger and allow adapters to be nested.
+
+.. versionchanged:: 3.13
+   Remove the undocumented ``warn()`` method which was an alias to the
+   ``warning()`` method.
+
+.. versionchanged:: 3.13
+   The *merge_extra* argument was added.
 
 
 Thread Safety
@@ -1160,6 +1190,10 @@ functions.
    .. note:: There is an obsolete function ``warn`` which is functionally
       identical to ``warning``. As ``warn`` is deprecated, please do not use
       it - use ``warning`` instead.
+
+   .. versionchanged:: 3.13
+      Remove the undocumented ``warn()`` function which was an alias to the
+      :func:`warning` function.
 
 
 .. function:: error(msg, *args, **kwargs)

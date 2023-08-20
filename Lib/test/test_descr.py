@@ -989,8 +989,8 @@ class ClassPropertiesAndMethods(unittest.TestCase):
 
     def test_mro_disagreement(self):
         # Testing error messages for MRO disagreement...
-        mro_err_msg = """Cannot create a consistent method resolution
-order (MRO) for bases """
+        mro_err_msg = ("Cannot create a consistent method resolution "
+                       "order (MRO) for bases ")
 
         def raises(exc, expected, callable, *args):
             try:
@@ -5002,6 +5002,32 @@ order (MRO) for bases """
         del Child
         gc.collect()
         self.assertEqual(Parent.__subclasses__(), [])
+
+    def test_attr_raise_through_property(self):
+        # test case for gh-103272
+        class A:
+            def __getattr__(self, name):
+                raise ValueError("FOO")
+
+            @property
+            def foo(self):
+                return self.__getattr__("asdf")
+
+        with self.assertRaisesRegex(ValueError, "FOO"):
+            A().foo
+
+        # test case for gh-103551
+        class B:
+            @property
+            def __getattr__(self, name):
+                raise ValueError("FOO")
+
+            @property
+            def foo(self):
+                raise NotImplementedError("BAR")
+
+        with self.assertRaisesRegex(NotImplementedError, "BAR"):
+            B().foo
 
 
 class DictProxyTests(unittest.TestCase):

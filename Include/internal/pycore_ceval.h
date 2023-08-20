@@ -21,15 +21,16 @@ struct _ceval_runtime_state;
 
 
 extern void _Py_FinishPendingCalls(PyThreadState *tstate);
-extern void _PyEval_InitRuntimeState(struct _ceval_runtime_state *);
-extern void _PyEval_InitState(struct _ceval_state *, PyThread_type_lock);
+extern void _PyEval_InitState(PyInterpreterState *, PyThread_type_lock);
 extern void _PyEval_FiniState(struct _ceval_state *ceval);
-PyAPI_FUNC(void) _PyEval_SignalReceived(PyInterpreterState *interp);
+extern void _PyEval_SignalReceived(PyInterpreterState *interp);
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(int) _PyEval_AddPendingCall(
     PyInterpreterState *interp,
     int (*func)(void *),
-    void *arg);
-PyAPI_FUNC(void) _PyEval_SignalAsyncExc(PyInterpreterState *interp);
+    void *arg,
+    int mainthreadonly);
+extern void _PyEval_SignalAsyncExc(PyInterpreterState *interp);
 #ifdef HAVE_FORK
 extern PyStatus _PyEval_ReInitThreads(PyThreadState *tstate);
 #endif
@@ -96,11 +97,13 @@ _PyEval_Vector(PyThreadState *tstate,
             PyObject* const* args, size_t argcount,
             PyObject *kwnames);
 
-extern int _PyEval_ThreadsInitialized(struct pyruntimestate *runtime);
-extern PyStatus _PyEval_InitGIL(PyThreadState *tstate);
+extern int _PyEval_ThreadsInitialized(void);
+extern PyStatus _PyEval_InitGIL(PyThreadState *tstate, int own_gil);
 extern void _PyEval_FiniGIL(PyInterpreterState *interp);
 
-extern void _PyEval_ReleaseLock(PyThreadState *tstate);
+extern void _PyEval_AcquireLock(PyThreadState *tstate);
+extern void _PyEval_ReleaseLock(PyInterpreterState *, PyThreadState *);
+extern PyThreadState * _PyThreadState_SwapNoGIL(PyThreadState *);
 
 extern void _PyEval_DeactivateOpCache(void);
 
@@ -120,6 +123,7 @@ static inline int _Py_MakeRecCheck(PyThreadState *tstate) {
 }
 #endif
 
+// Export for _Py_EnterRecursiveCall()
 PyAPI_FUNC(int) _Py_CheckRecursiveCall(
     PyThreadState *tstate,
     const char *where);
@@ -150,8 +154,24 @@ extern struct _PyInterpreterFrame* _PyEval_GetFrame(void);
 
 extern PyObject* _Py_MakeCoro(PyFunctionObject *func);
 
+/* Handle signals, pending calls, GIL drop request
+   and asynchronous exception */
 extern int _Py_HandlePending(PyThreadState *tstate);
 
+extern PyObject * _PyEval_GetFrameLocals(void);
+
+extern const binaryfunc _PyEval_BinaryOps[];
+int _PyEval_CheckExceptStarTypeValid(PyThreadState *tstate, PyObject* right);
+int _PyEval_CheckExceptTypeValid(PyThreadState *tstate, PyObject* right);
+int _PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type, PyObject **match, PyObject **rest);
+void _PyEval_FormatAwaitableError(PyThreadState *tstate, PyTypeObject *type, int oparg);
+void _PyEval_FormatExcCheckArg(PyThreadState *tstate, PyObject *exc, const char *format_str, PyObject *obj);
+void _PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *co, int oparg);
+void _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwargs);
+PyObject *_PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t nargs, PyObject *kwargs);
+PyObject *_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys);
+int _PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v, int argcnt, int argcntafter, PyObject **sp);
+void _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
 
 
 #ifdef __cplusplus
