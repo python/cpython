@@ -1,6 +1,8 @@
 """Tests to cover the Tools/i18n package"""
 
 import os
+from pathlib import Path
+import re
 import sys
 import unittest
 from textwrap import dedent
@@ -16,16 +18,16 @@ skip_if_missing()
 class Test_pygettext(unittest.TestCase):
     """Tests for the pygettext.py tool"""
 
-    script = os.path.join(toolsdir,'i18n', 'pygettext.py')
+    script = os.path.join(toolsdir, 'i18n', 'pygettext.py')
 
     def get_header(self, data):
         """ utility: return the header of a .po file as a dictionary """
         headers = {}
         for line in data.split('\n'):
-            if not line or line.startswith(('#', 'msgid','msgstr')):
+            if not line or line.startswith(('#', 'msgid', 'msgstr')):
                 continue
             line = line.strip('"')
-            key, val = line.split(':',1)
+            key, val = line.split(':', 1)
             headers[key] = val.strip()
         return headers
 
@@ -52,6 +54,25 @@ class Test_pygettext(unittest.TestCase):
                 msgids.append('\n'.join(cur_msgid))
 
         return msgids
+
+    def assert_POT_equal(self, expected, actual):
+        """Check if two POT files are equal"""
+        # Normalize the creation date
+        date_pattern = re.compile(r'"POT-Creation-Date: .+?\n"')
+        header = '"POT-Creation-Date: 2000-01-01 00:00+0000\\n"'
+        expected = re.sub(date_pattern, header, expected)
+        actual = re.sub(date_pattern, header, actual)
+
+        # Normalize the file location path separators in case this test is
+        # running on a platform which does not use '/' as a default separator
+        fileloc_pattern = re.compile(r'#:.+')
+
+        def replace(match):
+            return match[0].replace(os.sep, "/")
+        expected = re.sub(fileloc_pattern, replace, expected)
+        actual = re.sub(fileloc_pattern, replace, actual)
+
+        self.assertEqual(expected, actual)
 
     def extract_docstrings_from_str(self, module_content):
         """ utility: return all msgids extracted from module_content """
@@ -309,6 +330,24 @@ class Test_pygettext(unittest.TestCase):
         '''))
         self.assertNotIn('foo', msgids)
         self.assertIn('bar', msgids)
+
+    def test_pygettext_output(self):
+        """Test that the pygettext output exactly matches a file."""
+        data_dir = Path(__file__).parent / 'data'
+        filenames = (('messages.py', 'messages.pot'),
+                     ('docstrings.py', 'docstrings.pot'),
+                     ('fileloc.py', 'fileloc.pot'))
+
+        for input_file, output_file in filenames:
+            with self.subTest(f'Input file: data/{input_file}'):
+                contents = (data_dir / input_file).read_text()
+                with temp_cwd(None):
+                    Path(input_file).write_text(contents)
+                    assert_python_ok(self.script, '-D', input_file)
+                    output = Path('messages.pot').read_text()
+
+                expected = (data_dir / output_file).read_text()
+                self.assert_POT_equal(expected, output)
 
     def test_files_list(self):
         """Make sure the directories are inspected for source files
