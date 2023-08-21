@@ -1,1 +1,1 @@
-remove dependency of current debug mode
+Ensure test consistency regardless of debug mode.
