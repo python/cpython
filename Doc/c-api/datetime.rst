@@ -176,7 +176,7 @@ Macros to create objects:
    :class:`datetime.timedelta` objects.
 
 
-.. c:function:: PyObject* PyTimeZone_FromOffset(PyDateTime_DeltaType* offset)
+.. c:function:: PyObject* PyTimeZone_FromOffset(PyObject *offset)
 
    Return a :class:`datetime.timezone` object with an unnamed fixed offset
    represented by the *offset* argument.
@@ -184,7 +184,7 @@ Macros to create objects:
    .. versionadded:: 3.7
 
 
-.. c:function:: PyObject* PyTimeZone_FromOffsetAndName(PyDateTime_DeltaType *offset, PyObject *name)
+.. c:function:: PyObject* PyTimeZone_FromOffsetAndName(PyObject *offset, PyObject *name)
 
    Return a :class:`datetime.timezone` object with a fixed offset represented
    by the *offset* argument and with tzname *name*.
