@@ -1884,9 +1884,20 @@ code_hash(PyCodeObject *co)
     SCRAMBLE_IN(Py_SIZE(co));
     for (int i = 0; i < Py_SIZE(co); i++) {
         int deop = _Py_GetBaseOpcode(co, i);
-        SCRAMBLE_IN(deop);
-        SCRAMBLE_IN(_PyCode_CODE(co)[i].op.arg);
-        i += _PyOpcode_Caches[deop];
+        if (deop == ENTER_EXECUTOR) {
+            // Assume that deopt of ENTER_EXECUTOR will be ENTER_EXECUTOR.
+            const int exec_index = _PyCode_CODE(co)[i].op.arg;
+            _PyExecutorObject *exec = co->co_executors->executors[exec_index];
+            assert(exec != NULL);
+            SCRAMBLE_IN(exec->vm_data.opcode);
+            SCRAMBLE_IN(exec->vm_data.oparg);
+            i += _PyOpcode_Caches[exec->vm_data.opcode];
+        }
+        else {
+            SCRAMBLE_IN(deop);
+            SCRAMBLE_IN(_PyCode_CODE(co)[i].op.arg);
+            i += _PyOpcode_Caches[deop];
+        }
     }
     if ((Py_hash_t)uhash == -1) {
         return -2;
