@@ -185,6 +185,13 @@ General Options
 
    .. versionadded:: 3.11
 
+.. cmdoption:: --disable-gil
+
+   Enables experimental support for running Python without the global
+   interpreter lock (GIL).
+
+   .. versionadded:: 3.13
+
 WebAssembly Options
 -------------------
 
