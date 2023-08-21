@@ -410,7 +410,7 @@ class Generator(Analyzer):
                 #endif
             """).strip())
 
-            self.out.emit("\n#include <stdbool.h>")
+            self.out.emit("\n#include <stdbool.h>              // bool")
 
             self.write_pseudo_instrs()
 

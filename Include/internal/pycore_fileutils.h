@@ -8,7 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include <locale.h>   /* struct lconv */
+#include <locale.h>               // struct lconv
+
 
 /* A routine to check if a file descriptor can be select()-ed. */
 #ifdef _MSC_VER
@@ -268,7 +269,7 @@ extern wchar_t *_Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t
 // so provide our own implementations. Remove them in case they get added
 // to the Games API family
 #if defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP)
-#include <winerror.h>
+#include <winerror.h>             // HRESULT
 
 extern HRESULT PathCchSkipRoot(const wchar_t *pszPath, const wchar_t **ppszRootEnd);
 #endif /* defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP) */

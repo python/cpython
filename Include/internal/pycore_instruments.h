@@ -6,9 +6,7 @@
 #endif
 
 #include "pycore_bitutils.h"      // _Py_popcount32
-#include "pycore_frame.h"
-
-#include "cpython/code.h"
+#include "pycore_frame.h"         // _PyInterpreterFrame
 
 #ifdef __cplusplus
 extern "C" {
