@@ -2880,7 +2880,8 @@ AC_CHECK_HEADERS([net/if.h], [], [],
 ])
 
 # On Linux, netlink.h requires asm/types.h
-AC_CHECK_HEADERS([linux/netlink.h], [], [], [
+# On FreeBSD, netlink.h is located in netlink/netlink.h
+AC_CHECK_HEADERS([linux/netlink.h netlink/netlink.h], [], [], [
 #ifdef HAVE_ASM_TYPES_H
 #include <asm/types.h>
 #endif

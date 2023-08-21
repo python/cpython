@@ -129,7 +129,7 @@ _PyRuntime_Finalize(void)
 }
 
 int
-_Py_IsFinalizing(void)
+Py_IsFinalizing(void)
 {
     return _PyRuntimeState_GetFinalizing(&_PyRuntime) != NULL;
 }
@@ -1921,11 +1921,11 @@ Py_FinalizeEx(void)
     }
 
     if (dump_refs) {
-        _Py_PrintReferences(stderr);
+        _Py_PrintReferences(tstate->interp, stderr);
     }
 
     if (dump_refs_fp != NULL) {
-        _Py_PrintReferences(dump_refs_fp);
+        _Py_PrintReferences(tstate->interp, dump_refs_fp);
     }
 #endif /* Py_TRACE_REFS */
 
@@ -1961,11 +1961,11 @@ Py_FinalizeEx(void)
      */
 
     if (dump_refs) {
-        _Py_PrintReferenceAddresses(stderr);
+        _Py_PrintReferenceAddresses(tstate->interp, stderr);
     }
 
     if (dump_refs_fp != NULL) {
-        _Py_PrintReferenceAddresses(dump_refs_fp);
+        _Py_PrintReferenceAddresses(tstate->interp, dump_refs_fp);
         fclose(dump_refs_fp);
     }
 #endif /* Py_TRACE_REFS */
@@ -2075,6 +2075,8 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
     }
     has_gil = 1;
 
+    /* No objects have been created yet. */
+
     status = pycore_interp_init(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
@@ -2145,7 +2147,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     if (tstate != _PyThreadState_GET()) {
         Py_FatalError("thread is not current");
     }
-    if (tstate->cframe->current_frame != NULL) {
+    if (tstate->current_frame != NULL) {
         Py_FatalError("thread still has a frame");
     }
     interp->finalizing = 1;

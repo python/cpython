@@ -234,7 +234,7 @@ _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
 {
 
     if (errors == NULL) {
-        errors = Py_NewRef(&_Py_ID(strict));
+        errors = &_Py_ID(strict);
     }
     else {
         errors = Py_NewRef(errors);
@@ -1138,7 +1138,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
 
     if (encoding == NULL && _PyRuntime.preconfig.utf8_mode) {
         _Py_DECLARE_STR(utf_8, "utf-8");
-        self->encoding = Py_NewRef(&_Py_STR(utf_8));
+        self->encoding = &_Py_STR(utf_8);
     }
     else if (encoding == NULL || (strcmp(encoding, "locale") == 0)) {
         self->encoding = _Py_GetLocaleEncodingObject();
@@ -2267,7 +2267,7 @@ _textiowrapper_readline(textio *self, Py_ssize_t limit)
         Py_CLEAR(chunks);
     }
     if (line == NULL) {
-        line = Py_NewRef(&_Py_STR(empty));
+        line = &_Py_STR(empty);
     }
 
     return line;

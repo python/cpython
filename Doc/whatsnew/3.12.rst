@@ -504,8 +504,8 @@ Other Language Changes
 * :class:`slice` objects are now hashable, allowing them to be used as dict keys and
   set items. (Contributed by Will Bradshaw, Furkan Onder, and Raymond Hettinger in :gh:`101264`.)
 
-* :func:`sum` now uses Neumaier summation to improve accuracy when summing
-  floats or mixed ints and floats.
+* :func:`sum` now uses Neumaier summation to improve accuracy and commutativity
+  when summing floats or mixed ints and floats.
   (Contributed by Raymond Hettinger in :gh:`100425`.)
 
 * Exceptions raised in a typeobject's ``__set_name__`` method are no longer
@@ -800,6 +800,11 @@ sys
 * :func:`sys._current_exceptions` now returns a mapping from thread-id to an
   exception instance, rather than to a ``(typ, exc, tb)`` tuple.
   (Contributed by Irit Katriel in :gh:`103176`.)
+
+* :func:`sys.setrecursionlimit` and :func:`sys.getrecursionlimit`.
+  The recursion limit now applies only to Python code. Builtin functions do
+  not use the recursion limit, but are protected by a different mechanism
+  that prevents recursion from causing a virtual machine crash.
 
 tempfile
 --------
@@ -1571,7 +1576,7 @@ Changes in the Python API
       1,13-1,17:          FSTRING_MIDDLE ' end'
       1,17-1,18:          FSTRING_END    '"'
 
-  Additionally, there may be some minor behavioral changes as a consecuence of the
+  Additionally, there may be some minor behavioral changes as a consequence of the
   changes required to support :pep:`701`. Some of these changes include:
 
   * The ``type`` attribute of the tokens emitted when tokenizing some invalid Python
