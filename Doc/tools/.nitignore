@@ -24,10 +24,7 @@ Doc/c-api/typeobj.rst
 Doc/c-api/unicode.rst
 Doc/extending/extending.rst
 Doc/extending/newtypes.rst
-Doc/faq/design.rst
 Doc/faq/gui.rst
-Doc/faq/library.rst
-Doc/faq/programming.rst
 Doc/glossary.rst
 Doc/howto/descriptor.rst
 Doc/howto/enum.rst
@@ -92,7 +89,6 @@ Doc/library/inspect.rst
 Doc/library/locale.rst
 Doc/library/logging.config.rst
 Doc/library/logging.handlers.rst
-Doc/library/logging.rst
 Doc/library/lzma.rst
 Doc/library/mailbox.rst
 Doc/library/mmap.rst
