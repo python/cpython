@@ -35,6 +35,7 @@ from collections.abc import (
     Iterator,
     Sequence,
 )
+from operator import attrgetter
 from types import FunctionType, NoneType
 from typing import (
     TYPE_CHECKING,
@@ -939,8 +940,9 @@ class CLanguage(Language):
             f"{func.fulldisplayname}() is deprecated."
         )
 
-        for (major, minor), group in itertools.groupby(params.values(),  # type: ignore[misc]
-                                        lambda p: p.deprecated_positional):
+        for (major, minor), group in itertools.groupby(
+            params.values(), key=attrgetter("deprecated_positional")
+        ):
             names = [repr(p.name) for p in group]
             pstr = pprint_words(names)
             if len(names) == 1:
@@ -1006,8 +1008,9 @@ class CLanguage(Language):
             f"{func.fulldisplayname}() is deprecated."
         )
 
-        for (major, minor), group in itertools.groupby(params.values(),  # type: ignore[misc]
-                                        lambda p: p.deprecated_keyword):
+        for (major, minor), group in itertools.groupby(
+            params.values(), key=attrgetter("deprecated_positional")
+        ):
             names = [repr(p.name) for p in group]
             pstr = pprint_words(names)
             pl = 's' if len(names) != 1 else ''
