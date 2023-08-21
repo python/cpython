@@ -1009,7 +1009,7 @@ class CLanguage(Language):
         )
 
         for (major, minor), group in itertools.groupby(
-            params.values(), key=attrgetter("deprecated_positional")
+            params.values(), key=attrgetter("deprecated_keyword")
         ):
             names = [repr(p.name) for p in group]
             pstr = pprint_words(names)
