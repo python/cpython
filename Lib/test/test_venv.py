@@ -166,7 +166,7 @@ class BasicTest(BaseTest):
                 b = venv.EnvBuilder()
             else:
                 b = venv.EnvBuilder(
-                    **{attr: False if attr in negated_attrs else True})
+                    **{attr: attr not in negated_attrs})
             b.upgrade_dependencies = Mock() # avoid pip command to upgrade deps
             b._setup_pip = Mock() # avoid pip setup
             self.run_with_capture(b.create, self.env_dir)

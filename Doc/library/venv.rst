@@ -143,7 +143,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
 .. class:: EnvBuilder(system_site_packages=False, clear=False, \
                       symlinks=False, upgrade=False, with_pip=False, \
-                      prompt=None, upgrade_deps=False, \*, gitignore=False)
+                      prompt=None, upgrade_deps=False, *, gitignore=False)
 
     The :class:`EnvBuilder` class accepts the following keyword arguments on
     instantiation:
@@ -350,7 +350,7 @@ There is also a module-level convenience function:
 
 .. function:: create(env_dir, system_site_packages=False, clear=False, \
                      symlinks=False, with_pip=False, prompt=None, \
-                     upgrade_deps=False, \*, gitignore=False)
+                     upgrade_deps=False, *, gitignore=False)
 
     Create an :class:`EnvBuilder` with the given keyword arguments, and call its
     :meth:`~EnvBuilder.create` method with the *env_dir* argument.
