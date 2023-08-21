@@ -1897,7 +1897,7 @@ code_hash(PyCodeObject *co)
             co_arg = exec->vm_data.oparg;
         }
         else {
-            co_code = _PyOpcode_Deopt[co_code];
+            co_code = _Py_GetBaseOpcode(co, i);
         }
         SCRAMBLE_IN(co_code);
         SCRAMBLE_IN(co_arg);
