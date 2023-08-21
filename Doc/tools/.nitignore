@@ -2,7 +2,6 @@
 # as tested on the CI via check-warnings.py in reusable-docs.yml.
 # Keep lines sorted lexicographically to help avoid merge conflicts.
 
-Doc/c-api/buffer.rst
 Doc/c-api/descriptor.rst
 Doc/c-api/exceptions.rst
 Doc/c-api/file.rst
@@ -24,10 +23,6 @@ Doc/c-api/typeobj.rst
 Doc/c-api/unicode.rst
 Doc/extending/extending.rst
 Doc/extending/newtypes.rst
-Doc/faq/design.rst
-Doc/faq/gui.rst
-Doc/faq/library.rst
-Doc/faq/programming.rst
 Doc/glossary.rst
 Doc/howto/descriptor.rst
 Doc/howto/enum.rst
@@ -89,11 +84,9 @@ Doc/library/http.server.rst
 Doc/library/importlib.resources.rst
 Doc/library/importlib.rst
 Doc/library/inspect.rst
-Doc/library/io.rst
 Doc/library/locale.rst
 Doc/library/logging.config.rst
 Doc/library/logging.handlers.rst
-Doc/library/logging.rst
 Doc/library/lzma.rst
 Doc/library/mailbox.rst
 Doc/library/mmap.rst
@@ -128,7 +121,6 @@ Doc/library/ssl.rst
 Doc/library/stdtypes.rst
 Doc/library/string.rst
 Doc/library/subprocess.rst
-Doc/library/sys.rst
 Doc/library/sys_path_init.rst
 Doc/library/syslog.rst
 Doc/library/tarfile.rst
@@ -162,7 +154,6 @@ Doc/library/xml.sax.rst
 Doc/library/xmlrpc.client.rst
 Doc/library/xmlrpc.server.rst
 Doc/library/zlib.rst
-Doc/license.rst
 Doc/reference/compound_stmts.rst
 Doc/reference/datamodel.rst
 Doc/reference/expressions.rst
@@ -172,9 +163,7 @@ Doc/tutorial/appendix.rst
 Doc/tutorial/classes.rst
 Doc/tutorial/controlflow.rst
 Doc/tutorial/datastructures.rst
-Doc/tutorial/inputoutput.rst
 Doc/tutorial/introduction.rst
-Doc/tutorial/modules.rst
 Doc/using/cmdline.rst
 Doc/using/configure.rst
 Doc/using/windows.rst

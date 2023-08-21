@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 #ifndef Py_BUILD_CORE
-#  error "Py_BUILD_CORE must be defined to include this header"
+#  error "this header requires Py_BUILD_CORE define"
 #endif
 
 #include <locale.h>   /* struct lconv */
@@ -109,7 +109,8 @@ PyAPI_FUNC(int) _Py_stat(
     PyObject *path,
     struct stat *status);
 
-extern int _Py_open(
+// Export for 'select' shared extension (Solaris newDevPollObject() uses it)
+PyAPI_FUNC(int) _Py_open(
     const char *pathname,
     int flags);
 
@@ -126,7 +127,8 @@ extern Py_ssize_t _Py_read(
     void *buf,
     size_t count);
 
-extern Py_ssize_t _Py_write(
+// Export for 'select' shared extension (Solaris devpoll_flush() uses it)
+PyAPI_FUNC(Py_ssize_t) _Py_write(
     int fd,
     const void *buf,
     size_t count);

@@ -168,6 +168,24 @@ class TypeParamsAliasValueTest(unittest.TestCase):
         self.assertEqual(repr(GenericRecursive[GenericRecursive[int]]),
                          "GenericRecursive[GenericRecursive[int]]")
 
+    def test_raising(self):
+        type MissingName = list[_My_X]
+        with self.assertRaisesRegex(
+            NameError,
+            "cannot access free variable '_My_X' where it is not associated with a value",
+        ):
+            MissingName.__value__
+        _My_X = int
+        self.assertEqual(MissingName.__value__, list[int])
+        del _My_X
+        # Cache should still work:
+        self.assertEqual(MissingName.__value__, list[int])
+
+        # Explicit exception:
+        type ExprException = 1 / 0
+        with self.assertRaises(ZeroDivisionError):
+            ExprException.__value__
+
 
 class TypeAliasConstructorTest(unittest.TestCase):
     def test_basic(self):
