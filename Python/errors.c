@@ -919,10 +919,12 @@ PyErr_SetFromErrnoWithFilename(PyObject *exc, const char *filename)
 {
     PyObject *name = NULL;
     if (filename) {
+        int i = errno;
         name = PyUnicode_DecodeFSDefault(filename);
         if (name == NULL) {
             return NULL;
         }
+        errno = i;
     }
     PyObject *result = PyErr_SetFromErrnoWithFilenameObjects(exc, name, NULL);
     Py_XDECREF(name);
@@ -1022,6 +1024,9 @@ PyObject *PyErr_SetExcFromWindowsErrWithFilename(
 {
     PyObject *name = NULL;
     if (filename) {
+        if ((DWORD)ierr == 0) {
+            ierr = (int)GetLastError();
+        }
         name = PyUnicode_DecodeFSDefault(filename);
         if (name == NULL) {
             return NULL;
@@ -1052,6 +1057,9 @@ PyObject *PyErr_SetFromWindowsErrWithFilename(
 {
     PyObject *name = NULL;
     if (filename) {
+        if ((DWORD)ierr == 0) {
+            ierr = (int)GetLastError();
+        }
         name = PyUnicode_DecodeFSDefault(filename);
         if (name == NULL) {
             return NULL;
