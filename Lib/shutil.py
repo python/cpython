@@ -727,9 +727,11 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
                       DeprecationWarning, stacklevel=2)
 
     sys.audit("shutil.rmtree", path, dir_fd)
+
+    errors = []
     if ignore_errors:
         def onexc(*args):
-            pass
+            errors.append(args)
     elif onerror is None and onexc is None:
         def onexc(*args):
             raise
@@ -757,13 +759,13 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
             orig_st = os.lstat(path, dir_fd=dir_fd)
         except Exception as err:
             onexc(os.lstat, path, err)
-            return
+            return errors
         try:
             fd = os.open(path, os.O_RDONLY, dir_fd=dir_fd)
             fd_closed = False
         except Exception as err:
             onexc(os.open, path, err)
-            return
+            return errors
         try:
             if os.path.samestat(orig_st, os.fstat(fd)):
                 _rmtree_safe_fd(fd, path, onexc)
@@ -792,8 +794,9 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
         except OSError as err:
             onexc(os.path.islink, path, err)
             # can't continue even if onexc hook returns
-            return
-        return _rmtree_unsafe(path, onexc)
+            return errors
+        _rmtree_unsafe(path, onexc)
+    return errors
 
 # Allow introspection of whether or not the hardening against symlink
 # attacks is supported on the current platform
