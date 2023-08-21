@@ -1893,7 +1893,7 @@ code_hash(PyCodeObject *co)
             _PyExecutorObject *exec = co->co_executors->executors[co_arg];
             assert(exec != NULL);
             assert(exec->vm_data.opcode != ENTER_EXECUTOR);
-            co_code = exec->vm_data.opcode;
+            co_code = _PyOpcode_Deopt[exec->vm_data.opcode];
             co_arg = exec->vm_data.oparg;
         }
         else {
