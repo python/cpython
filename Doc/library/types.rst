@@ -480,13 +480,20 @@ Additional Utility Classes and Functions
    namespace, as well as a meaningful repr.
 
    Unlike :class:`object`, with ``SimpleNamespace`` you can add and remove
-   attributes.  If a ``SimpleNamespace`` object is initialized with keyword
+   attributes.
+   The :class:`!SimpleNamespace` constructor can take a positional argument
+   which must be a mapping object with string keys or an :term:`iterable`
+   object producing key-value pairs with string keys.
+   Key-value pairs from the mapping object or the iterable object are
+   directly added to the underlying namespace.
+   If a ``SimpleNamespace`` object is initialized with keyword
    arguments, those are directly added to the underlying namespace.
 
    The type is roughly equivalent to the following code::
 
        class SimpleNamespace:
-           def __init__(self, /, **kwargs):
+           def __init__(self, mapping_or_iterable=(), /, **kwargs):
+               self.__dict__.update(mapping_or_iterable)
                self.__dict__.update(kwargs)
 
            def __repr__(self):
@@ -507,6 +514,9 @@ Additional Utility Classes and Functions
    .. versionchanged:: 3.9
       Attribute order in the repr changed from alphabetical to insertion (like
       ``dict``).
+
+   .. versionchanged:: 3.13
+      Added support of an optional positional argument.
 
 .. function:: DynamicClassAttribute(fget=None, fset=None, fdel=None, doc=None)
 

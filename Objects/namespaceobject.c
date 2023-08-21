@@ -2,6 +2,9 @@
 
 #include "Python.h"
 #include "pycore_namespace.h"     // _PyNamespace_Type
+#include "pycore_global_strings.h" // _Py_ID
+#include "pycore_global_objects.h" // _Py_ID
+#include "pycore_runtime.h"       // _Py_ID
 
 #include <stddef.h>               // offsetof()
 
@@ -43,9 +46,41 @@ namespace_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 namespace_init(_PyNamespaceObject *ns, PyObject *args, PyObject *kwds)
 {
-    if (PyTuple_GET_SIZE(args) != 0) {
-        PyErr_Format(PyExc_TypeError, "no positional arguments expected");
+    PyObject *arg = NULL;
+    if (!PyArg_UnpackTuple(args, _PyType_Name(Py_TYPE(ns)), 0, 1, &arg)) {
         return -1;
+    }
+    if (arg != NULL) {
+        PyObject *dict;
+        int ret = 0;
+        if (PyDict_CheckExact(arg)) {
+            dict = Py_NewRef(arg);
+        }
+        else {
+            dict = PyDict_New();
+            if (dict == NULL) {
+                return -1;
+            }
+            PyObject *func;
+            ret = PyObject_GetOptionalAttr(arg, &_Py_ID(keys), &func);
+            if (ret > 0) {
+                Py_DECREF(func);
+                ret = PyDict_Merge(dict, arg, 1);
+            }
+            else if (ret == 0) {
+                ret = PyDict_MergeFromSeq2(dict, arg, 1);
+            }
+        }
+        if (ret < 0 ||
+            !PyArg_ValidateKeywordArguments(dict) ||
+            PyDict_Update(ns->ns_dict, dict) < 0)
+        {
+            ret = -1;
+        }
+        Py_DECREF(dict);
+        if (ret < 0) {
+            return -1;
+        }
     }
     if (kwds == NULL) {
         return 0;
@@ -197,9 +232,10 @@ static PyMethodDef namespace_methods[] = {
 
 
 PyDoc_STRVAR(namespace_doc,
-"A simple attribute-based namespace.\n\
-\n\
-SimpleNamespace(**kwargs)");
+"SimpleNamespace(mapping_or_iterable=(), /, **kwargs)\n"
+"--\n"
+"\n"
+"A simple attribute-based namespace.");
 
 PyTypeObject _PyNamespace_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)

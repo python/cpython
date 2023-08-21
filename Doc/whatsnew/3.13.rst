@@ -160,6 +160,14 @@ traceback
   to format the nested exceptions of a :exc:`BaseExceptionGroup` instance, recursively.
   (Contributed by Irit Katriel in :gh:`105292`.)
 
+types
+-----
+
+* :class:`~types.SimpleNamespace` constructor allows now to specify initial
+  values of attributes as a positional argument which must be a mapping or
+  an iterable or key-value pairs.
+  (Contributed by Serhiy Storchaka in :gh:`108191`.)
+
 typing
 ------
 
