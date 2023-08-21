@@ -13,7 +13,6 @@ extern "C" {
 #include "pycore_emscripten_trampoline.h" // _PyCFunction_TrampolineCall()
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_runtime.h"       // _PyRuntime
 
 /* Check if an object is consistent. For example, ensure that the reference
    counter is greater than or equal to 1, and ensure that ob_type is not NULL.
