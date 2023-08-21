@@ -151,6 +151,15 @@ sqlite3
   object is not :meth:`closed <sqlite3.Connection.close>` explicitly.
   (Contributed by Erlend E. Aasland in :gh:`105539`.)
 
+tkinter
+-------
+
+* Add :mod:`tkinter` widget methods:
+  :meth:`!tk_busy_hold`, :meth:`!tk_busy_configure`,
+  :meth:`!tk_busy_cget`, :meth:`!tk_busy_forget`,
+  :meth:`!tk_busy_current`, and :meth:`!tk_busy_status`.
+  (Contributed by Miguel, klappnase and Serhiy Storchaka in :gh:`72684`.)
+
 traceback
 ---------
 
@@ -363,6 +372,12 @@ Pending Removal in Python 3.15
   methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
+
+* Passing any arguments to :func:`threading.RLock` is now deprecated.
+  C version allows any numbers of args and kwargs,
+  but they are just ignored. Python version does not allow any arguments.
+  All arguments will be removed from :func:`threading.RLock` in Python 3.15.
+  (Contributed by Nikita Sobolev in :gh:`102029`.)
 
 Pending Removal in Python 3.16
 ------------------------------
@@ -832,6 +847,10 @@ New Features
   these functions return -1 on error and so checking ``PyErr_Occurred()`` is
   not needed.
   (Contributed by Victor Stinner in :gh:`106004`.)
+
+* Add :c:func:`Py_IsFinalizing` function: check if the main Python interpreter is
+  :term:`shutting down <interpreter shutdown>`.
+  (Contributed by Victor Stinner in :gh:`108014`.)
 
 Porting to Python 3.13
 ----------------------
