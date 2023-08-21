@@ -14,6 +14,8 @@ from test.support.os_helper import temp_cwd, temp_dir
 
 skip_if_missing()
 
+DATA_DIR = Path(__file__).resolve().parent / 'data'
+
 
 class Test_pygettext(unittest.TestCase):
     """Tests for the pygettext.py tool"""
@@ -339,20 +341,19 @@ class Test_pygettext(unittest.TestCase):
 
     def test_pygettext_output(self):
         """Test that the pygettext output exactly matches a file."""
-        data_dir = Path(__file__).parent / 'data'
         filenames = (('messages.py', 'messages.pot'),
                      ('docstrings.py', 'docstrings.pot'),
                      ('fileloc.py', 'fileloc.pot'))
 
         for input_file, output_file in filenames:
-            with self.subTest(f'Input file: data/{input_file}'):
-                contents = (data_dir / input_file).read_text(encoding='utf-8')
+            with self.subTest(input_file=f'data/{input_file}'):
+                contents = (DATA_DIR / input_file).read_text(encoding='utf-8')
                 with temp_cwd(None):
                     Path(input_file).write_text(contents)
                     assert_python_ok(self.script, '--docstrings', input_file)
                     output = Path('messages.pot').read_text()
 
-                expected = (data_dir / output_file).read_text(encoding='utf-8')
+                expected = (DATA_DIR / output_file).read_text(encoding='utf-8')
                 self.assert_POT_equal(expected, output)
 
     def test_files_list(self):
