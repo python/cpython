@@ -9,6 +9,7 @@ import itertools
 import os
 import posixpath
 import sys
+import textwrap
 import typing
 from collections.abc import Iterator
 
@@ -402,6 +403,12 @@ class Generator(Analyzer):
             self.out = Formatter(f, 0)
 
             self.write_provenance_header()
+
+            self.out.emit("\n" + textwrap.dedent("""
+                #ifndef Py_BUILD_CORE
+                #  error "this header requires Py_BUILD_CORE define"
+                #endif
+            """).strip())
 
             self.out.emit("\n#include <stdbool.h>")
 
