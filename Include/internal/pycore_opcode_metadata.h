@@ -7,7 +7,7 @@
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include <stdbool.h>
+#include <stdbool.h>              // bool
 
 
 #define IS_PSEUDO_INSTR(OP)  ( \
