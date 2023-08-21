@@ -1,7 +1,9 @@
-
 #ifndef Py_INTERNAL_INSTRUMENT_H
 #define Py_INTERNAL_INSTRUMENT_H
 
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
+#endif
 
 #include "pycore_bitutils.h"      // _Py_popcount32
 #include "pycore_frame.h"
