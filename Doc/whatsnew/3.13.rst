@@ -86,7 +86,7 @@ Other Language Changes
   (Contributed by Inada Naoki in :gh:`81283`.)
 
 * The :func:`compile` built-in can now accept a new flag,
-  ``ast.PyCF_OPTIMIZED_AST``, which is similar to ``ast.PyCF_ONLY_AST``
+  :data:`ast.PyCF_OPTIMIZED_AST`, which is similar to :data:`ast.PyCF_ONLY_AST`
   except that the returned ``AST`` is optimized according to the value
   of the ``optimize`` argument.
   (Contributed by Irit Katriel in :gh:`108113`).
