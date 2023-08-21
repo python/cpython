@@ -2,8 +2,8 @@
 
 /* -----------------------------------------------------------------------
    x86-ffi64.c - Copyright (c) 2002  Bo Thorsen <bo@suse.de>
-   
-   x86-64 Foreign Function Interface 
+
+   x86-64 Foreign Function Interface
 
    Permission is hereby granted, free of charge, to any person obtaining
    a copy of this software and associated documentation files (the
@@ -208,7 +208,7 @@ classify_argument(
 
 		case FFI_TYPE_STRUCT:
 		{
-			ffi_type**				ptr; 
+			ffi_type**				ptr;
 			int						i;
 			enum x86_64_reg_class	subclasses[MAX_CLASSES];
 			const int				UNITS_PER_WORD = 8;

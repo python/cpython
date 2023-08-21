@@ -11,7 +11,7 @@ import email.policy
 from email import message
 
 
-
+
 class MIMEBase(message.Message):
     """Base class for MIME specializations."""
 
