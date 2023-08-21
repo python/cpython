@@ -947,7 +947,7 @@ class GzipBrokenHeaderCorrectException(GzipTest, unittest.TestCase):
             b'\x1f\x8b'  # header
             b'\x08'  # compression method
             b'\x04'  # flags
-            b'\0\0\0\0\0\0'  # padding?
+            b'\0\0\0\0\0\0'  # timestamp, compression data, OS ID
             b'\0\x01'  # size
             b'\0\0\0\0\0'  # corrupt data (zeros)
         )
