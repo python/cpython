@@ -1751,7 +1751,7 @@ class ClinicParserTest(TestCase):
                 * [from 3.14]
             Docstring.
         """
-        err = "Function 'bar': '* [from ...]' must come before '*'"
+        err = "Function 'bar': '* [from ...]' must precede '*'"
         self.expect_failure(block, err, lineno=4)
 
     def test_depr_star_duplicate(self):
@@ -1779,7 +1779,7 @@ class ClinicParserTest(TestCase):
                 c: int
             Docstring.
         """
-        err = "Function 'bar': '* [from 3.15]' must come before '* [from 3.14]'"
+        err = "Function 'bar': '* [from 3.15]' must precede '* [from 3.14]'"
         self.expect_failure(block, err, lineno=5)
 
     def test_depr_slash_duplicate(self):
@@ -3484,6 +3484,27 @@ class ClinicFunctionalTest(unittest.TestCase):
         check("a", "b", c="c", d="d", e="e", f="f", g="g", h="h")
         check("a", b="b", c="c", d="d", e="e", f="f", g="g", h="h")
         self.assertRaises(TypeError, fn, a="a", b="b", c="c", d="d", e="e", f="f", g="g", h="h")
+
+    def test_depr_multi(self):
+        fn = ac_tester.depr_multi
+        self.assertRaises(TypeError, fn, "a", "b", "c", "d", "e", "f", "g")
+        errmsg = (
+            "Passing more than 4 positional arguments to depr_multi() is deprecated. "
+            "Parameter 'e' will become a keyword-only parameter in Python 3.15. "
+            "Parameter 'f' will become a keyword-only parameter in Python 3.14.")
+        check = partial(self.check_depr, re.escape(errmsg), fn)
+        check("a", "b", "c", "d", "e", "f", g="g")
+        check("a", "b", "c", "d", "e", f="f", g="g")
+        fn("a", "b", "c", "d", e="e", f="f", g="g")
+        fn("a", "b", "c", d="d", e="e", f="f", g="g")
+        errmsg = (
+            "Passing keyword arguments 'b' and 'c' to depr_multi() is deprecated. "
+            "Parameter 'b' will become positional-only in Python 3.14. "
+            "Parameter 'c' will become positional-only in Python 3.15.")
+        check = partial(self.check_depr, re.escape(errmsg), fn)
+        check("a", "b", c="c", d="d", e="e", f="f", g="g")
+        check("a", b="b", c="c", d="d", e="e", f="f", g="g")
+        self.assertRaises(TypeError, fn, a="a", b="b", c="c", d="d", e="e", f="f", g="g")
 
 
 class PermutationTests(unittest.TestCase):

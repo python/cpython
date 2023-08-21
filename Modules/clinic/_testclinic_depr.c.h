@@ -2284,4 +2284,111 @@ depr_kwd_multi(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=af49d89c7c2f877d input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(depr_multi__doc__,
+"depr_multi($module, a, /, b, c, d, e, f, *, g)\n"
+"--\n"
+"\n"
+"Note: Passing keyword arguments \'b\' and \'c\' to depr_multi() is\n"
+"deprecated. Parameter \'b\' will become positional-only in Python 3.14.\n"
+"Parameter \'c\' will become positional-only in Python 3.15.\n"
+"\n"
+"\n"
+"Note: Passing more than 4 positional arguments to depr_multi() is\n"
+"deprecated. Parameter \'e\' will become a keyword-only parameter in\n"
+"Python 3.15. Parameter \'f\' will become a keyword-only parameter in\n"
+"Python 3.14.\n"
+"");
+
+#define DEPR_MULTI_METHODDEF    \
+    {"depr_multi", _PyCFunction_CAST(depr_multi), METH_FASTCALL|METH_KEYWORDS, depr_multi__doc__},
+
+static PyObject *
+depr_multi_impl(PyObject *module, PyObject *a, PyObject *b, PyObject *c,
+                PyObject *d, PyObject *e, PyObject *f, PyObject *g);
+
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error "Update the clinic input of 'depr_multi'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ("Update the clinic input of 'depr_multi'.")
+#  else
+#    warning "Update the clinic input of 'depr_multi'."
+#  endif
+#endif
+
+static PyObject *
+depr_multi(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 6
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), &_Py_ID(e), &_Py_ID(f), &_Py_ID(g), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "b", "c", "d", "e", "f", "g", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "depr_multi",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[7];
+    PyObject *a;
+    PyObject *b;
+    PyObject *c;
+    PyObject *d;
+    PyObject *e;
+    PyObject *f;
+    PyObject *g;
+
+    if (nargs > 4 && nargs <= 6) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing more than 4 positional arguments to depr_multi() is "
+                "deprecated. Parameter 'e' will become a keyword-only parameter "
+                "in Python 3.15. Parameter 'f' will become a keyword-only "
+                "parameter in Python 3.14.", 1))
+        {
+            goto exit;
+        }
+    }
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 6, 6, 1, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing keyword arguments 'b' and 'c' to depr_multi() is "
+                "deprecated. Parameter 'b' will become positional-only in Python "
+                "3.14. Parameter 'c' will become positional-only in Python 3.15.", 1))
+        {
+            goto exit;
+        }
+    }
+    a = args[0];
+    b = args[1];
+    c = args[2];
+    d = args[3];
+    e = args[4];
+    f = args[5];
+    g = args[6];
+    return_value = depr_multi_impl(module, a, b, c, d, e, f, g);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=ee8b1933e4bf4dc4 input=a9049054013a1b77]*/

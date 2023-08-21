@@ -1755,6 +1755,32 @@ depr_kwd_multi_impl(PyObject *module, PyObject *a, PyObject *b, PyObject *c,
 }
 
 
+/*[clinic input]
+depr_multi
+    a: object
+    /
+    b: object
+    / [from 3.14]
+    c: object
+    / [from 3.15]
+    d: object
+    * [from 3.15]
+    e: object
+    * [from 3.14]
+    f: object
+    *
+    g: object
+[clinic start generated code]*/
+
+static PyObject *
+depr_multi_impl(PyObject *module, PyObject *a, PyObject *b, PyObject *c,
+                PyObject *d, PyObject *e, PyObject *f, PyObject *g)
+/*[clinic end generated code: output=f81c92852ca2d4ee input=5b847c5e44bedd02]*/
+{
+    Py_RETURN_NONE;
+}
+
+
 // Reset PY_VERSION_HEX
 #undef PY_VERSION_HEX
 #define PY_VERSION_HEX _SAVED_PY_VERSION
@@ -1841,6 +1867,7 @@ static PyMethodDef tester_methods[] = {
     DEPR_KWD_REQUIRED_OPTIONAL_METHODDEF
     DEPR_KWD_NOINLINE_METHODDEF
     DEPR_KWD_MULTI_METHODDEF
+    DEPR_MULTI_METHODDEF
     {NULL, NULL}
 };
 

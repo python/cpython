@@ -5521,14 +5521,14 @@ class DSLParser:
             self.keyword_only = True
         else:
             if self.keyword_only:
-                fail(f"Function {function.name!r}: '* [from ...]' must come before '*'")
+                fail(f"Function {function.name!r}: '* [from ...]' must precede '*'")
             if self.deprecated_positional:
                 if self.deprecated_positional == version:
                     fail(f"Function {function.name!r} uses '* [from "
                          f"{version[0]}.{version[1]}]' more than once.")
                 if self.deprecated_positional < version:
                     fail(f"Function {function.name!r}: '* [from "
-                         f"{version[0]}.{version[1]}]' must come before '* [from "
+                         f"{version[0]}.{version[1]}]' must precede '* [from "
                          f"{self.deprecated_positional[0]}.{self.deprecated_positional[1]}]'")
         self.deprecated_positional = version
 
