@@ -4010,7 +4010,7 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
     size = PyTuple_Size(args);
     if (size < 2 || size > 6) {
         PyErr_SetString(st->PicklingError, "tuple returned by "
-                        "__reduce__ must contain 2 to 6 elements");
+                        "__reduce__ must contain 2 through 6 elements");
         return -1;
     }
 
