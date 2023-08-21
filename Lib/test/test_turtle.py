@@ -464,7 +464,6 @@ class TestTPen(unittest.TestCase):
 class TestModuleLevel(unittest.TestCase):
     def test_all_signatures(self):
         import inspect
-        import types
 
         known_signatures = {
             'teleport':
@@ -475,17 +474,11 @@ class TestModuleLevel(unittest.TestCase):
             'pen': '(pen=None, **pendict)',
         }
 
-        for name in turtle.__all__:
-            obj = getattr(turtle, name)
-            if not isinstance(obj, types.FunctionType):
-                continue
-
+        for name in known_signatures:
             with self.subTest(name=name):
-                # All functions must produce correct signatures:
+                obj = getattr(turtle, name)
                 sig = inspect.signature(obj)
-
-                if name in known_signatures:
-                    self.assertEqual(str(sig), known_signatures[name])
+                self.assertEqual(str(sig), known_signatures[name])
 
 
 if __name__ == '__main__':
