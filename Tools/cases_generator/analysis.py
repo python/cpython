@@ -2,6 +2,7 @@ import re
 import sys
 import typing
 
+from _typing_backports import assert_never
 from flags import InstructionFlags, variable_used
 from formatting import prettify_filename, UNUSED
 from instructions import (
@@ -172,7 +173,7 @@ class Analyzer:
                     self.pseudos[name] = thing
                     self.everything.append(thing)
                 case _:
-                    typing.assert_never(thing)
+                    assert_never(thing)
         if not psr.eof():
             raise psr.make_syntax_error(f"Extra stuff at the end of {filename}")
 
@@ -368,7 +369,7 @@ class Analyzer:
                         # SAVE_IP in a macro is a no-op in Tier 1
                         flags.add(instr.instr_flags)
                 case _:
-                    typing.assert_never(component)
+                    assert_never(component)
         format = "IB" if flags.HAS_ARG_FLAG else "IX"
         if offset:
             format += "C" + "0" * (offset - 1)
@@ -409,5 +410,5 @@ class Analyzer:
                 case parsing.CacheEffect():
                     components.append(uop)
                 case _:
-                    typing.assert_never(uop)
+                    assert_never(uop)
         return components
