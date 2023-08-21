@@ -109,7 +109,7 @@
         _PyFrame_SetStackPointer(frame, stack_pointer); \
         frame->prev_instr = next_instr - 1;             \
         (NEW_FRAME)->previous = frame;                  \
-        frame = cframe.current_frame = (NEW_FRAME);     \
+        frame = tstate->current_frame = (NEW_FRAME);     \
         CALL_STAT_INC(inlined_py_calls);                \
         goto start_frame;                               \
     } while (0)
@@ -364,3 +364,12 @@ static const convertion_func_ptr CONVERSION_FUNCTIONS[4] = {
 #else
 #define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) _Py_atomic_load_relaxed(ATOMIC_VAL)
 #endif
+
+static inline int _Py_EnterRecursivePy(PyThreadState *tstate) {
+    return (tstate->py_recursion_remaining-- <= 0) &&
+        _Py_CheckRecursiveCallPy(tstate);
+}
+
+static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
+    tstate->py_recursion_remaining++;
+}

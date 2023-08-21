@@ -1,6 +1,7 @@
 import dataclasses
 import typing
 
+from flags import variable_used_unspecialized
 from formatting import (
     Formatter,
     UNUSED,
@@ -61,14 +62,14 @@ class StackOffset:
         for eff in self.deep:
             if eff.size:
                 terms.append(("-", maybe_parenthesize(eff.size)))
-            elif eff.cond and eff.cond != "1":
+            elif eff.cond and eff.cond not in ("0", "1"):
                 terms.append(("-", f"({parenthesize_cond(eff.cond)} ? 1 : 0)"))
             elif eff.cond != "0":
                 num -= 1
         for eff in self.high:
             if eff.size:
                 terms.append(("+", maybe_parenthesize(eff.size)))
-            elif eff.cond and eff.cond != "1":
+            elif eff.cond and eff.cond not in ("0", "1"):
                 terms.append(("+", f"({parenthesize_cond(eff.cond)} ? 1 : 0)"))
             elif eff.cond != "0":
                 num += 1
@@ -146,6 +147,8 @@ class EffectManager:
     # Track offsets from stack pointer
     min_offset: StackOffset
     final_offset: StackOffset
+    # Link to previous manager
+    pred: "EffectManager | None" = None
 
     def __init__(
         self,
@@ -167,7 +170,8 @@ class EffectManager:
             self.pokes.append(StackItem(offset=self.final_offset.clone(), effect=eff))
             self.final_offset.higher(eff)
 
-        if pred:
+        self.pred = pred
+        while pred:
             # Replace push(x) + pop(y) with copy(x, y).
             # Check that the sources and destinations are disjoint.
             sources: set[str] = set()
@@ -192,6 +196,11 @@ class EffectManager:
                 sources,
                 destinations,
             )
+            # See if we can get more copies of a earlier predecessor.
+            if self.peeks and not pred.pokes and not pred.peeks:
+                pred = pred.pred
+            else:
+                pred = None  # Break
 
     def adjust_deeper(self, eff: StackEffect) -> None:
         for peek in self.peeks:
@@ -295,6 +304,7 @@ def write_single_instr(
             [Component(instr, instr.active_caches)],
             out,
             tier,
+            0,
         )
     except AssertionError as err:
         raise AssertionError(f"Error writing instruction {instr.name}") from err
@@ -303,37 +313,32 @@ def write_single_instr(
 def write_macro_instr(
     mac: MacroInstruction, out: Formatter, family: Family | None
 ) -> None:
-    parts = [part for part in mac.parts if isinstance(part, Component)]
-
-    cache_adjust = 0
-    for part in mac.parts:
-        match part:
-            case CacheEffect(size=size):
-                cache_adjust += size
-            case Component(instr=instr):
-                cache_adjust += instr.cache_offset
-            case _:
-                typing.assert_never(part)
-
+    parts = [
+        part
+        for part in mac.parts
+        if isinstance(part, Component) and part.instr.name != "SAVE_IP"
+    ]
     out.emit("")
     with out.block(f"TARGET({mac.name})"):
         if mac.predicted:
             out.emit(f"PREDICTED({mac.name});")
-        out.static_assert_family_size(mac.name, family, cache_adjust)
+        out.static_assert_family_size(mac.name, family, mac.cache_offset)
         try:
-            write_components(parts, out, TIER_ONE)
+            next_instr_is_set = write_components(parts, out, TIER_ONE, mac.cache_offset)
         except AssertionError as err:
             raise AssertionError(f"Error writing macro {mac.name}") from err
-        if cache_adjust:
-            out.emit(f"next_instr += {cache_adjust};")
-        out.emit("DISPATCH();")
+        if not parts[-1].instr.always_exits and not next_instr_is_set:
+            if mac.cache_offset:
+                out.emit(f"next_instr += {mac.cache_offset};")
+            out.emit("DISPATCH();")
 
 
 def write_components(
     parts: list[Component],
     out: Formatter,
     tier: Tiers,
-) -> None:
+    cache_offset: int,
+) -> bool:
     managers = get_managers(parts)
 
     all_vars: dict[str, StackEffect] = {}
@@ -354,6 +359,7 @@ def write_components(
     for name, eff in all_vars.items():
         out.declare(eff, None)
 
+    next_instr_is_set = False
     for mgr in managers:
         if len(parts) > 1:
             out.emit(f"// {mgr.instr.name}")
@@ -374,13 +380,25 @@ def write_components(
                     poke.as_stack_effect(lax=True),
                 )
 
+        if mgr.instr.name in ("_PUSH_FRAME", "_POP_FRAME"):
+            # Adjust stack to min_offset (input effects materialized)
+            out.stack_adjust(mgr.min_offset.deep, mgr.min_offset.high)
+            # Use clone() since adjust_inverse() mutates final_offset
+            mgr.adjust_inverse(mgr.final_offset.clone())
+
+        if mgr.instr.name == "SAVE_CURRENT_IP":
+            next_instr_is_set = True
+            if cache_offset:
+                out.emit(f"next_instr += {cache_offset};")
+
         if len(parts) == 1:
             mgr.instr.write_body(out, 0, mgr.active_caches, tier)
         else:
             with out.block(""):
                 mgr.instr.write_body(out, -4, mgr.active_caches, tier)
 
-        if mgr is managers[-1]:
+        if mgr is managers[-1] and not next_instr_is_set:
+            # TODO: Explain why this adjustment is needed.
             out.stack_adjust(mgr.final_offset.deep, mgr.final_offset.high)
             # Use clone() since adjust_inverse() mutates final_offset
             mgr.adjust_inverse(mgr.final_offset.clone())
@@ -390,4 +408,37 @@ def write_components(
                 out.assign(
                     poke.as_stack_effect(),
                     poke.effect,
+                )
+
+    return next_instr_is_set
+
+
+def write_single_instr_for_abstract_interp(instr: Instruction, out: Formatter) -> None:
+    try:
+        _write_components_for_abstract_interp(
+            [Component(instr, instr.active_caches)],
+            out,
+        )
+    except AssertionError as err:
+        raise AssertionError(
+            f"Error writing abstract instruction {instr.name}"
+        ) from err
+
+
+def _write_components_for_abstract_interp(
+    parts: list[Component],
+    out: Formatter,
+) -> None:
+    managers = get_managers(parts)
+    for mgr in managers:
+        if mgr is managers[-1]:
+            out.stack_adjust(mgr.final_offset.deep, mgr.final_offset.high)
+            # Use clone() since adjust_inverse() mutates final_offset
+            mgr.adjust_inverse(mgr.final_offset.clone())
+        # NULL out the output stack effects
+        for poke in mgr.pokes:
+            if not poke.effect.size and poke.effect.name not in mgr.instr.unmoved_names:
+                out.emit(
+                    f"PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)"
+                    f"PARTITIONNODE_NULLROOT, PEEK(-({poke.offset.as_index()})), true);"
                 )

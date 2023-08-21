@@ -539,6 +539,7 @@ extern "C" {
     INIT_STR(anon_lambda, "<lambda>"), \
     INIT_STR(anon_listcomp, "<listcomp>"), \
     INIT_STR(anon_module, "<module>"), \
+    INIT_STR(anon_null, "<NULL>"), \
     INIT_STR(anon_setcomp, "<setcomp>"), \
     INIT_STR(anon_string, "<string>"), \
     INIT_STR(anon_unknown, "<unknown>"), \
@@ -917,6 +918,7 @@ extern "C" {
     INIT_ID(exp), \
     INIT_ID(extend), \
     INIT_ID(extra_tokens), \
+    INIT_ID(f), \
     INIT_ID(facility), \
     INIT_ID(factory), \
     INIT_ID(false), \
@@ -948,6 +950,7 @@ extern "C" {
     INIT_ID(fset), \
     INIT_ID(func), \
     INIT_ID(future), \
+    INIT_ID(g), \
     INIT_ID(generation), \
     INIT_ID(genexpr), \
     INIT_ID(get), \
@@ -961,6 +964,7 @@ extern "C" {
     INIT_ID(globals), \
     INIT_ID(groupindex), \
     INIT_ID(groups), \
+    INIT_ID(h), \
     INIT_ID(handle), \
     INIT_ID(hash_name), \
     INIT_ID(header), \
