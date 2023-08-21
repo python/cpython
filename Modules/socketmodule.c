@@ -7317,7 +7317,6 @@ os_init(void)
 static void
 sock_free_api(PySocketModule_APIObject *capi)
 {
-    Py_DECREF(capi->Sock_Type);
     Py_DECREF(capi->error);
     Py_DECREF(capi->timeout_error);
     PyMem_Free(capi);
@@ -7339,7 +7338,7 @@ sock_get_api(socket_state *state)
         return NULL;
     }
 
-    capi->Sock_Type = (PyTypeObject *)Py_NewRef(state->sock_type);
+    capi->Sock_Type = state->sock_type;
     capi->error = Py_NewRef(PyExc_OSError);
     capi->timeout_error = Py_NewRef(PyExc_TimeoutError);
     return capi;

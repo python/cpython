@@ -382,7 +382,7 @@ typedef struct {
 /* C API for usage by other Python modules.
  * Always add new things to the end for binary compatibility. */
 typedef struct {
-    PyTypeObject *Sock_Type;
+    PyTypeObject *Sock_Type;  // borrowed reference (gh-108240)
     PyObject *error;
     PyObject *timeout_error;
 } PySocketModule_APIObject;
