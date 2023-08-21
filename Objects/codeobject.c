@@ -1889,6 +1889,7 @@ code_hash(PyCodeObject *co)
             const int exec_index = _PyCode_CODE(co)[i].op.arg;
             _PyExecutorObject *exec = co->co_executors->executors[exec_index];
             assert(exec != NULL);
+            assert(exec->vm_data.opcode != ENTER_EXECUTOR);
             SCRAMBLE_IN(exec->vm_data.opcode);
             SCRAMBLE_IN(exec->vm_data.oparg);
             i += _PyOpcode_Caches[exec->vm_data.opcode];
