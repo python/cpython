@@ -6,7 +6,7 @@
 #include "patchlevel.h"
 
 static int initialized = 0;
-static char version[250];
+static char version[258];
 
 void _Py_InitVersion(void)
 {
@@ -14,8 +14,13 @@ void _Py_InitVersion(void)
         return;
     }
     initialized = 1;
-    PyOS_snprintf(version, sizeof(version), "%.80s (%.80s) %.80s",
-                  PY_VERSION, Py_GetBuildInfo(), Py_GetCompiler());
+#ifdef Py_NOGIL
+    const char *gil = " [NOGIL]";  // 8 characters
+#else
+    const char *gil = "";
+#endif
+    PyOS_snprintf(version, sizeof(version), "%.80s (%.80s) %.80s%s",
+                  PY_VERSION, Py_GetBuildInfo(), Py_GetCompiler(), gil);
 }
 
 const char *
