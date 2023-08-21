@@ -2341,7 +2341,7 @@ class TestOptimizerAPI(unittest.TestCase):
             long_loop()
             self.assertEqual(opt.get_count(), 10)
 
-    def test_code_richcompare(self):
+    def test_code_restore_for_ENTER_EXECUTOR(self):
         def testfunc(x):
             i = 0
             while i < x:
@@ -2350,7 +2350,9 @@ class TestOptimizerAPI(unittest.TestCase):
         opt = _testinternalcapi.get_counter_optimizer()
         with temporary_optimizer(opt):
             testfunc(1000)
-            self.assertEqual(testfunc.__code__, testfunc.__code__.replace())
+            code, replace_code  = testfunc.__code__, testfunc.__code__.replace()
+            self.assertEqual(code, replace_code)
+            self.assertEqual(hash(code), hash(replace_code))
 
 
 def get_first_executor(func):
