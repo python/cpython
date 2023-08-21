@@ -709,7 +709,7 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
     dir_fd may not be implemented on your platform.
     If it is unavailable, using it will raise a NotImplementedError.
 
-    If ignore_errors is set, errors are ignored; otherwise, if onexc or
+    If ignore_errors is set, errors are returned; otherwise, if onexc or
     onerror is set, it is called to handle the error with arguments (func,
     path, exc_info) where func is platform and implementation dependent;
     path is the argument to that function that caused it to fail; and

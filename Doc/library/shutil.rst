@@ -298,7 +298,7 @@ Directory and files operations
 
    Delete an entire directory tree; *path* must point to a directory (but not a
    symbolic link to a directory).  If *ignore_errors* is true, errors resulting
-   from failed removals will be ignored; if false or omitted, such errors are
+   from failed removals will be returned; if false or omitted, such errors are
    handled by calling a handler specified by *onexc* or *onerror* or, if both
    are omitted, exceptions are propagated to the caller.
 
@@ -314,6 +314,9 @@ Directory and files operations
       symlinks on the filesystem to delete files they wouldn't be able to access
       otherwise.  Applications can use the :data:`rmtree.avoids_symlink_attacks`
       function attribute to determine which case applies.
+
+   If *ignore_errors* is true, a list of tuples containing *function*, *path*,
+   and *excinfo* is returned.
 
    If *onexc* is provided, it must be a callable that accepts three parameters:
    *function*, *path*, and *excinfo*.
@@ -342,6 +345,9 @@ Directory and files operations
 
    .. versionchanged:: 3.12
       Added the *onexc* parameter, deprecated *onerror*.
+
+   .. versionchanged:: 3.13
+      Return a list of errors when *ignore_errors* is true
 
    .. attribute:: rmtree.avoids_symlink_attacks
 
