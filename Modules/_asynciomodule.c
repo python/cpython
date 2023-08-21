@@ -529,7 +529,7 @@ future_init(FutureObj *fut, PyObject *loop)
     }
     if (is_true && !_Py_IsInterpreterFinalizing(_PyInterpreterState_GET())) {
         /* Only try to capture the traceback if the interpreter is not being
-           finalized.  The original motivation to add a `_Py_IsFinalizing()`
+           finalized.  The original motivation to add a `Py_IsFinalizing()`
            call was to prevent SIGSEGV when a Future is created in a __del__
            method, which is called during the interpreter shutdown and the
            traceback module is already unloaded.
