@@ -1031,6 +1031,20 @@ class TestSpecifics(unittest.TestCase):
         code_lines = self.get_code_lines(test.__code__)
         self.assertEqual(expected_lines, code_lines)
 
+    def test_lineno_of_backward_jump(self):
+        # Issue gh-107901
+        def f():
+            for i in x:
+                if y:
+                    pass
+
+        linenos = list(inst.positions.lineno
+                       for inst in dis.get_instructions(f.__code__)
+                       if inst.opname == 'JUMP_BACKWARD')
+
+        self.assertTrue(len(linenos) > 0)
+        self.assertTrue(all(l is not None for l in linenos))
+
     def test_big_dict_literal(self):
         # The compiler has a flushing point in "compiler_dict" that calls compiles
         # a portion of the dictionary literal when the loop that iterates over the items
