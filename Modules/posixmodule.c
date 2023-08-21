@@ -6609,7 +6609,7 @@ os_execv_impl(PyObject *module, path_t *path, PyObject *argv)
     /* If we get here it's definitely an error */
 
     free_string_array(argvlist, argc);
-    return posix_error();
+    return path_error(path);
 }
 
 
