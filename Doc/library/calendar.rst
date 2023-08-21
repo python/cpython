@@ -233,14 +233,6 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       used.
 
 
-   .. method:: formatmonthname(theyear, themonth, withyear=True)
-
-      Return an HTML table row for the month name given by year and month
-      *theyear* and *themonth*.
-      If *withyear* is ``True``, the year will be appended to the month name.
-      Used by :meth:`formatmonth`.
-
-
    .. method:: formatyear(theyear, width=3)
 
       Return a year's calendar as an HTML table. *width* (defaulting to 3)
@@ -289,7 +281,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    .. attribute:: cssclass_month_head
 
-      The month's head CSS class (used by :meth:`formatmonthname`).
+      The month's head CSS class (used by :meth:`!formatmonthname`).
       The default value is ``"month"``.
 
       .. versionadded:: 3.7
@@ -418,8 +410,8 @@ For simple text calendars this module provides the following functions.
 
 .. function:: month(theyear, themonth, w=0, l=0)
 
-   Returns a month's calendar in a multi-line string using
-   :meth:`TextCalendar.formatmonth`.
+   Returns a month's calendar in a multi-line string using the
+   :meth:`~TextCalendar.formatmonth` method of the :class:`TextCalendar` class.
 
 
 .. function:: prcal(year, w=0, l=0, c=6, m=3)
@@ -430,7 +422,7 @@ For simple text calendars this module provides the following functions.
 .. function:: calendar(year, w=2, l=1, c=6, m=3)
 
    Returns a 3-column calendar for an entire year as a multi-line string using
-   :meth:`TextCalendar.formatyear`.
+   the :meth:`~TextCalendar.formatyear` method of the :class:`TextCalendar` class.
 
 
 .. function:: timegm(tuple)
