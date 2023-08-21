@@ -370,10 +370,8 @@ class TestRmTree(BaseTest, unittest.TestCase):
         # test that ignore_errors option is honored
         shutil.rmtree(filename, ignore_errors=True)
         self.assertTrue(os.path.exists(filename))
-        errors = []
-        def onexc(*args):
-            errors.append(args)
-        shutil.rmtree(filename, onexc=onexc)
+
+        errors = shutil.rmtree(filename, ignore_errors=True)
         self.assertEqual(len(errors), 2)
         self.assertIs(errors[0][0], os.scandir)
         self.assertEqual(errors[0][1], filename)
