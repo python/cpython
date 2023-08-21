@@ -235,20 +235,14 @@ negative).
 
 There are two types of integers:
 
-
 Integers (:class:`int`)
-"""""""""""""""""""""""
-
    These represent numbers in an unlimited range, subject to available (virtual)
    memory only.  For the purpose of shift and mask operations, a binary
    representation is assumed, and negative numbers are represented in a variant of
    2's complement which gives the illusion of an infinite string of sign bits
    extending to the left.
 
-
 Booleans (:class:`bool`)
-""""""""""""""""""""""""
-
    .. index::
       pair: object; Boolean
       single: False
@@ -338,10 +332,7 @@ The following types are immutable sequences:
 .. index::
    single: string; immutable sequences
 
-
 Strings
-"""""""
-
    .. index::
       pair: built-in function; chr
       pair: built-in function; ord
@@ -361,10 +352,7 @@ Strings
    :class:`bytes` using the given text encoding, and
    :meth:`bytes.decode` can be used to achieve the opposite.
 
-
 Tuples
-""""""
-
    .. index::
       pair: object; tuple
       pair: singleton; tuple
@@ -377,10 +365,7 @@ Tuples
    parentheses must be usable for grouping of expressions).  An empty
    tuple can be formed by an empty pair of parentheses.
 
-
 Bytes
-"""""
-
    .. index:: bytes, byte
 
    A bytes object is an immutable array.  The items are 8-bit bytes,
@@ -413,20 +398,14 @@ slicing notations can be used as the target of assignment and :keyword:`del`
 
 There are currently two intrinsic mutable sequence types:
 
-
 Lists
-"""""
-
    .. index:: pair: object; list
 
    The items of a list are arbitrary Python objects.  Lists are formed by
    placing a comma-separated list of expressions in square brackets. (Note
    that there are no special cases needed to form lists of length 0 or 1.)
 
-
 Byte Arrays
-"""""""""""
-
    .. index:: bytearray
 
    A bytearray object is a mutable array. They are created by the built-in
