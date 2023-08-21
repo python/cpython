@@ -6843,7 +6843,8 @@ class SendRecvFdsTests(unittest.TestCase):
 
             self.assertEqual(msg, MSG)
             self.assertEqual(len(rds2), len(self.rds))
-            self.assertEqual(flags, socket.MSG_PEEK)
+            # flags can be 0 or socket.MSG_PEEK:
+            self.assertEqual(flags & ~socket.MSG_PEEK, 0)
             # don't test addr for anonymous socket pair
             # when PEEKing, rds2 are not open fds and should be all 0s
             self.assertEqual(rds2, [0]*len(rds2))
