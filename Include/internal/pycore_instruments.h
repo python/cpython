@@ -28,7 +28,8 @@ extern "C" {
 #define PY_MONITORING_EVENT_BRANCH 8
 #define PY_MONITORING_EVENT_STOP_ITERATION 9
 
-#define PY_MONITORING_INSTRUMENTED_EVENTS 10
+#define PY_MONITORING_IS_INSTRUMENTED_EVENT(ev) \
+    ((ev) <= PY_MONITORING_EVENT_STOP_ITERATION)
 
 /* Other events, mainly exceptions */
 
@@ -36,12 +37,13 @@ extern "C" {
 #define PY_MONITORING_EVENT_EXCEPTION_HANDLED 11
 #define PY_MONITORING_EVENT_PY_UNWIND 12
 #define PY_MONITORING_EVENT_PY_THROW 13
+#define PY_MONITORING_EVENT_RERAISE 14
 
 
 /* Ancilliary events */
 
-#define PY_MONITORING_EVENT_C_RETURN 14
-#define PY_MONITORING_EVENT_C_RAISE 15
+#define PY_MONITORING_EVENT_C_RETURN 15
+#define PY_MONITORING_EVENT_C_RAISE 16
 
 
 typedef uint32_t _PyMonitoringEventSet;
@@ -87,10 +89,6 @@ _Py_call_instrumentation_arg(PyThreadState *tstate, int event,
 extern int
 _Py_call_instrumentation_2args(PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1);
-
-extern void
-_Py_call_instrumentation_exc0(PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr);
 
 extern void
 _Py_call_instrumentation_exc2(PyThreadState *tstate, int event,

@@ -738,7 +738,7 @@ for ``x`` when creating a class instance will share the same copy
 of ``x``.  Because dataclasses just use normal Python class
 creation they also share this behavior.  There is no general way
 for Data Classes to detect this condition.  Instead, the
-:func:`dataclass` decorator will raise a :exc:`TypeError` if it
+:func:`dataclass` decorator will raise a :exc:`ValueError` if it
 detects an unhashable default parameter.  The assumption is that if
 a value is unhashable, it is mutable.  This is a partial solution,
 but it does protect against many common errors.

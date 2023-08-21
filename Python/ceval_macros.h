@@ -1,4 +1,4 @@
-// Macros needed by ceval.c and bytecodes.c
+// Macros and other things needed by ceval.c, executor.c, and bytecodes.c
 
 /* Computed GOTOs, or
        the-optimization-commonly-but-improperly-known-as-"threaded code"
@@ -109,7 +109,7 @@
         _PyFrame_SetStackPointer(frame, stack_pointer); \
         frame->prev_instr = next_instr - 1;             \
         (NEW_FRAME)->previous = frame;                  \
-        frame = cframe.current_frame = (NEW_FRAME);     \
+        frame = tstate->current_frame = (NEW_FRAME);     \
         CALL_STAT_INC(inlined_py_calls);                \
         goto start_frame;                               \
     } while (0)
@@ -117,7 +117,9 @@
 #define CHECK_EVAL_BREAKER() \
     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
     if (_Py_atomic_load_relaxed_int32(&tstate->interp->ceval.eval_breaker)) { \
-        goto handle_eval_breaker; \
+        if (_Py_HandlePending(tstate) != 0) { \
+            goto error; \
+        } \
     }
 
 
@@ -138,14 +140,20 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 /* Code access macros */
 
 /* The integer overflow is checked by an assertion below. */
-#define INSTR_OFFSET() ((int)(next_instr - _PyCode_CODE(frame->f_code)))
+#define INSTR_OFFSET() ((int)(next_instr - _PyCode_CODE(_PyFrame_GetCode(frame))))
 #define NEXTOPARG()  do { \
         _Py_CODEUNIT word = *next_instr; \
         opcode = word.op.code; \
         oparg = word.op.arg; \
     } while (0)
-#define JUMPTO(x)       (next_instr = _PyCode_CODE(frame->f_code) + (x))
+#define JUMPTO(x)       (next_instr = _PyCode_CODE(_PyFrame_GetCode(frame)) + (x))
+
+/* JUMPBY makes the generator identify the instruction as a jump. SKIP_OVER is
+ * for advancing to the next instruction, taking into account cache entries
+ * and skipped instructions.
+ */
 #define JUMPBY(x)       (next_instr += (x))
+#define SKIP_OVER(x)    (next_instr += (x))
 
 /* OpCode prediction macros
     Some opcodes tend to come in pairs thus making it possible to
@@ -182,7 +190,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 /* The stack can grow at most MAXINT deep, as co_nlocals and
    co_stacksize are ints. */
 #define STACK_LEVEL()     ((int)(stack_pointer - _PyFrame_Stackbase(frame)))
-#define STACK_SIZE()      (frame->f_code->co_stacksize)
+#define STACK_SIZE()      (_PyFrame_GetCode(frame)->co_stacksize)
 #define EMPTY()           (STACK_LEVEL() == 0)
 #define TOP()             (stack_pointer[-1])
 #define SECOND()          (stack_pointer[-2])
@@ -219,8 +227,14 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define STACK_SHRINK(n)        BASIC_STACKADJ(-(n))
 #endif
 
+
+/* Data access macros */
+#define FRAME_CO_CONSTS (_PyFrame_GetCode(frame)->co_consts)
+#define FRAME_CO_NAMES  (_PyFrame_GetCode(frame)->co_names)
+
 /* Local variable macros */
 
+#define LOCALS_ARRAY    (frame->localsplus)
 #define GETLOCAL(i)     (frame->localsplus[i])
 
 /* The SETLOCAL() macro must not DECREF the local variable in-place and
@@ -265,6 +279,8 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define GLOBALS() frame->f_globals
 #define BUILTINS() frame->f_builtins
 #define LOCALS() frame->f_locals
+#define CONSTS() _PyFrame_GetCode(frame)->co_consts
+#define NAMES() _PyFrame_GetCode(frame)->co_names
 
 #define DTRACE_FUNCTION_ENTRY()  \
     if (PyDTrace_FUNCTION_ENTRY_ENABLED()) { \
@@ -288,6 +304,11 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         (COUNTER) += (1 << ADAPTIVE_BACKOFF_BITS);   \
     } while (0);
 
+#define UNBOUNDLOCAL_ERROR_MSG \
+    "cannot access local variable '%s' where it is not associated with a value"
+#define UNBOUNDFREE_ERROR_MSG \
+    "cannot access free variable '%s' where it is not associated with a value" \
+    " in enclosing scope"
 #define NAME_ERROR_MSG "name '%.200s' is not defined"
 
 #define KWNAMES_LEN() \
@@ -326,3 +347,29 @@ do { \
         goto error; \
     } \
 } while (0);
+
+typedef PyObject *(*convertion_func_ptr)(PyObject *);
+
+static const convertion_func_ptr CONVERSION_FUNCTIONS[4] = {
+    [FVC_STR] = PyObject_Str,
+    [FVC_REPR] = PyObject_Repr,
+    [FVC_ASCII] = PyObject_ASCII
+};
+
+#define ASSERT_KWNAMES_IS_NULL() assert(kwnames == NULL)
+
+// GH-89279: Force inlining by using a macro.
+#if defined(_MSC_VER) && SIZEOF_INT == 4
+#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) (assert(sizeof((ATOMIC_VAL)->_value) == 4), *((volatile int*)&((ATOMIC_VAL)->_value)))
+#else
+#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) _Py_atomic_load_relaxed(ATOMIC_VAL)
+#endif
+
+static inline int _Py_EnterRecursivePy(PyThreadState *tstate) {
+    return (tstate->py_recursion_remaining-- <= 0) &&
+        _Py_CheckRecursiveCallPy(tstate);
+}
+
+static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
+    tstate->py_recursion_remaining++;
+}
