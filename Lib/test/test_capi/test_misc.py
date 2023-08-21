@@ -2341,6 +2341,17 @@ class TestOptimizerAPI(unittest.TestCase):
             long_loop()
             self.assertEqual(opt.get_count(), 10)
 
+    def test_code_richcompare(self):
+        def testfunc(x):
+            i = 0
+            while i < x:
+                i += 1
+
+        opt = _testinternalcapi.get_counter_optimizer()
+        with temporary_optimizer(opt):
+            testfunc(1000)
+            self.assertEqual(testfunc.__code__, testfunc.__code__.replace())
+
 
 def get_first_executor(func):
     code = func.__code__
