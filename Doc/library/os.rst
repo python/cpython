@@ -1589,7 +1589,6 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    .. versionadded:: 3.3
 
-
 .. data:: SF_NOCACHE
 
    Parameter to the :func:`sendfile` function, if the implementation supports
