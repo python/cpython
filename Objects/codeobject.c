@@ -1786,6 +1786,7 @@ code_richcompare(PyObject *self, PyObject *other, int op)
             const int exec_index = co_instr.op.arg;
             _PyExecutorObject *exec = co->co_executors->executors[exec_index];
             co_instr.op.code = exec->vm_data.opcode;
+            co_instr.op.arg = exec->vm_data.oparg;
         }
         assert(co_instr.op.code != ENTER_EXECUTOR);
         co_instr.op.code = _PyOpcode_Deopt[co_instr.op.code];
@@ -1794,6 +1795,7 @@ code_richcompare(PyObject *self, PyObject *other, int op)
             const int exec_index = cp_instr.op.arg;
             _PyExecutorObject *exec = cp->co_executors->executors[exec_index];
             cp_instr.op.code = exec->vm_data.opcode;
+            cp_instr.op.arg = exec->vm_data.oparg;
         }
         assert(cp_instr.op.code != ENTER_EXECUTOR);
         cp_instr.op.code = _PyOpcode_Deopt[cp_instr.op.code];
