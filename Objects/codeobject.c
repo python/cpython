@@ -1886,22 +1886,22 @@ code_hash(PyCodeObject *co)
     SCRAMBLE_IN(co->co_firstlineno);
     SCRAMBLE_IN(Py_SIZE(co));
     for (int i = 0; i < Py_SIZE(co); i++) {
-        int deop = _Py_GetBaseOpcode(co, i);
-        if (deop == ENTER_EXECUTOR) {
-            // Assume that deop of ENTER_EXECUTOR will be ENTER_EXECUTOR.
-            const int exec_index = _PyCode_CODE(co)[i].op.arg;
-            _PyExecutorObject *exec = co->co_executors->executors[exec_index];
+        _Py_CODEUNIT co_instr = _PyCode_CODE(co)[i];
+        uint8_t co_code = co_instr.op.code;
+        uint8_t co_arg = co_instr.op.arg;
+        if (co_code == ENTER_EXECUTOR) {
+            _PyExecutorObject *exec = co->co_executors->executors[co_arg];
             assert(exec != NULL);
             assert(exec->vm_data.opcode != ENTER_EXECUTOR);
-            SCRAMBLE_IN(exec->vm_data.opcode);
-            SCRAMBLE_IN(exec->vm_data.oparg);
-            i += _PyOpcode_Caches[exec->vm_data.opcode];
+            co_code = exec->vm_data.opcode;
+            co_arg = exec->vm_data.oparg;
         }
         else {
-            SCRAMBLE_IN(deop);
-            SCRAMBLE_IN(_PyCode_CODE(co)[i].op.arg);
-            i += _PyOpcode_Caches[deop];
+            co_code = _PyOpcode_Deopt[co_code];
         }
+        SCRAMBLE_IN(co_code);
+        SCRAMBLE_IN(co_arg);
+        i += _PyOpcode_Caches[co_code];
     }
     if ((Py_hash_t)uhash == -1) {
         return -2;
