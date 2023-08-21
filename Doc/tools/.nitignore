@@ -166,9 +166,7 @@ Doc/tutorial/appendix.rst
 Doc/tutorial/classes.rst
 Doc/tutorial/controlflow.rst
 Doc/tutorial/datastructures.rst
-Doc/tutorial/inputoutput.rst
 Doc/tutorial/introduction.rst
-Doc/tutorial/modules.rst
 Doc/using/cmdline.rst
 Doc/using/configure.rst
 Doc/using/windows.rst
