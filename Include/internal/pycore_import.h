@@ -5,6 +5,10 @@
 extern "C" {
 #endif
 
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
+#endif
+
 #include "pycore_hashtable.h"     // _Py_hashtable_t
 #include "pycore_time.h"          // _PyTime_t
 
