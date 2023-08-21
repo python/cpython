@@ -1885,7 +1885,7 @@ code_hash(PyCodeObject *co)
     for (int i = 0; i < Py_SIZE(co); i++) {
         int deop = _Py_GetBaseOpcode(co, i);
         if (deop == ENTER_EXECUTOR) {
-            // Assume that deopt of ENTER_EXECUTOR will be ENTER_EXECUTOR.
+            // Assume that deop of ENTER_EXECUTOR will be ENTER_EXECUTOR.
             const int exec_index = _PyCode_CODE(co)[i].op.arg;
             _PyExecutorObject *exec = co->co_executors->executors[exec_index];
             assert(exec != NULL);
