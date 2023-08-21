@@ -372,8 +372,8 @@ class _Stream:
                 self.zlib = zlib
                 self.crc = zlib.crc32(b"")
                 if mode == "r":
-                    self._init_read_gz()
                     self.exception = zlib.error
+                    self._init_read_gz()
                 else:
                     self._init_write_gz()
 

@@ -908,6 +908,23 @@ class LzmaDetectReadTest(LzmaTest, DetectReadTest):
     pass
 
 
+class GzipBrokenHeaderCorrectException(GzipTest, unittest.TestCase):
+    """
+    See: https://github.com/python/cpython/issues/107396
+    """
+    def runTest(self):
+        f = io.BytesIO(
+            b'\x1f\x8b'  # header
+            b'\x08'  # compression method
+            b'\x04'  # flags
+            b'\0\0\0\0\0\0'  # timestamp, compression data, OS ID
+            b'\0\x01'  # size
+            b'\0\0\0\0\0'  # corrupt data (zeros)
+        )
+        with self.assertRaises(tarfile.ReadError):
+            tarfile.open(fileobj=f, mode='r|gz')
+
+
 class MemberReadTest(ReadTest, unittest.TestCase):
 
     def _test_member(self, tarinfo, chksum=None, **kwargs):
