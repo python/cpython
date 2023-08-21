@@ -45,7 +45,6 @@ Doc/library/asyncio-task.rst
 Doc/library/bdb.rst
 Doc/library/bisect.rst
 Doc/library/bz2.rst
-Doc/library/calendar.rst
 Doc/library/cmd.rst
 Doc/library/codecs.rst
 Doc/library/collections.abc.rst
