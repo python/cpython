@@ -1,0 +1,3 @@
+Fixes :func:`~os.path.realpath` to behave consistently when passed a path
+containing an embedded null character. In strict mode, it now raises
+:exc:`OSError`, and in non-strict mode will make the path absolute.
