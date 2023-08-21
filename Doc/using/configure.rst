@@ -190,6 +190,8 @@ General Options
    Enables experimental support for running Python without the
    :term:`global interpreter lock` (GIL).
 
+   See :pep:`703` "Making the Global Interpreter Lock Optional in CPython".
+
    .. versionadded:: 3.13
 
 WebAssembly Options
