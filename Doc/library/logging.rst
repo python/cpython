@@ -1015,6 +1015,14 @@ information into logging calls. For a usage example, see the section on
       'extra'. The return value is a (*msg*, *kwargs*) tuple which has the
       (possibly modified) versions of the arguments passed in.
 
+   .. attribute:: manager
+
+      Delegates to the underlying :attr:`!manager`` on *logger*.
+
+   .. attribute:: _log
+
+      Delegates to the underlying :meth:`!_log`` method on *logger*.
+
    In addition to the above, :class:`LoggerAdapter` supports the following
    methods of :class:`Logger`: :meth:`~Logger.debug`, :meth:`~Logger.info`,
    :meth:`~Logger.warning`, :meth:`~Logger.error`, :meth:`~Logger.exception`,
