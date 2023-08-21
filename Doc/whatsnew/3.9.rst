@@ -1370,8 +1370,8 @@ Porting to Python 3.9
   (Contributed by Victor Stinner in :issue:`40241`.)
 
 * The ``Py_UNICODE_COPY``, ``Py_UNICODE_FILL``, ``PyUnicode_WSTR_LENGTH``,
-  :c:func:`PyUnicode_FromUnicode`, :c:func:`PyUnicode_AsUnicode`,
-  ``_PyUnicode_AsUnicode``, and :c:func:`PyUnicode_AsUnicodeAndSize` are
+  :c:func:`!PyUnicode_FromUnicode`, :c:func:`!PyUnicode_AsUnicode`,
+  ``_PyUnicode_AsUnicode``, and :c:func:`!PyUnicode_AsUnicodeAndSize` are
   marked as deprecated in C.  They have been deprecated by :pep:`393` since
   Python 3.3.
   (Contributed by Inada Naoki in :issue:`36346`.)
