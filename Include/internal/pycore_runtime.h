@@ -165,6 +165,7 @@ typedef struct pyruntimestate {
 
     /* Is Python fully initialized? Set to 1 by Py_Initialize() */
     int initialized;
+
     /* Set by Py_FinalizeEx(). Only reset to NULL if Py_Initialize()
        is called again.
 
