@@ -1,0 +1,3 @@
+Add a new internal pycore_dict_struct.h header file. It can be used by
+debuggers and profilers to inspect a Python dictionary without having to
+call Python functions. It should be usable in C++. Patch by Victor Stinner.

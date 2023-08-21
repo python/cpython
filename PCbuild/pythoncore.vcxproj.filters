@@ -561,6 +561,9 @@
     <ClInclude Include="..\Include\internal\pycore_dict_state.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_dict_struct.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_dtoa.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -650,7 +653,7 @@
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_optimizer.h">
       <Filter>Include\internal</Filter>
-    </ClInclude>    
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_pathconfig.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -737,7 +740,7 @@
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_uops.h">
       <Filter>Include\internal</Filter>
-    </ClInclude>    
+    </ClInclude>
     <ClInclude Include="$(zlibDir)\crc32.h">
       <Filter>Modules\zlib</Filter>
     </ClInclude>
