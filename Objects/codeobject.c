@@ -6,7 +6,8 @@
 #include "pycore_code.h"          // _PyCodeConstructor
 #include "pycore_frame.h"         // FRAME_SPECIALS_SIZE
 #include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
-#include "pycore_opcode.h"        // _PyOpcode_Deopt
+#include "pycore_opcode.h"        // _PyOpcode_Caches
+#include "pycore_opcode_metadata.h" // _PyOpcode_Deopt
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
@@ -395,6 +396,9 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     int nlocals, ncellvars, nfreevars;
     get_localsplus_counts(con->localsplusnames, con->localspluskinds,
                           &nlocals, &ncellvars, &nfreevars);
+    if (con->stacksize == 0) {
+        con->stacksize = 1;
+    }
 
     co->co_filename = Py_NewRef(con->filename);
     co->co_name = Py_NewRef(con->name);
@@ -1777,8 +1781,25 @@ code_richcompare(PyObject *self, PyObject *other, int op)
     for (int i = 0; i < Py_SIZE(co); i++) {
         _Py_CODEUNIT co_instr = _PyCode_CODE(co)[i];
         _Py_CODEUNIT cp_instr = _PyCode_CODE(cp)[i];
+
+        if (co_instr.op.code == ENTER_EXECUTOR) {
+            const int exec_index = co_instr.op.arg;
+            _PyExecutorObject *exec = co->co_executors->executors[exec_index];
+            co_instr.op.code = exec->vm_data.opcode;
+            co_instr.op.arg = exec->vm_data.oparg;
+        }
+        assert(co_instr.op.code != ENTER_EXECUTOR);
         co_instr.op.code = _PyOpcode_Deopt[co_instr.op.code];
+
+        if (cp_instr.op.code == ENTER_EXECUTOR) {
+            const int exec_index = cp_instr.op.arg;
+            _PyExecutorObject *exec = cp->co_executors->executors[exec_index];
+            cp_instr.op.code = exec->vm_data.opcode;
+            cp_instr.op.arg = exec->vm_data.oparg;
+        }
+        assert(cp_instr.op.code != ENTER_EXECUTOR);
         cp_instr.op.code = _PyOpcode_Deopt[cp_instr.op.code];
+
         eq = co_instr.cache == cp_instr.cache;
         if (!eq) {
             goto unequal;

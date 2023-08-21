@@ -196,7 +196,7 @@ _PyFrame_GetFirstComplete(_PyInterpreterFrame *frame)
 static inline _PyInterpreterFrame *
 _PyThreadState_GetFrame(PyThreadState *tstate)
 {
-    return _PyFrame_GetFirstComplete(tstate->cframe->current_frame);
+    return _PyFrame_GetFirstComplete(tstate->current_frame);
 }
 
 /* For use by _PyFrame_GetFrameObject
