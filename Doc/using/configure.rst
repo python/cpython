@@ -187,8 +187,8 @@ General Options
 
 .. cmdoption:: --disable-gil
 
-   Enables experimental support for running Python without the global
-   interpreter lock (GIL).
+   Enables experimental support for running Python without the
+   :term:`global interpreter lock` (GIL).
 
    .. versionadded:: 3.13
 
