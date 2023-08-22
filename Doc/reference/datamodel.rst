@@ -1742,8 +1742,8 @@ For a more fine grained customization of the module behavior, one can set the
    sys.modules[__name__].__class__ = CallableModule
 
 .. note::
-   Defining module ``__getattr__``/``__setattr__``/``__delattr__`` and setting
-   module ``__class__`` only affect lookups made using the attribute access
+   Defining module ``__getattr__``, ``__setattr__``, ``__delattr__``, ``__dir__``
+   and setting module ``__class__`` only affect lookups made using the attribute access
    syntax -- directly accessing the module globals (whether by code within the
    module, or via a reference to the module's globals dictionary) is unaffected.
 
