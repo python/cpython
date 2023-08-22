@@ -1201,7 +1201,7 @@ Pending Removal in Python 3.14
   is deprecated and will raise an exception in Python 3.14.
 
 * Creating immutable types (:c:macro:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
-  bases using the C API.
+  bases using the C API (:gh:`95388`).
 
 * ``__package__`` and ``__cached__`` will cease to be set or taken
   into consideration by the import system (:gh:`97879`).
