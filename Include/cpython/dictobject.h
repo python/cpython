@@ -55,6 +55,7 @@ static inline Py_ssize_t PyDict_GET_SIZE(PyObject *op) {
 }
 #define PyDict_GET_SIZE(op) PyDict_GET_SIZE(_PyObject_CAST(op))
 
+PyAPI_FUNC(int) PyDict_ContainsString(PyObject *mp, const char *key);
 PyAPI_FUNC(int) _PyDict_ContainsId(PyObject *, _Py_Identifier *);
 
 PyAPI_FUNC(PyObject *) _PyDict_NewPresized(Py_ssize_t minused);

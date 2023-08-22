@@ -2208,10 +2208,11 @@ add_main_module(PyInterpreterState *interp)
     }
     Py_DECREF(ann_dict);
 
-    if (_PyDict_GetItemStringWithError(d, "__builtins__") == NULL) {
-        if (PyErr_Occurred()) {
-            return _PyStatus_ERR("Failed to test __main__.__builtins__");
-        }
+    int has_builtins = PyDict_ContainsString(d, "__builtins__");
+    if (has_builtins < 0) {
+        return _PyStatus_ERR("Failed to test __main__.__builtins__");
+    }
+    if (!has_builtins) {
         PyObject *bimod = PyImport_ImportModule("builtins");
         if (bimod == NULL) {
             return _PyStatus_ERR("Failed to retrieve builtins module");
