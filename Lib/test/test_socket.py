@@ -6809,6 +6809,8 @@ class SendRecvFdsTests(unittest.TestCase):
             self.assertEqual(data,  str(index).encode())
 
     def testSendAndRecvFds(self):
+        """basic test over a local socket pair"""
+
         # use a UNIX socket pair to exchange file descriptors locally
         sock1, sock2 = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
         with sock1, sock2:
@@ -6828,6 +6830,8 @@ class SendRecvFdsTests(unittest.TestCase):
         self.check_pipes_connected(self.wds, rds2)
 
     def testRecvFlags(self):
+        """same as testSendAndRecvFds but set recv_fds flags to MSG_PEEK"""
+
         # use a UNIX socket pair to exchange file descriptors locally
         # set to non blocking to avoid hangs on errors
         with socket_setdefaulttimeout(0):
@@ -6875,6 +6879,9 @@ class SendRecvFdsTests(unittest.TestCase):
                     )
 
     def testSendAddress(self):
+        """test receiving a DGRAM over a bound socket, sending with the
+        'address' argument of send_fds"""
+
         # create a bound socket and use a second unbound socket to test
         # the address parameter of send_fds
         with (
