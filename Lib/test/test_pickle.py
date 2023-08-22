@@ -574,9 +574,12 @@ class C_None_reduce_ex:
     __reduce_ex__ = None
 
 class C_None_reduce:
-    __reduce_ex__ = None
+    __reduce__ = None
 
 class C_None_setstate:
+    def __getstate__(self):
+        return 1
+
     __setstate__ = None
 
 class C_setstate:
