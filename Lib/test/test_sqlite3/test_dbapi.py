@@ -583,6 +583,12 @@ class ConnectionTests(unittest.TestCase):
             cx.close()
         self.assertEqual(cm.filename, __file__)
 
+    def test_connection_resource_warning(self):
+        with self.assertWarns(ResourceWarning):
+            cx = sqlite.connect(":memory:")
+            del cx
+            gc_collect()
+
 
 class UninitialisedConnectionTests(unittest.TestCase):
     def setUp(self):
