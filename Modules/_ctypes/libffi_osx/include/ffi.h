@@ -199,9 +199,9 @@ typedef union {
 
 void
 ffi_raw_call(
-/*@dependent@*/	ffi_cif*	cif, 
-				void		(*fn)(void), 
-/*@out@*/		void*		rvalue, 
+/*@dependent@*/	ffi_cif*	cif,
+				void		(*fn)(void),
+/*@out@*/		void*		rvalue,
 /*@dependent@*/	ffi_raw*	avalue);
 
 void
@@ -225,9 +225,9 @@ ffi_raw_size(
 	longs and doubles are followed by an empty 64-bit word.	*/
 void
 ffi_java_raw_call(
-/*@dependent@*/	ffi_cif*	cif, 
-				void		(*fn)(void), 
-/*@out@*/		void*		rvalue, 
+/*@dependent@*/	ffi_cif*	cif,
+				void		(*fn)(void),
+/*@out@*/		void*		rvalue,
 /*@dependent@*/	ffi_raw*	avalue);
 
 void
@@ -272,8 +272,8 @@ typedef struct ffi_raw_closure {
 	ffi_cif*	cif;
 
 #if !FFI_NATIVE_RAW_API
-	/*	if this is enabled, then a raw closure has the same layout 
-		as a regular closure.  We use this to install an intermediate 
+	/*	if this is enabled, then a raw closure has the same layout
+		as a regular closure.  We use this to install an intermediate
 		handler to do the transaltion, void** -> ffi_raw*. */
 	void	(*translate_args)(ffi_cif*,void*,void**,void*);
 	void*	this_closure;
@@ -303,17 +303,17 @@ ffi_prep_java_raw_closure(
 
 ffi_status
 ffi_prep_cif(
-/*@out@*/ /*@partial@*/					ffi_cif*		cif, 
+/*@out@*/ /*@partial@*/					ffi_cif*		cif,
 										ffi_abi			abi,
-										unsigned int	nargs, 
-/*@dependent@*/ /*@out@*/ /*@partial@*/	ffi_type*		rtype, 
+										unsigned int	nargs,
+/*@dependent@*/ /*@out@*/ /*@partial@*/	ffi_type*		rtype,
 /*@dependent@*/							ffi_type**		atypes);
 
 void
 ffi_call(
-/*@dependent@*/	ffi_cif*	cif, 
-				void		(*fn)(void), 
-/*@out@*/		void*		rvalue, 
+/*@dependent@*/	ffi_cif*	cif,
+				void		(*fn)(void),
+/*@out@*/		void*		rvalue,
 /*@dependent@*/	void**		avalue);
 
 /* Useful for eliminating compiler warnings */

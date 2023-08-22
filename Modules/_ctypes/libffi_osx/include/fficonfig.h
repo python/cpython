@@ -1,4 +1,4 @@
-/*	Manually created fficonfig.h for Darwin on PowerPC or Intel 
+/*	Manually created fficonfig.h for Darwin on PowerPC or Intel
 
 	This file is manually generated to do away with the need for autoconf and
 	therefore make it easier to cross-compile and build fat binaries.
@@ -33,10 +33,10 @@
 #	define	SIZEOF_DOUBLE 8
 #	if __GNUC__ >= 4
 #		define	HAVE_LONG_DOUBLE 1
-#		define	SIZEOF_LONG_DOUBLE 16 
+#		define	SIZEOF_LONG_DOUBLE 16
 #	else
 #		undef	HAVE_LONG_DOUBLE
-#		define	SIZEOF_LONG_DOUBLE 8 
+#		define	SIZEOF_LONG_DOUBLE 8
 #	endif
 
 #elif defined(__ppc64__)
