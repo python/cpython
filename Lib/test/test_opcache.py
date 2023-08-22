@@ -17,7 +17,7 @@ def disabling_optimizer(func):
             return func(*args, **kwargs)
         finally:
             _testinternalcapi.set_optimizer(old_opt)
-    
+
     return wrapper
 
 
