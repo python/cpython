@@ -725,6 +725,11 @@ A ``TarInfo`` object has the following public data attributes:
    Name of the target file name, which is only present in :class:`TarInfo` objects
    of type :const:`LNKTYPE` and :const:`SYMTYPE`.
 
+   For symbolic links (``SYMTYPE``), the *linkname* is relative to the directory
+   that contains the link.
+   For hard links (``LNKTYPE``), the *linkname* is relative to the root of
+   the archive.
+
 
 .. attribute:: TarInfo.uid
    :type: int
