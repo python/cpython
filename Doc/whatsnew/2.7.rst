@@ -2152,7 +2152,7 @@ Changes to Python's build process and to the C API include:
 
 * New function: stemming from the rewrite of string-to-float conversion,
   a new :c:func:`PyOS_string_to_double` function was added.  The old
-  :c:func:`PyOS_ascii_strtod` and :c:func:`PyOS_ascii_atof` functions
+  :c:func:`!PyOS_ascii_strtod` and :c:func:`!PyOS_ascii_atof` functions
   are now deprecated.
 
 * New function: :c:func:`PySys_SetArgvEx` sets the value of
@@ -2195,13 +2195,13 @@ Changes to Python's build process and to the C API include:
 
   .. XXX these macros don't seem to be described in the c-api docs.
 
-* Removed function: :c:macro:`PyEval_CallObject` is now only available
+* Removed function: :c:func:`!PyEval_CallObject` is now only available
   as a macro.  A function version was being kept around to preserve
   ABI linking compatibility, but that was in 1997; it can certainly be
   deleted by now.  (Removed by Antoine Pitrou; :issue:`8276`.)
 
-* New format codes: the :c:func:`PyFormat_FromString`,
-  :c:func:`PyFormat_FromStringV`, and :c:func:`PyErr_Format` functions now
+* New format codes: the :c:func:`!PyString_FromFormat`,
+  :c:func:`!PyString_FromFormatV`, and :c:func:`PyErr_Format` functions now
   accept ``%lld`` and ``%llu`` format codes for displaying
   C's :c:expr:`long long` types.
   (Contributed by Mark Dickinson; :issue:`7228`.)
@@ -2540,7 +2540,7 @@ For C extensions:
   instead of triggering a :exc:`DeprecationWarning` (:issue:`5080`).
 
 * Use the new :c:func:`PyOS_string_to_double` function instead of the old
-  :c:func:`PyOS_ascii_strtod` and :c:func:`PyOS_ascii_atof` functions,
+  :c:func:`!PyOS_ascii_strtod` and :c:func:`!PyOS_ascii_atof` functions,
   which are now deprecated.
 
 For applications that embed Python:

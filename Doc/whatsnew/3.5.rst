@@ -2512,7 +2512,7 @@ Changes in the Python API
 Changes in the C API
 --------------------
 
-* The undocumented :c:member:`~PyMemoryViewObject.format` member of the
+* The undocumented :c:member:`!format` member of the
   (non-public) :c:type:`PyMemoryViewObject` structure has been removed.
   All extensions relying on the relevant parts in ``memoryobject.h``
   must be rebuilt.
@@ -2520,7 +2520,7 @@ Changes in the C API
 * The :c:type:`PyMemAllocator` structure was renamed to
   :c:type:`PyMemAllocatorEx` and a new ``calloc`` field was added.
 
-* Removed non-documented macro :c:macro:`PyObject_REPR` which leaked references.
+* Removed non-documented macro :c:macro:`!PyObject_REPR()` which leaked references.
   Use format character ``%R`` in :c:func:`PyUnicode_FromFormat`-like functions
   to format the :func:`repr` of the object.
   (Contributed by Serhiy Storchaka in :issue:`22453`.)
