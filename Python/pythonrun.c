@@ -15,6 +15,7 @@
 #include "pycore_ast.h"           // PyAST_mod2obj
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
 #include "pycore_compile.h"       // _PyAST_Compile()
+#include "pycore_dict.h"          // _PyDict_GetItemStringWithError()
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
