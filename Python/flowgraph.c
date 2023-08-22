@@ -2404,12 +2404,16 @@ build_cellfixedoffsets(_PyCompile_CodeUnitMetadata *umd)
     PyObject *varname, *cellindex;
     Py_ssize_t pos = 0;
     while (PyDict_Next(umd->u_cellvars, &pos, &varname, &cellindex)) {
-        PyObject *varindex = PyDict_GetItem(umd->u_varnames, varname);
+        PyObject *varindex;
+        if (PyDict_GetItemRef(umd->u_varnames, varname, &varindex) < 0) {
+            return NULL;
+        }
         if (varindex != NULL) {
             assert(PyLong_AS_LONG(cellindex) < INT_MAX);
             assert(PyLong_AS_LONG(varindex) < INT_MAX);
             int oldindex = (int)PyLong_AS_LONG(cellindex);
             int argoffset = (int)PyLong_AS_LONG(varindex);
+            Py_DECREF(varindex);
             fixed[oldindex] = argoffset;
         }
     }

@@ -466,7 +466,7 @@ dict_keys_inorder(PyObject *dict, Py_ssize_t offset)
 extern void _Py_set_localsplus_info(int, PyObject *, unsigned char,
                                    PyObject *, PyObject *);
 
-static void
+static int
 compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
                         PyObject *names, PyObject *kinds)
 {
@@ -481,7 +481,11 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
         if (PyDict_Contains(umd->u_fasthidden, k)) {
             kind |= CO_FAST_HIDDEN;
         }
-        if (PyDict_GetItem(umd->u_cellvars, k) != NULL) {
+        int has_cell = PyDict_Contains(umd->u_cellvars, k);
+        if (has_cell < 0) {
+            return -1;
+        }
+        if (has_cell) {
             kind |= CO_FAST_CELL;
         }
         _Py_set_localsplus_info(offset, k, kind, names, kinds);
@@ -492,7 +496,11 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
     int numdropped = 0;
     pos = 0;
     while (PyDict_Next(umd->u_cellvars, &pos, &k, &v)) {
-        if (PyDict_GetItem(umd->u_varnames, k) != NULL) {
+        int has_name = PyDict_Contains(umd->u_varnames, k);
+        if (has_name < 0) {
+            return -1;
+        }
+        if (has_name) {
             // Skip cells that are already covered by locals.
             numdropped += 1;
             continue;
@@ -512,6 +520,7 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
         assert(offset < nlocalsplus);
         _Py_set_localsplus_info(offset, k, CO_FAST_FREE, names, kinds);
     }
+    return 0;
 }
 
 static PyCodeObject *
@@ -556,7 +565,10 @@ makecode(_PyCompile_CodeUnitMetadata *umd, struct assembler *a, PyObject *const_
     if (localspluskinds == NULL) {
         goto error;
     }
-    compute_localsplus_info(umd, nlocalsplus, localsplusnames, localspluskinds);
+    if (compute_localsplus_info(umd, nlocalsplus,
+                                localsplusnames, localspluskinds) < 0) {
+        goto error;
+    }
 
     struct _PyCodeConstructor con = {
         .filename = filename,

@@ -4194,9 +4194,20 @@ compiler_nameop(struct compiler *c, location loc,
         optype = OP_DEREF;
         break;
     case LOCAL:
-        if (_PyST_IsFunctionLike(c->u->u_ste) ||
-                (PyDict_GetItem(c->u->u_metadata.u_fasthidden, mangled) == Py_True))
+        if (_PyST_IsFunctionLike(c->u->u_ste)) {
             optype = OP_FAST;
+        }
+        else {
+            PyObject *item;
+            if (PyDict_GetItemRef(c->u->u_metadata.u_fasthidden, mangled,
+                                  &item) < 0) {
+                return ERROR;
+            }
+            if (item == Py_True) {
+                optype = OP_FAST;
+            }
+            Py_XDECREF(item);
+        }
         break;
     case GLOBAL_IMPLICIT:
         if (_PyST_IsFunctionLike(c->u->u_ste))
@@ -5518,8 +5529,13 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
         if ((symbol & DEF_LOCAL && !(symbol & DEF_NONLOCAL)) || in_class_block) {
             if (!_PyST_IsFunctionLike(c->u->u_ste)) {
                 // non-function scope: override this name to use fast locals
-                PyObject *orig = PyDict_GetItem(c->u->u_metadata.u_fasthidden, k);
-                if (orig != Py_True) {
+                PyObject *orig;
+                if (PyDict_GetItemRef(c->u->u_metadata.u_fasthidden, k, &orig) < 0) {
+                    return ERROR;
+                }
+                int orig_is_true = (orig == Py_True);
+                Py_XDECREF(orig);
+                if (!orig_is_true) {
                     if (PyDict_SetItem(c->u->u_metadata.u_fasthidden, k, Py_True) < 0) {
                         return ERROR;
                     }
