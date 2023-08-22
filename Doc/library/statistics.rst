@@ -828,6 +828,11 @@ of applications in statistics.
        number generator.  This is useful for creating reproducible results,
        even in a multi-threading context.
 
+       .. versionchanged:: 3.13
+
+       Switched to a faster algorithm.  To reproduce samples from previous
+       versions, use :func:`random.seed` and :func`random.gauss`.
+
     .. method:: NormalDist.pdf(x)
 
        Using a `probability density function (pdf)
