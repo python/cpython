@@ -3926,6 +3926,36 @@ class TestHelpUsageWithParentheses(HelpTestCase):
         '''
     version = ''
 
+class TestHelpWithPercentageSymbols(HelpTestCase):
+    """Test a help message including % symbols"""
+    parser_signature = Sig(prog='PROG', description='Just a test code.')
+    argument_signatures = [
+        Sig('--somearg', metavar='somearg',  
+            help='Now you dont need to escape this: %, and you will not get nonsensical errors!'),
+        Sig('--date', metavar='when',  help='A date in format %Y-%m-%d', 
+            dest=f'date', type=str, required=True),
+        Sig('bar', nargs='?', type=int, default=42, 
+            help='the bar to %(prog)s (default: %(default)s)'),
+    ]
+
+    usage = '''\
+        usage: PROG [-h] [--somearg somearg] --date when [bar]
+        '''
+    help = usage + '''\
+
+        Just a test code.
+
+        positional arguments:
+          bar                the bar to PROG (default: 42)
+
+        options:
+          -h, --help         show this help message and exit
+          --somearg somearg  Now you dont need to escape this: %, and you will not get
+                             nonsensical errors!
+          --date when        A date in format %Y-%m-%d
+        '''
+    version = ''
+
 
 class TestHelpOnlyUserGroups(HelpTestCase):
     """Test basic usage messages"""
