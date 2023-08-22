@@ -21,7 +21,6 @@ Doc/c-api/structures.rst
 Doc/c-api/sys.rst
 Doc/c-api/type.rst
 Doc/c-api/typeobj.rst
-Doc/c-api/unicode.rst
 Doc/extending/extending.rst
 Doc/extending/newtypes.rst
 Doc/faq/gui.rst

@@ -8765,7 +8765,7 @@ for relative path to files in current directory.
 .. nonce: fmehdG
 .. section: C API
 
-The :c:func:`PyByteArray_Init` and :c:func:`PyByteArray_Fini` functions have
+The :c:func:`!PyByteArray_Init` and :c:func:`!PyByteArray_Fini` functions have
 been removed. They did nothing since Python 2.7.4 and Python 3.2.0, were
 excluded from the limited API (stable ABI), and were not documented.
 
@@ -8836,7 +8836,7 @@ Py_LIMITED_API. Patch by Arthur Neufeld.
 .. nonce: gFd85N
 .. section: C API
 
-The :c:func:`_PyObject_GC_TRACK` and :c:func:`_PyObject_GC_UNTRACK` macros
+The :c:func:`!_PyObject_GC_TRACK` and :c:func:`!_PyObject_GC_UNTRACK` macros
 have been removed from the public C API.
 
 ..

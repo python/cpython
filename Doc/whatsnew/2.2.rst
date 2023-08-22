@@ -1078,17 +1078,17 @@ code, none of the changes described here will affect you very much.
 
   To upgrade an extension module to the new API, perform the following steps:
 
-* Rename :c:func:`Py_TPFLAGS_GC` to :c:func:`PyTPFLAGS_HAVE_GC`.
+* Rename :c:macro:`!Py_TPFLAGS_GC` to :c:macro:`Py_TPFLAGS_HAVE_GC`.
 
 * Use :c:func:`PyObject_GC_New` or :c:func:`PyObject_GC_NewVar` to allocate
     objects, and :c:func:`PyObject_GC_Del` to deallocate them.
 
-* Rename :c:func:`PyObject_GC_Init` to :c:func:`PyObject_GC_Track` and
-    :c:func:`PyObject_GC_Fini` to :c:func:`PyObject_GC_UnTrack`.
+* Rename :c:func:`!PyObject_GC_Init` to :c:func:`PyObject_GC_Track` and
+  :c:func:`!PyObject_GC_Fini` to :c:func:`PyObject_GC_UnTrack`.
 
-* Remove :c:func:`PyGC_HEAD_SIZE` from object size calculations.
+* Remove :c:macro:`!PyGC_HEAD_SIZE` from object size calculations.
 
-* Remove calls to :c:func:`PyObject_AS_GC` and :c:func:`PyObject_FROM_GC`.
+* Remove calls to :c:func:`!PyObject_AS_GC` and :c:func:`!PyObject_FROM_GC`.
 
 * A new ``et`` format sequence was added to :c:func:`PyArg_ParseTuple`; ``et``
   takes both a parameter and an encoding name, and converts the parameter to the
@@ -1219,7 +1219,7 @@ Some of the more notable changes are:
   operator, but these features were rarely used and therefore buggy.  The
   :meth:`tolist` method and the :attr:`start`, :attr:`stop`, and :attr:`step`
   attributes are also being deprecated.  At the C level, the fourth argument to
-  the :c:func:`PyRange_New` function, ``repeat``, has also been deprecated.
+  the :c:func:`!PyRange_New` function, ``repeat``, has also been deprecated.
 
 * There were a bunch of patches to the dictionary implementation, mostly to fix
   potential core dumps if a dictionary contains objects that sneakily changed
