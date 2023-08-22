@@ -4,11 +4,11 @@
 extern "C" {
 #endif
 
-#include "pycore_moduleobject.h"
-
 #ifndef Py_BUILD_CORE
 #  error "this header requires Py_BUILD_CORE define"
 #endif
+
+#include "pycore_moduleobject.h"  // PyModuleObject
 
 
 /* state */

@@ -85,6 +85,12 @@ Other Language Changes
   This change will affect tools using docstrings, like :mod:`doctest`.
   (Contributed by Inada Naoki in :gh:`81283`.)
 
+* The :func:`compile` built-in can now accept a new flag,
+  ``ast.PyCF_OPTIMIZED_AST``, which is similar to ``ast.PyCF_ONLY_AST``
+  except that the returned ``AST`` is optimized according to the value
+  of the ``optimize`` argument.
+  (Contributed by Irit Katriel in :gh:`108113`).
+
 New Modules
 ===========
 
@@ -93,6 +99,14 @@ New Modules
 
 Improved Modules
 ================
+
+ast
+---
+
+* :func:`ast.parse` now accepts an optional argument ``optimize``
+  which is passed on to the :func:`compile` built-in. This makes it
+  possible to obtain an optimized ``AST``.
+  (Contributed by Irit Katriel in :gh:`108113`).
 
 array
 -----
@@ -143,6 +157,13 @@ pathlib
   :meth:`~pathlib.Path.rglob`, :meth:`~pathlib.Path.is_file`, and
   :meth:`~pathlib.Path.is_dir`.
   (Contributed by Barney Gale in :gh:`77609` and :gh:`105793`.)
+
+sqlite3
+-------
+
+* A :exc:`ResourceWarning` is now emitted if a :class:`sqlite3.Connection`
+  object is not :meth:`closed <sqlite3.Connection.close>` explicitly.
+  (Contributed by Erlend E. Aasland in :gh:`105539`.)
 
 tkinter
 -------
