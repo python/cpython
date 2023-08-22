@@ -13,6 +13,7 @@ extern "C" {
 
 // Unsafe flavor of PyDict_GetItemWithError(): no error checking
 extern PyObject* _PyDict_GetItemWithError(PyObject *dp, PyObject *key);
+extern PyObject* _PyDict_GetItemStringWithError(PyObject *, const char *);
 
 extern int _PyDict_Contains_KnownHash(PyObject *, PyObject *, Py_hash_t);
 
