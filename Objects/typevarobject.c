@@ -107,7 +107,7 @@ make_union(PyObject *self, PyObject *other)
 static PyObject *
 caller(void)
 {
-    _PyInterpreterFrame *f = _PyThreadState_GET()->cframe->current_frame;
+    _PyInterpreterFrame *f = _PyThreadState_GET()->current_frame;
     if (f == NULL) {
         Py_RETURN_NONE;
     }

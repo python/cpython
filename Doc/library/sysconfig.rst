@@ -82,14 +82,14 @@ Python currently supports nine schemes:
   This scheme defines paths located under the user's home directory
   (:const:`site.USER_BASE`).
 - *posix_venv*: scheme for :mod:`Python virtual environments <venv>` on POSIX
-  platforms; by default it is the same as *posix_prefix* .
+  platforms; by default it is the same as *posix_prefix*.
 - *nt*: scheme for Windows.
   This is the default scheme used when Python or a component is installed.
 - *nt_user*: scheme for Windows, when the *user* option is used.
 - *nt_venv*: scheme for :mod:`Python virtual environments <venv>` on Windows;
-  by default it is the same as *nt* .
-- *venv*: a scheme with values from ether *posix_venv* or *nt_venv* depending
-  on the platform Python runs on
+  by default it is the same as *nt*.
+- *venv*: a scheme with values from either *posix_venv* or *nt_venv* depending
+  on the platform Python runs on.
 - *osx_framework_user*: scheme for macOS, when the *user* option is used.
 
 Each scheme is itself composed of a series of paths and each path has a unique
@@ -336,7 +336,7 @@ Installation path functions
    platform is used.
 
    If *vars* is provided, it must be a dictionary of variables that will update
-   the dictionary return by :func:`get_config_vars`.
+   the dictionary returned by :func:`get_config_vars`.
 
    If *expand* is set to ``False``, the path will not be expanded using the
    variables.
