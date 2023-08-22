@@ -570,20 +570,50 @@ class CompatPickleTests(unittest.TestCase):
                                  ('multiprocessing.context', name))
 
 
+class C_None_reduce_ex:
+    __reduce_ex__ = None
+
+class C_None_reduce:
+    __reduce_ex__ = None
+
+class C_None_setstate:
+    __setstate__ = None
+
+class C_setstate:
+    def __init__(self):
+        self.value = 0
+
+    def __getstate__(self):
+        return self.value
+
+    def __setstate__(self, state):
+        print(state)
+        self.value = state + 1
+
 class PickleReductionMethodsTests(unittest.TestCase):
 
     def test_pickle_invalid_reduction_method(self):
-        class C:
-            __reduce_ex__ = None
-        c = C()
+        c = C_None_reduce_ex()
         with self.assertRaises(TypeError):
             pickle.dumps(c)
 
-        class C:
-            __reduce__ = None
-        c = C()
+        c = C_None_reduce()
         with self.assertRaises(TypeError):
             pickle.dumps(c)
+
+class PickleSetstateTests(unittest.TestCase):
+
+    def test_pickle_setstate(self):
+        c = C_setstate()
+        s = pickle.dumps(c)
+        c2 = pickle.loads(s)
+        self.assertEqual(c2.value, c.value + 1)
+
+        c = C_None_setstate()
+        # See gh-103035
+        p = pickle.dumps(c)
+        with self.assertRaises(TypeError):
+            pickle.loads(p)
 
 
 def load_tests(loader, tests, pattern):
