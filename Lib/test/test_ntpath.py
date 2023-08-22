@@ -332,6 +332,10 @@ class TestNtpath(NtpathTestCase):
             raise OSError("No free drive letters available")
         self.assertEqual(ntpath.realpath(d), d)
 
+        # gh-106242: Embedded nulls and non-strict fallback to abspath
+        self.assertEqual(ABSTFN + "\0spam",
+                         ntpath.realpath(os_helper.TESTFN + "\0spam", strict=False))
+
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     def test_realpath_strict(self):
@@ -342,6 +346,8 @@ class TestNtpath(NtpathTestCase):
         self.addCleanup(os_helper.unlink, ABSTFN)
         self.assertRaises(FileNotFoundError, ntpath.realpath, ABSTFN, strict=True)
         self.assertRaises(FileNotFoundError, ntpath.realpath, ABSTFN + "2", strict=True)
+        # gh-106242: Embedded nulls should raise OSError (not ValueError)
+        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "\0spam", strict=True)
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
