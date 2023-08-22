@@ -16,8 +16,9 @@ CRASHER_FILES = os.path.join(glob.escape(CRASHER_DIR), "*.py")
 infinite_loops = frozenset(["infinite_loop_re.py"])
 
 
+@support.skip_if_sanitizer(address=True, memory=True)
+@support.cpython_only
 class CrasherTest(unittest.TestCase):
-    @support.cpython_only
     def test_crashers_crash(self):
         if support.verbose:
             print()
