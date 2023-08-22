@@ -1079,7 +1079,7 @@ checkShebang(SearchInfo *search)
             search->tagLength = commandLength;
             // If we had 'python3.12.exe' then we want to strip the suffix
             // off of the tag
-            if (search->tagLength > 4) {
+            if (search->tagLength >= 4) {
                 const wchar_t *suffix = &search->tag[search->tagLength - 4];
                 if (0 == _comparePath(suffix, 4, L".exe", -1)) {
                     search->tagLength -= 4;
