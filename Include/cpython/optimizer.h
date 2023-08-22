@@ -12,7 +12,7 @@ typedef struct {
 } _PyVMData;
 
 typedef struct _PyExecutorObject {
-    PyObject_HEAD
+    PyObject_VAR_HEAD
     /* WARNING: execute consumes a reference to self. This is necessary to allow executors to tail call into each other. */
     struct _PyInterpreterFrame *(*execute)(struct _PyExecutorObject *self, struct _PyInterpreterFrame *frame, PyObject **stack_pointer);
     _PyVMData vm_data; /* Used by the VM, but opaque to the optimizer */
@@ -22,7 +22,7 @@ typedef struct _PyExecutorObject {
 typedef struct _PyOptimizerObject _PyOptimizerObject;
 
 /* Should return > 0 if a new executor is created. O if no executor is produced and < 0 if an error occurred. */
-typedef int (*optimize_func)(_PyOptimizerObject* self, PyCodeObject *code, _Py_CODEUNIT *instr, _PyExecutorObject **);
+typedef int (*optimize_func)(_PyOptimizerObject* self, PyCodeObject *code, _Py_CODEUNIT *instr, _PyExecutorObject **, int curr_stackentries);
 
 typedef struct _PyOptimizerObject {
     PyObject_HEAD

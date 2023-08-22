@@ -1,5 +1,7 @@
 .. highlight:: c
 
+.. _isolating-extensions-howto:
+
 ***************************
 Isolating Extension Modules
 ***************************
@@ -62,7 +64,7 @@ Enter Per-Module State
 
 Instead of focusing on per-interpreter state, Python's C API is evolving
 to better support the more granular *per-module* state.
-This means that C-level data is be attached to a *module object*.
+This means that C-level data should be attached to a *module object*.
 Each interpreter creates its own module object, keeping the data separate.
 For testing the isolation, multiple module objects corresponding to a single
 extension can even be loaded in a single interpreter.
@@ -467,7 +469,7 @@ Module State Access from Slot Methods, Getters and Setters
 
 Slot methods—the fast C equivalents for special methods, such as
 :c:member:`~PyNumberMethods.nb_add` for :py:attr:`~object.__add__` or
-:c:member:`~PyType.tp_new` for initialization—have a very simple API that
+:c:member:`~PyTypeObject.tp_new` for initialization—have a very simple API that
 doesn't allow passing in the defining class, unlike with :c:type:`PyCMethod`.
 The same goes for getters and setters defined with
 :c:type:`PyGetSetDef`.
@@ -483,14 +485,14 @@ to get the state::
         return NULL;
     }
 
-``PyType_GetModuleByDef`` works by searching the
+:c:func:`!PyType_GetModuleByDef` works by searching the
 :term:`method resolution order` (i.e. all superclasses) for the first
 superclass that has a corresponding module.
 
 .. note::
 
    In very exotic cases (inheritance chains spanning multiple modules
-   created from the same definition), ``PyType_GetModuleByDef`` might not
+   created from the same definition), :c:func:`!PyType_GetModuleByDef` might not
    return the module of the true defining class. However, it will always
    return a module with the same definition, ensuring a compatible
    C memory layout.

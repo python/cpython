@@ -9,9 +9,28 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_dict_state.h"
-#include "pycore_runtime.h"         // _PyRuntime
+#include "pycore_object.h"        // PyDictOrValues
 
+// Unsafe flavor of PyDict_GetItemWithError(): no error checking
+extern PyObject* _PyDict_GetItemWithError(PyObject *dp, PyObject *key);
+
+extern int _PyDict_Contains_KnownHash(PyObject *, PyObject *, Py_hash_t);
+
+extern int _PyDict_DelItemIf(PyObject *mp, PyObject *key,
+                             int (*predicate)(PyObject *value));
+
+extern int _PyDict_HasOnlyStringKeys(PyObject *mp);
+
+extern void _PyDict_MaybeUntrack(PyObject *mp);
+
+/* Like PyDict_Merge, but override can be 0, 1 or 2.  If override is 0,
+   the first occurrence of a key wins, if override is 1, the last occurrence
+   of a key wins, if override is 2, a KeyError with conflicting key as
+   argument is raised.
+*/
+extern int _PyDict_MergeEx(PyObject *mp, PyObject *other, int override);
+
+extern void _PyDict_DebugMallocStats(FILE *out);
 
 /* runtime lifecycle */
 
@@ -41,6 +60,8 @@ extern uint32_t _PyDictKeys_GetVersionForCurrentState(
         PyInterpreterState *interp, PyDictKeysObject *dictkeys);
 
 extern size_t _PyDict_KeysSize(PyDictKeysObject *keys);
+
+extern void _PyDictKeys_DecRef(PyDictKeysObject *keys);
 
 /* _Py_dict_lookup() returns index of entry which can be used like DK_ENTRIES(dk)[index].
  * -1 when no entry found, -3 when compare raises error.
@@ -176,6 +197,7 @@ _PyDict_NotifyEvent(PyInterpreterState *interp,
 }
 
 extern PyObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values);
+extern bool _PyObject_MakeInstanceAttributesFromDict(PyObject *obj, PyDictOrValues *dorv);
 extern PyObject *_PyDict_FromItems(
         PyObject *const *keys, Py_ssize_t keys_offset,
         PyObject *const *values, Py_ssize_t values_offset,

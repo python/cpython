@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include <stdbool.h>
+#include <stdbool.h>              // bool
 
 #include "pycore_ast_state.h"     // struct ast_state
 #include "pycore_atexit.h"        // struct atexit_state
@@ -21,16 +21,16 @@ extern "C" {
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_floatobject.h"   // struct _Py_float_state
 #include "pycore_function.h"      // FUNC_MAX_WATCHERS
-#include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
-#include "pycore_global_objects.h"  // struct _Py_interp_static_objects
+#include "pycore_genobject.h"     // struct _Py_async_gen_state
+#include "pycore_global_objects.h"// struct _Py_interp_cached_objects
 #include "pycore_import.h"        // struct _import_state
-#include "pycore_instruments.h"   // PY_MONITORING_EVENTS
+#include "pycore_instruments.h"   // _PY_MONITORING_EVENTS
 #include "pycore_list.h"          // struct _Py_list_state
-#include "pycore_object_state.h"   // struct _py_object_state
-#include "pycore_obmalloc.h"      // struct obmalloc_state
+#include "pycore_object_state.h"  // struct _py_object_state
+#include "pycore_obmalloc.h"      // struct _obmalloc_state
 #include "pycore_tuple.h"         // struct _Py_tuple_state
-#include "pycore_typeobject.h"    // struct type_cache
+#include "pycore_typeobject.h"    // struct types_state
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
 
@@ -47,6 +47,11 @@ struct _Py_long_state {
    The PyInterpreterState typedef is in Include/pytypedefs.h.
    */
 struct _is {
+
+    /* This struct countains the eval_breaker,
+     * which is by far the hottest field in this struct
+     * and should be placed at the beginning. */
+    struct _ceval_state ceval;
 
     PyInterpreterState *next;
 
@@ -108,8 +113,6 @@ struct _is {
 
     // Dictionary of the builtins module
     PyObject *builtins;
-
-    struct _ceval_state ceval;
 
     struct _import_state imports;
 
@@ -190,7 +193,7 @@ struct _is {
     bool sys_trace_initialized;
     Py_ssize_t sys_profiling_threads; /* Count of threads with c_profilefunc set */
     Py_ssize_t sys_tracing_threads; /* Count of threads with c_tracefunc set */
-    PyObject *monitoring_callables[PY_MONITORING_TOOL_IDS][PY_MONITORING_EVENTS];
+    PyObject *monitoring_callables[PY_MONITORING_TOOL_IDS][_PY_MONITORING_EVENTS];
     PyObject *monitoring_tool_names[PY_MONITORING_TOOL_IDS];
 
     struct _Py_interp_cached_objects cached_objects;
@@ -232,13 +235,11 @@ struct _xidregitem {
     crossinterpdatafunc getdata;
 };
 
-PyAPI_FUNC(PyInterpreterState*) _PyInterpreterState_LookUpID(int64_t);
+extern PyInterpreterState* _PyInterpreterState_LookUpID(int64_t);
 
-PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
-PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
-PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
-
-PyAPI_FUNC(PyObject*) _PyInterpreterState_GetMainModule(PyInterpreterState *);
+extern int _PyInterpreterState_IDInitref(PyInterpreterState *);
+extern int _PyInterpreterState_IDIncref(PyInterpreterState *);
+extern void _PyInterpreterState_IDDecref(PyInterpreterState *);
 
 extern const PyConfig* _PyInterpreterState_GetConfig(PyInterpreterState *interp);
 
@@ -253,7 +254,9 @@ extern const PyConfig* _PyInterpreterState_GetConfig(PyInterpreterState *interp)
    The caller must hold the GIL.
 
    Once done with the configuration, PyConfig_Clear() must be called to clear
-   it. */
+   it.
+
+   Export for '_testinternalcapi' shared extension. */
 PyAPI_FUNC(int) _PyInterpreterState_GetConfigCopy(
     struct PyConfig *config);
 
@@ -271,7 +274,9 @@ PyAPI_FUNC(int) _PyInterpreterState_GetConfigCopy(
 
    Return 0 on success. Raise an exception and return -1 on error.
 
-   The configuration should come from _PyInterpreterState_GetConfigCopy(). */
+   The configuration should come from _PyInterpreterState_GetConfigCopy().
+
+   Export for '_testinternalcapi' shared extension. */
 PyAPI_FUNC(int) _PyInterpreterState_SetConfig(
     const struct PyConfig *config);
 

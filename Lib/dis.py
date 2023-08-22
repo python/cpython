@@ -14,7 +14,7 @@ from opcode import (
     _intrinsic_1_descs,
     _intrinsic_2_descs,
     _specializations,
-    _specialized_instructions,
+    _specialized_opmap,
 )
 
 __all__ = ["code_info", "dis", "disassemble", "distb", "disco",
@@ -49,11 +49,11 @@ CACHE = opmap["CACHE"]
 
 _all_opname = list(opname)
 _all_opmap = dict(opmap)
-_empty_slot = [slot for slot, name in enumerate(_all_opname) if name.startswith("<")]
-for spec_op, specialized in zip(_empty_slot, _specialized_instructions):
+for name, op in _specialized_opmap.items():
     # fill opname and opmap
-    _all_opname[spec_op] = specialized
-    _all_opmap[specialized] = spec_op
+    assert op < len(_all_opname)
+    _all_opname[op] = name
+    _all_opmap[name] = op
 
 deoptmap = {
     specialized: base for base, family in _specializations.items() for specialized in family
@@ -288,13 +288,16 @@ _ExceptionTableEntry = collections.namedtuple("_ExceptionTableEntry",
 _OPNAME_WIDTH = 20
 _OPARG_WIDTH = 5
 
+def _get_cache_size(opname):
+    return _inline_cache_entries.get(opname, 0)
+
 def _get_jump_target(op, arg, offset):
     """Gets the bytecode offset of the jump target if this is a jump instruction.
 
     Otherwise return None.
     """
     deop = _deoptop(op)
-    caches = _inline_cache_entries[deop]
+    caches = _get_cache_size(_all_opname[deop])
     if deop in hasjrel:
         if _is_backward_jump(deop):
             arg = -arg
@@ -353,7 +356,7 @@ class Instruction(_Instruction):
     @property
     def end_offset(self):
         """End index of the cache entries following the operation."""
-        return self.cache_offset + _inline_cache_entries[self.opcode]*2
+        return self.cache_offset + _get_cache_size(_all_opname[self.opcode])*2
 
     @property
     def jump_target(self):
@@ -535,7 +538,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         argrepr = ''
         positions = Positions(*next(co_positions, ()))
         deop = _deoptop(op)
-        caches = _inline_cache_entries[deop]
+        caches = _get_cache_size(_all_opname[deop])
         op = code[offset]
         if arg is not None:
             #  Set argval to the dereferenced value of the argument when
@@ -549,15 +552,15 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                 if deop == LOAD_GLOBAL:
                     argval, argrepr = _get_name_info(arg//2, get_name)
                     if (arg & 1) and argrepr:
-                        argrepr = "NULL + " + argrepr
+                        argrepr = f"{argrepr} + NULL"
                 elif deop == LOAD_ATTR:
                     argval, argrepr = _get_name_info(arg//2, get_name)
                     if (arg & 1) and argrepr:
-                        argrepr = "NULL|self + " + argrepr
+                        argrepr = f"{argrepr} + NULL|self"
                 elif deop == LOAD_SUPER_ATTR:
                     argval, argrepr = _get_name_info(arg//4, get_name)
                     if (arg & 1) and argrepr:
-                        argrepr = "NULL|self + " + argrepr
+                        argrepr = f"{argrepr} + NULL|self"
                 else:
                     argval, argrepr = _get_name_info(arg, get_name)
             elif deop in hasjabs:
@@ -679,7 +682,7 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
         else:
             # Each CACHE takes 2 bytes
             is_current_instr = instr.offset <= lasti \
-                <= instr.offset + 2 * _inline_cache_entries[_deoptop(instr.opcode)]
+                <= instr.offset + 2 * _get_cache_size(_all_opname[_deoptop(instr.opcode)])
         print(instr._disassemble(lineno_width, is_current_instr, offset_width),
               file=file)
     if exception_entries:
@@ -712,7 +715,7 @@ def _unpack_opargs(code):
             continue
         op = code[i]
         deop = _deoptop(op)
-        caches = _inline_cache_entries[deop]
+        caches = _get_cache_size(_all_opname[deop])
         if deop in hasarg:
             arg = code[i+1] | extended_arg
             extended_arg = (arg << 8) if deop == EXTENDED_ARG else 0
