@@ -91,6 +91,10 @@ Other Language Changes
   of the ``optimize`` argument.
   (Contributed by Irit Katriel in :gh:`108113`).
 
+* Support customizing module attribute access with ``__setattr__`` and
+  ``__delattr__`` functions at the module level.  (Contributed by
+  Sergey B Kirpichev in :gh:`108261`).
+
 New Modules
 ===========
 
