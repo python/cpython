@@ -25,7 +25,8 @@ struct _atexit_runtime_state {
 //###################
 // interpreter atexit
 
-struct atexit_callback;
+typedef void (*atexit_datacallbackfunc)(void *);
+
 typedef struct atexit_callback {
     atexit_datacallbackfunc func;
     void *data;
@@ -50,6 +51,11 @@ struct atexit_state {
     int callback_len;
 };
 
+// Export for '_xxinterpchannels' shared extension
+PyAPI_FUNC(int) _Py_AtExit(
+    PyInterpreterState *interp,
+    atexit_datacallbackfunc func,
+    void *data);
 
 #ifdef __cplusplus
 }

@@ -729,13 +729,13 @@ class PyListTests(DebuggerTests):
 
 SAMPLE_WITH_C_CALL = """
 
-from _testcapi import pyobject_fastcall
+from _testcapi import pyobject_vectorcall
 
 def foo(a, b, c):
     bar(a, b, c)
 
 def bar(a, b, c):
-    pyobject_fastcall(baz, (a, b, c))
+    pyobject_vectorcall(baz, (a, b, c), None)
 
 def baz(*args):
     id(42)
@@ -756,7 +756,7 @@ class StackNavigationTests(DebuggerTests):
         self.assertMultilineMatches(bt,
                                     r'''^.*
 #[0-9]+ Frame 0x-?[0-9a-f]+, for file <string>, line 12, in baz \(args=\(1, 2, 3\)\)
-#[0-9]+ <built-in method pyobject_fastcall of module object at remote 0x[0-9a-f]+>
+#[0-9]+ <built-in method pyobject_vectorcall of module object at remote 0x[0-9a-f]+>
 $''')
 
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
@@ -785,7 +785,7 @@ $''')
         self.assertMultilineMatches(bt,
                                     r'''^.*
 #[0-9]+ Frame 0x-?[0-9a-f]+, for file <string>, line 12, in baz \(args=\(1, 2, 3\)\)
-#[0-9]+ <built-in method pyobject_fastcall of module object at remote 0x[0-9a-f]+>
+#[0-9]+ <built-in method pyobject_vectorcall of module object at remote 0x[0-9a-f]+>
 #[0-9]+ Frame 0x-?[0-9a-f]+, for file <string>, line 12, in baz \(args=\(1, 2, 3\)\)
 $''')
 

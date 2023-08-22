@@ -1029,7 +1029,7 @@ validate_type_params(struct validator *state, asdl_type_param_seq *tps)
 
 
 /* See comments in symtable.c. */
-#define COMPILER_STACK_FRAME_SCALE 3
+#define COMPILER_STACK_FRAME_SCALE 2
 
 int
 _PyAST_Validate(mod_ty mod)

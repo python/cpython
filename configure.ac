@@ -1079,7 +1079,11 @@ cat > conftest.c <<EOF
 #  if defined(__EMSCRIPTEN__)
 	wasm32-emscripten
 #  elif defined(__wasi__)
+#    if defined(_REENTRANT)
+	wasm32-wasi-threads
+#    else
 	wasm32-wasi
+#    endif
 #  else
 #    error unknown wasm32 platform
 #  endif
@@ -1272,7 +1276,7 @@ AC_ARG_ENABLE([wasm-pthreads],
 [
   AS_CASE([$ac_sys_system],
     [Emscripten], [],
-    [WASI], [AC_MSG_ERROR([WASI threading is not implemented yet.])],
+    [WASI], [],
     [AC_MSG_ERROR([--enable-wasm-pthreads only applies to Emscripten and WASI])]
   )
 ], [
@@ -2309,6 +2313,18 @@ AS_CASE([$ac_sys_system],
     LIBS="$LIBS -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
     echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
 
+    AS_VAR_IF([enable_wasm_pthreads], [yes], [
+      # Note: update CFLAGS because ac_compile/ac_link needs this too.
+      # without this, configure fails to find pthread_create, sem_init,
+      # etc because they are only available in the sysroot for
+      # wasm32-wasi-threads.
+      AS_VAR_APPEND([CFLAGS], [" -target wasm32-wasi-threads -pthread"])
+      AS_VAR_APPEND([CFLAGS_NODIST], [" -target wasm32-wasi-threads -pthread"])
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -target wasm32-wasi-threads -pthread"])
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--import-memory"])
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--max-memory=10485760"])
+    ])
+
     dnl increase initial memory and stack size, move stack first
     dnl https://github.com/WebAssembly/wasi-libc/issues/233
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -z stack-size=524288 -Wl,--stack-first -Wl,--initial-memory=10485760"])
@@ -2640,6 +2656,9 @@ yes)
 esac
 
 case "$CC" in
+*mpicc*)
+    CFLAGS_NODIST="$CFLAGS_NODIST"
+    ;;
 *icc*)
     # ICC needs -fp-model strict or floats behave badly
     CFLAGS_NODIST="$CFLAGS_NODIST -fp-model strict"
@@ -2829,7 +2848,7 @@ AC_DEFINE([STDC_HEADERS], [1],
 # checks for header files
 AC_CHECK_HEADERS([ \
   alloca.h asm/types.h bluetooth.h conio.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
-  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/memfd.h \
+  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/limits.h linux/memfd.h \
   linux/random.h linux/soundcard.h \
   linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
@@ -2861,7 +2880,8 @@ AC_CHECK_HEADERS([net/if.h], [], [],
 ])
 
 # On Linux, netlink.h requires asm/types.h
-AC_CHECK_HEADERS([linux/netlink.h], [], [], [
+# On FreeBSD, netlink.h is located in netlink/netlink.h
+AC_CHECK_HEADERS([linux/netlink.h netlink/netlink.h], [], [], [
 #ifdef HAVE_ASM_TYPES_H
 #include <asm/types.h>
 #endif
@@ -3952,7 +3972,7 @@ PY_CHECK_EMSCRIPTEN_PORT([LIBSQLITE3], [-sUSE_SQLITE3])
 
 dnl Check for SQLite library. Use pkg-config if available.
 PKG_CHECK_MODULES(
-  [LIBSQLITE3], [sqlite3 >= 3.7.15], [], [
+  [LIBSQLITE3], [sqlite3 >= 3.15.2], [], [
     LIBSQLITE3_CFLAGS=${LIBSQLITE3_CFLAGS-""}
     LIBSQLITE3_LIBS=${LIBSQLITE3_LIBS-"-lsqlite3"}
   ]
@@ -3978,8 +3998,8 @@ dnl hence CPPFLAGS instead of CFLAGS.
     AC_COMPILE_IFELSE([
       AC_LANG_PROGRAM([
         #include <sqlite3.h>
-        #if SQLITE_VERSION_NUMBER < 3007015
-        #  error "SQLite 3.7.15 or higher required"
+        #if SQLITE_VERSION_NUMBER < 3015002
+        #  error "SQLite 3.15.2 or higher required"
         #endif
       ], [])
     ], [
@@ -6627,7 +6647,6 @@ SRCDIRS="\
   Modules/_hacl \
   Modules/_io \
   Modules/_multiprocessing \
-  Modules/_sha3 \
   Modules/_sqlite \
   Modules/_sre \
   Modules/_testcapi \
@@ -7106,6 +7125,21 @@ AC_ARG_ENABLE([test-modules],
 ])
 AC_MSG_RESULT([$TEST_MODULES])
 AC_SUBST([TEST_MODULES])
+
+# Check for --disable-gil
+# --disable-gil
+AC_MSG_CHECKING([for --disable-gil])
+AC_ARG_ENABLE([gil],
+  [AS_HELP_STRING([--disable-gil], [enable experimental support for running without the GIL (default is no)])],
+  [AS_VAR_IF([enable_gil], [yes], [disable_gil=no], [disable_gil=yes])], [disable_gil=no]
+)
+AC_MSG_RESULT([$disable_gil])
+
+if test "$disable_gil" = "yes"
+then
+  AC_DEFINE([Py_NOGIL], [1],
+            [Define if you want to disable the GIL])
+fi
 
 AC_DEFUN([PY_STDLIB_MOD_SET_NA], [
   m4_foreach([mod], [$@], [

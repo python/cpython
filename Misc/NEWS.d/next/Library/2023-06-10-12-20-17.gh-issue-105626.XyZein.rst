@@ -1,0 +1,3 @@
+Change the default return value of
+:meth:`http.client.HTTPConnection.get_proxy_response_headers` to be ``None``
+and not ``{}``.
