@@ -18,7 +18,7 @@
 #define ERROR -1
 
 #define RETURN_IF_ERROR(X)  \
-    if ((X) == -1) {        \
+    if ((X) < 0) {          \
         return ERROR;       \
     }
 
@@ -448,13 +448,17 @@ static PyObject *
 dict_keys_inorder(PyObject *dict, Py_ssize_t offset)
 {
     PyObject *tuple, *k, *v;
-    Py_ssize_t i, pos = 0, size = PyDict_GET_SIZE(dict);
+    Py_ssize_t pos = 0, size = PyDict_GET_SIZE(dict);
 
     tuple = PyTuple_New(size);
     if (tuple == NULL)
         return NULL;
     while (PyDict_Next(dict, &pos, &k, &v)) {
-        i = PyLong_AS_LONG(v);
+        Py_ssize_t i = PyLong_AsSsize_t(v);
+        if (i == -1 && PyErr_Occurred()) {
+            Py_DECREF(tuple);
+            return NULL;
+        }
         assert((i - offset) < size);
         assert((i - offset) >= 0);
         PyTuple_SET_ITEM(tuple, i - offset, Py_NewRef(k));
@@ -473,21 +477,27 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
     PyObject *k, *v;
     Py_ssize_t pos = 0;
     while (PyDict_Next(umd->u_varnames, &pos, &k, &v)) {
-        int offset = (int)PyLong_AS_LONG(v);
+        int offset = _PyLong_AsInt(v);
+        if (offset == -1 && PyErr_Occurred()) {
+            return ERROR;
+        }
         assert(offset >= 0);
         assert(offset < nlocalsplus);
+
         // For now we do not distinguish arg kinds.
         _PyLocals_Kind kind = CO_FAST_LOCAL;
-        if (PyDict_Contains(umd->u_fasthidden, k)) {
+        int has_key = PyDict_Contains(umd->u_fasthidden, k);
+        RETURN_IF_ERROR(has_key);
+        if (has_key) {
             kind |= CO_FAST_HIDDEN;
         }
-        int has_cell = PyDict_Contains(umd->u_cellvars, k);
-        if (has_cell < 0) {
-            return -1;
-        }
-        if (has_cell) {
+
+        has_key = PyDict_Contains(umd->u_cellvars, k);
+        RETURN_IF_ERROR(has_key);
+        if (has_key) {
             kind |= CO_FAST_CELL;
         }
+
         _Py_set_localsplus_info(offset, k, kind, names, kinds);
     }
     int nlocals = (int)PyDict_GET_SIZE(umd->u_varnames);
@@ -497,15 +507,17 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
     pos = 0;
     while (PyDict_Next(umd->u_cellvars, &pos, &k, &v)) {
         int has_name = PyDict_Contains(umd->u_varnames, k);
-        if (has_name < 0) {
-            return -1;
-        }
+        RETURN_IF_ERROR(has_name);
         if (has_name) {
             // Skip cells that are already covered by locals.
             numdropped += 1;
             continue;
         }
-        int offset = (int)PyLong_AS_LONG(v);
+
+        int offset = _PyLong_AsInt(v);
+        if (offset == -1 && PyErr_Occurred()) {
+            return ERROR;
+        }
         assert(offset >= 0);
         offset += nlocals - numdropped;
         assert(offset < nlocalsplus);
@@ -514,13 +526,16 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
 
     pos = 0;
     while (PyDict_Next(umd->u_freevars, &pos, &k, &v)) {
-        int offset = (int)PyLong_AS_LONG(v);
+        int offset = _PyLong_AsInt(v);
+        if (offset == -1 && PyErr_Occurred()) {
+            return ERROR;
+        }
         assert(offset >= 0);
         offset += nlocals - numdropped;
         assert(offset < nlocalsplus);
         _Py_set_localsplus_info(offset, k, CO_FAST_FREE, names, kinds);
     }
-    return 0;
+    return SUCCESS;
 }
 
 static PyCodeObject *
@@ -566,7 +581,7 @@ makecode(_PyCompile_CodeUnitMetadata *umd, struct assembler *a, PyObject *const_
         goto error;
     }
     if (compute_localsplus_info(umd, nlocalsplus,
-                                localsplusnames, localspluskinds) < 0) {
+                                localsplusnames, localspluskinds) == ERROR) {
         goto error;
     }
 

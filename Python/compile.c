@@ -4201,7 +4201,7 @@ compiler_nameop(struct compiler *c, location loc,
             PyObject *item;
             if (PyDict_GetItemRef(c->u->u_metadata.u_fasthidden, mangled,
                                   &item) < 0) {
-                return ERROR;
+                goto error;
             }
             if (item == Py_True) {
                 optype = OP_FAST;
@@ -4232,7 +4232,7 @@ compiler_nameop(struct compiler *c, location loc,
                 op = LOAD_FROM_DICT_OR_DEREF;
                 // First load the locals
                 if (codegen_addop_noarg(INSTR_SEQUENCE(c), LOAD_LOCALS, loc) < 0) {
-                    return ERROR;
+                    goto error;
                 }
             }
             else if (c->u->u_ste->ste_can_see_class_scope) {
@@ -4240,7 +4240,7 @@ compiler_nameop(struct compiler *c, location loc,
                 // First load the classdict
                 if (compiler_addop_o(c->u, loc, LOAD_DEREF,
                                      c->u->u_metadata.u_freevars, &_Py_ID(__classdict__)) < 0) {
-                    return ERROR;
+                    goto error;
                 }
             }
             else {
@@ -4267,7 +4267,7 @@ compiler_nameop(struct compiler *c, location loc,
                 // First load the classdict
                 if (compiler_addop_o(c->u, loc, LOAD_DEREF,
                                      c->u->u_metadata.u_freevars, &_Py_ID(__classdict__)) < 0) {
-                    return ERROR;
+                    goto error;
                 }
             } else {
                 op = LOAD_GLOBAL;
@@ -4301,6 +4301,10 @@ compiler_nameop(struct compiler *c, location loc,
         arg <<= 1;
     }
     return codegen_addop_i(INSTR_SEQUENCE(c), op, arg, loc);
+
+error:
+    Py_DECREF(mangled);
+    return ERROR;
 }
 
 static int

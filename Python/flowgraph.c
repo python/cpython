@@ -2406,19 +2406,29 @@ build_cellfixedoffsets(_PyCompile_CodeUnitMetadata *umd)
     while (PyDict_Next(umd->u_cellvars, &pos, &varname, &cellindex)) {
         PyObject *varindex;
         if (PyDict_GetItemRef(umd->u_varnames, varname, &varindex) < 0) {
-            return NULL;
+            goto error;
         }
-        if (varindex != NULL) {
-            assert(PyLong_AS_LONG(cellindex) < INT_MAX);
-            assert(PyLong_AS_LONG(varindex) < INT_MAX);
-            int oldindex = (int)PyLong_AS_LONG(cellindex);
-            int argoffset = (int)PyLong_AS_LONG(varindex);
-            Py_DECREF(varindex);
-            fixed[oldindex] = argoffset;
+        if (varindex == NULL) {
+            continue;
         }
-    }
 
+        int argoffset = _PyLong_AsInt(varindex);
+        Py_DECREF(varindex);
+        if (argoffset == -1 && PyErr_Occurred()) {
+            goto error;
+        }
+
+        int oldindex = _PyLong_AsInt(cellindex);
+        if (oldindex == -1 && PyErr_Occurred()) {
+            goto error;
+        }
+        fixed[oldindex] = argoffset;
+    }
     return fixed;
+
+error:
+    PyMem_Free(fixed);
+    return NULL;
 }
 
 #define IS_GENERATOR(CF) \
