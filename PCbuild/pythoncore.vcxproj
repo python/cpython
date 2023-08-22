@@ -166,6 +166,7 @@
     <ClInclude Include="..\Include\cpython\parser_interface.h" />
     <ClInclude Include="..\Include\cpython\picklebufobject.h" />
     <ClInclude Include="..\Include\cpython\pyarena.h" />
+    <ClInclude Include="..\Include\cpython\pyatomic_msc.h" />
     <ClInclude Include="..\Include\cpython\pyctype.h" />
     <ClInclude Include="..\Include\cpython\pydebug.h" />
     <ClInclude Include="..\Include\cpython\pyerrors.h" />
@@ -301,7 +302,6 @@
     <ClInclude Include="..\Include\patchlevel.h" />
     <ClInclude Include="..\Include\py_curses.h" />
     <ClInclude Include="..\Include\pyatomic.h" />
-    <ClInclude Include="..\Include\pyatomic_msc.h" />
     <ClInclude Include="..\Include\pybuffer.h" />
     <ClInclude Include="..\Include\pycapsule.h" />
     <ClInclude Include="..\Include\pyerrors.h" />

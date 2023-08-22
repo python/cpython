@@ -423,6 +423,9 @@
     <ClInclude Include="..\Include\cpython\pyarena.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\pyatomic_msc.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\pyctype.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -775,9 +778,6 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\pyatomic.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\pyatomic_msc.h">
       <Filter>Include</Filter>
     </ClInclude>
   </ItemGroup>
