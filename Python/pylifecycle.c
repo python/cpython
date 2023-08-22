@@ -762,19 +762,17 @@ pycore_init_builtins(PyThreadState *tstate)
     }
     interp->builtins = Py_NewRef(builtins_dict);
 
-    PyObject *isinstance;
-    if (PyDict_GetItemRef(builtins_dict, &_Py_ID(isinstance), &isinstance) != 1) {
+    PyObject *isinstance = PyDict_GetItemWithError(builtins_dict, &_Py_ID(isinstance));
+    if (!isinstance) {
         goto error;
     }
     interp->callable_cache.isinstance = isinstance;
-    Py_DECREF(isinstance);
 
-    PyObject *len;
-    if (PyDict_GetItemRef(builtins_dict, &_Py_ID(len), &len) != 1) {
+    PyObject *len = PyDict_GetItemWithError(builtins_dict, &_Py_ID(len));
+    if (!len) {
         goto error;
     }
     interp->callable_cache.len = len;
-    Py_DECREF(len);
 
     PyObject *list_append = _PyType_Lookup(&PyList_Type, &_Py_ID(append));
     if (list_append == NULL) {
