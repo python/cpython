@@ -1,15 +1,15 @@
 Deprecate passing name, number of arguments, and the callable as keyword
 arguments, for the following :class:`sqlite3.Connection` APIs:
 
-- :meth:`~sqlite3.Connection.create_function` -
-:meth:`~sqlite3.Connection.create_aggregate`
+* :meth:`~sqlite3.Connection.create_function`
+* :meth:`~sqlite3.Connection.create_aggregate`
 
 Deprecate passing the callback as a keyword argument, for the following
 :class:`sqlite3.Connection` APIs:
 
-- :meth:`~sqlite3.Connection.set_authorizer` -
-:meth:`~sqlite3.Connection.set_progress_handler` -
-:meth:`~sqlite3.Connection.set_trace_callback`
+* :meth:`~sqlite3.Connection.set_authorizer`
+* :meth:`~sqlite3.Connection.set_progress_handler`
+* :meth:`~sqlite3.Connection.set_trace_callback`
 
 The affected parameters will become positional-only in Python 3.15.
 
