@@ -526,26 +526,33 @@ class Regrtest:
             print("== CPU count:", cpu_count)
         print("== encodings: locale=%s, FS=%s"
               % (locale.getencoding(), sys.getfilesystemencoding()))
+        self.display_sanitizers()
+
+    def display_sanitizers(self):
+        # This makes it easier to remember what to set in your local
+        # environment when trying to reproduce a sanitizer failure.
         asan = support.check_sanitizer(address=True)
         msan = support.check_sanitizer(memory=True)
         ubsan = support.check_sanitizer(ub=True)
-        # This makes it easier to remember what to set in your local
-        # environment when trying to reproduce a sanitizer failure.
-        if asan or msan or ubsan:
-            names = [n for n in (asan and "address",
-                                 msan and "memory",
-                                 ubsan and "undefined behavior")
-                     if n]
-            print(f"== sanitizers: {', '.join(names)}")
-            a_opts = os.environ.get("ASAN_OPTIONS")
-            if asan and a_opts is not None:
-                print(f"==  ASAN_OPTIONS={a_opts}")
-            m_opts = os.environ.get("ASAN_OPTIONS")
-            if msan and m_opts is not None:
-                print(f"==  MSAN_OPTIONS={m_opts}")
-            ub_opts = os.environ.get("UBSAN_OPTIONS")
-            if ubsan and ub_opts is not None:
-                print(f"==  UBSAN_OPTIONS={ub_opts}")
+        sanitizers = []
+        if asan:
+            sanitizers.append("address")
+        if msan:
+            sanitizers.append("memory")
+        if ubsan:
+            sanitizers.append("undefined behavior")
+        if not sanitizers:
+            return
+
+        print(f"== sanitizers: {', '.join(sanitizers)}")
+        for sanitizer, env_var in (
+            (asan, "ASAN_OPTIONS"),
+            (msan, "MSAN_OPTIONS"),
+            (ubsan, "UBSAN_OPTIONS"),
+        ):
+            options= os.environ.get(env_var)
+            if sanitizer and options is not None:
+                print(f"== {env_var}={options!r}")
 
     def no_tests_run(self):
         return not any((self.good, self.bad, self.skipped, self.interrupted,
