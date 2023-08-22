@@ -64,8 +64,15 @@ class FaultHandlerTests(unittest.TestCase):
         if fd is not None:
             pass_fds.append(fd)
         env = dict(os.environ)
+
+        # Sanitizers must not handle SIGSEGV (ex: for test_enable_fd())
+        option = 'handle_segv=0'
         for name in ('ASAN_OPTIONS', 'MSAN_OPTIONS', 'UBSAN_OPTIONS'):
-            env[name] = 'handle_segv=0'
+            if name in env:
+                env[name] += f':{option}'
+            else:
+                env[name] = option
+
         with support.SuppressCrashReport():
             process = script_helper.spawn_python('-c', code,
                                                  pass_fds=pass_fds,
