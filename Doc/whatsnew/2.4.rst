@@ -1468,7 +1468,7 @@ Some of the changes to Python's build process and to the C API are:
   *X* is a NaN.   (Contributed by Tim Peters.)
 
 * C code can avoid unnecessary locking by using the new
-  :c:func:`PyEval_ThreadsInitialized` function to tell  if any thread operations
+  :c:func:`!PyEval_ThreadsInitialized` function to tell  if any thread operations
   have been performed.  If this function  returns false, no lock operations are
   needed. (Contributed by Nick Coghlan.)
 
