@@ -146,12 +146,13 @@ dis_bug708901 = """\
 %3d        PRECALL                  2
            CALL                     2
            GET_ITER
-        >> FOR_ITER                 2 (to 40)
+        >> FOR_ITER                 3 (to 42)
            STORE_FAST               0 (res)
 
-%3d        JUMP_BACKWARD            3 (to 34)
+%3d        NOP
 
-%3d     >> LOAD_CONST               0 (None)
+%3d        JUMP_BACKWARD            4 (to 34)
+        >> LOAD_CONST               0 (None)
            RETURN_VALUE
 """ % (bug708901.__code__.co_firstlineno,
        bug708901.__code__.co_firstlineno + 1,
@@ -622,9 +623,9 @@ dis_loop_test_quickened_code = """\
              34 PRECALL_PYFUNC           1
              38 CALL_PY_WITH_DEFAULTS     1
              48 POP_TOP
-             50 JUMP_BACKWARD_QUICK     18 (to 16)
 
-%3d     >>   52 LOAD_CONST               0 (None)
+%3d          50 JUMP_BACKWARD_QUICK     18 (to 16)
+        >>   52 LOAD_CONST               0 (None)
              54 RETURN_VALUE
 """ % (loop_test.__code__.co_firstlineno,
        loop_test.__code__.co_firstlineno + 1,
@@ -1434,7 +1435,7 @@ expected_opinfo_jumpy = [
   Instruction(opname='POP_JUMP_FORWARD_IF_FALSE', opcode=114, arg=2, argval=96, argrepr='to 96', offset=90, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=92, starts_line=8, is_jump_target=False, positions=None),
   Instruction(opname='JUMP_FORWARD', opcode=110, arg=16, argval=128, argrepr='to 128', offset=94, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='JUMP_BACKWARD', opcode=140, arg=33, argval=32, argrepr='to 32', offset=96, starts_line=7, is_jump_target=True, positions=None),
+  Instruction(opname='JUMP_BACKWARD', opcode=140, arg=33, argval=32, argrepr='to 32', offset=96, starts_line=3, is_jump_target=True, positions=None),
   Instruction(opname='LOAD_GLOBAL', opcode=116, arg=3, argval='print', argrepr='NULL + print', offset=98, starts_line=10, is_jump_target=True, positions=None),
   Instruction(opname='LOAD_CONST', opcode=100, arg=4, argval='I can haz else clause?', argrepr="'I can haz else clause?'", offset=110, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='PRECALL', opcode=166, arg=1, argval=1, argrepr='', offset=112, starts_line=None, is_jump_target=False, positions=None),

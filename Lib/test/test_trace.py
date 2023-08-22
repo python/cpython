@@ -147,7 +147,7 @@ class TestLineCounts(unittest.TestCase):
         firstlineno = get_firstlineno(traced_func_loop)
         expected = {
             (self.my_py_filename, firstlineno + 1): 1,
-            (self.my_py_filename, firstlineno + 2): 6,
+            (self.my_py_filename, firstlineno + 2): 11,
             (self.my_py_filename, firstlineno + 3): 5,
             (self.my_py_filename, firstlineno + 4): 1,
         }
@@ -172,10 +172,10 @@ class TestLineCounts(unittest.TestCase):
         firstlineno_gen = get_firstlineno(traced_func_generator)
         expected = {
             (self.my_py_filename, firstlineno_calling + 1): 1,
-            (self.my_py_filename, firstlineno_calling + 2): 11,
+            (self.my_py_filename, firstlineno_calling + 2): 21,
             (self.my_py_filename, firstlineno_calling + 3): 10,
             (self.my_py_filename, firstlineno_gen + 1): 1,
-            (self.my_py_filename, firstlineno_gen + 2): 11,
+            (self.my_py_filename, firstlineno_gen + 2): 21,
             (self.my_py_filename, firstlineno_gen + 3): 10,
         }
         self.assertEqual(self.tracer.results().counts, expected)
@@ -246,7 +246,7 @@ class TestRunExecCounts(unittest.TestCase):
         firstlineno = get_firstlineno(traced_func_loop)
         expected = {
             (self.my_py_filename, firstlineno + 1): 1,
-            (self.my_py_filename, firstlineno + 2): 6,
+            (self.my_py_filename, firstlineno + 2): 11,
             (self.my_py_filename, firstlineno + 3): 5,
             (self.my_py_filename, firstlineno + 4): 1,
         }
