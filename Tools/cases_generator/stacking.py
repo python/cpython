@@ -179,7 +179,7 @@ class EffectManager:
             while (
                 pred.pokes
                 and self.peeks
-                and pred.pokes[-1].effect == self.peeks[-1].effect
+                and pred.pokes[-1].effect == self.peeks[0].effect
             ):
                 src = pred.pokes.pop(-1).effect
                 dst = self.peeks.pop(0).effect
