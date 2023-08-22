@@ -3366,7 +3366,6 @@ class TestExtractionFilters(unittest.TestCase):
                     + """['"].*moo['"], which is outside the """
                     + "destination")
 
-    @symlink_test
     def test_deep_symlink(self):
         # Test that symlinks and hardlinks inside a directory
         # point to the correct file (`target` of size 3).
@@ -3390,7 +3389,6 @@ class TestExtractionFilters(unittest.TestCase):
                 else:
                     self.expect_file('linkdir/symlink', size=3)
 
-    @symlink_test
     def test_chains(self):
         # Test chaining of symlinks/hardlinks.
         # Symlinks are created before the files they point to.
