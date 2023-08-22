@@ -3123,7 +3123,7 @@ compiler_for(struct compiler *c, stmt_ty s)
     VISIT(c, expr, s->v.For.target);
     VISIT_SEQ(c, stmt, s->v.For.body);
     /* Mark jump as artificial */
-    UNSET_LOC(c);
+    SET_LOC(c, s->v.For.iter);
     ADDOP_JUMP(c, JUMP, start);
     compiler_use_next_block(c, cleanup);
 
