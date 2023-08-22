@@ -1299,7 +1299,7 @@ the user settings on the machine running the codec.
 
    Encode the Unicode object using the specified code page and return a Python
    bytes object.  Return ``NULL`` if an exception was raised by the codec. Use
-   :c:macro:`CP_ACP` code page to get the MBCS encoder.
+   :c:macro:`!CP_ACP` code page to get the MBCS encoder.
 
    .. versionadded:: 3.3
 

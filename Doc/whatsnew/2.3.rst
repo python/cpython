@@ -1897,7 +1897,7 @@ Changes to Python's build process and to the C API include:
   but will also mean that you can't get help for Python's built-ins.  (Contributed
   by Gustavo Niemeyer.)
 
-* The :c:func:`PyArg_NoArgs` macro is now deprecated, and code that uses it
+* The :c:func:`!PyArg_NoArgs` macro is now deprecated, and code that uses it
   should be changed.  For Python 2.2 and later, the method definition table can
   specify the :c:macro:`METH_NOARGS` flag, signalling that there are no arguments,
   and the argument checking can then be removed.  If compatibility with pre-2.2

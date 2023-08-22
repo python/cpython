@@ -870,9 +870,9 @@ Deprecated
   users can leverage the Abstract Syntax Tree (AST) generation and compilation
   stage, using the :mod:`ast` module.
 
-* The Public C API functions :c:func:`PyParser_SimpleParseStringFlags`,
-  :c:func:`PyParser_SimpleParseStringFlagsFilename`,
-  :c:func:`PyParser_SimpleParseFileFlags` and :c:func:`PyNode_Compile`
+* The Public C API functions :c:func:`!PyParser_SimpleParseStringFlags`,
+  :c:func:`!PyParser_SimpleParseStringFlagsFilename`,
+  :c:func:`!PyParser_SimpleParseFileFlags` and :c:func:`!PyNode_Compile`
   are deprecated and will be removed in Python 3.10 together with the old parser.
 
 * Using :data:`NotImplemented` in a boolean context has been deprecated,
@@ -923,10 +923,10 @@ Deprecated
   (Contributed by Batuhan Taskaya in :issue:`39639` and :issue:`39969`
   and Serhiy Storchaka in :issue:`39988`.)
 
-* The :c:func:`PyEval_InitThreads` and :c:func:`PyEval_ThreadsInitialized`
+* The :c:func:`!PyEval_InitThreads` and :c:func:`!PyEval_ThreadsInitialized`
   functions are now deprecated and will be removed in Python 3.11. Calling
-  :c:func:`PyEval_InitThreads` now does nothing. The :term:`GIL` is initialized
-  by :c:func:`Py_Initialize()` since Python 3.7.
+  :c:func:`!PyEval_InitThreads` now does nothing. The :term:`GIL` is initialized
+  by :c:func:`Py_Initialize` since Python 3.7.
   (Contributed by Victor Stinner in :issue:`39877`.)
 
 * Passing ``None`` as the first argument to the :func:`shlex.split` function
