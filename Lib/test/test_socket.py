@@ -6816,14 +6816,14 @@ class SendRecvFdsTests(unittest.TestCase):
             socket.send_fds(sock1, [MSG], self.rds)
             # receive them on sock2
             # allocate space for more data and file descriptors than expected
-            msg, rds2, flags, addr = socket.recv_fds(
+            msg, rds2, msg_flags, addr = socket.recv_fds(
                 sock2, len(MSG) * 2, len(self.rds) * 2
                 )
             self.addCleanup(self.close_fds, rds2)
 
         self.assertEqual(msg, MSG)
         self.assertEqual(len(rds2), len(self.rds))
-        self.assertEqual(flags, 0)
+        self.assertEqual(msg_flags, 0)
         # addr contains no useful info and is not checked
         self.check_pipes_connected(self.wds, rds2)
 
@@ -6837,33 +6837,40 @@ class SendRecvFdsTests(unittest.TestCase):
             socket.send_fds(sock1, [MSG], self.rds)
             # receive them on sock2, with socket.MSG_PEEK
             # allocate space for more data and file descriptors than expected
-            msg, rds2, flags, addr = socket.recv_fds(
+            msg, rds2, msg_flags, addr = socket.recv_fds(
                 sock2, len(MSG) * 2, len(self.rds) * 2, socket.MSG_PEEK
                 )
 
             self.assertEqual(msg, MSG)
             self.assertEqual(len(rds2), len(self.rds))
-            # flags can be 0 or socket.MSG_PEEK:
-            self.assertEqual(flags & ~socket.MSG_PEEK, 0)
-            # don't test addr for anonymous socket pair
-            # when PEEKing, rds2 are not open fds and should be all 0s
-            self.assertEqual(rds2, [0]*len(rds2))
+            # msg_flags can be 0 or socket.MSG_PEEK:
+            self.assertEqual(msg_flags & ~socket.MSG_PEEK, 0)
+            # addr contains no useful info and is not checked
+            if msg_flags == 0:
+                # rds2 are open and connected
+                self.addCleanup(self.close_fds, rds2)
+                self.check_pipes_connected(self.wds, rds2)
+            elif msg_flags == socket.MSG_PEEK:
+                # rds2 are not open fds and should be all 0s
+                self.assertEqual(rds2, [0]*len(rds2))
+            else:
+                assert False, "message msg_flags has unexpected value"
 
             # receive again without socket.MSG_PEEK
-            msg, rds2, flags, addr = socket.recv_fds(
+            msg, rds2, msg_flags, addr = socket.recv_fds(
                 sock2, len(MSG) * 2, len(self.rds) * 2
                 )
             self.addCleanup(self.close_fds, rds2)
 
             self.assertEqual(msg, MSG)
             self.assertEqual(len(rds2), len(self.rds))
-            self.assertEqual(flags, 0)
+            self.assertEqual(msg_flags, 0)
             # addr contains no useful info and is not checked
             self.check_pipes_connected(self.wds, rds2)
 
             # check that there is no more data waiting
             with self.assertRaises(BlockingIOError):
-                msg, rds2, flags, addr = socket.recv_fds(
+                msg, rds2, msg_flags, addr = socket.recv_fds(
                     sock2, len(MSG) * 2, len(self.rds) * 2
                     )
 
@@ -6881,14 +6888,14 @@ class SendRecvFdsTests(unittest.TestCase):
             # send from sock2
             socket.send_fds(sock2, [MSG], self.rds, address=sockpth)
             # receive on sock1
-            msg, rds2, flags, addr = socket.recv_fds(
+            msg, rds2, msg_flags, addr = socket.recv_fds(
                 sock1, len(MSG) * 2, len(self.rds) * 2
                 )
             self.addCleanup(self.close_fds, rds2)
 
             self.assertEqual(msg, MSG)
             self.assertEqual(len(rds2), len(self.rds))
-            self.assertEqual(flags, 0)
+            self.assertEqual(msg_flags, 0)
             # addr contains no useful info and is not checked
             self.check_pipes_connected(self.wds, rds2)
 
