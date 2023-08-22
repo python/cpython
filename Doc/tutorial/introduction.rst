@@ -558,7 +558,7 @@ knows we have finished typing the last line)::
    4
 
 Function arguments
------------------
+------------------
 
 We already know the :func:`print` function, which writes the value of the
 argument(s) it receives on screen.  The arguments are enclosed within
