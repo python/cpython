@@ -10,9 +10,7 @@ from test.support import os_helper
 
 
 MS_WINDOWS = (sys.platform == 'win32')
-
-
-SETUP_TESTCPPEXT = support.findfile('setup_testcppext.py')
+SETUP = os.path.join(os.path.dirname(__file__), 'setup.py')
 
 
 @support.requires_subprocess()
@@ -74,14 +72,14 @@ class TestCPPExt(unittest.TestCase):
 
         # Build the C++ extension
         cmd = [python, '-X', 'dev',
-               SETUP_TESTCPPEXT, 'build_ext', '--verbose']
+               SETUP, 'build_ext', '--verbose']
         if std_cpp03:
             cmd.append('-std=c++03')
         run_cmd('Build', cmd)
 
         # Install the C++ extension
         cmd = [python, '-X', 'dev',
-               SETUP_TESTCPPEXT, 'install']
+               SETUP, 'install']
         run_cmd('Install', cmd)
 
         # Do a reference run. Until we test that running python
