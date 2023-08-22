@@ -560,7 +560,7 @@ knows we have finished typing the last line)::
 Function arguments
 -----------------
 
-We already know the : func:`print` function, which writes the value of the
+We already know the :func:`print` function, which writes the value of the
 argument(s) it receives on screen.  The arguments are enclosed within
 parentheses ``()``. In simplest form, like ``print(a, b)``, the arguments
 are positional,  meaning the function processes them in the same order
