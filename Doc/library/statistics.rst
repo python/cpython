@@ -831,7 +831,7 @@ of applications in statistics.
        .. versionchanged:: 3.13
 
        Switched to a faster algorithm.  To reproduce samples from previous
-       versions, use :func:`random.seed` and :func`random.gauss`.
+       versions, use :func:`random.seed` and :func:`random.gauss`.
 
     .. method:: NormalDist.pdf(x)
 
