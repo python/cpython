@@ -869,6 +869,7 @@ _Py_module_getattro(PyModuleObject *m, PyObject *name)
 static int
 module_setattro(PyModuleObject *mod, PyObject *name, PyObject *value)
 {
+    PyObject *ret;
     assert(mod->md_dict != NULL);
     if (value == NULL) {
         PyObject *delattr = PyDict_GetItemWithError(mod->md_dict, &_Py_ID(__delattr__));
@@ -876,8 +877,8 @@ module_setattro(PyModuleObject *mod, PyObject *name, PyObject *value)
             return -1;
         }
         if (delattr) {
-            PyObject_CallFunctionObjArgs(delattr, name, NULL);
-            if (PyErr_Occurred()) {
+            ret = PyObject_CallFunctionObjArgs(delattr, name, NULL);
+            if (ret == NULL) {
                 return -1;
             }
             return 0;
@@ -888,8 +889,8 @@ module_setattro(PyModuleObject *mod, PyObject *name, PyObject *value)
             return -1;
         }
         if (setattr) {
-            PyObject_CallFunctionObjArgs(setattr, name, value, NULL);
-            if (PyErr_Occurred()) {
+            ret = PyObject_CallFunctionObjArgs(setattr, name, value, NULL);
+            if (ret == NULL) {
                 return -1;
             }
             return 0;
