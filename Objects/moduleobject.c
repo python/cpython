@@ -869,10 +869,9 @@ _Py_module_getattro(PyModuleObject *m, PyObject *name)
 static int
 module_setattro(PyModuleObject *m, PyObject *name, PyObject *value)
 {
-    PyObject *setattr, *delattr;
     assert(m->md_dict != NULL);
     if (value == NULL) {
-        delattr = PyDict_GetItemWithError(m->md_dict, &_Py_ID(__delattr__));
+        PyObject *delattr = PyDict_GetItemWithError(m->md_dict, &_Py_ID(__delattr__));
         if (PyErr_Occurred()) {
             return -1;
         }
@@ -884,7 +883,7 @@ module_setattro(PyModuleObject *m, PyObject *name, PyObject *value)
             return 0;
         }
     } else {
-        setattr = PyDict_GetItemWithError(m->md_dict, &_Py_ID(__setattr__));
+        PyObject *setattr = PyDict_GetItemWithError(m->md_dict, &_Py_ID(__setattr__));
         if (PyErr_Occurred()) {
             return -1;
         }
