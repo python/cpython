@@ -2132,6 +2132,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/support/_hypothesis_stubs \
 		test/test_asyncio \
 		test/test_capi \
+		test/test_cppext \
 		test/test_ctypes \
 		test/test_email \
 		test/test_email/data \
