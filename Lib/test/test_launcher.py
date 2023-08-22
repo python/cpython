@@ -623,7 +623,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                     [script, "-postarg"],
                     env={"PATH": f"{Path(sys.executable).parent};{os.getenv('PATH')}"},
                 )
-        self.assertEqual(f"X.Y.exe -prearg {script} -postarg", data["stdout"].strip())
+        self.assertEqual(f"{sys.executable} -prearg {script} -postarg", data["stdout"].strip())
 
     def test_search_path_exe(self):
         # Leave the .exe on the name to ensure we don't add it a second time
@@ -634,7 +634,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                     [script, "-postarg"],
                     env={"PATH": f"{Path(sys.executable).parent};{os.getenv('PATH')}"},
                 )
-        self.assertEqual(f"X.Y.exe -prearg {script} -postarg", data["stdout"].strip())
+        self.assertEqual(f"{sys.executable} -prearg {script} -postarg", data["stdout"].strip())
 
     def test_recursive_search_path(self):
         stem = self.get_py_exe().stem
@@ -719,7 +719,23 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         )
 
     def test_shebang_command_in_venv(self):
+        stem = "python-that-is-not-on-path"
+
+        # First ensure that our test name doesn't exist, and the launcher does
+        # not match any installed env
+        with self.script(f'#! /usr/bin/env {stem} arg1') as script:
+            data = self.run_py([script], expect_returncode=103)
+
         with self.fake_venv() as (venv_exe, env):
-            with self.script('#! /usr/bin/env pythonanythingatall arg1') as script:
+            # Put a real Python (ourselves) on PATH as a distraction.
+            # The active VIRTUAL_ENV should be preferred when the name isn't an
+            # exact match.
+            env["PATH"] = f"{Path(sys.executable).parent};{os.environ['PATH']}"
+
+            with self.script(f'#! /usr/bin/env {stem} arg1') as script:
                 data = self.run_py([script], env=env)
-        self.assertEqual(data["stdout"].strip(), f"{venv_exe} arg1 {script}")
+            self.assertEqual(data["stdout"].strip(), f"{venv_exe} arg1 {script}")
+
+            with self.script(f'#! /usr/bin/env {Path(sys.executable).stem} arg1') as script:
+                data = self.run_py([script], env=env)
+            self.assertEqual(data["stdout"].strip(), f"{sys.executable} arg1 {script}")

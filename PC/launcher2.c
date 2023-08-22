@@ -1043,7 +1043,6 @@ checkShebang(SearchInfo *search)
     int executablePathWasSetByUsrBinEnv = 0;
     exitCode = searchPath(search, shebang, shebangLength);
     if (exitCode == 0) {
-        // We might need to clear executable path later if we match a template
         executablePathWasSetByUsrBinEnv = 1;
     } else if (exitCode != RC_NO_SHEBANG) {
         return exitCode;
@@ -1096,12 +1095,6 @@ checkShebang(SearchInfo *search)
             }
             search->oldStyleTag = true;
             search->lowPriorityTag = true;
-            if (executablePathWasSetByUsrBinEnv) {
-                // If it was allocated, it's in a free list, so just clear it
-                debug(L"# Shebang template made us forget executablePath %s\n",
-                      search->executablePath);
-                search->executablePath = NULL;
-            }
             search->executableArgs = &command[commandLength];
             search->executableArgsLength = shebangLength - commandLength;
             if (search->tag && search->tagLength) {
@@ -1113,6 +1106,11 @@ checkShebang(SearchInfo *search)
             }
             return 0;
         }
+    }
+
+    // Didn't match a template, but we found it on PATH
+    if (executablePathWasSetByUsrBinEnv) {
+        return 0;
     }
 
     // Unrecognised executables are first tried as command aliases
