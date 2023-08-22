@@ -5,6 +5,10 @@
 extern "C" {
 #endif
 
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
+#endif
+
 #include "pycore_hashtable.h"     // _Py_hashtable_t
 #include "pycore_time.h"          // _PyTime_t
 
@@ -99,7 +103,7 @@ struct _import_state {
 };
 
 #ifdef HAVE_DLOPEN
-#  include <dlfcn.h>
+#  include <dlfcn.h>              // RTLD_NOW, RTLD_LAZY
 #  if HAVE_DECL_RTLD_NOW
 #    define _Py_DLOPEN_FLAGS RTLD_NOW
 #  else
