@@ -6,7 +6,7 @@
 #include "pycore_code.h"          // _Py_next_func_version
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
-#include "structmember.h"         // PyMemberDef
+
 
 static PyObject* func_repr(PyFunctionObject *op);
 
@@ -223,7 +223,73 @@ error:
     return NULL;
 }
 
-uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func)
+/*
+Function versions
+-----------------
+
+Function versions are used to detect when a function object has been
+updated, invalidating inline cache data used by the `CALL` bytecode
+(notably `CALL_PY_EXACT_ARGS` and a few other `CALL` specializations).
+
+They are also used by the Tier 2 superblock creation code to find
+the function being called (and from there the code object).
+
+How does a function's `func_version` field get initialized?
+
+- `PyFunction_New` and friends initialize it to 0.
+- The `MAKE_FUNCTION` instruction sets it from the code's `co_version`.
+- It is reset to 0 when various attributes like `__code__` are set.
+- A new version is allocated by `_PyFunction_GetVersionForCurrentState`
+  when the specializer needs a version and the version is 0.
+
+The latter allocates versions using a counter in the interpreter state;
+when the counter wraps around to 0, no more versions are allocated.
+There is one other special case: functions with a non-standard
+`vectorcall` field are not given a version.
+
+When the function version is 0, the `CALL` bytecode is not specialized.
+
+Code object versions
+--------------------
+
+So where to code objects get their `co_version`? There is a single
+static global counter, `_Py_next_func_version`. This is initialized in
+the generated (!) file `Python/deepfreeze/deepfreeze.c`, to 1 plus the
+number of deep-frozen function objects in that file.
+(In `_bootstrap_python.c` and `freeze_module.c` it is initialized to 1.)
+
+Code objects get a new `co_version` allocated from this counter upon
+creation. Since code objects are nominally immutable, `co_version` can
+not be invalidated. The only way it can be 0 is when 2**32 or more
+code objects have been created during the process's lifetime.
+(The counter isn't reset by `fork()`, extending the lifetime.)
+*/
+
+void
+_PyFunction_SetVersion(PyFunctionObject *func, uint32_t version)
+{
+    func->func_version = version;
+    if (version != 0) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        interp->func_state.func_version_cache[
+            version % FUNC_VERSION_CACHE_SIZE] = func;
+    }
+}
+
+PyFunctionObject *
+_PyFunction_LookupByVersion(uint32_t version)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyFunctionObject *func = interp->func_state.func_version_cache[
+        version % FUNC_VERSION_CACHE_SIZE];
+    if (func != NULL && func->func_version == version) {
+        return (PyFunctionObject *)Py_NewRef(func);
+    }
+    return NULL;
+}
+
+uint32_t
+_PyFunction_GetVersionForCurrentState(PyFunctionObject *func)
 {
     if (func->func_version != 0) {
         return func->func_version;
@@ -236,7 +302,7 @@ uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func)
         return 0;
     }
     uint32_t v = interp->func_state.next_version++;
-    func->func_version = v;
+    _PyFunction_SetVersion(func, v);
     return v;
 }
 
@@ -451,11 +517,11 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
 #define OFF(x) offsetof(PyFunctionObject, x)
 
 static PyMemberDef func_memberlist[] = {
-    {"__closure__",   T_OBJECT,     OFF(func_closure), READONLY},
-    {"__doc__",       T_OBJECT,     OFF(func_doc), 0},
-    {"__globals__",   T_OBJECT,     OFF(func_globals), READONLY},
-    {"__module__",    T_OBJECT,     OFF(func_module), 0},
-    {"__builtins__",  T_OBJECT,     OFF(func_builtins), READONLY},
+    {"__closure__",   _Py_T_OBJECT,     OFF(func_closure), Py_READONLY},
+    {"__doc__",       _Py_T_OBJECT,     OFF(func_doc), 0},
+    {"__globals__",   _Py_T_OBJECT,     OFF(func_globals), Py_READONLY},
+    {"__module__",    _Py_T_OBJECT,     OFF(func_module), 0},
+    {"__builtins__",  _Py_T_OBJECT,     OFF(func_builtins), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -831,8 +897,8 @@ func_clear(PyFunctionObject *op)
     // However, name and qualname could be str subclasses, so they
     // could have reference cycles. The solution is to replace them
     // with a genuinely immutable string.
-    Py_SETREF(op->func_name, Py_NewRef(&_Py_STR(empty)));
-    Py_SETREF(op->func_qualname, Py_NewRef(&_Py_STR(empty)));
+    Py_SETREF(op->func_name, &_Py_STR(empty));
+    Py_SETREF(op->func_qualname, &_Py_STR(empty));
     return 0;
 }
 
@@ -850,6 +916,15 @@ func_dealloc(PyFunctionObject *op)
     _PyObject_GC_UNTRACK(op);
     if (op->func_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) op);
+    }
+    if (op->func_version != 0) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        PyFunctionObject **slot =
+            interp->func_state.func_version_cache
+            + (op->func_version % FUNC_VERSION_CACHE_SIZE);
+        if (*slot == op) {
+            *slot = NULL;
+        }
     }
     (void)func_clear(op);
     // These aren't cleared by func_clear().
@@ -943,7 +1018,7 @@ static int
 functools_copy_attr(PyObject *wrapper, PyObject *wrapped, PyObject *name)
 {
     PyObject *value;
-    int res = _PyObject_LookupAttr(wrapped, name, &value);
+    int res = PyObject_GetOptionalAttr(wrapped, name, &value);
     if (value != NULL) {
         res = PyObject_SetAttr(wrapper, name, value);
         Py_DECREF(value);
@@ -1063,8 +1138,8 @@ cm_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyMemberDef cm_memberlist[] = {
-    {"__func__", T_OBJECT, offsetof(classmethod, cm_callable), READONLY},
-    {"__wrapped__", T_OBJECT, offsetof(classmethod, cm_callable), READONLY},
+    {"__func__", _Py_T_OBJECT, offsetof(classmethod, cm_callable), Py_READONLY},
+    {"__wrapped__", _Py_T_OBJECT, offsetof(classmethod, cm_callable), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -1258,8 +1333,8 @@ sm_call(PyObject *callable, PyObject *args, PyObject *kwargs)
 }
 
 static PyMemberDef sm_memberlist[] = {
-    {"__func__", T_OBJECT, offsetof(staticmethod, sm_callable), READONLY},
-    {"__wrapped__", T_OBJECT, offsetof(staticmethod, sm_callable), READONLY},
+    {"__func__", _Py_T_OBJECT, offsetof(staticmethod, sm_callable), Py_READONLY},
+    {"__wrapped__", _Py_T_OBJECT, offsetof(staticmethod, sm_callable), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 

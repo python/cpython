@@ -10,7 +10,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_asdl.h"
+#include "pycore_asdl.h"          // _ASDL_SEQ_HEAD
 
 typedef struct _mod *mod_ty;
 

@@ -662,7 +662,7 @@ class Formatter(object):
         # See issues #9427, #1553375. Commented out for now.
         #if getattr(self, 'fullstack', False):
         #    traceback.print_stack(tb.tb_frame.f_back, file=sio)
-        traceback.print_exception(ei[0], ei[1], tb, None, sio)
+        traceback.print_exception(ei[0], ei[1], tb, limit=None, file=sio)
         s = sio.getvalue()
         sio.close()
         if s[-1:] == "\n":
@@ -916,8 +916,7 @@ def getHandlerNames():
     """
     Return all known handler names as an immutable set.
     """
-    result = set(_handlers.keys())
-    return frozenset(result)
+    return frozenset(_handlers)
 
 
 class Handler(Filterer):
@@ -1080,14 +1079,14 @@ class Handler(Filterer):
         The record which was being processed is passed in to this method.
         """
         if raiseExceptions and sys.stderr:  # see issue 13807
-            t, v, tb = sys.exc_info()
+            exc = sys.exception()
             try:
                 sys.stderr.write('--- Logging error ---\n')
-                traceback.print_exception(t, v, tb, None, sys.stderr)
+                traceback.print_exception(exc, limit=None, file=sys.stderr)
                 sys.stderr.write('Call stack:\n')
                 # Walk the stack frame up until we're out of logging,
                 # so as to print the calling context.
-                frame = tb.tb_frame
+                frame = exc.__traceback__.tb_frame
                 while (frame and os.path.dirname(frame.f_code.co_filename) ==
                        __path__[0]):
                     frame = frame.f_back
@@ -1112,7 +1111,7 @@ class Handler(Filterer):
             except OSError: #pragma: no cover
                 pass    # see issue 5971
             finally:
-                del t, v, tb
+                del exc
 
     def __repr__(self):
         level = getLevelName(self.level)
@@ -1880,7 +1879,7 @@ class LoggerAdapter(object):
     information in logging output.
     """
 
-    def __init__(self, logger, extra=None):
+    def __init__(self, logger, extra=None, merge_extra=False):
         """
         Initialize the adapter with a logger and a dict-like object which
         provides contextual information. This constructor signature allows
@@ -1890,9 +1889,20 @@ class LoggerAdapter(object):
         following example:
 
         adapter = LoggerAdapter(someLogger, dict(p1=v1, p2="v2"))
+
+        By default, LoggerAdapter objects will drop the "extra" argument
+        passed on the individual log calls to use its own instead.
+
+        Initializing it with merge_extra=True will instead merge both
+        maps when logging, the individual call extra taking precedence
+        over the LoggerAdapter instance extra
+
+        .. versionchanged:: 3.13
+           The *merge_extra* argument was added.
         """
         self.logger = logger
         self.extra = extra
+        self.merge_extra = merge_extra
 
     def process(self, msg, kwargs):
         """
@@ -1904,7 +1914,10 @@ class LoggerAdapter(object):
         Normally, you'll only need to override this one method in a
         LoggerAdapter subclass for your specific needs.
         """
-        kwargs["extra"] = self.extra
+        if self.merge_extra and "extra" in kwargs:
+            kwargs["extra"] = {**self.extra, **kwargs["extra"]}
+        else:
+            kwargs["extra"] = self.extra
         return msg, kwargs
 
     #

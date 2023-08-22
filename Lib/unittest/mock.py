@@ -212,17 +212,12 @@ def _set_async_signature(mock, original, instance=False, is_async_mock=False):
     # signature as the original.
 
     skipfirst = isinstance(original, type)
-    result = _get_signature_object(original, instance, skipfirst)
-    if result is None:
-        return mock
-    func, sig = result
+    func, sig = _get_signature_object(original, instance, skipfirst)
     def checksig(*args, **kwargs):
         sig.bind(*args, **kwargs)
     _copy_func_details(func, checksig)
 
     name = original.__name__
-    if not name.isidentifier():
-        name = 'funcopy'
     context = {'_checksig_': checksig, 'mock': mock}
     src = """async def %s(*args, **kwargs):
     _checksig_(*args, **kwargs)

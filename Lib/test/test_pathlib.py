@@ -66,9 +66,9 @@ class PurePathTest(unittest.TestCase):
 
     def setUp(self):
         p = self.cls('a')
-        self.flavour = p._flavour
-        self.sep = self.flavour.sep
-        self.altsep = self.flavour.altsep
+        self.pathmod = p.pathmod
+        self.sep = self.pathmod.sep
+        self.altsep = self.pathmod.altsep
 
     def test_constructor_common(self):
         P = self.cls
@@ -93,17 +93,17 @@ class PurePathTest(unittest.TestCase):
         p = self.cls('a')
         self.assertIs(type(p), expected)
 
-    def test_different_flavours_unequal(self):
+    def test_different_pathmods_unequal(self):
         p = self.cls('a')
-        if p._flavour is posixpath:
+        if p.pathmod is posixpath:
             q = pathlib.PureWindowsPath('a')
         else:
             q = pathlib.PurePosixPath('a')
         self.assertNotEqual(p, q)
 
-    def test_different_flavours_unordered(self):
+    def test_different_pathmods_unordered(self):
         p = self.cls('a')
-        if p._flavour is posixpath:
+        if p.pathmod is posixpath:
             q = pathlib.PureWindowsPath('a')
         else:
             q = pathlib.PurePosixPath('a')
@@ -188,16 +188,16 @@ class PurePathTest(unittest.TestCase):
         return path.drive, path.root, path.parts
 
     def _check_drive_root_parts(self, arg, *expected):
-        sep = self.flavour.sep
+        sep = self.pathmod.sep
         actual = self._get_drive_root_parts([x.replace('/', sep) for x in arg])
         self.assertEqual(actual, expected)
-        if altsep := self.flavour.altsep:
+        if altsep := self.pathmod.altsep:
             actual = self._get_drive_root_parts([x.replace('/', altsep) for x in arg])
             self.assertEqual(actual, expected)
 
     def test_drive_root_parts_common(self):
         check = self._check_drive_root_parts
-        sep = self.flavour.sep
+        sep = self.pathmod.sep
         # Unanchored parts.
         check((),                   '', '', ())
         check(('a',),               '', '', ('a',))
@@ -657,7 +657,7 @@ class PurePathTest(unittest.TestCase):
         self.assertRaises(ValueError, P('a/b').with_suffix, './.d')
         self.assertRaises(ValueError, P('a/b').with_suffix, '.d/.')
         self.assertRaises(ValueError, P('a/b').with_suffix,
-                          (self.flavour.sep, 'd'))
+                          (self.pathmod.sep, 'd'))
 
     def test_relative_to_common(self):
         P = self.cls
@@ -693,8 +693,14 @@ class PurePathTest(unittest.TestCase):
         self.assertRaises(ValueError, p.relative_to, P('a/b/c'))
         self.assertRaises(ValueError, p.relative_to, P('a/c'))
         self.assertRaises(ValueError, p.relative_to, P('/a'))
+        self.assertRaises(ValueError, p.relative_to, P("../a"))
+        self.assertRaises(ValueError, p.relative_to, P("a/.."))
+        self.assertRaises(ValueError, p.relative_to, P("/a/.."))
         self.assertRaises(ValueError, p.relative_to, P('/'), walk_up=True)
         self.assertRaises(ValueError, p.relative_to, P('/a'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P("../a"), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P("a/.."), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P("/a/.."), walk_up=True)
         p = P('/a/b')
         self.assertEqual(p.relative_to(P('/')), P('a/b'))
         self.assertEqual(p.relative_to('/'), P('a/b'))
@@ -723,8 +729,14 @@ class PurePathTest(unittest.TestCase):
         self.assertRaises(ValueError, p.relative_to, P())
         self.assertRaises(ValueError, p.relative_to, '')
         self.assertRaises(ValueError, p.relative_to, P('a'))
+        self.assertRaises(ValueError, p.relative_to, P("../a"))
+        self.assertRaises(ValueError, p.relative_to, P("a/.."))
+        self.assertRaises(ValueError, p.relative_to, P("/a/.."))
         self.assertRaises(ValueError, p.relative_to, P(''), walk_up=True)
         self.assertRaises(ValueError, p.relative_to, P('a'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P("../a"), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P("a/.."), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P("/a/.."), walk_up=True)
 
     def test_is_relative_to_common(self):
         P = self.cls
@@ -1891,11 +1903,11 @@ class PathTest(unittest.TestCase):
                               "dirC/dirD", "dirC/dirD/fileD"])
         _check(p.rglob("file*"), ["dirC/fileC", "dirC/dirD/fileD"])
         _check(p.rglob("**/file*"), ["dirC/fileC", "dirC/dirD/fileD"])
-        _check(p.rglob("dir*/**"), ["dirC/dirD"])
+        _check(p.rglob("dir*/**/"), ["dirC/dirD"])
         _check(p.rglob("*/*"), ["dirC/dirD/fileD"])
         _check(p.rglob("*/"), ["dirC/dirD"])
         _check(p.rglob(""), ["dirC", "dirC/dirD"])
-        _check(p.rglob("**"), ["dirC", "dirC/dirD"])
+        _check(p.rglob("**/"), ["dirC", "dirC/dirD"])
         # gh-91616, a re module regression
         _check(p.rglob("*.txt"), ["dirC/novel.txt"])
         _check(p.rglob("*.*"), ["dirC/novel.txt"])
@@ -2045,7 +2057,20 @@ class PathTest(unittest.TestCase):
         path.mkdir(parents=True)
 
         with set_recursion_limit(recursion_limit):
-            list(base.glob('**'))
+            list(base.glob('**/'))
+
+    def test_glob_recursive_no_trailing_slash(self):
+        P = self.cls
+        p = P(BASE)
+        with self.assertWarns(FutureWarning):
+            p.glob('**')
+        with self.assertWarns(FutureWarning):
+            p.glob('*/**')
+        with self.assertWarns(FutureWarning):
+            p.rglob('**')
+        with self.assertWarns(FutureWarning):
+            p.rglob('*/**')
+
 
     def test_readlink(self):
         if not self.can_symlink:
@@ -2392,8 +2417,8 @@ class PathTest(unittest.TestCase):
         p = self.cls('a')
         self.assertIs(type(p), expected)
 
-    def test_unsupported_flavour(self):
-        if self.cls._flavour is os.path:
+    def test_unsupported_pathmod(self):
+        if self.cls.pathmod is os.path:
             self.skipTest("path flavour is supported")
         else:
             self.assertRaises(pathlib.UnsupportedOperation, self.cls)
@@ -2848,9 +2873,9 @@ class PathTest(unittest.TestCase):
     def test_is_junction(self):
         P = self.cls(BASE)
 
-        with mock.patch.object(P._flavour, 'isjunction'):
-            self.assertEqual(P.is_junction(), P._flavour.isjunction.return_value)
-            P._flavour.isjunction.assert_called_once_with(P)
+        with mock.patch.object(P.pathmod, 'isjunction'):
+            self.assertEqual(P.is_junction(), P.pathmod.isjunction.return_value)
+            P.pathmod.isjunction.assert_called_once_with(P)
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), "os.mkfifo() required")
     @unittest.skipIf(sys.platform == "vxworks",

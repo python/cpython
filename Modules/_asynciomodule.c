@@ -8,7 +8,7 @@
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime_init.h"  // _Py_ID()
-#include "structmember.h"         // PyMemberDef
+
 #include <stddef.h>               // offsetof()
 
 
@@ -248,7 +248,7 @@ get_future_loop(asyncio_state *state, PyObject *fut)
         return Py_NewRef(loop);
     }
 
-    if (_PyObject_LookupAttr(fut, &_Py_ID(get_loop), &getloop) < 0) {
+    if (PyObject_GetOptionalAttr(fut, &_Py_ID(get_loop), &getloop) < 0) {
         return NULL;
     }
     if (getloop != NULL) {
@@ -529,7 +529,7 @@ future_init(FutureObj *fut, PyObject *loop)
     }
     if (is_true && !_Py_IsInterpreterFinalizing(_PyInterpreterState_GET())) {
         /* Only try to capture the traceback if the interpreter is not being
-           finalized.  The original motivation to add a `_Py_IsFinalizing()`
+           finalized.  The original motivation to add a `Py_IsFinalizing()`
            call was to prevent SIGSEGV when a Future is created in a __del__
            method, which is called during the interpreter shutdown and the
            traceback module is already unloaded.
@@ -1398,7 +1398,8 @@ FutureObj_get_state(FutureObj *fut, void *Py_UNUSED(ignored))
     default:
         assert (0);
     }
-    return Py_XNewRef(ret);
+    assert(_Py_IsImmortal(ret));
+    return ret;
 }
 
 static PyObject *
@@ -2966,7 +2967,7 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
     }
 
     /* Check if `result` is a Future-compatible object */
-    if (_PyObject_LookupAttr(result, &_Py_ID(_asyncio_future_blocking), &o) < 0) {
+    if (PyObject_GetOptionalAttr(result, &_Py_ID(_asyncio_future_blocking), &o) < 0) {
         goto fail;
     }
     if (o != NULL && o != Py_None) {
