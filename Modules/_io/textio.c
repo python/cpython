@@ -2649,7 +2649,7 @@ previous stream position.
 
 static PyObject *
 _io_TextIOWrapper_tell_impl(textio *self)
-/*[clinic end generated code: output=4f168c08bf34ad5f input=9a2caf88c24f9ddf]*/
+/*[clinic end generated code: output=4f168c08bf34ad5f input=9ad104776ed95ada]*/
 {
     PyObject *res;
     PyObject *posobj = NULL;
