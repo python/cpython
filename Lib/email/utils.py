@@ -152,7 +152,7 @@ def getaddresses(fieldvalues):
 
     # When a comma is used in the Real Name part it is not a deliminator
     # So strip those out before counting the commas
-    pattern = r'"[^"]*,[^"]*"|\'[^\']*,[^\']\'*'
+    pattern = r'"[^"]*,[^"]*"|\'[^\']*,[^\']\'*|\\,'
     n = 0
     for v in fieldvalues:
         v = re.sub(pattern, '', v)
