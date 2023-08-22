@@ -47,7 +47,7 @@ _Py_atomic_add_int64(volatile int64_t *address, int64_t value)
     for (;;) {
         int64_t old_value = *address;
         int64_t new_value = old_value + value;
-        if (_InterlockedCompareExchange64((volatile __int64*)address, (__int64)new_value, (__int64)old_value)) {
+        if (old_value == _InterlockedCompareExchange64((volatile __int64*)address, (__int64)new_value, (__int64)old_value)) {
             return old_value;
         }
     }
@@ -230,7 +230,7 @@ _Py_atomic_exchange_int64(volatile int64_t *address, int64_t value)
     for (;;) {
         int64_t old_value = *address;
         int64_t new_value = value;
-        if (_InterlockedCompareExchange64((volatile __int64*)address, (__int64)new_value, (__int64)old_value)) {
+        if (old_value == _InterlockedCompareExchange64((volatile __int64*)address, (__int64)new_value, (__int64)old_value)) {
             return old_value;
         }
     }
@@ -322,7 +322,7 @@ _Py_atomic_and_uint64(volatile uint64_t *address, uint64_t value)
     for (;;) {
         uint64_t old_value = *address;
         uint64_t new_value = old_value & value;
-        if (_InterlockedCompareExchange64((volatile __int64*)address, (__int64)new_value, (__int64)old_value)) {
+        if (old_value == _InterlockedCompareExchange64((volatile __int64*)address, (__int64)new_value, (__int64)old_value)) {
             return old_value;
         }
     }
@@ -366,7 +366,7 @@ _Py_atomic_or_uint64(volatile uint64_t *address, uint64_t value)
     for (;;) {
         uint64_t old_value = *address;
         uint64_t new_value = old_value | value;
-        if (_InterlockedCompareExchange64((volatile __int64*)address, (__int64)new_value, (__int64)old_value)) {
+        if (old_value == _InterlockedCompareExchange64((volatile __int64*)address, (__int64)new_value, (__int64)old_value)) {
             return old_value;
         }
     }

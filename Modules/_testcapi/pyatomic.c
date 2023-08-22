@@ -41,11 +41,11 @@ static PyObject * \
 test_atomic_add_##suffix(PyObject *self, PyObject *obj) { \
     dtype x = 0; \
     assert(_Py_atomic_add_##suffix(&x, 1) == 0); \
-    assert("a" && x == 1); \
+    assert(x == 1); \
     assert(_Py_atomic_add_##suffix(&x, 2) == 1); \
     assert(x == 3); \
     assert(_Py_atomic_add_##suffix(&x, -2) == 3); \
-    assert("b" && x == 1); \
+    assert(x == 1); \
     assert(_Py_atomic_add_##suffix(&x, -1) == 1); \
     assert(x == 0); \
     assert(_Py_atomic_add_##suffix(&x, -1) == 0); \
