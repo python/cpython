@@ -630,6 +630,12 @@ Connection objects
       * :ref:`sqlite3-connection-shortcuts`
       * :ref:`sqlite3-connection-context-manager`
 
+
+   .. versionchanged:: 3.13
+
+      A :exc:`ResourceWarning` is emitted if :meth:`close` is not called before
+      a :class:`!Connection` object is deleted.
+
    An SQLite database connection has the following attributes and methods:
 
    .. method:: cursor(factory=Cursor)
