@@ -8,7 +8,6 @@ import typing
 from test import support
 
 
-
 class TestIsInstanceExceptions(unittest.TestCase):
     # Test to make sure that an AttributeError when accessing the instance's
     # class's bases is masked.  This was actually a bug in Python 2.2 and
@@ -145,7 +144,6 @@ class TestIsSubclassExceptions(unittest.TestCase):
             __bases__ = property(getbases)
 
         self.assertRaises(TypeError, issubclass, B, C())
-
 
 
 # meta classes for creating abstract classes and instances
