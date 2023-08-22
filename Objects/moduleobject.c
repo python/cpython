@@ -871,7 +871,6 @@ module_setattro(PyModuleObject *m, PyObject *name, PyObject *value)
 {
     PyObject *setattr, *delattr;
     assert(m->md_dict != NULL);
-    PyErr_Clear();
     if (value == NULL) {
         delattr = PyDict_GetItemWithError(m->md_dict, &_Py_ID(__delattr__));
         if (PyErr_Occurred()) {
