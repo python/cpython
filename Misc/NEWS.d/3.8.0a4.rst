@@ -124,7 +124,7 @@ Galindo.
 .. nonce: CjRps3
 .. section: Core and Builtins
 
-:c:func:`PyEval_AcquireLock` and :c:func:`PyEval_AcquireThread` now
+:c:func:`!PyEval_AcquireLock` and :c:func:`!PyEval_AcquireThread` now
 terminate the current thread if called while the interpreter is finalizing,
 making them consistent with :c:func:`PyEval_RestoreThread`,
 :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`.
