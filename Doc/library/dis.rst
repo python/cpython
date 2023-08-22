@@ -747,7 +747,7 @@ iterations of the loop.
 .. opcode:: MATCH_MAPPING
 
    If TOS is an instance of :class:`collections.abc.Mapping` (or, more technically: if
-   it has the :const:`Py_TPFLAGS_MAPPING` flag set in its
+   it has the :c:macro:`Py_TPFLAGS_MAPPING` flag set in its
    :c:member:`~PyTypeObject.tp_flags`), push ``True`` onto the stack.  Otherwise, push
    ``False``.
 
@@ -758,7 +758,7 @@ iterations of the loop.
 
    If TOS is an instance of :class:`collections.abc.Sequence` and is *not* an instance
    of :class:`str`/:class:`bytes`/:class:`bytearray` (or, more technically: if it has
-   the :const:`Py_TPFLAGS_SEQUENCE` flag set in its :c:member:`~PyTypeObject.tp_flags`),
+   the :c:macro:`Py_TPFLAGS_SEQUENCE` flag set in its :c:member:`~PyTypeObject.tp_flags`),
    push ``True`` onto the stack.  Otherwise, push ``False``.
 
    .. versionadded:: 3.10

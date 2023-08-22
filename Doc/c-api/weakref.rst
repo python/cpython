@@ -11,18 +11,18 @@ simple reference object, and the second acts as a proxy for the original object
 as much as it can.
 
 
-.. c:function:: int PyWeakref_Check(ob)
+.. c:function:: int PyWeakref_Check(PyObject *ob)
 
    Return true if *ob* is either a reference or proxy object.  This function
    always succeeds.
 
 
-.. c:function:: int PyWeakref_CheckRef(ob)
+.. c:function:: int PyWeakref_CheckRef(PyObject *ob)
 
    Return true if *ob* is a reference object.  This function always succeeds.
 
 
-.. c:function:: int PyWeakref_CheckProxy(ob)
+.. c:function:: int PyWeakref_CheckProxy(PyObject *ob)
 
    Return true if *ob* is a proxy object.  This function always succeeds.
 
@@ -54,7 +54,7 @@ as much as it can.
 .. c:function:: PyObject* PyWeakref_GetObject(PyObject *ref)
 
    Return the referenced object from a weak reference, *ref*.  If the referent is
-   no longer live, returns :const:`Py_None`.
+   no longer live, returns ``Py_None``.
 
    .. note::
 

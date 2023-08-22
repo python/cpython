@@ -44,7 +44,7 @@ Any object can be tested for truth value, for use in an :keyword:`if` or
 .. index:: single: true
 
 By default, an object is considered true unless its class defines either a
-:meth:`__bool__` method that returns ``False`` or a :meth:`__len__` method that
+:meth:`~object.__bool__` method that returns ``False`` or a :meth:`__len__` method that
 returns zero, when called with the object. [1]_  Here are most of the built-in
 objects considered false:
 
@@ -3903,7 +3903,7 @@ copying.
          >>> m = memoryview(bytearray(b'abc'))
          >>> mm = m.toreadonly()
          >>> mm.tolist()
-         [89, 98, 99]
+         [97, 98, 99]
          >>> mm[0] = 42
          Traceback (most recent call last):
            File "<stdin>", line 1, in <module>
@@ -3959,6 +3959,7 @@ copying.
       :mod:`struct` syntax. One of the formats must be a byte format
       ('B', 'b' or 'c'). The byte length of the result must be the same
       as the original length.
+      Note that all byte lengths may depend on the operating system.
 
       Cast 1D/long to 1D/unsigned bytes::
 
@@ -3989,8 +3990,8 @@ copying.
          >>> x = memoryview(b)
          >>> x[0] = b'a'
          Traceback (most recent call last):
-           File "<stdin>", line 1, in <module>
-         ValueError: memoryview: invalid value for format "B"
+           ...
+         TypeError: memoryview: invalid type for format 'B'
          >>> y = x.cast('c')
          >>> y[0] = b'a'
          >>> b
@@ -4735,8 +4736,10 @@ An example of dictionary view usage::
    >>> # set operations
    >>> keys & {'eggs', 'bacon', 'salad'}
    {'bacon'}
-   >>> keys ^ {'sausage', 'juice'}
-   {'juice', 'sausage', 'bacon', 'spam'}
+   >>> keys ^ {'sausage', 'juice'} == {'juice', 'sausage', 'bacon', 'spam'}
+   True
+   >>> keys | ['juice', 'juice', 'juice'] == {'bacon', 'spam', 'juice'}
+   True
 
    >>> # get back a read-only proxy for the original dictionary
    >>> values.mapping
@@ -4943,8 +4946,8 @@ exception to disallow mistakes like ``dict[str][str]``::
 
    >>> dict[str][str]
    Traceback (most recent call last):
-     File "<stdin>", line 1, in <module>
-   TypeError: There are no type variables left in dict[str]
+     ...
+   TypeError: dict[str] is not a generic class
 
 However, such expressions are valid when :ref:`type variables <generics>` are
 used.  The index must have as many elements as there are type variable items
@@ -5150,13 +5153,15 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
       >>> isinstance("", int | str)
       True
 
-   However, union objects containing :ref:`parameterized generics
-   <types-genericalias>` cannot be used::
+   However, :ref:`parameterized generics <types-genericalias>` in
+   union objects cannot be checked::
 
-      >>> isinstance(1, int | list[int])
+      >>> isinstance(1, int | list[int])  # short-circuit evaluation
+      True
+      >>> isinstance([1], int | list[int])
       Traceback (most recent call last):
-        File "<stdin>", line 1, in <module>
-      TypeError: isinstance() argument 2 cannot contain a parameterized generic
+        ...
+      TypeError: isinstance() argument 2 cannot be a parameterized generic
 
 The user-exposed type for the union object can be accessed from
 :data:`types.UnionType` and used for :func:`isinstance` checks.  An object cannot be
@@ -5472,7 +5477,7 @@ types, where they are relevant.  Some of these are not reported by the
    definition order.  Example::
 
       >>> int.__subclasses__()
-      [<class 'bool'>]
+      [<class 'bool'>, <enum 'IntEnum'>, <flag 'IntFlag'>, <class 're._constants._NamedIntConstant'>]
 
 
 .. _int_max_str_digits:
@@ -5508,7 +5513,7 @@ When an operation would exceed the limit, a :exc:`ValueError` is raised:
    >>> _ = int('2' * 5432)
    Traceback (most recent call last):
    ...
-   ValueError: Exceeds the limit (4300 digits) for integer string conversion: value has 5432 digits; use sys.set_int_max_str_digits() to increase the limit.
+   ValueError: Exceeds the limit (4300 digits) for integer string conversion: value has 5432 digits; use sys.set_int_max_str_digits() to increase the limit
    >>> i = int('2' * 4300)
    >>> len(str(i))
    4300
@@ -5516,7 +5521,7 @@ When an operation would exceed the limit, a :exc:`ValueError` is raised:
    >>> len(str(i_squared))
    Traceback (most recent call last):
    ...
-   ValueError: Exceeds the limit (4300 digits) for integer string conversion: value has 8599 digits; use sys.set_int_max_str_digits() to increase the limit.
+   ValueError: Exceeds the limit (4300 digits) for integer string conversion; use sys.set_int_max_str_digits() to increase the limit
    >>> len(hex(i_squared))
    7144
    >>> assert int(hex(i_squared), base=16) == i*i  # Hexadecimal is unlimited.
@@ -5586,7 +5591,7 @@ From code, you can inspect the current limit and set a new one using these
   a getter and setter for the interpreter-wide limit. Subinterpreters have
   their own limit.
 
-Information about the default and minimum can be found in :attr:`sys.int_info`:
+Information about the default and minimum can be found in :data:`sys.int_info`:
 
 * :data:`sys.int_info.default_max_str_digits <sys.int_info>` is the compiled-in
   default limit.

@@ -69,7 +69,7 @@ Python uses an installation scheme that differs depending on the platform and on
 the installation options.  These schemes are stored in :mod:`sysconfig` under
 unique identifiers based on the value returned by :const:`os.name`.
 
-Every new component that is installed using :mod:`distutils` or a
+Every new component that is installed using :mod:`!distutils` or a
 Distutils-based system will follow the same scheme to copy its file in the right
 places.
 
@@ -84,13 +84,13 @@ Python currently supports nine schemes:
   through Distutils and the *user* option is used.  This scheme defines paths
   located under the user home directory.
 - *posix_venv*: scheme for :mod:`Python virtual environments <venv>` on POSIX
-  platforms; by default it is the same as *posix_prefix* .
+  platforms; by default it is the same as *posix_prefix*.
 - *nt*: scheme for NT platforms like Windows.
 - *nt_user*: scheme for NT platforms, when the *user* option is used.
 - *nt_venv*: scheme for :mod:`Python virtual environments <venv>` on NT
-  platforms; by default it is the same as *nt* .
-- *venv*: a scheme with values from ether *posix_venv* or *nt_venv* depending
-  on the platform Python runs on
+  platforms; by default it is the same as *nt*.
+- *venv*: a scheme with values from either *posix_venv* or *nt_venv* depending
+  on the platform Python runs on.
 - *osx_framework_user*: scheme for macOS, when the *user* option is used.
 
 Each scheme is itself composed of a series of paths and each path has a unique
@@ -187,7 +187,7 @@ identifier.  Python currently uses eight paths:
    platform is used.
 
    If *vars* is provided, it must be a dictionary of variables that will update
-   the dictionary return by :func:`get_config_vars`.
+   the dictionary returned by :func:`get_config_vars`.
 
    If *expand* is set to ``False``, the path will not be expanded using the
    variables.

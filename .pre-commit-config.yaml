@@ -1,0 +1,15 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: check-yaml
+      - id: trailing-whitespace
+        types_or: [c, python, rst]
+
+  - repo: https://github.com/sphinx-contrib/sphinx-lint
+    rev: v0.6.8
+    hooks:
+      - id: sphinx-lint
+        args: [--enable=default-role]
+        files: ^Doc/|^Misc/NEWS.d/next/
+        types: [rst]

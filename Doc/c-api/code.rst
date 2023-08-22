@@ -33,7 +33,7 @@ bound into a function.
 
    Return the number of free variables in *co*.
 
-.. c:function:: PyCodeObject* PyCode_New(int argcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
+.. c:function:: PyCodeObject* PyCode_New(int argcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, PyObject *qualname, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
 
    Return a new code object.  If you need a dummy code object to create a frame,
    use :c:func:`PyCode_NewEmpty` instead.  Calling :c:func:`PyCode_New` directly
@@ -43,9 +43,9 @@ bound into a function.
    execution or VM crashes. Use this function only with extreme care.
 
    .. versionchanged:: 3.11
-      Added ``exceptiontable`` parameter.
+      Added ``qualname`` and ``exceptiontable`` parameters.
 
-.. c:function:: PyCodeObject* PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
+.. c:function:: PyCodeObject* PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, PyObject *qualname, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
 
    Similar to :c:func:`PyCode_New`, but with an extra "posonlyargcount" for positional-only arguments.
    The same caveats that apply to ``PyCode_New`` also apply to this function.
@@ -53,7 +53,7 @@ bound into a function.
    .. versionadded:: 3.8
 
    .. versionchanged:: 3.11
-      Added ``exceptiontable`` parameter.
+      Added ``qualname`` and  ``exceptiontable`` parameters.
 
 .. c:function:: PyCodeObject* PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
 

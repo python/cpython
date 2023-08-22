@@ -122,6 +122,17 @@ class OrderedDictTests:
         self.OrderedDict(Spam())
         self.assertEqual(calls, ['keys'])
 
+    def test_overridden_init(self):
+        # Sync-up pure Python OD class with C class where
+        # a consistent internal state is created in __new__
+        # rather than __init__.
+        OrderedDict = self.OrderedDict
+        class ODNI(OrderedDict):
+            def __init__(*args, **kwargs):
+                pass
+        od = ODNI()
+        od['a'] = 1  # This used to fail because __init__ was bypassed
+
     def test_fromkeys(self):
         OrderedDict = self.OrderedDict
         od = OrderedDict.fromkeys('abc')

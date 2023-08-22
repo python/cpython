@@ -62,7 +62,7 @@ General Options
 
 .. cmdoption:: --with-tzpath=<list of absolute paths separated by pathsep>
 
-   Select the default time zone search path for :data:`zoneinfo.TZPATH`.
+   Select the default time zone search path for :const:`zoneinfo.TZPATH`.
    See the :ref:`Compile-time configuration
    <zoneinfo_data_compile_time_config>` of the :mod:`zoneinfo` module.
 
@@ -77,7 +77,7 @@ General Options
    Build the ``_decimal`` extension module using a thread-local context rather
    than a coroutine-local context (default), see the :mod:`decimal` module.
 
-   See :data:`decimal.HAVE_CONTEXTVAR` and the :mod:`contextvars` module.
+   See :const:`decimal.HAVE_CONTEXTVAR` and the :mod:`contextvars` module.
 
    .. versionadded:: 3.9
 
@@ -679,8 +679,8 @@ Extensions defined after the ``*shared*`` marker are built as dynamic libraries.
 The :file:`setup.py` script only builds C extensions as shared libraries using
 the :mod:`distutils` module.
 
-The :c:macro:`PyAPI_FUNC()`, :c:macro:`PyAPI_API()` and
-:c:macro:`PyMODINIT_FUNC()` macros of :file:`Include/pyport.h` are defined
+The :c:macro:`PyAPI_FUNC()`, :c:macro:`PyAPI_DATA()` and
+:c:macro:`PyMODINIT_FUNC` macros of :file:`Include/pyport.h` are defined
 differently depending if the ``Py_BUILD_CORE_MODULE`` macro is defined:
 
 * Use ``Py_EXPORTED_SYMBOL`` if the ``Py_BUILD_CORE_MODULE`` is defined

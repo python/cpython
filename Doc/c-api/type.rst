@@ -66,7 +66,7 @@ Type Objects
 .. c:function:: int PyType_IS_GC(PyTypeObject *o)
 
    Return true if the type object includes support for the cycle detector; this
-   tests the type flag :const:`Py_TPFLAGS_HAVE_GC`.
+   tests the type flag :c:macro:`Py_TPFLAGS_HAVE_GC`.
 
 
 .. c:function:: int PyType_IsSubtype(PyTypeObject *a, PyTypeObject *b)
@@ -99,10 +99,10 @@ Type Objects
 
    .. note::
        If some of the base classes implements the GC protocol and the provided
-       type does not include the :const:`Py_TPFLAGS_HAVE_GC` in its flags, then
+       type does not include the :c:macro:`Py_TPFLAGS_HAVE_GC` in its flags, then
        the GC protocol will be automatically implemented from its parents. On
        the contrary, if the type being created does include
-       :const:`Py_TPFLAGS_HAVE_GC` in its flags then it **must** implement the
+       :c:macro:`Py_TPFLAGS_HAVE_GC` in its flags then it **must** implement the
        GC protocol itself by at least implementing the
        :c:member:`~PyTypeObject.tp_traverse` handle.
 
@@ -149,7 +149,7 @@ Type Objects
    ``Py_TYPE(self)`` may be a *subclass* of the intended class, and subclasses
    are not necessarily defined in the same module as their superclass.
    See :c:type:`PyCMethod` to get the class that defines the method.
-   See :c:func:`PyType_GetModuleByDef` for cases when ``PyCMethod`` cannot
+   See :c:func:`PyType_GetModuleByDef` for cases when :c:type:`!PyCMethod` cannot
    be used.
 
    .. versionadded:: 3.9
@@ -193,7 +193,7 @@ The following functions and structs are used to create
 .. c:function:: PyObject* PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
 
    Creates and returns a :ref:`heap type <heap-types>` from the *spec*
-   (:const:`Py_TPFLAGS_HEAPTYPE`).
+   (:c:macro:`Py_TPFLAGS_HEAPTYPE`).
 
    The *bases* argument can be used to specify base classes; it can either
    be only one class or a tuple of classes.
@@ -292,7 +292,7 @@ The following functions and structs are used to create
       Setting :c:data:`Py_tp_bases` or :c:data:`Py_tp_base` may be
       problematic on some platforms.
       To avoid issues, use the *bases* argument of
-      :py:func:`PyType_FromSpecWithBases` instead.
+      :c:func:`PyType_FromSpecWithBases` instead.
 
      .. versionchanged:: 3.9
 
