@@ -2747,7 +2747,7 @@ output.append(4)
         x = [i for i in range(10)]
         c = 3
 
-    @jump_test(8, 2, [2, 7, 2])
+    @jump_test(8, 2, [2, 7, 2], warning=(RuntimeWarning, unbound_locals))
     def test_jump_backward_over_listcomp_v2(output):
         flag = False
         output.append(2)
@@ -2770,7 +2770,7 @@ output.append(4)
         x = [i async for i in asynciter(range(10))]
         c = 3
 
-    @async_jump_test(8, 2, [2, 7, 2])
+    @async_jump_test(8, 2, [2, 7, 2], warning=(RuntimeWarning, unbound_locals))
     async def test_jump_backward_over_async_listcomp_v2(output):
         flag = False
         output.append(2)
