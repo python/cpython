@@ -12,8 +12,13 @@ the user build or load random bytecodes anyway.  Otherwise, this is a
 
 """
 
-import types
+from test.support import SuppressCrashReport
 
-co = types.CodeType(0, 0, 0, 0, 0, 0, b'\x04\x00\x71\x00',
-                    (), (), (), '', '', 1, b'')
-exec(co)
+def func():
+    pass
+
+invalid_code = b'\x04\x00\x71\x00'
+func.__code__ = func.__code__.replace(co_code=invalid_code)
+
+with SuppressCrashReport():
+    func()

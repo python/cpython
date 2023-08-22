@@ -15,9 +15,14 @@ change to decouple object creation and GC registration, and according
 fixes to the documentation for extension module writers.  It's unlikely
 to happen, though.  So this is currently classified as
 "gc.get_referrers() is dangerous, use only for debugging".
+
+* https://github.com/python/cpython/issues/39117
+* https://github.com/python/cpython/issues/59313
+* https://github.com/python/cpython/pull/107183
 """
 
 import gc
+from test.support import SuppressCrashReport
 
 
 def g():
@@ -29,4 +34,5 @@ def g():
     print(tup[1])
 
 
-tuple(g())
+with SuppressCrashReport():
+    tuple(g())

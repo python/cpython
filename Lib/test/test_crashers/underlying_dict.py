@@ -1,3 +1,4 @@
+from test.support import SuppressCrashReport
 import gc
 
 thingy = object()
@@ -17,4 +18,5 @@ for i in range(10):
     a.f()
 dct["f"] = lambda self: 2
 
-print(a.f()) # should print 1
+with SuppressCrashReport():
+    print(a.f())  # should print 1
