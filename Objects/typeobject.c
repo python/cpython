@@ -586,8 +586,29 @@ _PyType_GetDocFromInternalDoc(const char *name, const char *internal_doc)
     return PyUnicode_FromString(doc);
 }
 
+static const char *
+signature_from_flags(int flags)
+{
+    switch (flags & ~METH_COEXIST) {
+        case METH_NOARGS:
+            return "($self, /)";
+        case METH_NOARGS|METH_CLASS:
+            return "($type, /)";
+        case METH_NOARGS|METH_STATIC:
+            return "()";
+        case METH_O:
+            return "($self, object, /)";
+        case METH_O|METH_CLASS:
+            return "($type, object, /)";
+        case METH_O|METH_STATIC:
+            return "(object, /)";
+        default:
+            return NULL;
+    }
+}
+
 PyObject *
-_PyType_GetTextSignatureFromInternalDoc(const char *name, const char *internal_doc)
+_PyType_GetTextSignatureFromInternalDoc(const char *name, const char *internal_doc, int flags)
 {
     const char *start = find_signature(name, internal_doc);
     const char *end;
@@ -597,6 +618,10 @@ _PyType_GetTextSignatureFromInternalDoc(const char *name, const char *internal_d
     else
         end = NULL;
     if (!end) {
+        start = signature_from_flags(flags);
+        if (start) {
+            return PyUnicode_FromString(start);
+        }
         Py_RETURN_NONE;
     }
 
@@ -1429,7 +1454,7 @@ type_get_doc(PyTypeObject *type, void *context)
 static PyObject *
 type_get_text_signature(PyTypeObject *type, void *context)
 {
-    return _PyType_GetTextSignatureFromInternalDoc(type->tp_name, type->tp_doc);
+    return _PyType_GetTextSignatureFromInternalDoc(type->tp_name, type->tp_doc, 0);
 }
 
 static int
@@ -2419,7 +2444,7 @@ set_mro_error(PyObject **to_merge, Py_ssize_t to_merge_size, int *remain)
     n = PyDict_GET_SIZE(set);
 
     off = PyOS_snprintf(buf, sizeof(buf), "Cannot create a \
-consistent method resolution\norder (MRO) for bases");
+consistent method resolution order (MRO) for bases");
     i = 0;
     while (PyDict_Next(set, &i, &k, &v) && (size_t)off < sizeof(buf)) {
         PyObject *name = class_name(k);
@@ -4264,9 +4289,9 @@ _PyType_FromMetaclass_impl(
         if (_allow_tp_new) {
             if (PyErr_WarnFormat(
                     PyExc_DeprecationWarning, 1,
-                    "Using PyType_Spec with metaclasses that have custom "
-                    "tp_new is deprecated and will no longer be allowed in "
-                    "Python 3.14.") < 0) {
+                    "Type %s uses PyType_Spec with a metaclass that has custom "
+                    "tp_new. This is deprecated and will no longer be allowed in "
+                    "Python 3.14.", spec->name) < 0) {
                 goto finally;
             }
         }
@@ -4964,9 +4989,6 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
     Py_DECREF(name);
     return res;
 }
-
-extern void
-_PyDictKeys_DecRef(PyDictKeysObject *keys);
 
 
 static void
