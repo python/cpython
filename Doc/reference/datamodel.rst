@@ -1712,7 +1712,7 @@ the module ``__dict__`` before raising an :exc:`AttributeError`. If found,
 it is called with the attribute name and the result is returned.
 
 The ``__setattr__`` function should accept two arguments, respectively, the
-name of an attribute and the value to be assigned and return :const:`None` or
+name of an attribute and the value to be assigned. It can
 raise an :exc:`AttributeError`.  If present, this function overrides the
 standard :func:`setattr` behaviour on a module.  For example::
 
