@@ -1,2 +1,0 @@
-Restore behaviour of complex exponentiation with integer-valued exponent of
-type :class:`float` or :class:`complex`.

@@ -153,7 +153,7 @@ headers.
       specified as ``-0000`` (indicating it is in UTC but contains no
       information about the source timezone), then :attr:`.datetime` will be a
       naive :class:`~datetime.datetime`.  If a specific timezone offset is
-      found (including `+0000`), then :attr:`.datetime` will contain an aware
+      found (including ``+0000``), then :attr:`.datetime` will contain an aware
       ``datetime`` that uses :class:`datetime.timezone` to record the timezone
       offset.
 
@@ -206,7 +206,7 @@ headers.
 
    The ``decoded`` value of the header will have all encoded words decoded to
    unicode.  :class:`~encodings.idna` encoded domain names are also decoded to
-   unicode.  The ``decoded`` value is set by :attr:`~str.join`\ ing the
+   unicode.  The ``decoded`` value is set by :ref:`joining <meth-str-join>` the
    :class:`str` value of the elements of the ``groups`` attribute with ``',
    '``.
 

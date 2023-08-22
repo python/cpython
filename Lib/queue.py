@@ -298,7 +298,7 @@ class _PySimpleQueue:
     def put_nowait(self, item):
         '''Put an item into the queue without blocking.
 
-        This is exactly equivalent to `put(item)` and is only provided
+        This is exactly equivalent to `put(item, block=False)` and is only provided
         for compatibility with the Queue class.
         '''
         return self.put(item, block=False)

@@ -128,6 +128,18 @@ class EnumerateTestCase(unittest.TestCase, PickleTest):
         self.assertRaises(TypeError, self.enum, 'abc', 'a') # wrong type
         self.assertRaises(TypeError, self.enum, 'abc', 2, 3) # too many arguments
 
+    def test_kwargs(self):
+        self.assertEqual(list(self.enum(iterable=Ig(self.seq))), self.res)
+        expected = list(self.enum(Ig(self.seq), 0))
+        self.assertEqual(list(self.enum(iterable=Ig(self.seq), start=0)),
+                         expected)
+        self.assertEqual(list(self.enum(start=0, iterable=Ig(self.seq))),
+                         expected)
+        self.assertRaises(TypeError, self.enum, iterable=[], x=3)
+        self.assertRaises(TypeError, self.enum, start=0, x=3)
+        self.assertRaises(TypeError, self.enum, x=0, y=3)
+        self.assertRaises(TypeError, self.enum, x=0)
+
     @support.cpython_only
     def test_tuple_reuse(self):
         # Tests an implementation detail where tuple is reused
@@ -266,14 +278,16 @@ class EnumerateStartTestCase(EnumerateTestCase):
 
 
 class TestStart(EnumerateStartTestCase):
+    def enum(self, iterable, start=11):
+        return enumerate(iterable, start=start)
 
-    enum = lambda self, i: enumerate(i, start=11)
     seq, res = 'abc', [(11, 'a'), (12, 'b'), (13, 'c')]
 
 
 class TestLongStart(EnumerateStartTestCase):
+    def enum(self, iterable, start=sys.maxsize + 1):
+        return enumerate(iterable, start=start)
 
-    enum = lambda self, i: enumerate(i, start=sys.maxsize+1)
     seq, res = 'abc', [(sys.maxsize+1,'a'), (sys.maxsize+2,'b'),
                        (sys.maxsize+3,'c')]
 

@@ -1,3 +1,0 @@
-Update of three expired hyperlinks in Doc/distributing/index.rst:
-"Project structure", "Building and packaging the project", and "Uploading the
-project to the Python Packaging Index".

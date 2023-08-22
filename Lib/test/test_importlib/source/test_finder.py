@@ -1,5 +1,4 @@
-from .. import abc
-from .. import util
+from test.test_importlib import abc, util
 
 machinery = util.import_importlib('importlib.machinery')
 
@@ -11,7 +10,6 @@ import sys
 import tempfile
 from test.support.import_helper import make_legacy_pyc
 import unittest
-import warnings
 
 
 class FinderTests(abc.FinderTests):
@@ -121,7 +119,7 @@ class FinderTests(abc.FinderTests):
     def test_failure(self):
         with util.create_modules('blah') as mapping:
             nothing = self.import_(mapping['.root'], 'sdfsadsadf')
-            self.assertIsNone(nothing)
+            self.assertEqual(nothing, self.NOT_FOUND)
 
     def test_empty_string_for_dir(self):
         # The empty string from sys.path means to search in the cwd.
@@ -151,28 +149,19 @@ class FinderTests(abc.FinderTests):
             found = self._find(finder, 'mod', loader_only=True)
             self.assertIsNotNone(found)
         found = self._find(finder, 'mod', loader_only=True)
-        self.assertIsNone(found)
+        self.assertEqual(found, self.NOT_FOUND)
 
     @unittest.skipUnless(sys.platform != 'win32',
             'os.chmod() does not support the needed arguments under Windows')
     def test_no_read_directory(self):
         # Issue #16730
         tempdir = tempfile.TemporaryDirectory()
+        self.enterContext(tempdir)
+        # Since we muck with the permissions, we want to set them back to
+        # their original values to make sure the directory can be properly
+        # cleaned up.
         original_mode = os.stat(tempdir.name).st_mode
-        def cleanup(tempdir):
-            """Cleanup function for the temporary directory.
-
-            Since we muck with the permissions, we want to set them back to
-            their original values to make sure the directory can be properly
-            cleaned up.
-
-            """
-            os.chmod(tempdir.name, original_mode)
-            # If this is not explicitly called then the __del__ method is used,
-            # but since already mucking around might as well explicitly clean
-            # up.
-            tempdir.__exit__(None, None, None)
-        self.addCleanup(cleanup, tempdir)
+        self.addCleanup(os.chmod, tempdir.name, original_mode)
         os.chmod(tempdir.name, stat.S_IWUSR | stat.S_IXUSR)
         finder = self.get_finder(tempdir.name)
         found = self._find(finder, 'doesnotexist')
@@ -206,30 +195,17 @@ class FinderTestsPEP420(FinderTests):
     NOT_FOUND = (None, [])
 
     def _find(self, finder, name, loader_only=False):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            loader_portions = finder.find_loader(name)
-            return loader_portions[0] if loader_only else loader_portions
+        spec = finder.find_spec(name)
+        if spec is None:
+            return self.NOT_FOUND
+        if loader_only:
+            return spec.loader
+        return spec.loader, spec.submodule_search_locations
 
 
 (Frozen_FinderTestsPEP420,
  Source_FinderTestsPEP420
  ) = util.test_both(FinderTestsPEP420, machinery=machinery)
-
-
-class FinderTestsPEP302(FinderTests):
-
-    NOT_FOUND = None
-
-    def _find(self, finder, name, loader_only=False):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            return finder.find_module(name)
-
-
-(Frozen_FinderTestsPEP302,
- Source_FinderTestsPEP302
- ) = util.test_both(FinderTestsPEP302, machinery=machinery)
 
 
 if __name__ == '__main__':

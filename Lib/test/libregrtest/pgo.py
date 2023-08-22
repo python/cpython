@@ -40,7 +40,7 @@ PGO_TESTS = [
     'test_pprint',
     'test_re',
     'test_set',
-    'test_sqlite',
+    'test_sqlite3',
     'test_statistics',
     'test_struct',
     'test_tabnanny',

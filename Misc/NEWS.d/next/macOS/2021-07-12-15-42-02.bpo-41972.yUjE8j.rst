@@ -1,2 +1,0 @@
-The framework build's user header path in sysconfig is changed to add a
-'pythonX.Y' component to match distutils's behavior.

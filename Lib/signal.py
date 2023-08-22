@@ -1,6 +1,5 @@
 import _signal
 from _signal import *
-from functools import wraps as _wraps
 from enum import IntEnum as _IntEnum
 
 _globals = globals()
@@ -42,6 +41,16 @@ def _enum_to_int(value):
         return value
 
 
+# Similar to functools.wraps(), but only assign __doc__.
+# __module__ should be preserved,
+# __name__ and __qualname__ are already fine,
+# __annotations__ is not set.
+def _wraps(wrapped):
+    def decorator(wrapper):
+        wrapper.__doc__ = wrapped.__doc__
+        return wrapper
+    return decorator
+
 @_wraps(_signal.signal)
 def signal(signalnum, handler):
     handler = _signal.signal(_enum_to_int(signalnum), _enum_to_int(handler))
@@ -59,7 +68,6 @@ if 'pthread_sigmask' in _globals:
     def pthread_sigmask(how, mask):
         sigs_set = _signal.pthread_sigmask(how, mask)
         return set(_int_to_enum(x, Signals) for x in sigs_set)
-    pthread_sigmask.__doc__ = _signal.pthread_sigmask.__doc__
 
 
 if 'sigpending' in _globals:
@@ -73,7 +81,6 @@ if 'sigwait' in _globals:
     def sigwait(sigset):
         retsig = _signal.sigwait(sigset)
         return _int_to_enum(retsig, Signals)
-    sigwait.__doc__ = _signal.sigwait
 
 
 if 'valid_signals' in _globals:

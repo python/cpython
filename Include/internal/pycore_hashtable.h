@@ -18,9 +18,9 @@ typedef struct {
     _Py_slist_item_t *head;
 } _Py_slist_t;
 
-#define _Py_SLIST_ITEM_NEXT(ITEM) (((_Py_slist_item_t *)ITEM)->next)
+#define _Py_SLIST_ITEM_NEXT(ITEM) _Py_RVALUE(((_Py_slist_item_t *)(ITEM))->next)
 
-#define _Py_SLIST_HEAD(SLIST) (((_Py_slist_t *)SLIST)->head)
+#define _Py_SLIST_HEAD(SLIST) _Py_RVALUE(((_Py_slist_t *)(SLIST))->head)
 
 
 /* _Py_hashtable: table entry */
@@ -106,6 +106,7 @@ PyAPI_FUNC(int) _Py_hashtable_foreach(
     void *user_data);
 
 PyAPI_FUNC(size_t) _Py_hashtable_size(const _Py_hashtable_t *ht);
+PyAPI_FUNC(size_t) _Py_hashtable_len(const _Py_hashtable_t *ht);
 
 /* Add a new entry to the hash. The key must not be present in the hash table.
    Return 0 on success, -1 on memory error. */

@@ -1,2 +1,0 @@
-Fix checking the number of arguments when subscribe a generic type with
-``ParamSpec`` parameter.

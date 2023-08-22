@@ -1,3 +1,0 @@
-Fix test_ssl.test_wrong_cert_tls13(): use ``suppress_ragged_eofs=False``,
-since ``read()`` can raise :exc:`ssl.SSLEOFError` on Windows. Patch by
-Victor Stinner.

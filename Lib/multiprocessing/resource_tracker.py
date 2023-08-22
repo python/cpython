@@ -161,10 +161,10 @@ class ResourceTracker(object):
     def _send(self, cmd, name, rtype):
         self.ensure_running()
         msg = '{0}:{1}:{2}\n'.format(cmd, name, rtype).encode('ascii')
-        if len(name) > 512:
+        if len(msg) > 512:
             # posix guarantees that writes to a pipe of less than PIPE_BUF
             # bytes are atomic, and that PIPE_BUF >= 512
-            raise ValueError('name too long')
+            raise ValueError('msg too long')
         nbytes = os.write(self._fd, msg)
         assert nbytes == len(msg), "nbytes {0:n} but len(msg) {1:n}".format(
             nbytes, len(msg))
@@ -221,9 +221,10 @@ def main(fd):
         for rtype, rtype_cache in cache.items():
             if rtype_cache:
                 try:
-                    warnings.warn('resource_tracker: There appear to be %d '
-                                  'leaked %s objects to clean up at shutdown' %
-                                  (len(rtype_cache), rtype))
+                    warnings.warn(
+                        f'resource_tracker: There appear to be {len(rtype_cache)} '
+                        f'leaked {rtype} objects to clean up at shutdown: {rtype_cache}'
+                    )
                 except Exception:
                     pass
             for name in rtype_cache:

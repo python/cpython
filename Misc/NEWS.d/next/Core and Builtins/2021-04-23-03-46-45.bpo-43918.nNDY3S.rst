@@ -1,1 +1,0 @@
-Document the signature and ``default`` argument in the docstring of the new ``anext`` builtin.

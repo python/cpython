@@ -1,1 +1,0 @@
-Enable building using a Visual Studio 2022 install on Windows.

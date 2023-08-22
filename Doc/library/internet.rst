@@ -9,7 +9,7 @@ Internet Protocols and Support
    single: Internet
    single: World Wide Web
 
-.. index:: module: socket
+.. index:: pair: module; socket
 
 The modules described in this chapter implement internet protocols and  support
 for related technology.  They are all implemented in Python. Most of these
@@ -20,8 +20,6 @@ is currently supported on most popular platforms.  Here is an overview:
 .. toctree::
 
    webbrowser.rst
-   cgi.rst
-   cgitb.rst
    wsgiref.rst
    urllib.rst
    urllib.request.rst
@@ -33,10 +31,7 @@ is currently supported on most popular platforms.  Here is an overview:
    ftplib.rst
    poplib.rst
    imaplib.rst
-   nntplib.rst
    smtplib.rst
-   smtpd.rst
-   telnetlib.rst
    uuid.rst
    socketserver.rst
    http.server.rst

@@ -1,1 +1,0 @@
-``DeprecationWarning`` is now raised when importing :mod:`tkinter.tix`, which has been deprecated in documentation since Python 3.6.

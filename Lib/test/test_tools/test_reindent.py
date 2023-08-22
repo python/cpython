@@ -9,12 +9,12 @@ import unittest
 from test.support.script_helper import assert_python_ok
 from test.support import findfile
 
-from test.test_tools import scriptsdir, skip_if_missing
+from test.test_tools import toolsdir, skip_if_missing
 
 skip_if_missing()
 
 class ReindentTests(unittest.TestCase):
-    script = os.path.join(scriptsdir, 'reindent.py')
+    script = os.path.join(toolsdir, 'patchcheck', 'reindent.py')
 
     def test_noargs(self):
         assert_python_ok(self.script)

@@ -32,6 +32,8 @@ Notes:
 import atexit
 import builtins
 import inspect
+import keyword
+import re
 import __main__
 
 __all__ = ["Completer"]
@@ -113,18 +115,17 @@ class Completer:
         defined in self.namespace that match.
 
         """
-        import keyword
         matches = []
         seen = {"__builtins__"}
         n = len(text)
-        for word in keyword.kwlist:
+        for word in keyword.kwlist + keyword.softkwlist:
             if word[:n] == text:
                 seen.add(word)
                 if word in {'finally', 'try'}:
                     word = word + ':'
                 elif word not in {'False', 'None', 'True',
                                   'break', 'continue', 'pass',
-                                  'else'}:
+                                  'else', '_'}:
                     word = word + ' '
                 matches.append(word)
         for nspace in [self.namespace, builtins.__dict__]:
@@ -146,7 +147,6 @@ class Completer:
         with a __getattr__ hook is evaluated.
 
         """
-        import re
         m = re.match(r"(\w+(\.\w+)*)\.(\w*)", text)
         if not m:
             return []

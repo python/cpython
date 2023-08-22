@@ -9,15 +9,12 @@ from tkinter import filedialog
 from tkinter import messagebox
 from tkinter.simpledialog import askstring
 
-import idlelib
 from idlelib.config import idleConf
+from idlelib.util import py_extensions
 
+py_extensions = ' '.join("*"+ext for ext in py_extensions)
 encoding = 'utf-8'
-if sys.platform == 'win32':
-    errors = 'surrogatepass'
-else:
-    errors = 'surrogateescape'
-
+errors = 'surrogatepass' if sys.platform == 'win32' else 'surrogateescape'
 
 
 class IOBinding:
@@ -254,11 +251,17 @@ class IOBinding:
             return False
 
     def fixnewlines(self):
-        "Return text with final \n if needed and os eols."
-        if (self.text.get("end-2c") != '\n'
-            and not hasattr(self.editwin, "interp")):  # Not shell.
-            self.text.insert("end-1c", "\n")
-        text = self.text.get("1.0", "end-1c")
+        """Return text with os eols.
+
+        Add prompts if shell else final \n if missing.
+        """
+
+        if hasattr(self.editwin, "interp"):  # Saving shell.
+            text = self.editwin.get_prompt_text('1.0', self.text.index('end-1c'))
+        else:
+            if self.text.get("end-2c") != '\n':
+                self.text.insert("end-1c", "\n")  # Changes 'end-1c' value.
+            text = self.text.get('1.0', "end-1c")
         if self.eol_convention != "\n":
             text = text.replace("\n", self.eol_convention)
         return text
@@ -348,7 +351,7 @@ class IOBinding:
     savedialog = None
 
     filetypes = (
-        ("Python files", "*.py *.pyw", "TEXT"),
+        ("Python files", py_extensions, "TEXT"),
         ("Text files", "*.txt", "TEXT"),
         ("All files", "*"),
         )

@@ -59,9 +59,9 @@ truth tests, identity tests, and boolean operations:
               __not__(obj)
 
    Return the outcome of :keyword:`not` *obj*.  (Note that there is no
-   :meth:`__not__` method for object instances; only the interpreter core defines
-   this operation.  The result is affected by the :meth:`__bool__` and
-   :meth:`__len__` methods.)
+   :meth:`!__not__` method for object instances; only the interpreter core defines
+   this operation.  The result is affected by the :meth:`~object.__bool__` and
+   :meth:`~object.__len__` methods.)
 
 
 .. function:: truth(obj)
@@ -244,11 +244,22 @@ Operations which work with sequences (some of them with mappings too) include:
 
 .. function:: length_hint(obj, default=0)
 
-   Return an estimated length for the object *o*. First try to return its
+   Return an estimated length for the object *obj*. First try to return its
    actual length, then an estimate using :meth:`object.__length_hint__`, and
    finally return the default value.
 
    .. versionadded:: 3.4
+
+
+The following operation works with callables:
+
+.. function:: call(obj, /, *args, **kwargs)
+              __call__(obj, /, *args, **kwargs)
+
+   Return ``obj(*args, **kwargs)``.
+
+   .. versionadded:: 3.11
+
 
 The :mod:`operator` module also defines tools for generalized attribute and item
 lookups.  These are useful for making fast field extractors as arguments for
@@ -316,7 +327,7 @@ expect a function argument.
           return g
 
    The items can be any type accepted by the operand's :meth:`__getitem__`
-   method.  Dictionaries accept any hashable value.  Lists, tuples, and
+   method.  Dictionaries accept any :term:`hashable` value.  Lists, tuples, and
    strings accept an index or a slice:
 
       >>> itemgetter(1)('ABCDEFG')

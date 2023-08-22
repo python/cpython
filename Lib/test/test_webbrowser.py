@@ -8,8 +8,10 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test webserver requires subprocess")
 
-URL = 'http://www.example.com'
+URL = 'https://www.example.com'
 CMD_NAME = 'test'
 
 
@@ -93,6 +95,31 @@ class ChromeCommandTest(CommandTestMixin, unittest.TestCase):
                    arguments=[URL])
 
 
+class EdgeCommandTest(CommandTestMixin, unittest.TestCase):
+
+    browser_class = webbrowser.Edge
+
+    def test_open(self):
+        self._test('open',
+                   options=[],
+                   arguments=[URL])
+
+    def test_open_with_autoraise_false(self):
+        self._test('open', kw=dict(autoraise=False),
+                   options=[],
+                   arguments=[URL])
+
+    def test_open_new(self):
+        self._test('open_new',
+                   options=['--new-window'],
+                   arguments=[URL])
+
+    def test_open_new_tab(self):
+        self._test('open_new_tab',
+                   options=[],
+                   arguments=[URL])
+
+
 class MozillaCommandTest(CommandTestMixin, unittest.TestCase):
 
     browser_class = webbrowser.Mozilla
@@ -118,34 +145,9 @@ class MozillaCommandTest(CommandTestMixin, unittest.TestCase):
                    arguments=['-new-tab', URL])
 
 
-class NetscapeCommandTest(CommandTestMixin, unittest.TestCase):
+class EpiphanyCommandTest(CommandTestMixin, unittest.TestCase):
 
-    browser_class = webbrowser.Netscape
-
-    def test_open(self):
-        self._test('open',
-                   options=['-raise', '-remote'],
-                   arguments=['openURL({})'.format(URL)])
-
-    def test_open_with_autoraise_false(self):
-        self._test('open', kw=dict(autoraise=False),
-                   options=['-noraise', '-remote'],
-                   arguments=['openURL({})'.format(URL)])
-
-    def test_open_new(self):
-        self._test('open_new',
-                   options=['-raise', '-remote'],
-                   arguments=['openURL({},new-window)'.format(URL)])
-
-    def test_open_new_tab(self):
-        self._test('open_new_tab',
-                   options=['-raise', '-remote'],
-                   arguments=['openURL({},new-tab)'.format(URL)])
-
-
-class GaleonCommandTest(CommandTestMixin, unittest.TestCase):
-
-    browser_class = webbrowser.Galeon
+    browser_class = webbrowser.Epiphany
 
     def test_open(self):
         self._test('open',
@@ -304,7 +306,7 @@ class ImportTest(unittest.TestCase):
         webbrowser = import_helper.import_fresh_module('webbrowser')
         try:
             browser = webbrowser.get().name
-        except (webbrowser.Error, AttributeError) as err:
+        except webbrowser.Error as err:
             self.skipTest(str(err))
         with os_helper.EnvironmentVarGuard() as env:
             env["BROWSER"] = browser
@@ -316,7 +318,7 @@ class ImportTest(unittest.TestCase):
         try:
             webbrowser.get()
             least_preferred_browser = webbrowser.get(webbrowser._tryorder[-1]).name
-        except (webbrowser.Error, AttributeError, IndexError) as err:
+        except (webbrowser.Error, IndexError) as err:
             self.skipTest(str(err))
 
         with os_helper.EnvironmentVarGuard() as env:

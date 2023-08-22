@@ -72,6 +72,7 @@ available, and then make assertions about how they have been used:
 :attr:`side_effect` allows you to perform side effects, including raising an
 exception when a mock is called:
 
+   >>> from unittest.mock import Mock
    >>> mock = Mock(side_effect=KeyError('foo'))
    >>> mock()
    Traceback (most recent call last):
@@ -204,8 +205,10 @@ The Mock Class
     import asyncio
     import inspect
     import unittest
+    import threading
     from unittest.mock import sentinel, DEFAULT, ANY
     from unittest.mock import patch, call, Mock, MagicMock, PropertyMock, AsyncMock
+    from unittest.mock import ThreadingMock
     from unittest.mock import mock_open
 
 :class:`Mock` is a flexible mock object intended to replace the use of stubs and
@@ -406,7 +409,7 @@ the *new_callable* argument to :func:`patch`.
             False
 
         .. versionchanged:: 3.6
-           Added two keyword only argument to the reset_mock function.
+           Added two keyword-only arguments to the reset_mock function.
 
         This can be useful where you want to make a series of assertions that
         reuse the same object. Note that :meth:`reset_mock` *doesn't* clear the
@@ -416,8 +419,8 @@ the *new_callable* argument to :func:`patch`.
         parameter as ``True``. Child mocks and the return value mock
         (if any) are reset as well.
 
-        .. note:: *return_value*, and :attr:`side_effect` are keyword only
-                  argument.
+        .. note:: *return_value*, and :attr:`side_effect` are keyword-only
+                  arguments.
 
 
     .. method:: mock_add_spec(spec, spec_set=False)
@@ -1098,6 +1101,51 @@ object::
       [call('foo'), call('bar')]
 
 
+.. class:: ThreadingMock(spec=None, side_effect=None, return_value=DEFAULT, wraps=None, name=None, spec_set=None, unsafe=False, *, timeout=UNSET, **kwargs)
+
+  A version of :class:`MagicMock` for multithreading tests. The
+  :class:`ThreadingMock` object provides extra methods to wait for a call to
+  be invoked, rather than assert on it immediately.
+
+  The default timeout is specified by the ``timeout`` argument, or if unset by the
+  :attr:`ThreadingMock.DEFAULT_TIMEOUT` attribute, which defaults to blocking (``None``).
+
+  You can configure the global default timeout by setting :attr:`ThreadingMock.DEFAULT_TIMEOUT`.
+
+  .. method:: wait_until_called(*, timeout=UNSET)
+
+      Waits until the mock is called.
+
+      If a timeout was passed at the creation of the mock or if a timeout
+      argument is passed to this function, the function raises an
+      :exc:`AssertionError` if the call is not performed in time.
+
+        >>> mock = ThreadingMock()
+        >>> thread = threading.Thread(target=mock)
+        >>> thread.start()
+        >>> mock.wait_until_called(timeout=1)
+        >>> thread.join()
+
+  .. method:: wait_until_any_call_with(*args, **kwargs)
+
+      Waits until the the mock is called with the specified arguments.
+
+      If a timeout was passed at the creation of the mock
+      the function raises an :exc:`AssertionError` if the call is not performed in time.
+
+        >>> mock = ThreadingMock()
+        >>> thread = threading.Thread(target=mock, args=("arg1", "arg2",), kwargs={"arg": "thing"})
+        >>> thread.start()
+        >>> mock.wait_until_any_call_with("arg1", "arg2", arg="thing")
+        >>> thread.join()
+
+  .. attribute:: DEFAULT_TIMEOUT
+
+    Global default timeout in seconds to create instances of :class:`ThreadingMock`.
+
+  .. versionadded:: 3.13
+
+
 Calling
 ~~~~~~~
 
@@ -1516,7 +1564,7 @@ attribute in a class) that does not exist will fail with :exc:`AttributeError`::
     >>> test()
     Traceback (most recent call last):
       ...
-    AttributeError: <module 'sys' (built-in)> does not have the attribute 'non_existing'
+    AttributeError: <module 'sys' (built-in)> does not have the attribute 'non_existing_attribute'
 
 but adding ``create=True`` in the call to :func:`patch` will make the previous example
 work as expected::
@@ -1604,6 +1652,7 @@ decorator:
     >>> @patch.dict(foo, {'newkey': 'newvalue'})
     ... def test():
     ...     assert foo == {'newkey': 'newvalue'}
+    ...
     >>> test()
     >>> assert foo == {}
 
@@ -1944,7 +1993,7 @@ Both patch_ and patch.object_ correctly patch and restore descriptors: class
 methods, static methods and properties. You should patch these on the *class*
 rather than an instance. They also work with *some* objects
 that proxy attribute access, like the `django settings object
-<http://www.voidspace.org.uk/python/weblog/arch_d7_2010_12_04.shtml#e1198>`_.
+<https://web.archive.org/web/20200603181648/http://www.voidspace.org.uk/python/weblog/arch_d7_2010_12_04.shtml#e1198>`_.
 
 
 MagicMock and magic method support
@@ -2020,7 +2069,7 @@ The full list of supported magic methods is:
 * Context manager: ``__enter__``, ``__exit__``, ``__aenter__`` and ``__aexit__``
 * Unary numeric methods: ``__neg__``, ``__pos__`` and ``__invert__``
 * The numeric methods (including right hand and in-place variants):
-  ``__add__``, ``__sub__``, ``__mul__``, ``__matmul__``, ``__div__``, ``__truediv__``,
+  ``__add__``, ``__sub__``, ``__mul__``, ``__matmul__``, ``__truediv__``,
   ``__floordiv__``, ``__mod__``, ``__divmod__``, ``__lshift__``,
   ``__rshift__``, ``__and__``, ``__xor__``, ``__or__``, and ``__pow__``
 * Numeric conversion methods: ``__complex__``, ``__int__``, ``__float__``
@@ -2165,7 +2214,7 @@ Magic methods that are supported but not setup by default in ``MagicMock`` are:
 * ``__reversed__`` and ``__missing__``
 * ``__reduce__``, ``__reduce_ex__``, ``__getinitargs__``, ``__getnewargs__``,
   ``__getstate__`` and ``__setstate__``
-* ``__getformat__`` and ``__setformat__``
+* ``__getformat__``
 
 
 
@@ -2381,7 +2430,7 @@ FILTER_DIR
 .. data:: FILTER_DIR
 
 :data:`FILTER_DIR` is a module level variable that controls the way mock objects
-respond to :func:`dir` (only for Python 2.6 or more recent). The default is ``True``,
+respond to :func:`dir`. The default is ``True``,
 which uses the filtering described below, to only show useful members. If you
 dislike this filtering, or need to switch it off for diagnostic purposes, then
 set ``mock.FILTER_DIR = False``.
@@ -2436,7 +2485,7 @@ behaviour you can switch it off by setting the module level switch
 
 Alternatively you can just use ``vars(my_mock)`` (instance members) and
 ``dir(type(my_mock))`` (type members) to bypass the filtering irrespective of
-:data:`mock.FILTER_DIR`.
+:const:`mock.FILTER_DIR`.
 
 
 mock_open
@@ -2550,7 +2599,7 @@ your assertion is gone:
 
     >>> mock = Mock(name='Thing', return_value=None)
     >>> mock(1, 2, 3)
-    >>> mock.assret_called_once_with(4, 5, 6)
+    >>> mock.assret_called_once_with(4, 5, 6)  # Intentional typo!
 
 Your tests can pass silently and incorrectly because of the typo.
 
@@ -2570,7 +2619,7 @@ attributes on the mock that exist on the real class:
 
     >>> from urllib import request
     >>> mock = Mock(spec=request.Request)
-    >>> mock.assret_called_with
+    >>> mock.assret_called_with  # Intentional typo!
     Traceback (most recent call last):
      ...
     AttributeError: Mock object has no attribute 'assret_called_with'
@@ -2582,7 +2631,7 @@ with any methods on the mock:
 
     >>> mock.has_data()
     <mock.Mock object at 0x...>
-    >>> mock.has_data.assret_called_with()
+    >>> mock.has_data.assret_called_with()  # Intentional typo!
 
 Auto-speccing solves this problem. You can either pass ``autospec=True`` to
 :func:`patch` / :func:`patch.object` or use the :func:`create_autospec` function to create a
@@ -2625,7 +2674,7 @@ any typos in our asserts will raise the correct error::
 
     >>> req.add_header('spam', 'eggs')
     <MagicMock name='request.Request().add_header()' id='...'>
-    >>> req.add_header.assret_called_with
+    >>> req.add_header.assret_called_with  # Intentional typo!
     Traceback (most recent call last):
      ...
     AttributeError: Mock object has no attribute 'assret_called_with'
