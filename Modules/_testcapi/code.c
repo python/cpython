@@ -9,12 +9,12 @@ get_code_extra_index(PyInterpreterState* interp) {
     PyObject *interp_dict = PyInterpreterState_GetDict(interp); // borrowed
     assert(interp_dict);  // real users would handle missing dict... somehow
 
-    PyObject *index_obj = _PyDict_GetItemStringWithError(interp_dict, key); // borrowed
+    PyObject *index_obj;
+    if (PyDict_GetItemStringRef(interp_dict, key, &index_obj) < 0) {
+        goto finally;
+    }
     Py_ssize_t index = 0;
     if (!index_obj) {
-        if (PyErr_Occurred()) {
-            goto finally;
-        }
         index = PyUnstable_Eval_RequestCodeExtraIndex(NULL);
         if (index < 0 || PyErr_Occurred()) {
             goto finally;
@@ -31,6 +31,7 @@ get_code_extra_index(PyInterpreterState* interp) {
     }
     else {
         index = PyLong_AsSsize_t(index_obj);
+        Py_DECREF(index_obj);
         if (index == -1 && PyErr_Occurred()) {
             goto finally;
         }

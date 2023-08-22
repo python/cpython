@@ -8,6 +8,7 @@
 */
 
 #include "Python.h"
+#include "pycore_dict.h"          // _PyDict_GetItemStringWithError()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 
