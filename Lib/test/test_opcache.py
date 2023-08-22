@@ -8,6 +8,19 @@ from test.support import threading_helper
 import _testinternalcapi
 
 
+def disabling_optimizer(func):
+    def wrapper(*args, **kwargs):
+        import _testinternalcapi
+        old_opt = _testinternalcapi.get_optimizer()
+        _testinternalcapi.set_optimizer(None)
+        try:
+            return func(*args, **kwargs)
+        finally:
+            _testinternalcapi.set_optimizer(old_opt)
+    
+    return wrapper
+
+
 class TestLoadSuperAttrCache(unittest.TestCase):
     def test_descriptor_not_double_executed_on_spec_fail(self):
         calls = []
@@ -929,6 +942,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
         opname = "STORE_ATTR_INSTANCE_VALUE"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
+    @disabling_optimizer
     def test_store_attr_with_hint(self):
         def get_items():
             class C:
