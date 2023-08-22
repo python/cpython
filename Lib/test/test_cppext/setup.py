@@ -2,7 +2,6 @@
 # compatible with C++ and does not emit C++ compiler warnings.
 import os
 import sys
-from test import support
 
 from setuptools import setup, Extension
 
@@ -10,7 +9,7 @@ from setuptools import setup, Extension
 MS_WINDOWS = (sys.platform == 'win32')
 
 
-SOURCE = support.findfile('_testcppext.cpp')
+SOURCE = 'extension.cpp'
 if not MS_WINDOWS:
     # C++ compiler flags for GCC and clang
     CPPFLAGS = [
