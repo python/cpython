@@ -60,6 +60,17 @@ Pretty printing::
         "6": 7
     }
 
+Specializing JSON object encoding::
+
+   >>> import json
+   >>> def custom_json(obj):
+   ...     if isinstance(obj, complex):
+   ...         return {'__complex__': True, 'real': obj.real, 'imag': obj.imag}
+   ...     raise TypeError(f'Cannot serialize object of {type(obj)}')
+   ...
+   >>> json.dumps(1 + 2j, default=custom_json)
+   '{"__complex__": true, "real": 1.0, "imag": 2.0}'
+
 Decoding JSON::
 
     >>> import json
