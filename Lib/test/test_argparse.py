@@ -3936,10 +3936,12 @@ class TestHelpWithPercentageSymbols(HelpTestCase):
             dest=f'date', type=str, required=True),
         Sig('bar', nargs='?', type=int, default=42, 
             help='the bar to %(prog)s (default: %(default)s)'),
+        Sig('--weirdarg', metavar='weird', dest=f'weird', type=str, 
+            required=True, help='A weird arg with 1 %, 2 %%% and 3 %%%%%'),
     ]
 
     usage = '''\
-        usage: PROG [-h] [--somearg somearg] --date when [bar]
+        usage: PROG [-h] [--somearg somearg] --date when --weirdarg weird [bar]
         '''
     help = usage + '''\
 
@@ -3953,6 +3955,7 @@ class TestHelpWithPercentageSymbols(HelpTestCase):
           --somearg somearg  Now you dont need to escape this: %, and you will not get
                              nonsensical errors!
           --date when        A date in format %Y-%m-%d
+          --weirdarg weird   A weird arg with 1 %, 2 %% and 3 %%%
         '''
     version = ''
 
