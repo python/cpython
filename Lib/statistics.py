@@ -134,7 +134,7 @@ import sys
 
 from fractions import Fraction
 from decimal import Decimal
-from itertools import count, groupby, repeat, starmap
+from itertools import count, groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum, sumprod
 from math import isfinite, isinf
