@@ -8,7 +8,7 @@ import stat
 
 __all__ = ['commonprefix', 'exists', 'getatime', 'getctime', 'getmtime',
            'getsize', 'isdir', 'isfile', 'samefile', 'sameopenfile',
-           'samestat']
+           'samestat', 'ALLOW_MISSING']
 
 
 # Does a path exist?
@@ -149,3 +149,13 @@ def _check_arg_types(funcname, *args):
                             (funcname, s.__class__.__name__)) from None
     if hasstr and hasbytes:
         raise TypeError("Can't mix strings and bytes in path components") from None
+
+
+# A singleton with a true boolean value.
+@object.__new__
+class ALLOW_MISSING:
+    """Special value for use in realpath()."""
+    def __repr__(self):
+        return 'os.path.ALLOW_MISSING'
+    def __reduce__(self):
+        return self.__class__.__name__

@@ -1,8 +1,10 @@
 import ntpath
 import os
+import subprocess
 import sys
 import unittest
 import warnings
+from ntpath import ALLOW_MISSING
 from test.support import TestFailed, FakePath
 from test import support, test_genericpath
 from tempfile import TemporaryFile
