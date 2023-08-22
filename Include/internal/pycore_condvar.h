@@ -10,7 +10,7 @@
    not present in unistd.h. But they still can be implemented as an external
    library (e.g. gnu pth in pthread emulation) */
 # ifdef HAVE_PTHREAD_H
-#  include <pthread.h> /* _POSIX_THREADS */
+#  include <pthread.h>            // _POSIX_THREADS
 # endif
 #endif
 
@@ -21,7 +21,7 @@
 #define Py_HAVE_CONDVAR
 
 #ifdef HAVE_PTHREAD_H
-#  include <pthread.h>
+#  include <pthread.h>            // pthread_mutex_t
 #endif
 
 #define PyMUTEX_T pthread_mutex_t
@@ -38,7 +38,7 @@
 
 /* include windows if it hasn't been done before */
 #define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#include <windows.h>              // CRITICAL_SECTION
 
 /* options */
 /* non-emulated condition variables are provided for those that want
