@@ -453,3 +453,11 @@ _Pypegen_set_syntax_error(Parser* p, Token* last_token) {
     // generic SyntaxError we just raised if errors are found.
     _PyPegen_tokenize_full_source_to_check_for_errors(p);
 }
+
+void
+_Pypegen_stack_overflow(Parser *p)
+{
+    p->error_indicator = 1;
+    PyErr_SetString(PyExc_MemoryError,
+        "Parser stack overflowed - Python source too complex to parse");
+}
