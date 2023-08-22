@@ -32,7 +32,13 @@ class CrasherTest(unittest.TestCase):
             if support.verbose:
                 print(f"Checking crasher: {script}", flush=True)
             proc = assert_python_failure(fname)
-            self.assertLess(proc.rc, 0, proc)
+            if os.name != "nt":
+                # On Unix, if proc.rc is negative, the process was killed
+                # by a signal
+                self.assertLess(proc.rc, 0, proc)
+            else:
+                # Windows. For example, C0000005 is an Access Violation
+                self.assertGreaterEqual(proc.rc, 0xC0000000, proc)
 
 
 def tearDownModule():
