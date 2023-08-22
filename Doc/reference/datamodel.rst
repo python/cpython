@@ -1721,7 +1721,7 @@ standard :func:`setattr` behaviour on a module.  For example::
        globals()[name] = value
 
 The ``__delattr__`` function should accept one argument which is the name of an
-attribute and return :const:`None` or raise an :exc:`AttributeError`.  If present,
+attribute. It can raise an :exc:`AttributeError`.  If present,
 this function overrides the standard :func:`delattr` behaviour on a module.
 
 The ``__dir__`` function should accept no arguments, and return a sequence of
