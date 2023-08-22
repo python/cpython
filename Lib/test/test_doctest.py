@@ -2845,6 +2845,7 @@ whitespace if doctest does not correctly do the newline conversion.
     ...     doctest.testfile("doctest_testfile.txt", package="doctest_testpkg", verbose=False)
     TestResults(failed=0, attempted=3)
     >>> shutil.rmtree(dn)
+    []
 
 """
 
