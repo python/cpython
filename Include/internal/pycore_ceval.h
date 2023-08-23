@@ -8,6 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_interp.h"        // PyInterpreterState.eval_frame
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+
 /* Forward declarations */
 struct pyruntimestate;
 struct _ceval_runtime_state;
@@ -15,10 +18,6 @@ struct _ceval_runtime_state;
 #ifndef Py_DEFAULT_RECURSION_LIMIT
 #  define Py_DEFAULT_RECURSION_LIMIT 1000
 #endif
-
-#include "pycore_interp.h"        // PyInterpreterState.eval_frame
-#include "pycore_pystate.h"       // _PyThreadState_GET()
-
 
 extern void _Py_FinishPendingCalls(PyThreadState *tstate);
 extern void _PyEval_InitState(PyInterpreterState *, PyThread_type_lock);
@@ -171,6 +170,7 @@ void _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *
 PyObject *_PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t nargs, PyObject *kwargs);
 PyObject *_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys);
 int _PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v, int argcnt, int argcntafter, PyObject **sp);
+void _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
 
 
 #ifdef __cplusplus

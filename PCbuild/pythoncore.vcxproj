@@ -248,6 +248,7 @@
     <ClInclude Include="..\Include\internal\pycore_object_state.h" />
     <ClInclude Include="..\Include\internal\pycore_obmalloc.h" />
     <ClInclude Include="..\Include\internal\pycore_obmalloc_init.h" />
+    <ClInclude Include="..\Include\internal\pycore_optimizer.h" />    
     <ClInclude Include="..\Include\internal\pycore_pathconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_pyarena.h" />
     <ClInclude Include="..\Include\internal\pycore_pyerrors.h" />
@@ -279,6 +280,7 @@
     <ClInclude Include="..\Include\internal\pycore_unionobject.h" />
     <ClInclude Include="..\Include\internal\pycore_unicodeobject.h" />
     <ClInclude Include="..\Include\internal\pycore_unicodeobject_generated.h" />
+    <ClInclude Include="..\Include\internal\pycore_uops.h" />    
     <ClInclude Include="..\Include\internal\pycore_warnings.h" />
     <ClInclude Include="..\Include\internal\pycore_weakref.h" />
     <ClInclude Include="..\Include\interpreteridobject.h" />
@@ -548,6 +550,7 @@
     <ClCompile Include="..\Python\mysnprintf.c" />
     <ClCompile Include="..\Python\mystrtoul.c" />
     <ClCompile Include="..\Python\optimizer.c" />
+    <ClCompile Include="..\Python\optimizer_analysis.c" />
     <ClCompile Include="..\Python\pathconfig.c" />
     <ClCompile Include="..\Python\perf_trampoline.c" />
     <ClCompile Include="..\Python\preconfig.c" />

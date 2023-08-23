@@ -1208,6 +1208,9 @@ class ASTModuleVisitor(PickleVisitor):
         self.emit('if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0) {', 1)
         self.emit("return -1;", 2)
         self.emit('}', 1)
+        self.emit('if (PyModule_AddIntMacro(m, PyCF_OPTIMIZED_AST) < 0) {', 1)
+        self.emit("return -1;", 2)
+        self.emit('}', 1)
         for dfn in mod.dfns:
             self.visit(dfn)
         self.emit("return 0;", 1)
@@ -1582,7 +1585,7 @@ def write_header(mod, metadata, f):
         #  error "this header requires Py_BUILD_CORE define"
         #endif
 
-        #include "pycore_asdl.h"
+        #include "pycore_asdl.h"          // _ASDL_SEQ_HEAD
 
     """).lstrip())
 
