@@ -39,7 +39,6 @@ EXCLUDED_HEADERS = {
     "genobject.h",
     "longintrepr.h",
     "parsetok.h",
-    "pyatomic.h",
     "token.h",
     "ucnhash.h",
 }

@@ -1654,7 +1654,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/osdefs.h \
 		$(srcdir)/Include/osmodule.h \
 		$(srcdir)/Include/patchlevel.h \
-		$(srcdir)/Include/pyatomic.h \
 		$(srcdir)/Include/pybuffer.h \
 		$(srcdir)/Include/pycapsule.h \
 		$(srcdir)/Include/pydtrace.h \
@@ -1722,6 +1721,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/optimizer.h \
 		$(srcdir)/Include/cpython/picklebufobject.h \
 		$(srcdir)/Include/cpython/pthread_stubs.h \
+		$(srcdir)/Include/cpython/pyatomic.h \
 		$(srcdir)/Include/cpython/pyatomic_gcc.h \
 		$(srcdir)/Include/cpython/pyatomic_std.h \
 		$(srcdir)/Include/cpython/pyctype.h \
