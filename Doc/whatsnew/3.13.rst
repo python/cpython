@@ -261,7 +261,6 @@ Deprecated
 
   The affected parameters will become positional-only in Python 3.15.
 
-  The affected parameters will become positional-only in Python 3.15.
   (Contributed by Erlend E. Aasland in :gh:`107948` and :gh:`108278`.)
 
 Pending Removal in Python 3.14
