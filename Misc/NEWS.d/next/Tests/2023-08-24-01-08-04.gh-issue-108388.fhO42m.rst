@@ -1,0 +1,6 @@
+The slowest tests are now skipped by default, unless the "cpu" resource is
+enabled: test_concurrent_futures, test_multiprocessing_spawn,
+test_peg_generator and test_tools.test_freeze. Run the test suite with ``-u
+cpu`` or ``-u all`` to run these tests. Moreover, these tests are no longer
+skipped on Python built with ASAN or MSAN sanitizer. Patch by Victor
+Stinner.

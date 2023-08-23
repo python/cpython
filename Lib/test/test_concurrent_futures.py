@@ -33,10 +33,8 @@ import multiprocessing.util
 import multiprocessing as mp
 
 
-if support.check_sanitizer(address=True, memory=True):
-    # gh-90791: Skip the test because it is too slow when Python is built
-    # with ASAN/MSAN: between 5 and 20 minutes on GitHub Actions.
-    raise unittest.SkipTest("test too slow on ASAN/MSAN build")
+# This test spawns many threads and processes and is slow
+support.requires('cpu')
 
 
 def create_future(state=PENDING, exception=None, result=None):

@@ -3,6 +3,9 @@ import test._test_multiprocessing
 
 from test import support
 
+# This test spawns many processes and is slow
+support.requires('cpu')
+
 if support.PGO:
     raise unittest.SkipTest("test is not helpful for PGO")
 
