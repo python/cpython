@@ -514,6 +514,21 @@ def test_not_in_gc():
             assert hook not in o
 
 
+def test_time():
+    import time
+
+    def hook(event, args):
+        if event.startswith("time."):
+            print(event, *args)
+    sys.addaudithook(hook)
+
+    time.sleep(0)
+    time.sleep(0.0625)  # 1/16, a small exact float
+    try:
+        time.sleep(-1)
+    except ValueError:
+        pass
+
 def test_sys_monitoring_register_callback():
     import sys
 
