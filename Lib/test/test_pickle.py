@@ -571,7 +571,6 @@ class CompatPickleTests(unittest.TestCase):
 
 
 class C_with_reduce_ex:
-    
     def __reduce_ex__(self, proto):
         return object.__reduce_ex__(self, proto)
 
