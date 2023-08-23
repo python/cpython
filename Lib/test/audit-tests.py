@@ -186,7 +186,7 @@ def test_monkeypatch():
     )
 
 
-def test_open():
+def test_open(testfn):
     # SSLContext.load_dh_params uses _Py_fopen_obj rather than normal open()
     try:
         import ssl
@@ -199,11 +199,11 @@ def test_open():
     # All of them should fail
     with TestHook(raise_on_events={"open"}) as hook:
         for fn, *args in [
-            (open, sys.argv[2], "r"),
+            (open, testfn, "r"),
             (open, sys.executable, "rb"),
             (open, 3, "wb"),
-            (open, sys.argv[2], "w", -1, None, None, None, False, lambda *a: 1),
-            (load_dh_params, sys.argv[2]),
+            (open, testfn, "w", -1, None, None, None, False, lambda *a: 1),
+            (load_dh_params, testfn),
         ]:
             if not fn:
                 continue
@@ -216,11 +216,11 @@ def test_open():
         [
             i
             for i in [
-                (sys.argv[2], "r"),
+                (testfn, "r"),
                 (sys.executable, "r"),
                 (3, "w"),
-                (sys.argv[2], "w"),
-                (sys.argv[2], "rb") if load_dh_params else None,
+                (testfn, "w"),
+                (testfn, "rb") if load_dh_params else None,
             ]
             if i is not None
         ],
@@ -549,4 +549,4 @@ if __name__ == "__main__":
     suppress_msvcrt_asserts()
 
     test = sys.argv[1]
-    globals()[test]()
+    globals()[test](*sys.argv[2:])
