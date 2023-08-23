@@ -4212,9 +4212,20 @@ compiler_nameop(struct compiler *c, location loc,
         optype = OP_DEREF;
         break;
     case LOCAL:
-        if (_PyST_IsFunctionLike(c->u->u_ste) ||
-                (PyDict_GetItem(c->u->u_metadata.u_fasthidden, mangled) == Py_True))
+        if (_PyST_IsFunctionLike(c->u->u_ste)) {
             optype = OP_FAST;
+        }
+        else {
+            PyObject *item;
+            if (PyDict_GetItemRef(c->u->u_metadata.u_fasthidden, mangled,
+                                  &item) < 0) {
+                goto error;
+            }
+            if (item == Py_True) {
+                optype = OP_FAST;
+            }
+            Py_XDECREF(item);
+        }
         break;
     case GLOBAL_IMPLICIT:
         if (_PyST_IsFunctionLike(c->u->u_ste))
@@ -4239,7 +4250,7 @@ compiler_nameop(struct compiler *c, location loc,
                 op = LOAD_FROM_DICT_OR_DEREF;
                 // First load the locals
                 if (codegen_addop_noarg(INSTR_SEQUENCE(c), LOAD_LOCALS, loc) < 0) {
-                    return ERROR;
+                    goto error;
                 }
             }
             else if (c->u->u_ste->ste_can_see_class_scope) {
@@ -4247,7 +4258,7 @@ compiler_nameop(struct compiler *c, location loc,
                 // First load the classdict
                 if (compiler_addop_o(c->u, loc, LOAD_DEREF,
                                      c->u->u_metadata.u_freevars, &_Py_ID(__classdict__)) < 0) {
-                    return ERROR;
+                    goto error;
                 }
             }
             else {
@@ -4274,7 +4285,7 @@ compiler_nameop(struct compiler *c, location loc,
                 // First load the classdict
                 if (compiler_addop_o(c->u, loc, LOAD_DEREF,
                                      c->u->u_metadata.u_freevars, &_Py_ID(__classdict__)) < 0) {
-                    return ERROR;
+                    goto error;
                 }
             } else {
                 op = LOAD_GLOBAL;
@@ -4308,6 +4319,10 @@ compiler_nameop(struct compiler *c, location loc,
         arg <<= 1;
     }
     return codegen_addop_i(INSTR_SEQUENCE(c), op, arg, loc);
+
+error:
+    Py_DECREF(mangled);
+    return ERROR;
 }
 
 static int
@@ -5536,8 +5551,13 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
         if ((symbol & DEF_LOCAL && !(symbol & DEF_NONLOCAL)) || in_class_block) {
             if (!_PyST_IsFunctionLike(c->u->u_ste)) {
                 // non-function scope: override this name to use fast locals
-                PyObject *orig = PyDict_GetItem(c->u->u_metadata.u_fasthidden, k);
-                if (orig != Py_True) {
+                PyObject *orig;
+                if (PyDict_GetItemRef(c->u->u_metadata.u_fasthidden, k, &orig) < 0) {
+                    return ERROR;
+                }
+                int orig_is_true = (orig == Py_True);
+                Py_XDECREF(orig);
+                if (!orig_is_true) {
                     if (PyDict_SetItem(c->u->u_metadata.u_fasthidden, k, Py_True) < 0) {
                         return ERROR;
                     }
