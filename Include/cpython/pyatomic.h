@@ -1,6 +1,27 @@
 #ifndef Py_ATOMIC_H
 #define Py_ATOMIC_H
 
+// This header provides cross-platform low-level atomic operations
+// similar to C11 atomics.
+//
+// Operations are sequentially consistent unless they have a suffix indicating
+// otherwise. If in doubt, prefer the sequentially consistent operations.
+//
+// The "_relaxed" suffix for load and store operations indicates the "relaxed"
+// memory order. They don't provide synchronization, but (roughly speaking)
+// guarantee somewhat sane behavior for races instead of undefined behavior.
+// In practice, they correspond to "normal" hardware load and store instructions,
+// so they are almost as inexpensive as plain loads and stores in C.
+//
+// Note that atomic read-modify-write operations like _Py_atomic_add_* return
+// the previous value of the atomic variable, not the new value.
+//
+// See https://en.cppreference.com/w/c/atomic for more information on C11 atomics.
+// See https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p2055r0.pdf
+// "A Relaxed Guide to memory_order_relaxed" for discussion of and common usage
+// or relaxed atomics.
+
+// Atomically adds `value` to `address` and returns the previous value
 static inline int
 _Py_atomic_add_int(int *address, int value);
 
@@ -40,7 +61,9 @@ _Py_atomic_add_uintptr(uintptr_t *address, uintptr_t value);
 static inline Py_ssize_t
 _Py_atomic_add_ssize(Py_ssize_t *address, Py_ssize_t value);
 
-
+// Performs an atomic compare-and-exchange. If `*address` and `expected` are equal,
+// then `value` is stored in `*address`. Returns 1 on success and 0 on failure.
+// These correspond to the "strong" variations of the C11 atomic_compare_exchange_* functions.
 static inline int
 _Py_atomic_compare_exchange_int(int *address, int expected, int value);
 
@@ -83,7 +106,7 @@ _Py_atomic_compare_exchange_ssize(Py_ssize_t *address, Py_ssize_t expected, Py_s
 static inline int
 _Py_atomic_compare_exchange_ptr(void *address, void *expected, void *value);
 
-
+// Atomically replaces `*address` with value and returns the previously value of *address.
 static inline int
 _Py_atomic_exchange_int(int *address, int value);
 
@@ -126,7 +149,7 @@ _Py_atomic_exchange_ssize(Py_ssize_t *address, Py_ssize_t value);
 static inline void *
 _Py_atomic_exchange_ptr(void *address, void *value);
 
-
+// Performs `*address &= value` atomically and returns the previous value of *address.
 static inline uint8_t
 _Py_atomic_and_uint8(uint8_t *address, uint8_t value);
 
@@ -142,7 +165,7 @@ _Py_atomic_and_uint64(uint64_t *address, uint64_t value);
 static inline uintptr_t
 _Py_atomic_and_uintptr(uintptr_t *address, uintptr_t value);
 
-
+// Performs `*address |= value` atomically and returns the previous value of *address.
 static inline uint8_t
 _Py_atomic_or_uint8(uint8_t *address, uint8_t value);
 
@@ -158,7 +181,7 @@ _Py_atomic_or_uint64(uint64_t *address, uint64_t value);
 static inline uintptr_t
 _Py_atomic_or_uintptr(uintptr_t *address, uintptr_t value);
 
-
+// Atomically loads `*address` (sequential consistency)
 static inline int
 _Py_atomic_load_int(const int *address);
 
@@ -201,7 +224,7 @@ _Py_atomic_load_ssize(const Py_ssize_t *address);
 static inline void *
 _Py_atomic_load_ptr(const void *address);
 
-
+// Loads `*address` (relaxed consistency, i.e., no ordering)
 static inline int
 _Py_atomic_load_int_relaxed(const int *address);
 
@@ -244,7 +267,7 @@ _Py_atomic_load_ssize_relaxed(const Py_ssize_t *address);
 static inline void *
 _Py_atomic_load_ptr_relaxed(const void *address);
 
-
+// Atomically performs `*address = value` (sequential consistency)
 static inline void
 _Py_atomic_store_int(int *address, int value);
 
@@ -287,7 +310,7 @@ _Py_atomic_store_ptr(void *address, void *value);
 static inline void
 _Py_atomic_store_ssize(Py_ssize_t* address, Py_ssize_t value);
 
-
+// Stores `*address = value` (relaxed consistency, i.e., no ordering)
 static inline void
 _Py_atomic_store_int_relaxed(int *address, int value);
 
@@ -330,7 +353,7 @@ _Py_atomic_store_ptr_relaxed(void *address, void *value);
 static inline void
 _Py_atomic_store_ssize_relaxed(Py_ssize_t *address, Py_ssize_t value);
 
-
+// Stores `*address = value` (release operation)
 static inline void
 _Py_atomic_store_uint64_release(uint64_t *address, uint64_t value);
 
@@ -338,10 +361,12 @@ static inline void
 _Py_atomic_store_ptr_release(void *address, void *value);
 
 
- static inline void
+// Sequential consistency fence
+static inline void
 _Py_atomic_fence_seq_cst(void);
 
- static inline void
+// Release fence
+static inline void
 _Py_atomic_fence_release(void);
 
 
