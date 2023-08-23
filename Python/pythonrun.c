@@ -22,7 +22,6 @@
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException, _Py_Offer_Suggestions
 #include "pycore_pylifecycle.h"   // _Py_UnhandledKeyboardInterrupt
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_symtable.h"      // _PyFuture_FromAST()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_traceback.h"     // _PyTraceBack_Print_Indented()
 
@@ -1792,24 +1791,6 @@ error:
     return NULL;
 }
 
-static int
-ast_optimize(mod_ty mod, PyObject *filename, PyCompilerFlags *cf,
-             int optimize, PyArena *arena)
-{
-    PyFutureFeatures future;
-    if (!_PyFuture_FromAST(mod, filename, &future)) {
-        return -1;
-    }
-    int flags = future.ff_features | cf->cf_flags;
-    if (optimize == -1) {
-        optimize = _Py_GetConfig()->optimization_level;
-    }
-    if (!_PyAST_Optimize(mod, arena, optimize, flags)) {
-        return -1;
-    }
-    return 0;
-}
-
 PyObject *
 Py_CompileStringObject(const char *str, PyObject *filename, int start,
                        PyCompilerFlags *flags, int optimize)
@@ -1827,8 +1808,7 @@ Py_CompileStringObject(const char *str, PyObject *filename, int start,
     }
     if (flags && (flags->cf_flags & PyCF_ONLY_AST)) {
         if ((flags->cf_flags & PyCF_OPTIMIZED_AST) == PyCF_OPTIMIZED_AST) {
-            if (ast_optimize(mod, filename, flags, optimize, arena) < 0) {
-                _PyArena_Free(arena);
+            if (_PyCompile_AstOptimize(mod, filename, flags, optimize, arena) < 0) {
                 return NULL;
             }
         }

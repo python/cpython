@@ -557,6 +557,24 @@ _PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
     return co;
 }
 
+int
+_PyCompile_AstOptimize(mod_ty mod, PyObject *filename, PyCompilerFlags *cf,
+                       int optimize, PyArena *arena)
+{
+    PyFutureFeatures future;
+    if (!_PyFuture_FromAST(mod, filename, &future)) {
+        return -1;
+    }
+    int flags = future.ff_features | cf->cf_flags;
+    if (optimize == -1) {
+        optimize = _Py_GetConfig()->optimization_level;
+    }
+    if (!_PyAST_Optimize(mod, arena, optimize, flags)) {
+        return -1;
+    }
+    return 0;
+}
+
 static void
 compiler_free(struct compiler *c)
 {

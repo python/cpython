@@ -19,6 +19,14 @@ PyAPI_FUNC(PyCodeObject*) _PyAST_Compile(
     int optimize,
     struct _arena *arena);
 
+/* AST optimizations */
+PyAPI_FUNC(int) _PyCompile_AstOptimize(
+    struct _mod *mod,
+    PyObject *filename,
+    PyCompilerFlags *flags,
+    int optimize,
+    struct _arena *arena);
+
 static const _PyCompilerSrcLocation NO_LOCATION = {-1, -1, -1, -1};
 
 extern int _PyAST_Optimize(
