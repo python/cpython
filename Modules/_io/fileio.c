@@ -3,7 +3,7 @@
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
-#include "structmember.h"         // PyMemberDef
+
 #include <stdbool.h>
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -1199,10 +1199,10 @@ static PyGetSetDef fileio_getsetlist[] = {
 };
 
 static PyMemberDef fileio_members[] = {
-    {"_blksize", T_UINT, offsetof(fileio, blksize), 0},
-    {"_finalizing", T_BOOL, offsetof(fileio, finalizing), 0},
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(fileio, weakreflist), READONLY},
-    {"__dictoffset__", T_PYSSIZET, offsetof(fileio, dict), READONLY},
+    {"_blksize", Py_T_UINT, offsetof(fileio, blksize), 0},
+    {"_finalizing", Py_T_BOOL, offsetof(fileio, finalizing), 0},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(fileio, weakreflist), Py_READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(fileio, dict), Py_READONLY},
     {NULL}
 };
 

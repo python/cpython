@@ -17,7 +17,7 @@
 
 #include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 #include "frameobject.h"          // PyFrame_New()
-#include "structmember.h"         // PyMemberDef
+
 #include "osdefs.h"               // SEP
 #ifdef HAVE_FCNTL_H
 #  include <fcntl.h>
@@ -25,7 +25,7 @@
 
 #define OFF(x) offsetof(PyTracebackObject, x)
 
-#define PUTS(fd, str) _Py_write_noraise(fd, str, (int)strlen(str))
+#define PUTS(fd, str) (void)_Py_write_noraise(fd, str, (int)strlen(str))
 #define MAX_STRING_LENGTH 500
 #define MAX_FRAME_DEPTH 100
 #define MAX_NTHREADS 100
@@ -148,9 +148,9 @@ static PyMethodDef tb_methods[] = {
 };
 
 static PyMemberDef tb_memberlist[] = {
-    {"tb_frame",        T_OBJECT,       OFF(tb_frame),  READONLY|PY_AUDIT_READ},
-    {"tb_lasti",        T_INT,          OFF(tb_lasti),  READONLY},
-    {"tb_lineno",       T_INT,          OFF(tb_lineno), READONLY},
+    {"tb_frame",        _Py_T_OBJECT,       OFF(tb_frame),  Py_READONLY|Py_AUDIT_READ},
+    {"tb_lasti",        Py_T_INT,          OFF(tb_lasti),  Py_READONLY},
+    {"tb_lineno",       Py_T_INT,          OFF(tb_lineno), Py_READONLY},
     {NULL}      /* Sentinel */
 };
 
@@ -1047,7 +1047,7 @@ _Py_DumpDecimal(int fd, size_t value)
         value /= 10;
     } while (value);
 
-    _Py_write_noraise(fd, ptr, end - ptr);
+    (void)_Py_write_noraise(fd, ptr, end - ptr);
 }
 
 /* Format an integer as hexadecimal with width digits into fd file descriptor.
@@ -1072,7 +1072,7 @@ _Py_DumpHexadecimal(int fd, uintptr_t value, Py_ssize_t width)
         value >>= 4;
     } while ((end - ptr) < width || value);
 
-    _Py_write_noraise(fd, ptr, end - ptr);
+    (void)_Py_write_noraise(fd, ptr, end - ptr);
 }
 
 void
@@ -1125,7 +1125,7 @@ _Py_DumpASCII(int fd, PyObject *text)
         }
         if (!need_escape) {
             // The string can be written with a single write() syscall
-            _Py_write_noraise(fd, str, size);
+            (void)_Py_write_noraise(fd, str, size);
             goto done;
         }
     }
@@ -1135,7 +1135,7 @@ _Py_DumpASCII(int fd, PyObject *text)
         if (' ' <= ch && ch <= 126) {
             /* printable ASCII character */
             char c = (char)ch;
-            _Py_write_noraise(fd, &c, 1);
+            (void)_Py_write_noraise(fd, &c, 1);
         }
         else if (ch <= 0xff) {
             PUTS(fd, "\\x");
@@ -1207,7 +1207,7 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
         PUTS(fd, "Stack (most recent call first):\n");
     }
 
-    frame = tstate->cframe->current_frame;
+    frame = tstate->current_frame;
     if (frame == NULL) {
         PUTS(fd, "  <no Python frame>\n");
         return;

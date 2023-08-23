@@ -897,7 +897,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
 }
 
 static PyMemberDef ast_type_members[] = {
-    {"__dictoffset__", T_PYSSIZET, offsetof(AST_object, dict), READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(AST_object, dict), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -1208,6 +1208,9 @@ class ASTModuleVisitor(PickleVisitor):
         self.emit('if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0) {', 1)
         self.emit("return -1;", 2)
         self.emit('}', 1)
+        self.emit('if (PyModule_AddIntMacro(m, PyCF_OPTIMIZED_AST) < 0) {', 1)
+        self.emit("return -1;", 2)
+        self.emit('}', 1)
         for dfn in mod.dfns:
             self.visit(dfn)
         self.emit("return 0;", 1)
@@ -1393,7 +1396,7 @@ PyObject* PyAST_mod2obj(mod_ty t)
 
     int starting_recursion_depth;
     /* Be careful here to prevent overflow. */
-    int COMPILER_STACK_FRAME_SCALE = 3;
+    int COMPILER_STACK_FRAME_SCALE = 2;
     PyThreadState *tstate = _PyThreadState_GET();
     if (!tstate) {
         return 0;
@@ -1542,7 +1545,6 @@ def generate_module_def(mod, metadata, f, internal_h):
         #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
         #include "pycore_interp.h"        // _PyInterpreterState.ast
         #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-        #include "structmember.h"
         #include <stddef.h>
 
         // Forward declaration
@@ -1583,7 +1585,7 @@ def write_header(mod, metadata, f):
         #  error "this header requires Py_BUILD_CORE define"
         #endif
 
-        #include "pycore_asdl.h"
+        #include "pycore_asdl.h"          // _ASDL_SEQ_HEAD
 
     """).lstrip())
 

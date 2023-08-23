@@ -10,28 +10,29 @@
 #undef NDEBUG
 
 #include "Python.h"
-#include "frameobject.h"
-#include "interpreteridobject.h"  // _PyInterpreterID_LookUp()
-#include "pycore_atomic_funcs.h" // _Py_atomic_int_get()
-#include "pycore_bitutils.h"     // _Py_bswap32()
-#include "pycore_bytesobject.h"  // _PyBytes_Find()
-#include "pycore_compile.h"      // _PyCompile_CodeGen, _PyCompile_OptimizeCfg, _PyCompile_Assemble, _PyCompile_CleanDoc
-#include "pycore_ceval.h"        // _PyEval_AddPendingCall
-#include "pycore_fileutils.h"    // _Py_normpath
-#include "pycore_frame.h"        // _PyInterpreterFrame
-#include "pycore_gc.h"           // PyGC_Head
-#include "pycore_hashtable.h"    // _Py_hashtable_new()
-#include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
-#include "pycore_interp.h"       // _PyInterpreterState_GetConfigCopy()
-#include "pycore_pathconfig.h"   // _PyPathConfig_ClearGlobal()
-#include "pycore_pyerrors.h"     // _Py_UTF8_Edit_Cost()
-#include "pycore_pystate.h"      // _PyThreadState_GET()
-#include "osdefs.h"              // MAXPATHLEN
+#include "pycore_atomic_funcs.h"  // _Py_atomic_int_get()
+#include "pycore_bitutils.h"      // _Py_bswap32()
+#include "pycore_bytesobject.h"   // _PyBytes_Find()
+#include "pycore_compile.h"       // _PyCompile_CodeGen, _PyCompile_OptimizeCfg, _PyCompile_Assemble, _PyCompile_CleanDoc
+#include "pycore_ceval.h"         // _PyEval_AddPendingCall
+#include "pycore_dict.h"          // _PyDictOrValues_GetValues()
+#include "pycore_fileutils.h"     // _Py_normpath
+#include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_gc.h"            // PyGC_Head
+#include "pycore_hashtable.h"     // _Py_hashtable_new()
+#include "pycore_initconfig.h"    // _Py_GetConfigsAsDict()
+#include "pycore_interp.h"        // _PyInterpreterState_GetConfigCopy()
+#include "pycore_object.h"        // _PyObject_IsFreed()
+#include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
+#include "pycore_pyerrors.h"      // _Py_UTF8_Edit_Cost()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+
+#include "interpreteridobject.h"  // PyInterpreterID_LookUp()
 
 #include "clinic/_testinternalcapi.c.h"
 
 #ifdef MS_WINDOWS
-#  include <winsock2.h>           // struct timeval
+#  include <winsock2.h>          // struct timeval
 #endif
 
 
@@ -1081,7 +1082,7 @@ pending_identify(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O:pending_identify", &interpid)) {
         return NULL;
     }
-    PyInterpreterState *interp = _PyInterpreterID_LookUp(interpid);
+    PyInterpreterState *interp = PyInterpreterID_LookUp(interpid);
     if (interp == NULL) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError, "interpreter not found");
@@ -1431,7 +1432,7 @@ test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
     PyThreadState *tstate = Py_NewInterpreter();
 
     struct atexit_data data = {0};
-    int res = _Py_AtExit(tstate->interp, callback, (void *)&data);
+    int res = PyUnstable_AtExit(tstate->interp, callback, (void *)&data);
     Py_EndInterpreter(tstate);
     PyThreadState_Swap(oldts);
     if (res < 0) {
@@ -1443,6 +1444,123 @@ test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
         return NULL;
     }
     Py_RETURN_NONE;
+}
+
+
+static PyObject *
+test_pyobject_is_freed(const char *test_name, PyObject *op)
+{
+    if (!_PyObject_IsFreed(op)) {
+        PyErr_SetString(PyExc_AssertionError,
+                        "object is not seen as freed");
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+check_pyobject_null_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyObject *op = NULL;
+    return test_pyobject_is_freed("check_pyobject_null_is_freed", op);
+}
+
+
+static PyObject *
+check_pyobject_uninitialized_is_freed(PyObject *self,
+                                      PyObject *Py_UNUSED(args))
+{
+    PyObject *op = (PyObject *)PyObject_Malloc(sizeof(PyObject));
+    if (op == NULL) {
+        return NULL;
+    }
+    /* Initialize reference count to avoid early crash in ceval or GC */
+    Py_SET_REFCNT(op, 1);
+    /* object fields like ob_type are uninitialized! */
+    return test_pyobject_is_freed("check_pyobject_uninitialized_is_freed", op);
+}
+
+
+static PyObject *
+check_pyobject_forbidden_bytes_is_freed(PyObject *self,
+                                        PyObject *Py_UNUSED(args))
+{
+    /* Allocate an incomplete PyObject structure: truncate 'ob_type' field */
+    PyObject *op = (PyObject *)PyObject_Malloc(offsetof(PyObject, ob_type));
+    if (op == NULL) {
+        return NULL;
+    }
+    /* Initialize reference count to avoid early crash in ceval or GC */
+    Py_SET_REFCNT(op, 1);
+    /* ob_type field is after the memory block: part of "forbidden bytes"
+       when using debug hooks on memory allocators! */
+    return test_pyobject_is_freed("check_pyobject_forbidden_bytes_is_freed", op);
+}
+
+
+static PyObject *
+check_pyobject_freed_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    /* This test would fail if run with the address sanitizer */
+#ifdef _Py_ADDRESS_SANITIZER
+    Py_RETURN_NONE;
+#else
+    PyObject *op = PyObject_CallNoArgs((PyObject *)&PyBaseObject_Type);
+    if (op == NULL) {
+        return NULL;
+    }
+    Py_TYPE(op)->tp_dealloc(op);
+    /* Reset reference count to avoid early crash in ceval or GC */
+    Py_SET_REFCNT(op, 1);
+    /* object memory is freed! */
+    return test_pyobject_is_freed("check_pyobject_freed_is_freed", op);
+#endif
+}
+
+
+static PyObject *
+test_pymem_getallocatorsname(PyObject *self, PyObject *args)
+{
+    const char *name = _PyMem_GetCurrentAllocatorName();
+    if (name == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "cannot get allocators name");
+        return NULL;
+    }
+    return PyUnicode_FromString(name);
+}
+
+static PyObject *
+get_object_dict_values(PyObject *self, PyObject *obj)
+{
+    PyTypeObject *type = Py_TYPE(obj);
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_MANAGED_DICT)) {
+        Py_RETURN_NONE;
+    }
+    PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(obj);
+    if (!_PyDictOrValues_IsValues(dorv)) {
+        Py_RETURN_NONE;
+    }
+    PyDictValues *values = _PyDictOrValues_GetValues(dorv);
+    PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
+    assert(keys != NULL);
+    int size = (int)keys->dk_nentries;
+    assert(size >= 0);
+    PyObject *res = PyTuple_New(size);
+    if (res == NULL) {
+        return NULL;
+    }
+    _Py_DECLARE_STR(anon_null, "<NULL>");
+    for(int i = 0; i < size; i++) {
+        PyObject *item = values->values[i];
+        if (item == NULL) {
+            item = &_Py_STR(anon_null);
+        }
+        else {
+            Py_INCREF(item);
+        }
+        PyTuple_SET_ITEM(res, i, item);
+    }
+    return res;
 }
 
 
@@ -1502,6 +1620,14 @@ static PyMethodDef module_functions[] = {
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {"_PyUnicode_TransformDecimalAndSpaceToASCII", unicode_transformdecimalandspacetoascii, METH_O},
     {"test_atexit", test_atexit, METH_NOARGS},
+    {"check_pyobject_forbidden_bytes_is_freed",
+                            check_pyobject_forbidden_bytes_is_freed, METH_NOARGS},
+    {"check_pyobject_freed_is_freed", check_pyobject_freed_is_freed, METH_NOARGS},
+    {"check_pyobject_null_is_freed",  check_pyobject_null_is_freed,  METH_NOARGS},
+    {"check_pyobject_uninitialized_is_freed",
+                              check_pyobject_uninitialized_is_freed, METH_NOARGS},
+    {"pymem_getallocatorsname", test_pymem_getallocatorsname, METH_NOARGS},
+    {"get_object_dict_values", get_object_dict_values, METH_O},
     {NULL, NULL} /* sentinel */
 };
 

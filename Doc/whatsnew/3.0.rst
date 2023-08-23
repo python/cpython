@@ -789,7 +789,7 @@ Operators And Special Methods
   :attr:`__doc__`, :attr:`__globals__`, :attr:`~definition.__name__`,
   respectively.
 
-* :meth:`__nonzero__` is now :meth:`__bool__`.
+* :meth:`!__nonzero__` is now :meth:`~object.__bool__`.
 
 Builtins
 --------
@@ -865,8 +865,8 @@ to the C API.
 
 * No more C API support for restricted execution.
 
-* :c:func:`PyNumber_Coerce`, :c:func:`PyNumber_CoerceEx`,
-  :c:func:`PyMember_Get`, and :c:func:`PyMember_Set` C APIs are removed.
+* :c:func:`!PyNumber_Coerce`, :c:func:`!PyNumber_CoerceEx`,
+  :c:func:`!PyMember_Get`, and :c:func:`!PyMember_Set` C APIs are removed.
 
 * New C API :c:func:`PyImport_ImportModuleNoBlock`, works like
   :c:func:`PyImport_ImportModule` but won't block on the import lock
@@ -875,7 +875,7 @@ to the C API.
 * Renamed the boolean conversion C-level slot and method:
   ``nb_nonzero`` is now ``nb_bool``.
 
-* Removed :c:macro:`METH_OLDARGS` and :c:macro:`WITH_CYCLE_GC` from the C API.
+* Removed :c:macro:`!METH_OLDARGS` and :c:macro:`!WITH_CYCLE_GC` from the C API.
 
 .. ======================================================================
 

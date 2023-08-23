@@ -4,8 +4,8 @@
 
 /* Interpreter ID Object */
 
-PyAPI_DATA(PyTypeObject) _PyInterpreterID_Type;
+PyAPI_DATA(PyTypeObject) PyInterpreterID_Type;
 
-PyAPI_FUNC(PyObject *) _PyInterpreterID_New(int64_t);
-PyAPI_FUNC(PyObject *) _PyInterpreterState_GetIDObject(PyInterpreterState *);
-PyAPI_FUNC(PyInterpreterState *) _PyInterpreterID_LookUp(PyObject *);
+PyAPI_FUNC(PyObject *) PyInterpreterID_New(int64_t);
+PyAPI_FUNC(PyObject *) PyInterpreterState_GetIDObject(PyInterpreterState *);
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterID_LookUp(PyObject *);

@@ -613,6 +613,26 @@ _opcode_get_specialization_stats(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _opcode_get_specialization_stats_impl(module);
 }
 
+PyDoc_STRVAR(_opcode_get_nb_ops__doc__,
+"get_nb_ops($module, /)\n"
+"--\n"
+"\n"
+"Return array of symbols of binary ops.\n"
+"\n"
+"Indexed by the BINARY_OP oparg value.");
+
+#define _OPCODE_GET_NB_OPS_METHODDEF    \
+    {"get_nb_ops", (PyCFunction)_opcode_get_nb_ops, METH_NOARGS, _opcode_get_nb_ops__doc__},
+
+static PyObject *
+_opcode_get_nb_ops_impl(PyObject *module);
+
+static PyObject *
+_opcode_get_nb_ops(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _opcode_get_nb_ops_impl(module);
+}
+
 PyDoc_STRVAR(_opcode_get_intrinsic1_descs__doc__,
 "get_intrinsic1_descs($module, /)\n"
 "--\n"
@@ -648,4 +668,4 @@ _opcode_get_intrinsic2_descs(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _opcode_get_intrinsic2_descs_impl(module);
 }
-/*[clinic end generated code: output=d85de5f2887b3661 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=31a1a11c2f81dca4 input=a9049054013a1b77]*/
