@@ -12,7 +12,6 @@ extern "C" {
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_runtime.h"       // _PyRuntime
 
 /* Check if an object is consistent. For example, ensure that the reference
    counter is greater than or equal to 1, and ensure that ob_type is not NULL.
@@ -173,6 +172,7 @@ _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
 
 extern void _PyType_InitCache(PyInterpreterState *interp);
 
+extern void _PyObject_InitState(PyInterpreterState *interp);
 
 /* Inline functions trading binary compatibility for speed:
    _PyObject_Init() is the fast version of PyObject_Init(), and
@@ -380,7 +380,7 @@ extern PyObject *_PyType_NewManagedObject(PyTypeObject *type);
 
 extern PyTypeObject* _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
 extern PyObject* _PyType_GetDocFromInternalDoc(const char *, const char *);
-extern PyObject* _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);
+extern PyObject* _PyType_GetTextSignatureFromInternalDoc(const char *, const char *, int);
 
 extern int _PyObject_InitializeDict(PyObject *obj);
 int _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp);

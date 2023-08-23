@@ -1031,6 +1031,20 @@ class TestSpecifics(unittest.TestCase):
         code_lines = self.get_code_lines(test.__code__)
         self.assertEqual(expected_lines, code_lines)
 
+    def test_lineno_of_backward_jump(self):
+        # Issue gh-107901
+        def f():
+            for i in x:
+                if y:
+                    pass
+
+        linenos = list(inst.positions.lineno
+                       for inst in dis.get_instructions(f.__code__)
+                       if inst.opname == 'JUMP_BACKWARD')
+
+        self.assertTrue(len(linenos) > 0)
+        self.assertTrue(all(l is not None for l in linenos))
+
     def test_big_dict_literal(self):
         # The compiler has a flushing point in "compiler_dict" that calls compiles
         # a portion of the dictionary literal when the loop that iterates over the items
@@ -1315,18 +1329,18 @@ class TestSourcePositions(unittest.TestCase):
         snippet = textwrap.dedent("""\
             assert (a > 0 and
                     bb > 0 and
-                    ccc == 4), "error msg"
+                    ccc == 1000000), "error msg"
             """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
         self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_ASSERTION_ERROR',
-            line=1, end_line=3, column=0, end_column=30, occurrence=1)
+            line=1, end_line=3, column=0, end_column=36, occurrence=1)
         #  The "error msg":
         self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_CONST',
-            line=3, end_line=3, column=19, end_column=30, occurrence=4)
+            line=3, end_line=3, column=25, end_column=36, occurrence=4)
         self.assertOpcodeSourcePositionIs(compiled_code, 'CALL',
-            line=1, end_line=3, column=0, end_column=30, occurrence=1)
+            line=1, end_line=3, column=0, end_column=36, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'RAISE_VARARGS',
-            line=1, end_line=3, column=0, end_column=30, occurrence=1)
+            line=1, end_line=3, column=8, end_column=22, occurrence=1)
 
     def test_multiline_generator_expression(self):
         snippet = textwrap.dedent("""\
