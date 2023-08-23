@@ -669,16 +669,24 @@ defined by the module.  The specific list of defined symbols is available as
 
 .. data:: ECANCELED
 
-   operation canceled
+   Operation canceled
+
+   .. versionadded:: 3.2
 
 .. data:: EOWNERDEAD
 
-   owner dead
+   Owner died
+
+   .. versionadded:: 3.2
 
 .. data:: ENOTRECOVERABLE
 
-   state not recoverable
+   State not recoverable
+
+   .. versionadded:: 3.2
 
 .. data:: ENOTSUP
 
-   not supported
+   Operation not supported
+
+   .. versionadded:: 3.2
