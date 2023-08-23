@@ -814,15 +814,15 @@ _Py_atomic_store_ssize_relaxed(Py_ssize_t *address, Py_ssize_t value)
     *(volatile Py_ssize_t *)address = value;
 }
 
-static inline void
-_Py_atomic_store_uint64_release(uint64_t *address, uint64_t value)
+static inline void *
+_Py_atomic_load_ptr_acquire(const void *address)
 {
 #if defined(_M_X64) || defined(_M_IX86)
-    *(volatile uint64_t *)address = value;
+    return *(void * volatile *)address;
 #elif defined(_M_ARM64)
-    __stlr64(address, value);
+    return (void *)__ldar64((unsigned __int64 volatile*)address);
 #else
-#error no implementation of _Py_atomic_store_uint64_release
+#error no implementation of _Py_atomic_load_ptr_acquire
 #endif
 }
 

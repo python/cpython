@@ -653,11 +653,10 @@ _Py_atomic_store_ssize_relaxed(Py_ssize_t *address, Py_ssize_t value)
     __atomic_store_n(address, value, __ATOMIC_RELAXED);
 }
 
-
-static inline void
-_Py_atomic_store_uint64_release(uint64_t *address, uint64_t value)
+static inline void *
+_Py_atomic_load_ptr_acquire(const void *address)
 {
-    __atomic_store_n(address, value, __ATOMIC_RELEASE);
+    return (void *)__atomic_load_n((void **)address, __ATOMIC_ACQUIRE);
 }
 
 static inline void

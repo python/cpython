@@ -355,10 +355,12 @@ _Py_atomic_store_ptr_relaxed(void *address, void *value);
 static inline void
 _Py_atomic_store_ssize_relaxed(Py_ssize_t *address, Py_ssize_t value);
 
-// Stores `*address = value` (release operation)
-static inline void
-_Py_atomic_store_uint64_release(uint64_t *address, uint64_t value);
 
+// Loads `*address` (acquire operation)
+static inline void *
+_Py_atomic_load_ptr_acquire(const void *address);
+
+// Stores `*address = value` (release operation)
 static inline void
 _Py_atomic_store_ptr_release(void *address, void *value);
 

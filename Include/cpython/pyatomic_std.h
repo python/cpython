@@ -770,11 +770,11 @@ _Py_atomic_store_ssize_relaxed(Py_ssize_t *address, Py_ssize_t value)
     atomic_store_explicit((_Atomic(Py_ssize_t)*)address, value, memory_order_relaxed);
 }
 
-static inline void
-_Py_atomic_store_uint64_release(uint64_t *address, uint64_t value)
+static inline void *
+_Py_atomic_load_ptr_acquire(const void *address)
 {
     _Py_USING_STD
-    atomic_store_explicit((_Atomic(uint64_t)*)address, value, memory_order_release);
+    return atomic_load_explicit((const _Atomic(void*)*)address, memory_order_acquire);
 }
 
 static inline void

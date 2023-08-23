@@ -131,6 +131,17 @@ test_atomic_fences(PyObject *self, PyObject *obj) {
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_atomic_release_acquire(PyObject *self, PyObject *obj) {
+    void *x = NULL;
+    void *y = &y;
+    assert(_Py_atomic_load_ptr_acquire(&x) == NULL);
+    _Py_atomic_store_ptr_release(&x, y);
+    assert(x == y);
+    assert(_Py_atomic_load_ptr_acquire(&x) == y);
+    Py_RETURN_NONE;
+}
+
 // NOTE: all tests should start with "test_atomic_" to be included
 // in test_pyatomic.py
 
@@ -152,6 +163,7 @@ static PyMethodDef test_methods[] = {
     FOR_ALL_TYPES(BIND_TEST_LOAD_STORE)
     FOR_BITWISE_TYPES(BIND_TEST_AND_OR)
     {"test_atomic_fences", test_atomic_fences, METH_NOARGS},
+    {"test_atomic_release_acquire", test_atomic_release_acquire, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
