@@ -185,6 +185,15 @@ General Options
 
    .. versionadded:: 3.11
 
+.. cmdoption:: --disable-gil
+
+   Enables **experimental** support for running Python without the
+   :term:`global interpreter lock` (GIL).
+
+   See :pep:`703` "Making the Global Interpreter Lock Optional in CPython".
+
+   .. versionadded:: 3.13
+
 WebAssembly Options
 -------------------
 
@@ -686,7 +695,6 @@ Main files of the build system
 * :file:`pyconfig.h` (created by :file:`configure`);
 * :file:`Modules/Setup`: C extensions built by the Makefile using
   :file:`Module/makesetup` shell script;
-* :file:`setup.py`: C extensions built using the ``setuptools`` package.
 
 Main build steps
 ----------------
@@ -695,8 +703,7 @@ Main build steps
 * A static ``libpython`` library (``.a``) is created from objects files.
 * ``python.o`` and the static ``libpython`` library are linked into the
   final ``python`` program.
-* C extensions are built by the Makefile (see :file:`Modules/Setup`)
-  and ``python setup.py build``.
+* C extensions are built by the Makefile (see :file:`Modules/Setup`).
 
 Main Makefile targets
 ---------------------
@@ -748,11 +755,8 @@ Example on Linux x86-64::
 At the beginning of the files, C extensions are built as built-in modules.
 Extensions defined after the ``*shared*`` marker are built as dynamic libraries.
 
-The :file:`setup.py` script only builds C extensions as shared libraries using
-the :mod:`distutils` module.
-
-The :c:macro:`PyAPI_FUNC()`, :c:macro:`PyAPI_API()` and
-:c:macro:`PyMODINIT_FUNC()` macros of :file:`Include/pyport.h` are defined
+The :c:macro:`PyAPI_FUNC()`, :c:macro:`PyAPI_DATA()` and
+:c:macro:`PyMODINIT_FUNC` macros of :file:`Include/pyport.h` are defined
 differently depending if the ``Py_BUILD_CORE_MODULE`` macro is defined:
 
 * Use ``Py_EXPORTED_SYMBOL`` if the ``Py_BUILD_CORE_MODULE`` is defined
@@ -784,7 +788,7 @@ Preprocessor flags
    headers in a nonstandard directory ``<include dir>``.
 
    Both :envvar:`CPPFLAGS` and :envvar:`LDFLAGS` need to contain the shell's
-   value for setup.py to be able to build extension modules using the
+   value to be able to build extension modules using the
    directories specified in the environment variables.
 
 .. envvar:: BASECPPFLAGS
@@ -821,8 +825,8 @@ Compiler flags
 .. envvar:: CFLAGS_NODIST
 
    :envvar:`CFLAGS_NODIST` is used for building the interpreter and stdlib C
-   extensions.  Use it when a compiler flag should *not* be part of the
-   distutils :envvar:`CFLAGS` once Python is installed (:issue:`21121`).
+   extensions.  Use it when a compiler flag should *not* be part of
+   :envvar:`CFLAGS` once Python is installed (:gh:`65320`).
 
    In particular, :envvar:`CFLAGS` should not contain:
 
@@ -952,7 +956,7 @@ Linker flags
 
    :envvar:`LDFLAGS_NODIST` is used in the same manner as
    :envvar:`CFLAGS_NODIST`.  Use it when a linker flag should *not* be part of
-   the distutils :envvar:`LDFLAGS` once Python is installed (:issue:`35257`).
+   :envvar:`LDFLAGS` once Python is installed (:gh:`65320`).
 
    In particular, :envvar:`LDFLAGS` should not contain:
 
@@ -974,7 +978,7 @@ Linker flags
    directory ``<lib dir>``.
 
    Both :envvar:`CPPFLAGS` and :envvar:`LDFLAGS` need to contain the shell's
-   value for setup.py to be able to build extension modules using the
+   value to be able to build extension modules using the
    directories specified in the environment variables.
 
 .. envvar:: LIBS

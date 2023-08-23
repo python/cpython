@@ -1,8 +1,11 @@
+import copy
+import pickle
 import dis
 import threading
 import types
 import unittest
 from test.support import threading_helper
+import _testinternalcapi
 
 
 class TestLoadSuperAttrCache(unittest.TestCase):
@@ -996,6 +999,124 @@ class TestRacesDoNotCrash(unittest.TestCase):
 
         opname = "UNPACK_SEQUENCE_LIST"
         self.assert_races_do_not_crash(opname, get_items, read, write)
+
+class C:
+    pass
+
+class TestInstanceDict(unittest.TestCase):
+
+    def setUp(self):
+        c = C()
+        c.a, c.b, c.c = 0,0,0
+
+    def test_values_on_instance(self):
+        c = C()
+        c.a = 1
+        C().b = 2
+        c.c = 3
+        self.assertEqual(
+            _testinternalcapi.get_object_dict_values(c),
+            (1, '<NULL>', 3)
+        )
+
+    def test_dict_materialization(self):
+        c = C()
+        c.a = 1
+        c.b = 2
+        c.__dict__
+        self.assertIs(
+            _testinternalcapi.get_object_dict_values(c),
+            None
+        )
+
+    def test_dict_dematerialization(self):
+        c = C()
+        c.a = 1
+        c.b = 2
+        c.__dict__
+        self.assertIs(
+            _testinternalcapi.get_object_dict_values(c),
+            None
+        )
+        for _ in range(100):
+            c.a
+        self.assertEqual(
+            _testinternalcapi.get_object_dict_values(c),
+            (1, 2, '<NULL>')
+        )
+
+    def test_dict_dematerialization_multiple_refs(self):
+        c = C()
+        c.a = 1
+        c.b = 2
+        d = c.__dict__
+        for _ in range(100):
+            c.a
+        self.assertIs(
+            _testinternalcapi.get_object_dict_values(c),
+            None
+        )
+        self.assertIs(c.__dict__, d)
+
+    def test_dict_dematerialization_copy(self):
+        c = C()
+        c.a = 1
+        c.b = 2
+        c2 = copy.copy(c)
+        for _ in range(100):
+            c.a
+            c2.a
+        self.assertEqual(
+            _testinternalcapi.get_object_dict_values(c),
+            (1, 2, '<NULL>')
+        )
+        self.assertEqual(
+            _testinternalcapi.get_object_dict_values(c2),
+            (1, 2, '<NULL>')
+        )
+        c3 = copy.deepcopy(c)
+        for _ in range(100):
+            c.a
+            c3.a
+        self.assertEqual(
+            _testinternalcapi.get_object_dict_values(c),
+            (1, 2, '<NULL>')
+        )
+        #NOTE -- c3.__dict__ does not de-materialize
+
+    def test_dict_dematerialization_pickle(self):
+        c = C()
+        c.a = 1
+        c.b = 2
+        c2 = pickle.loads(pickle.dumps(c))
+        for _ in range(100):
+            c.a
+            c2.a
+        self.assertEqual(
+            _testinternalcapi.get_object_dict_values(c),
+            (1, 2, '<NULL>')
+        )
+        self.assertEqual(
+            _testinternalcapi.get_object_dict_values(c2),
+            (1, 2, '<NULL>')
+        )
+
+    def test_dict_dematerialization_subclass(self):
+        class D(dict): pass
+        c = C()
+        c.a = 1
+        c.b = 2
+        c.__dict__ = D(c.__dict__)
+        for _ in range(100):
+            c.a
+        self.assertIs(
+            _testinternalcapi.get_object_dict_values(c),
+            None
+        )
+        self.assertEqual(
+            c.__dict__,
+            {'a':1, 'b':2}
+        )
 
 
 if __name__ == "__main__":
