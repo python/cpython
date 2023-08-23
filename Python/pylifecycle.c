@@ -762,18 +762,30 @@ pycore_init_builtins(PyThreadState *tstate)
     }
     interp->builtins = Py_NewRef(builtins_dict);
 
-    PyObject *isinstance = PyDict_GetItem(builtins_dict, &_Py_ID(isinstance));
-    assert(isinstance);
+    PyObject *isinstance = PyDict_GetItemWithError(builtins_dict, &_Py_ID(isinstance));
+    if (!isinstance) {
+        goto error;
+    }
     interp->callable_cache.isinstance = isinstance;
-    PyObject *len = PyDict_GetItem(builtins_dict, &_Py_ID(len));
-    assert(len);
+
+    PyObject *len = PyDict_GetItemWithError(builtins_dict, &_Py_ID(len));
+    if (!len) {
+        goto error;
+    }
     interp->callable_cache.len = len;
+
     PyObject *list_append = _PyType_Lookup(&PyList_Type, &_Py_ID(append));
-    assert(list_append);
+    if (list_append == NULL) {
+        goto error;
+    }
     interp->callable_cache.list_append = list_append;
+
     PyObject *object__getattribute__ = _PyType_Lookup(&PyBaseObject_Type, &_Py_ID(__getattribute__));
-    assert(object__getattribute__);
+    if (object__getattribute__ == NULL) {
+        goto error;
+    }
     interp->callable_cache.object__getattribute__ = object__getattribute__;
+
     if (_PyBuiltins_AddExceptions(bimod) < 0) {
         return _PyStatus_ERR("failed to add exceptions to builtins");
     }
