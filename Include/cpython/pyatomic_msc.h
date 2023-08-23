@@ -1,5 +1,8 @@
 // This is the implementation of Python atomic operations for MSVC if the
 // compiler does not support C11 or C++11 atomics.
+//
+// MSVC intrinsics are defined on char, short, long, __int64, and pointer
+// types. Note that long and int are both 32-bits even on 64-bit Windows.
 
 #ifndef Py_ATOMIC_MSC_H
 #  error "this header file must not be included directly"
@@ -7,28 +10,31 @@
 
 #include <intrin.h>
 
-
 static inline int
 _Py_atomic_add_int(int *address, int value)
 {
+    Py_BUILD_ASSERT(sizeof(int) == sizeof(long));
     return (int)_InterlockedExchangeAdd((volatile long*)address, (long)value);
 }
 
 static inline int8_t
 _Py_atomic_add_int8(int8_t *address, int8_t value)
 {
+    Py_BUILD_ASSERT(sizeof(int8_t) == sizeof(char));
     return (int8_t)_InterlockedExchangeAdd8((volatile char*)address, (char)value);
 }
 
 static inline int16_t
 _Py_atomic_add_int16(int16_t *address, int16_t value)
 {
+    Py_BUILD_ASSERT(sizeof(int16_t) == sizeof(short));
     return (int16_t)_InterlockedExchangeAdd16((volatile short*)address, (short)value);
 }
 
 static inline int32_t
 _Py_atomic_add_int32(int32_t *address, int32_t value)
 {
+    Py_BUILD_ASSERT(sizeof(int32_t) == sizeof(long));
     return (int32_t)_InterlockedExchangeAdd((volatile long*)address, (long)value);
 }
 
@@ -39,9 +45,9 @@ _Py_atomic_add_int64(int64_t *address, int64_t value)
     return (int64_t)_InterlockedExchangeAdd64((volatile __int64*)address, (__int64)value);
 #else
     for (;;) {
-        __int64 old_value = *(volatile __int64*)address;
-        __int64 new_value = old_value + (__int64)value;
-        if (old_value == _InterlockedCompareExchange64((volatile __int64*)address, new_value, old_value)) {
+        int64_t old_value = *(volatile int64_t*)address;
+        int64_t new_value = old_value + value;
+        if (_Py_atomic_compare_exchange_int64(address, old_value, new_value)) {
             return old_value;
         }
     }
@@ -228,9 +234,8 @@ _Py_atomic_exchange_int64(int64_t *address, int64_t value)
     return (int64_t)_InterlockedExchange64((volatile __int64*)address, (__int64)value);
 #else
     for (;;) {
-        __int64 old_value = *(volatile __int64*)address;
-        __int64 new_value = (__int64)value;
-        if (old_value == _InterlockedCompareExchange64((volatile __int64*)address, new_value, old_value)) {
+        int64_t old_value = *(volatile int64_t*)address;
+        if (old_value == _Py_atomic_compare_exchange_int64(address, old_value, value)) {
             return old_value;
         }
     }
@@ -322,7 +327,7 @@ _Py_atomic_and_uint64(uint64_t *address, uint64_t value)
     for (;;) {
         uint64_t old_value = *(volatile uint64_t*)address;
         uint64_t new_value = old_value & value;
-        if ((__int64)old_value == _InterlockedCompareExchange64((volatile __int64*)address, (__int64)new_value, (__int64)old_value)) {
+        if (_Py_atomic_compare_exchange_uint64(address, old_value, new_value)) {
             return old_value;
         }
     }
@@ -366,7 +371,7 @@ _Py_atomic_or_uint64(uint64_t *address, uint64_t value)
     for (;;) {
         uint64_t old_value = *(volatile uint64_t *)address;
         uint64_t new_value = old_value | value;
-        if (old_value == _InterlockedCompareExchange64((volatile __int64*)address, (__int64)new_value, (__int64)old_value)) {
+        if (_Py_atomic_compare_exchange_uint64(address, old_value, new_value)) {
             return old_value;
         }
     }
