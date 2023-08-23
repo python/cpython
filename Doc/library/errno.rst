@@ -511,6 +511,13 @@ defined by the module.  The specific list of defined symbols is available as
    Operation not supported on transport endpoint
 
 
+.. data:: ENOTSUP
+
+   Operation not supported
+
+   .. versionadded:: 3.2
+
+
 .. data:: EPFNOSUPPORT
 
    Protocol family not supported
@@ -667,11 +674,13 @@ defined by the module.  The specific list of defined symbols is available as
 
    .. versionadded:: 3.11.1
 
+
 .. data:: ECANCELED
 
    Operation canceled
 
    .. versionadded:: 3.2
+
 
 .. data:: EOWNERDEAD
 
@@ -679,14 +688,9 @@ defined by the module.  The specific list of defined symbols is available as
 
    .. versionadded:: 3.2
 
+
 .. data:: ENOTRECOVERABLE
 
    State not recoverable
-
-   .. versionadded:: 3.2
-
-.. data:: ENOTSUP
-
-   Operation not supported
 
    .. versionadded:: 3.2
