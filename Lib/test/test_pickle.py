@@ -570,6 +570,10 @@ class CompatPickleTests(unittest.TestCase):
                                  ('multiprocessing.context', name))
 
 
+class C_with_reduce_ex:
+    def __reduce_ex__(self):
+        return 10
+
 class C_None_reduce_ex:
     __reduce_ex__ = None
 
@@ -603,6 +607,20 @@ class PickleReductionMethodsTests(unittest.TestCase):
         c = C_None_reduce()
         with self.assertRaises(TypeError):
             pickle.dumps(c)
+
+    def test_pickle_invalid_reducer_override(self):
+        obj=C_with_reduce_ex()
+
+        bio = io.BytesIO()
+        pickler = pickle._Pickler(bio)
+        pickler.reducer_override = None
+        with self.assertRaises(TypeError):
+            pickler.dump(obj)
+
+        pickler.reducer_override = 10
+        with self.assertRaises(TypeError):
+            pickler.dump(obj)
+
 
 class PickleSetstateTests(unittest.TestCase):
 
