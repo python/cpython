@@ -398,15 +398,18 @@ def test_sqlite3():
     cx2 = sqlite3.Connection(":memory:")
 
     # Configured without --enable-loadable-sqlite-extensions
-    if hasattr(sqlite3.Connection, "enable_load_extension"):
-        cx1.enable_load_extension(False)
-        try:
-            cx1.load_extension("test")
-        except sqlite3.OperationalError:
-            pass
-        else:
-            raise RuntimeError("Expected sqlite3.load_extension to fail")
-
+    try:
+        if hasattr(sqlite3.Connection, "enable_load_extension"):
+            cx1.enable_load_extension(False)
+            try:
+                cx1.load_extension("test")
+            except sqlite3.OperationalError:
+                pass
+            else:
+                raise RuntimeError("Expected sqlite3.load_extension to fail")
+    finally:
+        cx1.close()
+        cx2.close()
 
 def test_sys_getframe():
     import sys
