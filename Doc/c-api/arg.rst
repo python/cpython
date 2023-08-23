@@ -237,6 +237,17 @@ Numbers
    Convert a Python integer to a tiny int without overflow checking, stored in a C
    :c:expr:`unsigned char`.
 
+``c`` (:class:`bytes` or :class:`bytearray` of length 1) [char]
+   Convert a Python byte, represented as a :class:`bytes` or
+   :class:`bytearray` object of length 1, to a C :c:expr:`char`.
+
+   .. versionchanged:: 3.3
+      Allow :class:`bytearray` objects.
+
+``C`` (:class:`str` of length 1) [int]
+   Convert a Python character, represented as a :class:`str` object of
+   length 1, to a C :c:expr:`int`.
+
 ``h`` (:class:`int`) [short int]
    Convert a Python integer to a C :c:expr:`short int`.
 
@@ -251,12 +262,12 @@ Numbers
    Convert a Python integer to a C :c:expr:`unsigned int`, without overflow
    checking.
 
-``l`` (:class:`int`) [long int]
-   Convert a Python integer to a C :c:expr:`long int`.
-
 ``k`` (:class:`int`) [unsigned long]
    Convert a Python integer to a C :c:expr:`unsigned long` without
    overflow checking.
+
+``l`` (:class:`int`) [long int]
+   Convert a Python integer to a C :c:expr:`long int`.
 
 ``L`` (:class:`int`) [long long]
    Convert a Python integer to a C :c:expr:`long long`.
@@ -267,17 +278,6 @@ Numbers
 
 ``n`` (:class:`int`) [:c:type:`Py_ssize_t`]
    Convert a Python integer to a C :c:type:`Py_ssize_t`.
-
-``c`` (:class:`bytes` or :class:`bytearray` of length 1) [char]
-   Convert a Python byte, represented as a :class:`bytes` or
-   :class:`bytearray` object of length 1, to a C :c:expr:`char`.
-
-   .. versionchanged:: 3.3
-      Allow :class:`bytearray` objects.
-
-``C`` (:class:`str` of length 1) [int]
-   Convert a Python character, represented as a :class:`str` object of
-   length 1, to a C :c:expr:`int`.
 
 ``f`` (:class:`float`) [float]
    Convert a Python floating point number to a C :c:expr:`float`.
