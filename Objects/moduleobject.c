@@ -870,15 +870,13 @@ static int
 module_setattro(PyModuleObject *mod, PyObject *name, PyObject *value)
 {
     PyObject *res;
-    int ret;
     assert(mod->md_dict != NULL);
     if (value == NULL) {
         PyObject *delattr;
-        ret = PyDict_GetItemRef(mod->md_dict, &_Py_ID(__delattr__), &delattr);
-        if (ret == -1) {
+        if (PyDict_GetItemRef(mod->md_dict, &_Py_ID(__delattr__), &delattr) < 0) {
             return -1;
         }
-        if (ret) {
+        if (delattr) {
             res = PyObject_CallFunctionObjArgs(delattr, name, NULL);
             if (res == NULL) {
                 return -1;
@@ -887,11 +885,10 @@ module_setattro(PyModuleObject *mod, PyObject *name, PyObject *value)
         }
     } else {
         PyObject *setattr;
-        ret = PyDict_GetItemRef(mod->md_dict, &_Py_ID(__setattr__), &setattr);
-        if (ret == -1) {
+        if (PyDict_GetItemRef(mod->md_dict, &_Py_ID(__setattr__), &setattr) < 0) {
             return -1;
         }
-        if (ret) {
+        if (setattr) {
             res = PyObject_CallFunctionObjArgs(setattr, name, value, NULL);
             if (res == NULL) {
                 return -1;
