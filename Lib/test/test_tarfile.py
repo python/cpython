@@ -3809,33 +3809,38 @@ class TestExtractionFilters(unittest.TestCase):
             arc.add('no_bits', mode='?---------')
             arc.add('dir/', mode='?---rwsrwt')
 
-        # On some systems, setting the sticky bit is a no-op.
-        # Check if that's the case.
+        # On some systems, setting the uid, gid, and/or sticky bit is a no-ops.
+        # Check which bits we can set, so we can compare tarfile machinery to
+        # a simple chmod.
         tmp_filename = os.path.join(TEMPDIR, "tmp.file")
         with open(tmp_filename, 'w'):
             pass
-        os.chmod(tmp_filename, os.stat(tmp_filename).st_mode | stat.S_ISVTX)
-        have_sticky_files = (os.stat(tmp_filename).st_mode & stat.S_ISVTX)
+        new_mode = (os.stat(tmp_filename).st_mode
+                    | stat.S_ISVTX | stat.S_ISGID | stat.S_ISUID)
+        os.chmod(tmp_filename, new_mode)
+        got_mode = os.stat(tmp_filename).st_mode
+        _t_file = 't' if (got_mode & stat.S_ISVTX) else 'x'
+        _suid_file = 's' if (got_mode & stat.S_ISUID) else 'x'
+        _sgid_file = 's' if (got_mode & stat.S_ISGID) else 'x'
         os.unlink(tmp_filename)
 
         os.mkdir(tmp_filename)
-        os.chmod(tmp_filename, os.stat(tmp_filename).st_mode | stat.S_ISVTX)
-        have_sticky_dirs = (os.stat(tmp_filename).st_mode & stat.S_ISVTX)
+        new_mode = os.stat(tmp_filename).st_mode | stat.S_ISVTX | stat.S_ISGID
+        os.chmod(tmp_filename, new_mode)
+        got_mode = os.stat(tmp_filename).st_mode
+        _t_dir = 't' if (got_mode & stat.S_ISVTX) else 'x'
+        _suid_dir = 's' if (got_mode & stat.S_ISUID) else 'x'
+        _sgid_dir = 's' if (got_mode & stat.S_ISGID) else 'x'
         os.rmdir(tmp_filename)
 
         with self.check_context(arc.open(), 'fully_trusted'):
-            if have_sticky_files:
-                self.expect_file('all_bits', mode='?rwsrwsrwt')
-            else:
-                self.expect_file('all_bits', mode='?rwsrwsrwx')
+            self.expect_file('all_bits',
+                             mode=f'?rw{_suid_file}rw{_sgid_file}rw{_t_file}')
             self.expect_file('perm_bits', mode='?rwxrwxrwx')
             self.expect_file('exec_group_other', mode='?rw-rwxrwx')
             self.expect_file('read_group_only', mode='?---r-----')
             self.expect_file('no_bits', mode='?---------')
-            if have_sticky_dirs:
-                self.expect_file('dir/', mode='?---rwsrwt')
-            else:
-                self.expect_file('dir/', mode='?---rwsrwx')
+            self.expect_file('dir/', mode=f'?---rw{_sgid_dir}rw{_t_dir}')
 
         with self.check_context(arc.open(), 'tar'):
             self.expect_file('all_bits', mode='?rwxr-xr-x')
