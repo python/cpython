@@ -878,9 +878,11 @@ module_setattro(PyModuleObject *mod, PyObject *name, PyObject *value)
         }
         if (delattr) {
             res = PyObject_CallFunctionObjArgs(delattr, name, NULL);
+            Py_DECREF(delattr);
             if (res == NULL) {
                 return -1;
             }
+            Py_DECREF(res);
             return 0;
         }
     } else {
@@ -890,9 +892,11 @@ module_setattro(PyModuleObject *mod, PyObject *name, PyObject *value)
         }
         if (setattr) {
             res = PyObject_CallFunctionObjArgs(setattr, name, value, NULL);
+            Py_DECREF(setattr);
             if (res == NULL) {
                 return -1;
             }
+            Py_DECREF(res);
             return 0;
         }
     }
