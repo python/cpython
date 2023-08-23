@@ -371,13 +371,13 @@ _Py_atomic_fence_release(void);
 
 
 #ifndef _Py_USE_GCC_BUILTIN_ATOMICS
-#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8))
-#define _Py_USE_GCC_BUILTIN_ATOMICS 1
-#elif defined(__clang__)
-#if __has_builtin(__atomic_load)
-#define _Py_USE_GCC_BUILTIN_ATOMICS 1
-#endif
-#endif
+#  if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8))
+#    define _Py_USE_GCC_BUILTIN_ATOMICS 1
+#  elif defined(__clang__)
+#    if __has_builtin(__atomic_load)
+#      define _Py_USE_GCC_BUILTIN_ATOMICS 1
+#    endif
+#  endif
 #endif
 
 #if _Py_USE_GCC_BUILTIN_ATOMICS
