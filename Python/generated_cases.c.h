@@ -3833,7 +3833,6 @@
                 DEOPT_IF(code->co_argcount != oparg + (self_or_null != NULL), CALL);
             }
             // _CHECK_STACK_SPACE
-            callable = stack_pointer[-2 - oparg];
             {
                 PyFunctionObject *func = (PyFunctionObject *)callable;
                 PyCodeObject *code = (PyCodeObject *)func->func_code;
@@ -3842,7 +3841,6 @@
             // _INIT_CALL_PY_EXACT_ARGS
             args = stack_pointer - oparg;
             self_or_null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
             {
                 int argcount = oparg;
                 if (self_or_null != NULL) {

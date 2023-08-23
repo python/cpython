@@ -83,6 +83,27 @@ class StackOffset:
         terms = self.as_terms()
         return make_index(terms)
 
+    def equivalent_to(self, other: "StackOffset") -> bool:
+        if self.deep == other.deep and self.high == other.high:
+            return True
+        deep = list(self.deep)
+        for x in other.deep:
+            try:
+                deep.remove(x)
+            except ValueError:
+                return False
+        if deep:
+            return False
+        high = list(self.high)
+        for x in other.high:
+            try:
+                high.remove(x)
+            except ValueError:
+                return False
+        if high:
+            return False
+        return True
+
 
 def make_index(terms: list[tuple[str, str]]) -> str:
     # Produce an index expression from the terms honoring PEP 8,
@@ -131,9 +152,9 @@ class StackItem:
 
 
 @dataclasses.dataclass
-class CopyEffect:
-    src: StackEffect
-    dst: StackEffect
+class CopyItem:
+    src: StackItem
+    dst: StackItem
 
 
 class EffectManager:
@@ -143,7 +164,7 @@ class EffectManager:
     active_caches: list[ActiveCacheEffect]
     peeks: list[StackItem]
     pokes: list[StackItem]
-    copies: list[CopyEffect]  # See merge()
+    copies: list[CopyItem]  # See merge()
     # Track offsets from stack pointer
     min_offset: StackOffset
     final_offset: StackOffset
@@ -181,14 +202,17 @@ class EffectManager:
                 and self.peeks
                 and pred.pokes[-1].effect == self.peeks[0].effect
             ):
-                src = pred.pokes.pop(-1).effect
-                dst = self.peeks.pop(0).effect
-                pred.final_offset.deeper(src)
-                if dst.name != UNUSED:
-                    destinations.add(dst.name)
-                    if dst.name != src.name:
-                        sources.add(src.name)
-                    self.copies.append(CopyEffect(src, dst))
+                src = pred.pokes.pop(-1)
+                dst = self.peeks.pop(0)
+                src_offset = src.offset
+                dst_offset = dst.offset
+                assert src.offset.equivalent_to(dst.offset), (src, dst)
+                pred.final_offset.deeper(src.effect)
+                if dst.effect.name != UNUSED:
+                    destinations.add(dst.effect.name)
+                    if dst.effect.name != src.effect.name:
+                        sources.add(src.effect.name)
+                self.copies.append(CopyItem(src, dst))
             # TODO: Turn this into an error (pass an Analyzer instance?)
             assert sources & destinations == set(), (
                 pred.instr.name,
@@ -207,6 +231,9 @@ class EffectManager:
             peek.offset.deeper(eff)
         for poke in self.pokes:
             poke.offset.deeper(eff)
+        for copy in self.copies:
+            copy.src.offset.deeper(eff)
+            copy.dst.offset.deeper(eff)
         self.min_offset.deeper(eff)
         self.final_offset.deeper(eff)
 
@@ -215,6 +242,9 @@ class EffectManager:
             peek.offset.higher(eff)
         for poke in self.pokes:
             poke.offset.higher(eff)
+        for copy in self.copies:
+            copy.src.offset.higher(eff)
+            copy.dst.offset.higher(eff)
         self.min_offset.higher(eff)
         self.final_offset.higher(eff)
 
@@ -248,8 +278,8 @@ class EffectManager:
                     vars[eff.name] = eff
 
         for copy in self.copies:
-            add(copy.src)
-            add(copy.dst)
+            add(copy.src.effect)
+            add(copy.dst.effect)
         for peek in self.peeks:
             add(peek.effect)
         for poke in self.pokes:
@@ -365,8 +395,11 @@ def write_components(
             out.emit(f"// {mgr.instr.name}")
 
         for copy in mgr.copies:
-            if copy.src.name != copy.dst.name:
-                out.assign(copy.dst, copy.src)
+            copy_src_effect = copy.src.effect
+            if copy_src_effect.name != copy.dst.effect.name:
+                if copy_src_effect.name == UNUSED:
+                    copy_src_effect = copy.src.as_stack_effect()
+                out.assign(copy.dst.effect, copy_src_effect)
         for peek in mgr.peeks:
             out.assign(
                 peek.effect,
