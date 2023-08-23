@@ -571,8 +571,9 @@ class CompatPickleTests(unittest.TestCase):
 
 
 class C_with_reduce_ex:
-    def __reduce_ex__(self):
-        return 10
+    
+    def __reduce_ex__(self, proto):
+        return object.__reduce_ex__(self, proto)
 
 class C_None_reduce_ex:
     __reduce_ex__ = None
@@ -613,11 +614,23 @@ class PickleReductionMethodsTests(unittest.TestCase):
 
         bio = io.BytesIO()
         pickler = pickle._Pickler(bio)
+        pickler.dump(obj)
+
         pickler.reducer_override = None
         with self.assertRaises(TypeError):
             pickler.dump(obj)
 
         pickler.reducer_override = 10
+        with self.assertRaises(TypeError):
+            pickler.dump(obj)
+
+    def test_pickle_invalid_dispatch_table(self):
+        # gh-93627
+        obj=C_with_reduce_ex()
+
+        bio = io.BytesIO()
+        pickler = pickle._Pickler(bio)
+        pickler.dispatch_table = {type(obj): None}
         with self.assertRaises(TypeError):
             pickler.dump(obj)
 
