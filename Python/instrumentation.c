@@ -1,4 +1,7 @@
 #include "Python.h"
+
+#include "opcode_ids.h"
+
 #include "pycore_call.h"
 #include "pycore_frame.h"
 #include "pycore_interp.h"
@@ -6,8 +9,7 @@
 #include "pycore_modsupport.h"    // _PyModule_CreateInitialized()
 #include "pycore_namespace.h"
 #include "pycore_object.h"
-#include "pycore_opcode.h"
-#include "pycore_opcode_metadata.h" // IS_VALID_OPCODE
+#include "pycore_opcode_metadata.h" // IS_VALID_OPCODE, _PyOpcode_Caches
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
