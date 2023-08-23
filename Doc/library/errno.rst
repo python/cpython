@@ -96,9 +96,29 @@ defined by the module.  The specific list of defined symbols is available as
    :exc:`PermissionError`.
 
 
+.. data:: ECANCELED
+
+   Operation canceled
+
+
 .. data:: EFAULT
 
    Bad address
+
+
+.. data:: ENOTSUP
+
+   Operation not supported
+
+
+.. data:: ENOTRECOVERABLE
+
+   State not recoverable
+
+
+.. data:: EOWNERDEAD
+
+   Owner died
 
 
 .. data:: ENOTBLK
