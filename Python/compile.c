@@ -24,6 +24,7 @@
 #include <stdbool.h>
 
 #include "Python.h"
+#include "opcode.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
 #define NEED_OPCODE_TABLES
 #include "pycore_opcode_utils.h"
