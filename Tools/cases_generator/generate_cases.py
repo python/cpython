@@ -545,7 +545,7 @@ class Generator(Analyzer):
                 "=",
                 ";",
             ):
-                for name, family in self.families.items():
+                for name, _ in self.families.items():
                     instr = self.instrs[name]
                     if instr.cache_offset > 0:
                         self.out.emit(f'[{name}] = {instr.cache_offset},')
