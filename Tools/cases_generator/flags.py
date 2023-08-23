@@ -36,7 +36,8 @@ class InstructionFlags:
             HAS_FREE_FLAG=has_free,
             HAS_LOCAL_FLAG=(
                 variable_used(instr, "GETLOCAL") or variable_used(instr, "SETLOCAL")
-            ) and not has_free,
+            )
+            and not has_free,
             HAS_EVAL_BREAK_FLAG=variable_used(instr, "CHECK_EVAL_BREAKER"),
         )
 
