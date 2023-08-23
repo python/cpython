@@ -459,6 +459,10 @@ Other Language Changes
   :class:`collections.OrderedDict`, :class:`collections.deque`,
   :class:`weakref.WeakSet`, and :class:`datetime.tzinfo` now copies and
   pickles instance attributes implemented as :term:`slots <__slots__>`.
+  This change has an unintended side effect: It trips up a small minority
+  of existing Python projects not expecting :meth:`object.__getstate__` to
+  exist. See the later comments on :gh:`70766` for discussions of what
+  workarounds such code may need.
   (Contributed by Serhiy Storchaka in :issue:`26579`.)
 
 .. _whatsnew311-pythonsafepath:
