@@ -1024,7 +1024,7 @@ class SSLSocket(socket):
                 try:
                     raise notconn_pre_handshake_data_error
                 finally:
-                    # Break explicitly reference cycle
+                    # Explicitly break the reference cycle.
                     notconn_pre_handshake_data_error = None
         else:
             connected = True
