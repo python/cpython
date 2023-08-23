@@ -256,7 +256,7 @@ class AuditTest(unittest.TestCase):
             self.fail(stderr)
 
     def test_time(self):
-        returncode, events, stderr = self.run_python("test_time")
+        returncode, events, stderr = self.run_python("test_time", "print")
         if returncode:
             self.fail(stderr)
 
@@ -270,6 +270,11 @@ class AuditTest(unittest.TestCase):
 
         self.assertEqual(actual, expected)
 
+    def test_time_fail(self):
+        returncode, events, stderr = self.run_python("test_time", "fail",
+                                                     expect_stderr=True)
+        self.assertNotEqual(returncode, 0)
+        self.assertIn('hook failed', stderr.splitlines()[-1])
 
     def test_sys_monitoring_register_callback(self):
         returncode, events, stderr = self.run_python("test_sys_monitoring_register_callback")

@@ -517,12 +517,15 @@ def test_not_in_gc():
             assert hook not in o
 
 
-def test_time():
+def test_time(mode):
     import time
 
     def hook(event, args):
         if event.startswith("time."):
-            print(event, *args)
+            if mode == 'print':
+                print(event, *args)
+            elif mode == 'fail':
+                raise AssertionError('hook failed')
     sys.addaudithook(hook)
 
     time.sleep(0)
