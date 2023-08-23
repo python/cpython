@@ -206,12 +206,11 @@ class _ModuleTarget(str):
 # line_prefix = ': '    # Use this to get the old situation back
 line_prefix = '\n-> '   # Probably a better default
 
+MAX_CHAINED_EXCEPTION_DEPTH = 999
+
+
 class Pdb(bdb.Bdb, cmd.Cmd):
     # the max number of chained exceptions + exception groups we accept to navigate.
-    _max_chained_exception_depth = 999
-    _chained_exceptions = tuple()
-    _chained_exception_index = 0
-
     _previous_sigint_handler = None
 
     def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
@@ -260,6 +259,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                                        # a command list
         self.commands_bnum = None # The breakpoint number for which we are
                                   # defining a list
+
+        self._chained_exceptions = tuple()
+        self._chained_exception_index = 0
 
     def sigint_handler(self, signum, frame):
         if self.allow_kbdint:
@@ -444,9 +446,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 ):
                     current = current.__context__
 
-                if len(_exceptions) >= self._max_chained_exception_depth:
+                if len(_exceptions) >= MAX_CHAINED_EXCEPTION_DEPTH:
                     self.message(
-                        f"More than {self._max_chained_exception_depth}"
+                        f"More than {MAX_CHAINED_EXCEPTION_DEPTH}"
                         " chained exceptions found, not all exceptions"
                         "will be browsable with `exceptions`."
                     )
@@ -495,8 +497,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.print_stack_entry(self.stack[self.curindex])
             self._cmdloop()
             self.forget()
-
-
 
     def displayhook(self, obj):
         """Custom displayhook for the exec in default(), which prevents
