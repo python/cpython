@@ -1372,17 +1372,17 @@ finalize_modules_delete_special(PyThreadState *tstate, int verbose)
         if (verbose) {
             PySys_WriteStderr("# restore sys.%s\n", name);
         }
-        PyObject *value = _PyDict_GetItemStringWithError(interp->sysdict,
-                                                         orig_name);
+        PyObject *value;
+        if (PyDict_GetItemStringRef(interp->sysdict, orig_name, &value) < 0) {
+            PyErr_WriteUnraisable(NULL);
+        }
         if (value == NULL) {
-            if (_PyErr_Occurred(tstate)) {
-                PyErr_WriteUnraisable(NULL);
-            }
-            value = Py_None;
+            value = Py_NewRef(Py_None);
         }
         if (PyDict_SetItemString(interp->sysdict, name, value) < 0) {
             PyErr_WriteUnraisable(NULL);
         }
+        Py_DECREF(value);
     }
 }
 
@@ -2207,7 +2207,7 @@ _Py_IsInterpreterFinalizing(PyInterpreterState *interp)
 static PyStatus
 add_main_module(PyInterpreterState *interp)
 {
-    PyObject *m, *d, *loader, *ann_dict;
+    PyObject *m, *d, *ann_dict;
     m = PyImport_AddModule("__main__");
     if (m == NULL)
         return _PyStatus_ERR("can't create __main__ module");
@@ -2239,11 +2239,13 @@ add_main_module(PyInterpreterState *interp)
      * will be set if __main__ gets further initialized later in the startup
      * process.
      */
-    loader = _PyDict_GetItemStringWithError(d, "__loader__");
-    if (loader == NULL || loader == Py_None) {
-        if (PyErr_Occurred()) {
-            return _PyStatus_ERR("Failed to test __main__.__loader__");
-        }
+    PyObject *loader;
+    if (PyDict_GetItemStringRef(d, "__loader__", &loader) < 0) {
+        return _PyStatus_ERR("Failed to test __main__.__loader__");
+    }
+    int has_loader = !(loader == NULL || loader == Py_None);
+    Py_XDECREF(loader);
+    if (!has_loader) {
         PyObject *loader = _PyImport_GetImportlibLoader(interp,
                                                         "BuiltinImporter");
         if (loader == NULL) {
