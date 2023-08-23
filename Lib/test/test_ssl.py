@@ -4863,7 +4863,7 @@ class TestPreHandshakeClose(unittest.TestCase):
         class SynchronizedHTTPSConnection(http.client.HTTPSConnection):
             def connect(self):
                 # Call clear text HTTP connect(), not the encrypted HTTPS (TLS)
-                # # connect(): wrap_socket() is called manually above.
+                # connect(): wrap_socket() is called manually below.
                 http.client.HTTPConnection.connect(self)
 
                 # Wait for our fault injection server to have done its thing.
