@@ -4809,7 +4809,7 @@ class TestPreHandshakeClose(unittest.TestCase):
 
             # This forces an immediate connection close via RST on .close().
             set_socket_so_linger_on_with_zero_timeout(conn_to_client)
-            conn_to_client.sendall(
+            conn_to_client.send(
                     b"HTTP/1.0 307 Temporary Redirect\r\n"
                     b"Location: https://example.com/someone-elses-server\r\n"
                     b"\r\n")
@@ -4862,7 +4862,10 @@ class TestPreHandshakeClose(unittest.TestCase):
 
         class SynchronizedHTTPSConnection(http.client.HTTPSConnection):
             def connect(self):
-                super().connect()
+                # Call clear text HTTP connect(), not the encrypted HTTPS (TLS)
+                # # connect(): wrap_socket() is called manually above.
+                http.client.HTTPConnection.connect(self)
+
                 # Wait for our fault injection server to have done its thing.
                 if not server_responding.wait(support.SHORT_TIMEOUT) and support.verbose:
                     sys.stdout.write("server_responding event never set.")
