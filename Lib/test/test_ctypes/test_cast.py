@@ -160,6 +160,35 @@ class Test(unittest.TestCase):
         self.assertEqual(obj[0].contents.a, 10)
         self.assertEqual(obj[1].contents.a, 20)
 
+    def test_pointer_set_contents(self):
+        class Struct(Structure):
+            _fields_ = [('a', c_int16)]
+        p = pointer(Struct(a=23))
+        self.assertEqual(p.contents.a, 23)
+        self.assertIs(p._type_, Struct)
+        cp = cast(p, POINTER(c_int16))
+        self.assertEqual(cp.contents._type_, 'h')
+        cp.contents = c_int16(24)
+        self.assertEqual(cp.contents.value, 24)
+        self.assertEqual(p.contents.a, 24)
+
+        pp = pointer(p)
+        self.assertIs(pp._type_, POINTER(Struct))
+
+        from code import interact; interact(local=locals())
+
+        cast(pp, POINTER(POINTER(c_int16))).contents.contents = c_int16(32)
+
+        # self.assertIs(p.contents, pp.contents.contents)
+
+        self.assertEqual(cast(p, POINTER(c_int16)).contents.value, 32)
+        self.assertEqual(p[0].a, 32)  # works
+        self.assertEqual(pp[0].contents.a, 32)  # works
+        self.assertEqual(pp.contents[0].a, 32)  # works
+
+        self.assertEqual(p.contents.a, 32)  # fails, wat, holds 23
+        self.assertEqual(pp.contents.contents.a, 32)  # fails, wat, holds 23
+
 
 if __name__ == "__main__":
     unittest.main()

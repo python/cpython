@@ -5172,11 +5172,15 @@ Pointer_get_contents(CDataObject *self, void *closure)
             // It's not a cast: don't construct a new object,
             // return existing one instead to preserve refcount
             p2p = (CDataObject*) ptr2ptr;
+            printf("self->b_ptr=%lu\n", *(void**) self->b_ptr);
+            printf("p2p->b_ptr=%lu\n", *(void**) p2p->b_ptr);
+            printf("self->b_value.c=%lu\n", *(void**) self->b_value.c);
+            printf("p2p->b_value.c=%lu\n", *(void**) p2p->b_value.c);
             assert(
-                *(void**) self->b_ptr == p2p->b_ptr ||
-                *(void**) self->b_value.c == p2p->b_ptr ||
-                *(void**) self->b_ptr == p2p->b_value.c ||
-                *(void**) self->b_value.c == p2p->b_value.c
+                *(void**) self->b_ptr == *(void**) p2p->b_ptr ||
+                *(void**) self->b_value.c == *(void**) p2p->b_ptr ||
+                *(void**) self->b_ptr == *(void**) p2p->b_value.c ||
+                *(void**) self->b_value.c == *(void**) p2p->b_value.c
             ); // double-check that we are returning the same thing
             Py_INCREF(ptr2ptr);
             return ptr2ptr;
