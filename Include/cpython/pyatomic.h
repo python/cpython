@@ -1,6 +1,3 @@
-#ifndef Py_ATOMIC_H
-#define Py_ATOMIC_H
-
 // This header provides cross-platform low-level atomic operations
 // similar to C11 atomics.
 //
@@ -10,16 +7,21 @@
 // The "_relaxed" suffix for load and store operations indicates the "relaxed"
 // memory order. They don't provide synchronization, but (roughly speaking)
 // guarantee somewhat sane behavior for races instead of undefined behavior.
-// In practice, they correspond to "normal" hardware load and store instructions,
-// so they are almost as inexpensive as plain loads and stores in C.
+// In practice, they correspond to "normal" hardware load and store
+// instructions, so they are almost as inexpensive as plain loads and stores
+// in C.
 //
 // Note that atomic read-modify-write operations like _Py_atomic_add_* return
 // the previous value of the atomic variable, not the new value.
 //
-// See https://en.cppreference.com/w/c/atomic for more information on C11 atomics.
+// See https://en.cppreference.com/w/c/atomic for more information on C11
+// atomics.
 // See https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p2055r0.pdf
 // "A Relaxed Guide to memory_order_relaxed" for discussion of and common usage
 // or relaxed atomics.
+
+#ifndef Py_ATOMIC_H
+#define Py_ATOMIC_H
 
 // Atomically adds `value` to `address` and returns the previous value
 static inline int

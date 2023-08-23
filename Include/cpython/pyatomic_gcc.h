@@ -1,11 +1,11 @@
-#ifndef Py_ATOMIC_GCC_H
-#  error "this header file must not be included directly"
-#endif
-
 // This is the implementation of Python atomic operations using GCC's built-in
 // functions that match the C+11 memory model. This implementation is preferred
 // for GCC compatible compilers, such as Clang. These functions are available in
 // GCC 4.8+ without needing to compile with --std=c11 or --std=gnu11.
+
+#ifndef Py_ATOMIC_GCC_H
+#  error "this header file must not be included directly"
+#endif
 
 static inline int
 _Py_atomic_add_int(int *address, int value)

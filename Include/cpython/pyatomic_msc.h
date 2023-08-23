@@ -1,9 +1,9 @@
+// This is the implementation of Python atomic operations for MSVC if the
+// compiler does not support C11 or C++11 atomics.
+
 #ifndef Py_ATOMIC_MSC_H
 #  error "this header file must not be included directly"
 #endif
-
-// This is the implementation of Python atomic operations for MSVC if the
-// compiler does not support C11 or C++11 atomics.
 
 #include <intrin.h>
 
@@ -85,7 +85,7 @@ _Py_atomic_add_uint32(uint32_t *address, uint32_t value)
 static inline uint64_t
 _Py_atomic_add_uint64(uint64_t *address, uint64_t value)
 {
-    return (uint64_t)_Py_atomic_add_int64((volatile int64_t*)address, (int64_t)value);
+    return (uint64_t)_Py_atomic_add_int64((int64_t*)address, (int64_t)value);
 }
 
 static inline uintptr_t
@@ -270,7 +270,7 @@ _Py_atomic_exchange_uint32(uint32_t *address, uint32_t value)
 static inline uint64_t
 _Py_atomic_exchange_uint64(uint64_t *address, uint64_t value)
 {
-    return (uint64_t)_Py_atomic_exchange_int64((volatile __int64*)address, (__int64)value);
+    return (uint64_t)_Py_atomic_exchange_int64((int64_t *)address, (int64_t)value);
 }
 
 static inline uintptr_t
@@ -693,7 +693,7 @@ _Py_atomic_store_uint32(uint32_t *address, uint32_t value)
 static inline void
 _Py_atomic_store_uint64(uint64_t *address, uint64_t value)
 {
-    _Py_atomic_exchange_int64((volatile __int64*)address, (__int64)value);
+    _Py_atomic_exchange_int64((int64_t *)address, (int64_t)value);
 }
 
 static inline void

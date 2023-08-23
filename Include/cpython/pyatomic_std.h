@@ -1,10 +1,10 @@
-#ifndef Py_ATOMIC_STD_H
-#  error "this header file must not be included directly"
-#endif
-
 // This is the implementation of Python atomic operations using C++11 or C11
 // atomics. Note that the pyatomic_gcc.h implementation is preferred for GCC
 // compatible compilers, even if they support C++11 atomics.
+
+#ifndef Py_ATOMIC_STD_H
+#  error "this header file must not be included directly"
+#endif
 
 #ifdef __cplusplus
 extern "C++" {
