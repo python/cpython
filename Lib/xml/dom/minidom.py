@@ -320,7 +320,7 @@ def _write_data(writer, text, attr):
         if "\n" in text:
             text = text.replace("\n", "&#10;")
         if "\t" in text:
-            text = text.replace("\t", "&#09;")
+            text = text.replace("\t", "&#9;")
     writer.write(text)
 
 def _get_elements_by_tagName_helper(parent, name, rc):

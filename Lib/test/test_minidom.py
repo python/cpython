@@ -543,7 +543,7 @@ class MinidomTest(unittest.TestCase):
                 'lf="&#10;" '
                 'crlf="&#13;&#10;" '
                 'lflf="&#10;&#10;" '
-                'ws="&#09;&#10;&#13; "/>')
+                'ws="&#9;&#10;&#13; "/>')
 
     def testAltNewline(self):
         str = '<?xml version="1.0" ?>\n<a b="c"/>\n'
