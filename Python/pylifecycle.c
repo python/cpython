@@ -57,7 +57,7 @@
 #  undef BYTE
 #endif
 
-#define PUTS(fd, str) _Py_write_noraise(fd, str, (int)strlen(str))
+#define PUTS(fd, str) (void)_Py_write_noraise(fd, str, (int)strlen(str))
 
 
 #ifdef __cplusplus

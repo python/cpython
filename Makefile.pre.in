@@ -2156,6 +2156,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/support/_hypothesis_stubs \
 		test/test_asyncio \
 		test/test_capi \
+		test/test_cppext \
 		test/test_ctypes \
 		test/test_email \
 		test/test_email/data \
@@ -2212,6 +2213,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_importlib/resources/zipdata02 \
 		test/test_importlib/source \
 		test/test_json \
+		test/test_module \
 		test/test_peg_generator \
 		test/test_sqlite3 \
 		test/test_tkinter \

@@ -237,7 +237,7 @@ class Generator(Analyzer):
             except ValueError:
                 # May happen on Windows if root and temp on different volumes
                 pass
-            filenames.append(filename)
+            filenames.append(filename.replace(os.path.sep, posixpath.sep))
         paths = f"\n{self.out.comment}   ".join(filenames)
         return f"{self.out.comment} from:\n{self.out.comment}   {paths}\n"
 
