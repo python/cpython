@@ -9,12 +9,11 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_dict_state.h"
-#include "pycore_object.h"
-#include "pycore_runtime.h"         // _PyRuntime
+#include "pycore_object.h"        // PyDictOrValues
 
 // Unsafe flavor of PyDict_GetItemWithError(): no error checking
 extern PyObject* _PyDict_GetItemWithError(PyObject *dp, PyObject *key);
+extern PyObject* _PyDict_GetItemStringWithError(PyObject *, const char *);
 
 extern int _PyDict_Contains_KnownHash(PyObject *, PyObject *, Py_hash_t);
 

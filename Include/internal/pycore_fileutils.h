@@ -5,10 +5,11 @@ extern "C" {
 #endif
 
 #ifndef Py_BUILD_CORE
-#  error "Py_BUILD_CORE must be defined to include this header"
+#  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include <locale.h>   /* struct lconv */
+#include <locale.h>               // struct lconv
+
 
 /* A routine to check if a file descriptor can be select()-ed. */
 #ifdef _MSC_VER
@@ -109,7 +110,8 @@ PyAPI_FUNC(int) _Py_stat(
     PyObject *path,
     struct stat *status);
 
-extern int _Py_open(
+// Export for 'select' shared extension (Solaris newDevPollObject() uses it)
+PyAPI_FUNC(int) _Py_open(
     const char *pathname,
     int flags);
 
@@ -126,7 +128,8 @@ extern Py_ssize_t _Py_read(
     void *buf,
     size_t count);
 
-extern Py_ssize_t _Py_write(
+// Export for 'select' shared extension (Solaris devpoll_flush() uses it)
+PyAPI_FUNC(Py_ssize_t) _Py_write(
     int fd,
     const void *buf,
     size_t count);
@@ -266,7 +269,7 @@ extern wchar_t *_Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t
 // so provide our own implementations. Remove them in case they get added
 // to the Games API family
 #if defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP)
-#include <winerror.h>
+#include <winerror.h>             // HRESULT
 
 extern HRESULT PathCchSkipRoot(const wchar_t *pszPath, const wchar_t **ppszRootEnd);
 #endif /* defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP) */

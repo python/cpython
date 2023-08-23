@@ -18,8 +18,8 @@
 #undef NDEBUG
 
 #include "Python.h"
-#include "frameobject.h"          // PyFrame_New
-#include "marshal.h"              // PyMarshal_WriteLongToFile
+#include "frameobject.h"          // PyFrame_New()
+#include "marshal.h"              // PyMarshal_WriteLongToFile()
 
 #include <float.h>                // FLT_MAX
 #include <signal.h>
@@ -37,7 +37,7 @@
 #endif
 
 #ifdef bool
-#  error "The public headers should not include <stdbool.h>, see bpo-46748"
+#  error "The public headers should not include <stdbool.h>, see gh-48924"
 #endif
 
 // Several parts of this module are broken out into files in _testcapi/.

@@ -7,6 +7,10 @@
             break;
         }
 
+        case RESUME: {
+            break;
+        }
+
         case POP_TOP: {
             STACK_SHRINK(1);
             break;
@@ -188,6 +192,11 @@
         case CALL_INTRINSIC_2: {
             STACK_SHRINK(1);
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+            break;
+        }
+
+        case _POP_FRAME: {
+            STACK_SHRINK(1);
             break;
         }
 
@@ -612,6 +621,30 @@
             break;
         }
 
+        case _CHECK_PEP_523: {
+            break;
+        }
+
+        case _CHECK_FUNCTION_EXACT_ARGS: {
+            break;
+        }
+
+        case _CHECK_STACK_SPACE: {
+            break;
+        }
+
+        case _INIT_CALL_PY_EXACT_ARGS: {
+            STACK_SHRINK(oparg);
+            STACK_SHRINK(1);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+            break;
+        }
+
+        case _PUSH_FRAME: {
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+            break;
+        }
+
         case CALL_NO_KW_TYPE_1: {
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
@@ -748,6 +781,10 @@
         }
 
         case SAVE_IP: {
+            break;
+        }
+
+        case SAVE_CURRENT_IP: {
             break;
         }
 
