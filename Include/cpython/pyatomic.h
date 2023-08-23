@@ -381,16 +381,16 @@ _Py_atomic_fence_release(void);
 #endif
 
 #if _Py_USE_GCC_BUILTIN_ATOMICS
-#define Py_ATOMIC_GCC_H
-#include "cpython/pyatomic_gcc.h"
+#  define Py_ATOMIC_GCC_H
+#  include "cpython/pyatomic_gcc.h"
 #elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_ATOMICS__)
-#define Py_ATOMIC_STD_H
-#include "cpython/pyatomic_std.h"
+#  define Py_ATOMIC_STD_H
+#  include "cpython/pyatomic_std.h"
 #elif defined(_MSC_VER)
-#define Py_ATOMIC_MSC_H
-#include "cpython/pyatomic_msc.h"
+#  define Py_ATOMIC_MSC_H
+#  include "cpython/pyatomic_msc.h"
 #else
-#error "define pyatomic for this platform"
+#  error "no available pyatomic implementation for this platform/compiler"
 #endif
 
 #endif  /* Py_ATOMIC_H */
