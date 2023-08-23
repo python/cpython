@@ -1959,6 +1959,7 @@ TESTSUBDIRS=	ctypes/test \
 		test/support \
 		test/test_asyncio \
 		test/test_capi \
+		test/test_cppext \
 		test/test_email \
 		test/test_email/data \
 		test/test_import \

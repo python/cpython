@@ -1,5 +1,7 @@
 // gh-91321: Very basic C++ test extension to check that the Python C API is
 // compatible with C++ and does not emit C++ compiler warnings.
+//
+// The code is only built, not executed.
 
 // Always enable assertions
 #undef NDEBUG
