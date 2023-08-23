@@ -4,6 +4,7 @@ from ctypes import (sizeof,
                     c_int8, c_uint8, c_int16, c_uint16,
                     c_int32, c_uint32, c_int64, c_uint64,
                     c_void_p, c_size_t, c_ssize_t, c_time_t, SIZEOF_TIME_T)
+from struct import calc_size
 import unittest
 
 
@@ -11,18 +12,26 @@ class SizesTestCase(unittest.TestCase):
     def test_8(self):
         self.assertEqual(1, sizeof(c_int8))
         self.assertEqual(1, sizeof(c_uint8))
+        self.assertEqual(1, calc_size(c_int8._type_))
+        self.assertEqual(1, calc_size(c_uint8._type_))
 
     def test_16(self):
         self.assertEqual(2, sizeof(c_int16))
         self.assertEqual(2, sizeof(c_uint16))
+        self.assertEqual(2, calc_size(c_int16._type_))
+        self.assertEqual(2, calc_size(c_uint16._type_))
 
     def test_32(self):
         self.assertEqual(4, sizeof(c_int32))
         self.assertEqual(4, sizeof(c_uint32))
+        self.assertEqual(4, calc_size(c_int32._type_))
+        self.assertEqual(4, calc_size(c_uint32._type_))
 
     def test_64(self):
         self.assertEqual(8, sizeof(c_int64))
         self.assertEqual(8, sizeof(c_uint64))
+        self.assertEqual(8, calc_size(c_int64._type_))
+        self.assertEqual(8, calc_size(c_uint64._type_))
 
     def test_size_t(self):
         self.assertEqual(sizeof(c_void_p), sizeof(c_size_t))
