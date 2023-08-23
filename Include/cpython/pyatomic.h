@@ -362,12 +362,10 @@ _Py_atomic_store_ptr_release(void *address, void *value);
 
 
 // Sequential consistency fence
-static inline void
-_Py_atomic_fence_seq_cst(void);
+static inline void _Py_atomic_fence_seq_cst(void);
 
 // Release fence
-static inline void
-_Py_atomic_fence_release(void);
+static inline void _Py_atomic_fence_release(void);
 
 
 #ifndef _Py_USE_GCC_BUILTIN_ATOMICS
