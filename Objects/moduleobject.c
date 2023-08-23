@@ -869,16 +869,15 @@ _Py_module_getattro(PyModuleObject *m, PyObject *name)
 static int
 module_setattro(PyModuleObject *mod, PyObject *name, PyObject *value)
 {
-    PyObject *res;
     assert(mod->md_dict != NULL);
-    if (value == NULL) {
-        PyObject *delattr;
-        if (PyDict_GetItemRef(mod->md_dict, &_Py_ID(__delattr__), &delattr) < 0) {
+    if (value) {
+        PyObject *setattr;
+        if (PyDict_GetItemRef(mod->md_dict, &_Py_ID(__setattr__), &setattr) < 0) {
             return -1;
         }
-        if (delattr) {
-            res = PyObject_CallFunctionObjArgs(delattr, name, NULL);
-            Py_DECREF(delattr);
+        if (setattr) {
+            PyObject *res = PyObject_CallFunctionObjArgs(setattr, name, value, NULL);
+            Py_DECREF(setattr);
             if (res == NULL) {
                 return -1;
             }
@@ -886,13 +885,13 @@ module_setattro(PyModuleObject *mod, PyObject *name, PyObject *value)
             return 0;
         }
     } else {
-        PyObject *setattr;
-        if (PyDict_GetItemRef(mod->md_dict, &_Py_ID(__setattr__), &setattr) < 0) {
+        PyObject *delattr;
+        if (PyDict_GetItemRef(mod->md_dict, &_Py_ID(__delattr__), &delattr) < 0) {
             return -1;
         }
-        if (setattr) {
-            res = PyObject_CallFunctionObjArgs(setattr, name, value, NULL);
-            Py_DECREF(setattr);
+        if (delattr) {
+            PyObject *res = PyObject_CallFunctionObjArgs(delattr, name, NULL);
+            Py_DECREF(delattr);
             if (res == NULL) {
                 return -1;
             }
