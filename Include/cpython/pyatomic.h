@@ -106,7 +106,7 @@ _Py_atomic_compare_exchange_ssize(Py_ssize_t *address, Py_ssize_t expected, Py_s
 static inline int
 _Py_atomic_compare_exchange_ptr(void *address, void *expected, void *value);
 
-// Atomically replaces `*address` with value and returns the previously value of *address.
+// Atomically replaces `*address` with `value` and returns the previous value of `*address`.
 static inline int
 _Py_atomic_exchange_int(int *address, int value);
 
@@ -149,7 +149,7 @@ _Py_atomic_exchange_ssize(Py_ssize_t *address, Py_ssize_t value);
 static inline void *
 _Py_atomic_exchange_ptr(void *address, void *value);
 
-// Performs `*address &= value` atomically and returns the previous value of *address.
+// Performs `*address &= value` atomically and returns the previous value of `*address`.
 static inline uint8_t
 _Py_atomic_and_uint8(uint8_t *address, uint8_t value);
 
@@ -165,7 +165,7 @@ _Py_atomic_and_uint64(uint64_t *address, uint64_t value);
 static inline uintptr_t
 _Py_atomic_and_uintptr(uintptr_t *address, uintptr_t value);
 
-// Performs `*address |= value` atomically and returns the previous value of *address.
+// Performs `*address |= value` atomically and returns the previous value of `*address`.
 static inline uint8_t
 _Py_atomic_or_uint8(uint8_t *address, uint8_t value);
 
