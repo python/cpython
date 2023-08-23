@@ -712,12 +712,7 @@ PyDoc_STRVAR(pysqlite_connection_set_authorizer__doc__,
 "set_authorizer($self, /, authorizer_callback)\n"
 "--\n"
 "\n"
-"Sets authorizer callback.\n"
-"\n"
-"Note: Passing keyword argument \'authorizer_callback\' to\n"
-"_sqlite3.Connection.set_authorizer() is deprecated. Parameter\n"
-"\'authorizer_callback\' will become positional-only in Python 3.15.\n"
-"");
+"Sets authorizer callback.");
 
 #define PYSQLITE_CONNECTION_SET_AUTHORIZER_METHODDEF    \
     {"set_authorizer", _PyCFunction_CAST(pysqlite_connection_set_authorizer), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_set_authorizer__doc__},
@@ -726,17 +721,6 @@ static PyObject *
 pysqlite_connection_set_authorizer_impl(pysqlite_Connection *self,
                                         PyTypeObject *cls,
                                         PyObject *callable);
-
-// Emit compiler warnings when we get to Python 3.15.
-#if PY_VERSION_HEX >= 0x030f00C0
-#  error "Update the clinic input of '_sqlite3.Connection.set_authorizer'."
-#elif PY_VERSION_HEX >= 0x030f00A0
-#  ifdef _MSC_VER
-#    pragma message ("Update the clinic input of '_sqlite3.Connection.set_authorizer'.")
-#  else
-#    warning "Update the clinic input of '_sqlite3.Connection.set_authorizer'."
-#  endif
-#endif
 
 static PyObject *
 pysqlite_connection_set_authorizer(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -774,16 +758,6 @@ pysqlite_connection_set_authorizer(pysqlite_Connection *self, PyTypeObject *cls,
     if (!args) {
         goto exit;
     }
-    if (nargs < 1) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                "Passing keyword argument 'authorizer_callback' to "
-                "_sqlite3.Connection.set_authorizer() is deprecated. Parameter "
-                "'authorizer_callback' will become positional-only in Python "
-                "3.15.", 1))
-        {
-            goto exit;
-        }
-    }
     callable = args[0];
     return_value = pysqlite_connection_set_authorizer_impl(self, cls, callable);
 
@@ -795,12 +769,7 @@ PyDoc_STRVAR(pysqlite_connection_set_progress_handler__doc__,
 "set_progress_handler($self, /, progress_handler, n)\n"
 "--\n"
 "\n"
-"Sets progress handler callback.\n"
-"\n"
-"Note: Passing keyword argument \'progress_handler\' to\n"
-"_sqlite3.Connection.set_progress_handler() is deprecated. Parameter\n"
-"\'progress_handler\' will become positional-only in Python 3.15.\n"
-"");
+"Sets progress handler callback.");
 
 #define PYSQLITE_CONNECTION_SET_PROGRESS_HANDLER_METHODDEF    \
     {"set_progress_handler", _PyCFunction_CAST(pysqlite_connection_set_progress_handler), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_set_progress_handler__doc__},
@@ -809,17 +778,6 @@ static PyObject *
 pysqlite_connection_set_progress_handler_impl(pysqlite_Connection *self,
                                               PyTypeObject *cls,
                                               PyObject *callable, int n);
-
-// Emit compiler warnings when we get to Python 3.15.
-#if PY_VERSION_HEX >= 0x030f00C0
-#  error "Update the clinic input of '_sqlite3.Connection.set_progress_handler'."
-#elif PY_VERSION_HEX >= 0x030f00A0
-#  ifdef _MSC_VER
-#    pragma message ("Update the clinic input of '_sqlite3.Connection.set_progress_handler'.")
-#  else
-#    warning "Update the clinic input of '_sqlite3.Connection.set_progress_handler'."
-#  endif
-#endif
 
 static PyObject *
 pysqlite_connection_set_progress_handler(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -858,16 +816,6 @@ pysqlite_connection_set_progress_handler(pysqlite_Connection *self, PyTypeObject
     if (!args) {
         goto exit;
     }
-    if (nargs < 1) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                "Passing keyword argument 'progress_handler' to "
-                "_sqlite3.Connection.set_progress_handler() is deprecated. "
-                "Parameter 'progress_handler' will become positional-only in "
-                "Python 3.15.", 1))
-        {
-            goto exit;
-        }
-    }
     callable = args[0];
     n = _PyLong_AsInt(args[1]);
     if (n == -1 && PyErr_Occurred()) {
@@ -883,12 +831,7 @@ PyDoc_STRVAR(pysqlite_connection_set_trace_callback__doc__,
 "set_trace_callback($self, /, trace_callback)\n"
 "--\n"
 "\n"
-"Sets a trace callback called for each SQL statement (passed as unicode).\n"
-"\n"
-"Note: Passing keyword argument \'trace_callback\' to\n"
-"_sqlite3.Connection.set_trace_callback() is deprecated. Parameter\n"
-"\'trace_callback\' will become positional-only in Python 3.15.\n"
-"");
+"Sets a trace callback called for each SQL statement (passed as unicode).");
 
 #define PYSQLITE_CONNECTION_SET_TRACE_CALLBACK_METHODDEF    \
     {"set_trace_callback", _PyCFunction_CAST(pysqlite_connection_set_trace_callback), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_set_trace_callback__doc__},
@@ -897,17 +840,6 @@ static PyObject *
 pysqlite_connection_set_trace_callback_impl(pysqlite_Connection *self,
                                             PyTypeObject *cls,
                                             PyObject *callable);
-
-// Emit compiler warnings when we get to Python 3.15.
-#if PY_VERSION_HEX >= 0x030f00C0
-#  error "Update the clinic input of '_sqlite3.Connection.set_trace_callback'."
-#elif PY_VERSION_HEX >= 0x030f00A0
-#  ifdef _MSC_VER
-#    pragma message ("Update the clinic input of '_sqlite3.Connection.set_trace_callback'.")
-#  else
-#    warning "Update the clinic input of '_sqlite3.Connection.set_trace_callback'."
-#  endif
-#endif
 
 static PyObject *
 pysqlite_connection_set_trace_callback(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -944,16 +876,6 @@ pysqlite_connection_set_trace_callback(pysqlite_Connection *self, PyTypeObject *
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
-    }
-    if (nargs < 1) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                "Passing keyword argument 'trace_callback' to "
-                "_sqlite3.Connection.set_trace_callback() is deprecated. "
-                "Parameter 'trace_callback' will become positional-only in Python"
-                " 3.15.", 1))
-        {
-            goto exit;
-        }
     }
     callable = args[0];
     return_value = pysqlite_connection_set_trace_callback_impl(self, cls, callable);
@@ -1812,4 +1734,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=9caa8f706e0d6f50 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=575f9a692378ad6a input=a9049054013a1b77]*/
