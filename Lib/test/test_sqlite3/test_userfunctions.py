@@ -421,6 +421,26 @@ class FunctionTests(unittest.TestCase):
         self.assertRaisesRegex(sqlite.OperationalError, msg,
                                self.con.execute, "select badreturn()")
 
+    def test_func_keyword_args(self):
+        regex = (
+            r"Passing keyword arguments 'name', 'narg' and 'func' to "
+            r"_sqlite3.Connection.create_function\(\) is deprecated. "
+            r"Parameters 'name', 'narg' and 'func' will become "
+            r"positional-only in Python 3.15."
+        )
+
+        def check(*args, **kwds):
+            with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+                self.con.create_function(*args, **kwds)
+            self.assertEqual(cm.filename, __file__)
+
+        def noop():
+            return None
+
+        check("noop", 0, func=noop)
+        check("noop", narg=0, func=noop)
+        check(name="noop", narg=0, func=noop)
+
 
 class WindowSumInt:
     def __init__(self):
