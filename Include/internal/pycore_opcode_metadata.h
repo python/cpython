@@ -1814,6 +1814,26 @@ const char *const _PyOpcode_OpName[268] = {
 };
 #endif // NEED_OPCODE_METADATA
 
+extern const uint8_t _PyOpcode_Caches[256];
+#ifdef NEED_OPCODE_METADATA
+const uint8_t _PyOpcode_Caches[256] = {
+    [TO_BOOL] = 3,
+    [BINARY_OP] = 1,
+    [BINARY_SUBSCR] = 1,
+    [STORE_SUBSCR] = 1,
+    [SEND] = 1,
+    [UNPACK_SEQUENCE] = 1,
+    [STORE_ATTR] = 4,
+    [LOAD_GLOBAL] = 4,
+    [LOAD_SUPER_ATTR] = 1,
+    [LOAD_ATTR] = 9,
+    [COMPARE_OP] = 1,
+    [FOR_ITER] = 1,
+    [CALL] = 3,
+    [JUMP_BACKWARD] = 1,
+};
+#endif // NEED_OPCODE_METADATA
+
 extern const uint8_t _PyOpcode_Deopt[256];
 #ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Deopt[256] = {

@@ -1,5 +1,7 @@
 #include "Python.h"
 
+#include "opcode.h"
+
 #include "pycore_call.h"
 #include "pycore_ceval.h"
 #include "pycore_dict.h"
