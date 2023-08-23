@@ -2155,13 +2155,13 @@ Changes to Python's build process and to the C API include:
   :c:func:`!PyOS_ascii_strtod` and :c:func:`!PyOS_ascii_atof` functions
   are now deprecated.
 
-* New function: :c:func:`PySys_SetArgvEx` sets the value of
+* New function: :c:func:`!PySys_SetArgvEx` sets the value of
   ``sys.argv`` and can optionally update ``sys.path`` to include the
   directory containing the script named by ``sys.argv[0]`` depending
   on the value of an *updatepath* parameter.
 
   This function was added to close a security hole for applications
-  that embed Python.  The old function, :c:func:`PySys_SetArgv`, would
+  that embed Python.  The old function, :c:func:`!PySys_SetArgv`, would
   always update ``sys.path``, and sometimes it would add the current
   directory.  This meant that, if you ran an application embedding
   Python in a directory controlled by someone else, attackers could
@@ -2169,8 +2169,8 @@ Changes to Python's build process and to the C API include:
   :file:`os.py`) that your application would then import and run.
 
   If you maintain a C/C++ application that embeds Python, check
-  whether you're calling :c:func:`PySys_SetArgv` and carefully consider
-  whether the application should be using :c:func:`PySys_SetArgvEx`
+  whether you're calling :c:func:`!PySys_SetArgv` and carefully consider
+  whether the application should be using :c:func:`!PySys_SetArgvEx`
   with *updatepath* set to false.
 
   Security issue reported as `CVE-2008-5983
@@ -2545,11 +2545,11 @@ For C extensions:
 
 For applications that embed Python:
 
-* The :c:func:`PySys_SetArgvEx` function was added, letting
+* The :c:func:`!PySys_SetArgvEx` function was added, letting
   applications close a security hole when the existing
-  :c:func:`PySys_SetArgv` function was used.  Check whether you're
-  calling :c:func:`PySys_SetArgv` and carefully consider whether the
-  application should be using :c:func:`PySys_SetArgvEx` with
+  :c:func:`!PySys_SetArgv` function was used.  Check whether you're
+  calling :c:func:`!PySys_SetArgv` and carefully consider whether the
+  application should be using :c:func:`!PySys_SetArgvEx` with
   *updatepath* set to false.
 
 .. ======================================================================
