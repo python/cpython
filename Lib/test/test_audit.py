@@ -19,7 +19,7 @@ class AuditTest(unittest.TestCase):
     maxDiff = None
 
     @support.requires_subprocess()
-    def do_test(self, *args):
+    def run_test_in_subprocess(self, *args):
         with subprocess.Popen(
             [sys.executable, "-X utf8", AUDIT_TESTS_PY, *args],
             encoding="utf-8",
@@ -27,27 +27,26 @@ class AuditTest(unittest.TestCase):
             stderr=subprocess.PIPE,
         ) as p:
             p.wait()
-            sys.stdout.writelines(p.stdout)
-            sys.stderr.writelines(p.stderr)
-            if p.returncode:
-                self.fail("".join(p.stderr))
+            return p, p.stdout.read(), p.stderr.read()
 
-    @support.requires_subprocess()
-    def run_python(self, *args):
+    def do_test(self, *args):
+        proc, stdout, stderr = self.run_test_in_subprocess(*args)
+
+        sys.stdout.write(stdout)
+        sys.stderr.write(stderr)
+        if proc.returncode:
+            self.fail(stderr)
+
+    def run_python(self, *args, expect_stderr=False):
         events = []
-        with subprocess.Popen(
-            [sys.executable, "-X utf8", AUDIT_TESTS_PY, *args],
-            encoding="utf-8",
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        ) as p:
-            p.wait()
-            sys.stderr.writelines(p.stderr)
-            return (
-                p.returncode,
-                [line.strip().partition(" ") for line in p.stdout],
-                "".join(p.stderr),
-            )
+        proc, stdout, stderr = self.run_test_in_subprocess(*args)
+        if not expect_stderr or support.verbose:
+            sys.stderr.writelines(stderr)
+        return (
+            proc.returncode,
+            [line.strip().partition(" ") for line in stdout.splitlines()],
+            stderr,
+        )
 
     def test_basic(self):
         self.do_test("test_basic")
