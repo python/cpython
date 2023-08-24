@@ -83,6 +83,7 @@
 //       # release
 //       ...
 
+#ifndef Py_LIMITED_API
 #ifndef Py_ATOMIC_H
 #define Py_ATOMIC_H
 
@@ -503,4 +504,4 @@ static inline void _Py_atomic_fence_release(void);
 #endif
 
 #endif  /* Py_ATOMIC_H */
-
+#endif  /* Py_LIMITED_API */
