@@ -487,7 +487,7 @@ The :mod:`calendar` module defines the following exceptions:
    A subclass of :exc:`ValueError`,
    raised when the given weekday number is outwith the range 0-6 (inclusive).
 
-   .. attribute:: month
+   .. attribute:: weekday
 
       The invalid weekday number.
 
