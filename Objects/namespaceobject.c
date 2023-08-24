@@ -59,8 +59,7 @@ namespace_init(_PyNamespaceObject *ns, PyObject *args, PyObject *kwds)
                 return -1;
             }
         }
-        if (ret < 0 ||
-            !PyArg_ValidateKeywordArguments(dict) ||
+        if (!PyArg_ValidateKeywordArguments(dict) ||
             PyDict_Update(ns->ns_dict, dict) < 0)
         {
             ret = -1;
