@@ -30,7 +30,7 @@ _locale_setlocale(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("setlocale", nargs, 1, 2)) {
         goto exit;
     }
-    category = _PyLong_AsInt(args[0]);
+    category = PyLong_AsInt(args[0]);
     if (category == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -196,7 +196,7 @@ _locale_nl_langinfo(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int item;
 
-    item = _PyLong_AsInt(arg);
+    item = PyLong_AsInt(arg);
     if (item == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -373,7 +373,7 @@ _locale_dcgettext(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    category = _PyLong_AsInt(args[2]);
+    category = PyLong_AsInt(args[2]);
     if (category == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -599,4 +599,4 @@ _locale_getencoding(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
     #define _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
 #endif /* !defined(_LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF) */
-/*[clinic end generated code: output=9dbd0b4bf5767edd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=119644f17919234d input=a9049054013a1b77]*/
