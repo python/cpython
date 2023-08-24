@@ -3,6 +3,7 @@
 #include "pycore_pyerrors.h"      // _Py_DumpExtensionModules
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_signal.h"        // Py_NSIG
+#include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads
 
 #include <object.h>
