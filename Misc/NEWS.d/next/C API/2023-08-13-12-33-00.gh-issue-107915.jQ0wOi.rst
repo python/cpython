@@ -1,4 +1,0 @@
-Such C API functions as ``PyErr_SetString()``, ``PyErr_Format()``,
-``PyErr_SetFromErrnoWithFilename()`` and many others no longer crash or
-ignore errors if it failed to format the error message or decode the
-filename. Instead, they keep a corresponding error.

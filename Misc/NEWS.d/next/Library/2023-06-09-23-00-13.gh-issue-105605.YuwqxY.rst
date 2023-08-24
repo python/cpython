@@ -1,3 +1,0 @@
-Harden :mod:`pyexpat` error handling during module initialisation to prevent
-exceptions from possibly being overwritten, and objects from being
-dereferenced twice.
