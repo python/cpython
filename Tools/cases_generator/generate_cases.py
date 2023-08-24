@@ -388,16 +388,16 @@ class Generator(Analyzer):
                 case parsing.Macro():
                     format = self.macro_instrs[thing.name].instr_fmt
                 case parsing.Pseudo():
-                    maybe_format: str | None = None
+                    fmt: str | None = None
                     for target in self.pseudos[thing.name].targets:
                         target_instr = self.instrs.get(target)
                         assert target_instr
-                        if maybe_format is None:
-                            maybe_format = target_instr.instr_fmt
+                        if fmt is None:
+                            fmt = target_instr.instr_fmt
                         else:
-                            assert maybe_format == target_instr.instr_fmt
-                    assert maybe_format is not None
-                    format = maybe_format
+                            assert fmt == target_instr.instr_fmt
+                    assert fmt is not None
+                    format = fmt
                 case _:
                     assert_never(thing)
             all_formats.add(format)
