@@ -1399,7 +1399,6 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
                     return ()
                 if isinstance(b, type) and issubclass(b, Generic):
                     return ()
-                    return ()
         return (self.__origin__,)
 
     def __iter__(self):
