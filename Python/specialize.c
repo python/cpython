@@ -1,4 +1,7 @@
 #include "Python.h"
+
+#include "opcode.h"
+
 #include "pycore_code.h"
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
 #include "pycore_dict.h"
@@ -7,7 +10,7 @@
 #include "pycore_long.h"
 #include "pycore_moduleobject.h"
 #include "pycore_object.h"
-#include "pycore_opcode.h"        // _PyOpcode_Caches
+#include "pycore_opcode_metadata.h" // _PyOpcode_Caches
 #include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
 
 
