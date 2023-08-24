@@ -3840,7 +3840,6 @@
             }
             // _INIT_CALL_PY_EXACT_ARGS
             args = stack_pointer - oparg;
-            self_or_null = stack_pointer[-1 - oparg];
             {
                 int argcount = oparg;
                 if (self_or_null != NULL) {

@@ -204,13 +204,12 @@ class EffectManager:
             ):
                 src = pred.pokes.pop(-1)
                 dst = self.peeks.pop(0)
-                src_offset = src.offset
-                dst_offset = dst.offset
                 assert src.offset.equivalent_to(dst.offset), (src, dst)
                 pred.final_offset.deeper(src.effect)
-                if dst.effect.name != UNUSED:
-                    destinations.add(dst.effect.name)
-                    if dst.effect.name != src.effect.name:
+                if dst.effect.name != src.effect.name:
+                    if dst.effect.name != UNUSED:
+                        destinations.add(dst.effect.name)
+                    if src.effect.name != UNUSED:
                         sources.add(src.effect.name)
                 self.copies.append(CopyItem(src, dst))
             # TODO: Turn this into an error (pass an Analyzer instance?)
@@ -225,6 +224,18 @@ class EffectManager:
                 pred = pred.pred
             else:
                 pred = None  # Break
+
+        # Fix up patterns of copies through UNUSED,
+        # e.g. cp(a, UNUSED) + cp(UNUSED, b) -> cp(a, b).
+        if any(copy.src.effect.name == UNUSED for copy in self.copies):
+            pred = self
+            while pred := pred.pred:
+                for copy in self.copies:
+                    if copy.src.effect.name == UNUSED:
+                        for pred_copy in pred.copies:
+                            if pred_copy.dst == copy.src:
+                                copy.src = pred_copy.src
+                                break
 
     def adjust_deeper(self, eff: StackEffect) -> None:
         for peek in self.peeks:
@@ -399,7 +410,9 @@ def write_components(
             if copy_src_effect.name != copy.dst.effect.name:
                 if copy_src_effect.name == UNUSED:
                     copy_src_effect = copy.src.as_stack_effect()
-                out.assign(copy.dst.effect, copy_src_effect)
+                    out.assign(copy.dst.effect, copy_src_effect)
+                else:
+                    out.assign(copy.dst.effect, copy_src_effect)
         for peek in mgr.peeks:
             out.assign(
                 peek.effect,
