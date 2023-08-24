@@ -87,7 +87,12 @@ _PySys_GetObject(PyInterpreterState *interp, const char *name)
     if (sysdict == NULL) {
         return NULL;
     }
-    return _PyDict_GetItemStringWithError(sysdict, name);
+    PyObject *value;
+    if (PyDict_GetItemStringRef(sysdict, name, &value) != 1) {
+        return NULL;
+    }
+    Py_DECREF(value);  // return a borrowed reference
+    return value;
 }
 
 PyObject *
