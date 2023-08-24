@@ -359,21 +359,21 @@ for a complete listing.
 +------------------+-----------------------------------------------+
 | Method/Attribute | Purpose                                       |
 +==================+===============================================+
+| ``fullmatch()``  | Determine if the RE matches the entire string |
+|                  | exactly.                                      |
++------------------+-----------------------------------------------+
 | ``match()``      | Determine if the RE matches at the beginning  |
 |                  | of the string.                                |
 +------------------+-----------------------------------------------+
 | ``search()``     | Scan through a string, looking for any        |
-|                  | location where this RE matches.               |
-+------------------+-----------------------------------------------+
-| ``fullmatch()``  | Determine if the RE matches the entire string |
-|                  | exactly.                                      |
+|                  | location where the RE matches.                |
 +------------------+-----------------------------------------------+
 | ``findall()``    | Find all substrings where the RE matches, and |
 |                  | returns them as a list.                       |
 +------------------+-----------------------------------------------+
-| ``finditer()``   | Find all matches for the RE, and returns      |
-|                  | an :term:`iterator` of                        |
-|                  | :ref:`match objects <match-objects>`.         |
+| ``finditer()``   | Returns an :term:`iterator` yielding          |
+|                  | :ref:`match objects <match-objects>` for all  |
+|                  | matches of the RE.                            |
 +------------------+-----------------------------------------------+
 
 :meth:`~re.Pattern.match`, :meth:`~re.Pattern.search`, and :meth:`~re.Pattern.fullmatch` return ``None`` if no match can be found.  If
