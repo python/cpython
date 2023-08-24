@@ -2678,7 +2678,7 @@ class PyTask_CFutureSubclass_Tests(BaseTaskTests, test_utils.TestCase):
 
     Future = getattr(futures, '_CFuture', None)
     Task = tasks._PyTask
-    all_tasks = getattr(tasks, '_py_all_tasks', None)
+    all_tasks = tasks._py_all_tasks
 
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
@@ -2696,7 +2696,7 @@ class PyTask_CFuture_Tests(BaseTaskTests, test_utils.TestCase):
 
     Task = tasks._PyTask
     Future = getattr(futures, '_CFuture', None)
-    all_tasks = getattr(tasks, '_c_all_tasks', None)
+    all_tasks = staticmethod(tasks._py_all_tasks)
 
 
 class PyTask_PyFuture_Tests(BaseTaskTests, SetMethodsTest,
@@ -2704,7 +2704,7 @@ class PyTask_PyFuture_Tests(BaseTaskTests, SetMethodsTest,
 
     Task = tasks._PyTask
     Future = futures._PyFuture
-    all_tasks = asyncio.all_tasks
+    all_tasks = staticmethod(tasks._py_all_tasks)
 
 
 @add_subclass_tests

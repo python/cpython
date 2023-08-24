@@ -145,26 +145,27 @@ typedef struct {
 
         * After adding the first task 'task1':
         - asyncio_tasks.head == task1
-        - task1->prev == &asyncio_tasks.tail
-        - task1->next == NULL
-        - asyncio_tasks.tail.next == task1
+        - task1->next == &asyncio_tasks.tail
+        - task1->prev == NULL
+        - asyncio_tasks.tail.prev == task1
 
         * After adding a second task 'task2':
         - asyncio_tasks.head == task2
-        - task2->prev == task1
-        - task2->next == NULL
-        - task1->next == task2
-        - asyncio_tasks.tail.next == task1
+        - task2->next == task1
+        - task2->prev == NULL
+        - task1->prev == task2
+        - asyncio_tasks.tail.prev == task1
 
         * After removing task 'task1':
         - asyncio_tasks.head == task2
-        - task2->prev == &asyncio_tasks.tail
-        - task2->next == NULL
-        - asyncio_tasks.tail.next == task2
+        - task2->next == &asyncio_tasks.tail
+        - task2->prev == NULL
+        - asyncio_tasks.tail.prev == task2
 
         * After removing task 'task2', the list is empty:
         - asyncio_tasks.head == &asyncio_tasks.tail
         - asyncio_tasks.head->prev == NULL
+        - asyncio_tasks.tail.prev == NULL
         - asyncio_tasks.tail.next == NULL
     */
 
@@ -1987,15 +1988,15 @@ register_task(asyncio_state *state, TaskObj *task)
 {
     assert(Task_Check(state, task));
     assert(task != &state->asyncio_tasks.tail);
-    if (task->prev != NULL) {
+    if (task->next != NULL) {
         // already registered
         return;
     }
-    assert(task->next == NULL);
+    assert(task->prev == NULL);
     assert(state->asyncio_tasks.head != NULL);
 
-    task->prev = state->asyncio_tasks.head;
-    state->asyncio_tasks.head->next = task;
+    task->next = state->asyncio_tasks.head;
+    state->asyncio_tasks.head->prev = task;
     state->asyncio_tasks.head = task;
 }
 
@@ -2010,18 +2011,18 @@ unregister_task(asyncio_state *state, TaskObj *task)
 {
     assert(Task_Check(state, task));
     assert(task != &state->asyncio_tasks.tail);
-    if (task->prev == NULL) {
+    if (task->next == NULL) {
         // not registered
-        assert(task->next == NULL);
+        assert(task->prev == NULL);
         assert(state->asyncio_tasks.head != task);
         return;
     }
-    task->prev->next = task->next;
-    if (task->next == NULL) {
+    task->next->prev = task->prev;
+    if (task->prev == NULL) {
         assert(state->asyncio_tasks.head == task);
-        state->asyncio_tasks.head = task->prev;
+        state->asyncio_tasks.head = task->next;
     } else {
-        task->next->prev = task->prev;
+        task->prev->next = task->next;
     }
     task->next = NULL;
     task->prev = NULL;
@@ -3690,7 +3691,7 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     Py_DECREF(eager_iter);
     TaskObj *head = state->asyncio_tasks.head;
     assert(head != NULL);
-    assert(head->next == NULL);
+    assert(head->prev == NULL);
     TaskObj *tail = &state->asyncio_tasks.tail;
     while (head != tail)
     {
@@ -3699,7 +3700,8 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
             Py_DECREF(loop);
             return NULL;
         }
-        head = head->prev;
+        head = head->next;
+        assert(head != NULL);
     }
     PyObject *scheduled_iter = PyObject_GetIter(state->non_asyncio_tasks);
     if (scheduled_iter == NULL) {
