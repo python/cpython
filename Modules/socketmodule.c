@@ -106,6 +106,7 @@ Local naming conventions:
 #endif
 
 #include "Python.h"
+#include "pycore_dict.h"          // _PyDict_Pop()
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_moduleobject.h"  // _PyModule_GetState
 
