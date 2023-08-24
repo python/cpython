@@ -2450,3 +2450,5 @@
     added = '3.13'
 [function.PyDict_GetItemStringRef]
     added = '3.13'
+[function.PyLong_AsInt]
+    added = '3.13'
