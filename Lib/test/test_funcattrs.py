@@ -108,13 +108,35 @@ class FunctionPropertiesTest(FuncAttrsTest):
 
     def test___closure__(self):
         a = 12
-        def f(): print(a)
+        b = 67
+        def f():
+            return a + b
         c = f.__closure__
         self.assertIsInstance(c, tuple)
-        self.assertEqual(len(c), 1)
+        self.assertEqual(len(c), 2)
         # don't have a type object handy
         self.assertEqual(c[0].__class__.__name__, "cell")
-        self.cannot_set_attr(f, "__closure__", c, AttributeError)
+
+        # check that we can overwrite the __closure__
+        self.assertEqual(f(), 79)
+        good_closure = f.__closure__ = (cell(42), cell(34))
+        self.assertEqual(f(), 76)
+
+        # check that we can't write anything besides a 2-tuple of cells or None
+        with self.assertRaises(TypeError):
+            f.__closure__ = 'spam'                      # wrong type
+        with self.assertRaises(ValueError):
+            f.__closure__ = ()                          # too short
+        with self.assertRaises(ValueError):
+            f.__closure__ = (cell(1),)                  # too short
+        with self.assertRaises(ValueError):
+            f.__closure__ = (cell(1), cell(2), cell(3)) # too long
+        with self.assertRaises(TypeError):
+            f.__closure__ = (cell(1), 2)                # wrong element type
+
+        # __closure__ should not be affected by the previous exceptions
+        self.assertIs(f.__closure__, good_closure)
+        self.assertEqual(f(), 76)
 
     def test_cell_new(self):
         cell_obj = types.CellType(1)
