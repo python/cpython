@@ -2,7 +2,12 @@
 // compiler does not support C11 or C++11 atomics.
 //
 // MSVC intrinsics are defined on char, short, long, __int64, and pointer
-// types. Note that long and int are both 32-bits even on 64-bit Windows.
+// types. Note that long and int are both 32-bits even on 64-bit Windows,
+// so operations on int are cast to long.
+//
+// The volatile keyword has additional memory ordering semantics on MSVC. On
+// x86 and x86-64, volatile accesses have acquire-release semantics. On ARM64,
+// volatile accesses behave like C11's memory_order_relaxed.
 
 #ifndef Py_ATOMIC_MSC_H
 #  error "this header file must not be included directly"
