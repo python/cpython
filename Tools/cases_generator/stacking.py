@@ -228,14 +228,15 @@ class EffectManager:
         # Fix up patterns of copies through UNUSED,
         # e.g. cp(a, UNUSED) + cp(UNUSED, b) -> cp(a, b).
         if any(copy.src.effect.name == UNUSED for copy in self.copies):
-            pred = self
-            while pred := pred.pred:
+            pred = self.pred
+            while pred is not None:
                 for copy in self.copies:
                     if copy.src.effect.name == UNUSED:
                         for pred_copy in pred.copies:
                             if pred_copy.dst == copy.src:
                                 copy.src = pred_copy.src
                                 break
+                pred = pred.pred
 
     def adjust_deeper(self, eff: StackEffect) -> None:
         for peek in self.peeks:
