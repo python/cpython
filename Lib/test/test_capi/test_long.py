@@ -44,6 +44,14 @@ class LongTests(unittest.TestCase):
             with self.subTest(value=value):
                 self.assertEqual(PyLong_AsInt(value), value)
 
+        # use __index__(), not __int__()
+        class MyIndex:
+            def __index__(self):
+                return 10
+            def __int__(self):
+                return 22
+        self.assertEqual(PyLong_AsInt(MyIndex()), 10)
+
         # bound checking
         with self.assertRaises(OverflowError):
             PyLong_AsInt(INT_MIN - 1)
