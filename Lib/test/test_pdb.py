@@ -1614,6 +1614,39 @@ def test_pdb_multiline_statement():
     (Pdb) c
     """
 
+def test_pdb_show_attribute_and_item():
+    """Test for multiline statement
+
+    >>> def test_function():
+    ...     n = lambda x: x
+    ...     c = {"a": 1}
+    ...     j = 1
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     pass
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'c["a"]',
+    ...     'c.get("a")',
+    ...     'n(1)',
+    ...     'j+1',
+    ...     'r"a"',
+    ...     'c'
+    ... ]):
+    ...     test_function()
+        > <doctest test.test_pdb.test_pdb_show_attribute_and_item[0]>(6)test_function()
+    -> pass
+    (Pdb) c["a"]
+    1
+    (Pdb) c.get("a")
+    1
+    (Pdb) n(1)
+    1
+    (Pdb) j+1
+    2
+    (Pdb) r"a"
+    'a'
+    (Pdb) c
+    """
 
 def test_pdb_issue_20766():
     """Test for reference leaks when the SIGINT handler is set.
