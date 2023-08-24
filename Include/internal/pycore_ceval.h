@@ -15,6 +15,23 @@ extern "C" {
 struct pyruntimestate;
 struct _ceval_runtime_state;
 
+// Export for '_lsprof' shared extension
+PyAPI_FUNC(int) _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
+
+extern int _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
+
+// Helper to look up a builtin object
+// Export for 'array' shared extension
+PyAPI_FUNC(PyObject*) _PyEval_GetBuiltin(PyObject *);
+
+extern PyObject* _PyEval_GetBuiltinId(_Py_Identifier *);
+
+extern void _PyEval_SetSwitchInterval(unsigned long microseconds);
+extern unsigned long _PyEval_GetSwitchInterval(void);
+
+// Export for '_queue' shared extension
+PyAPI_FUNC(int) _PyEval_MakePendingCalls(PyThreadState *);
+
 #ifndef Py_DEFAULT_RECURSION_LIMIT
 #  define Py_DEFAULT_RECURSION_LIMIT 1000
 #endif
