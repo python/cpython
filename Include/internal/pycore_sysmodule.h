@@ -14,8 +14,8 @@ extern int _PySys_Audit(
     const char *argFormat,
     ...);
 
-/* We want minimal exposure of this function, so use extern rather than
-   PyAPI_FUNC() to not export the symbol. */
+// _PySys_ClearAuditHooks() must not be exported: use extern rather than
+// PyAPI_FUNC(). We want minimal exposure of this function.
 extern void _PySys_ClearAuditHooks(PyThreadState *tstate);
 
 extern int _PySys_SetAttr(PyObject *, PyObject *);
