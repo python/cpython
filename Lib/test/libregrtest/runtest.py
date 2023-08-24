@@ -150,6 +150,9 @@ NOTTESTS = set()
 
 SPLITTESTDIRS = {
     "test_asyncio",
+    "test_multiprocessing_fork",
+    "test_multiprocessing_forkserver",
+    "test_multiprocessing_spawn",
 }
 
 # Storage of uncollectable objects
