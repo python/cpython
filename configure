@@ -6899,7 +6899,13 @@ cat > conftest.c <<EOF
 #   error unknown platform triplet
 # endif
 #elif defined(__gnu_hurd__)
+# if defined(__x86_64__) && defined(__LP64__)
+        x86_64-gnu
+# elif defined(__i386__)
         i386-gnu
+# else
+#   error unknown platform triplet
+# endif
 #elif defined(__APPLE__)
         darwin
 #elif defined(__VXWORKS__)
