@@ -37,7 +37,7 @@ on efficient attribute extraction for output formatting and manipulation.
    Package `dateutil <https://dateutil.readthedocs.io/en/stable/>`_
       Third-party library with expanded time zone and parsing support.
 
-   Repository `DateType <https://github.com/glyph/DateType>`_
+   Package `DateType <https://pypi.org/project/datetype/>`_
       It can be used to improve type checking of naive vs. aware datetimes.
 
 .. _datetime-naive-aware:
