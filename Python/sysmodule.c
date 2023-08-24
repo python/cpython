@@ -31,6 +31,7 @@ Data members:
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_structseq.h"     // _PyStructSequence_InitBuiltinWithFlags()
+#include "pycore_sysmodule.h"     // Define _PySys_GetSizeOf()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 #include "frameobject.h"          // PyFrame_FastToLocalsWithError()
