@@ -256,7 +256,7 @@ sys_trace_line_func(
         Py_RETURN_NONE;
     }
     assert(PyVectorcall_NARGS(nargsf) == 2);
-    int line = _PyLong_AsInt(args[1]);
+    int line = PyLong_AsInt(args[1]);
     assert(line >= 0);
     PyFrameObject *frame = PyEval_GetFrame();
     if (frame == NULL) {
@@ -282,9 +282,9 @@ sys_trace_jump_func(
         Py_RETURN_NONE;
     }
     assert(PyVectorcall_NARGS(nargsf) == 3);
-    int from = _PyLong_AsInt(args[1])/sizeof(_Py_CODEUNIT);
+    int from = PyLong_AsInt(args[1])/sizeof(_Py_CODEUNIT);
     assert(from >= 0);
-    int to = _PyLong_AsInt(args[2])/sizeof(_Py_CODEUNIT);
+    int to = PyLong_AsInt(args[2])/sizeof(_Py_CODEUNIT);
     assert(to >= 0);
     if (to > from) {
         /* Forward jump */
