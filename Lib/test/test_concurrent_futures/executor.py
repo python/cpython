@@ -53,7 +53,6 @@ class ExecutorTest:
         self.assertEqual(i.__next__(), (0, 1))
         self.assertRaises(ZeroDivisionError, i.__next__)
 
-    @support.requires_resource('walltime')
     def test_map_timeout(self):
         results = []
         try:
