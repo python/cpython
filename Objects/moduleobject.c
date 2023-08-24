@@ -884,7 +884,8 @@ module_setattro(PyModuleObject *mod, PyObject *name, PyObject *value)
             Py_DECREF(res);
             return 0;
         }
-    } else {
+    }
+    else {
         PyObject *delattr;
         if (PyDict_GetItemRef(mod->md_dict, &_Py_ID(__delattr__), &delattr) < 0) {
             return -1;

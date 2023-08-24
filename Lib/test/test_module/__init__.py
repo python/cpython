@@ -159,6 +159,7 @@ a = A(destroyed)"""
             gsa.foo = 2
         gsa.bar = 3
         self.assertEqual(gsa.bar, 3)
+        del sys.modules['test.test_module.good_setattr']
 
     def test_module_setattr_errors(self):
         import test.test_module.bad_setattr as bsa
@@ -170,7 +171,8 @@ a = A(destroyed)"""
         with self.assertRaises(TypeError):
             bad_setattr2.foo = 2
         del sys.modules['test.test_module.bad_setattr']
-        del sys.modules['test.test_module.bad_setattr2']
+        if 'test.test_module.bad_setattr2' in sys.modules:
+            del sys.modules['test.test_module.bad_setattr2']
 
     def test_module_delattr(self):
         import test.test_module.good_delattr as gda
@@ -195,7 +197,8 @@ a = A(destroyed)"""
         with self.assertRaises(TypeError):
             del bad_delattr2.foo
         del sys.modules['test.test_module.bad_delattr']
-        del sys.modules['test.test_module.bad_delattr2']
+        if 'test.test_module.bad_delattr2' in sys.modules:
+            del sys.modules['test.test_module.bad_delattr2']
 
     def test_module_dir(self):
         import test.test_module.good_getattr as gga
