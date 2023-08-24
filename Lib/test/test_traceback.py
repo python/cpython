@@ -216,6 +216,7 @@ class TracebackCases(unittest.TestCase):
         self.assertEqual(err[0], "%s: %s\n" % (str_name, str_value))
 
     @requires_subprocess()
+    @support.requires_resource('cpu')
     def test_encoded_file(self):
         # Test that tracebacks are correctly printed for encoded source files:
         # - correct line number (Issue2384)
@@ -3539,6 +3540,7 @@ class MiscTest(unittest.TestCase):
         CHECK("AttributeError", "AttributeErrorTests", 10)
         CHECK("ABA", "AAB", 4)
 
+    @support.requires_resource('cpu')
     def test_levenshtein_distance_short_circuit(self):
         if not LEVENSHTEIN_DATA_FILE.is_file():
             self.fail(

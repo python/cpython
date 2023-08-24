@@ -1350,6 +1350,7 @@ class ExceptionTests(unittest.TestCase):
 
 
     @cpython_only
+    @support.requires_resource('cpu')
     def test_trashcan_recursion(self):
         # See bpo-33930
 

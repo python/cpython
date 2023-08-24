@@ -638,6 +638,7 @@ class WaitTests:
                 finished)
         self.assertEqual(set([future1]), pending)
 
+    @support.requires_resource('cpu')
     def test_first_exception(self):
         future1 = self.executor.submit(mul, 2, 21)
         future2 = self.executor.submit(sleep_and_raise, 1.5)
@@ -695,6 +696,7 @@ class WaitTests:
                               future2]), finished)
         self.assertEqual(set(), pending)
 
+    @support.requires_resource('cpu')
     def test_timeout(self):
         future1 = self.executor.submit(mul, 6, 7)
         future2 = self.executor.submit(time.sleep, 6)
@@ -859,6 +861,7 @@ class ExecutorTest:
         self.assertEqual(i.__next__(), (0, 1))
         self.assertRaises(ZeroDivisionError, i.__next__)
 
+    @support.requires_resource('cpu')
     def test_map_timeout(self):
         results = []
         try:
@@ -951,6 +954,7 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
         executor.shutdown(wait=True)
 
     @unittest.skipUnless(hasattr(os, 'register_at_fork'), 'need os.register_at_fork')
+    @support.requires_resource('cpu')
     def test_hang_global_shutdown_lock(self):
         # bpo-45021: _global_shutdown_lock should be reinitialized in the child
         # process, otherwise it will never exit
