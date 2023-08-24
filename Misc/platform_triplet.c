@@ -225,7 +225,13 @@ PLATFORM_TRIPLET=i386-kfreebsd-gnu
 #   error unknown platform triplet
 # endif
 #elif defined(__gnu_hurd__)
+# if defined(__x86_64__) && defined(__LP64__)
+PLATFORM_TRIPLET=x86_64-gnu
+# elif defined(__i386__)
 PLATFORM_TRIPLET=i386-gnu
+# else
+#   error unknown platform triplet
+# endif
 #elif defined(__APPLE__)
 PLATFORM_TRIPLET=darwin
 #elif defined(__VXWORKS__)
