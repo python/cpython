@@ -3741,6 +3741,18 @@ PyDict_Contains(PyObject *op, PyObject *key)
     return (ix != DKIX_EMPTY && value != NULL);
 }
 
+int
+PyDict_ContainsString(PyObject *op, const char *key)
+{
+    PyObject *key_obj = PyUnicode_FromString(key);
+    if (key_obj == NULL) {
+        return -1;
+    }
+    int res = PyDict_Contains(op, key_obj);
+    Py_DECREF(key_obj);
+    return res;
+}
+
 /* Internal version of PyDict_Contains used when the hash value is already known */
 int
 _PyDict_Contains_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
