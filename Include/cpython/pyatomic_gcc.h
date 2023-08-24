@@ -1,7 +1,7 @@
 // This is the implementation of Python atomic operations using GCC's built-in
 // functions that match the C+11 memory model. This implementation is preferred
-// for GCC compatible compilers, such as Clang. These functions are available in
-// GCC 4.8+ without needing to compile with --std=c11 or --std=gnu11.
+// for GCC compatible compilers, such as Clang. These functions are available
+// in GCC 4.8+ without needing to compile with --std=c11 or --std=gnu11.
 
 #ifndef Py_ATOMIC_GCC_H
 #  error "this header file must not be included directly"
@@ -89,86 +89,99 @@ _Py_atomic_add_ssize(Py_ssize_t *address, Py_ssize_t value)
 static inline int
 _Py_atomic_compare_exchange_int(int *address, int expected, int value)
 {
-    return __atomic_compare_exchange_n(address, &expected, value, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+    return __atomic_compare_exchange_n(address, &expected, value, 0,
+                                       __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
 static inline int
 _Py_atomic_compare_exchange_int8(int8_t *address, int8_t expected, int8_t value)
 {
-    return __atomic_compare_exchange_n(address, &expected, value, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+    return __atomic_compare_exchange_n(address, &expected, value, 0,
+                                       __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
 static inline int
 _Py_atomic_compare_exchange_int16(int16_t *address, int16_t expected, int16_t value)
 {
-    return __atomic_compare_exchange_n(address, &expected, value, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+    return __atomic_compare_exchange_n(address, &expected, value, 0,
+                                       __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
 static inline int
 _Py_atomic_compare_exchange_int32(int32_t *address, int32_t expected, int32_t value)
 {
-    return __atomic_compare_exchange_n(address, &expected, value, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+    return __atomic_compare_exchange_n(address, &expected, value, 0,
+                                       __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
 static inline int
 _Py_atomic_compare_exchange_int64(int64_t *address, int64_t expected, int64_t value)
 {
-    return __atomic_compare_exchange_n(address, &expected, value, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+    return __atomic_compare_exchange_n(address, &expected, value, 0,
+                                       __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
 static inline int
 _Py_atomic_compare_exchange_intptr(intptr_t *address, intptr_t expected, intptr_t value)
 {
-    return __atomic_compare_exchange_n(address, &expected, value, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+    return __atomic_compare_exchange_n(address, &expected, value, 0,
+                                       __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
 static inline int
 _Py_atomic_compare_exchange_uint(unsigned int *address, unsigned int expected, unsigned int value)
 {
-    return __atomic_compare_exchange_n(address, &expected, value, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+    return __atomic_compare_exchange_n(address, &expected, value, 0,
+                                       __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
 static inline int
 _Py_atomic_compare_exchange_uint8(uint8_t *address, uint8_t expected, uint8_t value)
 {
-    return __atomic_compare_exchange_n(address, &expected, value, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+    return __atomic_compare_exchange_n(address, &expected, value, 0,
+                                       __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
 static inline int
 _Py_atomic_compare_exchange_uint16(uint16_t *address, uint16_t expected, uint16_t value)
 {
-    return __atomic_compare_exchange_n(address, &expected, value, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+    return __atomic_compare_exchange_n(address, &expected, value, 0,
+                                       __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
 static inline int
 _Py_atomic_compare_exchange_uint32(uint32_t *address, uint32_t expected, uint32_t value)
 {
-    return __atomic_compare_exchange_n(address, &expected, value, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+    return __atomic_compare_exchange_n(address, &expected, value, 0,
+                                       __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
 static inline int
 _Py_atomic_compare_exchange_uint64(uint64_t *address, uint64_t expected, uint64_t value)
 {
-    return __atomic_compare_exchange_n(address, &expected, value, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+    return __atomic_compare_exchange_n(address, &expected, value, 0,
+                                       __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
 static inline int
 _Py_atomic_compare_exchange_uintptr(uintptr_t *address, uintptr_t expected, uintptr_t value)
 {
-    return __atomic_compare_exchange_n(address, &expected, value, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+    return __atomic_compare_exchange_n(address, &expected, value, 0,
+                                       __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
 static inline int
 _Py_atomic_compare_exchange_ssize(Py_ssize_t *address, Py_ssize_t expected, Py_ssize_t value)
 {
-    return __atomic_compare_exchange_n(address, &expected, value, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+    return __atomic_compare_exchange_n(address, &expected, value, 0,
+                                       __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
 static inline int
 _Py_atomic_compare_exchange_ptr(void *address, void *expected, void *value)
 {
-    void *e = expected;
-    return __atomic_compare_exchange_n((void **)address, &e, value, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+    return __atomic_compare_exchange_n((void **)address, &expected, value, 0,
+                                       __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
 

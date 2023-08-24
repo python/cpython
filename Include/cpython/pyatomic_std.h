@@ -113,98 +113,112 @@ static inline int
 _Py_atomic_compare_exchange_int(int *address, int expected, int value)
 {
     _Py_USING_STD
-    return atomic_compare_exchange_strong((_Atomic(int)*)address, &expected, value);
+    return atomic_compare_exchange_strong((_Atomic(int)*)address,
+                                          &expected, value);
 }
 
 static inline int
 _Py_atomic_compare_exchange_int8(int8_t *address, int8_t expected, int8_t value)
 {
     _Py_USING_STD
-    return atomic_compare_exchange_strong((_Atomic(int8_t)*)address, &expected, value);
+    return atomic_compare_exchange_strong((_Atomic(int8_t)*)address,
+                                          &expected, value);
 }
 
 static inline int
 _Py_atomic_compare_exchange_int16(int16_t *address, int16_t expected, int16_t value)
 {
     _Py_USING_STD
-    return atomic_compare_exchange_strong((_Atomic(int16_t)*)address, &expected, value);
+    return atomic_compare_exchange_strong((_Atomic(int16_t)*)address,
+                                          &expected, value);
 }
 
 static inline int
 _Py_atomic_compare_exchange_int32(int32_t *address, int32_t expected, int32_t value)
 {
     _Py_USING_STD
-    return atomic_compare_exchange_strong((_Atomic(int32_t)*)address, &expected, value);
+    return atomic_compare_exchange_strong((_Atomic(int32_t)*)address,
+                                          &expected, value);
 }
 
 static inline int
 _Py_atomic_compare_exchange_int64(int64_t *address, int64_t expected, int64_t value)
 {
     _Py_USING_STD
-    return atomic_compare_exchange_strong((_Atomic(int64_t)*)address, &expected, value);
+    return atomic_compare_exchange_strong((_Atomic(int64_t)*)address,
+                                          &expected, value);
 }
 
 static inline int
 _Py_atomic_compare_exchange_intptr(intptr_t *address, intptr_t expected, intptr_t value)
 {
     _Py_USING_STD
-    return atomic_compare_exchange_strong((_Atomic(intptr_t)*)address, &expected, value);
+    return atomic_compare_exchange_strong((_Atomic(intptr_t)*)address,
+                                          &expected, value);
 }
 
 static inline int
 _Py_atomic_compare_exchange_uint(unsigned int *address, unsigned int expected, unsigned int value)
 {
     _Py_USING_STD
-    return atomic_compare_exchange_strong((_Atomic(unsigned int)*)address, &expected, value);
+    return atomic_compare_exchange_strong((_Atomic(unsigned int)*)address,
+                                          &expected, value);
 }
 
 static inline int
 _Py_atomic_compare_exchange_uint8(uint8_t *address, uint8_t expected, uint8_t value)
 {
     _Py_USING_STD
-    return atomic_compare_exchange_strong((_Atomic(uint8_t)*)address, &expected, value);
+    return atomic_compare_exchange_strong((_Atomic(uint8_t)*)address,
+                                          &expected, value);
 }
 
 static inline int
 _Py_atomic_compare_exchange_uint16(uint16_t *address, uint16_t expected, uint16_t value)
 {
     _Py_USING_STD
-    return atomic_compare_exchange_strong((_Atomic(uint16_t)*)address, &expected, value);
+    return atomic_compare_exchange_strong((_Atomic(uint16_t)*)address,
+                                          &expected, value);
 }
 
 static inline int
 _Py_atomic_compare_exchange_uint32(uint32_t *address, uint32_t expected, uint32_t value)
 {
     _Py_USING_STD
-    return atomic_compare_exchange_strong((_Atomic(uint32_t)*)address, &expected, value);
+    return atomic_compare_exchange_strong((_Atomic(uint32_t)*)address,
+                                          &expected, value);
 }
 
 static inline int
 _Py_atomic_compare_exchange_uint64(uint64_t *address, uint64_t expected, uint64_t value)
 {
     _Py_USING_STD
-    return atomic_compare_exchange_strong((_Atomic(uint64_t)*)address, &expected, value);
+    return atomic_compare_exchange_strong((_Atomic(uint64_t)*)address,
+                                          &expected, value);
 }
 
 static inline int
 _Py_atomic_compare_exchange_uintptr(uintptr_t *address, uintptr_t expected, uintptr_t value)
 {
     _Py_USING_STD
-    return atomic_compare_exchange_strong((_Atomic(uintptr_t)*)address, &expected, value);
+    return atomic_compare_exchange_strong((_Atomic(uintptr_t)*)address,
+                                          &expected, value);
 }
 
 static inline int
 _Py_atomic_compare_exchange_ssize(Py_ssize_t *address, Py_ssize_t expected, Py_ssize_t value)
 {
     _Py_USING_STD
-    return atomic_compare_exchange_strong((_Atomic(Py_ssize_t)*)address, &expected, value);
+    return atomic_compare_exchange_strong((_Atomic(Py_ssize_t)*)address,
+                                          &expected, value);
 }
 
 static inline int
 _Py_atomic_compare_exchange_ptr(void *address, void *expected, void *value)
 {
     _Py_USING_STD
-    return atomic_compare_exchange_strong((_Atomic(void *)*)address, &expected, value);
+    return atomic_compare_exchange_strong((_Atomic(void *)*)address,
+                                          &expected, value);
 }
 
 
@@ -480,98 +494,112 @@ static inline int
 _Py_atomic_load_int_relaxed(const int *address)
 {
     _Py_USING_STD
-    return atomic_load_explicit((const _Atomic(int)*)address, memory_order_relaxed);
+    return atomic_load_explicit((const _Atomic(int)*)address,
+                                memory_order_relaxed);
 }
 
 static inline int8_t
 _Py_atomic_load_int8_relaxed(const int8_t *address)
 {
     _Py_USING_STD
-    return atomic_load_explicit((const _Atomic(int8_t)*)address, memory_order_relaxed);
+    return atomic_load_explicit((const _Atomic(int8_t)*)address,
+                                memory_order_relaxed);
 }
 
 static inline int16_t
 _Py_atomic_load_int16_relaxed(const int16_t *address)
 {
     _Py_USING_STD
-    return atomic_load_explicit((const _Atomic(int16_t)*)address, memory_order_relaxed);
+    return atomic_load_explicit((const _Atomic(int16_t)*)address,
+                                memory_order_relaxed);
 }
 
 static inline int32_t
 _Py_atomic_load_int32_relaxed(const int32_t *address)
 {
     _Py_USING_STD
-    return atomic_load_explicit((const _Atomic(int32_t)*)address, memory_order_relaxed);
+    return atomic_load_explicit((const _Atomic(int32_t)*)address,
+                                memory_order_relaxed);
 }
 
 static inline int64_t
 _Py_atomic_load_int64_relaxed(const int64_t *address)
 {
     _Py_USING_STD
-    return atomic_load_explicit((const _Atomic(int64_t)*)address, memory_order_relaxed);
+    return atomic_load_explicit((const _Atomic(int64_t)*)address,
+                                memory_order_relaxed);
 }
 
 static inline intptr_t
 _Py_atomic_load_intptr_relaxed(const intptr_t *address)
 {
     _Py_USING_STD
-    return atomic_load_explicit((const _Atomic(intptr_t)*)address, memory_order_relaxed);
+    return atomic_load_explicit((const _Atomic(intptr_t)*)address,
+                                memory_order_relaxed);
 }
 
 static inline uint8_t
 _Py_atomic_load_uint8_relaxed(const uint8_t *address)
 {
     _Py_USING_STD
-    return atomic_load_explicit((const _Atomic(uint8_t)*)address, memory_order_relaxed);
+    return atomic_load_explicit((const _Atomic(uint8_t)*)address,
+                                memory_order_relaxed);
 }
 
 static inline uint16_t
 _Py_atomic_load_uint16_relaxed(const uint16_t *address)
 {
     _Py_USING_STD
-    return atomic_load_explicit((const _Atomic(uint16_t)*)address, memory_order_relaxed);
+    return atomic_load_explicit((const _Atomic(uint16_t)*)address,
+                                memory_order_relaxed);
 }
 
 static inline uint32_t
 _Py_atomic_load_uint32_relaxed(const uint32_t *address)
 {
     _Py_USING_STD
-    return atomic_load_explicit((const _Atomic(uint32_t)*)address, memory_order_relaxed);
+    return atomic_load_explicit((const _Atomic(uint32_t)*)address,
+                                memory_order_relaxed);
 }
 
 static inline uint64_t
 _Py_atomic_load_uint64_relaxed(const uint64_t *address)
 {
     _Py_USING_STD
-    return atomic_load_explicit((const _Atomic(uint64_t)*)address, memory_order_relaxed);
+    return atomic_load_explicit((const _Atomic(uint64_t)*)address,
+                                memory_order_relaxed);
 }
 
 static inline uintptr_t
 _Py_atomic_load_uintptr_relaxed(const uintptr_t *address)
 {
     _Py_USING_STD
-    return atomic_load_explicit((const _Atomic(uintptr_t)*)address, memory_order_relaxed);
+    return atomic_load_explicit((const _Atomic(uintptr_t)*)address,
+                                memory_order_relaxed);
 }
 
 static inline unsigned int
 _Py_atomic_load_uint_relaxed(const unsigned int *address)
 {
     _Py_USING_STD
-    return atomic_load_explicit((const _Atomic(unsigned int)*)address, memory_order_relaxed);
+    return atomic_load_explicit((const _Atomic(unsigned int)*)address,
+                                memory_order_relaxed);
 }
 
 static inline Py_ssize_t
 _Py_atomic_load_ssize_relaxed(const Py_ssize_t *address)
 {
     _Py_USING_STD
-    return atomic_load_explicit((const _Atomic(Py_ssize_t)*)address, memory_order_relaxed);
+    return atomic_load_explicit((const _Atomic(Py_ssize_t)*)address,
+                                memory_order_relaxed);
 }
 
 static inline void *
 _Py_atomic_load_ptr_relaxed(const void *address)
 {
     _Py_USING_STD
-    return atomic_load_explicit((const _Atomic(void*)*)address, memory_order_relaxed);
+    return atomic_load_explicit((const _Atomic(void*)*)address,
+                                memory_order_relaxed);
 }
 
 static inline void
@@ -676,112 +704,128 @@ static inline void
 _Py_atomic_store_int_relaxed(int *address, int value)
 {
     _Py_USING_STD
-    atomic_store_explicit((_Atomic(int)*)address, value, memory_order_relaxed);
+    atomic_store_explicit((_Atomic(int)*)address, value,
+                          memory_order_relaxed);
 }
 
 static inline void
 _Py_atomic_store_int8_relaxed(int8_t *address, int8_t value)
 {
     _Py_USING_STD
-    atomic_store_explicit((_Atomic(int8_t)*)address, value, memory_order_relaxed);
+    atomic_store_explicit((_Atomic(int8_t)*)address, value,
+                          memory_order_relaxed);
 }
 
 static inline void
 _Py_atomic_store_int16_relaxed(int16_t *address, int16_t value)
 {
     _Py_USING_STD
-    atomic_store_explicit((_Atomic(int16_t)*)address, value, memory_order_relaxed);
+    atomic_store_explicit((_Atomic(int16_t)*)address, value,
+                          memory_order_relaxed);
 }
 
 static inline void
 _Py_atomic_store_int32_relaxed(int32_t *address, int32_t value)
 {
     _Py_USING_STD
-    atomic_store_explicit((_Atomic(int32_t)*)address, value, memory_order_relaxed);
+    atomic_store_explicit((_Atomic(int32_t)*)address, value,
+                          memory_order_relaxed);
 }
 
 static inline void
 _Py_atomic_store_int64_relaxed(int64_t *address, int64_t value)
 {
     _Py_USING_STD
-    atomic_store_explicit((_Atomic(int64_t)*)address, value, memory_order_relaxed);
+    atomic_store_explicit((_Atomic(int64_t)*)address, value,
+                          memory_order_relaxed);
 }
 
 static inline void
 _Py_atomic_store_intptr_relaxed(intptr_t *address, intptr_t value)
 {
     _Py_USING_STD
-    atomic_store_explicit((_Atomic(intptr_t)*)address, value, memory_order_relaxed);
+    atomic_store_explicit((_Atomic(intptr_t)*)address, value,
+                          memory_order_relaxed);
 }
 
 static inline void
 _Py_atomic_store_uint8_relaxed(uint8_t *address, uint8_t value)
 {
     _Py_USING_STD
-    atomic_store_explicit((_Atomic(uint8_t)*)address, value, memory_order_relaxed);
+    atomic_store_explicit((_Atomic(uint8_t)*)address, value,
+                          memory_order_relaxed);
 }
 
 static inline void
 _Py_atomic_store_uint16_relaxed(uint16_t *address, uint16_t value)
 {
     _Py_USING_STD
-    atomic_store_explicit((_Atomic(uint16_t)*)address, value, memory_order_relaxed);
+    atomic_store_explicit((_Atomic(uint16_t)*)address, value,
+                          memory_order_relaxed);
 }
 
 static inline void
 _Py_atomic_store_uint32_relaxed(uint32_t *address, uint32_t value)
 {
     _Py_USING_STD
-    atomic_store_explicit((_Atomic(uint32_t)*)address, value, memory_order_relaxed);
+    atomic_store_explicit((_Atomic(uint32_t)*)address, value,
+                          memory_order_relaxed);
 }
 
 static inline void
 _Py_atomic_store_uint64_relaxed(uint64_t *address, uint64_t value)
 {
     _Py_USING_STD
-    atomic_store_explicit((_Atomic(uint64_t)*)address, value, memory_order_relaxed);
+    atomic_store_explicit((_Atomic(uint64_t)*)address, value,
+                          memory_order_relaxed);
 }
 
 static inline void
 _Py_atomic_store_uintptr_relaxed(uintptr_t *address, uintptr_t value)
 {
     _Py_USING_STD
-    atomic_store_explicit((_Atomic(uintptr_t)*)address, value, memory_order_relaxed);
+    atomic_store_explicit((_Atomic(uintptr_t)*)address, value,
+                          memory_order_relaxed);
 }
 
 static inline void
 _Py_atomic_store_uint_relaxed(unsigned int *address, unsigned int value)
 {
     _Py_USING_STD
-    atomic_store_explicit((_Atomic(unsigned int)*)address, value, memory_order_relaxed);
+    atomic_store_explicit((_Atomic(unsigned int)*)address, value,
+                          memory_order_relaxed);
 }
 
 static inline void
 _Py_atomic_store_ptr_relaxed(void *address, void *value)
 {
     _Py_USING_STD
-    atomic_store_explicit((_Atomic(void*)*)address, value, memory_order_relaxed);
+    atomic_store_explicit((_Atomic(void*)*)address, value,
+                          memory_order_relaxed);
 }
 
 static inline void
 _Py_atomic_store_ssize_relaxed(Py_ssize_t *address, Py_ssize_t value)
 {
     _Py_USING_STD
-    atomic_store_explicit((_Atomic(Py_ssize_t)*)address, value, memory_order_relaxed);
+    atomic_store_explicit((_Atomic(Py_ssize_t)*)address, value,
+                          memory_order_relaxed);
 }
 
 static inline void *
 _Py_atomic_load_ptr_acquire(const void *address)
 {
     _Py_USING_STD
-    return atomic_load_explicit((const _Atomic(void*)*)address, memory_order_acquire);
+    return atomic_load_explicit((const _Atomic(void*)*)address,
+                                memory_order_acquire);
 }
 
 static inline void
 _Py_atomic_store_ptr_release(void *address, void *value)
 {
     _Py_USING_STD
-    atomic_store_explicit((_Atomic(void*)*)address, value, memory_order_release);
+    atomic_store_explicit((_Atomic(void*)*)address, value,
+                          memory_order_release);
 }
 
  static inline void
