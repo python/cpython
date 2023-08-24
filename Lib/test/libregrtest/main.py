@@ -463,8 +463,8 @@ class Regrtest:
         if self.ns.print_slow:
             self.test_times.sort(reverse=True)
             print()
-            print("10 slowest tests:")
-            for test_time, test in self.test_times[:10]:
+            print("20 slowest tests:")
+            for test_time, test in self.test_times[:20]:
                 print("- %s: %s" % (test, format_duration(test_time)))
 
         if self.bad:
