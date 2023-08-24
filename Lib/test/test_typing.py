@@ -8490,6 +8490,24 @@ class AnnotatedTests(BaseTestCase):
         class Y2(Annotated[List[int], 'meta']): ...
         self.assertEqual(Y2.__mro__, (Y2, list, Generic, object))
 
+        class Y3(
+            Annotated[
+                Annotated[
+                    list[
+                        Annotated[
+                            list[
+                                Annotated[int, 'm'],
+                            ],
+                            'm',
+                        ],
+                    ],
+                    'm',
+                ],
+                'm',
+            ],
+        ): ...
+        self.assertEqual(Y3.__mro__, (Y3, list, object))
+
         T = TypeVar('T')
         class GenericBase(Generic[T]): ...
         class Mixin: ...
