@@ -206,12 +206,15 @@ class _ModuleTarget(str):
 # line_prefix = ': '    # Use this to get the old situation back
 line_prefix = '\n-> '   # Probably a better default
 
-MAX_CHAINED_EXCEPTION_DEPTH = 999
 
 
 class Pdb(bdb.Bdb, cmd.Cmd):
     # the max number of chained exceptions + exception groups we accept to navigate.
     _previous_sigint_handler = None
+
+    # Limit the maximum depth of chained exceptions, we should be handling cycles,
+    # but in case there are recursions, we stop at 999.
+    MAX_CHAINED_EXCEPTION_DEPTH = 999
 
     def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
                  nosigint=False, readrc=True):
@@ -446,9 +449,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 ):
                     current = current.__context__
 
-                if len(_exceptions) >= MAX_CHAINED_EXCEPTION_DEPTH:
+                if len(_exceptions) >= self.MAX_CHAINED_EXCEPTION_DEPTH:
                     self.message(
-                        f"More than {MAX_CHAINED_EXCEPTION_DEPTH}"
+                        f"More than {self.MAX_CHAINED_EXCEPTION_DEPTH}"
                         " chained exceptions found, not all exceptions"
                         "will be browsable with `exceptions`."
                     )
