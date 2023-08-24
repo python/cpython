@@ -798,6 +798,8 @@ Build Changes
 * SQLite 3.15.2 or newer is required to build the :mod:`sqlite3` extension module.
   (Contributed by Erlend Aasland in :gh:`105875`.)
 
+* Building CPython now requires a compiler with support for the C11 atomic
+  library, GCC built-in atomic functions, or MSVC interlocked intrinsics.
 
 C API Changes
 =============
