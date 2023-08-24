@@ -365,7 +365,10 @@ static inline void
 _Py_atomic_store_ptr_release(void *address, void *value);
 
 
-// Sequential consistency fence
+// Sequential consistency fence. C11 fences have complex semantics. When
+// possible, use the atomic operations on variables defined above, which
+// generally do not require explicit use of a fence.
+// See https://en.cppreference.com/w/cpp/atomic/atomic_thread_fence
 static inline void _Py_atomic_fence_seq_cst(void);
 
 // Release fence
