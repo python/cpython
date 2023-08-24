@@ -2412,13 +2412,13 @@ build_cellfixedoffsets(_PyCompile_CodeUnitMetadata *umd)
             continue;
         }
 
-        int argoffset = _PyLong_AsInt(varindex);
+        int argoffset = PyLong_AsInt(varindex);
         Py_DECREF(varindex);
         if (argoffset == -1 && PyErr_Occurred()) {
             goto error;
         }
 
-        int oldindex = _PyLong_AsInt(cellindex);
+        int oldindex = PyLong_AsInt(cellindex);
         if (oldindex == -1 && PyErr_Occurred()) {
             goto error;
         }
