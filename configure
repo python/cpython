@@ -8746,7 +8746,7 @@ printf "%s\n" "$as_me: llvm-profdata found via xcrun: ${LLVM_PROFDATA}" >&6;}
   fi
 fi
 LLVM_PROF_ERR=no
-case $CC in
+case $( basename "$CC" ) in
   *clang*)
     # Any changes made here should be reflected in the GCC+Darwin case below
     PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
@@ -9575,7 +9575,7 @@ fi
 
     # ICC doesn't recognize the option, but only emits a warning
     ## XXX does it emit an unused result warning and can it be disabled?
-    case $CC in #(
+    case $( basename "$CC") in #(
   *icc*) :
     ac_cv_disable_unused_result_warning=no
 
@@ -10156,7 +10156,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
     ;;
 esac
 
-case "$CC" in
+case $( basename "$CC" ) in
 *mpicc*)
     CFLAGS_NODIST="$CFLAGS_NODIST"
     ;;
