@@ -1,5 +1,7 @@
 #include "Python.h"
 #include "pycore_object.h"
+#include "pycore_sysmodule.h"     // _PySys_GetSizeOf()
+
 #include <stddef.h>               // offsetof()
 #include "_iomodule.h"
 
