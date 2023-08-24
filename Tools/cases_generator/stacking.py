@@ -411,9 +411,7 @@ def write_components(
             if copy_src_effect.name != copy.dst.effect.name:
                 if copy_src_effect.name == UNUSED:
                     copy_src_effect = copy.src.as_stack_effect()
-                    out.assign(copy.dst.effect, copy_src_effect)
-                else:
-                    out.assign(copy.dst.effect, copy_src_effect)
+                out.assign(copy.dst.effect, copy_src_effect)
         for peek in mgr.peeks:
             out.assign(
                 peek.effect,
