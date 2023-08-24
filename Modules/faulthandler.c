@@ -3,6 +3,7 @@
 #include "pycore_pyerrors.h"      // _Py_DumpExtensionModules
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_signal.h"        // Py_NSIG
+#include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads
 
 #include <object.h>
@@ -26,7 +27,7 @@
 /* Allocate at maximum 100 MiB of the stack to raise the stack overflow */
 #define STACK_OVERFLOW_MAX_SIZE (100 * 1024 * 1024)
 
-#define PUTS(fd, str) _Py_write_noraise(fd, str, strlen(str))
+#define PUTS(fd, str) (void)_Py_write_noraise(fd, str, strlen(str))
 
 
 // clang uses __attribute__((no_sanitize("undefined")))
@@ -576,7 +577,7 @@ faulthandler_thread(void *unused)
         /* Timeout => dump traceback */
         assert(st == PY_LOCK_FAILURE);
 
-        _Py_write_noraise(thread.fd, thread.header, (int)thread.header_len);
+        (void)_Py_write_noraise(thread.fd, thread.header, (int)thread.header_len);
 
         errmsg = _Py_DumpTracebackThreads(thread.fd, thread.interp, NULL);
         ok = (errmsg == NULL);
@@ -1274,6 +1275,8 @@ PyExec_faulthandler(PyObject *module) {
 
 static PyModuleDef_Slot faulthandler_slots[] = {
     {Py_mod_exec, PyExec_faulthandler},
+    // XXX gh-103092: fix isolation.
+    //{Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

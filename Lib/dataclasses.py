@@ -575,15 +575,15 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
     # message, and future-proofs us in case we build up the function
     # using ast.
 
-    seen_default = False
+    seen_default = None
     for f in std_fields:
         # Only consider the non-kw-only fields in the __init__ call.
         if f.init:
             if not (f.default is MISSING and f.default_factory is MISSING):
-                seen_default = True
+                seen_default = f
             elif seen_default:
                 raise TypeError(f'non-default argument {f.name!r} '
-                                'follows default argument')
+                                f'follows default argument {seen_default.name!r}')
 
     locals = {f'__dataclass_type_{f.name}__': f.type for f in fields}
     locals.update({
@@ -627,7 +627,7 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
 def _repr_fn(fields, globals):
     fn = _create_fn('__repr__',
                     ('self',),
-                    ['return self.__class__.__qualname__ + f"(' +
+                    ['return f"{self.__class__.__qualname__}(' +
                      ', '.join([f"{f.name}={{self.{f.name}!r}}"
                                 for f in fields]) +
                      ')"'],
@@ -1036,7 +1036,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     # Was this class defined with an explicit __hash__?  Note that if
     # __eq__ is defined in this class, then python will automatically
     # set __hash__ to None.  This is a heuristic, as it's possible
-    # that such a __hash__ == None was not auto-generated, but it
+    # that such a __hash__ == None was not auto-generated, but it's
     # close enough.
     class_hash = cls.__dict__.get('__hash__', MISSING)
     has_explicit_hash = not (class_hash is MISSING or
@@ -1085,13 +1085,17 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     if eq:
         # Create __eq__ method.  There's no need for a __ne__ method,
         # since python will call __eq__ and negate it.
-        flds = [f for f in field_list if f.compare]
-        self_tuple = _tuple_str('self', flds)
-        other_tuple = _tuple_str('other', flds)
-        _set_new_attribute(cls, '__eq__',
-                           _cmp_fn('__eq__', '==',
-                                   self_tuple, other_tuple,
-                                   globals=globals))
+        cmp_fields = (field for field in field_list if field.compare)
+        terms = [f'self.{field.name}==other.{field.name}' for field in cmp_fields]
+        field_comparisons = ' and '.join(terms) or 'True'
+        body =  [f'if other.__class__ is self.__class__:',
+                 f' return {field_comparisons}',
+                 f'return NotImplemented']
+        func = _create_fn('__eq__',
+                          ('self', 'other'),
+                          body,
+                          globals=globals)
+        _set_new_attribute(cls, '__eq__', func)
 
     if order:
         # Create and set the ordering methods.
@@ -1324,11 +1328,18 @@ def _asdict_inner(obj, dict_factory):
     if type(obj) in _ATOMIC_TYPES:
         return obj
     elif _is_dataclass_instance(obj):
-        result = []
-        for f in fields(obj):
-            value = _asdict_inner(getattr(obj, f.name), dict_factory)
-            result.append((f.name, value))
-        return dict_factory(result)
+        # fast path for the common case
+        if dict_factory is dict:
+            return {
+                f.name: _asdict_inner(getattr(obj, f.name), dict)
+                for f in fields(obj)
+            }
+        else:
+            result = []
+            for f in fields(obj):
+                value = _asdict_inner(getattr(obj, f.name), dict_factory)
+                result.append((f.name, value))
+            return dict_factory(result)
     elif isinstance(obj, tuple) and hasattr(obj, '_fields'):
         # obj is a namedtuple.  Recurse into it, but the returned
         # object is another namedtuple of the same type.  This is

@@ -1,5 +1,6 @@
 import unittest
-from ctypes import *
+from ctypes import Structure, Union, sizeof, c_char, c_int
+
 
 class StructFieldsTestCase(unittest.TestCase):
     # Structure/Union classes must get 'finalized' sooner or
@@ -92,6 +93,7 @@ class StructFieldsTestCase(unittest.TestCase):
             _fields_ = (("field", c_int),)
         self.assertRaises(TypeError,
                           MyCUnion.field.__get__, 'wrong type self', 42)
+
 
 if __name__ == "__main__":
     unittest.main()

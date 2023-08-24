@@ -48,7 +48,9 @@ typedef long long SHA1_INT64;        /* 64-bit integer */
 
 typedef struct {
     PyObject_HEAD
-
+    // Prevents undefined behavior via multiple threads entering the C API.
+    // The lock will be NULL before threaded access has been enabled.
+    PyThread_type_lock lock;
     Hacl_Streaming_SHA1_state *hash_state;
 } SHA1object;
 
@@ -71,6 +73,10 @@ static SHA1object *
 newSHA1object(SHA1State *st)
 {
     SHA1object *sha = (SHA1object *)PyObject_GC_New(SHA1object, st->sha1_type);
+    if (sha == NULL) {
+        return NULL;
+    }
+    sha->lock = NULL;
     PyObject_GC_Track(sha);
     return sha;
 }
@@ -88,6 +94,9 @@ static void
 SHA1_dealloc(SHA1object *ptr)
 {
     Hacl_Streaming_SHA1_legacy_free(ptr->hash_state);
+    if (ptr->lock != NULL) {
+        PyThread_free_lock(ptr->lock);
+    }
     PyTypeObject *tp = Py_TYPE(ptr);
     PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);
@@ -115,7 +124,9 @@ SHA1Type_copy_impl(SHA1object *self, PyTypeObject *cls)
     if ((newobj = newSHA1object(st)) == NULL)
         return NULL;
 
+    ENTER_HASHLIB(self);
     newobj->hash_state = Hacl_Streaming_SHA1_legacy_copy(self->hash_state);
+    LEAVE_HASHLIB(self);
     return (PyObject *)newobj;
 }
 
@@ -130,7 +141,9 @@ SHA1Type_digest_impl(SHA1object *self)
 /*[clinic end generated code: output=2f05302a7aa2b5cb input=13824b35407444bd]*/
 {
     unsigned char digest[SHA1_DIGESTSIZE];
+    ENTER_HASHLIB(self);
     Hacl_Streaming_SHA1_legacy_finish(self->hash_state, digest);
+    LEAVE_HASHLIB(self);
     return PyBytes_FromStringAndSize((const char *)digest, SHA1_DIGESTSIZE);
 }
 
@@ -145,7 +158,9 @@ SHA1Type_hexdigest_impl(SHA1object *self)
 /*[clinic end generated code: output=4161fd71e68c6659 input=97691055c0c74ab0]*/
 {
     unsigned char digest[SHA1_DIGESTSIZE];
+    ENTER_HASHLIB(self);
     Hacl_Streaming_SHA1_legacy_finish(self->hash_state, digest);
+    LEAVE_HASHLIB(self);
     return _Py_strhex((const char *)digest, SHA1_DIGESTSIZE);
 }
 
@@ -177,7 +192,18 @@ SHA1Type_update(SHA1object *self, PyObject *obj)
 
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
 
-    update(self->hash_state, buf.buf, buf.len);
+    if (self->lock == NULL && buf.len >= HASHLIB_GIL_MINSIZE) {
+        self->lock = PyThread_allocate_lock();
+    }
+    if (self->lock != NULL) {
+        Py_BEGIN_ALLOW_THREADS
+        PyThread_acquire_lock(self->lock, 1);
+        update(self->hash_state, buf.buf, buf.len);
+        PyThread_release_lock(self->lock);
+        Py_END_ALLOW_THREADS
+    } else {
+        update(self->hash_state, buf.buf, buf.len);
+    }
 
     PyBuffer_Release(&buf);
     Py_RETURN_NONE;
@@ -279,7 +305,15 @@ _sha1_sha1_impl(PyObject *module, PyObject *string, int usedforsecurity)
         return NULL;
     }
     if (string) {
-        update(new->hash_state, buf.buf, buf.len);
+        if (buf.len >= HASHLIB_GIL_MINSIZE) {
+            /* We do not initialize self->lock here as this is the constructor
+             * where it is not yet possible to have concurrent access. */
+            Py_BEGIN_ALLOW_THREADS
+            update(new->hash_state, buf.buf, buf.len);
+            Py_END_ALLOW_THREADS
+        } else {
+            update(new->hash_state, buf.buf, buf.len);
+        }
         PyBuffer_Release(&buf);
     }
 
@@ -323,16 +357,9 @@ _sha1_exec(PyObject *module)
 
     st->sha1_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         module, &sha1_type_spec, NULL);
-
-    if (st->sha1_type == NULL) {
-        return -1;
-    }
-
-    Py_INCREF(st->sha1_type);
-    if (PyModule_AddObject(module,
+    if (PyModule_AddObjectRef(module,
                            "SHA1Type",
                            (PyObject *)st->sha1_type) < 0) {
-        Py_DECREF(st->sha1_type);
         return -1;
     }
 
@@ -344,6 +371,7 @@ _sha1_exec(PyObject *module)
 
 static PyModuleDef_Slot _sha1_slots[] = {
     {Py_mod_exec, _sha1_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

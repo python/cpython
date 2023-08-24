@@ -39,27 +39,24 @@
 // Return 1 if float or double arg is neither infinite nor NAN, else 0.
 #define Py_IS_FINITE(X) isfinite(X)
 
-/* HUGE_VAL is supposed to expand to a positive double infinity.  Python
- * uses Py_HUGE_VAL instead because some platforms are broken in this
- * respect.  We used to embed code in pyport.h to try to worm around that,
- * but different platforms are broken in conflicting ways.  If you're on
- * a platform where HUGE_VAL is defined incorrectly, fiddle your Python
- * config to #define Py_HUGE_VAL to something that works on your platform.
+// Py_INFINITY: Value that evaluates to a positive double infinity.
+#ifndef Py_INFINITY
+#  define Py_INFINITY ((double)INFINITY)
+#endif
+
+/* Py_HUGE_VAL should always be the same as Py_INFINITY.  But historically
+ * this was not reliable and Python did not require IEEE floats and C99
+ * conformity.  Prefer Py_INFINITY for new code.
  */
 #ifndef Py_HUGE_VAL
 #  define Py_HUGE_VAL HUGE_VAL
 #endif
 
-// Py_NAN: Value that evaluates to a quiet Not-a-Number (NaN).
+/* Py_NAN: Value that evaluates to a quiet Not-a-Number (NaN).  The sign is
+ * undefined and normally not relevant, but e.g. fixed for float("nan").
+ */
 #if !defined(Py_NAN)
-#  if _Py__has_builtin(__builtin_nan)
-     // Built-in implementation of the ISO C99 function nan(): quiet NaN.
-#    define Py_NAN (__builtin_nan(""))
-#else
-     // Use C99 NAN constant: quiet Not-A-Number.
-     // NAN is a float, Py_NAN is a double: cast to double.
 #    define Py_NAN ((double)NAN)
-#  endif
 #endif
 
 #endif /* Py_PYMATH_H */

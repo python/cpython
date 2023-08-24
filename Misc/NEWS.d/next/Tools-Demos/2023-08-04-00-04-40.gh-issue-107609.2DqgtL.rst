@@ -1,0 +1,3 @@
+Fix duplicate module check in Argument Clinic. Previously, a duplicate
+definition would incorrectly be silently accepted. Patch by Erlend E.
+Aasland.

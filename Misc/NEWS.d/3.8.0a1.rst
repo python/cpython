@@ -1934,7 +1934,7 @@ failure.
 .. nonce: _ct_0H
 .. section: Library
 
-The :data:`time.CLOCK_UPTIME_RAW` constant is now available for macOS 10.12.
+The :const:`time.CLOCK_UPTIME_RAW` constant is now available for macOS 10.12.
 
 ..
 
@@ -2747,7 +2747,7 @@ smaller file). Also, change the default compression level to 6 (tradeoff).
 .. nonce: xo5LAr
 .. section: Library
 
-The :term:`2to3` :2to3fixer:`execfile` fixer now opens the file with mode
+The 2to3 ``execfile`` fixer now opens the file with mode
 ``'rb'``.  Patch by Zackery Spytz.
 
 ..
@@ -3817,7 +3817,7 @@ user.
 .. nonce: w6g7tn
 .. section: Library
 
-The :2to3fixer:`reload` fixer now uses :func:`importlib.reload` instead of
+The ``reload`` fixer now uses :func:`importlib.reload` instead of
 deprecated :func:`!imp.reload`.
 
 ..
@@ -5576,8 +5576,8 @@ documentation.
 .. section: Library
 
 Improved exceptions raised for invalid number of channels and sample width
-when read an audio file in modules :mod:`aifc`, :mod:`wave` and
-:mod:`sunau`.
+when read an audio file in modules :mod:`!aifc`, :mod:`wave` and
+:mod:`!sunau`.
 
 ..
 
@@ -8765,7 +8765,7 @@ for relative path to files in current directory.
 .. nonce: fmehdG
 .. section: C API
 
-The :c:func:`PyByteArray_Init` and :c:func:`PyByteArray_Fini` functions have
+The :c:func:`!PyByteArray_Init` and :c:func:`!PyByteArray_Fini` functions have
 been removed. They did nothing since Python 2.7.4 and Python 3.2.0, were
 excluded from the limited API (stable ABI), and were not documented.
 
@@ -8836,7 +8836,7 @@ Py_LIMITED_API. Patch by Arthur Neufeld.
 .. nonce: gFd85N
 .. section: C API
 
-The :c:func:`_PyObject_GC_TRACK` and :c:func:`_PyObject_GC_UNTRACK` macros
+The :c:func:`!_PyObject_GC_TRACK` and :c:func:`!_PyObject_GC_UNTRACK` macros
 have been removed from the public C API.
 
 ..

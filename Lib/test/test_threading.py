@@ -251,6 +251,14 @@ class ThreadTests(BaseTestCase):
         #Issue 29376
         self.assertTrue(threading._active[tid].is_alive())
         self.assertRegex(repr(threading._active[tid]), '_DummyThread')
+
+        # Issue gh-106236:
+        with self.assertRaises(RuntimeError):
+            threading._active[tid].join()
+        threading._active[tid]._started.clear()
+        with self.assertRaises(RuntimeError):
+            threading._active[tid].is_alive()
+
         del threading._active[tid]
 
     # PyThreadState_SetAsyncExc() is a CPython-only gimmick, not (currently)
@@ -530,34 +538,6 @@ class ThreadTests(BaseTestCase):
         self.assertFalse(t.daemon)
         t = threading.Thread(daemon=True)
         self.assertTrue(t.daemon)
-
-    @support.requires_fork()
-    def test_fork_at_exit(self):
-        # bpo-42350: Calling os.fork() after threading._shutdown() must
-        # not log an error.
-        code = textwrap.dedent("""
-            import atexit
-            import os
-            import sys
-            from test.support import wait_process
-
-            # Import the threading module to register its "at fork" callback
-            import threading
-
-            def exit_handler():
-                pid = os.fork()
-                if not pid:
-                    print("child process ok", file=sys.stderr, flush=True)
-                    # child process
-                else:
-                    wait_process(pid, exitcode=0)
-
-            # exit_handler() will be called after threading._shutdown()
-            atexit.register(exit_handler)
-        """)
-        _, out, err = assert_python_ok("-c", code)
-        self.assertEqual(out, b'')
-        self.assertEqual(err.rstrip(), b'child process ok')
 
     @support.requires_fork()
     def test_dummy_thread_after_fork(self):
@@ -1048,6 +1028,22 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
+    def test_start_new_thread_at_exit(self):
+        code = """if 1:
+            import atexit
+            import _thread
+
+            def f():
+                print("shouldn't be printed")
+
+            def exit_handler():
+                _thread.start_new_thread(f, ())
+
+            atexit.register(exit_handler)
+        """
+        _, out, err = assert_python_ok("-c", code)
+        self.assertEqual(out, b'')
+        self.assertIn(b"can't create new thread at interpreter shutdown", err)
 
 class ThreadJoinOnShutdown(BaseTestCase):
 
@@ -1349,6 +1345,7 @@ class SubinterpThreadingTests(BaseTestCase):
                 allow_threads={allowed},
                 allow_daemon_threads={daemon_allowed},
                 check_multi_interp_extensions=False,
+                own_gil=False,
             )
             """)
         with test.support.SuppressCrashReport():
@@ -1750,6 +1747,30 @@ class PyRLockTests(lock_tests.RLockTests):
 @unittest.skipIf(threading._CRLock is None, 'RLock not implemented in C')
 class CRLockTests(lock_tests.RLockTests):
     locktype = staticmethod(threading._CRLock)
+
+    def test_signature(self):  # gh-102029
+        with warnings.catch_warnings(record=True) as warnings_log:
+            threading.RLock()
+        self.assertEqual(warnings_log, [])
+
+        arg_types = [
+            ((1,), {}),
+            ((), {'a': 1}),
+            ((1, 2), {'a': 1}),
+        ]
+        for args, kwargs in arg_types:
+            with self.subTest(args=args, kwargs=kwargs):
+                with self.assertWarns(DeprecationWarning):
+                    threading.RLock(*args, **kwargs)
+
+        # Subtypes with custom `__init__` are allowed (but, not recommended):
+        class CustomRLock(self.locktype):
+            def __init__(self, a, *, b) -> None:
+                super().__init__()
+
+        with warnings.catch_warnings(record=True) as warnings_log:
+            CustomRLock(1, b=2)
+        self.assertEqual(warnings_log, [])
 
 class EventTests(lock_tests.EventTests):
     eventtype = staticmethod(threading.Event)

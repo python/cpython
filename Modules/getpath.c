@@ -1,12 +1,13 @@
 /* Return the initial module search path. */
 
 #include "Python.h"
+#include "pycore_fileutils.h"     // _Py_abspath()
+#include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_pathconfig.h"    // _PyPathConfig_ReadGlobal()
+#include "pycore_pymem.h"         // _PyMem_RawWcsdup()
+
 #include "marshal.h"              // PyMarshal_ReadObjectFromString
 #include "osdefs.h"               // DELIM
-#include "pycore_initconfig.h"
-#include "pycore_fileutils.h"
-#include "pycore_pathconfig.h"
-#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include <wchar.h>
 
 #ifdef MS_WINDOWS
@@ -921,23 +922,6 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
     }
     Py_DECREF(r);
 
-#if 0
-    PyObject *it = PyObject_GetIter(configDict);
-    for (PyObject *k = PyIter_Next(it); k; k = PyIter_Next(it)) {
-        if (!strcmp("__builtins__", PyUnicode_AsUTF8(k))) {
-            Py_DECREF(k);
-            continue;
-        }
-        fprintf(stderr, "%s = ", PyUnicode_AsUTF8(k));
-        PyObject *o = PyDict_GetItem(configDict, k);
-        o = PyObject_Repr(o);
-        fprintf(stderr, "%s\n", PyUnicode_AsUTF8(o));
-        Py_DECREF(o);
-        Py_DECREF(k);
-    }
-    Py_DECREF(it);
-#endif
-
     if (_PyConfig_FromDict(config, configDict) < 0) {
         _PyErr_WriteUnraisableMsg("reading getpath results", NULL);
         Py_DECREF(dict);
@@ -948,4 +932,3 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
 
     return _PyStatus_OK();
 }
-

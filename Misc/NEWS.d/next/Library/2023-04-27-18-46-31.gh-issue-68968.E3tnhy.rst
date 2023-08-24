@@ -1,1 +1,0 @@
-Fixed garbled output of :meth:`~unittest.TestCase.assertEqual` when an input lacks final newline.

@@ -501,6 +501,8 @@ The special characters are:
       in the ASCII range (``b'\x00'``-``b'\x7f'``).
 
 
+.. _re-special-sequences:
+
 The special sequences consist of ``'\'`` and a character from the list below.
 If the ordinary character is not an ASCII digit or an ASCII letter, then the
 resulting RE will match the second character.  For example, ``\$`` matches the
@@ -632,8 +634,8 @@ character ``'$'``.
    single: \x; in regular expressions
    single: \\; in regular expressions
 
-Most of the standard escapes supported by Python string literals are also
-accepted by the regular expression parser::
+Most of the :ref:`escape sequences <escape-sequences>` supported by Python
+string literals are also accepted by the regular expression parser::
 
    \a      \b      \f      \n
    \N      \r      \t      \u
@@ -779,6 +781,17 @@ Flags
    Corresponds to the inline flag ``(?s)``.
 
 
+.. data:: U
+          UNICODE
+
+   In Python 2, this flag made :ref:`special sequences <re-special-sequences>`
+   include Unicode characters in matches. Since Python 3, Unicode characters
+   are matched by default.
+
+   See :const:`A` for restricting matching on ASCII characters instead.
+
+   This flag is only kept for backward compatibility.
+
 .. data:: X
           VERBOSE
 
@@ -885,7 +898,7 @@ Functions
       ['Words', 'words', 'words', '']
       >>> re.split(r'(\W+)', 'Words, words, words.')
       ['Words', ', ', 'words', ', ', 'words', '.', '']
-      >>> re.split(r'\W+', 'Words, words, words.', 1)
+      >>> re.split(r'\W+', 'Words, words, words.', maxsplit=1)
       ['Words', 'words, words.']
       >>> re.split('[a-f]+', '0a3B9', flags=re.IGNORECASE)
       ['0', '3', '9']
@@ -915,6 +928,11 @@ Functions
 
    .. versionchanged:: 3.7
       Added support of splitting on a pattern that could match an empty string.
+
+   .. deprecated:: 3.13
+      Passing *maxsplit* and *flags* as positional arguments is deprecated.
+      In future Python versions they will be
+      :ref:`keyword-only parameters <keyword-only_parameter>`.
 
 
 .. function:: findall(pattern, string, flags=0)
@@ -1014,8 +1032,6 @@ Functions
    .. versionchanged:: 3.7
       Unknown escapes in *repl* consisting of ``'\'`` and an ASCII letter
       now are errors.
-
-   .. versionchanged:: 3.7
       Empty matches for the pattern are replaced when adjacent to a previous
       non-empty match.
 
@@ -1024,17 +1040,16 @@ Functions
       In :class:`bytes` replacement strings, group *name* can only contain bytes
       in the ASCII range (``b'\x00'``-``b'\x7f'``).
 
+   .. deprecated:: 3.13
+      Passing *count* and *flags* as positional arguments is deprecated.
+      In future Python versions they will be
+      :ref:`keyword-only parameters <keyword-only_parameter>`.
+
 
 .. function:: subn(pattern, repl, string, count=0, flags=0)
 
    Perform the same operation as :func:`sub`, but return a tuple ``(new_string,
    number_of_subs_made)``.
-
-   .. versionchanged:: 3.1
-      Added the optional flags argument.
-
-   .. versionchanged:: 3.5
-      Unmatched groups are replaced with an empty string.
 
 
 .. function:: escape(pattern)
@@ -1520,14 +1535,14 @@ Simulating scanf()
 
 .. index:: single: scanf()
 
-Python does not currently have an equivalent to :c:func:`scanf`.  Regular
+Python does not currently have an equivalent to :c:func:`!scanf`.  Regular
 expressions are generally more powerful, though also more verbose, than
-:c:func:`scanf` format strings.  The table below offers some more-or-less
-equivalent mappings between :c:func:`scanf` format tokens and regular
+:c:func:`!scanf` format strings.  The table below offers some more-or-less
+equivalent mappings between :c:func:`!scanf` format tokens and regular
 expressions.
 
 +--------------------------------+---------------------------------------------+
-| :c:func:`scanf` Token          | Regular Expression                          |
+| :c:func:`!scanf` Token         | Regular Expression                          |
 +================================+=============================================+
 | ``%c``                         | ``.``                                       |
 +--------------------------------+---------------------------------------------+
@@ -1552,7 +1567,7 @@ To extract the filename and numbers from a string like ::
 
    /usr/sbin/sendmail - 0 errors, 4 warnings
 
-you would use a :c:func:`scanf` format like ::
+you would use a :c:func:`!scanf` format like ::
 
    %s - %d errors, %d warnings
 
@@ -1643,7 +1658,7 @@ because the address has spaces, our splitting pattern, in it:
 .. doctest::
    :options: +NORMALIZE_WHITESPACE
 
-   >>> [re.split(":? ", entry, 3) for entry in entries]
+   >>> [re.split(":? ", entry, maxsplit=3) for entry in entries]
    [['Ross', 'McFluff', '834.345.1254', '155 Elm Street'],
    ['Ronald', 'Heathmore', '892.345.3428', '436 Finley Avenue'],
    ['Frank', 'Burger', '925.541.7625', '662 South Dogwood Way'],
@@ -1656,7 +1671,7 @@ house number from the street name:
 .. doctest::
    :options: +NORMALIZE_WHITESPACE
 
-   >>> [re.split(":? ", entry, 4) for entry in entries]
+   >>> [re.split(":? ", entry, maxsplit=4) for entry in entries]
    [['Ross', 'McFluff', '834.345.1254', '155', 'Elm Street'],
    ['Ronald', 'Heathmore', '892.345.3428', '436', 'Finley Avenue'],
    ['Frank', 'Burger', '925.541.7625', '662', 'South Dogwood Way'],
