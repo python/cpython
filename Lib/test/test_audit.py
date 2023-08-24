@@ -41,7 +41,7 @@ class AuditTest(unittest.TestCase):
         events = []
         proc, stdout, stderr = self.run_test_in_subprocess(*args)
         if not expect_stderr or support.verbose:
-            sys.stderr.writelines(stderr)
+            sys.stderr.write(stderr)
         return (
             proc.returncode,
             [line.strip().partition(" ") for line in stdout.splitlines()],
