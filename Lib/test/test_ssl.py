@@ -5044,15 +5044,10 @@ class TestPreHandshakeClose(unittest.TestCase):
         timeout = 2.0
         server = self.SingleConnectionTestServerThread(
                 call_after_accept=call_after_accept,
-<<<<<<< HEAD
-                name="non_tls_http_RST_responder")
-        server.__enter__()  # starts it
-        self.addCleanup(server.__exit__)  # ... & unittest.TestCase stops it.
-=======
                 name="non_tls_http_RST_responder",
                 timeout=timeout)
-        self.enterContext(server)  # starts it & unittest.TestCase stops it.
->>>>>>> 592bacb6fc (gh-108342: Make ssl TestPreHandshakeClose more reliable (#108370))
+        server.__enter__()  # starts it
+        self.addCleanup(server.__exit__)  # ... & unittest.TestCase stops it.
         # Redundant; call_after_accept sets SO_LINGER on the accepted conn.
         set_socket_so_linger_on_with_zero_timeout(server.listener)
 
