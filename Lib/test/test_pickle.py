@@ -598,6 +598,7 @@ class C_setstate:
         self.value = state + 1
 
 class PickleReductionMethodsTests(unittest.TestCase):
+    # see gh-93627
 
     def test_pickle_invalid_reduction_method(self):
         c = C_None_reduce_ex()
@@ -626,7 +627,6 @@ class PickleReductionMethodsTests(unittest.TestCase):
             pickler.dump(obj)
 
     def test_pickle_invalid_dispatch_table(self):
-        # gh-93627
         obj=C_with_reduce_ex()
 
         bio = io.BytesIO()
@@ -637,6 +637,7 @@ class PickleReductionMethodsTests(unittest.TestCase):
 
 
 class PickleSetstateTests(unittest.TestCase):
+    # See gh-103035
 
     def test_pickle_setstate(self):
         c = C_setstate()
@@ -645,7 +646,6 @@ class PickleSetstateTests(unittest.TestCase):
         self.assertEqual(c2.value, c.value + 1)
 
         c = C_None_setstate()
-        # See gh-103035
         p = pickle.dumps(c)
         with self.assertRaises(TypeError):
             pickle.loads(p)
