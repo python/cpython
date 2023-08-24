@@ -68,4 +68,9 @@ struct _pycontexttokenobject {
 };
 
 
+// _testinternalcapi.hamt() used by tests.
+// Export for '_testcapi' shared extension
+PyAPI_FUNC(PyObject*) _PyContext_NewHamtForTests(void);
+
+
 #endif /* !Py_INTERNAL_CONTEXT_H */

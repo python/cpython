@@ -2125,13 +2125,6 @@ test_pythread_tss_key_state(PyObject *self, PyObject *args)
 }
 
 
-static PyObject*
-new_hamt(PyObject *self, PyObject *args)
-{
-    return _PyContext_NewHamtForTests();
-}
-
-
 /* def bad_get(self, obj, cls):
        cls()
        return repr(self)
@@ -3626,7 +3619,6 @@ static PyMethodDef TestMethods[] = {
     {"W_STOPCODE", py_w_stopcode, METH_VARARGS},
 #endif
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
-    {"hamt", new_hamt, METH_NOARGS},
     {"bad_get", _PyCFunction_CAST(bad_get), METH_FASTCALL},
 #ifdef Py_REF_DEBUG
     {"negative_refcount", negative_refcount, METH_NOARGS},

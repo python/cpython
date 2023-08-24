@@ -13,8 +13,9 @@
 #include "pycore_atomic_funcs.h"  // _Py_atomic_int_get()
 #include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
-#include "pycore_compile.h"       // _PyCompile_CodeGen, _PyCompile_OptimizeCfg, _PyCompile_Assemble, _PyCompile_CleanDoc
 #include "pycore_ceval.h"         // _PyEval_AddPendingCall()
+#include "pycore_compile.h"       // _PyCompile_CodeGen()
+#include "pycore_context.h"       // _PyContext_NewHamtForTests()
 #include "pycore_dict.h"          // _PyDictOrValues_GetValues()
 #include "pycore_fileutils.h"     // _Py_normpath()
 #include "pycore_frame.h"         // _PyInterpreterFrame
@@ -1564,6 +1565,13 @@ get_object_dict_values(PyObject *self, PyObject *obj)
 }
 
 
+static PyObject*
+new_hamt(PyObject *self, PyObject *args)
+{
+    return _PyContext_NewHamtForTests();
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -1628,6 +1636,7 @@ static PyMethodDef module_functions[] = {
                               check_pyobject_uninitialized_is_freed, METH_NOARGS},
     {"pymem_getallocatorsname", test_pymem_getallocatorsname, METH_NOARGS},
     {"get_object_dict_values", get_object_dict_values, METH_O},
+    {"hamt", new_hamt, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
