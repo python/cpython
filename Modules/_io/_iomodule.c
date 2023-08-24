@@ -8,9 +8,10 @@
 */
 
 #include "Python.h"
-#include "_iomodule.h"
-#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+
+#include "_iomodule.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
