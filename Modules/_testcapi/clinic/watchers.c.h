@@ -29,7 +29,7 @@ _testcapi_watch_dict(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("watch_dict", nargs, 2, 2)) {
         goto exit;
     }
-    watcher_id = _PyLong_AsInt(args[0]);
+    watcher_id = PyLong_AsInt(args[0]);
     if (watcher_id == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -61,7 +61,7 @@ _testcapi_unwatch_dict(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     if (!_PyArg_CheckPositional("unwatch_dict", nargs, 2, 2)) {
         goto exit;
     }
-    watcher_id = _PyLong_AsInt(args[0]);
+    watcher_id = PyLong_AsInt(args[0]);
     if (watcher_id == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -93,7 +93,7 @@ _testcapi_watch_type(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("watch_type", nargs, 2, 2)) {
         goto exit;
     }
-    watcher_id = _PyLong_AsInt(args[0]);
+    watcher_id = PyLong_AsInt(args[0]);
     if (watcher_id == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -125,7 +125,7 @@ _testcapi_unwatch_type(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     if (!_PyArg_CheckPositional("unwatch_type", nargs, 2, 2)) {
         goto exit;
     }
-    watcher_id = _PyLong_AsInt(args[0]);
+    watcher_id = PyLong_AsInt(args[0]);
     if (watcher_id == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -195,4 +195,4 @@ _testcapi_set_func_kwdefaults_via_capi(PyObject *module, PyObject *const *args, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=12c375089125d165 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b7564a84c5815b46 input=a9049054013a1b77]*/

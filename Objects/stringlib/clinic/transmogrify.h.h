@@ -62,7 +62,7 @@ stringlib_expandtabs(PyObject *self, PyObject *const *args, Py_ssize_t nargs, Py
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    tabsize = _PyLong_AsInt(args[0]);
+    tabsize = PyLong_AsInt(args[0]);
     if (tabsize == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -278,4 +278,4 @@ stringlib_zfill(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d44a269805f6739e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=00e34c03331699fe input=a9049054013a1b77]*/

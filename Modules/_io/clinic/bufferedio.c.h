@@ -162,7 +162,7 @@ _io__BufferedIOBase_read(PyObject *self, PyTypeObject *cls, PyObject *const *arg
     if (nargs < 1) {
         goto skip_optional_posonly;
     }
-    size = _PyLong_AsInt(args[0]);
+    size = PyLong_AsInt(args[0]);
     if (size == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -216,7 +216,7 @@ _io__BufferedIOBase_read1(PyObject *self, PyTypeObject *cls, PyObject *const *ar
     if (nargs < 1) {
         goto skip_optional_posonly;
     }
-    size = _PyLong_AsInt(args[0]);
+    size = PyLong_AsInt(args[0]);
     if (size == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -721,7 +721,7 @@ _io__Buffered_seek(buffered *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    whence = _PyLong_AsInt(args[1]);
+    whence = PyLong_AsInt(args[1]);
     if (whence == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1098,4 +1098,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b7ddf84a5bc2bf34 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e5b335441452653d input=a9049054013a1b77]*/

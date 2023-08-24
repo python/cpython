@@ -223,7 +223,7 @@ pysqlite_cursor_fetchmany(pysqlite_Cursor *self, PyObject *const *args, Py_ssize
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    maxrows = _PyLong_AsInt(args[0]);
+    maxrows = PyLong_AsInt(args[0]);
     if (maxrows == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -313,4 +313,4 @@ pysqlite_cursor_close(pysqlite_Cursor *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_cursor_close_impl(self);
 }
-/*[clinic end generated code: output=831f7bc5256526d3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b56b3ddb3b6df8c6 input=a9049054013a1b77]*/

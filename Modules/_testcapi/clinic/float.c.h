@@ -31,7 +31,7 @@ _testcapi_float_pack(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("float_pack", nargs, 3, 3)) {
         goto exit;
     }
-    size = _PyLong_AsInt(args[0]);
+    size = PyLong_AsInt(args[0]);
     if (size == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -45,7 +45,7 @@ _testcapi_float_pack(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
             goto exit;
         }
     }
-    le = _PyLong_AsInt(args[2]);
+    le = PyLong_AsInt(args[2]);
     if (le == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -85,4 +85,4 @@ _testcapi_float_unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=083e5df26cd5fbeb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=de6879d0f4987d79 input=a9049054013a1b77]*/
