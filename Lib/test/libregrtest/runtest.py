@@ -125,24 +125,6 @@ class Timeout(Failed):
 # the test is running in background
 PROGRESS_MIN_TIME = 30.0   # seconds
 
-# small set of tests to determine if we have a basically functioning interpreter
-# (i.e. if any of these fail, then anything else is likely to follow)
-STDTESTS = [
-    'test_grammar',
-    'test_opcodes',
-    'test_dict',
-    'test_builtin',
-    'test_exceptions',
-    'test_types',
-    'test_unittest',
-    'test_doctest',
-    'test_doctest2',
-    'test_support'
-]
-
-# set of tests that we don't want to be executed when using regrtest
-NOTTESTS = set()
-
 #If these test directories are encountered recurse into them and treat each
 # test_ .py or dir as a separate test module. This can increase parallelism.
 # Beware this can't generally be done for any directory with sub-tests as the
@@ -166,22 +148,38 @@ def findtestdir(path=None):
     return path or os.path.dirname(os.path.dirname(__file__)) or os.curdir
 
 
-def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS, *, split_test_dirs=SPLITTESTDIRS, base_mod=""):
+def findtests(*, testdir=None, exclude=(),
+              split_test_dirs=SPLITTESTDIRS, base_mod=""):
     """Return a list of all applicable test modules."""
     testdir = findtestdir(testdir)
-    names = os.listdir(testdir)
     tests = []
-    others = set(stdtests) | nottests
-    for name in names:
+    for name in os.listdir(testdir):
         mod, ext = os.path.splitext(name)
-        if mod[:5] == "test_" and mod not in others:
-            if mod in split_test_dirs:
-                subdir = os.path.join(testdir, mod)
-                mod = f"{base_mod or 'test'}.{mod}"
-                tests.extend(findtests(subdir, [], nottests, split_test_dirs=split_test_dirs, base_mod=mod))
-            elif ext in (".py", ""):
-                tests.append(f"{base_mod}.{mod}" if base_mod else mod)
-    return stdtests + sorted(tests)
+        if (not mod.startswith("test_")) or (mod in exclude):
+            continue
+        if mod in split_test_dirs:
+            subdir = os.path.join(testdir, mod)
+            mod = f"{base_mod or 'test'}.{mod}"
+            tests.extend(findtests(testdir=subdir, exclude=exclude,
+                                   split_test_dirs=split_test_dirs, base_mod=mod))
+        elif ext in (".py", ""):
+            tests.append(f"{base_mod}.{mod}" if base_mod else mod)
+    return sorted(tests)
+
+
+def split_test_packages(tests, *, testdir=None, exclude=(),
+                        split_test_dirs=SPLITTESTDIRS):
+    testdir = findtestdir(testdir)
+    splitted = []
+    for name in tests:
+        if name in split_test_dirs:
+            subdir = os.path.join(testdir, name)
+            splitted.extend(findtests(testdir=subdir, exclude=exclude,
+                                      split_test_dirs=split_test_dirs,
+                                      base_mod=name))
+        else:
+            splitted.append(name)
+    return splitted
 
 
 def get_abs_module(ns: Namespace, test_name: str) -> str:
