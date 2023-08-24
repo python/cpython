@@ -3,7 +3,11 @@
 //   Python/bytecodes.c
 // Do not edit!
 
-#include <stdbool.h>
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
+#endif
+
+#include <stdbool.h>              // bool
 
 
 #define IS_PSEUDO_INSTR(OP)  ( \
@@ -1807,6 +1811,26 @@ const char *const _PyOpcode_OpName[268] = {
     [SETUP_FINALLY] = "SETUP_FINALLY",
     [SETUP_WITH] = "SETUP_WITH",
     [STORE_FAST_MAYBE_NULL] = "STORE_FAST_MAYBE_NULL",
+};
+#endif // NEED_OPCODE_METADATA
+
+extern const uint8_t _PyOpcode_Caches[256];
+#ifdef NEED_OPCODE_METADATA
+const uint8_t _PyOpcode_Caches[256] = {
+    [TO_BOOL] = 3,
+    [BINARY_OP] = 1,
+    [BINARY_SUBSCR] = 1,
+    [STORE_SUBSCR] = 1,
+    [SEND] = 1,
+    [UNPACK_SEQUENCE] = 1,
+    [STORE_ATTR] = 4,
+    [LOAD_GLOBAL] = 4,
+    [LOAD_SUPER_ATTR] = 1,
+    [LOAD_ATTR] = 9,
+    [COMPARE_OP] = 1,
+    [FOR_ITER] = 1,
+    [CALL] = 3,
+    [JUMP_BACKWARD] = 1,
 };
 #endif // NEED_OPCODE_METADATA
 

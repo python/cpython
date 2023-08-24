@@ -126,8 +126,8 @@ a = A(destroyed)"""
         self.assertIs(wr(), None)
 
     def test_module_getattr(self):
-        import test.good_getattr as gga
-        from test.good_getattr import test
+        import test.test_module.good_getattr as gga
+        from test.test_module.good_getattr import test
         self.assertEqual(test, "There is test")
         self.assertEqual(gga.x, 1)
         self.assertEqual(gga.y, 2)
@@ -135,46 +135,46 @@ a = A(destroyed)"""
                                     "Deprecated, use whatever instead"):
             gga.yolo
         self.assertEqual(gga.whatever, "There is whatever")
-        del sys.modules['test.good_getattr']
+        del sys.modules['test.test_module.good_getattr']
 
     def test_module_getattr_errors(self):
-        import test.bad_getattr as bga
-        from test import bad_getattr2
+        import test.test_module.bad_getattr as bga
+        from test.test_module import bad_getattr2
         self.assertEqual(bga.x, 1)
         self.assertEqual(bad_getattr2.x, 1)
         with self.assertRaises(TypeError):
             bga.nope
         with self.assertRaises(TypeError):
             bad_getattr2.nope
-        del sys.modules['test.bad_getattr']
-        if 'test.bad_getattr2' in sys.modules:
-            del sys.modules['test.bad_getattr2']
+        del sys.modules['test.test_module.bad_getattr']
+        if 'test.test_module.bad_getattr2' in sys.modules:
+            del sys.modules['test.test_module.bad_getattr2']
 
     def test_module_dir(self):
-        import test.good_getattr as gga
+        import test.test_module.good_getattr as gga
         self.assertEqual(dir(gga), ['a', 'b', 'c'])
-        del sys.modules['test.good_getattr']
+        del sys.modules['test.test_module.good_getattr']
 
     def test_module_dir_errors(self):
-        import test.bad_getattr as bga
-        from test import bad_getattr2
+        import test.test_module.bad_getattr as bga
+        from test.test_module import bad_getattr2
         with self.assertRaises(TypeError):
             dir(bga)
         with self.assertRaises(TypeError):
             dir(bad_getattr2)
-        del sys.modules['test.bad_getattr']
-        if 'test.bad_getattr2' in sys.modules:
-            del sys.modules['test.bad_getattr2']
+        del sys.modules['test.test_module.bad_getattr']
+        if 'test.test_module.bad_getattr2' in sys.modules:
+            del sys.modules['test.test_module.bad_getattr2']
 
     def test_module_getattr_tricky(self):
-        from test import bad_getattr3
+        from test.test_module import bad_getattr3
         # these lookups should not crash
         with self.assertRaises(AttributeError):
             bad_getattr3.one
         with self.assertRaises(AttributeError):
             bad_getattr3.delgetattr
-        if 'test.bad_getattr3' in sys.modules:
-            del sys.modules['test.bad_getattr3']
+        if 'test.test_module.bad_getattr3' in sys.modules:
+            del sys.modules['test.test_module.bad_getattr3']
 
     def test_module_repr_minimal(self):
         # reprs when modules have no __file__, __name__, or __loader__
@@ -324,7 +324,9 @@ a = A(destroyed)"""
             del foo.__annotations__
 
     def test_annotations_are_created_correctly(self):
-        ann_module4 = import_helper.import_fresh_module('test.ann_module4')
+        ann_module4 = import_helper.import_fresh_module(
+            'test.typinganndata.ann_module4',
+        )
         self.assertTrue("__annotations__" in ann_module4.__dict__)
         del ann_module4.__annotations__
         self.assertFalse("__annotations__" in ann_module4.__dict__)

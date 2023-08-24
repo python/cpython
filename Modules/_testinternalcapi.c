@@ -10,26 +10,24 @@
 #undef NDEBUG
 
 #include "Python.h"
-#include "pycore_atomic_funcs.h" // _Py_atomic_int_get()
-#include "pycore_bitutils.h"     // _Py_bswap32()
-#include "pycore_bytesobject.h"  // _PyBytes_Find()
-#include "pycore_compile.h"      // _PyCompile_CodeGen, _PyCompile_OptimizeCfg, _PyCompile_Assemble, _PyCompile_CleanDoc
-#include "pycore_ceval.h"        // _PyEval_AddPendingCall
-#include "pycore_dict.h"        // _PyDictOrValues_GetValues
-#include "pycore_fileutils.h"    // _Py_normpath
-#include "pycore_frame.h"        // _PyInterpreterFrame
-#include "pycore_gc.h"           // PyGC_Head
-#include "pycore_hashtable.h"    // _Py_hashtable_new()
-#include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
-#include "pycore_interp.h"       // _PyInterpreterState_GetConfigCopy()
-#include "pycore_object.h"       // _PyObject_IsFreed()
-#include "pycore_pathconfig.h"   // _PyPathConfig_ClearGlobal()
-#include "pycore_pyerrors.h"     // _Py_UTF8_Edit_Cost()
-#include "pycore_pystate.h"      // _PyThreadState_GET()
+#include "pycore_atomic_funcs.h"  // _Py_atomic_int_get()
+#include "pycore_bitutils.h"      // _Py_bswap32()
+#include "pycore_bytesobject.h"   // _PyBytes_Find()
+#include "pycore_compile.h"       // _PyCompile_CodeGen, _PyCompile_OptimizeCfg, _PyCompile_Assemble, _PyCompile_CleanDoc
+#include "pycore_ceval.h"         // _PyEval_AddPendingCall
+#include "pycore_dict.h"          // _PyDictOrValues_GetValues()
+#include "pycore_fileutils.h"     // _Py_normpath
+#include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_gc.h"            // PyGC_Head
+#include "pycore_hashtable.h"     // _Py_hashtable_new()
+#include "pycore_initconfig.h"    // _Py_GetConfigsAsDict()
+#include "pycore_interp.h"        // _PyInterpreterState_GetConfigCopy()
+#include "pycore_object.h"        // _PyObject_IsFreed()
+#include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
+#include "pycore_pyerrors.h"      // _Py_UTF8_Edit_Cost()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 
-#include "frameobject.h"
-#include "interpreteridobject.h" // PyInterpreterID_LookUp()
-#include "osdefs.h"              // MAXPATHLEN
+#include "interpreteridobject.h"  // PyInterpreterID_LookUp()
 
 #include "clinic/_testinternalcapi.c.h"
 

@@ -407,19 +407,19 @@ def check_sanitizer(*, address=False, memory=False, ub=False):
         raise ValueError('At least one of address, memory, or ub must be True')
 
 
-    _cflags = sysconfig.get_config_var('CFLAGS') or ''
-    _config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
+    cflags = sysconfig.get_config_var('CFLAGS') or ''
+    config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
     memory_sanitizer = (
-        '-fsanitize=memory' in _cflags or
-        '--with-memory-sanitizer' in _config_args
+        '-fsanitize=memory' in cflags or
+        '--with-memory-sanitizer' in config_args
     )
     address_sanitizer = (
-        '-fsanitize=address' in _cflags or
-        '--with-address-sanitizer' in _config_args
+        '-fsanitize=address' in cflags or
+        '--with-address-sanitizer' in config_args
     )
     ub_sanitizer = (
-        '-fsanitize=undefined' in _cflags or
-        '--with-undefined-behavior-sanitizer' in _config_args
+        '-fsanitize=undefined' in cflags or
+        '--with-undefined-behavior-sanitizer' in config_args
     )
     return (
         (memory and memory_sanitizer) or

@@ -9,10 +9,12 @@ import itertools
 import os
 import posixpath
 import sys
+import textwrap
 import typing
 from collections.abc import Iterator
 
 import stacking  # Early import to avoid circular import
+from _typing_backports import assert_never
 from analysis import Analyzer
 from formatting import Formatter, list_effect_size
 from flags import InstructionFlags, variable_used
@@ -146,7 +148,7 @@ arg_parser.add_argument(
 class Generator(Analyzer):
     def get_stack_effect_info(
         self, thing: parsing.InstDef | parsing.Macro | parsing.Pseudo
-    ) -> tuple[AnyInstruction | None, str | None, str | None]:
+    ) -> tuple[AnyInstruction | None, str, str]:
         def effect_str(effects: list[StackEffect]) -> str:
             n_effect, sym_effect = list_effect_size(effects)
             if sym_effect:
@@ -154,8 +156,6 @@ class Generator(Analyzer):
             return str(n_effect)
 
         instr: AnyInstruction | None
-        popped: str | None
-        pushed: str | None
         match thing:
             case parsing.InstDef():
                 if thing.kind != "op" or self.instrs[thing.name].is_viable_uop():
@@ -171,10 +171,9 @@ class Generator(Analyzer):
                 popped, pushed = stacking.get_stack_effect_info_for_macro(instr)
             case parsing.Pseudo():
                 instr = self.pseudo_instrs[thing.name]
-                popped = pushed = None
                 # Calculate stack effect, and check that it's the the same
                 # for all targets.
-                for target in self.pseudos[thing.name].targets:
+                for idx, target in enumerate(self.pseudos[thing.name].targets):
                     target_instr = self.instrs.get(target)
                     # Currently target is always an instr. This could change
                     # in the future, e.g., if we have a pseudo targetting a
@@ -182,14 +181,13 @@ class Generator(Analyzer):
                     assert target_instr
                     target_popped = effect_str(target_instr.input_effects)
                     target_pushed = effect_str(target_instr.output_effects)
-                    if pushed is None:
-                        assert popped is None
+                    if idx == 0:
                         popped, pushed = target_popped, target_pushed
                     else:
                         assert popped == target_popped
                         assert pushed == target_pushed
             case _:
-                typing.assert_never(thing)
+                assert_never(thing)
         return instr, popped, pushed
 
     @contextlib.contextmanager
@@ -209,7 +207,6 @@ class Generator(Analyzer):
                 continue
             instr, popped, pushed = self.get_stack_effect_info(thing)
             if instr is not None:
-                assert popped is not None and pushed is not None
                 popped_data.append((instr, popped))
                 pushed_data.append((instr, pushed))
 
@@ -240,7 +237,7 @@ class Generator(Analyzer):
             except ValueError:
                 # May happen on Windows if root and temp on different volumes
                 pass
-            filenames.append(filename)
+            filenames.append(filename.replace(os.path.sep, posixpath.sep))
         paths = f"\n{self.out.comment}   ".join(filenames)
         return f"{self.out.comment} from:\n{self.out.comment}   {paths}\n"
 
@@ -379,7 +376,6 @@ class Generator(Analyzer):
         # Compute the set of all instruction formats.
         all_formats: set[str] = set()
         for thing in self.everything:
-            format: str | None
             match thing:
                 case OverriddenInstructionPlaceHolder():
                     continue
@@ -388,17 +384,15 @@ class Generator(Analyzer):
                 case parsing.Macro():
                     format = self.macro_instrs[thing.name].instr_fmt
                 case parsing.Pseudo():
-                    format = None
-                    for target in self.pseudos[thing.name].targets:
+                    for idx, target in enumerate(self.pseudos[thing.name].targets):
                         target_instr = self.instrs.get(target)
                         assert target_instr
-                        if format is None:
+                        if idx == 0:
                             format = target_instr.instr_fmt
                         else:
                             assert format == target_instr.instr_fmt
-                    assert format is not None
                 case _:
-                    typing.assert_never(thing)
+                    assert_never(thing)
             all_formats.add(format)
 
         # Turn it into a sorted list of enum values.
@@ -410,7 +404,13 @@ class Generator(Analyzer):
 
             self.write_provenance_header()
 
-            self.out.emit("\n#include <stdbool.h>")
+            self.out.emit("\n" + textwrap.dedent("""
+                #ifndef Py_BUILD_CORE
+                #  error "this header requires Py_BUILD_CORE define"
+                #endif
+            """).strip())
+
+            self.out.emit("\n#include <stdbool.h>              // bool")
 
             self.write_pseudo_instrs()
 
@@ -488,7 +488,7 @@ class Generator(Analyzer):
                                 self.pseudo_instrs[thing.name]
                             )
                         case _:
-                            typing.assert_never(thing)
+                            assert_never(thing)
 
             with self.metadata_item(
                 "const struct opcode_macro_expansion "
@@ -525,7 +525,7 @@ class Generator(Analyzer):
                         case parsing.Pseudo():
                             pass
                         case _:
-                            typing.assert_never(thing)
+                            assert_never(thing)
 
             with self.metadata_item(
                 "const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE]", "=", ";"
@@ -539,6 +539,18 @@ class Generator(Analyzer):
             ):
                 for name in self.opmap:
                     self.out.emit(f'[{name}] = "{name}",')
+
+            with self.metadata_item(
+                f"const uint8_t _PyOpcode_Caches[256]",
+                "=",
+                ";",
+            ):
+                for name, _ in self.families.items():
+                    instr = self.instrs[name]
+                    if instr.cache_offset > 0:
+                        self.out.emit(f'[{name}] = {instr.cache_offset},')
+                # Irregular case:
+                self.out.emit('[JUMP_BACKWARD] = 1,')
 
             deoptcodes = {}
             for name, op in self.opmap.items():
@@ -774,7 +786,7 @@ class Generator(Analyzer):
                     case parsing.Pseudo():
                         pass
                     case _:
-                        typing.assert_never(thing)
+                        assert_never(thing)
 
         print(
             f"Wrote {n_instrs} instructions and {n_macros} macros "
@@ -818,7 +830,7 @@ class Generator(Analyzer):
                     case parsing.Pseudo():
                         pass
                     case _:
-                        typing.assert_never(thing)
+                        assert_never(thing)
         print(
             f"Wrote {n_instrs} instructions and {n_uops} ops to {executor_filename}",
             file=sys.stderr,
@@ -850,7 +862,7 @@ class Generator(Analyzer):
                     case parsing.Pseudo():
                         pass
                     case _:
-                        typing.assert_never(thing)
+                        assert_never(thing)
         print(
             f"Wrote some stuff to {abstract_interpreter_filename}",
             file=sys.stderr,

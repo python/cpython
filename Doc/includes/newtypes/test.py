@@ -187,13 +187,6 @@ Test cyclic gc(?)
 >>> gc.enable()
 """
 
-import os
-import sys
-from distutils.util import get_platform
-PLAT_SPEC = "%s-%d.%d" % (get_platform(), *sys.version_info[:2])
-src = os.path.join("build", "lib.%s" % PLAT_SPEC)
-sys.path.append(src)
-
 if __name__ == "__main__":
     import doctest, __main__
     doctest.testmod(__main__)

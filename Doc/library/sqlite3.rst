@@ -630,6 +630,12 @@ Connection objects
       * :ref:`sqlite3-connection-shortcuts`
       * :ref:`sqlite3-connection-context-manager`
 
+
+   .. versionchanged:: 3.13
+
+      A :exc:`ResourceWarning` is emitted if :meth:`close` is not called before
+      a :class:`!Connection` object is deleted.
+
    An SQLite database connection has the following attributes and methods:
 
    .. method:: cursor(factory=Cursor)
@@ -758,7 +764,7 @@ Connection objects
          ('acbd18db4cc2f85cedef654fccc4a4d8',)
 
 
-   .. method:: create_aggregate(name, /, n_arg, aggregate_class)
+   .. method:: create_aggregate(name, n_arg, aggregate_class)
 
       Create or remove a user-defined SQL aggregate function.
 
@@ -898,7 +904,7 @@ Connection objects
 
          [('a', 9), ('b', 12), ('c', 16), ('d', 12), ('e', 9)]
 
-   .. method:: create_collation(name, callable)
+   .. method:: create_collation(name, callable, /)
 
       Create a collation named *name* using the collating function *callable*.
       *callable* is passed two :class:`string <str>` arguments,
