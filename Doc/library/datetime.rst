@@ -38,7 +38,7 @@ on efficient attribute extraction for output formatting and manipulation.
       Third-party library with expanded time zone and parsing support.
 
    Package `DateType <https://pypi.org/project/datetype/>`_
-      It can be used to improve type checking of naive vs. aware datetimes.
+      Third-party library that introduces distinct types for naive and aware datetimes.
 
 .. _datetime-naive-aware:
 
