@@ -12,7 +12,7 @@ import unittest
 from test.libregrtest.cmdline import _parse_args
 from test.libregrtest.runtest import (
     findtests, runtest, get_abs_module, is_failed,
-    STDTESTS, NOTTESTS, PROGRESS_MIN_TIME,
+    PROGRESS_MIN_TIME,
     Passed, Failed, EnvChanged, Skipped, ResourceDenied, Interrupted,
     ChildError, DidNotRun)
 from test.libregrtest.setup import setup_tests
@@ -41,6 +41,32 @@ EXITCODE_BAD_TEST = 2
 EXITCODE_INTERRUPTED = 130
 EXITCODE_ENV_CHANGED = 3
 EXITCODE_NO_TESTS_RAN = 4
+
+# Coarse heuristic: tests taking at least 1 minute on a modern
+# developer laptop. The list should have less than 20 tests.
+SLOWEST_TESTS = frozenset((
+    # more or less sorted from the slowest to the fastest
+    "test_concurrent_futures",
+    "test_multiprocessing_spawn",
+    "test_multiprocessing_forkserver",
+    "test_multiprocessing_fork",
+    "test_multiprocessing_main_handling",
+    "test_pickle",
+    "test_compileall",
+    "test_cppext",
+    "test_venv",
+    "test_gdb",
+    "test_tools",
+    "test_peg_generator",
+    "test_perf_profiler",
+    "test_buffer",
+    "test_subprocess",
+    "test_signal",
+    "test_tarfile",
+    "test_regrtest",
+    "test_socket",
+    "test_io",
+))
 
 
 class Regrtest:
@@ -246,21 +272,18 @@ class Regrtest:
             # add default PGO tests if no tests are specified
             setup_pgo_tests(self.ns)
 
-        stdtests = STDTESTS[:]
-        nottests = NOTTESTS.copy()
+        exclude_tests = set()
         if self.ns.exclude:
             for arg in self.ns.args:
-                if arg in stdtests:
-                    stdtests.remove(arg)
-                nottests.add(arg)
+                exclude_tests.add(arg)
             self.ns.args = []
 
         # if testdir is set, then we are not running the python tests suite, so
         # don't add default tests to be executed or skipped (pass empty values)
         if self.ns.testdir:
-            alltests = findtests(self.ns.testdir, list(), set())
+            alltests = findtests(self.ns.testdir)
         else:
-            alltests = findtests(self.ns.testdir, stdtests, nottests)
+            alltests = findtests(self.ns.testdir, exclude=exclude_tests)
 
         if not self.ns.fromfile:
             self.selected = self.tests or self.ns.args or alltests
@@ -282,11 +305,31 @@ class Regrtest:
                 print("Couldn't find starting test (%s), using all tests"
                       % self.ns.start, file=sys.stderr)
 
+        self.group_randomize_tests()
+
+    def group_randomize_tests(self):
         if self.ns.randomize:
             if self.ns.random_seed is None:
                 self.ns.random_seed = random.randrange(10000000)
             random.seed(self.ns.random_seed)
-            random.shuffle(self.selected)
+
+        # group slow tests
+        slow = []
+        other = []
+        for name in self.selected:
+            if name in SLOWEST_TESTS:
+                slow.append(name)
+            else:
+                other.append(name)
+
+        if self.ns.randomize:
+            if slow:
+                random.shuffle(slow)
+            if other:
+                random.shuffle(other)
+
+        # gh-108388: Run the slowest first, and then other tests
+        self.selected = slow + other
 
     def list_tests(self):
         for name in self.selected:

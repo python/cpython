@@ -1,0 +1,3 @@
+The Python test suite (regrtest) now runs the 20 slowest tests first and
+then other tests, to better use all available CPUs when running tests in
+parallel. Patch Victor Stinner.
