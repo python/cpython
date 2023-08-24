@@ -540,6 +540,18 @@ class Generator(Analyzer):
                 for name in self.opmap:
                     self.out.emit(f'[{name}] = "{name}",')
 
+            with self.metadata_item(
+                f"const uint8_t _PyOpcode_Caches[256]",
+                "=",
+                ";",
+            ):
+                for name, _ in self.families.items():
+                    instr = self.instrs[name]
+                    if instr.cache_offset > 0:
+                        self.out.emit(f'[{name}] = {instr.cache_offset},')
+                # Irregular case:
+                self.out.emit('[JUMP_BACKWARD] = 1,')
+
             deoptcodes = {}
             for name, op in self.opmap.items():
                 if op < 256:
