@@ -48,7 +48,8 @@ extern PyObject* _PyDict_NewPresized(Py_ssize_t minused);
 // Export for '_ctypes' shared extension
 PyAPI_FUNC(Py_ssize_t) _PyDict_SizeOf(PyDictObject *);
 
-extern PyObject* _PyDict_Pop(PyObject *, PyObject *, PyObject *);
+// Export for '_socket' shared extension (Windows remove_unusable_flags())
+PyAPI_FUNC(PyObject*) _PyDict_Pop(PyObject *, PyObject *, PyObject *);
 
 #define _PyDict_HasSplitTable(d) ((d)->ma_values != NULL)
 
