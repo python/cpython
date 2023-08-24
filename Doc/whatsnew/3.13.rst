@@ -871,6 +871,12 @@ New Features
   :term:`shutting down <interpreter shutdown>`.
   (Contributed by Victor Stinner in :gh:`108014`.)
 
+* Add :c:func:`PyLong_AsInt` function: similar to :c:func:`PyLong_AsLong`, but
+  store the result in a C :c:expr:`int` instead of a C :c:expr:`long`.
+  Previously, it was known as the the private function :c:func:`!_PyLong_AsInt`
+  (with an underscore prefix).
+  (Contributed by Victor Stinner in :gh:`108014`.)
+
 Porting to Python 3.13
 ----------------------
 

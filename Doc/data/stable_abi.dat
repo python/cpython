@@ -347,6 +347,7 @@ var,PyList_Type,3.2,,
 type,PyLongObject,3.2,,opaque
 var,PyLongRangeIter_Type,3.2,,
 function,PyLong_AsDouble,3.2,,
+function,PyLong_AsInt,3.13,,
 function,PyLong_AsLong,3.2,,
 function,PyLong_AsLongAndOverflow,3.2,,
 function,PyLong_AsLongLong,3.2,,
