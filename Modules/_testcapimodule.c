@@ -271,26 +271,6 @@ test_dict_iteration(PyObject* self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
-static PyObject*
-dict_getitem_knownhash(PyObject *self, PyObject *args)
-{
-    PyObject *mp, *key, *result;
-    Py_ssize_t hash;
-
-    if (!PyArg_ParseTuple(args, "OOn:dict_getitem_knownhash",
-                          &mp, &key, &hash)) {
-        return NULL;
-    }
-
-    result = _PyDict_GetItem_KnownHash(mp, key, (Py_hash_t)hash);
-    if (result == NULL && !PyErr_Occurred()) {
-        _PyErr_SetKeyError(key);
-        return NULL;
-    }
-
-    return Py_XNewRef(result);
-}
-
 /* Issue #4701: Check that PyObject_Hash implicitly calls
  *   PyType_Ready if it hasn't already been called
  */
@@ -3353,7 +3333,6 @@ static PyMethodDef TestMethods[] = {
     {"test_sizeof_c_types",     test_sizeof_c_types,             METH_NOARGS},
     {"test_list_api",           test_list_api,                   METH_NOARGS},
     {"test_dict_iteration",     test_dict_iteration,             METH_NOARGS},
-    {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
     {"test_lazy_hash_inheritance",      test_lazy_hash_inheritance,METH_NOARGS},
     {"test_xincref_doesnt_leak",test_xincref_doesnt_leak,        METH_NOARGS},
     {"test_incref_doesnt_leak", test_incref_doesnt_leak,         METH_NOARGS},

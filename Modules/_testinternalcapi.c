@@ -1572,6 +1572,27 @@ new_hamt(PyObject *self, PyObject *args)
 }
 
 
+static PyObject*
+dict_getitem_knownhash(PyObject *self, PyObject *args)
+{
+    PyObject *mp, *key, *result;
+    Py_ssize_t hash;
+
+    if (!PyArg_ParseTuple(args, "OOn:dict_getitem_knownhash",
+                          &mp, &key, &hash)) {
+        return NULL;
+    }
+
+    result = _PyDict_GetItem_KnownHash(mp, key, (Py_hash_t)hash);
+    if (result == NULL && !PyErr_Occurred()) {
+        _PyErr_SetKeyError(key);
+        return NULL;
+    }
+
+    return Py_XNewRef(result);
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -1637,6 +1658,7 @@ static PyMethodDef module_functions[] = {
     {"pymem_getallocatorsname", test_pymem_getallocatorsname, METH_NOARGS},
     {"get_object_dict_values", get_object_dict_values, METH_O},
     {"hamt", new_hamt, METH_NOARGS},
+    {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
