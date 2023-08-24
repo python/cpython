@@ -5139,7 +5139,6 @@ static PyObject *
 Pointer_get_contents(CDataObject *self, void *closure)
 {
     StgDictObject *stgdict;
-    PyObject *keep, *ptr_probe;
 
     if (*(void **)self->b_ptr == NULL) {
         PyErr_SetString(PyExc_ValueError,
@@ -5150,7 +5149,7 @@ Pointer_get_contents(CDataObject *self, void *closure)
     stgdict = PyObject_stgdict((PyObject *)self);
     assert(stgdict); /* Cannot be NULL for pointer instances */
 
-    keep = GetKeepedObjects(self);
+    PyObject *keep = GetKeepedObjects(self);
     if (keep != NULL) {
         // check if it's a pointer to a pointer:
         // pointers will have '0' key in the _objects
