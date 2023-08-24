@@ -6088,7 +6088,8 @@ class ThreadsMixin(BaseMixin):
 # Functions used to create test cases from the base ones in this module
 #
 
-def install_tests_in_module_dict(remote_globs, start_method):
+def install_tests_in_module_dict(remote_globs, start_method,
+                                 only_type=None, exclude_types=False):
     __module__ = remote_globs['__name__']
     local_globs = globals()
     ALL_TYPES = {'processes', 'threads', 'manager'}
@@ -6101,6 +6102,10 @@ def install_tests_in_module_dict(remote_globs, start_method):
                 continue
             assert set(base.ALLOWED_TYPES) <= ALL_TYPES, base.ALLOWED_TYPES
             for type_ in base.ALLOWED_TYPES:
+                if only_type and type_ != only_type:
+                    continue
+                if exclude_types:
+                    continue
                 newname = 'With' + type_.capitalize() + name[1:]
                 Mixin = local_globs[type_.capitalize() + 'Mixin']
                 class Temp(base, Mixin, unittest.TestCase):
@@ -6111,6 +6116,9 @@ def install_tests_in_module_dict(remote_globs, start_method):
                 Temp.__module__ = __module__
                 remote_globs[newname] = Temp
         elif issubclass(base, unittest.TestCase):
+            if only_type:
+                continue
+
             class Temp(base, object):
                 pass
             Temp.__name__ = Temp.__qualname__ = name
