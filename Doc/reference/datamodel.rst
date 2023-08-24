@@ -437,24 +437,20 @@ There are currently two intrinsic set types:
 
 
 Sets
-^^^^
+   .. index:: pair: object; set
 
-.. index:: pair: object; set
-
-These represent a mutable set. They are created by the built-in :func:`set`
-constructor and can be modified afterwards by several methods, such as
-:meth:`~set.add`.
+   These represent a mutable set. They are created by the built-in :func:`set`
+   constructor and can be modified afterwards by several methods, such as
+   :meth:`~set.add`.
 
 
 Frozen sets
-^^^^^^^^^^^
+   .. index:: pair: object; frozenset
 
-.. index:: pair: object; frozenset
-
-These represent an immutable set.  They are created by the built-in
-:func:`frozenset` constructor.  As a frozenset is immutable and
-:term:`hashable`, it can be used again as an element of another set, or as
-a dictionary key.
+   These represent an immutable set.  They are created by the built-in
+   :func:`frozenset` constructor.  As a frozenset is immutable and
+   :term:`hashable`, it can be used again as an element of another set, or as
+   a dictionary key.
 
 
 Mappings
