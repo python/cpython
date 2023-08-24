@@ -14,9 +14,9 @@
 #include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_compile.h"       // _PyCompile_CodeGen, _PyCompile_OptimizeCfg, _PyCompile_Assemble, _PyCompile_CleanDoc
-#include "pycore_ceval.h"         // _PyEval_AddPendingCall
+#include "pycore_ceval.h"         // _PyEval_AddPendingCall()
 #include "pycore_dict.h"          // _PyDictOrValues_GetValues()
-#include "pycore_fileutils.h"     // _Py_normpath
+#include "pycore_fileutils.h"     // _Py_normpath()
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
