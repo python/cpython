@@ -1396,7 +1396,7 @@ authorizer_callback(void *ctx, int action, const char *arg1,
     }
     else {
         if (PyLong_Check(ret)) {
-            rc = _PyLong_AsInt(ret);
+            rc = PyLong_AsInt(ret);
             if (rc == -1 && PyErr_Occurred()) {
                 print_or_clear_traceback(ctx);
                 rc = SQLITE_DENY;
