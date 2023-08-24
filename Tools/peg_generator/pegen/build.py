@@ -5,7 +5,7 @@ import sys
 import sysconfig
 import tempfile
 import tokenize
-from typing import IO, Dict, List, Optional, Set, Tuple
+from typing import IO, Any, Dict, List, Optional, Set, Tuple
 
 from pegen.c_generator import CParserGenerator
 from pegen.grammar import Grammar
@@ -18,6 +18,7 @@ from pegen.tokenizer import Tokenizer
 MOD_DIR = pathlib.Path(__file__).resolve().parent
 
 TokenDefinitions = Tuple[Dict[int, str], Dict[str, int], Set[str]]
+Incomplete = Any  # TODO: install `types-setuptools` and remove this alias
 
 
 def get_extra_flags(compiler_flags: str, compiler_py_flags_nodist: str) -> List[str]:
@@ -28,7 +29,7 @@ def get_extra_flags(compiler_flags: str, compiler_py_flags_nodist: str) -> List[
     return f"{flags} {py_flags_nodist}".split()
 
 
-def fixup_build_ext(cmd):
+def fixup_build_ext(cmd: Incomplete) -> None:
     """Function needed to make build_ext tests pass.
 
     When Python was built with --enable-shared on Unix, -L. is not enough to
@@ -74,7 +75,7 @@ def compile_c_extension(
     keep_asserts: bool = True,
     disable_optimization: bool = False,
     library_dir: Optional[str] = None,
-) -> str:
+) -> pathlib.Path:
     """Compile the generated source for a parser generator into an extension module.
 
     The extension module will be generated in the same directory as the provided path
@@ -89,12 +90,12 @@ def compile_c_extension(
     static library of the common parser sources (this is useful in case you are
     creating multiple extensions).
     """
-    import setuptools.logging
+    import setuptools.logging  # type: ignore[import]
 
     from setuptools import Extension, Distribution
-    from setuptools._distutils.dep_util import newer_group
-    from setuptools._distutils.ccompiler import new_compiler
-    from setuptools._distutils.sysconfig import customize_compiler
+    from setuptools._distutils.dep_util import newer_group  # type: ignore[import]
+    from setuptools._distutils.ccompiler import new_compiler  # type: ignore[import]
+    from setuptools._distutils.sysconfig import customize_compiler  # type: ignore[import]
 
     if verbose:
         setuptools.logging.set_threshold(setuptools.logging.logging.DEBUG)
