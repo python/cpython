@@ -173,7 +173,9 @@ class Generator(Analyzer):
                 instr = self.pseudo_instrs[thing.name]
                 # Calculate stack effect, and check that it's the the same
                 # for all targets.
-                for idx, target in enumerate(self.pseudos[thing.name].targets):
+                maybe_popped: str | None = None
+                maybe_pushed: str | None = None
+                for target in self.pseudos[thing.name].targets:
                     target_instr = self.instrs.get(target)
                     # Currently target is always an instr. This could change
                     # in the future, e.g., if we have a pseudo targetting a
@@ -181,11 +183,13 @@ class Generator(Analyzer):
                     assert target_instr
                     target_popped = effect_str(target_instr.input_effects)
                     target_pushed = effect_str(target_instr.output_effects)
-                    if idx == 0:
-                        popped, pushed = target_popped, target_pushed
+                    if maybe_popped is None:
+                        maybe_popped, maybe_pushed = target_popped, target_pushed
                     else:
-                        assert popped == target_popped
-                        assert pushed == target_pushed
+                        assert maybe_popped == target_popped
+                        assert maybe_pushed == target_pushed
+                assert maybe_popped is not None and maybe_pushed is not None
+                popped, pushed = maybe_popped, maybe_pushed
             case _:
                 assert_never(thing)
         return instr, popped, pushed
@@ -384,13 +388,16 @@ class Generator(Analyzer):
                 case parsing.Macro():
                     format = self.macro_instrs[thing.name].instr_fmt
                 case parsing.Pseudo():
-                    for idx, target in enumerate(self.pseudos[thing.name].targets):
+                    maybe_format: str | None = None
+                    for target in self.pseudos[thing.name].targets:
                         target_instr = self.instrs.get(target)
                         assert target_instr
-                        if idx == 0:
-                            format = target_instr.instr_fmt
+                        if maybe_format is None:
+                            maybe_format = target_instr.instr_fmt
                         else:
-                            assert format == target_instr.instr_fmt
+                            assert maybe_format == target_instr.instr_fmt
+                    assert maybe_format is not None
+                    format = maybe_format
                 case _:
                     assert_never(thing)
             all_formats.add(format)
