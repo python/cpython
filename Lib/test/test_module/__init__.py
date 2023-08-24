@@ -186,6 +186,7 @@ a = A(destroyed)"""
         del gda.bar
         with self.assertRaises(AttributeError):
             gda.bar
+            del sys.modules['test.test_module.good_delattr']
 
     def test_module_delattr_errors(self):
         import test.test_module.bad_delattr as bda
