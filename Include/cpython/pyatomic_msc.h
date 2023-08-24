@@ -240,7 +240,7 @@ _Py_atomic_exchange_int64(int64_t *address, int64_t value)
 #else
     for (;;) {
         int64_t old_value = *(volatile int64_t*)address;
-        if (old_value == _Py_atomic_compare_exchange_int64(address, old_value, value)) {
+        if (_Py_atomic_compare_exchange_int64(address, old_value, value)) {
             return old_value;
         }
     }
