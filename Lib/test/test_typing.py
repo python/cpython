@@ -8484,6 +8484,23 @@ class AnnotatedTests(BaseTestCase):
         self.assertEqual(X.__mro__, (X, int, object),
                          "Annotated should be transparent.")
 
+        class Y1(Annotated[list[int], 'meta']): ...
+        self.assertEqual(Y1.__mro__, (Y1, list, object))
+
+        class Y2(Annotated[List[int], 'meta']): ...
+        self.assertEqual(Y2.__mro__, (Y2, list, Generic, object))
+
+        T = TypeVar('T')
+        class GenericBase(Generic[T]): ...
+        class Mixin: ...
+        class Z(Annotated[GenericBase[int], 'meta'], Mixin): ...
+        self.assertEqual(Z.__mro__, (Z, GenericBase, Generic, Mixin, object))
+
+        # Errors:
+        A1 = Annotated[Literal[1], 'meta']
+        with self.assertRaisesRegex(TypeError, 'Cannot subclass typing.Literal'):
+            class C1(A1): ...
+
 
 class TypeAliasTests(BaseTestCase):
     def test_canonical_usage_with_variable_annotation(self):

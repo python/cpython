@@ -1137,7 +1137,11 @@ class _BaseGenericAlias(_Final, _root=True):
         res = []
         if self.__origin__ not in bases:
             res.append(self.__origin__)
-        i = bases.index(self)
+        try:
+            i = bases.index(self)
+        except ValueError:
+            # It might not be there, if `Annotated[]` is used:
+            i = 0
         for b in bases[i+1:]:
             if isinstance(b, _BaseGenericAlias) or issubclass(b, Generic):
                 break
@@ -1998,6 +2002,8 @@ class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):
         return super().__getattr__(attr)
 
     def __mro_entries__(self, bases):
+        if isinstance(self.__origin__, (_GenericAlias, GenericAlias)):
+            return self.__origin__.__mro_entries__(bases)
         return (self.__origin__,)
 
 
