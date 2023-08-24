@@ -615,10 +615,12 @@ class PickleReductionMethodsTests(unittest.TestCase):
         pickler = pickle._Pickler(bio)
         pickler.dump(obj)
 
+        pickler.clear_memo()
         pickler.reducer_override = None
         with self.assertRaises(TypeError):
             pickler.dump(obj)
 
+        pickler.clear_memo()
         pickler.reducer_override = 10
         with self.assertRaises(TypeError):
             pickler.dump(obj)
