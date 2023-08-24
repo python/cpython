@@ -1193,7 +1193,7 @@ Unix signals
 
 .. method:: loop.add_signal_handler(signum, callback, *args)
 
-   Set *callback* as the handler for the *signum* signal.
+   Set or overwrite *callback* as the handler for the *signum* signal.
 
    The callback will be invoked by *loop*, along with other queued callbacks
    and runnable coroutines of that event loop. Unlike signal handlers
