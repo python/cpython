@@ -7,11 +7,14 @@
 
 /* Helpers for hash functions */
 extern Py_hash_t _Py_HashDouble(PyObject *, double);
-// _decimal shared extensions uses _Py_HashPointer()
+
+// Export for '_decimal' shared extension
 PyAPI_FUNC(Py_hash_t) _Py_HashPointer(const void*);
+
 // Similar to _Py_HashPointer(), but don't replace -1 with -2
 extern Py_hash_t _Py_HashPointerRaw(const void*);
-// _datetime shared extension uses _Py_HashBytes()
+
+// Export for '_datetime' shared extension
 PyAPI_FUNC(Py_hash_t) _Py_HashBytes(const void*, Py_ssize_t);
 
 /* Prime multiplier used in string and various other hashes. */
