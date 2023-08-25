@@ -2175,7 +2175,7 @@ class BlockPrinter:
 
             """)
 
-            if clinic:
+            if clinic is not None:
                 # Emit optional includes
                 for include, reason in sorted(clinic.includes.items()):
                     line = f'#include "{include}"'
@@ -2324,7 +2324,7 @@ class Parser(Protocol):
     def parse(self, block: Block) -> None: ...
 
 
-clinic : Clinic | None = None
+clinic: Clinic | None = None
 class Clinic:
 
     presets_text = """
@@ -3088,7 +3088,8 @@ class CConverter(metaclass=CConverterAutoRegister):
     # Only set by self_converter.
     signature_name: str | None = None
 
-    # Optional #include "name"  // reason
+    # Optional (name, reason) include which generate a line like:
+    # "#include "name"     // reason"
     include: tuple[str, str] | None = None
 
     # keep in sync with self_converter.__init__!
@@ -3396,7 +3397,7 @@ class CConverter(metaclass=CConverterAutoRegister):
             return self.name
 
     def add_include(self, name: str, reason: str) -> None:
-        if self.include:
+        if self.include is not None:
             raise ValueError("a converter only supports a single include")
         self.include = (name, reason)
 
