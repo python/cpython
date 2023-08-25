@@ -475,7 +475,7 @@ The :mod:`calendar` module defines the following exceptions:
 .. exception:: IllegalMonthError(month)
 
    A subclass of :exc:`ValueError`,
-   raised when the given month number is outwith the range 1-12 (inclusive).
+   raised when the given month number is outside of the range 1-12 (inclusive).
 
    .. attribute:: month
 
@@ -485,7 +485,7 @@ The :mod:`calendar` module defines the following exceptions:
 .. exception:: IllegalWeekdayError(weekday)
 
    A subclass of :exc:`ValueError`,
-   raised when the given weekday number is outwith the range 0-6 (inclusive).
+   raised when the given weekday number is outside of the range 0-6 (inclusive).
 
    .. attribute:: weekday
 
