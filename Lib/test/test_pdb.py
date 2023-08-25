@@ -1620,7 +1620,6 @@ def test_pdb_show_attribute_and_item():
     >>> def test_function():
     ...     n = lambda x: x
     ...     c = {"a": 1}
-    ...     j = 1
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...     pass
 
@@ -1628,12 +1627,13 @@ def test_pdb_show_attribute_and_item():
     ...     'c["a"]',
     ...     'c.get("a")',
     ...     'n(1)',
+    ...     'j=1',
     ...     'j+1',
     ...     'r"a"',
     ...     'c'
     ... ]):
     ...     test_function()
-        > <doctest test.test_pdb.test_pdb_show_attribute_and_item[0]>(6)test_function()
+    > <doctest test.test_pdb.test_pdb_show_attribute_and_item[0]>(5)test_function()
     -> pass
     (Pdb) c["a"]
     1
@@ -1641,6 +1641,7 @@ def test_pdb_show_attribute_and_item():
     1
     (Pdb) n(1)
     1
+    (Pdb) j=1
     (Pdb) j+1
     2
     (Pdb) r"a"
