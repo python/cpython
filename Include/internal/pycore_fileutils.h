@@ -312,6 +312,9 @@ extern HRESULT PathCchSkipRoot(const wchar_t *pszPath, const wchar_t **ppszRootE
 #  define _Py_END_SUPPRESS_IPH
 #endif /* _MSC_VER >= 1900 */
 
+// Export for 'select' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_FileDescriptor_Converter(PyObject *, void *);
+
 #ifdef __cplusplus
 }
 #endif

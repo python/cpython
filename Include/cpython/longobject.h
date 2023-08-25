@@ -2,8 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-PyAPI_FUNC(int) _PyLong_Size_t_Converter(PyObject *, void *);
-
 PyAPI_FUNC(PyObject*) PyLong_FromUnicodeObject(PyObject *u, int base);
 
 /* _PyLong_Sign.  Return 0 if v is 0, -1 if v < 0, +1 if v > 0.
