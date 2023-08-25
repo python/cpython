@@ -2190,6 +2190,32 @@
             break;
         }
 
+        case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS: {
+            PyObject *null;
+            PyObject *callable;
+            null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            DEOPT_IF(null != NULL, CALL);
+            DEOPT_IF(Py_TYPE(callable) != &PyMethod_Type, CALL);
+            break;
+        }
+
+        case _INIT_CALL_BOUND_METHOD_EXACT_ARGS: {
+            PyObject *callable;
+            PyObject *func;
+            PyObject *self;
+            callable = stack_pointer[-2 - oparg];
+            STAT_INC(CALL, hit);
+            self = Py_NewRef(((PyMethodObject *)callable)->im_self);
+            stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _INIT_CALL_PY_EXACT_ARGS
+            func = Py_NewRef(((PyMethodObject *)callable)->im_func);
+            stack_pointer[-2 - oparg] = func;  // This is used by CALL, upon deoptimization
+            Py_DECREF(callable);
+            stack_pointer[-2 - oparg] = func;
+            stack_pointer[-1 - oparg] = self;
+            break;
+        }
+
         case _CHECK_PEP_523: {
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             break;
