@@ -536,79 +536,79 @@ Special attributes:
 
 .. tabularcolumns:: |l|L|l|
 
-      .. index::
-         single: __doc__ (function attribute)
-         single: __name__ (function attribute)
-         single: __module__ (function attribute)
-         single: __dict__ (function attribute)
-         single: __defaults__ (function attribute)
-         single: __closure__ (function attribute)
-         single: __code__ (function attribute)
-         single: __globals__ (function attribute)
-         single: __annotations__ (function attribute)
-         single: __kwdefaults__ (function attribute)
-         pair: global; namespace
+.. index::
+   single: __doc__ (function attribute)
+   single: __name__ (function attribute)
+   single: __module__ (function attribute)
+   single: __dict__ (function attribute)
+   single: __defaults__ (function attribute)
+   single: __closure__ (function attribute)
+   single: __code__ (function attribute)
+   single: __globals__ (function attribute)
+   single: __annotations__ (function attribute)
+   single: __kwdefaults__ (function attribute)
+   pair: global; namespace
 
-      +-------------------------+-------------------------------+-----------+
-      | Attribute               | Meaning                       |           |
-      +=========================+===============================+===========+
-      | :attr:`__doc__`         | The function's documentation  | Writable  |
-      |                         | string, or ``None`` if        |           |
-      |                         | unavailable; not inherited by |           |
-      |                         | subclasses.                   |           |
-      +-------------------------+-------------------------------+-----------+
-      | :attr:`~definition.\    | The function's name.          | Writable  |
-      | __name__`               |                               |           |
-      +-------------------------+-------------------------------+-----------+
-      | :attr:`~definition.\    | The function's                | Writable  |
-      | __qualname__`           | :term:`qualified name`.       |           |
-      |                         |                               |           |
-      |                         | .. versionadded:: 3.3         |           |
-      +-------------------------+-------------------------------+-----------+
-      | :attr:`__module__`      | The name of the module the    | Writable  |
-      |                         | function was defined in, or   |           |
-      |                         | ``None`` if unavailable.      |           |
-      +-------------------------+-------------------------------+-----------+
-      | :attr:`__defaults__`    | A tuple containing default    | Writable  |
-      |                         | argument values for those     |           |
-      |                         | arguments that have defaults, |           |
-      |                         | or ``None`` if no arguments   |           |
-      |                         | have a default value.         |           |
-      +-------------------------+-------------------------------+-----------+
-      | :attr:`__code__`        | The code object representing  | Writable  |
-      |                         | the compiled function body.   |           |
-      +-------------------------+-------------------------------+-----------+
-      | :attr:`__globals__`     | A reference to the dictionary | Read-only |
-      |                         | that holds the function's     |           |
-      |                         | global variables --- the      |           |
-      |                         | global namespace of the       |           |
-      |                         | module in which the function  |           |
-      |                         | was defined.                  |           |
-      +-------------------------+-------------------------------+-----------+
-      | :attr:`~object.__dict__`| The namespace supporting      | Writable  |
-      |                         | arbitrary function            |           |
-      |                         | attributes.                   |           |
-      +-------------------------+-------------------------------+-----------+
-      | :attr:`__closure__`     | ``None`` or a tuple of cells  | Read-only |
-      |                         | that contain bindings for the |           |
-      |                         | function's free variables.    |           |
-      |                         | See below for information on  |           |
-      |                         | the ``cell_contents``         |           |
-      |                         | attribute.                    |           |
-      +-------------------------+-------------------------------+-----------+
-      | :attr:`__annotations__` | A dict containing annotations | Writable  |
-      |                         | of parameters.  The keys of   |           |
-      |                         | the dict are the parameter    |           |
-      |                         | names, and ``'return'`` for   |           |
-      |                         | the return annotation, if     |           |
-      |                         | provided.  For more           |           |
-      |                         | information on working with   |           |
-      |                         | this attribute, see           |           |
-      |                         | :ref:`annotations-howto`.     |           |
-      +-------------------------+-------------------------------+-----------+
-      | :attr:`__kwdefaults__`  | A dict containing defaults    | Writable  |
-      |                         | for keyword-only parameters.  |           |
-      +-------------------------+-------------------------------+-----------+
++-------------------------+-------------------------------+-----------+
+| Attribute               | Meaning                       |           |
++=========================+===============================+===========+
+| :attr:`__doc__`         | The function's documentation  | Writable  |
+|                         | string, or ``None`` if        |           |
+|                         | unavailable; not inherited by |           |
+|                         | subclasses.                   |           |
++-------------------------+-------------------------------+-----------+
+| :attr:`~definition.\    | The function's name.          | Writable  |
+| __name__`               |                               |           |
++-------------------------+-------------------------------+-----------+
+| :attr:`~definition.\    | The function's                | Writable  |
+| __qualname__`           | :term:`qualified name`.       |           |
+|                         |                               |           |
+|                         | .. versionadded:: 3.3         |           |
++-------------------------+-------------------------------+-----------+
+| :attr:`__module__`      | The name of the module the    | Writable  |
+|                         | function was defined in, or   |           |
+|                         | ``None`` if unavailable.      |           |
++-------------------------+-------------------------------+-----------+
+| :attr:`__defaults__`    | A tuple containing default    | Writable  |
+|                         | argument values for those     |           |
+|                         | arguments that have defaults, |           |
+|                         | or ``None`` if no arguments   |           |
+|                         | have a default value.         |           |
++-------------------------+-------------------------------+-----------+
+| :attr:`__code__`        | The code object representing  | Writable  |
+|                         | the compiled function body.   |           |
++-------------------------+-------------------------------+-----------+
+| :attr:`__globals__`     | A reference to the dictionary | Read-only |
+|                         | that holds the function's     |           |
+|                         | global variables --- the      |           |
+|                         | global namespace of the       |           |
+|                         | module in which the function  |           |
+|                         | was defined.                  |           |
++-------------------------+-------------------------------+-----------+
+| :attr:`~object.__dict__`| The namespace supporting      | Writable  |
+|                         | arbitrary function            |           |
+|                         | attributes.                   |           |
++-------------------------+-------------------------------+-----------+
+| :attr:`__closure__`     | ``None`` or a tuple of cells  | Read-only |
+|                         | that contain bindings for the |           |
+|                         | function's free variables.    |           |
+|                         | See below for information on  |           |
+|                         | the ``cell_contents``         |           |
+|                         | attribute.                    |           |
++-------------------------+-------------------------------+-----------+
+| :attr:`__annotations__` | A dict containing annotations | Writable  |
+|                         | of parameters.  The keys of   |           |
+|                         | the dict are the parameter    |           |
+|                         | names, and ``'return'`` for   |           |
+|                         | the return annotation, if     |           |
+|                         | provided.  For more           |           |
+|                         | information on working with   |           |
+|                         | this attribute, see           |           |
+|                         | :ref:`annotations-howto`.     |           |
++-------------------------+-------------------------------+-----------+
+| :attr:`__kwdefaults__`  | A dict containing defaults    | Writable  |
+|                         | for keyword-only parameters.  |           |
++-------------------------+-------------------------------+-----------+
 
 Most of the attributes labelled "Writable" check the type of the assigned value.
 
