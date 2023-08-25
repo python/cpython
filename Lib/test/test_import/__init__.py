@@ -25,6 +25,7 @@ from unittest import mock
 import _testinternalcapi
 import _imp
 
+from test.support import import_helper
 from test.support import os_helper
 from test.support import (
     STDLIB_DIR, swap_attr, swap_item, cpython_only, is_emscripten,
@@ -58,7 +59,7 @@ skip_if_dont_write_bytecode = unittest.skipIf(
 
 def _require_loader(module, loader, skip):
     if isinstance(module, str):
-        module = __import__(module)
+        module = import_helper.import_fresh_module(module)
 
     MODULE_KINDS = {
         BuiltinImporter: 'built-in',

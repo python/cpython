@@ -1004,7 +1004,7 @@ class String_TestCase(unittest.TestCase):
         buf = bytearray()
         self.assertRaises(ValueError, getargs_et_hash, 'abc\xe9', 'latin1', buf)
 
-    @support.requires_legacy_unicode_capi
+    @support.requires_legacy_unicode_capi()
     def test_u(self):
         from _testcapi import getargs_u
         with self.assertWarns(DeprecationWarning):
@@ -1020,7 +1020,7 @@ class String_TestCase(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertRaises(TypeError, getargs_u, None)
 
-    @support.requires_legacy_unicode_capi
+    @support.requires_legacy_unicode_capi()
     def test_u_hash(self):
         from _testcapi import getargs_u_hash
         with self.assertWarns(DeprecationWarning):
@@ -1036,7 +1036,7 @@ class String_TestCase(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertRaises(TypeError, getargs_u_hash, None)
 
-    @support.requires_legacy_unicode_capi
+    @support.requires_legacy_unicode_capi()
     def test_Z(self):
         from _testcapi import getargs_Z
         with self.assertWarns(DeprecationWarning):
@@ -1052,7 +1052,7 @@ class String_TestCase(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertIsNone(getargs_Z(None))
 
-    @support.requires_legacy_unicode_capi
+    @support.requires_legacy_unicode_capi()
     def test_Z_hash(self):
         from _testcapi import getargs_Z_hash
         with self.assertWarns(DeprecationWarning):

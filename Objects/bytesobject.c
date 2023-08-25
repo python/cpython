@@ -2,11 +2,12 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_bytesobject.h"   // _PyBytes_Find(), _PyBytes_Repeat()
 #include "pycore_bytes_methods.h" // _Py_bytes_startswith()
+#include "pycore_bytesobject.h"   // _PyBytes_Find(), _PyBytes_Repeat()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_format.h"        // F_LJUST
-#include "pycore_global_objects.h"  // _Py_GET_GLOBAL_OBJECT()
+#include "pycore_global_objects.h"// _Py_GET_GLOBAL_OBJECT()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _PyLong_DigitValue
 #include "pycore_object.h"        // _PyObject_GC_TRACK
@@ -752,7 +753,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                             "* wants int");
                         goto error;
                     }
-                    prec = _PyLong_AsInt(v);
+                    prec = PyLong_AsInt(v);
                     if (prec == -1 && PyErr_Occurred())
                         goto error;
                     if (prec < 0)
