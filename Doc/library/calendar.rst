@@ -190,6 +190,10 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    :class:`TextCalendar` instances have the following methods:
 
+   .. method:: prweek(theweek, width)
+
+      Print a week's calendar as returned by :meth:`formatweek`.
+
    .. method:: formatmonth(theyear, themonth, w=0, l=0)
 
       Return a month's calendar in a multi-line string. If *w* is provided, it
@@ -435,6 +439,11 @@ For simple text calendars this module provides the following functions.
 
 
 The :mod:`calendar` module exports the following data attributes:
+
+.. data:: mdays
+
+   An array that represents the number of days in each month.
+
 
 .. data:: day_name
 
