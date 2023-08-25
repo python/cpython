@@ -149,7 +149,7 @@ static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self);
 static void free_callback_context(callback_context *ctx);
 static void set_callback_context(callback_context **ctx_pp,
                                  callback_context *ctx);
-static void connection_close(pysqlite_Connection *self);
+static int connection_close(pysqlite_Connection *self);
 PyObject *_pysqlite_query_execute(pysqlite_Cursor *, int, PyObject *, PyObject *);
 
 static PyObject *
@@ -212,11 +212,11 @@ class sqlite3_int64_converter(CConverter):
 [python start generated code]*/
 /*[python end generated code: output=da39a3ee5e6b4b0d input=dff8760fb1eba6a1]*/
 
-// NB: This needs to be in sync with the sqlite3.connect docstring
 /*[clinic input]
 _sqlite3.Connection.__init__ as pysqlite_connection_init
 
     database: object
+    * [from 3.15]
     timeout: double = 5.0
     detect_types: int = 0
     isolation_level: IsolationLevel = ""
@@ -235,7 +235,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
                               int check_same_thread, PyObject *factory,
                               int cache_size, int uri,
                               enum autocommit_mode autocommit)
-/*[clinic end generated code: output=cba057313ea7712f input=9b0ab6c12f674fa3]*/
+/*[clinic end generated code: output=cba057313ea7712f input=219c3dbecbae7d99]*/
 {
     if (PySys_Audit("sqlite3.connect", "O", database) < 0) {
         return -1;
@@ -247,10 +247,13 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
     }
 
     if (self->initialized) {
+        self->initialized = 0;
+
         PyTypeObject *tp = Py_TYPE(self);
         tp->tp_clear((PyObject *)self);
-        connection_close(self);
-        self->initialized = 0;
+        if (connection_close(self) < 0) {
+            return -1;
+        }
     }
 
     // Create and configure SQLite database object.
@@ -334,7 +337,9 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
     self->initialized = 1;
 
     if (autocommit == AUTOCOMMIT_DISABLED) {
-        (void)connection_exec_stmt(self, "BEGIN");
+        if (connection_exec_stmt(self, "BEGIN") < 0) {
+            return -1;
+        }
     }
     return 0;
 
@@ -345,6 +350,34 @@ error:
     assert(rc == SQLITE_OK);
     return -1;
 }
+
+/*[clinic input]
+# Create a new destination 'connect' for the docstring and methoddef only.
+# This makes it possible to keep the signatures for Connection.__init__ and
+# sqlite3.connect() synchronised.
+output push
+destination connect new file '{dirname}/clinic/_sqlite3.connect.c.h'
+
+# Only output the docstring and the PyMethodDef entry.
+output everything suppress
+output docstring_definition connect
+output methoddef_define connect
+
+# Define the sqlite3.connect function by cloning Connection.__init__.
+_sqlite3.connect as pysqlite_connect = _sqlite3.Connection.__init__
+
+Open a connection to the SQLite database file 'database'.
+
+You can use ":memory:" to open a database connection to a database that
+resides in RAM instead of on disk.
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=92260edff95d1720]*/
+
+/*[clinic input]
+# Restore normal Argument Clinic operation for the rest of this file.
+output pop
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b899ba9273edcce7]*/
 
 #define VISIT_CALLBACK_CONTEXT(ctx) \
 do {                                \
@@ -404,48 +437,91 @@ free_callback_contexts(pysqlite_Connection *self)
 static void
 remove_callbacks(sqlite3 *db)
 {
-    sqlite3_trace_v2(db, SQLITE_TRACE_STMT, 0, 0);
+    /* None of these APIs can fail, as long as they are given a valid
+     * database pointer. */
+    assert(db != NULL);
+    int rc = sqlite3_trace_v2(db, SQLITE_TRACE_STMT, 0, 0);
+    assert(rc == SQLITE_OK), (void)rc;
+
     sqlite3_progress_handler(db, 0, 0, (void *)0);
-    (void)sqlite3_set_authorizer(db, NULL, NULL);
+
+    rc = sqlite3_set_authorizer(db, NULL, NULL);
+    assert(rc == SQLITE_OK), (void)rc;
 }
 
-static void
+static int
 connection_close(pysqlite_Connection *self)
 {
-    if (self->db) {
-        if (self->autocommit == AUTOCOMMIT_DISABLED &&
-            !sqlite3_get_autocommit(self->db))
-        {
-            /* If close is implicitly called as a result of interpreter
-             * tear-down, we must not call back into Python. */
-            if (_Py_IsInterpreterFinalizing(PyInterpreterState_Get())) {
-                remove_callbacks(self->db);
-            }
-            (void)connection_exec_stmt(self, "ROLLBACK");
-        }
-
-        free_callback_contexts(self);
-
-        sqlite3 *db = self->db;
-        self->db = NULL;
-
-        Py_BEGIN_ALLOW_THREADS
-        int rc = sqlite3_close_v2(db);
-        assert(rc == SQLITE_OK), (void)rc;
-        Py_END_ALLOW_THREADS
+    if (self->db == NULL) {
+        return 0;
     }
+
+    int rc = 0;
+    if (self->autocommit == AUTOCOMMIT_DISABLED &&
+        !sqlite3_get_autocommit(self->db))
+    {
+        if (connection_exec_stmt(self, "ROLLBACK") < 0) {
+            rc = -1;
+        }
+    }
+
+    sqlite3 *db = self->db;
+    self->db = NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    /* The v2 close call always returns SQLITE_OK if given a valid database
+     * pointer (which we do), so we can safely ignore the return value */
+    (void)sqlite3_close_v2(db);
+    Py_END_ALLOW_THREADS
+
+    free_callback_contexts(self);
+    return rc;
 }
 
 static void
-connection_dealloc(pysqlite_Connection *self)
+connection_finalize(PyObject *self)
 {
-    PyTypeObject *tp = Py_TYPE(self);
-    PyObject_GC_UnTrack(self);
-    tp->tp_clear((PyObject *)self);
+    pysqlite_Connection *con = (pysqlite_Connection *)self;
+    PyObject *exc = PyErr_GetRaisedException();
+
+    /* If close is implicitly called as a result of interpreter
+     * tear-down, we must not call back into Python. */
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    int teardown = _Py_IsInterpreterFinalizing(interp);
+    if (teardown && con->db) {
+        remove_callbacks(con->db);
+    }
 
     /* Clean up if user has not called .close() explicitly. */
-    connection_close(self);
+    if (con->db) {
+        if (PyErr_ResourceWarning(self, 1, "unclosed database in %R", self)) {
+            /* Spurious errors can appear at shutdown */
+            if (PyErr_ExceptionMatches(PyExc_Warning)) {
+                PyErr_WriteUnraisable(self);
+            }
+        }
+    }
+    if (connection_close(con) < 0) {
+        if (teardown) {
+            PyErr_Clear();
+        }
+        else {
+            PyErr_WriteUnraisable((PyObject *)self);
+        }
+    }
 
+    PyErr_SetRaisedException(exc);
+}
+
+static void
+connection_dealloc(PyObject *self)
+{
+    if (PyObject_CallFinalizerFromDealloc(self) < 0) {
+        return;
+    }
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+    tp->tp_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -593,7 +669,9 @@ pysqlite_connection_close_impl(pysqlite_Connection *self)
 
     pysqlite_close_all_blobs(self);
     Py_CLEAR(self->statement_cache);
-    connection_close(self);
+    if (connection_close(self) < 0) {
+        return NULL;
+    }
 
     Py_RETURN_NONE;
 }
@@ -1318,7 +1396,7 @@ authorizer_callback(void *ctx, int action, const char *arg1,
     }
     else {
         if (PyLong_Check(ret)) {
-            rc = _PyLong_AsInt(ret);
+            rc = PyLong_AsInt(ret);
             if (rc == -1 && PyErr_Occurred()) {
                 print_or_clear_traceback(ctx);
                 rc = SQLITE_DENY;
@@ -2527,6 +2605,7 @@ static struct PyMemberDef connection_members[] =
 };
 
 static PyType_Slot connection_slots[] = {
+    {Py_tp_finalize, connection_finalize},
     {Py_tp_dealloc, connection_dealloc},
     {Py_tp_doc, (void *)connection_doc},
     {Py_tp_methods, connection_methods},

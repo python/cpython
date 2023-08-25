@@ -9,6 +9,7 @@
 #endif
 
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_dict.h"          // _PyDict_SizeOf()
 #include <ffi.h>
 #ifdef MS_WIN32
 #  include <malloc.h>
@@ -400,7 +401,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         return -1;
     }
     if (tmp) {
-        pack = _PyLong_AsInt(tmp);
+        pack = PyLong_AsInt(tmp);
         Py_DECREF(tmp);
         if (pack < 0) {
             if (!PyErr_Occurred() ||

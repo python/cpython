@@ -150,8 +150,9 @@ extern PyObject* _PyExc_PrepReraiseStar(
 extern int _PyErr_CheckSignalsTstate(PyThreadState *tstate);
 
 extern void _Py_DumpExtensionModules(int fd, PyInterpreterState *interp);
-
+extern PyObject* _Py_CalculateSuggestions(PyObject *dir, PyObject *name);
 extern PyObject* _Py_Offer_Suggestions(PyObject* exception);
+
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(Py_ssize_t) _Py_UTF8_Edit_Cost(PyObject *str_a, PyObject *str_b,
                                           Py_ssize_t max_cost);

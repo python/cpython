@@ -131,7 +131,7 @@ gc_collect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    generation = _PyLong_AsInt(args[0]);
+    generation = PyLong_AsInt(args[0]);
     if (generation == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -175,7 +175,7 @@ gc_set_debug(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flags;
 
-    flags = _PyLong_AsInt(arg);
+    flags = PyLong_AsInt(arg);
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -424,4 +424,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=66432ac0e17fd04f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=16003cfbc66ada39 input=a9049054013a1b77]*/

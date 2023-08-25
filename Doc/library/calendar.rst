@@ -469,6 +469,29 @@ The :mod:`calendar` module exports the following data attributes:
 
    Aliases for day numbers, where ``MONDAY`` is ``0`` and ``SUNDAY`` is ``6``.
 
+
+The :mod:`calendar` module defines the following exceptions:
+
+.. exception:: IllegalMonthError(month)
+
+   A subclass of :exc:`ValueError`,
+   raised when the given month number is outside of the range 1-12 (inclusive).
+
+   .. attribute:: month
+
+      The invalid month number.
+
+
+.. exception:: IllegalWeekdayError(weekday)
+
+   A subclass of :exc:`ValueError`,
+   raised when the given weekday number is outside of the range 0-6 (inclusive).
+
+   .. attribute:: weekday
+
+      The invalid weekday number.
+
+
 .. seealso::
 
    Module :mod:`datetime`

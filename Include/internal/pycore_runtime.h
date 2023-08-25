@@ -8,24 +8,23 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_atexit.h"          // struct atexit_runtime_state
-#include "pycore_atomic.h"          /* _Py_atomic_address */
+#include "pycore_atexit.h"          // struct _atexit_runtime_state
+#include "pycore_atomic.h"          // _Py_atomic_address
 #include "pycore_ceval_state.h"     // struct _ceval_runtime_state
-#include "pycore_floatobject.h"     // struct _Py_float_runtime_state
 #include "pycore_faulthandler.h"    // struct _faulthandler_runtime_state
-#include "pycore_global_objects.h"  // struct _Py_global_objects
+#include "pycore_floatobject.h"     // struct _Py_float_runtime_state
 #include "pycore_import.h"          // struct _import_runtime_state
 #include "pycore_interp.h"          // PyInterpreterState
 #include "pycore_object_state.h"    // struct _py_object_runtime_state
 #include "pycore_parser.h"          // struct _parser_runtime_state
-#include "pycore_pymem.h"           // struct _pymem_allocators
 #include "pycore_pyhash.h"          // struct pyhash_runtime_state
+#include "pycore_pymem.h"           // struct _pymem_allocators
 #include "pycore_pythread.h"        // struct _pythread_runtime_state
 #include "pycore_signal.h"          // struct _signals_runtime_state
 #include "pycore_time.h"            // struct _time_runtime_state
 #include "pycore_tracemalloc.h"     // struct _tracemalloc_runtime_state
-#include "pycore_typeobject.h"      // struct types_runtime_state
-#include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_ids
+#include "pycore_typeobject.h"      // struct _types_runtime_state
+#include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_state
 
 struct _getargs_runtime_state {
     PyThread_type_lock mutex;
@@ -80,7 +79,7 @@ typedef struct _Py_DebugOffsets {
         off_t prev;
         off_t next;
         off_t interp;
-        off_t cframe;
+        off_t current_frame;
         off_t thread_id;
         off_t native_thread_id;
     } thread_state;
@@ -273,6 +272,9 @@ typedef struct pyruntimestate {
 
 /* other API */
 
+// Export _PyRuntime for shared extensions which use it in static inline
+// functions for best performance, like _Py_IsMainThread() or _Py_ID().
+// It's also made accessible for debuggers and profilers.
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
 
 extern PyStatus _PyRuntimeState_Init(_PyRuntimeState *runtime);

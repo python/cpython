@@ -102,7 +102,9 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
    .. c:member:: PyObject *obj
 
       A new reference to the exporting object. The reference is owned by
-      the consumer and automatically decremented and set to ``NULL`` by
+      the consumer and automatically released
+      (i.e. reference count decremented)
+      and set to ``NULL`` by
       :c:func:`PyBuffer_Release`. The field is the equivalent of the return
       value of any standard C-API function.
 
@@ -159,10 +161,7 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
       If it is ``0``, :c:member:`~Py_buffer.buf` points to a single item representing
       a scalar. In this case, :c:member:`~Py_buffer.shape`, :c:member:`~Py_buffer.strides`
       and :c:member:`~Py_buffer.suboffsets` MUST be ``NULL``.
-
-      The macro :c:macro:`PyBUF_MAX_NDIM` limits the maximum number of dimensions
-      to 64. Exporters MUST respect this limit, consumers of multi-dimensional
-      buffers SHOULD be able to handle up to :c:macro:`PyBUF_MAX_NDIM` dimensions.
+      The maximum number of dimensions is given by :c:macro:`PyBUF_MAX_NDIM`.
 
    .. c:member:: Py_ssize_t *shape
 
@@ -214,6 +213,17 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
       about whether or not the shape, strides, and suboffsets arrays must be
       freed when the buffer is released. The consumer MUST NOT alter this
       value.
+
+
+Constants:
+
+.. c:macro:: PyBUF_MAX_NDIM
+
+   The maximum number of dimensions the memory represents.
+   Exporters MUST respect this limit, consumers of multi-dimensional
+   buffers SHOULD be able to handle up to :c:macro:`!PyBUF_MAX_NDIM` dimensions.
+   Currently set to 64.
+
 
 .. _buffer-request-types:
 
@@ -438,7 +448,7 @@ Buffer-related functions
 
    Send a request to *exporter* to fill in *view* as specified by  *flags*.
    If the exporter cannot provide a buffer of the exact type, it MUST raise
-   :c:data:`PyExc_BufferError`, set ``view->obj`` to ``NULL`` and
+   :exc:`BufferError`, set ``view->obj`` to ``NULL`` and
    return ``-1``.
 
    On success, fill in *view*, set ``view->obj`` to a new reference
@@ -454,7 +464,8 @@ Buffer-related functions
 
 .. c:function:: void PyBuffer_Release(Py_buffer *view)
 
-   Release the buffer *view* and decrement the reference count for
+   Release the buffer *view* and release the :term:`strong reference`
+   (i.e. decrement the reference count) to the view's supporting object,
    ``view->obj``. This function MUST be called when the buffer
    is no longer being used, otherwise reference leaks may occur.
 
@@ -524,7 +535,7 @@ Buffer-related functions
    and :c:macro:`PyBUF_WRITABLE` is set in *flags*.
 
    On success, set ``view->obj`` to a new reference to *exporter* and
-   return 0. Otherwise, raise :c:data:`PyExc_BufferError`, set
+   return 0. Otherwise, raise :exc:`BufferError`, set
    ``view->obj`` to ``NULL`` and return ``-1``;
 
    If this function is used as part of a :ref:`getbufferproc <buffer-structs>`,

@@ -1,0 +1,1 @@
+Optimize ``(?!)`` (pattern which alwais fails) in regular expressions.
