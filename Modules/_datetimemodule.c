@@ -1923,7 +1923,7 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     }
 
     num = PyTuple_GET_ITEM(tuple, 1);           /* us */
-    us = _PyLong_AsInt(num);
+    us = PyLong_AsInt(num);
     num = NULL;
     if (us == -1 && PyErr_Occurred()) {
         goto Done;
@@ -1941,7 +1941,7 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     Py_DECREF(num);
 
     num = PyTuple_GET_ITEM(tuple, 1);           /* seconds */
-    s = _PyLong_AsInt(num);
+    s = PyLong_AsInt(num);
     num = NULL;
     if (s == -1 && PyErr_Occurred()) {
         goto Done;
@@ -1951,7 +1951,7 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     }
 
     num = Py_NewRef(PyTuple_GET_ITEM(tuple, 0));           /* leftover days */
-    d = _PyLong_AsInt(num);
+    d = PyLong_AsInt(num);
     if (d == -1 && PyErr_Occurred()) {
         goto Done;
     }

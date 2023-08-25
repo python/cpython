@@ -3,6 +3,7 @@
 #include "pycore_pyerrors.h"      // _Py_DumpExtensionModules
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_signal.h"        // Py_NSIG
+#include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads
 
 #include <object.h>
@@ -115,7 +116,7 @@ faulthandler_get_fileno(PyObject **file_ptr)
         }
     }
     else if (PyLong_Check(file)) {
-        fd = _PyLong_AsInt(file);
+        fd = PyLong_AsInt(file);
         if (fd == -1 && PyErr_Occurred())
             return -1;
         if (fd < 0) {

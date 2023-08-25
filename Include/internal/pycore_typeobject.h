@@ -114,8 +114,10 @@ extern static_builtin_state * _PyStaticType_GetState(PyInterpreterState *, PyTyp
 extern void _PyStaticType_ClearWeakRefs(PyInterpreterState *, PyTypeObject *type);
 extern void _PyStaticType_Dealloc(PyInterpreterState *, PyTypeObject *);
 
-// Export for 'math' shared extension via _PyType_IsReady() function
+// Export for 'math' shared extension, used via _PyType_IsReady() static inline
+// function
 PyAPI_FUNC(PyObject *) _PyType_GetDict(PyTypeObject *);
+
 extern PyObject * _PyType_GetBases(PyTypeObject *type);
 extern PyObject * _PyType_GetMRO(PyTypeObject *type);
 extern PyObject* _PyType_GetSubclasses(PyTypeObject *);

@@ -123,14 +123,14 @@ _testinternalcapi_compiler_codegen(PyObject *module, PyObject *const *args, Py_s
     }
     ast = args[0];
     filename = args[1];
-    optimize = _PyLong_AsInt(args[2]);
+    optimize = PyLong_AsInt(args[2]);
     if (optimize == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    compile_mode = _PyLong_AsInt(args[3]);
+    compile_mode = PyLong_AsInt(args[3]);
     if (compile_mode == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -194,7 +194,7 @@ _testinternalcapi_optimize_cfg(PyObject *module, PyObject *const *args, Py_ssize
     }
     instructions = args[0];
     consts = args[1];
-    nlocals = _PyLong_AsInt(args[2]);
+    nlocals = PyLong_AsInt(args[2]);
     if (nlocals == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -265,4 +265,4 @@ _testinternalcapi_assemble_code_object(PyObject *module, PyObject *const *args, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=811d50772c8f285a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1ce6e2257e95a853 input=a9049054013a1b77]*/

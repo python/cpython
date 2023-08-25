@@ -687,7 +687,7 @@ extern void _PyInterpreterState_FinalizeAllocatedBlocks(PyInterpreterState *);
 
 
 #ifdef WITH_PYMALLOC
-// Export the symbol for the 3rd party guppy3 project
+// Export the symbol for the 3rd party 'guppy3' project
 PyAPI_FUNC(int) _PyObject_DebugMallocStats(FILE *out);
 #endif
 

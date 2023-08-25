@@ -4,10 +4,11 @@
 #include "Python.h"
 #include "pycore_frame.h"
 #include "pycore_function.h"
-#include "pycore_runtime.h"
 #include "pycore_global_objects.h"
 #include "pycore_intrinsics.h"
 #include "pycore_pyerrors.h"
+#include "pycore_runtime.h"
+#include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_typevarobject.h"
 
 
