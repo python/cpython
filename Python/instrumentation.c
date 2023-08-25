@@ -1308,7 +1308,7 @@ initialize_tools(PyCodeObject *code)
             opcode = exec->vm_data.opcode;
             oparg = exec->vm_data.oparg;
         }
-        if (opcode == INSTRUMENTED_LINE) {
+        else if (opcode == INSTRUMENTED_LINE) {
             opcode = code->_co_monitoring->lines[i].original_opcode;
         }
         assert(opcode != ENTER_EXECUTOR);
