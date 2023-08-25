@@ -297,6 +297,9 @@ operation is being performed, so the intermediate analysis object isn't useful:
       The :pep:`626` ``co_lines`` method is used instead of the ``co_firstlineno``
       and ``co_lnotab`` attributes of the code object.
 
+   .. versionchanged:: 3.13
+      Line numbers can be ``None`` for bytecode that does not map to source lines.
+
 
 .. function:: findlabels(code)
 
@@ -402,7 +405,12 @@ details of bytecode instructions as :class:`Instruction` instances:
 
    .. data:: starts_line
 
-      line started by this opcode (if any), otherwise ``None``
+      ``True`` if this opcode starts a source line, otherwise ``False``
+
+
+   .. data:: line_number
+
+      source line number associated with this opcode (if any), otherwise ``None``
 
 
    .. data:: is_jump_target
@@ -429,8 +437,11 @@ details of bytecode instructions as :class:`Instruction` instances:
 
    .. versionchanged:: 3.13
 
+      Changed field ``starts_line``.
+
       Added fields ``start_offset``, ``cache_offset``, ``end_offset``,
-      ``baseopname``, ``baseopcode``, ``jump_target`` and ``oparg``.
+      ``baseopname``, ``baseopcode``, ``jump_target``, ``oparg``, and
+      ``line_number``.
 
 
 .. class:: Positions
