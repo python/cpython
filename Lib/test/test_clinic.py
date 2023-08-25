@@ -3542,6 +3542,17 @@ class LimitedCAPIFunctionalTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             _testclinic_limited.my_int_func("xyz")
 
+    def test_my_int_sum(self):
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_int_sum()
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_int_sum(1)
+        self.assertEqual(_testclinic_limited.my_int_sum(1, 2), 3)
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_int_sum(1.0, 2)
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_int_sum(1, "str")
+
 
 
 class PermutationTests(unittest.TestCase):
