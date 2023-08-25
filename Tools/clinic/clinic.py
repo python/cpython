@@ -63,6 +63,7 @@ from typing import (
 
 version = '1'
 
+DEFAULT_LIMITED_CAPI = False
 NO_VARARG = "PY_SSIZE_T_MAX"
 CLINIC_PREFIX = "__clinic_"
 CLINIC_PREFIXED_ARGS = {
@@ -1360,7 +1361,21 @@ class CLanguage(Language):
                     vararg
                 )
                 nargs = f"Py_MIN(nargs, {max_pos})" if max_pos else "0"
-            if not new_or_init:
+
+            if clinic.limited_capi:
+                # positional-or-keyword arguments
+                flags = "METH_VARARGS|METH_KEYWORDS"
+
+                parser_prototype = self.PARSER_PROTOTYPE_KEYWORD
+                parser_code = [normalize_snippet("""
+                    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "{format_units}:{name}", _keywords,
+                        {parse_arguments}))
+                        goto exit;
+                """, indent=4)]
+                argname_fmt = 'args[%d]'
+                declarations = ""
+
+            elif not new_or_init:
                 flags = "METH_FASTCALL|METH_KEYWORDS"
                 parser_prototype = self.PARSER_PROTOTYPE_FASTCALL_KEYWORDS
                 argname_fmt = 'args[%d]'
@@ -2111,7 +2126,8 @@ class BlockPrinter:
             self,
             block: Block,
             *,
-            core_includes: bool = False
+            core_includes: bool = False,
+            clinic: Clinic | None = None,
     ) -> None:
         input = block.input
         output = block.output
@@ -2140,7 +2156,11 @@ class BlockPrinter:
         write("\n")
 
         output = ''
-        if core_includes:
+        if clinic:
+            limited_capi = clinic.limited_capi
+        else:
+            limited_capi = DEFAULT_LIMITED_CAPI
+        if core_includes and not limited_capi:
             output += textwrap.dedent("""
                 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
                 #  include "pycore_gc.h"            // PyGC_Head
@@ -2344,6 +2364,7 @@ impl_definition block
             *,
             filename: str,
             verify: bool = True,
+            limited_capi: bool = False,
     ) -> None:
         # maps strings to Parser objects.
         # (instantiated from the "parsers" global.)
@@ -2353,6 +2374,7 @@ impl_definition block
             fail("Custom printers are broken right now")
         self.printer = printer or BlockPrinter(language)
         self.verify = verify
+        self.limited_capi = limited_capi
         self.filename = filename
         self.modules: ModuleDict = {}
         self.classes: ClassDict = {}
@@ -2450,7 +2472,7 @@ impl_definition block
                     self.parsers[dsl_name] = parsers[dsl_name](self)
                 parser = self.parsers[dsl_name]
                 parser.parse(block)
-            printer.print_block(block)
+            printer.print_block(block, clinic=self)
 
         # these are destinations not buffers
         for name, destination in self.destinations.items():
@@ -2465,7 +2487,7 @@ impl_definition block
                     block.input = "dump " + name + "\n"
                     warn("Destination buffer " + repr(name) + " not empty at end of file, emptying.")
                     printer.write("\n")
-                    printer.print_block(block)
+                    printer.print_block(block, clinic=self)
                     continue
 
                 if destination.type == 'file':
@@ -2490,7 +2512,7 @@ impl_definition block
 
                     block.input = 'preserve\n'
                     printer_2 = BlockPrinter(self.language)
-                    printer_2.print_block(block, core_includes=True)
+                    printer_2.print_block(block, core_includes=True, clinic=self)
                     write_file(destination.filename, printer_2.f.getvalue())
                     continue
 
@@ -2536,9 +2558,15 @@ impl_definition block
 def parse_file(
         filename: str,
         *,
-        verify: bool = True,
-        output: str | None = None
+        ns: argparse.Namespace,
+        output: str | None = None,
 ) -> None:
+    verify = not ns.force
+    limited_capi = ns.limited_capi
+    # XXX Temporary solution
+    if os.path.basename(filename) == '_testclinic_limited.c':
+        print(f"{filename} uses limited C API")
+        limited_capi = True
     if not output:
         output = filename
 
@@ -2560,7 +2588,10 @@ def parse_file(
         return
 
     assert isinstance(language, CLanguage)
-    clinic = Clinic(language, verify=verify, filename=filename)
+    clinic = Clinic(language,
+                    verify=verify,
+                    filename=filename,
+                    limited_capi=limited_capi)
     cooked = clinic.parse(raw)
 
     write_file(output, cooked)
@@ -5987,6 +6018,8 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
     cmdline.add_argument("--exclude", type=str, action="append",
                          help=("a file to exclude in --make mode; "
                                "can be given multiple times"))
+    cmdline.add_argument("--limited", dest="limited_capi", action='store_true',
+                         help="use the Limited C API")
     cmdline.add_argument("filename", metavar="FILE", type=str, nargs="*",
                          help="the list of files to process")
     return cmdline
@@ -6077,7 +6110,7 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
                     continue
                 if ns.verbose:
                     print(path)
-                parse_file(path, verify=not ns.force)
+                parse_file(path, ns=ns)
         return
 
     if not ns.filename:
@@ -6089,7 +6122,7 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
     for filename in ns.filename:
         if ns.verbose:
             print(filename)
-        parse_file(filename, output=ns.output, verify=not ns.force)
+        parse_file(filename, output=ns.output, ns=ns)
 
 
 def main(argv: list[str] | None = None) -> NoReturn:
