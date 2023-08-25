@@ -136,6 +136,14 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
       This function will no longer use :meth:`~object.__int__`.
 
 
+.. c:function:: int PyLong_AsInt(PyObject *obj)
+
+   Similar to :c:func:`PyLong_AsLong`, but store the result in a C
+   :c:expr:`int` instead of a C :c:expr:`long`.
+
+   .. versionadded:: 3.13
+
+
 .. c:function:: long PyLong_AsLongAndOverflow(PyObject *obj, int *overflow)
 
    Return a C :c:expr:`long` representation of *obj*.  If *obj* is not an

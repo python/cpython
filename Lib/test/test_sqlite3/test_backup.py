@@ -137,7 +137,7 @@ class BackupTests(unittest.TestCase):
             raise SystemError('nearly out of space')
 
         with self.assertRaises(SystemError) as err:
-            with sqlite.connect(':memory:') as bck:
+            with memory_database() as bck:
                 self.cx.backup(bck, progress=progress)
         self.assertEqual(str(err.exception), 'nearly out of space')
 

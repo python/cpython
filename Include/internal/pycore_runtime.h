@@ -272,6 +272,9 @@ typedef struct pyruntimestate {
 
 /* other API */
 
+// Export _PyRuntime for shared extensions which use it in static inline
+// functions for best performance, like _Py_IsMainThread() or _Py_ID().
+// It's also made accessible for debuggers and profilers.
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
 
 extern PyStatus _PyRuntimeState_Init(_PyRuntimeState *runtime);

@@ -5,6 +5,7 @@
 #include "Python.h"
 #include "pycore_import.h"        // _PyImport_SetModule()
 #include "pycore_pyhash.h"        // _Py_HashSecret
+#include "pycore_traceback.h"     // _PyTraceback_Add()
 
 #include <ctype.h>
 #include <stddef.h>               // offsetof()

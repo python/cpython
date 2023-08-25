@@ -1247,7 +1247,7 @@ tracemalloc_get_traceback(unsigned int domain, uintptr_t ptr)
 }
 
 
-#define PUTS(fd, str) _Py_write_noraise(fd, str, (int)strlen(str))
+#define PUTS(fd, str) (void)_Py_write_noraise(fd, str, (int)strlen(str))
 
 static void
 _PyMem_DumpFrame(int fd, frame_t * frame)

@@ -124,6 +124,7 @@ extern PyStatus _PyPreCmdline_Read(_PyPreCmdline *cmdline,
 
 // Export for '_testembed' program
 PyAPI_FUNC(void) _PyPreConfig_InitCompatConfig(PyPreConfig *preconfig);
+
 extern void _PyPreConfig_InitFromConfig(
     PyPreConfig *preconfig,
     const PyConfig *config);
@@ -149,6 +150,7 @@ typedef enum {
 
 // Export for '_testembed' program
 PyAPI_FUNC(void) _PyConfig_InitCompatConfig(PyConfig *config);
+
 extern PyStatus _PyConfig_Copy(
     PyConfig *config,
     const PyConfig *config2);
@@ -163,16 +165,16 @@ extern PyStatus _PyConfig_SetPyArgv(
     PyConfig *config,
     const _PyArgv *args);
 
-PyAPI_FUNC(PyObject*) _PyConfig_AsDict(const PyConfig *config);
-PyAPI_FUNC(int) _PyConfig_FromDict(PyConfig *config, PyObject *dict);
 
 extern void _Py_DumpPathConfig(PyThreadState *tstate);
-
-PyAPI_FUNC(PyObject*) _Py_Get_Getpath_CodeObject(void);
 
 
 /* --- Function used for testing ---------------------------------- */
 
+// Export these functions for '_testinternalcapi' shared extension
+PyAPI_FUNC(PyObject*) _PyConfig_AsDict(const PyConfig *config);
+PyAPI_FUNC(int) _PyConfig_FromDict(PyConfig *config, PyObject *dict);
+PyAPI_FUNC(PyObject*) _Py_Get_Getpath_CodeObject(void);
 PyAPI_FUNC(PyObject*) _Py_GetConfigsAsDict(void);
 
 #ifdef __cplusplus

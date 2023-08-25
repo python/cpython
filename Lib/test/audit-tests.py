@@ -398,15 +398,18 @@ def test_sqlite3():
     cx2 = sqlite3.Connection(":memory:")
 
     # Configured without --enable-loadable-sqlite-extensions
-    if hasattr(sqlite3.Connection, "enable_load_extension"):
-        cx1.enable_load_extension(False)
-        try:
-            cx1.load_extension("test")
-        except sqlite3.OperationalError:
-            pass
-        else:
-            raise RuntimeError("Expected sqlite3.load_extension to fail")
-
+    try:
+        if hasattr(sqlite3.Connection, "enable_load_extension"):
+            cx1.enable_load_extension(False)
+            try:
+                cx1.load_extension("test")
+            except sqlite3.OperationalError:
+                pass
+            else:
+                raise RuntimeError("Expected sqlite3.load_extension to fail")
+    finally:
+        cx1.close()
+        cx2.close()
 
 def test_sys_getframe():
     import sys
@@ -513,6 +516,21 @@ def test_not_in_gc():
         if isinstance(o, list):
             assert hook not in o
 
+
+def test_time():
+    import time
+
+    def hook(event, args):
+        if event.startswith("time."):
+            print(event, *args)
+    sys.addaudithook(hook)
+
+    time.sleep(0)
+    time.sleep(0.0625)  # 1/16, a small exact float
+    try:
+        time.sleep(-1)
+    except ValueError:
+        pass
 
 def test_sys_monitoring_register_callback():
     import sys
