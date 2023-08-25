@@ -7,6 +7,14 @@
 # future enhancements, you should normally quote any identifier that
 # is an English language word, even if you do not have to."
 
+def _quote_name(name):
+    return '"{0}"'.format(name.replace('"', '""'))
+
+
+def _quote_value(value):
+    return "'{0}'".format(value.replace("'", "''"))
+
+
 def _iterdump(connection):
     """
     Returns an iterator to the dump of the database in an SQL text format.
@@ -31,11 +39,11 @@ def _iterdump(connection):
     sqlite_sequence = []
     for table_name, type, sql in schema_res.fetchall():
         if table_name == 'sqlite_sequence':
-            rows = cu.execute('SELECT * FROM "sqlite_sequence";').fetchall()
+            rows = cu.execute('SELECT * FROM "sqlite_sequence";')
             sqlite_sequence = ['DELETE FROM "sqlite_sequence"']
             sqlite_sequence += [
-                f'INSERT INTO "sqlite_sequence" VALUES(\'{row[0]}\',{row[1]})'
-                for row in rows
+                f'INSERT INTO "sqlite_sequence" VALUES({_quote_value(table_name)},{seq_value})'
+                for table_name, seq_value in rows.fetchall()
             ]
             continue
         elif table_name == 'sqlite_stat1':
@@ -53,12 +61,15 @@ def _iterdump(connection):
             yield('{0};'.format(sql))
 
         # Build the insert statement for each row of the current table
-        table_name_ident = table_name.replace('"', '""')
-        res = cu.execute('PRAGMA table_info("{0}")'.format(table_name_ident))
+        table_name_ident = _quote_name(table_name)
+        res = cu.execute(f'PRAGMA table_info({table_name_ident})')
         column_names = [str(table_info[1]) for table_info in res.fetchall()]
-        q = """SELECT 'INSERT INTO "{0}" VALUES({1})' FROM "{0}";""".format(
+        q = "SELECT 'INSERT INTO {0} VALUES('{1}')' FROM {0};".format(
             table_name_ident,
-            ",".join("""'||quote("{0}")||'""".format(col.replace('"', '""')) for col in column_names))
+            "','".join(
+                "||quote({0})||".format(_quote_name(col)) for col in column_names
+            )
+        )
         query_res = cu.execute(q)
         for row in query_res:
             yield("{0};".format(row[0]))

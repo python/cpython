@@ -394,6 +394,10 @@ class TestNtpath(NtpathTestCase):
         d = drives.pop().encode()
         self.assertEqual(ntpath.realpath(d), d)
 
+        # gh-106242: Embedded nulls and non-strict fallback to abspath
+        self.assertEqual(ABSTFN + "\0spam",
+                         ntpath.realpath(os_helper.TESTFN + "\0spam", strict=False))
+
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     def test_realpath_strict(self):
@@ -404,6 +408,8 @@ class TestNtpath(NtpathTestCase):
         self.addCleanup(os_helper.unlink, ABSTFN)
         self.assertRaises(FileNotFoundError, ntpath.realpath, ABSTFN, strict=True)
         self.assertRaises(FileNotFoundError, ntpath.realpath, ABSTFN + "2", strict=True)
+        # gh-106242: Embedded nulls should raise OSError (not ValueError)
+        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "\0spam", strict=True)
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
@@ -1036,6 +1042,7 @@ class PathLikeTests(NtpathTestCase):
         self._check_function(self.path.normcase)
         if sys.platform == 'win32':
             self.assertEqual(ntpath.normcase('\u03a9\u2126'), 'ωΩ')
+            self.assertEqual(ntpath.normcase('abc\x00def'), 'abc\x00def')
 
     def test_path_isabs(self):
         self._check_function(self.path.isabs)

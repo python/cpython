@@ -9,15 +9,17 @@
 #include "pycore_dict.h"          // _PyObject_MakeDictFromInstanceAttributes()
 #include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
 #include "pycore_namespace.h"     // _PyNamespace_Type
 #include "pycore_object.h"        // PyAPI_DATA() _Py_SwappedOp definition
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntry_Type
-#include "pycore_typevarobject.h" // _PyTypeAlias_Type, _Py_initialize_generic
 #include "pycore_typeobject.h"    // _PyBufferWrapper_Type
+#include "pycore_typevarobject.h" // _PyTypeAlias_Type, _Py_initialize_generic
 #include "pycore_unionobject.h"   // _PyUnion_Type
+
 #include "interpreteridobject.h"  // _PyInterpreterID_Type
 
 #ifdef Py_LIMITED_API
@@ -161,6 +163,14 @@ _PyDebug_PrintTotalRefs(void) {
 #ifdef Py_TRACE_REFS
 
 #define REFCHAIN(interp) &interp->object_state.refchain
+
+static inline void
+init_refchain(PyInterpreterState *interp)
+{
+    PyObject *refchain = REFCHAIN(interp);
+    refchain->_ob_prev = refchain;
+    refchain->_ob_next = refchain;
+}
 
 /* Insert op at the front of the list of all objects.  If force is true,
  * op is added even if _ob_prev and _ob_next are non-NULL already.  If
@@ -1569,6 +1579,14 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
                 goto error_check;
             }
             dictptr = &dorv_ptr->dict;
+            if (*dictptr == NULL) {
+                if (_PyObject_InitInlineValues(obj, tp) < 0) {
+                    goto done;
+                }
+                res = _PyObject_StoreInstanceAttribute(
+                    obj, _PyDictOrValues_GetValues(*dorv_ptr), name, value);
+                goto error_check;
+            }
         }
         else {
             dictptr = _PyObject_ComputedDictPointer(obj);
@@ -2019,6 +2037,18 @@ PyObject _Py_NotImplementedStruct = {
     &_PyNotImplemented_Type
 };
 
+
+void
+_PyObject_InitState(PyInterpreterState *interp)
+{
+#ifdef Py_TRACE_REFS
+    if (!_Py_IsMainInterpreter(interp)) {
+        init_refchain(interp);
+    }
+#endif
+}
+
+
 extern PyTypeObject _Py_GenericAliasIterType;
 extern PyTypeObject _PyMemoryIter_Type;
 extern PyTypeObject _PyLineIterator;
@@ -2326,7 +2356,7 @@ _Py_GetObjects(PyObject *self, PyObject *args)
 
 #undef REFCHAIN
 
-#endif
+#endif  /* Py_TRACE_REFS */
 
 
 /* Hack to force loading of abstract.o */

@@ -916,6 +916,74 @@ class TestErrorMessagesUseQualifiedName(unittest.TestCase):
             A().method_two_args("x", "y", x="oops")
 
 @cpython_only
+class TestErrorMessagesSuggestions(unittest.TestCase):
+    @contextlib.contextmanager
+    def check_suggestion_includes(self, message):
+        with self.assertRaises(TypeError) as cm:
+            yield
+        self.assertIn(f"Did you mean '{message}'?", str(cm.exception))
+
+    @contextlib.contextmanager
+    def check_suggestion_not_pressent(self):
+        with self.assertRaises(TypeError) as cm:
+            yield
+        self.assertNotIn("Did you mean", str(cm.exception))
+
+    def test_unexpected_keyword_suggestion_valid_positions(self):
+        def foo(blech=None, /, aaa=None, *args, late1=None):
+            pass
+
+        cases = [
+            ("blach", None),
+            ("aa", "aaa"),
+            ("orgs", None),
+            ("late11", "late1"),
+        ]
+
+        for keyword, suggestion in cases:
+            with self.subTest(keyword):
+                ctx = self.check_suggestion_includes(suggestion) if suggestion else self.check_suggestion_not_pressent()
+                with ctx:
+                    foo(**{keyword:None})
+
+    def test_unexpected_keyword_suggestion_kinds(self):
+
+        def substitution(noise=None, more_noise=None, a = None, blech = None):
+            pass
+
+        def elimination(noise = None, more_noise = None, a = None, blch = None):
+            pass
+
+        def addition(noise = None, more_noise = None, a = None, bluchin = None):
+            pass
+
+        def substitution_over_elimination(blach = None, bluc = None):
+            pass
+
+        def substitution_over_addition(blach = None, bluchi = None):
+            pass
+
+        def elimination_over_addition(bluc = None, blucha = None):
+            pass
+
+        def case_change_over_substitution(BLuch=None, Luch = None, fluch = None):
+            pass
+
+        for func, suggestion in [
+            (addition, "bluchin"),
+            (substitution, "blech"),
+            (elimination, "blch"),
+            (addition, "bluchin"),
+            (substitution_over_elimination, "blach"),
+            (substitution_over_addition, "blach"),
+            (elimination_over_addition, "bluc"),
+            (case_change_over_substitution, "BLuch"),
+        ]:
+            with self.subTest(suggestion):
+                with self.check_suggestion_includes(suggestion):
+                    func(bluch=None)
+
+@cpython_only
 class TestRecursion(unittest.TestCase):
 
     @skip_on_s390x

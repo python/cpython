@@ -55,14 +55,14 @@ _io__IOBase_seek(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ss
     if (!args) {
         goto exit;
     }
-    offset = _PyLong_AsInt(args[0]);
+    offset = PyLong_AsInt(args[0]);
     if (offset == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (nargs < 2) {
         goto skip_optional_posonly;
     }
-    whence = _PyLong_AsInt(args[1]);
+    whence = PyLong_AsInt(args[1]);
     if (whence == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -436,4 +436,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=301b22f8f75ce3dc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0f064cfd54e3c1a5 input=a9049054013a1b77]*/

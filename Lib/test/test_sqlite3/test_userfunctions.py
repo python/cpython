@@ -21,54 +21,15 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
-import contextlib
-import functools
-import io
-import re
 import sys
 import unittest
 import sqlite3 as sqlite
 
 from unittest.mock import Mock, patch
-from test.support import bigmemtest, catch_unraisable_exception, gc_collect
+from test.support import bigmemtest, gc_collect
 
-from test.test_sqlite3.test_dbapi import cx_limit
-
-
-def with_tracebacks(exc, regex="", name=""):
-    """Convenience decorator for testing callback tracebacks."""
-    def decorator(func):
-        _regex = re.compile(regex) if regex else None
-        @functools.wraps(func)
-        def wrapper(self, *args, **kwargs):
-            with catch_unraisable_exception() as cm:
-                # First, run the test with traceback enabled.
-                with check_tracebacks(self, cm, exc, _regex, name):
-                    func(self, *args, **kwargs)
-
-            # Then run the test with traceback disabled.
-            func(self, *args, **kwargs)
-        return wrapper
-    return decorator
-
-
-@contextlib.contextmanager
-def check_tracebacks(self, cm, exc, regex, obj_name):
-    """Convenience context manager for testing callback tracebacks."""
-    sqlite.enable_callback_tracebacks(True)
-    try:
-        buf = io.StringIO()
-        with contextlib.redirect_stderr(buf):
-            yield
-
-        self.assertEqual(cm.unraisable.exc_type, exc)
-        if regex:
-            msg = str(cm.unraisable.exc_value)
-            self.assertIsNotNone(regex.search(msg))
-        if obj_name:
-            self.assertEqual(cm.unraisable.object.__name__, obj_name)
-    finally:
-        sqlite.enable_callback_tracebacks(False)
+from .util import cx_limit, memory_database
+from .util import with_tracebacks, check_tracebacks
 
 
 def func_returntext():
@@ -405,19 +366,19 @@ class FunctionTests(unittest.TestCase):
     def test_function_destructor_via_gc(self):
         # See bpo-44304: The destructor of the user function can
         # crash if is called without the GIL from the gc functions
-        dest = sqlite.connect(':memory:')
         def md5sum(t):
             return
 
-        dest.create_function("md5", 1, md5sum)
-        x = dest("create table lang (name, first_appeared)")
-        del md5sum, dest
+        with memory_database() as dest:
+            dest.create_function("md5", 1, md5sum)
+            x = dest("create table lang (name, first_appeared)")
+            del md5sum, dest
 
-        y = [x]
-        y.append(y)
+            y = [x]
+            y.append(y)
 
-        del x,y
-        gc_collect()
+            del x,y
+            gc_collect()
 
     @with_tracebacks(OverflowError)
     def test_func_return_too_large_int(self):
@@ -513,6 +474,10 @@ class WindowFunctionTests(unittest.TestCase):
             from test order by x
         """
         self.con.create_window_function("sumint", 1, WindowSumInt)
+
+    def tearDown(self):
+        self.cur.close()
+        self.con.close()
 
     def test_win_sum_int(self):
         self.cur.execute(self.query % "sumint")
@@ -634,6 +599,7 @@ class AggregateTests(unittest.TestCase):
             """)
         cur.execute("insert into test(t, i, f, n, b) values (?, ?, ?, ?, ?)",
             ("foo", 5, 3.14, None, memoryview(b"blob"),))
+        cur.close()
 
         self.con.create_aggregate("nostep", 1, AggrNoStep)
         self.con.create_aggregate("nofinalize", 1, AggrNoFinalize)
@@ -646,9 +612,7 @@ class AggregateTests(unittest.TestCase):
         self.con.create_aggregate("aggtxt", 1, AggrText)
 
     def tearDown(self):
-        #self.cur.close()
-        #self.con.close()
-        pass
+        self.con.close()
 
     def test_aggr_error_on_create(self):
         with self.assertRaises(sqlite.OperationalError):
@@ -775,7 +739,7 @@ class AuthorizerTests(unittest.TestCase):
         self.con.set_authorizer(self.authorizer_cb)
 
     def tearDown(self):
-        pass
+        self.con.close()
 
     def test_table_access(self):
         with self.assertRaises(sqlite.DatabaseError) as cm:

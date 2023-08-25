@@ -1748,6 +1748,30 @@ class PyRLockTests(lock_tests.RLockTests):
 class CRLockTests(lock_tests.RLockTests):
     locktype = staticmethod(threading._CRLock)
 
+    def test_signature(self):  # gh-102029
+        with warnings.catch_warnings(record=True) as warnings_log:
+            threading.RLock()
+        self.assertEqual(warnings_log, [])
+
+        arg_types = [
+            ((1,), {}),
+            ((), {'a': 1}),
+            ((1, 2), {'a': 1}),
+        ]
+        for args, kwargs in arg_types:
+            with self.subTest(args=args, kwargs=kwargs):
+                with self.assertWarns(DeprecationWarning):
+                    threading.RLock(*args, **kwargs)
+
+        # Subtypes with custom `__init__` are allowed (but, not recommended):
+        class CustomRLock(self.locktype):
+            def __init__(self, a, *, b) -> None:
+                super().__init__()
+
+        with warnings.catch_warnings(record=True) as warnings_log:
+            CustomRLock(1, b=2)
+        self.assertEqual(warnings_log, [])
+
 class EventTests(lock_tests.EventTests):
     eventtype = staticmethod(threading.Event)
 

@@ -53,7 +53,7 @@ _sre_ascii_iscased(PyObject *module, PyObject *arg)
     int character;
     int _return_value;
 
-    character = _PyLong_AsInt(arg);
+    character = PyLong_AsInt(arg);
     if (character == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -85,7 +85,7 @@ _sre_unicode_iscased(PyObject *module, PyObject *arg)
     int character;
     int _return_value;
 
-    character = _PyLong_AsInt(arg);
+    character = PyLong_AsInt(arg);
     if (character == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -117,7 +117,7 @@ _sre_ascii_tolower(PyObject *module, PyObject *arg)
     int character;
     int _return_value;
 
-    character = _PyLong_AsInt(arg);
+    character = PyLong_AsInt(arg);
     if (character == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -149,7 +149,7 @@ _sre_unicode_tolower(PyObject *module, PyObject *arg)
     int character;
     int _return_value;
 
-    character = _PyLong_AsInt(arg);
+    character = PyLong_AsInt(arg);
     if (character == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1031,7 +1031,7 @@ _sre_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         goto exit;
     }
     pattern = args[0];
-    flags = _PyLong_AsInt(args[1]);
+    flags = PyLong_AsInt(args[1]);
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1460,4 +1460,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyTypeObject *cls, PyObject *const 
     }
     return _sre_SRE_Scanner_search_impl(self, cls);
 }
-/*[clinic end generated code: output=e3ba72156dd71572 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6b84e62c87238f0e input=a9049054013a1b77]*/

@@ -295,6 +295,7 @@ _testcapi_unwatch_type_impl(PyObject *module, int watcher_id, PyObject *type)
 // Test code object watching
 
 #define NUM_CODE_WATCHERS 2
+static int code_watcher_ids[NUM_CODE_WATCHERS] = {-1, -1};
 static int num_code_object_created_events[NUM_CODE_WATCHERS] = {0, 0};
 static int num_code_object_destroyed_events[NUM_CODE_WATCHERS] = {0, 0};
 
@@ -345,11 +346,13 @@ add_code_watcher(PyObject *self, PyObject *which_watcher)
     long which_l = PyLong_AsLong(which_watcher);
     if (which_l == 0) {
         watcher_id = PyCode_AddWatcher(first_code_object_callback);
+        code_watcher_ids[0] = watcher_id;
         num_code_object_created_events[0] = 0;
         num_code_object_destroyed_events[0] = 0;
     }
     else if (which_l == 1) {
         watcher_id = PyCode_AddWatcher(second_code_object_callback);
+        code_watcher_ids[1] = watcher_id;
         num_code_object_created_events[1] = 0;
         num_code_object_destroyed_events[1] = 0;
     }
@@ -375,9 +378,14 @@ clear_code_watcher(PyObject *self, PyObject *watcher_id)
         return NULL;
     }
     // reset static events counters
-    if (watcher_id_l >= 0 && watcher_id_l < NUM_CODE_WATCHERS) {
-        num_code_object_created_events[watcher_id_l] = 0;
-        num_code_object_destroyed_events[watcher_id_l] = 0;
+    if (watcher_id_l >= 0) {
+        for (int i = 0; i < NUM_CODE_WATCHERS; i++) {
+            if (watcher_id_l == code_watcher_ids[i]) {
+                code_watcher_ids[i] = -1;
+                num_code_object_created_events[i] = 0;
+                num_code_object_destroyed_events[i] = 0;
+            }
+        }
     }
     Py_RETURN_NONE;
 }

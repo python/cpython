@@ -44,7 +44,7 @@ fcntl_fcntl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
-    code = _PyLong_AsInt(args[1]);
+    code = PyLong_AsInt(args[1]);
     if (code == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -164,7 +164,7 @@ fcntl_flock(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
-    code = _PyLong_AsInt(args[1]);
+    code = PyLong_AsInt(args[1]);
     if (code == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -224,7 +224,7 @@ fcntl_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
-    code = _PyLong_AsInt(args[1]);
+    code = PyLong_AsInt(args[1]);
     if (code == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -239,7 +239,7 @@ fcntl_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 5) {
         goto skip_optional;
     }
-    whence = _PyLong_AsInt(args[4]);
+    whence = PyLong_AsInt(args[4]);
     if (whence == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -249,4 +249,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1db859412172dd53 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=705976d5f53f2272 input=a9049054013a1b77]*/

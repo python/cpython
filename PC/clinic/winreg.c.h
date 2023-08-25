@@ -401,7 +401,7 @@ winreg_CreateKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
         goto skip_optional_pos;
     }
     if (args[2]) {
-        reserved = _PyLong_AsInt(args[2]);
+        reserved = PyLong_AsInt(args[2]);
         if (reserved == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -409,7 +409,7 @@ winreg_CreateKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
             goto skip_optional_pos;
         }
     }
-    access = _PyLong_AsInt(args[3]);
+    access = PyLong_AsInt(args[3]);
     if (access == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -579,7 +579,7 @@ winreg_DeleteKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
         goto skip_optional_pos;
     }
     if (args[2]) {
-        access = _PyLong_AsInt(args[2]);
+        access = PyLong_AsInt(args[2]);
         if (access == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -587,7 +587,7 @@ winreg_DeleteKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
             goto skip_optional_pos;
         }
     }
-    reserved = _PyLong_AsInt(args[3]);
+    reserved = PyLong_AsInt(args[3]);
     if (reserved == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -695,7 +695,7 @@ winreg_EnumKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!clinic_HKEY_converter(_PyModule_GetState(module), args[0], &key)) {
         goto exit;
     }
-    index = _PyLong_AsInt(args[1]);
+    index = PyLong_AsInt(args[1]);
     if (index == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -752,7 +752,7 @@ winreg_EnumValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!clinic_HKEY_converter(_PyModule_GetState(module), args[0], &key)) {
         goto exit;
     }
-    index = _PyLong_AsInt(args[1]);
+    index = PyLong_AsInt(args[1]);
     if (index == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1016,7 +1016,7 @@ winreg_OpenKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         goto skip_optional_pos;
     }
     if (args[2]) {
-        reserved = _PyLong_AsInt(args[2]);
+        reserved = PyLong_AsInt(args[2]);
         if (reserved == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -1024,7 +1024,7 @@ winreg_OpenKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
             goto skip_optional_pos;
         }
     }
-    access = _PyLong_AsInt(args[3]);
+    access = PyLong_AsInt(args[3]);
     if (access == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1133,7 +1133,7 @@ winreg_OpenKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         goto skip_optional_pos;
     }
     if (args[2]) {
-        reserved = _PyLong_AsInt(args[2]);
+        reserved = PyLong_AsInt(args[2]);
         if (reserved == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -1141,7 +1141,7 @@ winreg_OpenKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
             goto skip_optional_pos;
         }
     }
-    access = _PyLong_AsInt(args[3]);
+    access = PyLong_AsInt(args[3]);
     if (access == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1788,4 +1788,4 @@ exit:
 #ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
     #define WINREG_QUERYREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
-/*[clinic end generated code: output=d2bf1f58ad07e5f8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4d0ec3e43e1b28f4 input=a9049054013a1b77]*/
