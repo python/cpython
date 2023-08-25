@@ -3,6 +3,7 @@ import dataclasses
 from formatting import Formatter
 import lexer as lx
 import parsing
+from typing import AbstractSet
 
 
 @dataclasses.dataclass
@@ -55,7 +56,7 @@ class InstructionFlags:
             return list(dataclasses.asdict(self).keys())
         return [n for n, v in dataclasses.asdict(self).items() if v == value]
 
-    def bitmap(self, ignore: tuple = ()) -> int:
+    def bitmap(self, ignore: AbstractSet[str] = set()) -> int:
         flags = 0
         assert all(hasattr(self, name) for name in ignore)
         for name in self.names():
