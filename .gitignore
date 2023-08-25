@@ -127,6 +127,7 @@ Tools/unicode/data/
 /.ccache
 /cross-build/
 /jit_stencils.h
+/install-details.toml
 /platform
 /profile-clean-stamp
 /profile-run-stamp

@@ -654,7 +654,7 @@ all:		@DEF_MAKE_ALL_RULE@
 
 .PHONY: build_all
 build_all:	check-clean-src $(BUILDPYTHON) platform sharedmods \
-		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil
+		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil install-details.toml
 
 .PHONY: build_wasm
 build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
@@ -830,6 +830,9 @@ $(BUILDPYTHON):	Programs/python.o $(LINK_PYTHON_DEPS)
 
 platform: $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt
 	$(RUNSHARED) $(PYTHON_FOR_BUILD) -c 'import sys ; from sysconfig import get_platform ; print("%s-%d.%d" % (get_platform(), *sys.version_info[:2]))' >platform
+
+install-details.toml: $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt $(srcdir)/Tools/build/generate_install_details_file.py
+	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/generate_install_details_file.py ./install-details.toml
 
 # Create build directory and generate the sysconfig build-time data there.
 # pybuilddir.txt contains the name of the build dir and is used for
@@ -2042,7 +2045,7 @@ altinstall: commoninstall
 .PHONY: commoninstall
 commoninstall:  check-clean-src @FRAMEWORKALTINSTALLFIRST@ \
 		altbininstall libinstall inclinstall libainstall \
-		sharedinstall altmaninstall @FRAMEWORKALTINSTALLLAST@
+		sharedinstall altmaninstall descfileinstall @FRAMEWORKALTINSTALLLAST@
 
 # Install shared libraries enabled by Setup
 DESTDIRS=	$(exec_prefix) $(LIBDIR) $(BINLIBDEST) $(DESTSHARED)
@@ -2671,6 +2674,11 @@ frameworkaltinstallunixtools:
 frameworkinstallextras:
 	cd Mac && $(MAKE) installextras DESTDIR="$(DESTDIR)"
 
+# Install the
+.PHONY: descfileinstall
+descfileinstall:
+	$(INSTALL) -d -m $(FILEMODE) ./install-details.toml $(DESTDIR)$(LIBDEST)/install-details.toml
+
 # Build the toplevel Makefile
 Makefile.pre: $(srcdir)/Makefile.pre.in config.status
 	CONFIG_FILES=Makefile.pre CONFIG_HEADERS= ./config.status
@@ -2787,6 +2795,7 @@ clean-retain-profile: pycremoval
 	find build -name '*.py' -exec rm -f {} ';' || true
 	find build -name '*.py[co]' -exec rm -f {} ';' || true
 	-rm -f pybuilddir.txt
+	-rm -f install-details.toml
 	-rm -f _bootstrap_python
 	-rm -f python.html python*.js python.data python*.symbols python*.map
 	-rm -f $(WASM_STDLIB)
