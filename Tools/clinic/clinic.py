@@ -1075,6 +1075,11 @@ class CLanguage(Language):
             del parameters[0]
         converters = [p.converter for p in parameters]
 
+        # Copy includes from parameters to Clinic
+        for converter in converters:
+            if converter.include:
+                clinic.add_include(*converter.include)
+
         has_option_groups = parameters and (parameters[0].group or parameters[-1].group)
         default_return_converter = f.return_converter.type == 'PyObject *'
         new_or_init = f.kind.new_or_init
@@ -2126,8 +2131,8 @@ class BlockPrinter:
             self,
             block: Block,
             *,
+            clinic: Clinic,
             core_includes: bool = False,
-            clinic: Clinic | None = None,
     ) -> None:
         input = block.input
         output = block.output
@@ -2156,18 +2161,22 @@ class BlockPrinter:
         write("\n")
 
         output = ''
-        if clinic:
-            limited_capi = clinic.limited_capi
-        else:
-            limited_capi = DEFAULT_LIMITED_CAPI
-        if core_includes and not limited_capi:
-            output += textwrap.dedent("""
-                #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-                #  include "pycore_gc.h"            // PyGC_Head
-                #  include "pycore_runtime.h"       // _Py_ID()
-                #endif
+        if core_includes:
+            if not clinic.limited_capi:
+                output += textwrap.dedent("""
+                    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+                    #  include "pycore_gc.h"            // PyGC_Head
+                    #  include "pycore_runtime.h"       // _Py_ID()
+                    #endif
 
-            """)
+                """)
+
+            if clinic is not None:
+                # Emit optional includes
+                for include, reason in sorted(clinic.includes.items()):
+                    line = f'#include "{include}"'
+                    line = line.ljust(35) + f'// {reason}\n'
+                    output += line
 
         input = ''.join(block.input)
         output += ''.join(block.output)
@@ -2311,7 +2320,7 @@ class Parser(Protocol):
     def parse(self, block: Block) -> None: ...
 
 
-clinic = None
+clinic: Clinic | None = None
 class Clinic:
 
     presets_text = """
@@ -2379,6 +2388,9 @@ impl_definition block
         self.modules: ModuleDict = {}
         self.classes: ClassDict = {}
         self.functions: list[Function] = []
+        # dict: include name => reason
+        # Example: 'pycore_long.h' => '_PyLong_UnsignedShort_Converter()'
+        self.includes: dict[str, str] = {}
 
         self.line_prefix = self.line_suffix = ''
 
@@ -2436,6 +2448,12 @@ impl_definition block
 
         global clinic
         clinic = self
+
+    def add_include(self, name: str, reason: str) -> None:
+        if name in self.includes:
+            # Mention a single reason is enough, no need to list all of them
+            return
+        self.includes[name] = reason
 
     def add_destination(
             self,
@@ -3066,6 +3084,10 @@ class CConverter(metaclass=CConverterAutoRegister):
     # Only set by self_converter.
     signature_name: str | None = None
 
+    # Optional (name, reason) include which generate a line like:
+    # "#include "name"     // reason"
+    include: tuple[str, str] | None = None
+
     # keep in sync with self_converter.__init__!
     def __init__(self,
              # Positional args:
@@ -3369,6 +3391,11 @@ class CConverter(metaclass=CConverterAutoRegister):
             return CLINIC_PREFIX + self.name
         else:
             return self.name
+
+    def add_include(self, name: str, reason: str) -> None:
+        if self.include is not None:
+            raise ValueError("a converter only supports a single include")
+        self.include = (name, reason)
 
 type_checks = {
     '&PyLong_Type': ('PyLong_Check', 'int'),
@@ -5987,9 +6014,6 @@ parsers: dict[str, Callable[[Clinic], Parser]] = {
     'clinic': DSLParser,
     'python': PythonParser,
 }
-
-
-clinic = None
 
 
 def create_cli() -> argparse.ArgumentParser:
