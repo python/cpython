@@ -2131,9 +2131,8 @@ class BlockPrinter:
             self,
             block: Block,
             *,
+            clinic: Clinic,
             core_includes: bool = False,
-            # needed if core_includes is true
-            clinic: Clinic | None = None,
     ) -> None:
         input = block.input
         output = block.output
@@ -2162,18 +2161,15 @@ class BlockPrinter:
         write("\n")
 
         output = ''
-        if clinic:
-            limited_capi = clinic.limited_capi
-        else:
-            limited_capi = DEFAULT_LIMITED_CAPI
-        if core_includes and not limited_capi:
-            output += textwrap.dedent("""
-                #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-                #  include "pycore_gc.h"            // PyGC_Head
-                #  include "pycore_runtime.h"       // _Py_ID()
-                #endif
+        if core_includes:
+            if not clinic.limited_capi:
+                output += textwrap.dedent("""
+                    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+                    #  include "pycore_gc.h"            // PyGC_Head
+                    #  include "pycore_runtime.h"       // _Py_ID()
+                    #endif
 
-            """)
+                """)
 
             if clinic is not None:
                 # Emit optional includes
