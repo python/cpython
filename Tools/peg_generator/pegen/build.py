@@ -90,12 +90,12 @@ def compile_c_extension(
     static library of the common parser sources (this is useful in case you are
     creating multiple extensions).
     """
-    import setuptools.logging  # type: ignore[import]
+    import setuptools.logging
 
     from setuptools import Extension, Distribution
-    from setuptools._distutils.dep_util import newer_group  # type: ignore[import]
-    from setuptools._distutils.ccompiler import new_compiler  # type: ignore[import]
-    from setuptools._distutils.sysconfig import customize_compiler  # type: ignore[import]
+    from setuptools._distutils.dep_util import newer_group
+    from setuptools._distutils.ccompiler import new_compiler
+    from setuptools._distutils.sysconfig import customize_compiler
 
     if verbose:
         setuptools.logging.set_threshold(setuptools.logging.logging.DEBUG)
