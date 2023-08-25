@@ -20,7 +20,7 @@ def logger(method: F) -> F:
     """
     method_name = method.__name__
 
-    def logger_wrapper(self: Parser, *args: object) -> Any:
+    def logger_wrapper(self: "Parser", *args: object) -> Any:
         if not self._verbose:
             return method(self, *args)
         argsr = ",".join(repr(arg) for arg in args)
@@ -40,7 +40,7 @@ def memoize(method: F) -> F:
     """Memoize a symbol method."""
     method_name = method.__name__
 
-    def memoize_wrapper(self: Parser, *args: object) -> Any:
+    def memoize_wrapper(self: "Parser", *args: object) -> Any:
         mark = self._mark()
         key = mark, method_name, args
         # Fast path: cache hit, and not verbose.
@@ -79,7 +79,7 @@ def memoize_left_rec(
     """Memoize a left-recursive symbol method."""
     method_name = method.__name__
 
-    def memoize_left_rec_wrapper(self: Parser) -> Optional[T]:
+    def memoize_left_rec_wrapper(self: "Parser") -> Optional[T]:
         mark = self._mark()
         key = mark, method_name, ()
         # Fast path: cache hit, and not verbose.
