@@ -55,11 +55,11 @@ def _iterdump(connection):
             if not writeable_schema:
                 writeable_schema = True
                 yield('PRAGMA writable_schema=ON;')
-            qtable = table_name.replace("'", "''")
+            qtable = _quote_value(table_name)
             yield("INSERT INTO sqlite_master(type,name,tbl_name,rootpage,sql)"
                   "VALUES('table','{0}','{0}',0,'{1}');".format(
                     qtable,
-                    sql.replace("'", "''")))
+                    _quote_value(sql)))
         else:
             yield('{0};'.format(sql))
 
