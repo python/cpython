@@ -73,7 +73,9 @@ def memoize(method: F) -> F:
     return cast(F, memoize_wrapper)
 
 
-def memoize_left_rec(method: Callable[[Parser], Optional[T]]) -> Callable[[Parser], Optional[T]]:
+def memoize_left_rec(
+    method: Callable[["Parser"], Optional[T]]
+) -> Callable[["Parser"], Optional[T]]:
     """Memoize a left-recursive symbol method."""
     method_name = method.__name__
 
