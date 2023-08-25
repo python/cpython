@@ -1796,7 +1796,7 @@ fi
 LLVM_PROF_ERR=no
 
 # GNU Autoconf recommends the use of expr instead of basename.
-AS_VAR_SET([CC_BASENAME], [expr "//$CC" : '.*/\(.*\)'])
+AS_VAR_SET([CC_BASENAME], [$(expr "//$CC" : '.*/\(.*\)')])
 case "$CC_BASENAME" in
   *clang*)
     # Any changes made here should be reflected in the GCC+Darwin case below
