@@ -515,6 +515,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
         opnames = {instruction.opname for instruction in instructions}
         self.assertIn(opname, opnames)
 
+    @disabling_optimizer
     def assert_races_do_not_crash(
         self, opname, get_items, read, write, *, check_items=False
     ):
@@ -942,7 +943,6 @@ class TestRacesDoNotCrash(unittest.TestCase):
         opname = "STORE_ATTR_INSTANCE_VALUE"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @disabling_optimizer
     def test_store_attr_with_hint(self):
         def get_items():
             class C:
