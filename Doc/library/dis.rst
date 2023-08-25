@@ -43,13 +43,13 @@ interpreter.
       adaptive bytecode can be shown by passing ``adaptive=True``.
 
 
-Example: Given the function :func:`myfunc`::
+Example: Given the function :func:`!myfunc`::
 
    def myfunc(alist):
        return len(alist)
 
 the following command can be used to display the disassembly of
-:func:`myfunc`:
+:func:`!myfunc`:
 
 .. doctest::
 
@@ -793,7 +793,7 @@ iterations of the loop.
 
 .. opcode:: LOAD_BUILD_CLASS
 
-   Pushes :func:`builtins.__build_class__` onto the stack.  It is later called
+   Pushes :func:`!builtins.__build_class__` onto the stack.  It is later called
    to construct a class.
 
 
@@ -851,14 +851,14 @@ iterations of the loop.
 .. opcode:: STORE_NAME (namei)
 
    Implements ``name = STACK.pop()``. *namei* is the index of *name* in the attribute
-   :attr:`co_names` of the code object. The compiler tries to use
-   :opcode:`STORE_FAST` or :opcode:`STORE_GLOBAL` if possible.
+   :attr:`!co_names` of the :ref:`code object <code-objects>`.
+   The compiler tries to use :opcode:`STORE_FAST` or :opcode:`STORE_GLOBAL` if possible.
 
 
 .. opcode:: DELETE_NAME (namei)
 
-   Implements ``del name``, where *namei* is the index into :attr:`co_names`
-   attribute of the code object.
+   Implements ``del name``, where *namei* is the index into :attr:`!co_names`
+   attribute of the :ref:`code object <code-objects>`.
 
 
 .. opcode:: UNPACK_SEQUENCE (count)
@@ -897,7 +897,8 @@ iterations of the loop.
       value = STACK.pop()
       obj.name = value
 
-   where *namei* is the index of name in :attr:`co_names`.
+   where *namei* is the index of name in :attr:`!co_names` of the
+   :ref:`code object <code-objects>`.
 
 .. opcode:: DELETE_ATTR (namei)
 
@@ -906,7 +907,8 @@ iterations of the loop.
       obj = STACK.pop()
       del obj.name
 
-   where *namei* is the index of name into :attr:`co_names`.
+   where *namei* is the index of name into :attr:`!co_names` of the
+   :ref:`code object <code-objects>`.
 
 
 .. opcode:: STORE_GLOBAL (namei)
