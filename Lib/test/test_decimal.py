@@ -587,7 +587,7 @@ class ExplicitConstructionTest:
             self.assertRaises(InvalidOperation, Decimal, "1_2_\u00003")
 
     @cpython_only
-    @requires_legacy_unicode_capi
+    @requires_legacy_unicode_capi()
     @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_from_legacy_strings(self):
         import _testcapi
@@ -2919,7 +2919,7 @@ class ContextAPItests:
                                               Overflow])
 
     @cpython_only
-    @requires_legacy_unicode_capi
+    @requires_legacy_unicode_capi()
     @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_from_legacy_strings(self):
         import _testcapi
