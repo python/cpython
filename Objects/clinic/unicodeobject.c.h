@@ -289,7 +289,7 @@ unicode_expandtabs(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    tabsize = _PyLong_AsInt(args[0]);
+    tabsize = PyLong_AsInt(args[0]);
     if (tabsize == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1504,4 +1504,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ee76a1b49cd4cbb3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2e1e1b136ef1b681 input=a9049054013a1b77]*/

@@ -68,14 +68,14 @@ _posixshmem_shm_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         goto exit;
     }
     path = args[0];
-    flags = _PyLong_AsInt(args[1]);
+    flags = PyLong_AsInt(args[1]);
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    mode = _PyLong_AsInt(args[2]);
+    mode = PyLong_AsInt(args[2]);
     if (mode == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -166,4 +166,4 @@ exit:
 #ifndef _POSIXSHMEM_SHM_UNLINK_METHODDEF
     #define _POSIXSHMEM_SHM_UNLINK_METHODDEF
 #endif /* !defined(_POSIXSHMEM_SHM_UNLINK_METHODDEF) */
-/*[clinic end generated code: output=9b67f98885757bc4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c022e2f7371fdece input=a9049054013a1b77]*/

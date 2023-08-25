@@ -85,7 +85,7 @@ skip_optional_posonly:
         goto skip_optional_kwonly;
     }
     if (fastargs[1]) {
-        digest_size = _PyLong_AsInt(fastargs[1]);
+        digest_size = PyLong_AsInt(fastargs[1]);
         if (digest_size == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -130,7 +130,7 @@ skip_optional_posonly:
         }
     }
     if (fastargs[5]) {
-        fanout = _PyLong_AsInt(fastargs[5]);
+        fanout = PyLong_AsInt(fastargs[5]);
         if (fanout == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -139,7 +139,7 @@ skip_optional_posonly:
         }
     }
     if (fastargs[6]) {
-        depth = _PyLong_AsInt(fastargs[6]);
+        depth = PyLong_AsInt(fastargs[6]);
         if (depth == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -164,7 +164,7 @@ skip_optional_posonly:
         }
     }
     if (fastargs[9]) {
-        node_depth = _PyLong_AsInt(fastargs[9]);
+        node_depth = PyLong_AsInt(fastargs[9]);
         if (node_depth == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -173,7 +173,7 @@ skip_optional_posonly:
         }
     }
     if (fastargs[10]) {
-        inner_size = _PyLong_AsInt(fastargs[10]);
+        inner_size = PyLong_AsInt(fastargs[10]);
         if (inner_size == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -276,4 +276,4 @@ _blake2_blake2b_hexdigest(BLAKE2bObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _blake2_blake2b_hexdigest_impl(self);
 }
-/*[clinic end generated code: output=996b4fe396824797 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=76bbcf5f220511b9 input=a9049054013a1b77]*/

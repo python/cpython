@@ -12,6 +12,7 @@
 #include "pycore_object.h"        // _Py_AddToAllObjects()
 #include "pycore_pyerrors.h"      // _PyErr_NoMemory()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 #include "clinic/bltinmodule.c.h"

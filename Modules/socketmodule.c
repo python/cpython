@@ -106,6 +106,7 @@ Local naming conventions:
 #endif
 
 #include "Python.h"
+#include "pycore_dict.h"          // _PyDict_Pop()
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_moduleobject.h"  // _PyModule_GetState
 
@@ -4878,17 +4879,17 @@ sock_sendmsg_afalg(PySocketSockObject *self, PyObject *args, PyObject *kwds)
 
     /* op is a required, keyword-only argument >= 0 */
     if (opobj != NULL) {
-        op = _PyLong_AsInt(opobj);
+        op = PyLong_AsInt(opobj);
     }
     if (op < 0) {
-        /* override exception from _PyLong_AsInt() */
+        /* override exception from PyLong_AsInt() */
         PyErr_SetString(PyExc_TypeError,
                         "Invalid or missing argument 'op'");
         goto finally;
     }
     /* assoclen is optional but must be >= 0 */
     if (assoclenobj != NULL) {
-        assoclen = _PyLong_AsInt(assoclenobj);
+        assoclen = PyLong_AsInt(assoclenobj);
         if (assoclen == -1 && PyErr_Occurred()) {
             goto finally;
         }
@@ -5006,7 +5007,7 @@ sock_shutdown(PySocketSockObject *s, PyObject *arg)
     int how;
     int res;
 
-    how = _PyLong_AsInt(arg);
+    how = PyLong_AsInt(arg);
     if (how == -1 && PyErr_Occurred())
         return NULL;
     Py_BEGIN_ALLOW_THREADS
