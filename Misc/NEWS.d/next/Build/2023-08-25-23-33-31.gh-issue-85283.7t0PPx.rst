@@ -1,0 +1,2 @@
+The ``_statistics`` C extension is now built with the :ref:`Limited API
+<limited-c-api>`. Patch by Victor Stinner.

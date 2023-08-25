@@ -1,5 +1,7 @@
 /* statistics accelerator C extension: _statistics module. */
 
+#define Py_LIMITED_API 0x030d0000
+
 #include "Python.h"
 #include "clinic/_statisticsmodule.c.h"
 
