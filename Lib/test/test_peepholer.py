@@ -4,6 +4,7 @@ import sys
 import textwrap
 import unittest
 
+from test import support
 from test.support.bytecode_helper import BytecodeTestCase, CfgOptimizationTestCase
 
 
@@ -522,6 +523,7 @@ class TestTranforms(BytecodeTestCase):
             return (y for x in a for y in [f(x)])
         self.assertEqual(count_instr_recursively(genexpr, 'FOR_ITER'), 1)
 
+    @support.requires_resource('cpu')
     def test_format_combinations(self):
         flags = '-+ #0'
         testcases = [

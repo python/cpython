@@ -680,7 +680,6 @@ class HandlerTest(BaseTest):
         support.is_emscripten, "Emscripten cannot fstat unlinked files."
     )
     @threading_helper.requires_working_threading()
-    @support.requires_resource('cpu')
     def test_race(self):
         # Issue #14632 refers.
         def remove_loop(fname, tries):

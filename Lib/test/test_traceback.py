@@ -216,7 +216,6 @@ class TracebackCases(unittest.TestCase):
         self.assertEqual(err[0], "%s: %s\n" % (str_name, str_value))
 
     @requires_subprocess()
-    @support.requires_resource('cpu')
     def test_encoded_file(self):
         # Test that tracebacks are correctly printed for encoded source files:
         # - correct line number (Issue2384)

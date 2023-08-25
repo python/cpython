@@ -2182,7 +2182,6 @@ class NetworkedTests(unittest.TestCase):
             self.assertIn(rc, (errno.EAGAIN, errno.EWOULDBLOCK))
 
     @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'Needs IPv6')
-    @support.requires_resource('cpu')
     def test_get_server_certificate_ipv6(self):
         with socket_helper.transient_internet('ipv6.google.com'):
             _test_get_server_certificate(self, 'ipv6.google.com', 443)
@@ -2741,7 +2740,6 @@ def try_protocol_combo(server_protocol, client_protocol, expect_success,
 
 class ThreadedTests(unittest.TestCase):
 
-    @support.requires_resource('cpu')
     def test_echo(self):
         """Basic test of an SSL client connecting to a server"""
         if support.verbose:

@@ -133,7 +133,6 @@ class OtherNetworkTests(unittest.TestCase):
     # XXX The rest of these tests aren't very good -- they don't check much.
     # They do sometimes catch some major disasters, though.
 
-    @support.requires_resource('cpu')
     def test_ftp(self):
         # Testing the same URL twice exercises the caching in CacheFTPHandler
         urls = [
@@ -197,7 +196,6 @@ class OtherNetworkTests(unittest.TestCase):
             self.assertEqual(res.geturl(),
                     "http://www.pythontest.net/index.html#frag")
 
-    @support.requires_resource('cpu')
     def test_redirect_url_withfrag(self):
         redirect_url_with_frag = "http://www.pythontest.net/redir/with_frag/"
         with socket_helper.transient_internet(redirect_url_with_frag):
@@ -336,7 +334,6 @@ class TimeoutTest(unittest.TestCase):
 
     FTP_HOST = 'ftp://www.pythontest.net/'
 
-    @support.requires_resource('cpu')
     def test_ftp_basic(self):
         self.assertIsNone(socket.getdefaulttimeout())
         with socket_helper.transient_internet(self.FTP_HOST, timeout=None):
@@ -355,7 +352,6 @@ class TimeoutTest(unittest.TestCase):
                 socket.setdefaulttimeout(None)
             self.assertEqual(u.fp.fp.raw._sock.gettimeout(), 60)
 
-    @support.requires_resource('cpu')
     def test_ftp_no_timeout(self):
         self.assertIsNone(socket.getdefaulttimeout())
         with socket_helper.transient_internet(self.FTP_HOST):
@@ -367,7 +363,6 @@ class TimeoutTest(unittest.TestCase):
                 socket.setdefaulttimeout(None)
             self.assertIsNone(u.fp.fp.raw._sock.gettimeout())
 
-    @support.requires_resource('cpu')
     def test_ftp_timeout(self):
         with socket_helper.transient_internet(self.FTP_HOST):
             u = _urlopen_with_retry(self.FTP_HOST, timeout=60)

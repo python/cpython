@@ -745,7 +745,6 @@ class SiginterruptTest(unittest.TestCase):
         interrupted = self.readpipe_interrupted(True)
         self.assertTrue(interrupted)
 
-    @support.requires_resource('cpu')
     def test_siginterrupt_off(self):
         # If a signal handler is installed and siginterrupt is called with
         # a false value for the second argument, when that signal arrives, it

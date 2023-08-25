@@ -61,7 +61,6 @@ class SmtpSSLTest(unittest.TestCase):
             server.ehlo()
             server.quit()
 
-    @support.requires_resource('cpu')
     def test_connect_using_sslcontext(self):
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         context.check_hostname = False
