@@ -57,16 +57,18 @@
 #define _ITER_CHECK_RANGE 329
 #define _IS_ITER_EXHAUSTED_RANGE 330
 #define _ITER_NEXT_RANGE 331
-#define _CHECK_PEP_523 332
-#define _CHECK_FUNCTION_EXACT_ARGS 333
-#define _CHECK_STACK_SPACE 334
-#define _INIT_CALL_PY_EXACT_ARGS 335
-#define _PUSH_FRAME 336
-#define _POP_JUMP_IF_FALSE 337
-#define _POP_JUMP_IF_TRUE 338
-#define JUMP_TO_TOP 339
-#define SAVE_CURRENT_IP 340
-#define INSERT 341
+#define _CHECK_CALL_BOUND_METHOD_EXACT_ARGS 332
+#define _INIT_CALL_BOUND_METHOD_EXACT_ARGS 333
+#define _CHECK_PEP_523 334
+#define _CHECK_FUNCTION_EXACT_ARGS 335
+#define _CHECK_STACK_SPACE 336
+#define _INIT_CALL_PY_EXACT_ARGS 337
+#define _PUSH_FRAME 338
+#define _POP_JUMP_IF_FALSE 339
+#define _POP_JUMP_IF_TRUE 340
+#define JUMP_TO_TOP 341
+#define SAVE_CURRENT_IP 342
+#define INSERT 343
 
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
 #ifdef NEED_OPCODE_METADATA
@@ -484,7 +486,9 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
             return 0;
         case CALL:
             return oparg + 2;
-        case CALL_BOUND_METHOD_EXACT_ARGS:
+        case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS:
+            return oparg + 2;
+        case _INIT_CALL_BOUND_METHOD_EXACT_ARGS:
             return oparg + 2;
         case _CHECK_PEP_523:
             return 0;
@@ -496,6 +500,8 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
             return oparg + 2;
         case _PUSH_FRAME:
             return 1;
+        case CALL_BOUND_METHOD_EXACT_ARGS:
+            return oparg + 2;
         case CALL_PY_EXACT_ARGS:
             return oparg + 2;
         case CALL_PY_WITH_DEFAULTS:
@@ -1012,8 +1018,10 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 0;
         case CALL:
             return 1;
-        case CALL_BOUND_METHOD_EXACT_ARGS:
-            return 1;
+        case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS:
+            return oparg + 2;
+        case _INIT_CALL_BOUND_METHOD_EXACT_ARGS:
+            return oparg + 2;
         case _CHECK_PEP_523:
             return 0;
         case _CHECK_FUNCTION_EXACT_ARGS:
@@ -1023,6 +1031,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
         case _INIT_CALL_PY_EXACT_ARGS:
             return 1;
         case _PUSH_FRAME:
+            return 1;
+        case CALL_BOUND_METHOD_EXACT_ARGS:
             return 1;
         case CALL_PY_EXACT_ARGS:
             return 1;
@@ -1163,7 +1173,7 @@ struct opcode_metadata {
 
 struct opcode_macro_expansion {
     int nuops;
-    struct { int16_t uop; int8_t size; int8_t offset; } uops[8];
+    struct { int16_t uop; int8_t size; int8_t offset; } uops[12];
 };
 
 #define OPARG_FULL 0
@@ -1518,6 +1528,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [GET_YIELD_FROM_ITER] = { .nuops = 1, .uops = { { GET_YIELD_FROM_ITER, 0, 0 } } },
     [WITH_EXCEPT_START] = { .nuops = 1, .uops = { { WITH_EXCEPT_START, 0, 0 } } },
     [PUSH_EXC_INFO] = { .nuops = 1, .uops = { { PUSH_EXC_INFO, 0, 0 } } },
+    [CALL_BOUND_METHOD_EXACT_ARGS] = { .nuops = 9, .uops = { { _CHECK_PEP_523, 0, 0 }, { _CHECK_CALL_BOUND_METHOD_EXACT_ARGS, 0, 0 }, { _INIT_CALL_BOUND_METHOD_EXACT_ARGS, 0, 0 }, { _CHECK_FUNCTION_EXACT_ARGS, 2, 1 }, { _CHECK_STACK_SPACE, 0, 0 }, { _INIT_CALL_PY_EXACT_ARGS, 0, 0 }, { SAVE_IP, 7, 3 }, { SAVE_CURRENT_IP, 0, 0 }, { _PUSH_FRAME, 0, 0 } } },
     [CALL_PY_EXACT_ARGS] = { .nuops = 7, .uops = { { _CHECK_PEP_523, 0, 0 }, { _CHECK_FUNCTION_EXACT_ARGS, 2, 1 }, { _CHECK_STACK_SPACE, 0, 0 }, { _INIT_CALL_PY_EXACT_ARGS, 0, 0 }, { SAVE_IP, 7, 3 }, { SAVE_CURRENT_IP, 0, 0 }, { _PUSH_FRAME, 0, 0 } } },
     [CALL_NO_KW_TYPE_1] = { .nuops = 1, .uops = { { CALL_NO_KW_TYPE_1, 0, 0 } } },
     [CALL_NO_KW_STR_1] = { .nuops = 1, .uops = { { CALL_NO_KW_STR_1, 0, 0 } } },
@@ -1577,6 +1588,8 @@ const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
     [_ITER_CHECK_RANGE] = "_ITER_CHECK_RANGE",
     [_IS_ITER_EXHAUSTED_RANGE] = "_IS_ITER_EXHAUSTED_RANGE",
     [_ITER_NEXT_RANGE] = "_ITER_NEXT_RANGE",
+    [_CHECK_CALL_BOUND_METHOD_EXACT_ARGS] = "_CHECK_CALL_BOUND_METHOD_EXACT_ARGS",
+    [_INIT_CALL_BOUND_METHOD_EXACT_ARGS] = "_INIT_CALL_BOUND_METHOD_EXACT_ARGS",
     [_CHECK_PEP_523] = "_CHECK_PEP_523",
     [_CHECK_FUNCTION_EXACT_ARGS] = "_CHECK_FUNCTION_EXACT_ARGS",
     [_CHECK_STACK_SPACE] = "_CHECK_STACK_SPACE",
