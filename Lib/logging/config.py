@@ -378,7 +378,7 @@ class BaseConfigurator(object):
 
     WORD_PATTERN = re.compile(r'^\s*(\w+)\s*')
     DOT_PATTERN = re.compile(r'^\.\s*(\w+)\s*')
-    INDEX_PATTERN = re.compile(r'^\[\s*(\w+)\s*\]\s*')
+    INDEX_PATTERN = re.compile(r'^\[([^\[\]]*)\]\s*')
     DIGIT_PATTERN = re.compile(r'^\d+$')
 
     value_converters = {
