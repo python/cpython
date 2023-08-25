@@ -444,7 +444,7 @@ class Generator(Analyzer):
             with self.out.block("struct opcode_macro_expansion", ";"):
                 self.out.emit("int nuops;")
                 self.out.emit(
-                    "struct { int16_t uop; int8_t size; int8_t offset; } uops[8];"
+                    "struct { int16_t uop; int8_t size; int8_t offset; } uops[12];"
                 )
             self.out.emit("")
 
