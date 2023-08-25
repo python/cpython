@@ -953,6 +953,9 @@ Internal types
    definitions may change with future versions of the interpreter, but they are
    mentioned here for completeness.
 
+
+   .. _code-objects:
+
    .. index:: bytecode, object; code, code object
 
    Code objects
