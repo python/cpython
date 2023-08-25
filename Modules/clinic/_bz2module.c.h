@@ -102,7 +102,7 @@ _bz2_BZ2Compressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (PyTuple_GET_SIZE(args) < 1) {
         goto skip_optional;
     }
-    compresslevel = _PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
+    compresslevel = PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
     if (compresslevel == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -241,4 +241,4 @@ _bz2_BZ2Decompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=805400e4805098ec input=a9049054013a1b77]*/
+/*[clinic end generated code: output=431fd0fc40f019d1 input=a9049054013a1b77]*/

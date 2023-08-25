@@ -19,6 +19,10 @@ The :mod:`datetime` module supplies classes for manipulating dates and times.
 While date and time arithmetic is supported, the focus of the implementation is
 on efficient attribute extraction for output formatting and manipulation.
 
+.. tip::
+
+    Skip to :ref:`the format codes <format-codes>`.
+
 .. seealso::
 
    Module :mod:`calendar`
@@ -2321,6 +2325,8 @@ versus :meth:`strptime`:
 | Signature      | ``strftime(format)``                                   | ``strptime(date_string, format)``                                            |
 +----------------+--------------------------------------------------------+------------------------------------------------------------------------------+
 
+
+   .. _format-codes:
 
 :meth:`strftime` and :meth:`strptime` Format Codes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
