@@ -299,7 +299,7 @@ _testcapi_raise_exception(PyObject *module, PyObject *const *args, Py_ssize_t na
         goto exit;
     }
     exc = args[0];
-    num_args = _PyLong_AsInt(args[1]);
+    num_args = PyLong_AsInt(args[1]);
     if (num_args == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -488,4 +488,4 @@ _testcapi_unstable_exc_prep_reraise_star(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d574342d716e98b5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6c4b7ad1cb1e0153 input=a9049054013a1b77]*/

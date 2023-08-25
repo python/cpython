@@ -4,14 +4,15 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_MakePendingCalls()
+#include "pycore_dict.h"          // _PyDict_Pop()
 #include "pycore_interp.h"        // _PyInterpreterState.threads.count
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
+#include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
+
 #include <stddef.h>               // offsetof()
-
-
 #ifdef HAVE_SIGNAL_H
 #  include <signal.h>             // SIGINT
 #endif

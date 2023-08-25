@@ -280,7 +280,7 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
             self->fd = -1;
     }
 
-    fd = _PyLong_AsInt(nameobj);
+    fd = PyLong_AsInt(nameobj);
     if (fd < 0) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError,
