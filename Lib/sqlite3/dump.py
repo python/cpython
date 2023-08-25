@@ -58,8 +58,9 @@ def _iterdump(connection):
             qtable = _quote_value(table_name)
             yield("INSERT INTO sqlite_master(type,name,tbl_name,rootpage,sql)"
                   "VALUES('table','{0}','{0}',0,'{1}');".format(
-                    qtable,
-                    _quote_value(sql)))
+                      qtable,
+                      _quote_value(sql),
+                  ))
         else:
             yield('{0};'.format(sql))
 
