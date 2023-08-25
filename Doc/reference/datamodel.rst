@@ -1907,8 +1907,7 @@ Attribute lookup speed can be significantly improved as well.
 
 .. _datamodel-note-slots:
 
-Notes on using *__slots__*
-""""""""""""""""""""""""""
+Notes on using *__slots__*:
 
 * When inheriting from a class without *__slots__*, the
   :attr:`~object.__dict__` and
