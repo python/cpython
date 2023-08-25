@@ -17,6 +17,7 @@ def _iterdump(connection):
     """
 
     cu = connection.cursor()
+    yield('PRAGMA foreign_keys=OFF;')
     yield('BEGIN TRANSACTION;')
 
     # sqlite_master table contains the SQL CREATE statements for the database.

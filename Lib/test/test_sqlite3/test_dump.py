@@ -9,6 +9,15 @@ from .util import MemoryDatabaseMixin
 
 class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
 
+    def checkDump(self, actual, expected):
+        expected = [
+            "PRAGMA foreign_keys=OFF;",
+            "BEGIN TRANSACTION;",
+        ] + expected + [
+            "COMMIT;",
+        ]
+        self.assertEqual(actual, expected)
+
     def test_table_dump(self):
         expected_sqls = [
                 """CREATE TABLE "index"("index" blob);"""
@@ -42,10 +51,7 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
         [self.cu.execute(s) for s in expected_sqls]
         i = self.cx.iterdump()
         actual_sqls = [s for s in i]
-        expected_sqls = ['BEGIN TRANSACTION;'] + expected_sqls + \
-            ['COMMIT;']
-        [self.assertEqual(expected_sqls[i], actual_sqls[i])
-            for i in range(len(expected_sqls))]
+        self.checkDump(actual_sqls, expected_sqls)
 
     def test_dump_autoincrement(self):
         expected = [
@@ -57,15 +63,13 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
 
         # the NULL value should now be automatically be set to 1
         expected[1] = expected[1].replace("NULL", "1")
-        expected.insert(0, "BEGIN TRANSACTION;")
         expected.extend([
             'DELETE FROM "sqlite_sequence";',
             'INSERT INTO "sqlite_sequence" VALUES(\'t1\',1);',
-            'COMMIT;',
         ])
 
         actual = [stmt for stmt in self.cx.iterdump()]
-        self.assertEqual(expected, actual)
+        self.checkDump(actual, expected)
 
     def test_dump_autoincrement_create_new_db(self):
         self.cu.execute("BEGIN TRANSACTION")
@@ -100,18 +104,13 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
             def __getitem__(self, index):
                 return self.row[index]
         self.cx.row_factory = UnorderableRow
-        CREATE_ALPHA = """CREATE TABLE "alpha" ("one");"""
-        CREATE_BETA = """CREATE TABLE "beta" ("two");"""
-        expected = [
-            "BEGIN TRANSACTION;",
-            CREATE_ALPHA,
-            CREATE_BETA,
-            "COMMIT;"
-            ]
+        CREATE_ALPHA = 'CREATE TABLE "alpha" ("one");'
+        CREATE_BETA = 'CREATE TABLE "beta" ("two");'
+        expected = [CREATE_ALPHA, CREATE_BETA]
         self.cu.execute(CREATE_BETA)
         self.cu.execute(CREATE_ALPHA)
         got = list(self.cx.iterdump())
-        self.assertEqual(expected, got)
+        self.checkDump(got, expected)
 
 
 if __name__ == "__main__":
