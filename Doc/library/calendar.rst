@@ -416,8 +416,17 @@ The :mod:`calendar` module exports the following data attributes:
           SATURDAY
           SUNDAY
 
-   Enumeration defining the days of the week as integer constants,
+   Aliases for the days of the week,
    where ``MONDAY`` is ``0`` and ``SUNDAY`` is ``6``.
+
+   .. versionadded:: 3.12
+
+
+.. class:: Day
+
+   Enumeration defining days of the week as integer constants.
+   The members of this enumeration are exported to the module scope as
+   :data:`MONDAY` through :data:`SUNDAY`.
 
    .. versionadded:: 3.12
 
@@ -435,8 +444,17 @@ The :mod:`calendar` module exports the following data attributes:
           NOVEMBER
           DECEMBER
 
-   Enumeration defining months of the year as integer constants,
+   Aliases for the months of the year,
    where ``JANUARY`` is ``1`` and ``DECEMBER`` is ``12``.
+
+   .. versionadded:: 3.12
+
+
+.. class:: Month
+
+   Enumeration defining months of the year as integer constants.
+   The members of this enumeration are exported to the module scope as
+   :data:`JANUARY` through :data:`DECEMBER`.
 
    .. versionadded:: 3.12
 
