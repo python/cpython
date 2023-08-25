@@ -28,58 +28,6 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 2 BC, and so on.
 
 
-.. class:: Day
-
-   Enumeration defining the days of the week as integer constants, from 0 to 6.
-
-   .. attribute:: MONDAY
-
-   .. attribute:: TUESDAY
-
-   .. attribute:: WEDNESDAY
-
-   .. attribute:: THURSDAY
-
-   .. attribute:: FRIDAY
-
-   .. attribute:: SATURDAY
-
-   .. attribute:: SUNDAY
-
-   .. versionadded:: 3.12
-
-
-.. class:: Month
-
-   Enumeration defining months of the year as integer constants, from 1 to 12.
-
-   .. attribute:: JANUARY
-
-   .. attribute:: FEBRUARY
-
-   .. attribute:: MARCH
-
-   .. attribute:: APRIL
-
-   .. attribute:: MAY
-
-   .. attribute:: JUNE
-
-   .. attribute:: JULY
-
-   .. attribute:: AUGUST
-
-   .. attribute:: SEPTEMBER
-
-   .. attribute:: OCTOBER
-
-   .. attribute:: NOVEMBER
-
-   .. attribute:: DECEMBER
-
-   .. versionadded:: 3.12
-
-
 .. class:: Calendar(firstweekday=0)
 
    Creates a :class:`Calendar` object. *firstweekday* is an integer specifying the
@@ -459,6 +407,7 @@ The :mod:`calendar` module exports the following data attributes:
    locale.  This follows normal convention of January being month number 1, so it
    has a length of 13 and  ``month_abbr[0]`` is the empty string.
 
+
 .. data:: MONDAY
           TUESDAY
           WEDNESDAY
@@ -467,7 +416,29 @@ The :mod:`calendar` module exports the following data attributes:
           SATURDAY
           SUNDAY
 
-   Aliases for day numbers, where ``MONDAY`` is ``0`` and ``SUNDAY`` is ``6``.
+   Enumeration defining the days of the week as integer constants,
+   where ``MONDAY`` is ``0`` and ``SUNDAY`` is ``6``.
+
+   .. versionadded:: 3.12
+
+
+.. data:: JANUARY
+          FEBRUARY
+          MARCH
+          APRIL
+          MAY
+          JUNE
+          JULY
+          AUGUST
+          SEPTEMBER
+          OCTOBER
+          NOVEMBER
+          DECEMBER
+
+   Enumeration defining months of the year as integer constants,
+   where ``JANUARY`` is ``1`` and ``DECEMBER`` is ``12``.
+
+   .. versionadded:: 3.12
 
 
 The :mod:`calendar` module defines the following exceptions:
