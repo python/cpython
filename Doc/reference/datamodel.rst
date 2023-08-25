@@ -1039,11 +1039,13 @@ A few types used internally by the interpreter are exposed to the user. Their
 definitions may change with future versions of the interpreter, but they are
 mentioned here for completeness.
 
-.. index:: bytecode, object; code, code object
 
+.. _code-objects:
 
 Code objects
 ^^^^^^^^^^^^
+
+.. index:: bytecode, object; code, code object
 
 Code objects represent *byte-compiled* executable Python code, or :term:`bytecode`.
 The difference between a code object and a function object is that the function
