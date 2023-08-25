@@ -45,9 +45,27 @@ my_int_func_impl(PyObject *module, int arg)
 }
 
 
+/*[clinic input]
+my_int_sum -> int
+
+    x: int
+    y: int
+    /
+
+[clinic start generated code]*/
+
+static int
+my_int_sum_impl(PyObject *module, int x, int y)
+/*[clinic end generated code: output=3e52db9ab5f37e2f input=0edb6796813bf2d3]*/
+{
+    return x + y;
+}
+
+
 static PyMethodDef tester_methods[] = {
     TEST_EMPTY_FUNCTION_METHODDEF
     MY_INT_FUNC_METHODDEF
+    MY_INT_SUM_METHODDEF
     {NULL, NULL}
 };
 

@@ -78,6 +78,7 @@ CLINIC_PREFIXED_ARGS = {
     "noptargs",
     "return_value",
 }
+LIMITED_CAPI_REGEX = re.compile(r'#define +Py_LIMITED_API')
 
 
 class Sentinels(enum.Enum):
@@ -1248,6 +1249,22 @@ class CLanguage(Language):
             flags = "METH_VARARGS"
             parser_prototype = self.PARSER_PROTOTYPE_VARARGS
             parser_definition = parser_body(parser_prototype, '    {option_group_parsing}')
+
+        elif not requires_defining_class and pos_only == len(parameters) - pseudo_args and clinic.limited_capi:
+            # positional-only for the limited C API
+            flags = "METH_VARARGS"
+
+            parser_prototype = self.PARSER_PROTOTYPE_VARARGS
+            parser_code = [normalize_snippet("""
+                if (!PyArg_ParseTuple(args, "{format_units}:{name}",
+                    {parse_arguments}))
+                    goto exit;
+            """, indent=4)]
+            argname_fmt = 'args[%d]'
+            declarations = ""
+
+            parser_definition = parser_body(parser_prototype, *parser_code,
+                                            declarations=declarations)
 
         elif not requires_defining_class and pos_only == len(parameters) - pseudo_args:
             if not new_or_init:
@@ -2581,10 +2598,6 @@ def parse_file(
 ) -> None:
     verify = not ns.force
     limited_capi = ns.limited_capi
-    # XXX Temporary solution
-    if os.path.basename(filename) == '_testclinic_limited.c':
-        print(f"{filename} uses limited C API")
-        limited_capi = True
     if not output:
         output = filename
 
@@ -2604,6 +2617,9 @@ def parse_file(
     find_start_re = BlockParser("", language).find_start_re
     if not find_start_re.search(raw):
         return
+
+    if LIMITED_CAPI_REGEX.search(raw):
+        limited_capi = True
 
     assert isinstance(language, CLanguage)
     clinic = Clinic(language,
