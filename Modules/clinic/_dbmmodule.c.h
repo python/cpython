@@ -212,7 +212,7 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    mode = _PyLong_AsInt(args[2]);
+    mode = PyLong_AsInt(args[2]);
     if (mode == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -222,4 +222,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b3053c67ecfcc29c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f1bf74536f201669 input=a9049054013a1b77]*/

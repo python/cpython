@@ -3398,7 +3398,7 @@ class bool_converter(CConverter):
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'i':
             return """
-                {paramname} = _PyLong_AsInt({argname});
+                {paramname} = PyLong_AsInt({argname});
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
                 }}}}
@@ -3586,7 +3586,7 @@ class int_converter(CConverter):
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'i':
             return """
-                {paramname} = _PyLong_AsInt({argname});
+                {paramname} = PyLong_AsInt({argname});
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
                 }}}}

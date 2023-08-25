@@ -2463,11 +2463,12 @@ class ClinicExternalTest(TestCase):
             # Verify by checking the checksum.
             checksum = (
                 "/*[clinic end generated code: "
-                "output=2124c291eb067d76 input=9543a8d2da235301]*/\n"
+                "output=c16447c01510dfb3 input=9543a8d2da235301]*/\n"
             )
             with open(fn, 'r', encoding='utf-8') as f:
                 generated = f.read()
-            self.assertTrue(generated.endswith(checksum))
+            self.assertTrue(generated.endswith(checksum),
+                            (generated, checksum))
 
     def test_cli_make(self):
         c_code = dedent("""

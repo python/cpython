@@ -32,19 +32,8 @@ typedef struct {
     PyDictValues *ma_values;
 } PyDictObject;
 
-PyAPI_FUNC(PyObject *) _PyDict_GetItem_KnownHash(PyObject *mp, PyObject *key,
-                                       Py_hash_t hash);
-PyAPI_FUNC(PyObject *) _PyDict_GetItemIdWithError(PyObject *dp,
-                                                  _Py_Identifier *key);
 PyAPI_FUNC(PyObject *) PyDict_SetDefault(
     PyObject *mp, PyObject *key, PyObject *defaultobj);
-PyAPI_FUNC(int) _PyDict_SetItem_KnownHash(PyObject *mp, PyObject *key,
-                                          PyObject *item, Py_hash_t hash);
-PyAPI_FUNC(int) _PyDict_DelItem_KnownHash(PyObject *mp, PyObject *key,
-                                          Py_hash_t hash);
-
-PyAPI_FUNC(int) _PyDict_Next(
-    PyObject *mp, Py_ssize_t *pos, PyObject **key, PyObject **value, Py_hash_t *hash);
 
 /* Get the number of items of a dictionary. */
 static inline Py_ssize_t PyDict_GET_SIZE(PyObject *op) {
@@ -55,26 +44,8 @@ static inline Py_ssize_t PyDict_GET_SIZE(PyObject *op) {
 }
 #define PyDict_GET_SIZE(op) PyDict_GET_SIZE(_PyObject_CAST(op))
 
-PyAPI_FUNC(int) _PyDict_ContainsId(PyObject *, _Py_Identifier *);
+PyAPI_FUNC(int) PyDict_ContainsString(PyObject *mp, const char *key);
 
-PyAPI_FUNC(PyObject *) _PyDict_NewPresized(Py_ssize_t minused);
-PyAPI_FUNC(Py_ssize_t) _PyDict_SizeOf(PyDictObject *);
-PyAPI_FUNC(PyObject *) _PyDict_Pop(PyObject *, PyObject *, PyObject *);
-#define _PyDict_HasSplitTable(d) ((d)->ma_values != NULL)
-
-PyAPI_FUNC(int) _PyDict_SetItemId(PyObject *dp, _Py_Identifier *key, PyObject *item);
-
-PyAPI_FUNC(int) _PyDict_DelItemId(PyObject *mp, _Py_Identifier *key);
-
-/* _PyDictView */
-
-typedef struct {
-    PyObject_HEAD
-    PyDictObject *dv_dict;
-} _PyDictViewObject;
-
-PyAPI_FUNC(PyObject *) _PyDictView_New(PyObject *, PyTypeObject *);
-PyAPI_FUNC(PyObject *) _PyDictView_Intersect(PyObject* self, PyObject *other);
 
 /* Dictionary watchers */
 
