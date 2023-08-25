@@ -1282,9 +1282,16 @@ initialize_tools(PyCodeObject *code)
     for (int i = 0; i < code_len; i++) {
         _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
         int opcode = instr->op.code;
+        int oparg = instr->op.arg;
+        if (opcode == ENTER_EXECUTOR) {
+            _PyExecutorObject *exec = code->co_executors->executors[oparg];
+            opcode = exec->vm_data.opcode;
+            oparg = exec->vm_data.oparg;
+        }
         if (opcode == INSTRUMENTED_LINE) {
             opcode = code->_co_monitoring->lines[i].original_opcode;
         }
+        assert(opcode != ENTER_EXECUTOR);
         bool instrumented = is_instrumented(opcode);
         if (instrumented) {
             opcode = DE_INSTRUMENT[opcode];
@@ -1295,7 +1302,7 @@ initialize_tools(PyCodeObject *code)
             if (instrumented) {
                 int8_t event;
                 if (opcode == RESUME) {
-                    event = instr->op.arg != 0;
+                    event = oparg != 0;
                 }
                 else {
                     event = EVENT_FOR_OPCODE[opcode];
