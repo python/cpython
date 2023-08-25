@@ -50,4 +50,36 @@ my_int_func(PyObject *module, PyObject *arg_)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=07e2e8ed6923cd16 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(my_int_sum__doc__,
+"my_int_sum($module, x, y, /)\n"
+"--\n"
+"\n");
+
+#define MY_INT_SUM_METHODDEF    \
+    {"my_int_sum", (PyCFunction)my_int_sum, METH_VARARGS, my_int_sum__doc__},
+
+static int
+my_int_sum_impl(PyObject *module, int x, int y);
+
+static PyObject *
+my_int_sum(PyObject *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int x;
+    int y;
+    int _return_value;
+
+    if (!PyArg_ParseTuple(args, "ii:my_int_sum",
+        &x, &y))
+        goto exit;
+    _return_value = my_int_sum_impl(module, x, y);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=f9f7209255bb969e input=a9049054013a1b77]*/
