@@ -55,9 +55,8 @@ class InstructionFlags:
             return list(dataclasses.asdict(self).keys())
         return [n for n, v in dataclasses.asdict(self).items() if v == value]
 
-    def bitmap(self, ignore: tuple[str] | None = None) -> int:
+    def bitmap(self, ignore: tuple = ()) -> int:
         flags = 0
-        ignore = ignore or ()
         assert all(hasattr(self, name) for name in ignore)
         for name in self.names():
             if getattr(self, name) and name not in ignore:
