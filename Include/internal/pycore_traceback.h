@@ -8,6 +8,12 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+// Export for '_ctypes' shared extension
+PyAPI_FUNC(int) _Py_DisplaySourceLine(PyObject *, PyObject *, int, int, int *, PyObject **);
+
+// Export for 'pyexact' shared extension
+PyAPI_FUNC(void) _PyTraceback_Add(const char *, const char *, int);
+
 /* Write the Python traceback into the file 'fd'. For example:
 
        Traceback (most recent call first):
