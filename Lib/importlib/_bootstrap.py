@@ -51,18 +51,132 @@ def _new_module(name):
 
 # Module-level locking ########################################################
 
-# A dict mapping module names to weakrefs of _ModuleLock instances
-# Dictionary protected by the global import lock
+# For a list that can have a weakref to it.
+class List(list):
+    pass
+
+
+# From weakref.py with some simplifications.
+class WeakValueDictionary:
+
+    def __init__(self):
+        self_weakref = _weakref.ref(self)
+
+        # Inlined to avoid issues with inheriting from _weakref before it's
+        # set. Since there's only one instance of this class, this is
+        # not expensive.
+        class KeyedRef(_weakref.ref):
+
+            __slots__ = "key",
+
+            def __new__(type, ob, key):
+                self = super().__new__(type, ob, type.remove)
+                self.key = key
+                return self
+
+            def __init__(self, ob, key):
+                super().__init__(ob, self.remove)
+
+            @staticmethod
+            def remove(wr):
+                nonlocal self_weakref
+
+                self = self_weakref()
+                if self is not None:
+                    if self._iterating:
+                        self._pending_removals.append(wr.key)
+                    else:
+                        # Atomic removal is necessary since this function
+                        # can be called asynchronously by the GC
+                        _weakref._remove_dead_weakref(self.data, wr.key)
+
+        self._KeyedRef = KeyedRef
+        self.clear()
+
+    def clear(self):
+        self._pending_removals = []
+        self._iterating = set()
+        self.data = {}
+
+    def _commit_removals(self):
+        pop = self._pending_removals.pop
+        d = self.data
+        # We shouldn't encounter any KeyError, because this method should
+        # always be called *before* mutating the dict.
+        while True:
+            try:
+                key = pop()
+            except IndexError:
+                return
+            _weakref._remove_dead_weakref(d, key)
+
+    def __getitem__(self, key):
+        if self._pending_removals:
+            self._commit_removals()
+        o = self.data[key]()
+        if o is None:
+            raise KeyError(key)
+        else:
+            return o
+
+    def __delitem__(self, key):
+        if self._pending_removals:
+            self._commit_removals()
+        del self.data[key]
+
+    def __repr__(self):
+        return "<%s at %#x>" % (self.__class__.__name__, id(self))
+
+    def __setitem__(self, key, value):
+        if self._pending_removals:
+            self._commit_removals()
+        self.data[key] = self._KeyedRef(value, key)
+
+    def get(self, key, default=None):
+        if self._pending_removals:
+            self._commit_removals()
+        try:
+            wr = self.data[key]
+        except KeyError:
+            return default
+        else:
+            o = wr()
+            if o is None:
+                # This should only happen
+                return default
+            else:
+                return o
+
+    def setdefault(self, key, default=None):
+        try:
+            o = self.data[key]()
+        except KeyError:
+            o = None
+        if o is None:
+            if self._pending_removals:
+                self._commit_removals()
+            self.data[key] = self._KeyedRef(default, key)
+            return default
+        else:
+            return o
+
+
+# A dict mapping module names to weakrefs of _ModuleLock instances.
+# Dictionary protected by the global import lock.
 _module_locks = {}
 
-# A dict mapping thread IDs to lists of _ModuleLock instances.  This maps a
-# thread to the module locks it is blocking on acquiring.  The values are
-# lists because a single thread could perform a re-entrant import and be "in
-# the process" of blocking on locks for more than one module.  A thread can
-# be "in the process" because a thread cannot actually block on acquiring
-# more than one lock but it can have set up bookkeeping that reflects that
-# it intends to block on acquiring more than one lock.
-_blocking_on = {}
+# A dict mapping thread IDs to weakref'ed lists of _ModuleLock instances.
+# This maps a thread to the module locks it is blocking on acquiring.  The
+# values are lists because a single thread could perform a re-entrant import
+# and be "in the process" of blocking on locks for more than one module.  A
+# thread can be "in the process" because a thread cannot actually block on
+# acquiring more than one lock but it can have set up bookkeeping that reflects
+# that it intends to block on acquiring more than one lock.
+#
+# The dictionary uses a WeakValueDictionary to avoid keeping unnecessary
+# lists around, regardless of GC runs. This way there's no memory leak if
+# the list is no longer needed.
+_blocking_on = None
 
 
 class _BlockingOnManager:
@@ -79,7 +193,7 @@ class _BlockingOnManager:
         # re-entrant (i.e., a single thread may take it more than once) so it
         # wouldn't help us be correct in the face of re-entrancy either.
 
-        self.blocked_on = _blocking_on.setdefault(self.thread_id, [])
+        self.blocked_on = _blocking_on.setdefault(self.thread_id, List())
         self.blocked_on.append(self.lock)
 
     def __exit__(self, *args, **kwargs):
@@ -1409,7 +1523,7 @@ def _setup(sys_module, _imp_module):
     modules, those two modules must be explicitly passed in.
 
     """
-    global _imp, sys
+    global _imp, sys, _blocking_on
     _imp = _imp_module
     sys = sys_module
 
@@ -1436,6 +1550,8 @@ def _setup(sys_module, _imp_module):
         else:
             builtin_module = sys.modules[builtin_name]
         setattr(self_module, builtin_name, builtin_module)
+
+    _blocking_on = WeakValueDictionary()
 
 
 def _install(sys_module, _imp_module):
