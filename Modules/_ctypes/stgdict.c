@@ -401,7 +401,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         return -1;
     }
     if (tmp) {
-        pack = _PyLong_AsInt(tmp);
+        pack = PyLong_AsInt(tmp);
         Py_DECREF(tmp);
         if (pack < 0) {
             if (!PyErr_Occurred() ||

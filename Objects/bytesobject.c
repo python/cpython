@@ -753,7 +753,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                             "* wants int");
                         goto error;
                     }
-                    prec = _PyLong_AsInt(v);
+                    prec = PyLong_AsInt(v);
                     if (prec == -1 && PyErr_Occurred())
                         goto error;
                     if (prec < 0)

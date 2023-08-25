@@ -27,7 +27,7 @@ resource_getrusage(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int who;
 
-    who = _PyLong_AsInt(arg);
+    who = PyLong_AsInt(arg);
     if (who == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -56,7 +56,7 @@ resource_getrlimit(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int resource;
 
-    resource = _PyLong_AsInt(arg);
+    resource = PyLong_AsInt(arg);
     if (resource == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -87,7 +87,7 @@ resource_setrlimit(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("setrlimit", nargs, 2, 2)) {
         goto exit;
     }
-    resource = _PyLong_AsInt(args[0]);
+    resource = PyLong_AsInt(args[0]);
     if (resource == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -127,7 +127,7 @@ resource_prlimit(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (pid == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    resource = _PyLong_AsInt(args[1]);
+    resource = PyLong_AsInt(args[1]);
     if (resource == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -178,4 +178,4 @@ exit:
 #ifndef RESOURCE_PRLIMIT_METHODDEF
     #define RESOURCE_PRLIMIT_METHODDEF
 #endif /* !defined(RESOURCE_PRLIMIT_METHODDEF) */
-/*[clinic end generated code: output=2fbec74335a57230 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=916ecf0eb1927c37 input=a9049054013a1b77]*/

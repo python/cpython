@@ -10,6 +10,7 @@ on:
       - "Tools/clinic/**"
       - "Tools/cases_generator/**"
       - "Tools/peg_generator/**"
+      - "Tools/requirements-dev.txt"
       - ".github/workflows/mypy.yml"
   workflow_dispatch:
 
