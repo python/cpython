@@ -156,6 +156,8 @@ class Generator(Analyzer):
             return str(n_effect)
 
         instr: AnyInstruction | None
+        popped: str | None = None
+        pushed: str | None = None
         match thing:
             case parsing.InstDef():
                 if thing.kind != "op" or self.instrs[thing.name].is_viable_uop():
@@ -173,8 +175,6 @@ class Generator(Analyzer):
                 instr = self.pseudo_instrs[thing.name]
                 # Calculate stack effect, and check that it's the the same
                 # for all targets.
-                maybe_popped: str | None = None
-                maybe_pushed: str | None = None
                 for target in self.pseudos[thing.name].targets:
                     target_instr = self.instrs.get(target)
                     # Currently target is always an instr. This could change
@@ -183,15 +183,14 @@ class Generator(Analyzer):
                     assert target_instr
                     target_popped = effect_str(target_instr.input_effects)
                     target_pushed = effect_str(target_instr.output_effects)
-                    if maybe_popped is None:
-                        maybe_popped, maybe_pushed = target_popped, target_pushed
+                    if popped is None:
+                        popped, pushed = target_popped, target_pushed
                     else:
-                        assert maybe_popped == target_popped
-                        assert maybe_pushed == target_pushed
-                assert maybe_popped is not None and maybe_pushed is not None
-                popped, pushed = maybe_popped, maybe_pushed
+                        assert popped == target_popped
+                        assert pushed == target_pushed
             case _:
                 assert_never(thing)
+        assert popped is not None and pushed is not None
         return instr, popped, pushed
 
     @contextlib.contextmanager
@@ -380,6 +379,7 @@ class Generator(Analyzer):
         # Compute the set of all instruction formats.
         all_formats: set[str] = set()
         for thing in self.everything:
+            format: str | None = None
             match thing:
                 case OverriddenInstructionPlaceHolder():
                     continue
@@ -388,18 +388,16 @@ class Generator(Analyzer):
                 case parsing.Macro():
                     format = self.macro_instrs[thing.name].instr_fmt
                 case parsing.Pseudo():
-                    fmt: str | None = None
                     for target in self.pseudos[thing.name].targets:
                         target_instr = self.instrs.get(target)
                         assert target_instr
-                        if fmt is None:
-                            fmt = target_instr.instr_fmt
+                        if format is None:
+                            format = target_instr.instr_fmt
                         else:
-                            assert fmt == target_instr.instr_fmt
-                    assert fmt is not None
-                    format = fmt
+                            assert format == target_instr.instr_fmt
                 case _:
                     assert_never(thing)
+            assert format is not None
             all_formats.add(format)
 
         # Turn it into a sorted list of enum values.
