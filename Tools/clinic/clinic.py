@@ -2593,11 +2593,10 @@ impl_definition block
 def parse_file(
         filename: str,
         *,
-        ns: argparse.Namespace,
         output: str | None = None,
+        verify: bool = True,
+        limited_capi: bool = DEFAULT_LIMITED_CAPI,
 ) -> None:
-    verify = not ns.force
-    limited_capi = ns.limited_capi
     if not output:
         output = filename
 
@@ -6158,7 +6157,8 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
                     continue
                 if ns.verbose:
                     print(path)
-                parse_file(path, ns=ns)
+                parse_file(path,
+                           verify=not ns.force, limited_capi=ns.limited_capi)
         return
 
     if not ns.filename:
@@ -6170,7 +6170,8 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
     for filename in ns.filename:
         if ns.verbose:
             print(filename)
-        parse_file(filename, output=ns.output, ns=ns)
+        parse_file(filename, output=ns.output,
+                   verify=not ns.force, limited_capi=ns.limited_capi)
 
 
 def main(argv: list[str] | None = None) -> NoReturn:
