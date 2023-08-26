@@ -2,6 +2,8 @@
  * Helper method for urllib to fetch the proxy configuration settings
  * using the SystemConfiguration framework.
  */
+#define Py_LIMITED_API 0x030d0000
+
 #include <Python.h>
 #include <SystemConfiguration/SystemConfiguration.h>
 
