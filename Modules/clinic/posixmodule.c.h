@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"       // _Py_ID()
 #endif
 
+#include "pycore_fileutils.h"      // _PyLong_FileDescriptor_Converter()
 #include "pycore_long.h"           // _PyLong_UnsignedInt_Converter()
 
 PyDoc_STRVAR(os_stat__doc__,
@@ -11991,4 +11992,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=a08a47b52da6da0b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ff0e50316f4ed71a input=a9049054013a1b77]*/
