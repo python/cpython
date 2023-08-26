@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"       // _Py_ID()
 #endif
 
+#include "pycore_abstract.h"       // _PyNumber_Index()
 
 PyDoc_STRVAR(EVP_copy__doc__,
 "copy($self, /)\n"
@@ -1851,4 +1852,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=b339e255db698147 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cfad8d5e904a4917 input=a9049054013a1b77]*/
