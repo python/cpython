@@ -3,7 +3,10 @@
  * file (issue16421). This file defines 3 modules (_testimportmodule,
  * foo, bar), only the first one is called the same as the compiled file.
  */
-#include<Python.h>
+
+#define Py_LIMITED_API 0x030d0000
+
+#include <Python.h>
 
 static struct PyModuleDef _testimportmultiple = {
     PyModuleDef_HEAD_INIT,
