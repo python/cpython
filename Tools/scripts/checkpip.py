@@ -12,7 +12,7 @@ import sys
 def main():
     outofdate = False
 
-    for project, version in ensurepip._PROJECTS:
+    for project, version in ensurepip._structs.REMOTE_DIST_PKGS:
         data = json.loads(urllib.request.urlopen(
             "https://pypi.org/pypi/{}/json".format(project),
             cadefault=True,

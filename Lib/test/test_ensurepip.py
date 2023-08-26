@@ -6,12 +6,29 @@ import tempfile
 import test.support
 import unittest
 import unittest.mock
+import urllib.request
+from hashlib import sha256
+from io import BytesIO
+from pathlib import Path
+from random import randbytes, randint
+from runpy import run_module
 
 import ensurepip
+import ensurepip._bundler
+import ensurepip._structs
+import ensurepip._wheelhouses
 import ensurepip._uninstall
 
 
 class TestPackages(unittest.TestCase):
+    def setUp(self):
+        ensurepip._structs._get_wheel_pkg_dir_from_sysconfig.cache_clear()
+        ensurepip._wheelhouses.discover_ondisk_packages.cache_clear()
+
+    def tearDown(self):
+        ensurepip._structs._get_wheel_pkg_dir_from_sysconfig.cache_clear()
+        ensurepip._wheelhouses.discover_ondisk_packages.cache_clear()
+
     def touch(self, directory, filename):
         fullname = os.path.join(directory, filename)
         open(fullname, "wb").close()
@@ -20,41 +37,63 @@ class TestPackages(unittest.TestCase):
         # Test version()
         with tempfile.TemporaryDirectory() as tmpdir:
             self.touch(tmpdir, "pip-1.2.3b1-py2.py3-none-any.whl")
-            with (unittest.mock.patch.object(ensurepip, '_PACKAGES', None),
-                  unittest.mock.patch.object(ensurepip, '_WHEEL_PKG_DIR', tmpdir)):
+            with unittest.mock.patch.object(
+                    ensurepip._structs, 'get_config_var',
+                    lambda name: Path(tmpdir),
+            ):
                 self.assertEqual(ensurepip.version(), '1.2.3b1')
 
     def test_get_packages_no_dir(self):
         # Test _get_packages() without a wheel package directory
-        with (unittest.mock.patch.object(ensurepip, '_PACKAGES', None),
-              unittest.mock.patch.object(ensurepip, '_WHEEL_PKG_DIR', None)):
-            packages = ensurepip._get_packages()
-
-            # when bundled wheel packages are used, we get _PIP_VERSION
-            self.assertEqual(ensurepip._PIP_VERSION, ensurepip.version())
+        with unittest.mock.patch.object(
+                ensurepip._structs, 'get_config_var',
+                lambda name: None,
+        ):
+            # when bundled wheel packages are used, we get bundled pip version
+            self.assertEqual(
+                ensurepip._structs.PIP_REMOTE_DIST.project_version,
+                ensurepip.version(),
+            )
 
         # use bundled wheel packages
-        self.assertIsNotNone(packages['pip'].wheel_name)
+        self.assertTrue(
+            isinstance(
+                ensurepip._wheelhouses.discover_ondisk_packages()['pip'],
+                ensurepip._structs.BundledDistributionPackage,
+            ),
+        )
 
     def test_get_packages_with_dir(self):
         # Test _get_packages() with a wheel package directory
         pip_filename = "pip-20.2.2-py2.py3-none-any.whl"
 
         with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
             self.touch(tmpdir, pip_filename)
             # not used, make sure that it's ignored
             self.touch(tmpdir, "wheel-0.34.2-py2.py3-none-any.whl")
 
-            with (unittest.mock.patch.object(ensurepip, '_PACKAGES', None),
-                  unittest.mock.patch.object(ensurepip, '_WHEEL_PKG_DIR', tmpdir)):
-                packages = ensurepip._get_packages()
+            with unittest.mock.patch.object(
+                    ensurepip._structs, 'get_config_var',
+                    lambda name: tmp_path,
+            ):
+                packages = ensurepip._wheelhouses.discover_ondisk_packages()
 
-            self.assertEqual(packages['pip'].version, '20.2.2')
-            self.assertEqual(packages['pip'].wheel_path,
-                             os.path.join(tmpdir, pip_filename))
+            self.assertEqual(packages['pip'].project_version, '20.2.2')
+            self.assertEqual(
+                packages['pip'].wheel_path,
+                tmp_path / pip_filename,
+            )
 
             # wheel package is ignored
-            self.assertEqual(sorted(packages), ['pip'])
+            self.assertEqual(sorted(packages.keys()), ['pip'])
+
+    def test_returns_version(self):
+        pip_url = ensurepip._structs.PIP_REMOTE_DIST.wheel_file_url
+        self.assertIn(
+            f'/packages/py3/p/pip/pip-{ensurepip.version()}-',
+            pip_url,
+        )
 
 
 class EnsurepipMixin:
@@ -69,12 +108,13 @@ class EnsurepipMixin:
         real_devnull = os.devnull
         os_patch = unittest.mock.patch("ensurepip.os")
         patched_os = os_patch.start()
-        # But expose os.listdir() used by _find_packages()
-        patched_os.listdir = os.listdir
         self.addCleanup(os_patch.stop)
         patched_os.devnull = real_devnull
-        patched_os.path = os.path
         self.os_environ = patched_os.environ = os.environ.copy()
+
+        shutil_patch = unittest.mock.patch("ensurepip.shutil")
+        shutil_patch.start()
+        self.addCleanup(shutil_patch.stop)
 
 
 class TestBootstrap(EnsurepipMixin, unittest.TestCase):
@@ -92,6 +132,32 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
 
         additional_paths = self.run_pip.call_args[0][1]
         self.assertEqual(len(additional_paths), 1)
+
+    def test_replacement_wheel_bootstrapping(self):
+        ensurepip._structs._get_wheel_pkg_dir_from_sysconfig.cache_clear()
+        ensurepip._wheelhouses.discover_ondisk_packages.cache_clear()
+
+        pip_wheel_name = (
+            f'pip-{ensurepip._structs.PIP_REMOTE_DIST.project_version !s}-'
+            'py3-none-any.whl'
+        )
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            tmp_wheel_path = tmp_path / pip_wheel_name
+            tmp_wheel_path.touch()
+
+            with unittest.mock.patch.object(
+                    ensurepip._structs, 'get_config_var',
+                    lambda name: tmp_path,
+            ):
+                ensurepip.bootstrap()
+
+        ensurepip._structs._get_wheel_pkg_dir_from_sysconfig.cache_clear()
+        ensurepip._wheelhouses.discover_ondisk_packages.cache_clear()
+
+        additional_paths = self.run_pip.call_args[0][1]
+        self.assertEqual(Path(additional_paths[-1]).name, pip_wheel_name)
 
     def test_bootstrapping_with_root(self):
         ensurepip.bootstrap(root="/foo/bar/")
@@ -189,6 +255,159 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         # See http://bugs.python.org/issue20053 for details
         ensurepip.bootstrap()
         self.assertEqual(self.os_environ["PIP_CONFIG_FILE"], os.devnull)
+
+
+class TestBundle(EnsurepipMixin, unittest.TestCase):
+    def test_wheel_hash_mismatch(self):
+        wheel_contents_stub = memoryview(randbytes(randint(256, 512)))
+        sha256_hash = sha256(wheel_contents_stub).hexdigest()
+        remote_dist_stub = ensurepip._structs._RemoteDistributionPackage(
+            'pypi-pkg', '3.2.1',
+            sha256_hash,
+        )
+
+        class MockedHTTPSOpener:
+            def open(self, url, data, timeout):
+                assert 'pypi-pkg' in url
+                assert data is None  # HTTP GET
+                # Intentionally corrupt the wheel:
+                return BytesIO(wheel_contents_stub.tobytes()[:-1])
+
+        with (
+            unittest.mock.patch.object(
+                urllib.request,
+                '_opener',
+                None,
+            ),
+            self.assertRaisesRegex(
+                ValueError,
+                r"^The payload's hash is invalid for ",
+            )
+        ):
+            urllib.request.install_opener(MockedHTTPSOpener())
+            remote_dist_stub.download_verified_wheel_contents()
+
+    def test_bundle_cached(self):
+        wheel_contents_stub = memoryview(randbytes(randint(256, 512)))
+        sha256_hash = sha256(wheel_contents_stub).hexdigest()
+        remote_dist_stub = ensurepip._structs._RemoteDistributionPackage(
+            'pip', '1.2.3',
+            sha256_hash,
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            (
+                tmp_path / remote_dist_stub.wheel_file_name
+            ).write_bytes(wheel_contents_stub)
+            test_cases = (
+                ('no CLI args', (), []),
+                (
+                    'verbose',
+                    ('-v',),
+                    [
+                        unittest.mock.call(
+                            'A valid `pip-1.2.3-py3-none-any.whl` '
+                            'is already present in cache. Skipping download.',
+                        ),
+                        unittest.mock.call('\n')
+                    ]
+                ),
+            )
+            for case_name, case_cli_args, expected_stderr_writes in test_cases:
+                with self.subTest(case_name):
+                    with (
+                        unittest.mock.patch.object(
+                            ensurepip._bundler, 'BUNDLED_WHEELS_PATH',
+                            tmp_path,
+                        ),
+                        unittest.mock.patch.object(
+                            ensurepip._bundler,
+                            'REMOTE_DIST_PKGS',
+                            [remote_dist_stub],
+                        ),
+                        unittest.mock.patch.object(
+                            sys, 'argv', [sys.executable, *case_cli_args],
+                        ),
+                        unittest.mock.patch.object(
+                            sys.stderr, 'write',
+                        ) as stderr_write_mock,
+                    ):
+                        run_module('ensurepip.bundle', run_name='__main__')
+                    self.assertEqual(
+                        stderr_write_mock.call_args_list,
+                        expected_stderr_writes,
+                    )
+
+    def test_bundle_download(self):
+        wheel_contents_stub = memoryview(randbytes(randint(256, 512)))
+        sha256_hash = sha256(wheel_contents_stub).hexdigest()
+        remote_dist_stub = ensurepip._structs._RemoteDistributionPackage(
+            'pip', '1.2.3',
+            sha256_hash,
+        )
+
+        class MockedHTTPSOpener:
+            def open(self, url, data, timeout):
+                assert 'pip' in url
+                assert data is None  # HTTP GET
+                return BytesIO(wheel_contents_stub)
+
+        test_cases = (
+            ('no CLI args', (), []),
+            (
+                'verbose',
+                ('-v',),
+                [
+                    unittest.mock.call(
+                        'Downloading `pip-1.2.3-py3-none-any.whl`...'
+                    ),
+                    unittest.mock.call('\n'),
+                    unittest.mock.call(
+                        'Saving `pip-1.2.3-py3-none-any.whl` to disk...',
+                    ),
+                    unittest.mock.call('\n')
+                ]
+            ),
+        )
+        for case_name, case_cli_args, expected_stderr_writes in test_cases:
+            with self.subTest(case_name):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    tmp_path = Path(tmpdir)
+                    with (
+                        unittest.mock.patch.object(
+                            ensurepip._bundler, 'BUNDLED_WHEELS_PATH',
+                            Path(tmpdir),
+                        ),
+                        unittest.mock.patch.object(
+                            ensurepip._bundler,
+                            'REMOTE_DIST_PKGS',
+                            [remote_dist_stub],
+                        ),
+                        unittest.mock.patch.object(
+                            sys, 'argv', [sys.executable, *case_cli_args],
+                        ),
+                        unittest.mock.patch.object(
+                            sys.stderr, 'write',
+                        ) as stderr_write_mock,
+                        unittest.mock.patch.object(
+                            urllib.request,
+                            '_opener',
+                            None,
+                        ),
+                    ):
+                        urllib.request.install_opener(MockedHTTPSOpener())
+                        run_module('ensurepip.bundle', run_name='__main__')
+                    self.assertEqual(
+                        (
+                            tmp_path / remote_dist_stub.wheel_file_name
+                        ).read_bytes(),
+                        wheel_contents_stub,
+                    )
+                self.assertEqual(
+                    stderr_write_mock.call_args_list,
+                    expected_stderr_writes,
+                )
+
 
 @contextlib.contextmanager
 def fake_pip(version=ensurepip.version()):

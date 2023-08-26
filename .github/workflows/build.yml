@@ -231,7 +231,7 @@ jobs:
           --prefix=/opt/python-dev \
           --with-openssl="$(brew --prefix openssl@3.0)"
     - name: Build CPython
-      run: make -j4
+      run: make all-with-ensurepip-dists-bundled -j4
     - name: Display build info
       run: make pythoninfo
     - name: Tests
@@ -300,6 +300,11 @@ jobs:
     - name: Remount sources writable for tests
       # some tests write to srcdir, lack of pyc files slows down testing
       run: sudo mount $CPYTHON_RO_SRCDIR -oremount,rw
+    - name: Bundle ensurepip dists
+      env:
+        SSL_CERT_DIR: /etc/ssl/certs
+      run: make bundle-ensurepip-dists
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
     - name: Tests
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
@@ -352,7 +357,9 @@ jobs:
     - name: Configure CPython
       run: ./configure --config-cache --with-pydebug --with-openssl=$OPENSSL_DIR
     - name: Build CPython
-      run: make -j4
+      env:
+        SSL_CERT_DIR: /etc/ssl/certs
+      run: make all-with-ensurepip-dists-bundled -j4
     - name: Display build info
       run: make pythoninfo
     - name: SSL tests
@@ -421,6 +428,11 @@ jobs:
     - name: Remount sources writable for tests
       # some tests write to srcdir, lack of pyc files slows down testing
       run: sudo mount $CPYTHON_RO_SRCDIR -oremount,rw
+    - name: Bundle ensurepip dists
+      env:
+        SSL_CERT_DIR: /etc/ssl/certs
+      run: make bundle-ensurepip-dists
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
     - name: Setup directory envs for out-of-tree builds
       run: |
         echo "CPYTHON_BUILDDIR=$(realpath -m ${GITHUB_WORKSPACE}/../cpython-builddir)" >> $GITHUB_ENV
