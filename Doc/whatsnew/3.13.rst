@@ -833,6 +833,10 @@ Build Changes
   :ref:`debug build <debug-build>`.
   (Contributed by Victor Stinner in :gh:`108634`.)
 
+* The ``_stat`` C extension is now built with the :ref:`limited C API
+  <limited-c-api>`.
+  (Contributed by Victor Stinner in :gh:`85283`.)
+
 
 C API Changes
 =============

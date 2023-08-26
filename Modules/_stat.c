@@ -8,8 +8,10 @@
  * as int 0.
  *
  * NOTE: POSIX only defines the values of the S_I* permission bits.
- *
  */
+
+// Need limited C API version 3.13 for PyModule_Add() on Windows
+#define Py_LIMITED_API 0x030d0000
 
 #include "Python.h"
 
