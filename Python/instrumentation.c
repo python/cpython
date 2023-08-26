@@ -732,8 +732,8 @@ remove_tools(PyCodeObject * code, int offset, int event, int tools)
         }
         assert(co_code != ENTER_EXECUTOR);
         assert(opcode_has_event(co_code));
-        _PyCoMonitoringData *monitoring = code->_co_monitoring;
     #endif
+    _PyCoMonitoringData *monitoring = code->_co_monitoring;
     if (monitoring && monitoring->tools) {
         monitoring->tools[offset] &= ~tools;
         if (monitoring->tools[offset] == 0) {
