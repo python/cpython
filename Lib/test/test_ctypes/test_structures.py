@@ -903,6 +903,8 @@ class PointerMemberTestCase(unittest.TestCase):
 
         s.array[0] = 42
 
+        self.assertEqual(s.array.contents.value, 42)
+
         items = [s.array[i] for i in range(3)]
         self.assertEqual(items, [42, 2, 3])
 
