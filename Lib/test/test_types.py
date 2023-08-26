@@ -1741,13 +1741,15 @@ class SimpleNamespaceTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             types.SimpleNamespace(1, 2, 3)
         with self.assertRaises(TypeError):
-            types.SimpleNamespace(**{1: 2})
+            types.SimpleNamespace(**{1: 2})  # non-string key
         with self.assertRaises(TypeError):
             types.SimpleNamespace({1: 2})
         with self.assertRaises(TypeError):
             types.SimpleNamespace([[1, 2]])
         with self.assertRaises(TypeError):
             types.SimpleNamespace(UserDict({1: 2}))
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace([[[], 2]])  # non-hashable key
 
         self.assertEqual(len(ns1.__dict__), 0)
         self.assertEqual(vars(ns1), {})
