@@ -144,12 +144,11 @@ class CAPITest(unittest.TestCase):
         self.assertIs(getitemstring(dct2, b'b'), KeyError)
 
         with support.catch_unraisable_exception() as cm:
-            self.assertIs(getitemstring({}, b'\xff'), KeyError)
+            self.assertIs(getitemstring({}, INVALID_UTF8), KeyError)
             self.assertEqual(cm.unraisable.exc_type, UnicodeDecodeError)
             self.assertRegex(str(cm.unraisable.exc_value),
                              "'utf-8' codec can't decode")
 
-        self.assertIs(getitemstring({}, INVALID_UTF8), KeyError)
         self.assertIs(getitemstring(42, b'a'), KeyError)
         self.assertIs(getitemstring([], b'a'), KeyError)
         # CRASHES getitemstring({}, NULL)
