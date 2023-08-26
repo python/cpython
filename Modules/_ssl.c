@@ -3889,8 +3889,8 @@ _ssl__SSLContext_load_cert_chain_impl(PySSLContext *self, PyObject *certfile,
             /* the password callback has already set the error information */
         }
         else if (errno != 0) {
-            ERR_clear_error();
             PyErr_SetFromErrno(PyExc_OSError);
+            ERR_clear_error();
         }
         else {
             _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
@@ -3910,8 +3910,8 @@ _ssl__SSLContext_load_cert_chain_impl(PySSLContext *self, PyObject *certfile,
             /* the password callback has already set the error information */
         }
         else if (errno != 0) {
-            ERR_clear_error();
             PyErr_SetFromErrno(PyExc_OSError);
+            ERR_clear_error();
         }
         else {
             _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
@@ -4140,8 +4140,8 @@ _ssl__SSLContext_load_verify_locations_impl(PySSLContext *self,
         PySSL_END_ALLOW_THREADS
         if (r != 1) {
             if (errno != 0) {
-                ERR_clear_error();
                 PyErr_SetFromErrno(PyExc_OSError);
+                ERR_clear_error();
             }
             else {
                 _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
@@ -4188,8 +4188,8 @@ _ssl__SSLContext_load_dh_params(PySSLContext *self, PyObject *filepath)
     PySSL_END_ALLOW_THREADS
     if (dh == NULL) {
         if (errno != 0) {
-            ERR_clear_error();
             PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, filepath);
+            ERR_clear_error();
         }
         else {
             _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
