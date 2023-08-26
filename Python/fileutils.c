@@ -1790,6 +1790,8 @@ _Py_fopen_obj(PyObject *path, const char *mode)
         Py_END_ALLOW_THREADS
     } while (f == NULL
              && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    int saved_errno = errno;
+    PyMem_Free(wpath);
 #else
     PyObject *bytes;
     const char *path_bytes;
@@ -1811,17 +1813,18 @@ _Py_fopen_obj(PyObject *path, const char *mode)
         Py_END_ALLOW_THREADS
     } while (f == NULL
              && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-#endif
-    if (f == NULL && !async_err) {
-        PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path);
-    }
-#ifdef MS_WINDOWS
-    PyMem_Free(wpath);
-#else
+    int saved_errno = errno;
     Py_DECREF(bytes);
 #endif
+    if (async_err)
+        return NULL;
 
-    if (f != NULL && set_inheritable(fileno(f), 0, 1, NULL) < 0) {
+    if (f == NULL) {
+        errno = saved_errno;
+        PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path);
+    }
+
+    if (set_inheritable(fileno(f), 0, 1, NULL) < 0) {
         fclose(f);
         return NULL;
     }

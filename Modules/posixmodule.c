@@ -4143,7 +4143,7 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
         if (error == ERROR_FILE_NOT_FOUND)
             goto exit;
         path_error(path);
-        Py_SETREF(list, NULL);
+        Py_CLEAR(list);
         goto exit;
     }
     do {
@@ -4156,12 +4156,12 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
                 Py_SETREF(v, PyUnicode_EncodeFSDefault(v));
             }
             if (v == NULL) {
-                Py_SETREF(list, NULL);
+                Py_CLEAR(list);
                 break;
             }
             if (PyList_Append(list, v) != 0) {
                 Py_DECREF(v);
-                Py_SETREF(list, NULL);
+                Py_CLEAR(list);
                 break;
             }
             Py_DECREF(v);
@@ -4173,7 +4173,7 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
            it got to the end of the directory. */
         if (!result && GetLastError() != ERROR_NO_MORE_FILES) {
             path_error(path);
-            Py_SETREF(list, NULL);
+            Py_CLEAR(list);
             goto exit;
         }
     } while (result == TRUE);
@@ -4183,7 +4183,7 @@ exit:
         if (FindClose(hFindFile) == FALSE) {
             if (list != NULL) {
                 path_error(path);
-                Py_SETREF(list, NULL);
+                Py_CLEAR(list);
             }
         }
     }
@@ -4269,7 +4269,7 @@ _posix_listdir(path_t *path, PyObject *list)
                 break;
             } else {
                 path_error(path);
-                Py_SETREF(list, NULL);
+                Py_CLEAR(list);
                 goto exit;
             }
         }
@@ -7320,13 +7320,14 @@ os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv)
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
 
+    int saved_errno = errno;
+    free_string_array(argvlist, argc);
 
     if (spawnval == -1) {
+        errno = saved_errno;
         posix_error();
-        free_string_array(argvlist, argc);
         return NULL;
     }
-    free_string_array(argvlist, argc);
     return Py_BuildValue(_Py_PARSE_INTPTR, spawnval);
 }
 
@@ -10634,12 +10635,15 @@ os_readv_impl(PyObject *module, int fd, PyObject *buffers)
         Py_END_ALLOW_THREADS
     } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 
-    if (n < 0) {
-        if (!async_err)
-            posix_error();
-        n = -1;
-    }
+    int saved_errno = errno;
     iov_cleanup(iov, buf, cnt);
+    if (n < 0) {
+        if (!async_err) {
+            errno = saved_errno;
+            posix_error();
+        }
+        return -1;
+    }
 
     return n;
 }
@@ -10787,13 +10791,15 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
 
 #endif
 
+    int saved_errno = errno;
+    iov_cleanup(iov, buf, cnt);
     if (n < 0) {
         if (!async_err) {
+            errno = saved_errno;
             posix_error();
         }
-        n = -1;
+        return -1;
     }
-    iov_cleanup(iov, buf, cnt);
 
     return n;
 }
@@ -10958,8 +10964,14 @@ os_sendfile_impl(PyObject *module, int out_fd, int in_fd, PyObject *offobj,
     } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     _Py_END_SUPPRESS_IPH
 
+    int saved_errno = errno;
+    if (sf.headers != NULL)
+        iov_cleanup(sf.headers, hbuf, sf.hdr_cnt);
+    if (sf.trailers != NULL)
+        iov_cleanup(sf.trailers, tbuf, sf.trl_cnt);
+
     if (ret < 0) {
-        if ((errno == EAGAIN) || (errno == EBUSY)) {
+        if ((saved_errno == EAGAIN) || (saved_errno == EBUSY)) {
             if (sbytes != 0) {
                 // some data has been sent
                 goto done;
@@ -10968,22 +10980,14 @@ os_sendfile_impl(PyObject *module, int out_fd, int in_fd, PyObject *offobj,
             // to retry on EAGAIN or EBUSY
         }
         if (!async_err) {
+            errno = saved_errno;
             posix_error();
         }
-        if (sf.headers != NULL)
-            iov_cleanup(sf.headers, hbuf, sf.hdr_cnt);
-        if (sf.trailers != NULL)
-            iov_cleanup(sf.trailers, tbuf, sf.trl_cnt);
         return NULL;
     }
     goto done;
 
 done:
-    if (sf.headers != NULL)
-        iov_cleanup(sf.headers, hbuf, sf.hdr_cnt);
-    if (sf.trailers != NULL)
-        iov_cleanup(sf.trailers, tbuf, sf.trl_cnt);
-
     #if !defined(HAVE_LARGEFILE_SUPPORT)
         return Py_BuildValue("l", sbytes);
     #else
@@ -14623,20 +14627,18 @@ DirEntry_fetch_stat(PyObject *module, DirEntry *self, int follow_symlinks)
         Py_END_ALLOW_THREADS
     }
 
-    if (result != 0) {
-        path_object_error(self->path);
-#if defined(MS_WINDOWS)
-        PyMem_Free(path);
-#else
-        Py_DECREF(ub);
-#endif
-        return NULL;
-    }
+    int saved_errno = errno;
 #if defined(MS_WINDOWS)
     PyMem_Free(path);
 #else
     Py_DECREF(ub);
 #endif
+
+    if (result != 0) {
+        errno = saved_errno;
+        path_object_error(self->path);
+        return NULL;
+    }
 
     return _pystat_fromstructstat(module, &st);
 }
@@ -14829,12 +14831,13 @@ os_DirEntry_inode_impl(DirEntry *self)
         Py_DECREF(unicode);
         result = LSTAT(path, &stat);
 
-        if (result != 0) {
-            path_object_error(self->path);
-            PyMem_Free(path);
-            return NULL;
-        }
+        int saved_errno = errno;
         PyMem_Free(path);
+
+        if (result != 0) {
+            errno = saved_errno;
+            return path_object_error(self->path);
+        }
 
         self->win32_file_index = stat.st_ino;
         self->got_file_index = 1;
