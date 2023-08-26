@@ -4248,9 +4248,9 @@
             #line 2993 "Python/bytecodes.c"
             assert(kwnames == NULL);
             assert(oparg == 1);
-            assert(method != NULL);
             PyInterpreterState *interp = _PyInterpreterState_GET();
             DEOPT_IF(method != interp->callable_cache.list_append, CALL);
+            assert(self != NULL);
             DEOPT_IF(!PyList_Check(self), CALL);
             STAT_INC(CALL, hit);
             if (_PyList_AppendTakeRef((PyListObject *)self, args[0]) < 0) {
