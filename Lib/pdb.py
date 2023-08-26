@@ -2022,7 +2022,7 @@ def post_mortem(t=None):
     p.interaction(None, t)
 
 def pm():
-    """Enter post-mortem debugging of the traceback found in sys.last_traceback."""
+    """Enter post-mortem debugging of the traceback found in sys.last_exc."""
     post_mortem(sys.last_exc)
 
 

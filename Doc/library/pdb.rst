@@ -641,12 +641,6 @@ can be overridden by the local file.
 
 .. pdbcommand:: exceptions [excnumber]
 
-   .. versionadded:: 3.13
-
-      ``exceptions [excnumber]`` command and passing exceptions by default to
-      :func:`post_mortem`.
-
-
    List or jump between chained exceptions.
 
    When using ``pdb.pm()``  or ``Pdb.post_mortem(...)`` with a chained exception
@@ -692,6 +686,7 @@ can be overridden by the local file.
     > example.py(10)middle()
     -> return inner(0)
 
+   .. versionadded:: 3.13
 
 .. rubric:: Footnotes
 
