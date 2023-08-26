@@ -12,6 +12,7 @@
 #ifdef __VXWORKS__
 #  include "pycore_bitutils.h"    // _Py_popcount32()
 #endif
+#include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_ReInitThreads()
 #include "pycore_fileutils.h"     // _Py_closerange()

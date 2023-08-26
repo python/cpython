@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"       // _Py_ID()
 #endif
 
+#include "pycore_abstract.h"       // _Py_convert_optional_to_ssize_t()
 
 PyDoc_STRVAR(_io__TextIOBase_detach__doc__,
 "detach($self, /)\n"
@@ -975,4 +976,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=29b945b24287dd0c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c3a8eb2591be1bf7 input=a9049054013a1b77]*/

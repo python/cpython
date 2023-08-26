@@ -53,13 +53,3 @@ PyAPI_FUNC(Py_ssize_t) PyObject_LengthHint(PyObject *o, Py_ssize_t);
    need to be corrected for a negative index. */
 #define PySequence_ITEM(o, i)\
     ( Py_TYPE(o)->tp_as_sequence->sq_item((o), (i)) )
-
-/* === Mapping protocol ================================================= */
-
-// Convert Python int to Py_ssize_t. Do nothing if the argument is None.
-// Cannot be moved to the internal C API: used by Argument Clinic.
-PyAPI_FUNC(int) _Py_convert_optional_to_ssize_t(PyObject *, void *);
-
-// Same as PyNumber_Index but can return an instance of a subclass of int.
-// Cannot be moved to the internal C API: used by Argument Clinic.
-PyAPI_FUNC(PyObject *) _PyNumber_Index(PyObject *o);

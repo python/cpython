@@ -3795,8 +3795,11 @@ class Py_ssize_t_converter(CConverter):
         if accept == {int}:
             self.format_unit = 'n'
             self.default_type = int
+            self.add_include('pycore_abstract.h', '_PyNumber_Index()')
         elif accept == {int, NoneType}:
             self.converter = '_Py_convert_optional_to_ssize_t'
+            self.add_include('pycore_abstract.h',
+                             '_Py_convert_optional_to_ssize_t()')
         else:
             fail(f"Py_ssize_t_converter: illegal 'accept' argument {accept!r}")
 
