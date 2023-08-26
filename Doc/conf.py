@@ -68,6 +68,9 @@ highlight_language = 'python3'
 # Minimum version of sphinx required
 needs_sphinx = '3.2'
 
+# Hide versionadded and versionchanged in the output older than this version
+min_version_show_changes = '3.6'
+
 # Ignore any .rst files in the includes/ directory;
 # they're embedded in pages but not rendered individually.
 # Ignore any .rst files in the venv/ directory.
