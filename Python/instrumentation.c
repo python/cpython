@@ -718,20 +718,20 @@ remove_tools(PyCodeObject * code, int offset, int event, int tools)
     assert(event != PY_MONITORING_EVENT_INSTRUCTION);
     assert(PY_MONITORING_IS_INSTRUMENTED_EVENT(event));
     #ifndef NDEBUG
-        _Py_CODEUNIT co_instr = _PyCode_CODE(code)[offset];
-        uint8_t co_code = co_instr.op.code;
-        uint8_t co_arg = co_instr.op.arg;
-        if (co_code == ENTER_EXECUTOR) {
-            _PyExecutorObject *exec = code->co_executors->executors[co_arg];
-            assert(exec->vm_data.opcode != ENTER_EXECUTOR);
-            co_code = _PyOpcode_Deopt[exec->vm_data.opcode];
-            co_arg = exec->vm_data.oparg;
-        }
-        else {
-            co_code = _Py_GetBaseOpcode(code, offset);
-        }
-        assert(co_code != ENTER_EXECUTOR);
-        assert(opcode_has_event(co_code));
+    _Py_CODEUNIT co_instr = _PyCode_CODE(code)[offset];
+    uint8_t opcode = co_instr.op.code;
+    uint8_t oparg = co_instr.op.arg;
+    if (opcode == ENTER_EXECUTOR) {
+        _PyExecutorObject *exec = code->co_executors->executors[oparg];
+        assert(exec->vm_data.opcode != ENTER_EXECUTOR);
+        opcode = _PyOpcode_Deopt[exec->vm_data.opcode];
+        opcode = exec->vm_data.oparg;
+    }
+    else {
+        opcode = _Py_GetBaseOpcode(code, offset);
+    }
+    assert(opcode != ENTER_EXECUTOR);
+    assert(opcode_has_event(opcode));
     #endif
     _PyCoMonitoringData *monitoring = code->_co_monitoring;
     if (monitoring && monitoring->tools) {
