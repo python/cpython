@@ -1157,7 +1157,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.message(
                 "Did not find chained exceptions. To move between"
                 " exceptions, pdb/post_mortem must be given an exception"
-                " object instead of a traceback."
+                " object rather than a traceback."
             )
             return
         if not arg:
@@ -2004,9 +2004,8 @@ def post_mortem(t=None):
     currently being handled (an exception must be being handled if the
     default is to be used).
 
-    If `t` is an Exception and is a chained exception (i.e it has a __context__,
-    or a __cause__), pdb will be able to list and move to other exceptions in
-    the chain using the `exceptions` command
+    If `t` is an exception object, the `exceptions` command makes it possible to
+    list and inspect its chained exceptions (if any).
     """
     # handling the default
     if t is None:

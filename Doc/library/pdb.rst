@@ -644,7 +644,7 @@ can be overridden by the local file.
    List or jump between chained exceptions.
 
    When using ``pdb.pm()``  or ``Pdb.post_mortem(...)`` with a chained exception
-   instead of a traceback, it will now allow the user to move between the
+   instead of a traceback, it allows the user to move between the
    chained exceptions using ``exceptions`` command to list exceptions, and
    ``exception <number>`` to switch to that exception.
 

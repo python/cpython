@@ -1,3 +1,1 @@
-Add the new ``exceptions`` command the Pdb debugger to move between chained exceptions when using post mortem debugging.
-
-
+Add the new ``exceptions`` command to the Pdb debugger. It makes it possible to move between chained exceptions when using post mortem debugging.
