@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"       // _Py_ID()
 #endif
 
+#include "pycore_abstract.h"       // _Py_convert_optional_to_ssize_t()
 
 PyDoc_STRVAR(_io_StringIO_getvalue__doc__,
 "getvalue($self, /)\n"
@@ -367,4 +368,4 @@ _io_StringIO_seekable(stringio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_StringIO_seekable_impl(self);
 }
-/*[clinic end generated code: output=6f55dc1454aeb507 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=09d4056cc8c4aae4 input=a9049054013a1b77]*/
