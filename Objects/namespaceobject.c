@@ -49,7 +49,6 @@ namespace_init(_PyNamespaceObject *ns, PyObject *args, PyObject *kwds)
     }
     if (arg != NULL) {
         PyObject *dict;
-        int ret = 0;
         if (PyDict_CheckExact(arg)) {
             dict = Py_NewRef(arg);
         }
@@ -62,12 +61,10 @@ namespace_init(_PyNamespaceObject *ns, PyObject *args, PyObject *kwds)
         if (!PyArg_ValidateKeywordArguments(dict) ||
             PyDict_Update(ns->ns_dict, dict) < 0)
         {
-            ret = -1;
-        }
-        Py_DECREF(dict);
-        if (ret < 0) {
+            Py_DECREF(dict);
             return -1;
         }
+        Py_DECREF(dict);
     }
     if (kwds == NULL) {
         return 0;
