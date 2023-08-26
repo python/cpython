@@ -1822,6 +1822,7 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     if (f == NULL) {
         errno = saved_errno;
         PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path);
+        return NULL;
     }
 
     if (set_inheritable(fileno(f), 0, 1, NULL) < 0) {
