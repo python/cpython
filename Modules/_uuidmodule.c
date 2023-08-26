@@ -3,6 +3,8 @@
  * DCE compatible Universally Unique Identifier library.
  */
 
+#define Py_LIMITED_API 0x030d0000
+
 #include "Python.h"
 #if defined(HAVE_UUID_H)
   // AIX, FreeBSD, libuuid with pkgconf
