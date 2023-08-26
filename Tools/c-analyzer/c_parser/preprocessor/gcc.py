@@ -7,9 +7,18 @@ from . import common as _common
 # macro. Usually it's defined by the C file which includes it.
 # Other header files have a similar issue.
 NEED_BUILD_CORE = {
+    # Header ".h" files
     'cjkcodecs.h',
     'multibytecodec.h',
     'socketmodule.h',
+
+    # Argument Clinic ".c.h" files
+    '_testclinic.c.h',
+    '_testclinic_depr.c.h',
+    'overlapped.c.h',
+    'posixmodule.c.h',
+    'selectmodule.c.h',
+    'sha3module.c.h',
 }
 
 TOOL = 'gcc'

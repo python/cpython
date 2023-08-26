@@ -186,6 +186,13 @@ extern char* _PyLong_FormatBytesWriter(
     int base,
     int alternate);
 
+// Argument converters used by Argument Clinic
+PyAPI_FUNC(int) _PyLong_UnsignedShort_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyLong_UnsignedInt_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyLong_UnsignedLong_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyLong_UnsignedLongLong_Converter(PyObject *, void *);
+
+
 /* Long value tag bits:
  * 0-1: Sign bits value = (1-sign), ie. negative=2, positive=0, zero=1.
  * 2: Reserved for immortality bit
