@@ -183,6 +183,16 @@ class BaseTest:
         self.addCleanup(os_helper.rmtree, d)
         return d
 
+    def mktemp(self, dir=None):
+        """
+        return a tempfile, in a tempdir.
+
+        The tempfile does not need cleanup, as the dir itself will be.
+        """
+        if not dir:
+            dir = self.mkdtemp()
+        return tempfile.NamedTemporaryFile(dir=dir).name
+
 
 class TestRmTree(BaseTest, unittest.TestCase):
 
@@ -321,7 +331,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
 
     def test_rmtree_errors_onerror(self):
         # filename is guaranteed not to exist
-        filename = tempfile.mktemp(dir=self.mkdtemp())
+        filename = self.mktemp()
         self.assertRaises(FileNotFoundError, shutil.rmtree, filename)
         # test that ignore_errors option is honored
         shutil.rmtree(filename, ignore_errors=True)
@@ -354,7 +364,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
 
     def test_rmtree_errors_onexc(self):
         # filename is guaranteed not to exist
-        filename = tempfile.mktemp(dir=self.mkdtemp())
+        filename = self.mktemp()
         self.assertRaises(FileNotFoundError, shutil.rmtree, filename)
         # test that ignore_errors option is honored
         shutil.rmtree(filename, ignore_errors=True)
@@ -876,7 +886,7 @@ class TestCopyTree(BaseTest, unittest.TestCase):
 
         flag = []
         src = self.mkdtemp()
-        dst = tempfile.mktemp(dir=self.mkdtemp())
+        dst = self.mktemp()
         with open(os.path.join(src, 'foo'), 'w', encoding='utf-8') as f:
             f.close()
         shutil.copytree(src, dst, copy_function=custom_cpfun)
@@ -1992,7 +2002,7 @@ class TestMisc(BaseTest, unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'chown'), 'requires os.chown')
     def test_chown(self):
         dirname = self.mkdtemp()
-        filename = tempfile.mktemp(dir=dirname)
+        filename = self.mktemp(dirname)
         write_file(filename, 'testing chown function')
 
         with self.assertRaises(ValueError):
@@ -2440,7 +2450,7 @@ class TestMove(BaseTest, unittest.TestCase):
 
     def test_move_dir(self):
         # Move a dir to another location on the same filesystem.
-        dst_dir = tempfile.mktemp(dir=self.mkdtemp())
+        dst_dir = self.mktemp()
         try:
             self._check_move_dir(self.src_dir, dst_dir, dst_dir)
         finally:
@@ -2793,7 +2803,7 @@ class TestCopyFileObj(unittest.TestCase):
         self.assert_files_eq(fname, TESTFN2)
 
 
-class _ZeroCopyFileTest(object):
+class _ZeroCopyFileTest(BaseTest):
     """Tests common to all zero-copy APIs."""
     FILESIZE = (10 * 1024 * 1024)  # 10 MiB
     FILEDATA = b""
@@ -2849,7 +2859,7 @@ class _ZeroCopyFileTest(object):
         self.assertEqual(read_file(TESTFN, binary=True), self.FILEDATA)
 
     def test_non_existent_src(self):
-        name = tempfile.mktemp(dir=os.getcwd())
+        name = self.mktemp(dir=os.getcwd())
         with self.assertRaises(FileNotFoundError) as cm:
             shutil.copyfile(name, "new")
         self.assertEqual(cm.exception.filename, name)
