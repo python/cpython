@@ -1,5 +1,9 @@
 /* fcntl module */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 
 #ifdef HAVE_SYS_FILE_H
