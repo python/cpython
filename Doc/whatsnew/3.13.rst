@@ -189,6 +189,14 @@ typing
   check whether a class is a :class:`typing.Protocol`. (Contributed by Jelle Zijlstra in
   :gh:`104873`.)
 
+
+pdb
+---
+
+* Add ability to move between chained exceptions during post mortem debugging in :func:`pm()` using
+  the new ``exceptions [exc_number]`` command for Pdb. (Contributed by Matthias
+  Bussonnier in :gh:`106676`.)
+
 Optimizations
 =============
 
