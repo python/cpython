@@ -69,6 +69,7 @@ class _ThreadWakeup:
     def __init__(self):
         self._closed = False
         self._reader, self._writer = mp.Pipe(duplex=False)
+        os.set_blocking(self._writer.fileno(), False)
 
     def close(self):
         if not self._closed:
@@ -78,7 +79,17 @@ class _ThreadWakeup:
 
     def wakeup(self):
         if not self._closed:
-            self._writer.send_bytes(b"")
+            try:
+                self._writer.send_bytes(b"")
+            except BlockingIOError:
+                # Assuming BlockingIOError is only raised when there
+                # is data in the pipe then we can skip the wake-up
+                # here because we are holding the shutdown_lock and
+                # the clear() call is also protected by this
+                # lock. This means the reader will wake up again (or
+                # is already awake) due to the existing data in the
+                # pipe.
+                pass
 
     def clear(self):
         if not self._closed:
