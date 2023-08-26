@@ -51,6 +51,34 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(my_obj_func__doc__,
+"my_obj_func($module, /, arg1, arg2)\n"
+"--\n"
+"\n");
+
+#define MY_OBJ_FUNC_METHODDEF    \
+    {"my_obj_func", _PyCFunction_CAST(my_obj_func), METH_VARARGS|METH_KEYWORDS, my_obj_func__doc__},
+
+static PyObject *
+my_obj_func_impl(PyObject *module, PyObject *arg1, PyObject *arg2);
+
+static PyObject *
+my_obj_func(PyObject *module, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    char* _keywords[] = {"arg1", "arg2", NULL};
+    PyObject *arg1;
+    PyObject *arg2;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO:my_obj_func", _keywords,
+        &arg1, &arg2))
+        goto exit;
+    return_value = my_obj_func_impl(module, arg1, arg2);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(my_int_sum__doc__,
 "my_int_sum($module, x, y, /)\n"
 "--\n"
@@ -82,4 +110,4 @@ my_int_sum(PyObject *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f9f7209255bb969e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7e5151a2029efc21 input=a9049054013a1b77]*/

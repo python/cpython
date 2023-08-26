@@ -3534,6 +3534,7 @@ class LimitedCAPIFunctionalTest(unittest.TestCase):
                     for name in dir(_testclinic_limited) if name.startswith('test_'))
 
     def test_my_int_func(self):
+        # METH_O
         with self.assertRaises(TypeError):
             _testclinic_limited.my_int_func()
         self.assertEqual(_testclinic_limited.my_int_func(3), 3)
@@ -3543,6 +3544,7 @@ class LimitedCAPIFunctionalTest(unittest.TestCase):
             _testclinic_limited.my_int_func("xyz")
 
     def test_my_int_sum(self):
+        # PyArg_ParseTuple() with "ii:my_int_sum" format
         with self.assertRaises(TypeError):
             _testclinic_limited.my_int_sum()
         with self.assertRaises(TypeError):
@@ -3552,6 +3554,18 @@ class LimitedCAPIFunctionalTest(unittest.TestCase):
             _testclinic_limited.my_int_sum(1.0, 2)
         with self.assertRaises(TypeError):
             _testclinic_limited.my_int_sum(1, "str")
+
+    def test_my_obj_func(self):
+        # PyArg_ParseTupleAndKeywords() with "OO:my_obj_func" format
+        arg1 = object()
+        arg2 = object()
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_obj_func()
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_obj_func(arg1)
+        self.assertIs(_testclinic_limited.my_obj_func(arg1, arg2), arg1)
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_obj_func(arg1, arg2, "arg3")
 
 
 

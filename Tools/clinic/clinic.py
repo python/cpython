@@ -1250,18 +1250,32 @@ class CLanguage(Language):
             parser_prototype = self.PARSER_PROTOTYPE_VARARGS
             parser_definition = parser_body(parser_prototype, '    {option_group_parsing}')
 
-        elif not requires_defining_class and pos_only == len(parameters) - pseudo_args and clinic.limited_capi:
-            # positional-only for the limited C API
-            flags = "METH_VARARGS"
+        elif clinic.limited_capi:
+            if not requires_defining_class and pos_only == len(parameters) - pseudo_args:
+                # positional-only for the limited C API:
+                # PyArg_ParseTuple()
+                flags = "METH_VARARGS"
 
-            parser_prototype = self.PARSER_PROTOTYPE_VARARGS
-            parser_code = [normalize_snippet("""
-                if (!PyArg_ParseTuple(args, "{format_units}:{name}",
-                    {parse_arguments}))
-                    goto exit;
-            """, indent=4)]
-            argname_fmt = 'args[%d]'
-            declarations = ""
+                parser_prototype = self.PARSER_PROTOTYPE_VARARGS
+                parser_code = [normalize_snippet("""
+                    if (!PyArg_ParseTuple(args, "{format_units}:{name}",
+                        {parse_arguments}))
+                        goto exit;
+                """, indent=4)]
+                declarations = ""
+
+            else:
+                # positional-or-keyword arguments for the limited C API:
+                # PyArg_ParseTupleAndKeywords()
+                flags = "METH_VARARGS|METH_KEYWORDS"
+
+                parser_prototype = self.PARSER_PROTOTYPE_KEYWORD
+                parser_code = [normalize_snippet("""
+                    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "{format_units}:{name}", _keywords,
+                        {parse_arguments}))
+                        goto exit;
+                """, indent=4)]
+                declarations = "char* _keywords[] = {{{keywords_c} NULL}};"
 
             parser_definition = parser_body(parser_prototype, *parser_code,
                                             declarations=declarations)
@@ -1384,20 +1398,7 @@ class CLanguage(Language):
                 )
                 nargs = f"Py_MIN(nargs, {max_pos})" if max_pos else "0"
 
-            if clinic.limited_capi:
-                # positional-or-keyword arguments
-                flags = "METH_VARARGS|METH_KEYWORDS"
-
-                parser_prototype = self.PARSER_PROTOTYPE_KEYWORD
-                parser_code = [normalize_snippet("""
-                    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "{format_units}:{name}", _keywords,
-                        {parse_arguments}))
-                        goto exit;
-                """, indent=4)]
-                argname_fmt = 'args[%d]'
-                declarations = ""
-
-            elif not new_or_init:
+            if not new_or_init:
                 flags = "METH_FASTCALL|METH_KEYWORDS"
                 parser_prototype = self.PARSER_PROTOTYPE_FASTCALL_KEYWORDS
                 argname_fmt = 'args[%d]'
