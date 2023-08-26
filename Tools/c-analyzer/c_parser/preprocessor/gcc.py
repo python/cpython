@@ -12,13 +12,16 @@ NEED_BUILD_CORE = {
     'multibytecodec.h',
     'socketmodule.h',
 
-    # Argument Clinic ".c.h" files
+    # Argument Clinic ".c.h" header files
     '_testclinic.c.h',
     '_testclinic_depr.c.h',
+    '_winapi.c.h',
+    'fcntlmodule.c.h',
     'overlapped.c.h',
     'posixmodule.c.h',
     'selectmodule.c.h',
     'sha3module.c.h',
+    'termios.c.h',
 }
 
 TOOL = 'gcc'

@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"       // _Py_ID()
 #endif
 
+#include "pycore_fileutils.h"      // _PyLong_FileDescriptor_Converter()
 #include "pycore_long.h"           // _PyLong_UnsignedShort_Converter()
 
 PyDoc_STRVAR(select_select__doc__,
@@ -1310,4 +1311,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=a19c29946a931dce input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a215af2157f038c7 input=a9049054013a1b77]*/
