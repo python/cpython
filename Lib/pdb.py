@@ -209,7 +209,6 @@ line_prefix = '\n-> '   # Probably a better default
 
 
 class Pdb(bdb.Bdb, cmd.Cmd):
-    # the max number of chained exceptions + exception groups we accept to navigate.
     _previous_sigint_handler = None
 
     # Limit the maximum depth of chained exceptions, we should be handling cycles,
@@ -483,15 +482,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def interaction(self, frame, tb_or_exc):
         # Restore the previous signal handler at the Pdb prompt.
+        if Pdb._previous_sigint_handler:
+            try:
+                signal.signal(signal.SIGINT, Pdb._previous_sigint_handler)
+            except ValueError:  # ValueError: signal only works in main thread
+                pass
+            else:
+                Pdb._previous_sigint_handler = None
+
         _chained_exceptions, tb = self._get_tb_and_exceptions(tb_or_exc)
         with self._hold_exceptions(_chained_exceptions):
-            if Pdb._previous_sigint_handler:
-                try:
-                    signal.signal(signal.SIGINT, Pdb._previous_sigint_handler)
-                except ValueError:  # ValueError: signal only works in main thread
-                    pass
-                else:
-                    Pdb._previous_sigint_handler = None
             if self.setup(frame, tb):
                 # no interaction desired at this time (happens if .pdbrc contains
                 # a command like "continue")

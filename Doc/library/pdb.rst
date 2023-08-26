@@ -639,6 +639,7 @@ can be overridden by the local file.
 
    Print the return value for the last return of the current function.
 
+.. versionadded:: 3.7
 .. pdbcommand:: exceptions [excnumber]
 
    List or jump between chained exceptions.
