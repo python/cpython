@@ -29,24 +29,6 @@ typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 #define PyTrace_C_RETURN 6
 #define PyTrace_OPCODE 7
 
-// Internal structure: you should not use it directly, but use public functions
-// like PyThreadState_EnterTracing() and PyThreadState_LeaveTracing().
-typedef struct _PyCFrame {
-    /* This struct will be threaded through the C stack
-     * allowing fast access to per-thread state that needs
-     * to be accessed quickly by the interpreter, but can
-     * be modified outside of the interpreter.
-     *
-     * WARNING: This makes data on the C stack accessible from
-     * heap objects. Care must be taken to maintain stack
-     * discipline and make sure that instances of this struct cannot
-     * accessed outside of their lifetime.
-     */
-    /* Pointer to the currently executing frame (it can be NULL) */
-    struct _PyInterpreterFrame *current_frame;
-    struct _PyCFrame *previous;
-} _PyCFrame;
-
 typedef struct _err_stackitem {
     /* This struct represents a single execution context where we might
      * be currently handling an exception.  It is a per-coroutine state
@@ -123,9 +105,8 @@ struct _ts {
     int tracing;
     int what_event; /* The event currently being monitored, if any. */
 
-    /* Pointer to current _PyCFrame in the C stack frame of the currently,
-     * or most recently, executing _PyEval_EvalFrameDefault. */
-    _PyCFrame *cframe;
+    /* Pointer to currently executing frame. */
+    struct _PyInterpreterFrame *current_frame;
 
     Py_tracefunc c_profilefunc;
     Py_tracefunc c_tracefunc;
@@ -211,8 +192,6 @@ struct _ts {
     /* The thread's exception stack entry.  (Always the last entry.) */
     _PyErr_StackItem exc_state;
 
-    /* The bottom-most frame on the stack. */
-    _PyCFrame root_cframe;
 };
 
 /* WASI has limited call stack. Python's recursion limit depends on code

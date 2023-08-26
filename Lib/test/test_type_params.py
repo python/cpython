@@ -148,6 +148,10 @@ class TypeParamsInvalidTest(unittest.TestCase):
         check_syntax_error(self, "def f[T: [(x := 3) for _ in range(2)]](): pass")
         check_syntax_error(self, "type T = [(x := 3) for _ in range(2)]")
 
+    def test_incorrect_mro_explicit_object(self):
+        with self.assertRaisesRegex(TypeError, r"\(MRO\) for bases object, Generic"):
+            class My[X](object): ...
+
 
 class TypeParamsNonlocalTest(unittest.TestCase):
     def test_nonlocal_disallowed_01(self):

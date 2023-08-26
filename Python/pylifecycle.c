@@ -57,7 +57,7 @@
 #  undef BYTE
 #endif
 
-#define PUTS(fd, str) _Py_write_noraise(fd, str, (int)strlen(str))
+#define PUTS(fd, str) (void)_Py_write_noraise(fd, str, (int)strlen(str))
 
 
 #ifdef __cplusplus
@@ -129,7 +129,7 @@ _PyRuntime_Finalize(void)
 }
 
 int
-_Py_IsFinalizing(void)
+Py_IsFinalizing(void)
 {
     return _PyRuntimeState_GetFinalizing(&_PyRuntime) != NULL;
 }
@@ -762,18 +762,30 @@ pycore_init_builtins(PyThreadState *tstate)
     }
     interp->builtins = Py_NewRef(builtins_dict);
 
-    PyObject *isinstance = PyDict_GetItem(builtins_dict, &_Py_ID(isinstance));
-    assert(isinstance);
+    PyObject *isinstance = PyDict_GetItemWithError(builtins_dict, &_Py_ID(isinstance));
+    if (!isinstance) {
+        goto error;
+    }
     interp->callable_cache.isinstance = isinstance;
-    PyObject *len = PyDict_GetItem(builtins_dict, &_Py_ID(len));
-    assert(len);
+
+    PyObject *len = PyDict_GetItemWithError(builtins_dict, &_Py_ID(len));
+    if (!len) {
+        goto error;
+    }
     interp->callable_cache.len = len;
+
     PyObject *list_append = _PyType_Lookup(&PyList_Type, &_Py_ID(append));
-    assert(list_append);
+    if (list_append == NULL) {
+        goto error;
+    }
     interp->callable_cache.list_append = list_append;
+
     PyObject *object__getattribute__ = _PyType_Lookup(&PyBaseObject_Type, &_Py_ID(__getattribute__));
-    assert(object__getattribute__);
+    if (object__getattribute__ == NULL) {
+        goto error;
+    }
     interp->callable_cache.object__getattribute__ = object__getattribute__;
+
     if (_PyBuiltins_AddExceptions(bimod) < 0) {
         return _PyStatus_ERR("failed to add exceptions to builtins");
     }
@@ -1360,17 +1372,17 @@ finalize_modules_delete_special(PyThreadState *tstate, int verbose)
         if (verbose) {
             PySys_WriteStderr("# restore sys.%s\n", name);
         }
-        PyObject *value = _PyDict_GetItemStringWithError(interp->sysdict,
-                                                         orig_name);
+        PyObject *value;
+        if (PyDict_GetItemStringRef(interp->sysdict, orig_name, &value) < 0) {
+            PyErr_WriteUnraisable(NULL);
+        }
         if (value == NULL) {
-            if (_PyErr_Occurred(tstate)) {
-                PyErr_WriteUnraisable(NULL);
-            }
-            value = Py_None;
+            value = Py_NewRef(Py_None);
         }
         if (PyDict_SetItemString(interp->sysdict, name, value) < 0) {
             PyErr_WriteUnraisable(NULL);
         }
+        Py_DECREF(value);
     }
 }
 
@@ -2147,7 +2159,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     if (tstate != _PyThreadState_GET()) {
         Py_FatalError("thread is not current");
     }
-    if (tstate->cframe->current_frame != NULL) {
+    if (tstate->current_frame != NULL) {
         Py_FatalError("thread still has a frame");
     }
     interp->finalizing = 1;
@@ -2195,7 +2207,7 @@ _Py_IsInterpreterFinalizing(PyInterpreterState *interp)
 static PyStatus
 add_main_module(PyInterpreterState *interp)
 {
-    PyObject *m, *d, *loader, *ann_dict;
+    PyObject *m, *d, *ann_dict;
     m = PyImport_AddModule("__main__");
     if (m == NULL)
         return _PyStatus_ERR("can't create __main__ module");
@@ -2208,10 +2220,11 @@ add_main_module(PyInterpreterState *interp)
     }
     Py_DECREF(ann_dict);
 
-    if (_PyDict_GetItemStringWithError(d, "__builtins__") == NULL) {
-        if (PyErr_Occurred()) {
-            return _PyStatus_ERR("Failed to test __main__.__builtins__");
-        }
+    int has_builtins = PyDict_ContainsString(d, "__builtins__");
+    if (has_builtins < 0) {
+        return _PyStatus_ERR("Failed to test __main__.__builtins__");
+    }
+    if (!has_builtins) {
         PyObject *bimod = PyImport_ImportModule("builtins");
         if (bimod == NULL) {
             return _PyStatus_ERR("Failed to retrieve builtins module");
@@ -2227,11 +2240,13 @@ add_main_module(PyInterpreterState *interp)
      * will be set if __main__ gets further initialized later in the startup
      * process.
      */
-    loader = _PyDict_GetItemStringWithError(d, "__loader__");
-    if (loader == NULL || loader == Py_None) {
-        if (PyErr_Occurred()) {
-            return _PyStatus_ERR("Failed to test __main__.__loader__");
-        }
+    PyObject *loader;
+    if (PyDict_GetItemStringRef(d, "__loader__", &loader) < 0) {
+        return _PyStatus_ERR("Failed to test __main__.__loader__");
+    }
+    int has_loader = !(loader == NULL || loader == Py_None);
+    Py_XDECREF(loader);
+    if (!has_loader) {
         PyObject *loader = _PyImport_GetImportlibLoader(interp,
                                                         "BuiltinImporter");
         if (loader == NULL) {

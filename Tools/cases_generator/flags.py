@@ -3,6 +3,7 @@ import dataclasses
 from formatting import Formatter
 import lexer as lx
 import parsing
+from typing import AbstractSet
 
 
 @dataclasses.dataclass
@@ -15,13 +16,13 @@ class InstructionFlags:
     HAS_JUMP_FLAG: bool
     HAS_FREE_FLAG: bool
     HAS_LOCAL_FLAG: bool
+    HAS_EVAL_BREAK_FLAG: bool
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.bitmask = {name: (1 << i) for i, name in enumerate(self.names())}
 
     @staticmethod
-    def fromInstruction(instr: parsing.Node):
-
+    def fromInstruction(instr: parsing.Node) -> "InstructionFlags":
         has_free = (
             variable_used(instr, "PyCell_New")
             or variable_used(instr, "PyCell_GET")
@@ -38,31 +39,33 @@ class InstructionFlags:
                 variable_used(instr, "GETLOCAL") or variable_used(instr, "SETLOCAL")
             )
             and not has_free,
+            HAS_EVAL_BREAK_FLAG=variable_used(instr, "CHECK_EVAL_BREAKER"),
         )
 
     @staticmethod
-    def newEmpty():
-        return InstructionFlags(False, False, False, False, False, False)
+    def newEmpty() -> "InstructionFlags":
+        return InstructionFlags(False, False, False, False, False, False, False)
 
     def add(self, other: "InstructionFlags") -> None:
         for name, value in dataclasses.asdict(other).items():
             if value:
                 setattr(self, name, value)
 
-    def names(self, value=None) -> list[str]:
+    def names(self, value: bool | None = None) -> list[str]:
         if value is None:
             return list(dataclasses.asdict(self).keys())
         return [n for n, v in dataclasses.asdict(self).items() if v == value]
 
-    def bitmap(self) -> int:
+    def bitmap(self, ignore: AbstractSet[str] = frozenset()) -> int:
         flags = 0
+        assert all(hasattr(self, name) for name in ignore)
         for name in self.names():
-            if getattr(self, name):
+            if getattr(self, name) and name not in ignore:
                 flags |= self.bitmask[name]
         return flags
 
     @classmethod
-    def emit_macros(cls, out: Formatter):
+    def emit_macros(cls, out: Formatter) -> None:
         flags = cls.newEmpty()
         for name, value in flags.bitmask.items():
             out.emit(f"#define {name} ({value})")
@@ -90,9 +93,9 @@ def variable_used_unspecialized(node: parsing.Node, name: str) -> bool:
             text = "".join(token.text.split())
             # TODO: Handle nested #if
             if text == "#if":
-                if (
-                    i + 1 < len(node.tokens)
-                    and node.tokens[i + 1].text == "ENABLE_SPECIALIZATION"
+                if i + 1 < len(node.tokens) and node.tokens[i + 1].text in (
+                    "ENABLE_SPECIALIZATION",
+                    "TIER_ONE",
                 ):
                     skipping = True
             elif text in ("#else", "#endif"):

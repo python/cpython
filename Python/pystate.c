@@ -1310,7 +1310,7 @@ init_threadstate(PyThreadState *tstate,
     // This is cleared when PyGILState_Ensure() creates the thread state.
     tstate->gilstate_counter = 1;
 
-    tstate->cframe = &tstate->root_cframe;
+    tstate->current_frame = NULL;
     tstate->datastack_chunk = NULL;
     tstate->datastack_top = NULL;
     tstate->datastack_limit = NULL;
@@ -1452,7 +1452,7 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
 
-    if (verbose && tstate->cframe->current_frame != NULL) {
+    if (verbose && tstate->current_frame != NULL) {
         /* bpo-20526: After the main thread calls
            _PyInterpreterState_SetFinalizing() in Py_FinalizeEx()
            (or in Py_EndInterpreter() for subinterpreters),
@@ -1953,7 +1953,7 @@ _PyThread_CurrentFrames(void)
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
         PyThreadState *t;
         for (t = i->threads.head; t != NULL; t = t->next) {
-            _PyInterpreterFrame *frame = t->cframe->current_frame;
+            _PyInterpreterFrame *frame = t->current_frame;
             frame = _PyFrame_GetFirstComplete(frame);
             if (frame == NULL) {
                 continue;

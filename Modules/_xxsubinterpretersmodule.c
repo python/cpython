@@ -369,7 +369,7 @@ _is_running(PyInterpreterState *interp)
     }
 
     assert(!PyErr_Occurred());
-    struct _PyInterpreterFrame *frame = tstate->cframe->current_frame;
+    struct _PyInterpreterFrame *frame = tstate->current_frame;
     if (frame == NULL) {
         return 0;
     }

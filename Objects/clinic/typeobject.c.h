@@ -190,7 +190,7 @@ object___reduce_ex__(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int protocol;
 
-    protocol = _PyLong_AsInt(arg);
+    protocol = PyLong_AsInt(arg);
     if (protocol == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -266,4 +266,4 @@ object___dir__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return object___dir___impl(self);
 }
-/*[clinic end generated code: output=43533e6981550e9e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=baf5ec2093815a3f input=a9049054013a1b77]*/

@@ -112,7 +112,7 @@ memoryview__from_flags(PyTypeObject *type, PyObject *const *args, Py_ssize_t nar
         goto exit;
     }
     object = args[0];
-    flags = _PyLong_AsInt(args[1]);
+    flags = PyLong_AsInt(args[1]);
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -403,7 +403,7 @@ memoryview_hex(PyMemoryViewObject *self, PyObject *const *args, Py_ssize_t nargs
             goto skip_optional_pos;
         }
     }
-    bytes_per_sep = _PyLong_AsInt(args[1]);
+    bytes_per_sep = PyLong_AsInt(args[1]);
     if (bytes_per_sep == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -413,4 +413,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a4f6992947bcaf25 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=28a632db32b44b63 input=a9049054013a1b77]*/
