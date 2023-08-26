@@ -3629,6 +3629,8 @@ class unsigned_short_converter(CConverter):
             self.format_unit = 'H'
         else:
             self.converter = '_PyLong_UnsignedShort_Converter'
+            self.add_include('pycore_long.h',
+                             '_PyLong_UnsignedShort_Converter()')
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'H':
@@ -3690,6 +3692,8 @@ class unsigned_int_converter(CConverter):
             self.format_unit = 'I'
         else:
             self.converter = '_PyLong_UnsignedInt_Converter'
+            self.add_include('pycore_long.h',
+                             '_PyLong_UnsignedInt_Converter()')
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'I':
@@ -3727,6 +3731,8 @@ class unsigned_long_converter(CConverter):
             self.format_unit = 'k'
         else:
             self.converter = '_PyLong_UnsignedLong_Converter'
+            self.add_include('pycore_long.h',
+                             '_PyLong_UnsignedLong_Converter()')
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'k':
@@ -3766,6 +3772,8 @@ class unsigned_long_long_converter(CConverter):
             self.format_unit = 'K'
         else:
             self.converter = '_PyLong_UnsignedLongLong_Converter'
+            self.add_include('pycore_long.h',
+                             '_PyLong_UnsignedLongLong_Converter()')
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'K':
