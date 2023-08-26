@@ -5369,6 +5369,14 @@ class TestStartMethod(unittest.TestCase):
             self.assertRaises(ValueError, ctx.set_start_method, None)
             self.check_context(ctx)
 
+    def test_context_check_module_types(self):
+        try:
+            ctx = multiprocessing.get_context('forkserver')
+        except ValueError:
+            raise unittest.SkipTest('forkserver should be available')
+        with self.assertRaisesRegex(TypeError, 'module_names must be a list of strings'):
+            ctx.set_forkserver_preload([1, 2, 3])
+
     def test_set_get(self):
         multiprocessing.set_forkserver_preload(PRELOAD)
         count = 0
@@ -5412,6 +5420,28 @@ class TestStartMethod(unittest.TestCase):
             print(out)
             print(err)
             self.fail("failed spawning forkserver or grandchild")
+
+    @unittest.skipIf(sys.platform == "win32",
+                     "Only Spawn on windows so no risk of mixing")
+    @only_run_in_spawn_testsuite("avoids redundant testing.")
+    def test_mixed_startmethod(self):
+        # Fork-based locks cannot be used with spawned process
+        for process_method in ["spawn", "forkserver"]:
+            queue = multiprocessing.get_context("fork").Queue()
+            process_ctx = multiprocessing.get_context(process_method)
+            p = process_ctx.Process(target=close_queue, args=(queue,))
+            err_msg = "A SemLock created in a fork"
+            with self.assertRaisesRegex(RuntimeError, err_msg):
+                p.start()
+
+        # non-fork-based locks can be used with all other start methods
+        for queue_method in ["spawn", "forkserver"]:
+            for process_method in multiprocessing.get_all_start_methods():
+                queue = multiprocessing.get_context(queue_method).Queue()
+                process_ctx = multiprocessing.get_context(process_method)
+                p = process_ctx.Process(target=close_queue, args=(queue,))
+                p.start()
+                p.join()
 
 
 @unittest.skipIf(sys.platform == "win32",
@@ -6096,7 +6126,8 @@ class ThreadsMixin(BaseMixin):
 # Functions used to create test cases from the base ones in this module
 #
 
-def install_tests_in_module_dict(remote_globs, start_method):
+def install_tests_in_module_dict(remote_globs, start_method,
+                                 only_type=None, exclude_types=False):
     __module__ = remote_globs['__name__']
     local_globs = globals()
     ALL_TYPES = {'processes', 'threads', 'manager'}
@@ -6109,6 +6140,10 @@ def install_tests_in_module_dict(remote_globs, start_method):
                 continue
             assert set(base.ALLOWED_TYPES) <= ALL_TYPES, base.ALLOWED_TYPES
             for type_ in base.ALLOWED_TYPES:
+                if only_type and type_ != only_type:
+                    continue
+                if exclude_types:
+                    continue
                 newname = 'With' + type_.capitalize() + name[1:]
                 Mixin = local_globs[type_.capitalize() + 'Mixin']
                 class Temp(base, Mixin, unittest.TestCase):
@@ -6119,6 +6154,9 @@ def install_tests_in_module_dict(remote_globs, start_method):
                 Temp.__module__ = __module__
                 remote_globs[newname] = Temp
         elif issubclass(base, unittest.TestCase):
+            if only_type:
+                continue
+
             class Temp(base, object):
                 pass
             Temp.__name__ = Temp.__qualname__ = name

@@ -648,6 +648,9 @@
     <ClInclude Include="..\Include\internal\pycore_obmalloc_init.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_optimizer.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>    
     <ClInclude Include="..\Include\internal\pycore_pathconfig.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -732,6 +735,9 @@
     <ClInclude Include="..\Include\internal\pycore_unionobject.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_uops.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>    
     <ClInclude Include="$(zlibDir)\crc32.h">
       <Filter>Modules\zlib</Filter>
     </ClInclude>
@@ -1221,6 +1227,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\optimizer.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\optimizer_analysis.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\pathconfig.c">

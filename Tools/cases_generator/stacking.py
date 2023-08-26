@@ -1,6 +1,7 @@
 import dataclasses
 import typing
 
+from flags import variable_used_unspecialized
 from formatting import (
     Formatter,
     UNUSED,
@@ -82,6 +83,27 @@ class StackOffset:
         terms = self.as_terms()
         return make_index(terms)
 
+    def equivalent_to(self, other: "StackOffset") -> bool:
+        if self.deep == other.deep and self.high == other.high:
+            return True
+        deep = list(self.deep)
+        for x in other.deep:
+            try:
+                deep.remove(x)
+            except ValueError:
+                return False
+        if deep:
+            return False
+        high = list(self.high)
+        for x in other.high:
+            try:
+                high.remove(x)
+            except ValueError:
+                return False
+        if high:
+            return False
+        return True
+
 
 def make_index(terms: list[tuple[str, str]]) -> str:
     # Produce an index expression from the terms honoring PEP 8,
@@ -130,9 +152,9 @@ class StackItem:
 
 
 @dataclasses.dataclass
-class CopyEffect:
-    src: StackEffect
-    dst: StackEffect
+class CopyItem:
+    src: StackItem
+    dst: StackItem
 
 
 class EffectManager:
@@ -142,10 +164,12 @@ class EffectManager:
     active_caches: list[ActiveCacheEffect]
     peeks: list[StackItem]
     pokes: list[StackItem]
-    copies: list[CopyEffect]  # See merge()
+    copies: list[CopyItem]  # See merge()
     # Track offsets from stack pointer
     min_offset: StackOffset
     final_offset: StackOffset
+    # Link to previous manager
+    pred: "EffectManager | None" = None
 
     def __init__(
         self,
@@ -167,7 +191,8 @@ class EffectManager:
             self.pokes.append(StackItem(offset=self.final_offset.clone(), effect=eff))
             self.final_offset.higher(eff)
 
-        if pred:
+        self.pred = pred
+        while pred:
             # Replace push(x) + pop(y) with copy(x, y).
             # Check that the sources and destinations are disjoint.
             sources: set[str] = set()
@@ -175,16 +200,18 @@ class EffectManager:
             while (
                 pred.pokes
                 and self.peeks
-                and pred.pokes[-1].effect == self.peeks[-1].effect
+                and pred.pokes[-1].effect == self.peeks[0].effect
             ):
-                src = pred.pokes.pop(-1).effect
-                dst = self.peeks.pop(0).effect
-                pred.final_offset.deeper(src)
-                if dst.name != UNUSED:
-                    destinations.add(dst.name)
-                    if dst.name != src.name:
-                        sources.add(src.name)
-                    self.copies.append(CopyEffect(src, dst))
+                src = pred.pokes.pop(-1)
+                dst = self.peeks.pop(0)
+                assert src.offset.equivalent_to(dst.offset), (src, dst)
+                pred.final_offset.deeper(src.effect)
+                if dst.effect.name != src.effect.name:
+                    if dst.effect.name != UNUSED:
+                        destinations.add(dst.effect.name)
+                    if src.effect.name != UNUSED:
+                        sources.add(src.effect.name)
+                self.copies.append(CopyItem(src, dst))
             # TODO: Turn this into an error (pass an Analyzer instance?)
             assert sources & destinations == set(), (
                 pred.instr.name,
@@ -192,12 +219,33 @@ class EffectManager:
                 sources,
                 destinations,
             )
+            # See if we can get more copies of a earlier predecessor.
+            if self.peeks and not pred.pokes and not pred.peeks:
+                pred = pred.pred
+            else:
+                pred = None  # Break
+
+        # Fix up patterns of copies through UNUSED,
+        # e.g. cp(a, UNUSED) + cp(UNUSED, b) -> cp(a, b).
+        if any(copy.src.effect.name == UNUSED for copy in self.copies):
+            pred = self.pred
+            while pred is not None:
+                for copy in self.copies:
+                    if copy.src.effect.name == UNUSED:
+                        for pred_copy in pred.copies:
+                            if pred_copy.dst == copy.src:
+                                copy.src = pred_copy.src
+                                break
+                pred = pred.pred
 
     def adjust_deeper(self, eff: StackEffect) -> None:
         for peek in self.peeks:
             peek.offset.deeper(eff)
         for poke in self.pokes:
             poke.offset.deeper(eff)
+        for copy in self.copies:
+            copy.src.offset.deeper(eff)
+            copy.dst.offset.deeper(eff)
         self.min_offset.deeper(eff)
         self.final_offset.deeper(eff)
 
@@ -206,6 +254,9 @@ class EffectManager:
             peek.offset.higher(eff)
         for poke in self.pokes:
             poke.offset.higher(eff)
+        for copy in self.copies:
+            copy.src.offset.higher(eff)
+            copy.dst.offset.higher(eff)
         self.min_offset.higher(eff)
         self.final_offset.higher(eff)
 
@@ -239,8 +290,8 @@ class EffectManager:
                     vars[eff.name] = eff
 
         for copy in self.copies:
-            add(copy.src)
-            add(copy.dst)
+            add(copy.src.effect)
+            add(copy.dst.effect)
         for peek in self.peeks:
             add(peek.effect)
         for poke in self.pokes:
@@ -295,6 +346,7 @@ def write_single_instr(
             [Component(instr, instr.active_caches)],
             out,
             tier,
+            0,
         )
     except AssertionError as err:
         raise AssertionError(f"Error writing instruction {instr.name}") from err
@@ -303,37 +355,32 @@ def write_single_instr(
 def write_macro_instr(
     mac: MacroInstruction, out: Formatter, family: Family | None
 ) -> None:
-    parts = [part for part in mac.parts if isinstance(part, Component)]
-
-    cache_adjust = 0
-    for part in mac.parts:
-        match part:
-            case CacheEffect(size=size):
-                cache_adjust += size
-            case Component(instr=instr):
-                cache_adjust += instr.cache_offset
-            case _:
-                typing.assert_never(part)
-
+    parts = [
+        part
+        for part in mac.parts
+        if isinstance(part, Component) and part.instr.name != "SAVE_IP"
+    ]
     out.emit("")
     with out.block(f"TARGET({mac.name})"):
         if mac.predicted:
             out.emit(f"PREDICTED({mac.name});")
-        out.static_assert_family_size(mac.name, family, cache_adjust)
+        out.static_assert_family_size(mac.name, family, mac.cache_offset)
         try:
-            write_components(parts, out, TIER_ONE)
+            next_instr_is_set = write_components(parts, out, TIER_ONE, mac.cache_offset)
         except AssertionError as err:
             raise AssertionError(f"Error writing macro {mac.name}") from err
-        if cache_adjust:
-            out.emit(f"next_instr += {cache_adjust};")
-        out.emit("DISPATCH();")
+        if not parts[-1].instr.always_exits and not next_instr_is_set:
+            if mac.cache_offset:
+                out.emit(f"next_instr += {mac.cache_offset};")
+            out.emit("DISPATCH();")
 
 
 def write_components(
     parts: list[Component],
     out: Formatter,
     tier: Tiers,
-) -> None:
+    cache_offset: int,
+) -> bool:
     managers = get_managers(parts)
 
     all_vars: dict[str, StackEffect] = {}
@@ -354,13 +401,17 @@ def write_components(
     for name, eff in all_vars.items():
         out.declare(eff, None)
 
+    next_instr_is_set = False
     for mgr in managers:
         if len(parts) > 1:
             out.emit(f"// {mgr.instr.name}")
 
         for copy in mgr.copies:
-            if copy.src.name != copy.dst.name:
-                out.assign(copy.dst, copy.src)
+            copy_src_effect = copy.src.effect
+            if copy_src_effect.name != copy.dst.effect.name:
+                if copy_src_effect.name == UNUSED:
+                    copy_src_effect = copy.src.as_stack_effect()
+                out.assign(copy.dst.effect, copy_src_effect)
         for peek in mgr.peeks:
             out.assign(
                 peek.effect,
@@ -374,13 +425,25 @@ def write_components(
                     poke.as_stack_effect(lax=True),
                 )
 
+        if mgr.instr.name in ("_PUSH_FRAME", "_POP_FRAME"):
+            # Adjust stack to min_offset (input effects materialized)
+            out.stack_adjust(mgr.min_offset.deep, mgr.min_offset.high)
+            # Use clone() since adjust_inverse() mutates final_offset
+            mgr.adjust_inverse(mgr.final_offset.clone())
+
+        if mgr.instr.name == "SAVE_CURRENT_IP":
+            next_instr_is_set = True
+            if cache_offset:
+                out.emit(f"next_instr += {cache_offset};")
+
         if len(parts) == 1:
             mgr.instr.write_body(out, 0, mgr.active_caches, tier)
         else:
             with out.block(""):
                 mgr.instr.write_body(out, -4, mgr.active_caches, tier)
 
-        if mgr is managers[-1]:
+        if mgr is managers[-1] and not next_instr_is_set:
+            # TODO: Explain why this adjustment is needed.
             out.stack_adjust(mgr.final_offset.deep, mgr.final_offset.high)
             # Use clone() since adjust_inverse() mutates final_offset
             mgr.adjust_inverse(mgr.final_offset.clone())
@@ -390,4 +453,37 @@ def write_components(
                 out.assign(
                     poke.as_stack_effect(),
                     poke.effect,
+                )
+
+    return next_instr_is_set
+
+
+def write_single_instr_for_abstract_interp(instr: Instruction, out: Formatter) -> None:
+    try:
+        _write_components_for_abstract_interp(
+            [Component(instr, instr.active_caches)],
+            out,
+        )
+    except AssertionError as err:
+        raise AssertionError(
+            f"Error writing abstract instruction {instr.name}"
+        ) from err
+
+
+def _write_components_for_abstract_interp(
+    parts: list[Component],
+    out: Formatter,
+) -> None:
+    managers = get_managers(parts)
+    for mgr in managers:
+        if mgr is managers[-1]:
+            out.stack_adjust(mgr.final_offset.deep, mgr.final_offset.high)
+            # Use clone() since adjust_inverse() mutates final_offset
+            mgr.adjust_inverse(mgr.final_offset.clone())
+        # NULL out the output stack effects
+        for poke in mgr.pokes:
+            if not poke.effect.size and poke.effect.name not in mgr.instr.unmoved_names:
+                out.emit(
+                    f"PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)"
+                    f"PARTITIONNODE_NULLROOT, PEEK(-({poke.offset.as_index()})), true);"
                 )

@@ -9,6 +9,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_long.h"          // _PyLong_FromByteArray()
 
 #include "multibytecodec.h"
 #include "clinic/multibytecodec.c.h"

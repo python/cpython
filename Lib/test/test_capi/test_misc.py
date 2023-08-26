@@ -2341,6 +2341,19 @@ class TestOptimizerAPI(unittest.TestCase):
             long_loop()
             self.assertEqual(opt.get_count(), 10)
 
+    def test_code_restore_for_ENTER_EXECUTOR(self):
+        def testfunc(x):
+            i = 0
+            while i < x:
+                i += 1
+
+        opt = _testinternalcapi.get_counter_optimizer()
+        with temporary_optimizer(opt):
+            testfunc(1000)
+            code, replace_code  = testfunc.__code__, testfunc.__code__.replace()
+            self.assertEqual(code, replace_code)
+            self.assertEqual(hash(code), hash(replace_code))
+
 
 def get_first_executor(func):
     code = func.__code__
@@ -2617,6 +2630,24 @@ class TestUops(unittest.TestCase):
             a.append(4)
             with self.assertRaises(StopIteration):
                 next(it)
+
+    def test_call_py_exact_args(self):
+        def testfunc(n):
+            def dummy(x):
+                return x+1
+            for i in range(n):
+                dummy(i)
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            testfunc(10)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        self.assertIn("_PUSH_FRAME", uops)
+        self.assertIn("_BINARY_OP_ADD_INT", uops)
+
 
 
 if __name__ == "__main__":

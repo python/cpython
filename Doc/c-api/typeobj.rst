@@ -1403,7 +1403,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
        are allowed to be removed even if the instance is still alive).
 
    Note that :c:func:`Py_VISIT` requires the *visit* and *arg* parameters to
-   :c:func:`local_traverse` to have these specific names; don't name them just
+   :c:func:`!local_traverse` to have these specific names; don't name them just
    anything.
 
    Instances of :ref:`heap-allocated types <heap-types>` hold a reference to
@@ -1697,7 +1697,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
        to a pointer, are valid C99 address constants.
 
        However, the unary '&' operator applied to a non-static variable
-       like :c:func:`PyBaseObject_Type` is not required to produce an address
+       like :c:data:`PyBaseObject_Type` is not required to produce an address
        constant.  Compilers may support this (gcc does), MSVC does not.
        Both compilers are strictly standard conforming in this particular
        behavior.
@@ -2443,7 +2443,7 @@ Buffer Object Structures
    Except for point (3), an implementation of this function MUST take these
    steps:
 
-   (1) Check if the request can be met. If not, raise :c:data:`PyExc_BufferError`,
+   (1) Check if the request can be met. If not, raise :exc:`BufferError`,
        set :c:expr:`view->obj` to ``NULL`` and return ``-1``.
 
    (2) Fill in the requested fields.

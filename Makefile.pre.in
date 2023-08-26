@@ -405,6 +405,7 @@ PYTHON_OBJS=	\
 		Python/mysnprintf.o \
 		Python/mystrtoul.o \
 		Python/optimizer.o \
+		Python/optimizer_analysis.o \
 		Python/pathconfig.o \
 		Python/preconfig.o \
 		Python/pyarena.o \
@@ -1253,7 +1254,7 @@ regen-frozen: Tools/build/freeze_modules.py $(FROZEN_FILES_IN)
 .PHONY: regen-deepfreeze
 regen-deepfreeze: $(DEEPFREEZE_OBJS)
 
-DEEPFREEZE_DEPS=$(srcdir)/Tools/build/deepfreeze.py $(FREEZE_MODULE_DEPS) $(FROZEN_FILES_OUT)
+DEEPFREEZE_DEPS=$(srcdir)/Tools/build/deepfreeze.py Include/internal/pycore_global_strings.h $(FREEZE_MODULE_DEPS) $(FROZEN_FILES_OUT)
 
 # BEGIN: deepfreeze modules
 Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)
@@ -1320,7 +1321,7 @@ regen-limited-abi: all
 # Regenerate all generated files
 
 .PHONY: regen-all
-regen-all: regen-cases regen-opcode regen-typeslots \
+regen-all: regen-cases regen-typeslots \
 	regen-token regen-ast regen-keyword regen-sre regen-frozen clinic \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
 	regen-test-levenshtein regen-global-objects
@@ -1423,22 +1424,6 @@ regen-ast:
 	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_ast.h $(srcdir)/Include/internal/pycore_ast.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_ast_state.h $(srcdir)/Include/internal/pycore_ast_state.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/Python-ast.c $(srcdir)/Python/Python-ast.c.new
-
-.PHONY: regen-opcode
-regen-opcode:
-	# Regenerate Include/opcode.h from Lib/opcode.py
-	# using Tools/build/generate_opcode_h.py
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_opcode_h.py \
-		$(srcdir)/Lib/opcode.py \
-		$(srcdir)/Lib/_opcode_metadata.py \
-		$(srcdir)/Include/opcode_ids.h.new \
-		$(srcdir)/Include/opcode.h.new \
-                $(srcdir)/Python/opcode_targets.h.new \
-		$(srcdir)/Include/internal/pycore_opcode.h.new
-	$(UPDATE_FILE) $(srcdir)/Include/opcode_ids.h $(srcdir)/Include/opcode_ids.h.new
-	$(UPDATE_FILE) $(srcdir)/Include/opcode.h $(srcdir)/Include/opcode.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
-	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_opcode.h $(srcdir)/Include/internal/pycore_opcode.h.new
 
 .PHONY: regen-token
 regen-token:
@@ -1549,13 +1534,19 @@ regen-cases:
 	    $(srcdir)/Tools/cases_generator/generate_cases.py \
 		$(CASESFLAG) \
 		-o $(srcdir)/Python/generated_cases.c.h.new \
+		-n $(srcdir)/Include/opcode_ids.h.new \
+		-t $(srcdir)/Python/opcode_targets.h.new \
 		-m $(srcdir)/Include/internal/pycore_opcode_metadata.h.new \
 		-e $(srcdir)/Python/executor_cases.c.h.new \
 		-p $(srcdir)/Lib/_opcode_metadata.py.new \
+		-a $(srcdir)/Python/abstract_interp_cases.c.h.new \
 		$(srcdir)/Python/bytecodes.c
 	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
+	$(UPDATE_FILE) $(srcdir)/Include/opcode_ids.h $(srcdir)/Include/opcode_ids.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_opcode_metadata.h $(srcdir)/Include/internal/pycore_opcode_metadata.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/executor_cases.c.h $(srcdir)/Python/executor_cases.c.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/abstract_interp_cases.c.h $(srcdir)/Python/abstract_interp_cases.c.h.new
 	$(UPDATE_FILE) $(srcdir)/Lib/_opcode_metadata.py $(srcdir)/Lib/_opcode_metadata.py.new
 
 Python/compile.o: $(srcdir)/Include/internal/pycore_opcode_metadata.h
@@ -1568,6 +1559,7 @@ Python/ceval.o: \
 
 Python/executor.o: \
 		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
+		$(srcdir)/Include/internal/pycore_optimizer.h \
 		$(srcdir)/Python/ceval_macros.h \
 		$(srcdir)/Python/executor_cases.c.h
 
@@ -1576,7 +1568,12 @@ Python/flowgraph.o: \
 
 Python/optimizer.o: \
 		$(srcdir)/Python/executor_cases.c.h \
-		$(srcdir)/Include/internal/pycore_opcode_metadata.h
+		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
+		$(srcdir)/Include/internal/pycore_optimizer.h
+
+Python/optimizer_analysis.o: \
+		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
+		$(srcdir)/Include/internal/pycore_optimizer.h
 
 Python/frozen.o: $(FROZEN_FILES_OUT)
 
@@ -1645,6 +1642,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/object.h \
 		$(srcdir)/Include/objimpl.h \
 		$(srcdir)/Include/opcode.h \
+		$(srcdir)/Include/opcode_ids.h \
 		$(srcdir)/Include/osdefs.h \
 		$(srcdir)/Include/osmodule.h \
 		$(srcdir)/Include/patchlevel.h \
@@ -1784,8 +1782,9 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_object_state.h \
 		$(srcdir)/Include/internal/pycore_obmalloc.h \
 		$(srcdir)/Include/internal/pycore_obmalloc_init.h \
-		$(srcdir)/Include/internal/pycore_opcode.h \
+		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
 		$(srcdir)/Include/internal/pycore_opcode_utils.h \
+		$(srcdir)/Include/internal/pycore_optimizer.h \
 		$(srcdir)/Include/internal/pycore_pathconfig.h \
 		$(srcdir)/Include/internal/pycore_pyarena.h \
 		$(srcdir)/Include/internal/pycore_pyerrors.h \
@@ -2149,6 +2148,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/support/_hypothesis_stubs \
 		test/test_asyncio \
 		test/test_capi \
+		test/test_cppext \
 		test/test_ctypes \
 		test/test_email \
 		test/test_email/data \
@@ -2205,6 +2205,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_importlib/resources/zipdata02 \
 		test/test_importlib/source \
 		test/test_json \
+		test/test_module \
 		test/test_peg_generator \
 		test/test_sqlite3 \
 		test/test_tkinter \

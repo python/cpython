@@ -85,6 +85,12 @@ Other Language Changes
   This change will affect tools using docstrings, like :mod:`doctest`.
   (Contributed by Inada Naoki in :gh:`81283`.)
 
+* The :func:`compile` built-in can now accept a new flag,
+  ``ast.PyCF_OPTIMIZED_AST``, which is similar to ``ast.PyCF_ONLY_AST``
+  except that the returned ``AST`` is optimized according to the value
+  of the ``optimize`` argument.
+  (Contributed by Irit Katriel in :gh:`108113`).
+
 New Modules
 ===========
 
@@ -93,6 +99,14 @@ New Modules
 
 Improved Modules
 ================
+
+ast
+---
+
+* :func:`ast.parse` now accepts an optional argument ``optimize``
+  which is passed on to the :func:`compile` built-in. This makes it
+  possible to obtain an optimized ``AST``.
+  (Contributed by Irit Katriel in :gh:`108113`).
 
 array
 -----
@@ -143,6 +157,22 @@ pathlib
   :meth:`~pathlib.Path.rglob`, :meth:`~pathlib.Path.is_file`, and
   :meth:`~pathlib.Path.is_dir`.
   (Contributed by Barney Gale in :gh:`77609` and :gh:`105793`.)
+
+sqlite3
+-------
+
+* A :exc:`ResourceWarning` is now emitted if a :class:`sqlite3.Connection`
+  object is not :meth:`closed <sqlite3.Connection.close>` explicitly.
+  (Contributed by Erlend E. Aasland in :gh:`105539`.)
+
+tkinter
+-------
+
+* Add :mod:`tkinter` widget methods:
+  :meth:`!tk_busy_hold`, :meth:`!tk_busy_configure`,
+  :meth:`!tk_busy_cget`, :meth:`!tk_busy_forget`,
+  :meth:`!tk_busy_current`, and :meth:`!tk_busy_status`.
+  (Contributed by Miguel, klappnase and Serhiy Storchaka in :gh:`72684`.)
 
 traceback
 ---------
@@ -218,6 +248,11 @@ Deprecated
   methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
+
+* Passing more than one positional argument to :func:`sqlite3.connect` and the
+  :class:`sqlite3.Connection` constructor is deprecated. The remaining
+  parameters will become keyword-only in Python 3.15.
+  (Contributed by Erlend E. Aasland in :gh:`107948`.)
 
 Pending Removal in Python 3.14
 ------------------------------
@@ -351,6 +386,12 @@ Pending Removal in Python 3.15
   methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
+
+* Passing any arguments to :func:`threading.RLock` is now deprecated.
+  C version allows any numbers of args and kwargs,
+  but they are just ignored. Python version does not allow any arguments.
+  All arguments will be removed from :func:`threading.RLock` in Python 3.15.
+  (Contributed by Nikita Sobolev in :gh:`102029`.)
 
 Pending Removal in Python 3.16
 ------------------------------
@@ -821,11 +862,33 @@ New Features
   not needed.
   (Contributed by Victor Stinner in :gh:`106004`.)
 
+* Added :c:func:`PyDict_ContainsString` function: same as
+  :c:func:`PyDict_Contains`, but *key* is specified as a :c:expr:`const char*`
+  UTF-8 encoded bytes string, rather than a :c:expr:`PyObject*`.
+  (Contributed by Victor Stinner in :gh:`108314`.)
+
+* Add :c:func:`Py_IsFinalizing` function: check if the main Python interpreter is
+  :term:`shutting down <interpreter shutdown>`.
+  (Contributed by Victor Stinner in :gh:`108014`.)
+
+* Add :c:func:`PyLong_AsInt` function: similar to :c:func:`PyLong_AsLong`, but
+  store the result in a C :c:expr:`int` instead of a C :c:expr:`long`.
+  Previously, it was known as the private function :c:func:`!_PyLong_AsInt`
+  (with an underscore prefix).
+  (Contributed by Victor Stinner in :gh:`108014`.)
+
 Porting to Python 3.13
 ----------------------
 
 Deprecated
 ----------
+
+* Passing optional arguments *maxsplit*, *count* and *flags* in module-level
+  functions :func:`re.split`, :func:`re.sub` and :func:`re.subn` as positional
+  arguments is now deprecated.
+  In future Python versions these parameters will be
+  :ref:`keyword-only <keyword-only_parameter>`.
+  (Contributed by Serhiy Storchaka in :gh:`56166`.)
 
 * Deprecate the old ``Py_UNICODE`` and ``PY_UNICODE_TYPE`` types: use directly
   the :c:type:`wchar_t` type instead. Since Python 3.3, ``Py_UNICODE`` and
@@ -936,7 +999,9 @@ Removed
   * ``Py_SetPath()``: set :c:member:`PyConfig.module_search_paths` instead.
   * ``Py_SetProgramName()``: set :c:member:`PyConfig.program_name` instead.
   * ``Py_SetPythonHome()``: set :c:member:`PyConfig.home` instead.
-  * ``Py_SetStandardStreamEncoding()``: set :c:member:`PyConfig.stdio_encoding` instead.
+  * ``Py_SetStandardStreamEncoding()``: set :c:member:`PyConfig.stdio_encoding`
+    instead, and set also maybe :c:member:`PyConfig.legacy_windows_stdio` (on
+    Windows).
   * ``_Py_SetProgramFullPath()``: set :c:member:`PyConfig.executable` instead.
 
   Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization

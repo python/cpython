@@ -7,8 +7,11 @@
 /* XXX check overflow and DWORD <-> Py_ssize_t conversions
    Check itemsize */
 
-#include "Python.h"
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
+#include "Python.h"
 
 #define WINDOWS_LEAN_AND_MEAN
 #include <winsock2.h>

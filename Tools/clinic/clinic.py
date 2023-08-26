@@ -35,6 +35,7 @@ from collections.abc import (
     Iterator,
     Sequence,
 )
+from operator import attrgetter
 from types import FunctionType, NoneType
 from typing import (
     TYPE_CHECKING,
@@ -62,6 +63,7 @@ from typing import (
 
 version = '1'
 
+DEFAULT_LIMITED_CAPI = False
 NO_VARARG = "PY_SSIZE_T_MAX"
 CLINIC_PREFIX = "__clinic_"
 CLINIC_PREFIXED_ARGS = {
@@ -76,6 +78,7 @@ CLINIC_PREFIXED_ARGS = {
     "noptargs",
     "return_value",
 }
+LIMITED_CAPI_REGEX = re.compile(r'#define +Py_LIMITED_API')
 
 
 class Sentinels(enum.Enum):
@@ -849,25 +852,24 @@ class CLanguage(Language):
             #define {methoddef_name}
         #endif /* !defined({methoddef_name}) */
     """)
-    DEPRECATED_POSITIONAL_PROTOTYPE: Final[str] = r"""
+    COMPILER_DEPRECATION_WARNING_PROTOTYPE: Final[str] = r"""
         // Emit compiler warnings when we get to Python {major}.{minor}.
         #if PY_VERSION_HEX >= 0x{major:02x}{minor:02x}00C0
-        #  error \
-                {cpp_message}
+        #  error {message}
         #elif PY_VERSION_HEX >= 0x{major:02x}{minor:02x}00A0
         #  ifdef _MSC_VER
-        #    pragma message ( \
-                {cpp_message})
+        #    pragma message ({message})
         #  else
-        #    warning \
-                {cpp_message}
+        #    warning {message}
         #  endif
         #endif
-        if ({condition}) {{{{
+    """
+    DEPRECATION_WARNING_PROTOTYPE: Final[str] = r"""
+        if ({condition}) {{{{{errcheck}
             if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                    {depr_message}, 1))
+                    {message}, 1))
             {{{{
-                    goto exit;
+                goto exit;
             }}}}
         }}}}
     """
@@ -893,71 +895,149 @@ class CLanguage(Language):
                 function = o
         return self.render_function(clinic, function)
 
+    def compiler_deprecated_warning(
+            self,
+            func: Function,
+            parameters: list[Parameter],
+    ) -> str | None:
+        minversion: VersionTuple | None = None
+        for p in parameters:
+            for version in p.deprecated_positional, p.deprecated_keyword:
+                if version and (not minversion or minversion > version):
+                    minversion = version
+        if not minversion:
+            return None
+
+        # Format the preprocessor warning and error messages.
+        assert isinstance(self.cpp.filename, str)
+        source = os.path.basename(self.cpp.filename)
+        message = f"Update the clinic input of {func.full_name!r}."
+        code = self.COMPILER_DEPRECATION_WARNING_PROTOTYPE.format(
+            major=minversion[0],
+            minor=minversion[1],
+            message=c_repr(message),
+        )
+        return normalize_snippet(code)
+
     def deprecate_positional_use(
             self,
             func: Function,
             params: dict[int, Parameter],
     ) -> str:
         assert len(params) > 0
-        names = [repr(p.name) for p in params.values()]
-        first_pos, first_param = next(iter(params.items()))
-        last_pos, last_param = next(reversed(params.items()))
-
-        # Pretty-print list of names.
-        pstr = pprint_words(names)
-
-        # For now, assume there's only one deprecation level.
-        assert first_param.deprecated_positional == last_param.deprecated_positional
-        thenceforth = first_param.deprecated_positional
-        assert thenceforth is not None
-
-        # Format the preprocessor warning and error messages.
-        assert isinstance(self.cpp.filename, str)
-        source = os.path.basename(self.cpp.filename)
-        major, minor = thenceforth
-        cpp_message = (
-            f"In {source}, update parameter(s) {pstr} in the clinic "
-            f"input of {func.full_name!r} to be keyword-only."
-        )
+        first_pos = next(iter(params))
+        last_pos = next(reversed(params))
 
         # Format the deprecation message.
-        if first_pos == 0:
-            preamble = "Passing positional arguments to "
         if len(params) == 1:
             condition = f"nargs == {first_pos+1}"
-            if first_pos:
-                preamble = f"Passing {first_pos+1} positional arguments to "
-            depr_message = preamble + (
-                f"{func.fulldisplayname}() is deprecated. Parameter {pstr} will "
-                f"become a keyword-only parameter in Python {major}.{minor}."
-            )
+            amount = f"{first_pos+1} " if first_pos else ""
+            pl = "s"
         else:
             condition = f"nargs > {first_pos} && nargs <= {last_pos+1}"
-            if first_pos:
-                preamble = (
-                    f"Passing more than {first_pos} positional "
-                    f"argument{'s' if first_pos != 1 else ''} to "
+            amount = f"more than {first_pos} " if first_pos else ""
+            pl = "s" if first_pos != 1 else ""
+        message = (
+            f"Passing {amount}positional argument{pl} to "
+            f"{func.fulldisplayname}() is deprecated."
+        )
+
+        for (major, minor), group in itertools.groupby(
+            params.values(), key=attrgetter("deprecated_positional")
+        ):
+            names = [repr(p.name) for p in group]
+            pstr = pprint_words(names)
+            if len(names) == 1:
+                message += (
+                    f" Parameter {pstr} will become a keyword-only parameter "
+                    f"in Python {major}.{minor}."
                 )
-            depr_message = preamble + (
-                f"{func.fulldisplayname}() is deprecated. Parameters {pstr} will "
-                f"become keyword-only parameters in Python {major}.{minor}."
-            )
+            else:
+                message += (
+                    f" Parameters {pstr} will become keyword-only parameters "
+                    f"in Python {major}.{minor}."
+                )
 
         # Append deprecation warning to docstring.
-        lines = textwrap.wrap(f"Note: {depr_message}")
-        docstring = "\n".join(lines)
+        docstring = textwrap.fill(f"Note: {message}")
         func.docstring += f"\n\n{docstring}\n"
-
         # Format and return the code block.
-        code = self.DEPRECATED_POSITIONAL_PROTOTYPE.format(
+        code = self.DEPRECATION_WARNING_PROTOTYPE.format(
             condition=condition,
-            major=major,
-            minor=minor,
-            cpp_message=wrapped_c_string_literal(cpp_message, suffix=" \\",
-                                                 width=64,
-                                                 subsequent_indent=16),
-            depr_message=wrapped_c_string_literal(depr_message, width=64,
-                                                  subsequent_indent=20),
+            errcheck="",
+            message=wrapped_c_string_literal(message, width=64,
+                                             subsequent_indent=20),
+        )
+        return normalize_snippet(code, indent=4)
+
+    def deprecate_keyword_use(
+            self,
+            func: Function,
+            params: dict[int, Parameter],
+            argname_fmt: str | None,
+    ) -> str:
+        assert len(params) > 0
+        last_param = next(reversed(params.values()))
+
+        # Format the deprecation message.
+        containscheck = ""
+        conditions = []
+        for i, p in params.items():
+            if p.is_optional():
+                if argname_fmt:
+                    conditions.append(f"nargs < {i+1} && {argname_fmt % i}")
+                elif func.kind.new_or_init:
+                    conditions.append(f"nargs < {i+1} && PyDict_Contains(kwargs, &_Py_ID({p.name}))")
+                    containscheck = "PyDict_Contains"
+                else:
+                    conditions.append(f"nargs < {i+1} && PySequence_Contains(kwnames, &_Py_ID({p.name}))")
+                    containscheck = "PySequence_Contains"
+            else:
+                conditions = [f"nargs < {i+1}"]
+        condition = ") || (".join(conditions)
+        if len(conditions) > 1:
+            condition = f"(({condition}))"
+        if last_param.is_optional():
+            if func.kind.new_or_init:
+                condition = f"kwargs && PyDict_GET_SIZE(kwargs) && {condition}"
+            else:
+                condition = f"kwnames && PyTuple_GET_SIZE(kwnames) && {condition}"
+        names = [repr(p.name) for p in params.values()]
+        pstr = pprint_words(names)
+        pl = 's' if len(params) != 1 else ''
+        message = (
+            f"Passing keyword argument{pl} {pstr} to "
+            f"{func.fulldisplayname}() is deprecated."
+        )
+
+        for (major, minor), group in itertools.groupby(
+            params.values(), key=attrgetter("deprecated_keyword")
+        ):
+            names = [repr(p.name) for p in group]
+            pstr = pprint_words(names)
+            pl = 's' if len(names) != 1 else ''
+            message += (
+                f" Parameter{pl} {pstr} will become positional-only "
+                f"in Python {major}.{minor}."
+            )
+
+        if containscheck:
+            errcheck = f"""
+            if (PyErr_Occurred()) {{{{ // {containscheck}() above can fail
+                goto exit;
+            }}}}"""
+        else:
+            errcheck = ""
+        if argname_fmt:
+            # Append deprecation warning to docstring.
+            docstring = textwrap.fill(f"Note: {message}")
+            func.docstring += f"\n\n{docstring}\n"
+        # Format and return the code block.
+        code = self.DEPRECATION_WARNING_PROTOTYPE.format(
+            condition=condition,
+            errcheck=errcheck,
+            message=wrapped_c_string_literal(message, width=64,
+                                             subsequent_indent=20),
         )
         return normalize_snippet(code, indent=4)
 
@@ -995,6 +1075,11 @@ class CLanguage(Language):
             requires_defining_class = True
             del parameters[0]
         converters = [p.converter for p in parameters]
+
+        # Copy includes from parameters to Clinic
+        for converter in converters:
+            if converter.include:
+                clinic.add_include(*converter.include)
 
         has_option_groups = parameters and (parameters[0].group or parameters[-1].group)
         default_return_converter = f.return_converter.type == 'PyObject *'
@@ -1165,6 +1250,22 @@ class CLanguage(Language):
             parser_prototype = self.PARSER_PROTOTYPE_VARARGS
             parser_definition = parser_body(parser_prototype, '    {option_group_parsing}')
 
+        elif not requires_defining_class and pos_only == len(parameters) - pseudo_args and clinic.limited_capi:
+            # positional-only for the limited C API
+            flags = "METH_VARARGS"
+
+            parser_prototype = self.PARSER_PROTOTYPE_VARARGS
+            parser_code = [normalize_snippet("""
+                if (!PyArg_ParseTuple(args, "{format_units}:{name}",
+                    {parse_arguments}))
+                    goto exit;
+            """, indent=4)]
+            argname_fmt = 'args[%d]'
+            declarations = ""
+
+            parser_definition = parser_body(parser_prototype, *parser_code,
+                                            declarations=declarations)
+
         elif not requires_defining_class and pos_only == len(parameters) - pseudo_args:
             if not new_or_init:
                 # positional-only, but no option groups
@@ -1258,6 +1359,14 @@ class CLanguage(Language):
             parser_definition = parser_body(parser_prototype, *parser_code)
 
         else:
+            deprecated_positionals: dict[int, Parameter] = {}
+            deprecated_keywords: dict[int, Parameter] = {}
+            for i, p in enumerate(parameters):
+                if p.deprecated_positional:
+                    deprecated_positionals[i] = p
+                if p.deprecated_keyword:
+                    deprecated_keywords[i] = p
+
             has_optional_kw = (max(pos_only, min_pos) + min_kw_only < len(converters) - int(vararg != NO_VARARG))
             if vararg == NO_VARARG:
                 args_declaration = "_PyArg_UnpackKeywords", "%s, %s, %s" % (
@@ -1274,7 +1383,21 @@ class CLanguage(Language):
                     vararg
                 )
                 nargs = f"Py_MIN(nargs, {max_pos})" if max_pos else "0"
-            if not new_or_init:
+
+            if clinic.limited_capi:
+                # positional-or-keyword arguments
+                flags = "METH_VARARGS|METH_KEYWORDS"
+
+                parser_prototype = self.PARSER_PROTOTYPE_KEYWORD
+                parser_code = [normalize_snippet("""
+                    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "{format_units}:{name}", _keywords,
+                        {parse_arguments}))
+                        goto exit;
+                """, indent=4)]
+                argname_fmt = 'args[%d]'
+                declarations = ""
+
+            elif not new_or_init:
                 flags = "METH_FASTCALL|METH_KEYWORDS"
                 parser_prototype = self.PARSER_PROTOTYPE_FASTCALL_KEYWORDS
                 argname_fmt = 'args[%d]'
@@ -1310,7 +1433,10 @@ class CLanguage(Language):
                 flags = 'METH_METHOD|' + flags
                 parser_prototype = self.PARSER_PROTOTYPE_DEF_CLASS
 
-            deprecated_positionals: dict[int, Parameter] = {}
+            if deprecated_keywords:
+                code = self.deprecate_keyword_use(f, deprecated_keywords, argname_fmt)
+                parser_code.append(code)
+
             add_label: str | None = None
             for i, p in enumerate(parameters):
                 if isinstance(p.converter, defining_class_converter):
@@ -1325,8 +1451,6 @@ class CLanguage(Language):
                     parser_code.append("%s:" % add_label)
                     add_label = None
                 if not p.is_optional():
-                    if p.deprecated_positional:
-                        deprecated_positionals[i] = p
                     parser_code.append(normalize_snippet(parsearg, indent=4))
                 elif i < pos_only:
                     add_label = 'skip_optional_posonly'
@@ -1356,8 +1480,6 @@ class CLanguage(Language):
                                 goto %s;
                             }}
                             """ % add_label, indent=4))
-                    if p.deprecated_positional:
-                        deprecated_positionals[i] = p
                     if i + 1 == len(parameters):
                         parser_code.append(normalize_snippet(parsearg, indent=4))
                     else:
@@ -1372,12 +1494,6 @@ class CLanguage(Language):
                                 }}
                             }}
                             """ % add_label, indent=4))
-
-            if deprecated_positionals:
-                code = self.deprecate_positional_use(f, deprecated_positionals)
-                assert parser_code is not None
-                # Insert the deprecation code before parameter parsing.
-                parser_code.insert(0, code)
 
             if parser_code is not None:
                 if add_label:
@@ -1398,6 +1514,17 @@ class CLanguage(Language):
                             goto exit;
                         }}
                         """, indent=4)]
+                    if deprecated_positionals or deprecated_keywords:
+                        declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"
+                if deprecated_keywords:
+                    code = self.deprecate_keyword_use(f, deprecated_keywords, None)
+                    parser_code.append(code)
+
+            if deprecated_positionals:
+                code = self.deprecate_positional_use(f, deprecated_positionals)
+                # Insert the deprecation code before parameter parsing.
+                parser_code.insert(0, code)
+
             parser_definition = parser_body(parser_prototype, *parser_code,
                                             declarations=declarations)
 
@@ -1477,6 +1604,10 @@ class CLanguage(Language):
             impl_prototype += ";"
 
         parser_definition = parser_definition.replace("{return_value_declaration}", return_value_declaration)
+
+        compiler_warning = self.compiler_deprecated_warning(f, parameters)
+        if compiler_warning:
+            parser_definition = compiler_warning + "\n\n" + parser_definition
 
         d = {
             "docstring_prototype" : docstring_prototype,
@@ -1674,18 +1805,8 @@ class CLanguage(Language):
         full_name = f.full_name
         template_dict = {'full_name': full_name}
         template_dict['name'] = f.displayname
-
-        if f.c_basename:
-            c_basename = f.c_basename
-        else:
-            fields = full_name.split(".")
-            if fields[-1] == '__new__':
-                fields.pop()
-            c_basename = "_".join(fields)
-
-        template_dict['c_basename'] = c_basename
-
-        template_dict['methoddef_name'] = c_basename.upper() + "_METHODDEF"
+        template_dict['c_basename'] = f.c_basename
+        template_dict['methoddef_name'] = f.c_basename.upper() + "_METHODDEF"
 
         template_dict['docstring'] = self.docstring_for_c_string(f)
 
@@ -2027,7 +2148,8 @@ class BlockPrinter:
             self,
             block: Block,
             *,
-            core_includes: bool = False
+            clinic: Clinic,
+            core_includes: bool = False,
     ) -> None:
         input = block.input
         output = block.output
@@ -2057,13 +2179,21 @@ class BlockPrinter:
 
         output = ''
         if core_includes:
-            output += textwrap.dedent("""
-                #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-                #  include "pycore_gc.h"            // PyGC_Head
-                #  include "pycore_runtime.h"       // _Py_ID()
-                #endif
+            if not clinic.limited_capi:
+                output += textwrap.dedent("""
+                    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+                    #  include "pycore_gc.h"            // PyGC_Head
+                    #  include "pycore_runtime.h"       // _Py_ID()
+                    #endif
 
-            """)
+                """)
+
+            if clinic is not None:
+                # Emit optional includes
+                for include, reason in sorted(clinic.includes.items()):
+                    line = f'#include "{include}"'
+                    line = line.ljust(35) + f'// {reason}\n'
+                    output += line
 
         input = ''.join(block.input)
         output += ''.join(block.output)
@@ -2207,7 +2337,7 @@ class Parser(Protocol):
     def parse(self, block: Block) -> None: ...
 
 
-clinic = None
+clinic: Clinic | None = None
 class Clinic:
 
     presets_text = """
@@ -2260,6 +2390,7 @@ impl_definition block
             *,
             filename: str,
             verify: bool = True,
+            limited_capi: bool = False,
     ) -> None:
         # maps strings to Parser objects.
         # (instantiated from the "parsers" global.)
@@ -2269,10 +2400,14 @@ impl_definition block
             fail("Custom printers are broken right now")
         self.printer = printer or BlockPrinter(language)
         self.verify = verify
+        self.limited_capi = limited_capi
         self.filename = filename
         self.modules: ModuleDict = {}
         self.classes: ClassDict = {}
         self.functions: list[Function] = []
+        # dict: include name => reason
+        # Example: 'pycore_long.h' => '_PyLong_UnsignedShort_Converter()'
+        self.includes: dict[str, str] = {}
 
         self.line_prefix = self.line_suffix = ''
 
@@ -2331,6 +2466,12 @@ impl_definition block
         global clinic
         clinic = self
 
+    def add_include(self, name: str, reason: str) -> None:
+        if name in self.includes:
+            # Mention a single reason is enough, no need to list all of them
+            return
+        self.includes[name] = reason
+
     def add_destination(
             self,
             name: str,
@@ -2366,7 +2507,7 @@ impl_definition block
                     self.parsers[dsl_name] = parsers[dsl_name](self)
                 parser = self.parsers[dsl_name]
                 parser.parse(block)
-            printer.print_block(block)
+            printer.print_block(block, clinic=self)
 
         # these are destinations not buffers
         for name, destination in self.destinations.items():
@@ -2381,7 +2522,7 @@ impl_definition block
                     block.input = "dump " + name + "\n"
                     warn("Destination buffer " + repr(name) + " not empty at end of file, emptying.")
                     printer.write("\n")
-                    printer.print_block(block)
+                    printer.print_block(block, clinic=self)
                     continue
 
                 if destination.type == 'file':
@@ -2406,7 +2547,7 @@ impl_definition block
 
                     block.input = 'preserve\n'
                     printer_2 = BlockPrinter(self.language)
-                    printer_2.print_block(block, core_includes=True)
+                    printer_2.print_block(block, core_includes=True, clinic=self)
                     write_file(destination.filename, printer_2.f.getvalue())
                     continue
 
@@ -2437,8 +2578,6 @@ impl_definition block
                 if child:
                     parent = module = child
                     continue
-            if not hasattr(parent, 'classes'):
-                return module, cls
             child = parent.classes.get(field)
             if not child:
                 fullname = ".".join(so_far)
@@ -2454,9 +2593,11 @@ impl_definition block
 def parse_file(
         filename: str,
         *,
-        verify: bool = True,
-        output: str | None = None
+        ns: argparse.Namespace,
+        output: str | None = None,
 ) -> None:
+    verify = not ns.force
+    limited_capi = ns.limited_capi
     if not output:
         output = filename
 
@@ -2477,8 +2618,14 @@ def parse_file(
     if not find_start_re.search(raw):
         return
 
+    if LIMITED_CAPI_REGEX.search(raw):
+        limited_capi = True
+
     assert isinstance(language, CLanguage)
-    clinic = Clinic(language, verify=verify, filename=filename)
+    clinic = Clinic(language,
+                    verify=verify,
+                    filename=filename,
+                    limited_capi=limited_capi)
     cooked = clinic.parse(raw)
 
     write_file(output, cooked)
@@ -2653,7 +2800,7 @@ class Function:
     name: str
     module: Module | Clinic
     cls: Class | None
-    c_basename: str | None
+    c_basename: str
     full_name: str
     return_converter: CReturnConverter
     kind: FunctionKind
@@ -2751,6 +2898,7 @@ class Parameter:
     group: int = 0
     # (`None` signifies that there is no deprecation)
     deprecated_positional: VersionTuple | None = None
+    deprecated_keyword: VersionTuple | None = None
     right_bracket_count: int = dc.field(init=False, default=0)
 
     def __repr__(self) -> str:
@@ -2951,6 +3099,10 @@ class CConverter(metaclass=CConverterAutoRegister):
     # name, *just* for the text signature.
     # Only set by self_converter.
     signature_name: str | None = None
+
+    # Optional (name, reason) include which generate a line like:
+    # "#include "name"     // reason"
+    include: tuple[str, str] | None = None
 
     # keep in sync with self_converter.__init__!
     def __init__(self,
@@ -3256,6 +3408,11 @@ class CConverter(metaclass=CConverterAutoRegister):
         else:
             return self.name
 
+    def add_include(self, name: str, reason: str) -> None:
+        if self.include is not None:
+            raise ValueError("a converter only supports a single include")
+        self.include = (name, reason)
+
 type_checks = {
     '&PyLong_Type': ('PyLong_Check', 'int'),
     '&PyTuple_Type': ('PyTuple_Check', 'tuple'),
@@ -3315,7 +3472,7 @@ class bool_converter(CConverter):
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'i':
             return """
-                {paramname} = _PyLong_AsInt({argname});
+                {paramname} = PyLong_AsInt({argname});
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
                 }}}}
@@ -3472,6 +3629,8 @@ class unsigned_short_converter(CConverter):
             self.format_unit = 'H'
         else:
             self.converter = '_PyLong_UnsignedShort_Converter'
+            self.add_include('pycore_long.h',
+                             '_PyLong_UnsignedShort_Converter()')
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'H':
@@ -3503,7 +3662,7 @@ class int_converter(CConverter):
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'i':
             return """
-                {paramname} = _PyLong_AsInt({argname});
+                {paramname} = PyLong_AsInt({argname});
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
                 }}}}
@@ -3533,6 +3692,8 @@ class unsigned_int_converter(CConverter):
             self.format_unit = 'I'
         else:
             self.converter = '_PyLong_UnsignedInt_Converter'
+            self.add_include('pycore_long.h',
+                             '_PyLong_UnsignedInt_Converter()')
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'I':
@@ -3570,6 +3731,8 @@ class unsigned_long_converter(CConverter):
             self.format_unit = 'k'
         else:
             self.converter = '_PyLong_UnsignedLong_Converter'
+            self.add_include('pycore_long.h',
+                             '_PyLong_UnsignedLong_Converter()')
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'k':
@@ -3609,6 +3772,8 @@ class unsigned_long_long_converter(CConverter):
             self.format_unit = 'K'
         else:
             self.converter = '_PyLong_UnsignedLongLong_Converter'
+            self.add_include('pycore_long.h',
+                             '_PyLong_UnsignedLongLong_Converter()')
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'K':
@@ -3630,8 +3795,11 @@ class Py_ssize_t_converter(CConverter):
         if accept == {int}:
             self.format_unit = 'n'
             self.default_type = int
+            self.add_include('pycore_abstract.h', '_PyNumber_Index()')
         elif accept == {int, NoneType}:
             self.converter = '_Py_convert_optional_to_ssize_t'
+            self.add_include('pycore_abstract.h',
+                             '_Py_convert_optional_to_ssize_t()')
         else:
             fail(f"Py_ssize_t_converter: illegal 'accept' argument {accept!r}")
 
@@ -3670,6 +3838,10 @@ class size_t_converter(CConverter):
     converter = '_PyLong_Size_t_Converter'
     c_ignored_default = "0"
 
+    def converter_init(self, *, accept: TypeSet = {int, NoneType}) -> None:
+        self.add_include('pycore_long.h',
+                         '_PyLong_Size_t_Converter()')
+
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'n':
             return """
@@ -3684,6 +3856,10 @@ class size_t_converter(CConverter):
 class fildes_converter(CConverter):
     type = 'int'
     converter = '_PyLong_FileDescriptor_Converter'
+
+    def converter_init(self, *, accept: TypeSet = {int, NoneType}) -> None:
+        self.add_include('pycore_fileutils.h',
+                         '_PyLong_FileDescriptor_Converter()')
 
     def _parse_arg(self, argname: str, displayname: str) -> str | None:
         return """
@@ -4577,12 +4753,18 @@ class ParamState(enum.IntEnum):
     RIGHT_SQUARE_AFTER = 6
 
 
+class FunctionNames(NamedTuple):
+    full_name: str
+    c_basename: str
+
+
 class DSLParser:
     function: Function | None
     state: StateKeeper
     keyword_only: bool
     positional_only: bool
     deprecated_positional: VersionTuple | None
+    deprecated_keyword: VersionTuple | None
     group: int
     parameter_state: ParamState
     indent: IndentStack
@@ -4590,11 +4772,7 @@ class DSLParser:
     coexist: bool
     parameter_continuation: str
     preserve_output: bool
-    star_from_version_re = create_regex(
-        before="* [from ",
-        after="]",
-        word=False,
-    )
+    from_version_re = re.compile(r'([*/]) +\[from +(.+)\]')
 
     def __init__(self, clinic: Clinic) -> None:
         self.clinic = clinic
@@ -4619,6 +4797,7 @@ class DSLParser:
         self.keyword_only = False
         self.positional_only = False
         self.deprecated_positional = None
+        self.deprecated_keyword = None
         self.group = 0
         self.parameter_state: ParamState = ParamState.START
         self.indent = IndentStack()
@@ -4840,6 +5019,39 @@ class DSLParser:
 
         self.next(self.state_modulename_name, line)
 
+    @staticmethod
+    def parse_function_names(line: str) -> FunctionNames:
+        left, as_, right = line.partition(' as ')
+        full_name = left.strip()
+        c_basename = right.strip()
+        if as_ and not c_basename:
+            fail("No C basename provided after 'as' keyword")
+        if not c_basename:
+            fields = full_name.split(".")
+            if fields[-1] == '__new__':
+                fields.pop()
+            c_basename = "_".join(fields)
+        if not is_legal_py_identifier(full_name):
+            fail(f"Illegal function name: {full_name!r}")
+        if not is_legal_c_identifier(c_basename):
+            fail(f"Illegal C basename: {c_basename!r}")
+        return FunctionNames(full_name=full_name, c_basename=c_basename)
+
+    def update_function_kind(self, fullname: str) -> None:
+        fields = fullname.split('.')
+        name = fields.pop()
+        _, cls = self.clinic._module_and_class(fields)
+        if name in unsupported_special_methods:
+            fail(f"{name!r} is a special method and cannot be converted to Argument Clinic!")
+        if name == '__new__':
+            if (self.kind is not CLASS_METHOD) or (not cls):
+                fail("'__new__' must be a class method!")
+            self.kind = METHOD_NEW
+        elif name == '__init__':
+            if (self.kind is not CALLABLE) or (not cls):
+                fail("'__init__' must be a normal method, not a class or static method!")
+            self.kind = METHOD_INIT
+
     def state_modulename_name(self, line: str) -> None:
         # looking for declaration, which establishes the leftmost column
         # line should be
@@ -4862,15 +5074,10 @@ class DSLParser:
 
         # are we cloning?
         before, equals, existing = line.rpartition('=')
-        c_basename: str | None
         if equals:
-            full_name, _, c_basename = before.partition(' as ')
-            full_name = full_name.strip()
-            c_basename = c_basename.strip()
+            full_name, c_basename = self.parse_function_names(before)
             existing = existing.strip()
-            if (is_legal_py_identifier(full_name) and
-                (not c_basename or is_legal_c_identifier(c_basename)) and
-                is_legal_py_identifier(existing)):
+            if is_legal_py_identifier(existing):
                 # we're cloning!
                 fields = [x.strip() for x in existing.split('.')]
                 function_name = fields.pop()
@@ -4888,6 +5095,7 @@ class DSLParser:
                 function_name = fields.pop()
                 module, cls = self.clinic._module_and_class(fields)
 
+                self.update_function_kind(full_name)
                 overrides: dict[str, Any] = {
                     "name": function_name,
                     "full_name": full_name,
@@ -4915,15 +5123,7 @@ class DSLParser:
 
         line, _, returns = line.partition('->')
         returns = returns.strip()
-
-        full_name, _, c_basename = line.partition(' as ')
-        full_name = full_name.strip()
-        c_basename = c_basename.strip() or None
-
-        if not is_legal_py_identifier(full_name):
-            fail(f"Illegal function name: {full_name!r}")
-        if c_basename and not is_legal_c_identifier(c_basename):
-            fail(f"Illegal C basename: {c_basename!r}")
+        full_name, c_basename = self.parse_function_names(line)
 
         return_converter = None
         if returns:
@@ -4948,20 +5148,9 @@ class DSLParser:
         function_name = fields.pop()
         module, cls = self.clinic._module_and_class(fields)
 
-        fields = full_name.split('.')
-        if fields[-1] in unsupported_special_methods:
-            fail(f"{fields[-1]} is a special method and cannot be converted to Argument Clinic!  (Yet.)")
-
-        if fields[-1] == '__new__':
-            if (self.kind is not CLASS_METHOD) or (not cls):
-                fail("__new__ must be a class method!")
-            self.kind = METHOD_NEW
-        elif fields[-1] == '__init__':
-            if (self.kind is not CALLABLE) or (not cls):
-                fail("__init__ must be a normal method, not a class or static method!")
-            self.kind = METHOD_INIT
-            if not return_converter:
-                return_converter = init_return_converter()
+        self.update_function_kind(full_name)
+        if self.kind is METHOD_INIT and not return_converter:
+            return_converter = init_return_converter()
 
         if not return_converter:
             return_converter = CReturnConverter()
@@ -5086,21 +5275,22 @@ class DSLParser:
             return
 
         line = line.lstrip()
-        match = self.star_from_version_re.match(line)
+        version: VersionTuple | None = None
+        match = self.from_version_re.fullmatch(line)
         if match:
-            self.parse_deprecated_positional(match.group(1))
-            return
+            line = match[1]
+            version = self.parse_version(match[2])
 
         func = self.function
         match line:
             case '*':
-                self.parse_star(func)
+                self.parse_star(func, version)
             case '[':
                 self.parse_opening_square_bracket(func)
             case ']':
                 self.parse_closing_square_bracket(func)
             case '/':
-                self.parse_slash(func)
+                self.parse_slash(func, version)
             case param:
                 self.parse_parameter(param)
 
@@ -5401,29 +5591,42 @@ class DSLParser:
                     "Annotations must be either a name, a function call, or a string."
                 )
 
-    def parse_deprecated_positional(self, thenceforth: str) -> None:
+    def parse_version(self, thenceforth: str) -> VersionTuple:
+        """Parse Python version in `[from ...]` marker."""
         assert isinstance(self.function, Function)
-        fname = self.function.full_name
 
-        if self.keyword_only:
-            fail(f"Function {fname!r}: '* [from ...]' must come before '*'")
-        if self.deprecated_positional:
-            fail(f"Function {fname!r} uses '[from ...]' more than once.")
         try:
             major, minor = thenceforth.split(".")
-            self.deprecated_positional = int(major), int(minor)
+            return int(major), int(minor)
         except ValueError:
             fail(
-                f"Function {fname!r}: expected format '* [from major.minor]' "
+                f"Function {self.function.name!r}: expected format '[from major.minor]' "
                 f"where 'major' and 'minor' are integers; got {thenceforth!r}"
             )
 
-    def parse_star(self, function: Function) -> None:
-        """Parse keyword-only parameter marker '*'."""
-        if self.keyword_only:
-            fail(f"Function {function.name!r} uses '*' more than once.")
-        self.deprecated_positional = None
-        self.keyword_only = True
+    def parse_star(self, function: Function, version: VersionTuple | None) -> None:
+        """Parse keyword-only parameter marker '*'.
+
+        The 'version' parameter signifies the future version from which
+        the marker will take effect (None means it is already in effect).
+        """
+        if version is None:
+            if self.keyword_only:
+                fail(f"Function {function.name!r} uses '*' more than once.")
+            self.check_remaining_star()
+            self.keyword_only = True
+        else:
+            if self.keyword_only:
+                fail(f"Function {function.name!r}: '* [from ...]' must precede '*'")
+            if self.deprecated_positional:
+                if self.deprecated_positional == version:
+                    fail(f"Function {function.name!r} uses '* [from "
+                         f"{version[0]}.{version[1]}]' more than once.")
+                if self.deprecated_positional < version:
+                    fail(f"Function {function.name!r}: '* [from "
+                         f"{version[0]}.{version[1]}]' must precede '* [from "
+                         f"{self.deprecated_positional[0]}.{self.deprecated_positional[1]}]'")
+        self.deprecated_positional = version
 
     def parse_opening_square_bracket(self, function: Function) -> None:
         """Parse opening parameter group symbol '['."""
@@ -5457,11 +5660,44 @@ class DSLParser:
                      f"has an unsupported group configuration. "
                      f"(Unexpected state {st}.c)")
 
-    def parse_slash(self, function: Function) -> None:
-        """Parse positional-only parameter marker '/'."""
-        if self.positional_only:
-            fail(f"Function {function.name!r} uses '/' more than once.")
+    def parse_slash(self, function: Function, version: VersionTuple | None) -> None:
+        """Parse positional-only parameter marker '/'.
+
+        The 'version' parameter signifies the future version from which
+        the marker will take effect (None means it is already in effect).
+        """
+        if version is None:
+            if self.deprecated_keyword:
+                fail(f"Function {function.name!r}: '/' must precede '/ [from ...]'")
+            if self.deprecated_positional:
+                fail(f"Function {function.name!r}: '/' must precede '* [from ...]'")
+            if self.keyword_only:
+                fail(f"Function {function.name!r}: '/' must precede '*'")
+            if self.positional_only:
+                fail(f"Function {function.name!r} uses '/' more than once.")
+        else:
+            if self.deprecated_keyword:
+                if self.deprecated_keyword == version:
+                    fail(f"Function {function.name!r} uses '/ [from "
+                         f"{version[0]}.{version[1]}]' more than once.")
+                if self.deprecated_keyword > version:
+                    fail(f"Function {function.name!r}: '/ [from "
+                         f"{version[0]}.{version[1]}]' must precede '/ [from "
+                         f"{self.deprecated_keyword[0]}.{self.deprecated_keyword[1]}]'")
+            if self.deprecated_positional:
+                fail(f"Function {function.name!r}: '/ [from ...]' must precede '* [from ...]'")
+            if self.keyword_only:
+                fail(f"Function {function.name!r}: '/ [from ...]' must precede '*'")
         self.positional_only = True
+        self.deprecated_keyword = version
+        if version is not None:
+            found = False
+            for p in reversed(function.parameters.values()):
+                found = p.kind is inspect.Parameter.POSITIONAL_OR_KEYWORD
+                break
+            if not found:
+                fail(f"Function {function.name!r} specifies '/ [from ...]' "
+                     f"without preceding parameters.")
         # REQUIRED and OPTIONAL are allowed here, that allows positional-only
         # without option groups to work (and have default values!)
         allowed = {
@@ -5473,19 +5709,13 @@ class DSLParser:
         if (self.parameter_state not in allowed) or self.group:
             fail(f"Function {function.name!r} has an unsupported group configuration. "
                  f"(Unexpected state {self.parameter_state}.d)")
-        if self.keyword_only:
-            fail(f"Function {function.name!r} mixes keyword-only and "
-                 "positional-only parameters, which is unsupported.")
         # fixup preceding parameters
         for p in function.parameters.values():
-            if p.is_vararg():
-                continue
-            if (p.kind is not inspect.Parameter.POSITIONAL_OR_KEYWORD and
-                not isinstance(p.converter, self_converter)
-            ):
-                fail(f"Function {function.name!r} mixes keyword-only and "
-                     "positional-only parameters, which is unsupported.")
-            p.kind = inspect.Parameter.POSITIONAL_ONLY
+            if p.kind is inspect.Parameter.POSITIONAL_OR_KEYWORD:
+                if version is None:
+                    p.kind = inspect.Parameter.POSITIONAL_ONLY
+                elif p.deprecated_keyword is None:
+                    p.deprecated_keyword = version
 
     def state_parameter_docstring_start(self, line: str) -> None:
         assert self.indent.margin is not None, "self.margin.infer() has not yet been called to set the margin"
@@ -5770,6 +6000,29 @@ class DSLParser:
                              signature=signature,
                              parameters=parameters).rstrip()
 
+    def check_remaining_star(self, lineno: int | None = None) -> None:
+        assert isinstance(self.function, Function)
+
+        if self.keyword_only:
+            symbol = '*'
+        elif self.deprecated_positional:
+            symbol = '* [from ...]'
+        else:
+            return
+
+        no_param_after_symbol = True
+        for p in reversed(self.function.parameters.values()):
+            if self.keyword_only:
+                if p.kind == inspect.Parameter.KEYWORD_ONLY:
+                    return
+            elif self.deprecated_positional:
+                if p.deprecated_positional == self.deprecated_positional:
+                    return
+            break
+
+        fail(f"Function {self.function.name!r} specifies {symbol!r} "
+             f"without following parameters.", line_number=lineno)
+
     def do_post_block_processing_cleanup(self, lineno: int) -> None:
         """
         Called when processing the block is done.
@@ -5777,28 +6030,7 @@ class DSLParser:
         if not self.function:
             return
 
-        def check_remaining(
-                symbol: str,
-                condition: Callable[[Parameter], bool]
-        ) -> None:
-            assert isinstance(self.function, Function)
-
-            if values := self.function.parameters.values():
-                last_param = next(reversed(values))
-                no_param_after_symbol = condition(last_param)
-            else:
-                no_param_after_symbol = True
-            if no_param_after_symbol:
-                fname = self.function.full_name
-                fail(f"Function {fname!r} specifies {symbol!r} "
-                     "without any parameters afterwards.", line_number=lineno)
-
-        if self.keyword_only:
-            check_remaining("*", lambda p: p.kind != inspect.Parameter.KEYWORD_ONLY)
-
-        if self.deprecated_positional:
-            check_remaining("* [from ...]", lambda p: not p.deprecated_positional)
-
+        self.check_remaining_star(lineno)
         self.function.docstring = self.format_docstring()
 
 
@@ -5817,9 +6049,6 @@ parsers: dict[str, Callable[[Clinic], Parser]] = {
     'clinic': DSLParser,
     'python': PythonParser,
 }
-
-
-clinic = None
 
 
 def create_cli() -> argparse.ArgumentParser:
@@ -5848,6 +6077,8 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
     cmdline.add_argument("--exclude", type=str, action="append",
                          help=("a file to exclude in --make mode; "
                                "can be given multiple times"))
+    cmdline.add_argument("--limited", dest="limited_capi", action='store_true',
+                         help="use the Limited C API")
     cmdline.add_argument("filename", metavar="FILE", type=str, nargs="*",
                          help="the list of files to process")
     return cmdline
@@ -5938,7 +6169,7 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
                     continue
                 if ns.verbose:
                     print(path)
-                parse_file(path, verify=not ns.force)
+                parse_file(path, ns=ns)
         return
 
     if not ns.filename:
@@ -5950,7 +6181,7 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
     for filename in ns.filename:
         if ns.verbose:
             print(filename)
-        parse_file(filename, output=ns.output, verify=not ns.force)
+        parse_file(filename, output=ns.output, ns=ns)
 
 
 def main(argv: list[str] | None = None) -> NoReturn:
