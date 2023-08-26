@@ -5398,8 +5398,8 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
             }
 
             if (!SetHandleInformation((HANDLE)fd, HANDLE_FLAG_INHERIT, 0)) {
-                closesocket(fd);
                 PyErr_SetFromWindowsErr(0);
+                closesocket(fd);
                 return -1;
             }
 
@@ -5613,8 +5613,9 @@ socket_gethostname(PyObject *self, PyObject *unused)
                            name,
                            &size))
     {
+        PyErr_SetFromWindowsErr(0);
         PyMem_Free(name);
-        return PyErr_SetFromWindowsErr(0);
+        return NULL;
     }
 
     result = PyUnicode_FromWideChar(name, size);
@@ -6212,8 +6213,8 @@ socket_dup(PyObject *self, PyObject *fdobj)
     }
 
     if (!SetHandleInformation((HANDLE)newfd, HANDLE_FLAG_INHERIT, 0)) {
-        closesocket(newfd);
         PyErr_SetFromWindowsErr(0);
+        closesocket(newfd);
         return NULL;
     }
 #else
@@ -6660,11 +6661,12 @@ socket_inet_ntop(PyObject *self, PyObject *args)
 
     /* inet_ntop guarantee NUL-termination of resulting string. */
     retval = inet_ntop(af, packed_ip.buf, ip, sizeof(ip));
-    PyBuffer_Release(&packed_ip);
     if (!retval) {
         PyErr_SetFromErrno(PyExc_OSError);
+        PyBuffer_Release(&packed_ip);
         return NULL;
     } else {
+        PyBuffer_Release(&packed_ip);
         return PyUnicode_FromString(retval);
     }
 }
@@ -7003,8 +7005,8 @@ socket_if_nameindex(PyObject *self, PyObject *arg)
 
     ni = if_nameindex();
     if (ni == NULL) {
-        Py_DECREF(list);
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_DECREF(list);
         return NULL;
     }
 
