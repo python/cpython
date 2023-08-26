@@ -8,11 +8,17 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_long.h"
-#include "pycore_object.h"
-#include "pycore_parser.h"
-#include "pycore_pymem_init.h"
-#include "pycore_obmalloc_init.h"
+#include "pycore_ceval_state.h"   // _PyEval_RUNTIME_PERF_INIT
+#include "pycore_faulthandler.h"  // _faulthandler_runtime_state_INIT
+#include "pycore_floatobject.h"   // _py_float_format_unknown
+#include "pycore_object.h"        // _PyObject_HEAD_INIT
+#include "pycore_obmalloc_init.h" // _obmalloc_global_state_INIT
+#include "pycore_parser.h"        // _parser_runtime_state_INIT
+#include "pycore_pyhash.h"        // pyhash_state_INIT
+#include "pycore_pymem_init.h"    // _pymem_allocators_standard_INIT
+#include "pycore_runtime_init_generated.h"  // _Py_bytes_characters_INIT
+#include "pycore_signal.h"        // _signals_RUNTIME_INIT
+#include "pycore_tracemalloc.h"   // _tracemalloc_runtime_state_INIT
 
 
 extern PyTypeObject _PyExc_MemoryError;

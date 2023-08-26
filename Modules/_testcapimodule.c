@@ -18,8 +18,8 @@
 #undef NDEBUG
 
 #include "Python.h"
-#include "frameobject.h"          // PyFrame_New
-#include "marshal.h"              // PyMarshal_WriteLongToFile
+#include "frameobject.h"          // PyFrame_New()
+#include "marshal.h"              // PyMarshal_WriteLongToFile()
 
 #include <float.h>                // FLT_MAX
 #include <signal.h>
@@ -37,7 +37,7 @@
 #endif
 
 #ifdef bool
-#  error "The public headers should not include <stdbool.h>, see bpo-46748"
+#  error "The public headers should not include <stdbool.h>, see gh-48924"
 #endif
 
 // Several parts of this module are broken out into files in _testcapi/.
@@ -269,26 +269,6 @@ test_dict_iteration(PyObject* self, PyObject *Py_UNUSED(ignored))
     }
 
     Py_RETURN_NONE;
-}
-
-static PyObject*
-dict_getitem_knownhash(PyObject *self, PyObject *args)
-{
-    PyObject *mp, *key, *result;
-    Py_ssize_t hash;
-
-    if (!PyArg_ParseTuple(args, "OOn:dict_getitem_knownhash",
-                          &mp, &key, &hash)) {
-        return NULL;
-    }
-
-    result = _PyDict_GetItem_KnownHash(mp, key, (Py_hash_t)hash);
-    if (result == NULL && !PyErr_Occurred()) {
-        _PyErr_SetKeyError(key);
-        return NULL;
-    }
-
-    return Py_XNewRef(result);
 }
 
 /* Issue #4701: Check that PyObject_Hash implicitly calls
@@ -2125,13 +2105,6 @@ test_pythread_tss_key_state(PyObject *self, PyObject *args)
 }
 
 
-static PyObject*
-new_hamt(PyObject *self, PyObject *args)
-{
-    return _PyContext_NewHamtForTests();
-}
-
-
 /* def bad_get(self, obj, cls):
        cls()
        return repr(self)
@@ -3326,196 +3299,6 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 
 
 static PyObject *
-test_dict_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
-{
-    assert(!PyErr_Occurred());
-
-    PyObject *dict= NULL, *key = NULL, *missing_key = NULL, *value = NULL;
-    PyObject *invalid_key = NULL;
-    int res;
-
-    // test PyDict_New()
-    dict = PyDict_New();
-    if (dict == NULL) {
-        goto error;
-    }
-
-    key = PyUnicode_FromString("key");
-    if (key == NULL) {
-        goto error;
-    }
-
-    missing_key = PyUnicode_FromString("missing_key");
-    if (missing_key == NULL) {
-        goto error;
-    }
-
-    value = PyUnicode_FromString("value");
-    if (value == NULL) {
-        goto error;
-    }
-
-    // test PyDict_SetItem()
-    Py_ssize_t key_refcnt = Py_REFCNT(key);
-    Py_ssize_t value_refcnt = Py_REFCNT(value);
-    res = PyDict_SetItem(dict, key, value);
-    if (res < 0) {
-        goto error;
-    }
-    assert(res == 0);
-    assert(Py_REFCNT(key) == (key_refcnt + 1));
-    assert(Py_REFCNT(value) == (value_refcnt + 1));
-
-    // test PyDict_SetItemString()
-    res = PyDict_SetItemString(dict, "key", value);
-    if (res < 0) {
-        goto error;
-    }
-    assert(res == 0);
-    assert(Py_REFCNT(key) == (key_refcnt + 1));
-    assert(Py_REFCNT(value) == (value_refcnt + 1));
-
-    // test PyDict_Size()
-    assert(PyDict_Size(dict) == 1);
-
-    // test PyDict_Contains(), key is present
-    assert(PyDict_Contains(dict, key) == 1);
-
-    // test PyDict_GetItem(), key is present
-    assert(PyDict_GetItem(dict, key) == value);
-
-    // test PyDict_GetItemString(), key is present
-    assert(PyDict_GetItemString(dict, "key") == value);
-
-    // test PyDict_GetItemWithError(), key is present
-    assert(PyDict_GetItemWithError(dict, key) == value);
-    assert(!PyErr_Occurred());
-
-    // test PyDict_GetItemRef(), key is present
-    PyObject *get_value = Py_Ellipsis;  // marker value
-    assert(PyDict_GetItemRef(dict, key, &get_value) == 1);
-    assert(get_value == value);
-    Py_DECREF(get_value);
-
-    // test PyDict_GetItemStringRef(), key is present
-    get_value = Py_Ellipsis;  // marker value
-    assert(PyDict_GetItemStringRef(dict, "key", &get_value) == 1);
-    assert(get_value == value);
-    Py_DECREF(get_value);
-
-    // test PyDict_Contains(), missing key
-    assert(PyDict_Contains(dict, missing_key) == 0);
-
-    // test PyDict_GetItem(), missing key
-    assert(PyDict_GetItem(dict, missing_key) == NULL);
-    assert(!PyErr_Occurred());
-
-    // test PyDict_GetItemString(), missing key
-    assert(PyDict_GetItemString(dict, "missing_key") == NULL);
-    assert(!PyErr_Occurred());
-
-    // test PyDict_GetItemWithError(), missing key
-    assert(PyDict_GetItem(dict, missing_key) == NULL);
-    assert(!PyErr_Occurred());
-
-    // test PyDict_GetItemRef(), missing key
-    get_value = Py_Ellipsis;  // marker value
-    assert(PyDict_GetItemRef(dict, missing_key, &get_value) == 0);
-    assert(!PyErr_Occurred());
-    assert(get_value == NULL);
-
-    // test PyDict_GetItemStringRef(), missing key
-    get_value = Py_Ellipsis;  // marker value
-    assert(PyDict_GetItemStringRef(dict, "missing_key", &get_value) == 0);
-    assert(!PyErr_Occurred());
-    assert(get_value == NULL);
-
-    // test PyDict_GetItem(), invalid dict
-    PyObject *invalid_dict = key;  // borrowed reference
-    assert(PyDict_GetItem(invalid_dict, key) == NULL);
-    assert(!PyErr_Occurred());
-
-    // test PyDict_GetItemWithError(), invalid dict
-    assert(PyDict_GetItemWithError(invalid_dict, key) == NULL);
-    assert(PyErr_ExceptionMatches(PyExc_SystemError));
-    PyErr_Clear();
-
-    // test PyDict_GetItemRef(), invalid dict
-    get_value = Py_Ellipsis;  // marker value
-    assert(PyDict_GetItemRef(invalid_dict, key, &get_value) == -1);
-    assert(PyErr_ExceptionMatches(PyExc_SystemError));
-    PyErr_Clear();
-    assert(get_value == NULL);
-
-    // test PyDict_GetItemStringRef(), invalid dict
-    get_value = Py_Ellipsis;  // marker value
-    assert(PyDict_GetItemStringRef(invalid_dict, "key", &get_value) == -1);
-    assert(PyErr_ExceptionMatches(PyExc_SystemError));
-    PyErr_Clear();
-    assert(get_value == NULL);
-
-    invalid_key = PyList_New(0);
-    if (invalid_key == NULL) {
-        goto error;
-    }
-
-    // test PyDict_Contains(), invalid key
-    assert(PyDict_Contains(dict, invalid_key) == -1);
-    assert(PyErr_ExceptionMatches(PyExc_TypeError));
-    PyErr_Clear();
-
-    // test PyDict_GetItem(), invalid key
-    assert(PyDict_GetItem(dict, invalid_key) == NULL);
-    assert(!PyErr_Occurred());
-
-    // test PyDict_GetItemWithError(), invalid key
-    assert(PyDict_GetItemWithError(dict, invalid_key) == NULL);
-    assert(PyErr_ExceptionMatches(PyExc_TypeError));
-    PyErr_Clear();
-
-    // test PyDict_GetItemRef(), invalid key
-    get_value = Py_Ellipsis;  // marker value
-    assert(PyDict_GetItemRef(dict, invalid_key, &get_value) == -1);
-    assert(PyErr_ExceptionMatches(PyExc_TypeError));
-    PyErr_Clear();
-    assert(get_value == NULL);
-
-    // test PyDict_DelItem(), key is present
-    assert(PyDict_DelItem(dict, key) == 0);
-    assert(PyDict_Size(dict) == 0);
-
-    // test PyDict_DelItem(), missing key
-    assert(PyDict_DelItem(dict, missing_key) == -1);
-    assert(PyErr_ExceptionMatches(PyExc_KeyError));
-    PyErr_Clear();
-
-    // test PyDict_DelItem(), invalid key
-    assert(PyDict_DelItem(dict, invalid_key) == -1);
-    assert(PyErr_ExceptionMatches(PyExc_TypeError));
-    PyErr_Clear();
-
-    // test PyDict_Clear()
-    PyDict_Clear(dict);
-
-    Py_DECREF(dict);
-    Py_DECREF(key);
-    Py_DECREF(missing_key);
-    Py_DECREF(value);
-    Py_DECREF(invalid_key);
-
-    Py_RETURN_NONE;
-
-error:
-    Py_XDECREF(dict);
-    Py_XDECREF(key);
-    Py_XDECREF(missing_key);
-    Py_XDECREF(value);
-    Py_XDECREF(invalid_key);
-    return NULL;
-}
-
-
-static PyObject *
 sys_getobject(PyObject *Py_UNUSED(module), PyObject *arg)
 {
     const char *name;
@@ -3550,7 +3333,6 @@ static PyMethodDef TestMethods[] = {
     {"test_sizeof_c_types",     test_sizeof_c_types,             METH_NOARGS},
     {"test_list_api",           test_list_api,                   METH_NOARGS},
     {"test_dict_iteration",     test_dict_iteration,             METH_NOARGS},
-    {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
     {"test_lazy_hash_inheritance",      test_lazy_hash_inheritance,METH_NOARGS},
     {"test_xincref_doesnt_leak",test_xincref_doesnt_leak,        METH_NOARGS},
     {"test_incref_doesnt_leak", test_incref_doesnt_leak,         METH_NOARGS},
@@ -3626,7 +3408,6 @@ static PyMethodDef TestMethods[] = {
     {"W_STOPCODE", py_w_stopcode, METH_VARARGS},
 #endif
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
-    {"hamt", new_hamt, METH_NOARGS},
     {"bad_get", _PyCFunction_CAST(bad_get), METH_FASTCALL},
 #ifdef Py_REF_DEBUG
     {"negative_refcount", negative_refcount, METH_NOARGS},
@@ -3678,7 +3459,6 @@ static PyMethodDef TestMethods[] = {
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
     {"check_pyimport_addmodule", check_pyimport_addmodule, METH_VARARGS},
     {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
-    {"test_dict_capi", test_dict_capi, METH_NOARGS},
     {"sys_getobject", sys_getobject, METH_O},
     {"sys_setobject", sys_setobject, METH_VARARGS},
     {NULL, NULL} /* sentinel */

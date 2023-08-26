@@ -1,7 +1,6 @@
-import unittest
-import test._test_multiprocessing
-
+import os.path
 import sys
+import unittest
 from test import support
 
 if support.PGO:
@@ -13,7 +12,5 @@ if sys.platform == "win32":
 if sys.platform == 'darwin':
     raise unittest.SkipTest("test may crash on macOS (bpo-33725)")
 
-test._test_multiprocessing.install_tests_in_module_dict(globals(), 'fork')
-
-if __name__ == '__main__':
-    unittest.main()
+def load_tests(*args):
+    return support.load_package_tests(os.path.dirname(__file__), *args)

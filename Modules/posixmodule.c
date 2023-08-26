@@ -12,6 +12,7 @@
 #ifdef __VXWORKS__
 #  include "pycore_bitutils.h"    // _Py_popcount32()
 #endif
+#include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_ReInitThreads()
 #include "pycore_fileutils.h"     // _Py_closerange()
@@ -6821,7 +6822,7 @@ parse_posix_spawn_flags(PyObject *module, const char *func_name, PyObject *setpg
             goto fail;
         }
         if (py_schedpolicy != Py_None) {
-            int schedpolicy = _PyLong_AsInt(py_schedpolicy);
+            int schedpolicy = PyLong_AsInt(py_schedpolicy);
 
             if (schedpolicy == -1 && PyErr_Occurred()) {
                 goto fail;
@@ -12484,7 +12485,7 @@ conv_confname(PyObject *arg, int *valuep, struct constdef *table,
               size_t tablesize)
 {
     if (PyLong_Check(arg)) {
-        int value = _PyLong_AsInt(arg);
+        int value = PyLong_AsInt(arg);
         if (value == -1 && PyErr_Occurred())
             return 0;
         *valuep = value;
@@ -15668,7 +15669,7 @@ os_waitstatus_to_exitcode_impl(PyObject *module, PyObject *status_obj)
 /*[clinic end generated code: output=db50b1b0ba3c7153 input=7fe2d7fdaea3db42]*/
 {
 #ifndef MS_WINDOWS
-    int status = _PyLong_AsInt(status_obj);
+    int status = PyLong_AsInt(status_obj);
     if (status == -1 && PyErr_Occurred()) {
         return NULL;
     }

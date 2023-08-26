@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_runtime.h"   /* PyRuntimeState */
+#include "pycore_runtime.h"       // _PyRuntime
 
 
 /* Check if the current thread is the main thread.
@@ -66,6 +66,9 @@ _Py_ThreadCanHandleSignals(PyInterpreterState *interp)
 #if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
 extern _Py_thread_local PyThreadState *_Py_tss_tstate;
 #endif
+
+// Export for most shared extensions, used via _PyThreadState_GET() static
+// inline function.
 PyAPI_FUNC(PyThreadState *) _PyThreadState_GetCurrent(void);
 
 /* Get the current Python thread state.

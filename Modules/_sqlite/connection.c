@@ -493,6 +493,14 @@ connection_finalize(PyObject *self)
     }
 
     /* Clean up if user has not called .close() explicitly. */
+    if (con->db) {
+        if (PyErr_ResourceWarning(self, 1, "unclosed database in %R", self)) {
+            /* Spurious errors can appear at shutdown */
+            if (PyErr_ExceptionMatches(PyExc_Warning)) {
+                PyErr_WriteUnraisable(self);
+            }
+        }
+    }
     if (connection_close(con) < 0) {
         if (teardown) {
             PyErr_Clear();
@@ -1388,7 +1396,7 @@ authorizer_callback(void *ctx, int action, const char *arg1,
     }
     else {
         if (PyLong_Check(ret)) {
-            rc = _PyLong_AsInt(ret);
+            rc = PyLong_AsInt(ret);
             if (rc == -1 && PyErr_Occurred()) {
                 print_or_clear_traceback(ctx);
                 rc = SQLITE_DENY;

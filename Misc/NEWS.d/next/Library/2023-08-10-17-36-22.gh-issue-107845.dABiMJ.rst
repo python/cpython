@@ -1,0 +1,3 @@
+:func:`tarfile.data_filter` now takes the location of symlinks into account
+when determining their target, so it will no longer reject some valid
+tarballs with ``LinkOutsideDestinationError``.
