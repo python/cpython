@@ -394,20 +394,6 @@ The :mod:`calendar` module exports the following data attributes:
    An array that represents the abbreviated days of the week in the current locale.
 
 
-.. data:: month_name
-
-   An array that represents the months of the year in the current locale.  This
-   follows normal convention of January being month number 1, so it has a length of
-   13 and  ``month_name[0]`` is the empty string.
-
-
-.. data:: month_abbr
-
-   An array that represents the abbreviated months of the year in the current
-   locale.  This follows normal convention of January being month number 1, so it
-   has a length of 13 and  ``month_abbr[0]`` is the empty string.
-
-
 .. data:: MONDAY
           TUESDAY
           WEDNESDAY
@@ -429,6 +415,20 @@ The :mod:`calendar` module exports the following data attributes:
    :data:`MONDAY` through :data:`SUNDAY`.
 
    .. versionadded:: 3.12
+
+
+.. data:: month_name
+
+   An array that represents the months of the year in the current locale.  This
+   follows normal convention of January being month number 1, so it has a length of
+   13 and  ``month_name[0]`` is the empty string.
+
+
+.. data:: month_abbr
+
+   An array that represents the abbreviated months of the year in the current
+   locale.  This follows normal convention of January being month number 1, so it
+   has a length of 13 and  ``month_abbr[0]`` is the empty string.
 
 
 .. data:: JANUARY
