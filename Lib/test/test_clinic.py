@@ -22,13 +22,6 @@ with test_tools.imports_under_tool('clinic'):
     from clinic import DSLParser
 
 
-def default_namespace():
-    ns = types.SimpleNamespace()
-    ns.force = False
-    ns.limited_capi = clinic.DEFAULT_LIMITED_CAPI
-    return ns
-
-
 def _make_clinic(*, filename='clinic_tests'):
     clang = clinic.CLanguage(None)
     c = clinic.Clinic(clang, filename=filename)
@@ -704,9 +697,8 @@ class ParseFileUnitTest(TestCase):
         self, *, filename, expected_error, verify=True, output=None
     ):
         errmsg = re.escape(dedent(expected_error).strip())
-        ns = default_namespace()
         with self.assertRaisesRegex(clinic.ClinicError, errmsg):
-            clinic.parse_file(filename, ns=ns)
+            clinic.parse_file(filename)
 
     def test_parse_file_no_extension(self) -> None:
         self.expect_parsing_failure(
