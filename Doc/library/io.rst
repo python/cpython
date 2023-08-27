@@ -1063,8 +1063,7 @@ Text I/O
 
    .. method:: tell()
 
-      Return the stream position as an encoded :class:`int`,
-      referred to as a "cookie".
+      Return the stream position as an opaque number.
       The return value of :meth:`!tell` can be given as input to :meth:`seek`,
       to restore a previous stream position.
 
