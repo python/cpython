@@ -52,8 +52,6 @@ A callable can also be passed from the :ref:`python-interface`::
 Note however that :func:`.timeit` will automatically determine the number of
 repetitions only when the command-line interface is used.  In the
 :ref:`timeit-examples` section you can find more advanced examples.
-Especially, the time unit can be changed by modifying :func:`default_timer`
-or passing other timer in function.
 
 
 .. _python-interface:
@@ -88,9 +86,11 @@ The module defines three convenience functions and a public class:
    .. versionchanged:: 3.7
       Default value of *repeat* changed from 3 to 5.
 
+
 .. function:: default_timer()
 
-   The default timer, which is always :func:`time.perf_counter`.
+   The default timer, which is always time.perf_counter(), returns float seconds.
+   An alternative, time.perf_counter_ns, returns integer nanoseconds.
 
    .. versionchanged:: 3.3
       :func:`time.perf_counter` is now the default timer.
