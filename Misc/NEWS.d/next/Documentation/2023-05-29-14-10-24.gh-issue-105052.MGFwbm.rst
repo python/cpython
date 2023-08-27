@@ -1,1 +1,1 @@
-timeit doc update
+Update ``timeit`` doc to specify that time in seconds is just the default.
