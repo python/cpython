@@ -788,7 +788,7 @@ def load_test(x, y=0):
     return a, b
 
 dis_load_test_quickened_code = """\
-%3d           0 RESUME_QUICK             0
+%3d           0 RESUME_CHECK             0
 
 %3d           2 LOAD_FAST_LOAD_FAST      1 (x, y)
               4 STORE_FAST_STORE_FAST   50 (b, a)
@@ -805,7 +805,7 @@ def loop_test():
         load_test(i)
 
 dis_loop_test_quickened_code = """\
-%3d        RESUME_QUICK             0
+%3d        RESUME_CHECK             0
 
 %3d        BUILD_LIST               0
            LOAD_CONST               1 ((1, 2, 3))
@@ -1197,7 +1197,7 @@ class DisTests(DisTestBase):
     @requires_specialization
     def test_binary_specialize(self):
         binary_op_quicken = """\
-  0           0 RESUME_QUICK             0
+  0           0 RESUME_CHECK             0
 
   1           2 LOAD_NAME                0 (a)
               4 LOAD_NAME                1 (b)
@@ -1215,7 +1215,7 @@ class DisTests(DisTestBase):
         self.do_disassembly_compare(got, binary_op_quicken % "BINARY_OP_ADD_UNICODE    0 (+)", True)
 
         binary_subscr_quicken = """\
-  0           0 RESUME_QUICK             0
+  0           0 RESUME_CHECK             0
 
   1           2 LOAD_NAME                0 (a)
               4 LOAD_CONST               0 (0)
@@ -1236,7 +1236,7 @@ class DisTests(DisTestBase):
     @requires_specialization
     def test_load_attr_specialize(self):
         load_attr_quicken = """\
-  0           0 RESUME_QUICK             0
+  0           0 RESUME_CHECK             0
 
   1           2 LOAD_CONST               0 ('a')
               4 LOAD_ATTR_SLOT           0 (__class__)
@@ -1251,7 +1251,7 @@ class DisTests(DisTestBase):
     @requires_specialization
     def test_call_specialize(self):
         call_quicken = """\
-  0        RESUME_QUICK             0
+  0        RESUME_CHECK             0
 
   1        LOAD_NAME                0 (str)
            PUSH_NULL
