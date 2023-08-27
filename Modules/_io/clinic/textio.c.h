@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"       // _Py_ID()
 #endif
 
+#include "pycore_abstract.h"       // _Py_convert_optional_to_ssize_t()
 
 PyDoc_STRVAR(_io__TextIOBase_detach__doc__,
 "detach($self, /)\n"
@@ -75,7 +76,7 @@ _io__TextIOBase_read(PyObject *self, PyTypeObject *cls, PyObject *const *args, P
     if (nargs < 1) {
         goto skip_optional_posonly;
     }
-    size = _PyLong_AsInt(args[0]);
+    size = PyLong_AsInt(args[0]);
     if (size == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -129,7 +130,7 @@ _io__TextIOBase_readline(PyObject *self, PyTypeObject *cls, PyObject *const *arg
     if (nargs < 1) {
         goto skip_optional_posonly;
     }
-    size = _PyLong_AsInt(args[0]);
+    size = PyLong_AsInt(args[0]);
     if (size == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -798,7 +799,7 @@ _io_TextIOWrapper_seek(textio *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    whence = _PyLong_AsInt(args[1]);
+    whence = PyLong_AsInt(args[1]);
     if (whence == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -979,4 +980,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=476074297480c8ad input=a9049054013a1b77]*/
+/*[clinic end generated code: output=392e2375041a70a2 input=a9049054013a1b77]*/

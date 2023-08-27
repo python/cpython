@@ -308,6 +308,13 @@ def collect_os(info_add):
         "_PYTHON_PROJECT_BASE",
         "_PYTHON_SYSCONFIGDATA_NAME",
         "__PYVENV_LAUNCHER__",
+
+        # Sanitizer options
+        "ASAN_OPTIONS",
+        "LSAN_OPTIONS",
+        "MSAN_OPTIONS",
+        "TSAN_OPTIONS",
+        "UBSAN_OPTIONS",
     ))
     for name, value in os.environ.items():
         uname = name.upper()

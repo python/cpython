@@ -1112,6 +1112,10 @@ Modules (see :pep:`594`):
 * :mod:`!uu`
 * :mod:`!xdrlib`
 
+Other modules:
+
+* :mod:`!lib2to3`, and the :program:`2to3` program (:gh:`84540`)
+
 APIs:
 
 * :class:`!configparser.LegacyInterpolation` (:gh:`90765`)
@@ -1145,6 +1149,10 @@ Pending Removal in Python 3.14
 
   Use :class:`ast.Constant` instead.
   (Contributed by Serhiy Storchaka in :gh:`90953`.)
+
+* :mod:`asyncio`: the *msg* parameter of both
+  :meth:`asyncio.Future.cancel` and
+  :meth:`asyncio.Task.cancel` (:gh:`90985`)
 
 * :mod:`collections.abc`: Deprecated :class:`collections.abc.ByteString`.
   Prefer :class:`Sequence` or :class:`collections.abc.Buffer`.
@@ -1201,7 +1209,7 @@ Pending Removal in Python 3.14
   is deprecated and will raise an exception in Python 3.14.
 
 * Creating immutable types (:c:macro:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
-  bases using the C API.
+  bases using the C API (:gh:`95388`).
 
 * ``__package__`` and ``__cached__`` will cease to be set or taken
   into consideration by the import system (:gh:`97879`).
@@ -1212,11 +1220,16 @@ Pending Removal in Python 3.14
   May be removed in 3.14.
   (Contributed by Nikita Sobolev in :gh:`101866`.)
 
+* Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
+  bases using the C API (:gh:`95388`)
+
 Pending Removal in Future Versions
 ----------------------------------
 
 The following APIs were deprecated in earlier Python versions and will be removed,
 although there is currently no date scheduled for their removal.
+
+* :mod:`array`'s ``'u'`` format code (:gh:`57281`)
 
 * :class:`typing.Text` (:gh:`92332`)
 

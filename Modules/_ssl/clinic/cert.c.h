@@ -59,7 +59,7 @@ _ssl_Certificate_public_bytes(PySSLCertificate *self, PyObject *const *args, Py_
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    format = _PyLong_AsInt(args[0]);
+    format = PyLong_AsInt(args[0]);
     if (format == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -86,4 +86,4 @@ _ssl_Certificate_get_info(PySSLCertificate *self, PyObject *Py_UNUSED(ignored))
 {
     return _ssl_Certificate_get_info_impl(self);
 }
-/*[clinic end generated code: output=82efada014f9b7fe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=72e2bb139c64546c input=a9049054013a1b77]*/

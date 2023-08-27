@@ -2304,7 +2304,7 @@ Functions and macros manipulating Py_UNICODE* strings:
 
 Encoders:
 
-* :c:func:`!PyUnicode_Encode`: use :c:func:`PyUnicode_AsEncodedObject`
+* :c:func:`!PyUnicode_Encode`: use :c:func:`!PyUnicode_AsEncodedObject`
 * :c:func:`!PyUnicode_EncodeUTF7`
 * :c:func:`!PyUnicode_EncodeUTF8`: use :c:func:`PyUnicode_AsUTF8` or
   :c:func:`PyUnicode_AsUTF8String`
@@ -2462,7 +2462,7 @@ Porting C code
 --------------
 
 * In the course of changes to the buffer API the undocumented
-  :c:member:`~Py_buffer.smalltable` member of the
+  :c:member:`!smalltable` member of the
   :c:type:`Py_buffer` structure has been removed and the
   layout of the :c:type:`PyMemoryViewObject` has changed.
 

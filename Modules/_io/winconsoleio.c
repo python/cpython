@@ -280,7 +280,7 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
             self->fd = -1;
     }
 
-    fd = _PyLong_AsInt(nameobj);
+    fd = PyLong_AsInt(nameobj);
     if (fd < 0) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError,
@@ -377,8 +377,8 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
         else
             self->fd = _Py_open_osfhandle_noraise(handle, _O_RDONLY | _O_BINARY);
         if (self->fd < 0) {
-            CloseHandle(handle);
             PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, nameobj);
+            CloseHandle(handle);
             goto error;
         }
     }
