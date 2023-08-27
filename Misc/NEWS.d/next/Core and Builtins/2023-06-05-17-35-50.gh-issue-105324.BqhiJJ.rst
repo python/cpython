@@ -1,0 +1,2 @@
+Fix the main function of the :mod:`tokenize` module when reading from
+``sys.stdin``. Patch by Pablo Galindo

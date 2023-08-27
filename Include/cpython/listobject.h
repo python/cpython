@@ -21,9 +21,6 @@ typedef struct {
     Py_ssize_t allocated;
 } PyListObject;
 
-PyAPI_FUNC(PyObject *) _PyList_Extend(PyListObject *, PyObject *);
-PyAPI_FUNC(void) _PyList_DebugMallocStats(FILE *out);
-
 /* Cast argument to PyListObject* type. */
 #define _PyList_CAST(op) \
     (assert(PyList_Check(op)), _Py_CAST(PyListObject*, (op)))
@@ -34,18 +31,16 @@ static inline Py_ssize_t PyList_GET_SIZE(PyObject *op) {
     PyListObject *list = _PyList_CAST(op);
     return Py_SIZE(list);
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define PyList_GET_SIZE(op) PyList_GET_SIZE(_PyObject_CAST(op))
-#endif
+#define PyList_GET_SIZE(op) PyList_GET_SIZE(_PyObject_CAST(op))
 
-#define PyList_GET_ITEM(op, index) (_PyList_CAST(op)->ob_item[index])
+#define PyList_GET_ITEM(op, index) (_PyList_CAST(op)->ob_item[(index)])
 
 static inline void
 PyList_SET_ITEM(PyObject *op, Py_ssize_t index, PyObject *value) {
     PyListObject *list = _PyList_CAST(op);
+    assert(0 <= index);
+    assert(index < Py_SIZE(list));
     list->ob_item[index] = value;
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #define PyList_SET_ITEM(op, index, value) \
-    PyList_SET_ITEM(_PyObject_CAST(op), index, _PyObject_CAST(value))
-#endif
+    PyList_SET_ITEM(_PyObject_CAST(op), (index), _PyObject_CAST(value))

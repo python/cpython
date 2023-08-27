@@ -1074,7 +1074,7 @@ subclass.
 Sometimes this is inconvenient. For example, `one user
 <https://code.google.com/archive/p/mock/issues/105>`_ is subclassing mock to
 created a `Twisted adaptor
-<https://twistedmatrix.com/documents/11.0.0/api/twisted.python.components.html>`_.
+<https://twisted.org/documents/11.0.0/api/twisted.python.components.html>`_.
 Having this applied to attributes too actually causes errors.
 
 ``Mock`` (in all its flavours) uses a method called ``_get_child_mock`` to create
@@ -1116,7 +1116,7 @@ on first use).
 That aside there is a way to use ``mock`` to affect the results of an import.
 Importing fetches an *object* from the :data:`sys.modules` dictionary. Note that it
 fetches an *object*, which need not be a module. Importing a module for the
-first time results in a module object being put in `sys.modules`, so usually
+first time results in a module object being put in ``sys.modules``, so usually
 when you import something you get a module back. This need not be the case
 however.
 

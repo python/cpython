@@ -22,7 +22,7 @@ PyAPI_DATA(PyTypeObject) PyCapsule_Type;
 
 typedef void (*PyCapsule_Destructor)(PyObject *);
 
-#define PyCapsule_CheckExact(op) Py_IS_TYPE(op, &PyCapsule_Type)
+#define PyCapsule_CheckExact(op) Py_IS_TYPE((op), &PyCapsule_Type)
 
 
 PyAPI_FUNC(PyObject *) PyCapsule_New(
@@ -47,6 +47,10 @@ PyAPI_FUNC(int) PyCapsule_SetDestructor(PyObject *capsule, PyCapsule_Destructor 
 PyAPI_FUNC(int) PyCapsule_SetName(PyObject *capsule, const char *name);
 
 PyAPI_FUNC(int) PyCapsule_SetContext(PyObject *capsule, void *context);
+
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(int) _PyCapsule_SetTraverse(PyObject *op, traverseproc traverse_func, inquiry clear_func);
+#endif
 
 PyAPI_FUNC(void *) PyCapsule_Import(
     const char *name,           /* UTF-8 encoded string */

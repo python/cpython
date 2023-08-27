@@ -30,7 +30,7 @@ from types import GenericAlias
 # wrapper functions that can handle naive introspection
 
 WRAPPER_ASSIGNMENTS = ('__module__', '__name__', '__qualname__', '__doc__',
-                       '__annotations__')
+                       '__annotations__', '__type_params__')
 WRAPPER_UPDATES = ('__dict__',)
 def update_wrapper(wrapper,
                    wrapped,
@@ -483,8 +483,9 @@ def lru_cache(maxsize=128, typed=False):
     can grow without bound.
 
     If *typed* is True, arguments of different types will be cached separately.
-    For example, f(3.0) and f(3) will be treated as distinct calls with
-    distinct results.
+    For example, f(decimal.Decimal("3.0")) and f(3.0) will be treated as
+    distinct calls with distinct results. Some types such as str and int may
+    be cached separately even when typed is false.
 
     Arguments to the cached function must be hashable.
 
@@ -843,12 +844,11 @@ def singledispatch(func):
         return get_origin(cls) in {Union, types.UnionType}
 
     def _is_valid_dispatch_type(cls):
-        if isinstance(cls, type) and not isinstance(cls, GenericAlias):
+        if isinstance(cls, type):
             return True
         from typing import get_args
         return (_is_union_type(cls) and
-                all(isinstance(arg, type) and not isinstance(arg, GenericAlias)
-                    for arg in get_args(cls)))
+                all(isinstance(arg, type) for arg in get_args(cls)))
 
     def register(cls, func=None):
         """generic_func.register(cls, func) -> func
@@ -934,6 +934,9 @@ class singledispatchmethod:
         self.dispatcher = singledispatch(func)
         self.func = func
 
+        import weakref # see comment in singledispatch function
+        self._method_cache = weakref.WeakKeyDictionary()
+
     def register(self, cls, method=None):
         """generic_method.register(cls, func) -> func
 
@@ -942,13 +945,27 @@ class singledispatchmethod:
         return self.dispatcher.register(cls, func=method)
 
     def __get__(self, obj, cls=None):
+        if self._method_cache is not None:
+            try:
+                _method = self._method_cache[obj]
+            except TypeError:
+                self._method_cache = None
+            except KeyError:
+                pass
+            else:
+                return _method
+
+        dispatch = self.dispatcher.dispatch
         def _method(*args, **kwargs):
-            method = self.dispatcher.dispatch(args[0].__class__)
-            return method.__get__(obj, cls)(*args, **kwargs)
+            return dispatch(args[0].__class__).__get__(obj, cls)(*args, **kwargs)
 
         _method.__isabstractmethod__ = self.__isabstractmethod__
         _method.register = self.register
         update_wrapper(_method, self.func)
+
+        if self._method_cache is not None:
+            self._method_cache[obj] = _method
+
         return _method
 
     @property
@@ -957,18 +974,17 @@ class singledispatchmethod:
 
 
 ################################################################################
-### cached_property() - computed once per instance, cached as attribute
+### cached_property() - property result cached as instance attribute
 ################################################################################
 
 _NOT_FOUND = object()
-
 
 class cached_property:
     def __init__(self, func):
         self.func = func
         self.attrname = None
         self.__doc__ = func.__doc__
-        self.lock = RLock()
+        self.__module__ = func.__module__
 
     def __set_name__(self, owner, name):
         if self.attrname is None:
@@ -995,19 +1011,15 @@ class cached_property:
             raise TypeError(msg) from None
         val = cache.get(self.attrname, _NOT_FOUND)
         if val is _NOT_FOUND:
-            with self.lock:
-                # check if another thread filled cache while we awaited lock
-                val = cache.get(self.attrname, _NOT_FOUND)
-                if val is _NOT_FOUND:
-                    val = self.func(instance)
-                    try:
-                        cache[self.attrname] = val
-                    except TypeError:
-                        msg = (
-                            f"The '__dict__' attribute on {type(instance).__name__!r} instance "
-                            f"does not support item assignment for caching {self.attrname!r} property."
-                        )
-                        raise TypeError(msg) from None
+            val = self.func(instance)
+            try:
+                cache[self.attrname] = val
+            except TypeError:
+                msg = (
+                    f"The '__dict__' attribute on {type(instance).__name__!r} instance "
+                    f"does not support item assignment for caching {self.attrname!r} property."
+                )
+                raise TypeError(msg) from None
         return val
 
     __class_getitem__ = classmethod(GenericAlias)

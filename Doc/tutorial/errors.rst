@@ -154,13 +154,13 @@ exception type.
 The *except clause* may specify a variable after the exception name.  The
 variable is bound to the exception instance which typically has an ``args``
 attribute that stores the arguments. For convenience, builtin exception
-types define :meth:`__str__` to print all the arguments without explicitly
+types define :meth:`~object.__str__` to print all the arguments without explicitly
 accessing ``.args``.  ::
 
    >>> try:
    ...     raise Exception('spam', 'eggs')
    ... except Exception as inst:
-   ...     print(type(inst))    # the exception instance
+   ...     print(type(inst))    # the exception type
    ...     print(inst.args)     # arguments stored in .args
    ...     print(inst)          # __str__ allows args to be printed directly,
    ...                          # but may be overridden in exception subclasses
@@ -174,7 +174,7 @@ accessing ``.args``.  ::
    x = spam
    y = eggs
 
-The exception's :meth:`__str__` output is printed as the last part ('detail')
+The exception's :meth:`~object.__str__` output is printed as the last part ('detail')
 of the message for unhandled exceptions.
 
 :exc:`BaseException` is the common base class of all exceptions. One of its
@@ -284,8 +284,27 @@ re-raise the exception::
 Exception Chaining
 ==================
 
-The :keyword:`raise` statement allows an optional :keyword:`from<raise>` which enables
-chaining exceptions. For example::
+If an unhandled exception occurs inside an :keyword:`except` section, it will
+have the exception being handled attached to it and included in the error
+message::
+
+    >>> try:
+    ...     open("database.sqlite")
+    ... except OSError:
+    ...     raise RuntimeError("unable to handle error")
+    ...
+    Traceback (most recent call last):
+      File "<stdin>", line 2, in <module>
+    FileNotFoundError: [Errno 2] No such file or directory: 'database.sqlite'
+    <BLANKLINE>
+    During handling of the above exception, another exception occurred:
+    <BLANKLINE>
+    Traceback (most recent call last):
+      File "<stdin>", line 4, in <module>
+    RuntimeError: unable to handle error
+
+To indicate that an exception is a direct consequence of another, the
+:keyword:`raise` statement allows an optional :keyword:`from<raise>` clause::
 
     # exc must be exception instance or None.
     raise RuntimeError from exc
@@ -311,9 +330,8 @@ This can be useful when you are transforming exceptions. For example::
       File "<stdin>", line 4, in <module>
     RuntimeError: Failed to open database
 
-Exception chaining happens automatically when an exception is raised inside an
-:keyword:`except` or :keyword:`finally` section. This can be
-disabled by using ``from None`` idiom:
+It also allows disabling automatic exception chaining using the ``from None``
+idiom::
 
     >>> try:
     ...     open('database.sqlite')
@@ -478,7 +496,7 @@ Raising and Handling Multiple Unrelated Exceptions
 ==================================================
 
 There are situations where it is necessary to report several exceptions that
-have occurred. This it often the case in concurrency frameworks, when several
+have occurred. This is often the case in concurrency frameworks, when several
 tasks may have failed in parallel, but there are also other use cases where
 it is desirable to continue execution and collect multiple errors rather than
 raise the first exception.
@@ -517,11 +535,20 @@ of a certain type while letting all other exceptions propagate to
 other clauses and eventually to be reraised. ::
 
    >>> def f():
-   ...     raise ExceptionGroup("group1",
-   ...                          [OSError(1),
-   ...                           SystemError(2),
-   ...                           ExceptionGroup("group2",
-   ...                                          [OSError(3), RecursionError(4)])])
+   ...     raise ExceptionGroup(
+   ...         "group1",
+   ...         [
+   ...             OSError(1),
+   ...             SystemError(2),
+   ...             ExceptionGroup(
+   ...                 "group2",
+   ...                 [
+   ...                     OSError(3),
+   ...                     RecursionError(4)
+   ...                 ]
+   ...             )
+   ...         ]
+   ...     )
    ...
    >>> try:
    ...     f()
@@ -559,6 +586,8 @@ the following pattern::
    ...    raise ExceptionGroup("Test Failures", excs)
    ...
 
+
+.. _tut-exception-notes:
 
 Enriching Exceptions with Notes
 ===============================

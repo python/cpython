@@ -28,6 +28,58 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 2 BC, and so on.
 
 
+.. class:: Day
+
+   Enumeration defining the days of the week as integer constants, from 0 to 6.
+
+   .. attribute:: MONDAY
+
+   .. attribute:: TUESDAY
+
+   .. attribute:: WEDNESDAY
+
+   .. attribute:: THURSDAY
+
+   .. attribute:: FRIDAY
+
+   .. attribute:: SATURDAY
+
+   .. attribute:: SUNDAY
+
+   .. versionadded:: 3.12
+
+
+.. class:: Month
+
+   Enumeration defining months of the year as integer constants, from 1 to 12.
+
+   .. attribute:: JANUARY
+
+   .. attribute:: FEBRUARY
+
+   .. attribute:: MARCH
+
+   .. attribute:: APRIL
+
+   .. attribute:: MAY
+
+   .. attribute:: JUNE
+
+   .. attribute:: JULY
+
+   .. attribute:: AUGUST
+
+   .. attribute:: SEPTEMBER
+
+   .. attribute:: OCTOBER
+
+   .. attribute:: NOVEMBER
+
+   .. attribute:: DECEMBER
+
+   .. versionadded:: 3.12
+
+
 .. class:: Calendar(firstweekday=0)
 
    Creates a :class:`Calendar` object. *firstweekday* is an integer specifying the
@@ -416,6 +468,29 @@ The :mod:`calendar` module exports the following data attributes:
           SUNDAY
 
    Aliases for day numbers, where ``MONDAY`` is ``0`` and ``SUNDAY`` is ``6``.
+
+
+The :mod:`calendar` module defines the following exceptions:
+
+.. exception:: IllegalMonthError(month)
+
+   A subclass of :exc:`ValueError`,
+   raised when the given month number is outside of the range 1-12 (inclusive).
+
+   .. attribute:: month
+
+      The invalid month number.
+
+
+.. exception:: IllegalWeekdayError(weekday)
+
+   A subclass of :exc:`ValueError`,
+   raised when the given weekday number is outside of the range 0-6 (inclusive).
+
+   .. attribute:: weekday
+
+      The invalid weekday number.
+
 
 .. seealso::
 

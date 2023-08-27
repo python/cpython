@@ -31,7 +31,7 @@ _statistics__normal_dist_inv_cdf_impl(PyObject *module, double p, double mu,
 /*[clinic end generated code: output=02fd19ddaab36602 input=24715a74be15296a]*/
 {
     double q, num, den, r, x;
-    if (p <= 0.0 || p >= 1.0 || sigma <= 0.0) {
+    if (p <= 0.0 || p >= 1.0) {
         goto error;
     }
 
@@ -129,6 +129,7 @@ PyDoc_STRVAR(statistics_doc,
 "Accelerators for the statistics module.\n");
 
 static struct PyModuleDef_Slot _statisticsmodule_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

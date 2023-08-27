@@ -20,21 +20,21 @@ PyAPI_FUNC(int) PySet_Discard(PyObject *set, PyObject *key);
 PyAPI_FUNC(PyObject *) PySet_Pop(PyObject *set);
 PyAPI_FUNC(Py_ssize_t) PySet_Size(PyObject *anyset);
 
-#define PyFrozenSet_CheckExact(ob) Py_IS_TYPE(ob, &PyFrozenSet_Type)
+#define PyFrozenSet_CheckExact(ob) Py_IS_TYPE((ob), &PyFrozenSet_Type)
 #define PyFrozenSet_Check(ob) \
-    (Py_IS_TYPE(ob, &PyFrozenSet_Type) || \
+    (Py_IS_TYPE((ob), &PyFrozenSet_Type) || \
       PyType_IsSubtype(Py_TYPE(ob), &PyFrozenSet_Type))
 
 #define PyAnySet_CheckExact(ob) \
-    (Py_IS_TYPE(ob, &PySet_Type) || Py_IS_TYPE(ob, &PyFrozenSet_Type))
+    (Py_IS_TYPE((ob), &PySet_Type) || Py_IS_TYPE((ob), &PyFrozenSet_Type))
 #define PyAnySet_Check(ob) \
-    (Py_IS_TYPE(ob, &PySet_Type) || Py_IS_TYPE(ob, &PyFrozenSet_Type) || \
+    (Py_IS_TYPE((ob), &PySet_Type) || Py_IS_TYPE((ob), &PyFrozenSet_Type) || \
       PyType_IsSubtype(Py_TYPE(ob), &PySet_Type) || \
       PyType_IsSubtype(Py_TYPE(ob), &PyFrozenSet_Type))
 
 #define PySet_CheckExact(op) Py_IS_TYPE(op, &PySet_Type)
 #define PySet_Check(ob) \
-    (Py_IS_TYPE(ob, &PySet_Type) || \
+    (Py_IS_TYPE((ob), &PySet_Type) || \
     PyType_IsSubtype(Py_TYPE(ob), &PySet_Type))
 
 #ifndef Py_LIMITED_API

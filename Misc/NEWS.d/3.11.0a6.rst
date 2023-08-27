@@ -352,7 +352,7 @@ rather than ``JUMP_FORWARD`` with an argument of ``(2**32)+offset``.
 .. nonce: 3Z_qxd
 .. section: Core and Builtins
 
-Correct the docstring for the :meth:`__bool__` method. Patch by Jelle
+Correct the docstring for the :meth:`~object.__bool__` method. Patch by Jelle
 Zijlstra.
 
 ..
@@ -1043,7 +1043,8 @@ Respect `--with-suffix` when building on case-insensitive file systems.
 .. nonce: MD783M
 .. section: Build
 
-Building Python now requires a C11 compiler without optional C11 features.
+Building Python now requires a C11 compiler. Optional C11 features are not
+required.
 Patch by Victor Stinner.
 
 ..
@@ -1054,7 +1055,7 @@ Patch by Victor Stinner.
 .. section: Build
 
 Building Python now requires support for floating point Not-a-Number (NaN):
-remove the ``Py_NO_NAN`` macro. Patch by by Victor Stinner.
+remove the ``Py_NO_NAN`` macro. Patch by Victor Stinner.
 
 ..
 

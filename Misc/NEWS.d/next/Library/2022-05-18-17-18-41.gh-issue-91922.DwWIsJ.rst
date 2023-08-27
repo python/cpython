@@ -1,3 +1,0 @@
-Fix function :func:`sqlite.connect` and the :class:`sqlite.Connection`
-constructor on non-UTF-8 locales. Also, they now support bytes paths
-non-decodable with the current FS encoding.

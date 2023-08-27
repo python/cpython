@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(_tracemalloc_is_tracing__doc__,
 "is_tracing($module, /)\n"
 "--\n"
@@ -101,7 +107,7 @@ _tracemalloc_start(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    nframe = _PyLong_AsInt(args[0]);
+    nframe = PyLong_AsInt(args[0]);
     if (nframe == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -212,4 +218,4 @@ _tracemalloc_reset_peak(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _tracemalloc_reset_peak_impl(module);
 }
-/*[clinic end generated code: output=2ae4fe05f1a340c9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=98a42e95af7eaf09 input=a9049054013a1b77]*/

@@ -1,5 +1,7 @@
 # Author: Steven J. Bethard <steven.bethard@gmail.com>.
 
+import contextlib
+import functools
 import inspect
 import io
 import operator
@@ -13,7 +15,7 @@ import unittest
 import argparse
 import warnings
 
-from test.support import os_helper
+from test.support import os_helper, captured_stderr
 from unittest import mock
 
 
@@ -35,6 +37,35 @@ class StdIOBuffer(io.TextIOWrapper):
         return self.buffer.raw.getvalue().decode('utf-8')
 
 
+class StdStreamTest(unittest.TestCase):
+
+    def test_skip_invalid_stderr(self):
+        parser = argparse.ArgumentParser()
+        with (
+            contextlib.redirect_stderr(None),
+            mock.patch('argparse._sys.exit')
+        ):
+            parser.exit(status=0, message='foo')
+
+    def test_skip_invalid_stdout(self):
+        parser = argparse.ArgumentParser()
+        for func in (
+            parser.print_usage,
+            parser.print_help,
+            functools.partial(parser.parse_args, ['-h'])
+        ):
+            with (
+                self.subTest(func=func),
+                contextlib.redirect_stdout(None),
+                # argparse uses stderr as a fallback
+                StdIOBuffer() as mocked_stderr,
+                contextlib.redirect_stderr(mocked_stderr),
+                mock.patch('argparse._sys.exit'),
+            ):
+                func()
+                self.assertRegex(mocked_stderr.getvalue(), r'usage:')
+
+
 class TestCase(unittest.TestCase):
 
     def setUp(self):
@@ -45,6 +76,7 @@ class TestCase(unittest.TestCase):
         env['COLUMNS'] = '80'
 
 
+@os_helper.skip_unless_working_chmod
 class TempDirMixin(object):
 
     def setUp(self):
@@ -295,7 +327,7 @@ class TestOptionalsSingleDashCombined(ParserTestCase):
         Sig('-z'),
     ]
     failures = ['a', '--foo', '-xa', '-x --foo', '-x -z', '-z -x',
-                '-yx', '-yz a', '-yyyx', '-yyyza', '-xyza']
+                '-yx', '-yz a', '-yyyx', '-yyyza', '-xyza', '-x=']
     successes = [
         ('', NS(x=False, yyy=None, z=None)),
         ('-x', NS(x=True, yyy=None, z=None)),
@@ -732,6 +764,49 @@ class TestBooleanOptionalAction(ParserTestCase):
             parser.add_argument('--foo', const=True, action=argparse.BooleanOptionalAction)
 
         self.assertIn("got an unexpected keyword argument 'const'", str(cm.exception))
+
+    def test_deprecated_init_kw(self):
+        # See gh-92248
+        parser = argparse.ArgumentParser()
+
+        with self.assertWarns(DeprecationWarning):
+            parser.add_argument(
+                '-a',
+                action=argparse.BooleanOptionalAction,
+                type=None,
+            )
+        with self.assertWarns(DeprecationWarning):
+            parser.add_argument(
+                '-b',
+                action=argparse.BooleanOptionalAction,
+                type=bool,
+            )
+
+        with self.assertWarns(DeprecationWarning):
+            parser.add_argument(
+                '-c',
+                action=argparse.BooleanOptionalAction,
+                metavar=None,
+            )
+        with self.assertWarns(DeprecationWarning):
+            parser.add_argument(
+                '-d',
+                action=argparse.BooleanOptionalAction,
+                metavar='d',
+            )
+
+        with self.assertWarns(DeprecationWarning):
+            parser.add_argument(
+                '-e',
+                action=argparse.BooleanOptionalAction,
+                choices=None,
+            )
+        with self.assertWarns(DeprecationWarning):
+            parser.add_argument(
+                '-f',
+                action=argparse.BooleanOptionalAction,
+                choices=(),
+            )
 
 class TestBooleanOptionalActionRequired(ParserTestCase):
     """Tests BooleanOptionalAction required"""
@@ -1307,6 +1382,19 @@ class TestPositionalsActionAppend(ParserTestCase):
         ('a b c', NS(spam=['a', ['b', 'c']])),
     ]
 
+
+class TestPositionalsActionExtend(ParserTestCase):
+    """Test the 'extend' action"""
+
+    argument_signatures = [
+        Sig('spam', action='extend'),
+        Sig('spam', action='extend', nargs=2),
+    ]
+    failures = ['', '--foo', 'a', 'a b', 'a b c d']
+    successes = [
+        ('a b c', NS(spam=['a', 'b', 'c'])),
+    ]
+
 # ========================================
 # Combined optionals and positionals tests
 # ========================================
@@ -1341,6 +1429,32 @@ class TestOptionalsAlmostNumericAndPositionals(ParserTestCase):
         ('a', NS(x='a', y=False)),
         ('-k4', NS(x=None, y=True)),
         ('-k4 a', NS(x='a', y=True)),
+    ]
+
+
+class TestOptionalsAndPositionalsAppend(ParserTestCase):
+    argument_signatures = [
+        Sig('foo', nargs='*', action='append'),
+        Sig('--bar'),
+    ]
+    failures = ['-foo']
+    successes = [
+        ('a b', NS(foo=[['a', 'b']], bar=None)),
+        ('--bar a b', NS(foo=[['b']], bar='a')),
+        ('a b --bar c', NS(foo=[['a', 'b']], bar='c')),
+    ]
+
+
+class TestOptionalsAndPositionalsExtend(ParserTestCase):
+    argument_signatures = [
+        Sig('foo', nargs='*', action='extend'),
+        Sig('--bar'),
+    ]
+    failures = ['-foo']
+    successes = [
+        ('a b', NS(foo=['a', 'b'], bar=None)),
+        ('--bar a b', NS(foo=['b'], bar='a')),
+        ('a b --bar c', NS(foo=['a', 'b'], bar='c')),
     ]
 
 
@@ -1504,14 +1618,15 @@ class TestArgumentsFromFile(TempDirMixin, ParserTestCase):
     def setUp(self):
         super(TestArgumentsFromFile, self).setUp()
         file_texts = [
-            ('hello', 'hello world!\n'),
-            ('recursive', '-a\n'
-                          'A\n'
-                          '@hello'),
-            ('invalid', '@no-such-path\n'),
+            ('hello', os.fsencode(self.hello) + b'\n'),
+            ('recursive', b'-a\n'
+                          b'A\n'
+                          b'@hello'),
+            ('invalid', b'@no-such-path\n'),
+            ('undecodable', self.undecodable + b'\n'),
         ]
         for path, text in file_texts:
-            with open(path, 'w', encoding="utf-8") as file:
+            with open(path, 'wb') as file:
                 file.write(text)
 
     parser_signature = Sig(fromfile_prefix_chars='@')
@@ -1521,15 +1636,25 @@ class TestArgumentsFromFile(TempDirMixin, ParserTestCase):
         Sig('y', nargs='+'),
     ]
     failures = ['', '-b', 'X', '@invalid', '@missing']
+    hello = 'hello world!' + os_helper.FS_NONASCII
     successes = [
         ('X Y', NS(a=None, x='X', y=['Y'])),
         ('X -a A Y Z', NS(a='A', x='X', y=['Y', 'Z'])),
-        ('@hello X', NS(a=None, x='hello world!', y=['X'])),
-        ('X @hello', NS(a=None, x='X', y=['hello world!'])),
-        ('-a B @recursive Y Z', NS(a='A', x='hello world!', y=['Y', 'Z'])),
-        ('X @recursive Z -a B', NS(a='B', x='X', y=['hello world!', 'Z'])),
+        ('@hello X', NS(a=None, x=hello, y=['X'])),
+        ('X @hello', NS(a=None, x='X', y=[hello])),
+        ('-a B @recursive Y Z', NS(a='A', x=hello, y=['Y', 'Z'])),
+        ('X @recursive Z -a B', NS(a='B', x='X', y=[hello, 'Z'])),
         (["-a", "", "X", "Y"], NS(a='', x='X', y=['Y'])),
     ]
+    if os_helper.TESTFN_UNDECODABLE:
+        undecodable = os_helper.TESTFN_UNDECODABLE.lstrip(b'@')
+        decoded_undecodable = os.fsdecode(undecodable)
+        successes += [
+            ('@undecodable X', NS(a=None, x=decoded_undecodable, y=['X'])),
+            ('X @undecodable', NS(a=None, x='X', y=[decoded_undecodable])),
+        ]
+    else:
+        undecodable = b''
 
 
 class TestArgumentsFromFileConverter(TempDirMixin, ParserTestCase):
@@ -1538,10 +1663,10 @@ class TestArgumentsFromFileConverter(TempDirMixin, ParserTestCase):
     def setUp(self):
         super(TestArgumentsFromFileConverter, self).setUp()
         file_texts = [
-            ('hello', 'hello world!\n'),
+            ('hello', b'hello world!\n'),
         ]
         for path, text in file_texts:
-            with open(path, 'w', encoding="utf-8") as file:
+            with open(path, 'wb') as file:
                 file.write(text)
 
     class FromFileConverterArgumentParser(ErrorRaisingArgumentParser):
@@ -1722,8 +1847,7 @@ class WFile(object):
         return self.name == other.name
 
 
-@unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
-                 "non-root user required")
+@os_helper.skip_if_dac_override
 class TestFileTypeW(TempDirMixin, ParserTestCase):
     """Test the FileType option/argument type for writing files"""
 
@@ -1745,8 +1869,8 @@ class TestFileTypeW(TempDirMixin, ParserTestCase):
         ('-x - -', NS(x=eq_stdout, spam=eq_stdout)),
     ]
 
-@unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
-                 "non-root user required")
+
+@os_helper.skip_if_dac_override
 class TestFileTypeX(TempDirMixin, ParserTestCase):
     """Test the FileType option/argument type for writing new files only"""
 
@@ -1766,8 +1890,7 @@ class TestFileTypeX(TempDirMixin, ParserTestCase):
     ]
 
 
-@unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
-                 "non-root user required")
+@os_helper.skip_if_dac_override
 class TestFileTypeWB(TempDirMixin, ParserTestCase):
     """Test the FileType option/argument type for writing binary files"""
 
@@ -1784,8 +1907,7 @@ class TestFileTypeWB(TempDirMixin, ParserTestCase):
     ]
 
 
-@unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
-                 "non-root user required")
+@os_helper.skip_if_dac_override
 class TestFileTypeXB(TestFileTypeX):
     "Test the FileType option/argument type for writing new binary files only"
 
@@ -1815,6 +1937,10 @@ class TestFileTypeOpenArgs(TestCase):
             for type, args in cases:
                 type('foo')
                 m.assert_called_with('foo', *args)
+
+    def test_invalid_file_type(self):
+        with self.assertRaises(ValueError):
+            argparse.FileType('b')('-test')
 
 
 class TestFileTypeMissingInitialization(TestCase):
@@ -2008,6 +2134,27 @@ class TestActionExtend(ParserTestCase):
     successes = [
         ('--foo f1 --foo f2 f3 f4', NS(foo=['f1', 'f2', 'f3', 'f4'])),
     ]
+
+
+class TestInvalidAction(TestCase):
+    """Test invalid user defined Action"""
+
+    class ActionWithoutCall(argparse.Action):
+        pass
+
+    def test_invalid_type(self):
+        parser = argparse.ArgumentParser()
+
+        parser.add_argument('--foo', action=self.ActionWithoutCall)
+        self.assertRaises(NotImplementedError, parser.parse_args, ['--foo', 'bar'])
+
+    def test_modified_invalid_action(self):
+        parser = ErrorRaisingArgumentParser()
+        action = parser.add_argument('--foo')
+        # Someone got crazy and did this
+        action.type = 1
+        self.assertRaises(ArgumentParserError, parser.parse_args, ['--foo', 'bar'])
+
 
 # ================
 # Subparsers tests
@@ -2643,6 +2790,9 @@ class TestParentParsers(TestCase):
               -w W
               -x X
         '''.format(progname, ' ' if progname else '' )))
+
+    def test_wrong_type_parents(self):
+        self.assertRaises(TypeError, ErrorRaisingArgumentParser, parents=[1])
 
 # ==============================
 # Mutually exclusive group tests
@@ -3755,6 +3905,28 @@ class TestHelpUsage(HelpTestCase):
     version = ''
 
 
+class TestHelpUsageWithParentheses(HelpTestCase):
+    parser_signature = Sig(prog='PROG')
+    argument_signatures = [
+        Sig('positional', metavar='(example) positional'),
+        Sig('-p', '--optional', metavar='{1 (option A), 2 (option B)}'),
+    ]
+
+    usage = '''\
+        usage: PROG [-h] [-p {1 (option A), 2 (option B)}] (example) positional
+        '''
+    help = usage + '''\
+
+        positional arguments:
+          (example) positional
+
+        options:
+          -h, --help            show this help message and exit
+          -p {1 (option A), 2 (option B)}, --optional {1 (option A), 2 (option B)}
+        '''
+    version = ''
+
+
 class TestHelpOnlyUserGroups(HelpTestCase):
     """Test basic usage messages"""
 
@@ -4638,6 +4810,9 @@ class TestInvalidArgumentConstructors(TestCase):
         self.assertValueError('--')
         self.assertValueError('---')
 
+    def test_invalid_prefix(self):
+        self.assertValueError('--foo', '+foo')
+
     def test_invalid_type(self):
         self.assertValueError('--foo', type='int')
         self.assertValueError('--foo', type=(int, float))
@@ -4701,6 +4876,9 @@ class TestInvalidArgumentConstructors(TestCase):
         self.assertTypeError('command', action='parsers', prog='PROG')
         self.assertTypeError('command', action='parsers',
                              parser_class=argparse.ArgumentParser)
+
+    def test_version_missing_params(self):
+        self.assertTypeError('command', action='version')
 
     def test_required_positional(self):
         self.assertTypeError('foo', required=True)
@@ -5221,6 +5399,13 @@ class TestParseKnownArgs(TestCase):
         self.assertEqual(NS(v=3, spam=True, badger="B"), args)
         self.assertEqual(["C", "--foo", "4"], extras)
 
+    def test_zero_or_more_optional(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('x', nargs='*', choices=('x', 'y'))
+        args = parser.parse_args([])
+        self.assertEqual(NS(x=[]), args)
+
+
 # ===========================
 # parse_intermixed_args tests
 # ===========================
@@ -5287,6 +5472,17 @@ class TestIntermixedArgs(TestCase):
         group.add_argument('badger', nargs='*', default='X', help='BADGER')
         self.assertRaises(TypeError, parser.parse_intermixed_args, [])
         self.assertEqual(group.required, True)
+
+    def test_invalid_args(self):
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        self.assertRaises(ArgumentParserError, parser.parse_intermixed_args, ['a'])
+
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        parser.add_argument('--foo', nargs="*")
+        parser.add_argument('foo')
+        with captured_stderr() as stderr:
+            parser.parse_intermixed_args(['hello', '--foo'])
+            self.assertIn("UserWarning", stderr.getvalue())
 
 class TestIntermixedMessageContentError(TestCase):
     # case where Intermixed gives different error message

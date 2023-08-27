@@ -5,8 +5,8 @@
 Integer Objects
 ---------------
 
-.. index:: object: long integer
-           object: integer
+.. index:: pair: object; long integer
+           pair: object; integer
 
 All integers are implemented as "long" integer objects of arbitrary size.
 
@@ -47,7 +47,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 .. c:function:: PyObject* PyLong_FromUnsignedLong(unsigned long v)
 
-   Return a new :c:type:`PyLongObject` object from a C :c:type:`unsigned long`, or
+   Return a new :c:type:`PyLongObject` object from a C :c:expr:`unsigned long`, or
    ``NULL`` on failure.
 
 
@@ -65,13 +65,13 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 .. c:function:: PyObject* PyLong_FromLongLong(long long v)
 
-   Return a new :c:type:`PyLongObject` object from a C :c:type:`long long`, or ``NULL``
+   Return a new :c:type:`PyLongObject` object from a C :c:expr:`long long`, or ``NULL``
    on failure.
 
 
 .. c:function:: PyObject* PyLong_FromUnsignedLongLong(unsigned long long v)
 
-   Return a new :c:type:`PyLongObject` object from a C :c:type:`unsigned long long`,
+   Return a new :c:type:`PyLongObject` object from a C :c:expr:`unsigned long long`,
    or ``NULL`` on failure.
 
 
@@ -84,14 +84,19 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 .. c:function:: PyObject* PyLong_FromString(const char *str, char **pend, int base)
 
    Return a new :c:type:`PyLongObject` based on the string value in *str*, which
-   is interpreted according to the radix in *base*.  If *pend* is non-``NULL``,
-   *\*pend* will point to the first character in *str* which follows the
-   representation of the number.  If *base* is ``0``, *str* is interpreted using
-   the :ref:`integers` definition; in this case, leading zeros in a
-   non-zero decimal number raises a :exc:`ValueError`. If *base* is not ``0``,
-   it must be between ``2`` and ``36``, inclusive.  Leading spaces and single
-   underscores after a base specifier and between digits are ignored.  If there
-   are no digits, :exc:`ValueError` will be raised.
+   is interpreted according to the radix in *base*, or ``NULL`` on failure.  If
+   *pend* is non-``NULL``, *\*pend* will point to the end of *str* on success or
+   to the first character that could not be processed on error.  If *base* is ``0``,
+   *str* is interpreted using the :ref:`integers` definition; in this case, leading
+   zeros in a non-zero decimal number raises a :exc:`ValueError`.  If *base* is not
+   ``0``, it must be between ``2`` and ``36``, inclusive.  Leading and trailing
+   whitespace and single underscores after a base specifier and between digits are
+   ignored.  If there are no digits or *str* is not NULL-terminated following the
+   digits and trailing whitespace, :exc:`ValueError` will be raised.
+
+   .. seealso:: Python methods :meth:`int.to_bytes` and :meth:`int.from_bytes`
+      to convert a :c:type:`PyLongObject` to/from an array of bytes in base
+      ``256``. You can call those from C using :c:func:`PyObject_CallMethod`.
 
 
 .. c:function:: PyObject* PyLong_FromUnicodeObject(PyObject *u, int base)
@@ -115,40 +120,48 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
       single: LONG_MAX
       single: OverflowError (built-in exception)
 
-   Return a C :c:type:`long` representation of *obj*.  If *obj* is not an
-   instance of :c:type:`PyLongObject`, first call its :meth:`__index__` method
+   Return a C :c:expr:`long` representation of *obj*.  If *obj* is not an
+   instance of :c:type:`PyLongObject`, first call its :meth:`~object.__index__` method
    (if present) to convert it to a :c:type:`PyLongObject`.
 
    Raise :exc:`OverflowError` if the value of *obj* is out of range for a
-   :c:type:`long`.
+   :c:expr:`long`.
 
    Returns ``-1`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    .. versionchanged:: 3.8
-      Use :meth:`__index__` if available.
+      Use :meth:`~object.__index__` if available.
 
    .. versionchanged:: 3.10
-      This function will no longer use :meth:`__int__`.
+      This function will no longer use :meth:`~object.__int__`.
+
+
+.. c:function:: int PyLong_AsInt(PyObject *obj)
+
+   Similar to :c:func:`PyLong_AsLong`, but store the result in a C
+   :c:expr:`int` instead of a C :c:expr:`long`.
+
+   .. versionadded:: 3.13
 
 
 .. c:function:: long PyLong_AsLongAndOverflow(PyObject *obj, int *overflow)
 
-   Return a C :c:type:`long` representation of *obj*.  If *obj* is not an
-   instance of :c:type:`PyLongObject`, first call its :meth:`__index__`
+   Return a C :c:expr:`long` representation of *obj*.  If *obj* is not an
+   instance of :c:type:`PyLongObject`, first call its :meth:`~object.__index__`
    method (if present) to convert it to a :c:type:`PyLongObject`.
 
-   If the value of *obj* is greater than :const:`LONG_MAX` or less than
-   :const:`LONG_MIN`, set *\*overflow* to ``1`` or ``-1``, respectively, and
+   If the value of *obj* is greater than :c:macro:`LONG_MAX` or less than
+   :c:macro:`LONG_MIN`, set *\*overflow* to ``1`` or ``-1``, respectively, and
    return ``-1``; otherwise, set *\*overflow* to ``0``.  If any other exception
    occurs set *\*overflow* to ``0`` and return ``-1`` as usual.
 
    Returns ``-1`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    .. versionchanged:: 3.8
-      Use :meth:`__index__` if available.
+      Use :meth:`~object.__index__` if available.
 
    .. versionchanged:: 3.10
-      This function will no longer use :meth:`__int__`.
+      This function will no longer use :meth:`~object.__int__`.
 
 
 .. c:function:: long long PyLong_AsLongLong(PyObject *obj)
@@ -156,30 +169,30 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    .. index::
       single: OverflowError (built-in exception)
 
-   Return a C :c:type:`long long` representation of *obj*.  If *obj* is not an
-   instance of :c:type:`PyLongObject`, first call its :meth:`__index__` method
+   Return a C :c:expr:`long long` representation of *obj*.  If *obj* is not an
+   instance of :c:type:`PyLongObject`, first call its :meth:`~object.__index__` method
    (if present) to convert it to a :c:type:`PyLongObject`.
 
    Raise :exc:`OverflowError` if the value of *obj* is out of range for a
-   :c:type:`long long`.
+   :c:expr:`long long`.
 
    Returns ``-1`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    .. versionchanged:: 3.8
-      Use :meth:`__index__` if available.
+      Use :meth:`~object.__index__` if available.
 
    .. versionchanged:: 3.10
-      This function will no longer use :meth:`__int__`.
+      This function will no longer use :meth:`~object.__int__`.
 
 
 .. c:function:: long long PyLong_AsLongLongAndOverflow(PyObject *obj, int *overflow)
 
-   Return a C :c:type:`long long` representation of *obj*.  If *obj* is not an
-   instance of :c:type:`PyLongObject`, first call its :meth:`__index__` method
+   Return a C :c:expr:`long long` representation of *obj*.  If *obj* is not an
+   instance of :c:type:`PyLongObject`, first call its :meth:`~object.__index__` method
    (if present) to convert it to a :c:type:`PyLongObject`.
 
-   If the value of *obj* is greater than :const:`LLONG_MAX` or less than
-   :const:`LLONG_MIN`, set *\*overflow* to ``1`` or ``-1``, respectively,
+   If the value of *obj* is greater than :c:macro:`LLONG_MAX` or less than
+   :c:macro:`LLONG_MIN`, set *\*overflow* to ``1`` or ``-1``, respectively,
    and return ``-1``; otherwise, set *\*overflow* to ``0``.  If any other
    exception occurs set *\*overflow* to ``0`` and return ``-1`` as usual.
 
@@ -188,10 +201,10 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.8
-      Use :meth:`__index__` if available.
+      Use :meth:`~object.__index__` if available.
 
    .. versionchanged:: 3.10
-      This function will no longer use :meth:`__int__`.
+      This function will no longer use :meth:`~object.__int__`.
 
 
 .. c:function:: Py_ssize_t PyLong_AsSsize_t(PyObject *pylong)
@@ -215,11 +228,11 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
       single: ULONG_MAX
       single: OverflowError (built-in exception)
 
-   Return a C :c:type:`unsigned long` representation of *pylong*.  *pylong*
+   Return a C :c:expr:`unsigned long` representation of *pylong*.  *pylong*
    must be an instance of :c:type:`PyLongObject`.
 
    Raise :exc:`OverflowError` if the value of *pylong* is out of range for a
-   :c:type:`unsigned long`.
+   :c:expr:`unsigned long`.
 
    Returns ``(unsigned long)-1`` on error.
    Use :c:func:`PyErr_Occurred` to disambiguate.
@@ -246,11 +259,11 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    .. index::
       single: OverflowError (built-in exception)
 
-   Return a C :c:type:`unsigned long long` representation of *pylong*.  *pylong*
+   Return a C :c:expr:`unsigned long long` representation of *pylong*.  *pylong*
    must be an instance of :c:type:`PyLongObject`.
 
    Raise :exc:`OverflowError` if the value of *pylong* is out of range for an
-   :c:type:`unsigned long long`.
+   :c:expr:`unsigned long long`.
 
    Returns ``(unsigned long long)-1`` on error.
    Use :c:func:`PyErr_Occurred` to disambiguate.
@@ -261,59 +274,83 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 .. c:function:: unsigned long PyLong_AsUnsignedLongMask(PyObject *obj)
 
-   Return a C :c:type:`unsigned long` representation of *obj*.  If *obj* is not
-   an instance of :c:type:`PyLongObject`, first call its :meth:`__index__`
+   Return a C :c:expr:`unsigned long` representation of *obj*.  If *obj* is not
+   an instance of :c:type:`PyLongObject`, first call its :meth:`~object.__index__`
    method (if present) to convert it to a :c:type:`PyLongObject`.
 
-   If the value of *obj* is out of range for an :c:type:`unsigned long`,
+   If the value of *obj* is out of range for an :c:expr:`unsigned long`,
    return the reduction of that value modulo ``ULONG_MAX + 1``.
 
    Returns ``(unsigned long)-1`` on error.  Use :c:func:`PyErr_Occurred` to
    disambiguate.
 
    .. versionchanged:: 3.8
-      Use :meth:`__index__` if available.
+      Use :meth:`~object.__index__` if available.
 
    .. versionchanged:: 3.10
-      This function will no longer use :meth:`__int__`.
+      This function will no longer use :meth:`~object.__int__`.
 
 
 .. c:function:: unsigned long long PyLong_AsUnsignedLongLongMask(PyObject *obj)
 
-   Return a C :c:type:`unsigned long long` representation of *obj*.  If *obj*
+   Return a C :c:expr:`unsigned long long` representation of *obj*.  If *obj*
    is not an instance of :c:type:`PyLongObject`, first call its
-   :meth:`__index__` method (if present) to convert it to a
+   :meth:`~object.__index__` method (if present) to convert it to a
    :c:type:`PyLongObject`.
 
-   If the value of *obj* is out of range for an :c:type:`unsigned long long`,
+   If the value of *obj* is out of range for an :c:expr:`unsigned long long`,
    return the reduction of that value modulo ``ULLONG_MAX + 1``.
 
    Returns ``(unsigned long long)-1`` on error.  Use :c:func:`PyErr_Occurred`
    to disambiguate.
 
    .. versionchanged:: 3.8
-      Use :meth:`__index__` if available.
+      Use :meth:`~object.__index__` if available.
 
    .. versionchanged:: 3.10
-      This function will no longer use :meth:`__int__`.
+      This function will no longer use :meth:`~object.__int__`.
 
 
 .. c:function:: double PyLong_AsDouble(PyObject *pylong)
 
-   Return a C :c:type:`double` representation of *pylong*.  *pylong* must be
+   Return a C :c:expr:`double` representation of *pylong*.  *pylong* must be
    an instance of :c:type:`PyLongObject`.
 
    Raise :exc:`OverflowError` if the value of *pylong* is out of range for a
-   :c:type:`double`.
+   :c:expr:`double`.
 
    Returns ``-1.0`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 
 .. c:function:: void* PyLong_AsVoidPtr(PyObject *pylong)
 
-   Convert a Python integer *pylong* to a C :c:type:`void` pointer.
+   Convert a Python integer *pylong* to a C :c:expr:`void` pointer.
    If *pylong* cannot be converted, an :exc:`OverflowError` will be raised.  This
-   is only assured to produce a usable :c:type:`void` pointer for values created
+   is only assured to produce a usable :c:expr:`void` pointer for values created
    with :c:func:`PyLong_FromVoidPtr`.
 
    Returns ``NULL`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
+
+
+.. c:function:: int PyUnstable_Long_IsCompact(const PyLongObject* op)
+
+   Return 1 if *op* is compact, 0 otherwise.
+
+   This function makes it possible for performance-critical code to implement
+   a “fast path” for small integers. For compact values use
+   :c:func:`PyUnstable_Long_CompactValue`; for others fall back to a
+   :c:func:`PyLong_As* <PyLong_AsSize_t>` function or
+   :c:func:`calling <PyObject_CallMethod>` :meth:`int.to_bytes`.
+
+   The speedup is expected to be negligible for most users.
+
+   Exactly what values are considered compact is an implementation detail
+   and is subject to change.
+
+.. c:function:: Py_ssize_t PyUnstable_Long_CompactValue(const PyLongObject* op)
+
+   If *op* is compact, as determined by :c:func:`PyUnstable_Long_IsCompact`,
+   return its value.
+
+   Otherwise, the return value is undefined.
+

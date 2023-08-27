@@ -4,7 +4,6 @@ Test script for doctest.
 
 from test import support
 from test.support import import_helper
-from test.support import os_helper
 import doctest
 import functools
 import os
@@ -14,7 +13,6 @@ import importlib.abc
 import importlib.util
 import unittest
 import tempfile
-import shutil
 import types
 import contextlib
 
@@ -112,6 +110,14 @@ class SampleClass:
         42
         """
         return cls.a_class_attribute
+
+    @functools.cached_property
+    def a_cached_property(self):
+        """
+        >>> print(SampleClass(29).get())
+        29
+        """
+        return "hello"
 
     class NestedClass:
         """
@@ -461,7 +467,7 @@ We'll simulate a __file__ attr that ends in pyc:
     >>> tests = finder.find(sample_func)
 
     >>> print(tests)  # doctest: +ELLIPSIS
-    [<DocTest sample_func from test_doctest.py:34 (1 example)>]
+    [<DocTest sample_func from test_doctest.py:32 (1 example)>]
 
 The exact name depends on how test_doctest was invoked, so allow for
 leading path components.
@@ -517,6 +523,7 @@ methods, classmethods, staticmethods, properties, and nested classes.
      3  SampleClass.NestedClass
      1  SampleClass.NestedClass.__init__
      1  SampleClass.__init__
+     1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
      1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
@@ -573,6 +580,7 @@ functions, classes, and the `__test__` dictionary, if it exists:
      3  some_module.SampleClass.NestedClass
      1  some_module.SampleClass.NestedClass.__init__
      1  some_module.SampleClass.__init__
+     1  some_module.SampleClass.a_cached_property
      2  some_module.SampleClass.a_classmethod
      1  some_module.SampleClass.a_classmethod_property
      1  some_module.SampleClass.a_property
@@ -615,6 +623,7 @@ By default, an object with no doctests doesn't create any tests:
      3  SampleClass.NestedClass
      1  SampleClass.NestedClass.__init__
      1  SampleClass.__init__
+     1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
      1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
@@ -636,6 +645,7 @@ displays.
      0  SampleClass.NestedClass.get
      0  SampleClass.NestedClass.square
      1  SampleClass.__init__
+     1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
      1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
@@ -709,7 +719,7 @@ plain ol' Python and is guaranteed to be available.
 
     >>> import builtins
     >>> tests = doctest.DocTestFinder().find(builtins)
-    >>> 825 < len(tests) < 845 # approximate number of objects with docstrings
+    >>> 830 < len(tests) < 860 # approximate number of objects with docstrings
     True
     >>> real_tests = [t for t in tests if len(t.examples) > 0]
     >>> len(real_tests) # objects that actually have doctests
@@ -1289,14 +1299,14 @@ The NORMALIZE_WHITESPACE flag causes all sequences of whitespace to be
 treated as equal:
 
     >>> def f(x):
-    ...     '>>> print(1, 2, 3)\n  1   2\n 3'
+    ...     '\n>>> print(1, 2, 3)\n  1   2\n 3'
 
     >>> # Without the flag:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
     ... # doctest: +ELLIPSIS
     **********************************************************************
-    File ..., line 2, in f
+    File ..., line 3, in f
     Failed example:
         print(1, 2, 3)
     Expected:
@@ -2811,6 +2821,8 @@ in it, and use a package hook to install a custom loader; on any platform,
 at least one of the line endings will raise a ValueError for inconsistent
 whitespace if doctest does not correctly do the newline conversion.
 
+    >>> from test.support import os_helper
+    >>> import shutil
     >>> dn = tempfile.mkdtemp()
     >>> pkg = os.path.join(dn, "doctest_testpkg")
     >>> os.mkdir(pkg)
@@ -2854,7 +2866,7 @@ except UnicodeEncodeError:
     # Skip the test: the filesystem encoding is unable to encode the filename
     supports_unicode = False
 
-if supports_unicode and not support.has_no_debug_ranges():
+if supports_unicode:
     def test_unicode(): """
 Check doctest with a non-ascii filename:
 
@@ -2876,10 +2888,8 @@ Check doctest with a non-ascii filename:
         Traceback (most recent call last):
           File ...
             exec(compile(example.source, filename, "single",
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
           File "<doctest foo-bär@baz[0]>", line 1, in <module>
             raise Exception('clé')
-            ^^^^^^^^^^^^^^^^^^^^^^
         Exception: clé
     TestResults(failed=1, attempted=1)
     """

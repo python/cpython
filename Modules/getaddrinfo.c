@@ -61,6 +61,9 @@
 # define FAITH
 #endif
 
+#ifdef HAVE_NETDB_H
+#define HAVE_GETADDRINFO 1
+
 #define SUCCESS 0
 #define GAI_ANY 0
 #define YES 1
@@ -339,7 +342,11 @@ getaddrinfo(const char*hostname, const char*servname,
                 pai->ai_socktype = SOCK_DGRAM;
                 pai->ai_protocol = IPPROTO_UDP;
             }
-            port = htons((u_short)atoi(servname));
+            long maybe_port = strtol(servname, NULL, 10);
+            if (maybe_port < 0 || maybe_port > 0xffff) {
+                ERR(EAI_SERVICE);
+            }
+            port = htons((u_short)maybe_port);
         } else {
             struct servent *sp;
             const char *proto;
@@ -636,3 +643,5 @@ get_addr(hostname, af, res, pai, port0)
     *res = NULL;
     return error;
 }
+
+#endif // HAVE_NETDB_H

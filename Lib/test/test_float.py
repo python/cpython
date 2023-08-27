@@ -8,7 +8,6 @@ import time
 import unittest
 
 from test import support
-from test.support import import_helper
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
 from math import isinf, isnan, copysign, ldexp
@@ -138,6 +137,10 @@ class GeneralFloatCases(unittest.TestCase):
         check('123\xbd')
         check('  123 456  ')
         check(b'  123 456  ')
+        # all whitespace (cf. https://github.com/python/cpython/issues/95605)
+        check('')
+        check(' ')
+        check('\t \n')
 
         # non-ascii digits (error came from non-digit '!')
         check('\u0663\u0661\u0664!')
@@ -832,6 +835,11 @@ class RoundTestCase(unittest.TestCase):
         self.assertRaises(TypeError, round, NAN, "ceci n'est pas un integer")
         self.assertRaises(TypeError, round, -0.0, 1j)
 
+    def test_inf_nan_ndigits(self):
+        self.assertEqual(round(INF, 0), INF)
+        self.assertEqual(round(-INF, 0), -INF)
+        self.assertTrue(math.isnan(round(NAN, 0)))
+
     def test_large_n(self):
         for n in [324, 325, 400, 2**31-1, 2**31, 2**32, 2**100]:
             self.assertEqual(round(123.456, n), 123.456)
@@ -1032,11 +1040,8 @@ class InfNanTest(unittest.TestCase):
         self.assertEqual(copysign(1.0, float('inf')), 1.0)
         self.assertEqual(copysign(1.0, float('-inf')), -1.0)
 
-    @unittest.skipUnless(getattr(sys, 'float_repr_style', '') == 'short',
-                         "applies only when using short float repr style")
     def test_nan_signs(self):
-        # When using the dtoa.c code, the sign of float('nan') should
-        # be predictable.
+        # The sign of float('nan') should be predictable.
         self.assertEqual(copysign(1.0, float('nan')), 1.0)
         self.assertEqual(copysign(1.0, float('-nan')), -1.0)
 

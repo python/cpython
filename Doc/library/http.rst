@@ -137,6 +137,31 @@ equal to the constant name (i.e. ``http.HTTPStatus.OK`` is also available as
 .. versionadded:: 3.9
    Added ``103 EARLY_HINTS``, ``418 IM_A_TEAPOT`` and ``425 TOO_EARLY`` status codes.
 
+HTTP status category
+--------------------
+
+.. versionadded:: 3.12
+
+The enum values have several properties to indicate the HTTP status category:
+
+==================== ======================== ===============================
+Property             Indicates that           Details
+==================== ======================== ===============================
+``is_informational`` ``100 <= status <= 199`` HTTP/1.1 :rfc:`7231`, Section 6
+``is_success``       ``200 <= status <= 299`` HTTP/1.1 :rfc:`7231`, Section 6
+``is_redirection``   ``300 <= status <= 399`` HTTP/1.1 :rfc:`7231`, Section 6
+``is_client_error``  ``400 <= status <= 499`` HTTP/1.1 :rfc:`7231`, Section 6
+``is_server_error``  ``500 <= status <= 599`` HTTP/1.1 :rfc:`7231`, Section 6
+==================== ======================== ===============================
+
+   Usage::
+
+      >>> from http import HTTPStatus
+      >>> HTTPStatus.OK.is_success
+      True
+      >>> HTTPStatus.OK.is_client_error
+      False
+
 .. class:: HTTPMethod
 
    .. versionadded:: 3.11
@@ -146,16 +171,25 @@ equal to the constant name (i.e. ``http.HTTPStatus.OK`` is also available as
    Usage::
 
       >>> from http import HTTPMethod
-      >>> HTTMethod.GET
-      HTTMethod.GET
-      >>> HTTMethod.GET == 'GET'
+      >>>
+      >>> HTTPMethod.GET
+      <HTTPMethod.GET>
+      >>> HTTPMethod.GET == 'GET'
       True
-      >>> HTTMethod.GET.value
+      >>> HTTPMethod.GET.value
       'GET'
-      >>> HTTMethod.GET.description
-      'Transfer a current representation of the target resource.'
+      >>> HTTPMethod.GET.description
+      'Retrieve the target.'
       >>> list(HTTPMethod)
-      [HTTPMethod.GET, HTTPMethod.HEAD, ...]
+      [<HTTPMethod.CONNECT>,
+       <HTTPMethod.DELETE>,
+       <HTTPMethod.GET>,
+       <HTTPMethod.HEAD>,
+       <HTTPMethod.OPTIONS>,
+       <HTTPMethod.PATCH>,
+       <HTTPMethod.POST>,
+       <HTTPMethod.PUT>,
+       <HTTPMethod.TRACE>]
 
 .. _http-methods:
 

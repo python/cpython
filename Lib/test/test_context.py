@@ -9,7 +9,7 @@ import weakref
 from test.support import threading_helper
 
 try:
-    from _testcapi import hamt
+    from _testinternalcapi import hamt
 except ImportError:
     hamt = None
 
@@ -431,7 +431,7 @@ class EqError(Exception):
     pass
 
 
-@unittest.skipIf(hamt is None, '_testcapi lacks "hamt()" function')
+@unittest.skipIf(hamt is None, '_testinternalcapi.hamt() not available')
 class HamtTest(unittest.TestCase):
 
     def test_hashkey_helper_1(self):
