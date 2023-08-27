@@ -467,7 +467,7 @@ def replace_block(lines, start_marker, end_marker, replacements, file):
     return lines[:start_pos + 1] + replacements + lines[end_pos:]
 
 
-def regen_frozen(modules, frozen_modules: bool):
+def regen_frozen(modules, frozen_modules: bool, deep_frozen: bool):
     headerlines = []
     parentdir = os.path.dirname(FROZEN_FILE)
     if frozen_modules:
@@ -504,14 +504,11 @@ def regen_frozen(modules, frozen_modules: bool):
         get_code_name = "_Py_get_%s_toplevel" % code_name
         externlines.append("extern PyObject *%s(void);" % get_code_name)
 
-        symbol = mod.symbol
         pkg = 'true' if mod.ispkg else 'false'
-        if not frozen_modules:
-            line = ('{"%s", NULL, 0, %s, GET_CODE(%s)},'
-                ) % (mod.name, pkg, code_name)
-        else:
-            line = ('{"%s", %s, (int)sizeof(%s), %s, GET_CODE(%s)},'
-                ) % (mod.name, symbol, symbol, pkg, code_name)
+        symbol = mod.symbol if frozen_modules else "NULL"
+        size = f"(int)sizeof({symbol})" if frozen_modules else "0"
+        code = f"GET_CODE({code_name})" if deep_frozen else "NULL"
+        line = f'{{"{mod.name}", {symbol}, {size}, {pkg}, {code}}},'
         lines.append(line)
 
         if mod.isalias:
@@ -720,18 +717,23 @@ def regen_pcbuild(modules):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--frozen-modules", action="store_true",
-        help="Use both frozen and deepfrozen modules. (default: uses only deepfrozen modules)")
+        help="Use both frozen modules. (default: don't use frozen modules)")
+parser.add_argument("--deep-freeze", action="store_true",
+        help="Use deepfrozen modules. (default: don't use deep frozen modules)")
 
 def main():
     args = parser.parse_args()
     frozen_modules: bool = args.frozen_modules
+    deep_frozen_modules: bool = args.deep_freeze
+    if not frozen_modules and not deep_frozen_modules:
+        sys.exit("Must specify at least one of --frozen-modules and --deep-freeze")
     # Expand the raw specs, preserving order.
     modules = list(parse_frozen_specs())
 
     # Regen build-related files.
     regen_makefile(modules)
     regen_pcbuild(modules)
-    regen_frozen(modules, frozen_modules)
+    regen_frozen(modules, frozen_modules, deep_frozen_modules)
 
 
 if __name__ == '__main__':

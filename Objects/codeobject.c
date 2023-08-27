@@ -2368,4 +2368,6 @@ _PyStaticCode_Init(PyCodeObject *co)
     return 0;
 }
 
+uint32_t _Py_next_func_version = 1;
+
 #define MAX_CODE_UNITS_PER_LOC_ENTRY 8

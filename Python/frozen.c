@@ -100,47 +100,53 @@ extern PyObject *_Py_get___phello___spam_toplevel(void);
 extern PyObject *_Py_get_frozen_only_toplevel(void);
 /* End extern declarations */
 
+#define MOD(name) \
+{ #name, _Py_M__##name, (int)sizeof( _Py_M__##name), false, GET_CODE(name) }
+
+#define MOD_ALIAS(alias, name) \
+{ #alias, _Py_M__##name, (int)sizeof( _Py_M__##name), false, GET_CODE(name) }
+
 static const struct _frozen bootstrap_modules[] = {
-    {"_frozen_importlib", _Py_M__importlib__bootstrap, (int)sizeof(_Py_M__importlib__bootstrap), false, GET_CODE(importlib__bootstrap)},
-    {"_frozen_importlib_external", _Py_M__importlib__bootstrap_external, (int)sizeof(_Py_M__importlib__bootstrap_external), false, GET_CODE(importlib__bootstrap_external)},
-    {"zipimport", _Py_M__zipimport, (int)sizeof(_Py_M__zipimport), false, GET_CODE(zipimport)},
+    {"_frozen_importlib", _Py_M__importlib__bootstrap, (int)sizeof(_Py_M__importlib__bootstrap), false, NULL},
+    {"_frozen_importlib_external", _Py_M__importlib__bootstrap_external, (int)sizeof(_Py_M__importlib__bootstrap_external), false, NULL},
+    {"zipimport", _Py_M__zipimport, (int)sizeof(_Py_M__zipimport), false, NULL},
     {0, 0, 0} /* bootstrap sentinel */
 };
 static const struct _frozen stdlib_modules[] = {
     /* stdlib - startup, without site (python -S) */
-    {"abc", _Py_M__abc, (int)sizeof(_Py_M__abc), false, GET_CODE(abc)},
-    {"codecs", _Py_M__codecs, (int)sizeof(_Py_M__codecs), false, GET_CODE(codecs)},
-    {"io", _Py_M__io, (int)sizeof(_Py_M__io), false, GET_CODE(io)},
+    {"abc", _Py_M__abc, (int)sizeof(_Py_M__abc), false, NULL},
+    {"codecs", _Py_M__codecs, (int)sizeof(_Py_M__codecs), false, NULL},
+    {"io", _Py_M__io, (int)sizeof(_Py_M__io), false, NULL},
 
     /* stdlib - startup, with site */
-    {"_collections_abc", _Py_M___collections_abc, (int)sizeof(_Py_M___collections_abc), false, GET_CODE(_collections_abc)},
-    {"_sitebuiltins", _Py_M___sitebuiltins, (int)sizeof(_Py_M___sitebuiltins), false, GET_CODE(_sitebuiltins)},
-    {"genericpath", _Py_M__genericpath, (int)sizeof(_Py_M__genericpath), false, GET_CODE(genericpath)},
-    {"ntpath", _Py_M__ntpath, (int)sizeof(_Py_M__ntpath), false, GET_CODE(ntpath)},
-    {"posixpath", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath), false, GET_CODE(posixpath)},
-    {"os.path", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath), false, GET_CODE(posixpath)},
-    {"os", _Py_M__os, (int)sizeof(_Py_M__os), false, GET_CODE(os)},
-    {"site", _Py_M__site, (int)sizeof(_Py_M__site), false, GET_CODE(site)},
-    {"stat", _Py_M__stat, (int)sizeof(_Py_M__stat), false, GET_CODE(stat)},
+    {"_collections_abc", _Py_M___collections_abc, (int)sizeof(_Py_M___collections_abc), false, NULL},
+    {"_sitebuiltins", _Py_M___sitebuiltins, (int)sizeof(_Py_M___sitebuiltins), false, NULL},
+    {"genericpath", _Py_M__genericpath, (int)sizeof(_Py_M__genericpath), false, NULL},
+    {"ntpath", _Py_M__ntpath, (int)sizeof(_Py_M__ntpath), false, NULL},
+    {"posixpath", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath), false, NULL},
+    {"os.path", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath), false, NULL},
+    {"os", _Py_M__os, (int)sizeof(_Py_M__os), false, NULL},
+    {"site", _Py_M__site, (int)sizeof(_Py_M__site), false, NULL},
+    {"stat", _Py_M__stat, (int)sizeof(_Py_M__stat), false, NULL},
 
     /* runpy - run module with -m */
-    {"importlib.util", _Py_M__importlib_util, (int)sizeof(_Py_M__importlib_util), false, GET_CODE(importlib_util)},
-    {"importlib.machinery", _Py_M__importlib_machinery, (int)sizeof(_Py_M__importlib_machinery), false, GET_CODE(importlib_machinery)},
-    {"runpy", _Py_M__runpy, (int)sizeof(_Py_M__runpy), false, GET_CODE(runpy)},
+    {"importlib.util", _Py_M__importlib_util, (int)sizeof(_Py_M__importlib_util), false, NULL},
+    {"importlib.machinery", _Py_M__importlib_machinery, (int)sizeof(_Py_M__importlib_machinery), false, NULL},
+    {"runpy", _Py_M__runpy, (int)sizeof(_Py_M__runpy), false, NULL},
     {0, 0, 0} /* stdlib sentinel */
 };
 static const struct _frozen test_modules[] = {
-    {"__hello__", _Py_M____hello__, (int)sizeof(_Py_M____hello__), false, GET_CODE(__hello__)},
-    {"__hello_alias__", _Py_M____hello__, (int)sizeof(_Py_M____hello__), false, GET_CODE(__hello__)},
-    {"__phello_alias__", _Py_M____hello__, (int)sizeof(_Py_M____hello__), true, GET_CODE(__hello__)},
-    {"__phello_alias__.spam", _Py_M____hello__, (int)sizeof(_Py_M____hello__), false, GET_CODE(__hello__)},
-    {"__phello__", _Py_M____phello__, (int)sizeof(_Py_M____phello__), true, GET_CODE(__phello__)},
-    {"__phello__.__init__", _Py_M____phello__, (int)sizeof(_Py_M____phello__), false, GET_CODE(__phello__)},
-    {"__phello__.ham", _Py_M____phello___ham, (int)sizeof(_Py_M____phello___ham), true, GET_CODE(__phello___ham)},
-    {"__phello__.ham.__init__", _Py_M____phello___ham, (int)sizeof(_Py_M____phello___ham), false, GET_CODE(__phello___ham)},
-    {"__phello__.ham.eggs", _Py_M____phello___ham_eggs, (int)sizeof(_Py_M____phello___ham_eggs), false, GET_CODE(__phello___ham_eggs)},
-    {"__phello__.spam", _Py_M____phello___spam, (int)sizeof(_Py_M____phello___spam), false, GET_CODE(__phello___spam)},
-    {"__hello_only__", _Py_M__frozen_only, (int)sizeof(_Py_M__frozen_only), false, GET_CODE(frozen_only)},
+    {"__hello__", _Py_M____hello__, (int)sizeof(_Py_M____hello__), false, NULL},
+    {"__hello_alias__", _Py_M____hello__, (int)sizeof(_Py_M____hello__), false, NULL},
+    {"__phello_alias__", _Py_M____hello__, (int)sizeof(_Py_M____hello__), true, NULL},
+    {"__phello_alias__.spam", _Py_M____hello__, (int)sizeof(_Py_M____hello__), false, NULL},
+    {"__phello__", _Py_M____phello__, (int)sizeof(_Py_M____phello__), true, NULL},
+    {"__phello__.__init__", _Py_M____phello__, (int)sizeof(_Py_M____phello__), false, NULL},
+    {"__phello__.ham", _Py_M____phello___ham, (int)sizeof(_Py_M____phello___ham), true, NULL},
+    {"__phello__.ham.__init__", _Py_M____phello___ham, (int)sizeof(_Py_M____phello___ham), false, NULL},
+    {"__phello__.ham.eggs", _Py_M____phello___ham_eggs, (int)sizeof(_Py_M____phello___ham_eggs), false, NULL},
+    {"__phello__.spam", _Py_M____phello___spam, (int)sizeof(_Py_M____phello___spam), false, NULL},
+    {"__hello_only__", _Py_M__frozen_only, (int)sizeof(_Py_M__frozen_only), false, NULL},
     {0, 0, 0} /* test sentinel */
 };
 const struct _frozen *_PyImport_FrozenBootstrap = bootstrap_modules;
