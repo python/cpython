@@ -791,6 +791,8 @@ CFLAGS = [
     f"-Wno-unused-command-line-argument",
     f"-Wno-unused-label",
     f"-Wno-unused-variable",
+    # Keep library calls from sneaking in:
+    f"-ffreestanding",  # XXX
     # We don't need this (and it causes weird relocations):
     f"-fno-asynchronous-unwind-tables",  # XXX
     # # Don't need the overhead of position-independent code, if posssible:
