@@ -65,11 +65,11 @@ tb_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     tb_frame = (PyFrameObject *)fastargs[1];
-    tb_lasti = _PyLong_AsInt(fastargs[2]);
+    tb_lasti = PyLong_AsInt(fastargs[2]);
     if (tb_lasti == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    tb_lineno = _PyLong_AsInt(fastargs[3]);
+    tb_lineno = PyLong_AsInt(fastargs[3]);
     if (tb_lineno == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -78,4 +78,4 @@ tb_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7bc9927e362fdfb7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6303f910c04227a4 input=a9049054013a1b77]*/

@@ -1648,6 +1648,8 @@ keys); also, the following keypad mappings are standard:
 | :kbd:`Page Down` | KEY_NPAGE |
 +------------------+-----------+
 
+.. _curses-acs-codes:
+
 The following table lists characters from the alternate character set. These are
 inherited from the VT100 terminal, and will generally be  available on software
 emulations such as X terminals.  When there is no graphic available, curses

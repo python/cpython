@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"       // _Py_ID()
 #endif
 
+#include "pycore_abstract.h"       // _PyNumber_Index()
 
 PyDoc_STRVAR(array_array___copy____doc__,
 "__copy__($self, /)\n"
@@ -589,7 +590,7 @@ array__array_reconstructor(PyObject *module, PyObject *const *args, Py_ssize_t n
         goto exit;
     }
     typecode = PyUnicode_READ_CHAR(args[1], 0);
-    mformat_code = _PyLong_AsInt(args[2]);
+    mformat_code = PyLong_AsInt(args[2]);
     if (mformat_code == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -674,4 +675,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=11595e9f38d6d500 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ab24c7a40a41c2e1 input=a9049054013a1b77]*/

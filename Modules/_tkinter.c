@@ -317,7 +317,6 @@ typedef struct {
     const Tcl_ObjType *WideIntType;
     const Tcl_ObjType *BignumType;
     const Tcl_ObjType *ListType;
-    const Tcl_ObjType *ProcBodyType;
     const Tcl_ObjType *StringType;
 } TkappObject;
 
@@ -595,7 +594,6 @@ Tkapp_New(const char *screenName, const char *className,
     v->WideIntType = Tcl_GetObjType("wideInt");
     v->BignumType = Tcl_GetObjType("bignum");
     v->ListType = Tcl_GetObjType("list");
-    v->ProcBodyType = Tcl_GetObjType("procbody");
     v->StringType = Tcl_GetObjType("string");
 
     /* Delete the 'exit' command, which can screw things up */
@@ -913,16 +911,13 @@ AsObj(PyObject *value)
     if (PyLong_CheckExact(value)) {
         int overflow;
         long longValue;
-#ifdef TCL_WIDE_INT_TYPE
         Tcl_WideInt wideValue;
-#endif
         longValue = PyLong_AsLongAndOverflow(value, &overflow);
         if (!overflow) {
             return Tcl_NewLongObj(longValue);
         }
         /* If there is an overflow in the long conversion,
            fall through to wideInt handling. */
-#ifdef TCL_WIDE_INT_TYPE
         if (_PyLong_AsByteArray((PyLongObject *)value,
                                 (unsigned char *)(void *)&wideValue,
                                 sizeof(wideValue),
@@ -931,7 +926,6 @@ AsObj(PyObject *value)
             return Tcl_NewWideIntObj(wideValue);
         }
         PyErr_Clear();
-#endif
         /* If there is an overflow in the wideInt conversion,
            fall through to bignum handling. */
         return asBignumObj(value);
@@ -1173,10 +1167,6 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
             PyTuple_SET_ITEM(result, i, elem);
         }
         return result;
-    }
-
-    if (value->typePtr == tkapp->ProcBodyType) {
-      /* fall through: return tcl object. */
     }
 
     if (value->typePtr == tkapp->StringType) {

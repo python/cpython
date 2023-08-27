@@ -282,17 +282,10 @@ symtable_new(void)
     return NULL;
 }
 
-/* When compiling the use of C stack is probably going to be a lot
-   lighter than when executing Python code but still can overflow
-   and causing a Python crash if not checked (e.g. eval("()"*300000)).
-   Using the current recursion limit for the compiler seems too
-   restrictive (it caused at least one test to fail) so a factor is
-   used to allow deeper recursion when compiling an expression.
-
-   Using a scaling factor means this should automatically adjust when
+/* Using a scaling factor means this should automatically adjust when
    the recursion limit is adjusted for small or large C stack allocations.
 */
-#define COMPILER_STACK_FRAME_SCALE 3
+#define COMPILER_STACK_FRAME_SCALE 2
 
 struct symtable *
 _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)

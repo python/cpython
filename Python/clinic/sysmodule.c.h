@@ -444,7 +444,7 @@ sys_setrecursionlimit(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int new_limit;
 
-    new_limit = _PyLong_AsInt(arg);
+    new_limit = PyLong_AsInt(arg);
     if (new_limit == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -507,7 +507,7 @@ sys_set_coroutine_origin_tracking_depth(PyObject *module, PyObject *const *args,
     if (!args) {
         goto exit;
     }
-    depth = _PyLong_AsInt(args[0]);
+    depth = PyLong_AsInt(args[0]);
     if (depth == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -675,7 +675,7 @@ sys_setdlopenflags(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int new_val;
 
-    new_val = _PyLong_AsInt(arg);
+    new_val = PyLong_AsInt(arg);
     if (new_val == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -730,7 +730,7 @@ sys_mdebug(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flag;
 
-    flag = _PyLong_AsInt(arg);
+    flag = PyLong_AsInt(arg);
     if (flag == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -808,7 +808,7 @@ sys_set_int_max_str_digits(PyObject *module, PyObject *const *args, Py_ssize_t n
     if (!args) {
         goto exit;
     }
-    maxdigits = _PyLong_AsInt(args[0]);
+    maxdigits = PyLong_AsInt(args[0]);
     if (maxdigits == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -969,7 +969,7 @@ sys__getframe(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    depth = _PyLong_AsInt(args[0]);
+    depth = PyLong_AsInt(args[0]);
     if (depth == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1358,7 +1358,7 @@ sys__getframemodulename(PyObject *module, PyObject *const *args, Py_ssize_t narg
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    depth = _PyLong_AsInt(args[0]);
+    depth = PyLong_AsInt(args[0]);
     if (depth == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1412,4 +1412,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=41937e0843c68009 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6de02cd7d925d1de input=a9049054013a1b77]*/

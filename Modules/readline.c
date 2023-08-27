@@ -1001,7 +1001,7 @@ on_hook(PyObject *func)
         if (r == Py_None)
             result = 0;
         else {
-            result = _PyLong_AsInt(r);
+            result = PyLong_AsInt(r);
             if (result == -1 && PyErr_Occurred())
                 goto error;
         }

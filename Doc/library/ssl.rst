@@ -320,7 +320,7 @@ Random generation
 
    Mix the given *bytes* into the SSL pseudo-random number generator.  The
    parameter *entropy* (a float) is a lower bound on the entropy contained in
-   string (so you can always use :const:`0.0`).  See :rfc:`1750` for more
+   string (so you can always use ``0.0``).  See :rfc:`1750` for more
    information on sources of entropy.
 
    .. versionchanged:: 3.5

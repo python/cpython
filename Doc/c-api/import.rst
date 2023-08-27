@@ -151,10 +151,10 @@ Importing Modules
    The module's :attr:`__spec__` and :attr:`__loader__` will be set, if
    not set already, with the appropriate values.  The spec's loader will
    be set to the module's ``__loader__`` (if set) and to an instance of
-   :class:`SourceFileLoader` otherwise.
+   :class:`~importlib.machinery.SourceFileLoader` otherwise.
 
    The module's :attr:`__file__` attribute will be set to the code object's
-   :c:member:`co_filename`.  If applicable, :attr:`__cached__` will also
+   :attr:`!co_filename`.  If applicable, :attr:`__cached__` will also
    be set.
 
    This function will reload the module if it was already imported.  See
@@ -241,7 +241,7 @@ Importing Modules
 
 .. c:function:: PyObject* PyImport_GetImporter(PyObject *path)
 
-   Return a finder object for a :data:`sys.path`/:attr:`pkg.__path__` item
+   Return a finder object for a :data:`sys.path`/:attr:`!pkg.__path__` item
    *path*, possibly by fetching it from the :data:`sys.path_importer_cache`
    dict.  If it wasn't yet cached, traverse :data:`sys.path_hooks` until a hook
    is found that can handle the path item.  Return ``None`` if no hook could;
@@ -310,23 +310,25 @@ Importing Modules
 
 .. c:struct:: _inittab
 
-   Structure describing a single entry in the list of built-in modules.  Each of
-   these structures gives the name and initialization function for a module built
-   into the interpreter.  The name is an ASCII encoded string.  Programs which
+   Structure describing a single entry in the list of built-in modules.
+   Programs which
    embed Python may use an array of these structures in conjunction with
    :c:func:`PyImport_ExtendInittab` to provide additional built-in modules.
-   The structure is defined in :file:`Include/import.h` as::
+   The structure consists of two members:
 
-      struct _inittab {
-          const char *name;           /* ASCII encoded string */
-          PyObject* (*initfunc)(void);
-      };
+   .. c:member:: const char *name
+
+      The module name, as an ASCII encoded string.
+
+   .. c: member:: PyObject* (*initfunc)(void)
+
+      Initialization function for a module built into the interpreter.
 
 
 .. c:function:: int PyImport_ExtendInittab(struct _inittab *newtab)
 
    Add a collection of modules to the table of built-in modules.  The *newtab*
-   array must end with a sentinel entry which contains ``NULL`` for the :attr:`name`
+   array must end with a sentinel entry which contains ``NULL`` for the :c:member:`~_inittab.name`
    field; failure to provide the sentinel value can result in a memory fault.
    Returns ``0`` on success or ``-1`` if insufficient memory could be allocated to
    extend the internal table.  In the event of failure, no modules are added to the

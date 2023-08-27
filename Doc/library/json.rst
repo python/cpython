@@ -192,7 +192,7 @@ Basic Usage
    dictionaries will be sorted by key.
 
    To use a custom :class:`JSONEncoder` subclass (e.g. one that overrides the
-   :meth:`default` method to serialize additional types), specify it with the
+   :meth:`~JSONEncoder.default` method to serialize additional types), specify it with the
    *cls* kwarg; otherwise :class:`JSONEncoder` is used.
 
    .. versionchanged:: 3.6
@@ -422,7 +422,7 @@ Encoders and Decoders
       Added support for int- and float-derived Enum classes.
 
    To extend this to recognize other objects, subclass and implement a
-   :meth:`default` method with another method that returns a serializable object
+   :meth:`~JSONEncoder.default` method with another method that returns a serializable object
    for ``o`` if possible, otherwise it should call the superclass implementation
    (to raise :exc:`TypeError`).
 
@@ -483,7 +483,7 @@ Encoders and Decoders
       :exc:`TypeError`).
 
       For example, to support arbitrary iterators, you could implement
-      :meth:`default` like this::
+      :meth:`~JSONEncoder.default` like this::
 
          def default(self, o):
             try:

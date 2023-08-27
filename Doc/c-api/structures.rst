@@ -35,7 +35,7 @@ under :ref:`reference counting <countingrefs>`.
 
 .. c:type:: PyVarObject
 
-   This is an extension of :c:type:`PyObject` that adds the :attr:`ob_size`
+   This is an extension of :c:type:`PyObject` that adds the :c:member:`~PyVarObject.ob_size`
    field.  This is only used for objects that have some notion of *length*.
    This type does not often appear in the Python/C API.
    Access to the members must be done by using the macros
@@ -152,7 +152,7 @@ under :ref:`reference counting <countingrefs>`.
 .. c:macro:: PyVarObject_HEAD_INIT(type, size)
 
    This is a macro which expands to initialization values for a new
-   :c:type:`PyVarObject` type, including the :attr:`ob_size` field.
+   :c:type:`PyVarObject` type, including the :c:member:`~PyVarObject.ob_size` field.
    This macro expands to::
 
       _PyObject_EXTRA_INIT
@@ -228,30 +228,32 @@ Implementing functions and methods
    Structure used to describe a method of an extension type.  This structure has
    four fields:
 
-   .. c:member:: const char* ml_name
+   .. c:member:: const char *ml_name
 
-      name of the method
+      Name of the method.
 
    .. c:member:: PyCFunction ml_meth
 
-      pointer to the C implementation
+      Pointer to the C implementation.
 
    .. c:member:: int ml_flags
 
-      flags bits indicating how the call should be constructed
+      Flags bits indicating how the call should be constructed.
 
-   .. c:member:: const char* ml_doc
+   .. c:member:: const char *ml_doc
 
-      points to the contents of the docstring
+      Points to the contents of the docstring.
 
-The :c:member:`ml_meth` is a C function pointer.  The functions may be of different
+The :c:member:`~PyMethodDef.ml_meth` is a C function pointer.
+The functions may be of different
 types, but they always return :c:expr:`PyObject*`.  If the function is not of
 the :c:type:`PyCFunction`, the compiler will require a cast in the method table.
 Even though :c:type:`PyCFunction` defines the first parameter as
 :c:expr:`PyObject*`, it is common that the method implementation uses the
 specific C type of the *self* object.
 
-The :c:member:`ml_flags` field is a bitfield which can include the following flags.
+The :c:member:`~PyMethodDef.ml_flags` field is a bitfield which can include
+the following flags.
 The individual flags indicate either a calling convention or a binding
 convention.
 
@@ -391,7 +393,7 @@ definition with the same method name.
    *METH_COEXIST*, the default is to skip repeated definitions.  Since slot
    wrappers are loaded before the method table, the existence of a
    *sq_contains* slot, for example, would generate a wrapped method named
-   :meth:`__contains__` and preclude the loading of a corresponding
+   :meth:`~object.__contains__` and preclude the loading of a corresponding
    PyCFunction with the same name.  With the flag defined, the PyCFunction
    will be loaded in place of the wrapper object and will co-exist with the
    slot.  This is helpful because calls to PyCFunctions are optimized more
@@ -432,7 +434,7 @@ Accessing attributes of extension types
       The string should be static, no copy is made of it.
       Typically, it is defined using :c:macro:`PyDoc_STR`.
 
-   By default (when :c:member:`flags` is ``0``), members allow
+   By default (when :c:member:`~PyMemberDef.flags` is ``0``), members allow
    both read and write access.
    Use the :c:macro:`Py_READONLY` flag for read-only access.
    Certain types, like :c:macro:`Py_T_STRING`, imply :c:macro:`Py_READONLY`.
@@ -512,7 +514,7 @@ The following flags can be used with :c:member:`PyMemberDef.flags`:
 
    Can only be used as part of :c:member:`Py_tp_members <PyTypeObject.tp_members>`
    :c:type:`slot <PyTypeSlot>` when creating a class using negative
-   :c:member:`~PyTypeDef.basicsize`.
+   :c:member:`~PyType_Spec.basicsize`.
    It is mandatory in that case.
 
    This flag is only used in :c:type:`PyTypeSlot`.

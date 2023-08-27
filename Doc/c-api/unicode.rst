@@ -564,7 +564,7 @@ APIs:
 
    Copy an instance of a Unicode subtype to a new true Unicode object if
    necessary. If *obj* is already a true Unicode object (not a subtype),
-   return the reference with incremented refcount.
+   return a new :term:`strong reference` to the object.
 
    Objects other than Unicode or its subtypes will cause a :exc:`TypeError`.
 
@@ -601,7 +601,7 @@ APIs:
                                                     Py_ssize_t how_many)
 
    Copy characters from one Unicode object into another.  This function performs
-   character conversion when necessary and falls back to :c:func:`memcpy` if
+   character conversion when necessary and falls back to :c:func:`!memcpy` if
    possible.  Returns ``-1`` and sets an exception on error, otherwise returns
    the number of copied characters.
 
@@ -714,7 +714,7 @@ system.
 .. c:function:: PyObject* PyUnicode_DecodeLocale(const char *str, const char *errors)
 
    Similar to :c:func:`PyUnicode_DecodeLocaleAndSize`, but compute the string
-   length using :c:func:`strlen`.
+   length using :c:func:`!strlen`.
 
    .. versionadded:: 3.3
 
@@ -872,7 +872,7 @@ wchar_t Support
    most C functions. If *size* is ``NULL`` and the :c:expr:`wchar_t*` string
    contains null characters a :exc:`ValueError` is raised.
 
-   Returns a buffer allocated by :c:func:`PyMem_New` (use
+   Returns a buffer allocated by :c:macro:`PyMem_New` (use
    :c:func:`PyMem_Free` to free it) on success. On error, returns ``NULL``
    and *\*size* is undefined. Raises a :exc:`MemoryError` if memory allocation
    is failed.
@@ -1205,9 +1205,9 @@ Character Map Codecs
 
 This codec is special in that it can be used to implement many different codecs
 (and this is in fact what was done to obtain most of the standard codecs
-included in the :mod:`encodings` package). The codec uses mappings to encode and
+included in the :mod:`!encodings` package). The codec uses mappings to encode and
 decode characters.  The mapping objects provided must support the
-:meth:`__getitem__` mapping interface; dictionaries and sequences work well.
+:meth:`~object.__getitem__` mapping interface; dictionaries and sequences work well.
 
 These are the mapping codec APIs:
 
@@ -1250,7 +1250,7 @@ The following codec API is special in that maps Unicode to Unicode.
    The mapping table must map Unicode ordinal integers to Unicode ordinal integers
    or ``None`` (causing deletion of the character).
 
-   Mapping tables need only provide the :meth:`__getitem__` interface; dictionaries
+   Mapping tables need only provide the :meth:`~object.__getitem__` interface; dictionaries
    and sequences work well.  Unmapped character ordinals (ones which cause a
    :exc:`LookupError`) are left untouched and are copied as-is.
 
@@ -1292,7 +1292,7 @@ the user settings on the machine running the codec.
 
    Encode the Unicode object using the specified code page and return a Python
    bytes object.  Return ``NULL`` if an exception was raised by the codec. Use
-   :c:macro:`CP_ACP` code page to get the MBCS encoder.
+   :c:macro:`!CP_ACP` code page to get the MBCS encoder.
 
    .. versionadded:: 3.3
 
@@ -1438,11 +1438,11 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    Intern the argument *\*string* in place.  The argument must be the address of a
    pointer variable pointing to a Python Unicode string object.  If there is an
    existing interned string that is the same as *\*string*, it sets *\*string* to
-   it (decrementing the reference count of the old string object and incrementing
-   the reference count of the interned string object), otherwise it leaves
-   *\*string* alone and interns it (incrementing its reference count).
-   (Clarification: even though there is a lot of talk about reference counts, think
-   of this function as reference-count-neutral; you own the object after the call
+   it (releasing the reference to the old string object and creating a new
+   :term:`strong reference` to the interned string object), otherwise it leaves
+   *\*string* alone and interns it (creating a new :term:`strong reference`).
+   (Clarification: even though there is a lot of talk about references, think
+   of this function as reference-neutral; you own the object after the call
    if and only if you owned it before the call.)
 
 

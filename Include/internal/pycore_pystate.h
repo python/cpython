@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_runtime.h"   /* PyRuntimeState */
+#include "pycore_runtime.h"       // _PyRuntime
 
 
 /* Check if the current thread is the main thread.
@@ -66,6 +66,9 @@ _Py_ThreadCanHandleSignals(PyInterpreterState *interp)
 #if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
 extern _Py_thread_local PyThreadState *_Py_tss_tstate;
 #endif
+
+// Export for most shared extensions, used via _PyThreadState_GET() static
+// inline function.
 PyAPI_FUNC(PyThreadState *) _PyThreadState_GetCurrent(void);
 
 /* Get the current Python thread state.
@@ -124,11 +127,6 @@ static inline PyInterpreterState* _PyInterpreterState_GET(void) {
 extern PyThreadState * _PyThreadState_New(PyInterpreterState *interp);
 extern void _PyThreadState_Bind(PyThreadState *tstate);
 extern void _PyThreadState_DeleteExcept(PyThreadState *tstate);
-
-extern void _PyThreadState_InitDetached(PyThreadState *, PyInterpreterState *);
-extern void _PyThreadState_ClearDetached(PyThreadState *);
-extern void _PyThreadState_BindDetached(PyThreadState *);
-extern void _PyThreadState_UnbindDetached(PyThreadState *);
 
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyObject*) _PyThreadState_GetDict(PyThreadState *tstate);

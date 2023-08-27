@@ -234,7 +234,7 @@ _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
 {
 
     if (errors == NULL) {
-        errors = Py_NewRef(&_Py_ID(strict));
+        errors = &_Py_ID(strict);
     }
     else {
         errors = Py_NewRef(errors);
@@ -1138,7 +1138,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
 
     if (encoding == NULL && _PyRuntime.preconfig.utf8_mode) {
         _Py_DECLARE_STR(utf_8, "utf-8");
-        self->encoding = Py_NewRef(&_Py_STR(utf_8));
+        self->encoding = &_Py_STR(utf_8);
     }
     else if (encoding == NULL || (strcmp(encoding, "locale") == 0)) {
         self->encoding = _Py_GetLocaleEncodingObject();
@@ -2267,7 +2267,7 @@ _textiowrapper_readline(textio *self, Py_ssize_t limit)
         Py_CLEAR(chunks);
     }
     if (line == NULL) {
-        line = Py_NewRef(&_Py_STR(empty));
+        line = &_Py_STR(empty);
     }
 
     return line;
@@ -2428,13 +2428,29 @@ _textiowrapper_encoder_setstate(textio *self, cookie_type *cookie)
 /*[clinic input]
 _io.TextIOWrapper.seek
     cookie as cookieObj: object
-    whence: int = 0
+      Zero or an opaque number returned by tell().
+    whence: int(c_default='0') = os.SEEK_SET
+      The relative position to seek from.
     /
+
+Set the stream position, and return the new stream position.
+
+Four operations are supported, given by the following argument
+combinations:
+
+- seek(0, SEEK_SET): Rewind to the start of the stream.
+- seek(cookie, SEEK_SET): Restore a previous position;
+  'cookie' must be a number returned by tell().
+- seek(0, SEEK_END): Fast-forward to the end of the stream.
+- seek(0, SEEK_CUR): Leave the current stream position unchanged.
+
+Any other argument combinations are invalid,
+and may raise exceptions.
 [clinic start generated code]*/
 
 static PyObject *
 _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
-/*[clinic end generated code: output=0a15679764e2d04d input=0458abeb3d7842be]*/
+/*[clinic end generated code: output=0a15679764e2d04d input=0f68adcb02cf2823]*/
 {
     PyObject *posobj;
     cookie_type cookie;
