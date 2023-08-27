@@ -190,11 +190,11 @@ _curses_panel_panel_move(PyCursesPanelObject *self, PyTypeObject *cls, PyObject 
     if (!args) {
         goto exit;
     }
-    y = _PyLong_AsInt(args[0]);
+    y = PyLong_AsInt(args[0]);
     if (y == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    x = _PyLong_AsInt(args[1]);
+    x = PyLong_AsInt(args[1]);
     if (x == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -422,4 +422,4 @@ _curses_panel_update_panels(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_panel_update_panels_impl(module);
 }
-/*[clinic end generated code: output=8d0533681891523c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cb76cb1d5040f387 input=a9049054013a1b77]*/

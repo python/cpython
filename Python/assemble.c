@@ -476,7 +476,7 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
     PyObject *k, *v;
     Py_ssize_t pos = 0;
     while (PyDict_Next(umd->u_varnames, &pos, &k, &v)) {
-        int offset = _PyLong_AsInt(v);
+        int offset = PyLong_AsInt(v);
         if (offset == -1 && PyErr_Occurred()) {
             return ERROR;
         }
@@ -513,7 +513,7 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
             continue;
         }
 
-        int offset = _PyLong_AsInt(v);
+        int offset = PyLong_AsInt(v);
         if (offset == -1 && PyErr_Occurred()) {
             return ERROR;
         }
@@ -525,7 +525,7 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
 
     pos = 0;
     while (PyDict_Next(umd->u_freevars, &pos, &k, &v)) {
-        int offset = _PyLong_AsInt(v);
+        int offset = PyLong_AsInt(v);
         if (offset == -1 && PyErr_Occurred()) {
             return ERROR;
         }

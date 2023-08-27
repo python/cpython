@@ -75,6 +75,19 @@ dict_contains(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+dict_containsstring(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    const char *key;
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "Oz#", &obj, &key, &size)) {
+        return NULL;
+    }
+    NULLABLE(obj);
+    RETURN_INT(PyDict_ContainsString(obj, key));
+}
+
+static PyObject *
 dict_size(PyObject *self, PyObject *obj)
 {
     NULLABLE(obj);
@@ -349,6 +362,7 @@ static PyMethodDef test_methods[] = {
     {"dict_getitemref", dict_getitemref, METH_VARARGS},
     {"dict_getitemstringref", dict_getitemstringref, METH_VARARGS},
     {"dict_contains", dict_contains, METH_VARARGS},
+    {"dict_containsstring", dict_containsstring, METH_VARARGS},
     {"dict_setitem", dict_setitem, METH_VARARGS},
     {"dict_setitemstring", dict_setitemstring, METH_VARARGS},
     {"dict_delitem", dict_delitem, METH_VARARGS},

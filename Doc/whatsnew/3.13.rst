@@ -862,8 +862,19 @@ New Features
   not needed.
   (Contributed by Victor Stinner in :gh:`106004`.)
 
+* Added :c:func:`PyDict_ContainsString` function: same as
+  :c:func:`PyDict_Contains`, but *key* is specified as a :c:expr:`const char*`
+  UTF-8 encoded bytes string, rather than a :c:expr:`PyObject*`.
+  (Contributed by Victor Stinner in :gh:`108314`.)
+
 * Add :c:func:`Py_IsFinalizing` function: check if the main Python interpreter is
   :term:`shutting down <interpreter shutdown>`.
+  (Contributed by Victor Stinner in :gh:`108014`.)
+
+* Add :c:func:`PyLong_AsInt` function: similar to :c:func:`PyLong_AsLong`, but
+  store the result in a C :c:expr:`int` instead of a C :c:expr:`long`.
+  Previously, it was known as the private function :c:func:`!_PyLong_AsInt`
+  (with an underscore prefix).
   (Contributed by Victor Stinner in :gh:`108014`.)
 
 Porting to Python 3.13
