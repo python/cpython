@@ -1,5 +1,9 @@
 /* termios.c -- POSIX terminal I/O module implementation.  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 
 /* Apparently, on SGI, termios.h won't define CTRL if _XOPEN_SOURCE
@@ -1232,12 +1236,7 @@ termios_exec(PyObject *mod)
     struct constant *constant = termios_constants;
     termiosmodulestate *state = get_termios_state(mod);
     state->TermiosError = PyErr_NewException("termios.error", NULL, NULL);
-    if (state->TermiosError == NULL) {
-        return -1;
-    }
-    Py_INCREF(state->TermiosError);
-    if (PyModule_AddObject(mod, "error", state->TermiosError) < 0) {
-        Py_DECREF(state->TermiosError);
+    if (PyModule_AddObjectRef(mod, "error", state->TermiosError) < 0) {
         return -1;
     }
 

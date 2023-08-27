@@ -202,7 +202,7 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         }
     }
     if (args[2]) {
-        buffering = _PyLong_AsInt(args[2]);
+        buffering = PyLong_AsInt(args[2]);
         if (buffering == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -332,7 +332,7 @@ _io_text_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    stacklevel = _PyLong_AsInt(args[1]);
+    stacklevel = PyLong_AsInt(args[1]);
     if (stacklevel == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -398,13 +398,10 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         _PyArg_BadArgument("open_code", "argument 'path'", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     path = args[0];
     return_value = _io_open_code_impl(module, path);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f387eba3f4c0254a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a4ceb802f3a7243f input=a9049054013a1b77]*/

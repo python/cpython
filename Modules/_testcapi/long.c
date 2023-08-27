@@ -37,6 +37,9 @@ raise_test_long_error(const char* msg)
     return raiseTestError("test_long_api", msg);
 }
 
+// Test PyLong_FromLong()/PyLong_AsLong()
+// and PyLong_FromUnsignedLong()/PyLong_AsUnsignedLong().
+
 #define TESTNAME        test_long_api_inner
 #define TYPENAME        long
 #define F_S_TO_PY       PyLong_FromLong
@@ -63,6 +66,9 @@ _testcapi_test_long_api_impl(PyObject *module)
 #undef F_PY_TO_S
 #undef F_U_TO_PY
 #undef F_PY_TO_U
+
+// Test PyLong_FromLongLong()/PyLong_AsLongLong()
+// and PyLong_FromUnsignedLongLong()/PyLong_AsUnsignedLongLong().
 
 static PyObject *
 raise_test_longlong_error(const char* msg)
@@ -595,6 +601,24 @@ _testcapi_call_long_compact_api(PyObject *module, PyObject *arg)
     return Py_BuildValue("in", is_compact, value);
 }
 
+/*[clinic input]
+_testcapi.PyLong_AsInt
+    arg: object
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_testcapi_PyLong_AsInt(PyObject *module, PyObject *arg)
+/*[clinic end generated code: output=0df9f19de5fa575b input=9561b97105493a67]*/
+{
+    assert(!PyErr_Occurred());
+    int value = PyLong_AsInt(arg);
+    if (value == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromLong(value);
+}
+
 static PyMethodDef test_methods[] = {
     _TESTCAPI_TEST_LONG_AND_OVERFLOW_METHODDEF
     _TESTCAPI_TEST_LONG_API_METHODDEF
@@ -605,6 +629,7 @@ static PyMethodDef test_methods[] = {
     _TESTCAPI_TEST_LONG_NUMBITS_METHODDEF
     _TESTCAPI_TEST_LONGLONG_API_METHODDEF
     _TESTCAPI_CALL_LONG_COMPACT_API_METHODDEF
+    _TESTCAPI_PYLONG_ASINT_METHODDEF
     {NULL},
 };
 

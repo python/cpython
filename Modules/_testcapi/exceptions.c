@@ -1,6 +1,8 @@
 #include "parts.h"
 #include "clinic/exceptions.c.h"
 
+#define NULLABLE(x) do { if (x == Py_None) x = NULL; } while (0);
+
 /*[clinic input]
 module _testcapi
 [clinic start generated code]*/
@@ -127,6 +129,43 @@ _testcapi_exc_set_object_fetch_impl(PyObject *module, PyObject *exc,
     Py_XDECREF(type);
     Py_XDECREF(tb);
     return value;
+}
+
+/*[clinic input]
+_testcapi.err_setstring
+    exc: object
+    value: str(zeroes=True, accept={robuffer, str, NoneType})
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_testcapi_err_setstring_impl(PyObject *module, PyObject *exc,
+                             const char *value, Py_ssize_t value_length)
+/*[clinic end generated code: output=fba8705e5703dd3f input=e8a95fad66d9004b]*/
+{
+    NULLABLE(exc);
+    PyErr_SetString(exc, value);
+    return NULL;
+}
+
+/*[clinic input]
+_testcapi.err_setfromerrnowithfilename
+    error: int
+    exc: object
+    value: str(zeroes=True, accept={robuffer, str, NoneType})
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_testcapi_err_setfromerrnowithfilename_impl(PyObject *module, int error,
+                                            PyObject *exc, const char *value,
+                                            Py_ssize_t value_length)
+/*[clinic end generated code: output=d02df5749a01850e input=ff7c384234bf097f]*/
+{
+    NULLABLE(exc);
+    errno = error;
+    PyErr_SetFromErrnoWithFilename(exc, value);
+    return NULL;
 }
 
 /*[clinic input]
@@ -288,6 +327,22 @@ _testcapi_traceback_print_impl(PyObject *module, PyObject *traceback,
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_testcapi.unstable_exc_prep_reraise_star
+    orig: object
+    excs: object
+    /
+To test PyUnstable_Exc_PrepReraiseStar.
+[clinic start generated code]*/
+
+static PyObject *
+_testcapi_unstable_exc_prep_reraise_star_impl(PyObject *module,
+                                              PyObject *orig, PyObject *excs)
+/*[clinic end generated code: output=850cf008e0563c77 input=27fbcda2203eb301]*/
+{
+    return PyUnstable_Exc_PrepReraiseStar(orig, excs);
+}
+
 
 /*
  * Define the PyRecurdingInfinitelyError_Type
@@ -322,12 +377,15 @@ static PyMethodDef test_methods[] = {
     _TESTCAPI_MAKE_EXCEPTION_WITH_DOC_METHODDEF
     _TESTCAPI_EXC_SET_OBJECT_METHODDEF
     _TESTCAPI_EXC_SET_OBJECT_FETCH_METHODDEF
+    _TESTCAPI_ERR_SETSTRING_METHODDEF
+    _TESTCAPI_ERR_SETFROMERRNOWITHFILENAME_METHODDEF
     _TESTCAPI_RAISE_EXCEPTION_METHODDEF
     _TESTCAPI_RAISE_MEMORYERROR_METHODDEF
     _TESTCAPI_SET_EXC_INFO_METHODDEF
     _TESTCAPI_SET_EXCEPTION_METHODDEF
     _TESTCAPI_TRACEBACK_PRINT_METHODDEF
     _TESTCAPI_WRITE_UNRAISABLE_EXC_METHODDEF
+    _TESTCAPI_UNSTABLE_EXC_PREP_RERAISE_STAR_METHODDEF
     {NULL},
 };
 

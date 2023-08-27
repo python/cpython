@@ -970,13 +970,12 @@ class HTTPConnection:
         received from the proxy server to the CONNECT request
         sent to set the tunnel.
 
-        If the CONNECT request was not sent, the method returns
-        an empty dictionary.
+        If the CONNECT request was not sent, the method returns None.
         """
         return (
             _parse_header_lines(self._raw_proxy_headers)
             if self._raw_proxy_headers is not None
-            else {}
+            else None
         )
 
     def connect(self):

@@ -334,9 +334,11 @@ def test_pdb_breakpoint_commands():
     (Pdb) commands 10
     *** cannot set commands: Breakpoint number 10 out of range
     (Pdb) commands a
-    *** Usage: commands [bnum]
-            ...
-            end
+    *** Invalid argument: a
+          Usage: (Pdb) commands [bpnumber]
+                 (com) ...
+                 (com) end
+                 (Pdb)
     (Pdb) commands 4
     *** cannot set commands: Breakpoint 4 already deleted
     (Pdb) break 6, undefined
@@ -387,7 +389,7 @@ def test_pdb_breakpoints_preserved_across_interactive_sessions():
     1   breakpoint   keep yes   at ...test_pdb.py:...
     2   breakpoint   keep yes   at ...test_pdb.py:...
     (Pdb) break pdb.find_function
-    Breakpoint 3 at ...pdb.py:97
+    Breakpoint 3 at ...pdb.py:...
     (Pdb) break
     Num Type         Disp Enb   Where
     1   breakpoint   keep yes   at ...test_pdb.py:...
@@ -905,6 +907,34 @@ def test_pdb_skip_modules():
     --Return--
     > <doctest test.test_pdb.test_pdb_skip_modules[0]>(4)skip_module()->None
     -> string.capwords('FOO')
+    (Pdb) continue
+    """
+
+def test_pdb_invalid_arg():
+    """This tests pdb commands that have invalid arguments
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     pass
+
+    >>> with PdbTestInput([
+    ...     'a = 3',
+    ...     'll 4',
+    ...     'step 1',
+    ...     'continue'
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_invalid_arg[0]>(3)test_function()
+    -> pass
+    (Pdb) a = 3
+    *** Invalid argument: = 3
+          Usage: a(rgs)
+    (Pdb) ll 4
+    *** Invalid argument: 4
+          Usage: ll | longlist
+    (Pdb) step 1
+    *** Invalid argument: 1
+          Usage: s(tep)
     (Pdb) continue
     """
 
@@ -1558,6 +1588,32 @@ def test_pdb_next_command_subiterator():
     -> x = 123
     (Pdb) continue
     """
+
+def test_pdb_multiline_statement():
+    """Test for multiline statement
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     pass
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'def f(x):',
+    ...     '  return x * 2',
+    ...     '',
+    ...     'f(2)',
+    ...     'c'
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_multiline_statement[0]>(3)test_function()
+    -> pass
+    (Pdb) def f(x):
+    ...     return x * 2
+    ...
+    (Pdb) f(2)
+    4
+    (Pdb) c
+    """
+
 
 def test_pdb_issue_20766():
     """Test for reference leaks when the SIGINT handler is set.
@@ -2332,7 +2388,7 @@ def bœr():
 
     def test_errors_in_command(self):
         commands = "\n".join([
-            'print(',
+            'print(]',
             'debug print(',
             'debug doesnotexist',
             'c',
@@ -2341,7 +2397,8 @@ def bœr():
 
         self.assertEqual(stdout.splitlines()[1:], [
             '-> pass',
-            '(Pdb) *** SyntaxError: \'(\' was never closed',
+            "(Pdb) *** SyntaxError: closing parenthesis ']' does not match opening "
+            "parenthesis '('",
 
             '(Pdb) ENTERING RECURSIVE DEBUGGER',
             '*** SyntaxError: \'(\' was never closed',

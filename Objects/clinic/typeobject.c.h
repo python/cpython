@@ -190,7 +190,7 @@ object___reduce_ex__(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int protocol;
 
-    protocol = _PyLong_AsInt(arg);
+    protocol = PyLong_AsInt(arg);
     if (protocol == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -222,9 +222,6 @@ object___format__(PyObject *self, PyObject *arg)
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("__format__", "argument", "str", arg);
-        goto exit;
-    }
-    if (PyUnicode_READY(arg) == -1) {
         goto exit;
     }
     format_spec = arg;
@@ -269,4 +266,4 @@ object___dir__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return object___dir___impl(self);
 }
-/*[clinic end generated code: output=d2fc52440a89f2fa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=baf5ec2093815a3f input=a9049054013a1b77]*/

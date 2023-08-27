@@ -282,7 +282,7 @@ class Test_Csv(unittest.TestCase):
             self.assertRaises(OSError, writer.writerows, BadIterable())
 
     @support.cpython_only
-    @support.requires_legacy_unicode_capi
+    @support.requires_legacy_unicode_capi()
     @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_writerows_legacy_strings(self):
         import _testcapi
@@ -955,7 +955,7 @@ class TestArrayWrites(unittest.TestCase):
 
     def test_char_write(self):
         import array, string
-        a = array.array('u', string.ascii_letters)
+        a = array.array('w', string.ascii_letters)
 
         with TemporaryFile("w+", encoding="utf-8", newline='') as fileobj:
             writer = csv.writer(fileobj, dialect="excel")

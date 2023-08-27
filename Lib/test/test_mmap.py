@@ -299,6 +299,27 @@ class MmapTests(unittest.TestCase):
         self.assertEqual(m.find(b'one', 1, -2), -1)
         self.assertEqual(m.find(bytearray(b'one')), 0)
 
+        for i in range(-n-1, n+1):
+            for j in range(-n-1, n+1):
+                for p in [b"o", b"on", b"two", b"ones", b"s"]:
+                    expected = data.find(p, i, j)
+                    self.assertEqual(m.find(p, i, j), expected, (p, i, j))
+
+    def test_find_does_not_access_beyond_buffer(self):
+        try:
+            flags = mmap.MAP_PRIVATE | mmap.MAP_ANONYMOUS
+            PAGESIZE = mmap.PAGESIZE
+            PROT_NONE = 0
+            PROT_READ = mmap.PROT_READ
+        except AttributeError as e:
+            raise unittest.SkipTest("mmap flags unavailable") from e
+        for i in range(0, 2049):
+            with mmap.mmap(-1, PAGESIZE * (i + 1),
+                           flags=flags, prot=PROT_NONE) as guard:
+                with mmap.mmap(-1, PAGESIZE * (i + 2048),
+                               flags=flags, prot=PROT_READ) as fm:
+                    fm.find(b"fo", -2)
+
 
     def test_rfind(self):
         # test the new 'end' parameter works as expected

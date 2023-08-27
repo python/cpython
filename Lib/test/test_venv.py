@@ -208,7 +208,8 @@ class BasicTest(BaseTest):
     def test_upgrade_dependencies(self):
         builder = venv.EnvBuilder()
         bin_path = 'Scripts' if sys.platform == 'win32' else 'bin'
-        python_exe = os.path.split(sys.executable)[1]
+        python_exe_realpath = os.path.realpath(sys._base_executable)
+        python_exe = os.path.split(python_exe_realpath)[1]
         with tempfile.TemporaryDirectory() as fake_env_dir:
             expect_exe = os.path.normcase(
                 os.path.join(fake_env_dir, bin_path, python_exe)
@@ -551,7 +552,8 @@ class BasicTest(BaseTest):
         self.addCleanup(rmtree, non_installed_dir)
         bindir = os.path.join(non_installed_dir, self.bindir)
         os.mkdir(bindir)
-        shutil.copy2(sys.executable, bindir)
+        python_exe_realpath = os.path.realpath(sys._base_executable)
+        shutil.copy2(python_exe_realpath, bindir)
         libdir = os.path.join(non_installed_dir, platlibdir, self.lib[1])
         os.makedirs(libdir)
         landmark = os.path.join(libdir, "os.py")
@@ -595,7 +597,7 @@ class BasicTest(BaseTest):
         # libpython.so
         ld_library_path = sysconfig.get_config_var("LIBDIR")
         if not ld_library_path or sysconfig.is_python_build():
-            ld_library_path = os.path.abspath(os.path.dirname(sys.executable))
+            ld_library_path = os.path.abspath(os.path.dirname(python_exe_realpath))
         if sys.platform == 'darwin':
             ld_library_path_env = "DYLD_LIBRARY_PATH"
         else:
