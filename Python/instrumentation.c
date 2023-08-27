@@ -1553,8 +1553,8 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
     if (code->co_executors != NULL && code->co_executors->size > 0 ) {
         for (int i = 0; i < code_len; i += _PyInstruction_GetLength(code, i)) {
             _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
-            int opcode = instr->op.code;
-            int oparg = instr->op.arg;
+            uint8_t opcode = instr->op.code;
+            uint8_t oparg = instr->op.arg;
             if (opcode == ENTER_EXECUTOR) {
                 _PyExecutorObject *exec = code->co_executors->executors[oparg];
                 assert(exec->vm_data.opcode != ENTER_EXECUTOR);
