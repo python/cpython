@@ -133,7 +133,7 @@ dummy_func(
         }
 
         family(RESUME, 0) = {
-            RESUME_QUICK,
+            RESUME_CHECK,
         };
 
         inst(RESUME, (--)) {
@@ -148,11 +148,11 @@ dummy_func(
                 if (oparg < 2) {
                     CHECK_EVAL_BREAKER();
                 }
-                next_instr[-1].op.code = RESUME_QUICK;
+                next_instr[-1].op.code = RESUME_CHECK;
             }
         }
 
-        inst(RESUME_QUICK, (--)) {
+        inst(RESUME_CHECK, (--)) {
 #if defined(__EMSCRIPTEN__)
             DEOPT_IF(emscripten_signal_clock == 0, RESUME);
 #endif

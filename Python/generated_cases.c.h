@@ -21,12 +21,12 @@
                 if (oparg < 2) {
                     CHECK_EVAL_BREAKER();
                 }
-                next_instr[-1].op.code = RESUME_QUICK;
+                next_instr[-1].op.code = RESUME_CHECK;
             }
             DISPATCH();
         }
 
-        TARGET(RESUME_QUICK) {
+        TARGET(RESUME_CHECK) {
 #if defined(__EMSCRIPTEN__)
             DEOPT_IF(emscripten_signal_clock == 0, RESUME);
 #endif

@@ -7,7 +7,7 @@
             break;
         }
 
-        case RESUME_QUICK: {
+        case RESUME_CHECK: {
 #if defined(__EMSCRIPTEN__)
             DEOPT_IF(emscripten_signal_clock == 0, RESUME);
 #endif

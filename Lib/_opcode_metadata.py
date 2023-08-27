@@ -5,7 +5,7 @@
 
 _specializations = {
     "RESUME": [
-        "RESUME_QUICK",
+        "RESUME_CHECK",
     ],
     "TO_BOOL": [
         "TO_BOOL_ALWAYS_TRUE",
@@ -120,7 +120,7 @@ _specialized_opmap = {
     'BINARY_SUBSCR_LIST_INT': 15,
     'BINARY_SUBSCR_STR_INT': 16,
     'BINARY_SUBSCR_TUPLE_INT': 18,
-    'RESUME_QUICK': 47,
+    'RESUME_CHECK': 47,
     'STORE_ATTR_INSTANCE_VALUE': 51,
     'STORE_ATTR_SLOT': 52,
     'STORE_SUBSCR_DICT': 55,

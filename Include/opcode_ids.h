@@ -57,7 +57,7 @@ extern "C" {
 #define POP_TOP                                 44
 #define PUSH_EXC_INFO                           45
 #define PUSH_NULL                               46
-#define RESUME_QUICK                            47
+#define RESUME_CHECK                            47
 #define RETURN_GENERATOR                        48
 #define RETURN_VALUE                            49
 #define SETUP_ANNOTATIONS                       50

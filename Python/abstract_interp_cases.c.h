@@ -7,7 +7,7 @@
             break;
         }
 
-        case RESUME_QUICK: {
+        case RESUME_CHECK: {
             break;
         }
 
