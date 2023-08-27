@@ -76,6 +76,7 @@ import bdb
 import dis
 import code
 import glob
+import codeop
 import pprint
 import signal
 import inspect
@@ -444,7 +445,30 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         locals = self.curframe_locals
         globals = self.curframe.f_globals
         try:
-            code = compile(line + '\n', '<stdin>', 'single')
+            if (code := codeop.compile_command(line + '\n', '<stdin>', 'single')) is None:
+                # Multi-line mode
+                buffer = line
+                continue_prompt = "...   "
+                while (code := codeop.compile_command(buffer, '<stdin>', 'single')) is None:
+                    if self.use_rawinput:
+                        try:
+                            line = input(continue_prompt)
+                        except (EOFError, KeyboardInterrupt):
+                            self.lastcmd = ""
+                            print('\n')
+                            return
+                    else:
+                        self.stdout.write(continue_prompt)
+                        self.stdout.flush()
+                        line = self.stdin.readline()
+                        if not len(line):
+                            self.lastcmd = ""
+                            self.stdout.write('\n')
+                            self.stdout.flush()
+                            return
+                        else:
+                            line = line.rstrip('\r\n')
+                    buffer += '\n' + line
             save_stdout = sys.stdout
             save_stdin = sys.stdin
             save_displayhook = sys.displayhook

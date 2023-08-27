@@ -1,0 +1,1 @@
+Add *merge_extra* parameter/feature to :class:`logging.LoggerAdapter`

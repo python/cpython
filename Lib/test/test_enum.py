@@ -31,7 +31,31 @@ def load_tests(loader, tests, ignore):
                 '../../Doc/library/enum.rst',
                 optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE,
                 ))
+    if os.path.exists('Doc/howto/enum.rst'):
+        tests.addTests(doctest.DocFileSuite(
+                '../../Doc/howto/enum.rst',
+                optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE,
+                ))
     return tests
+
+def reraise_if_not_enum(*enum_types_or_exceptions):
+    from functools import wraps
+
+    def decorator(func):
+        @wraps(func)
+        def inner(*args, **kwargs):
+            excs = [
+                e
+                for e in enum_types_or_exceptions
+                if isinstance(e, Exception)
+            ]
+            if len(excs) == 1:
+                raise excs[0]
+            elif excs:
+                raise ExceptionGroup('Enum Exceptions', excs)
+            return func(*args, **kwargs)
+        return inner
+    return decorator
 
 MODULE = __name__
 SHORT_MODULE = MODULE.split('.')[-1]
@@ -66,30 +90,46 @@ try:
         LARRY = 1
         CURLY = 2
         MOE = 4
+        BIG = 389
 except Exception as exc:
     FlagStooges = exc
 
-class FlagStoogesWithZero(Flag):
-    NOFLAG = 0
-    LARRY = 1
-    CURLY = 2
-    MOE = 4
+try:
+    class FlagStoogesWithZero(Flag):
+        NOFLAG = 0
+        LARRY = 1
+        CURLY = 2
+        MOE = 4
+        BIG = 389
+except Exception as exc:
+    FlagStoogesWithZero = exc
 
-class IntFlagStooges(IntFlag):
-    LARRY = 1
-    CURLY = 2
-    MOE = 4
+try:
+    class IntFlagStooges(IntFlag):
+        LARRY = 1
+        CURLY = 2
+        MOE = 4
+        BIG = 389
+except Exception as exc:
+    IntFlagStooges = exc
 
-class IntFlagStoogesWithZero(IntFlag):
-    NOFLAG = 0
-    LARRY = 1
-    CURLY = 2
-    MOE = 4
+try:
+    class IntFlagStoogesWithZero(IntFlag):
+        NOFLAG = 0
+        LARRY = 1
+        CURLY = 2
+        MOE = 4
+        BIG = 389
+except Exception as exc:
+    IntFlagStoogesWithZero = exc
 
 # for pickle test and subclass tests
-class Name(StrEnum):
-    BDFL = 'Guido van Rossum'
-    FLUFL = 'Barry Warsaw'
+try:
+    class Name(StrEnum):
+        BDFL = 'Guido van Rossum'
+        FLUFL = 'Barry Warsaw'
+except Exception as exc:
+    Name = exc
 
 try:
     Question = Enum('Question', 'who what when where why', module=__name__)
@@ -195,26 +235,35 @@ class classproperty:
 
 # for global repr tests
 
-@enum.global_enum
-class HeadlightsK(IntFlag, boundary=enum.KEEP):
-    OFF_K = 0
-    LOW_BEAM_K = auto()
-    HIGH_BEAM_K = auto()
-    FOG_K = auto()
+try:
+    @enum.global_enum
+    class HeadlightsK(IntFlag, boundary=enum.KEEP):
+        OFF_K = 0
+        LOW_BEAM_K = auto()
+        HIGH_BEAM_K = auto()
+        FOG_K = auto()
+except Exception as exc:
+    HeadlightsK = exc
 
 
-@enum.global_enum
-class HeadlightsC(IntFlag, boundary=enum.CONFORM):
-    OFF_C = 0
-    LOW_BEAM_C = auto()
-    HIGH_BEAM_C = auto()
-    FOG_C = auto()
+try:
+    @enum.global_enum
+    class HeadlightsC(IntFlag, boundary=enum.CONFORM):
+        OFF_C = 0
+        LOW_BEAM_C = auto()
+        HIGH_BEAM_C = auto()
+        FOG_C = auto()
+except Exception as exc:
+    HeadlightsC = exc
 
 
-@enum.global_enum
-class NoName(Flag):
-    ONE = 1
-    TWO = 2
+try:
+    @enum.global_enum
+    class NoName(Flag):
+        ONE = 1
+        TWO = 2
+except Exception as exc:
+    NoName = exc
 
 
 # tests
@@ -795,9 +844,17 @@ class _MinimalOutputTests:
         TE = self.MainEnum
         copied = copy.copy(TE)
         self.assertEqual(copied, TE)
+        self.assertIs(copied, TE)
         deep = copy.deepcopy(TE)
         self.assertEqual(deep, TE)
+        self.assertIs(deep, TE)
 
+    def test_copy_member(self):
+        TE = self.MainEnum
+        copied = copy.copy(TE.first)
+        self.assertIs(copied, TE.first)
+        deep = copy.deepcopy(TE.first)
+        self.assertIs(deep, TE.first)
 
 class _FlagTests:
 
@@ -808,6 +865,89 @@ class _FlagTests:
             ) as ctx:
             self.MainEnum('RED')
         self.assertIs(ctx.exception.__context__, None)
+
+    def test_closed_invert_expectations(self):
+        class ClosedAB(self.enum_type):
+            A = 1
+            B = 2
+            MASK = 3
+        A, B = ClosedAB
+        AB_MASK = ClosedAB.MASK
+        #
+        self.assertIs(~A, B)
+        self.assertIs(~B, A)
+        self.assertIs(~(A|B), ClosedAB(0))
+        self.assertIs(~AB_MASK, ClosedAB(0))
+        self.assertIs(~ClosedAB(0), (A|B))
+        #
+        class ClosedXYZ(self.enum_type):
+            X = 4
+            Y = 2
+            Z = 1
+            MASK = 7
+        X, Y, Z = ClosedXYZ
+        XYZ_MASK = ClosedXYZ.MASK
+        #
+        self.assertIs(~X, Y|Z)
+        self.assertIs(~Y, X|Z)
+        self.assertIs(~Z, X|Y)
+        self.assertIs(~(X|Y), Z)
+        self.assertIs(~(X|Z), Y)
+        self.assertIs(~(Y|Z), X)
+        self.assertIs(~(X|Y|Z), ClosedXYZ(0))
+        self.assertIs(~XYZ_MASK, ClosedXYZ(0))
+        self.assertIs(~ClosedXYZ(0), (X|Y|Z))
+
+    def test_open_invert_expectations(self):
+        class OpenAB(self.enum_type):
+            A = 1
+            B = 2
+            MASK = 255
+        A, B = OpenAB
+        AB_MASK = OpenAB.MASK
+        #
+        if OpenAB._boundary_ in (EJECT, KEEP):
+            self.assertIs(~A, OpenAB(254))
+            self.assertIs(~B, OpenAB(253))
+            self.assertIs(~(A|B), OpenAB(252))
+            self.assertIs(~AB_MASK, OpenAB(0))
+            self.assertIs(~OpenAB(0), AB_MASK)
+        else:
+            self.assertIs(~A, B)
+            self.assertIs(~B, A)
+            self.assertIs(~(A|B), OpenAB(0))
+            self.assertIs(~AB_MASK, OpenAB(0))
+            self.assertIs(~OpenAB(0), (A|B))
+        #
+        class OpenXYZ(self.enum_type):
+            X = 4
+            Y = 2
+            Z = 1
+            MASK = 31
+        X, Y, Z = OpenXYZ
+        XYZ_MASK = OpenXYZ.MASK
+        #
+        if OpenXYZ._boundary_ in (EJECT, KEEP):
+            self.assertIs(~X, OpenXYZ(27))
+            self.assertIs(~Y, OpenXYZ(29))
+            self.assertIs(~Z, OpenXYZ(30))
+            self.assertIs(~(X|Y), OpenXYZ(25))
+            self.assertIs(~(X|Z), OpenXYZ(26))
+            self.assertIs(~(Y|Z), OpenXYZ(28))
+            self.assertIs(~(X|Y|Z), OpenXYZ(24))
+            self.assertIs(~XYZ_MASK, OpenXYZ(0))
+            self.assertTrue(~OpenXYZ(0), XYZ_MASK)
+        else:
+            self.assertIs(~X, Y|Z)
+            self.assertIs(~Y, X|Z)
+            self.assertIs(~Z, X|Y)
+            self.assertIs(~(X|Y), Z)
+            self.assertIs(~(X|Z), Y)
+            self.assertIs(~(Y|Z), X)
+            self.assertIs(~(X|Y|Z), OpenXYZ(0))
+            self.assertIs(~XYZ_MASK, OpenXYZ(0))
+            self.assertTrue(~OpenXYZ(0), (X|Y|Z))
+
 
 class TestPlainEnum(_EnumTests, _PlainOutputTests, unittest.TestCase):
     enum_type = Enum
@@ -1024,9 +1164,8 @@ class TestSpecial(unittest.TestCase):
                 green = 2
                 blue = 3
 
+    @reraise_if_not_enum(Theory)
     def test_enum_function_with_qualname(self):
-        if isinstance(Theory, Exception):
-            raise Theory
         self.assertEqual(Theory.__qualname__, 'spanish_inquisition')
 
     def test_enum_of_types(self):
@@ -1255,6 +1394,7 @@ class TestSpecial(unittest.TestCase):
         test_pickle_dump_load(self.assertIs, MyUnBrokenEnum.I)
         test_pickle_dump_load(self.assertIs, MyUnBrokenEnum)
 
+    @reraise_if_not_enum(FloatStooges)
     def test_floatenum_fromhex(self):
         h = float.hex(FloatStooges.MOE.value)
         self.assertIs(FloatStooges.fromhex(h), FloatStooges.MOE)
@@ -1375,6 +1515,7 @@ class TestSpecial(unittest.TestCase):
         self.assertIs(ThreePart((3, 3.0, 'three')), ThreePart.THREE)
         self.assertIs(ThreePart(3, 3.0, 'three'), ThreePart.THREE)
 
+    @reraise_if_not_enum(IntStooges)
     def test_intenum_from_bytes(self):
         self.assertIs(IntStooges.from_bytes(b'\x00\x03', 'big'), IntStooges.MOE)
         with self.assertRaises(ValueError):
@@ -1403,33 +1544,28 @@ class TestSpecial(unittest.TestCase):
             class Huh(MyStr, MyInt, Enum):
                 One = 1
 
+    @reraise_if_not_enum(Stooges)
     def test_pickle_enum(self):
-        if isinstance(Stooges, Exception):
-            raise Stooges
         test_pickle_dump_load(self.assertIs, Stooges.CURLY)
         test_pickle_dump_load(self.assertIs, Stooges)
 
+    @reraise_if_not_enum(IntStooges)
     def test_pickle_int(self):
-        if isinstance(IntStooges, Exception):
-            raise IntStooges
         test_pickle_dump_load(self.assertIs, IntStooges.CURLY)
         test_pickle_dump_load(self.assertIs, IntStooges)
 
+    @reraise_if_not_enum(FloatStooges)
     def test_pickle_float(self):
-        if isinstance(FloatStooges, Exception):
-            raise FloatStooges
         test_pickle_dump_load(self.assertIs, FloatStooges.CURLY)
         test_pickle_dump_load(self.assertIs, FloatStooges)
 
+    @reraise_if_not_enum(Answer)
     def test_pickle_enum_function(self):
-        if isinstance(Answer, Exception):
-            raise Answer
         test_pickle_dump_load(self.assertIs, Answer.him)
         test_pickle_dump_load(self.assertIs, Answer)
 
+    @reraise_if_not_enum(Question)
     def test_pickle_enum_function_with_module(self):
-        if isinstance(Question, Exception):
-            raise Question
         test_pickle_dump_load(self.assertIs, Question.who)
         test_pickle_dump_load(self.assertIs, Question)
 
@@ -1492,9 +1628,8 @@ class TestSpecial(unittest.TestCase):
                 [Season.SUMMER, Season.WINTER, Season.AUTUMN, Season.SPRING],
                 )
 
+    @reraise_if_not_enum(Name)
     def test_subclassing(self):
-        if isinstance(Name, Exception):
-            raise Name
         self.assertEqual(Name.BDFL, 'Guido van Rossum')
         self.assertTrue(Name.BDFL, Name('Guido van Rossum'))
         self.assertIs(Name.BDFL, getattr(Name, 'BDFL'))
@@ -1942,7 +2077,6 @@ class TestSpecial(unittest.TestCase):
             __qualname__ = 'NEI'
             x = ('the-x', 1)
             y = ('the-y', 2)
-
         self.assertIs(NEI.__new__, Enum.__new__)
         self.assertEqual(repr(NEI.x + NEI.y), "NamedInt('(the-x + the-y)', 3)")
         globals()['NamedInt'] = NamedInt
@@ -1950,6 +2084,10 @@ class TestSpecial(unittest.TestCase):
         NI5 = NamedInt('test', 5)
         self.assertEqual(NI5, 5)
         self.assertEqual(NEI.y.value, 2)
+        with self.assertRaisesRegex(TypeError, "name and value must be specified"):
+            test_pickle_dump_load(self.assertIs, NEI.y)
+        # fix pickle support and try again
+        NEI.__reduce_ex__ = enum.pickle_by_enum_name
         test_pickle_dump_load(self.assertIs, NEI.y)
         test_pickle_dump_load(self.assertIs, NEI)
 
@@ -3076,22 +3214,6 @@ class OldTestFlag(unittest.TestCase):
         self.assertIs(Open.RO ^ Open.CE, Open.CE)
         self.assertIs(Open.CE ^ Open.CE, Open.RO)
 
-    def test_invert(self):
-        Perm = self.Perm
-        RW = Perm.R | Perm.W
-        RX = Perm.R | Perm.X
-        WX = Perm.W | Perm.X
-        RWX = Perm.R | Perm.W | Perm.X
-        values = list(Perm) + [RW, RX, WX, RWX, Perm(0)]
-        for i in values:
-            self.assertIs(type(~i), Perm)
-            self.assertEqual(~~i, i)
-        for i in Perm:
-            self.assertIs(~~i, i)
-        Open = self.Open
-        self.assertIs(Open.WO & ~Open.WO, Open.RO)
-        self.assertIs((Open.WO|Open.CE) & ~Open.WO, Open.CE)
-
     def test_bool(self):
         Perm = self.Perm
         for f in Perm:
@@ -3243,20 +3365,30 @@ class OldTestFlag(unittest.TestCase):
             self.assertIn(e, Perm)
             self.assertIs(type(e), Perm)
 
+    @reraise_if_not_enum(
+        FlagStooges,
+        FlagStoogesWithZero,
+        IntFlagStooges,
+        IntFlagStoogesWithZero,
+    )
     def test_pickle(self):
-        if isinstance(FlagStooges, Exception):
-            raise FlagStooges
         test_pickle_dump_load(self.assertIs, FlagStooges.CURLY)
         test_pickle_dump_load(self.assertEqual,
                         FlagStooges.CURLY|FlagStooges.MOE)
         test_pickle_dump_load(self.assertEqual,
                         FlagStooges.CURLY&~FlagStooges.CURLY)
         test_pickle_dump_load(self.assertIs, FlagStooges)
+        test_pickle_dump_load(self.assertEqual, FlagStooges.BIG)
+        test_pickle_dump_load(self.assertEqual,
+                        FlagStooges.CURLY|FlagStooges.BIG)
 
         test_pickle_dump_load(self.assertIs, FlagStoogesWithZero.CURLY)
         test_pickle_dump_load(self.assertEqual,
                         FlagStoogesWithZero.CURLY|FlagStoogesWithZero.MOE)
         test_pickle_dump_load(self.assertIs, FlagStoogesWithZero.NOFLAG)
+        test_pickle_dump_load(self.assertEqual, FlagStoogesWithZero.BIG)
+        test_pickle_dump_load(self.assertEqual,
+                        FlagStoogesWithZero.CURLY|FlagStoogesWithZero.BIG)
 
         test_pickle_dump_load(self.assertIs, IntFlagStooges.CURLY)
         test_pickle_dump_load(self.assertEqual,
@@ -3266,11 +3398,19 @@ class OldTestFlag(unittest.TestCase):
         test_pickle_dump_load(self.assertEqual, IntFlagStooges(0))
         test_pickle_dump_load(self.assertEqual, IntFlagStooges(0x30))
         test_pickle_dump_load(self.assertIs, IntFlagStooges)
+        test_pickle_dump_load(self.assertEqual, IntFlagStooges.BIG)
+        test_pickle_dump_load(self.assertEqual, IntFlagStooges.BIG|1)
+        test_pickle_dump_load(self.assertEqual,
+                        IntFlagStooges.CURLY|IntFlagStooges.BIG)
 
         test_pickle_dump_load(self.assertIs, IntFlagStoogesWithZero.CURLY)
         test_pickle_dump_load(self.assertEqual,
                         IntFlagStoogesWithZero.CURLY|IntFlagStoogesWithZero.MOE)
         test_pickle_dump_load(self.assertIs, IntFlagStoogesWithZero.NOFLAG)
+        test_pickle_dump_load(self.assertEqual, IntFlagStoogesWithZero.BIG)
+        test_pickle_dump_load(self.assertEqual, IntFlagStoogesWithZero.BIG|1)
+        test_pickle_dump_load(self.assertEqual,
+                        IntFlagStoogesWithZero.CURLY|IntFlagStoogesWithZero.BIG)
 
     def test_contains_tf(self):
         Open = self.Open
@@ -3536,6 +3676,7 @@ class OldTestIntFlag(unittest.TestCase):
         self.assertTrue(isinstance(Open.WO | Open.RW, Open))
         self.assertEqual(Open.WO | Open.RW, 3)
 
+    @reraise_if_not_enum(HeadlightsK)
     def test_global_repr_keep(self):
         self.assertEqual(
                 repr(HeadlightsK(0)),
@@ -3550,6 +3691,7 @@ class OldTestIntFlag(unittest.TestCase):
                 '%(m)s.HeadlightsK(8)' % {'m': SHORT_MODULE},
                 )
 
+    @reraise_if_not_enum(HeadlightsC)
     def test_global_repr_conform1(self):
         self.assertEqual(
                 repr(HeadlightsC(0)),
@@ -3564,6 +3706,7 @@ class OldTestIntFlag(unittest.TestCase):
                 '%(m)s.OFF_C' % {'m': SHORT_MODULE},
                 )
 
+    @reraise_if_not_enum(NoName)
     def test_global_enum_str(self):
         self.assertEqual(str(NoName.ONE & NoName.TWO), 'NoName(0)')
         self.assertEqual(str(NoName(0)), 'NoName(0)')

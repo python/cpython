@@ -2,7 +2,9 @@
 
 #include "Python.h"
 #include "pycore_namespace.h"     // _PyNamespace_Type
-#include "structmember.h"         // PyMemberDef
+
+#include <stddef.h>               // offsetof()
+
 
 
 typedef struct {
@@ -12,7 +14,7 @@ typedef struct {
 
 
 static PyMemberDef namespace_members[] = {
-    {"__dict__", T_OBJECT, offsetof(_PyNamespaceObject, ns_dict), READONLY},
+    {"__dict__", _Py_T_OBJECT, offsetof(_PyNamespaceObject, ns_dict), Py_READONLY},
     {NULL}
 };
 

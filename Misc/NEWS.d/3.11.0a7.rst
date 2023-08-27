@@ -275,7 +275,7 @@ initializing to ``list_extend``. Patch by Jeremiah Pascual.
 .. nonce: cnaIK3
 .. section: Core and Builtins
 
-Speed up throwing exception in generator with :const:`METH_FASTCALL` calling
+Speed up throwing exception in generator with :c:macro:`METH_FASTCALL` calling
 convention. Patch by Kumar Aditya.
 
 ..

@@ -921,194 +921,14 @@ fi
 
 
 AC_MSG_CHECKING([for the platform triplet based on compiler characteristics])
-cat > conftest.c <<EOF
-#undef bfin
-#undef cris
-#undef fr30
-#undef linux
-#undef hppa
-#undef hpux
-#undef i386
-#undef mips
-#undef powerpc
-#undef sparc
-#undef unix
-#if defined(__ANDROID__)
-    # Android is not a multiarch system.
-#elif defined(__linux__)
-# if defined(__x86_64__) && defined(__LP64__)
-        x86_64-linux-gnu
-# elif defined(__x86_64__) && defined(__ILP32__)
-        x86_64-linux-gnux32
-# elif defined(__i386__)
-        i386-linux-gnu
-# elif defined(__aarch64__) && defined(__AARCH64EL__)
-#  if defined(__ILP32__)
-        aarch64_ilp32-linux-gnu
-#  else
-        aarch64-linux-gnu
-#  endif
-# elif defined(__aarch64__) && defined(__AARCH64EB__)
-#  if defined(__ILP32__)
-        aarch64_be_ilp32-linux-gnu
-#  else
-        aarch64_be-linux-gnu
-#  endif
-# elif defined(__alpha__)
-        alpha-linux-gnu
-# elif defined(__ARM_EABI__) && defined(__ARM_PCS_VFP)
-#  if defined(__ARMEL__)
-        arm-linux-gnueabihf
-#  else
-        armeb-linux-gnueabihf
-#  endif
-# elif defined(__ARM_EABI__) && !defined(__ARM_PCS_VFP)
-#  if defined(__ARMEL__)
-        arm-linux-gnueabi
-#  else
-        armeb-linux-gnueabi
-#  endif
-# elif defined(__hppa__)
-        hppa-linux-gnu
-# elif defined(__ia64__)
-        ia64-linux-gnu
-# elif defined(__loongarch__)
-#  if defined(__loongarch_lp64)
-#   if defined(__loongarch_soft_float)
-        loongarch64-linux-gnusf
-#   elif defined(__loongarch_single_float)
-        loongarch64-linux-gnuf32
-#   elif defined(__loongarch_double_float)
-        loongarch64-linux-gnu
-#   else
-#    error unknown platform triplet
-#   endif
-#  else
-#   error unknown platform triplet
-#  endif
-# elif defined(__m68k__) && !defined(__mcoldfire__)
-        m68k-linux-gnu
-# elif defined(__mips_hard_float) && defined(__mips_isa_rev) && (__mips_isa_rev >=6) && defined(_MIPSEL)
-#  if _MIPS_SIM == _ABIO32
-        mipsisa32r6el-linux-gnu
-#  elif _MIPS_SIM == _ABIN32
-        mipsisa64r6el-linux-gnuabin32
-#  elif _MIPS_SIM == _ABI64
-        mipsisa64r6el-linux-gnuabi64
-#  else
-#   error unknown platform triplet
-#  endif
-# elif defined(__mips_hard_float) && defined(__mips_isa_rev) && (__mips_isa_rev >=6)
-#  if _MIPS_SIM == _ABIO32
-        mipsisa32r6-linux-gnu
-#  elif _MIPS_SIM == _ABIN32
-        mipsisa64r6-linux-gnuabin32
-#  elif _MIPS_SIM == _ABI64
-        mipsisa64r6-linux-gnuabi64
-#  else
-#   error unknown platform triplet
-#  endif
-# elif defined(__mips_hard_float) && defined(_MIPSEL)
-#  if _MIPS_SIM == _ABIO32
-        mipsel-linux-gnu
-#  elif _MIPS_SIM == _ABIN32
-        mips64el-linux-gnuabin32
-#  elif _MIPS_SIM == _ABI64
-        mips64el-linux-gnuabi64
-#  else
-#   error unknown platform triplet
-#  endif
-# elif defined(__mips_hard_float)
-#  if _MIPS_SIM == _ABIO32
-        mips-linux-gnu
-#  elif _MIPS_SIM == _ABIN32
-        mips64-linux-gnuabin32
-#  elif _MIPS_SIM == _ABI64
-        mips64-linux-gnuabi64
-#  else
-#   error unknown platform triplet
-#  endif
-# elif defined(__or1k__)
-        or1k-linux-gnu
-# elif defined(__powerpc__) && defined(__SPE__)
-        powerpc-linux-gnuspe
-# elif defined(__powerpc64__)
-#  if defined(__LITTLE_ENDIAN__)
-        powerpc64le-linux-gnu
-#  else
-        powerpc64-linux-gnu
-#  endif
-# elif defined(__powerpc__)
-        powerpc-linux-gnu
-# elif defined(__s390x__)
-        s390x-linux-gnu
-# elif defined(__s390__)
-        s390-linux-gnu
-# elif defined(__sh__) && defined(__LITTLE_ENDIAN__)
-        sh4-linux-gnu
-# elif defined(__sparc__) && defined(__arch64__)
-        sparc64-linux-gnu
-# elif defined(__sparc__)
-        sparc-linux-gnu
-# elif defined(__riscv)
-#  if __riscv_xlen == 32
-        riscv32-linux-gnu
-#  elif __riscv_xlen == 64
-        riscv64-linux-gnu
-#  else
-#   error unknown platform triplet
-#  endif
-# else
-#   error unknown platform triplet
-# endif
-#elif defined(__FreeBSD_kernel__)
-# if defined(__LP64__)
-        x86_64-kfreebsd-gnu
-# elif defined(__i386__)
-        i386-kfreebsd-gnu
-# else
-#   error unknown platform triplet
-# endif
-#elif defined(__gnu_hurd__)
-        i386-gnu
-#elif defined(__APPLE__)
-        darwin
-#elif defined(__VXWORKS__)
-        vxworks
-#elif defined(__wasm32__)
-#  if defined(__EMSCRIPTEN__)
-	wasm32-emscripten
-#  elif defined(__wasi__)
-	wasm32-wasi
-#  else
-#    error unknown wasm32 platform
-#  endif
-#elif defined(__wasm64__)
-#  if defined(__EMSCRIPTEN__)
-	wasm64-emscripten
-#  elif defined(__wasi__)
-	wasm64-wasi
-#  else
-#    error unknown wasm64 platform
-#  endif
-#else
-# error unknown platform triplet
-#endif
-
-EOF
-
-if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
-  PLATFORM_TRIPLET=`grep -v '^#' conftest.out | grep -v '^ *$' | tr -d ' 	'`
-  case "$build_os" in
-  linux-musl*)
-    PLATFORM_TRIPLET=`echo "$PLATFORM_TRIPLET" | sed 's/linux-gnu/linux-musl/'`
-    ;;
-  esac
+if $CPP $CPPFLAGS $srcdir/Misc/platform_triplet.c >conftest.out 2>/dev/null; then
+  PLATFORM_TRIPLET=`grep '^PLATFORM_TRIPLET=' conftest.out | tr -d ' 	'`
+  PLATFORM_TRIPLET="${PLATFORM_TRIPLET@%:@PLATFORM_TRIPLET=}"
   AC_MSG_RESULT([$PLATFORM_TRIPLET])
 else
   AC_MSG_RESULT([none])
 fi
-rm -f conftest.c conftest.out
+rm -f conftest.out
 
 AC_MSG_CHECKING([for multiarch])
 AS_CASE([$ac_sys_system],
@@ -1272,7 +1092,7 @@ AC_ARG_ENABLE([wasm-pthreads],
 [
   AS_CASE([$ac_sys_system],
     [Emscripten], [],
-    [WASI], [AC_MSG_ERROR([WASI threading is not implemented yet.])],
+    [WASI], [],
     [AC_MSG_ERROR([--enable-wasm-pthreads only applies to Emscripten and WASI])]
   )
 ], [
@@ -2309,6 +2129,18 @@ AS_CASE([$ac_sys_system],
     LIBS="$LIBS -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
     echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
 
+    AS_VAR_IF([enable_wasm_pthreads], [yes], [
+      # Note: update CFLAGS because ac_compile/ac_link needs this too.
+      # without this, configure fails to find pthread_create, sem_init,
+      # etc because they are only available in the sysroot for
+      # wasm32-wasi-threads.
+      AS_VAR_APPEND([CFLAGS], [" -target wasm32-wasi-threads -pthread"])
+      AS_VAR_APPEND([CFLAGS_NODIST], [" -target wasm32-wasi-threads -pthread"])
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -target wasm32-wasi-threads -pthread"])
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--import-memory"])
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--max-memory=10485760"])
+    ])
+
     dnl increase initial memory and stack size, move stack first
     dnl https://github.com/WebAssembly/wasi-libc/issues/233
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -z stack-size=524288 -Wl,--stack-first -Wl,--initial-memory=10485760"])
@@ -2640,6 +2472,9 @@ yes)
 esac
 
 case "$CC" in
+*mpicc*)
+    CFLAGS_NODIST="$CFLAGS_NODIST"
+    ;;
 *icc*)
     # ICC needs -fp-model strict or floats behave badly
     CFLAGS_NODIST="$CFLAGS_NODIST -fp-model strict"
@@ -2829,7 +2664,7 @@ AC_DEFINE([STDC_HEADERS], [1],
 # checks for header files
 AC_CHECK_HEADERS([ \
   alloca.h asm/types.h bluetooth.h conio.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
-  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/memfd.h \
+  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/limits.h linux/memfd.h \
   linux/random.h linux/soundcard.h \
   linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
@@ -2861,7 +2696,8 @@ AC_CHECK_HEADERS([net/if.h], [], [],
 ])
 
 # On Linux, netlink.h requires asm/types.h
-AC_CHECK_HEADERS([linux/netlink.h], [], [], [
+# On FreeBSD, netlink.h is located in netlink/netlink.h
+AC_CHECK_HEADERS([linux/netlink.h netlink/netlink.h], [], [], [
 #ifdef HAVE_ASM_TYPES_H
 #include <asm/types.h>
 #endif
@@ -3952,7 +3788,7 @@ PY_CHECK_EMSCRIPTEN_PORT([LIBSQLITE3], [-sUSE_SQLITE3])
 
 dnl Check for SQLite library. Use pkg-config if available.
 PKG_CHECK_MODULES(
-  [LIBSQLITE3], [sqlite3 >= 3.7.15], [], [
+  [LIBSQLITE3], [sqlite3 >= 3.15.2], [], [
     LIBSQLITE3_CFLAGS=${LIBSQLITE3_CFLAGS-""}
     LIBSQLITE3_LIBS=${LIBSQLITE3_LIBS-"-lsqlite3"}
   ]
@@ -3978,8 +3814,8 @@ dnl hence CPPFLAGS instead of CFLAGS.
     AC_COMPILE_IFELSE([
       AC_LANG_PROGRAM([
         #include <sqlite3.h>
-        #if SQLITE_VERSION_NUMBER < 3007015
-        #  error "SQLite 3.7.15 or higher required"
+        #if SQLITE_VERSION_NUMBER < 3015002
+        #  error "SQLite 3.15.2 or higher required"
         #endif
       ], [])
     ], [
@@ -6627,7 +6463,6 @@ SRCDIRS="\
   Modules/_hacl \
   Modules/_io \
   Modules/_multiprocessing \
-  Modules/_sha3 \
   Modules/_sqlite \
   Modules/_sre \
   Modules/_testcapi \
@@ -7106,6 +6941,21 @@ AC_ARG_ENABLE([test-modules],
 ])
 AC_MSG_RESULT([$TEST_MODULES])
 AC_SUBST([TEST_MODULES])
+
+# Check for --disable-gil
+# --disable-gil
+AC_MSG_CHECKING([for --disable-gil])
+AC_ARG_ENABLE([gil],
+  [AS_HELP_STRING([--disable-gil], [enable experimental support for running without the GIL (default is no)])],
+  [AS_VAR_IF([enable_gil], [yes], [disable_gil=no], [disable_gil=yes])], [disable_gil=no]
+)
+AC_MSG_RESULT([$disable_gil])
+
+if test "$disable_gil" = "yes"
+then
+  AC_DEFINE([Py_NOGIL], [1],
+            [Define if you want to disable the GIL])
+fi
 
 AC_DEFUN([PY_STDLIB_MOD_SET_NA], [
   m4_foreach([mod], [$@], [

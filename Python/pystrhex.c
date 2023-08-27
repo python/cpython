@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_strhex.h"        // _Py_strhex_with_sep()
+#include "pycore_unicodeobject.h" // _PyUnicode_CheckConsistency()
 #include <stdlib.h>               // abs()
 
 static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,

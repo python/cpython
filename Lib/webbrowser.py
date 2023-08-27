@@ -8,7 +8,6 @@ import shutil
 import sys
 import subprocess
 import threading
-import warnings
 
 __all__ = ["Error", "open", "open_new", "open_new_tab", "get", "register"]
 
@@ -391,15 +390,6 @@ class Konqueror(BaseBrowser):
             return (p.poll() is None)
 
 
-    def open(self, url, new=0, autoraise=True):
-        sys.audit("webbrowser.open", url)
-        if new:
-            ok = self._remote("LOADNEW " + url)
-        else:
-            ok = self._remote("LOAD " + url)
-        return ok
-
-
 class Edge(UnixBrowser):
     "Launcher class for Microsoft Edge browser."
 
@@ -577,20 +567,6 @@ if sys.platform == 'darwin':
     class MacOSXOSAScript(BaseBrowser):
         def __init__(self, name='default'):
             super().__init__(name)
-
-        @property
-        def _name(self):
-            warnings.warn(f'{self.__class__.__name__}._name is deprecated in 3.11'
-                          f' use {self.__class__.__name__}.name instead.',
-                          DeprecationWarning, stacklevel=2)
-            return self.name
-
-        @_name.setter
-        def _name(self, val):
-            warnings.warn(f'{self.__class__.__name__}._name is deprecated in 3.11'
-                          f' use {self.__class__.__name__}.name instead.',
-                          DeprecationWarning, stacklevel=2)
-            self.name = val
 
         def open(self, url, new=0, autoraise=True):
             if self.name == 'default':
