@@ -13926,6 +13926,7 @@ _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
         const wchar_t *path = PyUnicode_AsUnicode(unicode);
         result = LSTAT(path, &stat);
+        int saved_errno = errno;
         Py_DECREF(unicode);
 _Py_COMP_DIAG_POP
 #else /* USE_UNICODE_WCHAR_CACHE */
