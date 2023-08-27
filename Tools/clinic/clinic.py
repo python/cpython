@@ -63,6 +63,7 @@ from typing import (
 
 version = '1'
 
+DEFAULT_LIMITED_CAPI = False
 NO_VARARG = "PY_SSIZE_T_MAX"
 CLINIC_PREFIX = "__clinic_"
 CLINIC_PREFIXED_ARGS = {
@@ -77,6 +78,7 @@ CLINIC_PREFIXED_ARGS = {
     "noptargs",
     "return_value",
 }
+LIMITED_CAPI_REGEX = re.compile(r'#define +Py_LIMITED_API')
 
 
 class Sentinels(enum.Enum):
@@ -1074,6 +1076,11 @@ class CLanguage(Language):
             del parameters[0]
         converters = [p.converter for p in parameters]
 
+        # Copy includes from parameters to Clinic
+        for converter in converters:
+            if converter.include:
+                clinic.add_include(*converter.include)
+
         has_option_groups = parameters and (parameters[0].group or parameters[-1].group)
         default_return_converter = f.return_converter.type == 'PyObject *'
         new_or_init = f.kind.new_or_init
@@ -1243,6 +1250,22 @@ class CLanguage(Language):
             parser_prototype = self.PARSER_PROTOTYPE_VARARGS
             parser_definition = parser_body(parser_prototype, '    {option_group_parsing}')
 
+        elif not requires_defining_class and pos_only == len(parameters) - pseudo_args and clinic.limited_capi:
+            # positional-only for the limited C API
+            flags = "METH_VARARGS"
+
+            parser_prototype = self.PARSER_PROTOTYPE_VARARGS
+            parser_code = [normalize_snippet("""
+                if (!PyArg_ParseTuple(args, "{format_units}:{name}",
+                    {parse_arguments}))
+                    goto exit;
+            """, indent=4)]
+            argname_fmt = 'args[%d]'
+            declarations = ""
+
+            parser_definition = parser_body(parser_prototype, *parser_code,
+                                            declarations=declarations)
+
         elif not requires_defining_class and pos_only == len(parameters) - pseudo_args:
             if not new_or_init:
                 # positional-only, but no option groups
@@ -1360,7 +1383,21 @@ class CLanguage(Language):
                     vararg
                 )
                 nargs = f"Py_MIN(nargs, {max_pos})" if max_pos else "0"
-            if not new_or_init:
+
+            if clinic.limited_capi:
+                # positional-or-keyword arguments
+                flags = "METH_VARARGS|METH_KEYWORDS"
+
+                parser_prototype = self.PARSER_PROTOTYPE_KEYWORD
+                parser_code = [normalize_snippet("""
+                    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "{format_units}:{name}", _keywords,
+                        {parse_arguments}))
+                        goto exit;
+                """, indent=4)]
+                argname_fmt = 'args[%d]'
+                declarations = ""
+
+            elif not new_or_init:
                 flags = "METH_FASTCALL|METH_KEYWORDS"
                 parser_prototype = self.PARSER_PROTOTYPE_FASTCALL_KEYWORDS
                 argname_fmt = 'args[%d]'
@@ -2111,7 +2148,8 @@ class BlockPrinter:
             self,
             block: Block,
             *,
-            core_includes: bool = False
+            clinic: Clinic,
+            core_includes: bool = False,
     ) -> None:
         input = block.input
         output = block.output
@@ -2141,13 +2179,21 @@ class BlockPrinter:
 
         output = ''
         if core_includes:
-            output += textwrap.dedent("""
-                #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-                #  include "pycore_gc.h"            // PyGC_Head
-                #  include "pycore_runtime.h"       // _Py_ID()
-                #endif
+            if not clinic.limited_capi:
+                output += textwrap.dedent("""
+                    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+                    #  include "pycore_gc.h"            // PyGC_Head
+                    #  include "pycore_runtime.h"       // _Py_ID()
+                    #endif
 
-            """)
+                """)
+
+            if clinic is not None:
+                # Emit optional includes
+                for include, reason in sorted(clinic.includes.items()):
+                    line = f'#include "{include}"'
+                    line = line.ljust(35) + f'// {reason}\n'
+                    output += line
 
         input = ''.join(block.input)
         output += ''.join(block.output)
@@ -2291,7 +2337,7 @@ class Parser(Protocol):
     def parse(self, block: Block) -> None: ...
 
 
-clinic = None
+clinic: Clinic | None = None
 class Clinic:
 
     presets_text = """
@@ -2344,6 +2390,7 @@ impl_definition block
             *,
             filename: str,
             verify: bool = True,
+            limited_capi: bool = False,
     ) -> None:
         # maps strings to Parser objects.
         # (instantiated from the "parsers" global.)
@@ -2353,10 +2400,14 @@ impl_definition block
             fail("Custom printers are broken right now")
         self.printer = printer or BlockPrinter(language)
         self.verify = verify
+        self.limited_capi = limited_capi
         self.filename = filename
         self.modules: ModuleDict = {}
         self.classes: ClassDict = {}
         self.functions: list[Function] = []
+        # dict: include name => reason
+        # Example: 'pycore_long.h' => '_PyLong_UnsignedShort_Converter()'
+        self.includes: dict[str, str] = {}
 
         self.line_prefix = self.line_suffix = ''
 
@@ -2415,6 +2466,12 @@ impl_definition block
         global clinic
         clinic = self
 
+    def add_include(self, name: str, reason: str) -> None:
+        if name in self.includes:
+            # Mention a single reason is enough, no need to list all of them
+            return
+        self.includes[name] = reason
+
     def add_destination(
             self,
             name: str,
@@ -2450,7 +2507,7 @@ impl_definition block
                     self.parsers[dsl_name] = parsers[dsl_name](self)
                 parser = self.parsers[dsl_name]
                 parser.parse(block)
-            printer.print_block(block)
+            printer.print_block(block, clinic=self)
 
         # these are destinations not buffers
         for name, destination in self.destinations.items():
@@ -2465,7 +2522,7 @@ impl_definition block
                     block.input = "dump " + name + "\n"
                     warn("Destination buffer " + repr(name) + " not empty at end of file, emptying.")
                     printer.write("\n")
-                    printer.print_block(block)
+                    printer.print_block(block, clinic=self)
                     continue
 
                 if destination.type == 'file':
@@ -2490,7 +2547,7 @@ impl_definition block
 
                     block.input = 'preserve\n'
                     printer_2 = BlockPrinter(self.language)
-                    printer_2.print_block(block, core_includes=True)
+                    printer_2.print_block(block, core_includes=True, clinic=self)
                     write_file(destination.filename, printer_2.f.getvalue())
                     continue
 
@@ -2536,9 +2593,11 @@ impl_definition block
 def parse_file(
         filename: str,
         *,
-        verify: bool = True,
-        output: str | None = None
+        ns: argparse.Namespace,
+        output: str | None = None,
 ) -> None:
+    verify = not ns.force
+    limited_capi = ns.limited_capi
     if not output:
         output = filename
 
@@ -2559,8 +2618,14 @@ def parse_file(
     if not find_start_re.search(raw):
         return
 
+    if LIMITED_CAPI_REGEX.search(raw):
+        limited_capi = True
+
     assert isinstance(language, CLanguage)
-    clinic = Clinic(language, verify=verify, filename=filename)
+    clinic = Clinic(language,
+                    verify=verify,
+                    filename=filename,
+                    limited_capi=limited_capi)
     cooked = clinic.parse(raw)
 
     write_file(output, cooked)
@@ -3035,6 +3100,10 @@ class CConverter(metaclass=CConverterAutoRegister):
     # Only set by self_converter.
     signature_name: str | None = None
 
+    # Optional (name, reason) include which generate a line like:
+    # "#include "name"     // reason"
+    include: tuple[str, str] | None = None
+
     # keep in sync with self_converter.__init__!
     def __init__(self,
              # Positional args:
@@ -3339,6 +3408,11 @@ class CConverter(metaclass=CConverterAutoRegister):
         else:
             return self.name
 
+    def add_include(self, name: str, reason: str) -> None:
+        if self.include is not None:
+            raise ValueError("a converter only supports a single include")
+        self.include = (name, reason)
+
 type_checks = {
     '&PyLong_Type': ('PyLong_Check', 'int'),
     '&PyTuple_Type': ('PyTuple_Check', 'tuple'),
@@ -3398,7 +3472,7 @@ class bool_converter(CConverter):
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'i':
             return """
-                {paramname} = _PyLong_AsInt({argname});
+                {paramname} = PyLong_AsInt({argname});
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
                 }}}}
@@ -3555,6 +3629,8 @@ class unsigned_short_converter(CConverter):
             self.format_unit = 'H'
         else:
             self.converter = '_PyLong_UnsignedShort_Converter'
+            self.add_include('pycore_long.h',
+                             '_PyLong_UnsignedShort_Converter()')
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'H':
@@ -3586,7 +3662,7 @@ class int_converter(CConverter):
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'i':
             return """
-                {paramname} = _PyLong_AsInt({argname});
+                {paramname} = PyLong_AsInt({argname});
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
                 }}}}
@@ -3616,6 +3692,8 @@ class unsigned_int_converter(CConverter):
             self.format_unit = 'I'
         else:
             self.converter = '_PyLong_UnsignedInt_Converter'
+            self.add_include('pycore_long.h',
+                             '_PyLong_UnsignedInt_Converter()')
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'I':
@@ -3653,6 +3731,8 @@ class unsigned_long_converter(CConverter):
             self.format_unit = 'k'
         else:
             self.converter = '_PyLong_UnsignedLong_Converter'
+            self.add_include('pycore_long.h',
+                             '_PyLong_UnsignedLong_Converter()')
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'k':
@@ -3692,6 +3772,8 @@ class unsigned_long_long_converter(CConverter):
             self.format_unit = 'K'
         else:
             self.converter = '_PyLong_UnsignedLongLong_Converter'
+            self.add_include('pycore_long.h',
+                             '_PyLong_UnsignedLongLong_Converter()')
 
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'K':
@@ -3713,8 +3795,11 @@ class Py_ssize_t_converter(CConverter):
         if accept == {int}:
             self.format_unit = 'n'
             self.default_type = int
+            self.add_include('pycore_abstract.h', '_PyNumber_Index()')
         elif accept == {int, NoneType}:
             self.converter = '_Py_convert_optional_to_ssize_t'
+            self.add_include('pycore_abstract.h',
+                             '_Py_convert_optional_to_ssize_t()')
         else:
             fail(f"Py_ssize_t_converter: illegal 'accept' argument {accept!r}")
 
@@ -3753,6 +3838,10 @@ class size_t_converter(CConverter):
     converter = '_PyLong_Size_t_Converter'
     c_ignored_default = "0"
 
+    def converter_init(self, *, accept: TypeSet = {int, NoneType}) -> None:
+        self.add_include('pycore_long.h',
+                         '_PyLong_Size_t_Converter()')
+
     def parse_arg(self, argname: str, displayname: str) -> str | None:
         if self.format_unit == 'n':
             return """
@@ -3767,6 +3856,10 @@ class size_t_converter(CConverter):
 class fildes_converter(CConverter):
     type = 'int'
     converter = '_PyLong_FileDescriptor_Converter'
+
+    def converter_init(self, *, accept: TypeSet = {int, NoneType}) -> None:
+        self.add_include('pycore_fileutils.h',
+                         '_PyLong_FileDescriptor_Converter()')
 
     def _parse_arg(self, argname: str, displayname: str) -> str | None:
         return """
@@ -5958,9 +6051,6 @@ parsers: dict[str, Callable[[Clinic], Parser]] = {
 }
 
 
-clinic = None
-
-
 def create_cli() -> argparse.ArgumentParser:
     cmdline = argparse.ArgumentParser(
         prog="clinic.py",
@@ -5987,6 +6077,8 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
     cmdline.add_argument("--exclude", type=str, action="append",
                          help=("a file to exclude in --make mode; "
                                "can be given multiple times"))
+    cmdline.add_argument("--limited", dest="limited_capi", action='store_true',
+                         help="use the Limited C API")
     cmdline.add_argument("filename", metavar="FILE", type=str, nargs="*",
                          help="the list of files to process")
     return cmdline
@@ -6077,7 +6169,7 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
                     continue
                 if ns.verbose:
                     print(path)
-                parse_file(path, verify=not ns.force)
+                parse_file(path, ns=ns)
         return
 
     if not ns.filename:
@@ -6089,7 +6181,7 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
     for filename in ns.filename:
         if ns.verbose:
             print(filename)
-        parse_file(filename, output=ns.output, verify=not ns.force)
+        parse_file(filename, output=ns.output, ns=ns)
 
 
 def main(argv: list[str] | None = None) -> NoReturn:

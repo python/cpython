@@ -989,10 +989,10 @@ class ZlibDecompressorTest(unittest.TestCase):
     @bigmemtest(size=_4G + 100, memuse=3.3)
     def testDecompress4G(self, size):
         # "Test zlib._ZlibDecompressor.decompress() with >4GiB input"
-        blocksize = 10 * 1024 * 1024
+        blocksize = min(10 * 1024 * 1024, size)
         block = random.randbytes(blocksize)
         try:
-            data = block * (size // blocksize + 1)
+            data = block * ((size-1) // blocksize + 1)
             compressed = zlib.compress(data)
             zlibd = zlib._ZlibDecompressor()
             decompressed = zlibd.decompress(compressed)

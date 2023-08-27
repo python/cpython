@@ -10,8 +10,8 @@ extern "C" {
 
 #include "pycore_unicodeobject.h" // _PyUnicodeWriter
 
-/* Operations on complex numbers from complexmodule.c */
-
+// Operations on complex numbers.
+// Export functions for 'cmath' shared extension.
 PyAPI_FUNC(Py_complex) _Py_c_sum(Py_complex, Py_complex);
 PyAPI_FUNC(Py_complex) _Py_c_diff(Py_complex, Py_complex);
 PyAPI_FUNC(Py_complex) _Py_c_neg(Py_complex);

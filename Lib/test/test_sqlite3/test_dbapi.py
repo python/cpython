@@ -40,6 +40,7 @@ from os import SEEK_SET, SEEK_CUR, SEEK_END
 from test.support.os_helper import TESTFN, TESTFN_UNDECODABLE, unlink, temp_dir, FakePath
 
 from .util import memory_database, cx_limit
+from .util import MemoryDatabaseMixin
 
 
 class ModuleTests(unittest.TestCase):
@@ -1740,10 +1741,9 @@ class ClosedConTests(unittest.TestCase):
         self.check(self.con)
 
 
-class ClosedCurTests(unittest.TestCase):
+class ClosedCurTests(MemoryDatabaseMixin, unittest.TestCase):
     def test_closed(self):
-        con = sqlite.connect(":memory:")
-        cur = con.cursor()
+        cur = self.cx.cursor()
         cur.close()
 
         for method_name in ("execute", "executemany", "executescript", "fetchall", "fetchmany", "fetchone"):

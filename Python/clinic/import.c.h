@@ -411,7 +411,7 @@ _imp__override_frozen_modules_for_tests(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int override;
 
-    override = _PyLong_AsInt(arg);
+    override = PyLong_AsInt(arg);
     if (override == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -442,7 +442,7 @@ _imp__override_multi_interp_extensions_check(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int override;
 
-    override = _PyLong_AsInt(arg);
+    override = PyLong_AsInt(arg);
     if (override == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -627,4 +627,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=a95ec234672280a2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d97b56ef622cb28a input=a9049054013a1b77]*/

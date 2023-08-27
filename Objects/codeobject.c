@@ -6,8 +6,7 @@
 #include "pycore_code.h"          // _PyCodeConstructor
 #include "pycore_frame.h"         // FRAME_SPECIALS_SIZE
 #include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
-#include "pycore_opcode.h"        // _PyOpcode_Caches
-#include "pycore_opcode_metadata.h" // _PyOpcode_Deopt
+#include "pycore_opcode_metadata.h" // _PyOpcode_Deopt, _PyOpcode_Caches
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
