@@ -2627,11 +2627,16 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
 
 /*[clinic input]
 _io.TextIOWrapper.tell
+
+Return the stream position as an opaque number.
+
+The return value of tell() can be given as input to seek(), to restore a
+previous stream position.
 [clinic start generated code]*/
 
 static PyObject *
 _io_TextIOWrapper_tell_impl(textio *self)
-/*[clinic end generated code: output=4f168c08bf34ad5f input=9a2caf88c24f9ddf]*/
+/*[clinic end generated code: output=4f168c08bf34ad5f input=0852d627d76fb520]*/
 {
     PyObject *res;
     PyObject *posobj = NULL;
