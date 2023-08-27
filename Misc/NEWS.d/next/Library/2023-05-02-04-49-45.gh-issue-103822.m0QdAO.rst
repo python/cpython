@@ -1,1 +1,0 @@
-Update the return type of ``weekday`` to the newly added Day attribute

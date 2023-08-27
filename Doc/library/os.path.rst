@@ -304,6 +304,24 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
+.. function:: isdevdrive(path)
+
+   Return ``True`` if pathname *path* is located on a Windows Dev Drive.
+   A Dev Drive is optimized for developer scenarios, and offers faster
+   performance for reading and writing files. It is recommended for use for
+   source code, temporary build directories, package caches, and other
+   IO-intensive operations.
+
+   May raise an error for an invalid path, for example, one without a
+   recognizable drive, but returns ``False`` on platforms that do not support
+   Dev Drives. See `the Windows documentation <https://learn.microsoft.com/windows/dev-drive/>`_
+   for information on enabling and creating Dev Drives.
+
+   .. availability:: Windows.
+
+   .. versionadded:: 3.12
+
+
 .. function:: join(path, *paths)
 
    Join one or more path segments intelligently.  The return value is the
@@ -392,7 +410,7 @@ the :mod:`glob` module.)
    *start*.  On Windows, :exc:`ValueError` is raised when *path* and *start*
    are on different drives.
 
-   *start* defaults to :attr:`os.curdir`.
+   *start* defaults to :data:`os.curdir`.
 
    .. availability:: Unix, Windows.
 

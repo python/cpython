@@ -312,8 +312,8 @@ class SmallPtyTests(unittest.TestCase):
         self.orig_pty_waitpid = pty.waitpid
         self.fds = []  # A list of file descriptors to close.
         self.files = []
-        self.select_rfds_lengths = []
-        self.select_rfds_results = []
+        self.select_input = []
+        self.select_output = []
         self.tcsetattr_mode_setting = None
 
     def tearDown(self):
@@ -350,8 +350,8 @@ class SmallPtyTests(unittest.TestCase):
 
     def _mock_select(self, rfds, wfds, xfds):
         # This will raise IndexError when no more expected calls exist.
-        self.assertEqual(self.select_rfds_lengths.pop(0), len(rfds))
-        return self.select_rfds_results.pop(0), [], []
+        self.assertEqual((rfds, wfds, xfds), self.select_input.pop(0))
+        return self.select_output.pop(0)
 
     def _make_mock_fork(self, pid):
         def mock_fork():
@@ -374,11 +374,13 @@ class SmallPtyTests(unittest.TestCase):
         os.write(masters[1], b'from master')
         os.write(write_to_stdin_fd, b'from stdin')
 
-        # Expect two select calls, the last one will cause IndexError
+        # Expect three select calls, the last one will cause IndexError
         pty.select = self._mock_select
-        self.select_rfds_lengths.append(2)
-        self.select_rfds_results.append([mock_stdin_fd, masters[0]])
-        self.select_rfds_lengths.append(2)
+        self.select_input.append(([mock_stdin_fd, masters[0]], [], []))
+        self.select_output.append(([mock_stdin_fd, masters[0]], [], []))
+        self.select_input.append(([mock_stdin_fd, masters[0]], [mock_stdout_fd, masters[0]], []))
+        self.select_output.append(([], [mock_stdout_fd, masters[0]], []))
+        self.select_input.append(([mock_stdin_fd, masters[0]], [], []))
 
         with self.assertRaises(IndexError):
             pty._copy(masters[0])

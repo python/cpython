@@ -223,6 +223,8 @@ class BaseSelectorTestCase:
         self.assertRaises(RuntimeError, s.get_key, wr)
         self.assertRaises(KeyError, mapping.__getitem__, rd)
         self.assertRaises(KeyError, mapping.__getitem__, wr)
+        self.assertEqual(mapping.get(rd), None)
+        self.assertEqual(mapping.get(wr), None)
 
     def test_get_key(self):
         s = self.SELECTOR()
@@ -241,13 +243,17 @@ class BaseSelectorTestCase:
         self.addCleanup(s.close)
 
         rd, wr = self.make_socketpair()
+        sentinel = object()
 
         keys = s.get_map()
         self.assertFalse(keys)
         self.assertEqual(len(keys), 0)
         self.assertEqual(list(keys), [])
+        self.assertEqual(keys.get(rd), None)
+        self.assertEqual(keys.get(rd, sentinel), sentinel)
         key = s.register(rd, selectors.EVENT_READ, "data")
         self.assertIn(rd, keys)
+        self.assertEqual(key, keys.get(rd))
         self.assertEqual(key, keys[rd])
         self.assertEqual(len(keys), 1)
         self.assertEqual(list(keys), [rd.fileno()])

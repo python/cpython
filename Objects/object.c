@@ -5,18 +5,22 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_context.h"       // _PyContextTokenMissing_Type
+#include "pycore_descrobject.h"   // _PyMethodWrapper_Type
 #include "pycore_dict.h"          // _PyObject_MakeDictFromInstanceAttributes()
 #include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
 #include "pycore_namespace.h"     // _PyNamespace_Type
-#include "pycore_object.h"        // _PyType_CheckConsistency(), _Py_FatalRefcountError()
+#include "pycore_object.h"        // PyAPI_DATA() _Py_SwappedOp definition
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntry_Type
 #include "pycore_typeobject.h"    // _PyBufferWrapper_Type
+#include "pycore_typevarobject.h" // _PyTypeAlias_Type, _Py_initialize_generic
 #include "pycore_unionobject.h"   // _PyUnion_Type
-#include "pycore_interpreteridobject.h"  // _PyInterpreterID_Type
+
+#include "interpreteridobject.h"  // _PyInterpreterID_Type
 
 #ifdef Py_LIMITED_API
    // Prevent recursive call _Py_IncRef() <=> Py_INCREF()
@@ -157,11 +161,16 @@ _PyDebug_PrintTotalRefs(void) {
    Do not call them otherwise, they do not initialize the object! */
 
 #ifdef Py_TRACE_REFS
-/* Head of circular doubly-linked list of all objects.  These are linked
- * together via the _ob_prev and _ob_next members of a PyObject, which
- * exist only in a Py_TRACE_REFS build.
- */
-static PyObject refchain = {&refchain, &refchain};
+
+#define REFCHAIN(interp) &interp->object_state.refchain
+
+static inline void
+init_refchain(PyInterpreterState *interp)
+{
+    PyObject *refchain = REFCHAIN(interp);
+    refchain->_ob_prev = refchain;
+    refchain->_ob_next = refchain;
+}
 
 /* Insert op at the front of the list of all objects.  If force is true,
  * op is added even if _ob_prev and _ob_next are non-NULL already.  If
@@ -186,10 +195,11 @@ _Py_AddToAllObjects(PyObject *op, int force)
     }
 #endif
     if (force || op->_ob_prev == NULL) {
-        op->_ob_next = refchain._ob_next;
-        op->_ob_prev = &refchain;
-        refchain._ob_next->_ob_prev = op;
-        refchain._ob_next = op;
+        PyObject *refchain = REFCHAIN(_PyInterpreterState_GET());
+        op->_ob_next = refchain->_ob_next;
+        op->_ob_prev = refchain;
+        refchain->_ob_next->_ob_prev = op;
+        refchain->_ob_next = op;
     }
 }
 #endif  /* Py_TRACE_REFS */
@@ -205,14 +215,14 @@ _Py_NegativeRefcount(const char *filename, int lineno, PyObject *op)
 
 /* This is used strictly by Py_INCREF(). */
 void
-_Py_IncRefTotal_DO_NOT_USE_THIS(void)
+_Py_INCREF_IncRefTotal(void)
 {
     reftotal_increment(_PyInterpreterState_GET());
 }
 
 /* This is used strictly by Py_DECREF(). */
 void
-_Py_DecRefTotal_DO_NOT_USE_THIS(void)
+_Py_DECREF_DecRefTotal(void)
 {
     reftotal_decrement(_PyInterpreterState_GET());
 }
@@ -559,11 +569,6 @@ PyObject_Repr(PyObject *v)
         Py_DECREF(res);
         return NULL;
     }
-#ifndef Py_DEBUG
-    if (PyUnicode_READY(res) < 0) {
-        return NULL;
-    }
-#endif
     return res;
 }
 
@@ -582,10 +587,6 @@ PyObject_Str(PyObject *v)
     if (v == NULL)
         return PyUnicode_FromString("<NULL>");
     if (PyUnicode_CheckExact(v)) {
-#ifndef Py_DEBUG
-        if (PyUnicode_READY(v) < 0)
-            return NULL;
-#endif
         return Py_NewRef(v);
     }
     if (Py_TYPE(v)->tp_str == NULL)
@@ -617,11 +618,6 @@ PyObject_Str(PyObject *v)
         Py_DECREF(res);
         return NULL;
     }
-#ifndef Py_DEBUG
-    if (PyUnicode_READY(res) < 0) {
-        return NULL;
-    }
-#endif
     assert(_PyUnicode_CheckConsistency(res, 1));
     return res;
 }
@@ -705,7 +701,7 @@ _PyObject_FunctionStr(PyObject *x)
 {
     assert(!PyErr_Occurred());
     PyObject *qualname;
-    int ret = _PyObject_LookupAttr(x, &_Py_ID(__qualname__), &qualname);
+    int ret = PyObject_GetOptionalAttr(x, &_Py_ID(__qualname__), &qualname);
     if (qualname == NULL) {
         if (ret < 0) {
             return NULL;
@@ -714,7 +710,7 @@ _PyObject_FunctionStr(PyObject *x)
     }
     PyObject *module;
     PyObject *result = NULL;
-    ret = _PyObject_LookupAttr(x, &_Py_ID(__module__), &module);
+    ret = PyObject_GetOptionalAttr(x, &_Py_ID(__module__), &module);
     if (module != NULL && module != Py_None) {
         ret = PyObject_RichCompareBool(module, &_Py_ID(builtins), Py_NE);
         if (ret < 0) {
@@ -956,6 +952,12 @@ PyObject_SetAttrString(PyObject *v, const char *name, PyObject *w)
 }
 
 int
+PyObject_DelAttrString(PyObject *v, const char *name)
+{
+    return PyObject_SetAttrString(v, name, NULL);
+}
+
+int
 _PyObject_IsAbstract(PyObject *obj)
 {
     int res;
@@ -964,7 +966,7 @@ _PyObject_IsAbstract(PyObject *obj)
     if (obj == NULL)
         return 0;
 
-    res = _PyObject_LookupAttr(obj, &_Py_ID(__isabstractmethod__), &isabstract);
+    res = PyObject_GetOptionalAttr(obj, &_Py_ID(__isabstractmethod__), &isabstract);
     if (res > 0) {
         res = PyObject_IsTrue(isabstract);
         Py_DECREF(isabstract);
@@ -1056,7 +1058,7 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
 }
 
 int
-_PyObject_LookupAttr(PyObject *v, PyObject *name, PyObject **result)
+PyObject_GetOptionalAttr(PyObject *v, PyObject *name, PyObject **result)
 {
     PyTypeObject *tp = Py_TYPE(v);
 
@@ -1124,21 +1126,35 @@ _PyObject_LookupAttr(PyObject *v, PyObject *name, PyObject **result)
 }
 
 int
-_PyObject_LookupAttrId(PyObject *v, _Py_Identifier *name, PyObject **result)
+PyObject_GetOptionalAttrString(PyObject *obj, const char *name, PyObject **result)
 {
-    PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
-    if (!oname) {
-        *result = NULL;
+    if (Py_TYPE(obj)->tp_getattr == NULL) {
+        PyObject *oname = PyUnicode_FromString(name);
+        if (oname == NULL) {
+            *result = NULL;
+            return -1;
+        }
+        int rc = PyObject_GetOptionalAttr(obj, oname, result);
+        Py_DECREF(oname);
+        return rc;
+    }
+
+    *result = (*Py_TYPE(obj)->tp_getattr)(obj, (char*)name);
+    if (*result != NULL) {
+        return 1;
+    }
+    if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
         return -1;
     }
-    return  _PyObject_LookupAttr(v, oname, result);
+    PyErr_Clear();
+    return 0;
 }
 
 int
 PyObject_HasAttr(PyObject *v, PyObject *name)
 {
     PyObject *res;
-    if (_PyObject_LookupAttr(v, name, &res) < 0) {
+    if (PyObject_GetOptionalAttr(v, name, &res) < 0) {
         PyErr_Clear();
         return 0;
     }
@@ -1196,6 +1212,12 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
                      value==NULL ? "del" : "assign to",
                      name);
     return -1;
+}
+
+int
+PyObject_DelAttr(PyObject *v, PyObject *name)
+{
+    return PyObject_SetAttr(v, name, NULL);
 }
 
 PyObject **
@@ -1557,15 +1579,32 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
                 goto error_check;
             }
             dictptr = &dorv_ptr->dict;
+            if (*dictptr == NULL) {
+                if (_PyObject_InitInlineValues(obj, tp) < 0) {
+                    goto done;
+                }
+                res = _PyObject_StoreInstanceAttribute(
+                    obj, _PyDictOrValues_GetValues(*dorv_ptr), name, value);
+                goto error_check;
+            }
         }
         else {
             dictptr = _PyObject_ComputedDictPointer(obj);
         }
         if (dictptr == NULL) {
             if (descr == NULL) {
-                PyErr_Format(PyExc_AttributeError,
-                            "'%.100s' object has no attribute '%U'",
-                            tp->tp_name, name);
+                if (tp->tp_setattro == PyObject_GenericSetAttr) {
+                    PyErr_Format(PyExc_AttributeError,
+                                "'%.100s' object has no attribute '%U' and no "
+                                "__dict__ for setting new attributes",
+                                tp->tp_name, name);
+                }
+                else {
+                    PyErr_Format(PyExc_AttributeError,
+                                "'%.100s' object has no attribute '%U'",
+                                tp->tp_name, name);
+                }
+                set_attribute_error_context(obj, name);
             }
             else {
                 PyErr_Format(PyExc_AttributeError,
@@ -1598,6 +1637,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
                          "'%.100s' object has no attribute '%U'",
                          tp->tp_name, name);
         }
+        set_attribute_error_context(obj, name);
     }
   done:
     Py_XDECREF(descr);
@@ -1703,13 +1743,15 @@ _dir_locals(void)
     PyObject *names;
     PyObject *locals;
 
-    locals = PyEval_GetLocals();
+    locals = _PyEval_GetFrameLocals();
     if (locals == NULL)
         return NULL;
 
     names = PyMapping_Keys(locals);
-    if (!names)
+    Py_DECREF(locals);
+    if (!names) {
         return NULL;
+    }
     if (!PyList_Check(names)) {
         PyErr_Format(PyExc_TypeError,
             "dir(): expected keys() of locals to be a list, "
@@ -1721,7 +1763,6 @@ _dir_locals(void)
         Py_DECREF(names);
         return NULL;
     }
-    /* the locals don't need to be DECREF'd */
     return names;
 }
 
@@ -1996,6 +2037,18 @@ PyObject _Py_NotImplementedStruct = {
     &_PyNotImplemented_Type
 };
 
+
+void
+_PyObject_InitState(PyInterpreterState *interp)
+{
+#ifdef Py_TRACE_REFS
+    if (!_Py_IsMainInterpreter(interp)) {
+        init_refchain(interp);
+    }
+#endif
+}
+
+
 extern PyTypeObject _Py_GenericAliasIterType;
 extern PyTypeObject _PyMemoryIter_Type;
 extern PyTypeObject _PyLineIterator;
@@ -2047,6 +2100,7 @@ static PyTypeObject* static_types[] = {
     &PyGen_Type,
     &PyGetSetDescr_Type,
     &PyInstanceMethod_Type,
+    &PyInterpreterID_Type,
     &PyListIter_Type,
     &PyListRevIter_Type,
     &PyList_Type,
@@ -2097,7 +2151,6 @@ static PyTypeObject* static_types[] = {
     &_PyHamt_CollisionNode_Type,
     &_PyHamt_Type,
     &_PyLegacyEventHandler_Type,
-    &_PyInterpreterID_Type,
     &_PyLineIterator,
     &_PyManagedBuffer_Type,
     &_PyMemoryIter_Type,
@@ -2111,6 +2164,7 @@ static PyTypeObject* static_types[] = {
     &_PyWeakref_CallableProxyType,
     &_PyWeakref_ProxyType,
     &_PyWeakref_RefType,
+    &_PyTypeAlias_Type,
 
     // subclasses: _PyTypes_FiniTypes() deallocates them before their base
     // class
@@ -2137,6 +2191,11 @@ _PyTypes_InitTypes(PyInterpreterState *interp)
             assert(PyBaseObject_Type.tp_base == NULL);
             assert(PyType_Type.tp_base == &PyBaseObject_Type);
         }
+    }
+
+    // Must be after static types are initialized
+    if (_Py_initialize_generic(interp) < 0) {
+        return _PyStatus_ERR("Can't initialize generic types");
     }
 
     return _PyStatus_OK();
@@ -2198,7 +2257,8 @@ _Py_ForgetReference(PyObject *op)
         _PyObject_ASSERT_FAILED_MSG(op, "negative refcnt");
     }
 
-    if (op == &refchain ||
+    PyObject *refchain = REFCHAIN(_PyInterpreterState_GET());
+    if (op == refchain ||
         op->_ob_prev->_ob_next != op || op->_ob_next->_ob_prev != op)
     {
         _PyObject_ASSERT_FAILED_MSG(op, "invalid object chain");
@@ -2206,12 +2266,12 @@ _Py_ForgetReference(PyObject *op)
 
 #ifdef SLOW_UNREF_CHECK
     PyObject *p;
-    for (p = refchain._ob_next; p != &refchain; p = p->_ob_next) {
+    for (p = refchain->_ob_next; p != refchain; p = p->_ob_next) {
         if (p == op) {
             break;
         }
     }
-    if (p == &refchain) {
+    if (p == refchain) {
         /* Not found */
         _PyObject_ASSERT_FAILED_MSG(op,
                                     "object not found in the objects list");
@@ -2227,11 +2287,15 @@ _Py_ForgetReference(PyObject *op)
  * interpreter must be in a healthy state.
  */
 void
-_Py_PrintReferences(FILE *fp)
+_Py_PrintReferences(PyInterpreterState *interp, FILE *fp)
 {
     PyObject *op;
+    if (interp == NULL) {
+        interp = _PyInterpreterState_Main();
+    }
     fprintf(fp, "Remaining objects:\n");
-    for (op = refchain._ob_next; op != &refchain; op = op->_ob_next) {
+    PyObject *refchain = REFCHAIN(interp);
+    for (op = refchain->_ob_next; op != refchain; op = op->_ob_next) {
         fprintf(fp, "%p [%zd] ", (void *)op, Py_REFCNT(op));
         if (PyObject_Print(op, fp, 0) != 0) {
             PyErr_Clear();
@@ -2243,34 +2307,42 @@ _Py_PrintReferences(FILE *fp)
 /* Print the addresses of all live objects.  Unlike _Py_PrintReferences, this
  * doesn't make any calls to the Python C API, so is always safe to call.
  */
+// XXX This function is not safe to use if the interpreter has been
+// freed or is in an unhealthy state (e.g. late in finalization).
+// The call in Py_FinalizeEx() is okay since the main interpreter
+// is statically allocated.
 void
-_Py_PrintReferenceAddresses(FILE *fp)
+_Py_PrintReferenceAddresses(PyInterpreterState *interp, FILE *fp)
 {
     PyObject *op;
+    PyObject *refchain = REFCHAIN(interp);
     fprintf(fp, "Remaining object addresses:\n");
-    for (op = refchain._ob_next; op != &refchain; op = op->_ob_next)
+    for (op = refchain->_ob_next; op != refchain; op = op->_ob_next)
         fprintf(fp, "%p [%zd] %s\n", (void *)op,
             Py_REFCNT(op), Py_TYPE(op)->tp_name);
 }
 
+/* The implementation of sys.getobjects(). */
 PyObject *
 _Py_GetObjects(PyObject *self, PyObject *args)
 {
     int i, n;
     PyObject *t = NULL;
     PyObject *res, *op;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     if (!PyArg_ParseTuple(args, "i|O", &n, &t))
         return NULL;
-    op = refchain._ob_next;
+    PyObject *refchain = REFCHAIN(interp);
+    op = refchain->_ob_next;
     res = PyList_New(0);
     if (res == NULL)
         return NULL;
-    for (i = 0; (n == 0 || i < n) && op != &refchain; i++) {
+    for (i = 0; (n == 0 || i < n) && op != refchain; i++) {
         while (op == self || op == args || op == res || op == t ||
                (t != NULL && !Py_IS_TYPE(op, (PyTypeObject *) t))) {
             op = op->_ob_next;
-            if (op == &refchain)
+            if (op == refchain)
                 return res;
         }
         if (PyList_Append(res, op) < 0) {
@@ -2282,7 +2354,9 @@ _Py_GetObjects(PyObject *self, PyObject *args)
     return res;
 }
 
-#endif
+#undef REFCHAIN
+
+#endif  /* Py_TRACE_REFS */
 
 
 /* Hack to force loading of abstract.o */

@@ -210,6 +210,13 @@ def clear_caches():
     else:
         fractions._hash_algorithm.cache_clear()
 
+    try:
+        inspect = sys.modules['inspect']
+    except KeyError:
+        pass
+    else:
+        inspect._shadowed_dict_from_mro_tuple.cache_clear()
+
 
 def get_build_info():
     # Get most important configure and build options as a list of strings.
@@ -221,6 +228,11 @@ def get_build_info():
     ldflags_nodist = sysconfig.get_config_var('PY_LDFLAGS_NODIST') or ''
 
     build = []
+
+    # --disable-gil
+    if sysconfig.get_config_var('Py_NOGIL'):
+        build.append("nogil")
+
     if hasattr(sys, 'gettotalrefcount'):
         # --with-pydebug
         build.append('debug')

@@ -277,6 +277,7 @@ class TestWorkerProcess(threading.Thread):
             encoding = locale.getencoding()
         else:
             encoding = sys.stdout.encoding
+
         # gh-94026: Write stdout+stderr to a tempfile as workaround for
         # non-blocking pipes on Emscripten with NodeJS.
         with tempfile.TemporaryFile('w+', encoding=encoding) as stdout_fh:
@@ -298,7 +299,14 @@ class TestWorkerProcess(threading.Thread):
                 retcode = self._run_process(test_name, None, stdout_fh)
                 tmp_files = ()
             stdout_fh.seek(0)
-            stdout = stdout_fh.read().strip()
+
+            try:
+                stdout = stdout_fh.read().strip()
+            except Exception as exc:
+                # gh-101634: Catch UnicodeDecodeError if stdout cannot be
+                # decoded from encoding
+                err_msg = f"Cannot read process stdout: {exc}"
+                return self.mp_result_error(ChildError(test_name), '', err_msg)
 
         if retcode is None:
             return self.mp_result_error(Timeout(test_name), stdout)
@@ -481,6 +489,8 @@ class MultiprocessTestRunner:
             # Thread got an exception
             format_exc = item[1]
             print_warning(f"regrtest worker thread failed: {format_exc}")
+            result = ChildError("<regrtest worker>")
+            self.regrtest.accumulate_result(result)
             return True
 
         self.test_index += 1

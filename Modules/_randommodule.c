@@ -71,8 +71,9 @@
 #endif
 
 #include "Python.h"
+#include "pycore_long.h"          // _PyLong_AsByteArray()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "pycore_runtime.h"
+#include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
 #ifdef HAVE_PROCESS_H
 #  include <process.h>            // getpid()
 #endif

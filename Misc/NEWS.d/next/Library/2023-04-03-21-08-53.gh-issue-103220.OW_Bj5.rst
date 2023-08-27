@@ -1,2 +1,0 @@
-Fix issue where :func:`os.path.join` added a slash when joining onto an
-incomplete UNC drive with a trailing slash on Windows.

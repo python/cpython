@@ -1,2 +1,0 @@
-Fix an issue where :class:`list` or :class:`tuple` repetition could fail to
-respect :pep:`683`.

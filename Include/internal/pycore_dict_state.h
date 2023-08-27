@@ -38,6 +38,11 @@ struct _Py_dict_state {
     PyDict_WatchCallback watchers[DICT_MAX_WATCHERS];
 };
 
+#define _dict_state_INIT \
+    { \
+        .next_keys_version = 2, \
+    }
+
 
 #ifdef __cplusplus
 }

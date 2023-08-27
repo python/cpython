@@ -16,6 +16,17 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
                               int cache_size, int uri,
                               enum autocommit_mode autocommit);
 
+// Emit compiler warnings when we get to Python 3.15.
+#if PY_VERSION_HEX >= 0x030f00C0
+#  error "Update the clinic input of '_sqlite3.Connection.__init__'."
+#elif PY_VERSION_HEX >= 0x030f00A0
+#  ifdef _MSC_VER
+#    pragma message ("Update the clinic input of '_sqlite3.Connection.__init__'.")
+#  else
+#    warning "Update the clinic input of '_sqlite3.Connection.__init__'."
+#  endif
+#endif
+
 static int
 pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
@@ -59,6 +70,17 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
     int uri = 0;
     enum autocommit_mode autocommit = LEGACY_TRANSACTION_CONTROL;
 
+    if (nargs > 1 && nargs <= 8) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing more than 1 positional argument to _sqlite3.Connection()"
+                " is deprecated. Parameters 'timeout', 'detect_types', "
+                "'isolation_level', 'check_same_thread', 'factory', "
+                "'cached_statements' and 'uri' will become keyword-only "
+                "parameters in Python 3.15.", 1))
+        {
+            goto exit;
+        }
+    }
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 8, 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -83,7 +105,7 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
     if (fastargs[2]) {
-        detect_types = _PyLong_AsInt(fastargs[2]);
+        detect_types = PyLong_AsInt(fastargs[2]);
         if (detect_types == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -115,7 +137,7 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
     if (fastargs[6]) {
-        cache_size = _PyLong_AsInt(fastargs[6]);
+        cache_size = PyLong_AsInt(fastargs[6]);
         if (cache_size == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -228,7 +250,7 @@ PyDoc_STRVAR(blobopen__doc__,
 
 static PyObject *
 blobopen_impl(pysqlite_Connection *self, const char *table, const char *col,
-              int row, int readonly, const char *name);
+              sqlite3_int64 row, int readonly, const char *name);
 
 static PyObject *
 blobopen(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -263,7 +285,7 @@ blobopen(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyO
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     const char *table;
     const char *col;
-    int row;
+    sqlite3_int64 row;
     int readonly = 0;
     const char *name = "main";
 
@@ -297,8 +319,7 @@ blobopen(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyO
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    row = _PyLong_AsInt(args[2]);
-    if (row == -1 && PyErr_Occurred()) {
+    if (!sqlite3_int64_converter(args[2], &row)) {
         goto exit;
     }
     if (!noptargs) {
@@ -461,7 +482,7 @@ pysqlite_connection_create_function(pysqlite_Connection *self, PyTypeObject *cls
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    narg = _PyLong_AsInt(args[1]);
+    narg = PyLong_AsInt(args[1]);
     if (narg == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -544,7 +565,7 @@ create_window_function(pysqlite_Connection *self, PyTypeObject *cls, PyObject *c
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    num_params = _PyLong_AsInt(args[1]);
+    num_params = PyLong_AsInt(args[1]);
     if (num_params == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -623,7 +644,7 @@ pysqlite_connection_create_aggregate(pysqlite_Connection *self, PyTypeObject *cl
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    n_arg = _PyLong_AsInt(args[1]);
+    n_arg = PyLong_AsInt(args[1]);
     if (n_arg == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -743,7 +764,7 @@ pysqlite_connection_set_progress_handler(pysqlite_Connection *self, PyTypeObject
         goto exit;
     }
     callable = args[0];
-    n = _PyLong_AsInt(args[1]);
+    n = PyLong_AsInt(args[1]);
     if (n == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -967,9 +988,6 @@ pysqlite_connection_execute(pysqlite_Connection *self, PyObject *const *args, Py
         _PyArg_BadArgument("execute", "argument 1", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     sql = args[0];
     if (nargs < 2) {
         goto skip_optional;
@@ -1007,9 +1025,6 @@ pysqlite_connection_executemany(pysqlite_Connection *self, PyObject *const *args
     }
     if (!PyUnicode_Check(args[0])) {
         _PyArg_BadArgument("executemany", "argument 1", "str", args[0]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[0]) == -1) {
         goto exit;
     }
     sql = args[0];
@@ -1131,7 +1146,7 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *const *args, Py_
         goto skip_optional_kwonly;
     }
     if (args[1]) {
-        pages = _PyLong_AsInt(args[1]);
+        pages = PyLong_AsInt(args[1]);
         if (pages == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -1523,11 +1538,11 @@ setlimit(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("setlimit", nargs, 2, 2)) {
         goto exit;
     }
-    category = _PyLong_AsInt(args[0]);
+    category = PyLong_AsInt(args[0]);
     if (category == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    limit = _PyLong_AsInt(args[1]);
+    limit = PyLong_AsInt(args[1]);
     if (limit == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1558,7 +1573,7 @@ getlimit(pysqlite_Connection *self, PyObject *arg)
     PyObject *return_value = NULL;
     int category;
 
-    category = _PyLong_AsInt(arg);
+    category = PyLong_AsInt(arg);
     if (category == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1593,7 +1608,7 @@ setconfig(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("setconfig", nargs, 1, 2)) {
         goto exit;
     }
-    op = _PyLong_AsInt(args[0]);
+    op = PyLong_AsInt(args[0]);
     if (op == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1633,7 +1648,7 @@ getconfig(pysqlite_Connection *self, PyObject *arg)
     int op;
     int _return_value;
 
-    op = _PyLong_AsInt(arg);
+    op = PyLong_AsInt(arg);
     if (op == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1666,4 +1681,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=8b03149c115ee6da input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bc31bec42067a8bf input=a9049054013a1b77]*/

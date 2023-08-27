@@ -11,8 +11,8 @@ import time
 import unittest
 from test.libregrtest.cmdline import _parse_args
 from test.libregrtest.runtest import (
-    findtests, runtest, get_abs_module, is_failed,
-    STDTESTS, NOTTESTS, PROGRESS_MIN_TIME,
+    findtests, split_test_packages, runtest, get_abs_module, is_failed,
+    PROGRESS_MIN_TIME,
     Passed, Failed, EnvChanged, Skipped, ResourceDenied, Interrupted,
     ChildError, DidNotRun)
 from test.libregrtest.setup import setup_tests
@@ -246,26 +246,23 @@ class Regrtest:
             # add default PGO tests if no tests are specified
             setup_pgo_tests(self.ns)
 
-        stdtests = STDTESTS[:]
-        nottests = NOTTESTS.copy()
+        exclude = set()
         if self.ns.exclude:
             for arg in self.ns.args:
-                if arg in stdtests:
-                    stdtests.remove(arg)
-                nottests.add(arg)
+                exclude.add(arg)
             self.ns.args = []
 
-        # if testdir is set, then we are not running the python tests suite, so
-        # don't add default tests to be executed or skipped (pass empty values)
-        if self.ns.testdir:
-            alltests = findtests(self.ns.testdir, list(), set())
-        else:
-            alltests = findtests(self.ns.testdir, stdtests, nottests)
+        alltests = findtests(testdir=self.ns.testdir, exclude=exclude)
 
         if not self.ns.fromfile:
-            self.selected = self.tests or self.ns.args or alltests
+            self.selected = self.tests or self.ns.args
+            if self.selected:
+                self.selected = split_test_packages(self.selected)
+            else:
+                self.selected = alltests
         else:
             self.selected = self.tests
+
         if self.ns.single:
             self.selected = self.selected[:1]
             try:
@@ -526,6 +523,33 @@ class Regrtest:
             print("== CPU count:", cpu_count)
         print("== encodings: locale=%s, FS=%s"
               % (locale.getencoding(), sys.getfilesystemencoding()))
+        self.display_sanitizers()
+
+    def display_sanitizers(self):
+        # This makes it easier to remember what to set in your local
+        # environment when trying to reproduce a sanitizer failure.
+        asan = support.check_sanitizer(address=True)
+        msan = support.check_sanitizer(memory=True)
+        ubsan = support.check_sanitizer(ub=True)
+        sanitizers = []
+        if asan:
+            sanitizers.append("address")
+        if msan:
+            sanitizers.append("memory")
+        if ubsan:
+            sanitizers.append("undefined behavior")
+        if not sanitizers:
+            return
+
+        print(f"== sanitizers: {', '.join(sanitizers)}")
+        for sanitizer, env_var in (
+            (asan, "ASAN_OPTIONS"),
+            (msan, "MSAN_OPTIONS"),
+            (ubsan, "UBSAN_OPTIONS"),
+        ):
+            options= os.environ.get(env_var)
+            if sanitizer and options is not None:
+                print(f"== {env_var}={options!r}")
 
     def no_tests_run(self):
         return not any((self.good, self.bad, self.skipped, self.interrupted,
