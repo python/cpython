@@ -1003,7 +1003,6 @@
                 _PyFrame_StackPush(frame, retval);
                 LOAD_SP();
                 LOAD_IP();
-    
     #if LLTRACE && TIER_ONE
                 lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
                 if (lltrace < 0) {
@@ -1071,7 +1070,6 @@
                 _PyFrame_StackPush(frame, retval);
                 LOAD_SP();
                 LOAD_IP();
-    
     #if LLTRACE && TIER_ONE
                 lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
                 if (lltrace < 0) {
