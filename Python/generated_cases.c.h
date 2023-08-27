@@ -990,6 +990,9 @@
             STACK_SHRINK(1);
             {
                 assert(EMPTY());
+                #if TIER_ONE
+                assert(frame != &entry_frame);
+                #endif
                 STORE_SP();
                 _Py_LeaveRecursiveCallPy(tstate);
                 // GH-99729: We need to unlink the frame *before* clearing it:
@@ -1055,6 +1058,9 @@
             retval = value;
             {
                 assert(EMPTY());
+                #if TIER_ONE
+                assert(frame != &entry_frame);
+                #endif
                 STORE_SP();
                 _Py_LeaveRecursiveCallPy(tstate);
                 // GH-99729: We need to unlink the frame *before* clearing it:

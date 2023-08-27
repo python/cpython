@@ -768,6 +768,9 @@ dummy_func(
         // different frame, and it's accounted for by _PUSH_FRAME.
         op(_POP_FRAME, (retval --)) {
             assert(EMPTY());
+            #if TIER_ONE
+            assert(frame != &entry_frame);
+            #endif
             STORE_SP();
             _Py_LeaveRecursiveCallPy(tstate);
             // GH-99729: We need to unlink the frame *before* clearing it:
