@@ -165,6 +165,9 @@ sqlite3
   object is not :meth:`closed <sqlite3.Connection.close>` explicitly.
   (Contributed by Erlend E. Aasland in :gh:`105539`.)
 
+* Add support for virtual tables to :meth:`sqlite3.Connection.iterdump`.
+  (Contributed by Aviv Palivoda in :gh:`64662`.)
+
 tkinter
 -------
 
