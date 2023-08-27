@@ -126,7 +126,7 @@ The module defines three convenience functions and a public class:
 
       Time *number* executions of the main statement.  This executes the setup
       statement once, and then returns the time it takes to execute the main
-      statement a number of times, measured in seconds as a float by default timer.
+      statement a number of times.  The default timer returns seconds as a float.
       The argument is the number of times through the loop, defaulting to one
       million.  The main statement, the setup statement and the timer function
       to be used are passed to the constructor.
