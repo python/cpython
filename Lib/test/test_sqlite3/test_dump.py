@@ -115,7 +115,6 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
     def test_dump_virtual_tables(self):
         # gh-64662
         expected = [
-            "BEGIN TRANSACTION;",
             "PRAGMA writable_schema=ON;",
             ("INSERT INTO sqlite_master(type,name,tbl_name,rootpage,sql)"
              "VALUES('table','test','test',0,'CREATE VIRTUAL TABLE test USING fts4(example)');"),
@@ -126,11 +125,10 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
             "CREATE TABLE 'test_segments'(blockid INTEGER PRIMARY KEY, block BLOB);",
             "CREATE TABLE 'test_stat'(id INTEGER PRIMARY KEY, value BLOB);",
             "PRAGMA writable_schema=OFF;",
-            "COMMIT;"
         ]
         self.cu.execute("CREATE VIRTUAL TABLE test USING fts4(example)")
         actual = list(self.cx.iterdump())
-        self.assertEqual(expected, actual)
+        self.checkDump(actual, expected)
 
 
 if __name__ == "__main__":
