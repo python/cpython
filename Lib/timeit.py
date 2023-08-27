@@ -168,8 +168,7 @@ class Timer:
 
         To be precise, this executes the setup statement once, and
         then returns the time it takes to execute the main statement
-        a number of times, as a float measured in seconds if using the default
-        timer. Thus, the time unit could be changed if using other timer.  The
+        a number of times, as float seconds if using the default timer.   The
         argument is the number of times through the loop, defaulting
         to one million.  The main statement, the setup statement and
         the timer function to be used are passed to the constructor.
