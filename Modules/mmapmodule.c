@@ -1366,6 +1366,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
                        prot, flags,
                        fd, offset);
 
+    int saved_errno = errno;
     if (devzero != -1) {
         close(devzero);
     }
@@ -1373,6 +1374,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     if (m_obj->data == (char *)-1) {
         m_obj->data = NULL;
         Py_DECREF(m_obj);
+        errno = saved_errno;
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
