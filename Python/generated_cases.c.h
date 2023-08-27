@@ -990,25 +990,40 @@
             STACK_SHRINK(1);
             {
                 assert(EMPTY());
-                _PyFrame_SetStackPointer(frame, stack_pointer);
+                STORE_SP();
                 _Py_LeaveRecursiveCallPy(tstate);
                 // GH-99729: We need to unlink the frame *before* clearing it:
                 _PyInterpreterFrame *dying = frame;
-                #if TIER_ONE
-                assert(frame != &entry_frame);
-                #endif
                 frame = tstate->current_frame = dying->previous;
                 _PyEval_FrameClearAndPop(tstate, dying);
                 frame->prev_instr += frame->return_offset;
                 _PyFrame_StackPush(frame, retval);
-                #if TIER_ONE
-                goto resume_frame;
-                #endif
-                #if TIER_TWO
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
-                #endif
+                LOAD_SP();
+                LOAD_IP();
+    
+    #if LLTRACE && TIER_ONE
+                {
+                    if (frame != &entry_frame && GLOBALS()) {
+                        int r = PyDict_Contains(GLOBALS(), &_Py_ID(__lltrace__));
+                        if (r < 0) {
+                            goto exit_unwind;
+                        }
+                        lltrace = r;
+                        if (!lltrace) {
+                            // When tracing executed uops, also trace bytecode
+                            char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
+                            if (uop_debug != NULL && *uop_debug >= '0') {
+                                lltrace = (*uop_debug - '0') >= 5;  // TODO: Parse an int and all that
+                            }
+                        }
+                    }
+                    if (lltrace) {
+                        lltrace_resume_frame(frame);
+                    }
+                }
+    #endif
             }
+            DISPATCH();
         }
 
         TARGET(INSTRUMENTED_RETURN_VALUE) {
@@ -1055,25 +1070,40 @@
             retval = value;
             {
                 assert(EMPTY());
-                _PyFrame_SetStackPointer(frame, stack_pointer);
+                STORE_SP();
                 _Py_LeaveRecursiveCallPy(tstate);
                 // GH-99729: We need to unlink the frame *before* clearing it:
                 _PyInterpreterFrame *dying = frame;
-                #if TIER_ONE
-                assert(frame != &entry_frame);
-                #endif
                 frame = tstate->current_frame = dying->previous;
                 _PyEval_FrameClearAndPop(tstate, dying);
                 frame->prev_instr += frame->return_offset;
                 _PyFrame_StackPush(frame, retval);
-                #if TIER_ONE
-                goto resume_frame;
-                #endif
-                #if TIER_TWO
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
-                #endif
+                LOAD_SP();
+                LOAD_IP();
+    
+    #if LLTRACE && TIER_ONE
+                {
+                    if (frame != &entry_frame && GLOBALS()) {
+                        int r = PyDict_Contains(GLOBALS(), &_Py_ID(__lltrace__));
+                        if (r < 0) {
+                            goto exit_unwind;
+                        }
+                        lltrace = r;
+                        if (!lltrace) {
+                            // When tracing executed uops, also trace bytecode
+                            char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
+                            if (uop_debug != NULL && *uop_debug >= '0') {
+                                lltrace = (*uop_debug - '0') >= 5;  // TODO: Parse an int and all that
+                            }
+                        }
+                    }
+                    if (lltrace) {
+                        lltrace_resume_frame(frame);
+                    }
+                }
+    #endif
             }
+            DISPATCH();
         }
 
         TARGET(INSTRUMENTED_RETURN_CONST) {
@@ -3887,6 +3917,7 @@
                 ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
                 #endif
             }
+            DISPATCH();
         }
 
         TARGET(CALL_PY_EXACT_ARGS) {
@@ -3963,6 +3994,7 @@
                 ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
                 #endif
             }
+            DISPATCH();
         }
 
         TARGET(CALL_PY_WITH_DEFAULTS) {
