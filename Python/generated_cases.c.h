@@ -1002,24 +1002,9 @@
                 LOAD_IP();
     
     #if LLTRACE && TIER_ONE
-                {
-                    if (frame != &entry_frame && GLOBALS()) {
-                        int r = PyDict_Contains(GLOBALS(), &_Py_ID(__lltrace__));
-                        if (r < 0) {
-                            goto exit_unwind;
-                        }
-                        lltrace = r;
-                        if (!lltrace) {
-                            // When tracing executed uops, also trace bytecode
-                            char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
-                            if (uop_debug != NULL && *uop_debug >= '0') {
-                                lltrace = (*uop_debug - '0') >= 5;  // TODO: Parse an int and all that
-                            }
-                        }
-                    }
-                    if (lltrace) {
-                        lltrace_resume_frame(frame);
-                    }
+                lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
+                if (lltrace < 0) {
+                    goto exit_unwind;
                 }
     #endif
             }
@@ -1082,24 +1067,9 @@
                 LOAD_IP();
     
     #if LLTRACE && TIER_ONE
-                {
-                    if (frame != &entry_frame && GLOBALS()) {
-                        int r = PyDict_Contains(GLOBALS(), &_Py_ID(__lltrace__));
-                        if (r < 0) {
-                            goto exit_unwind;
-                        }
-                        lltrace = r;
-                        if (!lltrace) {
-                            // When tracing executed uops, also trace bytecode
-                            char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
-                            if (uop_debug != NULL && *uop_debug >= '0') {
-                                lltrace = (*uop_debug - '0') >= 5;  // TODO: Parse an int and all that
-                            }
-                        }
-                    }
-                    if (lltrace) {
-                        lltrace_resume_frame(frame);
-                    }
+                lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
+                if (lltrace < 0) {
+                    goto exit_unwind;
                 }
     #endif
             }
