@@ -1,0 +1,2 @@
+``makeunicodedata.py`` now supports non-binary character properties when
+processing the ``DerivedCoreProperties.txt`` Unicode data file.
