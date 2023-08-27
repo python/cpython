@@ -48,7 +48,7 @@ _Py_CheckEmscriptenSignalsPeriodically(void)
         emscripten_signal_clock = PY_EMSCRIPTEN_SIGNAL_INTERVAL;
         _Py_CheckEmscriptenSignals();
     }
-    else {
+    else if (Py_EMSCRIPTEN_SIGNAL_HANDLING) {
         emscripten_signal_clock--;
     }
 }
