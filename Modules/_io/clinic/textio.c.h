@@ -815,7 +815,11 @@ exit:
 PyDoc_STRVAR(_io_TextIOWrapper_tell__doc__,
 "tell($self, /)\n"
 "--\n"
-"\n");
+"\n"
+"Return the stream position as an opaque number.\n"
+"\n"
+"The return value of tell() can be given as input to seek(), to restore a\n"
+"previous stream position.");
 
 #define _IO_TEXTIOWRAPPER_TELL_METHODDEF    \
     {"tell", (PyCFunction)_io_TextIOWrapper_tell, METH_NOARGS, _io_TextIOWrapper_tell__doc__},
@@ -978,4 +982,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=fc02f9e59bfa9956 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a3614e1c64747ff5 input=a9049054013a1b77]*/
