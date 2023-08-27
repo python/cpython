@@ -1291,6 +1291,7 @@ initialize_tools(PyCodeObject *code)
             opcode = DE_INSTRUMENT[opcode];
             assert(opcode != 0);
         }
+        assert(opcode != ENTER_EXECUTOR);
         opcode = _PyOpcode_Deopt[opcode];
         if (opcode_has_event(opcode)) {
             if (instrumented) {
