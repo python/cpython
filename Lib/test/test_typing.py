@@ -544,6 +544,16 @@ class TypeVarTests(BaseTestCase):
                 with self.assertRaises(TypeError):
                     list[T][arg]
 
+    def test_many_weakrefs(self):
+        # gh-108295: this used to segfault
+        for cls in (ParamSpec, TypeVarTuple, TypeVar):
+            with self.subTest(cls=cls):
+                vals = weakref.WeakValueDictionary()
+
+                for x in range(100000):
+                    vals[x] = cls(str(x))
+                del vals
+
 
 def template_replace(templates: list[str], replacements: dict[str, list[str]]) -> list[tuple[str]]:
     """Renders templates with possible combinations of replacements.
