@@ -8,6 +8,7 @@
 */
 
 #include "Python.h"
+#include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
