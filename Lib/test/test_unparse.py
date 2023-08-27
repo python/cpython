@@ -197,6 +197,10 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip('''f"a\\r\\nb"''')
         self.check_ast_roundtrip('''f"\\u2028{'x'}"''')
 
+    def test_fstrings_pep701(self):
+        self.check_ast_roundtrip('f" something { my_dict["key"] } something else "')
+        self.check_ast_roundtrip('f"{f"{f"{f"{f"{f"{1+1}"}"}"}"}"}"')
+
     def test_strings(self):
         self.check_ast_roundtrip("u'foo'")
         self.check_ast_roundtrip("r'foo'")
