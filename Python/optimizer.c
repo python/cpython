@@ -736,7 +736,6 @@ pop_jump_if_bool:
                     }
                     break;
                 }
-                fprintf(stderr, "Unsupported opcode %s\n", uop_name(opcode));
                 DPRINTF(2, "Unsupported opcode %s\n", uop_name(opcode));
                 goto done;  // Break out of loop
             }  // End default
