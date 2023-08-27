@@ -3,6 +3,7 @@
 #include "opcode_ids.h"
 
 #include "pycore_call.h"
+#include "pycore_code.h"          // _PyCode_Clear_Executors()
 #include "pycore_frame.h"
 #include "pycore_interp.h"
 #include "pycore_long.h"
@@ -1549,6 +1550,20 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
         return 0;
     }
     int code_len = (int)Py_SIZE(code);
+    if (code->co_executors != NULL && code->co_executors->size > 0 ) {
+        for (int i = 0; i < code_len; i += _PyInstruction_GetLength(code, i)) {
+            _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
+            int opcode = instr->op.code;
+            int oparg = instr->op.arg;
+            if (opcode == ENTER_EXECUTOR) {
+                _PyExecutorObject *exec = code->co_executors->executors[oparg];
+                assert(exec->vm_data.opcode != ENTER_EXECUTOR);
+                instr->op.code = _PyOpcode_Deopt[exec->vm_data.opcode];
+                instr->op.arg = exec->vm_data.oparg;
+            }
+        }
+        _PyCode_Clear_Executors(code);
+    }
     if (update_instrumentation_data(code, interp)) {
         return -1;
     }

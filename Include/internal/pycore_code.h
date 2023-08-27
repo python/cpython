@@ -233,6 +233,9 @@ extern void _PyLineTable_InitAddressRange(
 extern int _PyLineTable_NextAddressRange(PyCodeAddressRange *range);
 extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 
+/** API for executors */
+extern void _PyCode_Clear_Executors(PyCodeObject *code);
+
 #define ENABLE_SPECIALIZATION 1
 
 /* Specialization functions */

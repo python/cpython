@@ -1479,6 +1479,10 @@ clear_executors(PyCodeObject *co)
     co->co_executors = NULL;
 }
 
+void _PyCode_Clear_Executors(PyCodeObject *code) {
+    clear_executors(code);
+}
+
 static void
 deopt_code(PyCodeObject *code, _Py_CODEUNIT *instructions)
 {
