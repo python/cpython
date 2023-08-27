@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 #define UNDEFINED_FUTURE_FEATURE "future feature %.100s is not defined"
 

@@ -163,7 +163,7 @@ the modern themed widget set and API::
    interpreter and calls :func:`exec` on the contents of
    :file:`.{className}.py` and :file:`.{baseName}.py`.  The path for the
    profile files is the :envvar:`HOME` environment variable or, if that
-   isn't defined, then :attr:`os.curdir`.
+   isn't defined, then :data:`os.curdir`.
 
    .. attribute:: tk
 

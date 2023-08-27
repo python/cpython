@@ -117,7 +117,7 @@ _testmultiphase_StateAccessType_increment_count_clinic(StateAccessTypeObject *se
         goto skip_optional_pos;
     }
     if (args[0]) {
-        n = _PyLong_AsInt(args[0]);
+        n = PyLong_AsInt(args[0]);
         if (n == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -162,4 +162,4 @@ _testmultiphase_StateAccessType_get_count(StateAccessTypeObject *self, PyTypeObj
     }
     return _testmultiphase_StateAccessType_get_count_impl(self, cls);
 }
-/*[clinic end generated code: output=52ea97ab2f03bb6d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6f8db3983c5312a0 input=a9049054013a1b77]*/

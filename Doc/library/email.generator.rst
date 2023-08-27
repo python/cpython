@@ -274,9 +274,9 @@ in with information about the part.
 .. rubric:: Footnotes
 
 .. [#] This statement assumes that you use the appropriate setting for
-       ``unixfrom``, and that there are no :mod:`policy` settings calling for
+       ``unixfrom``, and that there are no :mod:`email.policy` settings calling for
        automatic adjustments (for example,
-       :attr:`~email.policy.Policy.refold_source` must be ``none``, which is
+       :attr:`~email.policy.EmailPolicy.refold_source` must be ``none``, which is
        *not* the default).  It is also not 100% true, since if the message
        does not conform to the RFC standards occasionally information about the
        exact original text is lost during parsing error recovery.  It is a goal

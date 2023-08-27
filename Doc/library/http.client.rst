@@ -83,7 +83,7 @@ The module provides the following classes:
 
    .. versionchanged:: 3.2
       This class now supports HTTPS virtual hosts if possible (that is,
-      if :data:`ssl.HAS_SNI` is true).
+      if :const:`ssl.HAS_SNI` is true).
 
    .. versionchanged:: 3.4
       The *strict* parameter was removed. HTTP 0.9-style "Simple Responses" are
@@ -94,16 +94,6 @@ The module provides the following classes:
       by default. To revert to the previous, unverified, behavior
       :func:`ssl._create_unverified_context` can be passed to the *context*
       parameter.
-
-   .. deprecated:: 3.6
-       *key_file* and *cert_file* are deprecated in favor of *context*.
-       Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
-       :func:`ssl.create_default_context` select the system's trusted CA
-       certificates for you.
-
-       The *check_hostname* parameter is also deprecated; the
-       :attr:`ssl.SSLContext.check_hostname` attribute of *context* should
-       be used instead.
 
    .. versionchanged:: 3.8
       This class now enables TLS 1.3
@@ -116,8 +106,8 @@ The module provides the following classes:
       ALPN protocols with :meth:`~ssl.SSLContext.set_alpn_protocol`.
 
    .. versionchanged:: 3.12
-       The deprecated *key_file*, *cert_file* and *check_hostname* parameters
-       have been removed.
+      The deprecated *key_file*, *cert_file* and *check_hostname* parameters
+      have been removed.
 
 
 .. class:: HTTPResponse(sock, debuglevel=0, method=None, url=None)
@@ -400,7 +390,7 @@ HTTPConnection Objects
    Returns a dictionary with the headers of the response received from
    the proxy server to the CONNECT request.
 
-   If the CONNECT request was not sent, the method returns an empty dictionary.
+   If the CONNECT request was not sent, the method returns ``None``.
 
    .. versionadded:: 3.12
 
