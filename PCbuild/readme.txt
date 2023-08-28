@@ -144,6 +144,7 @@ _socket
 _testbuffer
 _testcapi
 _testclinic
+_testclinic_limited
 _testconsole
 _testimportmultiple
 _testmultiphase
