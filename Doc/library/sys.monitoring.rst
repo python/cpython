@@ -7,7 +7,7 @@
 
 .. note::
 
-    ``sys.monitoring`` is a namespace within the `sys` module,
+    ``sys.monitoring`` is a namespace within the ``sys`` module,
     not an independent module, so there is no need to
     ``import sys.monitoring``, simply ``import sys`` and then use
     ``sys.monitoring``.
