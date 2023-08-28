@@ -1412,13 +1412,7 @@
 #undef HAVE_TIMEGM
 
 /* Define if you have the 'timerfd_create' function. */
-#undef HAVE_TIMERFD_CREATE
-
-/* Define if you have the 'timerfd_gettime' function. */
-#undef HAVE_TIMERFD_GETTIME
-
-/* Define if you have the 'timerfd_settime' function. */
-#undef HAVE_TIMERFD_SETTIME
+#undef HAVE_TIMERFD_API
 
 /* Define to 1 if you have the `times' function. */
 #undef HAVE_TIMES

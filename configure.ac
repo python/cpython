@@ -4731,19 +4731,8 @@ PY_CHECK_FUNC([timerfd_create], [
 #ifdef HAVE_SYS_TIMERFD_H
 #include <sys/timerfd.h>
 #endif
-])
-
-PY_CHECK_FUNC([timerfd_settime], [
-#ifdef HAVE_SYS_TIMERFD_H
-#include <sys/timerfd.h>
-#endif
-])
-
-PY_CHECK_FUNC([timerfd_gettime], [
-#ifdef HAVE_SYS_TIMERFD_H
-#include <sys/timerfd.h>
-#endif
-])
+],
+[HAVE_TIMERFD_API])
 
 # On some systems (eg. FreeBSD 5), we would find a definition of the
 # functions ctermid_r, setgroups in the library, but no prototype

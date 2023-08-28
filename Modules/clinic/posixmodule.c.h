@@ -5989,7 +5989,7 @@ os_times(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_TIMES) */
 
-#if defined(HAVE_TIMERFD_CREATE)
+#if defined(HAVE_TIMERFD_API)
 
 PyDoc_STRVAR(os_timerfd_create__doc__,
 "timerfd_create($module, clockid, flags, /)\n"
@@ -6027,9 +6027,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_TIMERFD_CREATE) */
+#endif /* defined(HAVE_TIMERFD_API) */
 
-#if defined(HAVE_TIMERFD_CREATE)
+#if defined(HAVE_TIMERFD_API)
 
 PyDoc_STRVAR(os_timerfd_gettime__doc__,
 "timerfd_gettime($module, fd, /)\n"
@@ -6058,9 +6058,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_TIMERFD_CREATE) */
+#endif /* defined(HAVE_TIMERFD_API) */
 
-#if defined(HAVE_TIMERFD_CREATE)
+#if defined(HAVE_TIMERFD_API)
 
 PyDoc_STRVAR(os_timerfd_settime__doc__,
 "timerfd_settime($module, fd, flags, it_interval=0.0, it_value=0.0, /)\n"
@@ -6127,9 +6127,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_TIMERFD_CREATE) */
+#endif /* defined(HAVE_TIMERFD_API) */
 
-#if defined(HAVE_TIMERFD_CREATE)
+#if defined(HAVE_TIMERFD_API)
 
 PyDoc_STRVAR(os_timerfd_gettime_ns__doc__,
 "timerfd_gettime_ns($module, fd, /)\n"
@@ -6158,9 +6158,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_TIMERFD_CREATE) */
+#endif /* defined(HAVE_TIMERFD_API) */
 
-#if defined(HAVE_TIMERFD_CREATE)
+#if defined(HAVE_TIMERFD_API)
 
 PyDoc_STRVAR(os_timerfd_settime_ns__doc__,
 "timerfd_settime_ns($module, fd, flags, it_interval_ns=0, it_value_ns=0,\n"
@@ -6216,7 +6216,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_TIMERFD_CREATE) */
+#endif /* defined(HAVE_TIMERFD_API) */
 
 #if defined(HAVE_GETSID)
 
@@ -12242,4 +12242,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=f545ccefafc084bd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=12c6e3a4e529029c input=a9049054013a1b77]*/
