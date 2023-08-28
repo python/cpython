@@ -310,7 +310,7 @@ _opcode_get_intrinsic1_descs_impl(PyObject *module)
         return NULL;
     }
     for (int i=0; i <= MAX_INTRINSIC_1; i++) {
-        PyObject *name = _PyUnstable_GetUnaryIntrinsicName(i);
+        PyObject *name = PyUnstable_GetUnaryIntrinsicName(i);
         if (name == NULL) {
             Py_DECREF(list);
             return NULL;
@@ -337,7 +337,7 @@ _opcode_get_intrinsic2_descs_impl(PyObject *module)
         return NULL;
     }
     for (int i=0; i <= MAX_INTRINSIC_2; i++) {
-        PyObject *name = _PyUnstable_GetBinaryIntrinsicName(i);
+        PyObject *name = PyUnstable_GetBinaryIntrinsicName(i);
         if (name == NULL) {
             Py_DECREF(list);
             return NULL;
