@@ -2287,13 +2287,14 @@
             CALL_STAT_INC(inlined_py_calls);
             frame = tstate->current_frame = new_frame;
             tstate->py_recursion_remaining--;
-            #if TIER_ONE
-            goto resume_frame;
-            #endif
-            #if TIER_TWO
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
-            #endif
+            LOAD_SP();
+            LOAD_IP();
+#if LLTRACE && TIER_ONE
+            lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
+            if (lltrace < 0) {
+                goto exit_unwind;
+            }
+#endif
             break;
         }
 
