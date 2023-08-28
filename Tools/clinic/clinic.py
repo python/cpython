@@ -1394,7 +1394,10 @@ class CLanguage(Language):
                 nargs = f"Py_MIN(nargs, {max_pos})" if max_pos else "0"
 
             limited_capi = clinic.limited_capi
-            if limited_capi and (requires_defining_class or pseudo_args):
+            if limited_capi and (requires_defining_class or pseudo_args or (
+                    any(p.is_optional() for p in f.parameters.values()) and
+                    any(p.is_keyword_only() and not p.is_optional() for p in f.parameters.values())
+                )):
                 print(f"Function {f.full_name} cannot use limited C API", file=sys.stderr)
                 limited_capi = False
             if limited_capi:
@@ -2939,7 +2942,8 @@ class Parameter:
         return self.kind == inspect.Parameter.VAR_POSITIONAL
 
     def is_optional(self) -> bool:
-        return not self.is_vararg() and (self.default is not unspecified)
+        return not self.is_vararg() and (self.default is not unspecified and
+                                         self.default is not inspect.Parameter.empty)
 
     def copy(
         self,
