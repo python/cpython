@@ -1,0 +1,9 @@
+On Lib/pdb.py :
+`cre` to `compiled_pattern`
+`fp` to `file_pointer`
+`_rstr` to `_repr_str`
+and comments:
+`#run-command lines` to rcLines
+`"""Inputs: frame, traceback"""` to setup(self, f, tb) due to the vagueness of `f` and `tb`
+`# Representative string` to `_repr_str`
+In order to fix the numerous issues regarding the ambiguity of some code.
