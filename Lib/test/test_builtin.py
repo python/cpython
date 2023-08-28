@@ -521,9 +521,10 @@ class BuiltinTest(unittest.TestCase):
     def test_compile_ast(self):
         args = ("a*(1+2)", "f.py", "exec")
         raw = compile(*args, flags = ast.PyCF_ONLY_AST).body[0]
-        opt = compile(*args, flags = ast.PyCF_OPTIMIZED_AST).body[0]
+        opt1 = compile(*args, flags = ast.PyCF_OPTIMIZED_AST).body[0]
+        opt2 = compile(ast.parse(args[0]), *args[1:], flags = ast.PyCF_OPTIMIZED_AST).body[0]
 
-        for tree in (raw, opt):
+        for tree in (raw, opt1, opt2):
             self.assertIsInstance(tree.value, ast.BinOp)
             self.assertIsInstance(tree.value.op, ast.Mult)
             self.assertIsInstance(tree.value.left, ast.Name)
@@ -536,9 +537,10 @@ class BuiltinTest(unittest.TestCase):
         self.assertIsInstance(raw_right.right, ast.Constant)
         self.assertEqual(raw_right.right.value, 2)
 
-        opt_right = opt.value.right  # expect Constant(3)
-        self.assertIsInstance(opt_right, ast.Constant)
-        self.assertEqual(opt_right.value, 3)
+        for opt in [opt1, opt2]:
+            opt_right = opt.value.right  # expect Constant(3)
+            self.assertIsInstance(opt_right, ast.Constant)
+            self.assertEqual(opt_right.value, 3)
 
     def test_delattr(self):
         sys.spam = 1

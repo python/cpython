@@ -865,8 +865,8 @@ to the C API.
 
 * No more C API support for restricted execution.
 
-* :c:func:`PyNumber_Coerce`, :c:func:`PyNumber_CoerceEx`,
-  :c:func:`PyMember_Get`, and :c:func:`PyMember_Set` C APIs are removed.
+* :c:func:`!PyNumber_Coerce`, :c:func:`!PyNumber_CoerceEx`,
+  :c:func:`!PyMember_Get`, and :c:func:`!PyMember_Set` C APIs are removed.
 
 * New C API :c:func:`PyImport_ImportModuleNoBlock`, works like
   :c:func:`PyImport_ImportModule` but won't block on the import lock

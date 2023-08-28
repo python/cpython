@@ -21,7 +21,6 @@
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException, _Py_Offer_Suggestions
 #include "pycore_pylifecycle.h"   // _Py_UnhandledKeyboardInterrupt
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_symtable.h"      // _PyFuture_FromAST()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_traceback.h"     // _PyTraceBack_Print_Indented()
 
@@ -413,10 +412,11 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
     PyObject *dict = PyModule_GetDict(main_module);  // borrowed ref
 
     int set_file_name = 0;
-    if (_PyDict_GetItemStringWithError(dict, "__file__") == NULL) {
-        if (PyErr_Occurred()) {
-            goto done;
-        }
+    int has_file = PyDict_ContainsString(dict, "__file__");
+    if (has_file < 0) {
+        goto done;
+    }
+    if (!has_file) {
         if (PyDict_SetItemString(dict, "__file__", filename) < 0) {
             goto done;
         }
@@ -1713,12 +1713,16 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
     _PyRuntime.signals.unhandled_keyboard_interrupt = 0;
 
     /* Set globals['__builtins__'] if it doesn't exist */
-    if (globals != NULL && _PyDict_GetItemStringWithError(globals, "__builtins__") == NULL) {
-        if (PyErr_Occurred() ||
-            PyDict_SetItemString(globals, "__builtins__",
-                                 tstate->interp->builtins) < 0)
-        {
+    if (globals != NULL) {
+        int has_builtins = PyDict_ContainsString(globals, "__builtins__");
+        if (has_builtins < 0) {
             return NULL;
+        }
+        if (!has_builtins) {
+            if (PyDict_SetItemString(globals, "__builtins__",
+                                     tstate->interp->builtins) < 0) {
+                return NULL;
+            }
         }
     }
 
@@ -1791,24 +1795,6 @@ error:
     return NULL;
 }
 
-static int
-ast_optimize(mod_ty mod, PyObject *filename, PyCompilerFlags *cf,
-             int optimize, PyArena *arena)
-{
-    PyFutureFeatures future;
-    if (!_PyFuture_FromAST(mod, filename, &future)) {
-        return -1;
-    }
-    int flags = future.ff_features | cf->cf_flags;
-    if (optimize == -1) {
-        optimize = _Py_GetConfig()->optimization_level;
-    }
-    if (!_PyAST_Optimize(mod, arena, optimize, flags)) {
-        return -1;
-    }
-    return 0;
-}
-
 PyObject *
 Py_CompileStringObject(const char *str, PyObject *filename, int start,
                        PyCompilerFlags *flags, int optimize)
@@ -1826,8 +1812,7 @@ Py_CompileStringObject(const char *str, PyObject *filename, int start,
     }
     if (flags && (flags->cf_flags & PyCF_ONLY_AST)) {
         if ((flags->cf_flags & PyCF_OPTIMIZED_AST) == PyCF_OPTIMIZED_AST) {
-            if (ast_optimize(mod, filename, flags, optimize, arena) < 0) {
-                _PyArena_Free(arena);
+            if (_PyCompile_AstOptimize(mod, filename, flags, optimize, arena) < 0) {
                 return NULL;
             }
         }

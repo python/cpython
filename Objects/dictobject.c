@@ -115,6 +115,7 @@ As a consequence of this, split keys have a maximum size of 16.
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_bit_length
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_code.h"          // stats
 #include "pycore_dict.h"          // PyDictKeysObject
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
@@ -1827,19 +1828,6 @@ _PyDict_GetItemIdWithError(PyObject *dp, _Py_Identifier *key)
     Py_hash_t hash = unicode_get_hash(kv);
     assert (hash != -1);  /* interned strings have their hash value initialised */
     return _PyDict_GetItem_KnownHash(dp, kv, hash);  // borrowed reference
-}
-
-PyObject *
-_PyDict_GetItemStringWithError(PyObject *v, const char *key)
-{
-    PyObject *kv, *rv;
-    kv = PyUnicode_FromString(key);
-    if (kv == NULL) {
-        return NULL;
-    }
-    rv = PyDict_GetItemWithError(v, kv);
-    Py_DECREF(kv);
-    return rv;  // borrowed reference
 }
 
 /* Fast version of global value lookup (LOAD_GLOBAL).
@@ -3739,6 +3727,18 @@ PyDict_Contains(PyObject *op, PyObject *key)
     if (ix == DKIX_ERROR)
         return -1;
     return (ix != DKIX_EMPTY && value != NULL);
+}
+
+int
+PyDict_ContainsString(PyObject *op, const char *key)
+{
+    PyObject *key_obj = PyUnicode_FromString(key);
+    if (key_obj == NULL) {
+        return -1;
+    }
+    int res = PyDict_Contains(op, key_obj);
+    Py_DECREF(key_obj);
+    return res;
 }
 
 /* Internal version of PyDict_Contains used when the hash value is already known */

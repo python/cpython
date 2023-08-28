@@ -3,6 +3,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_dict.h"          // _PyDict_GetItem_KnownHash()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()

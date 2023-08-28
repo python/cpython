@@ -10,9 +10,8 @@ from test import support
 
 
 MS_WINDOWS = (sys.platform == 'win32')
-
-
-SETUP_TESTCPPEXT = support.findfile('setup_testcppext.py')
+SOURCE = os.path.join(os.path.dirname(__file__), 'extension.cpp')
+SETUP = os.path.join(os.path.dirname(__file__), 'setup.py')
 
 
 @support.requires_subprocess()
@@ -41,7 +40,8 @@ class TestCPPExt(unittest.TestCase):
     def _check_build(self, std_cpp03, extension_name, python_exe):
         pkg_dir = 'pkg'
         os.mkdir(pkg_dir)
-        shutil.copy(SETUP_TESTCPPEXT, os.path.join(pkg_dir, "setup.py"))
+        shutil.copy(SETUP, os.path.join(pkg_dir, os.path.basename(SETUP)))
+        shutil.copy(SOURCE, os.path.join(pkg_dir, os.path.basename(SOURCE)))
 
         def run_cmd(operation, cmd):
             env = os.environ.copy()
