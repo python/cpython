@@ -95,21 +95,28 @@ class InteractiveSession(unittest.TestCase):
         with self.start_cli() as proc:
             out, err = proc.communicate(timeout=self.TIMEOUT)
             self.assertIn(self.MEMORY_DB_MSG, err)
-            self.assertIn(self.PS1, out)
+            self.assertTrue(out.endswith(self.PS1))
+            self.assertEqual(out.count(self.PS1), 1)
+            self.assertEqual(out.count(self.PS2), 0)
             self.expect_success(proc)
 
     def test_interact_quit(self):
         with self.start_cli() as proc:
             out, err = proc.communicate(input=".quit", timeout=self.TIMEOUT)
             self.assertIn(self.MEMORY_DB_MSG, err)
-            self.assertIn(self.PS1, out)
+            self.assertTrue(out.endswith(self.PS1))
+            self.assertEqual(out.count(self.PS1), 1)
+            self.assertEqual(out.count(self.PS2), 0)
             self.expect_success(proc)
 
     def test_interact_version(self):
         with self.start_cli() as proc:
             out, err = proc.communicate(input=".version", timeout=self.TIMEOUT)
             self.assertIn(self.MEMORY_DB_MSG, err)
-            self.assertIn(sqlite.sqlite_version, out)
+            self.assertIn(sqlite.sqlite_version + "\n", out)
+            self.assertTrue(out.endswith(self.PS1))
+            self.assertEqual(out.count(self.PS1), 2)
+            self.assertEqual(out.count(self.PS2), 0)
             self.expect_success(proc)
 
     def test_interact_valid_sql(self):
@@ -117,7 +124,20 @@ class InteractiveSession(unittest.TestCase):
             out, err = proc.communicate(input="select 1;",
                                         timeout=self.TIMEOUT)
             self.assertIn(self.MEMORY_DB_MSG, err)
-            self.assertIn("(1,)", out)
+            self.assertIn("(1,)\n", out)
+            self.assertTrue(out.endswith(self.PS1))
+            self.assertEqual(out.count(self.PS1), 2)
+            self.assertEqual(out.count(self.PS2), 0)
+            self.expect_success(proc)
+
+    def test_interact_incomplete_multiline_sql(self):
+        with self.start_cli() as proc:
+            out, err = proc.communicate(input="select 1",
+                                        timeout=self.TIMEOUT)
+            self.assertIn(self.MEMORY_DB_MSG, err)
+            self.assertTrue(out.endswith(self.PS2))
+            self.assertEqual(out.count(self.PS1), 1)
+            self.assertEqual(out.count(self.PS2), 1)
             self.expect_success(proc)
 
     def test_interact_valid_multiline_sql(self):
@@ -126,7 +146,10 @@ class InteractiveSession(unittest.TestCase):
                                         timeout=self.TIMEOUT)
             self.assertIn(self.MEMORY_DB_MSG, err)
             self.assertIn(self.PS2, out)
-            self.assertIn("(1,)", out)
+            self.assertIn("(1,)\n", out)
+            self.assertTrue(out.endswith(self.PS1))
+            self.assertEqual(out.count(self.PS1), 2)
+            self.assertEqual(out.count(self.PS2), 1)
             self.expect_success(proc)
 
     def test_interact_invalid_sql(self):
@@ -134,6 +157,9 @@ class InteractiveSession(unittest.TestCase):
             out, err = proc.communicate(input="sel;", timeout=self.TIMEOUT)
             self.assertIn(self.MEMORY_DB_MSG, err)
             self.assertIn("OperationalError (SQLITE_ERROR)", err)
+            self.assertTrue(out.endswith(self.PS1))
+            self.assertEqual(out.count(self.PS1), 2)
+            self.assertEqual(out.count(self.PS2), 0)
             self.expect_success(proc)
 
     def test_interact_on_disk_file(self):
@@ -142,12 +168,12 @@ class InteractiveSession(unittest.TestCase):
             out, err = proc.communicate(input="create table t(t);",
                                         timeout=self.TIMEOUT)
             self.assertIn(TESTFN, err)
-            self.assertIn(self.PS1, out)
+            self.assertTrue(out.endswith(self.PS1))
             self.expect_success(proc)
         with self.start_cli(TESTFN, "select count(t) from t") as proc:
             out = proc.stdout.read()
             err = proc.stderr.read()
-            self.assertIn("(0,)", out)
+            self.assertIn("(0,)\n", out)
             self.expect_success(proc)
 
 
