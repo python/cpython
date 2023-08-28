@@ -530,6 +530,8 @@ jobs:
     - name: Configure CPython
       run: ./configure --config-cache --with-address-sanitizer --without-pymalloc
     - name: Build CPython
+      env:
+        SSL_CERT_DIR: /etc/ssl/certs
       run: make all-with-ensurepip-dists-bundled -j4
     - name: Display build info
       run: make pythoninfo
