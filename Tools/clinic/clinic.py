@@ -2939,7 +2939,7 @@ class Parameter:
         return self.kind == inspect.Parameter.VAR_POSITIONAL
 
     def is_optional(self) -> bool:
-        return not self.is_vararg() and self.default is not unspecified
+        return not self.is_vararg() and (self.default is not unspecified)
 
     def copy(
         self,
