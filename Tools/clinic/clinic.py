@@ -1174,6 +1174,14 @@ class CLanguage(Language):
                 add(field)
             return linear_format(output(), parser_declarations=declarations)
 
+        limited_capi = clinic.limited_capi
+        if limited_capi and (requires_defining_class or pseudo_args or
+                (any(p.is_optional() for p in parameters) and
+                 any(p.is_keyword_only() and not p.is_optional() for p in parameters)) or
+                any(c.broken_limited_capi for c in converters)):
+            print(f"Function {f.full_name} cannot use limited C API", file=sys.stderr)
+            limited_capi = False
+
         parsearg: str | None
         if not parameters:
             parser_code: list[str] | None
@@ -1234,7 +1242,7 @@ class CLanguage(Language):
                     {c_basename}({self_type}{self_name}, PyObject *%s)
                     """ % argname)
 
-                if clinic.limited_capi:
+                if limited_capi:
                     parsearg = None
                 else:
                     displayname = parameters[0].get_displayname(0)
@@ -1258,7 +1266,7 @@ class CLanguage(Language):
             parser_definition = parser_body(parser_prototype, '    {option_group_parsing}')
 
         elif (not requires_defining_class and pos_only == len(parameters) and
-              not pseudo_args and clinic.limited_capi):
+              not pseudo_args and limited_capi):
             # positional-only for the limited C API
             flags = "METH_VARARGS"
             parser_prototype = self.PARSER_PROTOTYPE_VARARGS
@@ -1393,13 +1401,6 @@ class CLanguage(Language):
                 )
                 nargs = f"Py_MIN(nargs, {max_pos})" if max_pos else "0"
 
-            limited_capi = clinic.limited_capi
-            if limited_capi and (requires_defining_class or pseudo_args or (
-                    any(p.is_optional() for p in f.parameters.values()) and
-                    any(p.is_keyword_only() and not p.is_optional() for p in f.parameters.values())
-                )):
-                print(f"Function {f.full_name} cannot use limited C API", file=sys.stderr)
-                limited_capi = False
             if limited_capi:
                 # positional-or-keyword arguments
                 flags = "METH_VARARGS|METH_KEYWORDS"
@@ -2644,10 +2645,6 @@ def parse_file(
 
     if LIMITED_CAPI_REGEX.search(raw):
         limited_capi = True
-    # XXX Temporary solution
-    if limited_capi and os.path.basename(filename) in ('_struct.c', 'winreg.c'):
-        print(f"File {filename!r} cannot use limited C API", file=sys.stderr)
-        limited_capi = False
 
     assert isinstance(language, CLanguage)
     clinic = Clinic(language,
@@ -2942,8 +2939,7 @@ class Parameter:
         return self.kind == inspect.Parameter.VAR_POSITIONAL
 
     def is_optional(self) -> bool:
-        return not self.is_vararg() and (self.default is not unspecified and
-                                         self.default is not inspect.Parameter.empty)
+        return not self.is_vararg() and self.default is not unspecified
 
     def copy(
         self,
@@ -3132,6 +3128,8 @@ class CConverter(metaclass=CConverterAutoRegister):
     # Optional (name, reason) include which generate a line like:
     # "#include "name"     // reason"
     include: tuple[str, str] | None = None
+
+    broken_limited_capi: bool = False
 
     # keep in sync with self_converter.__init__!
     def __init__(self,
