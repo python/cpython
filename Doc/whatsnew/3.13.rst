@@ -886,6 +886,10 @@ New Features
   (with an underscore prefix).
   (Contributed by Victor Stinner in :gh:`108014`.)
 
+* Add :c:func:`PyInterpreterState_IsMain` function to test if an interpreter
+  is the main interpreter.
+  (Contributed by Victor Stinner in :gh:`85283`.)
+
 Porting to Python 3.13
 ----------------------
 

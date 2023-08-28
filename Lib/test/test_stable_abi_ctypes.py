@@ -355,6 +355,7 @@ SYMBOL_NAMES = (
     "PyInterpreterState_Get",
     "PyInterpreterState_GetDict",
     "PyInterpreterState_GetID",
+    "PyInterpreterState_IsMain",
     "PyInterpreterState_New",
     "PyIter_Check",
     "PyIter_Next",

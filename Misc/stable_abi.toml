@@ -2452,3 +2452,5 @@
     added = '3.13'
 [function.PyLong_AsInt]
     added = '3.13'
+[function.PyInterpreterState_IsMain]
+    added = '3.13'

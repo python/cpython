@@ -1,0 +1,2 @@
+Add :c:func:`PyInterpreterState_IsMain` function to test if an interpreter
+is the main interpreter. Patch by Victor Stinner.

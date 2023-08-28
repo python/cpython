@@ -583,6 +583,12 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
 // lifecycle
 //----------
 
+int
+PyInterpreterState_IsMain(PyInterpreterState *interp)
+{
+    return _Py_IsMainInterpreter(interp);
+}
+
 /* Calling this indicates that the runtime is ready to create interpreters. */
 
 PyStatus

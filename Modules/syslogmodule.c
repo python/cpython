@@ -69,7 +69,8 @@ static char S_log_open = 0;
 static inline int
 is_main_interpreter(void)
 {
-    return (PyInterpreterState_Get() == PyInterpreterState_Main());
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    return PyInterpreterState_IsMain(interp);
 }
 
 static PyObject *

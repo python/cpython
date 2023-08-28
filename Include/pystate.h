@@ -37,6 +37,11 @@ PyAPI_FUNC(int64_t) PyInterpreterState_GetID(PyInterpreterState *);
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+PyAPI_FUNC(int) PyInterpreterState_IsMain(PyInterpreterState *interp);
+#endif
+
+
 /* State unique per thread */
 
 /* New in 3.3 */
