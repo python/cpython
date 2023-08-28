@@ -372,6 +372,32 @@ static PyTypeObject UOpExecutor_Type = {
     .tp_as_sequence = &uop_as_sequence,
 };
 
+static int
+squeeze_stubs(
+    _PyUOpInstruction *trace,
+    int trace_length,
+    int stubs_start,
+    int stubs_end
+)
+{
+    memmove(trace + trace_length,
+            trace + stubs_start,
+            (stubs_end - stubs_start) * sizeof(_PyUOpInstruction));
+    // Patch up the jump targets
+    for (int i = 0; i < trace_length; i++) {
+        if (trace[i].opcode == _POP_JUMP_IF_FALSE ||
+            trace[i].opcode == _POP_JUMP_IF_TRUE)
+        {
+            int target = trace[i].oparg;
+            if (target >= stubs_start) {
+                target += trace_length - stubs_start;
+                trace[i].oparg = target;
+            }
+        }
+    }
+    return trace_length + stubs_end - stubs_start;
+}
+
 #define TRACE_STACK_SIZE 5
 
 static int
@@ -736,30 +762,22 @@ done:
                 code->co_firstlineno,
                 2 * INSTR_IP(initial_instr, code),
                 trace_length);
-        if (max_length < buffer_size && trace_length < max_length) {
-            // Move the stubs back to be immediately after the main trace
-            // (which ends at trace_length)
-            DPRINTF(2,
-                    "Moving %d stub uops back by %d\n",
-                    buffer_size - max_length,
-                    max_length - trace_length);
-            memmove(trace + trace_length,
-                    trace + max_length,
-                    (buffer_size - max_length) * sizeof(_PyUOpInstruction));
-            // Patch up the jump targets
-            for (int i = 0; i < trace_length; i++) {
-                if (trace[i].opcode == _POP_JUMP_IF_FALSE ||
-                    trace[i].opcode == _POP_JUMP_IF_TRUE)
-                {
-                    int target = trace[i].oparg;
-                    if (target >= max_length) {
-                        target += trace_length - max_length;
-                        trace[i].oparg = target;
-                    }
-                }
+        if (max_length < buffer_size) {
+            // There are stubs
+            if (trace_length < max_length) {
+                // There's a gap before the stubs
+                // Move the stubs back to be immediately after the main trace
+                // (which ends at trace_length)
+                DPRINTF(2,
+                        "Moving %d stub uops back by %d\n",
+                        buffer_size - max_length,
+                        max_length - trace_length);
+                trace_length = squeeze_stubs(trace, trace_length, max_length, buffer_size);
+            }
+            else {
+                trace_length += buffer_size - max_length;
             }
         }
-        trace_length += buffer_size - max_length;
         return trace_length;
     }
     else {
