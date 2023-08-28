@@ -55,12 +55,12 @@ struct _Py_float_state {
 void _PyFloat_ExactDealloc(PyObject *op);
 
 
-PyAPI_FUNC(void) _PyFloat_DebugMallocStats(FILE* out);
+extern void _PyFloat_DebugMallocStats(FILE* out);
 
 
 /* Format the object based on the format_spec, as defined in PEP 3101
    (Advanced String Formatting). */
-PyAPI_FUNC(int) _PyFloat_FormatAdvancedWriter(
+extern int _PyFloat_FormatAdvancedWriter(
     _PyUnicodeWriter *writer,
     PyObject *obj,
     PyObject *format_spec,

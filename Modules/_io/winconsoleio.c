@@ -12,7 +12,7 @@
 
 #ifdef HAVE_WINDOWS_CONSOLE_IO
 
-#include "structmember.h"         // PyMemberDef
+
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -1141,10 +1141,10 @@ static PyGetSetDef winconsoleio_getsetlist[] = {
 };
 
 static PyMemberDef winconsoleio_members[] = {
-    {"_blksize", T_UINT, offsetof(winconsoleio, blksize), 0},
-    {"_finalizing", T_BOOL, offsetof(winconsoleio, finalizing), 0},
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(winconsoleio, weakreflist), READONLY},
-    {"__dictoffset__", T_PYSSIZET, offsetof(winconsoleio, dict), READONLY},
+    {"_blksize", Py_T_UINT, offsetof(winconsoleio, blksize), 0},
+    {"_finalizing", Py_T_BOOL, offsetof(winconsoleio, finalizing), 0},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(winconsoleio, weakreflist), Py_READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(winconsoleio, dict), Py_READONLY},
     {NULL}
 };
 

@@ -208,6 +208,7 @@ class Printer:
                         self.write(".kind = 1,")
                         self.write(".compact = 1,")
                         self.write(".ascii = 1,")
+                        self.write(".statically_allocated = 1,")
                 self.write(f"._data = {make_string_literal(s.encode('ascii'))},")
                 return f"& {name}._ascii.ob_base"
             else:
@@ -220,6 +221,7 @@ class Printer:
                             self.write(f".kind = {kind},")
                             self.write(".compact = 1,")
                             self.write(".ascii = 0,")
+                            self.write(".statically_allocated = 1,")
                     utf8 = s.encode('utf-8')
                     self.write(f'.utf8 = {make_string_literal(utf8)},')
                     self.write(f'.utf8_length = {len(utf8)},')

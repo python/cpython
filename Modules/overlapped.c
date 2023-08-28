@@ -8,7 +8,7 @@
    Check itemsize */
 
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
+
 
 #define WINDOWS_LEAN_AND_MEAN
 #include <winsock2.h>
@@ -17,10 +17,10 @@
 
 #if defined(MS_WIN32) && !defined(MS_WIN64)
 #  define F_POINTER "k"
-#  define T_POINTER T_ULONG
+#  define T_POINTER Py_T_ULONG
 #else
 #  define F_POINTER "K"
-#  define T_POINTER T_ULONGLONG
+#  define T_POINTER Py_T_ULONGLONG
 #endif
 
 #define F_HANDLE F_POINTER
@@ -1942,12 +1942,12 @@ static PyMethodDef Overlapped_methods[] = {
 };
 
 static PyMemberDef Overlapped_members[] = {
-    {"error", T_ULONG,
+    {"error", Py_T_ULONG,
      offsetof(OverlappedObject, error),
-     READONLY, "Error from last operation"},
+     Py_READONLY, "Error from last operation"},
     {"event", T_HANDLE,
      offsetof(OverlappedObject, overlapped) + offsetof(OVERLAPPED, hEvent),
-     READONLY, "Overlapped event handle"},
+     Py_READONLY, "Overlapped event handle"},
     {NULL}
 };
 
@@ -1996,12 +1996,7 @@ static PyMethodDef overlapped_functions[] = {
 
 #define WINAPI_CONSTANT(fmt, con) \
     do { \
-        PyObject *value = Py_BuildValue(fmt, con); \
-        if (value == NULL) { \
-            return -1; \
-        } \
-        if (PyModule_AddObject(module, #con, value) < 0 ) { \
-            Py_DECREF(value); \
+        if (PyModule_Add(module, #con, Py_BuildValue(fmt, con)) < 0 ) { \
             return -1; \
         } \
     } while (0)

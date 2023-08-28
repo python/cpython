@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_dict.h"          // _PyDict_GetItemWithError()
 #include "pycore_frame.h"
 #include "pycore_initconfig.h"
 #include "pycore_interp.h"        // PyInterpreterState.warnings

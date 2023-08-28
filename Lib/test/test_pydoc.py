@@ -1,3 +1,4 @@
+import datetime
 import os
 import sys
 import contextlib
@@ -12,6 +13,7 @@ import re
 import stat
 import tempfile
 import test.support
+import time
 import types
 import typing
 import unittest
@@ -1179,6 +1181,108 @@ class TestDescriptions(unittest.TestCase):
     def test_module_level_callable(self):
         self.assertEqual(self._get_summary_line(os.stat),
             "stat(path, *, dir_fd=None, follow_symlinks=True)")
+
+    def test_module_level_callable_noargs(self):
+        self.assertEqual(self._get_summary_line(time.time),
+            "time()")
+
+    def test_module_level_callable_o(self):
+        self.assertEqual(self._get_summary_line(stat.S_IMODE),
+            "S_IMODE(object, /)")
+
+    def test_unbound_builtin_method_noargs(self):
+        self.assertEqual(self._get_summary_line(str.lower),
+            "lower(self, /)")
+
+    def test_bound_builtin_method_noargs(self):
+        self.assertEqual(self._get_summary_line(''.lower),
+            "lower() method of builtins.str instance")
+
+    def test_unbound_builtin_method_o(self):
+        self.assertEqual(self._get_summary_line(set.add),
+            "add(self, object, /)")
+
+    def test_bound_builtin_method_o(self):
+        self.assertEqual(self._get_summary_line(set().add),
+            "add(object, /) method of builtins.set instance")
+
+    def test_unbound_builtin_method_coexist_o(self):
+        self.assertEqual(self._get_summary_line(set.__contains__),
+            "__contains__(self, object, /)")
+
+    def test_bound_builtin_method_coexist_o(self):
+        self.assertEqual(self._get_summary_line(set().__contains__),
+            "__contains__(object, /) method of builtins.set instance")
+
+    def test_unbound_builtin_classmethod_noargs(self):
+        self.assertEqual(self._get_summary_line(datetime.datetime.__dict__['utcnow']),
+            "utcnow(type, /)")
+
+    def test_bound_builtin_classmethod_noargs(self):
+        self.assertEqual(self._get_summary_line(datetime.datetime.utcnow),
+            "utcnow() method of builtins.type instance")
+
+    def test_unbound_builtin_classmethod_o(self):
+        self.assertEqual(self._get_summary_line(dict.__dict__['__class_getitem__']),
+            "__class_getitem__(type, object, /)")
+
+    def test_bound_builtin_classmethod_o(self):
+        self.assertEqual(self._get_summary_line(dict.__class_getitem__),
+            "__class_getitem__(object, /) method of builtins.type instance")
+
+    def test_module_level_callable_unrepresentable_default(self):
+        self.assertEqual(self._get_summary_line(getattr),
+            "getattr(object, name, default=<unrepresentable>, /)")
+
+    def test_builtin_staticmethod_unrepresentable_default(self):
+        self.assertEqual(self._get_summary_line(str.maketrans),
+            "maketrans(x, y=<unrepresentable>, z=<unrepresentable>, /)")
+
+    def test_unbound_builtin_method_unrepresentable_default(self):
+        self.assertEqual(self._get_summary_line(dict.pop),
+            "pop(self, key, default=<unrepresentable>, /)")
+
+    def test_bound_builtin_method_unrepresentable_default(self):
+        self.assertEqual(self._get_summary_line({}.pop),
+            "pop(key, default=<unrepresentable>, /) "
+            "method of builtins.dict instance")
+
+    def test_overridden_text_signature(self):
+        class C:
+            def meth(*args, **kwargs):
+                pass
+            @classmethod
+            def cmeth(*args, **kwargs):
+                pass
+            @staticmethod
+            def smeth(*args, **kwargs):
+                pass
+        for text_signature, unbound, bound in [
+            ("($slf)", "(slf, /)", "()"),
+            ("($slf, /)", "(slf, /)", "()"),
+            ("($slf, /, arg)", "(slf, /, arg)", "(arg)"),
+            ("($slf, /, arg=<x>)", "(slf, /, arg=<x>)", "(arg=<x>)"),
+            ("($slf, arg, /)", "(slf, arg, /)", "(arg, /)"),
+            ("($slf, arg=<x>, /)", "(slf, arg=<x>, /)", "(arg=<x>, /)"),
+            ("(/, slf, arg)", "(/, slf, arg)", "(/, slf, arg)"),
+            ("(/, slf, arg=<x>)", "(/, slf, arg=<x>)", "(/, slf, arg=<x>)"),
+            ("(slf, /, arg)", "(slf, /, arg)", "(arg)"),
+            ("(slf, /, arg=<x>)", "(slf, /, arg=<x>)", "(arg=<x>)"),
+            ("(slf, arg, /)", "(slf, arg, /)", "(arg, /)"),
+            ("(slf, arg=<x>, /)", "(slf, arg=<x>, /)", "(arg=<x>, /)"),
+        ]:
+            with self.subTest(text_signature):
+                C.meth.__text_signature__ = text_signature
+                self.assertEqual(self._get_summary_line(C.meth),
+                        "meth" + unbound)
+                self.assertEqual(self._get_summary_line(C().meth),
+                        "meth" + bound + " method of test.test_pydoc.C instance")
+                C.cmeth.__func__.__text_signature__ = text_signature
+                self.assertEqual(self._get_summary_line(C.cmeth),
+                        "cmeth" + bound + " method of builtins.type instance")
+                C.smeth.__text_signature__ = text_signature
+                self.assertEqual(self._get_summary_line(C.smeth),
+                        "smeth" + unbound)
 
     @requires_docstrings
     def test_staticmethod(self):

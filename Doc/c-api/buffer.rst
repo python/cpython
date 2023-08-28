@@ -44,7 +44,7 @@ the elements exposed by an :class:`array.array` can be multi-byte values.
 
 An example consumer of the buffer interface is the :meth:`~io.BufferedIOBase.write`
 method of file objects: any object that can export a series of bytes through
-the buffer interface can be written to a file.  While :meth:`write` only
+the buffer interface can be written to a file.  While :meth:`!write` only
 needs read-only access to the internal contents of the object passed to it,
 other methods such as :meth:`~io.BufferedIOBase.readinto` need write access
 to the contents of their argument.  The buffer interface allows objects to
@@ -102,7 +102,9 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
    .. c:member:: PyObject *obj
 
       A new reference to the exporting object. The reference is owned by
-      the consumer and automatically decremented and set to ``NULL`` by
+      the consumer and automatically released
+      (i.e. reference count decremented)
+      and set to ``NULL`` by
       :c:func:`PyBuffer_Release`. The field is the equivalent of the return
       value of any standard C-API function.
 
@@ -159,10 +161,14 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
       If it is ``0``, :c:member:`~Py_buffer.buf` points to a single item representing
       a scalar. In this case, :c:member:`~Py_buffer.shape`, :c:member:`~Py_buffer.strides`
       and :c:member:`~Py_buffer.suboffsets` MUST be ``NULL``.
+      The maximum number of dimensions is given by :c:macro:`PyBUF_MAX_NDIM`.
 
-      The macro :c:macro:`PyBUF_MAX_NDIM` limits the maximum number of dimensions
-      to 64. Exporters MUST respect this limit, consumers of multi-dimensional
-      buffers SHOULD be able to handle up to :c:macro:`PyBUF_MAX_NDIM` dimensions.
+   .. :c:macro:: PyBUF_MAX_NDIM
+
+      The maximum number of dimensions the memory represents.
+      Exporters MUST respect this limit, consumers of multi-dimensional
+      buffers SHOULD be able to handle up to :c:macro:`!PyBUF_MAX_NDIM` dimensions.
+      Currently set to 64.
 
    .. c:member:: Py_ssize_t *shape
 
@@ -225,7 +231,7 @@ object via :c:func:`PyObject_GetBuffer`. Since the complexity of the logical
 structure of the memory can vary drastically, the consumer uses the *flags*
 argument to specify the exact buffer type it can handle.
 
-All :c:data:`Py_buffer` fields are unambiguously defined by the request
+All :c:type:`Py_buffer` fields are unambiguously defined by the request
 type.
 
 request-independent fields
@@ -454,7 +460,8 @@ Buffer-related functions
 
 .. c:function:: void PyBuffer_Release(Py_buffer *view)
 
-   Release the buffer *view* and decrement the reference count for
+   Release the buffer *view* and release the :term:`strong reference`
+   (i.e. decrement the reference count) to the view's supporting object,
    ``view->obj``. This function MUST be called when the buffer
    is no longer being used, otherwise reference leaks may occur.
 
@@ -464,7 +471,7 @@ Buffer-related functions
 
 .. c:function:: Py_ssize_t PyBuffer_SizeFromFormat(const char *format)
 
-   Return the implied :c:data:`~Py_buffer.itemsize` from :c:data:`~Py_buffer.format`.
+   Return the implied :c:member:`~Py_buffer.itemsize` from :c:member:`~Py_buffer.format`.
    On error, raise an exception and return -1.
 
    .. versionadded:: 3.9

@@ -324,10 +324,12 @@ extern int _PyTime_GetPerfCounterWithInfo(
 
 // Create a deadline.
 // Pseudo code: _PyTime_GetMonotonicClock() + timeout.
+// Export for '_ssl' shared extension.
 PyAPI_FUNC(_PyTime_t) _PyDeadline_Init(_PyTime_t timeout);
 
 // Get remaining time from a deadline.
 // Pseudo code: deadline - _PyTime_GetMonotonicClock().
+// Export for '_ssl' shared extension.
 PyAPI_FUNC(_PyTime_t) _PyDeadline_Get(_PyTime_t deadline);
 
 

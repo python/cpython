@@ -8,6 +8,12 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+extern PyObject* _PyFunction_Vectorcall(
+    PyObject *func,
+    PyObject *const *stack,
+    size_t nargsf,
+    PyObject *kwnames);
+
 #define FUNC_MAX_WATCHERS 8
 
 struct _py_func_state {

@@ -8,6 +8,25 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+extern PyObject* _PyBytes_FormatEx(
+    const char *format,
+    Py_ssize_t format_len,
+    PyObject *args,
+    int use_bytearray);
+
+extern PyObject* _PyBytes_FromHex(
+    PyObject *string,
+    int use_bytearray);
+
+// Helper for PyBytes_DecodeEscape that detects invalid escape chars.
+// Export for test_peg_generator.
+PyAPI_FUNC(PyObject*) _PyBytes_DecodeEscape(const char *, Py_ssize_t,
+                                            const char *, const char **);
+
+/* _PyBytes_Join(sep, x) is like sep.join(x).  sep must be PyBytesObject*,
+   x must be an iterable object. */
+extern PyObject* _PyBytes_Join(PyObject *sep, PyObject *x);
+
 
 /* Substring Search.
 

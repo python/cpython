@@ -1,11 +1,13 @@
 /* Return the initial module search path. */
 
 #include "Python.h"
+#include "pycore_fileutils.h"     // _Py_abspath()
+#include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_pathconfig.h"    // _PyPathConfig_ReadGlobal()
+#include "pycore_pymem.h"         // _PyMem_RawWcsdup()
+
 #include "marshal.h"              // PyMarshal_ReadObjectFromString
 #include "osdefs.h"               // DELIM
-#include "pycore_initconfig.h"
-#include "pycore_fileutils.h"
-#include "pycore_pathconfig.h"
 #include <wchar.h>
 
 #ifdef MS_WINDOWS

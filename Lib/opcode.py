@@ -19,25 +19,10 @@ if sys.version_info[:2] >= (3, 13):
 
 cmp_op = ('<', '<=', '==', '!=', '>', '>=')
 
-
-ENABLE_SPECIALIZATION = True
-
-def is_pseudo(op):
-    return op >= MIN_PSEUDO_OPCODE and op <= MAX_PSEUDO_OPCODE
-
 opmap = {}
-
-# pseudo opcodes (used in the compiler) mapped to the values
-# they can become in the actual code.
-_pseudo_ops = {}
 
 def def_op(name, op):
     opmap[name] = op
-
-def pseudo_op(name, op, real_ops):
-    def_op(name, op)
-    _pseudo_ops[name] = real_ops
-
 
 # Instruction opcodes for compiled code
 # Blank lines correspond to available opcodes
@@ -215,29 +200,27 @@ def_op('INSTRUMENTED_LINE', 254)
 # 255 is reserved
 
 
-MIN_PSEUDO_OPCODE = 256
+# Pseudo ops are above 255:
 
-pseudo_op('SETUP_FINALLY', 256, ['NOP'])
-pseudo_op('SETUP_CLEANUP', 257, ['NOP'])
-pseudo_op('SETUP_WITH', 258, ['NOP'])
-pseudo_op('POP_BLOCK', 259, ['NOP'])
+def_op('SETUP_FINALLY', 256)
+def_op('SETUP_CLEANUP', 257)
+def_op('SETUP_WITH', 258)
+def_op('POP_BLOCK', 259)
 
-pseudo_op('JUMP', 260, ['JUMP_FORWARD', 'JUMP_BACKWARD'])
-pseudo_op('JUMP_NO_INTERRUPT', 261, ['JUMP_FORWARD', 'JUMP_BACKWARD_NO_INTERRUPT'])
+def_op('JUMP', 260)
+def_op('JUMP_NO_INTERRUPT', 261)
 
-pseudo_op('LOAD_METHOD', 262, ['LOAD_ATTR'])
-pseudo_op('LOAD_SUPER_METHOD', 263, ['LOAD_SUPER_ATTR'])
-pseudo_op('LOAD_ZERO_SUPER_METHOD', 264, ['LOAD_SUPER_ATTR'])
-pseudo_op('LOAD_ZERO_SUPER_ATTR', 265, ['LOAD_SUPER_ATTR'])
+def_op('LOAD_METHOD', 262)
+def_op('LOAD_SUPER_METHOD', 263)
+def_op('LOAD_ZERO_SUPER_METHOD', 264)
+def_op('LOAD_ZERO_SUPER_ATTR', 265)
 
-pseudo_op('STORE_FAST_MAYBE_NULL', 266, ['STORE_FAST'])
-pseudo_op('LOAD_CLOSURE', 267, ['LOAD_FAST'])
+def_op('STORE_FAST_MAYBE_NULL', 266)
+def_op('LOAD_CLOSURE', 267)
 
-MAX_PSEUDO_OPCODE = MIN_PSEUDO_OPCODE + len(_pseudo_ops) - 1
+del def_op
 
-del def_op, pseudo_op
-
-opname = ['<%r>' % (op,) for op in range(MAX_PSEUDO_OPCODE + 1)]
+opname = ['<%r>' % (op,) for op in range(max(opmap.values()) + 1)]
 for op, i in opmap.items():
     opname[i] = op
 
@@ -256,6 +239,9 @@ if sys.version_info[:2] >= (3, 13):
 
     __all__.extend(["hasarg", "hasconst", "hasname", "hasjump", "hasjrel",
                     "hasjabs", "hasfree", "haslocal", "hasexc"])
+
+    _intrinsic_1_descs = _opcode.get_intrinsic1_descs()
+    _intrinsic_2_descs = _opcode.get_intrinsic2_descs()
 
 hascompare = [opmap["COMPARE_OP"]]
 
@@ -286,29 +272,6 @@ _nb_ops = [
     ("NB_INPLACE_SUBTRACT", "-="),
     ("NB_INPLACE_TRUE_DIVIDE", "/="),
     ("NB_INPLACE_XOR", "^="),
-]
-
-_intrinsic_1_descs = [
-    "INTRINSIC_1_INVALID",
-    "INTRINSIC_PRINT",
-    "INTRINSIC_IMPORT_STAR",
-    "INTRINSIC_STOPITERATION_ERROR",
-    "INTRINSIC_ASYNC_GEN_WRAP",
-    "INTRINSIC_UNARY_POSITIVE",
-    "INTRINSIC_LIST_TO_TUPLE",
-    "INTRINSIC_TYPEVAR",
-    "INTRINSIC_PARAMSPEC",
-    "INTRINSIC_TYPEVARTUPLE",
-    "INTRINSIC_SUBSCRIPT_GENERIC",
-    "INTRINSIC_TYPEALIAS",
-]
-
-_intrinsic_2_descs = [
-    "INTRINSIC_2_INVALID",
-    "INTRINSIC_PREP_RERAISE_STAR",
-    "INTRINSIC_TYPEVAR_WITH_BOUND",
-    "INTRINSIC_TYPEVAR_WITH_CONSTRAINTS",
-    "INTRINSIC_SET_FUNCTION_TYPE_PARAMS",
 ]
 
 
@@ -367,6 +330,6 @@ _cache_format = {
     },
 }
 
-_inline_cache_entries = [
-    sum(_cache_format.get(opname[opcode], {}).values()) for opcode in range(256)
-]
+_inline_cache_entries = {
+    name : sum(value.values()) for (name, value) in _cache_format.items()
+}

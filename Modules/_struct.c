@@ -10,8 +10,9 @@
 #include "Python.h"
 #include "pycore_bytesobject.h"   // _PyBytesWriter
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "structmember.h"         // PyMemberDef
+
 #include <ctype.h>
+#include <stddef.h>               // offsetof()
 
 /*[clinic input]
 class Struct "PyStructObject *" "&PyStructType"
@@ -2176,7 +2177,7 @@ static struct PyMethodDef s_methods[] = {
 };
 
 static PyMemberDef s_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(PyStructObject, weakreflist), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(PyStructObject, weakreflist), Py_READONLY},
     {NULL}  /* sentinel */
 };
 

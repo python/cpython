@@ -1105,11 +1105,11 @@ code, none of the changes described here will affect you very much.
   expected, and a set of pointers to :c:expr:`PyObject*` variables that will be
   filled in with argument values.
 
-* Two new flags :const:`METH_NOARGS` and :const:`METH_O` are available in method
+* Two new flags :c:macro:`METH_NOARGS` and :c:macro:`METH_O` are available in method
   definition tables to simplify implementation of methods with no arguments or a
   single untyped argument. Calling such methods is more efficient than calling a
-  corresponding method that uses :const:`METH_VARARGS`.  Also, the old
-  :const:`METH_OLDARGS` style of writing C methods is  now officially deprecated.
+  corresponding method that uses :c:macro:`METH_VARARGS`.  Also, the old
+  :c:macro:`METH_OLDARGS` style of writing C methods is  now officially deprecated.
 
 * Two new wrapper functions, :c:func:`PyOS_snprintf` and :c:func:`PyOS_vsnprintf`
   were added to provide  cross-platform implementations for the relatively new

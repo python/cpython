@@ -789,7 +789,7 @@ Operators And Special Methods
   :attr:`__doc__`, :attr:`__globals__`, :attr:`~definition.__name__`,
   respectively.
 
-* :meth:`__nonzero__` is now :meth:`__bool__`.
+* :meth:`!__nonzero__` is now :meth:`~object.__bool__`.
 
 Builtins
 --------

@@ -163,6 +163,9 @@ _PyLong_New(Py_ssize_t size)
     }
     _PyLong_SetSignAndDigitCount(result, size != 0, size);
     _PyObject_Init((PyObject*)result, &PyLong_Type);
+    /* The digit has to be initialized explicitly to avoid
+     * use-of-uninitialized-value. */
+    result->long_value.ob_digit[0] = 0;
     return result;
 }
 
@@ -171,7 +174,7 @@ _PyLong_FromDigits(int negative, Py_ssize_t digit_count, digit *digits)
 {
     assert(digit_count >= 0);
     if (digit_count == 0) {
-        return (PyLongObject *)Py_NewRef(_PyLong_GetZero());
+        return (PyLongObject *)_PyLong_GetZero();
     }
     PyLongObject *result = _PyLong_New(digit_count);
     if (result == NULL) {
@@ -2854,8 +2857,7 @@ long_divrem(PyLongObject *a, PyLongObject *b,
         if (*prem == NULL) {
             return -1;
         }
-        PyObject *zero = _PyLong_GetZero();
-        *pdiv = (PyLongObject*)Py_NewRef(zero);
+        *pdiv = (PyLongObject*)_PyLong_GetZero();
         return 0;
     }
     if (size_b == 1) {

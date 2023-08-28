@@ -2474,6 +2474,74 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertTrue(A.t(''))
         self.assertEqual(A.t(0.0), 0.0)
 
+    def test_slotted_class(self):
+        class Slot:
+            __slots__ = ('a', 'b')
+            @functools.singledispatchmethod
+            def go(self, item, arg):
+                pass
+
+            @go.register
+            def _(self, item: int, arg):
+                return item + arg
+
+        s = Slot()
+        self.assertEqual(s.go(1, 1), 2)
+
+    def test_classmethod_slotted_class(self):
+        class Slot:
+            __slots__ = ('a', 'b')
+            @functools.singledispatchmethod
+            @classmethod
+            def go(cls, item, arg):
+                pass
+
+            @go.register
+            @classmethod
+            def _(cls, item: int, arg):
+                return item + arg
+
+        s = Slot()
+        self.assertEqual(s.go(1, 1), 2)
+        self.assertEqual(Slot.go(1, 1), 2)
+
+    def test_staticmethod_slotted_class(self):
+        class A:
+            __slots__ = ['a']
+            @functools.singledispatchmethod
+            @staticmethod
+            def t(arg):
+                return arg
+            @t.register(int)
+            @staticmethod
+            def _(arg):
+                return isinstance(arg, int)
+            @t.register(str)
+            @staticmethod
+            def _(arg):
+                return isinstance(arg, str)
+        a = A()
+
+        self.assertTrue(A.t(0))
+        self.assertTrue(A.t(''))
+        self.assertEqual(A.t(0.0), 0.0)
+        self.assertTrue(a.t(0))
+        self.assertTrue(a.t(''))
+        self.assertEqual(a.t(0.0), 0.0)
+
+    def test_assignment_behavior(self):
+        # see gh-106448
+        class A:
+            @functools.singledispatchmethod
+            def t(arg):
+                return arg
+
+        a = A()
+        a.t.foo = 'bar'
+        a2 = A()
+        with self.assertRaises(AttributeError):
+            a2.t.foo
+
     def test_classmethod_register(self):
         class A:
             def __init__(self, arg):

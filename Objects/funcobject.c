@@ -6,7 +6,7 @@
 #include "pycore_code.h"          // _Py_next_func_version
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
-#include "structmember.h"         // PyMemberDef
+
 
 static PyObject* func_repr(PyFunctionObject *op);
 
@@ -451,11 +451,11 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
 #define OFF(x) offsetof(PyFunctionObject, x)
 
 static PyMemberDef func_memberlist[] = {
-    {"__closure__",   T_OBJECT,     OFF(func_closure), READONLY},
-    {"__doc__",       T_OBJECT,     OFF(func_doc), 0},
-    {"__globals__",   T_OBJECT,     OFF(func_globals), READONLY},
-    {"__module__",    T_OBJECT,     OFF(func_module), 0},
-    {"__builtins__",  T_OBJECT,     OFF(func_builtins), READONLY},
+    {"__closure__",   _Py_T_OBJECT,     OFF(func_closure), Py_READONLY},
+    {"__doc__",       _Py_T_OBJECT,     OFF(func_doc), 0},
+    {"__globals__",   _Py_T_OBJECT,     OFF(func_globals), Py_READONLY},
+    {"__module__",    _Py_T_OBJECT,     OFF(func_module), 0},
+    {"__builtins__",  _Py_T_OBJECT,     OFF(func_builtins), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -831,8 +831,8 @@ func_clear(PyFunctionObject *op)
     // However, name and qualname could be str subclasses, so they
     // could have reference cycles. The solution is to replace them
     // with a genuinely immutable string.
-    Py_SETREF(op->func_name, Py_NewRef(&_Py_STR(empty)));
-    Py_SETREF(op->func_qualname, Py_NewRef(&_Py_STR(empty)));
+    Py_SETREF(op->func_name, &_Py_STR(empty));
+    Py_SETREF(op->func_qualname, &_Py_STR(empty));
     return 0;
 }
 
@@ -1063,8 +1063,8 @@ cm_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyMemberDef cm_memberlist[] = {
-    {"__func__", T_OBJECT, offsetof(classmethod, cm_callable), READONLY},
-    {"__wrapped__", T_OBJECT, offsetof(classmethod, cm_callable), READONLY},
+    {"__func__", _Py_T_OBJECT, offsetof(classmethod, cm_callable), Py_READONLY},
+    {"__wrapped__", _Py_T_OBJECT, offsetof(classmethod, cm_callable), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -1258,8 +1258,8 @@ sm_call(PyObject *callable, PyObject *args, PyObject *kwargs)
 }
 
 static PyMemberDef sm_memberlist[] = {
-    {"__func__", T_OBJECT, offsetof(staticmethod, sm_callable), READONLY},
-    {"__wrapped__", T_OBJECT, offsetof(staticmethod, sm_callable), READONLY},
+    {"__func__", _Py_T_OBJECT, offsetof(staticmethod, sm_callable), Py_READONLY},
+    {"__wrapped__", _Py_T_OBJECT, offsetof(staticmethod, sm_callable), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 

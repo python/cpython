@@ -9,11 +9,11 @@
 #include "pycore_object.h"        // _PyType_AllocNoTrack
 #include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "structmember.h"         // PyMemberDef
+
 
 
 static PyMemberDef module_members[] = {
-    {"__dict__", T_OBJECT, offsetof(PyModuleObject, md_dict), READONLY},
+    {"__dict__", _Py_T_OBJECT, offsetof(PyModuleObject, md_dict), Py_READONLY},
     {0}
 };
 

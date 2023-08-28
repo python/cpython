@@ -1,4 +1,6 @@
 /* An arena-like memory interface for the compiler.
+ *
+ * Export symbols for test_peg_generator.
  */
 
 #ifndef Py_INTERNAL_PYARENA_H

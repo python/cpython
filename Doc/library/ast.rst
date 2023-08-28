@@ -2146,7 +2146,7 @@ and classes for traversing abstract syntax trees:
    Currently ``major`` must equal to ``3``.  For example, setting
    ``feature_version=(3, 4)`` will allow the use of ``async`` and
    ``await`` as variable names.  The lowest supported version is
-   ``(3, 4)``; the highest is ``sys.version_info[0:2]``.
+   ``(3, 7)``; the highest is ``sys.version_info[0:2]``.
 
    If source contains a null character ('\0'), :exc:`ValueError` is raised.
 
@@ -2168,6 +2168,9 @@ and classes for traversing abstract syntax trees:
 
    .. versionchanged:: 3.8
       Added ``type_comments``, ``mode='func_type'`` and ``feature_version``.
+
+   .. versionchanged:: 3.13
+      The minimum supported version for feature_version is now (3,7)
 
 
 .. function:: unparse(ast_obj)

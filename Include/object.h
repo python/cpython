@@ -165,12 +165,28 @@ check by comparing the reference count field to the immortality reference count.
  */
 struct _object {
     _PyObject_HEAD_EXTRA
+
+#if (defined(__GNUC__) || defined(__clang__)) \
+        && !(defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L)
+    // On C99 and older, anonymous union is a GCC and clang extension
+    __extension__
+#endif
+#ifdef _MSC_VER
+    // Ignore MSC warning C4201: "nonstandard extension used:
+    // nameless struct/union"
+    __pragma(warning(push))
+    __pragma(warning(disable: 4201))
+#endif
     union {
        Py_ssize_t ob_refcnt;
 #if SIZEOF_VOID_P > 4
        PY_UINT32_T ob_refcnt_split[2];
 #endif
     };
+#ifdef _MSC_VER
+    __pragma(warning(pop))
+#endif
+
     PyTypeObject *ob_type;
 };
 
@@ -594,10 +610,8 @@ you can count such references to the type object.)
 #if defined(Py_REF_DEBUG) && !defined(Py_LIMITED_API)
 PyAPI_FUNC(void) _Py_NegativeRefcount(const char *filename, int lineno,
                                       PyObject *op);
-PyAPI_FUNC(void) _Py_IncRefTotal_DO_NOT_USE_THIS(void);
-PyAPI_FUNC(void) _Py_DecRefTotal_DO_NOT_USE_THIS(void);
-#    define _Py_INC_REFTOTAL() _Py_IncRefTotal_DO_NOT_USE_THIS()
-#    define _Py_DEC_REFTOTAL() _Py_DecRefTotal_DO_NOT_USE_THIS()
+PyAPI_FUNC(void) _Py_INCREF_IncRefTotal(void);
+PyAPI_FUNC(void) _Py_DECREF_DecRefTotal(void);
 #endif  // Py_REF_DEBUG && !Py_LIMITED_API
 
 PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
@@ -646,7 +660,7 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 #endif
     _Py_INCREF_STAT_INC();
 #ifdef Py_REF_DEBUG
-    _Py_INC_REFTOTAL();
+    _Py_INCREF_IncRefTotal();
 #endif
 #endif
 }
@@ -675,7 +689,7 @@ static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
         return;
     }
     _Py_DECREF_STAT_INC();
-    _Py_DEC_REFTOTAL();
+    _Py_DECREF_DecRefTotal();
     if (--op->ob_refcnt != 0) {
         if (op->ob_refcnt < 0) {
             _Py_NegativeRefcount(filename, lineno, op);
@@ -702,9 +716,6 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
 }
 #define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
 #endif
-
-#undef _Py_INC_REFTOTAL
-#undef _Py_DEC_REFTOTAL
 
 
 /* Safely decref `op` and set `op` to NULL, especially useful in tp_clear

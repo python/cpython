@@ -2,6 +2,7 @@
 #include "compile.h"
 #include "opcode.h"
 #include "internal/pycore_code.h"
+#include "internal/pycore_intrinsics.h"
 
 /*[clinic input]
 module _opcode
@@ -220,6 +221,60 @@ _opcode_get_specialization_stats_impl(PyObject *module)
 #endif
 }
 
+/*[clinic input]
+
+_opcode.get_intrinsic1_descs
+
+Return a list of names of the unary intrinsics.
+[clinic start generated code]*/
+
+static PyObject *
+_opcode_get_intrinsic1_descs_impl(PyObject *module)
+/*[clinic end generated code: output=bd1ddb6b4447d18b input=13b51c712618459b]*/
+{
+    PyObject *list = PyList_New(MAX_INTRINSIC_1 + 1);
+    if (list == NULL) {
+        return NULL;
+    }
+    for (int i=0; i <= MAX_INTRINSIC_1; i++) {
+        PyObject *name = _PyUnstable_GetUnaryIntrinsicName(i);
+        if (name == NULL) {
+            Py_DECREF(list);
+            return NULL;
+        }
+        PyList_SET_ITEM(list, i, name);
+    }
+    return list;
+}
+
+
+/*[clinic input]
+
+_opcode.get_intrinsic2_descs
+
+Return a list of names of the binary intrinsics.
+[clinic start generated code]*/
+
+static PyObject *
+_opcode_get_intrinsic2_descs_impl(PyObject *module)
+/*[clinic end generated code: output=40e62bc27584c8a0 input=e83068f249f5471b]*/
+{
+    PyObject *list = PyList_New(MAX_INTRINSIC_2 + 1);
+    if (list == NULL) {
+        return NULL;
+    }
+    for (int i=0; i <= MAX_INTRINSIC_2; i++) {
+        PyObject *name = _PyUnstable_GetBinaryIntrinsicName(i);
+        if (name == NULL) {
+            Py_DECREF(list);
+            return NULL;
+        }
+        PyList_SET_ITEM(list, i, name);
+    }
+    return list;
+}
+
+
 static PyMethodDef
 opcode_functions[] =  {
     _OPCODE_STACK_EFFECT_METHODDEF
@@ -232,10 +287,21 @@ opcode_functions[] =  {
     _OPCODE_HAS_LOCAL_METHODDEF
     _OPCODE_HAS_EXC_METHODDEF
     _OPCODE_GET_SPECIALIZATION_STATS_METHODDEF
+    _OPCODE_GET_INTRINSIC1_DESCS_METHODDEF
+    _OPCODE_GET_INTRINSIC2_DESCS_METHODDEF
     {NULL, NULL, 0, NULL}
 };
 
+int
+_opcode_exec(PyObject *m) {
+    if (PyModule_AddIntMacro(m, ENABLE_SPECIALIZATION) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
 static PyModuleDef_Slot module_slots[] = {
+    {Py_mod_exec, _opcode_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };

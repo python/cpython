@@ -84,7 +84,9 @@ struct _ceval_runtime_state {
 
 struct _ceval_state {
     /* This single variable consolidates all requests to break out of
-       the fast path in the eval loop. */
+     * the fast path in the eval loop.
+     * It is by far the hottest field in this struct and
+     * should be placed at the beginning. */
     _Py_atomic_int eval_breaker;
     /* Request for dropping the GIL */
     _Py_atomic_int gil_drop_request;

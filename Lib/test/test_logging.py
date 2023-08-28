@@ -2079,17 +2079,17 @@ class SysLogHandlerTest(BaseTest):
         # The log message sent to the SysLogHandler is properly received.
         logger = logging.getLogger("slh")
         logger.error("sp\xe4m")
-        self.handled.wait()
+        self.handled.wait(support.LONG_TIMEOUT)
         self.assertEqual(self.log_output, b'<11>sp\xc3\xa4m\x00')
         self.handled.clear()
         self.sl_hdlr.append_nul = False
         logger.error("sp\xe4m")
-        self.handled.wait()
+        self.handled.wait(support.LONG_TIMEOUT)
         self.assertEqual(self.log_output, b'<11>sp\xc3\xa4m')
         self.handled.clear()
         self.sl_hdlr.ident = "h\xe4m-"
         logger.error("sp\xe4m")
-        self.handled.wait()
+        self.handled.wait(support.LONG_TIMEOUT)
         self.assertEqual(self.log_output, b'<11>h\xc3\xa4m-sp\xc3\xa4m')
 
     def test_udp_reconnection(self):
@@ -2097,7 +2097,7 @@ class SysLogHandlerTest(BaseTest):
         self.sl_hdlr.close()
         self.handled.clear()
         logger.error("sp\xe4m")
-        self.handled.wait(0.1)
+        self.handled.wait(support.LONG_TIMEOUT)
         self.assertEqual(self.log_output, b'<11>sp\xc3\xa4m\x00')
 
 @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")

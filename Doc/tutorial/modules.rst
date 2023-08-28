@@ -512,6 +512,22 @@ code::
 This would mean that ``from sound.effects import *`` would import the three
 named submodules of the :mod:`sound.effects` package.
 
+Be aware that submodules might become shadowed by locally defined names. For
+example, if you added a ``reverse`` function to the
+:file:`sound/effects/__init__.py` file, the ``from sound.effects import *``
+would only import the two submodules ``echo`` and ``surround``, but *not* the
+``reverse`` submodule, because it is shadowed by the locally defined
+``reverse`` function::
+
+    __all__ = [
+        "echo",      # refers to the 'echo.py' file
+        "surround",  # refers to the 'surround.py' file
+        "reverse",   # !!! refers to the 'reverse' function now !!!
+    ]
+
+    def reverse(msg: str):  # <-- this name shadows the 'reverse.py' submodule
+        return msg[::-1]    #     in the case of a 'from sound.effects import *'
+
 If ``__all__`` is not defined, the statement ``from sound.effects import *``
 does *not* import all submodules from the package :mod:`sound.effects` into the
 current namespace; it only ensures that the package :mod:`sound.effects` has

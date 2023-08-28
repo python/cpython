@@ -25,6 +25,7 @@ _specializations = {
         "BINARY_SUBSCR_DICT",
         "BINARY_SUBSCR_GETITEM",
         "BINARY_SUBSCR_LIST_INT",
+        "BINARY_SUBSCR_STR_INT",
         "BINARY_SUBSCR_TUPLE_INT",
     ],
     "STORE_SUBSCR": [

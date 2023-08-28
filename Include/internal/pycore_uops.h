@@ -18,7 +18,7 @@ typedef struct {
 
 typedef struct {
     _PyExecutorObject base;
-    _PyUOpInstruction trace[_Py_UOP_MAX_TRACE_LENGTH];  // TODO: variable length
+    _PyUOpInstruction trace[1];
 } _PyUOpExecutorObject;
 
 _PyInterpreterFrame *_PyUopExecute(

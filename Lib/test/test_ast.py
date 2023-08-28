@@ -1084,6 +1084,7 @@ class AST_Tests(unittest.TestCase):
                     return self
         enum._test_simple_enum(_Precedence, ast._Precedence)
 
+    @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     @support.cpython_only
     def test_ast_recursion_limit(self):
         fail_depth = support.EXCEEDS_RECURSION_LIMIT

@@ -60,7 +60,7 @@ Notes on the availability of these functions:
    ``'java'``.
 
    .. seealso::
-      :attr:`sys.platform` has a finer granularity.  :func:`os.uname` gives
+      :data:`sys.platform` has a finer granularity.  :func:`os.uname` gives
       system-dependent version information.
 
       The :mod:`platform` module provides detailed checks for the
@@ -233,7 +233,7 @@ process and user.
    :data:`environ` and :data:`environb` are synchronized (modifying
    :data:`environb` updates :data:`environ`, and vice versa).
 
-   :data:`environb` is only available if :data:`supports_bytes_environ` is
+   :data:`environb` is only available if :const:`supports_bytes_environ` is
    ``True``.
 
    .. versionadded:: 3.2
@@ -331,7 +331,7 @@ process and user.
    future environment changes.
 
 
-   :func:`getenvb` is only available if :data:`supports_bytes_environ`
+   :func:`getenvb` is only available if :const:`supports_bytes_environ`
    is ``True``.
 
    .. availability:: Unix.
@@ -401,11 +401,11 @@ process and user.
 
       On macOS, :func:`getgroups` behavior differs somewhat from
       other Unix platforms. If the Python interpreter was built with a
-      deployment target of :const:`10.5` or earlier, :func:`getgroups` returns
+      deployment target of ``10.5`` or earlier, :func:`getgroups` returns
       the list of effective group ids associated with the current user process;
       this list is limited to a system-defined number of entries, typically 16,
       and may be modified by calls to :func:`setgroups` if suitably privileged.
-      If built with a deployment target greater than :const:`10.5`,
+      If built with a deployment target greater than ``10.5``,
       :func:`getgroups` returns the current group access list for the user
       associated with the effective user id of the process; the group access
       list may change over the lifetime of the process, it is not affected by
@@ -714,14 +714,14 @@ process and user.
 
 .. function:: getsid(pid, /)
 
-   Call the system call :c:func:`getsid`.  See the Unix manual for the semantics.
+   Call the system call :c:func:`!getsid`.  See the Unix manual for the semantics.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. function:: setsid()
 
-   Call the system call :c:func:`setsid`.  See the Unix manual for the semantics.
+   Call the system call :c:func:`!setsid`.  See the Unix manual for the semantics.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
@@ -739,7 +739,7 @@ process and user.
 .. function:: strerror(code, /)
 
    Return the error message corresponding to the error code in *code*.
-   On platforms where :c:func:`strerror` returns ``NULL`` when given an unknown
+   On platforms where :c:func:`!strerror` returns ``NULL`` when given an unknown
    error number, :exc:`ValueError` is raised.
 
 
@@ -923,7 +923,7 @@ as internal buffering of data.
 
    In Linux kernel older than 5.3, the files pointed by *src* and *dst*
    must reside in the same filesystem, otherwise an :exc:`OSError` is
-   raised with :attr:`~OSError.errno` set to :data:`errno.EXDEV`.
+   raised with :attr:`~OSError.errno` set to :const:`errno.EXDEV`.
 
    This copy is done without the additional cost of transferring data
    from the kernel to user space and then back into the kernel. Additionally,
@@ -1181,7 +1181,7 @@ as internal buffering of data.
 
    .. versionadded:: 3.3
       Some operating systems could support additional values, like
-      :data:`os.SEEK_HOLE` or :data:`os.SEEK_DATA`.
+      :const:`os.SEEK_HOLE` or :const:`os.SEEK_DATA`.
 
 
 .. function:: open(path, flags, mode=0o777, *, dir_fd=None)
@@ -1422,7 +1422,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    If some data was successfully read, it will return the number of bytes read.
    If no bytes were read, it will return ``-1`` and set errno to
-   :data:`errno.EAGAIN`.
+   :const:`errno.EAGAIN`.
 
    .. availability:: Linux >= 4.14.
 
@@ -1627,7 +1627,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    *offset_dst*. The offset associated to the file descriptor that refers to a
    pipe must be ``None``. The files pointed by *src* and *dst* must reside in
    the same filesystem, otherwise an :exc:`OSError` is raised with
-   :attr:`~OSError.errno` set to :data:`errno.EXDEV`.
+   :attr:`~OSError.errno` set to :const:`errno.EXDEV`.
 
    This copy is done without the additional cost of transferring data
    from the kernel to user space and then back into the kernel. Additionally,
@@ -1960,18 +1960,18 @@ features:
    Set the flags of *path* to the numeric *flags*. *flags* may take a combination
    (bitwise OR) of the following values (as defined in the :mod:`stat` module):
 
-   * :data:`stat.UF_NODUMP`
-   * :data:`stat.UF_IMMUTABLE`
-   * :data:`stat.UF_APPEND`
-   * :data:`stat.UF_OPAQUE`
-   * :data:`stat.UF_NOUNLINK`
-   * :data:`stat.UF_COMPRESSED`
-   * :data:`stat.UF_HIDDEN`
-   * :data:`stat.SF_ARCHIVED`
-   * :data:`stat.SF_IMMUTABLE`
-   * :data:`stat.SF_APPEND`
-   * :data:`stat.SF_NOUNLINK`
-   * :data:`stat.SF_SNAPSHOT`
+   * :const:`stat.UF_NODUMP`
+   * :const:`stat.UF_IMMUTABLE`
+   * :const:`stat.UF_APPEND`
+   * :const:`stat.UF_OPAQUE`
+   * :const:`stat.UF_NOUNLINK`
+   * :const:`stat.UF_COMPRESSED`
+   * :const:`stat.UF_HIDDEN`
+   * :const:`stat.SF_ARCHIVED`
+   * :const:`stat.SF_IMMUTABLE`
+   * :const:`stat.SF_APPEND`
+   * :const:`stat.SF_NOUNLINK`
+   * :const:`stat.SF_SNAPSHOT`
 
    This function can support :ref:`not following symlinks <follow_symlinks>`.
 
@@ -1992,25 +1992,25 @@ features:
    following values (as defined in the :mod:`stat` module) or bitwise ORed
    combinations of them:
 
-   * :data:`stat.S_ISUID`
-   * :data:`stat.S_ISGID`
-   * :data:`stat.S_ENFMT`
-   * :data:`stat.S_ISVTX`
-   * :data:`stat.S_IREAD`
-   * :data:`stat.S_IWRITE`
-   * :data:`stat.S_IEXEC`
-   * :data:`stat.S_IRWXU`
-   * :data:`stat.S_IRUSR`
-   * :data:`stat.S_IWUSR`
-   * :data:`stat.S_IXUSR`
-   * :data:`stat.S_IRWXG`
-   * :data:`stat.S_IRGRP`
-   * :data:`stat.S_IWGRP`
-   * :data:`stat.S_IXGRP`
-   * :data:`stat.S_IRWXO`
-   * :data:`stat.S_IROTH`
-   * :data:`stat.S_IWOTH`
-   * :data:`stat.S_IXOTH`
+   * :const:`stat.S_ISUID`
+   * :const:`stat.S_ISGID`
+   * :const:`stat.S_ENFMT`
+   * :const:`stat.S_ISVTX`
+   * :const:`stat.S_IREAD`
+   * :const:`stat.S_IWRITE`
+   * :const:`stat.S_IEXEC`
+   * :const:`stat.S_IRWXU`
+   * :const:`stat.S_IRUSR`
+   * :const:`stat.S_IWUSR`
+   * :const:`stat.S_IXUSR`
+   * :const:`stat.S_IRWXG`
+   * :const:`stat.S_IRGRP`
+   * :const:`stat.S_IWGRP`
+   * :const:`stat.S_IXGRP`
+   * :const:`stat.S_IRWXO`
+   * :const:`stat.S_IROTH`
+   * :const:`stat.S_IWOTH`
+   * :const:`stat.S_IXOTH`
 
    This function can support :ref:`specifying a file descriptor <path_fd>`,
    :ref:`paths relative to directory descriptors <dir_fd>` and :ref:`not
@@ -2150,7 +2150,7 @@ features:
 
    .. audit-event:: os.link src,dst,src_dir_fd,dst_dir_fd os.link
 
-   .. availability:: Unix, Windows.
+   .. availability:: Unix, Windows, not Emscripten.
 
    .. versionchanged:: 3.2
       Added Windows support.
@@ -2420,13 +2420,13 @@ features:
 .. function:: major(device, /)
 
    Extract the device major number from a raw device number (usually the
-   :attr:`st_dev` or :attr:`st_rdev` field from :c:type:`stat`).
+   :attr:`st_dev` or :attr:`st_rdev` field from :c:struct:`stat`).
 
 
 .. function:: minor(device, /)
 
    Extract the device minor number from a raw device number (usually the
-   :attr:`st_dev` or :attr:`st_rdev` field from :c:type:`stat`).
+   :attr:`st_dev` or :attr:`st_rdev` field from :c:struct:`stat`).
 
 
 .. function:: makedev(major, minor, /)
@@ -2937,7 +2937,7 @@ features:
 .. class:: stat_result
 
    Object whose attributes correspond roughly to the members of the
-   :c:type:`stat` structure. It is used for the result of :func:`os.stat`,
+   :c:struct:`stat` structure. It is used for the result of :func:`os.stat`,
    :func:`os.fstat` and :func:`os.lstat`.
 
    Attributes:
@@ -3117,12 +3117,12 @@ features:
       See the ``IO_REPARSE_TAG_*`` constants in the :mod:`stat` module.
 
    The standard module :mod:`stat` defines functions and constants that are
-   useful for extracting information from a :c:type:`stat` structure. (On
+   useful for extracting information from a :c:struct:`stat` structure. (On
    Windows, some items are filled with dummy values.)
 
    For backward compatibility, a :class:`stat_result` instance is also
    accessible as a tuple of at least 10 integers giving the most important (and
-   portable) members of the :c:type:`stat` structure, in the order
+   portable) members of the :c:struct:`stat` structure, in the order
    :attr:`st_mode`, :attr:`st_ino`, :attr:`st_dev`, :attr:`st_nlink`,
    :attr:`st_uid`, :attr:`st_gid`, :attr:`st_size`, :attr:`st_atime`,
    :attr:`st_mtime`, :attr:`st_ctime`. More items may be added at the end by
@@ -3174,7 +3174,7 @@ features:
 
    Perform a :c:func:`statvfs` system call on the given path.  The return value is
    an object whose attributes describe the filesystem on the given path, and
-   correspond to the members of the :c:type:`statvfs` structure, namely:
+   correspond to the members of the :c:struct:`statvfs` structure, namely:
    :attr:`f_bsize`, :attr:`f_frsize`, :attr:`f_blocks`, :attr:`f_bfree`,
    :attr:`f_bavail`, :attr:`f_files`, :attr:`f_ffree`, :attr:`f_favail`,
    :attr:`f_flag`, :attr:`f_namemax`, :attr:`f_fsid`.
@@ -4151,8 +4151,8 @@ written in Python, such as a mail server's external command delivery program.
    Send signal *sig* to the process *pid*.  Constants for the specific signals
    available on the host platform are defined in the :mod:`signal` module.
 
-   Windows: The :data:`signal.CTRL_C_EVENT` and
-   :data:`signal.CTRL_BREAK_EVENT` signals are special signals which can
+   Windows: The :const:`signal.CTRL_C_EVENT` and
+   :const:`signal.CTRL_BREAK_EVENT` signals are special signals which can
    only be sent to console processes which share a common console window,
    e.g., some subprocesses. Any other value for *sig* will cause the process
    to be unconditionally killed by the TerminateProcess API, and the exit code
@@ -4205,7 +4205,7 @@ written in Python, such as a mail server's external command delivery program.
       This flag indicates that the file descriptor will be non-blocking.
       If the process referred to by the file descriptor has not yet terminated,
       then an attempt to wait on the file descriptor using :manpage:`waitid(2)`
-      will immediately return the error :data:`~errno.EAGAIN` rather than blocking.
+      will immediately return the error :const:`~errno.EAGAIN` rather than blocking.
 
    .. availability:: Linux >= 5.10
    .. versionadded:: 3.12
@@ -4308,7 +4308,7 @@ written in Python, such as a mail server's external command delivery program.
    specified. If the value specified is 0, the child's process group ID will be
    made the same as its process ID. If the value of *setpgroup* is not set, the
    child will inherit the parent's process group ID. This argument corresponds
-   to the C library :c:data:`POSIX_SPAWN_SETPGROUP` flag.
+   to the C library :c:macro:`POSIX_SPAWN_SETPGROUP` flag.
 
    If the *resetids* argument is ``True`` it will reset the effective UID and
    GID of the child to the real UID and GID of the parent process. If the
@@ -4316,27 +4316,27 @@ written in Python, such as a mail server's external command delivery program.
    the parent. In either case, if the set-user-ID and set-group-ID permission
    bits are enabled on the executable file, their effect will override the
    setting of the effective UID and GID. This argument corresponds to the C
-   library :c:data:`POSIX_SPAWN_RESETIDS` flag.
+   library :c:macro:`POSIX_SPAWN_RESETIDS` flag.
 
    If the *setsid* argument is ``True``, it will create a new session ID
-   for ``posix_spawn``. *setsid* requires :c:data:`POSIX_SPAWN_SETSID`
-   or :c:data:`POSIX_SPAWN_SETSID_NP` flag. Otherwise, :exc:`NotImplementedError`
+   for ``posix_spawn``. *setsid* requires :c:macro:`POSIX_SPAWN_SETSID`
+   or :c:macro:`POSIX_SPAWN_SETSID_NP` flag. Otherwise, :exc:`NotImplementedError`
    is raised.
 
    The *setsigmask* argument will set the signal mask to the signal set
    specified. If the parameter is not used, then the child inherits the
    parent's signal mask. This argument corresponds to the C library
-   :c:data:`POSIX_SPAWN_SETSIGMASK` flag.
+   :c:macro:`POSIX_SPAWN_SETSIGMASK` flag.
 
    The *sigdef* argument will reset the disposition of all signals in the set
    specified. This argument corresponds to the C library
-   :c:data:`POSIX_SPAWN_SETSIGDEF` flag.
+   :c:macro:`POSIX_SPAWN_SETSIGDEF` flag.
 
    The *scheduler* argument must be a tuple containing the (optional) scheduler
    policy and an instance of :class:`sched_param` with the scheduler parameters.
    A value of ``None`` in the place of the scheduler policy indicates that is
    not being provided. This argument is a combination of the C library
-   :c:data:`POSIX_SPAWN_SETSCHEDPARAM` and :c:data:`POSIX_SPAWN_SETSCHEDULER`
+   :c:macro:`POSIX_SPAWN_SETSCHEDPARAM` and :c:macro:`POSIX_SPAWN_SETSCHEDULER`
    flags.
 
    .. audit-event:: os.posix_spawn path,argv,env os.posix_spawn
@@ -4650,11 +4650,11 @@ written in Python, such as a mail server's external command delivery program.
    :data:`WNOHANG` and :data:`WNOWAIT` are additional optional flags.
 
    The return value is an object representing the data contained in the
-   :c:type:`!siginfo_t` structure with the following attributes:
+   :c:type:`siginfo_t` structure with the following attributes:
 
    * :attr:`!si_pid` (process ID)
    * :attr:`!si_uid` (real user ID of the child)
-   * :attr:`!si_signo` (always :data:`~signal.SIGCHLD`)
+   * :attr:`!si_signo` (always :const:`~signal.SIGCHLD`)
    * :attr:`!si_status` (the exit status or signal number, depending on :attr:`!si_code`)
    * :attr:`!si_code` (see :data:`CLD_EXITED` for possible values)
 
@@ -4892,7 +4892,7 @@ used to determine the disposition of a process.
 .. function:: WIFCONTINUED(status)
 
    Return ``True`` if a stopped child has been resumed by delivery of
-   :data:`~signal.SIGCONT` (if the process has been continued from a job
+   :const:`~signal.SIGCONT` (if the process has been continued from a job
    control stop), otherwise return ``False``.
 
    See :data:`WCONTINUED` option.
@@ -5264,7 +5264,7 @@ Random numbers
    ``/dev/urandom`` devices.
 
    The flags argument is a bit mask that can contain zero or more of the
-   following values ORed together: :py:data:`os.GRND_RANDOM` and
+   following values ORed together: :py:const:`os.GRND_RANDOM` and
    :py:data:`GRND_NONBLOCK`.
 
    See also the `Linux getrandom() manual page

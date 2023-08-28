@@ -687,6 +687,9 @@
     <ClInclude Include="..\Include\internal\pycore_runtime_init_generated.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_setobject.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_signal.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -1143,6 +1146,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\errors.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\executor.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\fileutils.c">

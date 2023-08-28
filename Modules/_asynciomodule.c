@@ -8,7 +8,7 @@
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime_init.h"  // _Py_ID()
-#include "structmember.h"         // PyMemberDef
+
 #include <stddef.h>               // offsetof()
 
 
@@ -1398,7 +1398,8 @@ FutureObj_get_state(FutureObj *fut, void *Py_UNUSED(ignored))
     default:
         assert (0);
     }
-    return Py_XNewRef(ret);
+    assert(_Py_IsImmortal(ret));
+    return ret;
 }
 
 static PyObject *

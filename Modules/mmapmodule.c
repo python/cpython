@@ -25,7 +25,7 @@
 #include <Python.h>
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_fileutils.h"     // _Py_stat_struct
-#include "structmember.h"         // PyMemberDef
+
 #include <stddef.h>               // offsetof()
 
 // to support MS_WINDOWS_SYSTEM OpenFileMappingA / CreateFileMappingA
@@ -883,7 +883,7 @@ mmap_madvise_method(mmap_object *self, PyObject *args)
 #endif // HAVE_MADVISE
 
 static struct PyMemberDef mmap_object_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(mmap_object, weakreflist), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(mmap_object, weakreflist), Py_READONLY},
     {NULL},
 };
 
@@ -1579,9 +1579,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 static int
 mmap_exec(PyObject *module)
 {
-    Py_INCREF(PyExc_OSError);
-    if (PyModule_AddObject(module, "error", PyExc_OSError) < 0) {
-        Py_DECREF(PyExc_OSError);
+    if (PyModule_AddObjectRef(module, "error", PyExc_OSError) < 0) {
         return -1;
     }
 

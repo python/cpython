@@ -106,7 +106,7 @@ class SpecializationStatsTests(unittest.TestCase):
         specialized_opcodes = [
             op.lower()
             for op in opcode._specializations
-            if opcode._inline_cache_entries[opcode.opmap[op]]
+            if opcode._inline_cache_entries.get(op, 0)
         ]
         self.assertIn('load_attr', specialized_opcodes)
         self.assertIn('binary_subscr', specialized_opcodes)

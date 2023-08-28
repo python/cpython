@@ -3,8 +3,7 @@
   What's New In Python 3.13
 ****************************
 
-:Release: |release|
-:Date: |today|
+:Editor: TBD
 
 .. Rules for maintenance:
 
@@ -102,6 +101,13 @@ array
   It can be used instead of ``'u'`` type code, which is deprecated.
   (Contributed by Inada Naoki in :gh:`80480`.)
 
+dbm
+---
+
+* Add :meth:`dbm.gnu.gdbm.clear` and :meth:`dbm.ndbm.ndbm.clear`  methods that remove all items
+  from the database.
+  (Contributed by Dong-hee Na in :gh:`107122`.)
+
 io
 --
 
@@ -110,6 +116,18 @@ The :class:`io.IOBase` finalizer now logs the ``close()`` method errors with
 and only logged in :ref:`Python Development Mode <devmode>` or on :ref:`Python
 built on debug mode <debug-build>`.
 (Contributed by Victor Stinner in :gh:`62948`.)
+
+opcode
+------
+
+* Move ``opcode.ENABLE_SPECIALIZATION`` to ``_opcode.ENABLE_SPECIALIZATION``.
+  This field was added in 3.12, it was never documented and is not intended for
+  external usage. (Contributed by Irit Katriel in :gh:`105481`.)
+
+* Removed ``opcode.is_pseudo``, ``opcode.MIN_PSEUDO_OPCODE`` and
+  ``opcode.MAX_PSEUDO_OPCODE``, which were added in 3.12, were never
+  documented or exposed through ``dis``, and were not intended to be
+  used externally.
 
 pathlib
 -------
@@ -144,36 +162,14 @@ typing
 Optimizations
 =============
 
-
+* :func:`textwrap.indent` is now ~30% faster than before for large input.
+  (Contributed by Inada Naoki in :gh:`107369`.)
 
 
 Deprecated
 ==========
 
-* :mod:`wave`: Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()``
-  methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
-  They will be removed in Python 3.15.
-  (Contributed by Victor Stinner in :gh:`105096`.)
-* :mod:`typing`: Creating a :class:`typing.NamedTuple` class using keyword arguments to denote
-  the fields (``NT = NamedTuple("NT", x=int, y=int)``) is deprecated, and will
-  be disallowed in Python 3.15. Use the class-based syntax or the functional
-  syntax instead. (Contributed by Alex Waygood in :gh:`105566`.)
-* :mod:`typing`: When using the functional syntax to create a :class:`typing.NamedTuple`
-  class or a :class:`typing.TypedDict` class, failing to pass a value to the
-  'fields' parameter (``NT = NamedTuple("NT")`` or ``TD = TypedDict("TD")``) is
-  deprecated. Passing ``None`` to the 'fields' parameter
-  (``NT = NamedTuple("NT", None)`` or ``TD = TypedDict("TD", None)``) is also
-  deprecated. Both will be disallowed in Python 3.15. To create a NamedTuple
-  class with 0 fields, use ``class NT(NamedTuple): pass`` or
-  ``NT = NamedTuple("NT", [])``. To create a TypedDict class with 0 fields, use
-  ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
-  (Contributed by Alex Waygood in :gh:`105566` and :gh:`105570`.)
-* :func:`typing.no_type_check_decorator` is deprecated, and scheduled for
-  removal in Python 3.15. After eight years in the :mod:`typing` module, it
-  has yet to be supported by any major type checkers.
-  (Contributed by Alex Waygood in :gh:`106309`.)
-
-* :mod:`array`'s ``'u'`` format code, deprecated in docs since Python 3.3,
+* :mod:`array`: :mod:`array`'s ``'u'`` format code, deprecated in docs since Python 3.3,
   emits :exc:`DeprecationWarning` since 3.13
   and will be removed in Python 3.16.
   Use the ``'w'`` format code instead.
@@ -184,12 +180,44 @@ Deprecated
   Replace ``ctypes.ARRAY(item_type, size)`` with ``item_type * size``.
   (Contributed by Victor Stinner in :gh:`105733`.)
 
-* The :mod:`getopt` and :mod:`optparse` modules are now
+* :mod:`getopt` and :mod:`optparse` modules: They are now
   :term:`soft deprecated`: the :mod:`argparse` should be used for new projects.
   Previously, the :mod:`optparse` module was already deprecated, its removal
   was not scheduled, and no warnings was emitted: so there is no change in
   practice.
   (Contributed by Victor Stinner in :gh:`106535`.)
+
+* :mod:`typing`: Creating a :class:`typing.NamedTuple` class using keyword arguments to denote
+  the fields (``NT = NamedTuple("NT", x=int, y=int)``) is deprecated, and will
+  be disallowed in Python 3.15. Use the class-based syntax or the functional
+  syntax instead. (Contributed by Alex Waygood in :gh:`105566`.)
+
+  * When using the functional syntax to create a :class:`typing.NamedTuple`
+    class or a :class:`typing.TypedDict` class, failing to pass a value to the
+    'fields' parameter (``NT = NamedTuple("NT")`` or ``TD = TypedDict("TD")``) is
+    deprecated. Passing ``None`` to the 'fields' parameter
+    (``NT = NamedTuple("NT", None)`` or ``TD = TypedDict("TD", None)``) is also
+    deprecated. Both will be disallowed in Python 3.15. To create a NamedTuple
+    class with 0 fields, use ``class NT(NamedTuple): pass`` or
+    ``NT = NamedTuple("NT", [])``. To create a TypedDict class with 0 fields, use
+    ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
+    (Contributed by Alex Waygood in :gh:`105566` and :gh:`105570`.)
+
+  * :func:`typing.no_type_check_decorator` is deprecated, and scheduled for
+    removal in Python 3.15. After eight years in the :mod:`typing` module, it
+    has yet to be supported by any major type checkers.
+    (Contributed by Alex Waygood in :gh:`106309`.)
+
+  * :data:`typing.AnyStr` is deprecated. In Python 3.16, it will be removed from
+    ``typing.__all__``, and a :exc:`DeprecationWarning` will be emitted when it
+    is imported or accessed. It will be removed entirely in Python 3.18. Use
+    the new :ref:`type parameter syntax <type-params>` instead.
+    (Contributed by Michael The in :gh:`107116`.)
+
+* :mod:`wave`: Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()``
+  methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
+  They will be removed in Python 3.15.
+  (Contributed by Victor Stinner in :gh:`105096`.)
 
 Pending Removal in Python 3.14
 ------------------------------
@@ -327,7 +355,7 @@ Pending Removal in Python 3.15
 Pending Removal in Python 3.16
 ------------------------------
 
-* :class:`array.array` ``'u'`` type (``wchar_t``):
+* :class:`array.array` ``'u'`` type (:c:type:`wchar_t`):
   use the ``'w'`` type instead (``Py_UCS4``).
 
 Pending Removal in Future Versions
@@ -786,6 +814,13 @@ New Features
   always steals a reference to the value.
   (Contributed by Serhiy Storchaka in :gh:`86493`.)
 
+* Added :c:func:`PyDict_GetItemRef` and :c:func:`PyDict_GetItemStringRef`
+  functions: similar to :c:func:`PyDict_GetItemWithError` but returning a
+  :term:`strong reference` instead of a :term:`borrowed reference`. Moreover,
+  these functions return -1 on error and so checking ``PyErr_Occurred()`` is
+  not needed.
+  (Contributed by Victor Stinner in :gh:`106004`.)
+
 Porting to Python 3.13
 ----------------------
 
@@ -793,8 +828,8 @@ Deprecated
 ----------
 
 * Deprecate the old ``Py_UNICODE`` and ``PY_UNICODE_TYPE`` types: use directly
-  the ``wchar_t`` type instead. Since Python 3.3, ``Py_UNICODE`` and
-  ``PY_UNICODE_TYPE`` are just aliases to ``wchar_t``.
+  the :c:type:`wchar_t` type instead. Since Python 3.3, ``Py_UNICODE`` and
+  ``PY_UNICODE_TYPE`` are just aliases to :c:type:`wchar_t`.
   (Contributed by Victor Stinner in :gh:`105156`.)
 
 * Deprecate old Python initialization functions:
@@ -827,6 +862,13 @@ Deprecated
 
 Removed
 -------
+
+* Remove many APIs (functions, macros, variables) with names prefixed by
+  ``_Py`` or ``_PY`` (considered as private API). If your project is affected
+  by one of these removals and you consider that the removed API should remain
+  available, please open a new issue to request a public C API and
+  add ``cc @vstinner`` to the issue to notify Victor Stinner.
+  (Contributed by Victor Stinner in :gh:`106320`.)
 
 * Remove functions deprecated in Python 3.9.
 
@@ -917,13 +959,6 @@ Removed
 
   (Contributed by Victor Stinner in :gh:`105182`.)
 
-* Remove the old private, undocumented and untested ``_PyGC_FINALIZED()`` macro
-  which was kept for backward compatibility with Python 3.8 and older: use
-  :c:func:`PyObject_GC_IsFinalized()` instead. The `pythoncapi-compat project
-  <https://github.com/python/pythoncapi-compat/>`__ can be used to get this
-  function on Python 3.8 and older.
-  (Contributed by Victor Stinner in :gh:`105268`.)
-
 * Remove the old aliases to functions calling functions which were kept for
   backward compatibility with Python 3.8 provisional API:
 
@@ -961,7 +996,7 @@ Removed
 Pending Removal in Python 3.14
 ------------------------------
 
-* Creating immutable types (:data:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
+* Creating immutable types (:c:macro:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
   bases using the C API.
 * Global configuration variables:
 
@@ -997,8 +1032,8 @@ Pending Removal in Python 3.15
 * :c:func:`PyImport_ImportModuleNoBlock`: use :c:func:`PyImport_ImportModule`.
 * :c:func:`PyWeakref_GET_OBJECT`: use :c:func:`PyWeakref_GetRef` instead.
 * :c:func:`PyWeakref_GetObject`: use :c:func:`PyWeakref_GetRef` instead.
-* :c:type:`!Py_UNICODE_WIDE` type: use ``wchar_t`` instead.
-* :c:type:`Py_UNICODE` type: use ``wchar_t`` instead.
+* :c:type:`!Py_UNICODE_WIDE` type: use :c:type:`wchar_t` instead.
+* :c:type:`Py_UNICODE` type: use :c:type:`wchar_t` instead.
 * Python initialization functions:
 
   * :c:func:`PySys_ResetWarnOptions`: clear :data:`sys.warnoptions` and
@@ -1017,7 +1052,7 @@ Pending Removal in Future Versions
 The following APIs were deprecated in earlier Python versions and will be
 removed, although there is currently no date scheduled for their removal.
 
-* :const:`Py_TPFLAGS_HAVE_FINALIZE`: no needed since Python 3.8.
+* :c:macro:`Py_TPFLAGS_HAVE_FINALIZE`: no needed since Python 3.8.
 * :c:func:`PyErr_Fetch`: use :c:func:`PyErr_GetRaisedException`.
 * :c:func:`PyErr_NormalizeException`: use :c:func:`PyErr_GetRaisedException`.
 * :c:func:`PyErr_Restore`: use :c:func:`PyErr_SetRaisedException`.

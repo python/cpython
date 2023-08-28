@@ -15,7 +15,7 @@
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
 #include "datetime.h"
-#include "structmember.h"         // PyMemberDef
+
 
 #include <time.h>
 
@@ -2727,13 +2727,13 @@ delta_reduce(PyDateTime_Delta* self, PyObject *Py_UNUSED(ignored))
 
 static PyMemberDef delta_members[] = {
 
-    {"days",         T_INT, OFFSET(days),         READONLY,
+    {"days",         Py_T_INT, OFFSET(days),         Py_READONLY,
      PyDoc_STR("Number of days.")},
 
-    {"seconds",      T_INT, OFFSET(seconds),      READONLY,
+    {"seconds",      Py_T_INT, OFFSET(seconds),      Py_READONLY,
      PyDoc_STR("Number of seconds (>= 0 and less than 1 day).")},
 
-    {"microseconds", T_INT, OFFSET(microseconds), READONLY,
+    {"microseconds", Py_T_INT, OFFSET(microseconds), Py_READONLY,
      PyDoc_STR("Number of microseconds (>= 0 and less than 1 second).")},
     {NULL}
 };
@@ -6834,8 +6834,7 @@ _datetime_exec(PyObject *module)
         return -1;
     }
 
-    if (PyModule_AddObject(module, "datetime_CAPI", x) < 0) {
-        Py_DECREF(x);
+    if (PyModule_Add(module, "datetime_CAPI", x) < 0) {
         return -1;
     }
 

@@ -9,7 +9,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 #include <stddef.h>               // offsetof()
-#include "structmember.h"         // PyMemberDef
+
 
 #ifdef HAVE_SIGNAL_H
 #  include <signal.h>             // SIGINT
@@ -293,7 +293,7 @@ unlock it.  A thread attempting to lock a lock that it has already locked\n\
 will block until another thread unlocks it.  Deadlocks may ensue.");
 
 static PyMemberDef lock_type_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(lockobject, in_weakreflist), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(lockobject, in_weakreflist), Py_READONLY},
     {NULL},
 };
 
@@ -575,7 +575,7 @@ static PyMethodDef rlock_methods[] = {
 
 
 static PyMemberDef rlock_type_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(rlockobject, in_weakreflist), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(rlockobject, in_weakreflist), Py_READONLY},
     {NULL},
 };
 
@@ -679,7 +679,7 @@ localdummy_dealloc(localdummyobject *self)
 }
 
 static PyMemberDef local_dummy_type_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(localdummyobject, weakreflist), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(localdummyobject, weakreflist), Py_READONLY},
     {NULL},
 };
 
@@ -959,7 +959,7 @@ local_setattro(localobject *self, PyObject *name, PyObject *v)
 static PyObject *local_getattro(localobject *, PyObject *);
 
 static PyMemberDef local_type_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(localobject, weakreflist), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(localobject, weakreflist), Py_READONLY},
     {NULL},
 };
 

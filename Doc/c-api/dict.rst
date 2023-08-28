@@ -93,10 +93,26 @@ Dictionary Objects
    Return ``0`` on success or ``-1`` on failure.
 
 
+.. c:function:: int PyDict_GetItemRef(PyObject *p, PyObject *key, PyObject **result)
+
+   Return a new :term:`strong reference` to the object from dictionary *p*
+   which has a key *key*:
+
+   * If the key is present, set *\*result* to a new :term:`strong reference`
+     to the value and return ``1``.
+   * If the key is missing, set *\*result* to ``NULL`` and return ``0``.
+   * On error, raise an exception and return ``-1``.
+
+   .. versionadded:: 3.13
+
+   See also the :c:func:`PyObject_GetItem` function.
+
+
 .. c:function:: PyObject* PyDict_GetItem(PyObject *p, PyObject *key)
 
-   Return the object from dictionary *p* which has a key *key*.  Return ``NULL``
-   if the key *key* is not present, but *without* setting an exception.
+   Return a :term:`borrowed reference` to the object from dictionary *p* which
+   has a key *key*.  Return ``NULL`` if the key *key* is missing *without*
+   setting an exception.
 
    .. note::
 
@@ -129,6 +145,14 @@ Dictionary Objects
       object are silently ignored.
       Prefer using the :c:func:`PyDict_GetItemWithError` function with your own
       :c:func:`PyUnicode_FromString` *key* instead.
+
+
+.. c:function:: int PyDict_GetItemStringRef(PyObject *p, const char *key, PyObject **result)
+
+   Similar than :c:func:`PyDict_GetItemRef`, but *key* is specified as a
+   :c:expr:`const char*`, rather than a :c:expr:`PyObject*`.
+
+   .. versionadded:: 3.13
 
 
 .. c:function:: PyObject* PyDict_SetDefault(PyObject *p, PyObject *key, PyObject *defaultobj)

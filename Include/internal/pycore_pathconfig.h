@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(void) _PyPathConfig_ClearGlobal(void);
 extern PyStatus _PyPathConfig_ReadGlobal(PyConfig *config);
 extern PyStatus _PyPathConfig_UpdateGlobal(const PyConfig *config);

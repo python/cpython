@@ -10,7 +10,7 @@
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "structmember.h"         // PyMemberDef
+
 #include "opcode.h"               // SEND
 #include "frameobject.h"          // _PyInterpreterFrame_GetLine
 #include "pystats.h"
@@ -149,14 +149,16 @@ gen_dealloc(PyGenObject *gen)
         gen->gi_frame_state = FRAME_CLEARED;
         frame->previous = NULL;
         _PyFrame_ClearExceptCode(frame);
+        _PyErr_ClearExcState(&gen->gi_exc_state);
     }
+    assert(gen->gi_exc_state.exc_value == NULL);
     if (_PyGen_GetCode(gen)->co_flags & CO_COROUTINE) {
         Py_CLEAR(((PyCoroObject *)gen)->cr_origin_or_finalizer);
     }
     Py_DECREF(_PyGen_GetCode(gen));
     Py_CLEAR(gen->gi_name);
     Py_CLEAR(gen->gi_qualname);
-    _PyErr_ClearExcState(&gen->gi_exc_state);
+
     PyObject_GC_Del(gen);
 }
 
@@ -252,10 +254,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
             !PyErr_ExceptionMatches(PyExc_StopAsyncIteration));
     }
 
-    /* generator can't be rerun, so release the frame */
-    /* first clean reference cycle through stored exception traceback */
-    _PyErr_ClearExcState(&gen->gi_exc_state);
-
+    assert(gen->gi_exc_state.exc_value == NULL);
     assert(gen->gi_frame_state == FRAME_CLEARED);
     *presult = result;
     return result ? PYGEN_RETURN : PYGEN_ERROR;
@@ -1144,7 +1143,7 @@ static PyGetSetDef coro_getsetlist[] = {
 };
 
 static PyMemberDef coro_memberlist[] = {
-    {"cr_origin",    T_OBJECT, offsetof(PyCoroObject, cr_origin_or_finalizer),   READONLY},
+    {"cr_origin",    _Py_T_OBJECT, offsetof(PyCoroObject, cr_origin_or_finalizer),   Py_READONLY},
     {NULL}      /* Sentinel */
 };
 
@@ -1558,8 +1557,8 @@ static PyGetSetDef async_gen_getsetlist[] = {
 };
 
 static PyMemberDef async_gen_memberlist[] = {
-    {"ag_running", T_BOOL,   offsetof(PyAsyncGenObject, ag_running_async),
-        READONLY},
+    {"ag_running", Py_T_BOOL,   offsetof(PyAsyncGenObject, ag_running_async),
+        Py_READONLY},
     {NULL}      /* Sentinel */
 };
 

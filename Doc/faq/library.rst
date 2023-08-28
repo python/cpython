@@ -566,7 +566,7 @@ use ``p.read(n)``.
    Note on a bug in popen2: unless your program calls ``wait()`` or
    ``waitpid()``, finished child processes are never removed, and eventually
    calls to popen2 will fail because of a limit on the number of child
-   processes.  Calling :func:`os.waitpid` with the :data:`os.WNOHANG` option can
+   processes.  Calling :func:`os.waitpid` with the :const:`os.WNOHANG` option can
    prevent this; a good place to insert such a call would be before calling
    ``popen2`` again.
 

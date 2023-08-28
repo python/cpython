@@ -3,7 +3,7 @@
 #include "Python.h"
 #include "pycore_object.h"
 #include "pycore_unionobject.h"   // _Py_union_type_or, _PyGenericAlias_Check
-#include "structmember.h"         // PyMemberDef
+
 
 #include <stdbool.h>
 
@@ -626,6 +626,7 @@ ga_vectorcall(PyObject *self, PyObject *const *args,
 
 static const char* const attr_exceptions[] = {
     "__class__",
+    "__bases__",
     "__origin__",
     "__args__",
     "__unpacked__",
@@ -782,9 +783,9 @@ static PyMethodDef ga_methods[] = {
 };
 
 static PyMemberDef ga_members[] = {
-    {"__origin__", T_OBJECT, offsetof(gaobject, origin), READONLY},
-    {"__args__", T_OBJECT, offsetof(gaobject, args), READONLY},
-    {"__unpacked__", T_BOOL, offsetof(gaobject, starred), READONLY},
+    {"__origin__", _Py_T_OBJECT, offsetof(gaobject, origin), Py_READONLY},
+    {"__args__", _Py_T_OBJECT, offsetof(gaobject, args), Py_READONLY},
+    {"__unpacked__", Py_T_BOOL, offsetof(gaobject, starred), Py_READONLY},
     {0}
 };
 
