@@ -1397,7 +1397,7 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
                     continue
                 if isinstance(b, _BaseGenericAlias):
                     return ()
-                if isinstance(b, type) and issubclass(b, Generic):
+                if Generic in getattr(b, '__mro__', ()):
                     return ()
         return (self.__origin__,)
 

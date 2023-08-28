@@ -4862,6 +4862,7 @@ class GenericTests(BaseTestCase):
     def test_multiple_inheritance_special_multiple_layers(self):
         S = TypeVar('S')
         class L(List[S]): ...
+        class G(list[S]): ...
         class M(Generic[S]): ...
 
         # Direct subclasses:
@@ -4883,6 +4884,18 @@ class GenericTests(BaseTestCase):
 
         class L4(Generic[S], L[S], M[S]): ...
         self.assertEqual(L4.__mro__, (L4, L, list, M, Generic, object))
+
+        class G1(G[S], Generic[S]): ...
+        self.assertEqual(G1.__mro__, (G1, G, list, Generic, object))
+
+        class G2(Generic[S], G[S]): ...
+        self.assertEqual(G2.__mro__, (G2, Generic, G, list, object))
+
+        class G3(G[S], M[S], Generic[S]): ...
+        self.assertEqual(G3.__mro__, (G3, G, list, M, Generic, object))
+
+        class G4(Generic[S], G[S], M[S]): ...
+        self.assertEqual(G4.__mro__, (G4, G, list, M, Generic, object))
 
     def test_init_subclass_super_called(self):
         class FinalException(Exception):
