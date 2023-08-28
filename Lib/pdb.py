@@ -12,7 +12,7 @@ To use the debugger in its simplest form:
 The debugger's prompt is '(Pdb) '.  This will stop in the first
 function call in <a statement>.
 
-Alternatively, if a statement is terminated with an unhandled exception,
+Alternatively, if a statement terminated with an unhandled exception,
 you can use pdb's post-mortem facility to inspect the contents of the
 traceback:
 
@@ -40,7 +40,7 @@ When an exception occurs in such a statement, the exception name is
 printed but the debugger's state is not changed.
 
 The debugger supports aliases, which can save typing.  And aliases can
-have parameters (see the alias help entry) that allow one a certain
+have parameters (see the alias help entry) which allows one a certain
 level of adaptability to the context under examination.
 
 Multiple commands may be entered on a single line, separated by the
@@ -64,7 +64,7 @@ Debugger commands
 =================
 
 """
-# NOTE: The actual command documentation is collected from the docstrings of the
+# NOTE: the actual command documentation is collected from docstrings of the
 # commands and is appended to __doc__ after the class has been defined.
 
 import os
@@ -96,19 +96,20 @@ __all__ = ["run", "pm", "Pdb", "runeval", "runctx", "runcall", "set_trace",
            "post_mortem", "help"]
 
 def find_function(funcname, filename):
-    cre = re.compile(r'def\s+%s\s*[(]' % re.escape(funcname))
+    compiled_pattern = re.compile(r'def\s+%s\s*[(]' % re.escape(funcname))
     try:
-        fp = tokenize.open(filename)
+        file_pointer = tokenize.open(filename)
     except OSError:
         return None
     # consumer of this info expects the first line to be 1
-    with fp:
-        for lineno, line in enumerate(fp, start=1):
-            if cre.match(line):
+    with file_pointer:
+        for lineno, line in enumerate(file_pointer, start=1):
+            if compiled_pattern.match(line):
                 return funcname, filename, lineno
     return None
 
 def lasti2lineno(code, lasti):
+    """Get last 2 line number"""
     linestarts = list(dis.findlinestarts(code))
     linestarts.reverse()
     for i, lineno in linestarts:
@@ -116,9 +117,9 @@ def lasti2lineno(code, lasti):
             return lineno
     return 0
 
-
-class _rstr(str):
-    """String that doesn't quote its repr."""
+# Representative string
+class _repr_str(str):
+    """Representative string: a string that doesn't quote its repr."""
     def __repr__(self):
         return self
 
@@ -155,8 +156,8 @@ class _ScriptTarget(str):
 
     @property
     def code(self):
-        with io.open_code(self) as fp:
-            return f"exec(compile({fp.read()!r}, {self!r}, 'exec'))"
+        with io.open_code(self) as file_pointer:
+            return f"exec(compile({file_pointer.read()!r}, {self!r}, 'exec'))"
 
 
 class _ModuleTarget(str):
@@ -199,7 +200,7 @@ class _ModuleTarget(str):
 
 
 # Interaction prompt line will separate file and call info from code
-# text using the value of line_prefix string.  A newline and arrow may
+# text using value of line_prefix string.  A newline and arrow may
 # be to your liking.  You can set it once pdb is imported using the
 # command "pdb.line_prefix = '\n% '".
 # line_prefix = ': '    # Use this to get the old situation back
@@ -221,7 +222,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.displaying = {}
         self.mainpyfile = ''
         self._wait_for_mainpyfile = False
-        self.tb_lineno = {}
+        self.tb_lineno = {} # traceback line number
         # Try to load readline if it exists
         try:
             import readline
@@ -233,7 +234,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.nosigint = nosigint
 
         # Read ~/.pdbrc and ./.pdbrc
-        self.rcLines = []
+        self.rcLines = [] # run-command lines
         if readrc:
             try:
                 with open(os.path.expanduser('~/.pdbrc'), encoding='utf-8') as rcFile:
@@ -277,11 +278,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.tb_lineno.clear()
 
     def setup(self, f, tb):
+        """Inputs: frame, traceback"""
         self.forget()
         self.stack, self.curindex = self.get_stack(f, tb)
         while tb:
             # when setting up post-mortem debugging with a traceback, save all
-            # the original line numbers are to be displayed along the current line
+            # the original line numbers to be displayed along the current line
             # numbers (which can be different, e.g. due to finally clauses)
             lineno = lasti2lineno(tb.tb_frame.f_code, tb.tb_lasti)
             self.tb_lineno[tb.tb_frame] = lineno
@@ -296,6 +298,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     # Can be executed earlier than 'setup' if desired
     def execRcLines(self):
+        """This function executes the commands in self.rcLines; rc: run commmands"""
         if not self.rcLines:
             return
         # local copy because of recursion
@@ -309,7 +312,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 if self.onecmd(line):
                     # if onecmd returns True, the command wants to exit
                     # from the interaction, save leftover rc lines
-                    # to execute before the next interaction
+                    # to execute before next interaction
                     self.rcLines += reversed(rcLines)
                     return True
 
@@ -424,7 +427,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             else:
                 Pdb._previous_sigint_handler = None
         if self.setup(frame, traceback):
-            # no interaction is desired at this time (happens if .pdbrc contains
+            # no interaction desired at this time (happens if .pdbrc contains
             # a command like "continue")
             self.forget()
             return
@@ -637,19 +640,19 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         The commands are executed when the breakpoint is hit.
 
         To remove all commands from a breakpoint, type commands and
-        follow it immediately with the end; that is, give no commands.
+        follow it immediately with end; that is, give no commands.
 
-        With no bpnumber argument, commands refer to the last
+        With no bpnumber argument, commands refers to the last
         breakpoint set.
 
         You can use breakpoint commands to start your program up
-        again.  Simply use the continue command, step, or any other
+        again.  Simply use the continue command, or step, or any other
         command that resumes execution.
 
         Specifying any command resuming execution (currently continue,
-        step, next, return, jump, quit, and their abbreviations)
+        step, next, return, jump, quit and their abbreviations)
         terminates the command list (as if that command was
-        immediately followed by the end).  This is because any time you
+        immediately followed by end).  This is because any time you
         resume execution (even with a simple next or step), you may
         encounter another breakpoint -- which could have its own
         command list, leading to ambiguities about which list to
@@ -718,8 +721,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         With a line number argument, set a break at this line in the
         current file.  With a function name, set a break at the first
         executable line of that function.  If a second argument is
-        present, it is a string specifying an expression that must
-        be evaluated to be true before the breakpoint is honored.
+        present, it is a string specifying an expression which must
+        evaluate to true before the breakpoint is honored.
 
         The line number may be prefixed with a filename and a colon,
         to specify a breakpoint in another file (probably one that
@@ -887,7 +890,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def do_enable(self, arg):
         """enable bpnumber [bpnumber ...]
 
-        Enables the breakpoints given as a space-separated list of
+        Enables the breakpoints given as a space separated list of
         breakpoint numbers.
         """
         args = arg.split()
@@ -1001,9 +1004,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def do_clear(self, arg):
         """cl(ear) [filename:lineno | bpnumber ...]
 
-        With a space-separated list of breakpoint numbers, clear
+        With a space separated list of breakpoint numbers, clear
         those breakpoints.  Without argument, clear all breaks (but
-        first ask for confirmation).  With a filename:lineno argument,
+        first ask confirmation).  With a filename:lineno argument,
         clear all breaks at that line in that file.
         """
         if not arg:
@@ -1121,7 +1124,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Without argument, continue execution until the line with a
         number greater than the current one is reached.  With a line
         number, continue execution until a line with a number greater
-        or equal to that is reached.  In both cases, also stops when
+        or equal to that is reached.  In both cases, also stop when
         the current frame returns.
         """
         if arg:
@@ -1172,7 +1175,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         Restart the debugged python program. If a string is supplied
         it is split with "shlex", and the result is used as the new
-        sys.argv.  History, breakpoints, actions, and debugger options
+        sys.argv.  History, breakpoints, actions and debugger options
         are preserved.  "restart" is an alias for "run".
         """
         if arg:
@@ -1347,7 +1350,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             else:
                 return eval(arg, frame.f_globals, frame.f_locals)
         except BaseException as exc:
-            return _rstr('** raised %s **' % self._format_exc(exc))
+            return _repr_str('** raised %s **' % self._format_exc(exc))
 
     def _error_exc(self):
         exc = sys.exception()
@@ -1384,7 +1387,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def do_list(self, arg):
         """l(ist) [first[, last] | .]
 
-        List the source code for the current file.  Without arguments,
+        List source code for the current file.  Without arguments,
         list 11 lines around the current line or continue the previous
         listing.  With . as argument, list 11 lines around the current
         line.  With one argument, list 11 lines starting at that line.
@@ -1534,7 +1537,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def do_display(self, arg):
         """display [expression]
 
-        Display the value of the expression if it changes, each time the execution
+        Display the value of the expression if it changed, each time execution
         stops in the current frame.
 
         Without expression, list all display expressions for the current frame.
@@ -1559,7 +1562,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def do_undisplay(self, arg):
         """undisplay [expression]
 
-        Do not display the expression anymore in the current frame.
+        Do not display the expression any more in the current frame.
 
         Without expression, clear all display expressions for the current frame.
         """
@@ -1768,7 +1771,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         try:
             compile(expr, "<stdin>", "eval")
         except SyntaxError as exc:
-            return _rstr(self._format_exc(exc))
+            return _repr_str(self._format_exc(exc))
         return ""
 
     def _getsourcelines(self, obj):
