@@ -15,12 +15,11 @@ extern "C" {
 /* Count of all  monitoring events */
 #define _PY_MONITORING_EVENTS 17
 
-/* Table of which tools are active for each monitored event. */
+/* Tables of which tools are active for each monitored event. */
 typedef struct _Py_LocalMonitors {
     uint8_t tools[_PY_MONITORING_LOCAL_EVENTS];
 } _Py_LocalMonitors;
 
-/* Table of which tools are active for each monitored event. */
 typedef struct _Py_GlobalMonitors {
     uint8_t tools[_PY_MONITORING_UNGROUPED_EVENTS];
 } _Py_GlobalMonitors;

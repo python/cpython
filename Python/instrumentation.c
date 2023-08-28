@@ -169,6 +169,11 @@ monitors_and(_Py_LocalMonitors a, _Py_LocalMonitors b)
 }
 #endif
 
+/* The union of the *local* events in a and b.
+ * Global events like RAISE are ignored.
+ * Used for instrumentation, as only local
+ * events get instrumented.
+ */
 static inline _Py_LocalMonitors
 local_union(_Py_GlobalMonitors a, _Py_LocalMonitors b)
 {
@@ -1554,6 +1559,12 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
         return 0;
     }
     int code_len = (int)Py_SIZE(code);
+    /* code->_co_firsttraceable >= code_len indicates
+     * that no instrumentation can be inserted.
+     * Exit early to avoid creating instuementation
+     * data for potential statically allocated code
+     * objects.
+     * See https://github.com/python/cpython/issues/108390 */
     if (code->_co_firsttraceable >= code_len) {
         return 0;
     }
@@ -1710,9 +1721,9 @@ set_events(_Py_GlobalMonitors *m, int tool_id, _PyMonitoringEventSet events)
     assert(0 <= tool_id && tool_id < PY_MONITORING_TOOL_IDS);
     for (int e = 0; e < _PY_MONITORING_UNGROUPED_EVENTS; e++) {
         uint8_t *tools = &m->tools[e];
-        int val = (events >> e) & 1;
+        int active = (events >> e) & 1;
         *tools &= ~(1 << tool_id);
-        *tools |= (val << tool_id);
+        *tools |= (active << tool_id);
     }
 }
 
