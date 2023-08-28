@@ -174,6 +174,7 @@ echo on
  /p:IncludeSSL=%IncludeSSL% /p:IncludeTkinter=%IncludeTkinter%^
  /p:UseTestMarker=%UseTestMarker% %GITProperty%^
  %1 %2 %3 %4 %5 %6 %7 %8 %9
+call "%PythonForBuild%" -m ensurepip.bundle -v
 
 @echo off
 exit /b %ERRORLEVEL%
