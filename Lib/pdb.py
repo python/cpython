@@ -120,8 +120,6 @@ def lasti2lineno(code, lasti):
             return lineno
     return 0
 
-# Representative string
-
 
 class _repr_str(str):
     """Representative string: a string that doesn't quote its repr."""
