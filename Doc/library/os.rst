@@ -3782,7 +3782,7 @@ features:
 
 .. function:: timerfd_create(clockid, flags)
 
-   Create and return an timerfd file descriptor. The file descriptors supports
+   Create and return a timer file descriptor. The file descriptors supports
    raw :func:`read` with a buffer size of 8, :func:`~select.select`, :func:`~select.poll`
    and similar. See man page :manpage:`timerfd_create(2)` for more information.
 
