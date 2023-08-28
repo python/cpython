@@ -2172,8 +2172,9 @@ class BlockPrinter:
             self,
             block: Block,
             *,
-            clinic: Clinic,
             core_includes: bool = False,
+            limited_capi: bool,
+            header_includes: dict[str, str],
     ) -> None:
         input = block.input
         output = block.output
@@ -2203,7 +2204,7 @@ class BlockPrinter:
 
         output = ''
         if core_includes:
-            if not clinic.limited_capi:
+            if not limited_capi:
                 output += textwrap.dedent("""
                     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
                     #  include "pycore_gc.h"            // PyGC_Head
@@ -2212,12 +2213,10 @@ class BlockPrinter:
 
                 """)
 
-            if clinic is not None:
-                # Emit optional includes
-                for include, reason in sorted(clinic.includes.items()):
-                    line = f'#include "{include}"'
-                    line = line.ljust(35) + f'// {reason}\n'
-                    output += line
+            # Emit optional "#include" directives for C headers
+            for include, reason in sorted(header_includes.items()):
+                line = f'#include "{include}"'.ljust(35) + f'// {reason}\n'
+                output += line
 
         input = ''.join(block.input)
         output += ''.join(block.output)
@@ -2531,7 +2530,9 @@ impl_definition block
                     self.parsers[dsl_name] = parsers[dsl_name](self)
                 parser = self.parsers[dsl_name]
                 parser.parse(block)
-            printer.print_block(block, clinic=self)
+            printer.print_block(block,
+                                limited_capi=self.limited_capi,
+                                header_includes=self.includes)
 
         # these are destinations not buffers
         for name, destination in self.destinations.items():
@@ -2546,7 +2547,9 @@ impl_definition block
                     block.input = "dump " + name + "\n"
                     warn("Destination buffer " + repr(name) + " not empty at end of file, emptying.")
                     printer.write("\n")
-                    printer.print_block(block, clinic=self)
+                    printer.print_block(block,
+                                        limited_capi=self.limited_capi,
+                                        header_includes=self.includes)
                     continue
 
                 if destination.type == 'file':
@@ -2571,7 +2574,10 @@ impl_definition block
 
                     block.input = 'preserve\n'
                     printer_2 = BlockPrinter(self.language)
-                    printer_2.print_block(block, core_includes=True, clinic=self)
+                    printer_2.print_block(block,
+                                          core_includes=True,
+                                          limited_capi=self.limited_capi,
+                                          header_includes=self.includes)
                     write_file(destination.filename, printer_2.f.getvalue())
                     continue
 
