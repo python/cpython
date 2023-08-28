@@ -775,7 +775,9 @@ done:
                 trace_length = squeeze_stubs(trace, trace_length, max_length, buffer_size);
             }
             else {
-                trace_length += buffer_size - max_length;
+                assert(trace_length == max_length);
+                // There's no gap
+                trace_length = buffer_size;
             }
         }
         return trace_length;
