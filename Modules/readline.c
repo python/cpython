@@ -4,8 +4,13 @@
  * recently, it was largely rewritten by Guido van Rossum.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 /* Standard definitions */
 #include "Python.h"
+#include "pycore_pylifecycle.h"   // _Py_SetLocaleFromEnv()
 
 #include <errno.h>
 #include <signal.h>
@@ -996,7 +1001,7 @@ on_hook(PyObject *func)
         if (r == Py_None)
             result = 0;
         else {
-            result = _PyLong_AsInt(r);
+            result = PyLong_AsInt(r);
             if (result == -1 && PyErr_Occurred())
                 goto error;
         }
@@ -1308,6 +1313,9 @@ rlhandler(char *text)
 static char *
 readline_until_enter_or_signal(const char *prompt, int *signal)
 {
+    // Defined in Parser/myreadline.c
+    extern PyThreadState *_PyOS_ReadlineTState;
+
     char * not_done_reading = "";
     fd_set selectset;
 

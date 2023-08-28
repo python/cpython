@@ -1,10 +1,9 @@
 /* Author: Daniel Stutzbach */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
-#include "structmember.h"         // PyMemberDef
+
 #include <stdbool.h>
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -265,7 +264,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
             self->fd = -1;
     }
 
-    fd = _PyLong_AsInt(nameobj);
+    fd = PyLong_AsInt(nameobj);
     if (fd < 0) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError,
@@ -394,6 +393,11 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 
             if (async_err)
                 goto error;
+
+            if (self->fd < 0) {
+                PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, nameobj);
+                goto error;
+            }
         }
         else {
             PyObject *fdobj;
@@ -413,7 +417,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
                 goto error;
             }
 
-            self->fd = _PyLong_AsInt(fdobj);
+            self->fd = PyLong_AsInt(fdobj);
             Py_DECREF(fdobj);
             if (self->fd < 0) {
                 if (!PyErr_Occurred()) {
@@ -425,12 +429,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
                 goto error;
             }
         }
-
         fd_is_own = 1;
-        if (self->fd < 0) {
-            PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, nameobj);
-            goto error;
-        }
 
 #ifndef MS_WINDOWS
         if (_Py_set_inheritable(self->fd, 0, atomic_flag_works) < 0)
@@ -1058,8 +1057,8 @@ _io_FileIO_truncate_impl(fileio *self, PyTypeObject *cls, PyObject *posobj)
     Py_END_ALLOW_THREADS
 
     if (ret != 0) {
-        Py_DECREF(posobj);
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_DECREF(posobj);
         return NULL;
     }
 
@@ -1100,7 +1099,7 @@ fileio_repr(fileio *self)
     if (self->fd < 0)
         return PyUnicode_FromFormat("<_io.FileIO [closed]>");
 
-    if (_PyObject_LookupAttr((PyObject *) self, &_Py_ID(name), &nameobj) < 0) {
+    if (PyObject_GetOptionalAttr((PyObject *) self, &_Py_ID(name), &nameobj) < 0) {
         return NULL;
     }
     if (nameobj == NULL) {
@@ -1200,10 +1199,10 @@ static PyGetSetDef fileio_getsetlist[] = {
 };
 
 static PyMemberDef fileio_members[] = {
-    {"_blksize", T_UINT, offsetof(fileio, blksize), 0},
-    {"_finalizing", T_BOOL, offsetof(fileio, finalizing), 0},
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(fileio, weakreflist), READONLY},
-    {"__dictoffset__", T_PYSSIZET, offsetof(fileio, dict), READONLY},
+    {"_blksize", Py_T_UINT, offsetof(fileio, blksize), 0},
+    {"_finalizing", Py_T_BOOL, offsetof(fileio, finalizing), 0},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(fileio, weakreflist), Py_READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(fileio, dict), Py_READONLY},
     {NULL}
 };
 

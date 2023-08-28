@@ -266,8 +266,9 @@ Module functions
 
    :param database:
        The path to the database file to be opened.
-       Pass ``":memory:"`` to open a connection to a database that is
-       in RAM instead of on disk.
+       You can pass ``":memory:"`` to create an `SQLite database existing only
+       in memory <https://sqlite.org/inmemorydb.html>`_, and open a connection
+       to it.
    :type database: :term:`path-like object`
 
    :param float timeout:
@@ -298,7 +299,7 @@ Module functions
        Can be ``"DEFERRED"`` (default), ``"EXCLUSIVE"`` or ``"IMMEDIATE"``;
        or ``None`` to disable opening transactions implicitly.
        Has no effect unless :attr:`Connection.autocommit` is set to
-       :data:`~sqlite3.LEGACY_TRANSACTION_CONTROL` (the default).
+       :const:`~sqlite3.LEGACY_TRANSACTION_CONTROL` (the default).
    :type isolation_level: str | None
 
    :param bool check_same_thread:
@@ -333,7 +334,7 @@ Module functions
        See :attr:`Connection.autocommit` and
        :ref:`sqlite3-transaction-control-autocommit` for more information.
        *autocommit* currently defaults to
-       :data:`~sqlite3.LEGACY_TRANSACTION_CONTROL`.
+       :const:`~sqlite3.LEGACY_TRANSACTION_CONTROL`.
        The default will change to ``False`` in a future Python release.
    :type autocommit: bool
 
@@ -353,6 +354,12 @@ Module functions
 
    .. versionadded:: 3.12
       The *autocommit* parameter.
+
+   .. versionchanged:: 3.13
+      Positional use of the parameters *timeout*, *detect_types*,
+      *isolation_level*, *check_same_thread*, *factory*, *cached_statements*,
+      and *uri* is deprecated.
+      They will become keyword-only parameters in Python 3.15.
 
 .. function:: complete_statement(statement)
 
@@ -623,6 +630,12 @@ Connection objects
       * :ref:`sqlite3-connection-shortcuts`
       * :ref:`sqlite3-connection-context-manager`
 
+
+   .. versionchanged:: 3.13
+
+      A :exc:`ResourceWarning` is emitted if :meth:`close` is not called before
+      a :class:`!Connection` object is deleted.
+
    An SQLite database connection has the following attributes and methods:
 
    .. method:: cursor(factory=Cursor)
@@ -751,7 +764,7 @@ Connection objects
          ('acbd18db4cc2f85cedef654fccc4a4d8',)
 
 
-   .. method:: create_aggregate(name, /, n_arg, aggregate_class)
+   .. method:: create_aggregate(name, n_arg, aggregate_class)
 
       Create or remove a user-defined SQL aggregate function.
 
@@ -891,7 +904,7 @@ Connection objects
 
          [('a', 9), ('b', 12), ('c', 16), ('d', 12), ('e', 9)]
 
-   .. method:: create_collation(name, callable)
+   .. method:: create_collation(name, callable, /)
 
       Create a collation named *name* using the collating function *callable*.
       *callable* is passed two :class:`string <str>` arguments,
@@ -1817,9 +1830,9 @@ Blob objects
    .. method:: seek(offset, origin=os.SEEK_SET, /)
 
       Set the current access position of the blob to *offset*.  The *origin*
-      argument defaults to :data:`os.SEEK_SET` (absolute blob positioning).
-      Other values for *origin* are :data:`os.SEEK_CUR` (seek relative to the
-      current position) and :data:`os.SEEK_END` (seek relative to the blob’s
+      argument defaults to :const:`os.SEEK_SET` (absolute blob positioning).
+      Other values for *origin* are :const:`os.SEEK_CUR` (seek relative to the
+      current position) and :const:`os.SEEK_END` (seek relative to the blob’s
       end).
 
 
@@ -2518,6 +2531,13 @@ Queries now return :class:`!Row` objects:
    'Earth'
    >>> row["RADIUS"]  # Column names are case-insensitive.
    6378
+
+.. note::
+
+    The ``FROM`` clause can be omitted in the ``SELECT`` statement, as in the
+    above example. In such cases, SQLite returns a single row with columns
+    defined by expressions, e.g. literals, with the given aliases
+    ``expr AS alias``.
 
 You can create a custom :attr:`~Cursor.row_factory`
 that returns each row as a :class:`dict`, with column names mapped to values:

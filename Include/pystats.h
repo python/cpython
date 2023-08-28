@@ -65,6 +65,7 @@ typedef struct _object_stats {
     uint64_t dict_materialized_new_key;
     uint64_t dict_materialized_too_big;
     uint64_t dict_materialized_str_subclass;
+    uint64_t dict_dematerialized;
     uint64_t type_cache_hits;
     uint64_t type_cache_misses;
     uint64_t type_cache_dunder_hits;
@@ -74,12 +75,21 @@ typedef struct _object_stats {
     uint64_t optimization_traces_created;
     uint64_t optimization_traces_executed;
     uint64_t optimization_uops_executed;
+    /* Temporary value used during GC */
+    uint64_t object_visits;
 } ObjectStats;
+
+typedef struct _gc_stats {
+    uint64_t collections;
+    uint64_t object_visits;
+    uint64_t objects_collected;
+} GCStats;
 
 typedef struct _stats {
     OpcodeStats opcode_stats[256];
     CallStats call_stats;
     ObjectStats object_stats;
+    GCStats *gc_stats;
 } PyStats;
 
 

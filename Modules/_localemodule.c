@@ -9,9 +9,9 @@ This software comes with no warranty. Use at your own risk.
 
 ******************************************************************/
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_fileutils.h"
+#include "pycore_pymem.h"  // _PyMem_Strdup
 
 #include <stdio.h>
 #include <locale.h>
@@ -737,8 +737,8 @@ _locale_bindtextdomain_impl(PyObject *module, const char *domain,
     }
     current_dirname = bindtextdomain(domain, dirname);
     if (current_dirname == NULL) {
-        Py_XDECREF(dirname_bytes);
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_XDECREF(dirname_bytes);
         return NULL;
     }
     result = PyUnicode_DecodeLocale(current_dirname, NULL);
@@ -845,12 +845,7 @@ _locale_exec(PyObject *module)
 
     _locale_state *state = get_locale_state(module);
     state->Error = PyErr_NewException("locale.Error", NULL, NULL);
-    if (state->Error == NULL) {
-        return -1;
-    }
-    Py_INCREF(get_locale_state(module)->Error);
-    if (PyModule_AddObject(module, "Error", get_locale_state(module)->Error) < 0) {
-        Py_DECREF(get_locale_state(module)->Error);
+    if (PyModule_AddObjectRef(module, "Error", state->Error) < 0) {
         return -1;
     }
 

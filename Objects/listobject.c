@@ -2,10 +2,12 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_interp.h"        // PyInterpreterState.list
 #include "pycore_list.h"          // struct _Py_list_state, _PyListIterObject
 #include "pycore_long.h"          // _PyLong_DigitCount
-#include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_modsupport.h"    // _PyArg_NoKwnames()
+#include "pycore_object.h"        // _PyObject_GC_TRACK(), _PyDebugAllocatorStats()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include <stddef.h>
 
@@ -2693,7 +2695,7 @@ list_remove(PyListObject *self, PyObject *value)
         else if (cmp < 0)
             return NULL;
     }
-    PyErr_SetString(PyExc_ValueError, "list.remove(x): x not in list");
+    PyErr_Format(PyExc_ValueError, "%R is not in list", value);
     return NULL;
 }
 

@@ -124,6 +124,9 @@
     <ClCompile Include="..\Python\errors.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\executor.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\exceptions.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -278,6 +281,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\optimizer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\optimizer_analysis.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\parser.c">

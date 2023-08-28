@@ -3319,6 +3319,23 @@ Foo
            [('Al Person', 'aperson@dom.ain'),
             ('Bud Person', 'bperson@dom.ain')])
 
+    def test_getaddresses_comma_in_name(self):
+        """GH-106669 regression test."""
+        self.assertEqual(
+            utils.getaddresses(
+                [
+                    '"Bud, Person" <bperson@dom.ain>',
+                    'aperson@dom.ain (Al Person)',
+                    '"Mariusz Felisiak" <to@example.com>',
+                ]
+            ),
+            [
+                ('Bud, Person', 'bperson@dom.ain'),
+                ('Al Person', 'aperson@dom.ain'),
+                ('Mariusz Felisiak', 'to@example.com'),
+            ],
+        )
+
     def test_getaddresses_nasty(self):
         eq = self.assertEqual
         eq(utils.getaddresses(['foo: ;']), [('', '')])
@@ -3694,6 +3711,16 @@ class TestParsers(TestEmailBase):
         self.assertFalse(msg.is_multipart())
         self.assertIsInstance(msg.get_payload(), str)
         self.assertIsInstance(msg.get_payload(decode=True), bytes)
+
+    def test_header_parser_multipart_is_valid(self):
+        # Don't flag valid multipart emails as having defects
+        with openfile('msg_47.txt', encoding="utf-8") as fp:
+            msgdata = fp.read()
+
+        parser = email.parser.Parser(policy=email.policy.default)
+        parsed_msg = parser.parsestr(msgdata, headersonly=True)
+
+        self.assertEqual(parsed_msg.defects, [])
 
     def test_bytes_parser_does_not_close_file(self):
         with openfile('msg_02.txt', 'rb') as fp:

@@ -13,7 +13,7 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 
    Return ``1`` if the object provides the mapping protocol or supports slicing,
    and ``0`` otherwise.  Note that it returns ``1`` for Python classes with
-   a :meth:`__getitem__` method, since in general it is impossible to
+   a :meth:`~object.__getitem__` method, since in general it is impossible to
    determine what type of keys the class supports. This function always succeeds.
 
 
@@ -31,6 +31,36 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
    Return element of *o* corresponding to the string *key* or ``NULL`` on failure.
    This is the equivalent of the Python expression ``o[key]``.
    See also :c:func:`PyObject_GetItem`.
+
+
+.. c:function:: int PyMapping_GetOptionalItem(PyObject *obj, PyObject *key, PyObject **result)
+
+   Variant of :c:func:`PyObject_GetItem` which doesn't raise
+   :exc:`KeyError` if the key is not found.
+
+   If the key is found, return ``1`` and set *\*result* to a new
+   :term:`strong reference` to the corresponding value.
+   If the key is not found, return ``0`` and set *\*result* to ``NULL``;
+   the :exc:`KeyError` is silenced.
+   If an error other than :exc:`KeyError` is raised, return ``-1`` and
+   set *\*result* to ``NULL``.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: int PyMapping_GetOptionalItemString(PyObject *obj, const char *key, PyObject **result)
+
+   Variant of :c:func:`PyMapping_GetItemString` which doesn't raise
+   :exc:`KeyError` if the key is not found.
+
+   If the key is found, return ``1`` and set *\*result* to a new
+   :term:`strong reference` to the corresponding value.
+   If the key is not found, return ``0`` and set *\*result* to ``NULL``;
+   the :exc:`KeyError` is silenced.
+   If an error other than :exc:`KeyError` is raised, return ``-1`` and
+   set *\*result* to ``NULL``.
+
+   .. versionadded:: 3.13
 
 
 .. c:function:: int PyMapping_SetItemString(PyObject *o, const char *key, PyObject *v)
@@ -60,7 +90,7 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
    This is equivalent to the Python expression ``key in o``.
    This function always succeeds.
 
-   Note that exceptions which occur while calling the :meth:`__getitem__`
+   Note that exceptions which occur while calling the :meth:`~object.__getitem__`
    method will get suppressed.
    To get error reporting use :c:func:`PyObject_GetItem()` instead.
 
@@ -71,7 +101,7 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
    This is equivalent to the Python expression ``key in o``.
    This function always succeeds.
 
-   Note that exceptions which occur while calling the :meth:`__getitem__`
+   Note that exceptions which occur while calling the :meth:`~object.__getitem__`
    method and creating a temporary string object will get suppressed.
    To get error reporting use :c:func:`PyMapping_GetItemString()` instead.
 

@@ -588,7 +588,7 @@ class ExplicitConstructionTest:
             self.assertRaises(InvalidOperation, Decimal, "1_2_\u00003")
 
     @cpython_only
-    @requires_legacy_unicode_capi
+    @requires_legacy_unicode_capi()
     @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_from_legacy_strings(self):
         import _testcapi
@@ -2920,7 +2920,7 @@ class ContextAPItests:
                                               Overflow])
 
     @cpython_only
-    @requires_legacy_unicode_capi
+    @requires_legacy_unicode_capi()
     @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_from_legacy_strings(self):
         import _testcapi
@@ -5700,6 +5700,36 @@ class CWhitebox(unittest.TestCase):
     def test_c_disallow_instantiation(self):
         ContextManager = type(C.localcontext())
         check_disallow_instantiation(self, ContextManager)
+
+    def test_c_signaldict_segfault(self):
+        # See gh-106263 for details.
+        SignalDict = type(C.Context().flags)
+        sd = SignalDict()
+        err_msg = "invalid signal dict"
+
+        with self.assertRaisesRegex(ValueError, err_msg):
+            len(sd)
+
+        with self.assertRaisesRegex(ValueError, err_msg):
+            iter(sd)
+
+        with self.assertRaisesRegex(ValueError, err_msg):
+            repr(sd)
+
+        with self.assertRaisesRegex(ValueError, err_msg):
+            sd[C.InvalidOperation] = True
+
+        with self.assertRaisesRegex(ValueError, err_msg):
+            sd[C.InvalidOperation]
+
+        with self.assertRaisesRegex(ValueError, err_msg):
+            sd == C.Context().flags
+
+        with self.assertRaisesRegex(ValueError, err_msg):
+            C.Context().flags == sd
+
+        with self.assertRaisesRegex(ValueError, err_msg):
+            sd.copy()
 
 @requires_docstrings
 @requires_cdecimal

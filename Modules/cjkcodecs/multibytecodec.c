@@ -4,11 +4,17 @@
  * Written by Hye-Shik Chang <perky@FreeBSD.org>
  */
 
-#define PY_SSIZE_T_CLEAN
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
+#include "pycore_long.h"          // _PyLong_FromByteArray()
+
 #include "multibytecodec.h"
 #include "clinic/multibytecodec.c.h"
+
+#include <stddef.h>               // offsetof()
 
 #define MODULE_NAME "_multibytecodec"
 
@@ -1608,9 +1614,9 @@ static struct PyMethodDef mbstreamreader_methods[] = {
 };
 
 static PyMemberDef mbstreamreader_members[] = {
-    {"stream",          T_OBJECT,
+    {"stream",          _Py_T_OBJECT,
                     offsetof(MultibyteStreamReaderObject, stream),
-                    READONLY, NULL},
+                    Py_READONLY, NULL},
     {NULL,}
 };
 
@@ -1916,9 +1922,9 @@ static struct PyMethodDef mbstreamwriter_methods[] = {
 };
 
 static PyMemberDef mbstreamwriter_members[] = {
-    {"stream",          T_OBJECT,
+    {"stream",          _Py_T_OBJECT,
                     offsetof(MultibyteStreamWriterObject, stream),
-                    READONLY, NULL},
+                    Py_READONLY, NULL},
     {NULL,}
 };
 

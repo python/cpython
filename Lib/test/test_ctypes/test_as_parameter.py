@@ -192,7 +192,7 @@ class BasicWrapTestCase(unittest.TestCase):
                              (9*2, 8*3, 7*4, 6*5, 5*6, 4*7, 3*8, 2*9))
 
     def test_recursive_as_param(self):
-        class A(object):
+        class A:
             pass
 
         a = A()
@@ -201,7 +201,7 @@ class BasicWrapTestCase(unittest.TestCase):
             c_int.from_param(a)
 
 
-class AsParamWrapper(object):
+class AsParamWrapper:
     def __init__(self, param):
         self._as_parameter_ = param
 
@@ -209,7 +209,7 @@ class AsParamWrapperTestCase(BasicWrapTestCase):
     wrap = AsParamWrapper
 
 
-class AsParamPropertyWrapper(object):
+class AsParamPropertyWrapper:
     def __init__(self, param):
         self._param = param
 
