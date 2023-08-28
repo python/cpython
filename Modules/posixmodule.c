@@ -10069,6 +10069,7 @@ os.timerfd_create
 
     clockid: int
     flags: int
+    /
 
 Creates and returns an timerfd notification file descriptor.
 [clinic start generated code]*/
