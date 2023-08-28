@@ -5,11 +5,12 @@
 
     :synopsis: Access and control event monitoring
 
-   .. note::
+.. note::
 
-      :mod:`!sys.monitoring` is a namespace within the `sys` module,
-      not an independent module, so ``import sys.monitoring`` will not
-      work.
+    :mod:`!sys.monitoring` is a namespace within the `sys` module,
+    not an independent module, so there is no need to
+    ``import sys.monitoring``, simply ``import sys`` and then use
+    ``sys.monitoring``.
 
 -----------------
 
