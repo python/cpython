@@ -1046,6 +1046,7 @@ class _PathBase(PurePath):
         raise UnsupportedOperation(f"{type(self).__name__}.iterdir()")
 
     def _scandir(self):
+        # os.scandir() returns an object that can be used as a context manager
         return contextlib.nullcontext(list(self.iterdir()))
 
     def _make_child_relpath(self, name):
