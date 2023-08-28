@@ -27,7 +27,6 @@ _io__BufferedIOBase_readinto(PyObject *self, PyObject *arg)
     Py_buffer buffer = {NULL, NULL};
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
-        PyErr_Clear();
         _PyArg_BadArgument("readinto", "argument", "read-write bytes-like object", arg);
         goto exit;
     }
@@ -64,7 +63,6 @@ _io__BufferedIOBase_readinto1(PyObject *self, PyObject *arg)
     Py_buffer buffer = {NULL, NULL};
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
-        PyErr_Clear();
         _PyArg_BadArgument("readinto1", "argument", "read-write bytes-like object", arg);
         goto exit;
     }
@@ -591,7 +589,6 @@ _io__Buffered_readinto(buffered *self, PyObject *arg)
     Py_buffer buffer = {NULL, NULL};
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
-        PyErr_Clear();
         _PyArg_BadArgument("readinto", "argument", "read-write bytes-like object", arg);
         goto exit;
     }
@@ -628,7 +625,6 @@ _io__Buffered_readinto1(buffered *self, PyObject *arg)
     Py_buffer buffer = {NULL, NULL};
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
-        PyErr_Clear();
         _PyArg_BadArgument("readinto1", "argument", "read-write bytes-like object", arg);
         goto exit;
     }
@@ -1099,4 +1095,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=768c3a3a3deabcb4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=37293d2bcb3a2158 input=a9049054013a1b77]*/
