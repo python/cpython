@@ -175,14 +175,7 @@ echo on
  /p:UseTestMarker=%UseTestMarker% %GITProperty%^
  %1 %2 %3 %4 %5 %6 %7 %8 %9
 
-if /I "%platf%" == "Win32" set prefix=%dir%win32
-if /I "%platf%" == "x64" set prefix=%dir%amd64
-if /I "%platf%" == "ARM64" set prefix=%dir%arm64
-if /I "%platf%" == "ARM" set prefix=%dir%arm32
-set suffix=
-if /I "%conf%" == "Debug" set suffix=_d
-set built_python_exe=%prefix%\python%suffix%.exe
-call "%built_python_exe%" -m ensurepip.bundle -v
+call "%dir%\..\python.bat" -m ensurepip.bundle -v
 
 @echo off
 exit /b %ERRORLEVEL%
