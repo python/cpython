@@ -20,12 +20,10 @@ with test_tools.imports_under_tool('clinic'):
     import clinic
     from clinic import DSLParser
 
-DEFAULT_LIMITED_C_API = False
-
 
 def _make_clinic(*, filename='clinic_tests'):
     clang = clinic.CLanguage(None)
-    c = clinic.Clinic(clang, filename=filename, limited_capi=DEFAULT_LIMITED_C_API)
+    c = clinic.Clinic(clang, filename=filename, limited_capi=False)
     c.block_parser = clinic.BlockParser('', clang)
     return c
 
@@ -127,7 +125,7 @@ class ClinicWholeFileTest(TestCase):
         clang.body_prefix = "//"
         clang.start_line = "//[{dsl_name} start]"
         clang.stop_line = "//[{dsl_name} stop]"
-        cl = clinic.Clinic(clang, filename="test.c", limited_capi=DEFAULT_LIMITED_C_API)
+        cl = clinic.Clinic(clang, filename="test.c", limited_capi=False)
         raw = dedent("""
             //[clinic start]
             //module test
@@ -694,7 +692,7 @@ class ParseFileUnitTest(TestCase):
     ):
         errmsg = re.escape(dedent(expected_error).strip())
         with self.assertRaisesRegex(clinic.ClinicError, errmsg):
-            clinic.parse_file(filename, limited_capi=DEFAULT_LIMITED_C_API)
+            clinic.parse_file(filename, limited_capi=False)
 
     def test_parse_file_no_extension(self) -> None:
         self.expect_parsing_failure(
@@ -862,7 +860,7 @@ xyz
 
     def _test_clinic(self, input, output):
         language = clinic.CLanguage(None)
-        c = clinic.Clinic(language, filename="file", limited_capi=DEFAULT_LIMITED_C_API)
+        c = clinic.Clinic(language, filename="file", limited_capi=False)
         c.parsers['inert'] = InertParser(c)
         c.parsers['copy'] = CopyParser(c)
         computed = c.parse(input)

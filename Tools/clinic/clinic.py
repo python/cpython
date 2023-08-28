@@ -2413,8 +2413,8 @@ impl_definition block
             printer: BlockPrinter | None = None,
             *,
             filename: str,
+            limited_capi: bool,
             verify: bool = True,
-            limited_capi: bool
     ) -> None:
         # maps strings to Parser objects.
         # (instantiated from the "parsers" global.)
@@ -2611,9 +2611,9 @@ impl_definition block
 def parse_file(
         filename: str,
         *,
+        limited_capi: bool,
         output: str | None = None,
         verify: bool = True,
-        limited_capi: bool,
 ) -> None:
     if not output:
         output = filename
