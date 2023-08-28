@@ -2173,6 +2173,7 @@ class BlockPrinter:
             block: Block,
             *,
             core_includes: bool = False,
+            limited_capi: bool = False,
             header_includes: dict[str, str] | None = None,
     ) -> None:
         input = block.input
@@ -2203,7 +2204,7 @@ class BlockPrinter:
 
         output = ''
         if core_includes:
-            if not clinic.limited_capi:
+            if not limited_capi:
                 output += textwrap.dedent("""
                     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
                     #  include "pycore_gc.h"            // PyGC_Head
