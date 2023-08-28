@@ -165,6 +165,9 @@ sqlite3
   object is not :meth:`closed <sqlite3.Connection.close>` explicitly.
   (Contributed by Erlend E. Aasland in :gh:`105539`.)
 
+* Add support for virtual tables to :meth:`sqlite3.Connection.iterdump`.
+  (Contributed by Aviv Palivoda in :gh:`64662`.)
+
 tkinter
 -------
 
@@ -435,8 +438,8 @@ although there is currently no date scheduled for their removal.
   * Delegation of ``int()`` to ``__trunc__()`` method.
 
 * :mod:`calendar`: ``calendar.January`` and ``calendar.February`` constants are
-  deprecated and replaced by :data:`calendar.Month.JANUARY` and
-  :data:`calendar.Month.FEBRUARY`.
+  deprecated and replaced by :data:`calendar.JANUARY` and
+  :data:`calendar.FEBRUARY`.
   (Contributed by Prince Roshan in :gh:`103636`.)
 
 * :mod:`datetime`:
