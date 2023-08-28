@@ -2416,7 +2416,7 @@ class AbstractPickleTests:
     def test_reduce_None(self):
         c = R_None()
         with self.assertRaises(TypeError):
-            pickle.dumps(c)
+            self.dumps(c)
 
     def test_pickle_setstate_None(self):
         c = C_None_setstate()
@@ -3373,6 +3373,7 @@ class R_None:
     __reduce__ = None
 
 class C_None_setstate:
+    """  Setting __setstate__ to None should fail """
     def __getstate__(self):
         return 1
 
