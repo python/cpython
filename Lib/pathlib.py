@@ -912,18 +912,19 @@ class _PathBase(PurePath):
         """
         try:
             self.lstat()
+            # Junctions are a Windows-only feature, not present in POSIX nor
+            # the majority of virtual filesystems. There is no cross-platform
+            # idiom to check for junctions (using stat().st_mode). And so this
+            # default implementation returns false if lstat() doesn't raise.
+            return False
         except OSError as e:
             if not _ignore_error(e):
                 raise
+            # Path doesn't exist
+            return False
         except ValueError:
             # Non-encodable path
             return False
-
-        # Junctions are a Windows-only feature, not present in POSIX nor the
-        # vast majority of virtual filesystems. There is no cross-platform
-        # idiom to check for junctions (using stat().st_mode). And so this
-        # default implementation returns false if lstat() doesn't raise.
-        return False
 
     def is_block_device(self):
         """
