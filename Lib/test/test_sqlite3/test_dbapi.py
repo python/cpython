@@ -1837,7 +1837,7 @@ class SqliteOnConflictTests(unittest.TestCase):
 
 @requires_subprocess()
 class MultiprocessTests(unittest.TestCase):
-    CONNECTION_TIMEOUT = SHORT_TIMEOUT / 1000.  # Defaults to 30 ms
+    CONNECTION_TIMEOUT = 0  # Disable the busy timeout.
 
     def tearDown(self):
         unlink(TESTFN)
