@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"       // _Py_ID()
 #endif
 
+#include "pycore_abstract.h"       // _PyNumber_Index()
 
 static int
 bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
@@ -1284,4 +1285,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=cb94d7ac45f0a4b7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d388e9027b333f00 input=a9049054013a1b77]*/

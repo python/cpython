@@ -763,6 +763,11 @@ Connection objects
          ...     print(row)
          ('acbd18db4cc2f85cedef654fccc4a4d8',)
 
+   .. versionchanged:: 3.13
+
+      Passing *name*, *narg*, and *func* as keyword arguments is deprecated.
+      These parameters will become positional-only in Python 3.15.
+
 
    .. method:: create_aggregate(name, n_arg, aggregate_class)
 
@@ -816,6 +821,11 @@ Connection objects
          :hide:
 
          3
+
+   .. versionchanged:: 3.13
+
+      Passing *name*, *n_arg*, and *aggregate_class* as keyword arguments is deprecated.
+      These parameters will become positional-only in Python 3.15.
 
 
    .. method:: create_window_function(name, num_params, aggregate_class, /)
