@@ -18,6 +18,12 @@ way; see :ref:`stable-abi-platform` below).
 So, code compiled for Python 3.10.0 will work on 3.10.8 and vice versa,
 but will need to be compiled separately for 3.9.x and 3.10.x.
 
+ABI compatibility only applies to public API usage (names not prefixed by an
+underscore). Python internal shared libraries (such as the _ssl module) may
+utilize the private API and are not guaranteed to be ABI compatible.
+For example, the internal _ssl shared library compiled from Python 3.11.5 cannot
+be used with a Python 3.11.4 executable.
+
 There are two tiers of C API with different stability exepectations:
 
 - :ref:`Unstable API <unstable-c-api>`, may change in minor versions without
