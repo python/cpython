@@ -100,12 +100,6 @@ extern PyObject *_Py_get___phello___spam_toplevel(void);
 extern PyObject *_Py_get_frozen_only_toplevel(void);
 /* End extern declarations */
 
-#define MOD(name) \
-{ #name, _Py_M__##name, (int)sizeof( _Py_M__##name), false, GET_CODE(name) }
-
-#define MOD_ALIAS(alias, name) \
-{ #alias, _Py_M__##name, (int)sizeof( _Py_M__##name), false, GET_CODE(name) }
-
 static const struct _frozen bootstrap_modules[] = {
     {"_frozen_importlib", _Py_M__importlib__bootstrap, (int)sizeof(_Py_M__importlib__bootstrap), false},
     {"_frozen_importlib_external", _Py_M__importlib__bootstrap_external, (int)sizeof(_Py_M__importlib__bootstrap_external), false},
