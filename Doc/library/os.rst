@@ -3899,37 +3899,36 @@ features:
 
    .. versionadded:: 3.13
 
+.. data:: TFD_NONBLOCK
 .. data:: TFD_CLOEXEC
 
-   Set close-on-exec flag for new :func:`timerfd_create` file descriptor.
+   Parameters to the :func:`timerfd_create` function.
 
-   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
+   :const:`TFD_NONBLOCK`
+      Set :const:`O_NONBLOCK` status flag for new :func:`timerfd_create` file
+      descriptor.
 
-   .. versionadded:: 3.13
-
-.. data:: TFD_NONBLOCK
-
-   Set :const:`O_NONBLOCK` status flag for new :func:`timerfd_create` file
-   descriptor.
+   :const:`TFD_CLOEXEC`
+      Set :const:`TFD_CLOEXEC` status flag for new :func:`timerfd_create` file
+      descriptor.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
    .. versionadded:: 3.13
 
 .. data:: TFD_TIMER_ABSTIME
-
-   Set :const:`TFD_TIMER_ABSTIME` flags for :func:`timerfd_settime` or
-   :func:`timerfd_settime_ns`.
-
-   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
-
-   .. versionadded:: 3.13
-
-
 .. data:: TFD_TIMER_CANCEL_ON_SET
 
-   Set :const:`TFD_TIMER_CANCEL_ON_SET` flags for :func:`timerfd_settime` or
-   :func:`timerfd_settime_ns`.
+   Parameters to the :func:`timerfd_settime` function.
+
+
+   :const:`TFD_TIMER_ABSTIME`
+     Set :const:`TFD_TIMER_ABSTIME` flags for :func:`timerfd_settime` or
+     :func:`timerfd_settime_ns`.
+
+   :const:`TFD_TIMER_CANCEL_ON_SET`
+     Set :const:`TFD_TIMER_CANCEL_ON_SET` flags for :func:`timerfd_settime` or
+     :func:`timerfd_settime_ns`.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
