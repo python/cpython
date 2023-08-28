@@ -1179,7 +1179,7 @@ class CLanguage(Language):
                 (any(p.is_optional() for p in parameters) and
                  any(p.is_keyword_only() and not p.is_optional() for p in parameters)) or
                 any(c.broken_limited_capi for c in converters)):
-            print(f"Function {f.full_name} cannot use limited C API", file=sys.stderr)
+            warn(f"Function {f.full_name} cannot use limited C API")
             limited_capi = False
 
         parsearg: str | None
