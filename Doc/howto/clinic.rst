@@ -1905,6 +1905,17 @@ blocks embedded in Python files look slightly different.  They look like this:
     #/*[python checksum:...]*/
 
 
+How to use the Limited C API
+----------------------------
+
+If a C source code contains ``#define Py_LIMITED_API``, the generated C code
+will use the :ref:`Limited API <limited-c-api>` to parse arguments. Private
+functions are not used in this case and the code parsing arguments can be a
+less efficient depending on the parameters (types, number, etc.).
+
+.. versionadded:: 3.13
+
+
 .. _clinic-howto-override-signature:
 
 How to override the generated signature
