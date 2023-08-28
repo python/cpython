@@ -429,17 +429,20 @@ class FunctionTests(unittest.TestCase):
             r"positional-only in Python 3.15."
         )
 
-        def check(*args, **kwds):
-            with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
-                self.con.create_function(*args, **kwds)
-            self.assertEqual(cm.filename, __file__)
-
         def noop():
             return None
 
-        check("noop", 0, func=noop)
-        check("noop", narg=0, func=noop)
-        check(name="noop", narg=0, func=noop)
+        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+            self.con.create_function("noop", 0, func=noop)
+        self.assertEqual(cm.filename, __file__)
+
+        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+            self.con.create_function("noop", narg=0, func=noop)
+        self.assertEqual(cm.filename, __file__)
+
+        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+            self.con.create_function(name="noop", narg=0, func=noop)
+        self.assertEqual(cm.filename, __file__)
 
 
 class WindowSumInt:
