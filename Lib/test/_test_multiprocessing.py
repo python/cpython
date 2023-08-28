@@ -5342,6 +5342,16 @@ class TestIgnoreEINTR(unittest.TestCase):
         finally:
             conn.close()
 
+# Utility functions used as target for spawn Process
+def put_one_in_queue(queue):
+    queue.put(1)
+
+def put_two_and_nest_once(queue):
+    queue.put(2)
+    process = multiprocessing.Process(target=put_one_in_queue, args=(queue,))
+    process.start()
+    process.join()
+
 class TestStartMethod(unittest.TestCase):
     @classmethod
     def _check_context(cls, conn):
@@ -5442,6 +5452,19 @@ class TestStartMethod(unittest.TestCase):
                 p = process_ctx.Process(target=close_queue, args=(queue,))
                 p.start()
                 p.join()
+
+    def test_nested_startmethod(self):
+        queue = multiprocessing.Queue()
+
+        process = multiprocessing.Process(target=put_two_and_nest_once, args=(queue,))
+        process.start()
+        process.join()
+
+        results = []
+        while not queue.empty():
+            results.append(queue.get())
+
+        self.assertEqual(results, [2, 1])
 
 
 @unittest.skipIf(sys.platform == "win32",
