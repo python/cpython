@@ -2974,6 +2974,7 @@ dummy_func(
             PyFunctionObject *func = (PyFunctionObject *)callable;
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
+            DEOPT_IF(tstate->py_recursion_remaining <= 1, CALL);
         }
 
         op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
@@ -3002,11 +3003,11 @@ dummy_func(
             new_frame->previous = frame;
             CALL_STAT_INC(inlined_py_calls);
             frame = tstate->current_frame = new_frame;
+            tstate->py_recursion_remaining--;
             #if TIER_ONE
-            goto start_frame;
+            goto resume_frame;
             #endif
             #if TIER_TWO
-            ERROR_IF(_Py_EnterRecursivePy(tstate), exit_unwind);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
             #endif
