@@ -3346,9 +3346,9 @@ dummy_func(
         inst(CALL_NO_KW_LIST_APPEND, (unused/1, unused/2, callable, self, args[oparg] -- unused)) {
             ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
-            assert(self != NULL);
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.list_append, CALL);
+            assert(self != NULL);
             DEOPT_IF(!PyList_Check(self), CALL);
             STAT_INC(CALL, hit);
             if (_PyList_AppendTakeRef((PyListObject *)self, args[0]) < 0) {
