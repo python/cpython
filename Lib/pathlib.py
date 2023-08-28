@@ -910,15 +910,20 @@ class _PathBase(PurePath):
         """
         Whether this path is a junction.
         """
-        import stat
         try:
-            return self.lstat().st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT
+            self.lstat()
         except OSError as e:
             if not _ignore_error(e):
                 raise
+        except ValueError:
+            # Non-encodable path
             return False
-        except (ValueError, AttributeError):
-            return False
+
+        # Junctions are a Windows-only feature, not present in POSIX nor the
+        # vast majority of virtual filesystems. There is no cross-platform
+        # idiom to check for junctions (using stat().st_mode). And so this
+        # default implementation returns false if lstat() doesn't raise.
+        return False
 
     def is_block_device(self):
         """
