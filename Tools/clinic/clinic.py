@@ -1394,7 +1394,8 @@ class CLanguage(Language):
                 nargs = f"Py_MIN(nargs, {max_pos})" if max_pos else "0"
 
             limited_capi = clinic.limited_capi
-            if requires_defining_class or pseudo_args:
+            if limited_capi and (requires_defining_class or pseudo_args):
+                print(f"Function {f.full_name} cannot use limited C API", file=sys.stderr)
                 limited_capi = False
             if limited_capi:
                 # positional-or-keyword arguments
@@ -2641,8 +2642,8 @@ def parse_file(
     if LIMITED_CAPI_REGEX.search(raw):
         limited_capi = True
     # XXX Temporary solution
-    if os.path.basename(filename) in ('_struct.c', 'winreg.c'):
-        print(f"{filename} cannot use limited C API")
+    if limited_capi and os.path.basename(filename) in ('_struct.c', 'winreg.c'):
+        print(f"File {filename!r} cannot use limited C API", file=sys.stderr)
         limited_capi = False
 
     assert isinstance(language, CLanguage)
