@@ -2,8 +2,9 @@
 ====================================================
 
 ..  module:: sys.monitoring
-
     :synopsis: Access and control event monitoring
+
+-----------------
 
 .. note::
 
@@ -12,7 +13,6 @@
     ``import sys.monitoring``, simply ``import sys`` and then use
     ``sys.monitoring``.
 
------------------
 
 This namespace provides access to the functions and constants necessary to
 activate and control event monitoring.
