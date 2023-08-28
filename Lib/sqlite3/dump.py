@@ -48,7 +48,7 @@ def _iterdump(connection):
                 writeable_schema = True
                 yield('PRAGMA writable_schema=ON;')
             yield("INSERT INTO sqlite_master(type,name,tbl_name,rootpage,sql)"
-                  "VALUES('table',{0!r},{0!r},0,{1!r});".format(
+                  "VALUES('table','{0}','{0}',0,'{1}');".format(
                       table_name.replace("'", "''"),
                       sql.replace("'", "''"),
                   ))
