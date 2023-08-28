@@ -2324,10 +2324,10 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=1)
 
     def test_parent_class_or_module_does_not_exist(self):
-        err = "Parent class or module 'z' does not exist"
+        err = "Parent class or module 'baz' does not exist"
         block = """
             module m
-            z.func
+            baz.func
         """
         self.expect_failure(block, err, lineno=1)
 
