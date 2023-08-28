@@ -250,6 +250,13 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
         self.assertEqual(list(reversed(row)), list(reversed(as_tuple)))
         self.assertIsInstance(row, Sequence)
 
+    def test_sqlite_row_keys(self):
+        """ Checks if the row object can return its keys """
+        self.con.row_factory = sqlite.Row
+        row = self.con.execute("select 1 as a, 2 as b").fetchone()
+
+        self.assertEqual(row.keys(), ['a', 'b'])
+
     def test_fake_cursor_class(self):
         # Issue #24257: Incorrect use of PyObject_IsInstance() caused
         # segmentation fault.
