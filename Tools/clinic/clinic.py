@@ -2415,7 +2415,7 @@ impl_definition block
             *,
             filename: str,
             verify: bool = True,
-            limited_capi: bool = False,
+            limited_capi: bool = DEFAULT_LIMITED_CAPI,
     ) -> None:
         # maps strings to Parser objects.
         # (instantiated from the "parsers" global.)
