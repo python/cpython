@@ -467,15 +467,14 @@ def replace_block(lines, start_marker, end_marker, replacements, file):
     return lines[:start_pos + 1] + replacements + lines[end_pos:]
 
 
-def regen_frozen(modules, frozen_modules: bool, deep_frozen: bool):
+def regen_frozen(modules):
     headerlines = []
     parentdir = os.path.dirname(FROZEN_FILE)
-    if frozen_modules:
-        for src in _iter_sources(modules):
-            # Adding a comment to separate sections here doesn't add much,
-            # so we don't.
-            header = relpath_for_posix_display(src.frozenfile, parentdir)
-            headerlines.append(f'#include "{header}"')
+    for src in _iter_sources(modules):
+        # Adding a comment to separate sections here doesn't add much,
+        # so we don't.
+        header = relpath_for_posix_display(src.frozenfile, parentdir)
+        headerlines.append(f'#include "{header}"')
 
     externlines = []
     bootstraplines = []
@@ -505,10 +504,8 @@ def regen_frozen(modules, frozen_modules: bool, deep_frozen: bool):
         externlines.append("extern PyObject *%s(void);" % get_code_name)
 
         pkg = 'true' if mod.ispkg else 'false'
-        symbol = mod.symbol if frozen_modules else "NULL"
-        size = f"(int)sizeof({symbol})" if frozen_modules else "0"
-        code = f"GET_CODE({code_name})" if deep_frozen else "NULL"
-        line = f'{{"{mod.name}", {symbol}, {size}, {pkg}, {code}}},'
+        size = f"(int)sizeof({mod.symbol})"
+        line = f'{{"{mod.name}", {mod.symbol}, {size}, {pkg}}},'
         lines.append(line)
 
         if mod.isalias:
@@ -715,25 +712,14 @@ def regen_pcbuild(modules):
 #######################################
 # the script
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--frozen-modules", action="store_true",
-        help="Use both frozen modules. (default: don't use frozen modules)")
-parser.add_argument("--deep-freeze", action="store_true",
-        help="Use deepfrozen modules. (default: don't use deep frozen modules)")
-
 def main():
-    args = parser.parse_args()
-    frozen_modules: bool = args.frozen_modules
-    deep_frozen_modules: bool = args.deep_freeze
-    if not frozen_modules and not deep_frozen_modules:
-        sys.exit("Must specify at least one of --frozen-modules and --deep-freeze")
     # Expand the raw specs, preserving order.
     modules = list(parse_frozen_specs())
 
     # Regen build-related files.
     regen_makefile(modules)
     regen_pcbuild(modules)
-    regen_frozen(modules, frozen_modules, deep_frozen_modules)
+    regen_frozen(modules)
 
 
 if __name__ == '__main__':
