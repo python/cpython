@@ -7,7 +7,7 @@
 
    .. note::
 
-      :mod:`sys.monitoring` is a namespace within the `sys` module,
+      :mod:`!sys.monitoring` is a namespace within the `sys` module,
       not an independent module, so ``import sys.monitoring`` will not
       work.
 
@@ -17,7 +17,7 @@ This namespace provides access to the functions and constants necessary to
 activate and control event monitoring.
 
 As programs execute, events occur that might be of interest to tools that
-monitor execution. The :mod:`sys.monitoring` namespace provides means to
+monitor execution. The :mod:`!sys.monitoring` namespace provides means to
 receive callbacks when events of interest occur.
 
 The monitoring API consists of three components:
@@ -40,14 +40,15 @@ Identifiers are integers in the range 0 to 5.
 
 To register a tool::
 
-  sys.monitoring.use_tool_id(id: range(6), name:str) -> None
+  sys.monitoring.use_tool_id(id: range(6), name: str) -> None
   sys.monitoring.free_tool_id(id: range(6)) -> None
   sys.monitoring.get_tool(id: range(6)) ->  str | None
 
 
-``sys.monitoring.use_tool_id`` raises a ``ValueError`` if ``id`` is in use.
-``sys.monitoring.get_tool`` returns the name of the tool if ``id`` is in use,
-otherwise it returns ``None``.
+:py:func:`sys.monitoring.use_tool_id` raises a ``ValueError``
+if ``id`` is in use.
+:py:func:`sys.monitoring.get_tool` returns the name of the tool
+if ``id`` is in use, otherwise it returns ``None``.
 
 All IDs are treated the same by the VM with regard to events, but the
 following IDs are pre-defined to make co-operation of tools easier::
@@ -87,7 +88,7 @@ The following events are supported:
 
 More events may be added in the future.
 
-These events are attributes of the :mod:`sys.monitoring.events` namespace.
+These events are attributes of the :mod:`!sys.monitoring.events` namespace.
 Each event is represented as a power-of-2 integer constant.
 To define a set of events, simply bitwise or the individual events together.
 For example, to specify both ``PY_RETURN`` and ``PY_START`` events, use the
@@ -113,8 +114,8 @@ The local events are:
 * BRANCH
 * STOP_ITERATION
 
-Ancilliary events
-'''''''''''''''''
+Ancillary events
+''''''''''''''''
 
 Ancillary events can be monitored like other events, but are controlled
 by another event:
@@ -167,10 +168,10 @@ Setting events globally
 
 Events can be controlled globally by modifying the set of events being monitored:
 
-* ``sys.monitoring.get_events(tool_id:int)->int``
+* ``sys.monitoring.get_events(tool_id: int) -> int``
   Returns the ``int`` representing all the active events.
 
-* ``sys.monitoring.set_events(tool_id:int, event_set: int)``
+* ``sys.monitoring.set_events(tool_id: int, event_set: int)``
   Activates all events which are set in ``event_set``.
   Raises a ``ValueError`` if ``tool_id`` is not in use.
 
@@ -181,10 +182,10 @@ Per code object events
 
 Events can also be controlled on a per code object basis:
 
-* ``sys.monitoring.get_local_events(tool_id:int, code: CodeType)->int``
+* ``sys.monitoring.get_local_events(tool_id: int, code: CodeType) -> int``
   Returns all the local events for ``code``
 
-* ``sys.monitoring.set_local_events(tool_id:int, code: CodeType, event_set: int)``
+* ``sys.monitoring.set_local_events(tool_id: int, code: CodeType, event_set: int)``
   Activates all the local events for ``code``  which are set in ``event_set``.
   Raises a ``ValueError`` if ``tool_id`` is not in use.
 
@@ -211,7 +212,7 @@ Registering callback functions
 
 To register a callable for events call::
 
-  sys.monitoring.register_callback(tool_id:int, event: int, func: Callable | None) -> Callable | None
+  sys.monitoring.register_callback(tool_id: int, event: int, func: Callable | None) -> Callable | None
 
 If another callback was registered for the given ``tool_id`` and ``event``,
 it is unregistered and returned.
