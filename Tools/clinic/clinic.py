@@ -63,7 +63,6 @@ from typing import (
 
 version = '1'
 
-DEFAULT_LIMITED_CAPI = False
 NO_VARARG = "PY_SSIZE_T_MAX"
 CLINIC_PREFIX = "__clinic_"
 CLINIC_PREFIXED_ARGS = {
@@ -2415,7 +2414,7 @@ impl_definition block
             *,
             filename: str,
             verify: bool = True,
-            limited_capi: bool = DEFAULT_LIMITED_CAPI,
+            limited_capi: bool
     ) -> None:
         # maps strings to Parser objects.
         # (instantiated from the "parsers" global.)
@@ -2614,7 +2613,7 @@ def parse_file(
         *,
         output: str | None = None,
         verify: bool = True,
-        limited_capi: bool = DEFAULT_LIMITED_CAPI,
+        limited_capi: bool,
 ) -> None:
     if not output:
         output = filename
