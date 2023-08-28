@@ -1139,6 +1139,7 @@ _sqlite3.Connection.create_function as pysqlite_connection_create_function
     name: str
     narg: int
     func: object
+    / [from 3.15]
     *
     deterministic: bool = False
 
@@ -1150,7 +1151,7 @@ pysqlite_connection_create_function_impl(pysqlite_Connection *self,
                                          PyTypeObject *cls, const char *name,
                                          int narg, PyObject *func,
                                          int deterministic)
-/*[clinic end generated code: output=8a811529287ad240 input=b3e8e1d8ddaffbef]*/
+/*[clinic end generated code: output=8a811529287ad240 input=c7c313b0ca8b519e]*/
 {
     int rc;
     int flags = SQLITE_UTF8;
@@ -1341,6 +1342,7 @@ _sqlite3.Connection.create_aggregate as pysqlite_connection_create_aggregate
     name: str
     n_arg: int
     aggregate_class: object
+    / [from 3.15]
 
 Creates a new aggregate.
 [clinic start generated code]*/
@@ -1350,7 +1352,7 @@ pysqlite_connection_create_aggregate_impl(pysqlite_Connection *self,
                                           PyTypeObject *cls,
                                           const char *name, int n_arg,
                                           PyObject *aggregate_class)
-/*[clinic end generated code: output=1b02d0f0aec7ff96 input=68a2a26366d4c686]*/
+/*[clinic end generated code: output=1b02d0f0aec7ff96 input=8087056db6eae1cf]*/
 {
     int rc;
 
