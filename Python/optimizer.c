@@ -780,6 +780,81 @@ done:
 }
 
 static int
+remove_unneeded_uops(_PyUOpInstruction *trace, int trace_length)
+{
+    // Stage 1: Replace unneeded SAVE_IP uops with NOP.
+    // Note that we don't enter stubs, those SAVE_IPs are needed.
+    int last_save_ip = -1;
+    int last_instr = -1;
+    bool need_ip = true;
+    bool changed = false;
+    for (int pc = 0; pc < trace_length; pc++) {
+        int opcode = trace[pc].opcode;
+        if (opcode == SAVE_CURRENT_IP) {
+            // Special case: never remove preceding SAVE_IP
+            last_save_ip = -1;
+        }
+        else if (opcode == SAVE_IP) {
+            if (!need_ip && last_save_ip >= 0) {
+                trace[last_save_ip].opcode = NOP;
+                changed = true;
+            }
+            need_ip = false;
+            last_save_ip = pc;
+        }
+        else if (opcode == JUMP_TO_TOP || opcode == EXIT_TRACE) {
+            last_instr = pc;
+            break;
+        }
+        else {
+            // If opcode metadata flags has ERROR or DEOPT, set need_up to true
+            if (_PyOpcode_opcode_metadata[opcode].flags & (HAS_ERROR_FLAG | HAS_DEOPT_FLAG)) {
+                need_ip = true;
+            }
+        }
+    }
+    // Stage 2: Squash NOP opcodes (pre-existing or set above).
+    if (changed) {
+        int dest = 0;
+        for (int pc = 0; pc <= last_instr; pc++) {
+            int opcode = trace[pc].opcode;
+            if (opcode != NOP) {
+                if (pc != dest) {
+                    trace[dest] = trace[pc];
+                }
+                dest++;
+            }
+        }
+        // Stage 3: insert new NOPs to pad out the trace until the stubs.
+        // TODO: We could move the stubs, but that would require patching
+        // jump targets (code that exists in translate_bytecode_to_trace).
+        for (int pc = dest; pc <= last_instr; pc++) {
+            trace[pc].opcode = NOP;  // TODO: Some other, fatal, opcode?
+            trace[pc].oparg = 0;
+            trace[pc].operand = 0;
+        }
+#ifdef Py_DEBUG
+        char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
+        int lltrace = 0;
+        if (uop_debug != NULL && *uop_debug >= '0') {
+            lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
+        }
+        if (lltrace >= 2) {
+            printf("Optimized trace:\n");
+            for (int pc = 0; pc < trace_length; pc++) {
+                printf("%4d: (%s, %d, %" PRIu64 ")\n",
+                    pc,
+                    uop_name(trace[pc].opcode),
+                    (trace[pc].oparg),
+                    (uint64_t)(trace[pc].operand));
+            }
+        }
+#endif
+    }
+    return trace_length;
+}
+
+static int
 uop_optimize(
     _PyOptimizerObject *self,
     PyCodeObject *code,
@@ -798,6 +873,7 @@ uop_optimize(
     if (uop_optimize != NULL && *uop_optimize > '0') {
         trace_length = _Py_uop_analyze_and_optimize(code, trace, trace_length, curr_stackentries);
     }
+    trace_length = remove_unneeded_uops(trace, trace_length);
     _PyUOpExecutorObject *executor = PyObject_NewVar(_PyUOpExecutorObject, &UOpExecutor_Type, trace_length);
     if (executor == NULL) {
         return -1;
