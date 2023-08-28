@@ -63,7 +63,6 @@ from typing import (
 
 version = '1'
 
-DEFAULT_LIMITED_CAPI = False
 NO_VARARG = "PY_SSIZE_T_MAX"
 CLINIC_PREFIX = "__clinic_"
 CLINIC_PREFIXED_ARGS = {
@@ -2414,8 +2413,8 @@ impl_definition block
             printer: BlockPrinter | None = None,
             *,
             filename: str,
+            limited_capi: bool,
             verify: bool = True,
-            limited_capi: bool = False,
     ) -> None:
         # maps strings to Parser objects.
         # (instantiated from the "parsers" global.)
@@ -2612,11 +2611,10 @@ impl_definition block
 def parse_file(
         filename: str,
         *,
-        ns: argparse.Namespace,
+        limited_capi: bool,
         output: str | None = None,
+        verify: bool = True,
 ) -> None:
-    verify = not ns.force
-    limited_capi = ns.limited_capi
     if not output:
         output = filename
 
@@ -6190,7 +6188,8 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
                     continue
                 if ns.verbose:
                     print(path)
-                parse_file(path, ns=ns)
+                parse_file(path,
+                           verify=not ns.force, limited_capi=ns.limited_capi)
         return
 
     if not ns.filename:
@@ -6202,7 +6201,8 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
     for filename in ns.filename:
         if ns.verbose:
             print(filename)
-        parse_file(filename, output=ns.output, ns=ns)
+        parse_file(filename, output=ns.output,
+                   verify=not ns.force, limited_capi=ns.limited_capi)
 
 
 def main(argv: list[str] | None = None) -> NoReturn:
