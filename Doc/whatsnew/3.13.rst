@@ -193,7 +193,7 @@ typing
 pdb
 ---
 
-* Add ability to move between chained exceptions during post mortem debugging in :func:`pm()` using
+* Add ability to move between chained exceptions during post mortem debugging in :func:`~pdb.pm` using
   the new ``exceptions [exc_number]`` command for Pdb. (Contributed by Matthias
   Bussonnier in :gh:`106676`.)
 
