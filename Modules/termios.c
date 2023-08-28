@@ -1,5 +1,9 @@
 /* termios.c -- POSIX terminal I/O module implementation.  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 
 /* Apparently, on SGI, termios.h won't define CTRL if _XOPEN_SOURCE

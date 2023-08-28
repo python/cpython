@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"       // _Py_ID()
 #endif
 
+#include "pycore_abstract.h"       // _PyNumber_Index()
 
 PyDoc_STRVAR(_bz2_BZ2Compressor_compress__doc__,
 "compress($self, data, /)\n"
@@ -241,4 +242,4 @@ _bz2_BZ2Decompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=431fd0fc40f019d1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=40706688f92642b4 input=a9049054013a1b77]*/
