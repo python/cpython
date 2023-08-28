@@ -1,0 +1,4 @@
+Add the properties ``PackageMetadata.authors`` and
+``PackageMetadata.maintainers`` to the ``importlib.metadata`` module. These
+unify and provide minimal parsing for the respective core metadata fields
+("Author", "Author-email"), and ("Maintainer", "Maintainer-email").
