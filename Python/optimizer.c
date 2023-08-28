@@ -821,7 +821,7 @@ remove_unneeded_uops(_PyUOpInstruction *trace, int trace_length)
             last_save_ip = pc;
         }
         else if (opcode == JUMP_TO_TOP || opcode == EXIT_TRACE) {
-            last_instr = pc;
+            last_instr = pc + 1;
             break;
         }
         else {
@@ -833,7 +833,7 @@ remove_unneeded_uops(_PyUOpInstruction *trace, int trace_length)
     }
     // Stage 2: Squash NOP opcodes (pre-existing or set above).
     int dest = 0;
-    for (int pc = 0; pc <= last_instr; pc++) {
+    for (int pc = 0; pc < last_instr; pc++) {
         int opcode = trace[pc].opcode;
         if (opcode != NOP) {
             if (pc != dest) {
@@ -843,8 +843,8 @@ remove_unneeded_uops(_PyUOpInstruction *trace, int trace_length)
         }
     }
     // Stage 3: Move the stubs back.
-    if (dest < last_instr + 1) {
-        trace_length = squeeze_stubs(trace, dest, last_instr + 1, trace_length);
+    if (dest < last_instr) {
+        trace_length = squeeze_stubs(trace, dest, last_instr, trace_length);
 #ifdef Py_DEBUG
         char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
         int lltrace = 0;
