@@ -3861,8 +3861,9 @@ features:
    .. c:var:: double interval;
    .. c:var:: double value;
 
-   :c:expr:`interval = new_value.it_interval.tv_sec + new_value.it_interval.tv_nsec * 1e-9`
-   :c:expr:`value = new_value.it_value.tv_sec + new_value.it_value.tv_nsec * 1e-9`
+   :c:expr:`interval = new_value.it_interval.tv_sec + new_value.it_interval.tv_nsec * 1e-9;`
+
+   :c:expr:`value = new_value.it_value.tv_sec + new_value.it_value.tv_nsec * 1e-9;`
 
    Return a two-item tuple (``interval``, ``value``) which were the setting of the timer at the time of the call.
 
