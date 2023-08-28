@@ -843,14 +843,8 @@ remove_unneeded_uops(_PyUOpInstruction *trace, int trace_length)
                 dest++;
             }
         }
-        // Stage 3: insert new NOPs to pad out the trace until the stubs.
-        // TODO: We could move the stubs, but that would require patching
-        // jump targets (code that exists in translate_bytecode_to_trace).
-        for (int pc = dest; pc <= last_instr; pc++) {
-            trace[pc].opcode = NOP;  // TODO: Some other, fatal, opcode?
-            trace[pc].oparg = 0;
-            trace[pc].operand = 0;
-        }
+        // Stage 3: Move the stubs back.
+        trace_length = squeeze_stubs(trace, dest, last_instr + 1, trace_length);
 #ifdef Py_DEBUG
         char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
         int lltrace = 0;
