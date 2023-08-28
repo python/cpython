@@ -302,7 +302,9 @@ _PyCode_Quicken(PyCodeObject *code)
         assert(opcode < MIN_INSTRUMENTED_OPCODE);
         int caches = _PyOpcode_Caches[opcode];
         if (caches) {
-            instructions[i + 1].cache = adaptive_counter_warmup();
+            // JUMP_BACKWARD counter counts up from 0 until it is > backedge_threshold
+            instructions[i + 1].cache =
+                opcode == JUMP_BACKWARD ? 0 : adaptive_counter_warmup();
             i += caches;
         }
     }
