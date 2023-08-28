@@ -618,7 +618,7 @@ build_all:	check-clean-src $(BUILDPYTHON) platform sharedmods \
 		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil
 
 .PHONY: all-with-ensurepip-dists-bundled
-all-with-ensurepip-dists-bundled: @DEF_MAKE_ALL_RULE@ bundle-ensurepip-dists
+all-with-ensurepip-dists-bundled: @DEF_MAKE_ALL_RULE@ download-ensurepip-blobs
 
 .PHONY: build_wasm
 build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
@@ -2762,8 +2762,8 @@ patchcheck: all
 check-limited-abi: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/stable_abi.py --all $(srcdir)/Misc/stable_abi.toml
 
-.PHONY: bundle-ensurepip-dists
-bundle-ensurepip-dists: $(BUILDPYTHON) platform
+.PHONY: download-ensurepip-blobs
+download-ensurepip-blobs: $(BUILDPYTHON) platform
 	if test "x$(ENSUREPIP)" != "xno"  ; then \
 		PYTHONPATH="$(abs_builddir)/Lib" \
 		  $(RUNSHARED) $(abs_builddir)/$(PYTHON_FOR_BUILD) -m \

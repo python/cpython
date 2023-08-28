@@ -1,4 +1,4 @@
 Replaced vendoring of pip blob in the CPython Git tree with a
 build-time download and caching mechanism.
-``Makefile`` now has a ``bundle-ensurepip-dists`` target to make
-bundling Pip wheel more convenient.
+``Makefile`` now has a ``download-ensurepip-blobs`` target to
+make bundling Pip wheel more convenient.

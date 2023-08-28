@@ -303,7 +303,7 @@ jobs:
     - name: Bundle ensurepip dists
       env:
         SSL_CERT_DIR: /etc/ssl/certs
-      run: make bundle-ensurepip-dists
+      run: make download-ensurepip-blobs
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
     - name: Tests
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
@@ -431,7 +431,7 @@ jobs:
     - name: Bundle ensurepip dists
       env:
         SSL_CERT_DIR: /etc/ssl/certs
-      run: make bundle-ensurepip-dists
+      run: make download-ensurepip-blobs
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
     - name: Setup directory envs for out-of-tree builds
       run: |
