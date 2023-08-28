@@ -38,17 +38,22 @@ monitor each other. This restriction may be lifted in the future.
 Before registering or activating events, a tool should choose an identifier.
 Identifiers are integers in the range 0 to 5.
 
-To register a tool::
+Registering and using tools
+'''''''''''''''''''''''''''
 
-  sys.monitoring.use_tool_id(id: range(6), name: str) -> None
-  sys.monitoring.free_tool_id(id: range(6)) -> None
-  sys.monitoring.get_tool(id: range(6)) ->  str | None
+.. function:: use_tool_id(id: range(6), name: str) -> None
 
+   Must be called before ``id`` can be used.
+   Raises a ``ValueError`` if ``id`` is in use.
 
-:py:func:`sys.monitoring.use_tool_id` raises a ``ValueError``
-if ``id`` is in use.
-:py:func:`sys.monitoring.get_tool` returns the name of the tool
-if ``id`` is in use, otherwise it returns ``None``.
+.. function:: free_tool_id(id: range(6)) -> None
+
+   Should be called once a tool no longer requires ``id``.
+
+.. function:: get_tool(id: range(6)) ->  str | None
+
+   Returns the name of the tool if ``id`` is in use,
+   otherwise it returns ``None``.
 
 All IDs are treated the same by the VM with regard to events, but the
 following IDs are pre-defined to make co-operation of tools easier::
@@ -166,28 +171,32 @@ for a particular code object.
 Setting events globally
 '''''''''''''''''''''''
 
-Events can be controlled globally by modifying the set of events being monitored:
+Events can be controlled globally by modifying the set of events being monitored.
 
-* ``sys.monitoring.get_events(tool_id: int) -> int``
-  Returns the ``int`` representing all the active events.
+.. function:: sys.monitoring.get_events(tool_id: int) -> int
 
-* ``sys.monitoring.set_events(tool_id: int, event_set: int)``
-  Activates all events which are set in ``event_set``.
-  Raises a ``ValueError`` if ``tool_id`` is not in use.
+   Returns the ``int`` representing all the active events.
+
+.. function:: sys.monitoring.set_events(tool_id: int, event_set: int)
+
+   Activates all events which are set in ``event_set``.
+   Raises a ``ValueError`` if ``tool_id`` is not in use.
 
 No events are active by default.
 
 Per code object events
 ''''''''''''''''''''''
 
-Events can also be controlled on a per code object basis:
+Events can also be controlled on a per code object basis.
 
-* ``sys.monitoring.get_local_events(tool_id: int, code: CodeType) -> int``
-  Returns all the local events for ``code``
+.. function:: sys.monitoring.get_local_events(tool_id: int, code: CodeType) -> int
 
-* ``sys.monitoring.set_local_events(tool_id: int, code: CodeType, event_set: int)``
-  Activates all the local events for ``code``  which are set in ``event_set``.
-  Raises a ``ValueError`` if ``tool_id`` is not in use.
+   Returns all the local events for ``code``
+
+.. function:: sys.monitoring.set_local_events(tool_id: int, code: CodeType, event_set: int)
+
+   Activates all the local events for ``code``  which are set in ``event_set``.
+   Raises a ``ValueError`` if ``tool_id`` is not in use.
 
 Local events add to global events, but do not mask them.
 In other words, all global events will trigger for a code object,
@@ -210,13 +219,16 @@ except for a few breakpoints.
 Registering callback functions
 ------------------------------
 
-To register a callable for events call::
+To register a callable for events call
 
-  sys.monitoring.register_callback(tool_id: int, event: int, func: Callable | None) -> Callable | None
+.. function:: sys.monitoring.register_callback(tool_id: int, event: int, func: Callable | None) -> Callable | None
 
-If another callback was registered for the given ``tool_id`` and ``event``,
-it is unregistered and returned.
-Otherwise ``register_callback`` returns ``None``.
+   Registers the callable ``func`` for the ``event`` with the given ``tool_id``
+
+   If another callback was registered for the given ``tool_id`` and ``event``,
+   it is unregistered and returned.
+   Otherwise ``register_callback`` returns ``None``.
+
 
 Functions can be unregistered by calling
 ``sys.monitoring.register_callback(tool_id, event, None)``.
