@@ -17,6 +17,7 @@
 #include "pycore_sliceobject.h"
 #include "pycore_uops.h"
 
+#define TIER_TWO 2
 #include "ceval_macros.h"
 
 
@@ -83,7 +84,6 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
         OBJECT_STAT_INC(optimization_uops_executed);
         switch (opcode) {
 
-#define TIER_TWO 2
 #include "executor_cases.c.h"
 
             default:

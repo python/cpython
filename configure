@@ -23571,8 +23571,9 @@ SOABI='cpython-'`echo $VERSION | tr -d .`${ABIFLAGS}${PLATFORM_TRIPLET:+-$PLATFO
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $SOABI" >&5
 printf "%s\n" "$SOABI" >&6; }
 
-# Release and debug (Py_DEBUG) ABI are compatible, but not Py_TRACE_REFS ABI
-if test "$Py_DEBUG" = 'true' -a "$with_trace_refs" != "yes"; then
+# Release build, debug build (Py_DEBUG), and trace refs build (Py_TRACE_REFS)
+# are ABI compatible
+if test "$Py_DEBUG" = 'true'; then
   # Similar to SOABI but remove "d" flag from ABIFLAGS
 
   ALT_SOABI='cpython-'`echo $VERSION | tr -d .``echo $ABIFLAGS | tr -d d`${PLATFORM_TRIPLET:+-$PLATFORM_TRIPLET}
@@ -29962,7 +29963,7 @@ printf %s "checking for stdlib extension module _testclinic_limited... " >&6; }
         if test "$py_cv_module__testclinic_limited" != "n/a"
 then :
 
-    if test "$TEST_MODULES" = yes -a "$with_trace_refs" = "no"
+    if test "$TEST_MODULES" = yes
 then :
   if true
 then :
@@ -30267,7 +30268,7 @@ printf %s "checking for stdlib extension module xxlimited... " >&6; }
         if test "$py_cv_module_xxlimited" != "n/a"
 then :
 
-    if test "$with_trace_refs" = "no"
+    if true
 then :
   if test "$ac_cv_func_dlopen" = yes
 then :
@@ -30305,7 +30306,7 @@ printf %s "checking for stdlib extension module xxlimited_35... " >&6; }
         if test "$py_cv_module_xxlimited_35" != "n/a"
 then :
 
-    if test "$with_trace_refs" = "no"
+    if true
 then :
   if test "$ac_cv_func_dlopen" = yes
 then :
