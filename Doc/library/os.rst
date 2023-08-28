@@ -3864,7 +3864,7 @@ features:
    :c:expr:`interval = new_value.it_interval.tv_sec + new_value.it_interval.tv_nsec * 1e-9`
    :c:expr:`value = new_value.it_value.tv_sec + new_value.it_value.tv_nsec * 1e-9`
 
-   Return a two-item tuple (`interval`, `value`) which were the setting of the timer at the time of the call.
+   Return a two-item tuple (``interval``, ``value``) which were the setting of the timer at the time of the call.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
@@ -3883,7 +3883,7 @@ features:
 
 .. function:: timerfd_gettime(fd)
 
-   Return a two-item tuple (`interval`, `value`) which is the time until next expiration.
+   Return a two-item tuple (``interval``, ``value``) which is the time until next expiration.
    See man page :manpage:`timerfd_gettime(2)` for more information.
 
    The format of the return value is same as that of :func:`timerfd_settime`.
