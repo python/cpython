@@ -3853,10 +3853,16 @@ features:
    See man page :manpage:`timerfd_settime(2)` for more information.
 
    *interval* coresponds to :c:member:`!it_interval` in :c:struct:`itimerspec` and *value* coresponds to
-   :c:member:`!it_value` in c:struct:`itimerspec`. They are both in seconds unit and types are double.
+   :c:member:`!it_value` in :c:struct:`itimerspec`. They are both in seconds and types are double.
 
-   *interval* is calculated like :c:member:`!timespec.tv_sec` + :c:member:`!timespec.tv_nsec` * `1e-9`,
-   *value* is calculated like :c:member:`!timespec.tv_sec` + :c:member:`!timespec.tv_nsec` * `1e-9` internally.
+   *interval* and *value* are interpreted like this to pass :manpage:`timerfd_settime(2)`.
+
+   .. c:var:: struct itimerspec new_value;
+   .. c:var:: double interval;
+   .. c:var:: double value;
+
+   :c:expr:`interval = new_value.it_interval.tv_sec + new_value.it_interval.tv_nsec * 1e-9`
+   :c:expr:`value = new_value.it_value.tv_sec + new_value.it_value.tv_nsec * 1e-9`
 
    Return a two-item tuple (`interval`, `value`) which were the setting of the timer at the time of the call.
 
