@@ -5992,52 +5992,25 @@ os_times(PyObject *module, PyObject *Py_UNUSED(ignored))
 #if defined(HAVE_TIMERFD_CREATE)
 
 PyDoc_STRVAR(os_timerfd_create__doc__,
-"timerfd_create($module, /, clockid, flags)\n"
+"timerfd_create($module, clockid, flags, /)\n"
 "--\n"
 "\n"
 "Creates and returns an timerfd notification file descriptor.");
 
 #define OS_TIMERFD_CREATE_METHODDEF    \
-    {"timerfd_create", _PyCFunction_CAST(os_timerfd_create), METH_FASTCALL|METH_KEYWORDS, os_timerfd_create__doc__},
+    {"timerfd_create", _PyCFunction_CAST(os_timerfd_create), METH_FASTCALL, os_timerfd_create__doc__},
 
 static PyObject *
 os_timerfd_create_impl(PyObject *module, int clockid, int flags);
 
 static PyObject *
-os_timerfd_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+os_timerfd_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 2
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(clockid), &_Py_ID(flags), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"clockid", "flags", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "timerfd_create",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     int clockid;
     int flags;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_CheckPositional("timerfd_create", nargs, 2, 2)) {
         goto exit;
     }
     clockid = PyLong_AsInt(args[0]);
@@ -12269,4 +12242,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=fdd32b39f54f794d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f545ccefafc084bd input=a9049054013a1b77]*/

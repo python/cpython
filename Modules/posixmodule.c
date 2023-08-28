@@ -10076,7 +10076,7 @@ Creates and returns an timerfd notification file descriptor.
 
 static PyObject *
 os_timerfd_create_impl(PyObject *module, int clockid, int flags)
-/*[clinic end generated code: output=1caae80fb168004a input=9ebed3e587e2ccd6]*/
+/*[clinic end generated code: output=1caae80fb168004a input=cdf3e82882b19a77]*/
 
 {
     int fd;
