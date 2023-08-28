@@ -56,14 +56,16 @@ class List(list):
     pass
 
 
-# From weakref.py with some simplifications.
-class WeakValueDictionary:
+# Copied from weakref.py with some simplifications and modifications unique to
+# bootstrapping importlib. Many methods were simply deleting for simplicity, so if they
+# are needed in the future they may work if simply copied back in.
+class _WeakValueDictionary:
 
     def __init__(self):
         self_weakref = _weakref.ref(self)
 
-        # Inlined to avoid issues with inheriting from _weakref before it's
-        # set. Since there's only one instance of this class, this is
+        # Inlined to avoid issues with inheriting from _weakref.ref before _weakref is
+        # set by _setup(). Since there's only one instance of this class, this is
         # not expensive.
         class KeyedRef(_weakref.ref):
 
@@ -86,8 +88,6 @@ class WeakValueDictionary:
                     if self._iterating:
                         self._pending_removals.append(wr.key)
                     else:
-                        # Atomic removal is necessary since this function
-                        # can be called asynchronously by the GC
                         _weakref._remove_dead_weakref(self.data, wr.key)
 
         self._KeyedRef = KeyedRef
@@ -101,36 +101,12 @@ class WeakValueDictionary:
     def _commit_removals(self):
         pop = self._pending_removals.pop
         d = self.data
-        # We shouldn't encounter any KeyError, because this method should
-        # always be called *before* mutating the dict.
         while True:
             try:
                 key = pop()
             except IndexError:
                 return
             _weakref._remove_dead_weakref(d, key)
-
-    def __getitem__(self, key):
-        if self._pending_removals:
-            self._commit_removals()
-        o = self.data[key]()
-        if o is None:
-            raise KeyError(key)
-        else:
-            return o
-
-    def __delitem__(self, key):
-        if self._pending_removals:
-            self._commit_removals()
-        del self.data[key]
-
-    def __repr__(self):
-        return "<%s at %#x>" % (self.__class__.__name__, id(self))
-
-    def __setitem__(self, key, value):
-        if self._pending_removals:
-            self._commit_removals()
-        self.data[key] = self._KeyedRef(value, key)
 
     def get(self, key, default=None):
         if self._pending_removals:
@@ -140,9 +116,7 @@ class WeakValueDictionary:
         except KeyError:
             return default
         else:
-            o = wr()
-            if o is None:
-                # This should only happen
+            if (o := wr()) is None:
                 return default
             else:
                 return o
@@ -175,7 +149,7 @@ _module_locks = {}
 #
 # The dictionary uses a WeakValueDictionary to avoid keeping unnecessary
 # lists around, regardless of GC runs. This way there's no memory leak if
-# the list is no longer needed.
+# the list is no longer needed (GH-106176).
 _blocking_on = None
 
 
@@ -1551,7 +1525,8 @@ def _setup(sys_module, _imp_module):
             builtin_module = sys.modules[builtin_name]
         setattr(self_module, builtin_name, builtin_module)
 
-    _blocking_on = WeakValueDictionary()
+    # Instantiation requires _weakref to have been set.
+    _blocking_on = _WeakValueDictionary()
 
 
 def _install(sys_module, _imp_module):
