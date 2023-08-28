@@ -79,10 +79,16 @@ class TestPackages(unittest.TestCase):
             ):
                 packages = ensurepip._wheelhouses.discover_ondisk_packages()
 
-            self.assertEqual(packages['pip'].project_version, '20.2.2')
+            pip_package = packages['pip']
+            assert isinstance(  # type checker hint
+                pip_package,
+                ensurepip._structs.ReplacementDistributionPackage,
+            )
+
+            self.assertEqual(pip_package.project_version, '20.2.2')
             self.assertEqual(
-                packages['pip'].wheel_path,
-                tmp_path / pip_filename,
+                pip_package.wheel_path.resolve(),
+                (tmp_path / pip_filename).resolve(),
             )
 
             # wheel package is ignored
