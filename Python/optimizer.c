@@ -756,12 +756,13 @@ done:
     if (trace_length > 3) {
         ADD_TO_TRACE(EXIT_TRACE, 0, 0);
         DPRINTF(1,
-                "Created a trace for %s (%s:%d) at byte offset %d -- length %d\n",
+                "Created a trace for %s (%s:%d) at byte offset %d -- length %d+%d\n",
                 PyUnicode_AsUTF8(code->co_qualname),
                 PyUnicode_AsUTF8(code->co_filename),
                 code->co_firstlineno,
                 2 * INSTR_IP(initial_instr, code),
-                trace_length);
+                trace_length,
+                buffer_size - max_length);
         if (max_length < buffer_size) {
             // There are stubs
             if (trace_length < max_length) {
@@ -844,7 +845,7 @@ remove_unneeded_uops(_PyUOpInstruction *trace, int trace_length)
     }
     // Stage 3: Move the stubs back.
     if (dest < last_instr) {
-        trace_length = squeeze_stubs(trace, dest, last_instr, trace_length);
+        int new_trace_length = squeeze_stubs(trace, dest, last_instr, trace_length);
 #ifdef Py_DEBUG
         char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
         int lltrace = 0;
@@ -852,8 +853,10 @@ remove_unneeded_uops(_PyUOpInstruction *trace, int trace_length)
             lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
         }
         if (lltrace >= 2) {
-            printf("Optimized trace:\n");
-            for (int pc = 0; pc < trace_length; pc++) {
+            printf("Optimized trace (length %d+%d = %d, saved %d):\n",
+                dest, trace_length - last_instr, new_trace_length,
+                trace_length - new_trace_length);
+            for (int pc = 0; pc < new_trace_length; pc++) {
                 printf("%4d: (%s, %d, %" PRIu64 ")\n",
                     pc,
                     uop_name(trace[pc].opcode),
@@ -862,6 +865,7 @@ remove_unneeded_uops(_PyUOpInstruction *trace, int trace_length)
             }
         }
 #endif
+        trace_length = new_trace_length;
     }
     return trace_length;
 }
