@@ -1931,6 +1931,123 @@ class ImportErrorTests(unittest.TestCase):
                 self.assertEqual(exc.name, orig.name)
                 self.assertEqual(exc.path, orig.path)
 
+
+class AssertionErrorTests(unittest.TestCase):
+    def tearDown(self):
+        unlink(TESTFN)
+
+    def write_source(self, source):
+        with open(TESTFN, 'w') as testfile:
+            testfile.write(dedent(source))
+        _rc, _out, err = script_helper.assert_python_failure('-Wd', '-X', 'utf8', TESTFN)
+        return err.decode('utf-8').splitlines()
+
+    def test_assertion_error_location(self):
+        cases = [
+            ('assert None',
+                [
+                    '    assert None',
+                    '           ^^^^',
+                    'AssertionError',
+                ],
+            ),
+            ('assert 0',
+                [
+                    '    assert 0',
+                    '           ^',
+                    'AssertionError',
+                ],
+            ),
+            ('assert 1 > 2',
+                [
+                    '    assert 1 > 2',
+                    '           ^^^^^',
+                    'AssertionError',
+                ],
+            ),
+            ('assert 1 > 2 and 3 > 2',
+                [
+                    '    assert 1 > 2 and 3 > 2',
+                    '           ^^^^^^^^^^^^^^^',
+                    'AssertionError',
+                ],
+            ),
+            ('assert 1 > 2, "message"',
+                [
+                    '    assert 1 > 2, "message"',
+                    '           ^^^^^',
+                    'AssertionError: message',
+                ],
+            ),
+
+            # Multiline:
+            ("""
+             assert (
+                 1 > 2)
+             """,
+                [
+                    '    1 > 2)',
+                    '    ^^^^^',
+                    'AssertionError',
+                ],
+            ),
+            ("""
+             assert (
+                 1 > 2), "Message"
+             """,
+                [
+                    '    1 > 2), "Message"',
+                    '    ^^^^^',
+                    'AssertionError: Message',
+                ],
+            ),
+            ("""
+             assert (
+                 1 > 2), \\
+                 "Message"
+             """,
+                [
+                    '    1 > 2), \\',
+                    '    ^^^^^',
+                    'AssertionError: Message',
+                ],
+            ),
+        ]
+        for source, expected in cases:
+            with self.subTest(source):
+                result = self.write_source(source)
+                self.assertEqual(result[-3:], expected)
+
+    def test_multiline_not_highlighted(self):
+        cases = [
+            ("""
+             assert (
+                 1 > 2
+             )
+             """,
+                [
+                    '    1 > 2',
+                    'AssertionError',
+                ],
+            ),
+            ("""
+             assert (
+                 1 < 2 and
+                 3 > 4
+             )
+             """,
+                [
+                    '    1 < 2 and',
+                    'AssertionError',
+                ],
+            ),
+        ]
+        for source, expected in cases:
+            with self.subTest(source):
+                result = self.write_source(source)
+                self.assertEqual(result[-2:], expected)
+
+
 class SyntaxErrorTests(unittest.TestCase):
     def test_range_of_offsets(self):
         cases = [

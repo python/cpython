@@ -437,12 +437,6 @@ PyAPI_FUNC(void) PyObject_ClearWeakRefs(PyObject *);
 */
 PyAPI_FUNC(PyObject *) PyObject_Dir(PyObject *);
 
-/* Pickle support. */
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _PyObject_GetState(PyObject *);
-#endif
-
-
 /* Helpers for printing recursive container types */
 PyAPI_FUNC(int) Py_ReprEnter(PyObject *);
 PyAPI_FUNC(void) Py_ReprLeave(PyObject *);
@@ -845,8 +839,6 @@ static inline PyObject* _Py_XNewRef(PyObject *obj)
 /*
 _Py_NoneStruct is an object of undefined type which can be used in contexts
 where NULL (nil) is not suitable (since NULL often means 'error').
-
-Don't forget to apply Py_INCREF() when returning this value!!!
 */
 PyAPI_DATA(PyObject) _Py_NoneStruct; /* Don't use this directly */
 #define Py_None (&_Py_NoneStruct)

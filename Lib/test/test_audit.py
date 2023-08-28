@@ -256,6 +256,34 @@ class AuditTest(unittest.TestCase):
         if returncode:
             self.fail(stderr)
 
+    def test_time(self):
+        returncode, events, stderr = self.run_python("test_time")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [("time.sleep", "0"),
+                    ("time.sleep", "0.0625"),
+                    ("time.sleep", "-1")]
+
+        self.assertEqual(actual, expected)
+
+
+    def test_sys_monitoring_register_callback(self):
+        returncode, events, stderr = self.run_python("test_sys_monitoring_register_callback")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [("sys.monitoring.register_callback", "(None,)")]
+
+        self.assertEqual(actual, expected)
+
 
 if __name__ == "__main__":
     unittest.main()

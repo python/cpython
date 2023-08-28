@@ -215,6 +215,68 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_testcapi_err_setstring__doc__,
+"err_setstring($module, exc, value, /)\n"
+"--\n"
+"\n");
+
+#define _TESTCAPI_ERR_SETSTRING_METHODDEF    \
+    {"err_setstring", _PyCFunction_CAST(_testcapi_err_setstring), METH_FASTCALL, _testcapi_err_setstring__doc__},
+
+static PyObject *
+_testcapi_err_setstring_impl(PyObject *module, PyObject *exc,
+                             const char *value, Py_ssize_t value_length);
+
+static PyObject *
+_testcapi_err_setstring(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *exc;
+    const char *value;
+    Py_ssize_t value_length;
+
+    if (!_PyArg_ParseStack(args, nargs, "Oz#:err_setstring",
+        &exc, &value, &value_length)) {
+        goto exit;
+    }
+    return_value = _testcapi_err_setstring_impl(module, exc, value, value_length);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_testcapi_err_setfromerrnowithfilename__doc__,
+"err_setfromerrnowithfilename($module, error, exc, value, /)\n"
+"--\n"
+"\n");
+
+#define _TESTCAPI_ERR_SETFROMERRNOWITHFILENAME_METHODDEF    \
+    {"err_setfromerrnowithfilename", _PyCFunction_CAST(_testcapi_err_setfromerrnowithfilename), METH_FASTCALL, _testcapi_err_setfromerrnowithfilename__doc__},
+
+static PyObject *
+_testcapi_err_setfromerrnowithfilename_impl(PyObject *module, int error,
+                                            PyObject *exc, const char *value,
+                                            Py_ssize_t value_length);
+
+static PyObject *
+_testcapi_err_setfromerrnowithfilename(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int error;
+    PyObject *exc;
+    const char *value;
+    Py_ssize_t value_length;
+
+    if (!_PyArg_ParseStack(args, nargs, "iOz#:err_setfromerrnowithfilename",
+        &error, &exc, &value, &value_length)) {
+        goto exit;
+    }
+    return_value = _testcapi_err_setfromerrnowithfilename_impl(module, error, exc, value, value_length);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_testcapi_raise_exception__doc__,
 "raise_exception($module, exception, num_args, /)\n"
 "--\n"
@@ -237,7 +299,7 @@ _testcapi_raise_exception(PyObject *module, PyObject *const *args, Py_ssize_t na
         goto exit;
     }
     exc = args[0];
-    num_args = _PyLong_AsInt(args[1]);
+    num_args = PyLong_AsInt(args[1]);
     if (num_args == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -426,4 +488,4 @@ _testcapi_unstable_exc_prep_reraise_star(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=fd6aef54f195c77b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6c4b7ad1cb1e0153 input=a9049054013a1b77]*/

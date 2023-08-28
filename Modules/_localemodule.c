@@ -11,6 +11,7 @@ This software comes with no warranty. Use at your own risk.
 
 #include "Python.h"
 #include "pycore_fileutils.h"
+#include "pycore_pymem.h"  // _PyMem_Strdup
 
 #include <stdio.h>
 #include <locale.h>
@@ -736,8 +737,8 @@ _locale_bindtextdomain_impl(PyObject *module, const char *domain,
     }
     current_dirname = bindtextdomain(domain, dirname);
     if (current_dirname == NULL) {
-        Py_XDECREF(dirname_bytes);
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_XDECREF(dirname_bytes);
         return NULL;
     }
     result = PyUnicode_DecodeLocale(current_dirname, NULL);

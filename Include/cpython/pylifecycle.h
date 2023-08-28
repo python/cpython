@@ -81,3 +81,5 @@ PyAPI_FUNC(PyStatus) Py_NewInterpreterFromConfig(
 typedef void (*atexit_datacallbackfunc)(void *);
 PyAPI_FUNC(int) PyUnstable_AtExit(
         PyInterpreterState *, atexit_datacallbackfunc, void *);
+
+PyAPI_FUNC(int) Py_IsFinalizing(void);

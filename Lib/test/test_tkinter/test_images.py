@@ -144,6 +144,14 @@ class BitmapImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image['foreground'],
                          '-foreground {} {} #000000 yellow')
 
+    def test_bug_100814(self):
+        # gh-100814: Passing a callable option value causes AttributeError.
+        with self.assertRaises(tkinter.TclError):
+            tkinter.BitmapImage('::img::test', master=self.root, spam=print)
+        image = tkinter.BitmapImage('::img::test', master=self.root)
+        with self.assertRaises(tkinter.TclError):
+            image.configure(spam=print)
+
 
 class PhotoImageTest(AbstractTkTest, unittest.TestCase):
 
@@ -273,6 +281,14 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image['palette'], '256')
         image.configure(palette='3/4/2')
         self.assertEqual(image['palette'], '3/4/2')
+
+    def test_bug_100814(self):
+        # gh-100814: Passing a callable option value causes AttributeError.
+        with self.assertRaises(tkinter.TclError):
+            tkinter.PhotoImage('::img::test', master=self.root, spam=print)
+        image = tkinter.PhotoImage('::img::test', master=self.root)
+        with self.assertRaises(tkinter.TclError):
+            image.configure(spam=print)
 
     def test_blank(self):
         image = self.create()
