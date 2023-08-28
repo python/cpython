@@ -1664,8 +1664,9 @@ class CLanguage(Language):
 
     def render_option_group_parsing(
             self,
+            clinic: Clinic,
             f: Function,
-            template_dict: TemplateDict
+            template_dict: TemplateDict,
     ) -> None:
         # positional only, grouped, optional arguments!
         # can be optional on the left or right.
@@ -1713,7 +1714,11 @@ class CLanguage(Language):
         count_min = sys.maxsize
         count_max = -1
 
-        add("switch (PyTuple_GET_SIZE(args)) {\n")
+        if clinic.limited_capi:
+            nargs = 'PyTuple_Size(args)'
+        else:
+            nargs = 'PyTuple_GET_SIZE(args)'
+        add(f"switch ({nargs}) {{\n")
         for subset in permute_optional_groups(left, required, right):
             count = len(subset)
             count_min = min(count_min, count)
@@ -1870,7 +1875,7 @@ class CLanguage(Language):
         template_dict['unpack_max'] = str(unpack_max)
 
         if has_option_groups:
-            self.render_option_group_parsing(f, template_dict)
+            self.render_option_group_parsing(clinic, f, template_dict)
 
         # buffers, not destination
         for name, destination in clinic.destination_buffers.items():
