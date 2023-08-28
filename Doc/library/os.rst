@@ -3786,7 +3786,7 @@ features:
    raw :func:`read` with a buffer size of 8, :func:`~select.select`, :func:`~select.poll`
    and similar. See man page :manpage:`timerfd_create(2)` for more information.
 
-   Refer to :ref:`time-clock-id-constants` for a list of accepted values for *clk_id*.
+   Refer to :ref:`time-clock-id-constants` for a list of accepted values for *clockid*.
 
    *flags* can be constructed from :const:`TFD_NONBLOCK` and :const:`TFD_CLOEXEC`.
 
@@ -3849,14 +3849,16 @@ features:
 
 .. function:: timerfd_settime(fd, flags, interval, value)
 
-   Start/stop timer for an timerfd file descriptor.
+   Start/stop timer for an timer file descriptor.
    See man page :manpage:`timerfd_settime(2)` for more information.
 
-   ``interval`` coresponds to ``it_interval`` in ``struct itimerspec`` and ``value`` coresponds to
-   ``it_value`` in ``struct itimerspec``. They are both in seconds unit and types are double.
+   *interval* coresponds to :c:member:`!it_interval` in :c:struct:`itimerspec` and *value* coresponds to
+   :c:member:`!it_value` in c:struct:`itimerspec`. They are both in seconds unit and types are double.
 
-   ``interval`` is calculated like ``it_interval.tv_sec + it_interval.tv_nsec * 1e-9``,
-   ``value`` is calculated like ``it_interval.tv_sec + it_interval.tv_nsec * 1e-9`` internally.
+   *interval* is calculated like :c:member:`!timespec.tv_sec` + :c:member:`!timespec.tv_nsec` * `1e-9`,
+   *value* is calculated like :c:member:`!timespec.tv_sec` + :c:member:`!timespec.tv_nsec` * `1e-9` internally.
+
+   Return a tuple interval and value which were the setting of the timer at the time of the call.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
@@ -3866,14 +3868,7 @@ features:
 
 .. function:: timerfd_settime_ns(fd, flags, interval_ns, value_ns)
 
-   Start/stop timer for an timerfd file descriptor.
-   See man page :manpage:`timerfd_settime(2)` for more information.
-
-   ``interval_ns`` coresponds to ``it_interval`` in ``struct itimerspec`` and ``value_ns`` coresponds to
-   ``it_value`` in ``struct itimerspec``. They are both in nano second unit and types are long long.
-
-   ``interval`` is calculated like ``it_interval.tv_sec * 10**9 + it_interval.tv_nsec``,
-   ``value`` is calculated like ``it_interval.tv_sec * 10**9 + it_interval.tv_nsec`` internally.
+   Similar to :func:`timerfd_settime`, but use time as nanoseconds.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
@@ -3882,7 +3877,7 @@ features:
 
 .. function:: timerfd_gettime(fd)
 
-   Returns a tuple ``interval`` which and ``value`` which is the time until next expiration.
+   Return a tuple ``interval`` which and ``value`` which is the time until next expiration.
    See man page :manpage:`timerfd_gettime(2)` for more information.
 
    ``interval`` coresponds to ``it_interval`` in ``struct itimerspec`` and ``value`` coresponds to
@@ -3898,14 +3893,7 @@ features:
 
 .. function:: timerfd_gettime_ns(fd)
 
-   Returns a tuple ``interval`` which and ``value`` which is the time until next expiration.
-   See man page :manpage:`timerfd_gettime(2)` for more information.
-
-   ``interval`` coresponds to ``it_interval`` in ``struct itimerspec`` and ``value`` coresponds to
-   ``it_value`` in ``struct itimerspec``. They are both in nano second unit and types are long long.
-
-   ``interval`` is calculated like ``it_interval.tv_sec * 10**9 + it_interval.tv_nsec``,
-   ``value`` is calculated like ``it_interval.tv_sec * 10**9 + it_interval.tv_nsec`` internally.
+   Similar to :func:`timerfd_gettime`, but return time as nanoseconds.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
