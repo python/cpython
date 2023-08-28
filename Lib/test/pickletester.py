@@ -3784,7 +3784,7 @@ class AbstractPicklerUnpicklerObjectTests:
 
     def test_pickle_invalid_reducer_override(self):
         # gh-103035
-        obj=object()
+        obj = object()
 
         f = io.BytesIO()
         class MyPickler(self.pickler_class):
@@ -3965,7 +3965,7 @@ class AbstractDispatchTableTests:
 
     def test_dispatch_table_None_item(self):
         # gh-93627
-        obj=object()
+        obj = object()
         f = io.BytesIO()
         pickler = self.pickler_class(f)
         pickler.dispatch_table = {type(obj): None}
