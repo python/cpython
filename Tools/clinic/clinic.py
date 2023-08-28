@@ -975,6 +975,8 @@ class CLanguage(Language):
             func: Function,
             params: dict[int, Parameter],
             argname_fmt: str | None,
+            *,
+            limited_capi: bool,
     ) -> str:
         assert len(params) > 0
         last_param = next(reversed(params.values()))
@@ -986,7 +988,7 @@ class CLanguage(Language):
             if p.is_optional():
                 if argname_fmt:
                     conditions.append(f"nargs < {i+1} && {argname_fmt % i}")
-                elif func.kind.new_or_init:
+                elif func.kind.new_or_init or limited_capi:
                     conditions.append(f"nargs < {i+1} && PyDict_Contains(kwargs, &_Py_ID({p.name}))")
                     containscheck = "PyDict_Contains"
                 else:
@@ -998,7 +1000,9 @@ class CLanguage(Language):
         if len(conditions) > 1:
             condition = f"(({condition}))"
         if last_param.is_optional():
-            if func.kind.new_or_init:
+            if limited_capi:
+                condition = f"kwargs && PyDict_Size(kwargs) && {condition}"
+            elif func.kind.new_or_init:
                 condition = f"kwargs && PyDict_GET_SIZE(kwargs) && {condition}"
             else:
                 condition = f"kwnames && PyTuple_GET_SIZE(kwnames) && {condition}"
@@ -1170,6 +1174,14 @@ class CLanguage(Language):
                 add(field)
             return linear_format(output(), parser_declarations=declarations)
 
+        limited_capi = clinic.limited_capi
+        if limited_capi and (requires_defining_class or pseudo_args or
+                (any(p.is_optional() for p in parameters) and
+                 any(p.is_keyword_only() and not p.is_optional() for p in parameters)) or
+                any(c.broken_limited_capi for c in converters)):
+            warn(f"Function {f.full_name} cannot use limited C API")
+            limited_capi = False
+
         parsearg: str | None
         if not parameters:
             parser_code: list[str] | None
@@ -1230,8 +1242,11 @@ class CLanguage(Language):
                     {c_basename}({self_type}{self_name}, PyObject *%s)
                     """ % argname)
 
-                displayname = parameters[0].get_displayname(0)
-                parsearg = converters[0].parse_arg(argname, displayname)
+                if limited_capi:
+                    parsearg = None
+                else:
+                    displayname = parameters[0].get_displayname(0)
+                    parsearg = converters[0].parse_arg(argname, displayname)
                 if parsearg is None:
                     parsearg = """
                         if (!PyArg_Parse(%s, "{format_units}:{name}", {parse_arguments})) {{
@@ -1250,21 +1265,24 @@ class CLanguage(Language):
             parser_prototype = self.PARSER_PROTOTYPE_VARARGS
             parser_definition = parser_body(parser_prototype, '    {option_group_parsing}')
 
-        elif not requires_defining_class and pos_only == len(parameters) - pseudo_args and clinic.limited_capi:
+        elif (not requires_defining_class and pos_only == len(parameters) and
+              not pseudo_args and limited_capi):
             # positional-only for the limited C API
             flags = "METH_VARARGS"
-
             parser_prototype = self.PARSER_PROTOTYPE_VARARGS
-            parser_code = [normalize_snippet("""
-                if (!PyArg_ParseTuple(args, "{format_units}:{name}",
-                    {parse_arguments}))
-                    goto exit;
-            """, indent=4)]
-            argname_fmt = 'args[%d]'
-            declarations = ""
-
-            parser_definition = parser_body(parser_prototype, *parser_code,
-                                            declarations=declarations)
+            if all(isinstance(c, object_converter) and c.format_unit == 'O' for c in converters):
+                parser_code = [normalize_snippet("""
+                    if (!PyArg_UnpackTuple(args, "{name}", %d, %d,
+                        {parse_arguments}))
+                        goto exit;
+                """ % (min_pos, max_pos), indent=4)]
+            else:
+                parser_code = [normalize_snippet("""
+                    if (!PyArg_ParseTuple(args, "{format_units}:{name}",
+                        {parse_arguments}))
+                        goto exit;
+                """, indent=4)]
+            parser_definition = parser_body(parser_prototype, *parser_code)
 
         elif not requires_defining_class and pos_only == len(parameters) - pseudo_args:
             if not new_or_init:
@@ -1283,7 +1301,6 @@ class CLanguage(Language):
                 parser_prototype = self.PARSER_PROTOTYPE_VARARGS
                 nargs = 'PyTuple_GET_SIZE(args)'
                 argname_fmt = 'PyTuple_GET_ITEM(args, %d)'
-
 
             left_args = f"{nargs} - {max_pos}"
             max_args = NO_VARARG if (vararg != NO_VARARG) else max_pos
@@ -1384,7 +1401,7 @@ class CLanguage(Language):
                 )
                 nargs = f"Py_MIN(nargs, {max_pos})" if max_pos else "0"
 
-            if clinic.limited_capi:
+            if limited_capi:
                 # positional-or-keyword arguments
                 flags = "METH_VARARGS|METH_KEYWORDS"
 
@@ -1394,8 +1411,13 @@ class CLanguage(Language):
                         {parse_arguments}))
                         goto exit;
                 """, indent=4)]
-                argname_fmt = 'args[%d]'
-                declarations = ""
+                declarations = "static char *_keywords[] = {{{keywords_c} NULL}};"
+                if deprecated_positionals or deprecated_keywords:
+                    declarations += "\nPy_ssize_t nargs = PyTuple_Size(args);"
+                if deprecated_keywords:
+                    code = self.deprecate_keyword_use(f, deprecated_keywords, None,
+                                                      limited_capi=limited_capi)
+                    parser_code.append(code)
 
             elif not new_or_init:
                 flags = "METH_FASTCALL|METH_KEYWORDS"
@@ -1433,92 +1455,95 @@ class CLanguage(Language):
                 flags = 'METH_METHOD|' + flags
                 parser_prototype = self.PARSER_PROTOTYPE_DEF_CLASS
 
-            if deprecated_keywords:
-                code = self.deprecate_keyword_use(f, deprecated_keywords, argname_fmt)
-                parser_code.append(code)
+            if not limited_capi:
+                if deprecated_keywords:
+                    code = self.deprecate_keyword_use(f, deprecated_keywords, argname_fmt,
+                                                      limited_capi=limited_capi)
+                    parser_code.append(code)
 
-            add_label: str | None = None
-            for i, p in enumerate(parameters):
-                if isinstance(p.converter, defining_class_converter):
-                    raise ValueError("defining_class should be the first "
-                                     "parameter (after self)")
-                displayname = p.get_displayname(i+1)
-                parsearg = p.converter.parse_arg(argname_fmt % i, displayname)
-                if parsearg is None:
-                    parser_code = None
-                    break
-                if add_label and (i == pos_only or i == max_pos):
-                    parser_code.append("%s:" % add_label)
-                    add_label = None
-                if not p.is_optional():
-                    parser_code.append(normalize_snippet(parsearg, indent=4))
-                elif i < pos_only:
-                    add_label = 'skip_optional_posonly'
-                    parser_code.append(normalize_snippet("""
-                        if (nargs < %d) {{
-                            goto %s;
-                        }}
-                        """ % (i + 1, add_label), indent=4))
-                    if has_optional_kw:
+                add_label: str | None = None
+                for i, p in enumerate(parameters):
+                    if isinstance(p.converter, defining_class_converter):
+                        raise ValueError("defining_class should be the first "
+                                        "parameter (after self)")
+                    displayname = p.get_displayname(i+1)
+                    parsearg = p.converter.parse_arg(argname_fmt % i, displayname)
+                    if parsearg is None:
+                        parser_code = None
+                        break
+                    if add_label and (i == pos_only or i == max_pos):
+                        parser_code.append("%s:" % add_label)
+                        add_label = None
+                    if not p.is_optional():
+                        parser_code.append(normalize_snippet(parsearg, indent=4))
+                    elif i < pos_only:
+                        add_label = 'skip_optional_posonly'
                         parser_code.append(normalize_snippet("""
-                            noptargs--;
-                            """, indent=4))
-                    parser_code.append(normalize_snippet(parsearg, indent=4))
-                else:
-                    if i < max_pos:
-                        label = 'skip_optional_pos'
-                        first_opt = max(min_pos, pos_only)
-                    else:
-                        label = 'skip_optional_kwonly'
-                        first_opt = max_pos + min_kw_only
-                        if vararg != NO_VARARG:
-                            first_opt += 1
-                    if i == first_opt:
-                        add_label = label
-                        parser_code.append(normalize_snippet("""
-                            if (!noptargs) {{
+                            if (nargs < %d) {{
                                 goto %s;
                             }}
-                            """ % add_label, indent=4))
-                    if i + 1 == len(parameters):
+                            """ % (i + 1, add_label), indent=4))
+                        if has_optional_kw:
+                            parser_code.append(normalize_snippet("""
+                                noptargs--;
+                                """, indent=4))
                         parser_code.append(normalize_snippet(parsearg, indent=4))
                     else:
-                        add_label = label
-                        parser_code.append(normalize_snippet("""
-                            if (%s) {{
-                            """ % (argname_fmt % i), indent=4))
-                        parser_code.append(normalize_snippet(parsearg, indent=8))
-                        parser_code.append(normalize_snippet("""
-                                if (!--noptargs) {{
+                        if i < max_pos:
+                            label = 'skip_optional_pos'
+                            first_opt = max(min_pos, pos_only)
+                        else:
+                            label = 'skip_optional_kwonly'
+                            first_opt = max_pos + min_kw_only
+                            if vararg != NO_VARARG:
+                                first_opt += 1
+                        if i == first_opt:
+                            add_label = label
+                            parser_code.append(normalize_snippet("""
+                                if (!noptargs) {{
                                     goto %s;
                                 }}
-                            }}
-                            """ % add_label, indent=4))
+                                """ % add_label, indent=4))
+                        if i + 1 == len(parameters):
+                            parser_code.append(normalize_snippet(parsearg, indent=4))
+                        else:
+                            add_label = label
+                            parser_code.append(normalize_snippet("""
+                                if (%s) {{
+                                """ % (argname_fmt % i), indent=4))
+                            parser_code.append(normalize_snippet(parsearg, indent=8))
+                            parser_code.append(normalize_snippet("""
+                                    if (!--noptargs) {{
+                                        goto %s;
+                                    }}
+                                }}
+                                """ % add_label, indent=4))
 
-            if parser_code is not None:
-                if add_label:
-                    parser_code.append("%s:" % add_label)
-            else:
-                declarations = declare_parser(f, hasformat=True)
-                if not new_or_init:
-                    parser_code = [normalize_snippet("""
-                        if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser{parse_arguments_comma}
-                            {parse_arguments})) {{
-                            goto exit;
-                        }}
-                        """, indent=4)]
+                if parser_code is not None:
+                    if add_label:
+                        parser_code.append("%s:" % add_label)
                 else:
-                    parser_code = [normalize_snippet("""
-                        if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-                            {parse_arguments})) {{
-                            goto exit;
-                        }}
-                        """, indent=4)]
-                    if deprecated_positionals or deprecated_keywords:
-                        declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"
-                if deprecated_keywords:
-                    code = self.deprecate_keyword_use(f, deprecated_keywords, None)
-                    parser_code.append(code)
+                    declarations = declare_parser(f, hasformat=True)
+                    if not new_or_init:
+                        parser_code = [normalize_snippet("""
+                            if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser{parse_arguments_comma}
+                                {parse_arguments})) {{
+                                goto exit;
+                            }}
+                            """, indent=4)]
+                    else:
+                        parser_code = [normalize_snippet("""
+                            if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+                                {parse_arguments})) {{
+                                goto exit;
+                            }}
+                            """, indent=4)]
+                        if deprecated_positionals or deprecated_keywords:
+                            declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"
+                    if deprecated_keywords:
+                        code = self.deprecate_keyword_use(f, deprecated_keywords, None,
+                                                          limited_capi=limited_capi)
+                        parser_code.append(code)
 
             if deprecated_positionals:
                 code = self.deprecate_positional_use(f, deprecated_positionals)
@@ -3098,6 +3123,8 @@ class CConverter(metaclass=CConverterAutoRegister):
     # "#include "name"     // reason"
     include: tuple[str, str] | None = None
 
+    broken_limited_capi: bool = False
+
     # keep in sync with self_converter.__init__!
     def __init__(self,
              # Positional args:
@@ -3262,7 +3289,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         elif self.subclass_of:
             args.append(self.subclass_of)
 
-        s = ("&" if self.parse_by_reference else "") + self.name
+        s = ("&" if self.parse_by_reference else "") + self.parser_name
         args.append(s)
 
         if self.length:

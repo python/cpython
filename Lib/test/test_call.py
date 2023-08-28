@@ -65,7 +65,8 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, int.from_bytes, b'a', 'little', False)
 
     def test_varargs1min(self):
-        msg = r"get expected at least 1 argument, got 0"
+        msg = (r"get\(\) takes at least 1 argument \(0 given\)|"
+               r"get expected at least 1 argument, got 0")
         self.assertRaisesRegex(TypeError, msg, {}.get)
 
         msg = r"expected 1 argument, got 0"
@@ -76,11 +77,13 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, getattr)
 
     def test_varargs1max(self):
-        msg = r"input expected at most 1 argument, got 2"
+        msg = (r"input\(\) takes at most 1 argument \(2 given\)|"
+               r"input expected at most 1 argument, got 2")
         self.assertRaisesRegex(TypeError, msg, input, 1, 2)
 
     def test_varargs2max(self):
-        msg = r"get expected at most 2 arguments, got 3"
+        msg = (r"get\(\) takes at most 2 arguments \(3 given\)|"
+               r"get expected at most 2 arguments, got 3")
         self.assertRaisesRegex(TypeError, msg, {}.get, 1, 2, 3)
 
     def test_varargs1_kw(self):
@@ -96,7 +99,7 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, bool, x=2)
 
     def test_varargs4_kw(self):
-        msg = r"^list[.]index\(\) takes no keyword arguments$"
+        msg = r"^(list[.])?index\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, [].index, x=2)
 
     def test_varargs5_kw(self):
