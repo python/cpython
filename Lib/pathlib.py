@@ -785,8 +785,17 @@ class PureWindowsPath(PurePath):
 
 
 class _PathBase(PurePath):
-    """PurePath subclass for virtual filesystems, such as archives and remote
-    storage.
+    """Base class for concrete path objects.
+
+    This class provides dummy implementations for many methods that derived
+    classes can override selectively; the default implementations raise
+    UnsupportedOperation. The most basic methods, such as stat() and open(),
+    directly raise UnsupportedOperation; these basic methods are called by
+    other methods such as is_dir() and read_text().
+
+    The Path class derives this class to implement local filesystem paths.
+    Users may derive their own classes to implement virtual filesystem paths,
+    such as paths in archive files or on remote storage systems.
     """
     __slots__ = ()
     __bytes__ = None
