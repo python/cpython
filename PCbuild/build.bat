@@ -175,12 +175,12 @@ echo on
  /p:UseTestMarker=%UseTestMarker% %GITProperty%^
  %1 %2 %3 %4 %5 %6 %7 %8 %9
 
-if "%platf%" EQU Win32 (set prefix=%dir%win32)
-if "%platf%" EQU x64 (set prefix=%dir%amd64)
-if "%platf%" EQU ARM64 (set prefix=%dir%arm64)
-if "%platf%" EQU ARM (set prefix=%dir%arm32)
+if "%platf%"=="Win32" set prefix=%dir%win32
+if "%platf%"=="x64" set prefix=%dir%amd64
+if "%platf%"=="ARM64" set prefix=%dir%arm64
+if "%platf%"=="ARM" set prefix=%dir%arm32
 set suffix=
-if "%conf%"=="Debug" (set suffix=_d)
+if "%conf%"=="Debug" set suffix=_d
 set built_python_exe=%prefix%\python%suffix%.exe
 call "%built_python_exe%" -m ensurepip.bundle -v
 
