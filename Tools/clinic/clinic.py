@@ -2554,7 +2554,7 @@ impl_definition block
         return printer.f.getvalue()
 
     def _module_and_class(
-        self, fields: Iterable[str]
+        self, fields: Sequence[str]
     ) -> tuple[Module | Clinic, Class | None]:
         """
         fields should be an iterable of field names.
@@ -2563,26 +2563,20 @@ impl_definition block
         this function is only ever used to find the parent of where
         a new class/module should go.
         """
-        parent: Clinic | Module | Class
-        child: Module | Class | None
-        module: Clinic | Module
+        parent: Clinic | Module | Class = self
+        module: Clinic | Module = self
         cls: Class | None = None
-        so_far: list[str] = []
 
-        parent = module = self
-
-        for field in fields:
-            so_far.append(field)
+        for idx, field in enumerate(fields):
             if not isinstance(parent, Class):
-                child = parent.modules.get(field)
-                if child:
-                    parent = module = child
+                if field in parent.modules:
+                    parent = module = parent.modules[field]
                     continue
-            child = parent.classes.get(field)
-            if not child:
-                fullname = ".".join(so_far)
+            if field in parent.classes:
+                parent = cls = parent.classes[field]
+            else:
+                fullname = ".".join(fields[idx:])
                 fail(f"Parent class or module {fullname!r} does not exist.")
-            cls = parent = child
 
         return module, cls
 
