@@ -2174,7 +2174,7 @@ class BlockPrinter:
             *,
             core_includes: bool = False,
             limited_capi: bool = False,
-            header_includes: dict[str, str] | None = None,
+            header_includes: dict[str, str],
     ) -> None:
         input = block.input
         output = block.output
@@ -2213,11 +2213,10 @@ class BlockPrinter:
 
                 """)
 
-            if header_includes is not None:
-                # Emit optional "#include" directives for C headers
-                for include, reason in sorted(header_includes.items()):
-                    line = f'#include "{include}"'.ljust(35) + f'// {reason}\n'
-                    output += line
+            # Emit optional "#include" directives for C headers
+            for include, reason in sorted(header_includes.items()):
+                line = f'#include "{include}"'.ljust(35) + f'// {reason}\n'
+                output += line
 
         input = ''.join(block.input)
         output += ''.join(block.output)
