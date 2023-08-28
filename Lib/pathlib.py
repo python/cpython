@@ -426,7 +426,7 @@ class PurePath:
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
 
     def as_uri(self):
-        """Return the path as a 'file' URI."""
+        """Return the path as a URI."""
         if not self.is_absolute():
             raise ValueError("relative path can't be expressed as a file URI")
 
@@ -1210,7 +1210,7 @@ class _PathBase(PurePath):
         """Return an absolute version of this path
         No normalization or symlink resolution is performed.
 
-        Use resolve() to get the canonical path to a file.
+        Use resolve() to resolve symlinks and remove '..' segments.
         """
         raise UnsupportedOperation(f"{type(self).__name__}.absolute()")
 
@@ -1239,8 +1239,8 @@ class _PathBase(PurePath):
 
     def resolve(self, strict=False):
         """
-        Resolve '..' segments in the path. Where possible, make the path
-        absolute and resolve symlinks on the way.
+        Make the path absolute, resolving all symlinks on the way and also
+        normalizing it.
         """
         try:
             path = self.absolute()
@@ -1463,10 +1463,10 @@ class Path(_PathBase):
         return os.scandir(self)
 
     def absolute(self):
-        """Return an absolute version of this path by prepending the current
-        working directory. No normalization or symlink resolution is performed.
+        """Return an absolute version of this path
+        No normalization or symlink resolution is performed.
 
-        Use resolve() to get the canonical path to a file.
+        Use resolve() to resolve symlinks and remove '..' segments.
         """
         if self.is_absolute():
             return self
