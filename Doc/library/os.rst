@@ -3858,7 +3858,7 @@ features:
    *interval* is calculated like :c:member:`!timespec.tv_sec` + :c:member:`!timespec.tv_nsec` * `1e-9`,
    *value* is calculated like :c:member:`!timespec.tv_sec` + :c:member:`!timespec.tv_nsec` * `1e-9` internally.
 
-   Return a tuple interval and value which were the setting of the timer at the time of the call.
+   Return a two-item tuple (`interval`, `value`) which were the setting of the timer at the time of the call.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
@@ -3877,7 +3877,7 @@ features:
 
 .. function:: timerfd_gettime(fd)
 
-   Return a tuple ``interval`` which and ``value`` which is the time until next expiration.
+   Return a two-item tuple (`interval`, `value`) which is the time until next expiration.
    See man page :manpage:`timerfd_gettime(2)` for more information.
 
    The format of the return value is same as that of :func:`timerfd_settime`.
