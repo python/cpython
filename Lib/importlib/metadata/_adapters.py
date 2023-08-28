@@ -40,37 +40,59 @@ _entries = re.compile(r"""
 
 # Split an RFC5233-ish name-email entry:
 # 01. Start at the beginning.
-# 02. If it starts with '<', skip this name-capturing regex.
-# 03. Alt 1: match single or double quotes and handle escape characters.
-# 04. Alt 2: match anything except one or more spaces followed by '<'. If
-#     quote characters are unbalanced, they will be matched here.
-# 05. Match the alternatives at least once, in any order...
-# 06. ... but optionally so the result will be 'None' rather than an empty
-#     string.
-# 07. If the name portion is missing there may not be whitespace before
-#     '<'.
-# 08. Capture everything after '<' with a non-greedy quantifier to allow #
-#     for the next regex. Use '+','?' to force an empty string to become
-#     'None'.
-# 09. Strip the final '>', if it exists.
-# 10. Allow for missing email section.
-# 11. Finish at the end.
+# 02. Alt 1: match single or double quotes and handle escape characters.
+# 03. Alt 2: match any character if the following is not an address. If
+#     quote characters are unbalanced, they will be matched here. First
+#     match any spaces preceding the address, which are optional if the
+#     display name is missing.
+# 04. Alt 2.1: match single or double quotes and handle escape characters.
+# 05. Alt 2.2: match any character except " " or "@".
+# 06. Match the alternatives at least once - the local part of the address
+#     cannot be empty.
+# 07. Match "@" followed by something - the domain cannot be empty either.
+# 08. (See 03)
+# 09. Match the top-level alternatives at least once, in any order...
+# 10. ... but optionally so the resulting name will be 'None' rather than
+#     an empty string.
+# 11. If the name portion is missing there may or may not be whitespace
+#     before the address. The opening angle bracket is always optional.
+# 12. (See 04)
+# 13. (See 05)
+# 14. (See 06)
+# 15. Match everything after "@" with a non-greedy quantifier to allow for
+#     the optional closing angle bracket.
+# 16. Allow for missing email section.
+# 17. Match the optional closing angle bracket.
+# 18. Finish at the end.
+# Summary:
+#   ^ ( ( quote
+#       | not: space* (quote | not:space-or-at)+ @ anything
+#       )+
+#     )?
+#   space* <? ( (quote | not:space-or-at)+ @ anything+? )? >? $
 # Result:
 #   group 1 (name):  None or non-empty string.
-#   group 3 (email): None or non-empty string.
+#   group 4 (email): None or non-empty string.
 
 _name_email = re.compile(r"""
-^                                           # 01
-  ( (?!<)                                   # 02
-    (?: (["']) (?:(?!\2|\\).|\\.)* \2       # 03
-    |   (?!\ +<).                           # 04
-    )+                                      # 05
-  )?                                        # 06
-  (?: \ *<                                  # 07
-      (.+?)?                                # 08
-      >?                                    # 09
-  )?                                        # 10
-$                                           # 11
+^                                                   # 01
+  ( (?: (["']) (?:(?!\2|\\).|\\.)* \2               # 02
+    |   (?! \ *                                     # 03
+            (?: (["']) (?:(?!\3|\\).|\\.)* \3       # 04
+            |   [^ @]                               # 05
+            )+                                      # 06
+            @ .                                     # 07
+        ).                                          # 08
+    )+                                              # 09
+  )?                                                # 10
+  \ * <?                                            # 11
+  ( (?: (["']) (?:(?!\5|\\).|\\.)* \5               # 12
+    |   [^ @]                                       # 13
+    )+                                              # 14
+    @ .+?                                           # 15
+  )?                                                # 16
+  >?                                                # 17
+$                                                   # 18
 """, re.VERBOSE)
 
 
@@ -162,7 +184,7 @@ class Message(email.message.Message):
 
     def _parse_idents(self, s):
         es = (i[0] for i in _entries.findall(s))
-        es = (_name_email.match(i)[::2] for i in es)
+        es = (_name_email.match(i).groups()[::3] for i in es)
         es = {Ident(*i) for i in es if i != (None, None)}
         return es
 
