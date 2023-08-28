@@ -2173,7 +2173,7 @@ class BlockPrinter:
             block: Block,
             *,
             core_includes: bool = False,
-            limited_capi: bool = False,
+            limited_capi: bool,
             header_includes: dict[str, str],
     ) -> None:
         input = block.input
@@ -2530,7 +2530,9 @@ impl_definition block
                     self.parsers[dsl_name] = parsers[dsl_name](self)
                 parser = self.parsers[dsl_name]
                 parser.parse(block)
-            printer.print_block(block, header_includes=self.includes)
+            printer.print_block(block,
+                                limited_capi=self.limited_capi,
+                                header_includes=self.includes)
 
         # these are destinations not buffers
         for name, destination in self.destinations.items():
@@ -2545,7 +2547,9 @@ impl_definition block
                     block.input = "dump " + name + "\n"
                     warn("Destination buffer " + repr(name) + " not empty at end of file, emptying.")
                     printer.write("\n")
-                    printer.print_block(block, header_includes=self.includes)
+                    printer.print_block(block,
+                                        limited_capi=self.limited_capi,
+                                        header_includes=self.includes)
                     continue
 
                 if destination.type == 'file':
@@ -2570,7 +2574,10 @@ impl_definition block
 
                     block.input = 'preserve\n'
                     printer_2 = BlockPrinter(self.language)
-                    printer_2.print_block(block, core_includes=True, header_includes=self.includes)
+                    printer_2.print_block(block,
+                                          core_includes=True,
+                                          limited_capi=self.limited_capi,
+                                          header_includes=self.includes)
                     write_file(destination.filename, printer_2.f.getvalue())
                     continue
 
