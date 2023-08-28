@@ -81,7 +81,7 @@ class InteractiveSession(unittest.TestCase):
         out = stdout.getvalue()
         err = stderr.getvalue()
         self.assertEqual(cm.exception.code, 0,
-                         "\n".join([f"Unexpected failure: {args=}", out, err]))
+                         f"Unexpected failure: {args=}\n{out}\n{err}")
         return out, err
 
     def test_interact(self):
