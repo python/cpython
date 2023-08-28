@@ -618,7 +618,7 @@ build_all:	check-clean-src $(BUILDPYTHON) platform sharedmods \
 		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil
 
 .PHONY: all-with-ensurepip-dists-bundled
-all-with-ensurepip-dists-bundled: build_all bundle-ensurepip-dists
+all-with-ensurepip-dists-bundled: @DEF_MAKE_ALL_RULE@ bundle-ensurepip-dists
 
 .PHONY: build_wasm
 build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
