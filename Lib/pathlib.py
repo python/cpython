@@ -790,7 +790,7 @@ class _PathBase(PurePath):
     """
     __slots__ = ()
     __bytes__ = None
-    __fspath__ = None
+    __fspath__ = None  # virtual paths have no local file system representation
 
     def stat(self, *, follow_symlinks=True):
         """
@@ -1190,8 +1190,8 @@ class _PathBase(PurePath):
             paths += [path._make_child_relpath(d) for d in reversed(dirnames)]
 
     def absolute(self):
-        """Return an absolute version of this path by prepending the current
-        working directory. No normalization or symlink resolution is performed.
+        """Return an absolute version of this path
+        No normalization or symlink resolution is performed.
 
         Use resolve() to get the canonical path to a file.
         """
@@ -1210,8 +1210,7 @@ class _PathBase(PurePath):
 
     @classmethod
     def home(cls):
-        """Return a new path pointing to the user's home directory (as
-        returned by os.path.expanduser('~')).
+        """Return a new path pointing to expanduser('~').
         """
         return cls("~").expanduser()
 
