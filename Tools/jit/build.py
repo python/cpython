@@ -795,8 +795,8 @@ CFLAGS = [
     f"-ffreestanding",  # XXX
     # We don't need this (and it causes weird relocations):
     f"-fno-asynchronous-unwind-tables",  # XXX
-    # # Don't need the overhead of position-independent code, if posssible:
-    # "-fno-pic",
+    # Position-independent code adds overhead and complicates things:
+    f"-fno-pic",
     # # Disable stack-smashing canaries, which use magic symbols:
     # f"-fno-stack-protector",  # XXX
     # The GHC calling convention uses %rbp as an argument-passing register:
