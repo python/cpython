@@ -366,8 +366,35 @@ error:
     return NULL;
 }
 
+static PyObject *
+structseq_asdict(PyStructSequence* self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject* dict = NULL;
+    Py_ssize_t n_visible_fields, n_unnamed_fields, i;
+
+    n_visible_fields = VISIBLE_SIZE(self);
+    n_unnamed_fields = UNNAMED_FIELDS(self);
+
+    dict = PyDict_New();
+    if (!dict)
+        return NULL;
+
+    for (i = 0; i < n_visible_fields; i++) {
+        const char *n = Py_TYPE(self)->tp_members[i-n_unnamed_fields].name;
+        if (PyDict_SetItemString(dict, n, self->ob_item[i]) < 0)
+            goto error;
+    }
+
+    return dict;
+
+error:
+    Py_XDECREF(dict);
+    return NULL;
+}
+
 static PyMethodDef structseq_methods[] = {
     {"__reduce__", (PyCFunction)structseq_reduce, METH_NOARGS, NULL},
+    {"_asdict", (PyCFunction)structseq_asdict, METH_NOARGS, NULL},
     {NULL, NULL}
 };
 
