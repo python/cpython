@@ -1917,8 +1917,8 @@ How to use the Limited C API
 
 If a C source code contains ``#define Py_LIMITED_API``, the generated C code
 will use the :ref:`Limited API <limited-c-api>` to parse arguments. Private
-functions are not used in this case. However the code parsing arguments can be
-a less efficient depending on the parameters (types, number, etc.).
+functions are not used in this case. However, the code parsing arguments can be
+less efficient depending on the parameters (types, number, etc.).
 
 .. versionadded:: 3.13
 
