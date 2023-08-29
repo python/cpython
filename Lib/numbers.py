@@ -66,6 +66,7 @@ class Complex(Number):
     """
 
     __slots__ = ()
+    __match_args__ = ('real', 'imag')
 
     @abstractmethod
     def __complex__(self):
