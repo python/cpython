@@ -254,7 +254,6 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
         # Checks if the row object can return a list of columns as strings
         self.con.row_factory = sqlite.Row
         row = self.con.execute("select 1 as a, 2 as b").fetchone()
-
         self.assertEqual(row.keys(), ['a', 'b'])
 
     def test_fake_cursor_class(self):
