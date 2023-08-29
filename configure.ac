@@ -5830,14 +5830,9 @@ AC_ARG_WITH(
 )
 
 AS_VAR_IF([with_readline], [default], [
-  case $ac_sys_system/$ac_sys_release in
-    Darwin/*) AC_DEFINE([WITH_EDITLINE], [1])
-      with_readline=readline
-      ;;
-    *)
-      with_readline=readline
-      ;;
-  esac
+  AS_CASE([$ac_sys_system/$ac_sys_release],
+    [Darwin/*], [AC_DEFINE([WITH_EDITLINE], [1]) with_readline=readline],
+    [with_readline=readline])
 ])
 
 AS_VAR_IF([with_readline], [readline], [

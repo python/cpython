@@ -23780,15 +23780,13 @@ fi
 if test "x$with_readline" = xdefault
 then :
 
-  case $ac_sys_system/$ac_sys_release in
-    Darwin/*) printf "%s\n" "#define WITH_EDITLINE 1" >>confdefs.h
-
-      with_readline=readline
-      ;;
-    *)
-      with_readline=readline
-      ;;
-  esac
+  case $ac_sys_system/$ac_sys_release in #(
+  Darwin/*) :
+    printf "%s\n" "#define WITH_EDITLINE 1" >>confdefs.h
+ with_readline=readline ;; #(
+  *) :
+    with_readline=readline ;;
+esac
 
 fi
 

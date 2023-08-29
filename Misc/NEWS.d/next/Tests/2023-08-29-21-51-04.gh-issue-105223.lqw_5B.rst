@@ -1,1 +1,0 @@
-Add special workround for macOS default editline. Patch By Dong-hee Na.
