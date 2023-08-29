@@ -267,6 +267,7 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
         # and values. Assert the keys values are the same too.
         row_1 = self.con.execute("select 1 as a, 2 as b").fetchone()
         row_2 = self.con.execute("select 1 as a, 2 as b").fetchone()
+        self.assertEqual(row_1, row_2)
         self.assertEqual(row_1.keys(), row_2.keys())
 
     def test_fake_cursor_class(self):
