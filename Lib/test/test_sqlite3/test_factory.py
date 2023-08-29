@@ -256,7 +256,7 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
             row = self.con.execute("select 1 as a where a == 'THISDOESNOTEXIST'").fetchone()
             row.keys()
 
-        # docs.python.org: "Immediately after a query, it is 
+        # docs.python.org: "Immediately after a query, it is
         # the first member of each tuple in Cursor.description."
         cur = self.con.cursor(factory=MyCursor)
         cur.execute("select 1 as a")
