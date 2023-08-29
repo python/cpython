@@ -528,6 +528,9 @@
     <ClInclude Include="..\Include\internal\pycore_call.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_capsule.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_ceval.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -609,6 +612,9 @@
     <ClInclude Include="..\Include\internal\pycore_hashtable.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_identifier.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_import.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -650,7 +656,7 @@
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_optimizer.h">
       <Filter>Include\internal</Filter>
-    </ClInclude>    
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_pathconfig.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -673,6 +679,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_pystate.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_pythonrun.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_pythread.h">
@@ -737,7 +746,7 @@
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_uops.h">
       <Filter>Include\internal</Filter>
-    </ClInclude>    
+    </ClInclude>
     <ClInclude Include="$(zlibDir)\crc32.h">
       <Filter>Modules\zlib</Filter>
     </ClInclude>

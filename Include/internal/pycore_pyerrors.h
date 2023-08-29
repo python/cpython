@@ -16,6 +16,10 @@ extern PyObject* _PyErr_GetHandledException(PyThreadState *);
 extern void _PyErr_SetHandledException(PyThreadState *, PyObject *);
 extern void _PyErr_GetExcInfo(PyThreadState *, PyObject **, PyObject **, PyObject **);
 
+// Export for '_testinternalcapi' shared extension
+PyAPI_FUNC(void) _PyErr_SetKeyError(PyObject *);
+
+
 // Like PyErr_Format(), but saves current exception as __context__ and
 // __cause__.
 // Export for '_sqlite3' shared extension.
