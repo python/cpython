@@ -352,7 +352,7 @@ Understanding How Tkinter Wraps Tcl/Tk
 
 When your application uses Tkinter's classes and methods, internally Tkinter
 is assembling strings representing Tcl/Tk commands, and executing those
-commands in the Tcl interpreter attached to your applicaton's :class:`Tk`
+commands in the Tcl interpreter attached to your application's :class:`Tk`
 instance.
 
 Whether it's trying to navigate reference documentation, trying to find
