@@ -828,6 +828,11 @@ Build Changes
 * SQLite 3.15.2 or newer is required to build the :mod:`sqlite3` extension module.
   (Contributed by Erlend Aasland in :gh:`105875`.)
 
+* Python built with :file:`configure` :option:`--with-trace-refs` (tracing
+  references) is now ABI compatible with Python release build and
+  :ref:`debug build <debug-build>`.
+  (Contributed by Victor Stinner in :gh:`108634`.)
+
 
 C API Changes
 =============
@@ -899,6 +904,10 @@ New Features
   Previously, it was known as the private function :c:func:`!_PyLong_AsInt`
   (with an underscore prefix).
   (Contributed by Victor Stinner in :gh:`108014`.)
+
+* Python built with :file:`configure` :option:`--with-trace-refs` (tracing
+  references) now supports the :ref:`Limited API <limited-c-api>`.
+  (Contributed by Victor Stinner in :gh:`108634`.)
 
 Porting to Python 3.13
 ----------------------

@@ -49,7 +49,6 @@ PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
    backwards compatible solution */
 #define _PyObject_HEAD_INIT(type)         \
     {                                     \
-        _PyObject_EXTRA_INIT              \
         .ob_refcnt = _Py_IMMORTAL_REFCNT, \
         .ob_type = (type)                 \
     },
@@ -178,6 +177,8 @@ _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
 extern void _PyType_InitCache(PyInterpreterState *interp);
 
 extern void _PyObject_InitState(PyInterpreterState *interp);
+extern void _PyObject_FiniState(PyInterpreterState *interp);
+extern bool _PyRefchain_IsTraced(PyInterpreterState *interp, PyObject *obj);
 
 /* Inline functions trading binary compatibility for speed:
    _PyObject_Init() is the fast version of PyObject_Init(), and

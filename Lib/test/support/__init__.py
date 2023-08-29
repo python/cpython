@@ -779,9 +779,6 @@ def python_is_optimized():
 
 _header = 'nP'
 _align = '0n'
-if hasattr(sys, "getobjects"):
-    _header = '2P' + _header
-    _align = '0P'
 _vheader = _header + 'n'
 
 def calcobjsize(fmt):
@@ -2469,3 +2466,5 @@ C_RECURSION_LIMIT = 1500
 #Windows doesn't have os.uname() but it doesn't support s390x.
 skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == 's390x',
                                 'skipped on s390x')
+
+Py_TRACE_REFS = hasattr(sys, 'getobjects')
