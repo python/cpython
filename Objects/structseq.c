@@ -18,6 +18,7 @@ static const char visible_length_key[] = "n_sequence_fields";
 static const char real_length_key[] = "n_fields";
 static const char unnamed_fields_key[] = "n_unnamed_fields";
 static const char match_args_key[] = "__match_args__";
+static const char named_fields_list_key[] = "_fields";
 
 /* Fields with this name have only a field index, not a field name.
    They are only allowed for indices < n_visible_fields. */
@@ -405,7 +406,7 @@ initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
     SET_DICT_FROM_SIZE(real_length_key, n_members);
     SET_DICT_FROM_SIZE(unnamed_fields_key, n_unnamed_members);
 
-    // Prepare and set __match_args__
+    // Prepare and set __match_args__ and _fields
     Py_ssize_t i, k;
     PyObject* keys = PyTuple_New(desc->n_in_sequence);
     if (keys == NULL) {
@@ -429,6 +430,10 @@ initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
     }
 
     if (PyDict_SetItemString(dict, match_args_key, keys) < 0) {
+        goto error;
+    }
+
+    if (PyDict_SetItemString(dict, named_fields_list_key, keys) < 0) {
         goto error;
     }
 
