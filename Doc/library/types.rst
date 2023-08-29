@@ -479,15 +479,18 @@ Additional Utility Classes and Functions
    A simple :class:`object` subclass that provides attribute access to its
    namespace, as well as a meaningful repr.
 
-   Unlike :class:`object`, with ``SimpleNamespace`` you can add and remove
+   Unlike :class:`object`, with :class:`!SimpleNamespace` you can add and remove
    attributes.
-   The :class:`!SimpleNamespace` constructor can take a positional argument
-   which must be a mapping object with string keys or an :term:`iterable`
-   object producing key-value pairs with string keys.
-   Key-value pairs from the mapping object or the iterable object are
-   directly added to the underlying namespace.
-   If a ``SimpleNamespace`` object is initialized with keyword
-   arguments, those are directly added to the underlying namespace.
+
+   :py:class:`SimpleNamespace` objects may be initialized either
+   with keyword arguments or with a single positional argument.
+   When initialized with keyword arguments,
+   those are directly added to the underlying namespace.
+   Alternatively, when initialized with a positional argument,
+   the underlying namespace will be updated with key-value pairs
+   from that argument (either a mapping object or
+   an :term:`iterable` object producing key-value pairs).
+   All such keys must be strings.
 
    The type is roughly equivalent to the following code::
 
