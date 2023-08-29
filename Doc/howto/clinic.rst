@@ -158,7 +158,7 @@ process a single source file, like this:
 The CLI supports the following options:
 
 .. program:: ./Tools/clinic/clinic.py [-h] [-f] [-o OUTPUT] [-v] \
-             [--converters] [--make] [--srcdir SRCDIR] [FILE ...]
+             [--converters] [--make] [--srcdir SRCDIR] [--limited] [FILE ...]
 
 .. option:: -h, --help
 
@@ -192,6 +192,11 @@ The CLI supports the following options:
 
    A file to exclude in :option:`--make` mode.
    This option can be given multiple times.
+
+.. option:: --limited
+
+    Use the :ref:`Limited API <limited-c-api>` to parse arguments in the generated C code.
+    See :ref:`How to use the Limited C API <clinic-howto-limited-capi>`.
 
 .. option:: FILE ...
 
@@ -1905,13 +1910,15 @@ blocks embedded in Python files look slightly different.  They look like this:
     #/*[python checksum:...]*/
 
 
+.. _clinic-howto-limited-capi:
+
 How to use the Limited C API
 ----------------------------
 
 If a C source code contains ``#define Py_LIMITED_API``, the generated C code
 will use the :ref:`Limited API <limited-c-api>` to parse arguments. Private
-functions are not used in this case and the code parsing arguments can be a
-less efficient depending on the parameters (types, number, etc.).
+functions are not used in this case. However the code parsing arguments can be
+a less efficient depending on the parameters (types, number, etc.).
 
 .. versionadded:: 3.13
 
