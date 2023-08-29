@@ -10192,7 +10192,7 @@ os.timerfd_settime_ns
     it_value_ns: long_long = 0
     /
 
-Write timerfd value.
+Set timerfd value in nanoseconds.
 [clinic start generated code]*/
 
 static PyObject *
