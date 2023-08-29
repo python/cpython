@@ -5822,12 +5822,23 @@ AC_ARG_WITH(
     AS_CASE([$with_readline],
       [editline|edit], [with_readline=edit],
       [yes|readline], [with_readline=readline],
-      [no], [],
+      [no], [with_readline=default],
       [AC_MSG_ERROR([proper usage is --with(out)-readline@<:@=editline|readline|no@:>@])]
     )
   ],
-  [with_readline=readline]
+  [with_readline=default]
 )
+
+AS_VAR_IF([with_readline], [default], [
+  case $ac_sys_system/$ac_sys_release in
+    Darwin/*) AC_DEFINE([WITH_EDITLINE], [1])
+      with_readline=readline
+      ;;
+    *)
+      with_readline=readline
+      ;;
+  esac
+])
 
 AS_VAR_IF([with_readline], [readline], [
   PKG_CHECK_MODULES([LIBREADLINE], [readline], [
