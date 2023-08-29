@@ -111,9 +111,6 @@ class RowFactoryTestsBackwardsCompat(unittest.TestCase):
 class RowFactoryTests(unittest.TestCase):
     def setUp(self):
         self.con = sqlite.connect(":memory:")
-
-    def setUp(self):
-        super().setUp()
         self.con.row_factory = sqlite.Row
 
     def test_custom_factory(self):
