@@ -20,7 +20,8 @@ Features and minimum versions required to build CPython:
 
 * Support for threads.
 
-* OpenSSL 1.1.1 for the :mod:`ssl` and :mod:`hashlib` extension modules.
+* OpenSSL 1.1.1 is the minimum version and OpenSSL 3.0.9 is the recommended
+  version for the :mod:`ssl` and :mod:`hashlib` extension modules.
 
 * SQLite 3.15.2 for the :mod:`sqlite3` extension module.
 
@@ -28,6 +29,9 @@ Features and minimum versions required to build CPython:
 
 * Autoconf 2.71 and aclocal 1.16.4 are required to regenerate the
   :file:`configure` script.
+
+.. versionchanged:: 3.13:
+   Autoconf 2.71, aclocal 1.16.4 and SQLite 3.15.2 are now required.
 
 .. versionchanged:: 3.11
    C11 compiler, IEEE 754 and NaN support are now required.
