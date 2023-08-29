@@ -246,16 +246,18 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
         self.assertEqual(list(reversed(row)), list(reversed(as_tuple)))
         self.assertIsInstance(row, Sequence)
 
-    def test_sqlite_row_keys(self):
+    def test_sqlite_row_keys_return_columns_as_strings(self):
         # Checks if the row object can return a list of columns as strings.
         row = self.con.execute("select 1 as a, 2 as b").fetchone()
         self.assertEqual(row.keys(), ['a', 'b'])
 
+    def test_sqlite_row_keys_raises_exception_on_empty_sql_query(self):
         # Test exception raised on an empty sql query result
         with self.assertRaises(AttributeError):
             row = self.con.execute("select 1 as a where a == 'THISDOESNOTEXIST'").fetchone()
             row.keys()
 
+    def test_sqlite_row_keys_returns_first_value_from_cursor_description(self):
         # docs.python.org: "Immediately after a query, it is
         # the first member of each tuple in Cursor.description."
         cur = self.con.cursor(factory=MyCursor)
@@ -263,6 +265,7 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
         row = cur.fetchone()
         self.assertEqual(cur.description[0][0], row.keys()[0])
 
+    def test_sqlite_row_keys_are_equal_if_rows_are_equal(self):
         # Two Row objects compare equal if they have identical column names
         # and values. Assert the keys values are the same too.
         row_1 = self.con.execute("select 1 as a, 2 as b").fetchone()
