@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "structmember.h"
 #include "pythread.h"
+#include "pycore_signal.h"        // _PyOS_IsMainThread()
 
 /*
  * Platform includes and definitions
