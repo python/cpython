@@ -10049,7 +10049,7 @@ build_itimerspec(const struct itimerspec* curr_value)
 {
     double _interval = (double)(curr_value->it_interval.tv_sec) +
                        (double)curr_value->it_interval.tv_nsec * 1e-9;
-    PyObject *interval = PyFloat_FromDouble(_inverval);
+    PyObject *interval = PyFloat_FromDouble(_interval);
     if (interval == NULL) {
         return NULL;
     }
