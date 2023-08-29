@@ -41,6 +41,7 @@ class TestNumbers(unittest.TestCase):
 
         match 1.0:
             case Real(f):
+                self.assertIsInstance(f, float)
                 self.assertEqual(f, 1.0)
             case _:
                 self.fail("float is not matched as Real")
@@ -60,7 +61,9 @@ class TestNumbers(unittest.TestCase):
 
         match 1j:
             case Complex(real, imag):
+                self.assertIsInstance(real, float)
                 self.assertEqual(real, 0.0)
+                self.assertIsInstance(imag, float)
                 self.assertEqual(imag, 1.0)
             case _:
                 self.fail(f"complex is not matched as Complex")
