@@ -235,7 +235,6 @@ typedef struct _heaptypeobject {
 } PyHeapTypeObject;
 
 PyAPI_FUNC(const char *) _PyType_Name(PyTypeObject *);
-PyAPI_FUNC(PyObject *) _PyType_Lookup(PyTypeObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, PyModuleDef *);
 PyAPI_FUNC(PyObject *) PyType_GetDict(PyTypeObject *);
 

@@ -1,4 +1,9 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "parts.h"
+#include "pycore_object.h"        // _PyType_Lookup()
 
 static PyObject*
 test_gc_control(PyObject *self, PyObject *Py_UNUSED(ignored))
