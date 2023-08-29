@@ -14,6 +14,11 @@ def _quote_name(name):
 def _quote_value(value):
     return "'{0}'".format(value.replace("'", "''"))
 
+def _force_decode(bs, *args, **kwargs):
+    try:
+        return bs.decode(*args, **kwargs)
+    except UnicodeDecodeError:
+        return "".join(chr(c) for c in bs)
 
 def _iterdump(connection):
     """
@@ -73,9 +78,14 @@ def _iterdump(connection):
                 "||quote({0})||".format(_quote_name(col)) for col in column_names
             )
         )
-        query_res = cu.execute(q)
-        for row in query_res:
-            yield("{0};".format(row[0]))
+        orig_text_factory = connection.text_factory
+        try:
+            connection.text_factory = bytes
+            query_res = cu.execute(q)
+            for row in query_res:
+                yield("{0};".format(_force_decode(row[0])))
+        finally:
+            connection.text_factory = orig_text_factory
 
     # Now when the type is 'index', 'trigger', or 'view'
     q = """
