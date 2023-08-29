@@ -11,6 +11,7 @@ This software comes with no warranty. Use at your own risk.
 
 #include "Python.h"
 #include "pycore_fileutils.h"
+#include "pycore_pymem.h"  // _PyMem_Strdup
 
 #include <stdio.h>
 #include <locale.h>

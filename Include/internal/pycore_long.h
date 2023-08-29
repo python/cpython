@@ -47,6 +47,17 @@ extern "C" {
 # error "_PY_LONG_DEFAULT_MAX_STR_DIGITS smaller than threshold."
 #endif
 
+extern PyLongObject* _PyLong_New(Py_ssize_t);
+
+// Return a copy of src.
+extern PyObject* _PyLong_Copy(PyLongObject *src);
+
+// Export for '_decimal' shared extension
+PyAPI_FUNC(PyLongObject*) _PyLong_FromDigits(
+    int negative,
+    Py_ssize_t digit_count,
+    digit *digits);
+
 
 /* runtime lifecycle */
 
