@@ -1728,7 +1728,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    treated as read-only.
 
    Some types may not store their dictionary in this slot.
-   Use :c:func:`PyType_GetDict` to retreive the dictionary for an arbitrary
+   Use :c:func:`PyType_GetDict` to retrieve the dictionary for an arbitrary
    type.
 
    .. versionchanged:: 3.12
