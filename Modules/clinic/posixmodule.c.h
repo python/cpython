@@ -5995,7 +5995,7 @@ PyDoc_STRVAR(os_timerfd_create__doc__,
 "timerfd_create($module, clockid, flags, /)\n"
 "--\n"
 "\n"
-"Creates and returns an timerfd notification file descriptor.");
+"Create and return a timerfd notification file descriptor.");
 
 #define OS_TIMERFD_CREATE_METHODDEF    \
     {"timerfd_create", _PyCFunction_CAST(os_timerfd_create), METH_FASTCALL, os_timerfd_create__doc__},
@@ -12242,4 +12242,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=12c6e3a4e529029c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=96967c7d4a8144b5 input=a9049054013a1b77]*/
