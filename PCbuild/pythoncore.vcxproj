@@ -235,6 +235,7 @@
     <ClInclude Include="..\Include\internal\pycore_global_objects_fini_generated.h" />
     <ClInclude Include="..\Include\internal\pycore_hamt.h" />
     <ClInclude Include="..\Include\internal\pycore_hashtable.h" />
+    <ClInclude Include="..\Include\internal\pycore_identifier.h" />
     <ClInclude Include="..\Include\internal\pycore_import.h" />
     <ClInclude Include="..\Include\internal\pycore_initconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_interp.h" />
@@ -248,7 +249,7 @@
     <ClInclude Include="..\Include\internal\pycore_object_state.h" />
     <ClInclude Include="..\Include\internal\pycore_obmalloc.h" />
     <ClInclude Include="..\Include\internal\pycore_obmalloc_init.h" />
-    <ClInclude Include="..\Include\internal\pycore_optimizer.h" />    
+    <ClInclude Include="..\Include\internal\pycore_optimizer.h" />
     <ClInclude Include="..\Include\internal\pycore_pathconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_pyarena.h" />
     <ClInclude Include="..\Include\internal\pycore_pyerrors.h" />
@@ -280,7 +281,7 @@
     <ClInclude Include="..\Include\internal\pycore_unionobject.h" />
     <ClInclude Include="..\Include\internal\pycore_unicodeobject.h" />
     <ClInclude Include="..\Include\internal\pycore_unicodeobject_generated.h" />
-    <ClInclude Include="..\Include\internal\pycore_uops.h" />    
+    <ClInclude Include="..\Include\internal\pycore_uops.h" />
     <ClInclude Include="..\Include\internal\pycore_warnings.h" />
     <ClInclude Include="..\Include\internal\pycore_weakref.h" />
     <ClInclude Include="..\Include\interpreteridobject.h" />
