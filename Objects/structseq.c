@@ -19,6 +19,7 @@ static const char real_length_key[] = "n_fields";
 static const char unnamed_fields_key[] = "n_unnamed_fields";
 static const char match_args_key[] = "__match_args__";
 static const char named_fields_list_key[] = "_fields";
+static const char named_fields_defaults_key[] = "_field_defaults";
 
 /* Fields with this name have only a field index, not a field name.
    They are only allowed for indices < n_visible_fields. */
@@ -414,7 +415,7 @@ count_members(PyStructSequence_Desc *desc, Py_ssize_t *n_unnamed_members) {
 static int
 initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
                           Py_ssize_t n_members, Py_ssize_t n_unnamed_members) {
-    PyObject *v;
+    PyObject *v, *defaults = NULL;
 
 #define SET_DICT_FROM_SIZE(key, value)                                         \
     do {                                                                       \
@@ -464,10 +465,21 @@ initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
         goto error;
     }
 
+    // Set _fields_defaults to an empty dir, as we don't support defaults
+    defaults = PyDict_New();
+    if (!defaults)
+        goto error;
+
+    if (PyDict_SetItemString(dict, named_fields_defaults_key, defaults) < 0) {
+        goto error;
+    }
+
+    Py_XDECREF(defaults);
     Py_DECREF(keys);
     return 0;
 
 error:
+    Py_XDECREF(defaults);
     Py_DECREF(keys);
     return -1;
 }
