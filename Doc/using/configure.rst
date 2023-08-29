@@ -26,8 +26,8 @@ Features and minimum versions required to build CPython:
 
 * Tcl/Tk 8.5.12 for the :mod:`tkinter` module.
 
-* Autoconf 2.71 and aclocal 1.16.4 are required to regenerate the ``configure``
-  script.
+* Autoconf 2.71 and aclocal 1.16.4 are required to regenerate the
+  :file:`configure` script.
 
 .. versionchanged:: 3.11
    C11 compiler, IEEE 754 and NaN support are now required.
@@ -56,7 +56,7 @@ support".
 Configure Options
 =================
 
-List all ``./configure`` script options using::
+List all :file:`configure` script options using::
 
     ./configure --help
 
