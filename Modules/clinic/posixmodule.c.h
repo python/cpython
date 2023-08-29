@@ -5995,7 +5995,10 @@ PyDoc_STRVAR(os_timerfd_create__doc__,
 "timerfd_create($module, clockid, flags, /)\n"
 "--\n"
 "\n"
-"Create and return a timerfd notification file descriptor.");
+"Create and return a timerfd notification file descriptor.\n"
+"\n"
+"clockid is CLOCK_REALTIME or CLOCK_MONOTONIC. CLOCK_REALTIME.\n"
+"flags is  0 or  a bit mask of TFD_NONBLOCK or TFD_CLOEXEC.");
 
 #define OS_TIMERFD_CREATE_METHODDEF    \
     {"timerfd_create", _PyCFunction_CAST(os_timerfd_create), METH_FASTCALL, os_timerfd_create__doc__},
@@ -6066,7 +6069,18 @@ PyDoc_STRVAR(os_timerfd_settime__doc__,
 "timerfd_settime($module, fd, flags, it_interval=0.0, it_value=0.0, /)\n"
 "--\n"
 "\n"
-"Set timerfd value in seconds.");
+"Set timerfd value in seconds.\n"
+"\n"
+"fd is a file descriptor for timer.\n"
+"flags is 0 or  a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.\n"
+"If TFD_TIMER_ABSTIME is not specified, it_interval is relative time.\n"
+"If TFD_TIMER_ABSTIME is specified, it_interval is absolute time and epoch time in time_t.\n"
+"If TFD_TIMER_CANCEL_ON_SET  and TFD_TIMER_ABSTIME are specifed as *flags* and time.CLOCK_REALTIME\n"
+"is specified as *clockid* of timerfd_create, a discontinuous change of system clock will make to\n"
+"abort reading from a file descriptor with ECANCELED error.\n"
+"it_interval is interval for timer in seconds.\n"
+"it_value is initial expiration timing in seconds. It could be absolute time or relative time\n"
+"based on TFD_TIMER_ABSTIME flag.");
 
 #define OS_TIMERFD_SETTIME_METHODDEF    \
     {"timerfd_settime", _PyCFunction_CAST(os_timerfd_settime), METH_FASTCALL, os_timerfd_settime__doc__},
@@ -6167,7 +6181,9 @@ PyDoc_STRVAR(os_timerfd_settime_ns__doc__,
 "                   /)\n"
 "--\n"
 "\n"
-"Set timerfd value in nanoseconds.");
+"Set timerfd value in nanoseconds.\n"
+"\n"
+"Similar to timerfd_settime except that it_interval_ns and it_value_ns are in nanoseconds.");
 
 #define OS_TIMERFD_SETTIME_NS_METHODDEF    \
     {"timerfd_settime_ns", _PyCFunction_CAST(os_timerfd_settime_ns), METH_FASTCALL, os_timerfd_settime_ns__doc__},
@@ -12242,4 +12258,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=e82535c68bca8dfe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1774c8053e23a6cb input=a9049054013a1b77]*/
