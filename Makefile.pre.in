@@ -1795,6 +1795,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_pymem.h \
 		$(srcdir)/Include/internal/pycore_pymem_init.h \
 		$(srcdir)/Include/internal/pycore_pystate.h \
+		$(srcdir)/Include/internal/pycore_pythonrun.h \
 		$(srcdir)/Include/internal/pycore_pythread.h \
 		$(srcdir)/Include/internal/pycore_range.h \
 		$(srcdir)/Include/internal/pycore_runtime.h \

@@ -21,6 +21,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException, _Py_Offer_Suggestions
 #include "pycore_pylifecycle.h"   // _Py_UnhandledKeyboardInterrupt
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_pythonrun.h"     // define _PyRun_InteractiveLoopObject()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_traceback.h"     // _PyTraceBack_Print_Indented()
 
