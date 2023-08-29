@@ -23755,6 +23755,7 @@ fi
 
 
 
+
 # Check whether --with-readline was given.
 if test ${with_readline+y}
 then :
@@ -23782,7 +23783,7 @@ then :
 
   case $ac_sys_system/$ac_sys_release in #(
   Darwin/*) :
-    printf "%s\n" "#define WITH_EDITLINE 1" >>confdefs.h
+    printf "%s\n" "#define WITH_APPLE_READLINE 1" >>confdefs.h
  with_readline=readline ;; #(
   *) :
     with_readline=readline ;;
