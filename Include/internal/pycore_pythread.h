@@ -75,6 +75,14 @@ struct _pythread_runtime_state {
 };
 
 
+#ifdef HAVE_FORK
+/* Private function to reinitialize a lock at fork in the child process.
+   Reset the lock to the unlocked state.
+   Return 0 on success, return -1 on error. */
+extern int _PyThread_at_fork_reinit(PyThread_type_lock *lock);
+#endif  /* HAVE_FORK */
+
+
 #ifdef __cplusplus
 }
 #endif
