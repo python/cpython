@@ -174,6 +174,14 @@ extern int _PyOS_InterruptOccurred(PyThreadState *tstate);
 // Export for test_peg_generator.
 PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 
+// Get the single PyInterpreterState used by this process' GILState
+// implementation.
+//
+// This function doesn't check for error. Return NULL before _PyGILState_Init()
+// is called and after _PyGILState_Fini() is called.
+//
+// See also PyInterpreterState_Get() and _PyInterpreterState_GET().
+extern PyInterpreterState* _PyGILState_GetInterpreterStateUnsafe(void);
 
 #ifdef __cplusplus
 }
