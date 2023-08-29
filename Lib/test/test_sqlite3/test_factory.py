@@ -251,7 +251,7 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
         self.assertIsInstance(row, Sequence)
 
     def test_sqlite_row_keys(self):
-        # Checks if the row object can return its keys
+        # Checks if the row object can return a list of columns as strings
         self.con.row_factory = sqlite.Row
         row = self.con.execute("select 1 as a, 2 as b").fetchone()
 
