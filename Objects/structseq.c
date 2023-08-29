@@ -474,7 +474,7 @@ initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
         goto error;
     }
 
-    Py_XDECREF(defaults);
+    Py_DECREF(defaults);
     Py_DECREF(keys);
     return 0;
 
