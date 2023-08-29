@@ -221,7 +221,7 @@ Install Options
    Install architecture-independent files in PREFIX. On Unix, it
    defaults to :file:`/usr/local`.
 
-   This value can be retrived at runtime using :data:`sys.prefix`.
+   This value can be retrieved at runtime using :data:`sys.prefix`.
 
    As an example, one can use ``--prefix="$HOME/.local/"`` to install
    a Python in its home directory.
@@ -230,7 +230,7 @@ Install Options
 
    Install architecture-dependent files in EPREFIX, defaults to :option:`--prefix`.
 
-   This value can be retrived at runtime using :data:`sys.exec_prefix`.
+   This value can be retrieved at runtime using :data:`sys.exec_prefix`.
 
 .. cmdoption:: --disable-test-modules
 

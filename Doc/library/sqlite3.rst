@@ -1547,7 +1547,7 @@ Cursor objects
 
       :raises ProgrammingError:
          If *sql* contains more than one SQL statement,
-         or is not a DML statment.
+         or is not a DML statement.
 
       Example:
 
