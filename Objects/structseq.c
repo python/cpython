@@ -389,7 +389,7 @@ structseq_asdict(PyStructSequence* self, PyObject *Py_UNUSED(ignored))
     return dict;
 
 error:
-    Py_XDECREF(dict);
+    Py_DECREF(dict);
     return NULL;
 }
 
