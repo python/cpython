@@ -1,0 +1,1 @@
+Fixed an issue causing sqlite3.iterdump to crash when encountering invalid unicode in a TEXT column.
