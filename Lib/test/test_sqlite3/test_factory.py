@@ -251,6 +251,24 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
         row = self.con.execute("select 1 as a, 2 as b").fetchone()
         self.assertEqual(row.keys(), ['a', 'b'])
 
+        # Test exception raised on an empty sql query result
+        with self.assertRaises(AttributeError):
+            row = self.con.execute("select 1 as a where a == 'THISDOESNOTEXIST'").fetchone()
+            row.keys()
+
+        # docs.python.org: "Immediately after a query, it is 
+        # the first member of each tuple in Cursor.description."
+        cur = self.con.cursor(factory=MyCursor)
+        cur.execute("select 1 as a")
+        row = cur.fetchone()
+        self.assertEqual(cur.description[0][0], row.keys()[0])
+
+        # Two Row objects compare equal if they have identical column names
+        # and values. Assert the keys values are the same too.
+        row_1 = self.con.execute("select 1 as a, 2 as b").fetchone()
+        row_2 = self.con.execute("select 1 as a, 2 as b").fetchone()
+        self.assertEqual(row_1.keys(), row_2.keys())
+
     def test_fake_cursor_class(self):
         # Issue #24257: Incorrect use of PyObject_IsInstance() caused
         # segmentation fault.
