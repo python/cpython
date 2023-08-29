@@ -10108,7 +10108,7 @@ os.timerfd_gettime
     fd: fildes
     /
 
-Read timerfd value in second.
+Return timerfd value in seconds.
 [clinic start generated code]*/
 
 static PyObject *
