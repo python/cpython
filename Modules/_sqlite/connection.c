@@ -1542,17 +1542,24 @@ _sqlite3.Connection.set_progress_handler as pysqlite_connection_set_progress_han
 
     cls: defining_class
     progress_handler as callable: object
+        A callable that takes no arguments.
+        If the callable returns non-zero, the current query is terminated,
+        and an exception is raised.
     / [from 3.15]
     n: int
+        The number of SQLite virtual machine instructions that are
+        executed between invocations of 'progress_handler'.
 
 Set progress handler callback.
+
+If 'progress_handler' is None or 'n' is 0, the progress handler is disabled.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_connection_set_progress_handler_impl(pysqlite_Connection *self,
                                               PyTypeObject *cls,
                                               PyObject *callable, int n)
-/*[clinic end generated code: output=0739957fd8034a50 input=d9a2e95f739e05e3]*/
+/*[clinic end generated code: output=0739957fd8034a50 input=b4d6e2ef8b4d32f9]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;

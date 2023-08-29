@@ -797,6 +797,16 @@ PyDoc_STRVAR(pysqlite_connection_set_progress_handler__doc__,
 "\n"
 "Set progress handler callback.\n"
 "\n"
+"  progress_handler\n"
+"    A callable that takes no arguments.\n"
+"    If the callable returns non-zero, the current query is terminated,\n"
+"    and an exception is raised.\n"
+"  n\n"
+"    The number of SQLite virtual machine instructions that are\n"
+"    executed between invocations of \'progress_handler\'.\n"
+"\n"
+"If \'progress_handler\' is None or \'n\' is 0, the progress handler is disabled.\n"
+"\n"
 "Note: Passing keyword argument \'progress_handler\' to\n"
 "_sqlite3.Connection.set_progress_handler() is deprecated. Parameter\n"
 "\'progress_handler\' will become positional-only in Python 3.15.\n"
@@ -1812,4 +1822,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=0bd06fb18a997753 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f06b254bc5c2bcaf input=a9049054013a1b77]*/
