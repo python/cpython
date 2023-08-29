@@ -214,11 +214,11 @@ Functions for sequences
    To shuffle an immutable sequence and return a new shuffled list, use
    ``sample(x, k=len(x))`` instead.
 
-   Note that even for small ``len(x)``, the total number of permutations of *x*
-   can quickly grow larger than the period of most random number generators.
-   This implies that most permutations of a long sequence can never be
-   generated.  For example, a sequence of length 2080 is the largest that
-   can fit within the period of the Mersenne Twister random number generator.
+   Note that the total number of permutations of *x* grows rapidly with its length,
+   such that the number of permutations can easily exceed the number of internal states of
+   a pseudo random number generator.  This implies that most permutations of a long sequence
+   can never be generated.  For example, a sequence of length greater than 2080 can not
+   be sampled uniformly by the Mersenne Twister random number generator.
 
    .. deprecated-removed:: 3.9 3.11
       The optional parameter *random*.
