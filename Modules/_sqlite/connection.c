@@ -1499,17 +1499,17 @@ exit:
 _sqlite3.Connection.set_authorizer as pysqlite_connection_set_authorizer
 
     cls: defining_class
-    /
     authorizer_callback as callable: object
+    / [from 3.15]
 
-Sets authorizer callback.
+Set authorizer callback.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_connection_set_authorizer_impl(pysqlite_Connection *self,
                                         PyTypeObject *cls,
                                         PyObject *callable)
-/*[clinic end generated code: output=75fa60114fc971c3 input=605d32ba92dd3eca]*/
+/*[clinic end generated code: output=75fa60114fc971c3 input=a52bd4937c588752]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -1541,18 +1541,18 @@ pysqlite_connection_set_authorizer_impl(pysqlite_Connection *self,
 _sqlite3.Connection.set_progress_handler as pysqlite_connection_set_progress_handler
 
     cls: defining_class
-    /
     progress_handler as callable: object
+    / [from 3.15]
     n: int
 
-Sets progress handler callback.
+Set progress handler callback.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_connection_set_progress_handler_impl(pysqlite_Connection *self,
                                               PyTypeObject *cls,
                                               PyObject *callable, int n)
-/*[clinic end generated code: output=0739957fd8034a50 input=f7c1837984bd86db]*/
+/*[clinic end generated code: output=0739957fd8034a50 input=d9a2e95f739e05e3]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -1578,17 +1578,17 @@ pysqlite_connection_set_progress_handler_impl(pysqlite_Connection *self,
 _sqlite3.Connection.set_trace_callback as pysqlite_connection_set_trace_callback
 
     cls: defining_class
-    /
     trace_callback as callable: object
+    / [from 3.15]
 
-Sets a trace callback called for each SQL statement (passed as unicode).
+Set a trace callback called for each SQL statement (passed as unicode).
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_connection_set_trace_callback_impl(pysqlite_Connection *self,
                                             PyTypeObject *cls,
                                             PyObject *callable)
-/*[clinic end generated code: output=d91048c03bfcee05 input=351a94210c5f81bb]*/
+/*[clinic end generated code: output=d91048c03bfcee05 input=d705d592ec03cf28]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
