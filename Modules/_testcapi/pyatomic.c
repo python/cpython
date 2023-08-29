@@ -64,12 +64,15 @@ test_atomic_compare_exchange_##suffix(PyObject *self, PyObject *obj) { \
     dtype x = (dtype)0; \
     dtype y = (dtype)1; \
     dtype z = (dtype)2; \
-    assert(_Py_atomic_compare_exchange_##suffix(&x, y, z) == 0); \
+    assert(_Py_atomic_compare_exchange_##suffix(&x, &y, z) == 0); \
     assert(x == 0); \
-    assert(_Py_atomic_compare_exchange_##suffix(&x, 0, z) == 1); \
+    assert(y == 0); \
+    assert(_Py_atomic_compare_exchange_##suffix(&x, &y, z) == 1); \
     assert(x == z); \
-    assert(_Py_atomic_compare_exchange_##suffix(&x, y, z) == 0); \
+    assert(y == 0); \
+    assert(_Py_atomic_compare_exchange_##suffix(&x, &y, z) == 0); \
     assert(x == z); \
+    assert(y == z); \
     Py_RETURN_NONE; \
 }
 FOR_ALL_TYPES(IMPL_TEST_COMPARE_EXCHANGE)
