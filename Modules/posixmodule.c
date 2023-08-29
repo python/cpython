@@ -10135,7 +10135,7 @@ os.timerfd_settime
     it_value: double = 0.0
     /
 
-Write timerfd value in second.
+Set timerfd value in seconds.
 [clinic start generated code]*/
 
 static PyObject *
