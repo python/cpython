@@ -7,6 +7,7 @@ Note: test_regrtest cannot be run twice in parallel.
 import contextlib
 import glob
 import io
+import locale
 import os.path
 import platform
 import re
@@ -1550,6 +1551,41 @@ class ArgsTestCase(BaseTestCase):
             self.assertIn(f"Warning -- {testname} leaked temporary "
                           f"files (1): mytmpfile",
                           output)
+
+    def test_mp_decode_error(self):
+        # gh-101634: If a worker stdout cannot be decoded, report a failed test
+        # and a non-zero exit code.
+        if sys.platform == 'win32':
+            encoding = locale.getencoding()
+        else:
+            encoding = sys.stdout.encoding
+            if encoding is None:
+                encoding = sys.__stdout__.encoding
+                if encoding is None:
+                    self.skipTest(f"cannot get regrtest worker encoding")
+
+        nonascii = b"byte:\xa0\xa9\xff\n"
+        try:
+            nonascii.decode(encoding)
+        except UnicodeDecodeError:
+            pass
+        else:
+            self.skipTest(f"{encoding} can decode non-ASCII bytes {nonascii!a}")
+
+        code = textwrap.dedent(fr"""
+            import sys
+            # bytes which cannot be decoded from UTF-8
+            nonascii = {nonascii!a}
+            sys.stdout.buffer.write(nonascii)
+            sys.stdout.buffer.flush()
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("--fail-env-changed", "-v", "-j1", testname,
+                                exitcode=EXITCODE_BAD_TEST)
+        self.check_executed_tests(output, [testname],
+                                  failed=[testname],
+                                  randomize=True)
 
 
 class TestUtils(unittest.TestCase):

@@ -2822,14 +2822,15 @@ class TransformCodecTest(unittest.TestCase):
     def test_custom_zlib_error_is_noted(self):
         # Check zlib codec gives a good error for malformed input
         msg = "decoding with 'zlib_codec' codec failed"
-        with self.assertRaises(Exception) as failure:
+        with self.assertRaises(zlib.error) as failure:
             codecs.decode(b"hello", "zlib_codec")
         self.assertEqual(msg, failure.exception.__notes__[0])
 
     def test_custom_hex_error_is_noted(self):
         # Check hex codec gives a good error for malformed input
+        import binascii
         msg = "decoding with 'hex_codec' codec failed"
-        with self.assertRaises(Exception) as failure:
+        with self.assertRaises(binascii.Error) as failure:
             codecs.decode(b"hello", "hex_codec")
         self.assertEqual(msg, failure.exception.__notes__[0])
 

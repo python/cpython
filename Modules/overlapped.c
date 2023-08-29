@@ -7,8 +7,11 @@
 /* XXX check overflow and DWORD <-> Py_ssize_t conversions
    Check itemsize */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
 
 #define WINDOWS_LEAN_AND_MEAN
 #include <winsock2.h>
@@ -17,10 +20,10 @@
 
 #if defined(MS_WIN32) && !defined(MS_WIN64)
 #  define F_POINTER "k"
-#  define T_POINTER T_ULONG
+#  define T_POINTER Py_T_ULONG
 #else
 #  define F_POINTER "K"
-#  define T_POINTER T_ULONGLONG
+#  define T_POINTER Py_T_ULONGLONG
 #endif
 
 #define F_HANDLE F_POINTER
@@ -367,8 +370,9 @@ _overlapped_RegisterWaitWithQueue_impl(PyObject *module, HANDLE Object,
             &NewWaitObject, Object, PostToQueueCallback, pdata, Milliseconds,
             WT_EXECUTEINWAITTHREAD | WT_EXECUTEONLYONCE))
     {
+        SetFromWindowsErr(0);
         PyMem_RawFree(pdata);
-        return SetFromWindowsErr(0);
+        return NULL;
     }
 
     return Py_BuildValue(F_HANDLE, NewWaitObject);
@@ -445,8 +449,8 @@ EventAttributes must be None.
 static PyObject *
 _overlapped_CreateEvent_impl(PyObject *module, PyObject *EventAttributes,
                              BOOL ManualReset, BOOL InitialState,
-                             const Py_UNICODE *Name)
-/*[clinic end generated code: output=8e04f0916c17b13d input=dbc36ae14375ba24]*/
+                             const wchar_t *Name)
+/*[clinic end generated code: output=b17ddc5fd506972d input=dbc36ae14375ba24]*/
 {
     HANDLE Event;
 
@@ -1600,8 +1604,8 @@ Connect to the pipe for asynchronous I/O (overlapped).
 
 static PyObject *
 _overlapped_Overlapped_ConnectPipe_impl(OverlappedObject *self,
-                                        const Py_UNICODE *Address)
-/*[clinic end generated code: output=3cc9661667d459d4 input=167c06a274efcefc]*/
+                                        const wchar_t *Address)
+/*[clinic end generated code: output=67cbd8e4d3a57855 input=167c06a274efcefc]*/
 {
     HANDLE PipeHandle;
 
@@ -1942,12 +1946,12 @@ static PyMethodDef Overlapped_methods[] = {
 };
 
 static PyMemberDef Overlapped_members[] = {
-    {"error", T_ULONG,
+    {"error", Py_T_ULONG,
      offsetof(OverlappedObject, error),
-     READONLY, "Error from last operation"},
+     Py_READONLY, "Error from last operation"},
     {"event", T_HANDLE,
      offsetof(OverlappedObject, overlapped) + offsetof(OVERLAPPED, hEvent),
-     READONLY, "Overlapped event handle"},
+     Py_READONLY, "Overlapped event handle"},
     {NULL}
 };
 
@@ -1996,12 +2000,7 @@ static PyMethodDef overlapped_functions[] = {
 
 #define WINAPI_CONSTANT(fmt, con) \
     do { \
-        PyObject *value = Py_BuildValue(fmt, con); \
-        if (value == NULL) { \
-            return -1; \
-        } \
-        if (PyModule_AddObject(module, #con, value) < 0 ) { \
-            Py_DECREF(value); \
+        if (PyModule_Add(module, #con, Py_BuildValue(fmt, con)) < 0 ) { \
             return -1; \
         } \
     } while (0)

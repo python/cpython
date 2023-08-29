@@ -1,6 +1,7 @@
 #include <Python.h>
 #include <errcode.h>
 
+#include "pycore_pyerrors.h"      // _PyErr_ProgramDecodedTextObject()
 #include "tokenizer.h"
 #include "pegen.h"
 
@@ -165,7 +166,7 @@ _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
 
     int ret = 0;
     struct token new_token;
-    new_token.metadata = NULL;
+    _PyToken_Init(&new_token);
 
     for (;;) {
         switch (_PyTokenizer_Get(p->tok, &new_token)) {
@@ -193,7 +194,7 @@ _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
 
 
 exit:
-    Py_XDECREF(new_token.metadata);
+    _PyToken_Free(&new_token);
     // If we're in an f-string, we want the syntax error in the expression part
     // to propagate, so that tokenizer errors (like expecting '}') that happen afterwards
     // do not swallow it.
@@ -452,4 +453,12 @@ _Pypegen_set_syntax_error(Parser* p, Token* last_token) {
     // _PyPegen_tokenize_full_source_to_check_for_errors will override the existing
     // generic SyntaxError we just raised if errors are found.
     _PyPegen_tokenize_full_source_to_check_for_errors(p);
+}
+
+void
+_Pypegen_stack_overflow(Parser *p)
+{
+    p->error_indicator = 1;
+    PyErr_SetString(PyExc_MemoryError,
+        "Parser stack overflowed - Python source too complex to parse");
 }

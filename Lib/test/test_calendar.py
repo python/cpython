@@ -3,12 +3,13 @@ import unittest
 
 from test import support
 from test.support.script_helper import assert_python_ok, assert_python_failure
-import time
-import locale
-import sys
+import contextlib
 import datetime
+import io
+import locale
 import os
-import warnings
+import sys
+import time
 
 # From https://en.wikipedia.org/wiki/Leap_year_starting_on_Saturday
 result_0_02_text = """\
@@ -550,26 +551,92 @@ class CalendarTestCase(unittest.TestCase):
             # verify it "acts like a sequence" in two forms of iteration
             self.assertEqual(value[::-1], list(reversed(value)))
 
-    def test_locale_calendars(self):
+    def test_locale_text_calendar(self):
+        try:
+            cal = calendar.LocaleTextCalendar(locale='')
+            local_weekday = cal.formatweekday(1, 10)
+            local_weekday_abbr = cal.formatweekday(1, 3)
+            local_month = cal.formatmonthname(2010, 10, 10)
+        except locale.Error:
+            # cannot set the system default locale -- skip rest of test
+            raise unittest.SkipTest('cannot set the system default locale')
+        self.assertIsInstance(local_weekday, str)
+        self.assertIsInstance(local_weekday_abbr, str)
+        self.assertIsInstance(local_month, str)
+        self.assertEqual(len(local_weekday), 10)
+        self.assertEqual(len(local_weekday_abbr), 3)
+        self.assertGreaterEqual(len(local_month), 10)
+
+        cal = calendar.LocaleTextCalendar(locale=None)
+        local_weekday = cal.formatweekday(1, 10)
+        local_weekday_abbr = cal.formatweekday(1, 3)
+        local_month = cal.formatmonthname(2010, 10, 10)
+        self.assertIsInstance(local_weekday, str)
+        self.assertIsInstance(local_weekday_abbr, str)
+        self.assertIsInstance(local_month, str)
+        self.assertEqual(len(local_weekday), 10)
+        self.assertEqual(len(local_weekday_abbr), 3)
+        self.assertGreaterEqual(len(local_month), 10)
+
+        cal = calendar.LocaleTextCalendar(locale='C')
+        local_weekday = cal.formatweekday(1, 10)
+        local_weekday_abbr = cal.formatweekday(1, 3)
+        local_month = cal.formatmonthname(2010, 10, 10)
+        self.assertIsInstance(local_weekday, str)
+        self.assertIsInstance(local_weekday_abbr, str)
+        self.assertIsInstance(local_month, str)
+        self.assertEqual(len(local_weekday), 10)
+        self.assertEqual(len(local_weekday_abbr), 3)
+        self.assertGreaterEqual(len(local_month), 10)
+
+    def test_locale_html_calendar(self):
+        try:
+            cal = calendar.LocaleHTMLCalendar(locale='')
+            local_weekday = cal.formatweekday(1)
+            local_month = cal.formatmonthname(2010, 10)
+        except locale.Error:
+            # cannot set the system default locale -- skip rest of test
+            raise unittest.SkipTest('cannot set the system default locale')
+        self.assertIsInstance(local_weekday, str)
+        self.assertIsInstance(local_month, str)
+
+        cal = calendar.LocaleHTMLCalendar(locale=None)
+        local_weekday = cal.formatweekday(1)
+        local_month = cal.formatmonthname(2010, 10)
+        self.assertIsInstance(local_weekday, str)
+        self.assertIsInstance(local_month, str)
+
+        cal = calendar.LocaleHTMLCalendar(locale='C')
+        local_weekday = cal.formatweekday(1)
+        local_month = cal.formatmonthname(2010, 10)
+        self.assertIsInstance(local_weekday, str)
+        self.assertIsInstance(local_month, str)
+
+    def test_locale_calendars_reset_locale_properly(self):
         # ensure that Locale{Text,HTML}Calendar resets the locale properly
         # (it is still not thread-safe though)
         old_october = calendar.TextCalendar().formatmonthname(2010, 10, 10)
         try:
             cal = calendar.LocaleTextCalendar(locale='')
             local_weekday = cal.formatweekday(1, 10)
+            local_weekday_abbr = cal.formatweekday(1, 3)
             local_month = cal.formatmonthname(2010, 10, 10)
         except locale.Error:
             # cannot set the system default locale -- skip rest of test
             raise unittest.SkipTest('cannot set the system default locale')
         self.assertIsInstance(local_weekday, str)
+        self.assertIsInstance(local_weekday_abbr, str)
         self.assertIsInstance(local_month, str)
         self.assertEqual(len(local_weekday), 10)
+        self.assertEqual(len(local_weekday_abbr), 3)
         self.assertGreaterEqual(len(local_month), 10)
+
         cal = calendar.LocaleHTMLCalendar(locale='')
         local_weekday = cal.formatweekday(1)
         local_month = cal.formatmonthname(2010, 10)
         self.assertIsInstance(local_weekday, str)
         self.assertIsInstance(local_month, str)
+
         new_october = calendar.TextCalendar().formatmonthname(2010, 10, 10)
         self.assertEqual(old_october, new_october)
 
@@ -587,6 +654,21 @@ class CalendarTestCase(unittest.TestCase):
             # For long widths, the full day name is used.
             self.assertEqual(cal.formatweekday(0, 9), "  Monday ")
             self.assertEqual(cal.formatweekday(0, 10), "  Monday  ")
+        except locale.Error:
+            raise unittest.SkipTest('cannot set the en_US locale')
+
+    def test_locale_calendar_formatmonthname(self):
+        try:
+            # formatmonthname uses the same month names regardless of the width argument.
+            cal = calendar.LocaleTextCalendar(locale='en_US')
+            # For too short widths, a full name (with year) is used.
+            self.assertEqual(cal.formatmonthname(2022, 6, 2, withyear=False), "June")
+            self.assertEqual(cal.formatmonthname(2022, 6, 2, withyear=True), "June 2022")
+            self.assertEqual(cal.formatmonthname(2022, 6, 3, withyear=False), "June")
+            self.assertEqual(cal.formatmonthname(2022, 6, 3, withyear=True), "June 2022")
+            # For long widths, a centered name is used.
+            self.assertEqual(cal.formatmonthname(2022, 6, 10, withyear=False), "   June   ")
+            self.assertEqual(cal.formatmonthname(2022, 6, 15, withyear=True), "   June 2022   ")
         except locale.Error:
             raise unittest.SkipTest('cannot set the en_US locale')
 
@@ -848,46 +930,104 @@ def conv(s):
     return s.replace('\n', os.linesep).encode()
 
 class CommandLineTestCase(unittest.TestCase):
-    def run_ok(self, *args):
+    def setUp(self):
+        self.runners = [self.run_cli_ok, self.run_cmd_ok]
+
+    @contextlib.contextmanager
+    def captured_stdout_with_buffer(self):
+        orig_stdout = sys.stdout
+        buffer = io.BytesIO()
+        sys.stdout = io.TextIOWrapper(buffer)
+        try:
+            yield sys.stdout
+        finally:
+            sys.stdout.flush()
+            sys.stdout.buffer.seek(0)
+            sys.stdout = orig_stdout
+
+    @contextlib.contextmanager
+    def captured_stderr_with_buffer(self):
+        orig_stderr = sys.stderr
+        buffer = io.BytesIO()
+        sys.stderr = io.TextIOWrapper(buffer)
+        try:
+            yield sys.stderr
+        finally:
+            sys.stderr.flush()
+            sys.stderr.buffer.seek(0)
+            sys.stderr = orig_stderr
+
+    def run_cli_ok(self, *args):
+        with self.captured_stdout_with_buffer() as stdout:
+            calendar.main(args)
+        return stdout.buffer.read()
+
+    def run_cmd_ok(self, *args):
         return assert_python_ok('-m', 'calendar', *args)[1]
 
-    def assertFailure(self, *args):
+    def assertCLIFails(self, *args):
+        with self.captured_stderr_with_buffer() as stderr:
+            self.assertRaises(SystemExit, calendar.main, args)
+        stderr = stderr.buffer.read()
+        self.assertIn(b'usage:', stderr)
+        return stderr
+
+    def assertCmdFails(self, *args):
         rc, stdout, stderr = assert_python_failure('-m', 'calendar', *args)
         self.assertIn(b'usage:', stderr)
         self.assertEqual(rc, 2)
+        return rc, stdout, stderr
+
+    def assertFailure(self, *args):
+        self.assertCLIFails(*args)
+        self.assertCmdFails(*args)
 
     def test_help(self):
-        stdout = self.run_ok('-h')
+        stdout = self.run_cmd_ok('-h')
         self.assertIn(b'usage:', stdout)
         self.assertIn(b'calendar.py', stdout)
         self.assertIn(b'--help', stdout)
+
+        # special case: stdout but sys.exit()
+        with self.captured_stdout_with_buffer() as output:
+            self.assertRaises(SystemExit, calendar.main, ['-h'])
+        output = output.buffer.read()
+        self.assertIn(b'usage:', output)
+        self.assertIn(b'--help', output)
 
     def test_illegal_arguments(self):
         self.assertFailure('-z')
         self.assertFailure('spam')
         self.assertFailure('2004', 'spam')
+        self.assertFailure('2004', '1', 'spam')
+        self.assertFailure('2004', '1', '1')
+        self.assertFailure('2004', '1', '1', 'spam')
         self.assertFailure('-t', 'html', '2004', '1')
 
     def test_output_current_year(self):
-        stdout = self.run_ok()
-        year = datetime.datetime.now().year
-        self.assertIn((' %s' % year).encode(), stdout)
-        self.assertIn(b'January', stdout)
-        self.assertIn(b'Mo Tu We Th Fr Sa Su', stdout)
+        for run in self.runners:
+            output = run()
+            year = datetime.datetime.now().year
+            self.assertIn(conv(' %s' % year), output)
+            self.assertIn(b'January', output)
+            self.assertIn(b'Mo Tu We Th Fr Sa Su', output)
 
     def test_output_year(self):
-        stdout = self.run_ok('2004')
-        self.assertEqual(stdout, conv(result_2004_text))
+        for run in self.runners:
+            output = run('2004')
+            self.assertEqual(output, conv(result_2004_text))
 
     def test_output_month(self):
-        stdout = self.run_ok('2004', '1')
-        self.assertEqual(stdout, conv(result_2004_01_text))
+        for run in self.runners:
+            output = run('2004', '1')
+            self.assertEqual(output, conv(result_2004_01_text))
 
     def test_option_encoding(self):
         self.assertFailure('-e')
         self.assertFailure('--encoding')
-        stdout = self.run_ok('--encoding', 'utf-16-le', '2004')
-        self.assertEqual(stdout, result_2004_text.encode('utf-16-le'))
+        for run in self.runners:
+            output = run('--encoding', 'utf-16-le', '2004')
+            self.assertEqual(output, result_2004_text.encode('utf-16-le'))
 
     def test_option_locale(self):
         self.assertFailure('-L')
@@ -905,66 +1045,75 @@ class CommandLineTestCase(unittest.TestCase):
                 locale.setlocale(locale.LC_TIME, oldlocale)
         except (locale.Error, ValueError):
             self.skipTest('cannot set the system default locale')
-        stdout = self.run_ok('--locale', lang, '--encoding', enc, '2004')
-        self.assertIn('2004'.encode(enc), stdout)
+        for run in self.runners:
+            for type in ('text', 'html'):
+                output = run(
+                    '--type', type, '--locale', lang, '--encoding', enc, '2004'
+                )
+                self.assertIn('2004'.encode(enc), output)
 
     def test_option_width(self):
         self.assertFailure('-w')
         self.assertFailure('--width')
         self.assertFailure('-w', 'spam')
-        stdout = self.run_ok('--width', '3', '2004')
-        self.assertIn(b'Mon Tue Wed Thu Fri Sat Sun', stdout)
+        for run in self.runners:
+            output = run('--width', '3', '2004')
+            self.assertIn(b'Mon Tue Wed Thu Fri Sat Sun', output)
 
     def test_option_lines(self):
         self.assertFailure('-l')
         self.assertFailure('--lines')
         self.assertFailure('-l', 'spam')
-        stdout = self.run_ok('--lines', '2', '2004')
-        self.assertIn(conv('December\n\nMo Tu We'), stdout)
+        for run in self.runners:
+            output = run('--lines', '2', '2004')
+            self.assertIn(conv('December\n\nMo Tu We'), output)
 
     def test_option_spacing(self):
         self.assertFailure('-s')
         self.assertFailure('--spacing')
         self.assertFailure('-s', 'spam')
-        stdout = self.run_ok('--spacing', '8', '2004')
-        self.assertIn(b'Su        Mo', stdout)
+        for run in self.runners:
+            output = run('--spacing', '8', '2004')
+            self.assertIn(b'Su        Mo', output)
 
     def test_option_months(self):
         self.assertFailure('-m')
         self.assertFailure('--month')
         self.assertFailure('-m', 'spam')
-        stdout = self.run_ok('--months', '1', '2004')
-        self.assertIn(conv('\nMo Tu We Th Fr Sa Su\n'), stdout)
+        for run in self.runners:
+            output = run('--months', '1', '2004')
+            self.assertIn(conv('\nMo Tu We Th Fr Sa Su\n'), output)
 
     def test_option_type(self):
         self.assertFailure('-t')
         self.assertFailure('--type')
         self.assertFailure('-t', 'spam')
-        stdout = self.run_ok('--type', 'text', '2004')
-        self.assertEqual(stdout, conv(result_2004_text))
-        stdout = self.run_ok('--type', 'html', '2004')
-        self.assertEqual(stdout[:6], b'<?xml ')
-        self.assertIn(b'<title>Calendar for 2004</title>', stdout)
+        for run in self.runners:
+            output = run('--type', 'text', '2004')
+            self.assertEqual(output, conv(result_2004_text))
+            output = run('--type', 'html', '2004')
+            self.assertEqual(output[:6], b'<?xml ')
+            self.assertIn(b'<title>Calendar for 2004</title>', output)
 
     def test_html_output_current_year(self):
-        stdout = self.run_ok('--type', 'html')
-        year = datetime.datetime.now().year
-        self.assertIn(('<title>Calendar for %s</title>' % year).encode(),
-                      stdout)
-        self.assertIn(b'<tr><th colspan="7" class="month">January</th></tr>',
-                      stdout)
+        for run in self.runners:
+            output = run('--type', 'html')
+            year = datetime.datetime.now().year
+            self.assertIn(('<title>Calendar for %s</title>' % year).encode(), output)
+            self.assertIn(b'<tr><th colspan="7" class="month">January</th></tr>', output)
 
     def test_html_output_year_encoding(self):
-        stdout = self.run_ok('-t', 'html', '--encoding', 'ascii', '2004')
-        self.assertEqual(stdout,
-                         result_2004_html.format(**default_format).encode('ascii'))
+        for run in self.runners:
+            output = run('-t', 'html', '--encoding', 'ascii', '2004')
+            self.assertEqual(output, result_2004_html.format(**default_format).encode('ascii'))
 
     def test_html_output_year_css(self):
         self.assertFailure('-t', 'html', '-c')
         self.assertFailure('-t', 'html', '--css')
-        stdout = self.run_ok('-t', 'html', '--css', 'custom.css', '2004')
-        self.assertIn(b'<link rel="stylesheet" type="text/css" '
-                      b'href="custom.css" />', stdout)
+        for run in self.runners:
+            output = run('-t', 'html', '--css', 'custom.css', '2004')
+            self.assertIn(b'<link rel="stylesheet" type="text/css" '
+                          b'href="custom.css" />', output)
 
 
 class MiscTestCase(unittest.TestCase):

@@ -1,4 +1,4 @@
-"""Tests for the unparse.py script in the Tools/parser directory."""
+"""Tests for ast.unparse."""
 
 import unittest
 import test.support
@@ -625,6 +625,78 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("a, b = [c, d] = e, f = g")
 
 
+class ManualASTCreationTestCase(unittest.TestCase):
+    """Test that AST nodes created without a type_params field unparse correctly."""
+
+    def test_class(self):
+        node = ast.ClassDef(name="X", bases=[], keywords=[], body=[ast.Pass()], decorator_list=[])
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "class X:\n    pass")
+
+    def test_class_with_type_params(self):
+        node = ast.ClassDef(name="X", bases=[], keywords=[], body=[ast.Pass()], decorator_list=[],
+                             type_params=[ast.TypeVar("T")])
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "class X[T]:\n    pass")
+
+    def test_function(self):
+        node = ast.FunctionDef(
+            name="f",
+            args=ast.arguments(posonlyargs=[], args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]),
+            body=[ast.Pass()],
+            decorator_list=[],
+            returns=None,
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "def f():\n    pass")
+
+    def test_function_with_type_params(self):
+        node = ast.FunctionDef(
+            name="f",
+            args=ast.arguments(posonlyargs=[], args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]),
+            body=[ast.Pass()],
+            decorator_list=[],
+            returns=None,
+            type_params=[ast.TypeVar("T")],
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "def f[T]():\n    pass")
+
+    def test_function_with_type_params_and_bound(self):
+        node = ast.FunctionDef(
+            name="f",
+            args=ast.arguments(posonlyargs=[], args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]),
+            body=[ast.Pass()],
+            decorator_list=[],
+            returns=None,
+            type_params=[ast.TypeVar("T", bound=ast.Name("int"))],
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "def f[T: int]():\n    pass")
+
+    def test_async_function(self):
+        node = ast.AsyncFunctionDef(
+            name="f",
+            args=ast.arguments(posonlyargs=[], args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]),
+            body=[ast.Pass()],
+            decorator_list=[],
+            returns=None,
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "async def f():\n    pass")
+
+    def test_async_function_with_type_params(self):
+        node = ast.AsyncFunctionDef(
+            name="f",
+            args=ast.arguments(posonlyargs=[], args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]),
+            body=[ast.Pass()],
+            decorator_list=[],
+            returns=None,
+            type_params=[ast.TypeVar("T")],
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "async def f[T]():\n    pass")
+
 
 class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""
@@ -633,7 +705,7 @@ class DirectoryTestCase(ASTTestCase):
     test_directories = (lib_dir, lib_dir / "test")
     run_always_files = {"test_grammar.py", "test_syntax.py", "test_compile.py",
                         "test_ast.py", "test_asdl_parser.py", "test_fstring.py",
-                        "test_patma.py"}
+                        "test_patma.py", "test_type_alias.py", "test_type_params.py"}
 
     _files_to_test = None
 

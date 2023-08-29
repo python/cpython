@@ -1,3 +1,0 @@
-Fix a potential ``[Errno 13] Permission denied`` when using :func:`shutil.copystat`
-within Windows Subsystem for Linux (WSL) on a mounted filesystem by adding
-``errno.EACCES`` to the list of ignored errors within the internal implementation.

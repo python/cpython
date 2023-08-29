@@ -1,1 +1,0 @@
-Adds three minor linting fixes to the wasm module caught that were caught by ruff.

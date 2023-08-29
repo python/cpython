@@ -4,13 +4,6 @@
 
 #define PYTHREAD_INVALID_THREAD_ID ((unsigned long)-1)
 
-#ifdef HAVE_FORK
-/* Private function to reinitialize a lock at fork in the child process.
-   Reset the lock to the unlocked state.
-   Return 0 on success, return -1 on error. */
-PyAPI_FUNC(int) _PyThread_at_fork_reinit(PyThread_type_lock *lock);
-#endif  /* HAVE_FORK */
-
 #ifdef HAVE_PTHREAD_H
     /* Darwin needs pthread.h to know type name the pthread_key_t. */
 #   include <pthread.h>

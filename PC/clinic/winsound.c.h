@@ -63,7 +63,7 @@ winsound_PlaySound(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
         goto exit;
     }
     sound = args[0];
-    flags = _PyLong_AsInt(args[1]);
+    flags = PyLong_AsInt(args[1]);
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -128,11 +128,11 @@ winsound_Beep(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     if (!args) {
         goto exit;
     }
-    frequency = _PyLong_AsInt(args[0]);
+    frequency = PyLong_AsInt(args[0]);
     if (frequency == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    duration = _PyLong_AsInt(args[1]);
+    duration = PyLong_AsInt(args[1]);
     if (duration == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -196,7 +196,7 @@ winsound_MessageBeep(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    type = _PyLong_AsInt(args[0]);
+    type = PyLong_AsInt(args[0]);
     if (type == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -206,4 +206,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f70b7730127208d8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e63a6516d7a55cb8 input=a9049054013a1b77]*/

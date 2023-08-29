@@ -111,41 +111,41 @@ for the controller classes, all defined in this module.
 +------------------------+-----------------------------------------+-------+
 | Type Name              | Class Name                              | Notes |
 +========================+=========================================+=======+
-| ``'mozilla'``          | :class:`Mozilla('mozilla')`             |       |
+| ``'mozilla'``          | ``Mozilla('mozilla')``                  |       |
 +------------------------+-----------------------------------------+-------+
-| ``'firefox'``          | :class:`Mozilla('mozilla')`             |       |
+| ``'firefox'``          | ``Mozilla('mozilla')``                  |       |
 +------------------------+-----------------------------------------+-------+
-| ``'epiphany'``         | :class:`Epiphany('epiphany')`           |       |
+| ``'epiphany'``         | ``Epiphany('epiphany')``                |       |
 +------------------------+-----------------------------------------+-------+
-| ``'kfmclient'``        | :class:`Konqueror()`                    | \(1)  |
+| ``'kfmclient'``        | ``Konqueror()``                         | \(1)  |
 +------------------------+-----------------------------------------+-------+
-| ``'konqueror'``        | :class:`Konqueror()`                    | \(1)  |
+| ``'konqueror'``        | ``Konqueror()``                         | \(1)  |
 +------------------------+-----------------------------------------+-------+
-| ``'kfm'``              | :class:`Konqueror()`                    | \(1)  |
+| ``'kfm'``              | ``Konqueror()``                         | \(1)  |
 +------------------------+-----------------------------------------+-------+
-| ``'opera'``            | :class:`Opera()`                        |       |
+| ``'opera'``            | ``Opera()``                             |       |
 +------------------------+-----------------------------------------+-------+
-| ``'links'``            | :class:`GenericBrowser('links')`        |       |
+| ``'links'``            | ``GenericBrowser('links')``             |       |
 +------------------------+-----------------------------------------+-------+
-| ``'elinks'``           | :class:`Elinks('elinks')`               |       |
+| ``'elinks'``           | ``Elinks('elinks')``                    |       |
 +------------------------+-----------------------------------------+-------+
-| ``'lynx'``             | :class:`GenericBrowser('lynx')`         |       |
+| ``'lynx'``             | ``GenericBrowser('lynx')``              |       |
 +------------------------+-----------------------------------------+-------+
-| ``'w3m'``              | :class:`GenericBrowser('w3m')`          |       |
+| ``'w3m'``              | ``GenericBrowser('w3m')``               |       |
 +------------------------+-----------------------------------------+-------+
-| ``'windows-default'``  | :class:`WindowsDefault`                 | \(2)  |
+| ``'windows-default'``  | ``WindowsDefault``                      | \(2)  |
 +------------------------+-----------------------------------------+-------+
-| ``'macosx'``           | :class:`MacOSXOSAScript('default')`     | \(3)  |
+| ``'macosx'``           | ``MacOSXOSAScript('default')``          | \(3)  |
 +------------------------+-----------------------------------------+-------+
-| ``'safari'``           | :class:`MacOSXOSAScript('safari')`      | \(3)  |
+| ``'safari'``           | ``MacOSXOSAScript('safari')``           | \(3)  |
 +------------------------+-----------------------------------------+-------+
-| ``'google-chrome'``    | :class:`Chrome('google-chrome')`        |       |
+| ``'google-chrome'``    | ``Chrome('google-chrome')``             |       |
 +------------------------+-----------------------------------------+-------+
-| ``'chrome'``           | :class:`Chrome('chrome')`               |       |
+| ``'chrome'``           | ``Chrome('chrome')``                    |       |
 +------------------------+-----------------------------------------+-------+
-| ``'chromium'``         | :class:`Chromium('chromium')`           |       |
+| ``'chromium'``         | ``Chromium('chromium')``                |       |
 +------------------------+-----------------------------------------+-------+
-| ``'chromium-browser'`` | :class:`Chromium('chromium-browser')`   |       |
+| ``'chromium-browser'`` | ``Chromium('chromium-browser')``        |       |
 +------------------------+-----------------------------------------+-------+
 
 Notes:
@@ -153,7 +153,7 @@ Notes:
 (1)
    "Konqueror" is the file manager for the KDE desktop environment for Unix, and
    only makes sense to use if KDE is running.  Some way of reliably detecting KDE
-   would be nice; the :envvar:`KDEDIR` variable is not sufficient.  Note also that
+   would be nice; the :envvar:`!KDEDIR` variable is not sufficient.  Note also that
    the name "kfm" is used even when using the :program:`konqueror` command with KDE
    2 --- the implementation selects the best strategy for running Konqueror.
 
@@ -163,6 +163,11 @@ Notes:
 (3)
    Only on macOS platform.
 
+.. versionadded:: 3.2
+   A new :class:`!MacOSXOSAScript` class has been added
+   and is used on Mac instead of the previous :class:`!MacOSX` class.
+   This adds support for opening browsers not currently set as the OS default.
+
 .. versionadded:: 3.3
    Support for Chrome/Chromium has been added.
 
@@ -170,9 +175,6 @@ Notes:
    Support for several obsolete browsers has been removed.
    Removed browsers include Grail, Mosaic, Netscape, Galeon,
    Skipstone, Iceape, and Firefox versions 35 and below.
-
-.. deprecated-removed:: 3.11 3.13
-   :class:`MacOSX` is deprecated, use :class:`MacOSXOSAScript` instead.
 
 Here are some simple examples::
 
@@ -194,7 +196,7 @@ Browser controllers provide these methods which parallel three of the
 module-level convenience functions:
 
 
-.. attribute:: name
+.. attribute:: controller.name
 
    System-dependent name for the browser.
 

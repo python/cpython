@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"       // _Py_ID()
 #endif
 
+#include "pycore_abstract.h"       // _PyNumber_Index()
 
 PyDoc_STRVAR(list_insert__doc__,
 "insert($self, index, object, /)\n"
@@ -383,4 +384,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=2ca109d8acc775bc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=537a17b562c57505 input=a9049054013a1b77]*/

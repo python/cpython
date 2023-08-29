@@ -696,14 +696,16 @@ class TestEmailMessageBase:
             self.assertIsNone(part['Content-Disposition'])
 
     class _TestSetRaisingContentManager:
+        class CustomError(Exception):
+            pass
         def set_content(self, msg, content, *args, **kw):
-            raise Exception('test')
+            raise self.CustomError('test')
 
     def test_default_content_manager_for_add_comes_from_policy(self):
         cm = self._TestSetRaisingContentManager()
         m = self.message(policy=self.policy.clone(content_manager=cm))
         for method in ('add_related', 'add_alternative', 'add_attachment'):
-            with self.assertRaises(Exception) as ar:
+            with self.assertRaises(self._TestSetRaisingContentManager.CustomError) as ar:
                 getattr(m, method)('')
             self.assertEqual(str(ar.exception), 'test')
 
