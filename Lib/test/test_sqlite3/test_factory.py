@@ -193,14 +193,14 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
         self.assertEqual(items, [1, 2])
 
     def test_sqlite_row_as_tuple(self):
-        """Checks if the row object can be converted to a tuple"""
+        # Checks if the row object can be converted to a tuple
         self.con.row_factory = sqlite.Row
         row = self.con.execute("select 1 as a, 2 as b").fetchone()
         t = tuple(row)
         self.assertEqual(t, (row['a'], row['b']))
 
     def test_sqlite_row_as_dict(self):
-        """Checks if the row object can be correctly converted to a dictionary"""
+        # Checks if the row object can be correctly converted to a dictionary
         self.con.row_factory = sqlite.Row
         row = self.con.execute("select 1 as a, 2 as b").fetchone()
         d = dict(row)
@@ -208,7 +208,7 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
         self.assertEqual(d["b"], row["b"])
 
     def test_sqlite_row_hash_cmp(self):
-        """Checks if the row object compares and hashes correctly"""
+        # Checks if the row object compares and hashes correctly
         self.con.row_factory = sqlite.Row
         row_1 = self.con.execute("select 1 as a, 2 as b").fetchone()
         row_2 = self.con.execute("select 1 as a, 2 as b").fetchone()
@@ -242,7 +242,7 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
         self.assertEqual(hash(row_1), hash(row_2))
 
     def test_sqlite_row_as_sequence(self):
-        """ Checks if the row object can act like a sequence """
+        # Checks if the row object can act like a sequence
         self.con.row_factory = sqlite.Row
         row = self.con.execute("select 1 as a, 2 as b").fetchone()
 
@@ -251,7 +251,7 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
         self.assertIsInstance(row, Sequence)
 
     def test_sqlite_row_keys(self):
-        """ Checks if the row object can return its keys """
+        # Checks if the row object can return its keys
         self.con.row_factory = sqlite.Row
         row = self.con.execute("select 1 as a, 2 as b").fetchone()
 
