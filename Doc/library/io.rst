@@ -412,8 +412,8 @@ I/O Base Classes
 
       * :data:`os.SEEK_SET` or ``0`` -- start of the stream (the default);
         *offset* should be zero or positive
-      * :data:`os.SEEK_CUR` or ``1`` -- current stream position; *offset* may
-        be negative
+      * :data:`os.SEEK_CUR` or ``1`` -- current stream position;
+        *offset* may be negative
       * :data:`os.SEEK_END` or ``2`` -- end of the stream; *offset* is usually
         negative
 
