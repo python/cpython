@@ -373,7 +373,7 @@ static PyTypeObject UOpExecutor_Type = {
 };
 
 static int
-squeeze_stubs(
+move_stubs(
     _PyUOpInstruction *trace,
     int trace_length,
     int stubs_start,
@@ -773,7 +773,7 @@ done:
                         "Moving %d stub uops back by %d\n",
                         buffer_size - max_length,
                         max_length - trace_length);
-                trace_length = squeeze_stubs(trace, trace_length, max_length, buffer_size);
+                trace_length = move_stubs(trace, trace_length, max_length, buffer_size);
             }
             else {
                 assert(trace_length == max_length);
@@ -845,7 +845,7 @@ remove_unneeded_uops(_PyUOpInstruction *trace, int trace_length)
     }
     // Stage 3: Move the stubs back.
     if (dest < last_instr) {
-        int new_trace_length = squeeze_stubs(trace, dest, last_instr, trace_length);
+        int new_trace_length = move_stubs(trace, dest, last_instr, trace_length);
 #ifdef Py_DEBUG
         char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
         int lltrace = 0;
