@@ -63,7 +63,6 @@ from typing import (
 
 version = '1'
 
-DEFAULT_LIMITED_CAPI = False
 NO_VARARG = "PY_SSIZE_T_MAX"
 CLINIC_PREFIX = "__clinic_"
 CLINIC_PREFIXED_ARGS = {
@@ -1665,7 +1664,8 @@ class CLanguage(Language):
     def render_option_group_parsing(
             self,
             f: Function,
-            template_dict: TemplateDict
+            template_dict: TemplateDict,
+            limited_capi: bool,
     ) -> None:
         # positional only, grouped, optional arguments!
         # can be optional on the left or right.
@@ -1713,7 +1713,11 @@ class CLanguage(Language):
         count_min = sys.maxsize
         count_max = -1
 
-        add("switch (PyTuple_GET_SIZE(args)) {\n")
+        if limited_capi:
+            nargs = 'PyTuple_Size(args)'
+        else:
+            nargs = 'PyTuple_GET_SIZE(args)'
+        add(f"switch ({nargs}) {{\n")
         for subset in permute_optional_groups(left, required, right):
             count = len(subset)
             count_min = min(count_min, count)
@@ -1870,7 +1874,8 @@ class CLanguage(Language):
         template_dict['unpack_max'] = str(unpack_max)
 
         if has_option_groups:
-            self.render_option_group_parsing(f, template_dict)
+            self.render_option_group_parsing(f, template_dict,
+                                             limited_capi=clinic.limited_capi)
 
         # buffers, not destination
         for name, destination in clinic.destination_buffers.items():
@@ -2173,8 +2178,9 @@ class BlockPrinter:
             self,
             block: Block,
             *,
-            clinic: Clinic,
             core_includes: bool = False,
+            limited_capi: bool,
+            header_includes: dict[str, str],
     ) -> None:
         input = block.input
         output = block.output
@@ -2204,7 +2210,7 @@ class BlockPrinter:
 
         output = ''
         if core_includes:
-            if not clinic.limited_capi:
+            if not limited_capi:
                 output += textwrap.dedent("""
                     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
                     #  include "pycore_gc.h"            // PyGC_Head
@@ -2213,12 +2219,10 @@ class BlockPrinter:
 
                 """)
 
-            if clinic is not None:
-                # Emit optional includes
-                for include, reason in sorted(clinic.includes.items()):
-                    line = f'#include "{include}"'
-                    line = line.ljust(35) + f'// {reason}\n'
-                    output += line
+            # Emit optional "#include" directives for C headers
+            for include, reason in sorted(header_includes.items()):
+                line = f'#include "{include}"'.ljust(35) + f'// {reason}\n'
+                output += line
 
         input = ''.join(block.input)
         output += ''.join(block.output)
@@ -2414,8 +2418,8 @@ impl_definition block
             printer: BlockPrinter | None = None,
             *,
             filename: str,
+            limited_capi: bool,
             verify: bool = True,
-            limited_capi: bool = False,
     ) -> None:
         # maps strings to Parser objects.
         # (instantiated from the "parsers" global.)
@@ -2532,7 +2536,9 @@ impl_definition block
                     self.parsers[dsl_name] = parsers[dsl_name](self)
                 parser = self.parsers[dsl_name]
                 parser.parse(block)
-            printer.print_block(block, clinic=self)
+            printer.print_block(block,
+                                limited_capi=self.limited_capi,
+                                header_includes=self.includes)
 
         # these are destinations not buffers
         for name, destination in self.destinations.items():
@@ -2547,7 +2553,9 @@ impl_definition block
                     block.input = "dump " + name + "\n"
                     warn("Destination buffer " + repr(name) + " not empty at end of file, emptying.")
                     printer.write("\n")
-                    printer.print_block(block, clinic=self)
+                    printer.print_block(block,
+                                        limited_capi=self.limited_capi,
+                                        header_includes=self.includes)
                     continue
 
                 if destination.type == 'file':
@@ -2572,7 +2580,10 @@ impl_definition block
 
                     block.input = 'preserve\n'
                     printer_2 = BlockPrinter(self.language)
-                    printer_2.print_block(block, core_includes=True, clinic=self)
+                    printer_2.print_block(block,
+                                          core_includes=True,
+                                          limited_capi=self.limited_capi,
+                                          header_includes=self.includes)
                     write_file(destination.filename, printer_2.f.getvalue())
                     continue
 
@@ -2612,11 +2623,10 @@ impl_definition block
 def parse_file(
         filename: str,
         *,
-        ns: argparse.Namespace,
+        limited_capi: bool,
         output: str | None = None,
+        verify: bool = True,
 ) -> None:
-    verify = not ns.force
-    limited_capi = ns.limited_capi
     if not output:
         output = filename
 
@@ -6190,7 +6200,8 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
                     continue
                 if ns.verbose:
                     print(path)
-                parse_file(path, ns=ns)
+                parse_file(path,
+                           verify=not ns.force, limited_capi=ns.limited_capi)
         return
 
     if not ns.filename:
@@ -6202,7 +6213,8 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
     for filename in ns.filename:
         if ns.verbose:
             print(filename)
-        parse_file(filename, output=ns.output, ns=ns)
+        parse_file(filename, output=ns.output,
+                   verify=not ns.force, limited_capi=ns.limited_capi)
 
 
 def main(argv: list[str] | None = None) -> NoReturn:

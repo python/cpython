@@ -442,6 +442,10 @@ extern int _PyObject_IsAbstract(PyObject *);
 extern int _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
 extern PyObject* _PyObject_NextNotImplemented(PyObject *);
 
+// Pickle support.
+// Export for '_datetime' shared extension
+PyAPI_FUNC(PyObject*) _PyObject_GetState(PyObject *);
+
 /* C function call trampolines to mitigate bad function pointer casts.
  *
  * Typical native ABIs ignore additional arguments or fill in missing
