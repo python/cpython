@@ -3849,7 +3849,7 @@ features:
 
 .. function:: timerfd_settime(fd, flags, interval, value)
 
-   Start/stop timer for an timer file descriptor.
+   Start/stop timer for a timer file descriptor.
    See man page :manpage:`timerfd_settime(2)` for more information.
 
    *interval* coresponds to :c:member:`!it_interval` in :c:struct:`itimerspec` and *value* coresponds to
