@@ -3919,7 +3919,6 @@ class EventfdTests(unittest.TestCase):
 @support.requires_linux_version(2, 6, 30)
 class TimerfdTests(unittest.TestCase):
     def test_timerfd_initval(self):
-        limit_error = 1e-3
         fd = os.timerfd_create(time.CLOCK_REALTIME, 0)
         self.assertNotEqual(fd, -1)
         self.addCleanup(os.close, fd)
@@ -3929,22 +3928,21 @@ class TimerfdTests(unittest.TestCase):
 
         # 1st call
         interval2, value2 = os.timerfd_settime(fd, 0, interval, value)
-        self.assertLessEqual(interval2, limit_error)
-        self.assertLessEqual(value2, limit_error)
+        self.assertAlmostEqual(interval2, 0.0, places=3)
+        self.assertAlmostEqual(value2, 0.0, places=3)
 
         # 2nd call
         interval2, value2 = os.timerfd_settime(fd, 0, interval, value)
-        self.assertLess(abs(interval2 - interval),  limit_error)
-        self.assertLess(abs(value2 - value),  limit_error)
+        self.assertAlmostEqual(interval2, interval, places=3)
+        self.assertAlmostEqual(value2, value, places=3)
 
         # timerfd_gettime
         interval2, value2 = os.timerfd_gettime(fd)
-        self.assertLess(abs(interval2 - interval),  limit_error)
-        self.assertLess(abs(value2 - value),  limit_error)
+        self.assertAlmostEqual(interval2, interval, places=3)
+        self.assertAlmostEqual(value2, value, places=3)
 
     def test_timerfd_interval(self):
         size = 8  # read 8 bytes
-        limit_error = 1e-3
         fd = os.timerfd_create(time.CLOCK_REALTIME, 0)
         self.assertNotEqual(fd, -1)
         self.addCleanup(os.close, fd)
@@ -3958,8 +3956,8 @@ class TimerfdTests(unittest.TestCase):
 
         # timerfd_gettime
         interval2, value2 = os.timerfd_gettime(fd)
-        self.assertLess(abs(interval2 - interval),  limit_error)
-        self.assertLess(abs(value2 - value),  limit_error)
+        self.assertAlmostEqual(interval2, interval, places=3)
+        self.assertAlmostEqual(value2, value, places=3)
 
         count = 3
         t = time.perf_counter()
@@ -3972,7 +3970,6 @@ class TimerfdTests(unittest.TestCase):
 
     def test_timerfd_TFD_TIMER_ABSTIME(self):
         size = 8  # read 8 bytes
-        limit_error = 1e-3
         fd = os.timerfd_create(time.CLOCK_REALTIME, 0)
         self.assertNotEqual(fd, -1)
         self.addCleanup(os.close, fd)
@@ -3990,8 +3987,8 @@ class TimerfdTests(unittest.TestCase):
         # timerfd_gettime
         # Note: timerfd_gettime returns relative values even if TFD_TIMER_ABSTIME is specified.
         interval2, value2 = os.timerfd_gettime(fd)
-        self.assertLess(abs(interval2 - interval),  limit_error)
-        self.assertLess(abs(value2 - offset),  limit_error)
+        self.assertAlmostEqual(interval2, interval, places=3)
+        self.assertAlmostEqual(value2, offset, places=3)
 
         t = time.perf_counter()
         _ = os.read(fd, size)
@@ -4050,7 +4047,7 @@ class TimerfdTests(unittest.TestCase):
         self.assertEqual(interval_ns2, interval_ns)
         self.assertLessEqual(value_ns2, value_ns)
 
-        self.assertLess(abs(value_ns2 - value_ns),  limit_error)
+        self.assertAlmostEqual(value_ns2, value_ns, delta=limit_error)
 
     def test_timerfd_ns_interval(self):
         size = 8  # read 8 bytes
