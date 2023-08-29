@@ -15,6 +15,11 @@ PyDoc_STRVAR(_io__IOBase_seek__doc__,
 "\n"
 "Change the stream position to the given byte offset.\n"
 "\n"
+"  offset\n"
+"    The stream position, relative to \'whence\'.\n"
+"  whence\n"
+"    The relative position to seek from.\n"
+"\n"
 "The offset is interpreted relative to the position indicated by whence.\n"
 "Values for whence are:\n"
 "\n"
@@ -437,4 +442,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=ec741e0961671a86 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d96f5bfd72e6eafb input=a9049054013a1b77]*/
