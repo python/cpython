@@ -693,6 +693,7 @@
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
             frame->prev_instr += frame->return_offset;
+            frame->instr_ptr += frame->return_offset;
             _PyFrame_StackPush(frame, retval);
             LOAD_SP();
             LOAD_IP();
@@ -2859,12 +2860,14 @@
 
         case SAVE_IP: {
             frame->prev_instr = ip_offset + oparg;
+            frame->instr_ptr = ip_offset + oparg + 1;
             break;
         }
 
         case SAVE_CURRENT_IP: {
             #if TIER_ONE
             frame->prev_instr = next_instr - 1;
+            frame->instr_ptr = next_instr;
             #endif
             #if TIER_TWO
             // Relies on a preceding SAVE_IP
@@ -2875,6 +2878,7 @@
 
         case EXIT_TRACE: {
             frame->prev_instr--;  // Back up to just before destination
+            frame->instr_ptr--;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
             return frame;

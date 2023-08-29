@@ -62,13 +62,18 @@
 #ifdef Py_STATS
 #define INSTRUCTION_START(op) \
     do { \
+        frame->instr_ptr = next_instr; \
         frame->prev_instr = next_instr++; \
         OPCODE_EXE_INC(op); \
         if (_Py_stats) _Py_stats->opcode_stats[lastopcode].pair_count[op]++; \
         lastopcode = op; \
     } while (0)
 #else
-#define INSTRUCTION_START(op) (frame->prev_instr = next_instr++)
+#define INSTRUCTION_START(op) \
+    do { \
+        frame->instr_ptr = next_instr; \
+        frame->prev_instr = next_instr++; \
+    } while(0)
 #endif
 
 #if USE_COMPUTED_GOTOS
@@ -108,6 +113,7 @@
         assert(tstate->interp->eval_frame == NULL);     \
         _PyFrame_SetStackPointer(frame, stack_pointer); \
         frame->prev_instr = next_instr - 1;             \
+        frame->instr_ptr = next_instr;                  \
         (NEW_FRAME)->previous = frame;                  \
         frame = tstate->current_frame = (NEW_FRAME);     \
         CALL_STAT_INC(inlined_py_calls);                \

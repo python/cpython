@@ -63,7 +63,16 @@ typedef struct _PyInterpreterFrame {
     // example, it may be an inline CACHE entry, an instruction we just jumped
     // over, or (in the case of a newly-created frame) a totally invalid value:
     _Py_CODEUNIT *prev_instr;
+    /* The instruction that is currently executing (possibly not started yet). */
+    _Py_CODEUNIT *instr_ptr;
     int stacktop;  /* Offset of TOS from localsplus  */
+    /* The new_return_offset determines where a `RETURN` should go in the caller,
+     * relative to `instr_ptr`.
+     * It is only meaningful to the callee,
+     * so it needs to be set in any CALL (to a Python function)
+     * or SEND (to a coroutine or generator).
+     * If there is no callee, then it is meaningless. */
+    uint16_t new_return_offset;
     /* The return_offset determines where a `RETURN` should go in the caller,
      * relative to `prev_instr`.
      * It is only meaningful to the callee,
@@ -135,6 +144,7 @@ _PyFrame_Initialize(
     frame->stacktop = code->co_nlocalsplus;
     frame->frame_obj = NULL;
     frame->prev_instr = _PyCode_CODE(code) - 1;
+    frame->instr_ptr = _PyCode_CODE(code);
     frame->return_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
 
@@ -282,7 +292,7 @@ _PyFrame_PushUnchecked(PyThreadState *tstate, PyFunctionObject *func, int null_l
 /* Pushes a trampoline frame without checking for space.
  * Must be guarded by _PyThreadState_HasStackSpace() */
 static inline _PyInterpreterFrame *
-_PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int stackdepth, int prev_instr)
+_PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int stackdepth, int prev_instr, int instr_ptr_offset)
 {
     CALL_STAT_INC(frames_pushed);
     _PyInterpreterFrame *frame = (_PyInterpreterFrame *)tstate->datastack_top;
@@ -298,6 +308,7 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->stacktop = code->co_nlocalsplus + stackdepth;
     frame->frame_obj = NULL;
     frame->prev_instr = _PyCode_CODE(code) + prev_instr;
+    frame->instr_ptr = _PyCode_CODE(code) + instr_ptr_offset;
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->return_offset = 0;
     return frame;

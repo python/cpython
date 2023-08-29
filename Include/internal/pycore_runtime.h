@@ -89,6 +89,7 @@ typedef struct _Py_DebugOffsets {
         off_t previous;
         off_t executable;
         off_t prev_instr;
+        off_t instr_ptr;
         off_t localsplus;
         off_t owner;
     } interpreter_frame;

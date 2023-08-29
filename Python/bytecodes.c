@@ -791,6 +791,7 @@ dummy_func(
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
             frame->prev_instr += frame->return_offset;
+            frame->instr_ptr += frame->return_offset;
             _PyFrame_StackPush(frame, retval);
             LOAD_SP();
             LOAD_IP();
@@ -804,7 +805,7 @@ dummy_func(
 
         macro(RETURN_VALUE) =
             SAVE_IP +  // Tier 2 only; special-cased oparg
-            SAVE_CURRENT_IP +  // Sets frame->prev_instr
+            SAVE_CURRENT_IP +  // Sets frame->prev_instr, frame->instr_ptr
             _POP_FRAME;
 
         inst(INSTRUMENTED_RETURN_VALUE, (retval --)) {
@@ -822,6 +823,7 @@ dummy_func(
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
             frame->prev_instr += frame->return_offset;
+            frame->instr_ptr += frame->return_offset;
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
         }
@@ -829,7 +831,7 @@ dummy_func(
         macro(RETURN_CONST) =
             LOAD_CONST +
             SAVE_IP +  // Tier 2 only; special-cased oparg
-            SAVE_CURRENT_IP +  // Sets frame->prev_instr
+            SAVE_CURRENT_IP +  // Sets frame->prev_instr, frame->instr_ptr
             _POP_FRAME;
 
         inst(INSTRUMENTED_RETURN_CONST, (--)) {
@@ -848,6 +850,7 @@ dummy_func(
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
             frame->prev_instr += frame->return_offset;
+            frame->instr_ptr += frame->return_offset;
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
         }
@@ -1060,6 +1063,7 @@ dummy_func(
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
             _PyInterpreterFrame *gen_frame = frame;
+            gen_frame->instr_ptr = next_instr;
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             _PyFrame_StackPush(frame, retval);
@@ -1078,6 +1082,7 @@ dummy_func(
                 if (PyLong_Check(lasti)) {
                     frame->prev_instr = _PyCode_CODE(_PyFrame_GetCode(frame)) + PyLong_AsLong(lasti);
                     assert(!_PyErr_Occurred(tstate));
+                    frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + PyLong_AsLong(lasti);
                 }
                 else {
                     assert(PyLong_Check(lasti));
@@ -2257,6 +2262,7 @@ dummy_func(
             int original_oparg = executor->vm_data.oparg | (oparg & 0xfffff00);
             JUMPBY(1-original_oparg);
             frame->prev_instr = next_instr - 1;
+            frame->instr_ptr = next_instr;
             Py_INCREF(executor);
             frame = executor->execute(executor, frame, stack_pointer);
             if (frame == NULL) {
@@ -3149,7 +3155,7 @@ dummy_func(
             }
             Py_DECREF(tp);
             _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
-                tstate, (PyCodeObject *)&_Py_InitCleanup, 1, 0);
+                tstate, (PyCodeObject *)&_Py_InitCleanup, 1, 0, 1);
             assert(_PyCode_CODE((PyCodeObject *)shim->f_executable)[1].op.code == EXIT_INIT_CHECK);
             /* Push self onto stack of shim */
             Py_INCREF(self);
@@ -3163,6 +3169,7 @@ dummy_func(
             }
             SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
             frame->prev_instr = next_instr - 1;
+            frame->instr_ptr = next_instr;
             frame->return_offset = 0;
             STACK_SHRINK(oparg+2);
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -3625,6 +3632,7 @@ dummy_func(
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
+            frame->instr_ptr = next_instr;
             _PyFrame_Copy(frame, gen_frame);
             assert(frame->frame_obj == NULL);
             gen->gi_frame_state = FRAME_CREATED;
@@ -3634,6 +3642,7 @@ dummy_func(
             _PyInterpreterFrame *prev = frame->previous;
             _PyThreadState_PopFrame(tstate, frame);
             frame = tstate->current_frame = prev;
+
             _PyFrame_StackPush(frame, (PyObject *)gen);
             goto resume_frame;
         }
@@ -3808,11 +3817,13 @@ dummy_func(
 
         op(SAVE_IP, (--)) {
             frame->prev_instr = ip_offset + oparg;
+            frame->instr_ptr = ip_offset + oparg + 1;
         }
 
         op(SAVE_CURRENT_IP, (--)) {
             #if TIER_ONE
             frame->prev_instr = next_instr - 1;
+            frame->instr_ptr = next_instr;
             #endif
             #if TIER_TWO
             // Relies on a preceding SAVE_IP
@@ -3822,6 +3833,7 @@ dummy_func(
 
         op(EXIT_TRACE, (--)) {
             frame->prev_instr--;  // Back up to just before destination
+            frame->instr_ptr--;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
             return frame;

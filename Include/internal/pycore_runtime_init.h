@@ -59,6 +59,7 @@ extern PyTypeObject _PyExc_MemoryError;
                 .previous = offsetof(_PyInterpreterFrame, previous), \
                 .executable = offsetof(_PyInterpreterFrame, f_executable), \
                 .prev_instr = offsetof(_PyInterpreterFrame, prev_instr), \
+                .instr_ptr = offsetof(_PyInterpreterFrame, instr_ptr), \
                 .localsplus = offsetof(_PyInterpreterFrame, localsplus), \
                 .owner = offsetof(_PyInterpreterFrame, owner), \
             }, \
