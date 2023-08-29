@@ -1915,10 +1915,13 @@ blocks embedded in Python files look slightly different.  They look like this:
 How to use the Limited C API
 ----------------------------
 
-If a C source code contains ``#define Py_LIMITED_API``, the generated C code
-will use the :ref:`Limited API <limited-c-api>` to parse arguments. Private
-functions are not used in this case. However, the code parsing arguments can be
-less efficient depending on the parameters (types, number, etc.).
+If Argument Clinic :term:`input` is located within a C source file
+that contains ``#define Py_LIMITED_API``, Argument Clinic will generate C code
+that uses the :ref:`Limited API <limited-c-api>` to parse arguments. The
+advantage of this is that the generated code will not use private functions.
+However, this *can* result in Argument Clinic generating less efficient code
+in some cases. The extent of the performance penalty will depend
+on the parameters (types, number, etc.).
 
 .. versionadded:: 3.13
 
