@@ -52,7 +52,7 @@ def _new_module(name):
 # Module-level locking ########################################################
 
 # For a list that can have a weakref to it.
-class List(list):
+class _List(list):
     pass
 
 
@@ -167,7 +167,7 @@ class _BlockingOnManager:
         # re-entrant (i.e., a single thread may take it more than once) so it
         # wouldn't help us be correct in the face of re-entrancy either.
 
-        self.blocked_on = _blocking_on.setdefault(self.thread_id, List())
+        self.blocked_on = _blocking_on.setdefault(self.thread_id, _List())
         self.blocked_on.append(self.lock)
 
     def __exit__(self, *args, **kwargs):
