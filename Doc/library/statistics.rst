@@ -830,8 +830,12 @@ of applications in statistics.
 
        .. versionchanged:: 3.13
 
-       Switched to a faster algorithm.  To reproduce samples from previous
-       versions, use :func:`random.seed` and :func:`random.gauss`.
+       The *use_gauss* keyword argument was added to facilitate a switch to a
+       faster algorithm.  The faster algorithm is used by default when no
+       *seed* is supplied.  The previous, :func:`random.gauss` based, slower
+       algorithm is used when a *seed* is provided in order to preserve
+       reproducability between Python versions.  To always use the faster
+       algorithm even when supplying *seed*, pass ``use_gauss=False``.
 
     .. method:: NormalDist.pdf(x)
 

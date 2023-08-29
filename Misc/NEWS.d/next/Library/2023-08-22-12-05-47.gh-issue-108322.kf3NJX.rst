@@ -1,2 +1,7 @@
-Speed-up NormalDist.samples() by using the inverse CDF method instead of
-calling random.gauss().
+Speed-up :meth:`statistics.NormalDist.samples` by using the inverse CDF method
+instead of calling :func:`random.gauss`.  When an explicit ``seed=`` is
+specified the original slower gauss based results remain the default to avoid
+introducing behavior differences between Python versions where people expect a
+consistent unchanging set of results.  Users can pass the new
+``use_gauss=False`` parameter along with ``seed=`` for better performance when
+using a fixed seed.

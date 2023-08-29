@@ -2769,12 +2769,31 @@ class TestNormalDist:
         xbar = self.module.mean(data)
         self.assertTrue(mu - sigma*8 <= xbar <= mu + sigma*8)
 
+        # Ensure the <=3.12 legacy implementation continues working as well.
+        data = X.samples(n, use_gauss=True)
+        self.assertEqual(len(data), n)
+        self.assertEqual(set(map(type, data)), {float})
+        # mean(data) expected to fall within 8 standard deviations
+        xbar = self.module.mean(data)
+        self.assertTrue(mu - sigma*8 <= xbar <= mu + sigma*8)
+
         # verify that seeding makes reproducible sequences
         n = 100
         data1 = X.samples(n, seed='happiness and joy')
         data2 = X.samples(n, seed='trouble and despair')
         data3 = X.samples(n, seed='happiness and joy')
         data4 = X.samples(n, seed='trouble and despair')
+        self.assertEqual(data1, data3)
+        self.assertEqual(data2, data4)
+        self.assertNotEqual(data1, data2)
+
+        # Verify that seeding makes reproducible sequences with the faster
+        # 3.13+ implementation as well.
+        n = 100
+        data1 = X.samples(n, seed='happiness and joy', use_gauss=False)
+        data2 = X.samples(n, seed='trouble and despair', use_gauss=False)
+        data3 = X.samples(n, seed='happiness and joy', use_gauss=False)
+        data4 = X.samples(n, seed='trouble and despair', use_gauss=False)
         self.assertEqual(data1, data3)
         self.assertEqual(data2, data4)
         self.assertNotEqual(data1, data2)
