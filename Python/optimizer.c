@@ -806,7 +806,7 @@ remove_unneeded_uops(_PyUOpInstruction *trace, int trace_length)
     // Stage 1: Replace unneeded SAVE_IP uops with NOP.
     // Note that we don't enter stubs, those SAVE_IPs are needed.
     int last_save_ip = -1;
-    int last_instr = -1;
+    int last_instr = 0;
     bool need_ip = true;
     for (int pc = 0; pc < trace_length; pc++) {
         int opcode = trace[pc].opcode;
