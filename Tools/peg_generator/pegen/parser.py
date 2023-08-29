@@ -32,7 +32,7 @@ def logger(method: F) -> F:
         print(f"{fill}... {method_name}({argsr}) --> {tree!s:.200}")
         return tree
 
-    logger_wrapper.__wrapped__ = method  # type: ignore
+    logger_wrapper.__wrapped__ = method  # type: ignore[attr-defined]
     return cast(F, logger_wrapper)
 
 
@@ -69,7 +69,7 @@ def memoize(method: F) -> F:
             self._reset(endmark)
         return tree
 
-    memoize_wrapper.__wrapped__ = method  # type: ignore
+    memoize_wrapper.__wrapped__ = method  # type: ignore[attr-defined]
     return cast(F, memoize_wrapper)
 
 
@@ -153,7 +153,7 @@ def memoize_left_rec(
                 self._reset(endmark)
         return tree
 
-    memoize_left_rec_wrapper.__wrapped__ = method  # type: ignore
+    memoize_left_rec_wrapper.__wrapped__ = method  # type: ignore[attr-defined]
     return memoize_left_rec_wrapper
 
 
