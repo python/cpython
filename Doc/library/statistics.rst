@@ -1026,7 +1026,6 @@ The final prediction goes to the largest posterior. This is known as the
   >>> 'male' if posterior_male > posterior_female else 'female'
   'female'
 
-
 ..
    # This modelines must appear within the last ten lines of the file.
    kate: indent-width 3; remove-trailing-space on; replace-tabs on; encoding utf-8;
