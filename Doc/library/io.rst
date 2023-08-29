@@ -415,7 +415,7 @@ I/O Base Classes
       * :data:`os.SEEK_CUR` or ``1`` -- current stream position;
         *offset* may be negative
       * :data:`os.SEEK_END` or ``2`` -- end of the stream;
-      *offset* is usually negative
+        *offset* is usually negative
 
       .. versionadded:: 3.1
          The :data:`!SEEK_*` constants.
