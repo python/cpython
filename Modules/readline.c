@@ -1019,10 +1019,16 @@ on_hook(PyObject *func)
 static int
 #if defined(_RL_FUNCTION_TYPEDEF)
 on_startup_hook(void)
+{
+#elif defined(__APPLE__) && defined(WITH_APPLE_READLINE)
+on_startup_hook(const char *text, int state)
+{
+  (void)text;
+  (void)state;
 #else
 on_startup_hook(void)
-#endif
 {
+#endif
     int r;
     PyGILState_STATE gilstate = PyGILState_Ensure();
     r = on_hook(readlinestate_global->startup_hook);
@@ -1034,10 +1040,16 @@ on_startup_hook(void)
 static int
 #if defined(_RL_FUNCTION_TYPEDEF)
 on_pre_input_hook(void)
+{
+#elif defined(__APPLE__) && defined(WITH_APPLE_READLINE)
+on_pre_input_hook(const char *text, int state)
+{
+  (void)text;
+  (void)state;
 #else
 on_pre_input_hook(void)
-#endif
 {
+#endif
     int r;
     PyGILState_STATE gilstate = PyGILState_Ensure();
     r = on_hook(readlinestate_global->pre_input_hook);

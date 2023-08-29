@@ -515,13 +515,17 @@ Libraries options
 
    .. versionadded:: 3.3
 
-.. cmdoption:: --with-readline=editline
+.. cmdoption:: --with-readline=readline|editline|apple
 
-   Use ``editline`` library for backend of the :mod:`readline` module.
+   Desinate a backend library of the :mod:`readline` module.
 
-   Define the ``WITH_EDITLINE`` macro.
+   readline: default backend
+   editline: Define the ``WITH_EDITLINE`` macro.
+   apple: Define the ``WITH_APPLE_READLINE`` macro.
 
    .. versionadded:: 3.10
+   .. versionchanged:: 3.13
+      ``apple`` for macOS specific backend library option is added.
 
 .. cmdoption:: --without-readline
 

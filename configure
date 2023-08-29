@@ -23755,6 +23755,7 @@ fi
 
 
 
+
 # Check whether --with-readline was given.
 if test ${with_readline+y}
 then :
@@ -23764,6 +23765,8 @@ then :
     with_readline=edit ;; #(
   yes|readline) :
     with_readline=readline ;; #(
+  apple) :
+    with_readline=apple ;; #(
   no) :
      ;; #(
   *) :
@@ -23776,6 +23779,19 @@ else $as_nop
 
 fi
 
+
+if test "x$with_readline" = xapple
+then :
+
+  case $ac_sys_system/$ac_sys_release in #(
+  Darwin/*) :
+    printf "%s\n" "#define WITH_APPLE_READLINE 1" >>confdefs.h
+ with_readline=readline ;; #(
+  *) :
+     ;;
+esac
+
+fi
 
 if test "x$with_readline" = xreadline
 then :

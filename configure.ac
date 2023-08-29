@@ -5813,6 +5813,7 @@ dnl library (tinfo ncursesw ncurses termcap). We now assume that libreadline
 dnl or readline.pc provide correct linker information.
 
 AH_TEMPLATE([WITH_EDITLINE], [Define to build the readline module against libedit.])
+AH_TEMPLATE([WITH_APPLE_READLINE], [Define to build the readline module agains apple builtin readline.])
 
 AC_ARG_WITH(
   [readline],
@@ -5822,11 +5823,19 @@ AC_ARG_WITH(
     AS_CASE([$with_readline],
       [editline|edit], [with_readline=edit],
       [yes|readline], [with_readline=readline],
+      [apple], [with_readline=apple],
       [no], [],
       [AC_MSG_ERROR([proper usage is --with(out)-readline@<:@=editline|readline|no@:>@])]
     )
   ],
   [with_readline=readline]
+)
+
+dnl gh-105323: Need to handle the macOS editline as an alias of readline.
+AS_VAR_IF([with_readline], [apple], [
+  AS_CASE([$ac_sys_system/$ac_sys_release],
+    [Darwin/*], [AC_DEFINE([WITH_APPLE_READLINE]) with_readline=readline],
+    [])]
 )
 
 AS_VAR_IF([with_readline], [readline], [
