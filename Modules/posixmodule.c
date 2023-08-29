@@ -10083,7 +10083,7 @@ os.timerfd_create
     flags: int
     /
 
-Creates and returns an timerfd notification file descriptor.
+Create and return a timerfd notification file descriptor.
 [clinic start generated code]*/
 
 static PyObject *
