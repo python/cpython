@@ -10047,11 +10047,23 @@ os_times_impl(PyObject *module)
 static PyObject *
 build_itimerspec(const struct itimerspec* curr_value)
 {
-    return PyTuple_Pack(
-        2,
-        PyFloat_FromDouble((double)(curr_value->it_interval.tv_sec) + (double)curr_value->it_interval.tv_nsec * 1e-9),
-        PyFloat_FromDouble((double)(curr_value->it_value.tv_sec) + (double)curr_value->it_value.tv_nsec * 1e-9)
-    );
+    double _interval = (double)(curr_value->it_interval.tv_sec) +
+                       (double)curr_value->it_interval.tv_nsec * 1e-9;
+    PyObject *interval = PyFloat_FromDouble(_inverval);
+    if (interval == NULL) {
+        return NULL;
+    }
+    double _value = (double)(curr_value->it_value.tv_sec) +
+                    (double)curr_value->it_value.tv_nsec * 1e-9;
+    PyObject *value = PyFloat_FromDouble(_value);
+    if (value == NULL) {
+        Py_DECREF(interval);
+        return NULL;
+    }
+    PyObject *tuple = PyTuple_Pack(2, interval, value);
+    Py_DECREF(interval);
+    Py_DECREF(value);
+    return tuple;
 }
 
 static PyObject *
