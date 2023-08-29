@@ -5829,6 +5829,7 @@ AC_ARG_WITH(
   [with_readline=default]
 )
 
+dnl gh-105323: Need to handle the macOS editline as an alias of readline.
 AS_VAR_IF([with_readline], [default], [
   AS_CASE([$ac_sys_system/$ac_sys_release],
     [Darwin/*], [AC_DEFINE([WITH_EDITLINE], [1]) with_readline=readline],
