@@ -5997,8 +5997,10 @@ PyDoc_STRVAR(os_timerfd_create__doc__,
 "\n"
 "Create and return a timerfd notification file descriptor.\n"
 "\n"
-"clockid is CLOCK_REALTIME or CLOCK_MONOTONIC. CLOCK_REALTIME.\n"
-"flags is  0 or  a bit mask of TFD_NONBLOCK or TFD_CLOEXEC.");
+"  clockid\n"
+"    CLOCK_REALTIME or CLOCK_MONOTONIC. CLOCK_REALTIME.\n"
+"  flags\n"
+"    0 or  a bit mask of TFD_NONBLOCK or TFD_CLOEXEC.");
 
 #define OS_TIMERFD_CREATE_METHODDEF    \
     {"timerfd_create", _PyCFunction_CAST(os_timerfd_create), METH_FASTCALL, os_timerfd_create__doc__},
@@ -6038,7 +6040,10 @@ PyDoc_STRVAR(os_timerfd_gettime__doc__,
 "timerfd_gettime($module, fd, /)\n"
 "--\n"
 "\n"
-"Return timerfd value in seconds.");
+"Return timerfd value in seconds.\n"
+"\n"
+"  fd\n"
+"    a file descriptor for timer.");
 
 #define OS_TIMERFD_GETTIME_METHODDEF    \
     {"timerfd_gettime", (PyCFunction)os_timerfd_gettime, METH_O, os_timerfd_gettime__doc__},
@@ -6071,16 +6076,20 @@ PyDoc_STRVAR(os_timerfd_settime__doc__,
 "\n"
 "Set timerfd value in seconds.\n"
 "\n"
-"fd is a file descriptor for timer.\n"
-"flags is 0 or  a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.\n"
-"If TFD_TIMER_ABSTIME is not specified, it_interval is relative time.\n"
-"If TFD_TIMER_ABSTIME is specified, it_interval is absolute time and epoch time in time_t.\n"
-"If TFD_TIMER_CANCEL_ON_SET  and TFD_TIMER_ABSTIME are specifed as *flags* and time.CLOCK_REALTIME\n"
-"is specified as *clockid* of timerfd_create, a discontinuous change of system clock will make to\n"
-"abort reading from a file descriptor with ECANCELED error.\n"
-"it_interval is interval for timer in seconds.\n"
-"it_value is initial expiration timing in seconds. It could be absolute time or relative time\n"
-"based on TFD_TIMER_ABSTIME flag.");
+"  fd\n"
+"    a file descriptor for timer.\n"
+"  flags\n"
+"    0 or  a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.\n"
+"  it_interval\n"
+"    If TFD_TIMER_ABSTIME is not specified, it_interval is relative time.\n"
+"    If TFD_TIMER_ABSTIME is specified, it_interval is absolute time and epoch time in time_t.\n"
+"    If TFD_TIMER_CANCEL_ON_SET  and TFD_TIMER_ABSTIME are specifed as *flags* and time.CLOCK_REALTIME\n"
+"    is specified as *clockid* of timerfd_create, a discontinuous change of system clock will make to\n"
+"    abort reading from a file descriptor with ECANCELED error.\n"
+"    it_interval is interval for timer in seconds.\n"
+"  it_value\n"
+"    it_value is initial expiration timing in seconds. It could be absolute time or relative time\n"
+"    based on TFD_TIMER_ABSTIME flag.");
 
 #define OS_TIMERFD_SETTIME_METHODDEF    \
     {"timerfd_settime", _PyCFunction_CAST(os_timerfd_settime), METH_FASTCALL, os_timerfd_settime__doc__},
@@ -6149,7 +6158,10 @@ PyDoc_STRVAR(os_timerfd_gettime_ns__doc__,
 "timerfd_gettime_ns($module, fd, /)\n"
 "--\n"
 "\n"
-"Return timerfd value in nanoseconds.");
+"Return timerfd value in nanoseconds.\n"
+"\n"
+"  fd\n"
+"    a file descriptor for timer.");
 
 #define OS_TIMERFD_GETTIME_NS_METHODDEF    \
     {"timerfd_gettime_ns", (PyCFunction)os_timerfd_gettime_ns, METH_O, os_timerfd_gettime_ns__doc__},
@@ -6183,7 +6195,14 @@ PyDoc_STRVAR(os_timerfd_settime_ns__doc__,
 "\n"
 "Set timerfd value in nanoseconds.\n"
 "\n"
-"Similar to timerfd_settime except that it_interval_ns and it_value_ns are in nanoseconds.");
+"  fd\n"
+"    a file descriptor for timer.\n"
+"  flags\n"
+"    similar to timerfd_settime\n"
+"  it_interval_ns\n"
+"    similar to timerfd_settime except for in nanoseconds.\n"
+"  it_value_ns\n"
+"    similar to timerfd_settime except for in nanoseconds.");
 
 #define OS_TIMERFD_SETTIME_NS_METHODDEF    \
     {"timerfd_settime_ns", _PyCFunction_CAST(os_timerfd_settime_ns), METH_FASTCALL, os_timerfd_settime_ns__doc__},
@@ -12258,4 +12277,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=1774c8053e23a6cb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6cd14270cdd68924 input=a9049054013a1b77]*/
