@@ -61,6 +61,7 @@
                 if (frame->prev_instr != next_instr-1) {
                     /* Instrumentation has jumped */
                     next_instr = frame->prev_instr;
+                    frame->instr_ptr = next_instr;
                     DISPATCH();
                 }
             }
@@ -1335,6 +1336,7 @@
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
             _PyInterpreterFrame *gen_frame = frame;
+            gen_frame->instr_ptr = next_instr;
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             _PyFrame_StackPush(frame, retval);
