@@ -40,6 +40,7 @@ Features and minimum versions required to build CPython:
 
 .. versionchanged:: 3.10
    OpenSSL 1.1.1 is now required.
+   Require SQLite 3.7.15.
 
 .. versionchanged:: 3.7
    Thread support and OpenSSL 1.0.2 are now required.
