@@ -2668,7 +2668,7 @@ class CTaskSubclass_PyFuture_Tests(BaseTaskTests, test_utils.TestCase):
 
     Task = getattr(tasks, '_CTask', None)
     Future = futures._PyFuture
-    all_tasks = getattr(tasks, '_py_all_tasks', None)
+    all_tasks = getattr(tasks, '_c_all_tasks', None)
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
