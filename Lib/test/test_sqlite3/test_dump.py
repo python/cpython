@@ -148,6 +148,19 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
         actual = list(self.cx.iterdump())
         self.assertEqual(expected, actual)
 
+    def test_dump_recreation(self):
+        self.cu.executescript("""
+            CREATE TABLE foo (id INTEGER, text TEXT, blob BLOB);
+            INSERT INTO foo VALUES (0, CAST(X'619f' AS TEXT), X'619f');
+            INSERT INTO foo VALUES (1, 'Hello SQLite!', X'98194eff46ab29f79064');
+        """)
+        original_dump = list(self.cx.iterdump())
+        with memory_database() as cx2:
+            query = "".join(original_dump)
+            cx2.executescript(query)
+            recreation_dump = list(cx2.iterdump())
+        self.assertEqual(original_dump, recreation_dump)
+
 
 if __name__ == "__main__":
     unittest.main()
