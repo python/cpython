@@ -26,7 +26,6 @@ Doc/glossary.rst
 Doc/howto/descriptor.rst
 Doc/howto/enum.rst
 Doc/howto/isolating-extensions.rst
-Doc/howto/logging-cookbook.rst
 Doc/howto/logging.rst
 Doc/howto/urllib2.rst
 Doc/library/__future__.rst
