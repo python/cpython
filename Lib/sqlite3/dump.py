@@ -20,6 +20,19 @@ def _force_decode(bs, *args, **kwargs):
     except UnicodeDecodeError:
         return "".join([chr(c) for c in bs])
 
+class _ctx_text_factory:
+    def __init__(self, connection, text_factory):
+        self.connection = connection
+        self.text_factory = text_factory
+        self.orig_text_factory = None
+
+    def __enter__(self):
+        self.orig_text_factory = self.connection.text_factory
+        self.connection.text_factory = self.text_factory
+
+    def __exit__(self, type, value, tb):
+        self.connection.text_factory = self.orig_text_factory
+
 def _iterdump(connection):
     """
     Returns an iterator to the dump of the database in an SQL text format.
@@ -78,14 +91,10 @@ def _iterdump(connection):
                 "||quote({0})||".format(_quote_name(col)) for col in column_names
             )
         )
-        orig_text_factory = connection.text_factory
-        try:
-            connection.text_factory = bytes
-            query_res = cu.execute(q)
+        query_res = cu.execute(q)
+        with _ctx_text_factory(connection, bytes):
             for row in query_res:
                 yield("{0};".format(_force_decode(row[0])))
-        finally:
-            connection.text_factory = orig_text_factory
 
     # Now when the type is 'index', 'trigger', or 'view'
     q = """

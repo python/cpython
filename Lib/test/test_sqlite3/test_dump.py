@@ -134,6 +134,7 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_dump_unicode_invalid(self):
+        # gh-108590
         expected = [
             "BEGIN TRANSACTION;",
             "CREATE TABLE foo (data TEXT);",
