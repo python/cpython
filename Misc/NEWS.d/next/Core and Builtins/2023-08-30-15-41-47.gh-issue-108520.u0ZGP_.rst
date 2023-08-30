@@ -1,0 +1,2 @@
+Rename :attr:`multiprocessing.synchronize.SemLock.is_fork_ctx` to :attr:`multiprocessing.synchronize.SemLock._is_fork_ctx` to avoid exposing it as public API.
+Fix :meth:`multiprocessing.synchronize.SemLock.__setstate__` to properly initialize :attr:`multiprocessing.synchronize.SemLock._is_fork_ctx`.
