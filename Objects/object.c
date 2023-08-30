@@ -196,23 +196,17 @@ _PyRefchain_Remove(PyInterpreterState *interp, PyObject *obj)
 }
 
 
-/* Insert op at the front of the list of all objects.  If force is true,
- * op is added even if _ob_prev and _ob_next are non-NULL already.  If
- * force is false amd _ob_prev or _ob_next are non-NULL, do nothing.
- * force should be true if and only if op points to freshly allocated,
- * uninitialized memory, or you've unlinked op from the list and are
- * relinking it into the front.
- * Note that objects are normally added to the list via _Py_NewReference,
- * which is called by PyObject_Init.  Not all objects are initialized that
- * way, though; exceptions include statically allocated type objects, and
- * statically allocated singletons (like Py_True and Py_None).
- */
+/* Add an object to the refchain hash table.
+ *
+ * Note that objects are normally added to the list by PyObject_Init()
+ * indirectly.  Not all objects are initialized that way, though; exceptions
+ * include statically allocated type objects, and statically allocated
+ * singletons (like Py_True and Py_None). */
 void
-_Py_AddToAllObjects(PyObject *op, int force)
+_Py_AddToAllObjects(PyObject *op)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    bool traced = _PyRefchain_IsTraced(interp, op);
-    if (force || !traced) {
+    if (!_PyRefchain_IsTraced(interp, op)) {
         _PyRefchain_Trace(interp, op);
     }
 }
@@ -2250,7 +2244,7 @@ new_reference(PyObject *op)
     // Skip the immortal object check in Py_SET_REFCNT; always set refcnt to 1
     op->ob_refcnt = 1;
 #ifdef Py_TRACE_REFS
-    _Py_AddToAllObjects(op, 1);
+    _Py_AddToAllObjects(op);
 #endif
 }
 
