@@ -7,6 +7,8 @@
 # future enhancements, you should normally quote any identifier that
 # is an English language word, even if you do not have to."
 
+from contextlib import contextmanager
+
 def _quote_name(name):
     return '"{0}"'.format(name.replace('"', '""'))
 
@@ -20,18 +22,14 @@ def _force_decode(bs, *args, **kwargs):
     except UnicodeDecodeError:
         return "".join([chr(c) for c in bs])
 
-class _ctx_text_factory:
-    def __init__(self, connection, text_factory):
-        self.connection = connection
-        self.text_factory = text_factory
-        self.orig_text_factory = None
-
-    def __enter__(self):
-        self.orig_text_factory = self.connection.text_factory
-        self.connection.text_factory = self.text_factory
-
-    def __exit__(self, type, value, tb):
-        self.connection.text_factory = self.orig_text_factory
+@contextmanager
+def _text_factory(con, factory):
+    saved_factory = con.text_factory
+    con.text_factory = factory
+    try:
+        yield
+    finally:
+        con.text_factory = saved_factory
 
 def _iterdump(connection):
     """
@@ -92,7 +90,7 @@ def _iterdump(connection):
             )
         )
         query_res = cu.execute(q)
-        with _ctx_text_factory(connection, bytes):
+        with _text_factory(connection, bytes):
             for row in query_res:
                 yield("{0};".format(_force_decode(row[0])))
 
