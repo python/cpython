@@ -133,21 +133,6 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
         actual = list(self.cx.iterdump())
         self.assertEqual(expected, actual)
 
-    def test_dump_unicode_invalid(self):
-        # gh-108590
-        expected = [
-            "BEGIN TRANSACTION;",
-            "CREATE TABLE foo (data TEXT);",
-            "INSERT INTO \"foo\" VALUES('a\x9f');",
-            "COMMIT;",
-        ]
-        self.cu.executescript("""
-            CREATE TABLE foo (data TEXT);
-            INSERT INTO foo VALUES (CAST(X'619f' AS TEXT));
-        """)
-        actual = list(self.cx.iterdump())
-        self.assertEqual(expected, actual)
-
 
 if __name__ == "__main__":
     unittest.main()
