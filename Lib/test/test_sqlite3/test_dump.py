@@ -138,7 +138,7 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
         expected = [
             "BEGIN TRANSACTION;",
             "CREATE TABLE foo (data TEXT);",
-            "INSERT INTO \"foo\" VALUES('a\x9f');",
+            "INSERT INTO \"foo\" VALUES('a\udc9f');",
             "COMMIT;",
         ]
         self.cu.executescript("""
