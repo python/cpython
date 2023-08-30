@@ -168,16 +168,16 @@ typedef struct _sharedns {
 static _sharedns *
 _sharedns_new(Py_ssize_t len)
 {
-    _sharedns *shared = PyMem_NEW(_sharedns, 1);
+    _sharedns *shared = PyMem_RawCalloc(sizeof(_sharedns), 1);
     if (shared == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
     shared->len = len;
-    shared->items = PyMem_NEW(struct _sharednsitem, len);
+    shared->items = PyMem_RawCalloc(sizeof(struct _sharednsitem), len);
     if (shared->items == NULL) {
         PyErr_NoMemory();
-        PyMem_Free(shared);
+        PyMem_RawFree(shared);
         return NULL;
     }
     return shared;
@@ -189,8 +189,8 @@ _sharedns_free(_sharedns *shared)
     for (Py_ssize_t i=0; i < shared->len; i++) {
         _sharednsitem_clear(&shared->items[i]);
     }
-    PyMem_Free(shared->items);
-    PyMem_Free(shared);
+    PyMem_RawFree(shared->items);
+    PyMem_RawFree(shared);
 }
 
 static _sharedns *
