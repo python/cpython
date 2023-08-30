@@ -5690,6 +5690,7 @@ pop_inlined_comprehension_state(struct compiler *c, location loc,
     PyObject *k, *v;
     Py_ssize_t pos = 0;
     if (IS_LABEL(state.cleanup)) {
+        ADDOP(c, NO_LOCATION, POP_BLOCK);
         ADDOP_JUMP(c, NO_LOCATION, JUMP, state.end);
 
         // cleanup from an exception inside the comprehension
@@ -5701,7 +5702,6 @@ pop_inlined_comprehension_state(struct compiler *c, location loc,
             return ERROR;
         }
         ADDOP_I(c, NO_LOCATION, RERAISE, 0);
-        ADDOP(c, NO_LOCATION, POP_BLOCK);
 
         USE_LABEL(c, state.end);
     }

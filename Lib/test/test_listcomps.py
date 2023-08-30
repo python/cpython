@@ -586,6 +586,16 @@ class ListComprehensionTest(unittest.TestCase):
         """
         self._check_in_scopes(code, {"ret": ["a"]})
 
+    def test_exception_in_post_comp_call(self):
+        code = """
+            value = [1, None]
+            try:
+                [v for v in value].sort()
+            except:
+                pass
+        """
+        self._check_in_scopes(code, {"value": [1, None]})
+
 
 __test__ = {'doctests' : doctests}
 
