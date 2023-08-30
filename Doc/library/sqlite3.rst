@@ -1444,39 +1444,8 @@ Connection objects
       and returns a text representation of it.
       The callable is invoked for SQLite values with the ``TEXT`` data type.
       By default, this attribute is set to :class:`str`.
-      If you want to return ``bytes`` instead, set *text_factory* to ``bytes``.
 
-      Example:
-
-      .. testcode::
-
-         con = sqlite3.connect(":memory:")
-         cur = con.cursor()
-
-         AUSTRIA = "Österreich"
-
-         # by default, rows are returned as str
-         cur.execute("SELECT ?", (AUSTRIA,))
-         row = cur.fetchone()
-         assert row[0] == AUSTRIA
-
-         # but we can make sqlite3 always return bytestrings ...
-         con.text_factory = bytes
-         cur.execute("SELECT ?", (AUSTRIA,))
-         row = cur.fetchone()
-         assert type(row[0]) is bytes
-         # the bytestrings will be encoded in UTF-8, unless you stored garbage in the
-         # database ...
-         assert row[0] == AUSTRIA.encode("utf-8")
-
-         # we can also implement a custom text_factory ...
-         # here we implement one that appends "foo" to all strings
-         con.text_factory = lambda x: x.decode("utf-8") + "foo"
-         cur.execute("SELECT ?", ("bar",))
-         row = cur.fetchone()
-         assert row[0] == "barfoo"
-
-         con.close()
+      See :ref:`sqlite3-howto-text-factory` for more details.
 
    .. attribute:: total_changes
 
@@ -2612,6 +2581,65 @@ The following row factory returns a :term:`named tuple`:
 With some adjustments, the above recipe can be adapted to use a
 :class:`~dataclasses.dataclass`, or any other custom class,
 instead of a :class:`~collections.namedtuple`.
+
+
+.. _sqlite3-howto-text-factory:
+
+How to create and use text factories
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, :mod:`!sqlite3` adapts SQLite values with the ``TEXT`` data type
+using :class:`str`.
+This works well for correctly encoded UTF-8 text, but it will fail for invalid
+Unicode sequences and other encodings.
+To work around this, you can use a custom :attr:`~Connection.text_factory`.
+
+Because of SQLites flexible typing, it is not uncommon to encounter table
+columns with the ``TEXT`` data type, containing arbitrary data.
+Let's create a test database with an invalid Unicode sequence:
+
+.. testcode::
+
+   con = sqlite3.connect(":memory:")
+   con.executescript("""
+       CREATE TABLE test (data TEXT);
+       INSERT INTO test VALUES(CAST(X'619F' AS TEXT));
+   """)
+
+To work with such databases, we can use the following trick,
+borrowed from the :ref:`unicode-howto`:
+
+.. testcode::
+
+   con.text_factory = lambda data: str(data, errors="surrogateescape")
+   dump = con.iterdump()
+   for line in dump:
+       print(line)
+
+The dump will now print with Unicode surrogate escapes:
+
+.. testoutput::
+
+   BEGIN TRANSACTION;
+   CREATE TABLE test (data TEXT);
+   INSERT INTO "test" VALUES('a\udc9f');
+   COMMIT;
+
+Notice that in order to write the invalid Unicode sequence to a file,
+you must also use ``errors="surrogateescape"`` as an argument to :func:`open`:
+
+.. testcode::
+
+   with open("dump.sql", "w", errors="surrogateescape") as f:
+       sql = "\n".join(dump)
+       f.write(sql)
+
+.. note::
+
+   Unlike :attr:`~Cursor.row_factory`, which exists as an attribute both on
+   :class:`Cursor` and :class:`Connection` objects,
+   :attr:`~Connection.text_factory` only exists as an attribute on
+   :class:`!Connection` objects.
 
 
 .. _sqlite3-explanation:
