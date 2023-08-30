@@ -452,9 +452,7 @@ process which created it.
    importable by the children. This is covered in :ref:`multiprocessing-programming`
    however it is worth pointing out here. This means that some examples, such
    as the :class:`multiprocessing.pool.Pool` examples will not work in the
-   interactive interpreter. For example:
-
-   .. code-block:: text
+   interactive interpreter. For example::
 
       >>> from multiprocessing import Pool
       >>> p = Pool(5)
@@ -2709,7 +2707,7 @@ handler type) for messages from different processes to get mixed up.
    Returns the logger used by :mod:`multiprocessing`.  If necessary, a new one
    will be created.
 
-   When first created the logger has level :data:`logging.NOTSET` and no
+   When first created the logger has level :const:`logging.NOTSET` and no
    default handler. Messages sent to this logger will not by default propagate
    to the root logger.
 

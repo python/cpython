@@ -414,6 +414,8 @@ Return the clk_id of a thread's CPU time clock.");
 static PyObject *
 time_sleep(PyObject *self, PyObject *timeout_obj)
 {
+    PySys_Audit("time.sleep", "O", timeout_obj);
+
     _PyTime_t timeout;
     if (_PyTime_FromSecondsObject(&timeout, timeout_obj, _PyTime_ROUND_TIMEOUT))
         return NULL;
@@ -1790,11 +1792,9 @@ init_timezone(PyObject *m)
         return -1;
     }
 #endif // MS_WINDOWS
-    PyObject *tzname_obj = Py_BuildValue("(NN)", otz0, otz1);
-    if (tzname_obj == NULL) {
+    if (PyModule_Add(m, "tzname", Py_BuildValue("(NN)", otz0, otz1)) < 0) {
         return -1;
     }
-    PyModule_AddObject(m, "tzname", tzname_obj);
 #else // !HAVE_DECL_TZNAME
     static const time_t YEAR = (365 * 24 + 6) * 3600;
     time_t t;
@@ -1837,10 +1837,9 @@ init_timezone(PyObject *m)
         PyModule_AddIntConstant(m, "daylight", janzone != julyzone);
         tzname_obj = Py_BuildValue("(zz)", janname, julyname);
     }
-    if (tzname_obj == NULL) {
+    if (PyModule_Add(m, "tzname", tzname_obj) < 0) {
         return -1;
     }
-    PyModule_AddObject(m, "tzname", tzname_obj);
 #endif // !HAVE_DECL_TZNAME
 
     if (PyErr_Occurred()) {
@@ -2107,6 +2106,7 @@ time_module_free(void *module)
 
 static struct PyModuleDef_Slot time_slots[] = {
     {Py_mod_exec, time_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

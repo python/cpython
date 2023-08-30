@@ -72,7 +72,7 @@ test runner
    a GUI tool for test discovery and execution.  This is intended largely for ease of use
    for those new to unit testing.  For production environments it is
    recommended that tests be driven by a continuous integration system such as
-   `Buildbot <https://buildbot.net/>`_, `Jenkins <https://jenkins.io/>`_,
+   `Buildbot <https://buildbot.net/>`_, `Jenkins <https://www.jenkins.io/>`_,
    `GitHub Actions <https://github.com/features/actions>`_, or
    `AppVeyor <https://www.appveyor.com/>`_.
 
@@ -1134,7 +1134,7 @@ Test cases
 
       If given, *level* should be either a numeric logging level or
       its string equivalent (for example either ``"ERROR"`` or
-      :attr:`logging.ERROR`).  The default is :attr:`logging.INFO`.
+      :const:`logging.ERROR`).  The default is :const:`logging.INFO`.
 
       The test passes if at least one message emitted inside the ``with``
       block matches the *logger* and *level* conditions, otherwise it fails.
@@ -1175,7 +1175,7 @@ Test cases
 
       If given, *level* should be either a numeric logging level or
       its string equivalent (for example either ``"ERROR"`` or
-      :attr:`logging.ERROR`).  The default is :attr:`logging.INFO`.
+      :const:`logging.ERROR`).  The default is :const:`logging.INFO`.
 
       Unlike :meth:`assertLogs`, nothing will be returned by the context
       manager.
@@ -2281,7 +2281,8 @@ Loading and running tests
 
    The *testRunner* argument can either be a test runner class or an already
    created instance of it. By default ``main`` calls :func:`sys.exit` with
-   an exit code indicating success or failure of the tests run.
+   an exit code indicating success (0) or failure (1) of the tests run.
+   An exit code of 5 indicates that no tests were run.
 
    The *testLoader* argument has to be a :class:`TestLoader` instance,
    and defaults to :data:`defaultTestLoader`.

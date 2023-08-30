@@ -12,9 +12,9 @@ from sys import *
 
 # different import patterns to check that __annotations__ does not interfere
 # with import machinery
-import test.ann_module as ann_module
+import test.typinganndata.ann_module as ann_module
 import typing
-from test import ann_module2
+from test.typinganndata import ann_module2
 import test
 
 # These are shared with test_tokenize and other test modules.
@@ -236,12 +236,9 @@ class TokenTests(unittest.TestCase):
             check(f"[{num}for x in ()]")
             check(f"{num}spam", error=True)
 
+            with self.assertWarnsRegex(SyntaxWarning, r'invalid \w+ literal'):
+                compile(f"{num}is x", "<testcase>", "eval")
             with warnings.catch_warnings():
-                warnings.filterwarnings('ignore', '"is" with a literal',
-                                        SyntaxWarning)
-                with self.assertWarnsRegex(SyntaxWarning,
-                            r'invalid \w+ literal'):
-                    compile(f"{num}is x", "<testcase>", "eval")
                 warnings.simplefilter('error', SyntaxWarning)
                 with self.assertRaisesRegex(SyntaxError,
                             r'invalid \w+ literal'):
@@ -455,7 +452,7 @@ class GrammarTests(unittest.TestCase):
     def test_var_annot_in_module(self):
         # check that functions fail the same way when executed
         # outside of module where they were defined
-        ann_module3 = import_helper.import_fresh_module("test.ann_module3")
+        ann_module3 = import_helper.import_fresh_module("test.typinganndata.ann_module3")
         with self.assertRaises(NameError):
             ann_module3.f_bad_ann()
         with self.assertRaises(NameError):
@@ -1467,14 +1464,22 @@ class GrammarTests(unittest.TestCase):
         if 1 < 1 > 1 == 1 >= 1 <= 1 != 1 in 1 not in x is x is not x: pass
 
     def test_comparison_is_literal(self):
-        def check(test, msg='"is" with a literal'):
+        def check(test, msg):
             self.check_syntax_warning(test, msg)
 
-        check('x is 1')
-        check('x is "thing"')
-        check('1 is x')
-        check('x is y is 1')
-        check('x is not 1', '"is not" with a literal')
+        check('x is 1', '"is" with \'int\' literal')
+        check('x is "thing"', '"is" with \'str\' literal')
+        check('1 is x', '"is" with \'int\' literal')
+        check('x is y is 1', '"is" with \'int\' literal')
+        check('x is not 1', '"is not" with \'int\' literal')
+        check('x is not (1, 2)', '"is not" with \'tuple\' literal')
+        check('(1, 2) is not x', '"is not" with \'tuple\' literal')
+
+        check('None is 1', '"is" with \'int\' literal')
+        check('1 is None', '"is" with \'int\' literal')
+
+        check('x == 3 is y', '"is" with \'int\' literal')
+        check('x == "thing" is y', '"is" with \'str\' literal')
 
         with warnings.catch_warnings():
             warnings.simplefilter('error', SyntaxWarning)
@@ -1482,6 +1487,10 @@ class GrammarTests(unittest.TestCase):
             compile('x is False', '<testcase>', 'exec')
             compile('x is True', '<testcase>', 'exec')
             compile('x is ...', '<testcase>', 'exec')
+            compile('None is x', '<testcase>', 'exec')
+            compile('False is x', '<testcase>', 'exec')
+            compile('True is x', '<testcase>', 'exec')
+            compile('... is x', '<testcase>', 'exec')
 
     def test_warn_missed_comma(self):
         def check(test):

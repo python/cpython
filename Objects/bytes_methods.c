@@ -1,4 +1,3 @@
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_abstract.h"   // _PyIndex_Check()
 #include "pycore_bytes_methods.h"
@@ -258,9 +257,12 @@ _Py_bytes_istitle(const char *cptr, Py_ssize_t len)
     const unsigned char *e;
     int cased, previous_is_cased;
 
-    /* Shortcut for single character strings */
-    if (len == 1)
-        return PyBool_FromLong(Py_ISUPPER(*p));
+    if (len == 1) {
+        if (Py_ISUPPER(*p)) {
+            Py_RETURN_TRUE;
+        }
+        Py_RETURN_FALSE;
+    }
 
     /* Special case for empty strings */
     if (len == 0)

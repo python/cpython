@@ -121,6 +121,8 @@ IDENTIFIERS = [
     '__xor__',
     '__divmod__',
     '__rdivmod__',
+    '__buffer__',
+    '__release_buffer__',
 ]
 
 NON_GENERATED_IMMORTAL_OBJECTS = [

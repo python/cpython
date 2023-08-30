@@ -11,8 +11,10 @@ from test.support import os_helper
 
 try:
     import _testcapi
+    import _testinternalcapi
 except ImportError:
     _testcapi = None
+    _testinternalcapi = None
 
 
 EMPTY_STRING_SIZE = sys.getsizeof(b'')
@@ -1008,7 +1010,7 @@ class TestCAPI(unittest.TestCase):
         tracemalloc.stop()
 
     def get_traceback(self):
-        frames = _testcapi.tracemalloc_get_traceback(self.domain, self.ptr)
+        frames = _testinternalcapi._PyTraceMalloc_GetTraceback(self.domain, self.ptr)
         if frames is not None:
             return tracemalloc.Traceback(frames)
         else:

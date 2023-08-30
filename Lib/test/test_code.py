@@ -264,7 +264,7 @@ class CodeTest(unittest.TestCase):
             ("co_posonlyargcount", 0),
             ("co_kwonlyargcount", 0),
             ("co_nlocals", 1),
-            ("co_stacksize", 0),
+            ("co_stacksize", 1),
             ("co_flags", code.co_flags | inspect.CO_COROUTINE),
             ("co_firstlineno", 100),
             ("co_code", code2.co_code),
@@ -356,7 +356,7 @@ class CodeTest(unittest.TestCase):
         foo.__code__ = foo.__code__.replace(
             co_code=b'\xe5' + foo.__code__.co_code[1:])
 
-        msg = f"unknown opcode 229"
+        msg = "unknown opcode 229"
         with self.assertRaisesRegex(SystemError, msg):
             foo()
 
