@@ -2988,7 +2988,7 @@ Global variables
 Safe importing of main module
 
     Make sure that the main module can be safely imported by a new Python
-    interpreter without causing unintended side effects (such a starting a new
+    interpreter without causing unintended side effects (such as starting a new
     process).
 
     For example, using the *spawn* or *forkserver* start method
