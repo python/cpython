@@ -7,12 +7,26 @@
 # future enhancements, you should normally quote any identifier that
 # is an English language word, even if you do not have to."
 
+
+from contextlib import contextmanager
+
+
 def _quote_name(name):
     return '"{0}"'.format(name.replace('"', '""'))
 
 
 def _quote_value(value):
     return "'{0}'".format(value.replace("'", "''"))
+
+
+@contextmanager
+def _text_factory(con, factory):
+    saved_factory = con.text_factory
+    con.text_factory = factory
+    try:
+        yield
+    finally:
+        con.text_factory = saved_factory
 
 
 def _iterdump(connection):
@@ -25,7 +39,6 @@ def _iterdump(connection):
     """
 
     writeable_schema = False
-    connection.text_factory = lambda x: str(x, errors='surrogateescape')
     cu = connection.cursor()
     yield('BEGIN TRANSACTION;')
 
@@ -75,8 +88,9 @@ def _iterdump(connection):
             )
         )
         query_res = cu.execute(q)
-        for row in query_res:
-            yield("{0};".format(row[0]))
+        with _text_factory(connection, lambda x: str(x, errors='surrogateescape')):
+            for row in query_res:
+                yield("{0};".format(row[0]))
 
     # Now when the type is 'index', 'trigger', or 'view'
     q = """
