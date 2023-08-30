@@ -195,27 +195,6 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       Print a week's calendar as returned by :meth:`formatweek` and sets the
       end parameter to an empty string to prevent adding a newline character.
 
-   .. method:: formatday(day, weekday, width)
-
-      Return a string containing the formatted day.
-
-   .. method:: formatweek(theweek, width)
-
-      Return a single formatted week, with each day formatted using :meth:`formatday`
-
-   .. method:: formatweekday(theweek, width)
-
-      Return a formatted week day name.
-
-   .. method:: formatweekheader(width)
-
-      Return the formatted header for a week, containing the weekday names, with
-      each day formatted using :meth:`formatweekday`.
-
-   .. method:: formatmonthname(theyear, themonth, width, withyear)
-
-      Return a formatted month name, optinally including the year.
-
    .. method:: formatmonth(theyear, themonth, w=0, l=0)
 
       Return a month's calendar in a multi-line string. If *w* is provided, it
