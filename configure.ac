@@ -5823,7 +5823,7 @@ AC_ARG_WITH(
     AS_CASE([$with_readline],
       [editline|edit], [with_readline=edit],
       [yes|readline], [with_readline=readline],
-      [no], [with_readline=default],
+      [no], [],
       [AC_MSG_ERROR([proper usage is --with(out)-readline@<:@=editline|readline|no@:>@])]
     )
   ],
@@ -5833,9 +5833,10 @@ AC_ARG_WITH(
 dnl gh-105323: Need to handle the macOS editline as an alias of readline.
 AS_VAR_IF([with_readline], [default], [
   AS_CASE([$ac_sys_system/$ac_sys_release],
-    [Darwin/*], [AC_DEFINE([WITH_APPLE_READLINE], [1]) with_readline=readline],
-    [with_readline=readline])
-])
+    [Darwin/*], [AC_DEFINE([WITH_APPLE_READLINE])],
+    [])]
+)
+AS_VAR_IF([with_readline], [default], [with_readline=readline])
 
 AS_VAR_IF([with_readline], [readline], [
   PKG_CHECK_MODULES([LIBREADLINE], [readline], [

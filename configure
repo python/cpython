@@ -23766,7 +23766,7 @@ then :
   yes|readline) :
     with_readline=readline ;; #(
   no) :
-    with_readline=default ;; #(
+     ;; #(
   *) :
     as_fn_error $? "proper usage is --with(out)-readline[=editline|readline|no]" "$LINENO" 5
      ;;
@@ -23784,11 +23784,15 @@ then :
   case $ac_sys_system/$ac_sys_release in #(
   Darwin/*) :
     printf "%s\n" "#define WITH_APPLE_READLINE 1" >>confdefs.h
- with_readline=readline ;; #(
+ ;; #(
   *) :
-    with_readline=readline ;;
+     ;;
 esac
 
+fi
+if test "x$with_readline" = xdefault
+then :
+  with_readline=readline
 fi
 
 if test "x$with_readline" = xreadline
