@@ -5697,7 +5697,9 @@ pop_inlined_comprehension_state(struct compiler *c, location loc,
         // discard incomplete comprehension result (beneath exc on stack)
         ADDOP_I(c, NO_LOCATION, SWAP, 2);
         ADDOP(c, NO_LOCATION, POP_TOP);
-        restore_inlined_comprehension_locals(c, loc, state);
+        if (restore_inlined_comprehension_locals(c, loc, state) < 0) {
+            return ERROR;
+        }
         ADDOP_I(c, NO_LOCATION, RERAISE, 0);
         ADDOP(c, NO_LOCATION, POP_BLOCK);
 
@@ -5712,7 +5714,9 @@ pop_inlined_comprehension_state(struct compiler *c, location loc,
         Py_CLEAR(state.temp_symbols);
     }
     if (state.pushed_locals) {
-        restore_inlined_comprehension_locals(c, loc, state);
+        if (restore_inlined_comprehension_locals(c, loc, state) < 0) {
+            return ERROR;
+        }
         Py_CLEAR(state.pushed_locals);
     }
     if (state.fast_hidden) {
