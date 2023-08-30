@@ -15,13 +15,13 @@
 #include "pycore_ast.h"           // PyAST_mod2obj
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
 #include "pycore_compile.h"       // _PyAST_Compile()
-#include "pycore_dict.h"          // _PyDict_GetItemStringWithError()
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException, _Py_Offer_Suggestions
 #include "pycore_pylifecycle.h"   // _Py_UnhandledKeyboardInterrupt
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_pythonrun.h"     // define _PyRun_InteractiveLoopObject()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_traceback.h"     // _PyTraceBack_Print_Indented()
 
@@ -413,10 +413,11 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
     PyObject *dict = PyModule_GetDict(main_module);  // borrowed ref
 
     int set_file_name = 0;
-    if (_PyDict_GetItemStringWithError(dict, "__file__") == NULL) {
-        if (PyErr_Occurred()) {
-            goto done;
-        }
+    int has_file = PyDict_ContainsString(dict, "__file__");
+    if (has_file < 0) {
+        goto done;
+    }
+    if (!has_file) {
         if (PyDict_SetItemString(dict, "__file__", filename) < 0) {
             goto done;
         }
@@ -1713,12 +1714,16 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
     _PyRuntime.signals.unhandled_keyboard_interrupt = 0;
 
     /* Set globals['__builtins__'] if it doesn't exist */
-    if (globals != NULL && _PyDict_GetItemStringWithError(globals, "__builtins__") == NULL) {
-        if (PyErr_Occurred() ||
-            PyDict_SetItemString(globals, "__builtins__",
-                                 tstate->interp->builtins) < 0)
-        {
+    if (globals != NULL) {
+        int has_builtins = PyDict_ContainsString(globals, "__builtins__");
+        if (has_builtins < 0) {
             return NULL;
+        }
+        if (!has_builtins) {
+            if (PyDict_SetItemString(globals, "__builtins__",
+                                     tstate->interp->builtins) < 0) {
+                return NULL;
+            }
         }
     }
 

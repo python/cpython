@@ -1794,7 +1794,10 @@ then
   fi
 fi
 LLVM_PROF_ERR=no
-case $CC in
+
+# GNU Autoconf recommends the use of expr instead of basename.
+AS_VAR_SET([CC_BASENAME], [$(expr "//$CC" : '.*/\(.*\)')])
+case "$CC_BASENAME" in
   *clang*)
     # Any changes made here should be reflected in the GCC+Darwin case below
     PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
@@ -2225,7 +2228,7 @@ yes)
 
     # ICC doesn't recognize the option, but only emits a warning
     ## XXX does it emit an unused result warning and can it be disabled?
-    AS_CASE([$CC],
+    AS_CASE(["$CC_BASENAME"],
             [*icc*], [ac_cv_disable_unused_result_warning=no]
             [PY_CHECK_CC_WARNING([disable], [unused-result])])
     AS_VAR_IF([ac_cv_disable_unused_result_warning], [yes],
@@ -2471,7 +2474,7 @@ yes)
     ;;
 esac
 
-case "$CC" in
+case "$CC_BASENAME" in
 *mpicc*)
     CFLAGS_NODIST="$CFLAGS_NODIST"
     ;;
@@ -7226,6 +7229,7 @@ PY_STDLIB_MOD([_hashlib], [], [test "$ac_cv_working_openssl_hashlib" = yes],
 dnl test modules
 PY_STDLIB_MOD([_testcapi], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testclinic], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testclinic_limited], [test "$TEST_MODULES" = yes -a "$with_trace_refs" = "no"])
 PY_STDLIB_MOD([_testinternalcapi], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])

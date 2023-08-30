@@ -83,7 +83,9 @@ iobase_unsupported(_PyIO_State *state, const char *message)
 _io._IOBase.seek
     cls: defining_class
     offset: int(unused=True)
+      The stream position, relative to 'whence'.
     whence: int(unused=True, c_default='0') = os.SEEK_SET
+      The relative position to seek from.
     /
 
 Change the stream position to the given byte offset.
@@ -101,7 +103,7 @@ Return the new absolute position.
 static PyObject *
 _io__IOBase_seek_impl(PyObject *self, PyTypeObject *cls,
                       int Py_UNUSED(offset), int Py_UNUSED(whence))
-/*[clinic end generated code: output=8bd74ea6538ded53 input=8d4e6adcd08292f2]*/
+/*[clinic end generated code: output=8bd74ea6538ded53 input=74211232b363363e]*/
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return iobase_unsupported(state, "seek");

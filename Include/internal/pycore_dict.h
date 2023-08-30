@@ -9,20 +9,50 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_identifier.h"    // _Py_Identifier
 #include "pycore_object.h"        // PyDictOrValues
 
 // Unsafe flavor of PyDict_GetItemWithError(): no error checking
 extern PyObject* _PyDict_GetItemWithError(PyObject *dp, PyObject *key);
-extern PyObject* _PyDict_GetItemStringWithError(PyObject *, const char *);
-
-extern int _PyDict_Contains_KnownHash(PyObject *, PyObject *, Py_hash_t);
 
 extern int _PyDict_DelItemIf(PyObject *mp, PyObject *key,
                              int (*predicate)(PyObject *value));
 
+// "KnownHash" variants
+// Export for '_testinternalcapi' shared extension
+PyAPI_FUNC(PyObject *) _PyDict_GetItem_KnownHash(PyObject *mp, PyObject *key,
+                                                 Py_hash_t hash);
+// Export for '_asyncio' shared extension
+PyAPI_FUNC(int) _PyDict_SetItem_KnownHash(PyObject *mp, PyObject *key,
+                                          PyObject *item, Py_hash_t hash);
+// Export for '_asyncio' shared extension
+PyAPI_FUNC(int) _PyDict_DelItem_KnownHash(PyObject *mp, PyObject *key,
+                                          Py_hash_t hash);
+extern int _PyDict_Contains_KnownHash(PyObject *, PyObject *, Py_hash_t);
+
+// "Id" variants
+extern PyObject* _PyDict_GetItemIdWithError(PyObject *dp,
+                                            _Py_Identifier *key);
+extern int _PyDict_ContainsId(PyObject *, _Py_Identifier *);
+extern int _PyDict_SetItemId(PyObject *dp, _Py_Identifier *key, PyObject *item);
+extern int _PyDict_DelItemId(PyObject *mp, _Py_Identifier *key);
+
+extern int _PyDict_Next(
+    PyObject *mp, Py_ssize_t *pos, PyObject **key, PyObject **value, Py_hash_t *hash);
+
 extern int _PyDict_HasOnlyStringKeys(PyObject *mp);
 
 extern void _PyDict_MaybeUntrack(PyObject *mp);
+
+extern PyObject* _PyDict_NewPresized(Py_ssize_t minused);
+
+// Export for '_ctypes' shared extension
+PyAPI_FUNC(Py_ssize_t) _PyDict_SizeOf(PyDictObject *);
+
+// Export for '_socket' shared extension (Windows remove_unusable_flags())
+PyAPI_FUNC(PyObject*) _PyDict_Pop(PyObject *, PyObject *, PyObject *);
+
+#define _PyDict_HasSplitTable(d) ((d)->ma_values != NULL)
 
 /* Like PyDict_Merge, but override can be 0, 1 or 2.  If override is 0,
    the first occurrence of a key wins, if override is 1, the last occurrence
@@ -32,6 +62,18 @@ extern void _PyDict_MaybeUntrack(PyObject *mp);
 extern int _PyDict_MergeEx(PyObject *mp, PyObject *other, int override);
 
 extern void _PyDict_DebugMallocStats(FILE *out);
+
+
+/* _PyDictView */
+
+typedef struct {
+    PyObject_HEAD
+    PyDictObject *dv_dict;
+} _PyDictViewObject;
+
+extern PyObject* _PyDictView_New(PyObject *, PyTypeObject *);
+extern PyObject* _PyDictView_Intersect(PyObject* self, PyObject *other);
+
 
 /* runtime lifecycle */
 

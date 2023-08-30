@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"       // _Py_ID()
 #endif
 
+#include "pycore_abstract.h"       // _PyNumber_Index()
 
 PyDoc_STRVAR(bytes___bytes____doc__,
 "__bytes__($self, /)\n"
@@ -958,7 +959,7 @@ bytes_hex(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
             goto skip_optional_pos;
         }
     }
-    bytes_per_sep = _PyLong_AsInt(args[1]);
+    bytes_per_sep = PyLong_AsInt(args[1]);
     if (bytes_per_sep == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1060,4 +1061,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bc4801bf1fa628f4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9da56b6c04914e18 input=a9049054013a1b77]*/

@@ -787,7 +787,6 @@ extern "C" {
     INIT_ID(aggregate_class), \
     INIT_ID(alias), \
     INIT_ID(append), \
-    INIT_ID(arg), \
     INIT_ID(argdefs), \
     INIT_ID(args), \
     INIT_ID(arguments), \
