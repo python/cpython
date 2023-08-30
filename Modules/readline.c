@@ -1020,7 +1020,7 @@ static int
 #if defined(_RL_FUNCTION_TYPEDEF)
 on_startup_hook(void)
 {
-#elif defined(__APPLE__) && defined(WITH_APPLE_READLINE)
+#elif defined(__APPLE__) && defined(WITH_APPLE_EDITLINE)
 on_startup_hook(const char *text, int state)
 {
   (void)text;
@@ -1041,7 +1041,7 @@ static int
 #if defined(_RL_FUNCTION_TYPEDEF)
 on_pre_input_hook(void)
 {
-#elif defined(__APPLE__) && defined(WITH_APPLE_READLINE)
+#elif defined(__APPLE__) && defined(WITH_APPLE_EDITLINE)
 on_pre_input_hook(const char *text, int state)
 {
   (void)text;
