@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"       // _Py_ID()
 #endif
 
+#include "pycore_abstract.h"       // _PyNumber_Index()
 
 static PyObject *
 long_new_impl(PyTypeObject *type, PyObject *x, PyObject *obase);
@@ -475,4 +476,4 @@ int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return int_is_integer_impl(self);
 }
-/*[clinic end generated code: output=75ed306fff493ba1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ea9c87ea532dadbe input=a9049054013a1b77]*/

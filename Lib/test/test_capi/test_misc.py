@@ -2341,6 +2341,19 @@ class TestOptimizerAPI(unittest.TestCase):
             long_loop()
             self.assertEqual(opt.get_count(), 10)
 
+    def test_code_restore_for_ENTER_EXECUTOR(self):
+        def testfunc(x):
+            i = 0
+            while i < x:
+                i += 1
+
+        opt = _testinternalcapi.get_counter_optimizer()
+        with temporary_optimizer(opt):
+            testfunc(1000)
+            code, replace_code  = testfunc.__code__, testfunc.__code__.replace()
+            self.assertEqual(code, replace_code)
+            self.assertEqual(hash(code), hash(replace_code))
+
 
 def get_first_executor(func):
     code = func.__code__
@@ -2465,7 +2478,7 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc([1, 2, 3])
+            testfunc(range(10))
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -2480,7 +2493,7 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc([1, 2, 3])
+            testfunc(range(10))
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)

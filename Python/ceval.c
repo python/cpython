@@ -14,8 +14,7 @@
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
-#include "pycore_opcode.h"        // EXTRA_CASES
-#include "pycore_opcode_metadata.h"
+#include "pycore_opcode_metadata.h" // EXTRA_CASES
 #include "pycore_opcode_utils.h"  // MAKE_FUNCTION_*
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -2417,7 +2416,7 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
 
     /* Fast path for not overloaded __import__. */
     if (_PyImport_IsDefaultImportFunc(tstate->interp, import_func)) {
-        int ilevel = _PyLong_AsInt(level);
+        int ilevel = PyLong_AsInt(level);
         if (ilevel == -1 && _PyErr_Occurred(tstate)) {
             return NULL;
         }

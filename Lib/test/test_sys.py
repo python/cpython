@@ -732,7 +732,6 @@ class SysModuleTest(unittest.TestCase):
         s = '__init__'
         t = sys.intern(s)
 
-        print('------------------------')
         interp = interpreters.create()
         interp.run(textwrap.dedent(f'''
             import sys

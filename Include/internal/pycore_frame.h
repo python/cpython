@@ -4,6 +4,10 @@
 extern "C" {
 #endif
 
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
+#endif
+
 #include <stdbool.h>
 #include <stddef.h>               // offsetof()
 #include "pycore_code.h"          // STATS

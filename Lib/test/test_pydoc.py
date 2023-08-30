@@ -1232,7 +1232,7 @@ class TestDescriptions(unittest.TestCase):
 
     def test_module_level_callable_unrepresentable_default(self):
         self.assertEqual(self._get_summary_line(getattr),
-            "getattr(object, name, default=<unrepresentable>, /)")
+            "getattr(...)")
 
     def test_builtin_staticmethod_unrepresentable_default(self):
         self.assertEqual(self._get_summary_line(str.maketrans),

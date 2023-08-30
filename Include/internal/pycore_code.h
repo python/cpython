@@ -4,6 +4,10 @@
 extern "C" {
 #endif
 
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
+#endif
+
 #define CODE_MAX_WATCHERS 8
 
 /* PEP 659
