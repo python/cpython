@@ -5835,7 +5835,7 @@ dnl gh-105323: Need to handle the macOS editline as an alias of readline.
 AS_VAR_IF([with_readline], [apple], [
   AS_CASE([$ac_sys_system/$ac_sys_release],
     [Darwin/*], [AC_DEFINE([WITH_APPLE_READLINE]) with_readline=readline],
-    [])]
+    [AC_MSG_ERROR([Only supports for macOS])])]
 )
 
 AS_VAR_IF([with_readline], [readline], [

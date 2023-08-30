@@ -23788,7 +23788,7 @@ then :
     printf "%s\n" "#define WITH_APPLE_READLINE 1" >>confdefs.h
  with_readline=readline ;; #(
   *) :
-     ;;
+    as_fn_error $? "Only supports for macOS" "$LINENO" 5 ;;
 esac
 
 fi
