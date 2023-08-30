@@ -7,7 +7,9 @@
 # future enhancements, you should normally quote any identifier that
 # is an English language word, even if you do not have to."
 
+
 from contextlib import contextmanager
+
 
 def _quote_name(name):
     return '"{0}"'.format(name.replace('"', '""'))
@@ -16,11 +18,14 @@ def _quote_name(name):
 def _quote_value(value):
     return "'{0}'".format(value.replace("'", "''"))
 
+
 def _force_decode(bs, *args, **kwargs):
+    # gh-108590: Don't fail if the database contains invalid Unicode data.
     try:
         return bs.decode(*args, **kwargs)
     except UnicodeDecodeError:
         return "".join([chr(c) for c in bs])
+
 
 @contextmanager
 def _text_factory(con, factory):
@@ -30,6 +35,7 @@ def _text_factory(con, factory):
         yield
     finally:
         con.text_factory = saved_factory
+
 
 def _iterdump(connection):
     """
