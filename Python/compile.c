@@ -5643,7 +5643,7 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
         ADDOP_I(c, loc, SWAP, PyList_GET_SIZE(state->pushed_locals) + 1);
     }
 
-    if (c->u->u_nfblocks > 0) {
+    if (c->u->u_nfblocks > 0 && state->pushed_locals) {
         // If we are inside a try block, we need to add our own cleanup handler
         // to restore comprehension locals, so they have the correct values
         // inside an exception handler or finally block.
