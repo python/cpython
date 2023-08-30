@@ -7,12 +7,12 @@ Build Requirements
 
 Features and minimum versions required to build CPython:
 
-* On Windows, Microsoft Visual Studio 2017 or later is required.
-
 * A `C11 <https://en.cppreference.com/w/c/11>`_ compiler. `Optional C11
   features
   <https://en.wikipedia.org/wiki/C11_(C_standard_revision)#Optional_features>`_
   are not required.
+
+* On Windows, Microsoft Visual Studio 2017 or later is required.
 
 * Support for `IEEE 754 <https://en.wikipedia.org/wiki/IEEE_754>`_ floating
   point numbers and `floating point Not-a-Number (NaN)
@@ -49,7 +49,11 @@ Features and minimum versions required to build CPython:
    inline`` functions.
 
 .. versionchanged:: 3.5
-   On Windows, Visual Studio 2015 or later is required.
+   On Windows, Visual Studio 2015 or later is now required.
+   Tcl/Tk version 8.4 is now required.
+
+.. versionchanged:: 3.1
+   Tcl/Tk version 8.3.1 is now required.
 
 See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform
 support".
