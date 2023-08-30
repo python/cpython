@@ -1,1 +1,1 @@
-Fixed an issue causing sqlite3.iterdump to crash when encountering invalid unicode in a TEXT column.
+Fixed an issue where :meth:`sqlite3.Connection.iterdump` would fail and leave an incomplete SQL dump if a table includes invalid Unicode sequences.
