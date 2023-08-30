@@ -5,12 +5,14 @@ Configure Python
 Build Requirements
 ==================
 
-Features required to build CPython:
+Features and minimum versions required to build CPython:
 
 * A `C11 <https://en.cppreference.com/w/c/11>`_ compiler. `Optional C11
   features
   <https://en.wikipedia.org/wiki/C11_(C_standard_revision)#Optional_features>`_
   are not required.
+
+* On Windows, Microsoft Visual Studio 2017 or later is required.
 
 * Support for `IEEE 754 <https://en.wikipedia.org/wiki/IEEE_754>`_ floating
   point numbers and `floating point Not-a-Number (NaN)
@@ -18,16 +20,27 @@ Features required to build CPython:
 
 * Support for threads.
 
-* OpenSSL 1.1.1 or newer for the :mod:`ssl` and :mod:`hashlib` modules.
+* OpenSSL 1.1.1 is the minimum version and OpenSSL 3.0.9 is the recommended
+  minimum version for the :mod:`ssl` and :mod:`hashlib` extension modules.
 
-* On Windows, Microsoft Visual Studio 2017 or later is required.
+* SQLite 3.15.2 for the :mod:`sqlite3` extension module.
+
+* Tcl/Tk 8.5.12 for the :mod:`tkinter` module.
+
+* Autoconf 2.71 and aclocal 1.16.4 are required to regenerate the
+  :file:`configure` script.
+
+.. versionchanged:: 3.13:
+   Autoconf 2.71, aclocal 1.16.4 and SQLite 3.15.2 are now required.
 
 .. versionchanged:: 3.11
    C11 compiler, IEEE 754 and NaN support are now required.
    On Windows, Visual Studio 2017 or later is required.
+   Tcl/Tk version 8.5.12 is now required for the :mod:`tkinter` module.
 
 .. versionchanged:: 3.10
    OpenSSL 1.1.1 is now required.
+   Require SQLite 3.7.15.
 
 .. versionchanged:: 3.7
    Thread support and OpenSSL 1.0.2 are now required.
@@ -37,7 +50,11 @@ Features required to build CPython:
    inline`` functions.
 
 .. versionchanged:: 3.5
-   On Windows, Visual Studio 2015 or later is required.
+   On Windows, Visual Studio 2015 or later is now required.
+   Tcl/Tk version 8.4 is now required.
+
+.. versionchanged:: 3.1
+   Tcl/Tk version 8.3.1 is now required.
 
 See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform
 support".
@@ -48,7 +65,7 @@ support".
 Configure Options
 =================
 
-List all ``./configure`` script options using::
+List all :file:`configure` script options using::
 
     ./configure --help
 
