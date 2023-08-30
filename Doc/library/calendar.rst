@@ -192,7 +192,29 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    .. method:: prweek(theweek, width)
 
-      Print a week's calendar as returned by :meth:`formatweek`.
+      Print a week's calendar as returned by :meth:`formatweek` and sets the
+      end parameter to an empty string to prevent adding a newline character.
+
+   .. method:: formatday(day, weekday, width)
+
+      Return a string containing the formatted day.
+
+   .. method:: formatweek(theweek, width)
+
+      Return a single formatted week, with each day formatted using :meth:`formatday`
+
+   .. method:: formatweekday(theweek, width)
+
+      Return a formatted week day name.
+
+   .. method:: formatweekheader(width)
+
+      Return the formatted header for a week, containing the weekday names, with
+      each day formatted using :meth:`formatweekday`.
+
+   .. method:: formatmonthname(theyear, themonth, width, withyear)
+
+      Return a formatted month name, optinally including the year.
 
    .. method:: formatmonth(theyear, themonth, w=0, l=0)
 
@@ -439,11 +461,6 @@ For simple text calendars this module provides the following functions.
 
 
 The :mod:`calendar` module exports the following data attributes:
-
-.. data:: mdays
-
-   An array that represents the number of days in each month.
-
 
 .. data:: day_name
 
