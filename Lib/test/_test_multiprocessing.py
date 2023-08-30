@@ -5405,6 +5405,32 @@ class TestStartMethod(unittest.TestCase):
                 p.start()
                 p.join()
 
+    @classmethod
+    def _put_one_in_queue(cls, queue):
+        queue.put(1)
+
+    @classmethod
+    def _put_two_and_nest_once(cls, queue):
+        queue.put(2)
+        process = multiprocessing.Process(target=cls._put_one_in_queue, args=(queue,))
+        process.start()
+        process.join()
+
+    def test_nested_startmethod(self):
+        # gh-108520: Regression test to ensure that child process can send its
+        # arguments to another process
+        queue = multiprocessing.Queue()
+
+        process = multiprocessing.Process(target=self._put_two_and_nest_once, args=(queue,))
+        process.start()
+        process.join()
+
+        results = []
+        while not queue.empty():
+            results.append(queue.get())
+
+        self.assertEqual(results, [2, 1])
+
 
 @unittest.skipIf(sys.platform == "win32",
                  "test semantics don't make sense on Windows")
