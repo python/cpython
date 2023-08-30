@@ -115,7 +115,7 @@ class SemLock(object):
         self._semlock = _multiprocessing.SemLock._rebuild(*state)
         util.debug('recreated blocker with handle %r' % state[0])
         self._make_methods()
-        # Ensure that deserialized SemLock can be serialized again (gh-108568).
+        # Ensure that deserialized SemLock can be serialized again (gh-108520).
         self._is_fork_ctx = False
 
     @staticmethod
