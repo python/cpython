@@ -311,6 +311,10 @@ might not be allowed in the current interpreter (i.e. os.fork() would fail).
 extern int _PyInterpreterState_HasFeature(PyInterpreterState *interp,
                                           unsigned long feature);
 
+PyAPI_FUNC(PyStatus) _PyInterpreterState_New(
+    PyThreadState *tstate,
+    PyInterpreterState **pinterp);
+
 
 #ifdef __cplusplus
 }
