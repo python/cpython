@@ -5,7 +5,8 @@ Python on macOS README
 :Authors:
     Jack Jansen (2004-07),
     Ronald Oussoren (2010-04),
-    Ned Deily (2012-06)
+    Ned Deily (2012-06),
+    Dong-hee Na (2023-08)
 
 This document provides a quick overview of some macOS specific features in
 the Python distribution.
@@ -37,7 +38,7 @@ macOS specific arguments to configure
   into that directory. This can be used to install a python framework into
   your home directory::
 
-     $ ./configure --enable-framework=/Users/ronald/Library/Frameworks
+     $ ./configure --enable-framework=/Users/ronald/Library/Frameworks --with-readline=apple
      $ make && make install
 
   This will install the framework itself in ``/Users/ronald/Library/Frameworks``,
@@ -106,7 +107,7 @@ supports one execution architecture, 64-bit Intel (``x86_64``).
 You can enable universal binaries by specifying the "--enable-universalsdk"
 flag to configure::
 
-  $ ./configure --enable-universalsdk
+  $ ./configure --enable-universalsdk --with-readline=apple
   $ make
   $ make install
 
