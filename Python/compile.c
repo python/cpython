@@ -5641,12 +5641,10 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
         // `pushed_locals` on the stack, but this will be reversed when we swap
         // out the comprehension result in pop_inlined_comprehension_state
         ADDOP_I(c, loc, SWAP, PyList_GET_SIZE(state->pushed_locals) + 1);
-    }
 
-    if (c->u->u_nfblocks > 0 && state->pushed_locals) {
-        // If we are inside a try block, we need to add our own cleanup handler
-        // to restore comprehension locals, so they have the correct values
-        // inside an exception handler or finally block.
+        // Add our own cleanup handler to restore comprehension locals in case
+        // of exception, so they have the correct values inside an exception
+        // handler or finally block.
         NEW_JUMP_TARGET_LABEL(c, cleanup);
         state->cleanup = cleanup;
         NEW_JUMP_TARGET_LABEL(c, end);
@@ -5689,7 +5687,15 @@ pop_inlined_comprehension_state(struct compiler *c, location loc,
     c->u->u_in_inlined_comp--;
     PyObject *k, *v;
     Py_ssize_t pos = 0;
-    if (IS_LABEL(state.cleanup)) {
+    if (state.temp_symbols) {
+        while (PyDict_Next(state.temp_symbols, &pos, &k, &v)) {
+            if (PyDict_SetItem(c->u->u_ste->ste_symbols, k, v)) {
+                return ERROR;
+            }
+        }
+        Py_CLEAR(state.temp_symbols);
+    }
+    if (state.pushed_locals) {
         ADDOP(c, NO_LOCATION, POP_BLOCK);
         ADDOP_JUMP(c, NO_LOCATION, JUMP, state.end);
 
@@ -5704,16 +5710,6 @@ pop_inlined_comprehension_state(struct compiler *c, location loc,
         ADDOP_I(c, NO_LOCATION, RERAISE, 0);
 
         USE_LABEL(c, state.end);
-    }
-    if (state.temp_symbols) {
-        while (PyDict_Next(state.temp_symbols, &pos, &k, &v)) {
-            if (PyDict_SetItem(c->u->u_ste->ste_symbols, k, v)) {
-                return ERROR;
-            }
-        }
-        Py_CLEAR(state.temp_symbols);
-    }
-    if (state.pushed_locals) {
         if (restore_inlined_comprehension_locals(c, loc, state) < 0) {
             return ERROR;
         }
