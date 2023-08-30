@@ -50,8 +50,8 @@ class SemLock(object):
     def __init__(self, kind, value, maxvalue, *, ctx):
         if ctx is None:
             ctx = context._default_context.get_context()
-        self.is_fork_ctx = ctx.get_start_method() == 'fork'
-        unlink_now = sys.platform == 'win32' or self.is_fork_ctx
+        self._is_fork_ctx = ctx.get_start_method() == 'fork'
+        unlink_now = sys.platform == 'win32' or self._is_fork_ctx
         for i in range(100):
             try:
                 sl = self._semlock = _multiprocessing.SemLock(
@@ -103,7 +103,7 @@ class SemLock(object):
         if sys.platform == 'win32':
             h = context.get_spawning_popen().duplicate_for_child(sl.handle)
         else:
-            if self.is_fork_ctx:
+            if self._is_fork_ctx:
                 raise RuntimeError('A SemLock created in a fork context is being '
                                    'shared with a process in a spawn context. This is '
                                    'not supported. Please use the same context to create '
@@ -116,7 +116,7 @@ class SemLock(object):
         util.debug('recreated blocker with handle %r' % state[0])
         self._make_methods()
         # SemLock created in fork context cannot be serialized
-        self.is_fork_ctx = False
+        self._is_fork_ctx = False
 
     @staticmethod
     def _make_name():
