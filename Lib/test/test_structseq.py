@@ -1,6 +1,7 @@
 import os
 import time
 import unittest
+import _testcapi
 
 
 class StructSeqTest(unittest.TestCase):
@@ -154,6 +155,14 @@ class StructSeqTest(unittest.TestCase):
             'tm_yday': 1,
             'tm_isdst': 0,
         })
+
+    def test_tuple_attributes_unnamed(self):
+        for key in ['_fields', '_field_defaults']:
+            self.assertNotIn(key, dir(_testcapi.MixedNamedTuple))
+
+    def test_asdict_unnamed(self):
+        t = _testcapi.MixedNamedTuple((0, 1))
+        self.assertRaises(ValueError, t._asdict)
 
 
 if __name__ == "__main__":

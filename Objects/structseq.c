@@ -376,6 +376,12 @@ structseq_asdict(PyStructSequence* self, PyObject *Py_UNUSED(ignored))
     n_visible_fields = VISIBLE_SIZE(self);
     n_unnamed_fields = UNNAMED_FIELDS(self);
 
+    if (n_unnamed_fields != 0) {
+        PyErr_SetString(PyExc_ValueError, "named tuples with both named and "
+                                          "unnamed fields don't support _asdict");
+        return NULL;
+    }
+
     dict = PyDict_New();
     if (!dict)
         return NULL;
@@ -434,7 +440,7 @@ initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
     SET_DICT_FROM_SIZE(real_length_key, n_members);
     SET_DICT_FROM_SIZE(unnamed_fields_key, n_unnamed_members);
 
-    // Prepare and set __match_args__ and _fields
+    // Prepare and set __match_args__
     Py_ssize_t i, k;
     PyObject* keys = PyTuple_New(desc->n_in_sequence);
     if (keys == NULL) {
@@ -461,20 +467,24 @@ initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
         goto error;
     }
 
-    if (PyDict_SetItemString(dict, named_fields_list_key, keys) < 0) {
-        goto error;
+    // Set _field and _field_defaults when we have no unnammed members
+    if (n_unnamed_members == 0) {
+        if (PyDict_SetItemString(dict, named_fields_list_key, keys) < 0) {
+            goto error;
+        }
+
+        // Set _fields_defaults to an empty dir, as we don't support defaults
+        defaults = PyDict_New();
+        if (!defaults)
+            goto error;
+
+        if (PyDict_SetItemString(dict, named_fields_defaults_key, defaults) < 0) {
+            goto error;
+        }
+
+        Py_DECREF(defaults);
     }
 
-    // Set _fields_defaults to an empty dir, as we don't support defaults
-    defaults = PyDict_New();
-    if (!defaults)
-        goto error;
-
-    if (PyDict_SetItemString(dict, named_fields_defaults_key, defaults) < 0) {
-        goto error;
-    }
-
-    Py_DECREF(defaults);
     Py_DECREF(keys);
     return 0;
 

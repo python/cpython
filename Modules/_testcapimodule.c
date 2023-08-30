@@ -3946,6 +3946,20 @@ static struct PyModuleDef _testcapimodule = {
     NULL
 };
 
+static PyStructSequence_Field MixedNamedTuple_fields[] = {
+    {"something", "some named entry"},
+    {NULL, "some unnamed entry"},
+    {0}
+};
+
+static PyStructSequence_Desc MixedNamedTuple_desc = {
+    .name = "_testcpi.MixedNamedTuple",
+    .doc = PyDoc_STR("Example of a named tuple with both named and unnamed fields."),
+    .fields = MixedNamedTuple_fields,
+    .n_in_sequence = 2
+};
+
+
 /* Per PEP 489, this module will not be converted to multi-phase initialization
  */
 
@@ -3953,6 +3967,7 @@ PyMODINIT_FUNC
 PyInit__testcapi(void)
 {
     PyObject *m;
+    PyTypeObject *type;
 
     m = PyModule_Create(&_testcapimodule);
     if (m == NULL)
@@ -4045,6 +4060,13 @@ PyInit__testcapi(void)
     Py_INCREF(&ContainerNoGC_type);
     if (PyModule_AddObject(m, "ContainerNoGC",
                            (PyObject *) &ContainerNoGC_type) < 0)
+        return NULL;
+
+    MixedNamedTuple_desc.fields[1].name = PyStructSequence_UnnamedField;
+    type = PyStructSequence_NewType(&MixedNamedTuple_desc);
+    if (type == NULL)
+        return NULL;
+    if (PyModule_AddType(m, type) < 0)
         return NULL;
 
     /* Include tests from the _testcapi/ directory */
