@@ -2812,7 +2812,7 @@ object_issubclass(PyThreadState *tstate, PyObject *derived, PyObject *cls)
         return -1;
     }
 
-    /* Probably never reached anymore. */
+    /* Can be reached when infinite recursion happens. */
     return recursive_issubclass(derived, cls);
 }
 

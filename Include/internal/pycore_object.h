@@ -12,7 +12,6 @@ extern "C" {
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_runtime.h"       // _PyRuntime
 
 /* Check if an object is consistent. For example, ensure that the reference
    counter is greater than or equal to 1, and ensure that ob_type is not NULL.
@@ -31,6 +30,11 @@ extern void _PyDebugAllocatorStats(FILE *out, const char *block_name,
                                    int num_blocks, size_t sizeof_block);
 
 extern void _PyObject_DebugTypeStats(FILE *out);
+
+#ifdef Py_TRACE_REFS
+/* Py_TRACE_REFS is such major surgery that we call external routines. */
+PyAPI_FUNC(void) _Py_ForgetReference(PyObject *);
+#endif
 
 // Export for shared _testinternalcapi extension
 PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
@@ -55,7 +59,7 @@ PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
         .ob_size = size                       \
     },
 
-PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
+extern void _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
     const char *func,
     const char *message);
 
@@ -173,6 +177,7 @@ _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
 
 extern void _PyType_InitCache(PyInterpreterState *interp);
 
+extern void _PyObject_InitState(PyInterpreterState *interp);
 
 /* Inline functions trading binary compatibility for speed:
    _PyObject_Init() is the fast version of PyObject_Init(), and
@@ -292,8 +297,8 @@ extern void _PyDebug_PrintTotalRefs(void);
 
 #ifdef Py_TRACE_REFS
 extern void _Py_AddToAllObjects(PyObject *op, int force);
-extern void _Py_PrintReferences(FILE *);
-extern void _Py_PrintReferenceAddresses(FILE *);
+extern void _Py_PrintReferences(PyInterpreterState *, FILE *);
+extern void _Py_PrintReferenceAddresses(PyInterpreterState *, FILE *);
 #endif
 
 
@@ -380,7 +385,7 @@ extern PyObject *_PyType_NewManagedObject(PyTypeObject *type);
 
 extern PyTypeObject* _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
 extern PyObject* _PyType_GetDocFromInternalDoc(const char *, const char *);
-extern PyObject* _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);
+extern PyObject* _PyType_GetTextSignatureFromInternalDoc(const char *, const char *, int);
 
 extern int _PyObject_InitializeDict(PyObject *obj);
 int _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp);
@@ -442,6 +447,10 @@ extern int _PyObject_IsAbstract(PyObject *);
 extern int _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
 extern PyObject* _PyObject_NextNotImplemented(PyObject *);
 
+// Pickle support.
+// Export for '_datetime' shared extension
+PyAPI_FUNC(PyObject*) _PyObject_GetState(PyObject *);
+
 /* C function call trampolines to mitigate bad function pointer casts.
  *
  * Typical native ABIs ignore additional arguments or fill in missing
@@ -469,13 +478,11 @@ extern PyObject* _PyCFunctionWithKeywords_TrampolineCall(
     (meth)((self), (args), (kw))
 #endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
 
-// Export for '_pickle' shared extension
+// Export these 2 symbols for '_pickle' shared extension
 PyAPI_DATA(PyTypeObject) _PyNone_Type;
-// Export for '_pickle' shared extension
 PyAPI_DATA(PyTypeObject) _PyNotImplemented_Type;
 
 // Maps Py_LT to Py_GT, ..., Py_GE to Py_LE.
-// Defined in Objects/object.c.
 // Export for the stable ABI.
 PyAPI_DATA(int) _Py_SwappedOp[];
 

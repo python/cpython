@@ -31,6 +31,7 @@ Data members:
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_structseq.h"     // _PyStructSequence_InitBuiltinWithFlags()
+#include "pycore_sysmodule.h"     // Define _PySys_GetSizeOf()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 #include "frameobject.h"          // PyFrame_FastToLocalsWithError()
@@ -87,7 +88,12 @@ _PySys_GetObject(PyInterpreterState *interp, const char *name)
     if (sysdict == NULL) {
         return NULL;
     }
-    return _PyDict_GetItemStringWithError(sysdict, name);
+    PyObject *value;
+    if (PyDict_GetItemStringRef(sysdict, name, &value) != 1) {
+        return NULL;
+    }
+    Py_DECREF(value);  // return a borrowed reference
+    return value;
 }
 
 PyObject *
@@ -1954,7 +1960,7 @@ sys__getframe_impl(PyObject *module, int depth)
 /*[clinic end generated code: output=d438776c04d59804 input=c1be8a6464b11ee5]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyInterpreterFrame *frame = tstate->cframe->current_frame;
+    _PyInterpreterFrame *frame = tstate->current_frame;
 
     if (frame != NULL) {
         while (depth > 0) {
@@ -2095,7 +2101,7 @@ static PyObject *
 sys_is_finalizing_impl(PyObject *module)
 /*[clinic end generated code: output=735b5ff7962ab281 input=f0df747a039948a5]*/
 {
-    return PyBool_FromLong(_Py_IsFinalizing());
+    return PyBool_FromLong(Py_IsFinalizing());
 }
 
 #ifdef Py_STATS
@@ -2270,7 +2276,7 @@ sys__getframemodulename_impl(PyObject *module, int depth)
     if (PySys_Audit("sys._getframemodulename", "i", depth) < 0) {
         return NULL;
     }
-    _PyInterpreterFrame *f = _PyThreadState_GET()->cframe->current_frame;
+    _PyInterpreterFrame *f = _PyThreadState_GET()->current_frame;
     while (f && (_PyFrame_IsIncomplete(f) || depth-- > 0)) {
         f = f->previous;
     }

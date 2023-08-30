@@ -3662,7 +3662,28 @@ class ConfigDictTest(BaseTest):
         d = {
             'atuple': (1, 2, 3),
             'alist': ['a', 'b', 'c'],
-            'adict': {'d': 'e', 'f': 3 },
+            'adict': {
+                'd': 'e', 'f': 3 ,
+                'alpha numeric 1 with spaces' : 5,
+                'aplha numeric 1 %( - © ©ß¯' : 9,
+                'alpha numeric ] 1 with spaces' : 15,
+                'aplha ]] numeric 1 %( - © ©ß¯]' : 19,
+                ' aplha [ numeric 1 %( - © ©ß¯] ' : 11,
+                ' aplha ' : 32,
+                '' : 10,
+                'nest4' : {
+                    'd': 'e', 'f': 3 ,
+                    'alpha numeric 1 with spaces' : 5,
+                    'aplha numeric 1 %( - © ©ß¯' : 9,
+                    '' : 10,
+                    'somelist' :  ('g', ('h', 'i'), 'j'),
+                    'somedict' : {
+                        'a' : 1,
+                        'a with 1 and space' : 3,
+                        'a with ( and space' : 4,
+                    }
+                }
+            },
             'nest1': ('g', ('h', 'i'), 'j'),
             'nest2': ['k', ['l', 'm'], 'n'],
             'nest3': ['o', 'cfg://alist', 'p'],
@@ -3674,11 +3695,36 @@ class ConfigDictTest(BaseTest):
         self.assertEqual(bc.convert('cfg://nest2[1][1]'), 'm')
         self.assertEqual(bc.convert('cfg://adict.d'), 'e')
         self.assertEqual(bc.convert('cfg://adict[f]'), 3)
+        self.assertEqual(bc.convert('cfg://adict[alpha numeric 1 with spaces]'), 5)
+        self.assertEqual(bc.convert('cfg://adict[aplha numeric 1 %( - © ©ß¯]'), 9)
+        self.assertEqual(bc.convert('cfg://adict[]'), 10)
+        self.assertEqual(bc.convert('cfg://adict.nest4.d'), 'e')
+        self.assertEqual(bc.convert('cfg://adict.nest4[d]'), 'e')
+        self.assertEqual(bc.convert('cfg://adict[nest4].d'), 'e')
+        self.assertEqual(bc.convert('cfg://adict[nest4][f]'), 3)
+        self.assertEqual(bc.convert('cfg://adict[nest4][alpha numeric 1 with spaces]'), 5)
+        self.assertEqual(bc.convert('cfg://adict[nest4][aplha numeric 1 %( - © ©ß¯]'), 9)
+        self.assertEqual(bc.convert('cfg://adict[nest4][]'), 10)
+        self.assertEqual(bc.convert('cfg://adict[nest4][somelist][0]'), 'g')
+        self.assertEqual(bc.convert('cfg://adict[nest4][somelist][1][0]'), 'h')
+        self.assertEqual(bc.convert('cfg://adict[nest4][somelist][1][1]'), 'i')
+        self.assertEqual(bc.convert('cfg://adict[nest4][somelist][2]'), 'j')
+        self.assertEqual(bc.convert('cfg://adict[nest4].somedict.a'), 1)
+        self.assertEqual(bc.convert('cfg://adict[nest4].somedict[a]'), 1)
+        self.assertEqual(bc.convert('cfg://adict[nest4].somedict[a with 1 and space]'), 3)
+        self.assertEqual(bc.convert('cfg://adict[nest4].somedict[a with ( and space]'), 4)
+        self.assertEqual(bc.convert('cfg://adict.nest4.somelist[1][1]'), 'i')
+        self.assertEqual(bc.convert('cfg://adict.nest4.somelist[2]'), 'j')
+        self.assertEqual(bc.convert('cfg://adict.nest4.somedict.a'), 1)
+        self.assertEqual(bc.convert('cfg://adict.nest4.somedict[a]'), 1)
         v = bc.convert('cfg://nest3')
         self.assertEqual(v.pop(1), ['a', 'b', 'c'])
         self.assertRaises(KeyError, bc.convert, 'cfg://nosuch')
         self.assertRaises(ValueError, bc.convert, 'cfg://!')
         self.assertRaises(KeyError, bc.convert, 'cfg://adict[2]')
+        self.assertRaises(KeyError, bc.convert, 'cfg://adict[alpha numeric ] 1 with spaces]')
+        self.assertRaises(ValueError, bc.convert, 'cfg://adict[ aplha ]] numeric 1 %( - © ©ß¯] ]')
+        self.assertRaises(ValueError, bc.convert, 'cfg://adict[ aplha [ numeric 1 %( - © ©ß¯] ]')
 
     def test_namedtuple(self):
         # see bpo-39142
@@ -5432,6 +5478,46 @@ class LoggerAdapterTest(unittest.TestCase):
         self.assertIs(adapter_adapter.manager, orig_manager)
         self.assertIs(adapter.manager, orig_manager)
         self.assertIs(self.logger.manager, orig_manager)
+
+    def test_extra_in_records(self):
+        self.adapter = logging.LoggerAdapter(logger=self.logger,
+                                             extra={'foo': '1'})
+
+        self.adapter.critical('foo should be here')
+        self.assertEqual(len(self.recording.records), 1)
+        record = self.recording.records[0]
+        self.assertTrue(hasattr(record, 'foo'))
+        self.assertEqual(record.foo, '1')
+
+    def test_extra_not_merged_by_default(self):
+        self.adapter.critical('foo should NOT be here', extra={'foo': 'nope'})
+        self.assertEqual(len(self.recording.records), 1)
+        record = self.recording.records[0]
+        self.assertFalse(hasattr(record, 'foo'))
+
+    def test_extra_merged(self):
+        self.adapter = logging.LoggerAdapter(logger=self.logger,
+                                             extra={'foo': '1'},
+                                             merge_extra=True)
+
+        self.adapter.critical('foo and bar should be here', extra={'bar': '2'})
+        self.assertEqual(len(self.recording.records), 1)
+        record = self.recording.records[0]
+        self.assertTrue(hasattr(record, 'foo'))
+        self.assertTrue(hasattr(record, 'bar'))
+        self.assertEqual(record.foo, '1')
+        self.assertEqual(record.bar, '2')
+
+    def test_extra_merged_log_call_has_precedence(self):
+        self.adapter = logging.LoggerAdapter(logger=self.logger,
+                                             extra={'foo': '1'},
+                                             merge_extra=True)
+
+        self.adapter.critical('foo shall be min', extra={'foo': '2'})
+        self.assertEqual(len(self.recording.records), 1)
+        record = self.recording.records[0]
+        self.assertTrue(hasattr(record, 'foo'))
+        self.assertEqual(record.foo, '2')
 
 
 class LoggerTest(BaseTest, AssertErrorMessage):

@@ -47,7 +47,7 @@ a table to determine where to jump to when an exception is raised.
 
   2           2 NOP
 
-  3           4 LOAD_GLOBAL              1 (NULL + g)
+  3           4 LOAD_GLOBAL              1 (g + NULL)
              16 LOAD_CONST               1 (0)
              18 PRECALL                  1
              22 CALL                     1

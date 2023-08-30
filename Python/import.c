@@ -1,7 +1,7 @@
 /* Module definition and import implementation */
 
 #include "Python.h"
-
+#include "pycore_dict.h"          // _PyDict_Pop()
 #include "pycore_hashtable.h"     // _Py_hashtable_new_full()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -15,6 +15,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
+
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
 #include "importdl.h"             // _PyImport_DynLoadFiletab
 #include "pydtrace.h"             // PyDTrace_IMPORT_FIND_LOAD_START_ENABLED()
@@ -601,7 +602,7 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
     when an extension is loaded.  This includes when it is imported
     for the first time.
 
-    Here's a summary, using importlib._boostrap._load() as a starting point.
+    Here's a summary, using importlib._bootstrap._load() as a starting point.
 
     1.  importlib._bootstrap._load()
     2.    _load():  acquire import lock
@@ -1073,6 +1074,7 @@ _extensions_cache_delete(PyObject *filename, PyObject *name)
        However, this decref would be problematic if the module def were
        dynamically allocated, it were the last ref, and this function
        were called with an interpreter other than the def's owner. */
+    assert(_Py_IsImmortal(entry->value));
     entry->value = NULL;
 
 finally:
@@ -2433,12 +2435,11 @@ int
 _PyImport_InitDefaultImportFunc(PyInterpreterState *interp)
 {
     // Get the __import__ function
-    PyObject *import_func = _PyDict_GetItemStringWithError(interp->builtins,
-                                                           "__import__");
-    if (import_func == NULL) {
+    PyObject *import_func;
+    if (PyDict_GetItemStringRef(interp->builtins, "__import__", &import_func) <= 0) {
         return -1;
     }
-    IMPORT_FUNC(interp) = Py_NewRef(import_func);
+    IMPORT_FUNC(interp) = import_func;
     return 0;
 }
 

@@ -159,7 +159,7 @@ pysqlite_enable_callback_trace(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int enable;
 
-    enable = _PyLong_AsInt(arg);
+    enable = PyLong_AsInt(arg);
     if (enable == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -208,4 +208,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e08e6856ae546e7b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c1d450089867b4bf input=a9049054013a1b77]*/
