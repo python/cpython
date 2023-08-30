@@ -31,6 +31,11 @@ extern void _PyDebugAllocatorStats(FILE *out, const char *block_name,
 
 extern void _PyObject_DebugTypeStats(FILE *out);
 
+#ifdef Py_TRACE_REFS
+/* Py_TRACE_REFS is such major surgery that we call external routines. */
+PyAPI_FUNC(void) _Py_ForgetReference(PyObject *);
+#endif
+
 // Export for shared _testinternalcapi extension
 PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 
