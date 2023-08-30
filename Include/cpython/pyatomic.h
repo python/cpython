@@ -66,8 +66,8 @@ _Py_atomic_add_ssize(Py_ssize_t *ptr, Py_ssize_t value);
 // Performs an atomic compare-and-exchange. If `*ptr` and `*expected` are
 // equal, then `desired` is stored in `*ptr`. Otherwise `*expected` is updated
 // with the current value of `*ptr`. Returns 1 on success and 0 on failure.
-// These correspond to the "strong" variations of the C11
-// atomic_compare_exchange_* functions.
+// These correspond to the C11
+// atomic_compare_exchange_strong() function.
 static inline int
 _Py_atomic_compare_exchange_int(int *ptr, int *expected, int desired);
 
