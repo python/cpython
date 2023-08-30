@@ -1,1 +1,0 @@
-Fixed an issue where :meth:`sqlite3.Connection.iterdump` would fail and leave an incomplete SQL dump if a table includes invalid Unicode sequences. Patch by Corvin McPherson
