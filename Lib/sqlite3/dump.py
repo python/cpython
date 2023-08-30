@@ -18,7 +18,7 @@ def _force_decode(bs, *args, **kwargs):
     try:
         return bs.decode(*args, **kwargs)
     except UnicodeDecodeError:
-        return "".join(chr(c) for c in bs)
+        return "".join([chr(c) for c in bs])
 
 def _iterdump(connection):
     """
