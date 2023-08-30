@@ -3784,7 +3784,9 @@ features:
 
    Create and return a timer file descriptor. The file descriptors supports
    raw :func:`read` with a buffer size of 8, :func:`~select.select`, :func:`~select.poll`
-   and similar. See man page :manpage:`timerfd_create(2)` for more information.
+
+   .. seealso:: :manpage:`timerfd_create(2)`
+
 
    Refer to :ref:`time-clock-id-constants` for a list of accepted values for *clockid*.
 
@@ -3850,7 +3852,8 @@ features:
 .. function:: timerfd_settime(fd, flags, interval, value)
 
    Start/stop timer for a timer file descriptor.
-   See man page :manpage:`timerfd_settime(2)` for more information.
+
+   .. seealso:: :manpage:`timerfd_settime(2)`
 
    *interval* coresponds to :c:member:`!it_interval` in :c:struct:`itimerspec` and *value* coresponds to
    :c:member:`!it_value` in :c:struct:`itimerspec`. They are both in seconds and types are double.
@@ -3885,7 +3888,8 @@ features:
 .. function:: timerfd_gettime(fd)
 
    Return a two-item tuple (``interval``, ``value``) which is the time until next expiration.
-   See man page :manpage:`timerfd_gettime(2)` for more information.
+
+   .. seealso:: :manpage:`timerfd_gettime(2)`
 
    The format of the return value is same as that of :func:`timerfd_settime`.
 
