@@ -285,7 +285,7 @@ thread of control.  There are two ways to specify the activity: by passing a
 callable object to the constructor, or by overriding the :meth:`~Thread.run`
 method in a subclass.  No other methods (except for the constructor) should be
 overridden in a subclass.  In other words, *only*  override the
-``Thread.__init__()`` and :meth:`~Thread.run` methods of this class.
+``__init__()`` and :meth:`~Thread.run` methods of this class.
 
 Once a thread object is created, its activity must be started by calling the
 thread's :meth:`~Thread.start` method.  This invokes the :meth:`~Thread.run`
