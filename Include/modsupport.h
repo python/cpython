@@ -111,14 +111,6 @@ PyAPI_FUNC(int) PyModule_ExecDef(PyObject *module, PyModuleDef *def);
 #define PYTHON_ABI_VERSION 3
 #define PYTHON_ABI_STRING "3"
 
-#ifdef Py_TRACE_REFS
- /* When we are tracing reference counts, rename module creation functions so
-    modules compiled with incompatible settings will generate a
-    link-time error. */
- #define PyModule_Create2 PyModule_Create2TraceRefs
- #define PyModule_FromDefAndSpec2 PyModule_FromDefAndSpec2TraceRefs
-#endif
-
 PyAPI_FUNC(PyObject *) PyModule_Create2(PyModuleDef*, int apiver);
 
 #ifdef Py_LIMITED_API
