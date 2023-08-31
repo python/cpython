@@ -77,6 +77,11 @@ CLINIC_PREFIXED_ARGS = {
     "noptargs",
     "return_value",
 }
+
+# '#include "header.h"   // reason': column of '//' comment
+INCLUDE_COMMENT_COLUMN = 35
+
+# match '#define Py_LIMITED_API'
 LIMITED_CAPI_REGEX = re.compile(r'#define +Py_LIMITED_API')
 
 
@@ -675,7 +680,9 @@ def normalize_snippet(
 def declare_parser(
         f: Function,
         *,
-        hasformat: bool = False
+        hasformat: bool = False,
+        clinic: Clinic,
+        limited_capi: bool,
 ) -> str:
     """
     Generates the code template for a static local PyArg_Parser variable,
@@ -694,7 +701,11 @@ def declare_parser(
         p for p in f.parameters.values()
         if not p.is_positional_only() and not p.is_vararg()
     ])
-    if num_keywords == 0:
+    if limited_capi:
+        declarations = """
+            #define KWTUPLE NULL
+        """
+    elif num_keywords == 0:
         declarations = """
             #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
             #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
@@ -722,6 +733,10 @@ def declare_parser(
             #  define KWTUPLE NULL
             #endif  // !Py_BUILD_CORE
         """ % num_keywords
+
+        condition = '#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)'
+        clinic.add_include('pycore_gc.h', 'PyGC_Head', condition=condition)
+        clinic.add_include('pycore_runtime.h', '_Py_ID()', condition=condition)
 
     declarations += """
             static const char * const _keywords[] = {{{keywords_c} NULL}};
@@ -976,6 +991,7 @@ class CLanguage(Language):
             argname_fmt: str | None,
             *,
             limited_capi: bool,
+            clinic: Clinic,
     ) -> str:
         assert len(params) > 0
         last_param = next(reversed(params.values()))
@@ -990,9 +1006,11 @@ class CLanguage(Language):
                 elif func.kind.new_or_init or limited_capi:
                     conditions.append(f"nargs < {i+1} && PyDict_Contains(kwargs, &_Py_ID({p.name}))")
                     containscheck = "PyDict_Contains"
+                    clinic.add_include('pycore_runtime.h', '_Py_ID()')
                 else:
                     conditions.append(f"nargs < {i+1} && PySequence_Contains(kwnames, &_Py_ID({p.name}))")
                     containscheck = "PySequence_Contains"
+                    clinic.add_include('pycore_runtime.h', '_Py_ID()')
             else:
                 conditions = [f"nargs < {i+1}"]
         condition = ") || (".join(conditions)
@@ -1081,8 +1099,10 @@ class CLanguage(Language):
 
         # Copy includes from parameters to Clinic
         for converter in converters:
-            if converter.include:
-                clinic.add_include(*converter.include)
+            include = converter.include
+            if include:
+                clinic.add_include(include.filename, include.reason,
+                                   condition=include.condition)
 
         has_option_groups = parameters and (parameters[0].group or parameters[-1].group)
         default_return_converter = f.return_converter.type == 'PyObject *'
@@ -1415,14 +1435,16 @@ class CLanguage(Language):
                     declarations += "\nPy_ssize_t nargs = PyTuple_Size(args);"
                 if deprecated_keywords:
                     code = self.deprecate_keyword_use(f, deprecated_keywords, None,
-                                                      limited_capi=limited_capi)
+                                                      limited_capi=limited_capi,
+                                                      clinic=clinic)
                     parser_code.append(code)
 
             elif not new_or_init:
                 flags = "METH_FASTCALL|METH_KEYWORDS"
                 parser_prototype = self.PARSER_PROTOTYPE_FASTCALL_KEYWORDS
                 argname_fmt = 'args[%d]'
-                declarations = declare_parser(f)
+                declarations = declare_parser(f, clinic=clinic,
+                                              limited_capi=clinic.limited_capi)
                 declarations += "\nPyObject *argsbuf[%s];" % len(converters)
                 if has_optional_kw:
                     declarations += "\nPy_ssize_t noptargs = %s + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (nargs, min_pos + min_kw_only)
@@ -1437,7 +1459,8 @@ class CLanguage(Language):
                 flags = "METH_VARARGS|METH_KEYWORDS"
                 parser_prototype = self.PARSER_PROTOTYPE_KEYWORD
                 argname_fmt = 'fastargs[%d]'
-                declarations = declare_parser(f)
+                declarations = declare_parser(f, clinic=clinic,
+                                              limited_capi=clinic.limited_capi)
                 declarations += "\nPyObject *argsbuf[%s];" % len(converters)
                 declarations += "\nPyObject * const *fastargs;"
                 declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"
@@ -1457,7 +1480,8 @@ class CLanguage(Language):
             if not limited_capi:
                 if deprecated_keywords:
                     code = self.deprecate_keyword_use(f, deprecated_keywords, argname_fmt,
-                                                      limited_capi=limited_capi)
+                                                      limited_capi=limited_capi,
+                                                      clinic=clinic)
                     parser_code.append(code)
 
                 add_label: str | None = None
@@ -1522,7 +1546,9 @@ class CLanguage(Language):
                     if add_label:
                         parser_code.append("%s:" % add_label)
                 else:
-                    declarations = declare_parser(f, hasformat=True)
+                    declarations = declare_parser(f, clinic=clinic,
+                                                  hasformat=True,
+                                                  limited_capi=clinic.limited_capi)
                     if not new_or_init:
                         parser_code = [normalize_snippet("""
                             if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser{parse_arguments_comma}
@@ -1541,7 +1567,8 @@ class CLanguage(Language):
                             declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"
                     if deprecated_keywords:
                         code = self.deprecate_keyword_use(f, deprecated_keywords, None,
-                                                          limited_capi=limited_capi)
+                                                          limited_capi=limited_capi,
+                                                          clinic=clinic)
                         parser_code.append(code)
 
             if deprecated_positionals:
@@ -2169,6 +2196,26 @@ class BlockParser:
         return Block(input_output(), dsl_name, output=output)
 
 
+@dc.dataclass(slots=True, frozen=True)
+class Include:
+    """
+    An include like: #include "pycore_long.h"   // _Py_ID()
+    """
+    # Example: "pycore_long.h".
+    filename: str
+
+    # Example: "_Py_ID()".
+    reason: str
+
+    # None means unconditional include.
+    # Example: "#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)".
+    condition: str | None
+
+    def sort_key(self) -> tuple[str, str]:
+        # order: '#if' comes before 'NO_CONDITION'
+        return (self.condition or 'NO_CONDITION', self.filename)
+
+
 @dc.dataclass(slots=True)
 class BlockPrinter:
     language: Language
@@ -2180,7 +2227,7 @@ class BlockPrinter:
             *,
             core_includes: bool = False,
             limited_capi: bool,
-            header_includes: dict[str, str],
+            header_includes: dict[str, Include],
     ) -> None:
         input = block.input
         output = block.output
@@ -2209,20 +2256,31 @@ class BlockPrinter:
         write("\n")
 
         output = ''
-        if core_includes:
-            if not limited_capi:
-                output += textwrap.dedent("""
-                    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-                    #  include "pycore_gc.h"            // PyGC_Head
-                    #  include "pycore_runtime.h"       // _Py_ID()
-                    #endif
-
-                """)
-
+        if core_includes and header_includes:
             # Emit optional "#include" directives for C headers
-            for include, reason in sorted(header_includes.items()):
-                line = f'#include "{include}"'.ljust(35) + f'// {reason}\n'
+            output += '\n'
+
+            current_condition: str | None = None
+            includes = sorted(header_includes.values(), key=Include.sort_key)
+            for include in includes:
+                if include.condition != current_condition:
+                    if current_condition:
+                        output += '#endif\n'
+                    current_condition = include.condition
+                    if include.condition:
+                        output += f'{include.condition}\n'
+
+                if current_condition:
+                    line = f'#  include "{include.filename}"'
+                else:
+                    line = f'#include "{include.filename}"'
+                if include.reason:
+                    comment = f'// {include.reason}\n'
+                    line = line.ljust(INCLUDE_COMMENT_COLUMN - 1) + comment
                 output += line
+
+            if current_condition:
+                output += '#endif\n'
 
         input = ''.join(block.input)
         output += ''.join(block.output)
@@ -2434,9 +2492,8 @@ impl_definition block
         self.modules: ModuleDict = {}
         self.classes: ClassDict = {}
         self.functions: list[Function] = []
-        # dict: include name => reason
-        # Example: 'pycore_long.h' => '_PyLong_UnsignedShort_Converter()'
-        self.includes: dict[str, str] = {}
+        # dict: include name => Include instance
+        self.includes: dict[str, Include] = {}
 
         self.line_prefix = self.line_suffix = ''
 
@@ -2495,11 +2552,23 @@ impl_definition block
         global clinic
         clinic = self
 
-    def add_include(self, name: str, reason: str) -> None:
-        if name in self.includes:
-            # Mention a single reason is enough, no need to list all of them
-            return
-        self.includes[name] = reason
+    def add_include(self, name: str, reason: str,
+                    *, condition: str | None = None) -> None:
+        try:
+            existing = self.includes[name]
+        except KeyError:
+            pass
+        else:
+            if existing.condition and not condition:
+                # If the previous include has a condition and the new one is
+                # unconditional, override the include.
+                pass
+            else:
+                # Already included, do nothing. Only mention a single reason,
+                # no need to list all of them.
+                return
+
+        self.includes[name] = Include(name, reason, condition)
 
     def add_destination(
             self,
@@ -3129,10 +3198,7 @@ class CConverter(metaclass=CConverterAutoRegister):
     # Only set by self_converter.
     signature_name: str | None = None
 
-    # Optional (name, reason) include which generate a line like:
-    # "#include "name"     // reason"
-    include: tuple[str, str] | None = None
-
+    include: Include | None = None
     broken_limited_capi: bool = False
 
     # keep in sync with self_converter.__init__!
@@ -3439,10 +3505,11 @@ class CConverter(metaclass=CConverterAutoRegister):
         else:
             return self.name
 
-    def add_include(self, name: str, reason: str) -> None:
+    def add_include(self, name: str, reason: str,
+                    *, condition: str | None = None) -> None:
         if self.include is not None:
             raise ValueError("a converter only supports a single include")
-        self.include = (name, reason)
+        self.include = Include(name, reason, condition)
 
 type_checks = {
     '&PyLong_Type': ('PyLong_Check', 'int'),
