@@ -425,8 +425,7 @@ See also the :ref:`Python Development Mode <devmode>` and the
 .. versionchanged:: 3.8
    Release builds and debug builds are now ABI compatible: defining the
    ``Py_DEBUG`` macro no longer implies the ``Py_TRACE_REFS`` macro (see the
-   :option:`--with-trace-refs` option), which introduces the only ABI
-   incompatibility.
+   :option:`--with-trace-refs` option).
 
 
 Debug options
@@ -447,8 +446,14 @@ Debug options
    * Add :func:`sys.getobjects` function.
    * Add :envvar:`PYTHONDUMPREFS` environment variable.
 
-   This build is not ABI compatible with release build (default build) or debug
-   build (``Py_DEBUG`` and ``Py_REF_DEBUG`` macros).
+   The :envvar:`PYTHONDUMPREFS` environment variable can be used to dump
+   objects and reference counts still alive at Python exit.
+
+   :ref:`Statically allocated objects <static-types>` are not traced.
+
+   .. versionchanged:: 3.13
+      This build is now ABI compatible with release build and :ref:`debug build
+      <debug-build>`.
 
    .. versionadded:: 3.8
 

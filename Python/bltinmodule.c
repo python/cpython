@@ -3110,7 +3110,7 @@ _PyBuiltin_Init(PyInterpreterState *interp)
      * result, programs leaking references to None and False (etc)
      * couldn't be diagnosed by examining sys.getobjects(0).
      */
-#define ADD_TO_ALL(OBJECT) _Py_AddToAllObjects((PyObject *)(OBJECT), 0)
+#define ADD_TO_ALL(OBJECT) _Py_AddToAllObjects((PyObject *)(OBJECT))
 #else
 #define ADD_TO_ALL(OBJECT) (void)0
 #endif
