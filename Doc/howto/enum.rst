@@ -1353,6 +1353,13 @@ to handle any extra arguments::
     members; it is then replaced by Enum's :meth:`__new__` which is used after
     class creation for lookup of existing members.
 
+.. warning::
+
+    *Do not* call `super().__new__()`, as the lookup-only `__new__` is the one
+    that is found; instead, use the data type directly -- e.g.::
+   
+       obj = int.__new__(cls, value)
+
 
 OrderedEnum
 ^^^^^^^^^^^
