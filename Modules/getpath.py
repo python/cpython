@@ -510,11 +510,12 @@ if ((not home_was_set and real_executable_dir and not py_setpath)
             build_stdlib_prefix = build_prefix
         else:
             build_stdlib_prefix = search_up(build_prefix, *BUILDSTDLIB_LANDMARKS)
-        # Always use the build prefix for stdlib
-        if build_stdlib_prefix:
-            stdlib_dir = joinpath(build_stdlib_prefix, 'Lib')
-        else:
-            stdlib_dir = joinpath(build_prefix, 'Lib')
+        # Use the build prefix for stdlib when not explicitly set
+        if not stdlib_dir_was_set_in_config:
+            if build_stdlib_prefix:
+                stdlib_dir = joinpath(build_stdlib_prefix, 'Lib')
+            else:
+                stdlib_dir = joinpath(build_prefix, 'Lib')
         # Only use the build prefix for prefix if it hasn't already been set
         if not prefix:
             prefix = build_stdlib_prefix
