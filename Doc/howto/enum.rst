@@ -902,7 +902,7 @@ Some rules:
    :meth:`__str__` method has been reset to their data types'
    :meth:`__str__` method.
 
-.. new-vs-init_
+.. _new-vs-init:
 
 When to use :meth:`__new__` vs. :meth:`__init__`
 ------------------------------------------------
