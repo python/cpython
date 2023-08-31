@@ -77,7 +77,10 @@ CLINIC_PREFIXED_ARGS = {
     "noptargs",
     "return_value",
 }
-LIMITED_CAPI_REGEX = re.compile(r'#define +Py_LIMITED_API')
+# match '#define Py_LIMITED_API'
+LIMITED_CAPI_REGEX = re.compile(r'# *define +Py_LIMITED_API')
+# match '#define Py_ARGUMENT_CLINIC_AVOID_INTERNAL_CAPI'
+AVOID_INTERNAL_CAPI_REGEX = re.compile(r'# *define +Py_ARGUMENT_CLINIC_AVOID_INTERNAL_CAPI')
 
 
 class Sentinels(enum.Enum):
@@ -674,8 +677,10 @@ def normalize_snippet(
 
 def declare_parser(
         f: Function,
+        clinic: Clinic,
         *,
-        hasformat: bool = False
+        hasformat: bool = False,
+        internal_capi: bool,
 ) -> str:
     """
     Generates the code template for a static local PyArg_Parser variable,
@@ -702,7 +707,7 @@ def declare_parser(
             #  define KWTUPLE NULL
             #endif
         """
-    else:
+    elif internal_capi:
         declarations = """
             #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
@@ -722,6 +727,10 @@ def declare_parser(
             #  define KWTUPLE NULL
             #endif  // !Py_BUILD_CORE
         """ % num_keywords
+    else:
+        declarations = """
+            #define KWTUPLE NULL
+        """
 
     declarations += """
             static const char * const _keywords[] = {{{keywords_c} NULL}};
@@ -976,6 +985,7 @@ class CLanguage(Language):
             argname_fmt: str | None,
             *,
             limited_capi: bool,
+            clinic: Clinic,
     ) -> str:
         assert len(params) > 0
         last_param = next(reversed(params.values()))
@@ -990,9 +1000,11 @@ class CLanguage(Language):
                 elif func.kind.new_or_init or limited_capi:
                     conditions.append(f"nargs < {i+1} && PyDict_Contains(kwargs, &_Py_ID({p.name}))")
                     containscheck = "PyDict_Contains"
+                    clinic.add_include('pycore_runtime.h', '_Py_ID()')
                 else:
                     conditions.append(f"nargs < {i+1} && PySequence_Contains(kwnames, &_Py_ID({p.name}))")
                     containscheck = "PySequence_Contains"
+                    clinic.add_include('pycore_runtime.h', '_Py_ID()')
             else:
                 conditions = [f"nargs < {i+1}"]
         condition = ") || (".join(conditions)
@@ -1415,14 +1427,16 @@ class CLanguage(Language):
                     declarations += "\nPy_ssize_t nargs = PyTuple_Size(args);"
                 if deprecated_keywords:
                     code = self.deprecate_keyword_use(f, deprecated_keywords, None,
-                                                      limited_capi=limited_capi)
+                                                      limited_capi=limited_capi,
+                                                      clinic=clinic)
                     parser_code.append(code)
 
             elif not new_or_init:
                 flags = "METH_FASTCALL|METH_KEYWORDS"
                 parser_prototype = self.PARSER_PROTOTYPE_FASTCALL_KEYWORDS
                 argname_fmt = 'args[%d]'
-                declarations = declare_parser(f)
+                declarations = declare_parser(f, clinic,
+                                              internal_capi=clinic.internal_capi)
                 declarations += "\nPyObject *argsbuf[%s];" % len(converters)
                 if has_optional_kw:
                     declarations += "\nPy_ssize_t noptargs = %s + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (nargs, min_pos + min_kw_only)
@@ -1437,7 +1451,8 @@ class CLanguage(Language):
                 flags = "METH_VARARGS|METH_KEYWORDS"
                 parser_prototype = self.PARSER_PROTOTYPE_KEYWORD
                 argname_fmt = 'fastargs[%d]'
-                declarations = declare_parser(f)
+                declarations = declare_parser(f, clinic,
+                                              internal_capi=clinic.internal_capi)
                 declarations += "\nPyObject *argsbuf[%s];" % len(converters)
                 declarations += "\nPyObject * const *fastargs;"
                 declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"
@@ -1457,7 +1472,8 @@ class CLanguage(Language):
             if not limited_capi:
                 if deprecated_keywords:
                     code = self.deprecate_keyword_use(f, deprecated_keywords, argname_fmt,
-                                                      limited_capi=limited_capi)
+                                                      limited_capi=limited_capi,
+                                                      clinic=clinic)
                     parser_code.append(code)
 
                 add_label: str | None = None
@@ -1522,7 +1538,8 @@ class CLanguage(Language):
                     if add_label:
                         parser_code.append("%s:" % add_label)
                 else:
-                    declarations = declare_parser(f, hasformat=True)
+                    declarations = declare_parser(f, clinic, hasformat=True,
+                                                  internal_capi=clinic.internal_capi)
                     if not new_or_init:
                         parser_code = [normalize_snippet("""
                             if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser{parse_arguments_comma}
@@ -1541,7 +1558,8 @@ class CLanguage(Language):
                             declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"
                     if deprecated_keywords:
                         code = self.deprecate_keyword_use(f, deprecated_keywords, None,
-                                                          limited_capi=limited_capi)
+                                                          limited_capi=limited_capi,
+                                                          clinic=clinic)
                         parser_code.append(code)
 
             if deprecated_positionals:
@@ -1852,8 +1870,13 @@ class CLanguage(Language):
         template_dict['keywords_c'] = ' '.join('"' + k + '",'
                                                for k in data.keywords)
         keywords = [k for k in data.keywords if k]
-        template_dict['keywords_py'] = ' '.join('&_Py_ID(' + k + '),'
-                                                for k in keywords)
+        # avoid internal pycore_runtime.h if there is no keywords
+        if keywords and clinic.internal_capi:
+            template_dict['keywords_py'] = ' '.join('&_Py_ID(' + k + '),'
+                                                    for k in keywords)
+            clinic.add_include('pycore_runtime.h', '_Py_ID()')
+        else:
+            template_dict['keywords_py'] = ''
         template_dict['format_units'] = ''.join(data.format_units)
         template_dict['parse_arguments'] = ', '.join(data.parse_arguments)
         if data.parse_arguments:
@@ -2179,7 +2202,6 @@ class BlockPrinter:
             block: Block,
             *,
             core_includes: bool = False,
-            limited_capi: bool,
             header_includes: dict[str, str],
     ) -> None:
         input = block.input
@@ -2209,15 +2231,8 @@ class BlockPrinter:
         write("\n")
 
         output = ''
-        if core_includes:
-            if not limited_capi:
-                output += textwrap.dedent("""
-                    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-                    #  include "pycore_gc.h"            // PyGC_Head
-                    #  include "pycore_runtime.h"       // _Py_ID()
-                    #endif
-
-                """)
+        if core_includes and header_includes:
+            output += "\n"
 
             # Emit optional "#include" directives for C headers
             for include, reason in sorted(header_includes.items()):
@@ -2419,6 +2434,7 @@ impl_definition block
             *,
             filename: str,
             limited_capi: bool,
+            internal_capi: bool,
             verify: bool = True,
     ) -> None:
         # maps strings to Parser objects.
@@ -2430,6 +2446,7 @@ impl_definition block
         self.printer = printer or BlockPrinter(language)
         self.verify = verify
         self.limited_capi = limited_capi
+        self.internal_capi = internal_capi
         self.filename = filename
         self.modules: ModuleDict = {}
         self.classes: ClassDict = {}
@@ -2537,7 +2554,6 @@ impl_definition block
                 parser = self.parsers[dsl_name]
                 parser.parse(block)
             printer.print_block(block,
-                                limited_capi=self.limited_capi,
                                 header_includes=self.includes)
 
         # these are destinations not buffers
@@ -2554,7 +2570,6 @@ impl_definition block
                     warn("Destination buffer " + repr(name) + " not empty at end of file, emptying.")
                     printer.write("\n")
                     printer.print_block(block,
-                                        limited_capi=self.limited_capi,
                                         header_includes=self.includes)
                     continue
 
@@ -2582,7 +2597,6 @@ impl_definition block
                     printer_2 = BlockPrinter(self.language)
                     printer_2.print_block(block,
                                           core_includes=True,
-                                          limited_capi=self.limited_capi,
                                           header_includes=self.includes)
                     write_file(destination.filename, printer_2.f.getvalue())
                     continue
@@ -2650,11 +2664,18 @@ def parse_file(
     if LIMITED_CAPI_REGEX.search(raw):
         limited_capi = True
 
+    internal_capi = True
+    if limited_capi:
+        internal_capi = False
+    elif AVOID_INTERNAL_CAPI_REGEX.search(raw):
+        internal_capi = False
+
     assert isinstance(language, CLanguage)
     clinic = Clinic(language,
                     verify=verify,
                     filename=filename,
-                    limited_capi=limited_capi)
+                    limited_capi=limited_capi,
+                    internal_capi=internal_capi)
     cooked = clinic.parse(raw)
 
     write_file(output, cooked)

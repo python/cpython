@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_runtime.h"        // _Py_ID()
 
 PyDoc_STRVAR(_pickle_Pickler_clear_memo__doc__,
 "clear_memo($self, /)\n"
@@ -1034,4 +1030,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a0e04b85e7bae626 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c8243bf09771bd94 input=a9049054013a1b77]*/

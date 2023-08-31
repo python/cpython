@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_runtime.h"        // _Py_ID()
 
 PyDoc_STRVAR(complex_conjugate__doc__,
 "conjugate($self, /)\n"
@@ -157,4 +153,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d438b7ed87f8459e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e586d47f317d9eab input=a9049054013a1b77]*/

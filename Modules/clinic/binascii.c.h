@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_runtime.h"        // _Py_ID()
 
 PyDoc_STRVAR(binascii_a2b_uu__doc__,
 "a2b_uu($module, data, /)\n"
@@ -795,4 +791,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=bf950ef45a10928d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d59ed73a9a170f10 input=a9049054013a1b77]*/

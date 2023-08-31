@@ -1,6 +1,9 @@
 
 /* UNIX group file access module */
 
+// Argument Clinic avoids the internal C API
+#define Py_ARGUMENT_CLINIC_AVOID_INTERNAL_CAPI
+
 #include "Python.h"
 #include "posixmodule.h"
 

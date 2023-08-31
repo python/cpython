@@ -10,6 +10,9 @@ module instead.
 
 #define MODULE_VERSION "1.0"
 
+// Argument Clinic avoids the internal C API
+#define Py_ARGUMENT_CLINIC_AVOID_INTERNAL_CAPI
+
 #include "Python.h"
 
 #include <stddef.h>               // offsetof()

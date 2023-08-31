@@ -1,3 +1,6 @@
+// Argument Clinic avoids the internal C API
+#define Py_ARGUMENT_CLINIC_AVOID_INTERNAL_CAPI
+
 #include "parts.h"
 #include "clinic/exceptions.c.h"
 

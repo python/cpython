@@ -2,12 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
-
 PyDoc_STRVAR(syslog_openlog__doc__,
 "openlog($module, /, ident=<unrepresentable>, logoption=0,\n"
 "        facility=LOG_USER)\n"
@@ -26,23 +20,7 @@ static PyObject *
 syslog_openlog(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 3
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(ident), &_Py_ID(logoption), &_Py_ID(facility), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
+    #define KWTUPLE NULL
 
     static const char * const _keywords[] = {"ident", "logoption", "facility", NULL};
     static _PyArg_Parser _parser = {
@@ -251,4 +229,4 @@ syslog_LOG_UPTO(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b8124c0977ed6177 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ce81f488ab484888 input=a9049054013a1b77]*/

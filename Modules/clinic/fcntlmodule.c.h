@@ -2,11 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
 #include "pycore_fileutils.h"      // _PyLong_FileDescriptor_Converter()
 
 PyDoc_STRVAR(fcntl_fcntl__doc__,
@@ -250,4 +245,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5f096e8731fa38be input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a899197278b7794b input=a9049054013a1b77]*/

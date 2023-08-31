@@ -23,7 +23,10 @@ with test_tools.imports_under_tool('clinic'):
 
 def _make_clinic(*, filename='clinic_tests'):
     clang = clinic.CLanguage(None)
-    c = clinic.Clinic(clang, filename=filename, limited_capi=False)
+    c = clinic.Clinic(clang,
+                      filename=filename,
+                      limited_capi=False,
+                      internal_capi=True)
     c.block_parser = clinic.BlockParser('', clang)
     return c
 
@@ -125,7 +128,7 @@ class ClinicWholeFileTest(TestCase):
         clang.body_prefix = "//"
         clang.start_line = "//[{dsl_name} start]"
         clang.stop_line = "//[{dsl_name} stop]"
-        cl = clinic.Clinic(clang, filename="test.c", limited_capi=False)
+        cl = clinic.Clinic(clang, filename="test.c", limited_capi=False, internal_capi=True)
         raw = dedent("""
             //[clinic start]
             //module test
@@ -834,7 +837,7 @@ class ClinicBlockParserTest(TestCase):
         writer = clinic.BlockPrinter(language)
         c = _make_clinic()
         for block in blocks:
-            writer.print_block(block, limited_capi=c.limited_capi, header_includes=c.includes)
+            writer.print_block(block, header_includes=c.includes)
         output = writer.f.getvalue()
         assert output == input, "output != input!\n\noutput " + repr(output) + "\n\n input " + repr(input)
 
@@ -860,7 +863,10 @@ xyz
 
     def _test_clinic(self, input, output):
         language = clinic.CLanguage(None)
-        c = clinic.Clinic(language, filename="file", limited_capi=False)
+        c = clinic.Clinic(language,
+                          filename="file",
+                          limited_capi=False,
+                          internal_capi=True)
         c.parsers['inert'] = InertParser(c)
         c.parsers['copy'] = CopyParser(c)
         computed = c.parse(input)
@@ -2673,12 +2679,6 @@ class ClinicExternalTest(TestCase):
             preserve
             [clinic start generated code]*/
 
-            #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-            #  include "pycore_gc.h"            // PyGC_Head
-            #  include "pycore_runtime.h"       // _Py_ID()
-            #endif
-
-
             PyDoc_VAR(func__doc__);
 
             PyDoc_STRVAR(func__doc__,
@@ -2691,7 +2691,7 @@ class ClinicExternalTest(TestCase):
 
             static PyObject *
             func(PyObject *module, PyObject *a)
-            /*[clinic end generated code: output=56c09670e89a0d9a input=a9049054013a1b77]*/
+            /*[clinic end generated code: output=3dde2d13002165b9 input=a9049054013a1b77]*/
         """)
         with os_helper.temp_dir() as tmp_dir:
             in_fn = os.path.join(tmp_dir, "test.c")

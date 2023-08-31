@@ -919,7 +919,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(extend));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(extra_tokens));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(f));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(facility));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(factory));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(false));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(family));
@@ -971,8 +970,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(headers));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(hi));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(hook));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(id));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ident));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ignore));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(imag));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(importlib));
@@ -1035,7 +1032,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(lo));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(locale));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(locals));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(logoption));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(loop));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(mapping));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(match));
@@ -1071,7 +1067,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(narg));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ndigits));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(new_file_name));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(new_limit));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(newline));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(newlines));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(next));

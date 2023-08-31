@@ -2,12 +2,8 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
 #include "pycore_abstract.h"       // _PyNumber_Index()
+#include "pycore_runtime.h"        // _Py_ID()
 
 PyDoc_STRVAR(EVP_copy__doc__,
 "copy($self, /)\n"
@@ -1852,4 +1848,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=cfad8d5e904a4917 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4e735551ee14efc8 input=a9049054013a1b77]*/

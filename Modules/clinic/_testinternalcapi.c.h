@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_runtime.h"        // _Py_ID()
 
 PyDoc_STRVAR(_testinternalcapi_compiler_cleandoc__doc__,
 "compiler_cleandoc($module, /, doc)\n"
@@ -265,4 +261,4 @@ _testinternalcapi_assemble_code_object(PyObject *module, PyObject *const *args, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1ce6e2257e95a853 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=74de0335b90264d1 input=a9049054013a1b77]*/

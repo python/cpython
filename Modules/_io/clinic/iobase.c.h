@@ -2,11 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
 #include "pycore_abstract.h"       // _Py_convert_optional_to_ssize_t()
 
 PyDoc_STRVAR(_io__IOBase_seek__doc__,
@@ -442,4 +437,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=d96f5bfd72e6eafb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=df48630514c002e1 input=a9049054013a1b77]*/

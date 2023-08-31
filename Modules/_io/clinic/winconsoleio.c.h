@@ -2,12 +2,8 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
 #include "pycore_abstract.h"       // _Py_convert_optional_to_ssize_t()
+#include "pycore_runtime.h"        // _Py_ID()
 
 #if defined(HAVE_WINDOWS_CONSOLE_IO)
 
@@ -466,4 +462,4 @@ _io__WindowsConsoleIO_isatty(winconsoleio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
     #define _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
 #endif /* !defined(_IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF) */
-/*[clinic end generated code: output=0cdb16d95f1c7dac input=a9049054013a1b77]*/
+/*[clinic end generated code: output=87f64ce0d0151153 input=a9049054013a1b77]*/
