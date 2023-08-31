@@ -1157,6 +1157,13 @@ Connection objects
                  f.write('%s\n' % line)
          con.close()
 
+      .. note::
+
+         If your database contains ``TEXT`` values with invalid Unicode
+         sequences, or encodings incompatible with UTF-8,
+         you must use a custom :attr:`text_factory`.
+         See :ref:`sqlite3-howto-text-factory` for more details.
+
 
    .. method:: backup(target, *, pages=-1, progress=None, name="main", sleep=0.250)
 
@@ -2594,9 +2601,12 @@ This works well for correctly encoded UTF-8 text, but it will fail for invalid
 Unicode sequences and other encodings.
 To work around this, you can use a custom :attr:`~Connection.text_factory`.
 
-Because of SQLites flexible typing, it is not uncommon to encounter table
+Because of SQLites `flexible typing`_, it is not uncommon to encounter table
 columns with the ``TEXT`` data type, containing arbitrary data.
-Let's create a test database with an invalid Unicode sequence:
+Let's create a test database with an invalid Unicode sequence.
+We will use a `CAST expression`_ to coerce an invalid Unicode sequence,
+represented as a hexadecimal string ``X'619F'``,
+into the ``TEXT`` data type:
 
 .. testcode::
 
@@ -2616,7 +2626,7 @@ borrowed from the :ref:`unicode-howto`:
    for line in dump:
        print(line)
 
-The dump will now print with Unicode surrogate escapes:
+The loop above will print the offending line using Unicode surrogate escapes:
 
 .. testoutput::
 
@@ -2640,6 +2650,8 @@ you must also use ``errors="surrogateescape"`` as an argument to :func:`open`:
    :class:`Cursor` and :class:`Connection` objects,
    :attr:`~Connection.text_factory` only exists as an attribute on
    :class:`!Connection` objects.
+
+.. _CAST expression: https://www.sqlite.org/lang_expr.html#castexpr
 
 
 .. _sqlite3-explanation:
