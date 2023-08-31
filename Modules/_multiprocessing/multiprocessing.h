@@ -1,9 +1,14 @@
 #ifndef MULTIPROCESSING_H
 #define MULTIPROCESSING_H
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "structmember.h"
 #include "pythread.h"
+#include "pycore_signal.h"        // _PyOS_IsMainThread()
 
 /*
  * Platform includes and definitions

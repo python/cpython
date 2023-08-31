@@ -4,11 +4,11 @@
 extern "C" {
 #endif
 
-#include "pycore_moduleobject.h"
-
 #ifndef Py_BUILD_CORE
 #  error "this header requires Py_BUILD_CORE define"
 #endif
+
+#include "pycore_moduleobject.h"  // PyModuleObject
 
 
 /* state */
@@ -114,7 +114,10 @@ extern static_builtin_state * _PyStaticType_GetState(PyInterpreterState *, PyTyp
 extern void _PyStaticType_ClearWeakRefs(PyInterpreterState *, PyTypeObject *type);
 extern void _PyStaticType_Dealloc(PyInterpreterState *, PyTypeObject *);
 
+// Export for 'math' shared extension, used via _PyType_IsReady() static inline
+// function
 PyAPI_FUNC(PyObject *) _PyType_GetDict(PyTypeObject *);
+
 extern PyObject * _PyType_GetBases(PyTypeObject *type);
 extern PyObject * _PyType_GetMRO(PyTypeObject *type);
 extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
@@ -128,18 +131,17 @@ _PyType_IsReady(PyTypeObject *type)
     return _PyType_GetDict(type) != NULL;
 }
 
-PyObject *
-_Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int *suppress_missing_attribute);
-PyObject *
-_Py_type_getattro(PyTypeObject *type, PyObject *name);
+extern PyObject* _Py_type_getattro_impl(PyTypeObject *type, PyObject *name,
+                                        int *suppress_missing_attribute);
+extern PyObject* _Py_type_getattro(PyTypeObject *type, PyObject *name);
 
-PyObject *_Py_slot_tp_getattro(PyObject *self, PyObject *name);
-PyObject *_Py_slot_tp_getattr_hook(PyObject *self, PyObject *name);
+extern PyObject* _Py_slot_tp_getattro(PyObject *self, PyObject *name);
+extern PyObject* _Py_slot_tp_getattr_hook(PyObject *self, PyObject *name);
 
-PyAPI_DATA(PyTypeObject) _PyBufferWrapper_Type;
+extern PyTypeObject _PyBufferWrapper_Type;
 
-PyObject *
-_PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj, PyObject *name, int *meth_found);
+extern PyObject* _PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj,
+                                 PyObject *name, int *meth_found);
 
 #ifdef __cplusplus
 }
