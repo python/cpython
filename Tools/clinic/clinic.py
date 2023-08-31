@@ -735,8 +735,8 @@ def declare_parser(
         """ % num_keywords
 
         condition = '#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)'
-        clinic.add_include('pycore_gc.h', 'PyGC_Head', condition)
-        clinic.add_include('pycore_runtime.h', '_Py_ID()', condition)
+        clinic.add_include('pycore_gc.h', 'PyGC_Head', condition=condition)
+        clinic.add_include('pycore_runtime.h', '_Py_ID()', condition=condition)
 
     declarations += """
             static const char * const _keywords[] = {{{keywords_c} NULL}};
@@ -1102,7 +1102,7 @@ class CLanguage(Language):
             include = converter.include
             if include:
                 clinic.add_include(include.filename, include.reason,
-                                   include.condition)
+                                   condition=include.condition)
 
         has_option_groups = parameters and (parameters[0].group or parameters[-1].group)
         default_return_converter = f.return_converter.type == 'PyObject *'
@@ -2196,7 +2196,7 @@ class BlockParser:
         return Block(input_output(), dsl_name, output=output)
 
 
-@dc.dataclass
+@dc.dataclass(slots=True, frozen=True)
 class Include:
     """
     An include like: #include "pycore_long.h"   // _Py_ID()
@@ -2210,6 +2210,10 @@ class Include:
     # None means unconditional include.
     # Example: "#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)".
     condition: str | None
+
+    def sort_key(self) -> tuple[str, str]:
+        # order: '#if' comes before 'NO_CONDITION'
+        return (self.condition or 'NO_CONDITION', self.filename)
 
 
 @dc.dataclass(slots=True)
@@ -2256,12 +2260,8 @@ class BlockPrinter:
             # Emit optional "#include" directives for C headers
             output += '\n'
 
-            def sort_key(include: Include) -> tuple[str, str]:
-                # order: '#if' comes before 'NO_CONDITION'
-                return (include.condition or 'NO_CONDITION', include.filename)
-
             current_condition: str | None = None
-            includes = sorted(header_includes.values(), key=sort_key)
+            includes = sorted(header_includes.values(), key=Include.sort_key)
             for include in includes:
                 if include.condition != current_condition:
                     if current_condition:
@@ -2552,7 +2552,8 @@ impl_definition block
         global clinic
         clinic = self
 
-    def add_include(self, name: str, reason: str, condition: str | None = None) -> None:
+    def add_include(self, name: str, reason: str,
+                    *, condition: str | None = None) -> None:
         try:
             existing = self.includes[name]
         except KeyError:
@@ -3504,7 +3505,8 @@ class CConverter(metaclass=CConverterAutoRegister):
         else:
             return self.name
 
-    def add_include(self, name: str, reason: str, condition: str | None = None) -> None:
+    def add_include(self, name: str, reason: str,
+                    *, condition: str | None = None) -> None:
         if self.include is not None:
             raise ValueError("a converter only supports a single include")
         self.include = Include(name, reason, condition)
