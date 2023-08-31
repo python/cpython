@@ -430,6 +430,19 @@ Note:  if your enumeration defines :meth:`__new__` and/or :meth:`__init__` then
 any value(s) given to the enum member will be passed into those methods.
 See `Planet`_ for an example.
 
+.. note::
+
+    The :meth:`__new__` method, if defined, is used during creation of the Enum
+    members; it is then replaced by Enum's :meth:`__new__` which is used after
+    class creation for lookup of existing members.
+
+.. warning::
+
+    *Do not* call ``super().__new__()``, as the lookup-only ``__new__`` is the one
+    that is found; instead, use the data type directly -- e.g.::
+
+       obj = int.__new__(cls, value)
+
 
 Restricted Enum subclassing
 ---------------------------
@@ -926,6 +939,11 @@ want one of them to be the value::
 
     >>> print(Coordinate(3))
     Coordinate.VY
+
+.. warning::
+
+    *Do not* call ``super().__new__()``, as the lookup-only ``__new__`` is the one
+    that is found; instead, use the data type directly.
 
 
 Finer Points
