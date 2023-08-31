@@ -3,10 +3,9 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
 
 PyDoc_STRVAR(_testcapi_err_set_raised__doc__,
 "err_set_raised($module, exception, /)\n"
@@ -488,4 +487,4 @@ _testcapi_unstable_exc_prep_reraise_star(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6c4b7ad1cb1e0153 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8f273949da28ffb5 input=a9049054013a1b77]*/
