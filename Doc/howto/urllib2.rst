@@ -393,7 +393,7 @@ info and geturl
 
 The response returned by urlopen (or the :exc:`HTTPError` instance) has two
 useful methods :meth:`info` and :meth:`geturl` and is defined in the module
-:mod:`urllib.response`..
+:mod:`urllib.response`.
 
 **geturl** - this returns the real URL of the page fetched. This is useful
 because ``urlopen`` (or the opener object used) may have followed a
