@@ -369,8 +369,8 @@ def write_macro_instr(
             next_instr_is_set = write_components(parts, out, TIER_ONE, mac.cache_offset)
         except AssertionError as err:
             raise AssertionError(f"Error writing macro {mac.name}") from err
-        if not parts[-1].instr.always_exits and not next_instr_is_set:
-            if mac.cache_offset:
+        if not parts[-1].instr.always_exits:
+            if not next_instr_is_set and mac.cache_offset:
                 out.emit(f"next_instr += {mac.cache_offset};")
             out.emit("DISPATCH();")
 
