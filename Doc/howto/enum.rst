@@ -1357,7 +1357,7 @@ to handle any extra arguments::
 
     *Do not* call ``super().__new__()``, as the lookup-only ``__new__`` is the one
     that is found; instead, use the data type directly -- e.g.::
-   
+
        obj = int.__new__(cls, value)
 
 
