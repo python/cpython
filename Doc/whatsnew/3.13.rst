@@ -833,6 +833,9 @@ Build Changes
   :ref:`debug build <debug-build>`.
   (Contributed by Victor Stinner in :gh:`108634`.)
 
+* Building CPython now requires a compiler with support for the C11 atomic
+  library, GCC built-in atomic functions, or MSVC interlocked intrinsics.
+
 
 C API Changes
 =============
