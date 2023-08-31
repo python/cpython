@@ -2640,8 +2640,11 @@ The loop above will print the offending line using Unicode surrogate escapes:
    INSERT INTO "test" VALUES('a\udc9f');
    COMMIT;
 
-Note that in order to write the invalid Unicode sequence to a file,
-you will also have to use ``errors="surrogateescape"`` as an argument to :func:`open`:
+Note that strings containing surrogate escapes must be treated with care.
+You cannot pass them back to SQLite, for example using :meth:`~Cursor.execute`,
+since the :mod:`!sqlite3` module APIs only accept UTF-8 encoded strings.
+In order to write strings containing surrogate escapes to a file,
+you will have to use ``errors="surrogateescape"`` as an argument to :func:`open`:
 
 .. testcode::
 
