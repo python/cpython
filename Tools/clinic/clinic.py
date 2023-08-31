@@ -2205,7 +2205,7 @@ class BlockPrinter:
             *,
             core_includes: bool = False,
             limited_capi: bool,
-            header_includes: dict[str, str],
+            header_includes: dict[str, tuple[str, str]],
     ) -> None:
         input = block.input
         output = block.output
@@ -2238,14 +2238,13 @@ class BlockPrinter:
             # Emit optional "#include" directives for C headers
             output += '\n'
 
-            def sort_key(item):
+            def sort_key(item: tuple[str, tuple[str, str]]) -> tuple[str, str]:
                 include, reason_condition = item
                 reason, condition = reason_condition
                 # '#if' is before 'NO_CONDITION'
                 return (condition or 'NO_CONDITION', include)
 
-            current_condition = None
-
+            current_condition = ''
             for include, reason_condition in sorted(header_includes.items(), key=sort_key):
                 reason, condition = reason_condition
                 if condition != current_condition:
@@ -2477,7 +2476,7 @@ impl_definition block
         self.functions: list[Function] = []
         # dict: include name => reason
         # Example: 'pycore_long.h' => '_PyLong_UnsignedShort_Converter()'
-        self.includes: dict[str, str] = {}
+        self.includes: dict[str, tuple[str, str]] = {}
 
         self.line_prefix = self.line_suffix = ''
 
@@ -2551,7 +2550,7 @@ impl_definition block
                 # no need to list all of them.
                 return
 
-        self.includes[name] = (reason, condition)
+        self.includes[name] = (reason, condition or '')
 
     def add_destination(
             self,
