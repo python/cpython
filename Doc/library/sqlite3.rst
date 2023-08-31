@@ -2601,9 +2601,9 @@ This works well for correctly encoded UTF-8 text, but it will fail for invalid
 Unicode sequences and other encodings.
 To work around this, you can use a custom :attr:`~Connection.text_factory`.
 
-Because of SQLites `flexible typing`_, it is not uncommon to encounter table
+Because of SQLite's `flexible typing`_, it is not uncommon to encounter table
 columns with the ``TEXT`` data type, containing arbitrary data.
-Let's create a test database with an invalid Unicode sequence.
+To demonstrate, let's create a test database with an invalid Unicode sequence.
 We will use a `CAST expression`_ to coerce an invalid Unicode sequence,
 represented as a hexadecimal string ``X'619F'``,
 into the ``TEXT`` data type:
@@ -2616,7 +2616,7 @@ into the ``TEXT`` data type:
        INSERT INTO test VALUES(CAST(X'619F' AS TEXT));
    """)
 
-To work with such databases, we can use the following trick,
+To work with such databases, we can use the following technique,
 borrowed from the :ref:`unicode-howto`:
 
 .. testcode::
@@ -2635,8 +2635,8 @@ The loop above will print the offending line using Unicode surrogate escapes:
    INSERT INTO "test" VALUES('a\udc9f');
    COMMIT;
 
-Notice that in order to write the invalid Unicode sequence to a file,
-you must also use ``errors="surrogateescape"`` as an argument to :func:`open`:
+Note that in order to write the invalid Unicode sequence to a file,
+you will also have to use ``errors="surrogateescape"`` as an argument to :func:`open`:
 
 .. testcode::
 
