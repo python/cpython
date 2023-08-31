@@ -2659,6 +2659,10 @@ you will have to use ``errors="surrogateescape"`` as an argument to :func:`open`
    :attr:`~Connection.text_factory` only exists as an attribute on
    :class:`!Connection` objects.
 
+.. seealso::
+
+   :ref:`unicode-howto`
+
 .. _CAST expression: https://www.sqlite.org/lang_expr.html#castexpr
 
 
