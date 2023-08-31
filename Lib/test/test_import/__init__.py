@@ -1805,12 +1805,12 @@ class SubinterpImportTests(unittest.TestCase):
             check_multi_interp_extensions=strict,
         )
         _, out, err = script_helper.assert_python_ok('-c', textwrap.dedent(f'''
-            import _testcapi, sys
+            import _testinternalcapi, sys
             assert (
                 {name!r} in sys.builtin_module_names or
                 {name!r} not in sys.modules
             ), repr({name!r})
-            ret = _testcapi.run_in_subinterp_with_config(
+            ret = _testinternalcapi.run_in_subinterp_with_config(
                 {self.import_script(name, "sys.stdout.fileno()")!r},
                 **{kwargs},
             )
@@ -1829,9 +1829,9 @@ class SubinterpImportTests(unittest.TestCase):
             check_multi_interp_extensions=True,
         )
         _, out, err = script_helper.assert_python_ok('-c', textwrap.dedent(f'''
-            import _testcapi, sys
+            import _testinternalcapi, sys
             assert {name!r} not in sys.modules, {name!r}
-            ret = _testcapi.run_in_subinterp_with_config(
+            ret = _testinternalcapi.run_in_subinterp_with_config(
                 {self.import_script(name, "sys.stdout.fileno()")!r},
                 **{kwargs},
             )
