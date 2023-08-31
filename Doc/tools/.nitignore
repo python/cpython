@@ -124,7 +124,6 @@ Doc/library/tarfile.rst
 Doc/library/tempfile.rst
 Doc/library/termios.rst
 Doc/library/test.rst
-Doc/library/threading.rst
 Doc/library/time.rst
 Doc/library/tkinter.rst
 Doc/library/tkinter.scrolledtext.rst
