@@ -1099,8 +1099,10 @@ class CLanguage(Language):
 
         # Copy includes from parameters to Clinic
         for converter in converters:
-            if converter.include:
-                clinic.add_include(*converter.include)
+            include = converter.include
+            if include:
+                clinic.add_include(include.filename, include.reason,
+                                   include.condition)
 
         has_option_groups = parameters and (parameters[0].group or parameters[-1].group)
         default_return_converter = f.return_converter.type == 'PyObject *'
@@ -2194,6 +2196,22 @@ class BlockParser:
         return Block(input_output(), dsl_name, output=output)
 
 
+@dc.dataclass
+class Include:
+    """
+    An include like: #include "pycore_long.h"   // _Py_ID()
+    """
+    # Example: "pycore_long.h".
+    filename: str
+
+    # Example: "_Py_ID()".
+    reason: str
+
+    # None means unconditional include.
+    # Example: "#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)".
+    condition: str | None
+
+
 @dc.dataclass(slots=True)
 class BlockPrinter:
     language: Language
@@ -2205,7 +2223,7 @@ class BlockPrinter:
             *,
             core_includes: bool = False,
             limited_capi: bool,
-            header_includes: dict[str, tuple[str, str]],
+            header_includes: dict[str, Include],
     ) -> None:
         input = block.input
         output = block.output
@@ -2238,27 +2256,27 @@ class BlockPrinter:
             # Emit optional "#include" directives for C headers
             output += '\n'
 
-            def sort_key(item: tuple[str, tuple[str, str]]) -> tuple[str, str]:
-                include, reason_condition = item
-                reason, condition = reason_condition
-                # '#if' is before 'NO_CONDITION'
-                return (condition or 'NO_CONDITION', include)
+            def sort_key(include: Include) -> tuple[str, str]:
+                # order: '#if' comes before 'NO_CONDITION'
+                return (include.condition or 'NO_CONDITION', include.filename)
 
-            current_condition = ''
-            for include, reason_condition in sorted(header_includes.items(), key=sort_key):
-                reason, condition = reason_condition
-                if condition != current_condition:
+            current_condition: str | None = None
+            includes = sorted(header_includes.values(), key=sort_key)
+            for include in includes:
+                if include.condition != current_condition:
                     if current_condition:
                         output += '#endif\n'
-                    current_condition = condition
-                    if condition:
-                        output += f'{condition}\n'
+                    current_condition = include.condition
+                    if include.condition:
+                        output += f'{include.condition}\n'
 
                 if current_condition:
-                    line = f'#  include "{include}"'
+                    line = f'#  include "{include.filename}"'
                 else:
-                    line = f'#include "{include}"'
-                line = line.ljust(INCLUDE_COMMENT_COLUMN - 1) + f'// {reason}\n'
+                    line = f'#include "{include.filename}"'
+                if include.reason:
+                    comment = f'// {include.reason}\n'
+                    line = line.ljust(INCLUDE_COMMENT_COLUMN - 1) + comment
                 output += line
 
             if current_condition:
@@ -2474,9 +2492,8 @@ impl_definition block
         self.modules: ModuleDict = {}
         self.classes: ClassDict = {}
         self.functions: list[Function] = []
-        # dict: include name => reason
-        # Example: 'pycore_long.h' => '_PyLong_UnsignedShort_Converter()'
-        self.includes: dict[str, tuple[str, str]] = {}
+        # dict: include name => Include instance
+        self.includes: dict[str, Include] = {}
 
         self.line_prefix = self.line_suffix = ''
 
@@ -2537,11 +2554,11 @@ impl_definition block
 
     def add_include(self, name: str, reason: str, condition: str | None = None) -> None:
         try:
-            existing_reason, existing_condition = self.includes[name]
+            existing = self.includes[name]
         except KeyError:
             pass
         else:
-            if existing_condition and not condition:
+            if existing.condition and not condition:
                 # If the previous include has a condition and the new one is
                 # unconditional, override the include.
                 pass
@@ -2550,7 +2567,7 @@ impl_definition block
                 # no need to list all of them.
                 return
 
-        self.includes[name] = (reason, condition or '')
+        self.includes[name] = Include(name, reason, condition)
 
     def add_destination(
             self,
@@ -3180,10 +3197,7 @@ class CConverter(metaclass=CConverterAutoRegister):
     # Only set by self_converter.
     signature_name: str | None = None
 
-    # Optional (name, reason) include which generate a line like:
-    # "#include "name"     // reason"
-    include: tuple[str, str] | None = None
-
+    include: Include | None = None
     broken_limited_capi: bool = False
 
     # keep in sync with self_converter.__init__!
@@ -3490,10 +3504,10 @@ class CConverter(metaclass=CConverterAutoRegister):
         else:
             return self.name
 
-    def add_include(self, name: str, reason: str) -> None:
+    def add_include(self, name: str, reason: str, condition: str | None = None) -> None:
         if self.include is not None:
             raise ValueError("a converter only supports a single include")
-        self.include = (name, reason)
+        self.include = Include(name, reason, condition)
 
 type_checks = {
     '&PyLong_Type': ('PyLong_Check', 'int'),
