@@ -3,6 +3,7 @@ import logging
 import queue
 import time
 import unittest
+import sys
 from concurrent.futures._base import BrokenExecutor
 from logging.handlers import QueueHandler
 
