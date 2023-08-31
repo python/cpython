@@ -46,6 +46,9 @@ details, and may change in every minor release (e.g. from 3.9 to 3.10) without
 any deprecation warnings.
 However, it will not change in a bugfix release (e.g. from 3.10.0 to 3.10.1).
 
+The ``PyUnstable`` prefix should be used for all symbols (functions, macros,
+variables, etc.).
+
 It is generally intended for specialized, low-level tools like debuggers.
 
 Projects that use this API are expected to follow
