@@ -231,7 +231,8 @@ pythonpath = config.get('module_search_paths')
 pythonpath_was_set = config.get('module_search_paths_set')
 
 real_executable_dir = None
-stdlib_dir = None
+stdlib_dir = config.get('stdlib_dir')
+stdlib_dir_was_set_in_config = bool(stdlib_dir)
 platstdlib_dir = None
 
 # ******************************************************************************
@@ -545,8 +546,9 @@ else:
         prefix, had_delim, exec_prefix = home.partition(DELIM)
         if not had_delim:
             exec_prefix = prefix
-        # Reset the standard library directory if it was already set
-        stdlib_dir = None
+        # Reset the standard library directory if it was not explicitly set
+        if not stdlib_dir_was_set_in_config:
+            stdlib_dir = None
 
 
     # First try to detect prefix by looking alongside our runtime library, if known

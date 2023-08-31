@@ -1,0 +1,1 @@
+Explicitly set PyConfig.stdlib_dir is now respected.
