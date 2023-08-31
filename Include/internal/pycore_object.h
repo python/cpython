@@ -32,8 +32,14 @@ extern void _PyDebugAllocatorStats(FILE *out, const char *block_name,
 extern void _PyObject_DebugTypeStats(FILE *out);
 
 #ifdef Py_TRACE_REFS
-/* Py_TRACE_REFS is such major surgery that we call external routines. */
-PyAPI_FUNC(void) _Py_ForgetReference(PyObject *);
+// Forget a reference registered by _Py_NewReference(). Function called by
+// _Py_Dealloc().
+//
+// On a free list, the function can be used before modifying an object to
+// remove the object from traced objects. Then _Py_NewReference() or
+// _Py_NewReferenceNoTotal() should be called again on the object to trace
+// it again.
+extern void _Py_ForgetReference(PyObject *);
 #endif
 
 // Export for shared _testinternalcapi extension
