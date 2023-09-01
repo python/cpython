@@ -1776,7 +1776,7 @@ _PyMonitoring_SetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEvent
     PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(events < (1 << _PY_MONITORING_LOCAL_EVENTS));
     if (code->_co_firsttraceable >= Py_SIZE(code)) {
-        PyErr_Format(PyExc_SystemError, "cannot instrument shim code object", code->co_name);
+        PyErr_Format(PyExc_SystemError, "cannot instrument shim code object '%U'", code->co_name);
     }
     if (check_tool(interp, tool_id)) {
         return -1;
