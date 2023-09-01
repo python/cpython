@@ -444,8 +444,8 @@ PyAPI_FUNC(int) _PyTrash_cond(PyObject *op, destructor dealloc);
 
 PyAPI_FUNC(void *) PyObject_GetItemData(PyObject *obj);
 
-PyAPI_FUNC(int) _PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg);
-PyAPI_FUNC(void) _PyObject_ClearManagedDict(PyObject *obj);
+PyAPI_FUNC(int) PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg);
+PyAPI_FUNC(void) PyObject_ClearManagedDict(PyObject *obj);
 
 #define TYPE_MAX_WATCHERS 8
 

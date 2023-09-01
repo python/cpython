@@ -5650,7 +5650,7 @@ _PyObject_FreeInstanceAttributes(PyObject *self)
 }
 
 int
-_PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg)
+PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg)
 {
     PyTypeObject *tp = Py_TYPE(obj);
     if((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
@@ -5673,7 +5673,7 @@ _PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg)
 }
 
 void
-_PyObject_ClearManagedDict(PyObject *obj)
+PyObject_ClearManagedDict(PyObject *obj)
 {
     PyTypeObject *tp = Py_TYPE(obj);
     if((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {

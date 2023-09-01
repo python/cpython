@@ -816,7 +816,7 @@ FutureObj_clear(FutureObj *fut)
     Py_CLEAR(fut->fut_source_tb);
     Py_CLEAR(fut->fut_cancel_msg);
     Py_CLEAR(fut->fut_cancelled_exc);
-    _PyObject_ClearManagedDict((PyObject *)fut);
+    PyObject_ClearManagedDict((PyObject *)fut);
     return 0;
 }
 
@@ -834,7 +834,7 @@ FutureObj_traverse(FutureObj *fut, visitproc visit, void *arg)
     Py_VISIT(fut->fut_source_tb);
     Py_VISIT(fut->fut_cancel_msg);
     Py_VISIT(fut->fut_cancelled_exc);
-    _PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
+    PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
     return 0;
 }
 
@@ -2181,7 +2181,7 @@ TaskObj_traverse(TaskObj *task, visitproc visit, void *arg)
     Py_VISIT(fut->fut_source_tb);
     Py_VISIT(fut->fut_cancel_msg);
     Py_VISIT(fut->fut_cancelled_exc);
-    _PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
+    PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
     return 0;
 }
 
