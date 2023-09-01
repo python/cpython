@@ -70,12 +70,9 @@ Dictionary Objects
 
 .. c:function:: int PyDict_SetItemString(PyObject *p, const char *key, PyObject *val)
 
-   .. index:: single: PyUnicode_FromString()
-
-   Insert *val* into the dictionary *p* using *key* as a key. *key* should
-   be a :c:expr:`const char*` UTF-8 encoded bytes string.  The key object is created using
-   ``PyUnicode_FromString(key)``.  Return ``0`` on success or ``-1`` on
-   failure.  This function *does not* steal a reference to *val*.
+   This is the same as :c:func:`PyDict_SetItem`, but *key* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
 
 
 .. c:function:: int PyDict_DelItem(PyObject *p, PyObject *key)
@@ -88,10 +85,9 @@ Dictionary Objects
 
 .. c:function:: int PyDict_DelItemString(PyObject *p, const char *key)
 
-   Remove the entry in dictionary *p* which has a key specified by the UTF-8
-   encoded bytes string *key*.
-   If *key* is not in the dictionary, :exc:`KeyError` is raised.
-   Return ``0`` on success or ``-1`` on failure.
+   This is the same as :c:func:`PyDict_DelItem`, but *key* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
 
 
 .. c:function:: PyObject* PyDict_GetItem(PyObject *p, PyObject *key)
