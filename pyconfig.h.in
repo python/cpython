@@ -721,6 +721,9 @@
 /* Define to 1 if you have the <linux/fs.h> header file. */
 #undef HAVE_LINUX_FS_H
 
+/* Define to 1 if you have the <linux/limits.h> header file. */
+#undef HAVE_LINUX_LIMITS_H
+
 /* Define to 1 if you have the <linux/memfd.h> header file. */
 #undef HAVE_LINUX_MEMFD_H
 
@@ -837,6 +840,9 @@
 
 /* Define to 1 if you have the <netinet/in.h> header file. */
 #undef HAVE_NETINET_IN_H
+
+/* Define to 1 if you have the <netlink/netlink.h> header file. */
+#undef HAVE_NETLINK_NETLINK_H
 
 /* Define to 1 if you have the <netpacket/packet.h> header file. */
 #undef HAVE_NETPACKET_PACKET_H
@@ -1602,6 +1608,9 @@
 /* Define hash algorithm for str, bytes and memoryview. SipHash24: 1, FNV: 2,
    SipHash13: 3, externally defined: 0 */
 #undef Py_HASH_ALGORITHM
+
+/* Define if you want to disable the GIL */
+#undef Py_NOGIL
 
 /* Define if you want to enable internal statistics gathering. */
 #undef Py_STATS

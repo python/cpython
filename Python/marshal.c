@@ -9,8 +9,9 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_code.h"          // _PyCode_New()
-#include "pycore_long.h"          // _PyLong_DigitCount
 #include "pycore_hashtable.h"     // _Py_hashtable_t
+#include "pycore_long.h"          // _PyLong_DigitCount
+#include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "marshal.h"              // Py_MARSHAL_VERSION
 
 /*[clinic input]

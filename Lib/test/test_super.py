@@ -5,6 +5,9 @@ from unittest.mock import patch
 from test import shadowed_super
 
 
+ADAPTIVE_WARMUP_DELAY = 2
+
+
 class A:
     def f(self):
         return 'A'
@@ -419,8 +422,47 @@ class TestSuper(unittest.TestCase):
             super(MyType, type(mytype)).__setattr__(mytype, "bar", 1)
             self.assertEqual(mytype.bar, 1)
 
-        test("foo1")
-        test("foo2")
+        for _ in range(ADAPTIVE_WARMUP_DELAY):
+            test("foo1")
+
+    def test_reassigned_new(self):
+        class A:
+            def __new__(cls):
+                pass
+
+            def __init_subclass__(cls):
+                if "__new__" not in cls.__dict__:
+                    cls.__new__ = cls.__new__
+
+        class B(A):
+            pass
+
+        class C(B):
+            def __new__(cls):
+                return super().__new__(cls)
+
+        for _ in range(ADAPTIVE_WARMUP_DELAY):
+            C()
+
+    def test_mixed_staticmethod_hierarchy(self):
+        # This test is just a desugared version of `test_reassigned_new`
+        class A:
+            @staticmethod
+            def some(cls, *args, **kwargs):
+                self.assertFalse(args)
+                self.assertFalse(kwargs)
+
+        class B(A):
+            def some(cls, *args, **kwargs):
+                return super().some(cls, *args, **kwargs)
+
+        class C(B):
+            @staticmethod
+            def some(cls):
+                return super().some(cls)
+
+        for _ in range(ADAPTIVE_WARMUP_DELAY):
+            C.some(C)
 
 
 if __name__ == "__main__":

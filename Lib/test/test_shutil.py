@@ -1839,6 +1839,49 @@ class TestArchives(BaseTest, unittest.TestCase):
         formats = [name for name, params in get_archive_formats()]
         self.assertNotIn('xxx', formats)
 
+    def test_make_tarfile_rootdir_nodir(self):
+        # GH-99203
+        self.addCleanup(os_helper.unlink, f'{TESTFN}.tar')
+        for dry_run in (False, True):
+            with self.subTest(dry_run=dry_run):
+                tmp_dir = self.mkdtemp()
+                nonexisting_file = os.path.join(tmp_dir, 'nonexisting')
+                with self.assertRaises(FileNotFoundError) as cm:
+                    make_archive(TESTFN, 'tar', nonexisting_file, dry_run=dry_run)
+                self.assertEqual(cm.exception.errno, errno.ENOENT)
+                self.assertEqual(cm.exception.filename, nonexisting_file)
+                self.assertFalse(os.path.exists(f'{TESTFN}.tar'))
+
+                tmp_fd, tmp_file = tempfile.mkstemp(dir=tmp_dir)
+                os.close(tmp_fd)
+                with self.assertRaises(NotADirectoryError) as cm:
+                    make_archive(TESTFN, 'tar', tmp_file, dry_run=dry_run)
+                self.assertEqual(cm.exception.errno, errno.ENOTDIR)
+                self.assertEqual(cm.exception.filename, tmp_file)
+                self.assertFalse(os.path.exists(f'{TESTFN}.tar'))
+
+    @support.requires_zlib()
+    def test_make_zipfile_rootdir_nodir(self):
+        # GH-99203
+        self.addCleanup(os_helper.unlink, f'{TESTFN}.zip')
+        for dry_run in (False, True):
+            with self.subTest(dry_run=dry_run):
+                tmp_dir = self.mkdtemp()
+                nonexisting_file = os.path.join(tmp_dir, 'nonexisting')
+                with self.assertRaises(FileNotFoundError) as cm:
+                    make_archive(TESTFN, 'zip', nonexisting_file, dry_run=dry_run)
+                self.assertEqual(cm.exception.errno, errno.ENOENT)
+                self.assertEqual(cm.exception.filename, nonexisting_file)
+                self.assertFalse(os.path.exists(f'{TESTFN}.zip'))
+
+                tmp_fd, tmp_file = tempfile.mkstemp(dir=tmp_dir)
+                os.close(tmp_fd)
+                with self.assertRaises(NotADirectoryError) as cm:
+                    make_archive(TESTFN, 'zip', tmp_file, dry_run=dry_run)
+                self.assertEqual(cm.exception.errno, errno.ENOTDIR)
+                self.assertEqual(cm.exception.filename, tmp_file)
+                self.assertFalse(os.path.exists(f'{TESTFN}.zip'))
+
     ### shutil.unpack_archive
 
     def check_unpack_archive(self, format, **kwargs):
@@ -2738,7 +2781,7 @@ class _ZeroCopyFileTest(object):
     def test_same_file(self):
         self.addCleanup(self.reset)
         with self.get_files() as (src, dst):
-            with self.assertRaises(Exception):
+            with self.assertRaises((OSError, _GiveupOnFastCopy)):
                 self.zerocopy_fun(src, src)
         # Make sure src file is not corrupted.
         self.assertEqual(read_file(TESTFN, binary=True), self.FILEDATA)

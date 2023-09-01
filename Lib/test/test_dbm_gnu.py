@@ -192,6 +192,20 @@ class TestGdbm(unittest.TestCase):
     def test_open_with_pathlib_bytes_path(self):
         gdbm.open(FakePath(os.fsencode(filename)), "c").close()
 
+    def test_clear(self):
+        kvs = [('foo', 'bar'), ('1234', '5678')]
+        with gdbm.open(filename, 'c') as db:
+            for k, v in kvs:
+                db[k] = v
+                self.assertIn(k, db)
+            self.assertEqual(len(db), len(kvs))
+
+            db.clear()
+            for k, v in kvs:
+                self.assertNotIn(k, db)
+            self.assertEqual(len(db), 0)
+
+
 
 if __name__ == '__main__':
     unittest.main()
