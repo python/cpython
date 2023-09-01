@@ -3,14 +3,14 @@ import re
 
 from . import common as _common
 
-# Modules/socketmodule.h uses pycore_time.h which needs the Py_BUILD_CORE
-# macro. Usually it's defined by the C file which includes it.
-# Other header files have a similar issue.
-NEED_BUILD_CORE = {
-    'cjkcodecs.h',
-    'multibytecodec.h',
-    'socketmodule.h',
-}
+# The following C files must not be built with Py_BUILD_CORE,
+# because they use the limited C API.
+USE_LIMITED_C_API = frozenset((
+    '_testcapimodule.c',
+    '_testclinic_limited.c',
+    'xxlimited.c',
+    'xxlimited_35.c',
+))
 
 TOOL = 'gcc'
 
@@ -70,7 +70,7 @@ def preprocess(filename,
     filename = _normpath(filename, cwd)
 
     postargs = POST_ARGS
-    if os.path.basename(filename) in NEED_BUILD_CORE:
+    if os.path.basename(filename) not in USE_LIMITED_C_API:
         postargs += ('-DPy_BUILD_CORE=1',)
 
     text = _common.preprocess(

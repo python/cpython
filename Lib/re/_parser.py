@@ -773,8 +773,10 @@ def _parse(source, state, verbose, nested, first=False):
                                            source.tell() - start)
                     if char == "=":
                         subpatternappend((ASSERT, (dir, p)))
-                    else:
+                    elif p:
                         subpatternappend((ASSERT_NOT, (dir, p)))
+                    else:
+                        subpatternappend((FAILURE, ()))
                     continue
 
                 elif char == "(":

@@ -685,7 +685,8 @@ resolve to ``'dev_team@domain.tld'`` and the string
 ``'support_team@domain.tld'``. The ``subject`` value could be accessed
 using either ``'cfg://handlers.email.subject'`` or, equivalently,
 ``'cfg://handlers.email[subject]'``.  The latter form only needs to be
-used if the key contains spaces or non-alphanumeric characters.  If an
+used if the key contains spaces or non-alphanumeric characters. Please note
+that the characters ``[`` and ``]`` are not allowed in the keys. If an
 index value consists only of decimal digits, access will be attempted
 using the corresponding integer value, falling back to the string
 value if needed.

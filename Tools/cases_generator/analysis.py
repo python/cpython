@@ -2,6 +2,7 @@ import re
 import sys
 import typing
 
+from _typing_backports import assert_never
 from flags import InstructionFlags, variable_used
 from formatting import prettify_filename, UNUSED
 from instructions import (
@@ -172,7 +173,7 @@ class Analyzer:
                     self.pseudos[name] = thing
                     self.everything.append(thing)
                 case _:
-                    typing.assert_never(thing)
+                    assert_never(thing)
         if not psr.eof():
             raise psr.make_syntax_error(f"Extra stuff at the end of {filename}")
 
@@ -297,6 +298,8 @@ class Analyzer:
         def get_var_names(instr: Instruction) -> dict[str, StackEffect]:
             vars: dict[str, StackEffect] = {}
             for eff in instr.input_effects + instr.output_effects:
+                if eff.name == UNUSED:
+                    continue
                 if eff.name in vars:
                     if vars[eff.name] != eff:
                         self.error(
@@ -335,7 +338,7 @@ class Analyzer:
                 copies: list[tuple[StackEffect, StackEffect]] = []
                 while pushes and pops and pushes[-1] == pops[0]:
                     src, dst = pushes.pop(), pops.pop(0)
-                    if src.name == dst.name or dst.name is UNUSED:
+                    if src.name == dst.name or dst.name == UNUSED:
                         continue
                     copies.append((src, dst))
                 reads = set(copy[0].name for copy in copies)
@@ -362,10 +365,12 @@ class Analyzer:
                 case Instruction() as instr:
                     part, offset = self.analyze_instruction(instr, offset)
                     parts.append(part)
-                    flags.add(instr.instr_flags)
+                    if instr.name != "SAVE_IP":
+                        # SAVE_IP in a macro is a no-op in Tier 1
+                        flags.add(instr.instr_flags)
                 case _:
-                    typing.assert_never(component)
-        format = "IB"
+                    assert_never(component)
+        format = "IB" if flags.HAS_ARG_FLAG else "IX"
         if offset:
             format += "C" + "0" * (offset - 1)
         return MacroInstruction(macro.name, format, flags, macro, parts, offset)
@@ -376,7 +381,8 @@ class Analyzer:
         # Make sure the targets have the same fmt
         fmts = list(set([t.instr_fmt for t in targets]))
         assert len(fmts) == 1
-        assert len(list(set([t.instr_flags.bitmap() for t in targets]))) == 1
+        ignored_flags = {"HAS_EVAL_BREAK_FLAG", "HAS_DEOPT_FLAG", "HAS_ERROR_FLAG"}
+        assert len({t.instr_flags.bitmap(ignore=ignored_flags) for t in targets}) == 1
         return PseudoInstruction(pseudo.name, targets, fmts[0], targets[0].instr_flags)
 
     def analyze_instruction(
@@ -405,5 +411,5 @@ class Analyzer:
                 case parsing.CacheEffect():
                     components.append(uop)
                 case _:
-                    typing.assert_never(uop)
+                    assert_never(uop)
         return components
