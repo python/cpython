@@ -1586,7 +1586,9 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
         _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
         CHECK(instr->op.code != 0);
         int base_opcode = _Py_GetBaseOpcode(code, i);
-        assert(base_opcode != ENTER_EXECUTOR);
+        if (base_opcode == ENTER_EXECUTOR) {
+            return -1;
+        }
         if (opcode_has_event(base_opcode)) {
             int8_t event;
             if (base_opcode == RESUME) {
