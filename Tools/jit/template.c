@@ -28,39 +28,35 @@
 #define ASSERT_KWNAMES_IS_NULL() (void)0
 
 // Stuff that will be patched at "JIT time":
-extern _PyInterpreterFrame *_jit_branch(_PyExecutorObject *executor,
-                                        _PyInterpreterFrame *frame,
+extern _PyInterpreterFrame *_jit_branch(_PyInterpreterFrame *frame,
                                         PyObject **stack_pointer,
-                                        PyThreadState *tstate);
-extern _PyInterpreterFrame *_jit_continue(_PyExecutorObject *executor,
-                                          _PyInterpreterFrame *frame,
+                                        PyThreadState *tstate,
+                                        _Py_CODEUNIT *ip_offset);
+extern _PyInterpreterFrame *_jit_continue(_PyInterpreterFrame *frame,
                                           PyObject **stack_pointer,
-                                          PyThreadState *tstate);
-extern _PyInterpreterFrame *_jit_loop(_PyExecutorObject *executor,
-                                      _PyInterpreterFrame *frame,
+                                          PyThreadState *tstate,
+                                          _Py_CODEUNIT *ip_offset);
+extern _PyInterpreterFrame *_jit_loop(_PyInterpreterFrame *frame,
                                       PyObject **stack_pointer,
-                                      PyThreadState *tstate);
+                                      PyThreadState *tstate,
+                                      _Py_CODEUNIT *ip_offset);
 // The address of an extern can't be 0:
 extern void _jit_oparg_plus_one;
 extern void _jit_operand_plus_one;
 extern _Py_CODEUNIT _jit_pc_plus_one;
 
-// XXX
-#define ip_offset ((_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive)
-
 _PyInterpreterFrame *
-_jit_entry(_PyExecutorObject *executor, _PyInterpreterFrame *frame,
-           PyObject **stack_pointer, PyThreadState *tstate
-           )
+_jit_entry(_PyInterpreterFrame *frame, PyObject **stack_pointer,
+           PyThreadState *tstate, _Py_CODEUNIT *ip_offset)
 {
     // Locals that the instruction implementations expect to exist:
-    _PyUOpExecutorObject *self = (_PyUOpExecutorObject *)executor;
     uint32_t opcode = _JIT_OPCODE;
     int32_t oparg = (uintptr_t)&_jit_oparg_plus_one - 1;
     uint64_t operand = (uintptr_t)&_jit_operand_plus_one - 1;
     int pc = -1;
     switch (opcode) {
         // Now, the actual instruction definitions (only one will be used):
+#define TIER_TWO 2
 #include "Python/executor_cases.c.h"
         default:
             Py_UNREACHABLE();
@@ -69,15 +65,15 @@ _jit_entry(_PyExecutorObject *executor, _PyInterpreterFrame *frame,
     if (opcode == JUMP_TO_TOP) {
         assert(pc == 0);
         __attribute__((musttail))
-        return _jit_loop(executor, frame, stack_pointer, tstate);
+        return _jit_loop(frame, stack_pointer, tstate, ip_offset);
     }
     if ((opcode == _POP_JUMP_IF_FALSE || opcode == _POP_JUMP_IF_TRUE) && pc != -1) {
         assert(pc == oparg);
         __attribute__((musttail))
-        return _jit_branch(executor, frame, stack_pointer, tstate);
+        return _jit_branch(frame, stack_pointer, tstate, ip_offset);
     }
     __attribute__((musttail))
-    return _jit_continue(executor, frame, stack_pointer, tstate);
+    return _jit_continue(frame, stack_pointer, tstate, ip_offset);
     // Labels that the instruction implementations expect to exist:
 unbound_local_error:
     _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
@@ -96,11 +92,9 @@ pop_1_exit_unwind:
     STACK_SHRINK(1);
 error:
     _PyFrame_SetStackPointer(frame, stack_pointer);
-    Py_DECREF(self);
     return NULL;
 deoptimize:
     frame->prev_instr--;
     _PyFrame_SetStackPointer(frame, stack_pointer);
-    Py_DECREF(self);
     return frame;
 }

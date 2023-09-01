@@ -19,9 +19,6 @@
                 #if TIER_TWO
                 goto deoptimize;
                 #endif
-                #ifdef _PyJIT_ACTIVE  // XXX
-                goto deoptimize;
-                #endif
             }
             else if (oparg < 2) {
                 CHECK_EVAL_BREAKER();
@@ -710,9 +707,6 @@
             #if TIER_TWO
             stack_pointer = _PyFrame_GetStackPointer(frame);
             ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
-            #endif
-            #ifdef _PyJIT_ACTIVE  // XXX
-            stack_pointer = _PyFrame_GetStackPointer(frame);
             #endif
             break;
         }
@@ -2298,10 +2292,6 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
             #endif
-            #ifdef _PyJIT_ACTIVE  // XXX
-            if (_Py_EnterRecursivePy(tstate)) goto pop_1_exit_unwind;
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            #endif
             break;
         }
 
@@ -2884,18 +2874,11 @@
             // Relies on a preceding SAVE_IP
             frame->prev_instr--;
             #endif
-            #ifdef _PyJIT_ACTIVE  // XXX
-            // Relies on a preceding SAVE_IP
-            frame->prev_instr--;
-            #endif
             break;
         }
 
         case EXIT_TRACE: {
-            frame->prev_instr--;  // Back up to just before destination
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            Py_DECREF(self);
-            return frame;
+            goto deoptimize;
             break;
         }
 
