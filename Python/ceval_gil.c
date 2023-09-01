@@ -2,11 +2,12 @@
 #include "Python.h"
 #include "pycore_atomic.h"        // _Py_atomic_int
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()
-#include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
-#include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // _Py_RunGC()
+#include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
+#include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
+#include "pycore_pystats.h"       // _Py_PrintSpecializationStats()
 
 /*
    Notes about the implementation:
