@@ -396,7 +396,7 @@ stack_pointer = _PyFrame_GetStackPointer(frame);
 #if TIER_TWO
 
 #define LOAD_IP() \
-do { ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive; } while (0)
+do {} while (0)
 
 #define STORE_SP() \
 _PyFrame_SetStackPointer(frame, stack_pointer)
