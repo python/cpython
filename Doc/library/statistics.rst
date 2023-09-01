@@ -828,6 +828,11 @@ of applications in statistics.
        number generator.  This is useful for creating reproducible results,
        even in a multi-threading context.
 
+       .. versionchanged:: 3.13
+
+       Switched to a faster algorithm.  To reproduce samples from previous
+       versions, use :func:`random.seed` and :func:`random.gauss`.
+
     .. method:: NormalDist.pdf(x)
 
        Using a `probability density function (pdf)
@@ -1086,7 +1091,7 @@ parameter, ``h``, representing the variance of the kernel function.
    import math
 
    def kde_normal(sample, h):
-       "Create a continous probability density function from a sample."
+       "Create a continuous probability density function from a sample."
        # Smooth the sample with a normal distribution of variance h.
        kernel_h = NormalDist(0.0, math.sqrt(h)).pdf
        n = len(sample)

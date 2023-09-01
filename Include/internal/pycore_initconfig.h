@@ -22,7 +22,7 @@ struct pyruntimestate;
 #endif
 
 #define _PyStatus_OK() \
-    (PyStatus){._type = _PyStatus_TYPE_OK,}
+    (PyStatus){._type = _PyStatus_TYPE_OK}
     /* other fields are set to 0 */
 #define _PyStatus_ERR(ERR_MSG) \
     (PyStatus){ \
@@ -30,7 +30,8 @@ struct pyruntimestate;
         .func = _PyStatus_GET_FUNC(), \
         .err_msg = (ERR_MSG)}
         /* other fields are set to 0 */
-#define _PyStatus_NO_MEMORY() _PyStatus_ERR("memory allocation failed")
+#define _PyStatus_NO_MEMORY_ERRMSG "memory allocation failed"
+#define _PyStatus_NO_MEMORY() _PyStatus_ERR(_PyStatus_NO_MEMORY_ERRMSG)
 #define _PyStatus_EXIT(EXITCODE) \
     (PyStatus){ \
         ._type = _PyStatus_TYPE_EXIT, \
@@ -43,6 +44,10 @@ struct pyruntimestate;
     ((err)._type != _PyStatus_TYPE_OK)
 #define _PyStatus_UPDATE_FUNC(err) \
     do { (err).func = _PyStatus_GET_FUNC(); } while (0)
+
+// Export for '_testinternalcapi' shared extension
+PyAPI_FUNC(void) _PyErr_SetFromPyStatus(PyStatus status);
+
 
 /* --- PyWideStringList ------------------------------------------------ */
 

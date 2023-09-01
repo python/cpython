@@ -484,8 +484,7 @@ class Generator(Analyzer):
                         case OverriddenInstructionPlaceHolder():
                             continue
                         case parsing.InstDef():
-                            if thing.kind != "op":
-                                self.write_metadata_for_inst(self.instrs[thing.name])
+                            self.write_metadata_for_inst(self.instrs[thing.name])
                         case parsing.Macro():
                             self.write_metadata_for_macro(self.macro_instrs[thing.name])
                         case parsing.Pseudo():
@@ -653,7 +652,7 @@ class Generator(Analyzer):
         add("SAVE_IP")
 
         for instr in self.instrs.values():
-            if instr.kind == "op" and instr.is_viable_uop():
+            if instr.kind == "op":
                 add(instr.name)
 
     def write_macro_expansions(

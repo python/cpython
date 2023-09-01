@@ -1794,7 +1794,10 @@ then
   fi
 fi
 LLVM_PROF_ERR=no
-case $CC in
+
+# GNU Autoconf recommends the use of expr instead of basename.
+AS_VAR_SET([CC_BASENAME], [$(expr "//$CC" : '.*/\(.*\)')])
+case "$CC_BASENAME" in
   *clang*)
     # Any changes made here should be reflected in the GCC+Darwin case below
     PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
@@ -2225,7 +2228,7 @@ yes)
 
     # ICC doesn't recognize the option, but only emits a warning
     ## XXX does it emit an unused result warning and can it be disabled?
-    AS_CASE([$CC],
+    AS_CASE(["$CC_BASENAME"],
             [*icc*], [ac_cv_disable_unused_result_warning=no]
             [PY_CHECK_CC_WARNING([disable], [unused-result])])
     AS_VAR_IF([ac_cv_disable_unused_result_warning], [yes],
@@ -2471,7 +2474,7 @@ yes)
     ;;
 esac
 
-case "$CC" in
+case "$CC_BASENAME" in
 *mpicc*)
     CFLAGS_NODIST="$CFLAGS_NODIST"
     ;;
@@ -5681,8 +5684,9 @@ AC_MSG_CHECKING([SOABI])
 SOABI='cpython-'`echo $VERSION | tr -d .`${ABIFLAGS}${PLATFORM_TRIPLET:+-$PLATFORM_TRIPLET}
 AC_MSG_RESULT([$SOABI])
 
-# Release and debug (Py_DEBUG) ABI are compatible, but not Py_TRACE_REFS ABI
-if test "$Py_DEBUG" = 'true' -a "$with_trace_refs" != "yes"; then
+# Release build, debug build (Py_DEBUG), and trace refs build (Py_TRACE_REFS)
+# are ABI compatible
+if test "$Py_DEBUG" = 'true'; then
   # Similar to SOABI but remove "d" flag from ABIFLAGS
   AC_SUBST([ALT_SOABI])
   ALT_SOABI='cpython-'`echo $VERSION | tr -d .``echo $ABIFLAGS | tr -d d`${PLATFORM_TRIPLET:+-$PLATFORM_TRIPLET}
@@ -7226,6 +7230,7 @@ PY_STDLIB_MOD([_hashlib], [], [test "$ac_cv_working_openssl_hashlib" = yes],
 dnl test modules
 PY_STDLIB_MOD([_testcapi], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testclinic], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testclinic_limited], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testinternalcapi], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
@@ -7237,10 +7242,9 @@ PY_STDLIB_MOD([_ctypes_test],
   [], [$LIBM])
 
 dnl Limited API template modules.
-dnl The limited C API is not compatible with the Py_TRACE_REFS macro.
 dnl Emscripten does not support shared libraries yet.
-PY_STDLIB_MOD([xxlimited], [test "$with_trace_refs" = "no"], [test "$ac_cv_func_dlopen" = yes])
-PY_STDLIB_MOD([xxlimited_35], [test "$with_trace_refs" = "no"], [test "$ac_cv_func_dlopen" = yes])
+PY_STDLIB_MOD([xxlimited], [], [test "$ac_cv_func_dlopen" = yes])
+PY_STDLIB_MOD([xxlimited_35], [], [test "$ac_cv_func_dlopen" = yes])
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 AC_SUBST([MODULE_BLOCK])
