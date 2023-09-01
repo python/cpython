@@ -42,15 +42,15 @@ Object Protocol
 
 .. c:function:: int PyObject_HasAttrString(PyObject *o, const char *attr_name)
 
-   Returns ``1`` if *o* has the attribute *attr_name*, and ``0`` otherwise.  This
-   is equivalent to the Python expression ``hasattr(o, attr_name)``.  This function
-   always succeeds.
+   This is the same as :c:func:`PyObject_HasAttr`, but *attr_name* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
 
    .. note::
 
       Exceptions that occur when this calls :meth:`~object.__getattr__` and
-      :meth:`~object.__getattribute__` methods or while creating the temporary :class:`str`
-      object are silently ignored.
+      :meth:`~object.__getattribute__` methods or while creating the temporary
+      :class:`str` object are silently ignored.
       For proper error handling, use :c:func:`PyObject_GetAttrString` instead.
 
 
@@ -63,9 +63,9 @@ Object Protocol
 
 .. c:function:: PyObject* PyObject_GetAttrString(PyObject *o, const char *attr_name)
 
-   Retrieve an attribute named *attr_name* from object *o*. Returns the attribute
-   value on success, or ``NULL`` on failure. This is the equivalent of the Python
-   expression ``o.attr_name``.
+   This is the same as :c:func:`PyObject_GetAttr`, but *attr_name* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
 
 
 .. c:function:: PyObject* PyObject_GenericGetAttr(PyObject *o, PyObject *name)
@@ -92,10 +92,9 @@ Object Protocol
 
 .. c:function:: int PyObject_SetAttrString(PyObject *o, const char *attr_name, PyObject *v)
 
-   Set the value of the attribute named *attr_name*, for object *o*, to the value
-   *v*. Raise an exception and return ``-1`` on failure;
-   return ``0`` on success.  This is the equivalent of the Python statement
-   ``o.attr_name = v``.
+   This is the same as :c:func:`PyObject_SetAttr`, but *attr_name* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
 
    If *v* is ``NULL``, the attribute is deleted, but this feature is
    deprecated in favour of using :c:func:`PyObject_DelAttrString`.
@@ -121,8 +120,9 @@ Object Protocol
 
 .. c:function:: int PyObject_DelAttrString(PyObject *o, const char *attr_name)
 
-   Delete attribute named *attr_name*, for object *o*. Returns ``-1`` on failure.
-   This is the equivalent of the Python statement ``del o.attr_name``.
+   This is the same as :c:func:`PyObject_DelAttr`, but *attr_name* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
 
 
 .. c:function:: PyObject* PyObject_GenericGetDict(PyObject *o, void *context)
