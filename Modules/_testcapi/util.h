@@ -23,3 +23,5 @@
         assert(!PyErr_Occurred());          \
         return PyLong_FromSsize_t(_ret);    \
     } while (0)
+
+#define UNINITIALIZED_PTR ((void *)"uninitialized")

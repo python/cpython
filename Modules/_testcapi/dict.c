@@ -139,7 +139,7 @@ dict_getitemwitherror(PyObject *self, PyObject *args)
 static PyObject *
 dict_getitemref(PyObject *self, PyObject *args)
 {
-    PyObject *obj, *attr_name, *value;
+    PyObject *obj, *attr_name, *value = UNINITIALIZED_PTR;
     if (!PyArg_ParseTuple(args, "OO", &obj, &attr_name)) {
         return NULL;
     }
@@ -164,7 +164,7 @@ dict_getitemref(PyObject *self, PyObject *args)
 static PyObject *
 dict_getitemstringref(PyObject *self, PyObject *args)
 {
-    PyObject *obj, *value;
+    PyObject *obj, *value = UNINITIALIZED_PTR;
     const char *attr_name;
     Py_ssize_t size;
     if (!PyArg_ParseTuple(args, "Oz#", &obj, &attr_name, &size)) {
