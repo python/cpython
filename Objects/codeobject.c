@@ -1482,7 +1482,7 @@ clear_executors(PyCodeObject *co)
 void
 _PyCode_Clear_Executors(PyCodeObject *code) {
     int code_len = (int)Py_SIZE(code);
-    for (int i = 0; i < code_len; i+=_PyInstruction_GetLength(code, i)) {
+    for (int i = 0; i < code_len; i += _PyInstruction_GetLength(code, i)) {
         _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
         uint8_t opcode = instr->op.code;
         uint8_t oparg = instr->op.arg;
