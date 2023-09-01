@@ -1550,19 +1550,7 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
         );
         return 0;
     }
-    int code_len = (int)Py_SIZE(code);
-    if (code->co_executors != NULL && code->co_executors->size > 0 ) {
-        for (int i = 0; i < code_len; i += _PyInstruction_GetLength(code, i)) {
-            _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
-            uint8_t opcode = instr->op.code;
-            uint8_t oparg = instr->op.arg;
-            if (opcode == ENTER_EXECUTOR) {
-                _PyExecutorObject *exec = code->co_executors->executors[oparg];
-                assert(exec->vm_data.opcode != ENTER_EXECUTOR);
-                instr->op.code = exec->vm_data.opcode;
-                instr->op.arg = exec->vm_data.oparg;
-            }
-        }
+    if (code->co_executors != NULL) {
         _PyCode_Clear_Executors(code);
     }
     if (update_instrumentation_data(code, interp)) {
@@ -1593,6 +1581,7 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
         return 0;
     }
     /* Insert instrumentation */
+    int code_len = (int)Py_SIZE(code);
     for (int i = code->_co_firsttraceable; i < code_len; i+= _PyInstruction_GetLength(code, i)) {
         _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
         CHECK(instr->op.code != 0);
