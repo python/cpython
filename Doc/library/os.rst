@@ -3780,103 +3780,106 @@ features:
    .. versionadded:: 3.10
 
 
-.. function:: timerfd_create(clockid, flags)
+.. function:: timerfd_create(clockid, flags, /)
 
-   Create and return a timer file descriptor. The file descriptors supports
-   raw :func:`read` with a buffer size of 8, :func:`~select.select`, :func:`~select.poll`
+   Create and return a timer file descriptor (*timerfd*).
+   The file descriptor supports :func:`read` with a buffer size of 8,
+   :func:`~select.select`, and :func:`~select.poll`.
 
-   .. seealso:: :manpage:`timerfd_create(2)`
+   .. seealso:: The :manpage:`timerfd_create(2)` man page.
 
+   *clockid* must be a valid :ref:`clock ID <time-clock-id-constants>`,
+   as defined in the :py:mod:`time` module.
 
-   Refer to :ref:`time-clock-id-constants` for a list of accepted values for *clockid*.
+   The file descriptor's behaviour can be modified by specifying a *flags* value.
+   Any of the following variables may used, combined using bitwise OR
+   (the ``|`` operator):
 
-   *flags* can be constructed from :const:`TFD_NONBLOCK` and :const:`TFD_CLOEXEC`.
+   - :const:`TFD_NONBLOCK`
+   - :const:`TFD_CLOEXEC`
 
-   If the timerfd counter is zero and :const:`TFD_NONBLOCK` is not
-   specified, :func:`read` blocks.
+   If the timer file descriptor's counter is zero and
+   :const:`TFD_NONBLOCK` is not set as a flag, :func:`read` blocks.
 
-   Example::
+   The following example shows how to use a timer file descriptor
+   to execute a function twice a second:
 
-       import time
-       import os
+   .. code:: python
 
-       fd = os.timerfd_create(time.CLOCK_REALTIME, 0)
+      import os, time
 
-       # timer interval 0.5 second
-       inteval = 0.5
+      fd = os.timerfd_create(time.CLOCK_REALTIME, 0)
+      interval = 0.5  # Set the timer interval to 0.5 seconds
+      value = 1  # Start the timer in 1 second
+      os.timerfd_settime(fd, 0, interval, value)  # Start the timer
 
-       # timer start in 1 second
-       value = 1
+      try:
+          while:
+              fd.read(8)  # Wait for the timer to expire
+              do_work()
+      finally:
+          os.close(fd)
 
-       # start timer
-       _, _ = os.timerfd_settime(fd, 0, inteval, value)
+   Units may be specified in nanoseconds for greater precision.
+   Repeating the previous example:
 
-       try:
-           while:
-               # wait timerfd expired
-               _ = fd.read(8)
-               do_work()
-       finally:
-           os.close(fd)
+   .. code:: python
 
-   Example::
+      import os, time
 
-       import time
-       import os
+      fd = os.timerfd_create(time.CLOCK_REALTIME, 0)
+      interval = 10**9 // 2  # Set the timer interval to 0.5 seconds
+      value = 10**9  # Start the timer in 1 second
+      os.timerfd_settime_ns(fd, 0, interval, value)  # Start the timer
 
-       fd = os.timerfd_create(time.CLOCK_REALTIME, 0)
-
-       # timer interval 0.5 second
-       inteval_ns = 10**9 // 2
-
-       # timer start in 1 second
-       value_ns = 10**9
-
-       # start timer in nano second unit
-       _, _ = os.timerfd_settime_ns(fd, 0, inteval_ns, value_ns)
-
-       try:
-           while:
-               # wait timerfd expired
-               _ = fd.read(8)
-               do_work()
-       finally:
-           os.close(fd)
-
+      try:
+          while:
+              fd.read(8)  # Wait for the timer to expire
+              do_work()
+      finally:
+          os.close(fd)
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
    .. versionadded:: 3.13
 
 
-.. function:: timerfd_settime(fd, flags, interval, value)
+.. function:: timerfd_settime(fd, flags, interval=0.0, value=0.0, /)
 
-   Start/stop timer for a timer file descriptor.
+   Alter a timer file descriptor's internal timer.
 
-   .. seealso:: :manpage:`timerfd_settime(2)`
+   .. seealso::  The :manpage:`timerfd_settime(2)` man page.
 
-   *interval* coresponds to :c:member:`!it_interval` in :c:struct:`itimerspec` and *value* coresponds to
-   :c:member:`!it_value` in :c:struct:`itimerspec`. They are both in seconds and types are double.
+   *fd* must be a valid timer file descriptor.
 
-   *interval* and *value* are interpreted like this to pass :manpage:`timerfd_settime(2)`.
+   The timer's behaviour can be modified by specifying a *flags* value.
+   Any of the following variables may used, combined using bitwise OR
+   (the ``|`` operator):
 
-   .. c:var:: struct itimerspec new_value;
-   .. c:var:: double interval;
-   .. c:var:: double value;
+   - :const:`TFD_TIMER_ABSTIME`
+   - :const:`TFD_TIMER_CANCEL_ON_SET`
 
-   :c:expr:`interval = new_value.it_interval.tv_sec + new_value.it_interval.tv_nsec * 1e-9`
+   The timer's interval is set by the *interval* :py:class:`float`.
+   If *interval* is zero, the timer only fires once, on the initial expiration.
+   If *interval* is greater than zero, the timer fires every time *interval*
+   seconds have elapsed since the previous expiration.
 
-   :c:expr:`value = new_value.it_value.tv_sec + new_value.it_value.tv_nsec * 1e-9`
+   The timer is disabled by setting *value* to zero (``0``).
+   If *value* is set to a non-zero value, the timer is enabled.
+   By default timer will fire when *value* seconds have elapsed.
+   However, if the :const:`TFD_TIMER_ABSTIME` flag is set,
+   the timer will fire when the timer's clock
+   (set by *clockid* in :func:`timerfd_create`) reaches *value* seconds.
 
-   Return a two-item tuple (``interval``, ``value``) which were the setting of the timer at the time of the call.
+   Return a two-item tuple of (``interval``, ``value``) from
+   the previous timer state, before this function executed.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
    .. versionadded:: 3.13
 
 
-
-.. function:: timerfd_settime_ns(fd, flags, interval_ns, value_ns)
+.. function:: timerfd_settime_ns(fd, flags, interval_ns=0, value_ns=0, /)
 
    Similar to :func:`timerfd_settime`, but use time as nanoseconds.
 
@@ -3885,20 +3888,24 @@ features:
    .. versionadded:: 3.13
 
 
-.. function:: timerfd_gettime(fd)
+.. function:: timerfd_gettime(fd, /)
 
-   Return a two-item tuple (``interval``, ``value``) which is the time until next expiration.
+   Return a two-item tuple (``interval``, ``value``).
+
+   ``value`` denotes the relative time until next the timer next fires,
+   regardless of if the :const:`TFD_TIMER_ABSTIME` flag is set.
+
+   ``interval`` denotes the timer's interval.
+   If zero, the timer will only fire once, after ``value`` seconds have elapsed.
 
    .. seealso:: :manpage:`timerfd_gettime(2)`
-
-   The format of the return value is same as that of :func:`timerfd_settime`.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
    .. versionadded:: 3.13
 
 
-.. function:: timerfd_gettime_ns(fd)
+.. function:: timerfd_gettime_ns(fd, /)
 
    Similar to :func:`timerfd_gettime`, but return time as nanoseconds.
 
@@ -3907,35 +3914,34 @@ features:
    .. versionadded:: 3.13
 
 .. data:: TFD_NONBLOCK
+
+   A flag for the :func:`timerfd_create` function,
+   which sets the :const:`O_NONBLOCK` status flag for the new timer file descriptor.
+
+   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
+
+   .. versionadded:: 3.13
+
 .. data:: TFD_CLOEXEC
 
-   Parameters to the :func:`timerfd_create` function.
-
-   :const:`TFD_NONBLOCK`
-      Set :const:`O_NONBLOCK` status flag for new :func:`timerfd_create` file
-      descriptor.
-
-   :const:`TFD_CLOEXEC`
-      Set :const:`TFD_CLOEXEC` status flag for new :func:`timerfd_create` file
-      descriptor.
+   A flag for the :func:`timerfd_create` function,
+   which sets the :const:`TFD_CLOEXEC` status flag for the new timer file descriptor.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
    .. versionadded:: 3.13
 
 .. data:: TFD_TIMER_ABSTIME
+
+   A flag for the :func:`timerfd_settime` and :func:`timerfd_settime_ns` functions.
+
+   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
+
+   .. versionadded:: 3.13
+
 .. data:: TFD_TIMER_CANCEL_ON_SET
 
-   Parameters to the :func:`timerfd_settime` function.
-
-
-   :const:`TFD_TIMER_ABSTIME`
-     Set :const:`TFD_TIMER_ABSTIME` flags for :func:`timerfd_settime` or
-     :func:`timerfd_settime_ns`.
-
-   :const:`TFD_TIMER_CANCEL_ON_SET`
-     Set :const:`TFD_TIMER_CANCEL_ON_SET` flags for :func:`timerfd_settime` or
-     :func:`timerfd_settime_ns`.
+   A flag for the :func:`timerfd_settime` and :func:`timerfd_settime_ns` functions.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 

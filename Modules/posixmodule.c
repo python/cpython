@@ -10081,11 +10081,11 @@ os.timerfd_create
 
     clockid: int
         CLOCK_REALTIME or CLOCK_MONOTONIC. CLOCK_REALTIME.
-    flags: int
-        0 or  a bit mask of TFD_NONBLOCK or TFD_CLOEXEC.
+    flags: int = 0
+        0 or a bit mask of TFD_NONBLOCK or TFD_CLOEXEC.
     /
 
-Create and return a timerfd notification file descriptor.
+Create and return a timer file descriptor.
 [clinic start generated code]*/
 
 static PyObject *
@@ -10108,10 +10108,11 @@ os_timerfd_create_impl(PyObject *module, int clockid, int flags)
 os.timerfd_gettime
 
     fd: fildes
-        a file descriptor for timer.
+        A timer file descriptor.
     /
 
-Return timerfd value in seconds.
+Return a tuple of a timer file descriptor's (interval, next expiration)
+in float seconds.
 [clinic start generated code]*/
 
 static PyObject *
@@ -10133,13 +10134,13 @@ os_timerfd_gettime_impl(PyObject *module, int fd)
 os.timerfd_settime
 
     fd: fildes
-        a file descriptor for timer.
+        A timer file descriptor.
     flags: int
-        0 or  a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.
+        0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.
     it_interval: double = 0.0
         If TFD_TIMER_ABSTIME is not specified, it_interval is relative time.
         If TFD_TIMER_ABSTIME is specified, it_interval is absolute time and epoch time in time_t.
-        If TFD_TIMER_CANCEL_ON_SET  and TFD_TIMER_ABSTIME are specifed as *flags* and time.CLOCK_REALTIME
+        If TFD_TIMER_CANCEL_ON_SET and TFD_TIMER_ABSTIME are specifed as *flags* and time.CLOCK_REALTIME
         is specified as *clockid* of timerfd_create, a discontinuous change of system clock will make to
         abort reading from a file descriptor with ECANCELED error.
         it_interval is interval for timer in seconds.
@@ -10176,10 +10177,11 @@ os_timerfd_settime_impl(PyObject *module, int fd, int flags,
 os.timerfd_gettime_ns
 
     fd: fildes
-        a file descriptor for timer.
+        A timer file descriptor.
     /
 
-Return timerfd value in nanoseconds.
+Return a tuple of a timer file descriptor's (interval, next expiration)
+in nanoseconds.
 [clinic start generated code]*/
 
 static PyObject *
@@ -10201,7 +10203,7 @@ os_timerfd_gettime_ns_impl(PyObject *module, int fd)
 os.timerfd_settime_ns
 
     fd: fildes
-        a file descriptor for timer.
+        A timer file descriptor.
     flags: int
         similar to timerfd_settime
     it_interval_ns: long_long = 0
