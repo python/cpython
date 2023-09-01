@@ -222,17 +222,21 @@ For convenience, some of these functions will always return a
 
 .. c:function:: PyObject* PyErr_SetFromWindowsErrWithFilename(int ierr, const char *filename)
 
-   Similar to :c:func:`PyErr_SetFromWindowsErrWithFilenameObject`, but the
-   filename is given as a C string.  *filename* is decoded from the filesystem
-   encoding (:func:`os.fsdecode`).
+   Similar to :c:func:`PyErr_SetFromWindowsErr`, with the additional behavior
+   that if *filename* is not ``NULL``, it is decoded from the filesystem
+   encoding (:func:`os.fsdecode`) and passed to the constructor of
+   :exc:`OSError` as a third parameter to be used to define the
+   :attr:`!filename` attribute of the exception instance.
 
    .. availability:: Windows.
 
 
 .. c:function:: PyObject* PyErr_SetExcFromWindowsErrWithFilenameObject(PyObject *type, int ierr, PyObject *filename)
 
-   Similar to :c:func:`PyErr_SetFromWindowsErrWithFilenameObject`, with an
-   additional parameter specifying the exception type to be raised.
+   Similar to :c:func:`PyErr_SetExcFromWindowsErr`, with the additional behavior
+   that if *filename* is not ``NULL``, it is passed to the constructor of
+   :exc:`OSError` as a third parameter to be used to define the
+   :attr:`!filename` attribute of the exception instance.
 
    .. availability:: Windows.
 

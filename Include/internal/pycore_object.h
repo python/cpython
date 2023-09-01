@@ -13,7 +13,6 @@ extern "C" {
 #include "pycore_emscripten_trampoline.h" // _PyCFunction_TrampolineCall()
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_runtime.h"       // _PyRuntime
 
 /* Check if an object is consistent. For example, ensure that the reference
    counter is greater than or equal to 1, and ensure that ob_type is not NULL.
@@ -33,6 +32,17 @@ extern void _PyDebugAllocatorStats(FILE *out, const char *block_name,
 
 extern void _PyObject_DebugTypeStats(FILE *out);
 
+#ifdef Py_TRACE_REFS
+// Forget a reference registered by _Py_NewReference(). Function called by
+// _Py_Dealloc().
+//
+// On a free list, the function can be used before modifying an object to
+// remove the object from traced objects. Then _Py_NewReference() or
+// _Py_NewReferenceNoTotal() should be called again on the object to trace
+// it again.
+extern void _Py_ForgetReference(PyObject *);
+#endif
+
 // Export for shared _testinternalcapi extension
 PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 
@@ -46,7 +56,6 @@ PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
    backwards compatible solution */
 #define _PyObject_HEAD_INIT(type)         \
     {                                     \
-        _PyObject_EXTRA_INIT              \
         .ob_refcnt = _Py_IMMORTAL_REFCNT, \
         .ob_type = (type)                 \
     },
@@ -56,7 +65,7 @@ PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
         .ob_size = size                       \
     },
 
-PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
+extern void _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
     const char *func,
     const char *message);
 
@@ -174,7 +183,9 @@ _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
 
 extern void _PyType_InitCache(PyInterpreterState *interp);
 
-extern void _PyObject_InitState(PyInterpreterState *interp);
+extern PyStatus _PyObject_InitState(PyInterpreterState *interp);
+extern void _PyObject_FiniState(PyInterpreterState *interp);
+extern bool _PyRefchain_IsTraced(PyInterpreterState *interp, PyObject *obj);
 
 /* Inline functions trading binary compatibility for speed:
    _PyObject_Init() is the fast version of PyObject_Init(), and
@@ -293,7 +304,7 @@ extern void _PyDebug_PrintTotalRefs(void);
 #endif
 
 #ifdef Py_TRACE_REFS
-extern void _Py_AddToAllObjects(PyObject *op, int force);
+extern void _Py_AddToAllObjects(PyObject *op);
 extern void _Py_PrintReferences(PyInterpreterState *, FILE *);
 extern void _Py_PrintReferenceAddresses(PyInterpreterState *, FILE *);
 #endif
@@ -444,14 +455,38 @@ extern int _PyObject_IsAbstract(PyObject *);
 extern int _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
 extern PyObject* _PyObject_NextNotImplemented(PyObject *);
 
+/* C function call trampolines to mitigate bad function pointer casts.
+ *
+ * Typical native ABIs ignore additional arguments or fill in missing
+ * values with 0/NULL in function pointer cast. Compilers do not show
+ * warnings when a function pointer is explicitly casted to an
+ * incompatible type.
+ *
+ * Bad fpcasts are an issue in WebAssembly. WASM's indirect_call has strict
+ * function signature checks. Argument count, types, and return type must
+ * match.
+ *
+ * Third party code unintentionally rely on problematic fpcasts. The call
+ * trampoline mitigates common occurrences of bad fpcasts on Emscripten.
+ */
+#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
+#define _PyCFunction_TrampolineCall(meth, self, args) \
+    _PyCFunctionWithKeywords_TrampolineCall( \
+        (*(PyCFunctionWithKeywords)(void(*)(void))(meth)), (self), (args), NULL)
+extern PyObject* _PyCFunctionWithKeywords_TrampolineCall(
+    PyCFunctionWithKeywords meth, PyObject *, PyObject *, PyObject *);
+#else
+#define _PyCFunction_TrampolineCall(meth, self, args) \
+    (meth)((self), (args))
+#define _PyCFunctionWithKeywords_TrampolineCall(meth, self, args, kw) \
+    (meth)((self), (args), (kw))
+#endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
 
-// Export for '_pickle' shared extension
+// Export these 2 symbols for '_pickle' shared extension
 PyAPI_DATA(PyTypeObject) _PyNone_Type;
-// Export for '_pickle' shared extension
 PyAPI_DATA(PyTypeObject) _PyNotImplemented_Type;
 
 // Maps Py_LT to Py_GT, ..., Py_GE to Py_LE.
-// Defined in Objects/object.c.
 // Export for the stable ABI.
 PyAPI_DATA(int) _Py_SwappedOp[];
 

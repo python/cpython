@@ -241,6 +241,10 @@ Data Types
         >>> list(reversed(Color))
         [<Color.BLUE: 3>, <Color.GREEN: 2>, <Color.RED: 1>]
 
+   .. versionadded:: 3.11
+
+      Before 3.11 ``enum`` used ``EnumMeta`` type, which is kept as an alias.
+
 
 .. class:: Enum
 

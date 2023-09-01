@@ -721,10 +721,10 @@ class BZ2DecompressorTest(BaseTest):
     @bigmemtest(size=_4G + 100, memuse=3.3)
     def testDecompress4G(self, size):
         # "Test BZ2Decompressor.decompress() with >4GiB input"
-        blocksize = 10 * 1024 * 1024
+        blocksize = min(10 * 1024 * 1024, size)
         block = random.randbytes(blocksize)
         try:
-            data = block * (size // blocksize + 1)
+            data = block * ((size-1) // blocksize + 1)
             compressed = bz2.compress(data)
             bz2d = BZ2Decompressor()
             decompressed = bz2d.decompress(compressed)

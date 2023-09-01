@@ -1013,7 +1013,7 @@ Deprecated
   (Contributed by Serhiy Storchaka and Guido van Rossum in :gh:`100160`.)
 
 * :mod:`calendar`: ``calendar.January`` and ``calendar.February`` constants are deprecated and
-  replaced by :data:`calendar.Month.JANUARY` and :data:`calendar.Month.FEBRUARY`.
+  replaced by :data:`calendar.JANUARY` and :data:`calendar.FEBRUARY`.
   (Contributed by Prince Roshan in :gh:`103636`.)
 
 * :mod:`datetime`: :class:`datetime.datetime`'s :meth:`~datetime.datetime.utcnow` and
@@ -1112,6 +1112,10 @@ Modules (see :pep:`594`):
 * :mod:`!uu`
 * :mod:`!xdrlib`
 
+Other modules:
+
+* :mod:`!lib2to3`, and the :program:`2to3` program (:gh:`84540`)
+
 APIs:
 
 * :class:`!configparser.LegacyInterpolation` (:gh:`90765`)
@@ -1145,6 +1149,10 @@ Pending Removal in Python 3.14
 
   Use :class:`ast.Constant` instead.
   (Contributed by Serhiy Storchaka in :gh:`90953`.)
+
+* :mod:`asyncio`: the *msg* parameter of both
+  :meth:`asyncio.Future.cancel` and
+  :meth:`asyncio.Task.cancel` (:gh:`90985`)
 
 * :mod:`collections.abc`: Deprecated :class:`collections.abc.ByteString`.
   Prefer :class:`Sequence` or :class:`collections.abc.Buffer`.
@@ -1201,7 +1209,7 @@ Pending Removal in Python 3.14
   is deprecated and will raise an exception in Python 3.14.
 
 * Creating immutable types (:c:macro:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
-  bases using the C API.
+  bases using the C API (:gh:`95388`).
 
 * ``__package__`` and ``__cached__`` will cease to be set or taken
   into consideration by the import system (:gh:`97879`).
@@ -1212,11 +1220,16 @@ Pending Removal in Python 3.14
   May be removed in 3.14.
   (Contributed by Nikita Sobolev in :gh:`101866`.)
 
+* Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
+  bases using the C API (:gh:`95388`)
+
 Pending Removal in Future Versions
 ----------------------------------
 
 The following APIs were deprecated in earlier Python versions and will be removed,
 although there is currently no date scheduled for their removal.
+
+* :mod:`array`'s ``'u'`` format code (:gh:`57281`)
 
 * :class:`typing.Text` (:gh:`92332`)
 
@@ -1299,8 +1312,9 @@ Removed
   * References to, and support for :meth:`!module_repr()` has been removed.
     (Contributed by Barry Warsaw in :gh:`97850`.)
 
-  * ``importlib.util.set_package`` has been removed. (Contributed by Brett
-    Cannon in :gh:`65961`.)
+  * ``importlib.util.set_package``, ``importlib.util.set_loader`` and
+    ``importlib.util.module_for_loader`` have all been removed. (Contributed by
+    Brett Cannon and Nikita Sobolev in :gh:`65961` and :gh:`97850`.)
 
   * Support for ``find_loader()`` and ``find_module()`` APIs have been
     removed.  (Contributed by Barry Warsaw in :gh:`98040`.)

@@ -1128,8 +1128,7 @@ static mod_ty
 file_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -1175,8 +1174,7 @@ static mod_ty
 interactive_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -1219,8 +1217,7 @@ static mod_ty
 eval_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -1269,8 +1266,7 @@ static mod_ty
 func_type_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -1331,8 +1327,7 @@ static expr_ty
 fstring_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -1381,8 +1376,7 @@ static asdl_stmt_seq*
 statements_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -1425,8 +1419,7 @@ static asdl_stmt_seq*
 statement_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -1493,8 +1486,7 @@ static asdl_stmt_seq*
 statement_newline_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -1625,8 +1617,7 @@ static asdl_stmt_seq*
 simple_stmts_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -1719,8 +1710,7 @@ static stmt_ty
 simple_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -2101,8 +2091,7 @@ static stmt_ty
 compound_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -2292,8 +2281,7 @@ static stmt_ty
 assignment_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -2511,8 +2499,7 @@ static expr_ty
 annotated_rhs_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -2582,8 +2569,7 @@ static AugOperator*
 augassign_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -2914,8 +2900,7 @@ static stmt_ty
 return_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -2979,8 +2964,7 @@ static stmt_ty
 raise_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -3080,8 +3064,7 @@ static stmt_ty
 global_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -3145,8 +3128,7 @@ static stmt_ty
 nonlocal_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -3210,8 +3192,7 @@ static stmt_ty
 del_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -3296,8 +3277,7 @@ static stmt_ty
 yield_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -3358,8 +3338,7 @@ static stmt_ty
 assert_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -3426,8 +3405,7 @@ static stmt_ty
 import_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -3503,8 +3481,7 @@ static stmt_ty
 import_name_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -3570,8 +3547,7 @@ static stmt_ty
 import_from_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -3690,8 +3666,7 @@ static asdl_alias_seq*
 import_from_targets_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -3826,8 +3801,7 @@ static asdl_alias_seq*
 import_from_as_names_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -3870,8 +3844,7 @@ static alias_ty
 import_from_as_name_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -3935,8 +3908,7 @@ static asdl_alias_seq*
 dotted_as_names_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -3979,8 +3951,7 @@ static alias_ty
 dotted_as_name_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -4046,8 +4017,7 @@ static expr_ty
 dotted_name_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, dotted_name_type, &_res)) {
@@ -4081,8 +4051,7 @@ static expr_ty
 dotted_name_raw(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -4150,8 +4119,7 @@ static asdl_stmt_seq*
 block_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -4246,8 +4214,7 @@ static asdl_expr_seq*
 decorators_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -4290,8 +4257,7 @@ static stmt_ty
 class_def_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -4358,8 +4324,7 @@ static stmt_ty
 class_def_raw_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -4454,8 +4419,7 @@ static stmt_ty
 function_def_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -4523,8 +4487,7 @@ static stmt_ty
 function_def_raw_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -4694,8 +4657,7 @@ static arguments_ty
 params_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -4757,8 +4719,7 @@ static arguments_ty
 parameters_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -4921,8 +4882,7 @@ static asdl_arg_seq*
 slash_no_default_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -5002,8 +4962,7 @@ static SlashWithDefault*
 slash_with_default_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -5092,8 +5051,7 @@ static StarEtc*
 star_etc_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -5254,8 +5212,7 @@ static arg_ty
 kwds_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -5320,8 +5277,7 @@ static arg_ty
 param_no_default_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -5401,8 +5357,7 @@ static arg_ty
 param_no_default_star_annotation_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -5480,8 +5435,7 @@ static NameDefaultPair*
 param_with_default_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -5567,8 +5521,7 @@ static NameDefaultPair*
 param_maybe_default_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -5652,8 +5605,7 @@ static arg_ty
 param_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -5717,8 +5669,7 @@ static arg_ty
 param_star_annotation_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -5782,8 +5733,7 @@ static expr_ty
 annotation_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -5829,8 +5779,7 @@ static expr_ty
 star_annotation_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -5876,8 +5825,7 @@ static expr_ty
 default_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -5945,8 +5893,7 @@ static stmt_ty
 if_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -6086,8 +6033,7 @@ static stmt_ty
 elif_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -6224,8 +6170,7 @@ static asdl_stmt_seq*
 else_block_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -6293,8 +6238,7 @@ static stmt_ty
 while_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -6390,8 +6334,7 @@ static stmt_ty
 for_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -6588,8 +6531,7 @@ static stmt_ty
 with_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -6858,8 +6800,7 @@ static withitem_ty
 with_item_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -6957,8 +6898,7 @@ static stmt_ty
 try_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -7147,8 +7087,7 @@ static excepthandler_ty
 except_block_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -7301,8 +7240,7 @@ static excepthandler_ty
 except_star_block_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -7416,8 +7354,7 @@ static asdl_stmt_seq*
 finally_block_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -7487,8 +7424,7 @@ static stmt_ty
 match_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -7586,8 +7522,7 @@ static expr_ty
 subject_expr_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -7673,8 +7608,7 @@ static match_case_ty
 case_block_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -7748,8 +7682,7 @@ static expr_ty
 guard_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -7795,8 +7728,7 @@ static pattern_ty
 patterns_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -7876,8 +7808,7 @@ static pattern_ty
 pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -7934,8 +7865,7 @@ static pattern_ty
 as_pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -8021,8 +7951,7 @@ static pattern_ty
 or_pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -8091,8 +8020,7 @@ static pattern_ty
 closed_pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -8274,8 +8202,7 @@ static pattern_ty
 literal_pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -8509,8 +8436,7 @@ static expr_ty
 literal_expr_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -8698,8 +8624,7 @@ static expr_ty
 complex_number_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -8805,8 +8730,7 @@ static expr_ty
 signed_number_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -8889,8 +8813,7 @@ static expr_ty
 signed_real_number_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -8973,8 +8896,7 @@ static expr_ty
 real_number_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -9017,8 +8939,7 @@ static expr_ty
 imaginary_number_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -9061,8 +8982,7 @@ static pattern_ty
 capture_pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -9123,8 +9043,7 @@ static expr_ty
 pattern_capture_target_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -9171,8 +9090,7 @@ static pattern_ty
 wildcard_pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -9233,8 +9151,7 @@ static pattern_ty
 value_pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -9299,8 +9216,7 @@ static expr_ty
 attr_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, attr_type, &_res)) {
@@ -9334,8 +9250,7 @@ static expr_ty
 attr_raw(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -9403,8 +9318,7 @@ static expr_ty
 name_or_attr_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -9461,8 +9375,7 @@ static pattern_ty
 group_pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -9511,8 +9424,7 @@ static pattern_ty
 sequence_pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -9618,8 +9530,7 @@ static asdl_seq*
 open_sequence_pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -9668,8 +9579,7 @@ static asdl_seq*
 maybe_sequence_pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -9716,8 +9626,7 @@ static pattern_ty
 maybe_star_pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -9774,8 +9683,7 @@ static pattern_ty
 star_pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -9884,8 +9792,7 @@ static pattern_ty
 mapping_pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -10084,8 +9991,7 @@ static asdl_seq*
 items_pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -10123,8 +10029,7 @@ static KeyPatternPair*
 key_value_pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -10173,8 +10078,7 @@ static expr_ty
 double_star_pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -10225,8 +10129,7 @@ static pattern_ty
 class_pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -10456,8 +10359,7 @@ static asdl_pattern_seq*
 positional_patterns_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -10500,8 +10402,7 @@ static asdl_seq*
 keyword_patterns_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -10539,8 +10440,7 @@ static KeyPatternPair*
 keyword_pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -10589,8 +10489,7 @@ static stmt_ty
 type_alias_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -10663,8 +10562,7 @@ static asdl_type_param_seq*
 type_params_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -10713,8 +10611,7 @@ static asdl_type_param_seq*
 type_param_seq_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -10766,8 +10663,7 @@ static type_param_ty
 type_param_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -10974,8 +10870,7 @@ static expr_ty
 type_param_bound_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -11021,8 +10916,7 @@ static expr_ty
 expressions_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -11150,8 +11044,7 @@ static expr_ty
 expression_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -11305,8 +11198,7 @@ static expr_ty
 yield_expr_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -11412,8 +11304,7 @@ static expr_ty
 star_expressions_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -11536,8 +11427,7 @@ static expr_ty
 star_expression_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -11625,8 +11515,7 @@ static asdl_expr_seq*
 star_named_expressions_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -11673,8 +11562,7 @@ static expr_ty
 star_named_expression_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -11757,8 +11645,7 @@ static expr_ty
 assignment_expression_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -11832,8 +11719,7 @@ static expr_ty
 named_expression_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -11911,8 +11797,7 @@ static expr_ty
 disjunction_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -12000,8 +11885,7 @@ static expr_ty
 conjunction_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -12089,8 +11973,7 @@ static expr_ty
 inversion_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -12178,8 +12061,7 @@ static expr_ty
 comparison_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -12272,8 +12154,7 @@ static CmpopExprPair*
 compare_op_bitwise_or_pair_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -12482,8 +12363,7 @@ static CmpopExprPair*
 eq_bitwise_or_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -12529,8 +12409,7 @@ static CmpopExprPair*
 noteq_bitwise_or_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -12576,8 +12455,7 @@ static CmpopExprPair*
 lte_bitwise_or_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -12623,8 +12501,7 @@ static CmpopExprPair*
 lt_bitwise_or_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -12670,8 +12547,7 @@ static CmpopExprPair*
 gte_bitwise_or_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -12717,8 +12593,7 @@ static CmpopExprPair*
 gt_bitwise_or_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -12764,8 +12639,7 @@ static CmpopExprPair*
 notin_bitwise_or_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -12814,8 +12688,7 @@ static CmpopExprPair*
 in_bitwise_or_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -12861,8 +12734,7 @@ static CmpopExprPair*
 isnot_bitwise_or_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -12911,8 +12783,7 @@ static CmpopExprPair*
 is_bitwise_or_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -12960,8 +12831,7 @@ static expr_ty
 bitwise_or_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, bitwise_or_type, &_res)) {
@@ -12995,8 +12865,7 @@ static expr_ty
 bitwise_or_raw(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -13084,8 +12953,7 @@ static expr_ty
 bitwise_xor_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, bitwise_xor_type, &_res)) {
@@ -13119,8 +12987,7 @@ static expr_ty
 bitwise_xor_raw(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -13208,8 +13075,7 @@ static expr_ty
 bitwise_and_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, bitwise_and_type, &_res)) {
@@ -13243,8 +13109,7 @@ static expr_ty
 bitwise_and_raw(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -13332,8 +13197,7 @@ static expr_ty
 shift_expr_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, shift_expr_type, &_res)) {
@@ -13367,8 +13231,7 @@ static expr_ty
 shift_expr_raw(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -13495,8 +13358,7 @@ static expr_ty
 sum_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, sum_type, &_res)) {
@@ -13530,8 +13392,7 @@ static expr_ty
 sum_raw(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -13664,8 +13525,7 @@ static expr_ty
 term_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, term_type, &_res)) {
@@ -13699,8 +13559,7 @@ static expr_ty
 term_raw(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -13942,8 +13801,7 @@ static expr_ty
 factor_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -14103,8 +13961,7 @@ static expr_ty
 power_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -14190,8 +14047,7 @@ static expr_ty
 await_primary_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -14286,8 +14142,7 @@ static expr_ty
 primary_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, primary_type, &_res)) {
@@ -14321,8 +14176,7 @@ static expr_ty
 primary_raw(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -14528,8 +14382,7 @@ static expr_ty
 slices_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -14620,8 +14473,7 @@ static expr_ty
 slice_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -14725,8 +14577,7 @@ static expr_ty
 atom_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -15008,8 +14859,7 @@ static expr_ty
 group_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -15077,8 +14927,7 @@ static expr_ty
 lambdef_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -15148,8 +14997,7 @@ static arguments_ty
 lambda_params_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -15211,8 +15059,7 @@ static arguments_ty
 lambda_parameters_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -15377,8 +15224,7 @@ static asdl_arg_seq*
 lambda_slash_no_default_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -15458,8 +15304,7 @@ static SlashWithDefault*
 lambda_slash_with_default_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -15547,8 +15392,7 @@ static StarEtc*
 lambda_star_etc_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -15676,8 +15520,7 @@ static arg_ty
 lambda_kwds_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -15742,8 +15585,7 @@ static arg_ty
 lambda_param_no_default_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -15815,8 +15657,7 @@ static NameDefaultPair*
 lambda_param_with_default_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -15894,8 +15735,7 @@ static NameDefaultPair*
 lambda_param_maybe_default_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -15973,8 +15813,7 @@ static arg_ty
 lambda_param_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -16035,8 +15874,7 @@ static expr_ty
 fstring_middle_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -16100,8 +15938,7 @@ static expr_ty
 fstring_replacement_field_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -16196,8 +16033,7 @@ static ResultTokenWithMetadata*
 fstring_conversion_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -16243,8 +16079,7 @@ static ResultTokenWithMetadata*
 fstring_full_format_spec_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -16308,8 +16143,7 @@ static expr_ty
 fstring_format_spec_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -16371,8 +16205,7 @@ static expr_ty
 string_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -16415,8 +16248,7 @@ static expr_ty
 strings_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -16482,8 +16314,7 @@ static expr_ty
 list_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -16550,8 +16381,7 @@ static expr_ty
 tuple_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -16618,8 +16448,7 @@ static expr_ty
 set_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -16686,8 +16515,7 @@ static expr_ty
 dict_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -16779,8 +16607,7 @@ static asdl_seq*
 double_starred_kvpairs_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -16827,8 +16654,7 @@ static KeyValuePair*
 double_starred_kvpair_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -16893,8 +16719,7 @@ static KeyValuePair*
 kvpair_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -16943,8 +16768,7 @@ static asdl_comprehension_seq*
 for_if_clauses_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -16990,8 +16814,7 @@ static comprehension_ty
 for_if_clause_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -17118,8 +16941,7 @@ static expr_ty
 listcomp_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -17208,8 +17030,7 @@ static expr_ty
 setcomp_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -17300,8 +17121,7 @@ static expr_ty
 genexp_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -17390,8 +17210,7 @@ static expr_ty
 dictcomp_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -17480,8 +17299,7 @@ static expr_ty
 arguments_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -17556,8 +17374,7 @@ static expr_ty
 args_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -17657,8 +17474,7 @@ static asdl_seq*
 kwargs_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -17745,8 +17561,7 @@ static expr_ty
 starred_expression_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -17829,8 +17644,7 @@ static KeywordOrStarred*
 kwarg_or_starred_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -17940,8 +17754,7 @@ static KeywordOrStarred*
 kwarg_or_double_starred_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -18063,8 +17876,7 @@ static expr_ty
 star_targets_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -18158,8 +17970,7 @@ static asdl_expr_seq*
 star_targets_list_seq_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -18206,8 +18017,7 @@ static asdl_expr_seq*
 star_targets_tuple_seq_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -18284,8 +18094,7 @@ static expr_ty
 star_target_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -18376,8 +18185,7 @@ static expr_ty
 target_with_star_atom_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -18518,8 +18326,7 @@ static expr_ty
 star_atom_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -18679,8 +18486,7 @@ static expr_ty
 single_target_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -18774,8 +18580,7 @@ static expr_ty
 single_subscript_attribute_target_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -18895,8 +18700,7 @@ static expr_ty
 t_primary_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, t_primary_type, &_res)) {
@@ -18930,8 +18734,7 @@ static expr_ty
 t_primary_raw(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -19152,8 +18955,7 @@ static void *
 t_lookahead_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -19229,8 +19031,7 @@ static asdl_expr_seq*
 del_targets_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -19280,8 +19081,7 @@ static expr_ty
 del_target_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -19418,8 +19218,7 @@ static expr_ty
 del_t_atom_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -19586,8 +19385,7 @@ static asdl_expr_seq*
 type_expressions_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -19831,8 +19629,7 @@ static Token*
 func_type_comment_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -19925,8 +19722,7 @@ static void *
 invalid_arguments_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -20169,8 +19965,7 @@ static void *
 invalid_kwarg_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -20316,8 +20111,7 @@ expression_without_invalid_rule(Parser *p)
     int _prev_call_invalid = p->call_invalid_rules;
     p->call_invalid_rules = 0;
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->call_invalid_rules = _prev_call_invalid;
@@ -20436,8 +20230,7 @@ static void *
 invalid_legacy_expression_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -20488,8 +20281,7 @@ static void *
 invalid_expression_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -20605,8 +20397,7 @@ static void *
 invalid_named_expression_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -20732,8 +20523,7 @@ static void *
 invalid_assignment_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -20938,8 +20728,7 @@ static expr_ty
 invalid_ann_assign_target_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -21026,8 +20815,7 @@ static void *
 invalid_del_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -21073,8 +20861,7 @@ static void *
 invalid_block_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -21122,8 +20909,7 @@ static void *
 invalid_comprehension_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -21241,8 +21027,7 @@ static void *
 invalid_dict_comprehension_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -21303,8 +21088,7 @@ static void *
 invalid_parameters_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -21521,8 +21305,7 @@ static void *
 invalid_default_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -21571,8 +21354,7 @@ static void *
 invalid_star_etc_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -21714,8 +21496,7 @@ static void *
 invalid_kwds_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -21830,8 +21611,7 @@ static void *
 invalid_parameters_helper_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -21899,8 +21679,7 @@ static void *
 invalid_lambda_parameters_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -22119,8 +21898,7 @@ static void *
 invalid_lambda_parameters_helper_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -22185,8 +21963,7 @@ static void *
 invalid_lambda_star_etc_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -22301,8 +22078,7 @@ static void *
 invalid_lambda_kwds_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -22417,8 +22193,7 @@ static void *
 invalid_double_type_comments_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -22473,8 +22248,7 @@ static void *
 invalid_with_item_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -22525,8 +22299,7 @@ static void *
 invalid_for_target_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -22576,8 +22349,7 @@ static void *
 invalid_group_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -22659,8 +22431,7 @@ static void *
 invalid_import_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -22712,8 +22483,7 @@ static void *
 invalid_import_from_targets_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -22764,8 +22534,7 @@ static void *
 invalid_with_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -22864,8 +22633,7 @@ static void *
 invalid_with_stmt_indent_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -22976,8 +22744,7 @@ static void *
 invalid_try_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -23156,8 +22923,7 @@ static void *
 invalid_except_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -23315,8 +23081,7 @@ static void *
 invalid_finally_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -23369,8 +23134,7 @@ static void *
 invalid_except_stmt_indent_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -23461,8 +23225,7 @@ static void *
 invalid_except_star_stmt_indent_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -23525,8 +23288,7 @@ static void *
 invalid_match_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -23612,8 +23374,7 @@ static void *
 invalid_case_block_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -23705,8 +23466,7 @@ static void *
 invalid_as_pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -23787,8 +23547,7 @@ static void *
 invalid_class_pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -23838,8 +23597,7 @@ static asdl_pattern_seq*
 invalid_class_argument_pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -23894,8 +23652,7 @@ static void *
 invalid_if_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -23981,8 +23738,7 @@ static void *
 invalid_elif_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -24066,8 +23822,7 @@ static void *
 invalid_else_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -24120,8 +23875,7 @@ static void *
 invalid_while_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -24207,8 +23961,7 @@ static void *
 invalid_for_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -24313,8 +24066,7 @@ static void *
 invalid_def_raw_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -24388,8 +24140,7 @@ static void *
 invalid_class_def_raw_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -24484,8 +24235,7 @@ static void *
 invalid_double_starred_kvpairs_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -24594,8 +24344,7 @@ static void *
 invalid_kvpair_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -24702,8 +24451,7 @@ static void *
 invalid_starred_expression_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -24766,8 +24514,7 @@ static void *
 invalid_replacement_field_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -25127,8 +24874,7 @@ static void *
 invalid_conversion_character_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -25199,8 +24945,7 @@ static asdl_seq *
 _loop0_1_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -25267,8 +25012,7 @@ static asdl_seq *
 _loop0_2_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -25335,8 +25079,7 @@ static asdl_seq *
 _loop0_3_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -25403,8 +25146,7 @@ static asdl_seq *
 _loop1_4_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -25476,8 +25218,7 @@ static asdl_seq *
 _loop0_6_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -25553,8 +25294,7 @@ static asdl_seq *
 _gather_5_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -25595,8 +25335,7 @@ static void *
 _tmp_7_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -25653,8 +25392,7 @@ static void *
 _tmp_8_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -25730,8 +25468,7 @@ static void *
 _tmp_9_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -25788,8 +25525,7 @@ static void *
 _tmp_10_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -25846,8 +25582,7 @@ static void *
 _tmp_11_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -25904,8 +25639,7 @@ static void *
 _tmp_12_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -25951,8 +25685,7 @@ static void *
 _tmp_13_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -26020,8 +25753,7 @@ static void *
 _tmp_14_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -26067,8 +25799,7 @@ static asdl_seq *
 _loop1_15_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -26140,8 +25871,7 @@ static void *
 _tmp_16_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -26198,8 +25928,7 @@ static void *
 _tmp_17_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -26256,8 +25985,7 @@ static void *
 _tmp_18_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -26303,8 +26031,7 @@ static asdl_seq *
 _loop0_20_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -26380,8 +26107,7 @@ static asdl_seq *
 _gather_19_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -26422,8 +26148,7 @@ static asdl_seq *
 _loop0_22_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -26499,8 +26224,7 @@ static asdl_seq *
 _gather_21_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -26541,8 +26265,7 @@ static void *
 _tmp_23_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -26599,8 +26322,7 @@ static void *
 _tmp_24_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -26646,8 +26368,7 @@ static asdl_seq *
 _loop0_25_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -26714,8 +26435,7 @@ static asdl_seq *
 _loop1_26_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -26787,8 +26507,7 @@ static asdl_seq *
 _loop0_28_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -26864,8 +26583,7 @@ static asdl_seq *
 _gather_27_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -26906,8 +26624,7 @@ static void *
 _tmp_29_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -26953,8 +26670,7 @@ static asdl_seq *
 _loop0_31_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -27030,8 +26746,7 @@ static asdl_seq *
 _gather_30_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -27072,8 +26787,7 @@ static void *
 _tmp_32_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -27119,8 +26833,7 @@ static asdl_seq *
 _loop1_33_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -27192,8 +26905,7 @@ static void *
 _tmp_34_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -27242,8 +26954,7 @@ static void *
 _tmp_35_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -27289,8 +27000,7 @@ static void *
 _tmp_36_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -27336,8 +27046,7 @@ static asdl_seq *
 _loop0_37_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -27404,8 +27113,7 @@ static asdl_seq *
 _loop0_38_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -27472,8 +27180,7 @@ static asdl_seq *
 _loop0_39_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -27540,8 +27247,7 @@ static asdl_seq *
 _loop1_40_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -27613,8 +27319,7 @@ static asdl_seq *
 _loop0_41_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -27681,8 +27386,7 @@ static asdl_seq *
 _loop1_42_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -27754,8 +27458,7 @@ static asdl_seq *
 _loop1_43_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -27827,8 +27530,7 @@ static asdl_seq *
 _loop1_44_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -27900,8 +27602,7 @@ static asdl_seq *
 _loop0_45_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -27968,8 +27669,7 @@ static asdl_seq *
 _loop1_46_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -28041,8 +27741,7 @@ static asdl_seq *
 _loop0_47_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -28109,8 +27808,7 @@ static asdl_seq *
 _loop1_48_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -28182,8 +27880,7 @@ static asdl_seq *
 _loop0_49_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -28250,8 +27947,7 @@ static asdl_seq *
 _loop0_50_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -28318,8 +28014,7 @@ static asdl_seq *
 _loop1_51_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -28391,8 +28086,7 @@ static asdl_seq *
 _loop0_53_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -28468,8 +28162,7 @@ static asdl_seq *
 _gather_52_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -28510,8 +28203,7 @@ static asdl_seq *
 _loop0_55_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -28587,8 +28279,7 @@ static asdl_seq *
 _gather_54_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -28629,8 +28320,7 @@ static asdl_seq *
 _loop0_57_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -28706,8 +28396,7 @@ static asdl_seq *
 _gather_56_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -28748,8 +28437,7 @@ static asdl_seq *
 _loop0_59_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -28825,8 +28513,7 @@ static asdl_seq *
 _gather_58_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -28867,8 +28554,7 @@ static void *
 _tmp_60_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -28944,8 +28630,7 @@ static asdl_seq *
 _loop1_61_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -29017,8 +28702,7 @@ static asdl_seq *
 _loop1_62_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -29090,8 +28774,7 @@ static void *
 _tmp_63_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -29137,8 +28820,7 @@ static void *
 _tmp_64_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -29184,8 +28866,7 @@ static asdl_seq *
 _loop1_65_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -29257,8 +28938,7 @@ static asdl_seq *
 _loop0_67_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -29334,8 +29014,7 @@ static asdl_seq *
 _gather_66_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -29376,8 +29055,7 @@ static void *
 _tmp_68_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -29434,8 +29112,7 @@ static void *
 _tmp_69_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -29492,8 +29169,7 @@ static void *
 _tmp_70_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -29569,8 +29245,7 @@ static void *
 _tmp_71_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -29646,8 +29321,7 @@ static asdl_seq *
 _loop0_73_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -29723,8 +29397,7 @@ static asdl_seq *
 _gather_72_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -29765,8 +29438,7 @@ static asdl_seq *
 _loop0_75_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -29842,8 +29514,7 @@ static asdl_seq *
 _gather_74_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -29884,8 +29555,7 @@ static void *
 _tmp_76_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -29942,8 +29612,7 @@ static asdl_seq *
 _loop0_78_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -30019,8 +29688,7 @@ static asdl_seq *
 _gather_77_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -30061,8 +29729,7 @@ static asdl_seq *
 _loop0_80_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -30138,8 +29805,7 @@ static asdl_seq *
 _gather_79_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -30180,8 +29846,7 @@ static asdl_seq *
 _loop0_82_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -30257,8 +29922,7 @@ static asdl_seq *
 _gather_81_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -30299,8 +29963,7 @@ static asdl_seq *
 _loop1_83_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -30372,8 +30035,7 @@ static asdl_seq *
 _loop1_84_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -30445,8 +30107,7 @@ static asdl_seq *
 _loop0_86_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -30522,8 +30183,7 @@ static asdl_seq *
 _gather_85_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -30564,8 +30224,7 @@ static asdl_seq *
 _loop1_87_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -30637,8 +30296,7 @@ static asdl_seq *
 _loop1_88_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -30710,8 +30368,7 @@ static asdl_seq *
 _loop1_89_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -30783,8 +30440,7 @@ static void *
 _tmp_90_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -30827,8 +30483,7 @@ static asdl_seq *
 _loop0_92_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -30904,8 +30559,7 @@ static asdl_seq *
 _gather_91_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -30946,8 +30600,7 @@ static void *
 _tmp_93_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -30993,8 +30646,7 @@ static void *
 _tmp_94_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -31051,8 +30703,7 @@ static void *
 _tmp_95_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -31128,8 +30779,7 @@ static void *
 _tmp_96_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -31186,8 +30836,7 @@ static void *
 _tmp_97_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -31282,8 +30931,7 @@ static void *
 _tmp_98_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -31340,8 +30988,7 @@ static asdl_seq *
 _loop0_99_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -31408,8 +31055,7 @@ static asdl_seq *
 _loop0_100_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -31476,8 +31122,7 @@ static asdl_seq *
 _loop0_101_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -31544,8 +31189,7 @@ static asdl_seq *
 _loop1_102_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -31617,8 +31261,7 @@ static asdl_seq *
 _loop0_103_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -31685,8 +31328,7 @@ static asdl_seq *
 _loop1_104_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -31758,8 +31400,7 @@ static asdl_seq *
 _loop1_105_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -31831,8 +31472,7 @@ static asdl_seq *
 _loop1_106_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -31904,8 +31544,7 @@ static asdl_seq *
 _loop0_107_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -31972,8 +31611,7 @@ static asdl_seq *
 _loop1_108_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -32045,8 +31683,7 @@ static asdl_seq *
 _loop0_109_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -32113,8 +31750,7 @@ static asdl_seq *
 _loop1_110_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -32186,8 +31822,7 @@ static asdl_seq *
 _loop0_111_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -32254,8 +31889,7 @@ static asdl_seq *
 _loop1_112_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -32327,8 +31961,7 @@ static void *
 _tmp_113_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -32385,8 +32018,7 @@ static asdl_seq *
 _loop0_114_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -32453,8 +32085,7 @@ static asdl_seq *
 _loop1_115_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -32526,8 +32157,7 @@ static void *
 _tmp_116_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -32576,8 +32206,7 @@ static asdl_seq *
 _loop0_118_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -32653,8 +32282,7 @@ static asdl_seq *
 _gather_117_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -32695,8 +32323,7 @@ static asdl_seq *
 _loop1_119_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -32768,8 +32395,7 @@ static asdl_seq *
 _loop0_120_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -32836,8 +32462,7 @@ static asdl_seq *
 _loop0_121_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -32904,8 +32529,7 @@ static void *
 _tmp_122_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -32964,8 +32588,7 @@ static asdl_seq *
 _loop0_124_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -33042,8 +32665,7 @@ static asdl_seq *
 _gather_123_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -33084,8 +32706,7 @@ static void *
 _tmp_125_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -33131,8 +32752,7 @@ static asdl_seq *
 _loop0_127_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -33208,8 +32828,7 @@ static asdl_seq *
 _gather_126_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -33250,8 +32869,7 @@ static asdl_seq *
 _loop0_129_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -33327,8 +32945,7 @@ static asdl_seq *
 _gather_128_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -33369,8 +32986,7 @@ static asdl_seq *
 _loop0_131_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -33446,8 +33062,7 @@ static asdl_seq *
 _gather_130_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -33488,8 +33103,7 @@ static asdl_seq *
 _loop0_133_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -33565,8 +33179,7 @@ static asdl_seq *
 _gather_132_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -33607,8 +33220,7 @@ static asdl_seq *
 _loop0_134_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -33675,8 +33287,7 @@ static asdl_seq *
 _loop0_136_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -33752,8 +33363,7 @@ static asdl_seq *
 _gather_135_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -33794,8 +33404,7 @@ static asdl_seq *
 _loop1_137_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -33867,8 +33476,7 @@ static void *
 _tmp_138_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -33908,8 +33516,7 @@ static asdl_seq *
 _loop0_140_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -33985,8 +33592,7 @@ static asdl_seq *
 _gather_139_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -34027,8 +33633,7 @@ static asdl_seq *
 _loop0_142_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -34104,8 +33709,7 @@ static asdl_seq *
 _gather_141_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -34146,8 +33750,7 @@ static asdl_seq *
 _loop0_144_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -34223,8 +33826,7 @@ static asdl_seq *
 _gather_143_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -34265,8 +33867,7 @@ static asdl_seq *
 _loop0_146_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -34342,8 +33943,7 @@ static asdl_seq *
 _gather_145_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -34384,8 +33984,7 @@ static asdl_seq *
 _loop0_148_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -34461,8 +34060,7 @@ static asdl_seq *
 _gather_147_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -34503,8 +34101,7 @@ static void *
 _tmp_149_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -34545,8 +34142,7 @@ static void *
 _tmp_150_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -34606,8 +34202,7 @@ static void *
 _tmp_151_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -34648,8 +34243,7 @@ static void *
 _tmp_152_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -34706,8 +34300,7 @@ static void *
 _tmp_153_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -34783,8 +34376,7 @@ static void *
 _tmp_154_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -34825,8 +34417,7 @@ static void *
 _tmp_155_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -34886,8 +34477,7 @@ static void *
 _tmp_156_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -34944,8 +34534,7 @@ static void *
 _tmp_157_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -35002,8 +34591,7 @@ static void *
 _tmp_158_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -35060,8 +34648,7 @@ static void *
 _tmp_159_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -35194,8 +34781,7 @@ static void *
 _tmp_160_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -35252,8 +34838,7 @@ static asdl_seq *
 _loop0_161_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -35320,8 +34905,7 @@ static asdl_seq *
 _loop0_162_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -35388,8 +34972,7 @@ static asdl_seq *
 _loop0_163_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -35456,8 +35039,7 @@ static void *
 _tmp_164_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -35514,8 +35096,7 @@ static void *
 _tmp_165_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -35591,8 +35172,7 @@ static void *
 _tmp_166_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -35649,8 +35229,7 @@ static void *
 _tmp_167_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -35707,8 +35286,7 @@ static void *
 _tmp_168_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -35765,8 +35343,7 @@ static asdl_seq *
 _loop0_169_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -35833,8 +35410,7 @@ static asdl_seq *
 _loop0_170_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -35901,8 +35477,7 @@ static asdl_seq *
 _loop0_171_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -35969,8 +35544,7 @@ static asdl_seq *
 _loop1_172_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -36042,8 +35616,7 @@ static void *
 _tmp_173_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -36100,8 +35673,7 @@ static asdl_seq *
 _loop0_174_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -36168,8 +35740,7 @@ static void *
 _tmp_175_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -36226,8 +35797,7 @@ static asdl_seq *
 _loop0_176_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -36294,8 +35864,7 @@ static asdl_seq *
 _loop1_177_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -36367,8 +35936,7 @@ static void *
 _tmp_178_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -36425,8 +35993,7 @@ static void *
 _tmp_179_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -36486,8 +36053,7 @@ static void *
 _tmp_180_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -36544,8 +36110,7 @@ static asdl_seq *
 _loop0_181_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -36612,8 +36177,7 @@ static void *
 _tmp_182_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -36670,8 +36234,7 @@ static void *
 _tmp_183_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -36747,8 +36310,7 @@ static asdl_seq *
 _loop1_184_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -36820,8 +36382,7 @@ static void *
 _tmp_185_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -36878,8 +36439,7 @@ static asdl_seq *
 _loop0_186_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -36946,8 +36506,7 @@ static asdl_seq *
 _loop0_187_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -37014,8 +36573,7 @@ static asdl_seq *
 _loop0_188_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -37082,8 +36640,7 @@ static asdl_seq *
 _loop0_190_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -37159,8 +36716,7 @@ static asdl_seq *
 _gather_189_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -37201,8 +36757,7 @@ static void *
 _tmp_191_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -37259,8 +36814,7 @@ static asdl_seq *
 _loop0_192_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -37327,8 +36881,7 @@ static void *
 _tmp_193_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -37385,8 +36938,7 @@ static asdl_seq *
 _loop0_194_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -37453,8 +37005,7 @@ static asdl_seq *
 _loop1_195_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -37526,8 +37077,7 @@ static asdl_seq *
 _loop1_196_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -37599,8 +37149,7 @@ static void *
 _tmp_197_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -37660,8 +37209,7 @@ static void *
 _tmp_198_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -37718,8 +37266,7 @@ static asdl_seq *
 _loop0_199_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -37786,8 +37333,7 @@ static void *
 _tmp_200_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -37844,8 +37390,7 @@ static void *
 _tmp_201_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -37921,8 +37466,7 @@ static void *
 _tmp_202_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -37998,8 +37542,7 @@ static asdl_seq *
 _loop0_204_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -38075,8 +37618,7 @@ static asdl_seq *
 _gather_203_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -38117,8 +37659,7 @@ static asdl_seq *
 _loop0_206_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -38194,8 +37735,7 @@ static asdl_seq *
 _gather_205_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -38236,8 +37776,7 @@ static asdl_seq *
 _loop0_208_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -38313,8 +37852,7 @@ static asdl_seq *
 _gather_207_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -38355,8 +37893,7 @@ static asdl_seq *
 _loop0_210_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -38432,8 +37969,7 @@ static asdl_seq *
 _gather_209_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -38474,8 +38010,7 @@ static asdl_seq *
 _loop0_212_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -38551,8 +38086,7 @@ static asdl_seq *
 _gather_211_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -38593,8 +38127,7 @@ static void *
 _tmp_213_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -38651,8 +38184,7 @@ static asdl_seq *
 _loop0_214_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -38719,8 +38251,7 @@ static asdl_seq *
 _loop1_215_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -38792,8 +38323,7 @@ static void *
 _tmp_216_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -38834,8 +38364,7 @@ static asdl_seq *
 _loop0_217_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -38902,8 +38431,7 @@ static asdl_seq *
 _loop1_218_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -38975,8 +38503,7 @@ static void *
 _tmp_219_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -39018,8 +38545,7 @@ static void *
 _tmp_220_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -39060,8 +38586,7 @@ static void *
 _tmp_221_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -39102,8 +38627,7 @@ static void *
 _tmp_222_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -39160,8 +38684,7 @@ static void *
 _tmp_223_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -39202,8 +38725,7 @@ static void *
 _tmp_224_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -39244,8 +38766,7 @@ static void *
 _tmp_225_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -39286,8 +38807,7 @@ static void *
 _tmp_226_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -39328,8 +38848,7 @@ static void *
 _tmp_227_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -39374,8 +38893,7 @@ static void *
 _tmp_228_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -39420,8 +38938,7 @@ static asdl_seq *
 _loop0_230_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -39497,8 +39014,7 @@ static asdl_seq *
 _gather_229_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -39539,8 +39055,7 @@ static void *
 _tmp_231_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -39597,8 +39112,7 @@ static void *
 _tmp_232_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -39655,8 +39169,7 @@ static void *
 _tmp_233_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -39713,8 +39226,7 @@ static void *
 _tmp_234_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -39771,8 +39283,7 @@ static void *
 _tmp_235_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -39867,8 +39378,7 @@ static void *
 _tmp_236_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -39925,8 +39435,7 @@ static void *
 _tmp_237_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -40002,8 +39511,7 @@ static void *
 _tmp_238_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -40060,8 +39568,7 @@ static void *
 _tmp_239_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -40118,8 +39625,7 @@ static void *
 _tmp_240_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -40160,8 +39666,7 @@ static void *
 _tmp_241_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -40218,8 +39723,7 @@ static void *
 _tmp_242_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -40276,8 +39780,7 @@ static void *
 _tmp_243_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -40318,8 +39821,7 @@ static asdl_seq *
 _loop0_244_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -40386,8 +39888,7 @@ static void *
 _tmp_245_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -40444,8 +39945,7 @@ static void *
 _tmp_246_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -40486,8 +39986,7 @@ static void *
 _tmp_247_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -40544,8 +40043,7 @@ static void *
 _tmp_248_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -40591,8 +40089,7 @@ static void *
 _tmp_249_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -40649,8 +40146,7 @@ static void *
 _tmp_250_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -40707,8 +40203,7 @@ static void *
 _tmp_251_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -40757,8 +40252,7 @@ static void *
 _tmp_252_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -40804,8 +40298,7 @@ static void *
 _tmp_253_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -40851,8 +40344,7 @@ static void *
 _tmp_254_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -40898,8 +40390,7 @@ static void *
 _tmp_255_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -40945,8 +40436,7 @@ static void *
 _tmp_256_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -41003,8 +40493,7 @@ static void *
 _tmp_257_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -41061,8 +40550,7 @@ static void *
 _tmp_258_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -41108,8 +40596,7 @@ static void *
 _tmp_259_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -41155,8 +40642,7 @@ static void *
 _tmp_260_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -41215,8 +40701,7 @@ static void *
 _tmp_261_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -41262,8 +40747,7 @@ static void *
 _tmp_262_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -41309,8 +40793,7 @@ static void *
 _tmp_263_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -41351,8 +40834,7 @@ static void *
 _tmp_264_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -41393,8 +40875,7 @@ static void *
 _tmp_265_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -41451,8 +40932,7 @@ static void *
 _tmp_266_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -41509,8 +40989,7 @@ static void *
 _tmp_267_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -41552,8 +41031,7 @@ static void *
 _tmp_268_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -41595,8 +41073,7 @@ static void *
 _tmp_269_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -41638,8 +41115,7 @@ static void *
 _tmp_270_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -41681,8 +41157,7 @@ static void *
 _tmp_271_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -41723,8 +41198,7 @@ static void *
 _tmp_272_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -41783,8 +41257,7 @@ static void *
 _tmp_273_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -41825,8 +41298,7 @@ static void *
 _tmp_274_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -41867,8 +41339,7 @@ static void *
 _tmp_275_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;
@@ -41909,8 +41380,7 @@ static void *
 _tmp_276_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
+        _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
         p->level--;

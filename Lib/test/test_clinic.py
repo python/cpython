@@ -23,7 +23,7 @@ with test_tools.imports_under_tool('clinic'):
 
 def _make_clinic(*, filename='clinic_tests'):
     clang = clinic.CLanguage(None)
-    c = clinic.Clinic(clang, filename=filename)
+    c = clinic.Clinic(clang, filename=filename, limited_capi=False)
     c.block_parser = clinic.BlockParser('', clang)
     return c
 
@@ -125,7 +125,7 @@ class ClinicWholeFileTest(TestCase):
         clang.body_prefix = "//"
         clang.start_line = "//[{dsl_name} start]"
         clang.stop_line = "//[{dsl_name} stop]"
-        cl = clinic.Clinic(clang, filename="test.c")
+        cl = clinic.Clinic(clang, filename="test.c", limited_capi=False)
         raw = dedent("""
             //[clinic start]
             //module test
@@ -692,7 +692,7 @@ class ParseFileUnitTest(TestCase):
     ):
         errmsg = re.escape(dedent(expected_error).strip())
         with self.assertRaisesRegex(clinic.ClinicError, errmsg):
-            clinic.parse_file(filename)
+            clinic.parse_file(filename, limited_capi=False)
 
     def test_parse_file_no_extension(self) -> None:
         self.expect_parsing_failure(
@@ -832,8 +832,9 @@ class ClinicBlockParserTest(TestCase):
 
         blocks = list(clinic.BlockParser(input, language))
         writer = clinic.BlockPrinter(language)
+        c = _make_clinic()
         for block in blocks:
-            writer.print_block(block)
+            writer.print_block(block, limited_capi=c.limited_capi, header_includes=c.includes)
         output = writer.f.getvalue()
         assert output == input, "output != input!\n\noutput " + repr(output) + "\n\n input " + repr(input)
 
@@ -859,7 +860,7 @@ xyz
 
     def _test_clinic(self, input, output):
         language = clinic.CLanguage(None)
-        c = clinic.Clinic(language, filename="file")
+        c = clinic.Clinic(language, filename="file", limited_capi=False)
         c.parsers['inert'] = InertParser(c)
         c.parsers['copy'] = CopyParser(c)
         computed = c.parse(input)
@@ -1751,7 +1752,7 @@ class ClinicParserTest(TestCase):
                 * [from 3.14]
             Docstring.
         """
-        err = "Function 'bar': '* [from ...]' must come before '*'"
+        err = "Function 'bar': '* [from ...]' must precede '*'"
         self.expect_failure(block, err, lineno=4)
 
     def test_depr_star_duplicate(self):
@@ -1765,7 +1766,7 @@ class ClinicParserTest(TestCase):
                 c: int
             Docstring.
         """
-        err = "Function 'bar' uses '* [from ...]' more than once."
+        err = "Function 'bar' uses '* [from 3.14]' more than once."
         self.expect_failure(block, err, lineno=5)
 
     def test_depr_star_duplicate2(self):
@@ -1779,7 +1780,7 @@ class ClinicParserTest(TestCase):
                 c: int
             Docstring.
         """
-        err = "Function 'bar' uses '* [from ...]' more than once."
+        err = "Function 'bar': '* [from 3.15]' must precede '* [from 3.14]'"
         self.expect_failure(block, err, lineno=5)
 
     def test_depr_slash_duplicate(self):
@@ -1793,7 +1794,7 @@ class ClinicParserTest(TestCase):
                 c: int
             Docstring.
         """
-        err = "Function 'bar' uses '/ [from ...]' more than once."
+        err = "Function 'bar' uses '/ [from 3.14]' more than once."
         self.expect_failure(block, err, lineno=5)
 
     def test_depr_slash_duplicate2(self):
@@ -1801,13 +1802,13 @@ class ClinicParserTest(TestCase):
             module foo
             foo.bar
                 a: int
-                / [from 3.14]
-                b: int
                 / [from 3.15]
+                b: int
+                / [from 3.14]
                 c: int
             Docstring.
         """
-        err = "Function 'bar' uses '/ [from ...]' more than once."
+        err = "Function 'bar': '/ [from 3.14]' must precede '/ [from 3.15]'"
         self.expect_failure(block, err, lineno=5)
 
     def test_single_slash(self):
@@ -2309,10 +2310,10 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=1)
 
     def test_parent_class_or_module_does_not_exist(self):
-        err = "Parent class or module 'z' does not exist"
+        err = "Parent class or module 'baz' does not exist"
         block = """
             module m
-            z.func
+            baz.func
         """
         self.expect_failure(block, err, lineno=1)
 
@@ -2463,11 +2464,12 @@ class ClinicExternalTest(TestCase):
             # Verify by checking the checksum.
             checksum = (
                 "/*[clinic end generated code: "
-                "output=2124c291eb067d76 input=9543a8d2da235301]*/\n"
+                "output=c16447c01510dfb3 input=9543a8d2da235301]*/\n"
             )
             with open(fn, 'r', encoding='utf-8') as f:
                 generated = f.read()
-            self.assertTrue(generated.endswith(checksum))
+            self.assertTrue(generated.endswith(checksum),
+                            (generated, checksum))
 
     def test_cli_make(self):
         c_code = dedent("""
@@ -2671,12 +2673,6 @@ class ClinicExternalTest(TestCase):
             preserve
             [clinic start generated code]*/
 
-            #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-            #  include "pycore_gc.h"            // PyGC_Head
-            #  include "pycore_runtime.h"       // _Py_ID()
-            #endif
-
-
             PyDoc_VAR(func__doc__);
 
             PyDoc_STRVAR(func__doc__,
@@ -2689,7 +2685,7 @@ class ClinicExternalTest(TestCase):
 
             static PyObject *
             func(PyObject *module, PyObject *a)
-            /*[clinic end generated code: output=56c09670e89a0d9a input=a9049054013a1b77]*/
+            /*[clinic end generated code: output=3dde2d13002165b9 input=a9049054013a1b77]*/
         """)
         with os_helper.temp_dir() as tmp_dir:
             in_fn = os.path.join(tmp_dir, "test.c")
@@ -2724,7 +2720,15 @@ class ClinicFunctionalTest(unittest.TestCase):
     locals().update((name, getattr(ac_tester, name))
                     for name in dir(ac_tester) if name.startswith('test_'))
 
-    def check_depr_star(self, pnames, fn, *args, name=None, **kwds):
+    def check_depr(self, regex, fn, /, *args, **kwds):
+        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+            # Record the line number, so we're sure we've got the correct stack
+            # level on the deprecation warning.
+            _, lineno = fn(*args, **kwds), sys._getframe().f_lineno
+        self.assertEqual(cm.filename, __file__)
+        self.assertEqual(cm.lineno, lineno)
+
+    def check_depr_star(self, pnames, fn, /, *args, name=None, **kwds):
         if name is None:
             name = fn.__qualname__
             if isinstance(fn, type):
@@ -2734,12 +2738,7 @@ class ClinicFunctionalTest(unittest.TestCase):
             fr"{re.escape(name)}\(\) is deprecated. Parameters? {pnames} will "
             fr"become( a)? keyword-only parameters? in Python 3\.14"
         )
-        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
-            # Record the line number, so we're sure we've got the correct stack
-            # level on the deprecation warning.
-            _, lineno = fn(*args, **kwds), sys._getframe().f_lineno
-        self.assertEqual(cm.filename, __file__)
-        self.assertEqual(cm.lineno, lineno)
+        self.check_depr(regex, fn, *args, **kwds)
 
     def check_depr_kwd(self, pnames, fn, *args, name=None, **kwds):
         if name is None:
@@ -2749,15 +2748,10 @@ class ClinicFunctionalTest(unittest.TestCase):
         pl = 's' if ' ' in pnames else ''
         regex = (
             fr"Passing keyword argument{pl} {pnames} to "
-            fr"{re.escape(name)}\(\) is deprecated. Corresponding parameter{pl} "
+            fr"{re.escape(name)}\(\) is deprecated. Parameter{pl} {pnames} "
             fr"will become positional-only in Python 3\.14."
         )
-        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
-            # Record the line number, so we're sure we've got the correct stack
-            # level on the deprecation warning.
-            _, lineno = fn(*args, **kwds), sys._getframe().f_lineno
-        self.assertEqual(cm.filename, __file__)
-        self.assertEqual(cm.lineno, lineno)
+        self.check_depr(regex, fn, *args, **kwds)
 
     def test_objects_converter(self):
         with self.assertRaises(TypeError):
@@ -3368,6 +3362,24 @@ class ClinicFunctionalTest(unittest.TestCase):
         check("a", "b", c="c")
         self.assertRaises(TypeError, fn, "a", "b", "c", "d")
 
+    def test_depr_star_multi(self):
+        fn = ac_tester.depr_star_multi
+        self.assertRaises(TypeError, fn, "a")
+        fn("a", b="b", c="c", d="d", e="e", f="f", g="g", h="h")
+        errmsg = (
+            "Passing more than 1 positional argument to depr_star_multi() is deprecated. "
+            "Parameter 'b' will become a keyword-only parameter in Python 3.16. "
+            "Parameters 'c' and 'd' will become keyword-only parameters in Python 3.15. "
+            "Parameters 'e', 'f' and 'g' will become keyword-only parameters in Python 3.14.")
+        check = partial(self.check_depr, re.escape(errmsg), fn)
+        check("a", "b", c="c", d="d", e="e", f="f", g="g", h="h")
+        check("a", "b", "c", d="d", e="e", f="f", g="g", h="h")
+        check("a", "b", "c", "d", e="e", f="f", g="g", h="h")
+        check("a", "b", "c", "d", "e", f="f", g="g", h="h")
+        check("a", "b", "c", "d", "e", "f", g="g", h="h")
+        check("a", "b", "c", "d", "e", "f", "g", h="h")
+        self.assertRaises(TypeError, fn, "a", "b", "c", "d", "e", "f", "g", "h")
+
     def test_depr_kwd_required_1(self):
         fn = ac_tester.depr_kwd_required_1
         fn("a", "b")
@@ -3451,6 +3463,76 @@ class ClinicFunctionalTest(unittest.TestCase):
         check("a", "b", c="c")
         self.assertRaises(TypeError, fn, "a", c="c")
         self.assertRaises(TypeError, fn, a="a", b="b", c="c")
+
+    def test_depr_kwd_multi(self):
+        fn = ac_tester.depr_kwd_multi
+        fn("a", "b", "c", "d", "e", "f", "g", h="h")
+        errmsg = (
+            "Passing keyword arguments 'b', 'c', 'd', 'e', 'f' and 'g' to depr_kwd_multi() is deprecated. "
+            "Parameter 'b' will become positional-only in Python 3.14. "
+            "Parameters 'c' and 'd' will become positional-only in Python 3.15. "
+            "Parameters 'e', 'f' and 'g' will become positional-only in Python 3.16.")
+        check = partial(self.check_depr, re.escape(errmsg), fn)
+        check("a", "b", "c", "d", "e", "f", g="g", h="h")
+        check("a", "b", "c", "d", "e", f="f", g="g", h="h")
+        check("a", "b", "c", "d", e="e", f="f", g="g", h="h")
+        check("a", "b", "c", d="d", e="e", f="f", g="g", h="h")
+        check("a", "b", c="c", d="d", e="e", f="f", g="g", h="h")
+        check("a", b="b", c="c", d="d", e="e", f="f", g="g", h="h")
+        self.assertRaises(TypeError, fn, a="a", b="b", c="c", d="d", e="e", f="f", g="g", h="h")
+
+    def test_depr_multi(self):
+        fn = ac_tester.depr_multi
+        self.assertRaises(TypeError, fn, "a", "b", "c", "d", "e", "f", "g")
+        errmsg = (
+            "Passing more than 4 positional arguments to depr_multi() is deprecated. "
+            "Parameter 'e' will become a keyword-only parameter in Python 3.15. "
+            "Parameter 'f' will become a keyword-only parameter in Python 3.14.")
+        check = partial(self.check_depr, re.escape(errmsg), fn)
+        check("a", "b", "c", "d", "e", "f", g="g")
+        check("a", "b", "c", "d", "e", f="f", g="g")
+        fn("a", "b", "c", "d", e="e", f="f", g="g")
+        fn("a", "b", "c", d="d", e="e", f="f", g="g")
+        errmsg = (
+            "Passing keyword arguments 'b' and 'c' to depr_multi() is deprecated. "
+            "Parameter 'b' will become positional-only in Python 3.14. "
+            "Parameter 'c' will become positional-only in Python 3.15.")
+        check = partial(self.check_depr, re.escape(errmsg), fn)
+        check("a", "b", c="c", d="d", e="e", f="f", g="g")
+        check("a", b="b", c="c", d="d", e="e", f="f", g="g")
+        self.assertRaises(TypeError, fn, a="a", b="b", c="c", d="d", e="e", f="f", g="g")
+
+
+try:
+    import _testclinic_limited
+except ImportError:
+    _testclinic_limited = None
+
+@unittest.skipIf(_testclinic_limited is None, "_testclinic_limited is missing")
+class LimitedCAPIFunctionalTest(unittest.TestCase):
+    locals().update((name, getattr(_testclinic_limited, name))
+                    for name in dir(_testclinic_limited) if name.startswith('test_'))
+
+    def test_my_int_func(self):
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_int_func()
+        self.assertEqual(_testclinic_limited.my_int_func(3), 3)
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_int_func(1.0)
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_int_func("xyz")
+
+    def test_my_int_sum(self):
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_int_sum()
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_int_sum(1)
+        self.assertEqual(_testclinic_limited.my_int_sum(1, 2), 3)
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_int_sum(1.0, 2)
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_int_sum(1, "str")
+
 
 
 class PermutationTests(unittest.TestCase):
