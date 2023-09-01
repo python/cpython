@@ -934,6 +934,14 @@ Porting to Python 3.13
   functions: ``close()``, ``getpagesize()``, ``getpid()`` and ``sysconf()``.
   (Contributed by Victor Stinner in :gh:`108765`.)
 
+* ``Python.h`` no longer includes these standard header files: ``<time.h>``,
+  ``<sys/select.h>`` and ``<sys/time.h>``. If needed, they should now be
+  included explicitly. For example, ``<time.h>`` provides the ``clock()`` and
+  ``gmtime()`` functions, ``<sys/select.h>`` provides the ``select()``
+  function, and ``<sys/time.h>`` provides the ``futimes()``, ``gettimeofday()``
+  and ``setitimer()`` functions.
+  (Contributed by Victor Stinner in :gh:`108765`.)
+
 Deprecated
 ----------
 
