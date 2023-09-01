@@ -629,10 +629,12 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
                           PyThreadState **tstate_p)
 {
     PyStatus status;
-    PyInterpreterState *interp = PyInterpreterState_New();
-    if (interp == NULL) {
-        return _PyStatus_ERR("can't make main interpreter");
+    PyInterpreterState *interp;
+    status = _PyInterpreterState_New(NULL, &interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
+    assert(interp != NULL);
     assert(_Py_IsMainInterpreter(interp));
 
     status = _PyConfig_Copy(&interp->config, src_config);
