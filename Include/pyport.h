@@ -190,25 +190,6 @@ typedef Py_ssize_t Py_ssize_clean_t;
 
 #include <math.h> /* Moved here from the math section, before extern "C" */
 
-/********************************************
- * WRAPPER FOR <time.h> and/or <sys/time.h> *
- ********************************************/
-
-#ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
-#endif
-#include <time.h>
-
-/******************************
- * WRAPPER FOR <sys/select.h> *
- ******************************/
-
-/* NB caller must include <sys/types.h> */
-
-#ifdef HAVE_SYS_SELECT_H
-#include <sys/select.h>
-#endif /* !HAVE_SYS_SELECT_H */
-
 /*******************************
  * stat() and fstat() fiddling *
  *******************************/

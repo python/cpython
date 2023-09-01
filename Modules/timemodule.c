@@ -7,7 +7,7 @@
 #include "pycore_runtime.h"       // _Py_ID()
 
 #include <ctype.h>
-
+#include <time.h>                 // clock()
 #ifdef HAVE_SYS_TIMES_H
 #  include <sys/times.h>
 #endif
