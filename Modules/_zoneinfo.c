@@ -1703,7 +1703,7 @@ parse_digits(const char **p, int min, int max, int *value)
     assert(max <= 3);
     *value = 0;
     for (int i = 0; i < max; i++, (*p)++) {
-        if (!isdigit(**p)) {
+        if (!Py_ISDIGIT(**p)) {
             return (i < min) ? -1 : 0;
         }
         *value *= 10;
@@ -1735,7 +1735,7 @@ parse_abbr(const char **p, PyObject **abbr)
             //   '+' ) character, or the minus-sign ( '-' ) character. The std
             //   and dst fields in this case shall not include the quoting
             //   characters.
-            if (!isalpha(buff) && !isdigit(buff) && buff != '+' &&
+            if (!Py_ISALPHA(buff) && !Py_ISDIGIT(buff) && buff != '+' &&
                 buff != '-') {
                 return -1;
             }
@@ -1751,7 +1751,7 @@ parse_abbr(const char **p, PyObject **abbr)
         //   In the unquoted form, all characters in these fields shall be
         //   alphabetic characters from the portable character set in the
         //   current locale.
-        while (isalpha(*ptr)) {
+        while (Py_ISALPHA(*ptr)) {
             ptr++;
         }
         str_end = ptr;
