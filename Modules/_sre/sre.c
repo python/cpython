@@ -136,7 +136,7 @@ static unsigned int sre_toupper(unsigned int ch) {
 
 static unsigned int sre_lower_ascii(unsigned int ch)
 {
-    return ((ch) < 128 ? Py_TOLOWER(ch) : ch);
+    return ((ch) < 128 ? (unsigned int)Py_TOLOWER((unsigned char)ch) : ch);
 }
 
 /* locale-specific character predicates */

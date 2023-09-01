@@ -2128,11 +2128,13 @@ bytes_translate_impl(PyBytesObject *self, PyObject *table,
     }
 
     if (table_chars == NULL) {
-        for (i = 0; i < 256; i++)
-            trans_table[i] = Py_CHARMASK(i);
+        for (int ch = 0; ch < 256; ch++) {
+            trans_table[ch] = Py_CHARMASK(ch);
+        }
     } else {
-        for (i = 0; i < 256; i++)
-            trans_table[i] = Py_CHARMASK(table_chars[i]);
+        for (int ch = 0; ch < 256; ch++) {
+            trans_table[ch] = Py_CHARMASK(table_chars[ch]);
+        }
     }
     PyBuffer_Release(&table_view);
 

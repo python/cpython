@@ -18,19 +18,37 @@ PyAPI_DATA(const unsigned int) _Py_ctype_table[256];
 /* Unlike their C counterparts, the following macros are not meant to
  * handle an int with any of the values [EOF, 0-UCHAR_MAX]. The argument
  * must be a signed/unsigned char. */
-#define Py_ISLOWER(c)  (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_LOWER)
-#define Py_ISUPPER(c)  (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_UPPER)
-#define Py_ISALPHA(c)  (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_ALPHA)
-#define Py_ISDIGIT(c)  (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_DIGIT)
-#define Py_ISXDIGIT(c) (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_XDIGIT)
-#define Py_ISALNUM(c)  (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_ALNUM)
-#define Py_ISSPACE(c)  (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_SPACE)
+static inline int Py_ISLOWER(int c) {
+    return (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_LOWER);
+}
+static inline int Py_ISUPPER(int c) {
+    return (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_UPPER);
+}
+static inline int Py_ISALPHA(int c) {
+    return (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_ALPHA);
+}
+static inline int Py_ISDIGIT(int c) {
+    return (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_DIGIT);
+}
+static inline int Py_ISXDIGIT(int c) {
+    return (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_XDIGIT);
+}
+static inline int Py_ISALNUM(int c) {
+    return (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_ALNUM);
+}
+static inline int Py_ISSPACE(int c) {
+    return (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_SPACE);
+}
 
 PyAPI_DATA(const unsigned char) _Py_ctype_tolower[256];
 PyAPI_DATA(const unsigned char) _Py_ctype_toupper[256];
 
-#define Py_TOLOWER(c) (_Py_ctype_tolower[Py_CHARMASK(c)])
-#define Py_TOUPPER(c) (_Py_ctype_toupper[Py_CHARMASK(c)])
+static inline int Py_TOLOWER(int c) {
+    return _Py_ctype_tolower[Py_CHARMASK(c)];
+}
+static inline int Py_TOUPPER(int c) {
+    return _Py_ctype_toupper[Py_CHARMASK(c)];
+}
 
 #ifdef __cplusplus
 }
