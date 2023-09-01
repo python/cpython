@@ -28,6 +28,7 @@
 #include "pycore_fileutils.h"     // _Py_stat_struct
 
 #include <stddef.h>               // offsetof()
+#include <unistd.h>               // close()
 
 // to support MS_WINDOWS_SYSTEM OpenFileMappingA / CreateFileMappingA
 // need to be replaced with OpenFileMappingW / CreateFileMappingW

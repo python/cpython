@@ -17,6 +17,7 @@
 #include "pycore_time.h"          // _PyTime_t
 
 #include <stddef.h>               // offsetof()
+#include <unistd.h>               // close()
 
 #ifdef HAVE_SYS_DEVPOLL_H
 #include <sys/resource.h>
