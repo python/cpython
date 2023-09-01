@@ -3951,28 +3951,33 @@ def getmethparlist(ob):
     function definition and the second is suitable for use in function
     call.  The "self" parameter is not included.
     """
-    defText = callText = ""
+    orig_sig = inspect.signature(ob)
     # bit of a hack for methods - turn it into a function
     # but we drop the "self" param.
     # Try and build one for Python defined functions
-    args, varargs, varkw = inspect.getargs(ob.__code__)
-    items2 = args[1:]
-    realArgs = args[1:]
-    defaults = ob.__defaults__ or []
-    defaults = ["=%r" % (value,) for value in defaults]
-    defaults = [""] * (len(realArgs)-len(defaults)) + defaults
-    items1 = [arg + dflt for arg, dflt in zip(realArgs, defaults)]
-    if varargs is not None:
-        items1.append("*" + varargs)
-        items2.append("*" + varargs)
-    if varkw is not None:
-        items1.append("**" + varkw)
-        items2.append("**" + varkw)
-    defText = ", ".join(items1)
-    defText = "(%s)" % defText
-    callText = ", ".join(items2)
-    callText = "(%s)" % callText
-    return defText, callText
+    func_sig = orig_sig.replace(
+        parameters=list(orig_sig.parameters.values())[1:],
+    )
+
+    call_args = []
+    for param in func_sig.parameters.values():
+        match param.kind:
+            case (
+                inspect.Parameter.POSITIONAL_ONLY
+                | inspect.Parameter.POSITIONAL_OR_KEYWORD
+            ):
+                call_args.append(param.name)
+            case inspect.Parameter.VAR_POSITIONAL:
+                call_args.append(f'*{param.name}')
+            case inspect.Parameter.KEYWORD_ONLY:
+                call_args.append(f'{param.name}={param.name}')
+            case inspect.Parameter.VAR_KEYWORD:
+                call_args.append(f'**{param.name}')
+            case _:
+                raise RuntimeError('Unsupported parameter kind', param.kind)
+    call_text = f'({', '.join(call_args)})'
+
+    return str(func_sig), call_text
 
 def _turtle_docrevise(docstr):
     """To reduce docstrings from RawTurtle class for functions
