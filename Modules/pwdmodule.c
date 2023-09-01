@@ -7,7 +7,6 @@
 #include <pwd.h>                  // getpwuid()
 #include <unistd.h>               // sysconf()
 
-
 #include "clinic/pwdmodule.c.h"
 /*[clinic input]
 module pwd

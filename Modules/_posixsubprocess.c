@@ -8,9 +8,9 @@
 #include "pycore_pystate.h"
 #include "pycore_signal.h"        // _Py_RestoreSignals()
 #if defined(HAVE_PIPE2) && !defined(_GNU_SOURCE)
-# define _GNU_SOURCE
+#  define _GNU_SOURCE
 #endif
-#include <unistd.h>
+#include <unistd.h>               // close()
 #include <fcntl.h>
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
