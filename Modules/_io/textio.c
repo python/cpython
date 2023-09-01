@@ -1223,11 +1223,10 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         goto error;
     self->seekable = self->telling = r;
 
-    r = PyObject_GetOptionalAttr(buffer, &_Py_ID(read1), &res);
+    r = PyObject_HasAttrWithError(buffer, &_Py_ID(read1));
     if (r < 0) {
         goto error;
     }
-    Py_XDECREF(res);
     self->has_read1 = r;
 
     self->encoding_start_of_stream = 0;
