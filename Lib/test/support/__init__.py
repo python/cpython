@@ -779,9 +779,6 @@ def python_is_optimized():
 
 _header = 'nP'
 _align = '0n'
-if hasattr(sys, "getobjects"):
-    _header = '2P' + _header
-    _align = '0P'
 _vheader = _header + 'n'
 
 def calcobjsize(fmt):
@@ -1821,11 +1818,11 @@ def run_in_subinterp_with_config(code, *, own_gil=None, **config):
     module is enabled.
     """
     _check_tracemalloc()
-    import _testcapi
+    import _testinternalcapi
     if own_gil is not None:
         assert 'gil' not in config, (own_gil, config)
         config['gil'] = 2 if own_gil else 1
-    return _testcapi.run_in_subinterp_with_config(code, **config)
+    return _testinternalcapi.run_in_subinterp_with_config(code, **config)
 
 
 def _check_tracemalloc():
@@ -2469,3 +2466,5 @@ C_RECURSION_LIMIT = 1500
 #Windows doesn't have os.uname() but it doesn't support s390x.
 skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == 's390x',
                                 'skipped on s390x')
+
+Py_TRACE_REFS = hasattr(sys, 'getobjects')

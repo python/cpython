@@ -69,7 +69,6 @@ def preprocess(filename,
         cwd = os.path.abspath(cwd or '.')
     filename = _normpath(filename, cwd)
 
-    print(filename)
     postargs = POST_ARGS
     if os.path.basename(filename) not in USE_LIMITED_C_API:
         postargs += ('-DPy_BUILD_CORE=1',)

@@ -1,5 +1,5 @@
-#ifndef Py_ATOMIC_H
-#define Py_ATOMIC_H
+#ifndef Py_INTERNAL_ATOMIC_H
+#define Py_INTERNAL_ATOMIC_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -554,4 +554,4 @@ typedef struct _Py_atomic_int {
 #ifdef __cplusplus
 }
 #endif
-#endif  /* Py_ATOMIC_H */
+#endif  /* Py_INTERNAL_ATOMIC_H */
