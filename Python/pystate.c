@@ -674,6 +674,7 @@ init_interpreter(PyInterpreterState *interp,
                 _obmalloc_pools_INIT(interp->obmalloc.pools);
         memcpy(&interp->obmalloc.pools.used, temp, sizeof(temp));
     }
+
     _PyObject_InitState(interp);
 
     _PyEval_InitState(interp, pending_lock);
@@ -1001,6 +1002,9 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     if (interp->id_mutex != NULL) {
         PyThread_free_lock(interp->id_mutex);
     }
+
+    _PyObject_FiniState(interp);
+
     free_interpreter(interp);
 }
 

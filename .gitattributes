@@ -66,6 +66,8 @@ PCbuild/readme.txt  dos
 [attr]generated linguist-generated=true diff=generated
 
 **/clinic/*.c.h                                     generated
+**/clinic/*.cpp.h                                   generated
+**/clinic/*.h.h                                     generated
 *_db.h                                              generated
 Doc/data/stable_abi.dat                             generated
 Doc/library/token-list.inc                          generated
