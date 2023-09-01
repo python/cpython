@@ -215,8 +215,8 @@ a non-Python signal handler.
 .. nonce: VouZjn
 .. section: Core and Builtins
 
-Add ``__match_args__`` to :c:type:`structsequence` based classes. Patch by
-Pablo Galindo.
+Add ``__match_args__`` to :ref:`struct sequence objects <struct-sequence-objects>`.
+Patch by Pablo Galindo.
 
 ..
 
@@ -574,7 +574,7 @@ raised. Patch by Erlend E. Aasland.
 .. nonce: t9XEkQ
 .. section: Library
 
-Fix a regression introduced in GH-24562, where an empty bytestring was
+Fix a regression introduced in PR 24562, where an empty bytestring was
 fetched as ``None`` instead of ``b''`` in :mod:`sqlite3`. Patch by Mariusz
 Felisiak.
 
@@ -713,7 +713,7 @@ this situation.  Also ensures that the :func:`tempfile.gettempdir()` and
 .. section: Library
 
 Expose ``X509_V_FLAG_ALLOW_PROXY_CERTS`` as
-:data:`~ssl.VERIFY_ALLOW_PROXY_CERTS` to allow proxy certificate validation
+:const:`~ssl.VERIFY_ALLOW_PROXY_CERTS` to allow proxy certificate validation
 as explained in
 https://www.openssl.org/docs/man1.1.1/man7/proxy-certificates.html.
 

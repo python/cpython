@@ -1,1 +1,0 @@
-Add a new `gh` role to the documentation to link to GitHub issues.

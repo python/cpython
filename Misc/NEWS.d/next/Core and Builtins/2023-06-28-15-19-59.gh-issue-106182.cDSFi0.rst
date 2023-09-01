@@ -1,0 +1,2 @@
+:func:`sys.getfilesystemencoding` and :mod:`sys.getfilesystemencodeerrors`
+now return interned Unicode object.

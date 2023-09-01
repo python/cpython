@@ -1,2 +1,0 @@
-Add support for path-like objects to :func:`multiprocessing.set_executable` for
-Windows to be on a par with Unix-like systems. Patch by Géry Ogam.

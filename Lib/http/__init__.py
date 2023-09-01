@@ -31,6 +31,26 @@ class HTTPStatus:
         obj.description = description
         return obj
 
+    @property
+    def is_informational(self):
+        return 100 <= self <= 199
+
+    @property
+    def is_success(self):
+        return 200 <= self <= 299
+
+    @property
+    def is_redirection(self):
+        return 300 <= self <= 399
+
+    @property
+    def is_client_error(self):
+        return 400 <= self <= 499
+
+    @property
+    def is_server_error(self):
+        return 500 <= self <= 599
+
     # informational
     CONTINUE = 100, 'Continue', 'Request received, please continue'
     SWITCHING_PROTOCOLS = (101, 'Switching Protocols',

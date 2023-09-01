@@ -1,2 +1,0 @@
-Show the actual named values stored in inline caches when
-``show_caches=True`` is passed to :mod:`dis` utilities.

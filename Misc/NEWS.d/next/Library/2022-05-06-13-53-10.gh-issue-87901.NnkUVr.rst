@@ -1,1 +1,0 @@
-Add the *encoding* parameter to :func:`os.popen`.

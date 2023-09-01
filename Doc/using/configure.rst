@@ -2,12 +2,70 @@
 Configure Python
 ****************
 
+Build Requirements
+==================
+
+Features and minimum versions required to build CPython:
+
+* A `C11 <https://en.cppreference.com/w/c/11>`_ compiler. `Optional C11
+  features
+  <https://en.wikipedia.org/wiki/C11_(C_standard_revision)#Optional_features>`_
+  are not required.
+
+* On Windows, Microsoft Visual Studio 2017 or later is required.
+
+* Support for `IEEE 754 <https://en.wikipedia.org/wiki/IEEE_754>`_ floating
+  point numbers and `floating point Not-a-Number (NaN)
+  <https://en.wikipedia.org/wiki/NaN#Floating_point>`_.
+
+* Support for threads.
+
+* OpenSSL 1.1.1 is the minimum version and OpenSSL 3.0.9 is the recommended
+  minimum version for the :mod:`ssl` and :mod:`hashlib` extension modules.
+
+* SQLite 3.15.2 for the :mod:`sqlite3` extension module.
+
+* Tcl/Tk 8.5.12 for the :mod:`tkinter` module.
+
+* Autoconf 2.71 and aclocal 1.16.4 are required to regenerate the
+  :file:`configure` script.
+
+.. versionchanged:: 3.13:
+   Autoconf 2.71, aclocal 1.16.4 and SQLite 3.15.2 are now required.
+
+.. versionchanged:: 3.11
+   C11 compiler, IEEE 754 and NaN support are now required.
+   On Windows, Visual Studio 2017 or later is required.
+   Tcl/Tk version 8.5.12 is now required for the :mod:`tkinter` module.
+
+.. versionchanged:: 3.10
+   OpenSSL 1.1.1 is now required.
+   Require SQLite 3.7.15.
+
+.. versionchanged:: 3.7
+   Thread support and OpenSSL 1.0.2 are now required.
+
+.. versionchanged:: 3.6
+   Selected C99 features are now required, like ``<stdint.h>`` and ``static
+   inline`` functions.
+
+.. versionchanged:: 3.5
+   On Windows, Visual Studio 2015 or later is now required.
+   Tcl/Tk version 8.4 is now required.
+
+.. versionchanged:: 3.1
+   Tcl/Tk version 8.3.1 is now required.
+
+See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform
+support".
+
+
 .. _configure-options:
 
 Configure Options
 =================
 
-List all ``./configure`` script options using::
+List all :file:`configure` script options using::
 
     ./configure --help
 
@@ -41,12 +99,6 @@ General Options
 
    See :data:`sys.int_info.bits_per_digit <sys.int_info>`.
 
-.. cmdoption:: --with-cxx-main
-.. cmdoption:: --with-cxx-main=COMPILER
-
-   Compile the Python ``main()`` function and link Python executable with C++
-   compiler: ``$CXX``, or *COMPILER* if specified.
-
 .. cmdoption:: --with-suffix=SUFFIX
 
    Set the Python executable suffix to *SUFFIX*.
@@ -62,7 +114,7 @@ General Options
 
 .. cmdoption:: --with-tzpath=<list of absolute paths separated by pathsep>
 
-   Select the default time zone search path for :data:`zoneinfo.TZPATH`.
+   Select the default time zone search path for :const:`zoneinfo.TZPATH`.
    See the :ref:`Compile-time configuration
    <zoneinfo_data_compile_time_config>` of the :mod:`zoneinfo` module.
 
@@ -77,7 +129,7 @@ General Options
    Build the ``_decimal`` extension module using a thread-local context rather
    than a coroutine-local context (default), see the :mod:`decimal` module.
 
-   See :data:`decimal.HAVE_CONTEXTVAR` and the :mod:`contextvars` module.
+   See :const:`decimal.HAVE_CONTEXTVAR` and the :mod:`contextvars` module.
 
    .. versionadded:: 3.9
 
@@ -98,6 +150,12 @@ General Options
    Don't define the ``PY_COERCE_C_LOCALE`` macro.
 
    See :envvar:`PYTHONCOERCECLOCALE` and the :pep:`538`.
+
+.. cmdoption:: --without-freelists
+
+   Disable all freelists except the empty tuple singleton.
+
+   .. versionadded:: 3.11
 
 .. cmdoption:: --with-platlibdir=DIRNAME
 
@@ -137,11 +195,21 @@ General Options
    Turn on internal statistics gathering.
 
    The statistics will be dumped to a arbitrary (probably unique) file in
-   ``/tmp/py_stats/``, or ``C:\temp\py_stats\`` on Windows.
+   ``/tmp/py_stats/``, or ``C:\temp\py_stats\`` on Windows. If that directory
+   does not exist, results will be printed on stdout.
 
    Use ``Tools/scripts/summarize_stats.py`` to read the stats.
 
    .. versionadded:: 3.11
+
+.. cmdoption:: --disable-gil
+
+   Enables **experimental** support for running Python without the
+   :term:`global interpreter lock` (GIL).
+
+   See :pep:`703` "Making the Global Interpreter Lock Optional in CPython".
+
+   .. versionadded:: 3.13
 
 WebAssembly Options
 -------------------
@@ -174,6 +242,22 @@ WebAssembly Options
 Install Options
 ---------------
 
+.. cmdoption:: --prefix=PREFIX
+
+   Install architecture-independent files in PREFIX. On Unix, it
+   defaults to :file:`/usr/local`.
+
+   This value can be retrieved at runtime using :data:`sys.prefix`.
+
+   As an example, one can use ``--prefix="$HOME/.local/"`` to install
+   a Python in its home directory.
+
+.. cmdoption:: --exec-prefix=EPREFIX
+
+   Install architecture-dependent files in EPREFIX, defaults to :option:`--prefix`.
+
+   This value can be retrieved at runtime using :data:`sys.exec_prefix`.
+
 .. cmdoption:: --disable-test-modules
 
    Don't build nor install test modules, like the :mod:`test` package or the
@@ -197,7 +281,8 @@ Performance options
 -------------------
 
 Configuring Python using ``--enable-optimizations --with-lto`` (PGO + LTO) is
-recommended for best performance.
+recommended for best performance. The experimental ``--enable-bolt`` flag can
+also be used to improve performance.
 
 .. cmdoption:: --enable-optimizations
 
@@ -237,6 +322,34 @@ recommended for best performance.
    .. versionadded:: 3.11
       To use ThinLTO feature, use ``--with-lto=thin`` on Clang.
 
+   .. versionchanged:: 3.12
+      Use ThinLTO as the default optimization policy on Clang if the compiler accepts the flag.
+
+.. cmdoption:: --enable-bolt
+
+   Enable usage of the `BOLT post-link binary optimizer
+   <https://github.com/llvm/llvm-project/tree/main/bolt>`_ (disabled by
+   default).
+
+   BOLT is part of the LLVM project but is not always included in their binary
+   distributions. This flag requires that ``llvm-bolt`` and ``merge-fdata``
+   are available.
+
+   BOLT is still a fairly new project so this flag should be considered
+   experimental for now. Because this tool operates on machine code its success
+   is dependent on a combination of the build environment + the other
+   optimization configure args + the CPU architecture, and not all combinations
+   are supported.
+   BOLT versions before LLVM 16 are known to crash BOLT under some scenarios.
+   Use of LLVM 16 or newer for BOLT optimization is strongly encouraged.
+
+   The :envvar:`!BOLT_INSTRUMENT_FLAGS` and :envvar:`!BOLT_APPLY_FLAGS`
+   :program:`configure` variables can be defined to override the default set of
+   arguments for :program:`llvm-bolt` to instrument and apply BOLT data to
+   binaries, respectively.
+
+   .. versionadded:: 3.12
+
 .. cmdoption:: --with-computed-gotos
 
    Enable computed gotos in evaluation loop (enabled by default on supported
@@ -262,6 +375,11 @@ recommended for best performance.
 
    Enable C-level code profiling with ``gprof`` (disabled by default).
 
+.. cmdoption:: --with-strict-overflow
+
+   Add ``-fstrict-overflow`` to the C compiler flags (by default we add
+   ``-fno-strict-overflow`` instead).
+
 
 .. _debug-build:
 
@@ -278,7 +396,8 @@ Effects of a debug build:
 * Add ``d`` to :data:`sys.abiflags`.
 * Add :func:`sys.gettotalrefcount` function.
 * Add :option:`-X showrefcount <-X>` command line option.
-* Add :envvar:`PYTHONTHREADDEBUG` environment variable.
+* Add :option:`-d` command line option and :envvar:`PYTHONDEBUG` environment
+  variable to debug the parser.
 * Add support for the ``__lltrace__`` variable: enable low-level tracing in the
   bytecode evaluation loop if the variable is defined.
 * Install :ref:`debug hooks on memory allocators <default-memory-allocators>`
@@ -306,8 +425,7 @@ See also the :ref:`Python Development Mode <devmode>` and the
 .. versionchanged:: 3.8
    Release builds and debug builds are now ABI compatible: defining the
    ``Py_DEBUG`` macro no longer implies the ``Py_TRACE_REFS`` macro (see the
-   :option:`--with-trace-refs` option), which introduces the only ABI
-   incompatibility.
+   :option:`--with-trace-refs` option).
 
 
 Debug options
@@ -328,8 +446,14 @@ Debug options
    * Add :func:`sys.getobjects` function.
    * Add :envvar:`PYTHONDUMPREFS` environment variable.
 
-   This build is not ABI compatible with release build (default build) or debug
-   build (``Py_DEBUG`` and ``Py_REF_DEBUG`` macros).
+   The :envvar:`PYTHONDUMPREFS` environment variable can be used to dump
+   objects and reference counts still alive at Python exit.
+
+   :ref:`Statically allocated objects <static-types>` are not traced.
+
+   .. versionchanged:: 3.13
+      This build is now ABI compatible with release build and :ref:`debug build
+      <debug-build>`.
 
    .. versionadded:: 3.8
 
@@ -405,11 +529,6 @@ Libraries options
 
    Build the :mod:`pyexpat` module using an installed ``expat`` library
    (default is no).
-
-.. cmdoption:: --with-system-ffi
-
-   Build the :mod:`_ctypes` extension module using an installed ``ffi``
-   library, see the :mod:`ctypes` module (default is system-dependent).
 
 .. cmdoption:: --with-system-libmpdec
 
@@ -598,7 +717,6 @@ Main files of the build system
 * :file:`pyconfig.h` (created by :file:`configure`);
 * :file:`Modules/Setup`: C extensions built by the Makefile using
   :file:`Module/makesetup` shell script;
-* :file:`setup.py`: C extensions built using the :mod:`distutils` module.
 
 Main build steps
 ----------------
@@ -607,8 +725,7 @@ Main build steps
 * A static ``libpython`` library (``.a``) is created from objects files.
 * ``python.o`` and the static ``libpython`` library are linked into the
   final ``python`` program.
-* C extensions are built by the Makefile (see :file:`Modules/Setup`)
-  and ``python setup.py build``.
+* C extensions are built by the Makefile (see :file:`Modules/Setup`).
 
 Main Makefile targets
 ---------------------
@@ -660,11 +777,8 @@ Example on Linux x86-64::
 At the beginning of the files, C extensions are built as built-in modules.
 Extensions defined after the ``*shared*`` marker are built as dynamic libraries.
 
-The :file:`setup.py` script only builds C extensions as shared libraries using
-the :mod:`distutils` module.
-
-The :c:macro:`PyAPI_FUNC()`, :c:macro:`PyAPI_API()` and
-:c:macro:`PyMODINIT_FUNC()` macros of :file:`Include/pyport.h` are defined
+The :c:macro:`PyAPI_FUNC()`, :c:macro:`PyAPI_DATA()` and
+:c:macro:`PyMODINIT_FUNC` macros of :file:`Include/pyport.h` are defined
 differently depending if the ``Py_BUILD_CORE_MODULE`` macro is defined:
 
 * Use ``Py_EXPORTED_SYMBOL`` if the ``Py_BUILD_CORE_MODULE`` is defined
@@ -696,7 +810,7 @@ Preprocessor flags
    headers in a nonstandard directory ``<include dir>``.
 
    Both :envvar:`CPPFLAGS` and :envvar:`LDFLAGS` need to contain the shell's
-   value for setup.py to be able to build extension modules using the
+   value to be able to build extension modules using the
    directories specified in the environment variables.
 
 .. envvar:: BASECPPFLAGS
@@ -720,21 +834,9 @@ Compiler flags
 
    Example: ``gcc -pthread``.
 
-.. envvar:: MAINCC
-
-   C compiler command used to build the ``main()`` function of programs like
-   ``python``.
-
-   Variable set by the :option:`--with-cxx-main` option of the configure
-   script.
-
-   Default: ``$(CC)``.
-
 .. envvar:: CXX
 
    C++ compiler command.
-
-   Used if the :option:`--with-cxx-main` option is used.
 
    Example: ``g++ -pthread``.
 
@@ -745,10 +847,28 @@ Compiler flags
 .. envvar:: CFLAGS_NODIST
 
    :envvar:`CFLAGS_NODIST` is used for building the interpreter and stdlib C
-   extensions.  Use it when a compiler flag should *not* be part of the
-   distutils :envvar:`CFLAGS` once Python is installed (:issue:`21121`).
+   extensions.  Use it when a compiler flag should *not* be part of
+   :envvar:`CFLAGS` once Python is installed (:gh:`65320`).
+
+   In particular, :envvar:`CFLAGS` should not contain:
+
+   * the compiler flag ``-I`` (for setting the search path for include files).
+     The ``-I`` flags are processed from left to right, and any flags in
+     :envvar:`CFLAGS` would take precedence over user- and package-supplied ``-I``
+     flags.
+
+   * hardening flags such as ``-Werror`` because distributions cannot control
+     whether packages installed by users conform to such heightened
+     standards.
 
    .. versionadded:: 3.5
+
+.. envvar:: COMPILEALL_OPTS
+
+   Options passed to the :mod:`compileall` command line when building PYC files
+   in ``make install``. Default: ``-j0``.
+
+   .. versionadded:: 3.12
 
 .. envvar:: EXTRA_CFLAGS
 
@@ -842,7 +962,7 @@ Linker flags
 
    Linker command used to build programs like ``python`` and ``_testembed``.
 
-   Default: ``$(PURIFY) $(MAINCC)``.
+   Default: ``$(PURIFY) $(CC)``.
 
 .. envvar:: CONFIGURE_LDFLAGS
 
@@ -858,7 +978,14 @@ Linker flags
 
    :envvar:`LDFLAGS_NODIST` is used in the same manner as
    :envvar:`CFLAGS_NODIST`.  Use it when a linker flag should *not* be part of
-   the distutils :envvar:`LDFLAGS` once Python is installed (:issue:`35257`).
+   :envvar:`LDFLAGS` once Python is installed (:gh:`65320`).
+
+   In particular, :envvar:`LDFLAGS` should not contain:
+
+   * the compiler flag ``-L`` (for setting the search path for libraries).
+     The ``-L`` flags are processed from left to right, and any flags in
+     :envvar:`LDFLAGS` would take precedence over user- and package-supplied ``-L``
+     flags.
 
 .. envvar:: CONFIGURE_LDFLAGS_NODIST
 
@@ -873,7 +1000,7 @@ Linker flags
    directory ``<lib dir>``.
 
    Both :envvar:`CPPFLAGS` and :envvar:`LDFLAGS` need to contain the shell's
-   value for setup.py to be able to build extension modules using the
+   value to be able to build extension modules using the
    directories specified in the environment variables.
 
 .. envvar:: LIBS

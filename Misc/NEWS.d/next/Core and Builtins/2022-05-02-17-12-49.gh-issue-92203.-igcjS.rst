@@ -1,5 +1,0 @@
-Add a closure keyword-only parameter to exec(). It can only be specified
-when exec-ing a code object that uses free variables. When specified, it
-must be a tuple, with exactly the number of cell variables referenced by the
-code object. closure has a default value of None, and it must be None if the
-code object doesn't refer to any free variables.

@@ -1,4 +1,0 @@
-All docstrings in code snippets are now wrapped into :func:`PyDoc_STR` to
-follow the guideline of `PEP 7's Documentation Strings paragraph
-<https://www.python.org/dev/peps/pep-0007/#documentation-strings>`_. Patch
-by Oleg Iarygin.

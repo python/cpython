@@ -1,2 +1,0 @@
-Implement ``typing.Required`` and ``typing.NotRequired`` (:pep:`655`). Patch
-by David Foster and Jelle Zijlstra.

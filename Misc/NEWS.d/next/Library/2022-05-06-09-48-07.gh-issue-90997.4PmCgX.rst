@@ -1,2 +1,0 @@
-Fix an issue where :mod:`dis` utilities may interpret populated inline cache
-entries as valid instructions.

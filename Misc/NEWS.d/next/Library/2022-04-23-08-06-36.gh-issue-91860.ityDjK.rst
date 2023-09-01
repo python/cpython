@@ -1,2 +1,0 @@
-Add :func:`typing.dataclass_transform`, implementing :pep:`681`. Patch by
-Jelle Zijlstra.

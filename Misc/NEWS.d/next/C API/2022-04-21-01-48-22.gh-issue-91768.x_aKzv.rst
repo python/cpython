@@ -1,3 +1,0 @@
-:c:func:`Py_REFCNT`, :c:func:`Py_TYPE`, :c:func:`Py_SIZE` and
-:c:func:`Py_IS_TYPE` functions argument type is now ``PyObject*``, rather
-than ``const PyObject*``. Patch by Victor Stinner.

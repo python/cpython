@@ -21,9 +21,9 @@ This returns an instance of a class with the following public methods:
       getparams()     -- returns a namedtuple consisting of all of the
                          above in the above order
       getmarkers()    -- returns None (for compatibility with the
-                         aifc module)
+                         old aifc module)
       getmark(id)     -- raises an error since the mark does not
-                         exist (for compatibility with the aifc module)
+                         exist (for compatibility with the old aifc module)
       readframes(n)   -- returns at most n frames of audio
       rewind()        -- rewind to the beginning of the audio stream
       setpos(pos)     -- seek to the specified position
@@ -83,11 +83,15 @@ class Error(Exception):
     pass
 
 WAVE_FORMAT_PCM = 0x0001
+WAVE_FORMAT_EXTENSIBLE = 0xFFFE
+# Derived from uuid.UUID("00000001-0000-0010-8000-00aa00389b71").bytes_le
+KSDATAFORMAT_SUBTYPE_PCM = b'\x01\x00\x00\x00\x00\x00\x10\x00\x80\x00\x00\xaa\x008\x9bq'
 
 _array_fmts = None, 'b', 'h', None, 'i'
 
 _wave_params = namedtuple('_wave_params',
                      'nchannels sampwidth framerate nframes comptype compname')
+
 
 def _byteswap(data, width):
     swapped_data = bytearray(len(data))
@@ -101,7 +105,6 @@ def _byteswap(data, width):
 
 class _Chunk:
     def __init__(self, file, align=True, bigendian=True, inclheader=False):
-        import struct
         self.closed = False
         self.align = align      # whether to align to word (2-byte) boundaries
         if bigendian:
@@ -209,7 +212,6 @@ class _Chunk:
             dummy = self.read(n)
             if not dummy:
                 raise EOFError
-
 
 
 class Wave_read:
@@ -340,9 +342,13 @@ class Wave_read:
                        self.getcomptype(), self.getcompname())
 
     def getmarkers(self):
+        import warnings
+        warnings._deprecated("Wave_read.getmarkers", remove=(3, 15))
         return None
 
     def getmark(self, id):
+        import warnings
+        warnings._deprecated("Wave_read.getmark", remove=(3, 15))
         raise Error('no marks')
 
     def setpos(self, pos):
@@ -377,21 +383,37 @@ class Wave_read:
             wFormatTag, self._nchannels, self._framerate, dwAvgBytesPerSec, wBlockAlign = struct.unpack_from('<HHLLH', chunk.read(14))
         except struct.error:
             raise EOFError from None
-        if wFormatTag == WAVE_FORMAT_PCM:
+        if wFormatTag != WAVE_FORMAT_PCM and wFormatTag != WAVE_FORMAT_EXTENSIBLE:
+            raise Error('unknown format: %r' % (wFormatTag,))
+        try:
+            sampwidth = struct.unpack_from('<H', chunk.read(2))[0]
+        except struct.error:
+            raise EOFError from None
+        if wFormatTag == WAVE_FORMAT_EXTENSIBLE:
             try:
-                sampwidth = struct.unpack_from('<H', chunk.read(2))[0]
+                cbSize, wValidBitsPerSample, dwChannelMask = struct.unpack_from('<HHL', chunk.read(8))
+                # Read the entire UUID from the chunk
+                SubFormat = chunk.read(16)
+                if len(SubFormat) < 16:
+                    raise EOFError
             except struct.error:
                 raise EOFError from None
-            self._sampwidth = (sampwidth + 7) // 8
-            if not self._sampwidth:
-                raise Error('bad sample width')
-        else:
-            raise Error('unknown format: %r' % (wFormatTag,))
+            if SubFormat != KSDATAFORMAT_SUBTYPE_PCM:
+                try:
+                    import uuid
+                    subformat_msg = f'unknown extended format: {uuid.UUID(bytes_le=SubFormat)}'
+                except Exception:
+                    subformat_msg = 'unknown extended format'
+                raise Error(subformat_msg)
+        self._sampwidth = (sampwidth + 7) // 8
+        if not self._sampwidth:
+            raise Error('bad sample width')
         if not self._nchannels:
             raise Error('bad # of channels')
         self._framesize = self._nchannels * self._sampwidth
         self._comptype = 'NONE'
         self._compname = 'not compressed'
+
 
 class Wave_write:
     """Variables used in this class:
@@ -530,12 +552,18 @@ class Wave_write:
               self._nframes, self._comptype, self._compname)
 
     def setmark(self, id, pos, name):
+        import warnings
+        warnings._deprecated("Wave_write.setmark", remove=(3, 15))
         raise Error('setmark() not supported')
 
     def getmark(self, id):
+        import warnings
+        warnings._deprecated("Wave_write.getmark", remove=(3, 15))
         raise Error('no marks')
 
     def getmarkers(self):
+        import warnings
+        warnings._deprecated("Wave_write.getmarkers", remove=(3, 15))
         return None
 
     def tell(self):
@@ -619,6 +647,7 @@ class Wave_write:
         self._file.write(struct.pack('<L', self._datawritten))
         self._file.seek(curpos, 0)
         self._datalength = self._datawritten
+
 
 def open(f, mode=None):
     if mode is None:

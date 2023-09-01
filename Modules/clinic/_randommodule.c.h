@@ -100,7 +100,7 @@ _random_Random_getrandbits(RandomObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int k;
 
-    k = _PyLong_AsInt(arg);
+    k = PyLong_AsInt(arg);
     if (k == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -109,4 +109,4 @@ _random_Random_getrandbits(RandomObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d144826cde89e605 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5e7e05d756a7e1c7 input=a9049054013a1b77]*/

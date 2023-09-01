@@ -1,2 +1,0 @@
-Provide a way to disable :mod:`subprocess` use of ``vfork()`` just in case
-it is ever needed and document the existing mechanism for ``posix_spawn()``.

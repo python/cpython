@@ -50,10 +50,10 @@ class CreationTestCase(unittest.TestCase):
     def testReturnType(self):
         # Test return type of gettimeout()
         self.sock.settimeout(1)
-        self.assertEqual(type(self.sock.gettimeout()), type(1.0))
+        self.assertIs(type(self.sock.gettimeout()), float)
 
         self.sock.settimeout(3.9)
-        self.assertEqual(type(self.sock.gettimeout()), type(1.0))
+        self.assertIs(type(self.sock.gettimeout()), float)
 
     def testTypeCheck(self):
         # Test type checking by settimeout()

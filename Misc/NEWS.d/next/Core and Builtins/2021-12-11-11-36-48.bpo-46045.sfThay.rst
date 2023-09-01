@@ -1,1 +1,0 @@
-Do not use POSIX semaphores on NetBSD

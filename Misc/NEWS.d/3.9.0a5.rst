@@ -582,7 +582,7 @@ Fix :mod:`json.tool` to catch :exc:`BrokenPipeError`. Patch by Dong-hee Na.
 
 Avoid a possible *"RuntimeError: dictionary changed size during iteration"*
 from :func:`inspect.getmodule` when it tried to loop through
-:attr:`sys.modules`.
+:data:`sys.modules`.
 
 ..
 
@@ -623,7 +623,7 @@ connections.
 .. nonce: 5a822c
 .. section: Library
 
-Reimplement :func:`distutils.spawn.spawn` function with the
+Reimplement ``distutils.spawn.spawn`` function with the
 :mod:`subprocess` module.
 
 ..
@@ -989,7 +989,7 @@ modules are built.
 
 Add ``--with-platlibdir`` option to the configure script: name of the
 platform-specific library directory, stored in the new
-:attr:`sys.platlibdir` attribute. It is used to build the path of
+:data:`sys.platlibdir` attribute. It is used to build the path of
 platform-specific extension modules and the path of the standard library. It
 is equal to ``"lib"`` on most platforms. On Fedora and SuSE, it is equal to
 ``"lib64"`` on 64-bit platforms. Patch by Jan Matějek, Matěj Cepl,
@@ -1022,7 +1022,7 @@ lock-related objects from :mod:`threading`) around 49-day uptime.
 .. nonce: MnHdYl
 .. section: Windows
 
-:mod:`distutils` will no longer statically link :file:`vcruntime140.dll`
+``distutils`` will no longer statically link :file:`vcruntime140.dll`
 when a redistributable version is unavailable. All future releases of
 CPython will include a copy of this DLL to ensure distributed extensions can
 continue to load.
@@ -1234,8 +1234,8 @@ method name in the SystemError "bad call flags" error message to ease debug.
 .. nonce: GOYtIm
 .. section: C API
 
-Deprecated :c:func:`PyEval_InitThreads` and
-:c:func:`PyEval_ThreadsInitialized`. Calling :c:func:`PyEval_InitThreads`
+Deprecated :c:func:`!PyEval_InitThreads` and
+:c:func:`!PyEval_ThreadsInitialized`. Calling :c:func:`!PyEval_InitThreads`
 now does nothing.
 
 ..

@@ -215,13 +215,8 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
             # object. On Python 3.6, it is required to avoid a ResourceWarning.
             self._proc.returncode = returncode
         self._call(self._protocol.process_exited)
-        self._try_finish()
 
-        # wake up futures waiting for wait()
-        for waiter in self._exit_waiters:
-            if not waiter.cancelled():
-                waiter.set_result(returncode)
-        self._exit_waiters = None
+        self._try_finish()
 
     async def _wait(self):
         """Wait until the process exit and return the process return code.
@@ -247,6 +242,11 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         try:
             self._protocol.connection_lost(exc)
         finally:
+            # wake up futures waiting for wait()
+            for waiter in self._exit_waiters:
+                if not waiter.cancelled():
+                    waiter.set_result(self._returncode)
+            self._exit_waiters = None
             self._loop = None
             self._proc = None
             self._protocol = None

@@ -1,2 +1,0 @@
-:mod:`re` module, fix :meth:`~re.Pattern.fullmatch` mismatch when using Atomic
-Grouping or Possessive Quantifiers.

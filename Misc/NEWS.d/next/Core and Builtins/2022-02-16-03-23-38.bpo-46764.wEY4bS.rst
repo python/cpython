@@ -1,1 +1,0 @@
-Fix wrapping bound methods with @classmethod

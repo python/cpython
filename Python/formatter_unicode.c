@@ -608,7 +608,7 @@ fill_number(_PyUnicodeWriter *writer, const NumberFieldWidths *spec,
 {
     /* Used to keep track of digits, decimal, and remainder. */
     Py_ssize_t d_pos = d_start;
-    const unsigned int kind = writer->kind;
+    const int kind = writer->kind;
     const void *data = writer->data;
     Py_ssize_t r;
 
@@ -982,7 +982,7 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
 
         /* Do the hard part, converting to a string in a given base */
         tmp = _PyLong_Format(value, base);
-        if (tmp == NULL || PyUnicode_READY(tmp) == -1)
+        if (tmp == NULL)
             goto done;
 
         inumeric_chars = 0;
@@ -1215,7 +1215,7 @@ format_complex_internal(PyObject *value,
     int flags = 0;
     int result = -1;
     Py_UCS4 maxchar = 127;
-    enum PyUnicode_Kind rkind;
+    int rkind;
     void *rdata;
     Py_UCS4 re_sign_char = '\0';
     Py_UCS4 im_sign_char = '\0';

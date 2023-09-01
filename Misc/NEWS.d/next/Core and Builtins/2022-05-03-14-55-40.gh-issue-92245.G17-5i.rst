@@ -1,2 +1,0 @@
-Make sure that PEP 523 is respected in all cases. In 3.11a7, specialization
-may have prevented Python-to-Python calls respecting PEP 523.
