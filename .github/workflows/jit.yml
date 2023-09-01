@@ -67,7 +67,7 @@ jobs:
           #   runner: ubuntu-latest
           #   compiler: gcc
           #   tier: 2
-          #   exclude: test_cmd_line test_concurrent_futures test_eintr test_faulthandler test_os test_posix test_signal test_socket test_subprocess test_tools
+          #   exclude: test_cmd_line test_concurrent_futures test_eintr test_faulthandler test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_tools
           - target: x86_64-unknown-linux-gnu/clang
             architecture: x86_64
             runner: ubuntu-latest

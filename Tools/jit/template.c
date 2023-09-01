@@ -15,6 +15,7 @@
 #include "pycore_sliceobject.h"
 #include "pycore_uops.h"
 
+#define TIER_TWO 2
 #include "Python/ceval_macros.h"
 
 #undef DEOPT_IF
@@ -53,10 +54,9 @@ _jit_entry(_PyInterpreterFrame *frame, PyObject **stack_pointer,
     uint32_t opcode = _JIT_OPCODE;
     int32_t oparg = (uintptr_t)&_jit_oparg_plus_one - 1;
     uint64_t operand = (uintptr_t)&_jit_operand_plus_one - 1;
-    int pc = -1;
+    int pc = -1;  // XXX
     switch (opcode) {
         // Now, the actual instruction definitions (only one will be used):
-#define TIER_TWO 2
 #include "Python/executor_cases.c.h"
         default:
             Py_UNREACHABLE();
@@ -88,7 +88,6 @@ pop_3_error:
 pop_2_error:
     STACK_SHRINK(1);
 pop_1_error:
-pop_1_exit_unwind:
     STACK_SHRINK(1);
 error:
     _PyFrame_SetStackPointer(frame, stack_pointer);

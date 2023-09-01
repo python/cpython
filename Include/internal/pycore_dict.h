@@ -9,6 +9,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_identifier.h"    // _Py_Identifier
 #include "pycore_object.h"        // PyDictOrValues
 
 // Unsafe flavor of PyDict_GetItemWithError(): no error checking

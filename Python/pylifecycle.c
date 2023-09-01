@@ -629,10 +629,12 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
                           PyThreadState **tstate_p)
 {
     PyStatus status;
-    PyInterpreterState *interp = PyInterpreterState_New();
-    if (interp == NULL) {
-        return _PyStatus_ERR("can't make main interpreter");
+    PyInterpreterState *interp;
+    status = _PyInterpreterState_New(NULL, &interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
+    assert(interp != NULL);
     assert(_Py_IsMainInterpreter(interp));
 
     status = _PyConfig_Copy(&interp->config, src_config);
@@ -1956,6 +1958,20 @@ Py_FinalizeEx(void)
     // XXX Ensure finalizer errors are handled properly.
 
     finalize_interp_clear(tstate);
+
+#ifdef Py_TRACE_REFS
+    /* Display addresses (& refcnts) of all objects still alive.
+     * An address can be used to find the repr of the object, printed
+     * above by _Py_PrintReferences. */
+    if (dump_refs) {
+        _Py_PrintReferenceAddresses(tstate->interp, stderr);
+    }
+    if (dump_refs_fp != NULL) {
+        _Py_PrintReferenceAddresses(tstate->interp, dump_refs_fp);
+        fclose(dump_refs_fp);
+    }
+#endif /* Py_TRACE_REFS */
+
     finalize_interp_delete(tstate->interp);
 
 #ifdef Py_REF_DEBUG
@@ -1966,21 +1982,6 @@ Py_FinalizeEx(void)
 #endif
     _Py_FinalizeAllocatedBlocks(runtime);
 
-#ifdef Py_TRACE_REFS
-    /* Display addresses (& refcnts) of all objects still alive.
-     * An address can be used to find the repr of the object, printed
-     * above by _Py_PrintReferences.
-     */
-
-    if (dump_refs) {
-        _Py_PrintReferenceAddresses(tstate->interp, stderr);
-    }
-
-    if (dump_refs_fp != NULL) {
-        _Py_PrintReferenceAddresses(tstate->interp, dump_refs_fp);
-        fclose(dump_refs_fp);
-    }
-#endif /* Py_TRACE_REFS */
 #ifdef WITH_PYMALLOC
     if (malloc_stats) {
         _PyObject_DebugMallocStats(stderr);
