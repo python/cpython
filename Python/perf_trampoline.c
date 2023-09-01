@@ -140,9 +140,9 @@ any DWARF information available for them).
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/mman.h>
+#include <sys/mman.h>             // mmap()
 #include <sys/types.h>
-#include <unistd.h>
+#include <unistd.h>               // sysconf()
 
 #if defined(__arm__) || defined(__arm64__) || defined(__aarch64__)
 #define PY_HAVE_INVALIDATE_ICACHE
