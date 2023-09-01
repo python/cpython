@@ -1,2 +1,0 @@
-Fix wrong ordering of assignments in code like ``a, a = x, y``. Contributed by
-Carl Meyer.

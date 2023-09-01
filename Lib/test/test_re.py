@@ -1077,33 +1077,6 @@ class ReTests(unittest.TestCase):
     def test_category(self):
         self.assertEqual(re.match(r"(\s)", " ").group(1), " ")
 
-    @cpython_only
-    def test_case_helpers(self):
-        import _sre
-        for i in range(128):
-            c = chr(i)
-            lo = ord(c.lower())
-            self.assertEqual(_sre.ascii_tolower(i), lo)
-            self.assertEqual(_sre.unicode_tolower(i), lo)
-            iscased = c in string.ascii_letters
-            self.assertEqual(_sre.ascii_iscased(i), iscased)
-            self.assertEqual(_sre.unicode_iscased(i), iscased)
-
-        for i in list(range(128, 0x1000)) + [0x10400, 0x10428]:
-            c = chr(i)
-            self.assertEqual(_sre.ascii_tolower(i), i)
-            if i != 0x0130:
-                self.assertEqual(_sre.unicode_tolower(i), ord(c.lower()))
-            iscased = c != c.lower() or c != c.upper()
-            self.assertFalse(_sre.ascii_iscased(i))
-            self.assertEqual(_sre.unicode_iscased(i),
-                             c != c.lower() or c != c.upper())
-
-        self.assertEqual(_sre.ascii_tolower(0x0130), 0x0130)
-        self.assertEqual(_sre.unicode_tolower(0x0130), ord('i'))
-        self.assertFalse(_sre.ascii_iscased(0x0130))
-        self.assertTrue(_sre.unicode_iscased(0x0130))
-
     def test_not_literal(self):
         self.assertEqual(re.search(r"\s([^a])", " b").group(1), "b")
         self.assertEqual(re.search(r"\s([^a]*)", " bb").group(1), "bb")
@@ -1800,20 +1773,6 @@ class ReTests(unittest.TestCase):
         pat = re.compile(b'..')
         self.assertEqual(pat.sub(lambda m: b'bytes', b'a5'), b'bytes')
 
-    def test_dealloc(self):
-        # issue 3299: check for segfault in debug build
-        import _sre
-        # the overflow limit is different on wide and narrow builds and it
-        # depends on the definition of SRE_CODE (see sre.h).
-        # 2**128 should be big enough to overflow on both. For smaller values
-        # a RuntimeError is raised instead of OverflowError.
-        long_overflow = 2**128
-        self.assertRaises(TypeError, re.finditer, "a", {})
-        with self.assertRaises(OverflowError):
-            _sre.compile("abc", 0, [long_overflow], 0, {}, ())
-        with self.assertRaises(TypeError):
-            _sre.compile({}, 0, [], 0, [], [])
-
     def test_search_dot_unicode(self):
         self.assertTrue(re.search("123.*-", '123abc-'))
         self.assertTrue(re.search("123.*-", '123\xe9-'))
@@ -1870,21 +1829,6 @@ class ReTests(unittest.TestCase):
         self.assertRaises(OverflowError, re.compile, r".{,%d}" % 2**128)
         self.assertRaises(OverflowError, re.compile, r".{%d,}?" % 2**128)
         self.assertRaises(OverflowError, re.compile, r".{%d,%d}" % (2**129, 2**128))
-
-    @cpython_only
-    def test_repeat_minmax_overflow_maxrepeat(self):
-        try:
-            from _sre import MAXREPEAT
-        except ImportError:
-            self.skipTest('requires _sre.MAXREPEAT constant')
-        string = "x" * 100000
-        self.assertIsNone(re.match(r".{%d}" % (MAXREPEAT - 1), string))
-        self.assertEqual(re.match(r".{,%d}" % (MAXREPEAT - 1), string).span(),
-                         (0, 100000))
-        self.assertIsNone(re.match(r".{%d,}?" % (MAXREPEAT - 1), string))
-        self.assertRaises(OverflowError, re.compile, r".{%d}" % MAXREPEAT)
-        self.assertRaises(OverflowError, re.compile, r".{,%d}" % MAXREPEAT)
-        self.assertRaises(OverflowError, re.compile, r".{%d,}?" % MAXREPEAT)
 
     def test_backref_group_name_in_exception(self):
         # Issue 17341: Poor error message when compiling invalid regex
@@ -2452,6 +2396,26 @@ class ReTests(unittest.TestCase):
         self.assertTrue(template_re1.match('ahoy'))
         self.assertFalse(template_re1.match('nope'))
 
+    def test_bug_gh106052(self):
+        # gh-100061
+        self.assertEqual(re.match('(?>(?:.(?!D))+)', 'ABCDE').span(), (0, 2))
+        self.assertEqual(re.match('(?:.(?!D))++', 'ABCDE').span(), (0, 2))
+        self.assertEqual(re.match('(?>(?:.(?!D))*)', 'ABCDE').span(), (0, 2))
+        self.assertEqual(re.match('(?:.(?!D))*+', 'ABCDE').span(), (0, 2))
+        self.assertEqual(re.match('(?>(?:.(?!D))?)', 'CDE').span(), (0, 0))
+        self.assertEqual(re.match('(?:.(?!D))?+', 'CDE').span(), (0, 0))
+        self.assertEqual(re.match('(?>(?:.(?!D)){1,3})', 'ABCDE').span(), (0, 2))
+        self.assertEqual(re.match('(?:.(?!D)){1,3}+', 'ABCDE').span(), (0, 2))
+        # gh-106052
+        self.assertEqual(re.match("(?>(?:ab?c)+)", "aca").span(), (0, 2))
+        self.assertEqual(re.match("(?:ab?c)++", "aca").span(), (0, 2))
+        self.assertEqual(re.match("(?>(?:ab?c)*)", "aca").span(), (0, 2))
+        self.assertEqual(re.match("(?:ab?c)*+", "aca").span(), (0, 2))
+        self.assertEqual(re.match("(?>(?:ab?c)?)", "a").span(), (0, 0))
+        self.assertEqual(re.match("(?:ab?c)?+", "a").span(), (0, 0))
+        self.assertEqual(re.match("(?>(?:ab?c){1,3})", "aca").span(), (0, 2))
+        self.assertEqual(re.match("(?:ab?c){1,3}+", "aca").span(), (0, 2))
+
     @unittest.skipIf(multiprocessing is None, 'test requires multiprocessing')
     def test_regression_gh94675(self):
         pattern = re.compile(r'(?<=[({}])(((//[^\n]*)?[\n])([\000-\040])*)*'
@@ -2533,7 +2497,10 @@ ELSE
 
     def test_atomic_group(self):
         self.assertEqual(get_debug_out(r'(?>ab?)'), '''\
-ATOMIC_GROUP [(LITERAL, 97), (MAX_REPEAT, (0, 1, [(LITERAL, 98)]))]
+ATOMIC_GROUP
+  LITERAL 97
+  MAX_REPEAT 0 1
+    LITERAL 98
 
  0. INFO 4 0b0 1 2 (to 5)
  5: ATOMIC_GROUP 11 (to 17)
@@ -2716,6 +2683,64 @@ class ImplementationTest(unittest.TestCase):
                 for attr in deprecated[name]:
                     self.assertTrue(hasattr(mod, attr))
                 del sys.modules[name]
+
+    @cpython_only
+    def test_case_helpers(self):
+        import _sre
+        for i in range(128):
+            c = chr(i)
+            lo = ord(c.lower())
+            self.assertEqual(_sre.ascii_tolower(i), lo)
+            self.assertEqual(_sre.unicode_tolower(i), lo)
+            iscased = c in string.ascii_letters
+            self.assertEqual(_sre.ascii_iscased(i), iscased)
+            self.assertEqual(_sre.unicode_iscased(i), iscased)
+
+        for i in list(range(128, 0x1000)) + [0x10400, 0x10428]:
+            c = chr(i)
+            self.assertEqual(_sre.ascii_tolower(i), i)
+            if i != 0x0130:
+                self.assertEqual(_sre.unicode_tolower(i), ord(c.lower()))
+            iscased = c != c.lower() or c != c.upper()
+            self.assertFalse(_sre.ascii_iscased(i))
+            self.assertEqual(_sre.unicode_iscased(i),
+                             c != c.lower() or c != c.upper())
+
+        self.assertEqual(_sre.ascii_tolower(0x0130), 0x0130)
+        self.assertEqual(_sre.unicode_tolower(0x0130), ord('i'))
+        self.assertFalse(_sre.ascii_iscased(0x0130))
+        self.assertTrue(_sre.unicode_iscased(0x0130))
+
+    @cpython_only
+    def test_dealloc(self):
+        # issue 3299: check for segfault in debug build
+        import _sre
+        # the overflow limit is different on wide and narrow builds and it
+        # depends on the definition of SRE_CODE (see sre.h).
+        # 2**128 should be big enough to overflow on both. For smaller values
+        # a RuntimeError is raised instead of OverflowError.
+        long_overflow = 2**128
+        self.assertRaises(TypeError, re.finditer, "a", {})
+        with self.assertRaises(OverflowError):
+            _sre.compile("abc", 0, [long_overflow], 0, {}, ())
+        with self.assertRaises(TypeError):
+            _sre.compile({}, 0, [], 0, [], [])
+
+    @cpython_only
+    def test_repeat_minmax_overflow_maxrepeat(self):
+        try:
+            from _sre import MAXREPEAT
+        except ImportError:
+            self.skipTest('requires _sre.MAXREPEAT constant')
+        string = "x" * 100000
+        self.assertIsNone(re.match(r".{%d}" % (MAXREPEAT - 1), string))
+        self.assertEqual(re.match(r".{,%d}" % (MAXREPEAT - 1), string).span(),
+                         (0, 100000))
+        self.assertIsNone(re.match(r".{%d,}?" % (MAXREPEAT - 1), string))
+        self.assertRaises(OverflowError, re.compile, r".{%d}" % MAXREPEAT)
+        self.assertRaises(OverflowError, re.compile, r".{,%d}" % MAXREPEAT)
+        self.assertRaises(OverflowError, re.compile, r".{%d,}?" % MAXREPEAT)
+
 
 class ExternalTests(unittest.TestCase):
 

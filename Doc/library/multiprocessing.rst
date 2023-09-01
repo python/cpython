@@ -453,16 +453,16 @@ process which created it.
       ...     return x*x
       ...
       >>> with p:
-      ...   p.map(f, [1,2,3])
+      ...     p.map(f, [1,2,3])
       Process PoolWorker-1:
       Process PoolWorker-2:
       Process PoolWorker-3:
       Traceback (most recent call last):
       Traceback (most recent call last):
       Traceback (most recent call last):
-      AttributeError: 'module' object has no attribute 'f'
-      AttributeError: 'module' object has no attribute 'f'
-      AttributeError: 'module' object has no attribute 'f'
+      AttributeError: Can't get attribute 'f' on <module '__main__' (built-in)>
+      AttributeError: Can't get attribute 'f' on <module '__main__' (built-in)>
+      AttributeError: Can't get attribute 'f' on <module '__main__' (built-in)>
 
    (If you try this it will actually output three full tracebacks
    interleaved in a semi-random fashion, and then you may have to
@@ -2682,7 +2682,7 @@ handler type) for messages from different processes to get mixed up.
    Returns the logger used by :mod:`multiprocessing`.  If necessary, a new one
    will be created.
 
-   When first created the logger has level :data:`logging.NOTSET` and no
+   When first created the logger has level :const:`logging.NOTSET` and no
    default handler. Messages sent to this logger will not by default propagate
    to the root logger.
 
@@ -2963,7 +2963,7 @@ Global variables
 Safe importing of main module
 
     Make sure that the main module can be safely imported by a new Python
-    interpreter without causing unintended side effects (such a starting a new
+    interpreter without causing unintended side effects (such as starting a new
     process).
 
     For example, using the *spawn* or *forkserver* start method

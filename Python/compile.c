@@ -1736,8 +1736,12 @@ compiler_enter_scope(struct compiler *c, identifier name,
     Py_INCREF(name);
     u->u_name = name;
     u->u_varnames = list2dict(u->u_ste->ste_varnames);
+    if (!u->u_varnames) {
+        compiler_unit_free(u);
+        return 0;
+    }
     u->u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, 0, 0);
-    if (!u->u_varnames || !u->u_cellvars) {
+    if (!u->u_cellvars) {
         compiler_unit_free(u);
         return 0;
     }
@@ -1904,6 +1908,15 @@ find_ann(asdl_stmt_seq *stmts)
             res = find_ann(st->v.TryStar.body) ||
                   find_ann(st->v.TryStar.finalbody) ||
                   find_ann(st->v.TryStar.orelse);
+            break;
+        case Match_kind:
+            for (j = 0; j < asdl_seq_LEN(st->v.Match.cases); j++) {
+                match_case_ty match_case = (match_case_ty)asdl_seq_GET(
+                    st->v.Match.cases, j);
+                if (find_ann(match_case->body)) {
+                    return true;
+                }
+            }
             break;
         default:
             res = 0;

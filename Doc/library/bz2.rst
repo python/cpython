@@ -87,7 +87,8 @@ The :mod:`bz2` module contains:
    compressed streams.
 
    :class:`BZ2File` provides all of the members specified by the
-   :class:`io.BufferedIOBase`, except for :meth:`detach` and :meth:`truncate`.
+   :class:`io.BufferedIOBase`, except for :meth:`~io.BufferedIOBase.detach`
+   and :meth:`~io.IOBase.truncate`.
    Iteration and the :keyword:`with` statement are supported.
 
    :class:`BZ2File` also provides the following method:

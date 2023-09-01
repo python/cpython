@@ -45,7 +45,7 @@ The :mod:`pprint` module defines one class:
    several keyword parameters.
 
    *stream* (default ``sys.stdout``) is a :term:`file-like object` to
-   which the output will be written by calling its :meth:`write` method.
+   which the output will be written by calling its :meth:`!write` method.
    If both *stream* and ``sys.stdout`` are ``None``, then
    :meth:`~PrettyPrinter.pprint` silently returns.
 

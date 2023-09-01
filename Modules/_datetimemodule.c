@@ -6878,24 +6878,49 @@ _datetime_exec(PyObject *module)
     assert(DI100Y == days_before_year(100+1));
 
     us_per_ms = PyLong_FromLong(1000);
+    if (us_per_ms == NULL) {
+        goto error;
+    }
     us_per_second = PyLong_FromLong(1000000);
+    if (us_per_second == NULL) {
+        goto error;
+    }
     us_per_minute = PyLong_FromLong(60000000);
+    if (us_per_minute == NULL) {
+        goto error;
+    }
     seconds_per_day = PyLong_FromLong(24 * 3600);
-    if (us_per_ms == NULL || us_per_second == NULL ||
-        us_per_minute == NULL || seconds_per_day == NULL) {
-        return -1;
+    if (seconds_per_day == NULL) {
+        goto error;
     }
 
     /* The rest are too big for 32-bit ints, but even
      * us_per_week fits in 40 bits, so doubles should be exact.
      */
     us_per_hour = PyLong_FromDouble(3600000000.0);
-    us_per_day = PyLong_FromDouble(86400000000.0);
-    us_per_week = PyLong_FromDouble(604800000000.0);
-    if (us_per_hour == NULL || us_per_day == NULL || us_per_week == NULL) {
-        return -1;
+    if (us_per_hour == NULL) {
+        goto error;
     }
+    us_per_day = PyLong_FromDouble(86400000000.0);
+    if (us_per_day == NULL) {
+        goto error;
+    }
+    us_per_week = PyLong_FromDouble(604800000000.0);
+    if (us_per_week == NULL) {
+        goto error;
+    }
+
     return 0;
+
+error:
+    Py_XDECREF(us_per_ms);
+    Py_XDECREF(us_per_second);
+    Py_XDECREF(us_per_minute);
+    Py_XDECREF(us_per_hour);
+    Py_XDECREF(us_per_day);
+    Py_XDECREF(us_per_week);
+    Py_XDECREF(seconds_per_day);
+    return -1;
 }
 
 static struct PyModuleDef datetimemodule = {

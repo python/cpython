@@ -564,7 +564,7 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 {
     Py_ssize_t i,j;
     switch (typ) {
-        case REG_DWORD: 
+        case REG_DWORD:
             {
                 if (value != Py_None && !PyLong_Check(value)) {
                     return FALSE;
@@ -588,7 +588,7 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
                 *retDataSize = sizeof(DWORD);
                 break;
             }
-        case REG_QWORD: 
+        case REG_QWORD:
             {
                 if (value != Py_None && !PyLong_Check(value)) {
                     return FALSE;

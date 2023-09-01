@@ -85,7 +85,7 @@ termios_tcgetattr_impl(PyObject *module, int fd)
     int r;
 
     Py_BEGIN_ALLOW_THREADS
-    r = tcgetattr(fd, &mode); 
+    r = tcgetattr(fd, &mode);
     Py_END_ALLOW_THREADS
     if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
@@ -372,7 +372,7 @@ termios_tcgetwinsize_impl(PyObject *module, int fd)
 #if defined(TIOCGWINSZ)
     termiosmodulestate *state = PyModule_GetState(module);
     struct winsize w;
-    int r; 
+    int r;
 
     Py_BEGIN_ALLOW_THREADS
     r = ioctl(fd, TIOCGWINSZ, &w);

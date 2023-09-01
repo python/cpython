@@ -777,7 +777,7 @@ class CmdLineTest(unittest.TestCase):
         with os_helper.temp_dir() as work_dir:
             script_name = _make_test_script(work_dir, 'script.py', script)
             with open(script_name, "r") as fp:
-                p = spawn_python(f"/dev/fd/{fp.fileno()}", close_fds=False, pass_fds=(0,1,2,fp.fileno()))
+                p = spawn_python(f"/dev/fd/{fp.fileno()}", close_fds=True, pass_fds=(0,1,2,fp.fileno()))
                 out, err = p.communicate()
                 self.assertEqual(out, b"12345678912345678912345\n")
 

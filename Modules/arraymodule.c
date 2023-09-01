@@ -741,10 +741,12 @@ array_richcompare(PyObject *v, PyObject *w, int op)
     k = 1;
     for (i = 0; i < Py_SIZE(va) && i < Py_SIZE(wa); i++) {
         vi = getarrayitem(v, i);
+        if (vi == NULL) {
+            return NULL;
+        }
         wi = getarrayitem(w, i);
-        if (vi == NULL || wi == NULL) {
-            Py_XDECREF(vi);
-            Py_XDECREF(wi);
+        if (wi == NULL) {
+            Py_DECREF(vi);
             return NULL;
         }
         k = PyObject_RichCompareBool(vi, wi, Py_EQ);

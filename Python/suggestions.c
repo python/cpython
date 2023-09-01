@@ -147,13 +147,13 @@ calculate_suggestions(PyObject *dir,
 
     for (int i = 0; i < dir_size; ++i) {
         PyObject *item = PyList_GET_ITEM(dir, i);
+        if (_PyUnicode_Equal(name, item)) {
+            continue;
+        }
         Py_ssize_t item_size;
         const char *item_str = PyUnicode_AsUTF8AndSize(item, &item_size);
         if (item_str == NULL) {
             return NULL;
-        }
-        if (PyUnicode_CompareWithASCIIString(name, item_str) == 0) {
-            continue;
         }
         // No more than 1/3 of the involved characters should need changed.
         Py_ssize_t max_distance = (name_size + item_size + 3) * MOVE_COST / 6;
@@ -225,19 +225,19 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
     PyCodeObject *code = PyFrame_GetCode(frame);
     assert(code != NULL && code->co_localsplusnames != NULL);
     PyObject *varnames = _PyCode_GetVarnames(code);
+    Py_DECREF(code);
     if (varnames == NULL) {
         return NULL;
     }
     PyObject *dir = PySequence_List(varnames);
     Py_DECREF(varnames);
-    Py_DECREF(code);
     if (dir == NULL) {
         return NULL;
     }
 
     PyObject *suggestions = calculate_suggestions(dir, name);
     Py_DECREF(dir);
-    if (suggestions != NULL) {
+    if (suggestions != NULL|| PyErr_Occurred()) {
         return suggestions;
     }
 
@@ -247,7 +247,7 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
     }
     suggestions = calculate_suggestions(dir, name);
     Py_DECREF(dir);
-    if (suggestions != NULL) {
+    if (suggestions != NULL || PyErr_Occurred()) {
         return suggestions;
     }
 

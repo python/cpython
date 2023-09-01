@@ -108,7 +108,7 @@ The module defines the following items:
    .. versionchanged:: 3.4
       The class now supports hostname check with
       :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
-      :data:`ssl.HAS_SNI`).
+      :const:`ssl.HAS_SNI`).
 
    .. deprecated:: 3.6
 
@@ -438,7 +438,7 @@ FTP_TLS Objects
 
 .. attribute:: FTP_TLS.ssl_version
 
-   The SSL version to use (defaults to :attr:`ssl.PROTOCOL_SSLv23`).
+   The SSL version to use (defaults to :data:`ssl.PROTOCOL_SSLv23`).
 
 .. method:: FTP_TLS.auth()
 
@@ -448,7 +448,7 @@ FTP_TLS Objects
    .. versionchanged:: 3.4
       The method now supports hostname check with
       :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
-      :data:`ssl.HAS_SNI`).
+      :const:`ssl.HAS_SNI`).
 
 .. method:: FTP_TLS.ccc()
 

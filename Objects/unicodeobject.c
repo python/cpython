@@ -5120,6 +5120,9 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
     }
     s += ascii_decode(s, end, PyUnicode_1BYTE_DATA(u));
     if (s == end) {
+        if (consumed) {
+            *consumed = size;
+        }
         return u;
     }
 
@@ -7553,7 +7556,7 @@ decode_code_page_errors(UINT code_page,
             if (err != ERROR_NO_UNICODE_TRANSLATION
                 && err != ERROR_INSUFFICIENT_BUFFER)
             {
-                PyErr_SetFromWindowsErr(0);
+                PyErr_SetFromWindowsErr(err);
                 goto error;
             }
             insize++;
@@ -8454,25 +8457,30 @@ PyUnicode_BuildEncodingMap(PyObject* string)
 
     if (need_dict) {
         PyObject *result = PyDict_New();
-        PyObject *key, *value;
         if (!result)
             return NULL;
         for (i = 0; i < length; i++) {
-            key = PyLong_FromLong(PyUnicode_READ(kind, data, i));
-            value = PyLong_FromLong(i);
-            if (!key || !value)
-                goto failed1;
-            if (PyDict_SetItem(result, key, value) == -1)
-                goto failed1;
+            Py_UCS4 c = PyUnicode_READ(kind, data, i);
+            PyObject *key = PyLong_FromLong(c);
+            if (key == NULL) {
+                Py_DECREF(result);
+                return NULL;
+            }
+            PyObject *value = PyLong_FromLong(i);
+            if (value == NULL) {
+                Py_DECREF(key);
+                Py_DECREF(result);
+                return NULL;
+            }
+            int rc = PyDict_SetItem(result, key, value);
             Py_DECREF(key);
             Py_DECREF(value);
+            if (rc < 0) {
+                Py_DECREF(result);
+                return NULL;
+            }
         }
         return result;
-      failed1:
-        Py_XDECREF(key);
-        Py_XDECREF(value);
-        Py_DECREF(result);
-        return NULL;
     }
 
     /* Create a three-level trie */

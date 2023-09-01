@@ -8454,6 +8454,44 @@ fi
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can disable $CC int-conversion warning" >&5
+$as_echo_n "checking if we can disable $CC int-conversion warning... " >&6; }
+if ${ac_cv_disable_int_conversion_warning+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+    py_cflags=$CFLAGS
+    as_fn_append CFLAGS "-Wint-conversion -Werror"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_disable_int_conversion_warning=yes
+else
+  ac_cv_disable_int_conversion_warning=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+    CFLAGS=$py_cflags
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_disable_int_conversion_warning" >&5
+$as_echo "$ac_cv_disable_int_conversion_warning" >&6; }
+
+
+    if test "x$ac_cv_disable_int_conversion" = xyes; then :
+  CFLAGS_NODIST="$CFLAGS_NODIST -Wno-int-conversion"
+fi
+
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can disable $CC missing-field-initializers warning" >&5
 $as_echo_n "checking if we can disable $CC missing-field-initializers warning... " >&6; }
 if ${ac_cv_disable_missing_field_initializers_warning+:} false; then :
@@ -9153,7 +9191,7 @@ $as_echo "#define STDC_HEADERS 1" >>confdefs.h
 # checks for header files
 for ac_header in  \
   alloca.h asm/types.h bluetooth.h conio.h crypt.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
-  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/memfd.h \
+  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/limits.h linux/memfd.h \
   linux/random.h linux/soundcard.h \
   linux/tipc.h linux/wait.h netdb.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
@@ -15796,9 +15834,7 @@ if test "x$ac_cv_func_flock" = xyes; then :
 #define HAVE_FLOCK 1
 _ACEOF
 
-fi
-done
-
+else
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for flock in -lbsd" >&5
 $as_echo_n "checking for flock in -lbsd... " >&6; }
 if ${ac_cv_lib_bsd_flock+:} false; then :
@@ -15839,6 +15875,8 @@ if test "x$ac_cv_lib_bsd_flock" = xyes; then :
   FCNTL_LIBS="-lbsd"
 fi
 
+fi
+done
 
 fi
 

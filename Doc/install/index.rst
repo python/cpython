@@ -309,9 +309,9 @@ install into it.  It is enabled with a simple option::
 
    python setup.py install --user
 
-Files will be installed into subdirectories of :data:`site.USER_BASE` (written
+Files will be installed into subdirectories of :const:`site.USER_BASE` (written
 as :file:`{userbase}` hereafter).  This scheme installs pure Python modules and
-extension modules in the same location (also known as :data:`site.USER_SITE`).
+extension modules in the same location (also known as :const:`site.USER_SITE`).
 Here are the values for UNIX, including macOS:
 
 =============== ===========================================================
@@ -370,7 +370,7 @@ will expand this to your home directory::
 
 To make Python find the distributions installed with this scheme, you may have
 to :ref:`modify Python's search path <inst-search-path>` or edit
-:mod:`sitecustomize` (see :mod:`site`) to call :func:`site.addsitedir` or edit
+:mod:`!sitecustomize` (see :mod:`site`) to call :func:`site.addsitedir` or edit
 :data:`sys.path`.
 
 The :option:`!--home` option defines the installation base directory.  Files are
@@ -692,7 +692,7 @@ is supplied to suppress this behaviour.  So you could simply edit
    import sys
    sys.path.append('/www/python/')
 
-However, if you reinstall the same major version of Python (perhaps when
+However, if you reinstall the same minor version of Python (perhaps when
 upgrading from 2.2 to 2.2.2, for example) :file:`site.py` will be overwritten by
 the stock version.  You'd have to remember that it was modified and save a copy
 before doing the installation.
@@ -774,7 +774,7 @@ Notes:
 
 (2)
    On Unix, if the :envvar:`HOME` environment variable is not defined, the user's
-   home directory will be determined with the :func:`getpwuid` function from the
+   home directory will be determined with the :func:`~pwd.getpwuid` function from the
    standard :mod:`pwd` module. This is done by the :func:`os.path.expanduser`
    function used by Distutils.
 

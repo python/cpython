@@ -214,11 +214,9 @@ dist:
 	rm -r dist/python-$(DISTVERSION)-docs-texinfo
 	rm dist/python-$(DISTVERSION)-docs-texinfo.tar
 
-check:
-	# Check the docs and NEWS files with sphinx-lint.
-	# Ignore the tools and venv dirs and check that the default role is not used.
-	$(SPHINXLINT) -i tools -i $(VENVDIR) --enable default-role
-	$(SPHINXLINT) --enable default-role ../Misc/NEWS.d/next/
+check: venv
+	$(VENVDIR)/bin/python3 -m pre_commit --version > /dev/null || $(VENVDIR)/bin/python3 -m pip install pre-commit
+	$(VENVDIR)/bin/python3 -m pre_commit run --all-files
 
 serve:
 	@echo "The serve target was removed, use htmlview instead (see bpo-36329)"

@@ -653,6 +653,8 @@ class TracebackException:
 
     - :attr:`__cause__` A TracebackException of the original *__cause__*.
     - :attr:`__context__` A TracebackException of the original *__context__*.
+    - :attr:`exceptions` For exception groups - a list of TracebackException
+      instances for the nested *exceptions*.  ``None`` for other exceptions.
     - :attr:`__suppress_context__` The *__suppress_context__* value from the
       original exception.
     - :attr:`stack` A `StackSummary` representing the traceback.
@@ -667,8 +669,8 @@ class TracebackException:
       occurred.
     - :attr:`offset` For syntax errors - the offset into the text where the
       error occurred.
-    - :attr:`end_offset` For syntax errors - the offset into the text where the
-      error occurred. Can be `None` if not present.
+    - :attr:`end_offset` For syntax errors - the end offset into the text where
+      the error occurred. Can be `None` if not present.
     - :attr:`msg` For syntax errors - the compiler error message.
     """
 

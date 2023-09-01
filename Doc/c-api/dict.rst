@@ -73,7 +73,7 @@ Dictionary Objects
    .. index:: single: PyUnicode_FromString()
 
    Insert *val* into the dictionary *p* using *key* as a key. *key* should
-   be a :c:expr:`const char*`.  The key object is created using
+   be a :c:expr:`const char*` UTF-8 encoded bytes string.  The key object is created using
    ``PyUnicode_FromString(key)``.  Return ``0`` on success or ``-1`` on
    failure.  This function *does not* steal a reference to *val*.
 
@@ -88,7 +88,8 @@ Dictionary Objects
 
 .. c:function:: int PyDict_DelItemString(PyObject *p, const char *key)
 
-   Remove the entry in dictionary *p* which has a key specified by the string *key*.
+   Remove the entry in dictionary *p* which has a key specified by the UTF-8
+   encoded bytes string *key*.
    If *key* is not in the dictionary, :exc:`KeyError` is raised.
    Return ``0`` on success or ``-1`` on failure.
 
@@ -98,9 +99,11 @@ Dictionary Objects
    Return the object from dictionary *p* which has a key *key*.  Return ``NULL``
    if the key *key* is not present, but *without* setting an exception.
 
-   Note that exceptions which occur while calling :meth:`__hash__` and
-   :meth:`__eq__` methods will get suppressed.
-   To get error reporting use :c:func:`PyDict_GetItemWithError()` instead.
+   .. note::
+
+      Exceptions that occur while this calls :meth:`~object.__hash__` and
+      :meth:`~object.__eq__` methods are silently ignored.
+      Prefer the :c:func:`PyDict_GetItemWithError` function instead.
 
    .. versionchanged:: 3.10
       Calling this API without :term:`GIL` held had been allowed for historical
@@ -118,12 +121,16 @@ Dictionary Objects
 .. c:function:: PyObject* PyDict_GetItemString(PyObject *p, const char *key)
 
    This is the same as :c:func:`PyDict_GetItem`, but *key* is specified as a
-   :c:expr:`const char*`, rather than a :c:expr:`PyObject*`.
+   :c:expr:`const char*` UTF-8 encoded bytes string, rather than a
+   :c:expr:`PyObject*`.
 
-   Note that exceptions which occur while calling :meth:`__hash__` and
-   :meth:`__eq__` methods and creating a temporary string object
-   will get suppressed.
-   To get error reporting use :c:func:`PyDict_GetItemWithError()` instead.
+   .. note::
+
+      Exceptions that occur while this calls :meth:`~object.__hash__` and
+      :meth:`~object.__eq__` methods or while creating the temporary :class:`str`
+      object are silently ignored.
+      Prefer using the :c:func:`PyDict_GetItemWithError` function with your own
+      :c:func:`PyUnicode_FromString` *key* instead.
 
 
 .. c:function:: PyObject* PyDict_SetDefault(PyObject *p, PyObject *key, PyObject *defaultobj)

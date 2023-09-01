@@ -49,7 +49,7 @@ Options (and corresponding environment variables):\n\
          .pyc extension; also PYTHONOPTIMIZE=x\n\
 -OO    : do -O changes and also discard docstrings; add .opt-2 before\n\
          .pyc extension\n\
--P     : don't prepend a potentially unsafe path to sys.path\n\
+-P     : don't prepend a potentially unsafe path to sys.path; also PYTHONSAFEPATH\n\
 -q     : don't print version and copyright messages on interactive startup\n\
 -s     : don't add user site directory to sys.path; also PYTHONNOUSERSITE\n\
 -S     : don't imply 'import site' on initialization\n\
@@ -132,7 +132,6 @@ static const char usage_envvars[] =
 "PYTHONSTARTUP: file executed on interactive startup (no default)\n"
 "PYTHONPATH   : '%lc'-separated list of directories prefixed to the\n"
 "               default module search path.  The result is sys.path.\n"
-"PYTHONSAFEPATH: don't prepend a potentially unsafe path to sys.path.\n"
 "PYTHONHOME   : alternate <prefix> directory (or <prefix>%lc<exec_prefix>).\n"
 "               The default module search path uses %s.\n"
 "PYTHONPLATLIBDIR : override sys.platlibdir.\n"
@@ -172,6 +171,7 @@ static const char usage_envvars[] =
 "                          (-X int_max_str_digits=number)\n"
 "PYTHONNOUSERSITE        : disable user site directory (-s)\n"
 "PYTHONOPTIMIZE          : enable level 1 optimizations (-O)\n"
+"PYTHONSAFEPATH          : don't prepend a potentially unsafe path to sys.path (-P)\n"
 "PYTHONUNBUFFERED        : disable stdout/stderr buffering (-u)\n"
 "PYTHONVERBOSE           : trace import statements (-v)\n"
 "PYTHONWARNINGS=arg      : warning control (-W arg)\n";

@@ -368,8 +368,8 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
         else
             self->fd = _Py_open_osfhandle_noraise(handle, _O_RDONLY | _O_BINARY);
         if (self->fd < 0) {
-            CloseHandle(handle);
             PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, nameobj);
+            CloseHandle(handle);
             goto error;
         }
     }

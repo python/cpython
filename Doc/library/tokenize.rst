@@ -22,6 +22,15 @@ the generic :data:`~token.OP` token type.  The exact
 type can be determined by checking the ``exact_type`` property on the
 :term:`named tuple` returned from :func:`tokenize.tokenize`.
 
+
+.. warning::
+
+   Note that the functions in this module are only designed to parse
+   syntactically valid Python code (code that does not raise when parsed
+   using :func:`ast.parse`).  The behavior of the functions in this module is
+   **undefined** when providing invalid Python code and it can change at any
+   point.
+
 Tokenizing Input
 ----------------
 

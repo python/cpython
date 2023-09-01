@@ -1116,39 +1116,49 @@ _Pickler_Write(PicklerObject *self, const char *s, Py_ssize_t data_len)
 static PicklerObject *
 _Pickler_New(void)
 {
-    PicklerObject *self;
-
-    self = PyObject_GC_New(PicklerObject, &Pickler_Type);
-    if (self == NULL)
+    PyMemoTable *memo = PyMemoTable_New();
+    if (memo == NULL) {
         return NULL;
+    }
 
+    const Py_ssize_t max_output_len = WRITE_BUF_SIZE;
+    PyObject *output_buffer = PyBytes_FromStringAndSize(NULL, max_output_len);
+    if (output_buffer == NULL) {
+        goto error;
+    }
+
+    PicklerObject *self = PyObject_GC_New(PicklerObject, &Pickler_Type);
+    if (self == NULL) {
+        goto error;
+    }
+
+    self->memo = memo;
     self->pers_func = NULL;
+    self->pers_func_self = NULL;
     self->dispatch_table = NULL;
-    self->buffer_callback = NULL;
+    self->reducer_override = NULL;
     self->write = NULL;
+    self->output_buffer = output_buffer;
+    self->output_len = 0;
+    self->max_output_len = max_output_len;
     self->proto = 0;
     self->bin = 0;
     self->framing = 0;
     self->frame_start = -1;
+    self->buf_size = 0;
     self->fast = 0;
     self->fast_nesting = 0;
     self->fix_imports = 0;
     self->fast_memo = NULL;
-    self->max_output_len = WRITE_BUF_SIZE;
-    self->output_len = 0;
-    self->reducer_override = NULL;
-
-    self->memo = PyMemoTable_New();
-    self->output_buffer = PyBytes_FromStringAndSize(NULL,
-                                                    self->max_output_len);
-
-    if (self->memo == NULL || self->output_buffer == NULL) {
-        Py_DECREF(self);
-        return NULL;
-    }
+    self->buffer_callback = NULL;
 
     PyObject_GC_Track(self);
     return self;
+
+error:
+    PyMem_Free(memo);
+    Py_XDECREF(output_buffer);
+    return NULL;
 }
 
 static int
@@ -1599,13 +1609,29 @@ _Unpickler_MemoCleanup(UnpicklerObject *self)
 static UnpicklerObject *
 _Unpickler_New(void)
 {
-    UnpicklerObject *self;
-
-    self = PyObject_GC_New(UnpicklerObject, &Unpickler_Type);
-    if (self == NULL)
+    const int MEMO_SIZE = 32;
+    PyObject **memo = _Unpickler_NewMemo(MEMO_SIZE);
+    if (memo == NULL) {
         return NULL;
+    }
 
+    PyObject *stack = Pdata_New();
+    if (stack == NULL) {
+        goto error;
+    }
+
+    UnpicklerObject *self = PyObject_GC_New(UnpicklerObject, &Unpickler_Type);
+    if (self == NULL) {
+        goto error;
+    }
+
+    self->stack = (Pdata *)stack;
+    self->memo = memo;
+    self->memo_size = MEMO_SIZE;
+    self->memo_len = 0;
     self->pers_func = NULL;
+    self->pers_func_self = NULL;
+    memset(&self->buffer, 0, sizeof(Py_buffer));
     self->input_buffer = NULL;
     self->input_line = NULL;
     self->input_len = 0;
@@ -1623,19 +1649,14 @@ _Unpickler_New(void)
     self->marks_size = 0;
     self->proto = 0;
     self->fix_imports = 0;
-    memset(&self->buffer, 0, sizeof(Py_buffer));
-    self->memo_size = 32;
-    self->memo_len = 0;
-    self->memo = _Unpickler_NewMemo(self->memo_size);
-    self->stack = (Pdata *)Pdata_New();
-
-    if (self->memo == NULL || self->stack == NULL) {
-        Py_DECREF(self);
-        return NULL;
-    }
 
     PyObject_GC_Track(self);
     return self;
+
+error:
+    PyMem_Free(memo);
+    Py_XDECREF(stack);
+    return NULL;
 }
 
 /* Returns -1 (with an exception set) on failure, 0 on success. This may
@@ -1645,25 +1666,30 @@ _Unpickler_SetInputStream(UnpicklerObject *self, PyObject *file)
 {
     /* Optional file methods */
     if (_PyObject_LookupAttr(file, &_Py_ID(peek), &self->peek) < 0) {
-        return -1;
+        goto error;
     }
     if (_PyObject_LookupAttr(file, &_Py_ID(readinto), &self->readinto) < 0) {
-        return -1;
+        goto error;
     }
-    (void)_PyObject_LookupAttr(file, &_Py_ID(read), &self->read);
-    (void)_PyObject_LookupAttr(file, &_Py_ID(readline), &self->readline);
+    if (_PyObject_LookupAttr(file, &_Py_ID(read), &self->read) < 0) {
+        goto error;
+    }
+    if (_PyObject_LookupAttr(file, &_Py_ID(readline), &self->readline) < 0) {
+        goto error;
+    }
     if (!self->readline || !self->read) {
-        if (!PyErr_Occurred()) {
-            PyErr_SetString(PyExc_TypeError,
-                            "file must have 'read' and 'readline' attributes");
-        }
-        Py_CLEAR(self->read);
-        Py_CLEAR(self->readinto);
-        Py_CLEAR(self->readline);
-        Py_CLEAR(self->peek);
-        return -1;
+        PyErr_SetString(PyExc_TypeError,
+                        "file must have 'read' and 'readline' attributes");
+        goto error;
     }
     return 0;
+
+error:
+    Py_CLEAR(self->read);
+    Py_CLEAR(self->readinto);
+    Py_CLEAR(self->readline);
+    Py_CLEAR(self->peek);
+    return -1;
 }
 
 /* Returns -1 (with an exception set) on failure, 0 on success. This may
@@ -4833,11 +4859,12 @@ _pickle_PicklerMemoProxy_copy_impl(PicklerMemoProxyObject *self)
             PyObject *key, *value;
 
             key = PyLong_FromVoidPtr(entry.me_key);
+            if (key == NULL) {
+                goto error;
+            }
             value = Py_BuildValue("nO", entry.me_value, entry.me_key);
-
-            if (key == NULL || value == NULL) {
-                Py_XDECREF(key);
-                Py_XDECREF(value);
+            if (value == NULL) {
+                Py_DECREF(key);
                 goto error;
             }
             status = PyDict_SetItem(new_memo, key, value);
@@ -6033,13 +6060,21 @@ load_stack_global(UnpicklerObject *self)
     PyObject *global_name;
 
     PDATA_POP(self->stack, global_name);
+    if (global_name == NULL) {
+        return -1;
+    }
     PDATA_POP(self->stack, module_name);
-    if (module_name == NULL || !PyUnicode_CheckExact(module_name) ||
-        global_name == NULL || !PyUnicode_CheckExact(global_name)) {
+    if (module_name == NULL) {
+        Py_DECREF(global_name);
+        return -1;
+    }
+    if (!PyUnicode_CheckExact(module_name) ||
+        !PyUnicode_CheckExact(global_name))
+    {
         PickleState *st = _Pickle_GetGlobalState();
         PyErr_SetString(st->UnpicklingError, "STACK_GLOBAL requires str");
-        Py_XDECREF(global_name);
-        Py_XDECREF(module_name);
+        Py_DECREF(global_name);
+        Py_DECREF(module_name);
         return -1;
     }
     global = find_class(self, module_name, global_name);

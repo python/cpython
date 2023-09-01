@@ -4803,13 +4803,22 @@ exit:
 #endif /* defined(HAVE_LOCKF) */
 
 PyDoc_STRVAR(os_lseek__doc__,
-"lseek($module, fd, position, how, /)\n"
+"lseek($module, fd, position, whence, /)\n"
 "--\n"
 "\n"
 "Set the position of a file descriptor.  Return the new position.\n"
 "\n"
-"Return the new cursor position in number of bytes\n"
-"relative to the beginning of the file.");
+"  fd\n"
+"    An open file descriptor, as returned by os.open().\n"
+"  position\n"
+"    Position, interpreted relative to \'whence\'.\n"
+"  whence\n"
+"    The relative position to seek from. Valid values are:\n"
+"    - SEEK_SET: seek from the start of the file.\n"
+"    - SEEK_CUR: seek from the current file position.\n"
+"    - SEEK_END: seek from the end of the file.\n"
+"\n"
+"The return value is the number of bytes relative to the beginning of the file.");
 
 #define OS_LSEEK_METHODDEF    \
     {"lseek", _PyCFunction_CAST(os_lseek), METH_FASTCALL, os_lseek__doc__},
@@ -9379,4 +9388,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=8dd784bf1e41b881 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8277545a0dea1505 input=a9049054013a1b77]*/

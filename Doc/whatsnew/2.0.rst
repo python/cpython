@@ -664,7 +664,7 @@ extra set of parentheses to pass both values as a tuple:  ``L.append( (1,2) )``.
 
 The earlier versions of these methods were more forgiving because they used an
 old function in Python's C interface to parse their arguments; 2.0 modernizes
-them to use :func:`PyArg_ParseTuple`, the current argument parsing function,
+them to use :c:func:`PyArg_ParseTuple`, the current argument parsing function,
 which provides more helpful error messages and treats multi-argument calls as
 errors.  If you absolutely must use 2.0 but can't fix your code, you can edit
 :file:`Objects/listobject.c` and define the preprocessor symbol
@@ -766,7 +766,7 @@ file, :file:`Include/pyport.h`.
 
 Vladimir Marangozov's long-awaited malloc restructuring was completed, to make
 it easy to have the Python interpreter use a custom allocator instead of C's
-standard :func:`malloc`.  For documentation, read the comments in
+standard :c:func:`malloc`.  For documentation, read the comments in
 :file:`Include/pymem.h` and :file:`Include/objimpl.h`.  For the lengthy
 discussions during which the interface was hammered out, see the web archives of
 the 'patches' and 'python-dev' lists at python.org.
@@ -794,15 +794,15 @@ are generating Python code would run into this limit.  A patch by Charles G.
 Waldman raises the limit from ``2**16`` to ``2**32``.
 
 Three new convenience functions intended for adding constants to a module's
-dictionary at module initialization time were added: :func:`PyModule_AddObject`,
-:func:`PyModule_AddIntConstant`, and :func:`PyModule_AddStringConstant`.  Each
+dictionary at module initialization time were added: :c:func:`PyModule_AddObject`,
+:c:func:`PyModule_AddIntConstant`, and :c:func:`PyModule_AddStringConstant`.  Each
 of these functions takes a module object, a null-terminated C string containing
 the name to be added, and a third argument for the value to be assigned to the
 name.  This third argument is, respectively, a Python object, a C long, or a C
 string.
 
-A wrapper API was added for Unix-style signal handlers. :func:`PyOS_getsig` gets
-a signal handler and :func:`PyOS_setsig` will set a new handler.
+A wrapper API was added for Unix-style signal handlers. :c:func:`PyOS_getsig` gets
+a signal handler and :c:func:`PyOS_setsig` will set a new handler.
 
 .. ======================================================================
 

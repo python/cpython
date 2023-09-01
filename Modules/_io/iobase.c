@@ -82,15 +82,22 @@ iobase_unsupported(const char *message)
 /* Positioning */
 
 PyDoc_STRVAR(iobase_seek_doc,
-    "Change stream position.\n"
+    "seek($self, offset, whence=os.SEEK_SET, /)\n"
+    "--\n"
     "\n"
-    "Change the stream position to the given byte offset. The offset is\n"
-    "interpreted relative to the position indicated by whence.  Values\n"
-    "for whence are:\n"
+    "Change the stream position to the given byte offset.\n"
     "\n"
-    "* 0 -- start of stream (the default); offset should be zero or positive\n"
-    "* 1 -- current stream position; offset may be negative\n"
-    "* 2 -- end of stream; offset is usually negative\n"
+    "  offset\n"
+    "    The stream position, relative to \'whence\'.\n"
+    "  whence\n"
+    "    The relative position to seek from.\n"
+    "\n"
+    "The offset is interpreted relative to the position indicated by whence.\n"
+    "Values for whence are:\n"
+    "\n"
+    "* os.SEEK_SET or 0 -- start of stream (the default); offset should be zero or positive\n"
+    "* os.SEEK_CUR or 1 -- current stream position; offset may be negative\n"
+    "* os.SEEK_END or 2 -- end of stream; offset is usually negative\n"
     "\n"
     "Return the new absolute position.");
 

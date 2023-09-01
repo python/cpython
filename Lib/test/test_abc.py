@@ -448,15 +448,16 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
 
             # Also check that issubclass() propagates exceptions raised by
             # __subclasses__.
+            class CustomError(Exception): ...
             exc_msg = "exception from __subclasses__"
 
             def raise_exc():
-                raise Exception(exc_msg)
+                raise CustomError(exc_msg)
 
             class S(metaclass=abc_ABCMeta):
                 __subclasses__ = raise_exc
 
-            with self.assertRaisesRegex(Exception, exc_msg):
+            with self.assertRaisesRegex(CustomError, exc_msg):
                 issubclass(int, S)
 
         def test_subclasshook(self):

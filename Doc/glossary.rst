@@ -92,8 +92,8 @@ Glossary
 
    asynchronous context manager
       An object which controls the environment seen in an
-      :keyword:`async with` statement by defining :meth:`__aenter__` and
-      :meth:`__aexit__` methods.  Introduced by :pep:`492`.
+      :keyword:`async with` statement by defining :meth:`~object.__aenter__` and
+      :meth:`~object.__aexit__` methods.  Introduced by :pep:`492`.
 
    asynchronous generator
       A function which returns an :term:`asynchronous generator iterator`.  It
@@ -113,26 +113,26 @@ Glossary
       An object created by a :term:`asynchronous generator` function.
 
       This is an :term:`asynchronous iterator` which when called using the
-      :meth:`__anext__` method returns an awaitable object which will execute
+      :meth:`~object.__anext__` method returns an awaitable object which will execute
       the body of the asynchronous generator function until the next
       :keyword:`yield` expression.
 
       Each :keyword:`yield` temporarily suspends processing, remembering the
       location execution state (including local variables and pending
       try-statements).  When the *asynchronous generator iterator* effectively
-      resumes with another awaitable returned by :meth:`__anext__`, it
+      resumes with another awaitable returned by :meth:`~object.__anext__`, it
       picks up where it left off.  See :pep:`492` and :pep:`525`.
 
    asynchronous iterable
       An object, that can be used in an :keyword:`async for` statement.
       Must return an :term:`asynchronous iterator` from its
-      :meth:`__aiter__` method.  Introduced by :pep:`492`.
+      :meth:`~object.__aiter__` method.  Introduced by :pep:`492`.
 
    asynchronous iterator
-      An object that implements the :meth:`__aiter__` and :meth:`__anext__`
-      methods.  ``__anext__`` must return an :term:`awaitable` object.
+      An object that implements the :meth:`~object.__aiter__` and :meth:`~object.__anext__`
+      methods.  :meth:`~object.__anext__` must return an :term:`awaitable` object.
       :keyword:`async for` resolves the awaitables returned by an asynchronous
-      iterator's :meth:`__anext__` method until it raises a
+      iterator's :meth:`~object.__anext__` method until it raises a
       :exc:`StopAsyncIteration` exception.  Introduced by :pep:`492`.
 
    attribute
@@ -149,7 +149,7 @@ Glossary
 
    awaitable
       An object that can be used in an :keyword:`await` expression.  Can be
-      a :term:`coroutine` or an object with an :meth:`__await__` method.
+      a :term:`coroutine` or an object with an :meth:`~object.__await__` method.
       See also :pep:`492`.
 
    BDFL
@@ -168,8 +168,9 @@ Glossary
       :class:`str` objects.
 
    borrowed reference
-      In Python's C API, a borrowed reference is a reference to an object.
-      It does not modify the object reference count. It becomes a dangling
+      In Python's C API, a borrowed reference is a reference to an object,
+      where the code using the object does not own the reference.
+      It becomes a dangling
       pointer if the object is destroyed. For example, a garbage collection can
       remove the last :term:`strong reference` to the object and so destroy it.
 
@@ -1131,8 +1132,10 @@ Glossary
 
    strong reference
       In Python's C API, a strong reference is a reference to an object
-      which increments the object's reference count when it is created and
-      decrements the object's reference count when it is deleted.
+      which is owned by the code holding the reference.  The strong
+      reference is taken by calling :c:func:`Py_INCREF` when the
+      reference is created and released with :c:func:`Py_DECREF`
+      when the reference is deleted.
 
       The :c:func:`Py_NewRef` function can be used to create a strong reference
       to an object. Usually, the :c:func:`Py_DECREF` function must be called on

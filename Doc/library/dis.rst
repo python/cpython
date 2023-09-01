@@ -747,7 +747,7 @@ iterations of the loop.
 .. opcode:: MATCH_MAPPING
 
    If TOS is an instance of :class:`collections.abc.Mapping` (or, more technically: if
-   it has the :const:`Py_TPFLAGS_MAPPING` flag set in its
+   it has the :c:macro:`Py_TPFLAGS_MAPPING` flag set in its
    :c:member:`~PyTypeObject.tp_flags`), push ``True`` onto the stack.  Otherwise, push
    ``False``.
 
@@ -758,7 +758,7 @@ iterations of the loop.
 
    If TOS is an instance of :class:`collections.abc.Sequence` and is *not* an instance
    of :class:`str`/:class:`bytes`/:class:`bytearray` (or, more technically: if it has
-   the :const:`Py_TPFLAGS_SEQUENCE` flag set in its :c:member:`~PyTypeObject.tp_flags`),
+   the :c:macro:`Py_TPFLAGS_SEQUENCE` flag set in its :c:member:`~PyTypeObject.tp_flags`),
    push ``True`` onto the stack.  Otherwise, push ``False``.
 
    .. versionadded:: 3.10
@@ -1260,11 +1260,14 @@ iterations of the loop.
    * ``0x02`` a dictionary of keyword-only parameters' default values
    * ``0x04`` a tuple of strings containing parameters' annotations
    * ``0x08`` a tuple containing cells for free variables, making a closure
-   * the code associated with the function (at TOS1)
-   * the :term:`qualified name` of the function (at TOS)
+   * the code associated with the function (at TOS)
 
    .. versionchanged:: 3.10
       Flag value ``0x04`` is a tuple of strings instead of dictionary
+
+   .. versionchanged:: 3.11
+      Qualified name at TOS was removed.
+
 
 .. opcode:: BUILD_SLICE (argc)
 

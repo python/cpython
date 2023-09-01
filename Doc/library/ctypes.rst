@@ -221,7 +221,7 @@ Fundamental data types
 +----------------------+------------------------------------------+----------------------------+
 | :class:`c_char`      | :c:expr:`char`                           | 1-character bytes object   |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_wchar`     | :c:expr:`wchar_t`                        | 1-character string         |
+| :class:`c_wchar`     | :c:type:`wchar_t`                        | 1-character string         |
 +----------------------+------------------------------------------+----------------------------+
 | :class:`c_byte`      | :c:expr:`char`                           | int                        |
 +----------------------+------------------------------------------+----------------------------+
@@ -244,9 +244,9 @@ Fundamental data types
 | :class:`c_ulonglong` | :c:expr:`unsigned __int64` or            | int                        |
 |                      | :c:expr:`unsigned long long`             |                            |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_size_t`    | :c:expr:`size_t`                         | int                        |
+| :class:`c_size_t`    | :c:type:`size_t`                         | int                        |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_ssize_t`   | :c:expr:`ssize_t` or                     | int                        |
+| :class:`c_ssize_t`   | :c:type:`ssize_t` or                     | int                        |
 |                      | :c:expr:`Py_ssize_t`                     |                            |
 +----------------------+------------------------------------------+----------------------------+
 | :class:`c_float`     | :c:expr:`float`                          | float                      |
@@ -334,7 +334,7 @@ property::
 
 The :func:`create_string_buffer` function replaces the old :func:`c_buffer`
 function (which is still available as an alias).  To create a mutable memory
-block containing unicode characters of the C type :c:expr:`wchar_t`, use the
+block containing unicode characters of the C type :c:type:`wchar_t`, use the
 :func:`create_unicode_buffer` function.
 
 
@@ -399,9 +399,10 @@ Calling functions with your own custom data types
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can also customize :mod:`ctypes` argument conversion to allow instances of
-your own classes be used as function arguments.  :mod:`ctypes` looks for an
-:attr:`_as_parameter_` attribute and uses this as the function argument.  Of
-course, it must be one of integer, string, or bytes::
+your own classes be used as function arguments. :mod:`ctypes` looks for an
+:attr:`!_as_parameter_` attribute and uses this as the function argument. The
+attribute must be an integer, string, bytes, a :mod:`ctypes` instance, or an
+object with an :attr:`!_as_parameter_` attribute::
 
    >>> class Bottles:
    ...     def __init__(self, number):
@@ -1987,17 +1988,17 @@ Utility functions
    specifying an address, or a ctypes instance.
 
 
-.. function:: POINTER(type)
+.. function:: POINTER(type, /)
 
-   This factory function creates and returns a new ctypes pointer type. Pointer
-   types are cached and reused internally, so calling this function repeatedly is
-   cheap. *type* must be a ctypes type.
+   Create and return a new ctypes pointer type. Pointer types are cached and
+   reused internally, so calling this function repeatedly is cheap.
+   *type* must be a ctypes type.
 
 
-.. function:: pointer(obj)
+.. function:: pointer(obj, /)
 
-   This function creates a new pointer instance, pointing to *obj*. The returned
-   object is of the type ``POINTER(type(obj))``.
+   Create a new pointer instance, pointing to *obj*.
+   The returned object is of the type ``POINTER(type(obj))``.
 
    Note: If you just want to pass a pointer to an object to a foreign function
    call, you should use ``byref(obj)`` which is much faster.
@@ -2361,7 +2362,7 @@ These are the fundamental ctypes data types:
 
 .. class:: c_wchar
 
-   Represents the C :c:expr:`wchar_t` datatype, and interprets the value as a
+   Represents the C :c:type:`wchar_t` datatype, and interprets the value as a
    single character unicode string.  The constructor accepts an optional string
    initializer, the length of the string must be exactly one character.
 

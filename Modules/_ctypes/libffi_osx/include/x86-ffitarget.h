@@ -33,7 +33,7 @@
 #	define X86
 #endif
 
-#if defined(__x86_64__) 
+#if defined(__x86_64__)
 #	ifndef X86_64
 #		define X86_64
 #	endif

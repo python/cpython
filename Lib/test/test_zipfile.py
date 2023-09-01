@@ -3444,6 +3444,13 @@ with zipfile.ZipFile(io.BytesIO(), "w") as zf:
         assert e.suffixes == []
 
     @pass_alpharep
+    def test_suffix_no_filename(self, alpharep):
+        alpharep.filename = None
+        root = zipfile.Path(alpharep)
+        assert root.joinpath('example').suffix == ""
+        assert root.joinpath('example').suffixes == []
+
+    @pass_alpharep
     def test_stem(self, alpharep):
         """
         The final path component, without its suffix
@@ -3459,6 +3466,8 @@ with zipfile.ZipFile(io.BytesIO(), "w") as zf:
 
         d = root / "d"
         assert d.stem == "d"
+
+        assert (root / ".gitignore").stem == ".gitignore"
 
     @pass_alpharep
     def test_root_parent(self, alpharep):

@@ -17,6 +17,7 @@ import threading
 import time
 import unittest
 from unittest import mock
+import _imp
 
 from test.support import os_helper
 from test.support import (
@@ -528,6 +529,13 @@ class ImportTests(unittest.TestCase):
                                     stderr=subprocess.STDOUT,
                                     env=env,
                                     cwd=os.path.dirname(pyexe))
+
+    def test_issue105979(self):
+        # this used to crash
+        with self.assertRaises(ImportError) as cm:
+            _imp.get_frozen_object("x", b"6\'\xd5Cu\x12")
+        self.assertIn("Frozen object named 'x' is invalid",
+                      str(cm.exception))
 
 
 @skip_if_dont_write_bytecode

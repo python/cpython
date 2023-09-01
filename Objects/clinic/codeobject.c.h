@@ -157,12 +157,7 @@ exit:
 }
 
 PyDoc_STRVAR(code_replace__doc__,
-"replace($self, /, *, co_argcount=-1, co_posonlyargcount=-1,\n"
-"        co_kwonlyargcount=-1, co_nlocals=-1, co_stacksize=-1,\n"
-"        co_flags=-1, co_firstlineno=-1, co_code=None, co_consts=None,\n"
-"        co_names=None, co_varnames=None, co_freevars=None,\n"
-"        co_cellvars=None, co_filename=None, co_name=None,\n"
-"        co_qualname=None, co_linetable=None, co_exceptiontable=None)\n"
+"replace($self, /, **changes)\n"
 "--\n"
 "\n"
 "Return a copy of the code object with new values for the specified fields.");
@@ -174,13 +169,12 @@ static PyObject *
 code_replace_impl(PyCodeObject *self, int co_argcount,
                   int co_posonlyargcount, int co_kwonlyargcount,
                   int co_nlocals, int co_stacksize, int co_flags,
-                  int co_firstlineno, PyBytesObject *co_code,
-                  PyObject *co_consts, PyObject *co_names,
-                  PyObject *co_varnames, PyObject *co_freevars,
-                  PyObject *co_cellvars, PyObject *co_filename,
-                  PyObject *co_name, PyObject *co_qualname,
-                  PyBytesObject *co_linetable,
-                  PyBytesObject *co_exceptiontable);
+                  int co_firstlineno, PyObject *co_code, PyObject *co_consts,
+                  PyObject *co_names, PyObject *co_varnames,
+                  PyObject *co_freevars, PyObject *co_cellvars,
+                  PyObject *co_filename, PyObject *co_name,
+                  PyObject *co_qualname, PyObject *co_linetable,
+                  PyObject *co_exceptiontable);
 
 static PyObject *
 code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -197,7 +191,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     int co_stacksize = self->co_stacksize;
     int co_flags = self->co_flags;
     int co_firstlineno = self->co_firstlineno;
-    PyBytesObject *co_code = NULL;
+    PyObject *co_code = NULL;
     PyObject *co_consts = self->co_consts;
     PyObject *co_names = self->co_names;
     PyObject *co_varnames = NULL;
@@ -206,8 +200,8 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     PyObject *co_filename = self->co_filename;
     PyObject *co_name = self->co_name;
     PyObject *co_qualname = self->co_qualname;
-    PyBytesObject *co_linetable = (PyBytesObject *)self->co_linetable;
-    PyBytesObject *co_exceptiontable = (PyBytesObject *)self->co_exceptiontable;
+    PyObject *co_linetable = self->co_linetable;
+    PyObject *co_exceptiontable = self->co_exceptiontable;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
     if (!args) {
@@ -284,7 +278,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
             _PyArg_BadArgument("replace", "argument 'co_code'", "bytes", args[7]);
             goto exit;
         }
-        co_code = (PyBytesObject *)args[7];
+        co_code = args[7];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
@@ -383,7 +377,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
             _PyArg_BadArgument("replace", "argument 'co_linetable'", "bytes", args[16]);
             goto exit;
         }
-        co_linetable = (PyBytesObject *)args[16];
+        co_linetable = args[16];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
@@ -392,7 +386,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
         _PyArg_BadArgument("replace", "argument 'co_exceptiontable'", "bytes", args[17]);
         goto exit;
     }
-    co_exceptiontable = (PyBytesObject *)args[17];
+    co_exceptiontable = args[17];
 skip_optional_kwonly:
     return_value = code_replace_impl(self, co_argcount, co_posonlyargcount, co_kwonlyargcount, co_nlocals, co_stacksize, co_flags, co_firstlineno, co_code, co_consts, co_names, co_varnames, co_freevars, co_cellvars, co_filename, co_name, co_qualname, co_linetable, co_exceptiontable);
 
@@ -436,4 +430,4 @@ code__varname_from_oparg(PyCodeObject *self, PyObject *const *args, Py_ssize_t n
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9c521b6c79f90ff7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d1bbf51b746ca2d0 input=a9049054013a1b77]*/

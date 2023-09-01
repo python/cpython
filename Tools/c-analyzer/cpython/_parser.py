@@ -75,6 +75,7 @@ Python/emscripten_signal.c
 # only huge constants (safe but parsing is slow)
 Modules/_blake2/impl/blake2-kat.h
 Modules/_ssl_data.h
+Modules/_ssl_data_31.h
 Modules/_ssl_data_300.h
 Modules/_ssl_data_111.h
 Modules/cjkcodecs/mappings_*.h

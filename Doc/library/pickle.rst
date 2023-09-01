@@ -494,7 +494,8 @@ What can be pickled and unpickled?
 
 The following types can be pickled:
 
-* ``None``, ``True``, and ``False``;
+* built-in constants (``None``, ``True``, ``False``, ``Ellipsis``, and
+  ``NotImplemented``);
 
 * integers, floating-point numbers, complex numbers;
 

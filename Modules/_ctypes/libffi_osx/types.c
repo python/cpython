@@ -1,6 +1,6 @@
 /* -----------------------------------------------------------------------
    types.c - Copyright (c) 1996, 1998  Red Hat, Inc.
-   
+
    Predefined ffi_types needed by libffi.
 
    Permission is hereby granted, free of charge, to any person obtaining
@@ -85,7 +85,7 @@ FFI_INTEGRAL_TYPEDEF(sint64, 8, 8, FFI_TYPE_SINT64);
 		FFI_INTEGRAL_TYPEDEF(longdouble, 12, 4, FFI_TYPE_LONGDOUBLE);
 #	endif
 
-#elif defined ARM || defined SH || defined POWERPC_AIX 
+#elif defined ARM || defined SH || defined POWERPC_AIX
 FFI_INTEGRAL_TYPEDEF(double, 8, 4, FFI_TYPE_DOUBLE);
 FFI_INTEGRAL_TYPEDEF(longdouble, 8, 4, FFI_TYPE_LONGDOUBLE);
 #elif defined POWERPC_DARWIN

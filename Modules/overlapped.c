@@ -365,8 +365,9 @@ _overlapped_RegisterWaitWithQueue_impl(PyObject *module, HANDLE Object,
             &NewWaitObject, Object, PostToQueueCallback, pdata, Milliseconds,
             WT_EXECUTEINWAITTHREAD | WT_EXECUTEONLYONCE))
     {
+        SetFromWindowsErr(0);
         PyMem_RawFree(pdata);
-        return SetFromWindowsErr(0);
+        return NULL;
     }
 
     return Py_BuildValue(F_HANDLE, NewWaitObject);

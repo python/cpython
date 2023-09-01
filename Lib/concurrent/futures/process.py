@@ -497,6 +497,10 @@ class _ExecutorManagerThread(threading.Thread):
         for p in self.processes.values():
             p.terminate()
 
+        # Prevent queue writing to a pipe which is no longer read.
+        # https://github.com/python/cpython/issues/94777
+        self.call_queue._reader.close()
+
         # clean up resources
         self.join_executor_internals()
 

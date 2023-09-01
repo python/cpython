@@ -52,18 +52,18 @@ __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
 
 uses_relative = ['', 'ftp', 'http', 'gopher', 'nntp', 'imap',
                  'wais', 'file', 'https', 'shttp', 'mms',
-                 'prospero', 'rtsp', 'rtspu', 'sftp',
+                 'prospero', 'rtsp', 'rtsps', 'rtspu', 'sftp',
                  'svn', 'svn+ssh', 'ws', 'wss']
 
 uses_netloc = ['', 'ftp', 'http', 'gopher', 'nntp', 'telnet',
                'imap', 'wais', 'file', 'mms', 'https', 'shttp',
-               'snews', 'prospero', 'rtsp', 'rtspu', 'rsync',
+               'snews', 'prospero', 'rtsp', 'rtsps', 'rtspu', 'rsync',
                'svn', 'svn+ssh', 'sftp', 'nfs', 'git', 'git+ssh',
                'ws', 'wss']
 
 uses_params = ['', 'ftp', 'hdl', 'prospero', 'http', 'imap',
-               'https', 'shttp', 'rtsp', 'rtspu', 'sip', 'sips',
-               'mms', 'sftp', 'tel']
+               'https', 'shttp', 'rtsp', 'rtsps', 'rtspu', 'sip',
+               'sips', 'mms', 'sftp', 'tel']
 
 # These are not actually used anymore, but should stay for backwards
 # compatibility.  (They are undocumented, but have a public-looking name.)
@@ -72,7 +72,7 @@ non_hierarchical = ['gopher', 'hdl', 'mailto', 'news',
                     'telnet', 'wais', 'imap', 'snews', 'sip', 'sips']
 
 uses_query = ['', 'http', 'wais', 'imap', 'https', 'shttp', 'mms',
-              'gopher', 'rtsp', 'rtspu', 'sip', 'sips']
+              'gopher', 'rtsp', 'rtsps', 'rtspu', 'sip', 'sips']
 
 uses_fragment = ['', 'ftp', 'hdl', 'http', 'gopher', 'news',
                  'nntp', 'wais', 'https', 'shttp', 'snews',

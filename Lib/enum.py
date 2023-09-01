@@ -12,6 +12,7 @@ __all__ = [
         'FlagBoundary', 'STRICT', 'CONFORM', 'EJECT', 'KEEP',
         'global_flag_repr', 'global_enum_repr', 'global_str', 'global_enum',
         'EnumCheck', 'CONTINUOUS', 'NAMED_FLAGS', 'UNIQUE',
+        'pickle_by_global_name', 'pickle_by_enum_name',
         ]
 
 
@@ -918,7 +919,6 @@ class EnumType(type):
         body['__module__'] = module
         tmp_cls = type(name, (object, ), body)
         cls = _simple_enum(etype=cls, boundary=boundary or KEEP)(tmp_cls)
-        cls.__reduce_ex__ = _reduce_ex_by_global_name
         if as_global:
             global_enum(cls)
         else:
@@ -1225,7 +1225,13 @@ class Enum(metaclass=EnumType):
         return hash(self._name_)
 
     def __reduce_ex__(self, proto):
-        return getattr, (self.__class__, self._name_)
+        return self.__class__, (self._value_, )
+
+    def __deepcopy__(self,memo):
+        return self
+
+    def __copy__(self):
+        return self
 
     # enum.property is used to provide access to the `name` and
     # `value` attributes of enum members while keeping some measure of
@@ -1291,8 +1297,14 @@ class StrEnum(str, ReprEnum):
         return name.lower()
 
 
-def _reduce_ex_by_global_name(self, proto):
+def pickle_by_global_name(self, proto):
+    # should not be used with Flag-type enums
     return self.name
+_reduce_ex_by_global_name = pickle_by_global_name
+
+def pickle_by_enum_name(self, proto):
+    # should not be used with Flag-type enums
+    return getattr, (self.__class__, self._name_)
 
 class FlagBoundary(StrEnum):
     """
@@ -1313,23 +1325,6 @@ class Flag(Enum, boundary=STRICT):
     """
     Support for flags
     """
-
-    def __reduce_ex__(self, proto):
-        cls = self.__class__
-        unknown = self._value_ & ~cls._flag_mask_
-        member_value = self._value_ & cls._flag_mask_
-        if unknown and member_value:
-            return _or_, (cls(member_value), unknown)
-        for val in _iter_bits_lsb(member_value):
-            rest = member_value & ~val
-            if rest:
-                return _or_, (cls(rest), cls._value2member_map_.get(val))
-            else:
-                break
-        if self._name_ is None:
-            return cls, (self._value_,)
-        else:
-            return getattr, (cls, self._name_)
 
     _numeric_repr_ = repr
 
@@ -1457,12 +1452,11 @@ class Flag(Enum, boundary=STRICT):
         else:
             pseudo_member._name_ = None
         # use setdefault in case another thread already created a composite
-        # with this value, but only if all members are known
-        # note: zero is a special case -- add it
-        if not unknown:
-            pseudo_member = cls._value2member_map_.setdefault(value, pseudo_member)
-            if neg_value is not None:
-                cls._value2member_map_[neg_value] = pseudo_member
+        # with this value
+        # note: zero is a special case -- always add it
+        pseudo_member = cls._value2member_map_.setdefault(value, pseudo_member)
+        if neg_value is not None:
+            cls._value2member_map_[neg_value] = pseudo_member
         return pseudo_member
 
     def __contains__(self, other):
@@ -1534,14 +1528,10 @@ class Flag(Enum, boundary=STRICT):
 
     def __invert__(self):
         if self._inverted_ is None:
-            if self._boundary_ is KEEP:
-                # use all bits
+            if self._boundary_ in (EJECT, KEEP):
                 self._inverted_ = self.__class__(~self._value_)
             else:
-                # calculate flags not in this member
-                self._inverted_ = self.__class__(self._flag_mask_ ^ self._value_)
-            if isinstance(self._inverted_, self.__class__):
-                self._inverted_._inverted_ = self
+                self._inverted_ = self.__class__(self._singles_mask_ & ~self._value_)
         return self._inverted_
 
     __rand__ = __and__
@@ -2047,7 +2037,6 @@ def _old_convert_(etype, name, module, filter, source=None, *, boundary=None):
         # unless some values aren't comparable, in which case sort by name
         members.sort(key=lambda t: t[0])
     cls = etype(name, members, module=module, boundary=boundary or KEEP)
-    cls.__reduce_ex__ = _reduce_ex_by_global_name
     return cls
 
 _stdlib_enums = IntEnum, StrEnum, IntFlag

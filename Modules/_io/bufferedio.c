@@ -1740,7 +1740,6 @@ _bufferedreader_peek_unlocked(buffered *self)
     self->pos = 0;
     return PyBytes_FromStringAndSize(self->buffer, r);
 }
-
 
 
 /*
@@ -2047,7 +2046,6 @@ error:
     LEAVE_BUFFERED(self)
     return res;
 }
-
 
 
 /*
@@ -2253,7 +2251,6 @@ bufferedrwpair_closed_get(rwpair *self, void *context)
     }
     return PyObject_GetAttr((PyObject *) self->writer, &_Py_ID(closed));
 }
-
 
 
 /*

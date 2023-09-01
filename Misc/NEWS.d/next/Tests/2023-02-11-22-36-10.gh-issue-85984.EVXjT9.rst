@@ -1,1 +1,0 @@
-Utilize new "winsize" functions from termios in pty tests.
