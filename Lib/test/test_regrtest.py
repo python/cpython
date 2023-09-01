@@ -548,7 +548,11 @@ class BaseTestCase(unittest.TestCase):
         return proc
 
     def run_python(self, args, **kw):
-        args = [sys.executable, '-X', 'faulthandler', '-I', *args]
+        extraargs = []
+        if 'uops' in sys._xoptions:
+            # Pass -X uops along
+            extraargs.extend(['-X', 'uops'])
+        args = [sys.executable, *extraargs, '-X', 'faulthandler', '-I', *args]
         proc = self.run_command(args, **kw)
         return proc.stdout
 
