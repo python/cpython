@@ -2673,12 +2673,6 @@ class ClinicExternalTest(TestCase):
             preserve
             [clinic start generated code]*/
 
-            #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-            #  include "pycore_gc.h"            // PyGC_Head
-            #  include "pycore_runtime.h"       // _Py_ID()
-            #endif
-
-
             PyDoc_VAR(func__doc__);
 
             PyDoc_STRVAR(func__doc__,
@@ -2691,7 +2685,7 @@ class ClinicExternalTest(TestCase):
 
             static PyObject *
             func(PyObject *module, PyObject *a)
-            /*[clinic end generated code: output=56c09670e89a0d9a input=a9049054013a1b77]*/
+            /*[clinic end generated code: output=3dde2d13002165b9 input=a9049054013a1b77]*/
         """)
         with os_helper.temp_dir() as tmp_dir:
             in_fn = os.path.join(tmp_dir, "test.c")
