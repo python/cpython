@@ -1561,7 +1561,7 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
     int code_len = (int)Py_SIZE(code);
     /* code->_co_firsttraceable >= code_len indicates
      * that no instrumentation can be inserted.
-     * Exit early to avoid creating instuementation
+     * Exit early to avoid creating instrumentation
      * data for potential statically allocated code
      * objects.
      * See https://github.com/python/cpython/issues/108390 */
