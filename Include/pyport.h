@@ -184,12 +184,6 @@ typedef Py_ssize_t Py_ssize_clean_t;
 #  define Py_MEMCPY memcpy
 #endif
 
-#ifdef HAVE_IEEEFP_H
-#include <ieeefp.h>  /* needed for 'finite' declaration on some platforms */
-#endif
-
-#include <math.h> /* Moved here from the math section, before extern "C" */
-
 /********************************************
  * WRAPPER FOR <time.h> and/or <sys/time.h> *
  ********************************************/

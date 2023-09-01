@@ -915,6 +915,12 @@ New Features
 Porting to Python 3.13
 ----------------------
 
+* ``Python.h`` no longer includes the ``<ieeefp.h>`` standard header. It was
+  included for the ``finite()`` function which is now provided by the
+  ``<math.h>`` header. It should now be included explicitly if needed. Remove
+  also the ``HAVE_IEEEFP_H`` macro.
+  (Contributed by Victor Stinner in :gh:`108765`.)
+
 Deprecated
 ----------
 
