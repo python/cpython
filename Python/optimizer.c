@@ -289,6 +289,7 @@ static PyTypeObject CounterOptimizer_Type = {
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_methods = counter_methods,
+    .tp_dealloc = (destructor)PyObject_Del,
 };
 
 PyObject *
