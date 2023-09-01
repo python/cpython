@@ -332,7 +332,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Returns ``NULL`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 
-.. c:function:: int PyUnstable_Long_IsCompact(const PyLongObject* op)
+.. c:function:: int PyUnstable_Long_IsCompact(PyLongObject* op)
 
    Return 1 if *op* is compact, 0 otherwise.
 
@@ -347,7 +347,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Exactly what values are considered compact is an implementation detail
    and is subject to change.
 
-.. c:function:: Py_ssize_t PyUnstable_Long_CompactValue(const PyLongObject* op)
+.. c:function:: Py_ssize_t PyUnstable_Long_CompactValue(PyLongObject* op)
 
    If *op* is compact, as determined by :c:func:`PyUnstable_Long_IsCompact`,
    return its value.

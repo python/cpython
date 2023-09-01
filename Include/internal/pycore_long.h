@@ -231,36 +231,44 @@ PyAPI_FUNC(int) _PyLong_UnsignedLongLong_Converter(PyObject *, void *);
 // Export for '_testclinic' shared extension (Argument Clinic code)
 PyAPI_FUNC(int) _PyLong_Size_t_Converter(PyObject *, void *);
 
+#define _PyLong_SIGN_MASK 3
+#define _PyLong_NON_SIZE_BITS 3
+
 /* Long value tag bits:
  * 0-1: Sign bits value = (1-sign), ie. negative=2, positive=0, zero=1.
  * 2: Reserved for immortality bit
  * 3+ Unsigned digit count
  */
-#define SIGN_MASK 3
+#define SIGN_MASK _PyLong_SIGN_MASK
 #define SIGN_ZERO 1
 #define SIGN_NEGATIVE 2
-#define NON_SIZE_BITS 3
+#define NON_SIZE_BITS _PyLong_NON_SIZE_BITS
 
-/* The functions _PyLong_IsCompact and _PyLong_CompactValue are defined
- * in Include/cpython/longobject.h, since they need to be inline.
- *
- * "Compact" values have at least one bit to spare,
+/* "Compact" values have at least one bit to spare,
  * so that addition and subtraction can be performed on the values
  * without risk of overflow.
- *
- * The inline functions need tag bits.
- * For readability, rather than do `#define SIGN_MASK _PyLong_SIGN_MASK`
- * we define them to the numbers in both places and then assert that
- * they're the same.
  */
-static_assert(SIGN_MASK == _PyLong_SIGN_MASK, "SIGN_MASK does not match _PyLong_SIGN_MASK");
-static_assert(NON_SIZE_BITS == _PyLong_NON_SIZE_BITS, "NON_SIZE_BITS does not match _PyLong_NON_SIZE_BITS");
 
 /* All *compact" values are guaranteed to fit into
  * a Py_ssize_t with at least one bit to spare.
  * In other words, for 64 bit machines, compact
  * will be signed 63 (or fewer) bit values
  */
+
+static inline int
+_PyLong_IsCompact(const PyLongObject* op) {
+    assert(PyType_HasFeature((op)->ob_base.ob_type, Py_TPFLAGS_LONG_SUBCLASS));
+    return op->long_value.lv_tag < (2 << _PyLong_NON_SIZE_BITS);
+}
+
+static inline Py_ssize_t
+_PyLong_CompactValue(const PyLongObject *op)
+{
+    assert(PyType_HasFeature((op)->ob_base.ob_type, Py_TPFLAGS_LONG_SUBCLASS));
+    assert(_PyLong_IsCompact(op));
+    Py_ssize_t sign = 1 - (op->long_value.lv_tag & _PyLong_SIGN_MASK);
+    return sign * (Py_ssize_t)op->long_value.ob_digit[0];
+}
 
 /* Return 1 if the argument is compact int */
 static inline int

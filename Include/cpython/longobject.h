@@ -4,6 +4,5 @@
 
 PyAPI_FUNC(PyObject*) PyLong_FromUnicodeObject(PyObject *u, int base);
 
-PyAPI_FUNC(int) PyUnstable_Long_IsCompact(const PyLongObject* op);
-PyAPI_FUNC(Py_ssize_t) PyUnstable_Long_CompactValue(const PyLongObject* op);
-
+PyAPI_FUNC(int) PyUnstable_Long_IsCompact(PyLongObject* op);
+PyAPI_FUNC(Py_ssize_t) PyUnstable_Long_CompactValue(PyLongObject* op);
