@@ -188,9 +188,11 @@ _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNI
     insert_executor(code, src, index, executor);
     assert(frame->prev_instr == src);
     frame->prev_instr = dest - 1;
+    frame->instr_ptr = dest;
     return executor->execute(executor, frame, stack_pointer);
 jump_to_destination:
     frame->prev_instr = dest - 1;
+    frame->instr_ptr = dest;
     _PyFrame_SetStackPointer(frame, stack_pointer);
     return frame;
 }
