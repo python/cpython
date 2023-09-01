@@ -101,8 +101,8 @@ The memo dictionary should be treated as an opaque object.
    single: __replace__() (replace protocol)
 
 Function :func:`replace` is more limited than :func:`copy` and :func:`deepcopy`,
-and only supports named tuples, dataclasses, and other classes which
-define method :meth:`!__replace__`.
+and only supports named tuples created by :func:`~collections.namedtuple`,
+:mod:`dataclasses`, and other classes which define method :meth:`!__replace__`.
 
    .. method:: __replace__(self, /, **changes)
       :noindex:
