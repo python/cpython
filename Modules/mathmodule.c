@@ -2935,7 +2935,8 @@ math_pow_impl(PyObject *module, double x, double y)
             else /* y < 0. */
                 r = odd_y ? copysign(0., x) : 0.;
         }
-        else { /* Py_IS_INFINITY(y) */
+        else {
+            assert(Py_IS_INFINITY(y));
             if (fabs(x) == 1.0)
                 r = 1.;
             else if (y > 0. && fabs(x) > 1.0)
@@ -3465,6 +3466,8 @@ static const uint8_t factorial_trailing_zeros[] = {
 static PyObject *
 perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
 {
+    assert(k != 0);
+
     /* For small enough n and k the result fits in the 64-bit range and can
      * be calculated without allocating intermediate PyLong objects. */
     if (iscomb) {
