@@ -12,7 +12,6 @@
 #include "pycore_long.h"          // _PyLong_AsByteArray()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 
-#include <ctype.h>
 #include <stddef.h>               // offsetof()
 
 /*[clinic input]
