@@ -63,6 +63,27 @@ the following command can be used to display the disassembly of
 
 (The "2" is a line number).
 
+Command-line interface
+-----------------
+
+The :mod:`dis` module can be invoked as a script from the command line.
+It is as simple as:
+
+.. code-block:: sh
+
+   python -m dis [-h] [infile]
+
+The following options are accepted:
+
+.. program:: dis
+
+.. cmdoption:: -h, --help
+
+   Display usage and exit.
+
+If :file:`infile` is specified, its disassembled code will be written to stdout.
+Otherwise, disassembly is performed on compiled source code recieved from stdin.
+
 Bytecode analysis
 -----------------
 
