@@ -2629,7 +2629,7 @@ def bœr():
         stdout, stderr = self._run_pdb(
             ['-m', module_name], "", expected_returncode=1
         )
-        self.assertIn("ImportError: No module named t_main.__main__",
+        self.assertIn("ImportError: No module named t_main.__main__; 't_main' is a package and cannot be directly executed",
                       stdout.splitlines())
 
     def test_package_without_a_main(self):
@@ -2647,6 +2647,22 @@ def bœr():
         self.assertIn(
             "'t_pkg.t_main' is a package and cannot be directly executed",
             stdout)
+
+    def test_nonexistent_module(self):
+        stdout, stderr = self._run_pdb(["-m", os_helper.TESTFN], "", expected_returncode=1)
+        self.assertIn(f"ImportError: No module named {os_helper.TESTFN}", stdout.splitlines())
+
+    def test_dir_as_script(self):
+        os.mkdir(os_helper.TESTFN)
+        stdout, stderr = self._run_pdb([os_helper.TESTFN], "", expected_returncode=1)
+        self.assertIn(f"Error: {os_helper.TESTFN} is a directory", stdout.splitlines())
+        os.rmdir(os_helper.TESTFN)
+
+    def test_invalid_cmd_line_options(self):
+        stdout, stderr = self._run_pdb(["-c"], "", expected_returncode=1)
+        self.assertIn(f"Error: option -c requires argument", stdout.splitlines())
+        stdout, stderr = self._run_pdb(["--spam"], "", expected_returncode=1)
+        self.assertIn(f"Error: option --spam not recognized", stdout.splitlines())
 
     def test_blocks_at_first_code_line(self):
         script = """
