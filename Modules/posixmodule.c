@@ -10111,8 +10111,7 @@ os.timerfd_gettime
         A timer file descriptor.
     /
 
-Return a tuple of a timer file descriptor's (interval, next expiration)
-in float seconds.
+Return a tuple of a timer file descriptor's (interval, next expiration) in float seconds.
 [clinic start generated code]*/
 
 static PyObject *
@@ -10180,8 +10179,7 @@ os.timerfd_gettime_ns
         A timer file descriptor.
     /
 
-Return a tuple of a timer file descriptor's (interval, next expiration)
-in nanoseconds.
+Return a tuple of a timer file descriptor's (interval, next expiration) in nanoseconds.
 [clinic start generated code]*/
 
 static PyObject *
