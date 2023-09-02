@@ -1,5 +1,10 @@
 #include "Python.h"
 #include "pycore_time.h"          // _PyTime_t
+
+#include <time.h>                 // gmtime_r()
+#ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>           // gettimeofday()
+#endif
 #ifdef MS_WINDOWS
 #  include <winsock2.h>           // struct timeval
 #endif
