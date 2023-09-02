@@ -95,34 +95,25 @@ which relays any information about the UUID's safety, using this enumeration:
    A tuple of the six integer fields of the UUID, which are also available as six
    individual attributes and two derived attributes:
 
-.. list-table::
-
-   * - Field
-     - Meaning
-
-   * - .. attribute:: UUID.time_low
-     - The first 32 bits of the UUID.
-
-   * - .. attribute:: UUID.time_mid
-     - The next 16 bits of the UUID.
-
-   * - .. attribute:: UUID.time_hi_version
-     - The next 16 bits of the UUID.
-
-   * - .. attribute:: UUID.clock_seq_hi_variant
-     - The next 8 bits of the UUID.
-
-   * - .. attribute:: UUID.clock_seq_low
-     - The next 8 bits of the UUID.
-
-   * - .. attribute:: UUID.node
-     - The last 48 bits of the UUID.
-
-   * - .. attribute:: UUID.time
-     - The 60-bit timestamp.
-
-   * - .. attribute:: UUID.clock_seq
-     - The 14-bit sequence number.
+   +------------------------------+-------------------------------+
+   | Field                        | Meaning                       |
+   +==============================+===============================+
+   | :attr:`time_low`             | the first 32 bits of the UUID |
+   +------------------------------+-------------------------------+
+   | :attr:`time_mid`             | the next 16 bits of the UUID  |
+   +------------------------------+-------------------------------+
+   | :attr:`time_hi_version`      | the next 16 bits of the UUID  |
+   +------------------------------+-------------------------------+
+   | :attr:`clock_seq_hi_variant` | the next 8 bits of the UUID   |
+   +------------------------------+-------------------------------+
+   | :attr:`clock_seq_low`        | the next 8 bits of the UUID   |
+   +------------------------------+-------------------------------+
+   | :attr:`node`                 | the last 48 bits of the UUID  |
+   +------------------------------+-------------------------------+
+   | :attr:`time`                 | the 60-bit timestamp          |
+   +------------------------------+-------------------------------+
+   | :attr:`clock_seq`            | the 14-bit sequence number    |
+   +------------------------------+-------------------------------+
 
 
 .. attribute:: UUID.hex
