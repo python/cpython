@@ -449,6 +449,7 @@ class ScalableSelectorMixIn:
     # see issue #18963 for why it's skipped on older OS X versions
     @support.requires_mac_ver(10, 5)
     @unittest.skipUnless(resource, "Test needs resource module")
+    @support.requires_resource('cpu')
     def test_above_fd_setsize(self):
         # A scalable implementation should have no problem with more than
         # FD_SETSIZE file descriptors. Since we don't know the value, we just
