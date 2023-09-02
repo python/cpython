@@ -417,32 +417,6 @@ extern "C" {
 #  define Py_NO_INLINE
 #endif
 
-/**************************************************************************
-Prototypes that are missing from the standard include files on some systems
-(and possibly only some versions of such systems.)
-
-Please be conservative with adding new ones, document them and enclose them
-in platform-specific #ifdefs.
-**************************************************************************/
-
-#ifdef SOLARIS
-/* Unchecked */
-extern int gethostname(char *, int);
-#endif
-
-#ifdef HAVE__GETPTY
-#include <sys/types.h>          /* we need to import mode_t */
-extern char * _getpty(int *, int, mode_t, int);
-#endif
-
-/* On QNX 6, struct termio must be declared by including sys/termio.h
-   if TCGETA, TCSETA, TCSETAW, or TCSETAF are used.  sys/termio.h must
-   be included before termios.h or it will generate an error. */
-#if defined(HAVE_SYS_TERMIO_H) && !defined(__hpux)
-#include <sys/termio.h>
-#endif
-
-
 /* On 4.4BSD-descendants, ctype functions serves the whole range of
  * wchar_t character set rather than single byte code points only.
  * This characteristic can break some operations of string object
