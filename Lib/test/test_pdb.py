@@ -2650,19 +2650,18 @@ def bœr():
 
     def test_nonexistent_module(self):
         stdout, stderr = self._run_pdb(["-m", os_helper.TESTFN], "", expected_returncode=1)
-        self.assertIn(f"ImportError: No module named {os_helper.TESTFN}", stdout.splitlines())
+        self.assertIn(f"ImportError: No module named {os_helper.TESTFN}", stdout)
 
     def test_dir_as_script(self):
-        os.mkdir(os_helper.TESTFN)
-        stdout, stderr = self._run_pdb([os_helper.TESTFN], "", expected_returncode=1)
-        self.assertIn(f"Error: {os_helper.TESTFN} is a directory", stdout.splitlines())
-        os.rmdir(os_helper.TESTFN)
+        with os_helper.temp_dir() as temp_dir:
+            stdout, stderr = self._run_pdb([temp_dir], "", expected_returncode=1)
+            self.assertIn(f"Error: {temp_dir} is a directory", stdout)
 
     def test_invalid_cmd_line_options(self):
         stdout, stderr = self._run_pdb(["-c"], "", expected_returncode=1)
-        self.assertIn(f"Error: option -c requires argument", stdout.splitlines())
+        self.assertIn(f"Error: option -c requires argument", stdout)
         stdout, stderr = self._run_pdb(["--spam"], "", expected_returncode=1)
-        self.assertIn(f"Error: option --spam not recognized", stdout.splitlines())
+        self.assertIn(f"Error: option --spam not recognized", stdout)
 
     def test_blocks_at_first_code_line(self):
         script = """
