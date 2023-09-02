@@ -315,6 +315,9 @@ extern HRESULT PathCchSkipRoot(const wchar_t *pszPath, const wchar_t **ppszRootE
 // Export for 'select' shared extension (Argument Clinic code)
 PyAPI_FUNC(int) _PyLong_FileDescriptor_Converter(PyObject *, void *);
 
+// Export for test_peg_generator
+PyAPI_FUNC(char*) _Py_UniversalNewlineFgetsWithSize(char *, int, FILE*, PyObject *, size_t*);
+
 #ifdef __cplusplus
 }
 #endif

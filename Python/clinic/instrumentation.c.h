@@ -2,12 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
-
 PyDoc_STRVAR(monitoring_use_tool_id__doc__,
 "use_tool_id($module, tool_id, name, /)\n"
 "--\n"
@@ -308,4 +302,4 @@ monitoring__all_events(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return monitoring__all_events_impl(module);
 }
-/*[clinic end generated code: output=8baabc8341df3f0e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=46f449b18195f976 input=a9049054013a1b77]*/

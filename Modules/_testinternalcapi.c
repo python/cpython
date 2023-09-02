@@ -25,6 +25,7 @@
 #include "pycore_interp.h"        // _PyInterpreterState_GetConfigCopy()
 #include "pycore_object.h"        // _PyObject_IsFreed()
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
+#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pyerrors.h"      // _Py_UTF8_Edit_Cost()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
@@ -32,9 +33,8 @@
 
 #include "clinic/_testinternalcapi.c.h"
 
-#ifdef MS_WINDOWS
-#  include <winsock2.h>          // struct timeval
-#endif
+// Include test definitions from _testinternalcapi/
+#include "_testinternalcapi/parts.h"
 
 
 #define MODULE_NAME "_testinternalcapi"
@@ -1122,250 +1122,6 @@ pending_identify(PyObject *self, PyObject *args)
     return res;
 }
 
-
-static PyObject *
-test_pytime_fromseconds(PyObject *self, PyObject *args)
-{
-    int seconds;
-    if (!PyArg_ParseTuple(args, "i", &seconds)) {
-        return NULL;
-    }
-    _PyTime_t ts = _PyTime_FromSeconds(seconds);
-    return _PyTime_AsNanosecondsObject(ts);
-}
-
-static int
-check_time_rounding(int round)
-{
-    if (round != _PyTime_ROUND_FLOOR
-        && round != _PyTime_ROUND_CEILING
-        && round != _PyTime_ROUND_HALF_EVEN
-        && round != _PyTime_ROUND_UP)
-    {
-        PyErr_SetString(PyExc_ValueError, "invalid rounding");
-        return -1;
-    }
-    return 0;
-}
-
-static PyObject *
-test_pytime_fromsecondsobject(PyObject *self, PyObject *args)
-{
-    PyObject *obj;
-    int round;
-    if (!PyArg_ParseTuple(args, "Oi", &obj, &round)) {
-        return NULL;
-    }
-    if (check_time_rounding(round) < 0) {
-        return NULL;
-    }
-    _PyTime_t ts;
-    if (_PyTime_FromSecondsObject(&ts, obj, round) == -1) {
-        return NULL;
-    }
-    return _PyTime_AsNanosecondsObject(ts);
-}
-
-static PyObject *
-test_pytime_assecondsdouble(PyObject *self, PyObject *args)
-{
-    PyObject *obj;
-    if (!PyArg_ParseTuple(args, "O", &obj)) {
-        return NULL;
-    }
-    _PyTime_t ts;
-    if (_PyTime_FromNanosecondsObject(&ts, obj) < 0) {
-        return NULL;
-    }
-    double d = _PyTime_AsSecondsDouble(ts);
-    return PyFloat_FromDouble(d);
-}
-
-static PyObject *
-test_PyTime_AsTimeval(PyObject *self, PyObject *args)
-{
-    PyObject *obj;
-    int round;
-    if (!PyArg_ParseTuple(args, "Oi", &obj, &round)) {
-        return NULL;
-    }
-    if (check_time_rounding(round) < 0) {
-        return NULL;
-    }
-    _PyTime_t t;
-    if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
-        return NULL;
-    }
-    struct timeval tv;
-    if (_PyTime_AsTimeval(t, &tv, round) < 0) {
-        return NULL;
-    }
-
-    PyObject *seconds = PyLong_FromLongLong(tv.tv_sec);
-    if (seconds == NULL) {
-        return NULL;
-    }
-    return Py_BuildValue("Nl", seconds, (long)tv.tv_usec);
-}
-
-static PyObject *
-test_PyTime_AsTimeval_clamp(PyObject *self, PyObject *args)
-{
-    PyObject *obj;
-    int round;
-    if (!PyArg_ParseTuple(args, "Oi", &obj, &round)) {
-        return NULL;
-    }
-    if (check_time_rounding(round) < 0) {
-        return NULL;
-    }
-    _PyTime_t t;
-    if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
-        return NULL;
-    }
-    struct timeval tv;
-    _PyTime_AsTimeval_clamp(t, &tv, round);
-
-    PyObject *seconds = PyLong_FromLongLong(tv.tv_sec);
-    if (seconds == NULL) {
-        return NULL;
-    }
-    return Py_BuildValue("Nl", seconds, (long)tv.tv_usec);
-}
-
-#ifdef HAVE_CLOCK_GETTIME
-static PyObject *
-test_PyTime_AsTimespec(PyObject *self, PyObject *args)
-{
-    PyObject *obj;
-    if (!PyArg_ParseTuple(args, "O", &obj)) {
-        return NULL;
-    }
-    _PyTime_t t;
-    if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
-        return NULL;
-    }
-    struct timespec ts;
-    if (_PyTime_AsTimespec(t, &ts) == -1) {
-        return NULL;
-    }
-    return Py_BuildValue("Nl", _PyLong_FromTime_t(ts.tv_sec), ts.tv_nsec);
-}
-
-static PyObject *
-test_PyTime_AsTimespec_clamp(PyObject *self, PyObject *args)
-{
-    PyObject *obj;
-    if (!PyArg_ParseTuple(args, "O", &obj)) {
-        return NULL;
-    }
-    _PyTime_t t;
-    if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
-        return NULL;
-    }
-    struct timespec ts;
-    _PyTime_AsTimespec_clamp(t, &ts);
-    return Py_BuildValue("Nl", _PyLong_FromTime_t(ts.tv_sec), ts.tv_nsec);
-}
-#endif
-
-static PyObject *
-test_PyTime_AsMilliseconds(PyObject *self, PyObject *args)
-{
-    PyObject *obj;
-    int round;
-    if (!PyArg_ParseTuple(args, "Oi", &obj, &round)) {
-        return NULL;
-    }
-    _PyTime_t t;
-    if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
-        return NULL;
-    }
-    if (check_time_rounding(round) < 0) {
-        return NULL;
-    }
-    _PyTime_t ms = _PyTime_AsMilliseconds(t, round);
-    _PyTime_t ns = _PyTime_FromNanoseconds(ms);
-    return _PyTime_AsNanosecondsObject(ns);
-}
-
-static PyObject *
-test_PyTime_AsMicroseconds(PyObject *self, PyObject *args)
-{
-    PyObject *obj;
-    int round;
-    if (!PyArg_ParseTuple(args, "Oi", &obj, &round)) {
-        return NULL;
-    }
-    _PyTime_t t;
-    if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
-        return NULL;
-    }
-    if (check_time_rounding(round) < 0) {
-        return NULL;
-    }
-    _PyTime_t us = _PyTime_AsMicroseconds(t, round);
-    _PyTime_t ns = _PyTime_FromNanoseconds(us);
-    return _PyTime_AsNanosecondsObject(ns);
-}
-
-static PyObject *
-test_pytime_object_to_time_t(PyObject *self, PyObject *args)
-{
-    PyObject *obj;
-    time_t sec;
-    int round;
-    if (!PyArg_ParseTuple(args, "Oi", &obj, &round)) {
-        return NULL;
-    }
-    if (check_time_rounding(round) < 0) {
-        return NULL;
-    }
-    if (_PyTime_ObjectToTime_t(obj, &sec, round) == -1) {
-        return NULL;
-    }
-    return _PyLong_FromTime_t(sec);
-}
-
-static PyObject *
-test_pytime_object_to_timeval(PyObject *self, PyObject *args)
-{
-    PyObject *obj;
-    time_t sec;
-    long usec;
-    int round;
-    if (!PyArg_ParseTuple(args, "Oi", &obj, &round)) {
-        return NULL;
-    }
-    if (check_time_rounding(round) < 0) {
-        return NULL;
-    }
-    if (_PyTime_ObjectToTimeval(obj, &sec, &usec, round) == -1) {
-        return NULL;
-    }
-    return Py_BuildValue("Nl", _PyLong_FromTime_t(sec), usec);
-}
-
-static PyObject *
-test_pytime_object_to_timespec(PyObject *self, PyObject *args)
-{
-    PyObject *obj;
-    time_t sec;
-    long nsec;
-    int round;
-    if (!PyArg_ParseTuple(args, "Oi", &obj, &round)) {
-        return NULL;
-    }
-    if (check_time_rounding(round) < 0) {
-        return NULL;
-    }
-    if (_PyTime_ObjectToTimespec(obj, &sec, &nsec, round) == -1) {
-        return NULL;
-    }
-    return Py_BuildValue("Nl", _PyLong_FromTime_t(sec), nsec);
-}
-
-
 static PyObject *
 tracemalloc_get_traceback(PyObject *self, PyObject *args)
 {
@@ -1593,6 +1349,105 @@ dict_getitem_knownhash(PyObject *self, PyObject *args)
 }
 
 
+/* To run some code in a sub-interpreter. */
+static PyObject *
+run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    const char *code;
+    int use_main_obmalloc = -1;
+    int allow_fork = -1;
+    int allow_exec = -1;
+    int allow_threads = -1;
+    int allow_daemon_threads = -1;
+    int check_multi_interp_extensions = -1;
+    int gil = -1;
+    int r;
+    PyThreadState *substate, *mainstate;
+    /* only initialise 'cflags.cf_flags' to test backwards compatibility */
+    PyCompilerFlags cflags = {0};
+
+    static char *kwlist[] = {"code",
+                             "use_main_obmalloc",
+                             "allow_fork",
+                             "allow_exec",
+                             "allow_threads",
+                             "allow_daemon_threads",
+                             "check_multi_interp_extensions",
+                             "gil",
+                             NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                    "s$ppppppi:run_in_subinterp_with_config", kwlist,
+                    &code, &use_main_obmalloc,
+                    &allow_fork, &allow_exec,
+                    &allow_threads, &allow_daemon_threads,
+                    &check_multi_interp_extensions,
+                    &gil)) {
+        return NULL;
+    }
+    if (use_main_obmalloc < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing use_main_obmalloc");
+        return NULL;
+    }
+    if (allow_fork < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing allow_fork");
+        return NULL;
+    }
+    if (allow_exec < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing allow_exec");
+        return NULL;
+    }
+    if (allow_threads < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing allow_threads");
+        return NULL;
+    }
+    if (gil < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing gil");
+        return NULL;
+    }
+    if (allow_daemon_threads < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing allow_daemon_threads");
+        return NULL;
+    }
+    if (check_multi_interp_extensions < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing check_multi_interp_extensions");
+        return NULL;
+    }
+
+    mainstate = PyThreadState_Get();
+
+    PyThreadState_Swap(NULL);
+
+    const PyInterpreterConfig config = {
+        .use_main_obmalloc = use_main_obmalloc,
+        .allow_fork = allow_fork,
+        .allow_exec = allow_exec,
+        .allow_threads = allow_threads,
+        .allow_daemon_threads = allow_daemon_threads,
+        .check_multi_interp_extensions = check_multi_interp_extensions,
+        .gil = gil,
+    };
+    PyStatus status = Py_NewInterpreterFromConfig(&substate, &config);
+    if (PyStatus_Exception(status)) {
+        /* Since no new thread state was created, there is no exception to
+           propagate; raise a fresh one after swapping in the old thread
+           state. */
+        PyThreadState_Swap(mainstate);
+        _PyErr_SetFromPyStatus(status);
+        PyObject *exc = PyErr_GetRaisedException();
+        PyErr_SetString(PyExc_RuntimeError, "sub-interpreter creation failed");
+        _PyErr_ChainExceptions1(exc);
+        return NULL;
+    }
+    assert(substate != NULL);
+    r = PyRun_SimpleStringFlags(code, &cflags);
+    Py_EndInterpreter(substate);
+
+    PyThreadState_Swap(mainstate);
+
+    return PyLong_FromLong(r);
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -1631,20 +1486,6 @@ static PyMethodDef module_functions[] = {
     {"pending_threadfunc", _PyCFunction_CAST(pending_threadfunc),
      METH_VARARGS | METH_KEYWORDS},
     {"pending_identify", pending_identify, METH_VARARGS, NULL},
-    {"_PyTime_AsMicroseconds",    test_PyTime_AsMicroseconds,     METH_VARARGS},
-    {"_PyTime_AsMilliseconds",    test_PyTime_AsMilliseconds,     METH_VARARGS},
-    {"_PyTime_AsSecondsDouble",   test_pytime_assecondsdouble,    METH_VARARGS},
-#ifdef HAVE_CLOCK_GETTIME
-    {"_PyTime_AsTimespec",        test_PyTime_AsTimespec,         METH_VARARGS},
-    {"_PyTime_AsTimespec_clamp",  test_PyTime_AsTimespec_clamp,   METH_VARARGS},
-#endif
-    {"_PyTime_AsTimeval",         test_PyTime_AsTimeval,          METH_VARARGS},
-    {"_PyTime_AsTimeval_clamp",   test_PyTime_AsTimeval_clamp,    METH_VARARGS},
-    {"_PyTime_FromSeconds",       test_pytime_fromseconds,        METH_VARARGS},
-    {"_PyTime_FromSecondsObject", test_pytime_fromsecondsobject,  METH_VARARGS},
-    {"_PyTime_ObjectToTime_t",    test_pytime_object_to_time_t,   METH_VARARGS},
-    {"_PyTime_ObjectToTimespec",  test_pytime_object_to_timespec, METH_VARARGS},
-    {"_PyTime_ObjectToTimeval",   test_pytime_object_to_timeval,  METH_VARARGS},
     {"_PyTraceMalloc_GetTraceback", tracemalloc_get_traceback, METH_VARARGS},
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {"_PyUnicode_TransformDecimalAndSpaceToASCII", unicode_transformdecimalandspacetoascii, METH_O},
@@ -1659,6 +1500,9 @@ static PyMethodDef module_functions[] = {
     {"get_object_dict_values", get_object_dict_values, METH_O},
     {"hamt", new_hamt, METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
+    {"run_in_subinterp_with_config",
+     _PyCFunction_CAST(run_in_subinterp_with_config),
+     METH_VARARGS | METH_KEYWORDS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -1668,6 +1512,10 @@ static PyMethodDef module_functions[] = {
 static int
 module_exec(PyObject *module)
 {
+    if (_PyTestInternalCapi_Init_PyTime(module) < 0) {
+        return 1;
+    }
+
     if (PyModule_Add(module, "SIZEOF_PYGC_HEAD",
                         PyLong_FromSsize_t(sizeof(PyGC_Head))) < 0) {
         return 1;

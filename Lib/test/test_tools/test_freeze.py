@@ -17,10 +17,8 @@ with imports_under_tool('freeze', 'test'):
 @support.skip_if_buildbot('not all buildbots have enough space')
 class TestFreeze(unittest.TestCase):
 
+    @support.requires_resource('cpu') # Building Python is slow
     def test_freeze_simple_script(self):
-        # Building Python is slow
-        support.requires('cpu')
-
         script = textwrap.dedent("""
             import sys
             print('running...')

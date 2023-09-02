@@ -37,8 +37,7 @@ my_int_func(PyObject *module, PyObject *arg_)
     int arg;
     int _return_value;
 
-    arg = PyLong_AsInt(arg_);
-    if (arg == -1 && PyErr_Occurred()) {
+    if (!PyArg_Parse(arg_, "i:my_int_func", &arg)) {
         goto exit;
     }
     _return_value = my_int_func_impl(module, arg);
@@ -82,4 +81,4 @@ my_int_sum(PyObject *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f9f7209255bb969e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dcd5203d0d29df3a input=a9049054013a1b77]*/

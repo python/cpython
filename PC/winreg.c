@@ -220,6 +220,7 @@ class DWORD_converter(unsigned_long_converter):
 class HKEY_converter(CConverter):
     type = 'HKEY'
     converter = 'clinic_HKEY_converter'
+    broken_limited_capi = True
 
     def parse_arg(self, argname, displayname):
         return """
@@ -249,7 +250,7 @@ class self_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = (PyObject *)_return_value;\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=17e645060c7b8ae1]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=f8cb7034338aeaba]*/
 
 #include "clinic/winreg.c.h"
 
@@ -323,12 +324,14 @@ winreg.HKEYType.__exit__
     exc_type: object
     exc_value: object
     traceback: object
+    /
+
 [clinic start generated code]*/
 
 static PyObject *
 winreg_HKEYType___exit___impl(PyHKEYObject *self, PyObject *exc_type,
                               PyObject *exc_value, PyObject *traceback)
-/*[clinic end generated code: output=923ebe7389e6a263 input=fb32489ee92403c7]*/
+/*[clinic end generated code: output=923ebe7389e6a263 input=1eac83cd06962689]*/
 {
     winreg_state *st = _PyType_GetModuleState(Py_TYPE(self));
     assert(st != NULL);
