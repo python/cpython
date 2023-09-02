@@ -971,7 +971,8 @@ We can do this with :class:`MagicMock`, which will behave like a dictionary,
 and using :data:`~Mock.side_effect` to delegate dictionary access to a real
 underlying dictionary that is under our control.
 
-When the ``__getitem__`` and ``__setitem__`` methods of our ``MagicMock`` are called
+When the :meth:`~object.__getitem__` and :meth:`~object.__setitem__` methods
+of our ``MagicMock`` are called
 (normal dictionary access) then ``side_effect`` is called with the key (and in
 the case of ``__setitem__`` the value too). We can also control what is returned.
 
