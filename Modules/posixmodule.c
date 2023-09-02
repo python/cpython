@@ -10145,10 +10145,10 @@ os_timerfd_settime_impl(PyObject *module, int fd, int flags,
     struct itimerspec new_value;
     struct itimerspec old_value;
     int result;
-    new_value.it_interval.tv_sec = (time_t)it_interval;
-    new_value.it_interval.tv_nsec = EXTRACT_NSEC(it_interval);
     new_value.it_value.tv_sec = (time_t)it_initial_expiration;
     new_value.it_value.tv_nsec = EXTRACT_NSEC(it_initial_expiration);
+    new_value.it_interval.tv_sec = (time_t)it_interval;
+    new_value.it_interval.tv_nsec = EXTRACT_NSEC(it_interval);
     Py_BEGIN_ALLOW_THREADS
     result = timerfd_settime(fd, flags, &new_value, &old_value);
     Py_END_ALLOW_THREADS
@@ -10184,10 +10184,10 @@ os_timerfd_settime_ns_impl(PyObject *module, int fd, int flags,
     struct itimerspec new_value;
     struct itimerspec old_value;
     int result;
-    new_value.it_interval.tv_sec = it_interval_ns / ONE_SECOND_IN_NS;
-    new_value.it_interval.tv_nsec = it_interval_ns % ONE_SECOND_IN_NS;
     new_value.it_value.tv_sec = it_initial_expiration_ns / ONE_SECOND_IN_NS;
     new_value.it_value.tv_nsec = it_initial_expiration_ns % ONE_SECOND_IN_NS;
+    new_value.it_interval.tv_sec = it_interval_ns / ONE_SECOND_IN_NS;
+    new_value.it_interval.tv_nsec = it_interval_ns % ONE_SECOND_IN_NS;
     Py_BEGIN_ALLOW_THREADS
     result = timerfd_settime(fd, flags, &new_value, &old_value);
     Py_END_ALLOW_THREADS
