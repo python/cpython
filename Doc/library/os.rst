@@ -3799,44 +3799,6 @@ features:
    If the timer file descriptor's counter is zero and
    :const:`TFD_NONBLOCK` is not set as a flag, :func:`read` blocks.
 
-   The following example shows how to use a timer file descriptor
-   to execute a function twice a second:
-
-   .. code:: python
-
-      import os, time
-
-      fd = os.timerfd_create(time.CLOCK_REALTIME, 0)
-      initial_expiration = 1  # Start the timer in 1 second
-      interval = 0.5  # Set the timer interval to 0.5 seconds
-      os.timerfd_settime(fd, 0, initial_expiration, interval)  # Start the timer
-
-      try:
-          while:
-              fd.read(8)  # Wait for the timer to expire
-              do_work()
-      finally:
-          os.close(fd)
-
-   Units may be specified in nanoseconds for greater precision.
-   Repeating the previous example:
-
-   .. code:: python
-
-      import os, time
-
-      fd = os.timerfd_create(time.CLOCK_REALTIME, 0)
-      initial_expiration = 10**9  # Start the timer in 1 second
-      interval = 10**9 // 2  # Set the timer interval to 0.5 seconds
-      os.timerfd_settime_ns(fd, 0, initial_expiration, interval)  # Start the timer
-
-      try:
-          while:
-              fd.read(8)  # Wait for the timer to expire
-              do_work()
-      finally:
-          os.close(fd)
-
    .. seealso:: The :manpage:`timerfd_create(2)` man page.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
@@ -3872,6 +3834,26 @@ features:
    Return a two-item tuple of (``next_expiration``, ``interval``) from
    the previous timer state, before this function executed.
 
+   The following example shows how to use a timer file descriptor
+   to execute a function twice a second:
+
+   .. code:: python
+
+      import os, time
+
+      fd = os.timerfd_create(time.CLOCK_REALTIME, 0)
+      initial_expiration = 1  # Start the timer in 1 second
+      interval = 0.5  # Set the timer interval to 0.5 seconds
+      os.timerfd_settime(fd, 0, initial_expiration, interval)  # Start the timer
+
+      try:
+          # process timer events four times.
+          for _ in range(4):
+              fd.read(8)  # Wait for the timer to expire
+              do_work()
+      finally:
+          os.close(fd)
+
    .. seealso::  The :manpage:`timerfd_settime(2)` man page.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
@@ -3882,6 +3864,26 @@ features:
 .. function:: timerfd_settime_ns(fd, flags, initial_expiration_ns=0, interval_ns=0, /)
 
    Similar to :func:`timerfd_settime`, but use time as nanoseconds.
+
+   The following example shows how to use a timer file descriptor
+   to execute a function twice a second:
+
+   .. code:: python
+
+      import os, time
+
+      fd = os.timerfd_create(time.CLOCK_REALTIME, 0)
+      initial_expiration = 10**9  # Start the timer in 1 second
+      interval = 10**9 // 2  # Set the timer interval to 0.5 seconds
+      os.timerfd_settime_ns(fd, 0, initial_expiration, interval)  # Start the timer
+
+      try:
+          # process timer events four times.
+          for _ in range(4):
+              fd.read(8)  # Wait for the timer to expire
+              do_work()
+      finally:
+          os.close(fd)
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
