@@ -28,7 +28,7 @@
 #include <termios.h>
 #include <sys/ioctl.h>
 #if defined(__sun) && defined(__SVR4)
-#  include <unistd.h>     // ioctl
+#  include <unistd.h>             // ioctl()
 #endif
 
 /* HP-UX requires that this be included to pick up MDCD, MCTS, MDSR,
