@@ -1,8 +1,8 @@
 #define PY_SSIZE_T_CLEAN
 #include "parts.h"
+#include "util.h"
 #include "clinic/exceptions.c.h"
 
-#define NULLABLE(x) do { if (x == Py_None) x = NULL; } while (0);
 
 /*[clinic input]
 module _testcapi

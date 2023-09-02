@@ -145,12 +145,10 @@ Doc/library/tkinter.ttk.rst
 Doc/library/traceback.rst
 Doc/library/tty.rst
 Doc/library/turtle.rst
-Doc/library/unittest.mock-examples.rst
 Doc/library/unittest.mock.rst
 Doc/library/unittest.rst
 Doc/library/urllib.parse.rst
 Doc/library/urllib.request.rst
-Doc/library/uuid.rst
 Doc/library/weakref.rst
 Doc/library/webbrowser.rst
 Doc/library/wsgiref.rst
@@ -171,7 +169,6 @@ Doc/reference/datamodel.rst
 Doc/reference/expressions.rst
 Doc/reference/import.rst
 Doc/reference/simple_stmts.rst
-Doc/tutorial/appendix.rst
 Doc/tutorial/controlflow.rst
 Doc/tutorial/datastructures.rst
 Doc/tutorial/introduction.rst
