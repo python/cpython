@@ -1412,15 +1412,28 @@ class ExecutorDeadlockTest:
             time.sleep(5)
             thread_run(self)
 
-        # Should be support.PIPE_MAX_SIZE but it is way too
-        # pessimistic here, would take too long. Assume 64k pipe
-        # buffer and add some margin...
-        job_num = 65536 * 2
-        job_data = range(job_num)
+        def adjust_and_check_jobs_needed_to_block_pipe(connection):
+            try:
+                # Try to reduce pipe size to speed up test. Only works on Unix systems
+                import fcntl
+                from fcntl import F_SETPIPE_SZ
+                pipe_size = fcntl.fcntl(connection.fileno(), F_SETPIPE_SZ, 1024)
+            except ImportError:
+                # Assume 64k pipe if we fail, makes test take longer
+                pipe_size = 65536
+
+            # We send 4 bytes per job (one zero sized bytes object)
+            return pipe_size // 4 + 100  # Add some margin
+
         with unittest.mock.patch.object(futures.process._ExecutorManagerThread, 'run', mock_run):
             with self.executor_type(max_workers=2,
                                     mp_context=self.get_context()) as executor:
                 self.executor = executor  # Allow clean up in fail_on_deadlock
+
+                # Try to speed up the test by reducing the size of the wakeup pipe
+                job_num = adjust_and_check_jobs_needed_to_block_pipe(
+                    executor._executor_manager_thread_wakeup._writer)
+                job_data = range(job_num)
 
                 # Need to use sigalarm for timeout detection because
                 # Executor.submit is not guarded by any timeout (both
