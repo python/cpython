@@ -4,21 +4,19 @@
 extern "C" {
 #endif
 
-struct _frame;
-
 /* Traceback interface */
 
-PyAPI_FUNC(int) PyTraceBack_Here(struct _frame *);
+PyAPI_FUNC(int) PyTraceBack_Here(PyFrameObject *);
 PyAPI_FUNC(int) PyTraceBack_Print(PyObject *, PyObject *);
 
 /* Reveal traceback type so we can typecheck traceback objects */
 PyAPI_DATA(PyTypeObject) PyTraceBack_Type;
-#define PyTraceBack_Check(v) (Py_TYPE(v) == &PyTraceBack_Type)
+#define PyTraceBack_Check(v) Py_IS_TYPE((v), &PyTraceBack_Type)
 
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_TRACEBACK_H
-#  include  "cpython/traceback.h"
+#  include "cpython/traceback.h"
 #  undef Py_CPYTHON_TRACEBACK_H
 #endif
 

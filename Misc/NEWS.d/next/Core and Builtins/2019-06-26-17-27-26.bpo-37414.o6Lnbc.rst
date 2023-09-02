@@ -1,3 +1,0 @@
-The undocumented ``sys.callstats()`` function has been removed. Since Python
-3.7, it was deprecated and always returned ``None``. It required a special
-build option ``CALL_PROFILE`` which was already removed in Python 3.7.

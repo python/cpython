@@ -1,1 +1,0 @@
-The exception message for ``inspect.getfile()`` now correctly reports the passed class rather than the builtins module.

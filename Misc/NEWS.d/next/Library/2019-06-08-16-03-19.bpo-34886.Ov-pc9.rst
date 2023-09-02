@@ -1,5 +1,0 @@
-Fix an unintended ValueError from :func:`subprocess.run` when checking for
-conflicting `input` and `stdin` or `capture_output` and `stdout` or `stderr`
-args when they were explicitly provided but with `None` values within a
-passed in `**kwargs` dict rather than as passed directly by name. Patch
-contributed by Rémi Lapeyre.

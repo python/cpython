@@ -7,7 +7,10 @@
                                  |_| XML parser
 
    Copyright (c) 1997-2000 Thai Open Source Software Center Ltd
-   Copyright (c) 2000-2017 Expat development team
+   Copyright (c) 2000      Clark Cooper <coopercc@users.sourceforge.net>
+   Copyright (c) 2002      Karl Waclawek <karl@waclawek.net>
+   Copyright (c) 2002      Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
+   Copyright (c) 2017      Sebastian Pipping <sebastian@pipping.org>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -36,7 +39,7 @@
 #ifdef __VMS
 /*      0        1         2         3      0        1         2         3
         1234567890123456789012345678901     1234567890123456789012345678901 */
-#define XmlPrologStateInitExternalEntity    XmlPrologStateInitExternalEnt
+#  define XmlPrologStateInitExternalEntity XmlPrologStateInitExternalEnt
 #endif
 
 #include "xmltok.h"
@@ -113,11 +116,8 @@ enum {
 };
 
 typedef struct prolog_state {
-  int (PTRCALL *handler) (struct prolog_state *state,
-                          int tok,
-                          const char *ptr,
-                          const char *end,
-                          const ENCODING *enc);
+  int(PTRCALL *handler)(struct prolog_state *state, int tok, const char *ptr,
+                        const char *end, const ENCODING *enc);
   unsigned level;
   int role_none;
 #ifdef XML_DTD
@@ -132,8 +132,8 @@ void XmlPrologStateInit(PROLOG_STATE *);
 void XmlPrologStateInitExternalEntity(PROLOG_STATE *);
 #endif /* XML_DTD */
 
-#define XmlTokenRole(state, tok, ptr, end, enc) \
- (((state)->handler)(state, tok, ptr, end, enc))
+#define XmlTokenRole(state, tok, ptr, end, enc)                                \
+  (((state)->handler)(state, tok, ptr, end, enc))
 
 #ifdef __cplusplus
 }

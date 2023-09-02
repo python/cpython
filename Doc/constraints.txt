@@ -1,0 +1,25 @@
+# We have upper bounds on our transitive dependencies here
+# To avoid new releases unexpectedly breaking our build.
+# This file can be updated on an ad-hoc basis,
+# though it will probably have to be updated
+# whenever Doc/requirements.txt is updated.
+
+# Direct dependencies of Sphinx
+babel<3
+colorama<0.5
+imagesize<1.5
+Jinja2<3.2
+packaging<24
+# Pygments==2.15.0 breaks CI
+Pygments<2.16,!=2.15.0
+requests<3
+snowballstemmer<3
+sphinxcontrib-applehelp<1.1
+sphinxcontrib-devhelp<1.1
+sphinxcontrib-htmlhelp<2.1
+sphinxcontrib-jsmath<1.1
+sphinxcontrib-qthelp<1.1
+sphinxcontrib-serializinghtml<1.2
+
+# Direct dependencies of Jinja2 (Jinja is a dependency of Sphinx, see above)
+MarkupSafe<2.2

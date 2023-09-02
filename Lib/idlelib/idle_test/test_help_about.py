@@ -36,7 +36,7 @@ class LiveDialogTest(unittest.TestCase):
         del cls.root
 
     def test_build_bits(self):
-        self.assertIn(help_about.build_bits(), ('32', '64'))
+        self.assertIn(help_about.bits, ('32', '64'))
 
     def test_dialog_title(self):
         """Test about dialog title"""
@@ -107,7 +107,7 @@ class DefaultTitleTest(unittest.TestCase):
         """Test about dialog title"""
         self.assertEqual(self.dialog.title(),
                          f'About IDLE {python_version()}'
-                         f' ({help_about.build_bits()} bit)')
+                         f' ({help_about.bits} bit)')
 
 
 class CloseTest(unittest.TestCase):
@@ -134,7 +134,7 @@ class CloseTest(unittest.TestCase):
             self.dialog.winfo_class()
 
 
-class Dummy_about_dialog():
+class Dummy_about_dialog:
     # Dummy class for testing file display functions.
     idle_credits = About.show_idle_credits
     idle_readme = About.show_readme

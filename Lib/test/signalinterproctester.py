@@ -4,6 +4,7 @@ import subprocess
 import sys
 import time
 import unittest
+from test import support
 
 
 class SIGUSR1Exception(Exception):
@@ -27,16 +28,15 @@ class InterProcessSignalTests(unittest.TestCase):
             # (if set)
             child.wait()
 
-        timeout = 10.0
-        deadline = time.monotonic() + timeout
-
-        while time.monotonic() < deadline:
+        start_time = time.monotonic()
+        for _ in support.busy_retry(support.SHORT_TIMEOUT, error=False):
             if self.got_signals[signame]:
                 return
             signal.pause()
-
-        self.fail('signal %s not received after %s seconds'
-                  % (signame, timeout))
+        else:
+            dt = time.monotonic() - start_time
+            self.fail('signal %s not received after %.1f seconds'
+                      % (signame, dt))
 
     def subprocess_send_signal(self, pid, signame):
         code = 'import os, signal; os.kill(%s, signal.%s)' % (pid, signame)

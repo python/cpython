@@ -1,3 +1,0 @@
-``aifc.openfp()`` alias to ``aifc.open()``, ``sunau.openfp()`` alias to
-``sunau.open()``, and ``wave.openfp()`` alias to ``wave.open()`` have been
-removed. They were deprecated since Python 3.7.

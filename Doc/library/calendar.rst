@@ -31,7 +31,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 .. class:: Calendar(firstweekday=0)
 
    Creates a :class:`Calendar` object. *firstweekday* is an integer specifying the
-   first day of the week. ``0`` is Monday (the default), ``6`` is Sunday.
+   first day of the week. :const:`MONDAY` is ``0`` (the default), :const:`SUNDAY` is ``6``.
 
    A :class:`Calendar` object provides several methods that can be used for
    preparing the calendar data for formatting. This class doesn't do any formatting
@@ -279,22 +279,20 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    This subclass of :class:`TextCalendar` can be passed a locale name in the
    constructor and will return month and weekday names in the specified locale.
-   If this locale includes an encoding all strings containing month and weekday
-   names will be returned as unicode.
 
 
 .. class:: LocaleHTMLCalendar(firstweekday=0, locale=None)
 
    This subclass of :class:`HTMLCalendar` can be passed a locale name in the
    constructor and will return month and weekday names in the specified
-   locale. If this locale includes an encoding all strings containing month and
-   weekday names will be returned as unicode.
+   locale.
 
 .. note::
 
-   The :meth:`formatweekday` and :meth:`formatmonthname` methods of these two
-   classes temporarily change the current locale to the given *locale*.  Because
-   the current locale is a process-wide setting, they are not thread-safe.
+   The constructor, :meth:`formatweekday` and :meth:`formatmonthname` methods
+   of these two classes temporarily change the ``LC_TIME`` locale to the given
+   *locale*. Because the current locale is a process-wide setting, they are
+   not thread-safe.
 
 
 For simple text calendars this module provides the following functions.
@@ -349,7 +347,7 @@ For simple text calendars this module provides the following functions.
 .. function:: monthcalendar(year, month)
 
    Returns a matrix representing a month's calendar.  Each row represents a week;
-   days outside of the month a represented by zeros. Each week begins with Monday
+   days outside of the month are represented by zeros. Each week begins with Monday
    unless set by :func:`setfirstweekday`.
 
 
@@ -396,6 +394,29 @@ The :mod:`calendar` module exports the following data attributes:
    An array that represents the abbreviated days of the week in the current locale.
 
 
+.. data:: MONDAY
+          TUESDAY
+          WEDNESDAY
+          THURSDAY
+          FRIDAY
+          SATURDAY
+          SUNDAY
+
+   Aliases for the days of the week,
+   where ``MONDAY`` is ``0`` and ``SUNDAY`` is ``6``.
+
+   .. versionadded:: 3.12
+
+
+.. class:: Day
+
+   Enumeration defining days of the week as integer constants.
+   The members of this enumeration are exported to the module scope as
+   :data:`MONDAY` through :data:`SUNDAY`.
+
+   .. versionadded:: 3.12
+
+
 .. data:: month_name
 
    An array that represents the months of the year in the current locale.  This
@@ -408,6 +429,56 @@ The :mod:`calendar` module exports the following data attributes:
    An array that represents the abbreviated months of the year in the current
    locale.  This follows normal convention of January being month number 1, so it
    has a length of 13 and  ``month_abbr[0]`` is the empty string.
+
+
+.. data:: JANUARY
+          FEBRUARY
+          MARCH
+          APRIL
+          MAY
+          JUNE
+          JULY
+          AUGUST
+          SEPTEMBER
+          OCTOBER
+          NOVEMBER
+          DECEMBER
+
+   Aliases for the months of the year,
+   where ``JANUARY`` is ``1`` and ``DECEMBER`` is ``12``.
+
+   .. versionadded:: 3.12
+
+
+.. class:: Month
+
+   Enumeration defining months of the year as integer constants.
+   The members of this enumeration are exported to the module scope as
+   :data:`JANUARY` through :data:`DECEMBER`.
+
+   .. versionadded:: 3.12
+
+
+The :mod:`calendar` module defines the following exceptions:
+
+.. exception:: IllegalMonthError(month)
+
+   A subclass of :exc:`ValueError`,
+   raised when the given month number is outside of the range 1-12 (inclusive).
+
+   .. attribute:: month
+
+      The invalid month number.
+
+
+.. exception:: IllegalWeekdayError(weekday)
+
+   A subclass of :exc:`ValueError`,
+   raised when the given weekday number is outside of the range 0-6 (inclusive).
+
+   .. attribute:: weekday
+
+      The invalid weekday number.
 
 
 .. seealso::

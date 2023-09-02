@@ -84,7 +84,7 @@ PyDoc_STRVAR(_tracemalloc_start__doc__,
 "trace to nframe.");
 
 #define _TRACEMALLOC_START_METHODDEF    \
-    {"start", (PyCFunction)(void(*)(void))_tracemalloc_start, METH_FASTCALL, _tracemalloc_start__doc__},
+    {"start", _PyCFunction_CAST(_tracemalloc_start), METH_FASTCALL, _tracemalloc_start__doc__},
 
 static PyObject *
 _tracemalloc_start_impl(PyObject *module, int nframe);
@@ -101,12 +101,7 @@ _tracemalloc_start(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    nframe = _PyLong_AsInt(args[0]);
+    nframe = PyLong_AsInt(args[0]);
     if (nframe == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -197,4 +192,24 @@ _tracemalloc_get_traced_memory(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _tracemalloc_get_traced_memory_impl(module);
 }
-/*[clinic end generated code: output=1bc96dc569706afa input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_tracemalloc_reset_peak__doc__,
+"reset_peak($module, /)\n"
+"--\n"
+"\n"
+"Set the peak size of memory blocks traced by tracemalloc to the current size.\n"
+"\n"
+"Do nothing if the tracemalloc module is not tracing memory allocations.");
+
+#define _TRACEMALLOC_RESET_PEAK_METHODDEF    \
+    {"reset_peak", (PyCFunction)_tracemalloc_reset_peak, METH_NOARGS, _tracemalloc_reset_peak__doc__},
+
+static PyObject *
+_tracemalloc_reset_peak_impl(PyObject *module);
+
+static PyObject *
+_tracemalloc_reset_peak(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _tracemalloc_reset_peak_impl(module);
+}
+/*[clinic end generated code: output=ad7d1fae89f2bdaa input=a9049054013a1b77]*/

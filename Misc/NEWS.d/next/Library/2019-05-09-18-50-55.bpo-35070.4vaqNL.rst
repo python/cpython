@@ -1,2 +1,0 @@
-posix.getgrouplist() now works correctly when the user belongs to
-NGROUPS_MAX supplemental groups. Patch by Jeffrey Kintscher.

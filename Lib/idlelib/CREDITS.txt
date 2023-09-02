@@ -2,9 +2,10 @@ Guido van Rossum, as well as being the creator of the Python language, is the
 original creator of IDLE.  Other contributors prior to Version 0.8 include
 Mark Hammond, Jeremy Hylton, Tim Peters, and Moshe Zadka.
 
-IDLE's recent development was carried out in the SF IDLEfork project. The
+Until Python 2.3, IDLE's development was carried out in the SF IDLEfork project. The
 objective was to develop a version of IDLE which had an execution environment
 which could be initialized prior to each run of user code.
+IDLefork was merged into the Python code base in 2003.
 
 The IDLEfork project was initiated by David Scherer, with some help from Peter
 Schneider-Kamp and Nicholas Riley.  David wrote the first version of the RPC
@@ -27,6 +28,15 @@ Scott David Daniels, Tal Einat, Hernan Foffani, Christos Georgiou,
 Jim Jewett, Martin v. Löwis, Jason Orendorff, Guilherme Polo, Josh Robb,
 Nigel Rowe, Bruce Sherwood, Jeff Shute, and Weeble have submitted useful
 patches.  Thanks, guys!
+
+Major contributors since 2005:
+
+- 2005: Tal Einat
+- 2010: Terry Jan Reedy (current maintainer)
+- 2013: Roger Serwys
+- 2014: Saimadhav Heblikar
+- 2015: Mark Roseman
+- 2017: Louie Lu, Cheryl Sabella, and Serhiy Storchaka
 
 For additional details refer to NEWS.txt and Changelog.
 

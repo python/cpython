@@ -1,3 +1,10 @@
+"""Test tooltip, coverage 100%.
+
+Coverage is 100% after excluding 6 lines with "# pragma: no cover".
+They involve TclErrors that either should or should not happen in a
+particular situation, and which are 'pass'ed if they do.
+"""
+
 from idlelib.tooltip import TooltipBase, Hovertip
 from test.support import requires
 requires('gui')
@@ -12,15 +19,12 @@ def setUpModule():
     global root
     root = Tk()
 
-def root_update():
-    global root
-    root.update()
-
 def tearDownModule():
     global root
     root.update_idletasks()
     root.destroy()
     del root
+
 
 def add_call_counting(func):
     @wraps(func)
@@ -65,22 +69,25 @@ class HovertipTest(unittest.TestCase):
     def setUp(self):
         self.top, self.button = _make_top_and_button(self)
 
+    def is_tipwindow_shown(self, tooltip):
+        return tooltip.tipwindow and tooltip.tipwindow.winfo_viewable()
+
     def test_showtip(self):
         tooltip = Hovertip(self.button, 'ToolTip text')
         self.addCleanup(tooltip.hidetip)
-        self.assertFalse(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+        self.assertFalse(self.is_tipwindow_shown(tooltip))
         tooltip.showtip()
-        self.assertTrue(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+        self.assertTrue(self.is_tipwindow_shown(tooltip))
 
     def test_showtip_twice(self):
         tooltip = Hovertip(self.button, 'ToolTip text')
         self.addCleanup(tooltip.hidetip)
-        self.assertFalse(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+        self.assertFalse(self.is_tipwindow_shown(tooltip))
         tooltip.showtip()
-        self.assertTrue(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+        self.assertTrue(self.is_tipwindow_shown(tooltip))
         orig_tipwindow = tooltip.tipwindow
         tooltip.showtip()
-        self.assertTrue(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+        self.assertTrue(self.is_tipwindow_shown(tooltip))
         self.assertIs(tooltip.tipwindow, orig_tipwindow)
 
     def test_hidetip(self):
@@ -88,58 +95,66 @@ class HovertipTest(unittest.TestCase):
         self.addCleanup(tooltip.hidetip)
         tooltip.showtip()
         tooltip.hidetip()
-        self.assertFalse(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+        self.assertFalse(self.is_tipwindow_shown(tooltip))
 
     def test_showtip_on_mouse_enter_no_delay(self):
         tooltip = Hovertip(self.button, 'ToolTip text', hover_delay=None)
         self.addCleanup(tooltip.hidetip)
         tooltip.showtip = add_call_counting(tooltip.showtip)
-        root_update()
-        self.assertFalse(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+        root.update()
+        self.assertFalse(self.is_tipwindow_shown(tooltip))
         self.button.event_generate('<Enter>', x=0, y=0)
-        root_update()
-        self.assertTrue(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+        root.update()
+        self.assertTrue(self.is_tipwindow_shown(tooltip))
         self.assertGreater(len(tooltip.showtip.call_args_list), 0)
 
-    def test_showtip_on_mouse_enter_hover_delay(self):
-        tooltip = Hovertip(self.button, 'ToolTip text', hover_delay=50)
-        self.addCleanup(tooltip.hidetip)
-        tooltip.showtip = add_call_counting(tooltip.showtip)
-        root_update()
-        self.assertFalse(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+    def test_hover_with_delay(self):
+        # Run multiple tests requiring an actual delay simultaneously.
+
+        # Test #1: A hover tip with a non-zero delay appears after the delay.
+        tooltip1 = Hovertip(self.button, 'ToolTip text', hover_delay=100)
+        self.addCleanup(tooltip1.hidetip)
+        tooltip1.showtip = add_call_counting(tooltip1.showtip)
+        root.update()
+        self.assertFalse(self.is_tipwindow_shown(tooltip1))
         self.button.event_generate('<Enter>', x=0, y=0)
-        root_update()
-        self.assertFalse(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
-        time.sleep(0.1)
-        root_update()
-        self.assertTrue(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
-        self.assertGreater(len(tooltip.showtip.call_args_list), 0)
+        root.update()
+        self.assertFalse(self.is_tipwindow_shown(tooltip1))
+
+        # Test #2: A hover tip with a non-zero delay doesn't appear when
+        # the mouse stops hovering over the base widget before the delay
+        # expires.
+        tooltip2 = Hovertip(self.button, 'ToolTip text', hover_delay=100)
+        self.addCleanup(tooltip2.hidetip)
+        tooltip2.showtip = add_call_counting(tooltip2.showtip)
+        root.update()
+        self.button.event_generate('<Enter>', x=0, y=0)
+        root.update()
+        self.button.event_generate('<Leave>', x=0, y=0)
+        root.update()
+
+        time.sleep(0.15)
+        root.update()
+
+        # Test #1 assertions.
+        self.assertTrue(self.is_tipwindow_shown(tooltip1))
+        self.assertGreater(len(tooltip1.showtip.call_args_list), 0)
+
+        # Test #2 assertions.
+        self.assertFalse(self.is_tipwindow_shown(tooltip2))
+        self.assertEqual(tooltip2.showtip.call_args_list, [])
 
     def test_hidetip_on_mouse_leave(self):
         tooltip = Hovertip(self.button, 'ToolTip text', hover_delay=None)
         self.addCleanup(tooltip.hidetip)
         tooltip.showtip = add_call_counting(tooltip.showtip)
-        root_update()
+        root.update()
         self.button.event_generate('<Enter>', x=0, y=0)
-        root_update()
+        root.update()
         self.button.event_generate('<Leave>', x=0, y=0)
-        root_update()
-        self.assertFalse(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
+        root.update()
+        self.assertFalse(self.is_tipwindow_shown(tooltip))
         self.assertGreater(len(tooltip.showtip.call_args_list), 0)
-
-    def test_dont_show_on_mouse_leave_before_delay(self):
-        tooltip = Hovertip(self.button, 'ToolTip text', hover_delay=50)
-        self.addCleanup(tooltip.hidetip)
-        tooltip.showtip = add_call_counting(tooltip.showtip)
-        root_update()
-        self.button.event_generate('<Enter>', x=0, y=0)
-        root_update()
-        self.button.event_generate('<Leave>', x=0, y=0)
-        root_update()
-        time.sleep(0.1)
-        root_update()
-        self.assertFalse(tooltip.tipwindow and tooltip.tipwindow.winfo_viewable())
-        self.assertEqual(tooltip.showtip.call_args_list, [])
 
 
 if __name__ == '__main__':

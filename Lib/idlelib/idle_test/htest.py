@@ -77,8 +77,8 @@ AboutDialog_spec = {
     'kwds': {'title': 'help_about test',
              '_htest': True,
              },
-    'msg': "Test every button. Ensure Python, TK and IDLE versions "
-           "are correctly displayed.\n [Close] to exit.",
+    'msg': "Click on URL to open in default browser.\n"
+           "Verify x.y.z versions and test each button, including Close.\n "
     }
 
 # TODO implement ^\; adding '<Control-Key-\\>' to function does not work.
@@ -210,13 +210,20 @@ _linenumbers_drag_scrolling_spec = {
     'file': 'sidebar',
     'kwds': {},
     'msg': textwrap.dedent("""\
-        Click on the line numbers and drag down below the edge of the
+        1. Click on the line numbers and drag down below the edge of the
         window, moving the mouse a bit and then leaving it there for a while.
         The text and line numbers should gradually scroll down, with the
         selection updated continuously.
-        Do the same as above, dragging to above the window. The text and line
+
+        2. With the lines still selected, click on a line number above the
+        selected lines. Only the line whose number was clicked should be
+        selected.
+
+        3. Repeat step #1, dragging to above the window. The text and line
         numbers should gradually scroll up, with the selection updated
-        continuously."""),
+        continuously.
+
+        4. Repeat step #2, clicking a line number below the selection."""),
     }
 
 _multi_call_spec = {
@@ -239,7 +246,7 @@ _multistatus_bar_spec = {
 _object_browser_spec = {
     'file': 'debugobj',
     'kwds': {},
-    'msg': "Double click on items upto the lowest level.\n"
+    'msg': "Double click on items up to the lowest level.\n"
            "Attributes of the objects and related information "
            "will be displayed side-by-side at each level."
     }
@@ -248,7 +255,7 @@ _path_browser_spec = {
     'file': 'pathbrowser',
     'kwds': {},
     'msg': "Test for correct display of all paths in sys.path.\n"
-           "Toggle nested items upto the lowest level.\n"
+           "Toggle nested items up to the lowest level.\n"
            "Double clicking on an item prints a traceback\n"
            "for an exception that is ignored."
     }
@@ -334,7 +341,7 @@ _tree_widget_spec = {
     'file': 'tree',
     'kwds': {},
     'msg': "The canvas is scrollable.\n"
-           "Click on folders upto to the lowest level."
+           "Click on folders up to to the lowest level."
     }
 
 _undo_delegator_spec = {

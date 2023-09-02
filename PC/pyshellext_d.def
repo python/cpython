@@ -1,6 +1,0 @@
-LIBRARY	"pyshellext_d"
-EXPORTS
-  DllRegisterServer PRIVATE
-  DllUnregisterServer PRIVATE
-  DllGetClassObject PRIVATE
-  DllCanUnloadNow PRIVATE

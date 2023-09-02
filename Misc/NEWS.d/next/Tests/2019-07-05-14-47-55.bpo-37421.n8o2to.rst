@@ -1,3 +1,0 @@
-multiprocessing tests now stop the ForkServer instance if it's running: close
-the "alive" file descriptor to ask the server to stop and then remove its UNIX
-address.
