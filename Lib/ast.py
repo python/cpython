@@ -1247,11 +1247,17 @@ class _Unparser(NodeVisitor):
         new_fstring_parts = []
         quote_types = list(_ALL_QUOTES)
         for value, is_constant in fstring_parts:
-            value, quote_types = self._str_literal_helper(
-                value,
-                quote_types=quote_types,
-                escape_special_whitespace=is_constant,
-            )
+            if is_constant:
+                value, quote_types = self._str_literal_helper(
+                    value,
+                    quote_types=quote_types,
+                    escape_special_whitespace=True,
+                )
+            elif "\n" in value:
+                if "'" in quote_types:
+                    quote_types.remove("'")
+                if '"' in quote_types:
+                    quote_types.remove('"')
             new_fstring_parts.append(value)
 
         value = "".join(new_fstring_parts)
@@ -1273,16 +1279,12 @@ class _Unparser(NodeVisitor):
 
     def visit_FormattedValue(self, node):
         def unparse_inner(inner):
-            unparser = type(self)(_avoid_backslashes=True)
+            unparser = type(self)(_avoid_backslashes=False)
             unparser.set_precedence(_Precedence.TEST.next(), inner)
             return unparser.visit(inner)
 
         with self.delimit("{", "}"):
             expr = unparse_inner(node.value)
-            if "\\" in expr:
-                raise ValueError(
-                    "Unable to avoid backslash in f-string expression part"
-                )
             if expr.startswith("{"):
                 # Separate pair of opening brackets as "{ {"
                 self.write(" ")

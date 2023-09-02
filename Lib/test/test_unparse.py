@@ -382,8 +382,15 @@ class UnparseTestCase(ASTTestCase):
             )
         )
 
-    def test_invalid_fstring_backslash(self):
-        self.check_invalid(ast.FormattedValue(value=ast.Constant(value="\\\\")))
+    def test_fstring_backslash(self):
+        # valid since Python 3.12
+        self.assertEqual(ast.unparse(
+                            ast.FormattedValue(
+                                value=ast.Constant(value="\\\\"),
+                                conversion=-1,
+                                format_spec=None,
+                            )
+                        ), "{'\\\\\\\\'}")
 
     def test_invalid_yield_from(self):
         self.check_invalid(ast.YieldFrom(value=None))
@@ -506,11 +513,11 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("class X(*args, **kwargs):\n    pass")
 
     def test_fstrings(self):
-        self.check_src_roundtrip('''f\'\'\'-{f"""*{f"+{f'.{x}.'}+"}*"""}-\'\'\'''')
-        self.check_src_roundtrip('''f"\\u2028{'x'}"''')
+        self.check_src_roundtrip("f'-{f'*{f'+{f'.{x}.'}+'}*'}-'")
+        self.check_src_roundtrip("""f'\\u2028{'x'}'""")
         self.check_src_roundtrip(r"f'{x}\n'")
-        self.check_src_roundtrip('''f''\'{"""\n"""}\\n''\'''')
-        self.check_src_roundtrip('''f''\'{f"""{x}\n"""}\\n''\'''')
+        self.check_src_roundtrip("f'{'\\n'}\\n'")
+        self.check_src_roundtrip("f'{f'{x}\\n'}\\n'")
 
     def test_docstrings(self):
         docstrings = (
