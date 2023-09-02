@@ -1063,7 +1063,8 @@ class _PathBase(PurePath):
         return self._unsupported("iterdir")
 
     def _scandir(self):
-        # os.scandir() returns an object that can be used as a context manager
+        # Emulate os.scandir(), which returns an object that can be used as a
+        # context manager. This method is called by walk() and glob().
         return contextlib.nullcontext(self.iterdir())
 
     def _make_child_relpath(self, name):
@@ -1232,6 +1233,10 @@ class _PathBase(PurePath):
     @classmethod
     def cwd(cls):
         """Return a new path pointing to the current working directory."""
+        # We call 'absolute()' rather than using 'os.getcwd()' directly to
+        # enable users to replace the implementation of 'absolute()' in a
+        # subclass and benefit from the new behaviour here. This works because
+        # os.path.abspath('.') == os.getcwd().
         return cls().absolute()
 
     def expanduser(self):
