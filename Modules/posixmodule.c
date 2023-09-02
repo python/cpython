@@ -286,7 +286,7 @@ corresponding Unix manual entries for more information on calls.");
 #endif
 
 #ifdef HAVE_COPY_FILE_RANGE
-#  include <unistd.h>
+#  include <unistd.h>             // copy_file_range()
 #endif
 
 #if !defined(CPU_ALLOC) && defined(HAVE_SCHED_SETAFFINITY)

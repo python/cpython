@@ -1,13 +1,12 @@
-
 #include "Python.h"
-#include <sys/resource.h>
+#include <errno.h>                // errno
+#include <string.h>
+#include <sys/resource.h>         // getrusage()
 #ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
+#  include <sys/time.h>
 #endif
 #include <time.h>
-#include <string.h>
-#include <errno.h>
-#include <unistd.h>
+#include <unistd.h>               // getpagesize()
 
 /* On some systems, these aren't in any header file.
    On others they are, with inconsistent prototypes.

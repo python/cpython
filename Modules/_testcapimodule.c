@@ -24,9 +24,6 @@
 #include <float.h>                // FLT_MAX
 #include <signal.h>
 #include <stddef.h>               // offsetof()
-#ifndef MS_WINDOWS
-#  include <unistd.h>
-#endif
 
 #ifdef HAVE_SYS_WAIT_H
 #  include <sys/wait.h>           // W_STOPCODE

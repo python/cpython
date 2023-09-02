@@ -269,7 +269,7 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #ifdef HAVE_NETDB_H
 #  include <netdb.h>
 #endif
-# include <unistd.h>
+#include <unistd.h>               // close()
 
 /* Headers needed for inet_ntoa() and inet_addr() */
 #   include <arpa/inet.h>
