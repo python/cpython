@@ -71,7 +71,7 @@ files. Commands to regenerate all generated files::
     make regen-limited-abi
     make regen-configure
 
-The ``Makefile.pre.in`` documents generated files, their inputs, and tools used
+The ``Makefile.pre.in`` file documents generated files, their inputs, and tools used
 to regenerate them. Search for ``regen-*`` make targets.
 
 The ``make regen-configure`` command runs `tiran/cpython_autoconf
