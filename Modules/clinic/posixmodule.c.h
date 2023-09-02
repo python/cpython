@@ -6039,40 +6039,6 @@ exit:
 
 #if defined(HAVE_TIMERFD_API)
 
-PyDoc_STRVAR(os_timerfd_gettime__doc__,
-"timerfd_gettime($module, fd, /)\n"
-"--\n"
-"\n"
-"Return a tuple of a timer file descriptor\'s (interval, next expiration) in float seconds.\n"
-"\n"
-"  fd\n"
-"    A timer file descriptor.");
-
-#define OS_TIMERFD_GETTIME_METHODDEF    \
-    {"timerfd_gettime", (PyCFunction)os_timerfd_gettime, METH_O, os_timerfd_gettime__doc__},
-
-static PyObject *
-os_timerfd_gettime_impl(PyObject *module, int fd);
-
-static PyObject *
-os_timerfd_gettime(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    int fd;
-
-    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
-        goto exit;
-    }
-    return_value = os_timerfd_gettime_impl(module, fd);
-
-exit:
-    return return_value;
-}
-
-#endif /* defined(HAVE_TIMERFD_API) */
-
-#if defined(HAVE_TIMERFD_API)
-
 PyDoc_STRVAR(os_timerfd_settime__doc__,
 "timerfd_settime($module, fd, flags, it_interval=0.0,\n"
 "                it_initial_expiration=0.0, /)\n"
@@ -6158,23 +6124,23 @@ exit:
 
 #if defined(HAVE_TIMERFD_API)
 
-PyDoc_STRVAR(os_timerfd_gettime_ns__doc__,
-"timerfd_gettime_ns($module, fd, /)\n"
+PyDoc_STRVAR(os_timerfd_gettime__doc__,
+"timerfd_gettime($module, fd, /)\n"
 "--\n"
 "\n"
-"Return a tuple of a timer file descriptor\'s (interval, next expiration) in nanoseconds.\n"
+"Return a tuple of a timer file descriptor\'s (interval, next expiration) in float seconds.\n"
 "\n"
 "  fd\n"
 "    A timer file descriptor.");
 
-#define OS_TIMERFD_GETTIME_NS_METHODDEF    \
-    {"timerfd_gettime_ns", (PyCFunction)os_timerfd_gettime_ns, METH_O, os_timerfd_gettime_ns__doc__},
+#define OS_TIMERFD_GETTIME_METHODDEF    \
+    {"timerfd_gettime", (PyCFunction)os_timerfd_gettime, METH_O, os_timerfd_gettime__doc__},
 
 static PyObject *
-os_timerfd_gettime_ns_impl(PyObject *module, int fd);
+os_timerfd_gettime_impl(PyObject *module, int fd);
 
 static PyObject *
-os_timerfd_gettime_ns(PyObject *module, PyObject *arg)
+os_timerfd_gettime(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -6182,7 +6148,7 @@ os_timerfd_gettime_ns(PyObject *module, PyObject *arg)
     if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
         goto exit;
     }
-    return_value = os_timerfd_gettime_ns_impl(module, fd);
+    return_value = os_timerfd_gettime_impl(module, fd);
 
 exit:
     return return_value;
@@ -6251,6 +6217,40 @@ os_timerfd_settime_ns(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
 skip_optional:
     return_value = os_timerfd_settime_ns_impl(module, fd, flags, it_interval_ns, it_initial_expiration_ns);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_TIMERFD_API) */
+
+#if defined(HAVE_TIMERFD_API)
+
+PyDoc_STRVAR(os_timerfd_gettime_ns__doc__,
+"timerfd_gettime_ns($module, fd, /)\n"
+"--\n"
+"\n"
+"Return a tuple of a timer file descriptor\'s (interval, next expiration) in nanoseconds.\n"
+"\n"
+"  fd\n"
+"    A timer file descriptor.");
+
+#define OS_TIMERFD_GETTIME_NS_METHODDEF    \
+    {"timerfd_gettime_ns", (PyCFunction)os_timerfd_gettime_ns, METH_O, os_timerfd_gettime_ns__doc__},
+
+static PyObject *
+os_timerfd_gettime_ns_impl(PyObject *module, int fd);
+
+static PyObject *
+os_timerfd_gettime_ns(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int fd;
+
+    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
+        goto exit;
+    }
+    return_value = os_timerfd_gettime_ns_impl(module, fd);
 
 exit:
     return return_value;
@@ -12003,21 +12003,21 @@ exit:
     #define OS_TIMERFD_CREATE_METHODDEF
 #endif /* !defined(OS_TIMERFD_CREATE_METHODDEF) */
 
-#ifndef OS_TIMERFD_GETTIME_METHODDEF
-    #define OS_TIMERFD_GETTIME_METHODDEF
-#endif /* !defined(OS_TIMERFD_GETTIME_METHODDEF) */
-
 #ifndef OS_TIMERFD_SETTIME_METHODDEF
     #define OS_TIMERFD_SETTIME_METHODDEF
 #endif /* !defined(OS_TIMERFD_SETTIME_METHODDEF) */
 
-#ifndef OS_TIMERFD_GETTIME_NS_METHODDEF
-    #define OS_TIMERFD_GETTIME_NS_METHODDEF
-#endif /* !defined(OS_TIMERFD_GETTIME_NS_METHODDEF) */
+#ifndef OS_TIMERFD_GETTIME_METHODDEF
+    #define OS_TIMERFD_GETTIME_METHODDEF
+#endif /* !defined(OS_TIMERFD_GETTIME_METHODDEF) */
 
 #ifndef OS_TIMERFD_SETTIME_NS_METHODDEF
     #define OS_TIMERFD_SETTIME_NS_METHODDEF
 #endif /* !defined(OS_TIMERFD_SETTIME_NS_METHODDEF) */
+
+#ifndef OS_TIMERFD_GETTIME_NS_METHODDEF
+    #define OS_TIMERFD_GETTIME_NS_METHODDEF
+#endif /* !defined(OS_TIMERFD_GETTIME_NS_METHODDEF) */
 
 #ifndef OS_GETSID_METHODDEF
     #define OS_GETSID_METHODDEF
@@ -12282,4 +12282,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=87f9bbf56a040f3f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=111f3789bbd1c620 input=a9049054013a1b77]*/

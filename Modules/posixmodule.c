@@ -10103,32 +10103,6 @@ os_timerfd_create_impl(PyObject *module, int clockid, int flags)
     return PyLong_FromLong(fd);
 }
 
-
-/*[clinic input]
-os.timerfd_gettime
-
-    fd: fildes
-        A timer file descriptor.
-    /
-
-Return a tuple of a timer file descriptor's (interval, next expiration) in float seconds.
-[clinic start generated code]*/
-
-static PyObject *
-os_timerfd_gettime_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=ec5a94a66cfe6ab4 input=8148e3430870da1c]*/
-{
-    struct itimerspec curr_value;
-    int result;
-    Py_BEGIN_ALLOW_THREADS
-    result = timerfd_gettime(fd, &curr_value);
-    Py_END_ALLOW_THREADS
-    if (result == -1) {
-        return PyErr_SetFromErrno(PyExc_OSError);
-    }
-    return build_itimerspec(&curr_value);
-}
-
 /*[clinic input]
 os.timerfd_settime
 
@@ -10172,19 +10146,20 @@ os_timerfd_settime_impl(PyObject *module, int fd, int flags,
     return build_itimerspec(&old_value);
 }
 
+
 /*[clinic input]
-os.timerfd_gettime_ns
+os.timerfd_gettime
 
     fd: fildes
         A timer file descriptor.
     /
 
-Return a tuple of a timer file descriptor's (interval, next expiration) in nanoseconds.
+Return a tuple of a timer file descriptor's (interval, next expiration) in float seconds.
 [clinic start generated code]*/
 
 static PyObject *
-os_timerfd_gettime_ns_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=580633a4465f39fe input=a825443e4c6b40ac]*/
+os_timerfd_gettime_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=ec5a94a66cfe6ab4 input=8148e3430870da1c]*/
 {
     struct itimerspec curr_value;
     int result;
@@ -10194,8 +10169,9 @@ os_timerfd_gettime_ns_impl(PyObject *module, int fd)
     if (result == -1) {
         return PyErr_SetFromErrno(PyExc_OSError);
     }
-    return build_itimerspec_ns(&curr_value);
+    return build_itimerspec(&curr_value);
 }
+
 
 /*[clinic input]
 os.timerfd_settime_ns
@@ -10233,6 +10209,31 @@ os_timerfd_settime_ns_impl(PyObject *module, int fd, int flags,
         return PyErr_SetFromErrno(PyExc_OSError);
     }
     return build_itimerspec_ns(&old_value);
+}
+
+/*[clinic input]
+os.timerfd_gettime_ns
+
+    fd: fildes
+        A timer file descriptor.
+    /
+
+Return a tuple of a timer file descriptor's (interval, next expiration) in nanoseconds.
+[clinic start generated code]*/
+
+static PyObject *
+os_timerfd_gettime_ns_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=580633a4465f39fe input=a825443e4c6b40ac]*/
+{
+    struct itimerspec curr_value;
+    int result;
+    Py_BEGIN_ALLOW_THREADS
+    result = timerfd_gettime(fd, &curr_value);
+    Py_END_ALLOW_THREADS
+    if (result == -1) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    return build_itimerspec_ns(&curr_value);
 }
 
 #undef ONE_SECOND_IN_NS
