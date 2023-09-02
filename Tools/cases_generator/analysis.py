@@ -381,7 +381,8 @@ class Analyzer:
         # Make sure the targets have the same fmt
         fmts = list(set([t.instr_fmt for t in targets]))
         assert len(fmts) == 1
-        assert len(list(set([t.instr_flags.bitmap() for t in targets]))) == 1
+        ignored_flags = {"HAS_EVAL_BREAK_FLAG", "HAS_DEOPT_FLAG", "HAS_ERROR_FLAG"}
+        assert len({t.instr_flags.bitmap(ignore=ignored_flags) for t in targets}) == 1
         return PseudoInstruction(pseudo.name, targets, fmts[0], targets[0].instr_flags)
 
     def analyze_instruction(

@@ -1013,7 +1013,7 @@ Deprecated
   (Contributed by Serhiy Storchaka and Guido van Rossum in :gh:`100160`.)
 
 * :mod:`calendar`: ``calendar.January`` and ``calendar.February`` constants are deprecated and
-  replaced by :data:`calendar.Month.JANUARY` and :data:`calendar.Month.FEBRUARY`.
+  replaced by :data:`calendar.JANUARY` and :data:`calendar.FEBRUARY`.
   (Contributed by Prince Roshan in :gh:`103636`.)
 
 * :mod:`datetime`: :class:`datetime.datetime`'s :meth:`~datetime.datetime.utcnow` and
@@ -1312,8 +1312,9 @@ Removed
   * References to, and support for :meth:`!module_repr()` has been removed.
     (Contributed by Barry Warsaw in :gh:`97850`.)
 
-  * ``importlib.util.set_package`` has been removed. (Contributed by Brett
-    Cannon in :gh:`65961`.)
+  * ``importlib.util.set_package``, ``importlib.util.set_loader`` and
+    ``importlib.util.module_for_loader`` have all been removed. (Contributed by
+    Brett Cannon and Nikita Sobolev in :gh:`65961` and :gh:`97850`.)
 
   * Support for ``find_loader()`` and ``find_module()`` APIs have been
     removed.  (Contributed by Barry Warsaw in :gh:`98040`.)

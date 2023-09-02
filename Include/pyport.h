@@ -1,13 +1,8 @@
 #ifndef Py_PYPORT_H
 #define Py_PYPORT_H
 
-#include "pyconfig.h" /* include for defines */
-
-#include <inttypes.h>
-
-#include <limits.h>
 #ifndef UCHAR_MAX
-#  error "limits.h must define UCHAR_MAX"
+#  error "<limits.h> header must define UCHAR_MAX"
 #endif
 #if UCHAR_MAX != 255
 #  error "Python's source code assumes C's unsigned char is an 8-bit type"
@@ -684,12 +679,6 @@ extern char * _getpty(int *, int, mode_t, int);
 #  endif
 #endif
 
-/* Check that ALT_SOABI is consistent with Py_TRACE_REFS:
-   ./configure --with-trace-refs should must be used to define Py_TRACE_REFS */
-#if defined(ALT_SOABI) && defined(Py_TRACE_REFS)
-#  error "Py_TRACE_REFS ABI is not compatible with release and debug ABI"
-#endif
-
 #if defined(__ANDROID__) || defined(__VXWORKS__)
    // Use UTF-8 as the locale encoding, ignore the LC_CTYPE locale.
    // See _Py_GetLocaleEncoding(), PyUnicode_DecodeLocale()
@@ -775,6 +764,10 @@ extern char * _getpty(int *, int, mode_t, int);
 #if !defined(ALIGNOF_MAX_ALIGN_T) || ALIGNOF_MAX_ALIGN_T == 0
 #   undef ALIGNOF_MAX_ALIGN_T
 #   define ALIGNOF_MAX_ALIGN_T _Alignof(long double)
+#endif
+
+#if defined(__sgi) && !defined(_SGI_MP_SOURCE)
+#  define _SGI_MP_SOURCE
 #endif
 
 #endif /* Py_PYPORT_H */

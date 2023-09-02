@@ -25,11 +25,10 @@ from unittest import mock
 import _testinternalcapi
 import _imp
 
-from test.support import import_helper
 from test.support import os_helper
 from test.support import (
     STDLIB_DIR, swap_attr, swap_item, cpython_only, is_emscripten,
-    is_wasi, run_in_subinterp, run_in_subinterp_with_config)
+    is_wasi, run_in_subinterp, run_in_subinterp_with_config, Py_TRACE_REFS)
 from test.support.import_helper import (
     forget, make_legacy_pyc, unlink, unload, DirsOnSysPath, CleanImport)
 from test.support.os_helper import (
@@ -59,7 +58,7 @@ skip_if_dont_write_bytecode = unittest.skipIf(
 
 def _require_loader(module, loader, skip):
     if isinstance(module, str):
-        module = import_helper.import_fresh_module(module)
+        module = __import__(module)
 
     MODULE_KINDS = {
         BuiltinImporter: 'built-in',
@@ -1806,12 +1805,12 @@ class SubinterpImportTests(unittest.TestCase):
             check_multi_interp_extensions=strict,
         )
         _, out, err = script_helper.assert_python_ok('-c', textwrap.dedent(f'''
-            import _testcapi, sys
+            import _testinternalcapi, sys
             assert (
                 {name!r} in sys.builtin_module_names or
                 {name!r} not in sys.modules
             ), repr({name!r})
-            ret = _testcapi.run_in_subinterp_with_config(
+            ret = _testinternalcapi.run_in_subinterp_with_config(
                 {self.import_script(name, "sys.stdout.fileno()")!r},
                 **{kwargs},
             )
@@ -1830,9 +1829,9 @@ class SubinterpImportTests(unittest.TestCase):
             check_multi_interp_extensions=True,
         )
         _, out, err = script_helper.assert_python_ok('-c', textwrap.dedent(f'''
-            import _testcapi, sys
+            import _testinternalcapi, sys
             assert {name!r} not in sys.modules, {name!r}
-            ret = _testcapi.run_in_subinterp_with_config(
+            ret = _testinternalcapi.run_in_subinterp_with_config(
                 {self.import_script(name, "sys.stdout.fileno()")!r},
                 **{kwargs},
             )
@@ -2556,7 +2555,7 @@ class SinglephaseInitTests(unittest.TestCase):
     def test_basic_multiple_interpreters_deleted_no_reset(self):
         # without resetting; already loaded in a deleted interpreter
 
-        if hasattr(sys, 'getobjects'):
+        if Py_TRACE_REFS:
             # It's a Py_TRACE_REFS build.
             # This test breaks interpreter isolation a little,
             # which causes problems on Py_TRACE_REF builds.

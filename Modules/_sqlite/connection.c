@@ -33,7 +33,9 @@
 #include "blob.h"
 #include "prepare_protocol.h"
 #include "util.h"
+
 #include "pycore_import.h"        // _PyImport_GetModuleAttrString()
+#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_weakref.h"       // _PyWeakref_IS_DEAD()
 
@@ -1139,6 +1141,7 @@ _sqlite3.Connection.create_function as pysqlite_connection_create_function
     name: str
     narg: int
     func: object
+    / [from 3.15]
     *
     deterministic: bool = False
 
@@ -1150,7 +1153,7 @@ pysqlite_connection_create_function_impl(pysqlite_Connection *self,
                                          PyTypeObject *cls, const char *name,
                                          int narg, PyObject *func,
                                          int deterministic)
-/*[clinic end generated code: output=8a811529287ad240 input=b3e8e1d8ddaffbef]*/
+/*[clinic end generated code: output=8a811529287ad240 input=c7c313b0ca8b519e]*/
 {
     int rc;
     int flags = SQLITE_UTF8;
@@ -1341,6 +1344,7 @@ _sqlite3.Connection.create_aggregate as pysqlite_connection_create_aggregate
     name: str
     n_arg: int
     aggregate_class: object
+    / [from 3.15]
 
 Creates a new aggregate.
 [clinic start generated code]*/
@@ -1350,7 +1354,7 @@ pysqlite_connection_create_aggregate_impl(pysqlite_Connection *self,
                                           PyTypeObject *cls,
                                           const char *name, int n_arg,
                                           PyObject *aggregate_class)
-/*[clinic end generated code: output=1b02d0f0aec7ff96 input=68a2a26366d4c686]*/
+/*[clinic end generated code: output=1b02d0f0aec7ff96 input=8087056db6eae1cf]*/
 {
     int rc;
 
@@ -1497,17 +1501,17 @@ exit:
 _sqlite3.Connection.set_authorizer as pysqlite_connection_set_authorizer
 
     cls: defining_class
-    /
     authorizer_callback as callable: object
+    / [from 3.15]
 
-Sets authorizer callback.
+Set authorizer callback.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_connection_set_authorizer_impl(pysqlite_Connection *self,
                                         PyTypeObject *cls,
                                         PyObject *callable)
-/*[clinic end generated code: output=75fa60114fc971c3 input=605d32ba92dd3eca]*/
+/*[clinic end generated code: output=75fa60114fc971c3 input=a52bd4937c588752]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -1539,18 +1543,25 @@ pysqlite_connection_set_authorizer_impl(pysqlite_Connection *self,
 _sqlite3.Connection.set_progress_handler as pysqlite_connection_set_progress_handler
 
     cls: defining_class
-    /
     progress_handler as callable: object
+        A callable that takes no arguments.
+        If the callable returns non-zero, the current query is terminated,
+        and an exception is raised.
+    / [from 3.15]
     n: int
+        The number of SQLite virtual machine instructions that are
+        executed between invocations of 'progress_handler'.
 
-Sets progress handler callback.
+Set progress handler callback.
+
+If 'progress_handler' is None or 'n' is 0, the progress handler is disabled.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_connection_set_progress_handler_impl(pysqlite_Connection *self,
                                               PyTypeObject *cls,
                                               PyObject *callable, int n)
-/*[clinic end generated code: output=0739957fd8034a50 input=f7c1837984bd86db]*/
+/*[clinic end generated code: output=0739957fd8034a50 input=b4d6e2ef8b4d32f9]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -1576,17 +1587,17 @@ pysqlite_connection_set_progress_handler_impl(pysqlite_Connection *self,
 _sqlite3.Connection.set_trace_callback as pysqlite_connection_set_trace_callback
 
     cls: defining_class
-    /
     trace_callback as callable: object
+    / [from 3.15]
 
-Sets a trace callback called for each SQL statement (passed as unicode).
+Set a trace callback called for each SQL statement (passed as unicode).
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_connection_set_trace_callback_impl(pysqlite_Connection *self,
                                             PyTypeObject *cls,
                                             PyObject *callable)
-/*[clinic end generated code: output=d91048c03bfcee05 input=351a94210c5f81bb]*/
+/*[clinic end generated code: output=d91048c03bfcee05 input=d705d592ec03cf28]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;

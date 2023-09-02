@@ -289,6 +289,7 @@ static PyTypeObject CounterOptimizer_Type = {
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_methods = counter_methods,
+    .tp_dealloc = (destructor)PyObject_Del,
 };
 
 PyObject *
@@ -371,6 +372,32 @@ static PyTypeObject UOpExecutor_Type = {
     .tp_dealloc = (destructor)uop_dealloc,
     .tp_as_sequence = &uop_as_sequence,
 };
+
+static int
+move_stubs(
+    _PyUOpInstruction *trace,
+    int trace_length,
+    int stubs_start,
+    int stubs_end
+)
+{
+    memmove(trace + trace_length,
+            trace + stubs_start,
+            (stubs_end - stubs_start) * sizeof(_PyUOpInstruction));
+    // Patch up the jump targets
+    for (int i = 0; i < trace_length; i++) {
+        if (trace[i].opcode == _POP_JUMP_IF_FALSE ||
+            trace[i].opcode == _POP_JUMP_IF_TRUE)
+        {
+            int target = trace[i].oparg;
+            if (target >= stubs_start) {
+                target += trace_length - stubs_start;
+                trace[i].oparg = target;
+            }
+        }
+    }
+    return trace_length + stubs_end - stubs_start;
+}
 
 #define TRACE_STACK_SIZE 5
 
@@ -730,36 +757,31 @@ done:
     if (trace_length > 3) {
         ADD_TO_TRACE(EXIT_TRACE, 0, 0);
         DPRINTF(1,
-                "Created a trace for %s (%s:%d) at byte offset %d -- length %d\n",
+                "Created a trace for %s (%s:%d) at byte offset %d -- length %d+%d\n",
                 PyUnicode_AsUTF8(code->co_qualname),
                 PyUnicode_AsUTF8(code->co_filename),
                 code->co_firstlineno,
                 2 * INSTR_IP(initial_instr, code),
-                trace_length);
-        if (max_length < buffer_size && trace_length < max_length) {
-            // Move the stubs back to be immediately after the main trace
-            // (which ends at trace_length)
-            DPRINTF(2,
-                    "Moving %d stub uops back by %d\n",
-                    buffer_size - max_length,
-                    max_length - trace_length);
-            memmove(trace + trace_length,
-                    trace + max_length,
-                    (buffer_size - max_length) * sizeof(_PyUOpInstruction));
-            // Patch up the jump targets
-            for (int i = 0; i < trace_length; i++) {
-                if (trace[i].opcode == _POP_JUMP_IF_FALSE ||
-                    trace[i].opcode == _POP_JUMP_IF_TRUE)
-                {
-                    int target = trace[i].oparg;
-                    if (target >= max_length) {
-                        target += trace_length - max_length;
-                        trace[i].oparg = target;
-                    }
-                }
+                trace_length,
+                buffer_size - max_length);
+        if (max_length < buffer_size) {
+            // There are stubs
+            if (trace_length < max_length) {
+                // There's a gap before the stubs
+                // Move the stubs back to be immediately after the main trace
+                // (which ends at trace_length)
+                DPRINTF(2,
+                        "Moving %d stub uops back by %d\n",
+                        buffer_size - max_length,
+                        max_length - trace_length);
+                trace_length = move_stubs(trace, trace_length, max_length, buffer_size);
+            }
+            else {
+                assert(trace_length == max_length);
+                // There's no gap
+                trace_length = buffer_size;
             }
         }
-        trace_length += buffer_size - max_length;
         return trace_length;
     }
     else {
@@ -777,6 +799,76 @@ done:
 #undef INSTR_IP
 #undef ADD_TO_TRACE
 #undef DPRINTF
+}
+
+static int
+remove_unneeded_uops(_PyUOpInstruction *trace, int trace_length)
+{
+    // Stage 1: Replace unneeded SAVE_IP uops with NOP.
+    // Note that we don't enter stubs, those SAVE_IPs are needed.
+    int last_save_ip = -1;
+    int last_instr = 0;
+    bool need_ip = true;
+    for (int pc = 0; pc < trace_length; pc++) {
+        int opcode = trace[pc].opcode;
+        if (opcode == SAVE_CURRENT_IP) {
+            // Special case: never remove preceding SAVE_IP
+            last_save_ip = -1;
+        }
+        else if (opcode == SAVE_IP) {
+            if (!need_ip && last_save_ip >= 0) {
+                trace[last_save_ip].opcode = NOP;
+            }
+            need_ip = false;
+            last_save_ip = pc;
+        }
+        else if (opcode == JUMP_TO_TOP || opcode == EXIT_TRACE) {
+            last_instr = pc + 1;
+            break;
+        }
+        else {
+            // If opcode has ERROR or DEOPT, set need_up to true
+            if (_PyOpcode_opcode_metadata[opcode].flags & (HAS_ERROR_FLAG | HAS_DEOPT_FLAG)) {
+                need_ip = true;
+            }
+        }
+    }
+    // Stage 2: Squash NOP opcodes (pre-existing or set above).
+    int dest = 0;
+    for (int pc = 0; pc < last_instr; pc++) {
+        int opcode = trace[pc].opcode;
+        if (opcode != NOP) {
+            if (pc != dest) {
+                trace[dest] = trace[pc];
+            }
+            dest++;
+        }
+    }
+    // Stage 3: Move the stubs back.
+    if (dest < last_instr) {
+        int new_trace_length = move_stubs(trace, dest, last_instr, trace_length);
+#ifdef Py_DEBUG
+        char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
+        int lltrace = 0;
+        if (uop_debug != NULL && *uop_debug >= '0') {
+            lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
+        }
+        if (lltrace >= 2) {
+            printf("Optimized trace (length %d+%d = %d, saved %d):\n",
+                dest, trace_length - last_instr, new_trace_length,
+                trace_length - new_trace_length);
+            for (int pc = 0; pc < new_trace_length; pc++) {
+                printf("%4d: (%s, %d, %" PRIu64 ")\n",
+                    pc,
+                    uop_name(trace[pc].opcode),
+                    (trace[pc].oparg),
+                    (uint64_t)(trace[pc].operand));
+            }
+        }
+#endif
+        trace_length = new_trace_length;
+    }
+    return trace_length;
 }
 
 static int
@@ -798,6 +890,7 @@ uop_optimize(
     if (uop_optimize != NULL && *uop_optimize > '0') {
         trace_length = _Py_uop_analyze_and_optimize(code, trace, trace_length, curr_stackentries);
     }
+    trace_length = remove_unneeded_uops(trace, trace_length);
     _PyUOpExecutorObject *executor = PyObject_NewVar(_PyUOpExecutorObject, &UOpExecutor_Type, trace_length);
     if (executor == NULL) {
         return -1;

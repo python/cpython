@@ -1135,7 +1135,7 @@ def linear_regression(x, y, /, *, proportional=False):
     >>> noise = NormalDist().samples(5, seed=42)
     >>> y = [3 * x[i] + 2 + noise[i] for i in range(5)]
     >>> linear_regression(x, y)  #doctest: +ELLIPSIS
-    LinearRegression(slope=3.09078914170..., intercept=1.75684970486...)
+    LinearRegression(slope=3.17495..., intercept=1.00925...)
 
     If *proportional* is true, the independent variable *x* and the
     dependent variable *y* are assumed to be directly proportional.
@@ -1148,7 +1148,7 @@ def linear_regression(x, y, /, *, proportional=False):
 
     >>> y = [3 * x[i] + noise[i] for i in range(5)]
     >>> linear_regression(x, y, proportional=True)  #doctest: +ELLIPSIS
-    LinearRegression(slope=3.02447542484..., intercept=0.0)
+    LinearRegression(slope=2.90475..., intercept=0.0)
 
     """
     n = len(x)
@@ -1279,9 +1279,11 @@ class NormalDist:
 
     def samples(self, n, *, seed=None):
         "Generate *n* samples for a given mean and standard deviation."
-        gauss = random.gauss if seed is None else random.Random(seed).gauss
-        mu, sigma = self._mu, self._sigma
-        return [gauss(mu, sigma) for _ in repeat(None, n)]
+        rnd = random.random if seed is None else random.Random(seed).random
+        inv_cdf = _normal_dist_inv_cdf
+        mu = self._mu
+        sigma = self._sigma
+        return [inv_cdf(rnd(), mu, sigma) for _ in repeat(None, n)]
 
     def pdf(self, x):
         "Probability density function.  P(x <= X < x+dx) / dx"
