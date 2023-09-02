@@ -1189,7 +1189,6 @@ def _is_full_match_test(pattern):
 def set_match_tests(accept_patterns=None, ignore_patterns=None):
     global _match_test_func, _accept_test_patterns, _ignore_test_patterns
 
-
     if accept_patterns is None:
         accept_patterns = ()
     if ignore_patterns is None:
