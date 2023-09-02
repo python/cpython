@@ -157,3 +157,4 @@ def _adjust_resource_limits():
         except (ValueError, OSError) as err:
             print(f"Unable to raise RLIMIT_NOFILE from {fd_limit} to "
                   f"{new_fd_limit}: {err}.")
+
