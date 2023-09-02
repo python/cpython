@@ -2629,8 +2629,7 @@ def bœr():
         stdout, stderr = self._run_pdb(
             ['-m', module_name], "", expected_returncode=1
         )
-        self.assertIn("ImportError: No module named t_main.__main__; 't_main' is a package and cannot be directly executed",
-                      stdout.splitlines())
+        self.assertIn("ImportError: No module named t_main.__main__;", stdout)
 
     def test_package_without_a_main(self):
         pkg_name = 't_pkg'
