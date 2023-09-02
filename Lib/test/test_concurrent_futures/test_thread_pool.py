@@ -6,6 +6,7 @@ import os
 import threading
 import unittest
 from concurrent import futures
+from test import support
 
 from .executor import ExecutorTest, mul
 from .util import BaseTestCase, ThreadPoolMixin, setup_module
@@ -49,6 +50,7 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
         executor.shutdown(wait=True)
 
     @unittest.skipUnless(hasattr(os, 'register_at_fork'), 'need os.register_at_fork')
+    @support.requires_resource('cpu')
     def test_hang_global_shutdown_lock(self):
         # bpo-45021: _global_shutdown_lock should be reinitialized in the child
         # process, otherwise it will never exit
