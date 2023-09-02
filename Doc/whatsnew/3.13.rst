@@ -122,6 +122,14 @@ dbm
   from the database.
   (Contributed by Dong-hee Na in :gh:`107122`.)
 
+doctest
+-------
+
+* The :meth:`doctest.DocTestRunner.run` method now counts the number of skipped
+  tests. Add :attr:`doctest.DocTestRunner.skips` and
+  :attr:`doctest.TestResults.skipped` attributes.
+  (Contributed by Victor Stinner in :gh:`108794`.)
+
 io
 --
 
