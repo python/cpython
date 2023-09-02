@@ -1427,8 +1427,7 @@ TestResults objects
 
       Number of skipped tests.
 
-   .. versionchanged:: 3.13
-      Add :attr:`skipped` attribute.
+      .. versionadded:: 3.13
 
 
 .. _doctest-doctestrunner:
@@ -1449,7 +1448,7 @@ DocTestRunner objects
    passing a subclass of :class:`OutputChecker` to the constructor.
 
    The test runner's display output can be controlled in two ways. First, an output
-   function can be passed to :meth:`TestRunner.run`; this function will be called
+   function can be passed to :meth:`run`; this function will be called
    with strings that should be displayed.  It defaults to ``sys.stdout.write``.  If
    capturing the output is not sufficient, then the display output can be also
    customized by subclassing DocTestRunner, and overriding the methods
@@ -1470,6 +1469,10 @@ DocTestRunner objects
    runner compares expected output to actual output, and how it displays failures.
    For more information, see section :ref:`doctest-options`.
 
+   The test runner accumulate statistics. The aggregated number of attempted,
+   failed and skipped examples is also available via the :attr:`tries`,
+   :attr:`failures` and :attr:`skips` attributes. The :meth:`run` and
+   :meth:`summarize` methods return a TestResults instance.
 
    :class:`DocTestParser` defines the following methods:
 
@@ -1547,6 +1550,23 @@ DocTestRunner objects
       The optional *verbose* argument controls how detailed the summary is.  If the
       verbosity is not specified, then the :class:`DocTestRunner`'s verbosity is
       used.
+
+   :class:`DocTestParser` has the following attributes:
+
+   .. attribute:: tries
+
+      Number of attempted examples.
+
+   .. attribute:: failures
+
+      Number of failed examples.
+
+   .. attribute:: skips
+
+      Number of skipped examples.
+
+      .. versionadded:: 3.13
+
 
 .. _doctest-outputchecker:
 
