@@ -813,7 +813,7 @@ class StrTest(string_tests.StringLikeTest,
         self.assertFalse("0".isidentifier())
 
     @support.cpython_only
-    @support.requires_legacy_unicode_capi
+    @support.requires_legacy_unicode_capi()
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_isidentifier_legacy(self):
         u = '𝖀𝖓𝖎𝖈𝖔𝖉𝖊'
@@ -2490,7 +2490,7 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual(len(args), 1)
 
     @support.cpython_only
-    @support.requires_legacy_unicode_capi
+    @support.requires_legacy_unicode_capi()
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_resize(self):
         for length in range(1, 100, 7):

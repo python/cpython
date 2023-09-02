@@ -575,15 +575,15 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
     # message, and future-proofs us in case we build up the function
     # using ast.
 
-    seen_default = False
+    seen_default = None
     for f in std_fields:
         # Only consider the non-kw-only fields in the __init__ call.
         if f.init:
             if not (f.default is MISSING and f.default_factory is MISSING):
-                seen_default = True
+                seen_default = f
             elif seen_default:
                 raise TypeError(f'non-default argument {f.name!r} '
-                                'follows default argument')
+                                f'follows default argument {seen_default.name!r}')
 
     locals = {f'__dataclass_type_{f.name}__': f.type for f in fields}
     locals.update({

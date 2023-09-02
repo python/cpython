@@ -548,7 +548,11 @@ class BaseTestCase(unittest.TestCase):
         return proc
 
     def run_python(self, args, **kw):
-        args = [sys.executable, '-X', 'faulthandler', '-I', *args]
+        extraargs = []
+        if 'uops' in sys._xoptions:
+            # Pass -X uops along
+            extraargs.extend(['-X', 'uops'])
+        args = [sys.executable, *extraargs, '-X', 'faulthandler', '-I', *args]
         proc = self.run_command(args, **kw)
         return proc.stdout
 
@@ -893,12 +897,12 @@ class ArgsTestCase(BaseTestCase):
 
         filename = 'reflog.txt'
         self.addCleanup(os_helper.unlink, filename)
-        output = self.run_tests('--huntrleaks', '3:3:', test,
+        output = self.run_tests('--huntrleaks', '6:3:', test,
                                 exitcode=EXITCODE_BAD_TEST,
                                 stderr=subprocess.STDOUT)
         self.check_executed_tests(output, [test], failed=test)
 
-        line = 'beginning 6 repetitions\n123456\n......\n'
+        line = 'beginning 9 repetitions\n123456789\n.........\n'
         self.check_line(output, re.escape(line))
 
         line2 = '%s leaked [1, 1, 1] %s, sum=3\n' % (test, what)

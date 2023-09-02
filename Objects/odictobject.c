@@ -466,8 +466,10 @@ later:
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_dict.h"          // _Py_dict_lookup()
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include <stddef.h>               // offsetof()
 
 #include "clinic/odictobject.c.h"
