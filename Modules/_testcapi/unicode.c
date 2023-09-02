@@ -2,6 +2,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "parts.h"
+#include "util.h"
 
 static struct PyModuleDef *_testcapimodule = NULL;  // set at initialization
 
@@ -102,7 +103,6 @@ test_widechar(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
-#define NULLABLE(x) do { if (x == Py_None) x = NULL; } while (0);
 
 static PyObject *
 unicode_copy(PyObject *unicode)
@@ -348,13 +348,8 @@ unicode_substring(PyObject *self, PyObject *args)
 static PyObject *
 unicode_getlength(PyObject *self, PyObject *arg)
 {
-    Py_ssize_t result;
-
     NULLABLE(arg);
-    result = PyUnicode_GetLength(arg);
-    if (result == -1)
-        return NULL;
-    return PyLong_FromSsize_t(result);
+    RETURN_SIZE(PyUnicode_GetLength(arg));
 }
 
 /* Test PyUnicode_ReadChar() */
@@ -483,16 +478,12 @@ static PyObject *
 unicode_aswidechar_null(PyObject *self, PyObject *args)
 {
     PyObject *unicode;
-    Py_ssize_t buflen, size;
+    Py_ssize_t buflen;
 
     if (!PyArg_ParseTuple(args, "On", &unicode, &buflen))
         return NULL;
     NULLABLE(unicode);
-    size = PyUnicode_AsWideChar(unicode, NULL, buflen);
-    if (size == -1) {
-        return NULL;
-    }
-    return PyLong_FromSsize_t(size);
+    RETURN_SIZE(PyUnicode_AsWideChar(unicode, NULL, buflen));
 }
 
 /* Test PyUnicode_AsWideCharString() */
@@ -1302,17 +1293,13 @@ unicode_count(PyObject *self, PyObject *args)
     PyObject *substr;
     Py_ssize_t start;
     Py_ssize_t end;
-    Py_ssize_t result;
 
     if (!PyArg_ParseTuple(args, "OOnn", &str, &substr, &start, &end))
         return NULL;
 
     NULLABLE(str);
     NULLABLE(substr);
-    result = PyUnicode_Count(str, substr, start, end);
-    if (result == -1)
-        return NULL;
-    return PyLong_FromSsize_t(result);
+    RETURN_SIZE(PyUnicode_Count(str, substr, start, end));
 }
 
 /* Test PyUnicode_Find() */
@@ -1332,8 +1319,11 @@ unicode_find(PyObject *self, PyObject *args)
     NULLABLE(str);
     NULLABLE(substr);
     result = PyUnicode_Find(str, substr, start, end, direction);
-    if (result == -2)
+    if (result == -2) {
+        assert(PyErr_Occurred());
         return NULL;
+    }
+    assert(!PyErr_Occurred());
     return PyLong_FromSsize_t(result);
 }
 
@@ -1346,17 +1336,13 @@ unicode_tailmatch(PyObject *self, PyObject *args)
     Py_ssize_t start;
     Py_ssize_t end;
     int direction;
-    Py_ssize_t result;
 
     if (!PyArg_ParseTuple(args, "OOnni", &str, &substr, &start, &end, &direction))
         return NULL;
 
     NULLABLE(str);
     NULLABLE(substr);
-    result = PyUnicode_Tailmatch(str, substr, start, end, direction);
-    if (result == -1)
-        return NULL;
-    return PyLong_FromSsize_t(result);
+    RETURN_SIZE(PyUnicode_Tailmatch(str, substr, start, end, direction));
 }
 
 /* Test PyUnicode_FindChar() */
@@ -1375,10 +1361,12 @@ unicode_findchar(PyObject *self, PyObject *args)
     }
     NULLABLE(str);
     result = PyUnicode_FindChar(str, (Py_UCS4)ch, start, end, direction);
-    if (result == -2)
+    if (result == -2) {
+        assert(PyErr_Occurred());
         return NULL;
-    else
-        return PyLong_FromSsize_t(result);
+    }
+    assert(!PyErr_Occurred());
+    return PyLong_FromSsize_t(result);
 }
 
 /* Test PyUnicode_Replace() */
@@ -1416,6 +1404,7 @@ unicode_compare(PyObject *self, PyObject *args)
     if (result == -1 && PyErr_Occurred()) {
         return NULL;
     }
+    assert(!PyErr_Occurred());
     return PyLong_FromLong(result);
 }
 
@@ -1476,32 +1465,21 @@ unicode_contains(PyObject *self, PyObject *args)
 {
     PyObject *container;
     PyObject *element;
-    int result;
 
     if (!PyArg_ParseTuple(args, "OO", &container, &element))
         return NULL;
 
     NULLABLE(container);
     NULLABLE(element);
-    result = PyUnicode_Contains(container, element);
-    if (result == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
-    return PyLong_FromLong(result);
+    RETURN_INT(PyUnicode_Contains(container, element));
 }
 
 /* Test PyUnicode_IsIdentifier() */
 static PyObject *
 unicode_isidentifier(PyObject *self, PyObject *arg)
 {
-    int result;
-
     NULLABLE(arg);
-    result = PyUnicode_IsIdentifier(arg);
-    if (result == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
-    return PyLong_FromLong(result);
+    RETURN_INT(PyUnicode_IsIdentifier(arg));
 }
 
 /* Test PyUnicode_CopyCharacters() */
