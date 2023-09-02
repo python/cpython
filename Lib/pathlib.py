@@ -803,12 +803,18 @@ class _PathBase(PurePath):
     __bytes__ = None
     __fspath__ = None  # virtual paths have no local file system representation
 
+    def _unsupported(self, method_name):
+        msg = f"{type(self).__name__}.{method_name}() is unsupported"
+        if isinstance(self, Path):
+            msg += " on this system"
+        raise UnsupportedOperation(msg)
+
     def stat(self, *, follow_symlinks=True):
         """
         Return the result of the stat() system call on this path, like
         os.stat() does.
         """
-        raise UnsupportedOperation(f"{type(self).__name__}.stat()")
+        return self._unsupported("stat")
 
     def lstat(self):
         """
@@ -1008,7 +1014,7 @@ class _PathBase(PurePath):
         Open the file pointed by this path and return a file object, as
         the built-in open() function does.
         """
-        raise UnsupportedOperation(f"{type(self).__name__}.open()")
+        return self._unsupported("open")
 
     def read_bytes(self):
         """
@@ -1051,7 +1057,7 @@ class _PathBase(PurePath):
         The children are yielded in arbitrary order, and the
         special entries '.' and '..' are not included.
         """
-        raise UnsupportedOperation(f"{type(self).__name__}.iterdir()")
+        return self._unsupported("iterdir")
 
     def _scandir(self):
         # os.scandir() returns an object that can be used as a context manager
@@ -1218,7 +1224,7 @@ class _PathBase(PurePath):
 
         Use resolve() to resolve symlinks and remove '..' segments.
         """
-        raise UnsupportedOperation(f"{type(self).__name__}.absolute()")
+        return self._unsupported("absolute")
 
     @classmethod
     def cwd(cls):
@@ -1229,7 +1235,7 @@ class _PathBase(PurePath):
         """ Return a new path with expanded ~ and ~user constructs
         (as returned by os.path.expanduser)
         """
-        raise UnsupportedOperation(f"{type(self).__name__}.expanduser()")
+        return self._unsupported("expanduser")
 
     @classmethod
     def home(cls):
@@ -1241,7 +1247,7 @@ class _PathBase(PurePath):
         """
         Return the path to which the symbolic link points.
         """
-        raise UnsupportedOperation(f"{type(self).__name__}.readlink()")
+        return self._unsupported("readlink")
 
     def resolve(self, strict=False):
         """
@@ -1312,7 +1318,7 @@ class _PathBase(PurePath):
         Make this path a symlink pointing to the target path.
         Note the order of arguments (link, target) is the reverse of os.symlink.
         """
-        raise UnsupportedOperation(f"{type(self).__name__}.symlink_to()")
+        return self._unsupported("symlink_to")
 
     def hardlink_to(self, target):
         """
@@ -1320,19 +1326,19 @@ class _PathBase(PurePath):
 
         Note the order of arguments (self, target) is the reverse of os.link's.
         """
-        raise UnsupportedOperation(f"{type(self).__name__}.hardlink_to()")
+        return self._unsupported("hardlink_to")
 
     def touch(self, mode=0o666, exist_ok=True):
         """
         Create this file with the given access mode, if it doesn't exist.
         """
-        raise UnsupportedOperation(f"{type(self).__name__}.touch()")
+        return self._unsupported("touch")
 
     def mkdir(self, mode=0o777, parents=False, exist_ok=False):
         """
         Create a new directory at this given path.
         """
-        raise UnsupportedOperation(f"{type(self).__name__}.mkdir()")
+        return self._unsupported("mkdir")
 
     def rename(self, target):
         """
@@ -1344,7 +1350,7 @@ class _PathBase(PurePath):
 
         Returns the new Path instance pointing to the target path.
         """
-        raise UnsupportedOperation(f"{type(self).__name__}.rename()")
+        return self._unsupported("rename")
 
     def replace(self, target):
         """
@@ -1356,13 +1362,13 @@ class _PathBase(PurePath):
 
         Returns the new Path instance pointing to the target path.
         """
-        raise UnsupportedOperation(f"{type(self).__name__}.replace()")
+        return self._unsupported("replace")
 
     def chmod(self, mode, *, follow_symlinks=True):
         """
         Change the permissions of the path, like os.chmod().
         """
-        raise UnsupportedOperation(f"{type(self).__name__}.chmod()")
+        return self._unsupported("chmod")
 
     def lchmod(self, mode):
         """
@@ -1376,29 +1382,29 @@ class _PathBase(PurePath):
         Remove this file or link.
         If the path is a directory, use rmdir() instead.
         """
-        raise UnsupportedOperation(f"{type(self).__name__}.unlink()")
+        return self._unsupported("unlink")
 
     def rmdir(self):
         """
         Remove this directory.  The directory must be empty.
         """
-        raise UnsupportedOperation(f"{type(self).__name__}.rmdir()")
+        return self._unsupported("rmdir")
 
     def owner(self):
         """
         Return the login name of the file owner.
         """
-        raise UnsupportedOperation(f"{type(self).__name__}.owner()")
+        return self._unsupported("owner")
 
     def group(self):
         """
         Return the group name of the file gid.
         """
-        raise UnsupportedOperation(f"{type(self).__name__}.group()")
+        return self._unsupported("group")
 
     def as_uri(self):
         """Return the path as a URI."""
-        raise UnsupportedOperation(f"{type(self).__name__}.as_uri()")
+        return self._unsupported("as_uri")
 
 
 class Path(_PathBase):
