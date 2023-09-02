@@ -884,10 +884,10 @@ call fails (for example because the path doesn't exist).
 
    Users may wish to test the result with :meth:`~PurePath.is_absolute` and
    reject relative paths, as these are not portable across processes with
-   differing working directories.
+   different working directories.
 
    :func:`os.fsdecode` is used to decode percent-escaped byte sequences, and
-   so file URIs are not portable across machines with differing
+   so file URIs are not portable across machines with different
    :ref:`filesystem encodings <filesystem-encoding>`.
 
    .. versionadded:: 3.13
