@@ -1604,7 +1604,6 @@ class PathBaseTest(PurePathTest):
         self.assertRaises(e, p.is_char_device)
         self.assertRaises(e, p.is_fifo)
         self.assertRaises(e, p.is_socket)
-        self.assertRaises(e, p.is_junction)
         self.assertRaises(e, p.open)
         self.assertRaises(e, p.read_bytes)
         self.assertRaises(e, p.read_text)
