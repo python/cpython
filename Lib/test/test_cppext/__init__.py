@@ -17,9 +17,11 @@ SETUP = os.path.join(os.path.dirname(__file__), 'setup.py')
 
 @support.requires_subprocess()
 class TestCPPExt(unittest.TestCase):
+    @support.requires_resource('cpu')
     def test_build_cpp11(self):
         self.check_build(False, '_testcpp11ext')
 
+    @support.requires_resource('cpu')
     def test_build_cpp03(self):
         self.check_build(True, '_testcpp03ext')
 
