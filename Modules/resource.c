@@ -2,10 +2,6 @@
 #include <errno.h>                // errno
 #include <string.h>
 #include <sys/resource.h>         // getrusage()
-#ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-#endif
-#include <time.h>
 #include <unistd.h>               // getpagesize()
 
 /* On some systems, these aren't in any header file.

@@ -57,6 +57,10 @@
 
 #include <stdio.h>                // ctermid()
 #include <stdlib.h>               // system()
+#ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>           // futimes()
+#endif
+
 
 // SGI apparently needs this forward declaration
 #ifdef HAVE__GETPTY
