@@ -101,7 +101,7 @@ which relays any information about the UUID's safety, using this enumeration:
      - Meaning
 
    * - .. attribute:: UUID.time_low
-     - The next 32 bits of the UUID.
+     - The first 32 bits of the UUID.
 
    * - .. attribute:: UUID.time_mid
      - The next 16 bits of the UUID.
