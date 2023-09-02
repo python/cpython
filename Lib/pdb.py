@@ -167,8 +167,11 @@ class _ModuleTarget(str):
     def check(self):
         try:
             self._details
-        except Exception as e:
-            print(f"{type(e).__name__}: {e}")
+        except ImportError as e:
+            print(f"ImportError: {e}")
+            sys.exit(1)
+        except Exception:
+            traceback.print_exc()
             sys.exit(1)
 
     @functools.cached_property
