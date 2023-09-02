@@ -10069,11 +10069,23 @@ build_itimerspec(const struct itimerspec* curr_value)
 static PyObject *
 build_itimerspec_ns(const struct itimerspec* curr_value)
 {
-    return PyTuple_Pack(
-        2,
-        PyLong_FromLongLong((long long)curr_value->it_interval.tv_sec * ONE_SECOND_IN_NS + (long long)curr_value->it_interval.tv_nsec),
-        PyLong_FromLongLong((long long)curr_value->it_value.tv_sec * ONE_SECOND_IN_NS + (long long)curr_value->it_value.tv_nsec)
-    );
+    long long _interval = (long long)curr_value->it_interval.tv_sec * ONE_SECOND_IN_NS +
+                       (long long)curr_value->it_interval.tv_nsec;
+    PyObject *interval = PyLong_FromLongLong(_interval);
+    if (interval == NULL) {
+        return NULL;
+    }
+    long long _value = (long long)curr_value->it_value.tv_sec * ONE_SECOND_IN_NS +
+                    (long long)curr_value->it_value.tv_nsec;
+    PyObject *value = PyLong_FromLongLong(_value);
+    if (value == NULL) {
+        Py_DECREF(interval);
+        return NULL;
+    }
+    PyObject *tuple = PyTuple_Pack(2, interval, value);
+    Py_DECREF(interval);
+    Py_DECREF(value);
+    return tuple;
 }
 
 /*[clinic input]
