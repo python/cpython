@@ -3927,19 +3927,19 @@ class TimerfdTests(unittest.TestCase):
         initial_expiration = 0.25
 
         # 1st call
-        interval2, value2 = os.timerfd_settime(fd, 0, interval, initial_expiration)
+        interval2, next_expiration = os.timerfd_settime(fd, 0, interval, initial_expiration)
         self.assertAlmostEqual(interval2, 0.0, places=3)
-        self.assertAlmostEqual(value2, 0.0, places=3)
+        self.assertAlmostEqual(next_expiration, 0.0, places=3)
 
         # 2nd call
-        interval2, value2 = os.timerfd_settime(fd, 0, interval, initial_expiration)
+        interval2, next_expiration = os.timerfd_settime(fd, 0, interval, initial_expiration)
         self.assertAlmostEqual(interval2, interval, places=3)
-        self.assertAlmostEqual(value2, initial_expiration, places=3)
+        self.assertAlmostEqual(next_expiration, initial_expiration, places=3)
 
         # timerfd_gettime
-        interval2, value2 = os.timerfd_gettime(fd)
+        interval2, next_expiration = os.timerfd_gettime(fd)
         self.assertAlmostEqual(interval2, interval, places=3)
-        self.assertAlmostEqual(value2, initial_expiration, places=3)
+        self.assertAlmostEqual(next_expiration, initial_expiration, places=3)
 
     def test_timerfd_interval(self):
         size = 8  # read 8 bytes
@@ -3955,9 +3955,9 @@ class TimerfdTests(unittest.TestCase):
         _, _ = os.timerfd_settime(fd, 0, interval, initial_expiration)
 
         # timerfd_gettime
-        interval2, value2 = os.timerfd_gettime(fd)
+        interval2, next_expiration = os.timerfd_gettime(fd)
         self.assertAlmostEqual(interval2, interval, places=3)
-        self.assertAlmostEqual(value2, initial_expiration, places=3)
+        self.assertAlmostEqual(next_expiration, initial_expiration, places=3)
 
         count = 3
         t = time.perf_counter()
@@ -4033,9 +4033,9 @@ class TimerfdTests(unittest.TestCase):
         # 1st call
         interval_ns = one_sec_in_nsec // 1000
         initial_expiration_ns = 0
-        interval_ns2, value_ns2 = os.timerfd_settime_ns(fd, 0, interval_ns, initial_expiration_ns)
+        interval_ns2, next_expiration_ns = os.timerfd_settime_ns(fd, 0, interval_ns, initial_expiration_ns)
         self.assertEqual(interval_ns2, 0)
-        self.assertEqual(value_ns2, 0)
+        self.assertEqual(next_expiration_ns, 0)
 
         # 2nd call
         interval_ns2, value_ns2 = os.timerfd_settime_ns(fd, 0, interval_ns, initial_expiration_ns)
@@ -4043,11 +4043,11 @@ class TimerfdTests(unittest.TestCase):
         self.assertEqual(value_ns2, initial_expiration_ns)
 
         # timerfd_gettime
-        interval_ns2, value_ns2 = os.timerfd_gettime_ns(fd)
+        interval_ns2, next_expiration_ns = os.timerfd_gettime_ns(fd)
         self.assertEqual(interval_ns2, interval_ns)
-        self.assertLessEqual(value_ns2, initial_expiration_ns)
+        self.assertLessEqual(next_expiration_ns, initial_expiration_ns)
 
-        self.assertAlmostEqual(value_ns2, initial_expiration_ns, delta=limit_error)
+        self.assertAlmostEqual(next_expiration_ns, initial_expiration_ns, delta=limit_error)
 
     def test_timerfd_ns_interval(self):
         size = 8  # read 8 bytes
