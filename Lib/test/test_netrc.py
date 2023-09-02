@@ -309,7 +309,7 @@ class NetrcTestCase(unittest.TestCase):
                              ('anonymous', '', 'pass'))
 
 def test_main():
-    run_unittest(NetrcTestCase)
+    return run_unittest(NetrcTestCase)
 
 if __name__ == "__main__":
     test_main()
