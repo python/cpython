@@ -10326,12 +10326,6 @@ then :
   printf "%s\n" "#define HAVE_GRP_H 1" >>confdefs.h
 
 fi
-ac_fn_c_check_header_compile "$LINENO" "ieeefp.h" "ac_cv_header_ieeefp_h" "$ac_includes_default"
-if test "x$ac_cv_header_ieeefp_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_IEEEFP_H 1" >>confdefs.h
-
-fi
 ac_fn_c_check_header_compile "$LINENO" "io.h" "ac_cv_header_io_h" "$ac_includes_default"
 if test "x$ac_cv_header_io_h" = xyes
 then :
