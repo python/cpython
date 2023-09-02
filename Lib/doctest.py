@@ -1164,7 +1164,7 @@ class DocTestRunner:
     """
     A class used to run DocTest test cases, and accumulate statistics.
     The `run` method is used to process a single DocTest case.  It
-    returns a TestResults.
+    returns a TestResults instance.
 
         >>> tests = DocTestFinder().find(_TestClass)
         >>> runner = DocTestRunner(verbose=False)
@@ -1177,7 +1177,8 @@ class DocTestRunner:
         _TestClass.square -> TestResults(failed=0, attempted=1)
 
     The `summarize` method prints a summary of all the test cases that
-    have been run by the runner, and returns an aggregated TestResults:
+    have been run by the runner, and returns an aggregated TestResults
+    instance:
 
         >>> runner.summarize(verbose=1)
         4 items passed all tests:
@@ -1315,8 +1316,8 @@ class DocTestRunner:
         Run the examples in `test`.  Write the outcome of each example
         with one of the `DocTestRunner.report_*` methods, using the
         writer function `out`.  `compileflags` is the set of compiler
-        flags that should be used to execute examples.  Return a TestResults.
-        The examples are run in the namespace `test.globs`.
+        flags that should be used to execute examples.  Return a TestResults
+        instance.  The examples are run in the namespace `test.globs`.
         """
         # Keep track of the number of failures, attempted and skipped.
         failures = attempted = skipped = 0
@@ -1534,7 +1535,7 @@ class DocTestRunner:
     def summarize(self, verbose=None):
         """
         Print a summary of all the test cases that have been run by
-        this DocTestRunner, and return a TestResults.
+        this DocTestRunner, and return a TestResults instance.
 
         The optional `verbose` argument controls how detailed the
         summary is.  If the verbosity is not specified, then the

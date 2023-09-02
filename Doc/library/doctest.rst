@@ -1522,7 +1522,8 @@ DocTestRunner objects
    .. method:: run(test, compileflags=None, out=None, clear_globs=True)
 
       Run the examples in *test* (a :class:`DocTest` object), and display the
-      results using the writer function *out*. Return a :class:`TestResults`.
+      results using the writer function *out*. Return a :class:`TestResults`
+      instance.
 
       The examples are run in the namespace ``test.globs``.  If *clear_globs* is
       true (the default), then this namespace will be cleared after the test runs,
@@ -1541,7 +1542,7 @@ DocTestRunner objects
    .. method:: summarize(verbose=None)
 
       Print a summary of all the test cases that have been run by this DocTestRunner,
-      and return a :class:`TestResults`.
+      and return a :class:`TestResults` instance.
 
       The optional *verbose* argument controls how detailed the summary is.  If the
       verbosity is not specified, then the :class:`DocTestRunner`'s verbosity is
