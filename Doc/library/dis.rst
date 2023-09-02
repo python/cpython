@@ -64,7 +64,7 @@ the following command can be used to display the disassembly of
 (The "2" is a line number).
 
 Command-line interface
------------------
+----------------------
 
 The :mod:`dis` module can be invoked as a script from the command line.
 It is as simple as:
