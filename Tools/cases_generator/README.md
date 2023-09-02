@@ -9,7 +9,7 @@ What's currently here:
 - `plexer.py`: OO interface on top of lexer.py; main class: `PLexer`
 - `parser.py`: Parser for instruction definition DSL; main class `Parser`
 - `generate_cases.py`: driver script to read `Python/bytecodes.c` and
-  write `Python/generated_cases.c.h`
+  write `Python/generated_cases.c.h` (and several other files)
 - `test_generator.py`: tests, require manual running using `pytest`
 
 Note that there is some dummy C code at the top and bottom of

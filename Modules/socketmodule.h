@@ -1,5 +1,7 @@
 /* Socket module header file */
 
+#include "pycore_time.h"          // _PyTime_t
+
 /* Includes needed for the sockaddr_* symbols below */
 #ifndef MS_WINDOWS
 #ifdef __VMS

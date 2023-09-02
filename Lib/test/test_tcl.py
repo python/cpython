@@ -142,7 +142,10 @@ class TclTest(unittest.TestCase):
         for i in self.get_integers():
             self.assertEqual(tcl.getint(' %d ' % i), i)
             self.assertEqual(tcl.getint(' %#o ' % i), i)
-            self.assertEqual(tcl.getint((' %#o ' % i).replace('o', '')), i)
+            # Numbers starting with 0 are parsed as decimal in Tcl 9.0
+            # and as octal in older versions.
+            self.assertEqual(tcl.getint((' %#o ' % i).replace('o', '')),
+                             i if tcl_version < (9, 0) else int('%o' % i))
             self.assertEqual(tcl.getint(' %#x ' % i), i)
         self.assertEqual(tcl.getint(42), 42)
         self.assertRaises(TypeError, tcl.getint)

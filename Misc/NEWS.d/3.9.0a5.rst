@@ -582,7 +582,7 @@ Fix :mod:`json.tool` to catch :exc:`BrokenPipeError`. Patch by Dong-hee Na.
 
 Avoid a possible *"RuntimeError: dictionary changed size during iteration"*
 from :func:`inspect.getmodule` when it tried to loop through
-:attr:`sys.modules`.
+:data:`sys.modules`.
 
 ..
 
@@ -989,7 +989,7 @@ modules are built.
 
 Add ``--with-platlibdir`` option to the configure script: name of the
 platform-specific library directory, stored in the new
-:attr:`sys.platlibdir` attribute. It is used to build the path of
+:data:`sys.platlibdir` attribute. It is used to build the path of
 platform-specific extension modules and the path of the standard library. It
 is equal to ``"lib"`` on most platforms. On Fedora and SuSE, it is equal to
 ``"lib64"`` on 64-bit platforms. Patch by Jan Matějek, Matěj Cepl,

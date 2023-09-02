@@ -85,7 +85,7 @@ termios_tcgetattr_impl(PyObject *module, int fd)
     int r;
 
     Py_BEGIN_ALLOW_THREADS
-    r = tcgetattr(fd, &mode); 
+    r = tcgetattr(fd, &mode);
     Py_END_ALLOW_THREADS
     if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
@@ -372,7 +372,7 @@ termios_tcgetwinsize_impl(PyObject *module, int fd)
 #if defined(TIOCGWINSZ)
     termiosmodulestate *state = PyModule_GetState(module);
     struct winsize w;
-    int r; 
+    int r;
 
     Py_BEGIN_ALLOW_THREADS
     r = ioctl(fd, TIOCGWINSZ, &w);
@@ -1232,12 +1232,7 @@ termios_exec(PyObject *mod)
     struct constant *constant = termios_constants;
     termiosmodulestate *state = get_termios_state(mod);
     state->TermiosError = PyErr_NewException("termios.error", NULL, NULL);
-    if (state->TermiosError == NULL) {
-        return -1;
-    }
-    Py_INCREF(state->TermiosError);
-    if (PyModule_AddObject(mod, "error", state->TermiosError) < 0) {
-        Py_DECREF(state->TermiosError);
+    if (PyModule_AddObjectRef(mod, "error", state->TermiosError) < 0) {
         return -1;
     }
 
@@ -1253,6 +1248,7 @@ termios_exec(PyObject *mod)
 
 static PyModuleDef_Slot termios_slots[] = {
     {Py_mod_exec, termios_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

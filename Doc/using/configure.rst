@@ -97,7 +97,7 @@ General Options
 
 .. cmdoption:: --with-tzpath=<list of absolute paths separated by pathsep>
 
-   Select the default time zone search path for :data:`zoneinfo.TZPATH`.
+   Select the default time zone search path for :const:`zoneinfo.TZPATH`.
    See the :ref:`Compile-time configuration
    <zoneinfo_data_compile_time_config>` of the :mod:`zoneinfo` module.
 
@@ -112,7 +112,7 @@ General Options
    Build the ``_decimal`` extension module using a thread-local context rather
    than a coroutine-local context (default), see the :mod:`decimal` module.
 
-   See :data:`decimal.HAVE_CONTEXTVAR` and the :mod:`contextvars` module.
+   See :const:`decimal.HAVE_CONTEXTVAR` and the :mod:`contextvars` module.
 
    .. versionadded:: 3.9
 
@@ -314,6 +314,13 @@ also be used to improve performance.
    is dependent on a combination of the build environment + the other
    optimization configure args + the CPU architecture, and not all combinations
    are supported.
+   BOLT versions before LLVM 16 are known to crash BOLT under some scenarios.
+   Use of LLVM 16 or newer for BOLT optimization is strongly encouraged.
+
+   The :envvar:`!BOLT_INSTRUMENT_FLAGS` and :envvar:`!BOLT_APPLY_FLAGS`
+   :program:`configure` variables can be defined to override the default set of
+   arguments for :program:`llvm-bolt` to instrument and apply BOLT data to
+   binaries, respectively.
 
    .. versionadded:: 3.12
 

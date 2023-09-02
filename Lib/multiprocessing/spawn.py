@@ -31,11 +31,13 @@ if sys.platform != 'win32':
     WINSERVICE = False
 else:
     WINEXE = getattr(sys, 'frozen', False)
-    WINSERVICE = sys.executable.lower().endswith("pythonservice.exe")
+    WINSERVICE = sys.executable and sys.executable.lower().endswith("pythonservice.exe")
 
 def set_executable(exe):
     global _python_exe
-    if sys.platform == 'win32':
+    if exe is None:
+        _python_exe = exe
+    elif sys.platform == 'win32':
         _python_exe = os.fsdecode(exe)
     else:
         _python_exe = os.fsencode(exe)

@@ -3,6 +3,14 @@ import re
 
 from . import common as _common
 
+# Modules/socketmodule.h uses pycore_time.h which needs the Py_BUILD_CORE
+# macro. Usually it's defined by the C file which includes it.
+# Other header files have a similar issue.
+NEED_BUILD_CORE = {
+    'cjkcodecs.h',
+    'multibytecodec.h',
+    'socketmodule.h',
+}
 
 TOOL = 'gcc'
 
@@ -60,6 +68,11 @@ def preprocess(filename,
     if not cwd or not os.path.isabs(cwd):
         cwd = os.path.abspath(cwd or '.')
     filename = _normpath(filename, cwd)
+
+    postargs = POST_ARGS
+    if os.path.basename(filename) in NEED_BUILD_CORE:
+        postargs += ('-DPy_BUILD_CORE=1',)
+
     text = _common.preprocess(
         TOOL,
         filename,
@@ -67,7 +80,7 @@ def preprocess(filename,
         includes=includes,
         macros=macros,
         #preargs=PRE_ARGS,
-        postargs=POST_ARGS,
+        postargs=postargs,
         executable=['gcc'],
         compiler='unix',
         cwd=cwd,
@@ -219,6 +232,7 @@ def _strip_directives(line, partial=0):
         line = line[m.end():]
 
     line = re.sub(r'__extension__', '', line)
+    line = re.sub(r'__thread\b', '_Thread_local', line)
 
     while (m := COMPILER_DIRECTIVE_RE.match(line)):
         before, _, _, closed = m.groups()

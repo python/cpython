@@ -1,0 +1,2 @@
+Ensure custom :exc:`SyntaxError` error messages are raised for invalid
+imports with multiple targets. Patch by Pablo Galindo

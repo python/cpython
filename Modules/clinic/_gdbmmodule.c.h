@@ -247,6 +247,28 @@ _gdbm_gdbm_sync(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_s
     return _gdbm_gdbm_sync_impl(self, cls);
 }
 
+PyDoc_STRVAR(_gdbm_gdbm_clear__doc__,
+"clear($self, /)\n"
+"--\n"
+"\n"
+"Remove all items from the database.");
+
+#define _GDBM_GDBM_CLEAR_METHODDEF    \
+    {"clear", _PyCFunction_CAST(_gdbm_gdbm_clear), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_clear__doc__},
+
+static PyObject *
+_gdbm_gdbm_clear_impl(gdbmobject *self, PyTypeObject *cls);
+
+static PyObject *
+_gdbm_gdbm_clear(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "clear() takes no arguments");
+        return NULL;
+    }
+    return _gdbm_gdbm_clear_impl(self, cls);
+}
+
 PyDoc_STRVAR(dbmopen__doc__,
 "open($module, filename, flags=\'r\', mode=0o666, /)\n"
 "--\n"
@@ -322,4 +344,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c6e721d82335adb3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8c613cbd88e57480 input=a9049054013a1b77]*/

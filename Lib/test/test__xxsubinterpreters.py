@@ -731,10 +731,10 @@ class RunStringTests(TestBase):
             yield
         if msg is None:
             self.assertEqual(str(caught.exception).split(':')[0],
-                             str(exctype))
+                             exctype.__name__)
         else:
             self.assertEqual(str(caught.exception),
-                             "{}: {}".format(exctype, msg))
+                             "{}: {}".format(exctype.__name__, msg))
 
     def test_invalid_syntax(self):
         with self.assert_run_failed(SyntaxError):
@@ -798,7 +798,7 @@ class RunStringTests(TestBase):
             """))
 
         shared = {'spam': b'ham'}
-        script = dedent(f"""
+        script = dedent("""
             ns2 = dict(vars())
             del ns2['__builtins__']
         """)
@@ -902,7 +902,7 @@ class RunStringTests(TestBase):
     # XXX Fix this test!
     @unittest.skip('blocking forever')
     def test_still_running_at_exit(self):
-        script = dedent(f"""
+        script = dedent("""
         from textwrap import dedent
         import threading
         import _xxsubinterpreters as _interpreters

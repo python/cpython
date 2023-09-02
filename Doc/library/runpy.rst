@@ -30,7 +30,7 @@ The :mod:`runpy` module provides two functions:
 .. function:: run_module(mod_name, init_globals=None, run_name=None, alter_sys=False)
 
    .. index::
-      module: __main__
+      pair: module; __main__
 
    Execute the code of the specified module and return the resulting module
    globals dictionary. The module's code is first located using the standard
@@ -101,7 +101,7 @@ The :mod:`runpy` module provides two functions:
 .. function:: run_path(path_name, init_globals=None, run_name=None)
 
    .. index::
-      module: __main__
+      pair: module; __main__
 
    Execute the code at the named filesystem location and return the resulting
    module globals dictionary. As with a script name supplied to the CPython

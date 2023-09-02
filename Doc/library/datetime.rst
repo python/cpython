@@ -896,6 +896,10 @@ Other constructors, all class methods:
       in UTC. As such, the recommended way to create an object representing the
       current time in UTC is by calling ``datetime.now(timezone.utc)``.
 
+   .. deprecated:: 3.12
+
+      Use :meth:`datetime.now` with :attr:`UTC` instead.
+
 
 .. classmethod:: datetime.fromtimestamp(timestamp, tz=None)
 
@@ -963,6 +967,10 @@ Other constructors, all class methods:
       is out of the range of values supported by the platform C
       :c:func:`gmtime` function. Raise :exc:`OSError` instead of
       :exc:`ValueError` on :c:func:`gmtime` failure.
+
+   .. deprecated:: 3.12
+
+      Use :meth:`datetime.fromtimestamp` with :attr:`UTC` instead.
 
 
 .. classmethod:: datetime.fromordinal(ordinal)
@@ -1043,7 +1051,7 @@ Other constructors, all class methods:
    Return a :class:`.datetime` corresponding to *date_string*, parsed according to
    *format*.
 
-   This is equivalent to::
+   If *format* does not contain microseconds or timezone information, this is equivalent to::
 
      datetime(*(time.strptime(date_string, format)[0:6]))
 
@@ -2510,10 +2518,7 @@ Notes:
    Because the format depends on the current locale, care should be taken when
    making assumptions about the output value. Field orderings will vary (for
    example, "month/day/year" versus "day/month/year"), and the output may
-   contain Unicode characters encoded using the locale's default encoding (for
-   example, if the current locale is ``ja_JP``, the default encoding could be
-   any one of ``eucJP``, ``SJIS``, or ``utf-8``; use :meth:`locale.getlocale`
-   to determine the current locale's encoding).
+   contain non-ASCII characters.
 
 (2)
    The :meth:`strptime` method can parse years in the full [1, 9999] range, but

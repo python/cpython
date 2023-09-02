@@ -105,23 +105,14 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         _PyArg_BadArgument("code", "argument 11", "str", PyTuple_GET_ITEM(args, 10));
         goto exit;
     }
-    if (PyUnicode_READY(PyTuple_GET_ITEM(args, 10)) == -1) {
-        goto exit;
-    }
     filename = PyTuple_GET_ITEM(args, 10);
     if (!PyUnicode_Check(PyTuple_GET_ITEM(args, 11))) {
         _PyArg_BadArgument("code", "argument 12", "str", PyTuple_GET_ITEM(args, 11));
         goto exit;
     }
-    if (PyUnicode_READY(PyTuple_GET_ITEM(args, 11)) == -1) {
-        goto exit;
-    }
     name = PyTuple_GET_ITEM(args, 11);
     if (!PyUnicode_Check(PyTuple_GET_ITEM(args, 12))) {
         _PyArg_BadArgument("code", "argument 13", "str", PyTuple_GET_ITEM(args, 12));
-        goto exit;
-    }
-    if (PyUnicode_READY(PyTuple_GET_ITEM(args, 12)) == -1) {
         goto exit;
     }
     qualname = PyTuple_GET_ITEM(args, 12);
@@ -373,9 +364,6 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
             _PyArg_BadArgument("replace", "argument 'co_filename'", "str", args[13]);
             goto exit;
         }
-        if (PyUnicode_READY(args[13]) == -1) {
-            goto exit;
-        }
         co_filename = args[13];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -386,9 +374,6 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
             _PyArg_BadArgument("replace", "argument 'co_name'", "str", args[14]);
             goto exit;
         }
-        if (PyUnicode_READY(args[14]) == -1) {
-            goto exit;
-        }
         co_name = args[14];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -397,9 +382,6 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     if (args[15]) {
         if (!PyUnicode_Check(args[15])) {
             _PyArg_BadArgument("replace", "argument 'co_qualname'", "str", args[15]);
-            goto exit;
-        }
-        if (PyUnicode_READY(args[15]) == -1) {
             goto exit;
         }
         co_qualname = args[15];
@@ -488,4 +470,4 @@ code__varname_from_oparg(PyCodeObject *self, PyObject *const *args, Py_ssize_t n
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f1fab6e71c785182 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4ca4c0c403dbfa71 input=a9049054013a1b77]*/

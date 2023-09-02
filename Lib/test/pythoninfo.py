@@ -296,7 +296,6 @@ def collect_os(info_add):
         "TEMP",
         "TERM",
         "TILE_LIBRARY",
-        "TIX_LIBRARY",
         "TMP",
         "TMPDIR",
         "TRAVIS",
@@ -638,11 +637,11 @@ def collect_decimal(info_add):
 
 def collect_testcapi(info_add):
     try:
-        import _testcapi
+        import _testinternalcapi
     except ImportError:
         return
 
-    call_func(info_add, 'pymem.allocator', _testcapi, 'pymem_getallocatorsname')
+    call_func(info_add, 'pymem.allocator', _testinternalcapi, 'pymem_getallocatorsname')
 
 
 def collect_resource(info_add):

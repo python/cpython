@@ -41,6 +41,8 @@ static inline Py_ssize_t PyList_GET_SIZE(PyObject *op) {
 static inline void
 PyList_SET_ITEM(PyObject *op, Py_ssize_t index, PyObject *value) {
     PyListObject *list = _PyList_CAST(op);
+    assert(0 <= index);
+    assert(index < Py_SIZE(list));
     list->ob_item[index] = value;
 }
 #define PyList_SET_ITEM(op, index, value) \

@@ -28,6 +28,58 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 2 BC, and so on.
 
 
+.. class:: Day
+
+   Enumeration defining the days of the week as integer constants, from 0 to 6.
+
+   .. attribute:: MONDAY
+
+   .. attribute:: TUESDAY
+
+   .. attribute:: WEDNESDAY
+
+   .. attribute:: THURSDAY
+
+   .. attribute:: FRIDAY
+
+   .. attribute:: SATURDAY
+
+   .. attribute:: SUNDAY
+
+   .. versionadded:: 3.12
+
+
+.. class:: Month
+
+   Enumeration defining months of the year as integer constants, from 1 to 12.
+
+   .. attribute:: JANUARY
+
+   .. attribute:: FEBRUARY
+
+   .. attribute:: MARCH
+
+   .. attribute:: APRIL
+
+   .. attribute:: MAY
+
+   .. attribute:: JUNE
+
+   .. attribute:: JULY
+
+   .. attribute:: AUGUST
+
+   .. attribute:: SEPTEMBER
+
+   .. attribute:: OCTOBER
+
+   .. attribute:: NOVEMBER
+
+   .. attribute:: DECEMBER
+
+   .. versionadded:: 3.12
+
+
 .. class:: Calendar(firstweekday=0)
 
    Creates a :class:`Calendar` object. *firstweekday* is an integer specifying the

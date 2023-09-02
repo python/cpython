@@ -1,6 +1,7 @@
 /* Iterator objects */
 
 #include "Python.h"
+#include "pycore_abstract.h"      // _PyObject_HasLen()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 

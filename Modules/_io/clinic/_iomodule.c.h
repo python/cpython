@@ -398,13 +398,10 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         _PyArg_BadArgument("open_code", "argument 'path'", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     path = args[0];
     return_value = _io_open_code_impl(module, path);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f387eba3f4c0254a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6800c35366b1a5f3 input=a9049054013a1b77]*/

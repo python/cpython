@@ -11,9 +11,12 @@ extern "C" {
 #endif
 
 #include "pycore_atomic.h"         // _Py_atomic_address
-
 #include <signal.h>                // NSIG
 
+
+// Restore signals that the interpreter has called SIG_IGN on to SIG_DFL.
+// Export for '_posixsubprocess' shared extension.
+PyAPI_FUNC(void) _Py_RestoreSignals(void);
 
 #ifdef _SIG_MAXSIG
    // gh-91145: On FreeBSD, <signal.h> defines NSIG as 32: it doesn't include

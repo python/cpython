@@ -130,7 +130,7 @@ import _sre
 # public symbols
 __all__ = [
     "match", "fullmatch", "search", "sub", "subn", "split",
-    "findall", "finditer", "compile", "purge", "template", "escape",
+    "findall", "finditer", "compile", "purge", "escape",
     "error", "Pattern", "Match", "A", "I", "L", "M", "S", "X", "U",
     "ASCII", "IGNORECASE", "LOCALE", "MULTILINE", "DOTALL", "VERBOSE",
     "UNICODE", "NOFLAG", "RegexFlag",
@@ -150,7 +150,6 @@ class RegexFlag:
     DOTALL = S = _compiler.SRE_FLAG_DOTALL # make dot match newline
     VERBOSE = X = _compiler.SRE_FLAG_VERBOSE # ignore whitespace and comments
     # sre extensions (experimental, don't rely on these)
-    TEMPLATE = T = _compiler.SRE_FLAG_TEMPLATE # unknown purpose, deprecated
     DEBUG = _compiler.SRE_FLAG_DEBUG # dump pattern after compilation
     __str__ = object.__str__
     _numeric_repr_ = hex
@@ -233,17 +232,6 @@ def purge():
     _cache2.clear()
     _compile_template.cache_clear()
 
-def template(pattern, flags=0):
-    "Compile a template pattern, returning a Pattern object, deprecated"
-    import warnings
-    warnings.warn("The re.template() function is deprecated "
-                  "as it is an undocumented function "
-                  "without an obvious purpose. "
-                  "Use re.compile() instead.",
-                  DeprecationWarning)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", DeprecationWarning)  # warn just once
-        return _compile(pattern, flags|T)
 
 # SPECIAL_CHARS
 # closing ')', '}' and ']'
@@ -297,13 +285,6 @@ def _compile(pattern, flags):
             return pattern
         if not _compiler.isstring(pattern):
             raise TypeError("first argument must be string or compiled pattern")
-        if flags & T:
-            import warnings
-            warnings.warn("The re.TEMPLATE/re.T flag is deprecated "
-                    "as it is an undocumented flag "
-                    "without an obvious purpose. "
-                    "Don't use it.",
-                    DeprecationWarning)
         p = _compiler.compile(pattern, flags)
         if flags & DEBUG:
             return p

@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-PyAPI_FUNC(int) _PySys_Audit(
+extern int _PySys_Audit(
     PyThreadState *tstate,
     const char *event,
     const char *argFormat,
@@ -18,7 +18,7 @@ PyAPI_FUNC(int) _PySys_Audit(
    PyAPI_FUNC() to not export the symbol. */
 extern void _PySys_ClearAuditHooks(PyThreadState *tstate);
 
-PyAPI_FUNC(int) _PySys_SetAttr(PyObject *, PyObject *);
+extern int _PySys_SetAttr(PyObject *, PyObject *);
 
 extern int _PySys_ClearAttrString(PyInterpreterState *interp,
                                   const char *name, int verbose);

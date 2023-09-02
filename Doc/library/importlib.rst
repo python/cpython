@@ -127,28 +127,6 @@ Functions
     .. versionchanged:: 3.3
        Parent packages are automatically imported.
 
-.. function:: find_loader(name, path=None)
-
-   Find the loader for a module, optionally within the specified *path*. If the
-   module is in :attr:`sys.modules`, then ``sys.modules[name].__loader__`` is
-   returned (unless the loader would be ``None`` or is not set, in which case
-   :exc:`ValueError` is raised). Otherwise a search using :attr:`sys.meta_path`
-   is done. ``None`` is returned if no loader is found.
-
-   A dotted name does not have its parents implicitly imported as that requires
-   loading them and that may not be desired. To properly import a submodule you
-   will need to import all parent packages of the submodule and use the correct
-   argument to *path*.
-
-   .. versionadded:: 3.3
-
-   .. versionchanged:: 3.4
-      If ``__loader__`` is not set, raise :exc:`ValueError`, just like when the
-      attribute is set to ``None``.
-
-   .. deprecated:: 3.4
-      Use :func:`importlib.util.find_spec` instead.
-
 .. function:: invalidate_caches()
 
    Invalidate the internal caches of finders stored at
@@ -247,7 +225,6 @@ are also provided to help in implementing the core ABCs.
 ABC hierarchy::
 
     object
-     +-- Finder (deprecated)
      +-- MetaPathFinder
      +-- PathEntryFinder
      +-- Loader
@@ -258,28 +235,6 @@ ABC hierarchy::
                                      +-- SourceLoader
 
 
-.. class:: Finder
-
-   An abstract base class representing a :term:`finder`.
-
-   .. deprecated:: 3.3
-      Use :class:`MetaPathFinder` or :class:`PathEntryFinder` instead.
-
-   .. abstractmethod:: find_module(fullname, path=None)
-
-      An abstract method for finding a :term:`loader` for the specified
-      module.  Originally specified in :pep:`302`, this method was meant
-      for use in :data:`sys.meta_path` and in the path-based import subsystem.
-
-      .. versionchanged:: 3.4
-         Returns ``None`` when called instead of raising
-         :exc:`NotImplementedError`.
-
-      .. deprecated:: 3.10
-         Implement :meth:`MetaPathFinder.find_spec` or
-         :meth:`PathEntryFinder.find_spec` instead.
-
-
 .. class:: MetaPathFinder
 
    An abstract base class representing a :term:`meta path finder`.
@@ -287,7 +242,7 @@ ABC hierarchy::
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.10
-      No longer a subclass of :class:`Finder`.
+      No longer a subclass of :class:`!Finder`.
 
    .. method:: find_spec(fullname, path, target=None)
 
@@ -302,25 +257,6 @@ ABC hierarchy::
       concrete ``MetaPathFinders``.
 
       .. versionadded:: 3.4
-
-   .. method:: find_module(fullname, path)
-
-      A legacy method for finding a :term:`loader` for the specified
-      module.  If this is a top-level import, *path* will be ``None``.
-      Otherwise, this is a search for a subpackage or module and *path*
-      will be the value of :attr:`__path__` from the parent
-      package. If a loader cannot be found, ``None`` is returned.
-
-      If :meth:`find_spec` is defined, backwards-compatible functionality is
-      provided.
-
-      .. versionchanged:: 3.4
-         Returns ``None`` when called instead of raising
-         :exc:`NotImplementedError`. Can use :meth:`find_spec` to provide
-         functionality.
-
-      .. deprecated:: 3.4
-         Use :meth:`find_spec` instead.
 
    .. method:: invalidate_caches()
 
@@ -342,7 +278,7 @@ ABC hierarchy::
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.10
-      No longer a subclass of :class:`Finder`.
+      No longer a subclass of :class:`!Finder`.
 
    .. method:: find_spec(fullname, target=None)
 
@@ -355,36 +291,6 @@ ABC hierarchy::
       may be useful for implementing concrete ``PathEntryFinders``.
 
       .. versionadded:: 3.4
-
-   .. method:: find_loader(fullname)
-
-      A legacy method for finding a :term:`loader` for the specified
-      module.  Returns a 2-tuple of ``(loader, portion)`` where ``portion``
-      is a sequence of file system locations contributing to part of a namespace
-      package. The loader may be ``None`` while specifying ``portion`` to
-      signify the contribution of the file system locations to a namespace
-      package. An empty list can be used for ``portion`` to signify the loader
-      is not part of a namespace package. If ``loader`` is ``None`` and
-      ``portion`` is the empty list then no loader or location for a namespace
-      package were found (i.e. failure to find anything for the module).
-
-      If :meth:`find_spec` is defined then backwards-compatible functionality is
-      provided.
-
-      .. versionchanged:: 3.4
-         Returns ``(None, [])`` instead of raising :exc:`NotImplementedError`.
-         Uses :meth:`find_spec` when available to provide functionality.
-
-      .. deprecated:: 3.4
-         Use :meth:`find_spec` instead.
-
-   .. method:: find_module(fullname)
-
-      A concrete implementation of :meth:`Finder.find_module` which is
-      equivalent to ``self.find_loader(fullname)[0]``.
-
-      .. deprecated:: 3.4
-         Use :meth:`find_spec` instead.
 
    .. method:: invalidate_caches()
 
@@ -466,7 +372,7 @@ ABC hierarchy::
             The list of locations where the package's submodules will be found.
             Most of the time this is a single directory.
             The import system passes this attribute to ``__import__()`` and to finders
-            in the same way as :attr:`sys.path` but just for the package.
+            in the same way as :data:`sys.path` but just for the package.
             It is not set on non-package modules so it can be used
             as an indicator that the module is a package.
 
@@ -703,7 +609,7 @@ ABC hierarchy::
         automatically.
 
         When writing to the path fails because the path is read-only
-        (:attr:`errno.EACCES`/:exc:`PermissionError`), do not propagate the
+        (:const:`errno.EACCES`/:exc:`PermissionError`), do not propagate the
         exception.
 
         .. versionchanged:: 3.4
@@ -881,13 +787,6 @@ find and load modules.
          is no longer valid then ``None`` is returned but no value is cached
          in :data:`sys.path_importer_cache`.
 
-   .. classmethod:: find_module(fullname, path=None)
-
-      A legacy wrapper around :meth:`find_spec`.
-
-      .. deprecated:: 3.4
-         Use :meth:`find_spec` instead.
-
    .. classmethod:: invalidate_caches()
 
       Calls :meth:`importlib.abc.PathEntryFinder.invalidate_caches` on all
@@ -938,20 +837,13 @@ find and load modules.
 
       .. versionadded:: 3.4
 
-   .. method:: find_loader(fullname)
-
-      Attempt to find the loader to handle *fullname* within :attr:`path`.
-
-      .. deprecated:: 3.10
-         Use :meth:`find_spec` instead.
-
    .. method:: invalidate_caches()
 
       Clear out the internal cache.
 
    .. classmethod:: path_hook(*loader_details)
 
-      A class method which returns a closure for use on :attr:`sys.path_hooks`.
+      A class method which returns a closure for use on :data:`sys.path_hooks`.
       An instance of :class:`FileFinder` is returned by the closure using the
       path argument given to the closure directly and *loader_details*
       indirectly.
@@ -1049,7 +941,14 @@ find and load modules.
    The *fullname* argument specifies the name of the module the loader is to
    support. The *path* argument is the path to the extension module's file.
 
+   Note that, by default, importing an extension module will fail
+   in subinterpreters if it doesn't implement multi-phase init
+   (see :pep:`489`), even if it would otherwise import successfully.
+
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.12
+      Multi-phase init is now required for use in subinterpreters.
 
    .. attribute:: name
 
@@ -1292,10 +1191,10 @@ an :term:`importer`.
 .. function:: find_spec(name, package=None)
 
    Find the :term:`spec <module spec>` for a module, optionally relative to
-   the specified **package** name. If the module is in :attr:`sys.modules`,
+   the specified **package** name. If the module is in :data:`sys.modules`,
    then ``sys.modules[name].__spec__`` is returned (unless the spec would be
    ``None`` or is not set, in which case :exc:`ValueError` is raised).
-   Otherwise a search using :attr:`sys.meta_path` is done. ``None`` is
+   Otherwise a search using :data:`sys.meta_path` is done. ``None`` is
    returned if no spec is found.
 
    If **name** is for a submodule (contains a dot), the parent module is
@@ -1356,6 +1255,30 @@ an :term:`importer`.
 
    .. versionadded:: 3.7
 
+.. function:: _incompatible_extension_module_restrictions(*, disable_check)
+
+   A context manager that can temporarily skip the compatibility check
+   for extension modules.  By default the check is enabled and will fail
+   when a single-phase init module is imported in a subinterpreter.
+   It will also fail for a multi-phase init module that doesn't
+   explicitly support a per-interpreter GIL, when imported
+   in an interpreter with its own GIL.
+
+   Note that this function is meant to accommodate an unusual case;
+   one which is likely to eventually go away.  There's is a pretty good
+   chance this is not what you were looking for.
+
+   You can get the same effect as this function by implementing the
+   basic interface of multi-phase init (:pep:`489`) and lying about
+   support for mulitple interpreters (or per-interpreter GIL).
+
+   .. warning::
+      Using this function to disable the check can lead to
+      unexpected behavior and even crashes.  It should only be used during
+      extension module development.
+
+   .. versionadded:: 3.12
+
 .. class:: LazyLoader(loader)
 
    A class which postpones the execution of the loader of a module until the
@@ -1367,7 +1290,7 @@ an :term:`importer`.
    :meth:`~importlib.abc.Loader.create_module` method must return ``None`` or a
    type for which its ``__class__`` attribute can be mutated along with not
    using :term:`slots <__slots__>`. Finally, modules which substitute the object
-   placed into :attr:`sys.modules` will not work as there is no way to properly
+   placed into :data:`sys.modules` will not work as there is no way to properly
    replace the module references throughout the interpreter safely;
    :exc:`ValueError` is raised if such a substitution is detected.
 
@@ -1491,9 +1414,9 @@ For deep customizations of import, you typically want to implement an
 :term:`importer`. This means managing both the :term:`finder` and :term:`loader`
 side of things. For finders there are two flavours to choose from depending on
 your needs: a :term:`meta path finder` or a :term:`path entry finder`. The
-former is what you would put on :attr:`sys.meta_path` while the latter is what
-you create using a :term:`path entry hook` on :attr:`sys.path_hooks` which works
-with :attr:`sys.path` entries to potentially create a finder. This example will
+former is what you would put on :data:`sys.meta_path` while the latter is what
+you create using a :term:`path entry hook` on :data:`sys.path_hooks` which works
+with :data:`sys.path` entries to potentially create a finder. This example will
 show you how to register your own importers so that import will use them (for
 creating an importer for yourself, read the documentation for the appropriate
 classes defined within this package)::

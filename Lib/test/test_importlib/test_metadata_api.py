@@ -76,23 +76,12 @@ class APITests(
                     expect_content,
                 )
 
-    @staticmethod
-    def _workaround_103661(tests):
-        """
-        Skip failing test for now is it's failing on buildbot workers.
-        See https://github.com/python/cpython/issues/103661.
-        """
-        import platform
-        if platform.system() == 'Windows':
-            tests.remove(('egg_with_no_modules-pkg', '\n'))
-        return tests
-
     def test_read_text(self):
         tests = [
             ('egginfo-pkg', 'mod\n'),
             ('egg_with_no_modules-pkg', '\n'),
         ]
-        for pkg_name, expect_content in self._workaround_103661(tests):
+        for pkg_name, expect_content in tests:
             with self.subTest(pkg_name):
                 top_level = [
                     path for path in files(pkg_name) if path.name == 'top_level.txt'

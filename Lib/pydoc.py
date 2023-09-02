@@ -448,7 +448,7 @@ def safeimport(path, forceload=0, cache={}):
                     # Prevent garbage collection.
                     cache[key] = sys.modules[key]
                     del sys.modules[key]
-        module = __import__(path)
+        module = importlib.import_module(path)
     except BaseException as err:
         # Did the error occur before or after the module was found?
         if path in sys.modules:
@@ -463,9 +463,6 @@ def safeimport(path, forceload=0, cache={}):
         else:
             # Some other error occurred during the importing process.
             raise ErrorDuringImport(path, err)
-    for part in path.split('.')[1:]:
-        try: module = getattr(module, part)
-        except AttributeError: return None
     return module
 
 # ---------------------------------------------------- formatter base class
@@ -512,7 +509,7 @@ class Doc:
 
         basedir = os.path.normcase(basedir)
         if (isinstance(object, type(os)) and
-            (object.__name__ in ('errno', 'exceptions', 'gc', 'imp',
+            (object.__name__ in ('errno', 'exceptions', 'gc',
                                  'marshal', 'posix', 'signal', 'sys',
                                  '_thread', 'zipimport') or
              (file.startswith(basedir) and
@@ -1783,12 +1780,21 @@ def render_doc(thing, title='Python Library Documentation: %s', forceload=0,
     return title % desc + '\n\n' + renderer.document(object, name)
 
 def doc(thing, title='Python Library Documentation: %s', forceload=0,
-        output=None):
+        output=None, is_cli=False):
     """Display text documentation, given an object or a path to an object."""
     if output is None:
-        pager(render_doc(thing, title, forceload))
+        try:
+            pager(render_doc(thing, title, forceload))
+        except ImportError as exc:
+            if is_cli:
+                raise
+            print(exc)
     else:
-        output.write(render_doc(thing, title, forceload, plaintext))
+        try:
+            s = render_doc(thing, title, forceload, plaintext)
+        except ImportError as exc:
+            s = str(exc)
+        output.write(s)
 
 def writedoc(thing, forceload=0):
     """Write HTML documentation to a file in the current directory."""
@@ -2047,7 +2053,7 @@ has the same effect as typing a particular string at the help> prompt.
             self.output.flush()
             return self.input.readline()
 
-    def help(self, request):
+    def help(self, request, is_cli=False):
         if isinstance(request, str):
             request = request.strip()
             if request == 'keywords': self.listkeywords()
@@ -2059,13 +2065,13 @@ has the same effect as typing a particular string at the help> prompt.
             elif request in self.symbols: self.showsymbol(request)
             elif request in ['True', 'False', 'None']:
                 # special case these keywords since they are objects too
-                doc(eval(request), 'Help on %s:')
+                doc(eval(request), 'Help on %s:', is_cli=is_cli)
             elif request in self.keywords: self.showtopic(request)
             elif request in self.topics: self.showtopic(request)
-            elif request: doc(request, 'Help on %s:', output=self._output)
-            else: doc(str, 'Help on %s:', output=self._output)
+            elif request: doc(request, 'Help on %s:', output=self._output, is_cli=is_cli)
+            else: doc(str, 'Help on %s:', output=self._output, is_cli=is_cli)
         elif isinstance(request, Helper): self()
-        else: doc(request, 'Help on %s:', output=self._output)
+        else: doc(request, 'Help on %s:', output=self._output, is_cli=is_cli)
         self.output.write('\n')
 
     def intro(self):
@@ -2242,7 +2248,7 @@ class ModuleScanner:
                 callback(None, modname, '')
             else:
                 try:
-                    spec = pkgutil._get_spec(importer, modname)
+                    spec = importer.find_spec(modname)
                 except SyntaxError:
                     # raised by tests for bad coding cookies or BOM
                     continue
@@ -2803,7 +2809,7 @@ def cli():
                     else:
                         writedoc(arg)
                 else:
-                    help.help(arg)
+                    help.help(arg, is_cli=True)
             except (ImportError, ErrorDuringImport) as value:
                 print(value)
                 sys.exit(1)

@@ -12,6 +12,26 @@ extern "C" {
 #include "pycore_dict_state.h"
 #include "pycore_runtime.h"         // _PyRuntime
 
+// Unsafe flavor of PyDict_GetItemWithError(): no error checking
+extern PyObject* _PyDict_GetItemWithError(PyObject *dp, PyObject *key);
+
+extern int _PyDict_Contains_KnownHash(PyObject *, PyObject *, Py_hash_t);
+
+extern int _PyDict_DelItemIf(PyObject *mp, PyObject *key,
+                             int (*predicate)(PyObject *value));
+
+extern int _PyDict_HasOnlyStringKeys(PyObject *mp);
+
+extern void _PyDict_MaybeUntrack(PyObject *mp);
+
+/* Like PyDict_Merge, but override can be 0, 1 or 2.  If override is 0,
+   the first occurrence of a key wins, if override is 1, the last occurrence
+   of a key wins, if override is 2, a KeyError with conflicting key as
+   argument is raised.
+*/
+extern int _PyDict_MergeEx(PyObject *mp, PyObject *other, int override);
+
+extern void _PyDict_DebugMallocStats(FILE *out);
 
 /* runtime lifecycle */
 

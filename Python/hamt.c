@@ -2425,7 +2425,7 @@ hamt_alloc(void)
 }
 
 #define _empty_hamt \
-    (&_Py_INTERP_SINGLETON(_PyInterpreterState_Get(), hamt_empty))
+    (&_Py_INTERP_SINGLETON(_PyInterpreterState_GET(), hamt_empty))
 
 PyHamtObject *
 _PyHamt_New(void)

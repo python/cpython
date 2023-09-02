@@ -504,9 +504,6 @@ array_array_fromunicode(arrayobject *self, PyObject *arg)
         _PyArg_BadArgument("fromunicode", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     ustr = arg;
     return_value = array_array_fromunicode_impl(self, ustr);
 
@@ -585,9 +582,6 @@ array__array_reconstructor(PyObject *module, PyObject *const *args, Py_ssize_t n
     arraytype = (PyTypeObject *)args[0];
     if (!PyUnicode_Check(args[1])) {
         _PyArg_BadArgument("_array_reconstructor", "argument 2", "a unicode character", args[1]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[1])) {
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(args[1]) != 1) {
@@ -680,4 +674,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=69bc1451f7bda234 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=11595e9f38d6d500 input=a9049054013a1b77]*/

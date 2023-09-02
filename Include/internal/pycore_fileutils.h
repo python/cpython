@@ -10,6 +10,13 @@ extern "C" {
 
 #include <locale.h>   /* struct lconv */
 
+/* A routine to check if a file descriptor can be select()-ed. */
+#ifdef _MSC_VER
+    /* On Windows, any socket fd can be select()-ed, no matter how high */
+    #define _PyIsSelectable_fd(FD) (1)
+#else
+    #define _PyIsSelectable_fd(FD) ((unsigned int)(FD) < (unsigned int)FD_SETSIZE)
+#endif
 
 struct _fileutils_state {
     int force_ascii;
@@ -45,11 +52,11 @@ PyAPI_FUNC(int) _Py_EncodeLocaleEx(
     int current_locale,
     _Py_error_handler errors);
 
-PyAPI_FUNC(char*) _Py_EncodeLocaleRaw(
+extern char* _Py_EncodeLocaleRaw(
     const wchar_t *text,
     size_t *error_pos);
 
-PyAPI_FUNC(PyObject *) _Py_device_encoding(int);
+extern PyObject* _Py_device_encoding(int);
 
 #if defined(MS_WINDOWS) || defined(__APPLE__)
     /* On Windows, the count parameter of read() is an int (bpo-9015, bpo-9611).
@@ -102,7 +109,7 @@ PyAPI_FUNC(int) _Py_stat(
     PyObject *path,
     struct stat *status);
 
-PyAPI_FUNC(int) _Py_open(
+extern int _Py_open(
     const char *pathname,
     int flags);
 
@@ -110,16 +117,16 @@ PyAPI_FUNC(int) _Py_open_noraise(
     const char *pathname,
     int flags);
 
-PyAPI_FUNC(FILE *) _Py_wfopen(
+extern FILE* _Py_wfopen(
     const wchar_t *path,
     const wchar_t *mode);
 
-PyAPI_FUNC(Py_ssize_t) _Py_read(
+extern Py_ssize_t _Py_read(
     int fd,
     void *buf,
     size_t count);
 
-PyAPI_FUNC(Py_ssize_t) _Py_write(
+extern Py_ssize_t _Py_write(
     int fd,
     const void *buf,
     size_t count);
@@ -130,7 +137,7 @@ PyAPI_FUNC(Py_ssize_t) _Py_write_noraise(
     size_t count);
 
 #ifdef HAVE_READLINK
-PyAPI_FUNC(int) _Py_wreadlink(
+extern int _Py_wreadlink(
     const wchar_t *path,
     wchar_t *buf,
     /* Number of characters of 'buf' buffer
@@ -139,7 +146,7 @@ PyAPI_FUNC(int) _Py_wreadlink(
 #endif
 
 #ifdef HAVE_REALPATH
-PyAPI_FUNC(wchar_t*) _Py_wrealpath(
+extern wchar_t* _Py_wrealpath(
     const wchar_t *path,
     wchar_t *resolved_path,
     /* Number of characters of 'resolved_path' buffer
@@ -147,13 +154,13 @@ PyAPI_FUNC(wchar_t*) _Py_wrealpath(
     size_t resolved_path_len);
 #endif
 
-PyAPI_FUNC(wchar_t*) _Py_wgetcwd(
+extern wchar_t* _Py_wgetcwd(
     wchar_t *buf,
     /* Number of characters of 'buf' buffer
        including the trailing NUL character */
     size_t buflen);
 
-PyAPI_FUNC(int) _Py_get_inheritable(int fd);
+extern int _Py_get_inheritable(int fd);
 
 PyAPI_FUNC(int) _Py_set_inheritable(int fd, int inheritable,
                                     int *atomic_flag_works);
@@ -163,18 +170,18 @@ PyAPI_FUNC(int) _Py_set_inheritable_async_safe(int fd, int inheritable,
 
 PyAPI_FUNC(int) _Py_dup(int fd);
 
-PyAPI_FUNC(int) _Py_get_blocking(int fd);
+extern int _Py_get_blocking(int fd);
 
-PyAPI_FUNC(int) _Py_set_blocking(int fd, int blocking);
+extern int _Py_set_blocking(int fd, int blocking);
 
 #ifdef MS_WINDOWS
-PyAPI_FUNC(void*) _Py_get_osfhandle_noraise(int fd);
+extern void* _Py_get_osfhandle_noraise(int fd);
 
 PyAPI_FUNC(void*) _Py_get_osfhandle(int fd);
 
-PyAPI_FUNC(int) _Py_open_osfhandle_noraise(void *handle, int flags);
+extern int _Py_open_osfhandle_noraise(void *handle, int flags);
 
-PyAPI_FUNC(int) _Py_open_osfhandle(void *handle, int flags);
+extern int _Py_open_osfhandle(void *handle, int flags);
 #endif  /* MS_WINDOWS */
 
 // This is used after getting NULL back from Py_DecodeLocale().
@@ -183,9 +190,9 @@ PyAPI_FUNC(int) _Py_open_osfhandle(void *handle, int flags);
      ? _PyStatus_ERR("cannot decode " NAME) \
      : _PyStatus_NO_MEMORY()
 
-PyAPI_DATA(int) _Py_HasFileSystemDefaultEncodeErrors;
+extern int _Py_HasFileSystemDefaultEncodeErrors;
 
-PyAPI_FUNC(int) _Py_DecodeUTF8Ex(
+extern int _Py_DecodeUTF8Ex(
     const char *arg,
     Py_ssize_t arglen,
     wchar_t **wstr,
@@ -193,7 +200,7 @@ PyAPI_FUNC(int) _Py_DecodeUTF8Ex(
     const char **reason,
     _Py_error_handler errors);
 
-PyAPI_FUNC(int) _Py_EncodeUTF8Ex(
+extern int _Py_EncodeUTF8Ex(
     const wchar_t *text,
     char **str,
     size_t *error_pos,
@@ -201,7 +208,7 @@ PyAPI_FUNC(int) _Py_EncodeUTF8Ex(
     int raw_malloc,
     _Py_error_handler errors);
 
-PyAPI_FUNC(wchar_t*) _Py_DecodeUTF8_surrogateescape(
+extern wchar_t* _Py_DecodeUTF8_surrogateescape(
     const char *arg,
     Py_ssize_t arglen,
     size_t *wlen);
@@ -209,25 +216,25 @@ PyAPI_FUNC(wchar_t*) _Py_DecodeUTF8_surrogateescape(
 extern int
 _Py_wstat(const wchar_t *, struct stat *);
 
-PyAPI_FUNC(int) _Py_GetForceASCII(void);
+extern int _Py_GetForceASCII(void);
 
 /* Reset "force ASCII" mode (if it was initialized).
 
    This function should be called when Python changes the LC_CTYPE locale,
    so the "force ASCII" mode can be detected again on the new locale
    encoding. */
-PyAPI_FUNC(void) _Py_ResetForceASCII(void);
+extern void _Py_ResetForceASCII(void);
 
 
-PyAPI_FUNC(int) _Py_GetLocaleconvNumeric(
+extern int _Py_GetLocaleconvNumeric(
     struct lconv *lc,
     PyObject **decimal_point,
     PyObject **thousands_sep);
 
 PyAPI_FUNC(void) _Py_closerange(int first, int last);
 
-PyAPI_FUNC(wchar_t*) _Py_GetLocaleEncoding(void);
-PyAPI_FUNC(PyObject*) _Py_GetLocaleEncodingObject(void);
+extern wchar_t* _Py_GetLocaleEncoding(void);
+extern PyObject* _Py_GetLocaleEncodingObject(void);
 
 #ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
 extern int _Py_LocaleUsesNonUnicodeWchar(void);
@@ -246,13 +253,13 @@ extern int _Py_abspath(const wchar_t *path, wchar_t **abspath_p);
 #ifdef MS_WINDOWS
 extern int _PyOS_getfullpathname(const wchar_t *path, wchar_t **abspath_p);
 #endif
-extern wchar_t * _Py_join_relfile(const wchar_t *dirname,
-                                  const wchar_t *relfile);
+extern wchar_t* _Py_join_relfile(const wchar_t *dirname,
+                                 const wchar_t *relfile);
 extern int _Py_add_relfile(wchar_t *dirname,
                            const wchar_t *relfile,
                            size_t bufsize);
 extern size_t _Py_find_basename(const wchar_t *filename);
-PyAPI_FUNC(wchar_t *) _Py_normpath(wchar_t *path, Py_ssize_t size);
+PyAPI_FUNC(wchar_t*) _Py_normpath(wchar_t *path, Py_ssize_t size);
 
 // The Windows Games API family does not provide these functions
 // so provide our own implementations. Remove them in case they get added
