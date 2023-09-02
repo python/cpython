@@ -5991,15 +5991,15 @@ os_times(PyObject *module, PyObject *Py_UNUSED(ignored))
 #if defined(HAVE_TIMERFD_API)
 
 PyDoc_STRVAR(os_timerfd_create__doc__,
-"timerfd_create($module, clockid, flags, /)\n"
+"timerfd_create($module, clockid, flags=0, /)\n"
 "--\n"
 "\n"
-"Create and return a timerfd notification file descriptor.\n"
+"Create and return a timer file descriptor.\n"
 "\n"
 "  clockid\n"
 "    CLOCK_REALTIME or CLOCK_MONOTONIC. CLOCK_REALTIME.\n"
 "  flags\n"
-"    0 or  a bit mask of TFD_NONBLOCK or TFD_CLOEXEC.");
+"    0 or a bit mask of TFD_NONBLOCK or TFD_CLOEXEC.");
 
 #define OS_TIMERFD_CREATE_METHODDEF    \
     {"timerfd_create", _PyCFunction_CAST(os_timerfd_create), METH_FASTCALL, os_timerfd_create__doc__},
@@ -6012,19 +6012,23 @@ os_timerfd_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int clockid;
-    int flags;
+    int flags = 0;
 
-    if (!_PyArg_CheckPositional("timerfd_create", nargs, 2, 2)) {
+    if (!_PyArg_CheckPositional("timerfd_create", nargs, 1, 2)) {
         goto exit;
     }
     clockid = PyLong_AsInt(args[0]);
     if (clockid == -1 && PyErr_Occurred()) {
         goto exit;
     }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
     flags = PyLong_AsInt(args[1]);
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
+skip_optional:
     return_value = os_timerfd_create_impl(module, clockid, flags);
 
 exit:
@@ -6039,10 +6043,10 @@ PyDoc_STRVAR(os_timerfd_gettime__doc__,
 "timerfd_gettime($module, fd, /)\n"
 "--\n"
 "\n"
-"Return timerfd value in seconds.\n"
+"Return a tuple of a timer file descriptor\'s (interval, next expiration) in float seconds.\n"
 "\n"
 "  fd\n"
-"    a file descriptor for timer.");
+"    A timer file descriptor.");
 
 #define OS_TIMERFD_GETTIME_METHODDEF    \
     {"timerfd_gettime", (PyCFunction)os_timerfd_gettime, METH_O, os_timerfd_gettime__doc__},
@@ -6076,13 +6080,13 @@ PyDoc_STRVAR(os_timerfd_settime__doc__,
 "Set timerfd value in seconds.\n"
 "\n"
 "  fd\n"
-"    a file descriptor for timer.\n"
+"    A timer file descriptor.\n"
 "  flags\n"
-"    0 or  a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.\n"
+"    0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.\n"
 "  it_interval\n"
 "    If TFD_TIMER_ABSTIME is not specified, it_interval is relative time.\n"
 "    If TFD_TIMER_ABSTIME is specified, it_interval is absolute time and epoch time in time_t.\n"
-"    If TFD_TIMER_CANCEL_ON_SET  and TFD_TIMER_ABSTIME are specifed as *flags* and time.CLOCK_REALTIME\n"
+"    If TFD_TIMER_CANCEL_ON_SET and TFD_TIMER_ABSTIME are specifed as *flags* and time.CLOCK_REALTIME\n"
 "    is specified as *clockid* of timerfd_create, a discontinuous change of system clock will make to\n"
 "    abort reading from a file descriptor with ECANCELED error.\n"
 "    it_interval is interval for timer in seconds.\n"
@@ -6157,10 +6161,10 @@ PyDoc_STRVAR(os_timerfd_gettime_ns__doc__,
 "timerfd_gettime_ns($module, fd, /)\n"
 "--\n"
 "\n"
-"Return timerfd value in nanoseconds.\n"
+"Return a tuple of a timer file descriptor\'s (interval, next expiration) in nanoseconds.\n"
 "\n"
 "  fd\n"
-"    a file descriptor for timer.");
+"    A timer file descriptor.");
 
 #define OS_TIMERFD_GETTIME_NS_METHODDEF    \
     {"timerfd_gettime_ns", (PyCFunction)os_timerfd_gettime_ns, METH_O, os_timerfd_gettime_ns__doc__},
@@ -6195,7 +6199,7 @@ PyDoc_STRVAR(os_timerfd_settime_ns__doc__,
 "Set timerfd value in nanoseconds.\n"
 "\n"
 "  fd\n"
-"    a file descriptor for timer.\n"
+"    A timer file descriptor.\n"
 "  flags\n"
 "    similar to timerfd_settime\n"
 "  it_interval_ns\n"
@@ -12276,4 +12280,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=6cd14270cdd68924 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6e901dc77f408d2b input=a9049054013a1b77]*/
