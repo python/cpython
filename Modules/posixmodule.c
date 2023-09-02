@@ -10090,7 +10090,7 @@ Create and return a timer file descriptor.
 
 static PyObject *
 os_timerfd_create_impl(PyObject *module, int clockid, int flags)
-/*[clinic end generated code: output=1caae80fb168004a input=639b0f9daa7ce12e]*/
+/*[clinic end generated code: output=1caae80fb168004a input=65137ef7f4c50837]*/
 
 {
     int fd;
@@ -10116,7 +10116,7 @@ Return a tuple of a timer file descriptor's (interval, next expiration) in float
 
 static PyObject *
 os_timerfd_gettime_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=ec5a94a66cfe6ab4 input=e8a736fe29b08289]*/
+/*[clinic end generated code: output=ec5a94a66cfe6ab4 input=8148e3430870da1c]*/
 {
     struct itimerspec curr_value;
     int result;
@@ -10143,8 +10143,8 @@ os.timerfd_settime
         is specified as *clockid* of timerfd_create, a discontinuous change of system clock will make to
         abort reading from a file descriptor with ECANCELED error.
         it_interval is interval for timer in seconds.
-    it_value: double = 0.0
-        it_value is initial expiration timing in seconds. It could be absolute time or relative time
+    it_initial_expiration: double = 0.0
+        it_initial_expiration is initial expiration timing in seconds. It could be absolute time or relative time
         based on TFD_TIMER_ABSTIME flag.
     /
 
@@ -10153,16 +10153,16 @@ Set timerfd value in seconds.
 
 static PyObject *
 os_timerfd_settime_impl(PyObject *module, int fd, int flags,
-                        double it_interval, double it_value)
-/*[clinic end generated code: output=24030b5b2c5b539c input=915cd54d9ef8a889]*/
+                        double it_interval, double it_initial_expiration)
+/*[clinic end generated code: output=11b1e956631ad6f7 input=25b02549c6def8ec]*/
 {
     struct itimerspec new_value;
     struct itimerspec old_value;
     int result;
     new_value.it_interval.tv_sec = (time_t)it_interval;
     new_value.it_interval.tv_nsec = EXTRACT_NSEC(it_interval);
-    new_value.it_value.tv_sec = (time_t)it_value;
-    new_value.it_value.tv_nsec = EXTRACT_NSEC(it_value);
+    new_value.it_value.tv_sec = (time_t)it_initial_expiration;
+    new_value.it_value.tv_nsec = EXTRACT_NSEC(it_initial_expiration);
     Py_BEGIN_ALLOW_THREADS
     result = timerfd_settime(fd, flags, &new_value, &old_value);
     Py_END_ALLOW_THREADS
@@ -10184,7 +10184,7 @@ Return a tuple of a timer file descriptor's (interval, next expiration) in nanos
 
 static PyObject *
 os_timerfd_gettime_ns_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=580633a4465f39fe input=731cd1818f472501]*/
+/*[clinic end generated code: output=580633a4465f39fe input=a825443e4c6b40ac]*/
 {
     struct itimerspec curr_value;
     int result;
@@ -10206,7 +10206,7 @@ os.timerfd_settime_ns
         similar to timerfd_settime
     it_interval_ns: long_long = 0
         similar to timerfd_settime except for in nanoseconds.
-    it_value_ns: long_long = 0
+    it_initial_expiration_ns: long_long = 0
         similar to timerfd_settime except for in nanoseconds.
     /
 
@@ -10215,16 +10215,17 @@ Set timerfd value in nanoseconds.
 
 static PyObject *
 os_timerfd_settime_ns_impl(PyObject *module, int fd, int flags,
-                           long long it_interval_ns, long long it_value_ns)
-/*[clinic end generated code: output=8c2801053004f896 input=570fe1a68826e8a8]*/
+                           long long it_interval_ns,
+                           long long it_initial_expiration_ns)
+/*[clinic end generated code: output=bcac7b3109a5c493 input=c09c9e234ab38e29]*/
 {
     struct itimerspec new_value;
     struct itimerspec old_value;
     int result;
     new_value.it_interval.tv_sec = it_interval_ns / ONE_SECOND_IN_NS;
     new_value.it_interval.tv_nsec = it_interval_ns % ONE_SECOND_IN_NS;
-    new_value.it_value.tv_sec = it_value_ns / ONE_SECOND_IN_NS;
-    new_value.it_value.tv_nsec = it_value_ns % ONE_SECOND_IN_NS;
+    new_value.it_value.tv_sec = it_initial_expiration_ns / ONE_SECOND_IN_NS;
+    new_value.it_value.tv_nsec = it_initial_expiration_ns % ONE_SECOND_IN_NS;
     Py_BEGIN_ALLOW_THREADS
     result = timerfd_settime(fd, flags, &new_value, &old_value);
     Py_END_ALLOW_THREADS

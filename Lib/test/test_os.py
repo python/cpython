@@ -3924,22 +3924,22 @@ class TimerfdTests(unittest.TestCase):
         self.addCleanup(os.close, fd)
 
         interval = 0.125
-        value = 0.25
+        initial_expiration = 0.25
 
         # 1st call
-        interval2, value2 = os.timerfd_settime(fd, 0, interval, value)
+        interval2, value2 = os.timerfd_settime(fd, 0, interval, initial_expiration)
         self.assertAlmostEqual(interval2, 0.0, places=3)
         self.assertAlmostEqual(value2, 0.0, places=3)
 
         # 2nd call
-        interval2, value2 = os.timerfd_settime(fd, 0, interval, value)
+        interval2, value2 = os.timerfd_settime(fd, 0, interval, initial_expiration)
         self.assertAlmostEqual(interval2, interval, places=3)
-        self.assertAlmostEqual(value2, value, places=3)
+        self.assertAlmostEqual(value2, initial_expiration, places=3)
 
         # timerfd_gettime
         interval2, value2 = os.timerfd_gettime(fd)
         self.assertAlmostEqual(interval2, interval, places=3)
-        self.assertAlmostEqual(value2, value, places=3)
+        self.assertAlmostEqual(value2, initial_expiration, places=3)
 
     def test_timerfd_interval(self):
         size = 8  # read 8 bytes
@@ -3950,14 +3950,14 @@ class TimerfdTests(unittest.TestCase):
         # 0.5 second
         interval = 0.5
         # 1 second
-        value = 1
+        initial_expiration = 1
 
-        _, _ = os.timerfd_settime(fd, 0, interval, value)
+        _, _ = os.timerfd_settime(fd, 0, interval, initial_expiration)
 
         # timerfd_gettime
         interval2, value2 = os.timerfd_gettime(fd)
         self.assertAlmostEqual(interval2, interval, places=3)
-        self.assertAlmostEqual(value2, value, places=3)
+        self.assertAlmostEqual(value2, initial_expiration, places=3)
 
         count = 3
         t = time.perf_counter()
@@ -3965,7 +3965,7 @@ class TimerfdTests(unittest.TestCase):
             _ = os.read(fd, size)
         t = time.perf_counter() - t
 
-        total_time = value + interval * (count - 1)
+        total_time = initial_expiration + interval * (count - 1)
         self.assertGreater(t, total_time)
 
     def test_timerfd_TFD_TIMER_ABSTIME(self):
@@ -3980,9 +3980,9 @@ class TimerfdTests(unittest.TestCase):
         interval = 0
         # 1 second later from now.
         offset = 1
-        value = now + offset
+        initial_expiration = now + offset
 
-        _, _ = os.timerfd_settime(fd, os.TFD_TIMER_ABSTIME, interval, value)
+        _, _ = os.timerfd_settime(fd, os.TFD_TIMER_ABSTIME, interval, initial_expiration)
 
         # timerfd_gettime
         # Note: timerfd_gettime returns relative values even if TFD_TIMER_ABSTIME is specified.
@@ -4008,19 +4008,19 @@ class TimerfdTests(unittest.TestCase):
         # 0.125 second
         interval = 0.125
         # 0.25 second
-        value = 0.25
+        initial_expiration = 0.25
 
-        _, _ = os.timerfd_settime(fd, 0, interval, value)
+        _, _ = os.timerfd_settime(fd, 0, interval, initial_expiration)
 
         count = 3
         t = time.perf_counter()
         for _ in range(count):
-            rfd, wfd, xfd = select.select([fd], [fd], [fd], value + interval)
+            rfd, wfd, xfd = select.select([fd], [fd], [fd], initial_expiration + interval)
             self.assertEqual((rfd, wfd, xfd), ([fd], [], []))
             _ = os.read(fd, size)
         t = time.perf_counter() - t
 
-        total_time = value + interval * (count - 1)
+        total_time = initial_expiration + interval * (count - 1)
         self.assertGreater(t, total_time)
 
     def test_timerfd_ns_initval(self):
@@ -4032,22 +4032,22 @@ class TimerfdTests(unittest.TestCase):
 
         # 1st call
         interval_ns = one_sec_in_nsec // 1000
-        value_ns = 0
-        interval_ns2, value_ns2 = os.timerfd_settime_ns(fd, 0, interval_ns, value_ns)
+        initial_expiration_ns = 0
+        interval_ns2, value_ns2 = os.timerfd_settime_ns(fd, 0, interval_ns, initial_expiration_ns)
         self.assertEqual(interval_ns2, 0)
         self.assertEqual(value_ns2, 0)
 
         # 2nd call
-        interval_ns2, value_ns2 = os.timerfd_settime_ns(fd, 0, interval_ns, value_ns)
+        interval_ns2, value_ns2 = os.timerfd_settime_ns(fd, 0, interval_ns, initial_expiration_ns)
         self.assertEqual(interval_ns2, interval_ns)
-        self.assertEqual(value_ns2, value_ns)
+        self.assertEqual(value_ns2, initial_expiration_ns)
 
         # timerfd_gettime
         interval_ns2, value_ns2 = os.timerfd_gettime_ns(fd)
         self.assertEqual(interval_ns2, interval_ns)
-        self.assertLessEqual(value_ns2, value_ns)
+        self.assertLessEqual(value_ns2, initial_expiration_ns)
 
-        self.assertAlmostEqual(value_ns2, value_ns, delta=limit_error)
+        self.assertAlmostEqual(value_ns2, initial_expiration_ns, delta=limit_error)
 
     def test_timerfd_ns_interval(self):
         size = 8  # read 8 bytes
@@ -4060,14 +4060,14 @@ class TimerfdTests(unittest.TestCase):
         # 0.5 second
         interval_ns = one_sec_in_nsec // 2
         # 1 second
-        value_ns = one_sec_in_nsec
+        initial_expiration_ns = one_sec_in_nsec
 
-        _, _ = os.timerfd_settime_ns(fd, 0, interval_ns, value_ns)
+        _, _ = os.timerfd_settime_ns(fd, 0, interval_ns, initial_expiration_ns)
 
         # timerfd_gettime
         interval_ns2, value_ns2 = os.timerfd_gettime_ns(fd)
         self.assertEqual(interval_ns2, interval_ns)
-        self.assertLessEqual(value_ns2, value_ns)
+        self.assertLessEqual(value_ns2, initial_expiration_ns)
 
         count = 3
         t = time.perf_counter_ns()
@@ -4075,7 +4075,7 @@ class TimerfdTests(unittest.TestCase):
             _ = os.read(fd, size)
         t = time.perf_counter_ns() - t
 
-        total_time_ns = value_ns + interval_ns * (count - 1)
+        total_time_ns = initial_expiration_ns + interval_ns * (count - 1)
         self.assertGreater(t, total_time_ns)
 
 
@@ -4093,15 +4093,15 @@ class TimerfdTests(unittest.TestCase):
         interval_ns = 0
         # 1 second later from now.
         offset_ns = one_sec_in_nsec
-        value_ns = now_ns + offset_ns
+        initial_expiration_ns = now_ns + offset_ns
 
-        _, _ = os.timerfd_settime_ns(fd, os.TFD_TIMER_ABSTIME, interval_ns, value_ns)
+        _, _ = os.timerfd_settime_ns(fd, os.TFD_TIMER_ABSTIME, interval_ns, initial_expiration_ns)
 
         # timerfd_gettime
         # Note: timerfd_gettime returns relative values even if TFD_TIMER_ABSTIME is specified.
-        interval_ns2, value_ns2 = os.timerfd_gettime_ns(fd)
+        interval_ns2, initial_expiration_ns = os.timerfd_gettime_ns(fd)
         self.assertLess(abs(interval_ns2 - interval_ns),  limit_error)
-        self.assertLess(abs(value_ns2 - offset_ns),  limit_error)
+        self.assertLess(abs(initial_expiration_ns - offset_ns),  limit_error)
 
         t = time.perf_counter_ns()
         _ = os.read(fd, size)

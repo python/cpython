@@ -6074,7 +6074,8 @@ exit:
 #if defined(HAVE_TIMERFD_API)
 
 PyDoc_STRVAR(os_timerfd_settime__doc__,
-"timerfd_settime($module, fd, flags, it_interval=0.0, it_value=0.0, /)\n"
+"timerfd_settime($module, fd, flags, it_interval=0.0,\n"
+"                it_initial_expiration=0.0, /)\n"
 "--\n"
 "\n"
 "Set timerfd value in seconds.\n"
@@ -6090,8 +6091,8 @@ PyDoc_STRVAR(os_timerfd_settime__doc__,
 "    is specified as *clockid* of timerfd_create, a discontinuous change of system clock will make to\n"
 "    abort reading from a file descriptor with ECANCELED error.\n"
 "    it_interval is interval for timer in seconds.\n"
-"  it_value\n"
-"    it_value is initial expiration timing in seconds. It could be absolute time or relative time\n"
+"  it_initial_expiration\n"
+"    it_initial_expiration is initial expiration timing in seconds. It could be absolute time or relative time\n"
 "    based on TFD_TIMER_ABSTIME flag.");
 
 #define OS_TIMERFD_SETTIME_METHODDEF    \
@@ -6099,7 +6100,7 @@ PyDoc_STRVAR(os_timerfd_settime__doc__,
 
 static PyObject *
 os_timerfd_settime_impl(PyObject *module, int fd, int flags,
-                        double it_interval, double it_value);
+                        double it_interval, double it_initial_expiration);
 
 static PyObject *
 os_timerfd_settime(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -6108,7 +6109,7 @@ os_timerfd_settime(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int fd;
     int flags;
     double it_interval = 0.0;
-    double it_value = 0.0;
+    double it_initial_expiration = 0.0;
 
     if (!_PyArg_CheckPositional("timerfd_settime", nargs, 2, 4)) {
         goto exit;
@@ -6137,17 +6138,17 @@ os_timerfd_settime(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto skip_optional;
     }
     if (PyFloat_CheckExact(args[3])) {
-        it_value = PyFloat_AS_DOUBLE(args[3]);
+        it_initial_expiration = PyFloat_AS_DOUBLE(args[3]);
     }
     else
     {
-        it_value = PyFloat_AsDouble(args[3]);
-        if (it_value == -1.0 && PyErr_Occurred()) {
+        it_initial_expiration = PyFloat_AsDouble(args[3]);
+        if (it_initial_expiration == -1.0 && PyErr_Occurred()) {
             goto exit;
         }
     }
 skip_optional:
-    return_value = os_timerfd_settime_impl(module, fd, flags, it_interval, it_value);
+    return_value = os_timerfd_settime_impl(module, fd, flags, it_interval, it_initial_expiration);
 
 exit:
     return return_value;
@@ -6192,8 +6193,8 @@ exit:
 #if defined(HAVE_TIMERFD_API)
 
 PyDoc_STRVAR(os_timerfd_settime_ns__doc__,
-"timerfd_settime_ns($module, fd, flags, it_interval_ns=0, it_value_ns=0,\n"
-"                   /)\n"
+"timerfd_settime_ns($module, fd, flags, it_interval_ns=0,\n"
+"                   it_initial_expiration_ns=0, /)\n"
 "--\n"
 "\n"
 "Set timerfd value in nanoseconds.\n"
@@ -6204,7 +6205,7 @@ PyDoc_STRVAR(os_timerfd_settime_ns__doc__,
 "    similar to timerfd_settime\n"
 "  it_interval_ns\n"
 "    similar to timerfd_settime except for in nanoseconds.\n"
-"  it_value_ns\n"
+"  it_initial_expiration_ns\n"
 "    similar to timerfd_settime except for in nanoseconds.");
 
 #define OS_TIMERFD_SETTIME_NS_METHODDEF    \
@@ -6212,7 +6213,8 @@ PyDoc_STRVAR(os_timerfd_settime_ns__doc__,
 
 static PyObject *
 os_timerfd_settime_ns_impl(PyObject *module, int fd, int flags,
-                           long long it_interval_ns, long long it_value_ns);
+                           long long it_interval_ns,
+                           long long it_initial_expiration_ns);
 
 static PyObject *
 os_timerfd_settime_ns(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -6221,7 +6223,7 @@ os_timerfd_settime_ns(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int fd;
     int flags;
     long long it_interval_ns = 0;
-    long long it_value_ns = 0;
+    long long it_initial_expiration_ns = 0;
 
     if (!_PyArg_CheckPositional("timerfd_settime_ns", nargs, 2, 4)) {
         goto exit;
@@ -6243,12 +6245,12 @@ os_timerfd_settime_ns(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 4) {
         goto skip_optional;
     }
-    it_value_ns = PyLong_AsLongLong(args[3]);
-    if (it_value_ns == -1 && PyErr_Occurred()) {
+    it_initial_expiration_ns = PyLong_AsLongLong(args[3]);
+    if (it_initial_expiration_ns == -1 && PyErr_Occurred()) {
         goto exit;
     }
 skip_optional:
-    return_value = os_timerfd_settime_ns_impl(module, fd, flags, it_interval_ns, it_value_ns);
+    return_value = os_timerfd_settime_ns_impl(module, fd, flags, it_interval_ns, it_initial_expiration_ns);
 
 exit:
     return return_value;
@@ -12280,4 +12282,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=6e901dc77f408d2b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=87f9bbf56a040f3f input=a9049054013a1b77]*/
