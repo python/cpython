@@ -10047,44 +10047,44 @@ os_times_impl(PyObject *module)
 static PyObject *
 build_itimerspec(const struct itimerspec* curr_value)
 {
+    double _next_expiration = (double)(curr_value->it_value.tv_sec) +
+                    (double)curr_value->it_value.tv_nsec * 1e-9;
+    PyObject *next_expiration = PyFloat_FromDouble(_next_expiration);
+    if (next_expiration == NULL) {
+        return NULL;
+    }
     double _interval = (double)(curr_value->it_interval.tv_sec) +
                        (double)curr_value->it_interval.tv_nsec * 1e-9;
     PyObject *interval = PyFloat_FromDouble(_interval);
     if (interval == NULL) {
+        Py_DECREF(next_expiration);
         return NULL;
     }
-    double _value = (double)(curr_value->it_value.tv_sec) +
-                    (double)curr_value->it_value.tv_nsec * 1e-9;
-    PyObject *value = PyFloat_FromDouble(_value);
-    if (value == NULL) {
-        Py_DECREF(interval);
-        return NULL;
-    }
-    PyObject *tuple = PyTuple_Pack(2, interval, value);
+    PyObject *tuple = PyTuple_Pack(2, next_expiration, interval);
     Py_DECREF(interval);
-    Py_DECREF(value);
+    Py_DECREF(next_expiration);
     return tuple;
 }
 
 static PyObject *
 build_itimerspec_ns(const struct itimerspec* curr_value)
 {
+    long long _next_expiration = (long long)curr_value->it_value.tv_sec * ONE_SECOND_IN_NS +
+                    (long long)curr_value->it_value.tv_nsec;
+    PyObject *next_expiration = PyLong_FromLongLong(_next_expiration);
+    if (next_expiration == NULL) {
+        return NULL;
+    }
     long long _interval = (long long)curr_value->it_interval.tv_sec * ONE_SECOND_IN_NS +
                        (long long)curr_value->it_interval.tv_nsec;
     PyObject *interval = PyLong_FromLongLong(_interval);
     if (interval == NULL) {
+        Py_DECREF(next_expiration);
         return NULL;
     }
-    long long _value = (long long)curr_value->it_value.tv_sec * ONE_SECOND_IN_NS +
-                    (long long)curr_value->it_value.tv_nsec;
-    PyObject *value = PyLong_FromLongLong(_value);
-    if (value == NULL) {
-        Py_DECREF(interval);
-        return NULL;
-    }
-    PyObject *tuple = PyTuple_Pack(2, interval, value);
+    PyObject *tuple = PyTuple_Pack(2, next_expiration, interval);
     Py_DECREF(interval);
-    Py_DECREF(value);
+    Py_DECREF(next_expiration);
     return tuple;
 }
 
@@ -10122,6 +10122,9 @@ os.timerfd_settime
         A timer file descriptor.
     flags: int
         0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.
+    it_initial_expiration: double = 0.0
+        it_initial_expiration is initial expiration timing in seconds. It could be absolute time or relative time
+        based on TFD_TIMER_ABSTIME flag.
     it_interval: double = 0.0
         If TFD_TIMER_ABSTIME is not specified, it_interval is relative time.
         If TFD_TIMER_ABSTIME is specified, it_interval is absolute time and epoch time in time_t.
@@ -10129,9 +10132,6 @@ os.timerfd_settime
         is specified as *clockid* of timerfd_create, a discontinuous change of system clock will make to
         abort reading from a file descriptor with ECANCELED error.
         it_interval is interval for timer in seconds.
-    it_initial_expiration: double = 0.0
-        it_initial_expiration is initial expiration timing in seconds. It could be absolute time or relative time
-        based on TFD_TIMER_ABSTIME flag.
     /
 
 Set timerfd value in seconds.
@@ -10139,8 +10139,8 @@ Set timerfd value in seconds.
 
 static PyObject *
 os_timerfd_settime_impl(PyObject *module, int fd, int flags,
-                        double it_interval, double it_initial_expiration)
-/*[clinic end generated code: output=11b1e956631ad6f7 input=25b02549c6def8ec]*/
+                        double it_initial_expiration, double it_interval)
+/*[clinic end generated code: output=c6730e19eca1fa5e input=47426f72c5728eac]*/
 {
     struct itimerspec new_value;
     struct itimerspec old_value;
@@ -10192,9 +10192,9 @@ os.timerfd_settime_ns
         A timer file descriptor.
     flags: int
         similar to timerfd_settime
-    it_interval_ns: long_long = 0
-        similar to timerfd_settime except for in nanoseconds.
     it_initial_expiration_ns: long_long = 0
+        similar to timerfd_settime except for in nanoseconds.
+    it_interval_ns: long_long = 0
         similar to timerfd_settime except for in nanoseconds.
     /
 
@@ -10203,9 +10203,9 @@ Set timerfd value in nanoseconds.
 
 static PyObject *
 os_timerfd_settime_ns_impl(PyObject *module, int fd, int flags,
-                           long long it_interval_ns,
-                           long long it_initial_expiration_ns)
-/*[clinic end generated code: output=bcac7b3109a5c493 input=c09c9e234ab38e29]*/
+                           long long it_initial_expiration_ns,
+                           long long it_interval_ns)
+/*[clinic end generated code: output=5a507a762b87c9fe input=e8240c6f8b9c6665]*/
 {
     struct itimerspec new_value;
     struct itimerspec old_value;

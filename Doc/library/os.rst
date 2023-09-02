@@ -3809,9 +3809,9 @@ features:
       import os, time
 
       fd = os.timerfd_create(time.CLOCK_REALTIME, 0)
-      interval = 0.5  # Set the timer interval to 0.5 seconds
       initial_expiration = 1  # Start the timer in 1 second
-      os.timerfd_settime(fd, 0, interval, initial_expiration)  # Start the timer
+      interval = 0.5  # Set the timer interval to 0.5 seconds
+      os.timerfd_settime(fd, 0, initial_expiration, interval)  # Start the timer
 
       try:
           while:
@@ -3828,9 +3828,9 @@ features:
       import os, time
 
       fd = os.timerfd_create(time.CLOCK_REALTIME, 0)
-      interval = 10**9 // 2  # Set the timer interval to 0.5 seconds
       initial_expiration = 10**9  # Start the timer in 1 second
-      os.timerfd_settime_ns(fd, 0, interval, initial_expiration)  # Start the timer
+      interval = 10**9 // 2  # Set the timer interval to 0.5 seconds
+      os.timerfd_settime_ns(fd, 0, initial_expiration, interval)  # Start the timer
 
       try:
           while:
@@ -3844,7 +3844,7 @@ features:
    .. versionadded:: 3.13
 
 
-.. function:: timerfd_settime(fd, flags, interval=0.0, initial_expiration=0.0, /)
+.. function:: timerfd_settime(fd, flags, initial_expiration=0.0, interval=0.0, /)
 
    Alter a timer file descriptor's internal timer.
 
@@ -3859,19 +3859,19 @@ features:
    - :const:`TFD_TIMER_ABSTIME`
    - :const:`TFD_TIMER_CANCEL_ON_SET`
 
+   The timer is disabled by setting *initial_expiration* to zero (``0``).
+   If *initial_expiration* is set to a non-zero value, the timer is enabled.
+   By default timer will fire when *initial_expiration* seconds have elapsed.
+   However, if the :const:`TFD_TIMER_ABSTIME` flag is set,
+   the timer will fire when the timer's clock
+   (set by *clockid* in :func:`timerfd_create`) reaches *value* seconds.
+
    The timer's interval is set by the *interval* :py:class:`float`.
    If *interval* is zero, the timer only fires once, on the initial expiration.
    If *interval* is greater than zero, the timer fires every time *interval*
    seconds have elapsed since the previous expiration.
 
-   The timer is disabled by setting *value* to zero (``0``).
-   If *value* is set to a non-zero value, the timer is enabled.
-   By default timer will fire when *value* seconds have elapsed.
-   However, if the :const:`TFD_TIMER_ABSTIME` flag is set,
-   the timer will fire when the timer's clock
-   (set by *clockid* in :func:`timerfd_create`) reaches *value* seconds.
-
-   Return a two-item tuple of (``interval``, ``value``) from
+   Return a two-item tuple of (``next_expiration``, ``interval``) from
    the previous timer state, before this function executed.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
@@ -3879,7 +3879,7 @@ features:
    .. versionadded:: 3.13
 
 
-.. function:: timerfd_settime_ns(fd, flags, interval_ns=0, initial_expiration_ns=0, /)
+.. function:: timerfd_settime_ns(fd, flags, initial_expiration_ns=0, interval_ns=0, /)
 
    Similar to :func:`timerfd_settime`, but use time as nanoseconds.
 
@@ -3890,13 +3890,13 @@ features:
 
 .. function:: timerfd_gettime(fd, /)
 
-   Return a two-item tuple (``interval``, ``value``).
+   Return a two-item tuple (``next_expiration``, ``interval``).
 
-   ``value`` denotes the relative time until next the timer next fires,
+   ``next_expiration`` denotes the relative time until next the timer next fires,
    regardless of if the :const:`TFD_TIMER_ABSTIME` flag is set.
 
    ``interval`` denotes the timer's interval.
-   If zero, the timer will only fire once, after ``value`` seconds have elapsed.
+   If zero, the timer will only fire once, after ``next_expiration`` seconds have elapsed.
 
    .. seealso:: :manpage:`timerfd_gettime(2)`
 
