@@ -1,0 +1,1 @@
+netrc class accepts open file object as an initialization argument and reads from the file

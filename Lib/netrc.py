@@ -2,7 +2,7 @@
 
 # Module and documentation by Eric S. Raymond, 21 Dec 1998
 
-import os, stat
+import io, os, stat
 
 __all__ = ["netrc", "NetrcParseError"]
 
@@ -64,18 +64,28 @@ class _netrclex:
 
 
 class netrc:
-    def __init__(self, file=None):
+    def __init__(self, file=None, filename=None):
         default_netrc = file is None
         if file is None:
             file = os.path.join(os.path.expanduser("~"), ".netrc")
         self.hosts = {}
         self.macros = {}
-        try:
-            with open(file, encoding="utf-8") as fp:
-                self._parse(file, fp, default_netrc)
-        except UnicodeDecodeError:
-            with open(file, encoding="locale") as fp:
-                self._parse(file, fp, default_netrc)
+        if isinstance(file, io.TextIOBase):
+            if filename is None:
+                if hasattr(file, "name"):
+                    filename = file.name
+                else:
+                    filename = str(file)
+            self._parse(filename, file, default_netrc)
+        elif isinstance(file, (str, bytes, os.PathLike)):
+            try:
+                with open(file, encoding="utf-8") as fp:
+                    self._parse(file, fp, default_netrc)
+            except UnicodeDecodeError:
+                with open(file, encoding="locale") as fp:
+                    self._parse(file, fp, default_netrc)
+        else:
+            raise TypeError("filename must be a str, bytes, file or PathLike object")
 
     def _parse(self, file, fp, default_netrc):
         lexer = _netrclex(fp)
