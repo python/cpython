@@ -418,10 +418,16 @@ class MathTests(unittest.TestCase):
                 return 42
         class TestNoCeil:
             pass
+        class TestBadCeil:
+            class BadCeil:
+                def __get__(self, obj, objtype=None):
+                    raise ValueError
+            __ceil__ = BadCeil()
         self.assertEqual(math.ceil(TestCeil()), 42)
         self.assertEqual(math.ceil(FloatCeil()), 42)
         self.assertEqual(math.ceil(FloatLike(42.5)), 43)
         self.assertRaises(TypeError, math.ceil, TestNoCeil())
+        self.assertRaises(ValueError, math.ceil, TestBadCeil())
 
         t = TestNoCeil()
         t.__ceil__ = lambda *args: args
@@ -571,10 +577,16 @@ class MathTests(unittest.TestCase):
                 return 42
         class TestNoFloor:
             pass
+        class TestBadFloor:
+            class BadFloor:
+                def __get__(self, obj, objtype=None):
+                    raise ValueError
+            __floor__ = BadFloor()
         self.assertEqual(math.floor(TestFloor()), 42)
         self.assertEqual(math.floor(FloatFloor()), 42)
         self.assertEqual(math.floor(FloatLike(41.9)), 41)
         self.assertRaises(TypeError, math.floor, TestNoFloor())
+        self.assertRaises(ValueError, math.floor, TestBadFloor())
 
         t = TestNoFloor()
         t.__floor__ = lambda *args: args
