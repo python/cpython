@@ -1469,10 +1469,10 @@ DocTestRunner objects
    runner compares expected output to actual output, and how it displays failures.
    For more information, see section :ref:`doctest-options`.
 
-   The test runner accumulate statistics. The aggregated number of attempted,
+   The test runner accumulates statistics. The aggregated number of attempted,
    failed and skipped examples is also available via the :attr:`tries`,
    :attr:`failures` and :attr:`skips` attributes. The :meth:`run` and
-   :meth:`summarize` methods return a TestResults instance.
+   :meth:`summarize` methods return a :class:`TestResults` instance.
 
    :class:`DocTestParser` defines the following methods:
 
