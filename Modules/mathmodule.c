@@ -971,6 +971,7 @@ math_1(PyObject *arg, double (*func) (double), int can_overflow)
             errno = EDOM;
     }
     if (errno && is_error(r))
+        /* this branch unnecessary on most platforms */
         return NULL;
     return PyFloat_FromDouble(r);
 }
