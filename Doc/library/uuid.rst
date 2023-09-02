@@ -119,7 +119,7 @@ which relays any information about the UUID's safety, using this enumeration:
      - The last 48 bits of the UUID.
 
    * - .. attribute:: UUID.time
-     - The the 60-bit timestamp.
+     - The 60-bit timestamp.
 
    * - .. attribute:: UUID.clock_seq
      - The 14-bit sequence number.
