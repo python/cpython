@@ -500,6 +500,7 @@ class TestSupport(unittest.TestCase):
         self.assertEqual(proc.stdout.rstrip(), repr(expected))
         self.assertEqual(proc.returncode, 0)
 
+    @support.requires_resource('cpu')
     def test_args_from_interpreter_flags(self):
         # Test test.support.args_from_interpreter_flags()
         for opts in (

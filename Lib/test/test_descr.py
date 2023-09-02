@@ -4457,6 +4457,7 @@ order (MRO) for bases """
         o.whatever = Provoker(o)
         del o
 
+    @support.requires_resource('cpu')
     def test_wrapper_segfault(self):
         # SF 927248: deeply nested wrappers could cause stack overflow
         f = lambda:None

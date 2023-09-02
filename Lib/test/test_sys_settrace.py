@@ -2812,6 +2812,7 @@ output.append(4)
         ) = output.append(4) or "Spam"
         output.append(5)
 
+    @support.requires_resource('cpu')
     def test_jump_extended_args_for_iter(self):
         # In addition to failing when extended arg handling is broken, this can
         # also hang for a *very* long time:
