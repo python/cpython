@@ -20,6 +20,7 @@
 #include <ctype.h>                // tolower()
 #include <inttypes.h>             // uintptr_t
 #include <limits.h>               // INT_MAX
+#include <math.h>                 // HUGE_VAL
 #include <stdarg.h>               // va_list
 #include <wchar.h>                // wchar_t
 #ifdef HAVE_STDDEF_H
