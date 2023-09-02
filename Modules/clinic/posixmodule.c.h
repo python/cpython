@@ -6124,40 +6124,6 @@ exit:
 
 #if defined(HAVE_TIMERFD_API)
 
-PyDoc_STRVAR(os_timerfd_gettime__doc__,
-"timerfd_gettime($module, fd, /)\n"
-"--\n"
-"\n"
-"Return a tuple of a timer file descriptor\'s (interval, next expiration) in float seconds.\n"
-"\n"
-"  fd\n"
-"    A timer file descriptor.");
-
-#define OS_TIMERFD_GETTIME_METHODDEF    \
-    {"timerfd_gettime", (PyCFunction)os_timerfd_gettime, METH_O, os_timerfd_gettime__doc__},
-
-static PyObject *
-os_timerfd_gettime_impl(PyObject *module, int fd);
-
-static PyObject *
-os_timerfd_gettime(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    int fd;
-
-    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
-        goto exit;
-    }
-    return_value = os_timerfd_gettime_impl(module, fd);
-
-exit:
-    return return_value;
-}
-
-#endif /* defined(HAVE_TIMERFD_API) */
-
-#if defined(HAVE_TIMERFD_API)
-
 PyDoc_STRVAR(os_timerfd_settime_ns__doc__,
 "timerfd_settime_ns($module, fd, flags, it_initial_expiration_ns=0,\n"
 "                   it_interval_ns=0, /)\n"
@@ -6217,6 +6183,40 @@ os_timerfd_settime_ns(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
 skip_optional:
     return_value = os_timerfd_settime_ns_impl(module, fd, flags, it_initial_expiration_ns, it_interval_ns);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_TIMERFD_API) */
+
+#if defined(HAVE_TIMERFD_API)
+
+PyDoc_STRVAR(os_timerfd_gettime__doc__,
+"timerfd_gettime($module, fd, /)\n"
+"--\n"
+"\n"
+"Return a tuple of a timer file descriptor\'s (interval, next expiration) in float seconds.\n"
+"\n"
+"  fd\n"
+"    A timer file descriptor.");
+
+#define OS_TIMERFD_GETTIME_METHODDEF    \
+    {"timerfd_gettime", (PyCFunction)os_timerfd_gettime, METH_O, os_timerfd_gettime__doc__},
+
+static PyObject *
+os_timerfd_gettime_impl(PyObject *module, int fd);
+
+static PyObject *
+os_timerfd_gettime(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int fd;
+
+    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
+        goto exit;
+    }
+    return_value = os_timerfd_gettime_impl(module, fd);
 
 exit:
     return return_value;
@@ -12007,13 +12007,13 @@ exit:
     #define OS_TIMERFD_SETTIME_METHODDEF
 #endif /* !defined(OS_TIMERFD_SETTIME_METHODDEF) */
 
-#ifndef OS_TIMERFD_GETTIME_METHODDEF
-    #define OS_TIMERFD_GETTIME_METHODDEF
-#endif /* !defined(OS_TIMERFD_GETTIME_METHODDEF) */
-
 #ifndef OS_TIMERFD_SETTIME_NS_METHODDEF
     #define OS_TIMERFD_SETTIME_NS_METHODDEF
 #endif /* !defined(OS_TIMERFD_SETTIME_NS_METHODDEF) */
+
+#ifndef OS_TIMERFD_GETTIME_METHODDEF
+    #define OS_TIMERFD_GETTIME_METHODDEF
+#endif /* !defined(OS_TIMERFD_GETTIME_METHODDEF) */
 
 #ifndef OS_TIMERFD_GETTIME_NS_METHODDEF
     #define OS_TIMERFD_GETTIME_NS_METHODDEF
@@ -12282,4 +12282,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=2627e7a5e0aab5ae input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f379a432ee46efd5 input=a9049054013a1b77]*/

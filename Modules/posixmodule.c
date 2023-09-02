@@ -10160,32 +10160,6 @@ os_timerfd_settime_impl(PyObject *module, int fd, int flags,
 
 
 /*[clinic input]
-os.timerfd_gettime
-
-    fd: fildes
-        A timer file descriptor.
-    /
-
-Return a tuple of a timer file descriptor's (interval, next expiration) in float seconds.
-[clinic start generated code]*/
-
-static PyObject *
-os_timerfd_gettime_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=ec5a94a66cfe6ab4 input=8148e3430870da1c]*/
-{
-    struct itimerspec curr_value;
-    int result;
-    Py_BEGIN_ALLOW_THREADS
-    result = timerfd_gettime(fd, &curr_value);
-    Py_END_ALLOW_THREADS
-    if (result == -1) {
-        return PyErr_SetFromErrno(PyExc_OSError);
-    }
-    return build_itimerspec(&curr_value);
-}
-
-
-/*[clinic input]
 os.timerfd_settime_ns
 
     fd: fildes
@@ -10222,6 +10196,32 @@ os_timerfd_settime_ns_impl(PyObject *module, int fd, int flags,
     }
     return build_itimerspec_ns(&old_value);
 }
+
+/*[clinic input]
+os.timerfd_gettime
+
+    fd: fildes
+        A timer file descriptor.
+    /
+
+Return a tuple of a timer file descriptor's (interval, next expiration) in float seconds.
+[clinic start generated code]*/
+
+static PyObject *
+os_timerfd_gettime_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=ec5a94a66cfe6ab4 input=8148e3430870da1c]*/
+{
+    struct itimerspec curr_value;
+    int result;
+    Py_BEGIN_ALLOW_THREADS
+    result = timerfd_gettime(fd, &curr_value);
+    Py_END_ALLOW_THREADS
+    if (result == -1) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    return build_itimerspec(&curr_value);
+}
+
 
 /*[clinic input]
 os.timerfd_gettime_ns
@@ -16183,8 +16183,8 @@ static PyMethodDef posix_methods[] = {
     OS_UNSHARE_METHODDEF
     OS_TIMERFD_CREATE_METHODDEF
     OS_TIMERFD_SETTIME_METHODDEF
-    OS_TIMERFD_GETTIME_METHODDEF
     OS_TIMERFD_SETTIME_NS_METHODDEF
+    OS_TIMERFD_GETTIME_METHODDEF
     OS_TIMERFD_GETTIME_NS_METHODDEF
 
     OS__PATH_ISDEVDRIVE_METHODDEF
