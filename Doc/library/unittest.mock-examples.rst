@@ -579,14 +579,14 @@ Partial mocking
 In some tests I wanted to mock out a call to :meth:`datetime.date.today`
 to return a known date, but I didn't want to prevent the code under test from
 creating new date objects. Unfortunately :class:`datetime.date` is written in C, and
-so I couldn't just monkey-patch out the static :meth:`date.today` method.
+so I couldn't just monkey-patch out the static :meth:`datetime.date.today` method.
 
 I found a simple way of doing this that involved effectively wrapping the date
 class with a mock, but passing through calls to the constructor to the real
 class (and returning real instances).
 
 The :func:`patch decorator <patch>` is used here to
-mock out the ``date`` class in the module under test. The :attr:`side_effect`
+mock out the ``date`` class in the module under test. The :attr:`~Mock.side_effect`
 attribute on the mock date class is then set to a lambda function that returns
 a real date. When the mock date class is called a real date will be
 constructed and returned by ``side_effect``. ::
@@ -766,8 +766,8 @@ mock has a nice API for making assertions about how your mock objects are used.
     >>> mock.foo_bar.assert_called_with('baz', spam='eggs')
 
 If your mock is only being called once you can use the
-:meth:`assert_called_once_with` method that also asserts that the
-:attr:`call_count` is one.
+:meth:`~Mock.assert_called_once_with` method that also asserts that the
+:attr:`~Mock.call_count` is one.
 
     >>> mock.foo_bar.assert_called_once_with('baz', spam='eggs')
     >>> mock.foo_bar()
@@ -835,7 +835,7 @@ One possibility would be for mock to copy the arguments you pass in. This
 could then cause problems if you do assertions that rely on object identity
 for equality.
 
-Here's one solution that uses the :attr:`side_effect`
+Here's one solution that uses the :attr:`~Mock.side_effect`
 functionality. If you provide a ``side_effect`` function for a mock then
 ``side_effect`` will be called with the same args as the mock. This gives us an
 opportunity to copy the arguments and store them for later assertions. In this
@@ -971,7 +971,8 @@ We can do this with :class:`MagicMock`, which will behave like a dictionary,
 and using :data:`~Mock.side_effect` to delegate dictionary access to a real
 underlying dictionary that is under our control.
 
-When the :meth:`__getitem__` and :meth:`__setitem__` methods of our ``MagicMock`` are called
+When the :meth:`~object.__getitem__` and :meth:`~object.__setitem__` methods
+of our ``MagicMock`` are called
 (normal dictionary access) then ``side_effect`` is called with the key (and in
 the case of ``__setitem__`` the value too). We can also control what is returned.
 
