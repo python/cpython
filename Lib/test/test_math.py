@@ -428,6 +428,9 @@ class MathTests(unittest.TestCase):
         self.assertRaises(TypeError, math.ceil, t)
         self.assertRaises(TypeError, math.ceil, t, 0)
 
+        self.assertEqual(math.ceil(FloatLike(+1.0)), +1.0)
+        self.assertEqual(math.ceil(FloatLike(-1.0)), -1.0)
+
     @requires_IEEE_754
     def testCopysign(self):
         self.assertEqual(math.copysign(1, 42), 1.0)
@@ -577,6 +580,9 @@ class MathTests(unittest.TestCase):
         t.__floor__ = lambda *args: args
         self.assertRaises(TypeError, math.floor, t)
         self.assertRaises(TypeError, math.floor, t, 0)
+
+        self.assertEqual(math.floor(FloatLike(+1.0)), +1.0)
+        self.assertEqual(math.floor(FloatLike(-1.0)), -1.0)
 
     def testFmod(self):
         self.assertRaises(TypeError, math.fmod)

@@ -1184,7 +1184,13 @@ static PyObject *
 math_floor(PyObject *module, PyObject *number)
 /*[clinic end generated code: output=c6a65c4884884b8a input=63af6b5d7ebcc3d6]*/
 {
-    if (!PyFloat_CheckExact(number)) {
+    double x;
+
+    if (PyFloat_CheckExact(number)) {
+        x = PyFloat_AS_DOUBLE(number);
+    }
+    else
+    {
         math_module_state *state = get_math_module_state(module);
         PyObject *method = _PyObject_LookupSpecial(number, state->str___floor__);
         if (method != NULL) {
@@ -1194,11 +1200,10 @@ math_floor(PyObject *module, PyObject *number)
         }
         if (PyErr_Occurred())
             return NULL;
+        x = PyFloat_AsDouble(number);
+        if (x == -1.0 && PyErr_Occurred())
+            return NULL;
     }
-    double x = PyFloat_AsDouble(number);
-    if (x == -1.0 && PyErr_Occurred())
-        return NULL;
-
     return PyLong_FromDouble(floor(x));
 }
 
