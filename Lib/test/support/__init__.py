@@ -472,28 +472,28 @@ def requires_zlib(reason='requires zlib'):
         import zlib
     except ImportError:
         zlib = None
-    return unittest.skipUnless(zlib, reason)
+    return skipUnless(zlib, reason, label='requires_zlib')
 
 def requires_gzip(reason='requires gzip'):
     try:
         import gzip
     except ImportError:
         gzip = None
-    return unittest.skipUnless(gzip, reason)
+    return skipUnless(gzip, reason, label='requires_gzip')
 
 def requires_bz2(reason='requires bz2'):
     try:
         import bz2
     except ImportError:
         bz2 = None
-    return unittest.skipUnless(bz2, reason)
+    return skipUnless(bz2, reason, label='requires_bz2')
 
 def requires_lzma(reason='requires lzma'):
     try:
         import lzma
     except ImportError:
         lzma = None
-    return unittest.skipUnless(lzma, reason)
+    return skipUnless(lzma, reason, label='requires_lzma')
 
 def has_no_debug_ranges():
     try:
@@ -504,7 +504,7 @@ def has_no_debug_ranges():
     return not bool(config['code_debug_ranges'])
 
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
-    return unittest.skipIf(has_no_debug_ranges(), reason)
+    return skipIf(has_no_debug_ranges(), reason, label='requires_debug_ranges')
 
 # Is not actually used in tests, but is kept for compatibility.
 is_jython = sys.platform.startswith('java')
@@ -524,13 +524,13 @@ is_wasi = sys.platform == "wasi"
 has_fork_support = hasattr(os, "fork") and not is_emscripten and not is_wasi
 
 def requires_fork():
-    return unittest.skipUnless(has_fork_support, "requires working os.fork()")
+    return skipUnless(has_fork_support, "requires working os.fork()", label='requires_fork')
 
 has_subprocess_support = not is_emscripten and not is_wasi
 
 def requires_subprocess():
     """Used for subprocess, os.spawn calls, fd inheritance"""
-    return unittest.skipUnless(has_subprocess_support, "requires subprocess support")
+    return skipUnless(has_subprocess_support, "requires subprocess support", label='requires_subprocess')
 
 # Emscripten's socket emulation and WASI sockets have limitations.
 has_socket_support = not is_emscripten and not is_wasi
@@ -545,7 +545,7 @@ def requires_working_socket(*, module=False):
         if not has_socket_support:
             raise unittest.SkipTest(msg)
     else:
-        return unittest.skipUnless(has_socket_support, msg)
+        return skipUnless(has_socket_support, msg, label='requires_socket')
 
 # Does strftime() support glibc extension like '%4Y'?
 has_strftime_extensions = False
@@ -950,6 +950,8 @@ def bigmemtest(size, memuse, dry_run=True):
     test doesn't support dummy runs when -M is not specified.
     """
     def decorator(f):
+        @mark('bigmemtest')
+        @functools.wraps(f)
         def wrapper(self):
             size = wrapper.size
             memuse = wrapper.memuse
@@ -986,6 +988,8 @@ def bigmemtest(size, memuse, dry_run=True):
 
 def bigaddrspacetest(f):
     """Decorator for tests that fill the address space."""
+    @mark('bigaddrspacetest')
+    @functools.wraps(f)
     def wrapper(self):
         if max_memuse < MAX_Py_ssize_t:
             if MAX_Py_ssize_t >= 2**63 - 1 and max_memuse >= 2**31:
@@ -1002,16 +1006,31 @@ def bigaddrspacetest(f):
 #=======================================================================
 # unittest integration.
 
-def _id(obj):
-    return obj
+def mark(label):
+    def decorator(test):
+        setattr(test, label, True)
+        return test
+    return decorator
+
+def combine(*decorators):
+    def decorator(test):
+        for deco in reversed(decorators):
+            test = deco(test)
+        return test
+    return decorator
+
+def skipUnless(condition, reason, *, label):
+    return combine(unittest.skipUnless(condition, reason), mark(label))
+
+def skipIf(condition, reason, *, label):
+    return combine(unittest.skipIf(condition, reason), mark(label))
 
 def requires_resource(resource):
     if resource == 'gui' and not _is_gui_available():
-        return unittest.skip(_is_gui_available.reason)
-    if is_resource_enabled(resource):
-        return _id
-    else:
-        return unittest.skip("resource {0!r} is not enabled".format(resource))
+        return skipUnless(False, _is_gui_available.reason, label='requires_gui')
+    return skipUnless(is_resource_enabled(resource),
+                      f"resource {resource!r} is not enabled",
+                      label='requires_' + resource)
 
 def cpython_only(test):
     """
@@ -1020,8 +1039,16 @@ def cpython_only(test):
     return impl_detail(cpython=True)(test)
 
 def impl_detail(msg=None, **guards):
+    guards, _ = _parse_guards(guards)
+    decorators = []
+    for name in reversed(guards):
+        if guards[name]:
+            label = f'impl_detail_{name}'
+        else:
+            label = f'impl_detail_no_{name}'
+        decorators.append(mark(label))
     if check_impl_detail(**guards):
-        return _id
+        return combine(*decorators)
     if msg is None:
         guardnames, default = _parse_guards(guards)
         if default:
@@ -1030,7 +1057,7 @@ def impl_detail(msg=None, **guards):
             msg = "implementation detail specific to {0}"
         guardnames = sorted(guardnames.keys())
         msg = msg.format(' or '.join(guardnames))
-    return unittest.skip(msg)
+    return combine(unittest.skip(msg), *decorators)
 
 def _parse_guards(guards):
     # Returns a tuple ({platform_name: run_me}, default_value)
@@ -1157,6 +1184,7 @@ def _run_suite(suite):
 
 # By default, don't filter tests
 _match_test_func = None
+_match_test_func2 = None
 
 _accept_test_patterns = None
 _ignore_test_patterns = None
@@ -1164,10 +1192,8 @@ _ignore_test_patterns = None
 
 def match_test(test):
     # Function used by support.run_unittest() and regrtest --list-cases
-    if _match_test_func is None:
-        return True
-    else:
-        return _match_test_func(test.id())
+    return ((_match_test_func is None or _match_test_func(test.id())) and
+            (_match_test_func2 is None or _match_test_func2(test)))
 
 
 def _is_full_match_test(pattern):
@@ -1210,6 +1236,45 @@ def set_match_tests(accept_patterns=None, ignore_patterns=None):
             return accept and not ignore
 
         _match_test_func = match_function
+
+
+def _check_obj_labels(obj, labels):
+    for label in labels:
+        if hasattr(obj, label):
+            return True
+    return False
+
+def _check_test_labels(test, labels):
+    if _check_obj_labels(test, labels):
+        return True
+    testMethod = getattr(test, test._testMethodName)
+    while testMethod is not None:
+        if _check_obj_labels(testMethod, labels):
+            return True
+        testMethod = getattr(testMethod, '__wrapped__', None)
+    return False
+
+def set_match_tests2(accept_labels=None, ignore_labels=None):
+    global _match_test_func2
+
+    if accept_labels is None:
+        accept_labels = ()
+    if ignore_labels is None:
+        ignore_labels = ()
+    # Create a copy since label lists can be mutable and so modified later
+    accept_labels = tuple(accept_labels)
+    ignore_labels = tuple(ignore_labels)
+
+    def match_function(test):
+        accept = True
+        ignore = False
+        if accept_labels:
+            accept = _check_test_labels(test, accept_labels)
+        if ignore_labels:
+            ignore = _check_test_labels(test, ignore_labels)
+        return accept and not ignore
+
+    _match_test_func2 = match_function
 
 
 def _compile_match_function(patterns):

@@ -20,6 +20,8 @@ class RunTests:
     fail_env_changed: bool = False
     match_tests: FilterTuple | None = None
     ignore_tests: FilterTuple | None = None
+    accept_labels: tuple[str, ...] | None = None
+    ignore_labels: tuple[str, ...] | None = None
     match_tests_dict: FilterDict | None = None
     rerun: bool = False
     forever: bool = False

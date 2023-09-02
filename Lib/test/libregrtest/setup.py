@@ -95,6 +95,7 @@ def setup_tests(runtests: RunTests):
     support.PGO_EXTENDED = runtests.pgo_extended
 
     support.set_match_tests(runtests.match_tests, runtests.ignore_tests)
+    support.set_match_tests2(runtests.accept_labels, runtests.ignore_labels)
 
     if runtests.use_junit:
         support.junit_xml_list = []

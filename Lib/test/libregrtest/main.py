@@ -78,6 +78,14 @@ class Regrtest:
             self.ignore_tests: FilterTuple = tuple(ns.ignore_tests)
         else:
             self.ignore_tests = None
+        if ns.accept_labels:
+            self.accept_labels: tuple[str, ...] = tuple(ns.accept_labels)
+        else:
+            self.accept_labels = None
+        if ns.ignore_labels:
+            self.ignore_labels: tuple[str, ...] = tuple(ns.ignore_labels)
+        else:
+            self.ignore_labels = None
         self.exclude: bool = ns.exclude
         self.fromfile: StrPath | None = ns.fromfile
         self.starting_test: TestName | None = ns.start
@@ -484,6 +492,8 @@ class Regrtest:
             list_cases(selected,
                        match_tests=self.match_tests,
                        ignore_tests=self.ignore_tests,
+                       accept_labels=self.accept_labels,
+                       ignore_labels=self.ignore_labels,
                        test_dir=self.test_dir)
         else:
             exitcode = self.run_tests(selected, tests)
