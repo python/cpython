@@ -6,7 +6,7 @@
 #include "pycore_code.h"          // _PyCodeConstructor
 #include "pycore_frame.h"         // FRAME_SPECIALS_SIZE
 #include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
-#include "pycore_opcode.h"        // _PyOpcode_Deopt
+#include "pycore_opcode_metadata.h" // _PyOpcode_Deopt, _PyOpcode_Caches
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
@@ -395,6 +395,9 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     int nlocals, ncellvars, nfreevars;
     get_localsplus_counts(con->localsplusnames, con->localspluskinds,
                           &nlocals, &ncellvars, &nfreevars);
+    if (con->stacksize == 0) {
+        con->stacksize = 1;
+    }
 
     co->co_filename = Py_NewRef(con->filename);
     co->co_name = Py_NewRef(con->name);
@@ -1777,13 +1780,33 @@ code_richcompare(PyObject *self, PyObject *other, int op)
     for (int i = 0; i < Py_SIZE(co); i++) {
         _Py_CODEUNIT co_instr = _PyCode_CODE(co)[i];
         _Py_CODEUNIT cp_instr = _PyCode_CODE(cp)[i];
-        co_instr.op.code = _PyOpcode_Deopt[co_instr.op.code];
-        cp_instr.op.code = _PyOpcode_Deopt[cp_instr.op.code];
-        eq = co_instr.cache == cp_instr.cache;
-        if (!eq) {
+        uint8_t co_code = co_instr.op.code;
+        uint8_t co_arg = co_instr.op.arg;
+        uint8_t cp_code = cp_instr.op.code;
+        uint8_t cp_arg = cp_instr.op.arg;
+
+        if (co_code == ENTER_EXECUTOR) {
+            const int exec_index = co_arg;
+            _PyExecutorObject *exec = co->co_executors->executors[exec_index];
+            co_code = exec->vm_data.opcode;
+            co_arg = exec->vm_data.oparg;
+        }
+        assert(co_code != ENTER_EXECUTOR);
+        co_code = _PyOpcode_Deopt[co_code];
+
+        if (cp_code == ENTER_EXECUTOR) {
+            const int exec_index = cp_arg;
+            _PyExecutorObject *exec = cp->co_executors->executors[exec_index];
+            cp_code = exec->vm_data.opcode;
+            cp_arg = exec->vm_data.oparg;
+        }
+        assert(cp_code != ENTER_EXECUTOR);
+        cp_code = _PyOpcode_Deopt[cp_code];
+
+        if (co_code != cp_code || co_arg != cp_arg) {
             goto unequal;
         }
-        i += _PyOpcode_Caches[co_instr.op.code];
+        i += _PyOpcode_Caches[co_code];
     }
 
     /* compare constants */
@@ -1862,10 +1885,22 @@ code_hash(PyCodeObject *co)
     SCRAMBLE_IN(co->co_firstlineno);
     SCRAMBLE_IN(Py_SIZE(co));
     for (int i = 0; i < Py_SIZE(co); i++) {
-        int deop = _Py_GetBaseOpcode(co, i);
-        SCRAMBLE_IN(deop);
-        SCRAMBLE_IN(_PyCode_CODE(co)[i].op.arg);
-        i += _PyOpcode_Caches[deop];
+        _Py_CODEUNIT co_instr = _PyCode_CODE(co)[i];
+        uint8_t co_code = co_instr.op.code;
+        uint8_t co_arg = co_instr.op.arg;
+        if (co_code == ENTER_EXECUTOR) {
+            _PyExecutorObject *exec = co->co_executors->executors[co_arg];
+            assert(exec != NULL);
+            assert(exec->vm_data.opcode != ENTER_EXECUTOR);
+            co_code = _PyOpcode_Deopt[exec->vm_data.opcode];
+            co_arg = exec->vm_data.oparg;
+        }
+        else {
+            co_code = _Py_GetBaseOpcode(co, i);
+        }
+        SCRAMBLE_IN(co_code);
+        SCRAMBLE_IN(co_arg);
+        i += _PyOpcode_Caches[co_code];
     }
     if ((Py_hash_t)uhash == -1) {
         return -2;

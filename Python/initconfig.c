@@ -335,21 +335,34 @@ int PyStatus_IsExit(PyStatus status)
 int PyStatus_Exception(PyStatus status)
 { return _PyStatus_EXCEPTION(status); }
 
-PyObject*
+void
 _PyErr_SetFromPyStatus(PyStatus status)
 {
     if (!_PyStatus_IS_ERROR(status)) {
         PyErr_Format(PyExc_SystemError,
-                     "%s() expects an error PyStatus",
-                     _PyStatus_GET_FUNC());
+                     "_PyErr_SetFromPyStatus() status is not an error");
+        return;
     }
-    else if (status.func) {
-        PyErr_Format(PyExc_ValueError, "%s: %s", status.func, status.err_msg);
+
+    const char *err_msg = status.err_msg;
+    if (err_msg == NULL || strlen(err_msg) == 0) {
+        PyErr_Format(PyExc_SystemError,
+                     "_PyErr_SetFromPyStatus() status has no error message");
+        return;
+    }
+
+    if (strcmp(err_msg, _PyStatus_NO_MEMORY_ERRMSG) == 0) {
+        PyErr_NoMemory();
+        return;
+    }
+
+    const char *func = status.func;
+    if (func) {
+        PyErr_Format(PyExc_RuntimeError, "%s: %s", func, err_msg);
     }
     else {
-        PyErr_Format(PyExc_ValueError, "%s", status.err_msg);
+        PyErr_Format(PyExc_RuntimeError, "%s", err_msg);
     }
-    return NULL;
 }
 
 
@@ -1064,8 +1077,11 @@ fail:
 static PyObject*
 config_dict_get(PyObject *dict, const char *name)
 {
-    PyObject *item = _PyDict_GetItemStringWithError(dict, name);
-    if (item == NULL && !PyErr_Occurred()) {
+    PyObject *item;
+    if (PyDict_GetItemStringRef(dict, name, &item) < 0) {
+        return NULL;
+    }
+    if (item == NULL) {
         PyErr_Format(PyExc_ValueError, "missing config key: %s", name);
         return NULL;
     }
@@ -1094,7 +1110,8 @@ config_dict_get_int(PyObject *dict, const char *name, int *result)
     if (item == NULL) {
         return -1;
     }
-    int value = _PyLong_AsInt(item);
+    int value = PyLong_AsInt(item);
+    Py_DECREF(item);
     if (value == -1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
             config_dict_invalid_type(name);
@@ -1117,6 +1134,7 @@ config_dict_get_ulong(PyObject *dict, const char *name, unsigned long *result)
         return -1;
     }
     unsigned long value = PyLong_AsUnsignedLong(item);
+    Py_DECREF(item);
     if (value == (unsigned long)-1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
             config_dict_invalid_type(name);
@@ -1139,27 +1157,33 @@ config_dict_get_wstr(PyObject *dict, const char *name, PyConfig *config,
     if (item == NULL) {
         return -1;
     }
+
     PyStatus status;
     if (item == Py_None) {
         status = PyConfig_SetString(config, result, NULL);
     }
     else if (!PyUnicode_Check(item)) {
         config_dict_invalid_type(name);
-        return -1;
+        goto error;
     }
     else {
         wchar_t *wstr = PyUnicode_AsWideCharString(item, NULL);
         if (wstr == NULL) {
-            return -1;
+            goto error;
         }
         status = PyConfig_SetString(config, result, wstr);
         PyMem_Free(wstr);
     }
     if (_PyStatus_EXCEPTION(status)) {
         PyErr_NoMemory();
-        return -1;
+        goto error;
     }
+    Py_DECREF(item);
     return 0;
+
+error:
+    Py_DECREF(item);
+    return -1;
 }
 
 
@@ -1173,6 +1197,7 @@ config_dict_get_wstrlist(PyObject *dict, const char *name, PyConfig *config,
     }
 
     if (!PyList_CheckExact(list)) {
+        Py_DECREF(list);
         config_dict_invalid_type(name);
         return -1;
     }
@@ -1206,10 +1231,12 @@ config_dict_get_wstrlist(PyObject *dict, const char *name, PyConfig *config,
         goto error;
     }
     _PyWideStringList_Clear(&wstrlist);
+    Py_DECREF(list);
     return 0;
 
 error:
     _PyWideStringList_Clear(&wstrlist);
+    Py_DECREF(list);
     return -1;
 }
 

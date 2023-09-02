@@ -1726,8 +1726,7 @@ class DummyPath(pathlib._PathBase):
         if path in self._files:
             raise NotADirectoryError(errno.ENOTDIR, "Not a directory", path)
         elif path in self._directories:
-            for name in self._directories[path]:
-                yield self / name
+            return (self / name for name in self._directories[path])
         else:
             raise FileNotFoundError(errno.ENOENT, "File not found", path)
 
@@ -1927,7 +1926,7 @@ class DummyPathTest(unittest.TestCase):
         # __iter__ on something that is not a directory.
         p = self.cls(BASE, 'fileA')
         with self.assertRaises(OSError) as cm:
-            next(p.iterdir())
+            p.iterdir()
         # ENOENT or EINVAL under Windows, ENOTDIR otherwise
         # (see issue #12802).
         self.assertIn(cm.exception.errno, (errno.ENOTDIR,

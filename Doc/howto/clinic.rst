@@ -158,7 +158,7 @@ process a single source file, like this:
 The CLI supports the following options:
 
 .. program:: ./Tools/clinic/clinic.py [-h] [-f] [-o OUTPUT] [-v] \
-             [--converters] [--make] [--srcdir SRCDIR] [FILE ...]
+             [--converters] [--make] [--srcdir SRCDIR] [--limited] [FILE ...]
 
 .. option:: -h, --help
 
@@ -192,6 +192,11 @@ The CLI supports the following options:
 
    A file to exclude in :option:`--make` mode.
    This option can be given multiple times.
+
+.. option:: --limited
+
+    Use the :ref:`Limited API <limited-c-api>` to parse arguments in the generated C code.
+    See :ref:`clinic-howto-limited-capi`.
 
 .. option:: FILE ...
 
@@ -1905,6 +1910,22 @@ blocks embedded in Python files look slightly different.  They look like this:
     #/*[python checksum:...]*/
 
 
+.. _clinic-howto-limited-capi:
+
+How to use the Limited C API
+----------------------------
+
+If Argument Clinic :term:`input` is located within a C source file
+that contains ``#define Py_LIMITED_API``, Argument Clinic will generate C code
+that uses the :ref:`Limited API <limited-c-api>` to parse arguments. The
+advantage of this is that the generated code will not use private functions.
+However, this *can* result in Argument Clinic generating less efficient code
+in some cases. The extent of the performance penalty will depend
+on the parameters (types, number, etc.).
+
+.. versionadded:: 3.13
+
+
 .. _clinic-howto-override-signature:
 
 How to override the generated signature
@@ -1941,54 +1962,70 @@ The generated docstring ends up looking like this:
 
 
 .. _clinic-howto-deprecate-positional:
+.. _clinic-howto-deprecate-keyword:
 
-How to deprecate passing parameters positionally
-------------------------------------------------
+How to deprecate passing parameters positionally or by keyword
+--------------------------------------------------------------
 
 Argument Clinic provides syntax that makes it possible to generate code that
-deprecates passing :term:`arguments <argument>` positionally.
+deprecates passing :term:`arguments <argument>` for positional-or-keyword
+:term:`parameters <parameter>` positionally or by keyword.
 For example, say we've got a module-level function :py:func:`!foo.myfunc`
-that has three :term:`parameters <parameter>`:
-positional-or-keyword parameters *a* and *b*, and a keyword-only parameter *c*::
+that has five parameters: a positional-only parameter *a*, three
+positional-or-keyword parameters *b*, *c* and *d*, and a keyword-only
+parameter *e*::
 
    /*[clinic input]
    module foo
    myfunc
        a: int
+       /
        b: int
-       *
        c: int
+       d: int
+       *
+       e: int
    [clinic start generated output]*/
 
-We now want to make the *b* parameter keyword-only;
-however, we'll have to wait two releases before making this change,
+We now want to make the *b* parameter positional-only and the *d* parameter
+keyword-only;
+however, we'll have to wait two releases before making these changes,
 as mandated by Python's backwards-compatibility policy (see :pep:`387`).
 For this example, imagine we're in the development phase for Python 3.12:
 that means we'll be allowed to introduce deprecation warnings in Python 3.12
-whenever the *b* parameter is passed positionally,
-and we'll be allowed to make it keyword-only in Python 3.14 at the earliest.
+whenever an argument for the *b* parameter is passed by keyword or an argument
+for the *d* parameter is passed positionally, and we'll be allowed to make
+them positional-only and keyword-only respectively in Python 3.14 at
+the earliest.
 
 We can use Argument Clinic to emit the desired deprecation warnings
-using the ``* [from ...]`` syntax,
-by adding the line ``* [from 3.14]`` right above the *b* parameter::
+using the ``[from ...]`` syntax, by adding the line ``/ [from 3.14]`` right
+below the *b* parameter and adding the line ``* [from 3.14]`` right above
+the *d* parameter::
 
    /*[clinic input]
    module foo
    myfunc
        a: int
-       * [from 3.14]
+       /
        b: int
-       *
+       / [from 3.14]
        c: int
+       * [from 3.14]
+       d: int
+       *
+       e: int
    [clinic start generated output]*/
 
 Next, regenerate Argument Clinic code (``make clinic``),
 and add unit tests for the new behaviour.
 
 The generated code will now emit a :exc:`DeprecationWarning`
-when an :term:`argument` for the :term:`parameter` *b* is passed positionally.
+when an :term:`argument` for the :term:`parameter` *d* is passed positionally
+(e.g ``myfunc(1, 2, 3, 4, e=5)``) or an argument for the parameter *b* is
+passed by keyword (e.g ``myfunc(1, b=2, c=3, d=4, e=5)``).
 C preprocessor directives are also generated for emitting
-compiler warnings if the ``* [from ...]`` line has not been removed
+compiler warnings if the ``[from ...]`` lines have not been removed
 from the Argument Clinic input when the deprecation period is over,
 which means when the alpha phase of the specified Python version kicks in.
 
@@ -2001,21 +2038,26 @@ Luckily for us, compiler warnings are now generated:
 .. code-block:: none
 
    In file included from Modules/foomodule.c:139:
-   Modules/clinic/foomodule.c.h:139:8: warning: In 'foomodule.c', update parameter(s) 'a' and 'b' in the clinic input of 'mymod.myfunc' to be keyword-only. [-W#warnings]
-    #    warning "In 'foomodule.c', update parameter(s) 'a' and 'b' in the clinic input of 'mymod.myfunc' to be keyword-only. [-W#warnings]"
+   Modules/clinic/foomodule.c.h:139:8: warning: In 'foomodule.c', update the clinic input of 'mymod.myfunc'. [-W#warnings]
+    #    warning "In 'foomodule.c', update the clinic input of 'mymod.myfunc'. [-W#warnings]"
          ^
 
-We now close the deprecation phase by making *b* keyword-only;
-replace the ``* [from ...]`` line above *b*
-with the ``*`` from the line above *c*::
+We now close the deprecation phase by making *a* positional-only and *c*
+keyword-only;
+replace the ``/ [from ...]`` line below *b* with the ``/`` from the line
+below *a* and the ``* [from ...]`` line above *d* with the ``*`` from
+the line above *e*::
 
    /*[clinic input]
    module foo
    myfunc
        a: int
-       *
        b: int
+       /
        c: int
+       *
+       d: int
+       e: int
    [clinic start generated output]*/
 
 Finally, run ``make clinic`` to regenerate the Argument Clinic code,

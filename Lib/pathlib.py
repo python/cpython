@@ -1055,7 +1055,7 @@ class _PathBase(PurePath):
 
     def _scandir(self):
         # os.scandir() returns an object that can be used as a context manager
-        return contextlib.nullcontext(list(self.iterdir()))
+        return contextlib.nullcontext(self.iterdir())
 
     def _make_child_relpath(self, name):
         sep = self.pathmod.sep
@@ -1462,8 +1462,7 @@ class Path(_PathBase):
         The children are yielded in arbitrary order, and the
         special entries '.' and '..' are not included.
         """
-        for name in os.listdir(self):
-            yield self._make_child_relpath(name)
+        return (self._make_child_relpath(name) for name in os.listdir(self))
 
     def _scandir(self):
         return os.scandir(self)
