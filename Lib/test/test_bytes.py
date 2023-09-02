@@ -1354,7 +1354,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             except ValueError:
                 pass
             try:
-                setitem(b, 0, None)
+                setitem(b, 0, object())
                 self.fail("Didn't raise TypeError")
             except TypeError:
                 pass

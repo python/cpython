@@ -1,13 +1,8 @@
 #ifndef Py_PYPORT_H
 #define Py_PYPORT_H
 
-#include "pyconfig.h" /* include for defines */
-
-#include <inttypes.h>
-
-#include <limits.h>
 #ifndef UCHAR_MAX
-#  error "limits.h must define UCHAR_MAX"
+#  error "<limits.h> header must define UCHAR_MAX"
 #endif
 #if UCHAR_MAX != 255
 #  error "Python's source code assumes C's unsigned char is an 8-bit type"
@@ -24,9 +19,10 @@
 #define _Py_CAST(type, expr) ((type)(expr))
 
 // Static inline functions should use _Py_NULL rather than using directly NULL
-// to prevent C++ compiler warnings. On C++11 and newer, _Py_NULL is defined as
-// nullptr.
-#if defined(__cplusplus) && __cplusplus >= 201103
+// to prevent C++ compiler warnings. On C23 and newer and on C++11 and newer,
+// _Py_NULL is defined as nullptr.
+#if (defined (__STDC_VERSION__) && __STDC_VERSION__ > 201710L) \
+        || (defined(__cplusplus) && __cplusplus >= 201103)
 #  define _Py_NULL nullptr
 #else
 #  define _Py_NULL NULL
@@ -187,12 +183,6 @@ typedef Py_ssize_t Py_ssize_clean_t;
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_MEMCPY memcpy
 #endif
-
-#ifdef HAVE_IEEEFP_H
-#include <ieeefp.h>  /* needed for 'finite' declaration on some platforms */
-#endif
-
-#include <math.h> /* Moved here from the math section, before extern "C" */
 
 /********************************************
  * WRAPPER FOR <time.h> and/or <sys/time.h> *
@@ -420,32 +410,6 @@ extern "C" {
 #else
 #  define Py_NO_INLINE
 #endif
-
-/**************************************************************************
-Prototypes that are missing from the standard include files on some systems
-(and possibly only some versions of such systems.)
-
-Please be conservative with adding new ones, document them and enclose them
-in platform-specific #ifdefs.
-**************************************************************************/
-
-#ifdef SOLARIS
-/* Unchecked */
-extern int gethostname(char *, int);
-#endif
-
-#ifdef HAVE__GETPTY
-#include <sys/types.h>          /* we need to import mode_t */
-extern char * _getpty(int *, int, mode_t, int);
-#endif
-
-/* On QNX 6, struct termio must be declared by including sys/termio.h
-   if TCGETA, TCSETA, TCSETAW, or TCSETAF are used.  sys/termio.h must
-   be included before termios.h or it will generate an error. */
-#if defined(HAVE_SYS_TERMIO_H) && !defined(__hpux)
-#include <sys/termio.h>
-#endif
-
 
 /* On 4.4BSD-descendants, ctype functions serves the whole range of
  * wchar_t character set rather than single byte code points only.
@@ -683,12 +647,6 @@ extern char * _getpty(int *, int, mode_t, int);
 #  endif
 #endif
 
-/* Check that ALT_SOABI is consistent with Py_TRACE_REFS:
-   ./configure --with-trace-refs should must be used to define Py_TRACE_REFS */
-#if defined(ALT_SOABI) && defined(Py_TRACE_REFS)
-#  error "Py_TRACE_REFS ABI is not compatible with release and debug ABI"
-#endif
-
 #if defined(__ANDROID__) || defined(__VXWORKS__)
    // Use UTF-8 as the locale encoding, ignore the LC_CTYPE locale.
    // See _Py_GetLocaleEncoding(), PyUnicode_DecodeLocale()
@@ -774,6 +732,10 @@ extern char * _getpty(int *, int, mode_t, int);
 #if !defined(ALIGNOF_MAX_ALIGN_T) || ALIGNOF_MAX_ALIGN_T == 0
 #   undef ALIGNOF_MAX_ALIGN_T
 #   define ALIGNOF_MAX_ALIGN_T _Alignof(long double)
+#endif
+
+#if defined(__sgi) && !defined(_SGI_MP_SOURCE)
+#  define _SGI_MP_SOURCE
 #endif
 
 #endif /* Py_PYPORT_H */

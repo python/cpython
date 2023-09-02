@@ -3,7 +3,7 @@
 #include "pycore_object.h"  // _PyObject_GC_TRACK/UNTRACK
 #include "pycore_typevarobject.h"  // _PyTypeAlias_Type
 #include "pycore_unionobject.h"
-#include "structmember.h"
+
 
 
 static PyObject *make_union(PyObject *);
@@ -273,7 +273,7 @@ error:
 }
 
 static PyMemberDef union_members[] = {
-        {"__args__", T_OBJECT, offsetof(unionobject, args), READONLY},
+        {"__args__", _Py_T_OBJECT, offsetof(unionobject, args), Py_READONLY},
         {0}
 };
 

@@ -1,13 +1,12 @@
-
 #include "Python.h"
-#include <sys/resource.h>
+#include <errno.h>                // errno
+#include <string.h>
+#include <sys/resource.h>         // getrusage()
 #ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
+#  include <sys/time.h>
 #endif
 #include <time.h>
-#include <string.h>
-#include <errno.h>
-#include <unistd.h>
+#include <unistd.h>               // getpagesize()
 
 /* On some systems, these aren't in any header file.
    On others they are, with inconsistent prototypes.
@@ -372,9 +371,7 @@ resource_exec(PyObject *module)
     } while (0)
 
     /* Add some symbolic constants to the module */
-    Py_INCREF(PyExc_OSError);
-    if (PyModule_AddObject(module, "error", PyExc_OSError) < 0) {
-        Py_DECREF(PyExc_OSError);
+    if (PyModule_AddObjectRef(module, "error", PyExc_OSError) < 0) {
         return -1;
     }
 
@@ -502,12 +499,7 @@ resource_exec(PyObject *module)
     {
         v = PyLong_FromLong((long) RLIM_INFINITY);
     }
-    if (!v) {
-        return -1;
-    }
-
-    if (PyModule_AddObject(module, "RLIM_INFINITY", v) < 0) {
-        Py_DECREF(v);
+    if (PyModule_Add(module, "RLIM_INFINITY", v) < 0) {
         return -1;
     }
     return 0;

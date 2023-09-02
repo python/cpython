@@ -19,7 +19,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #ifndef MS_WINDOWS
-#include <unistd.h>
+#  include <unistd.h>
 #endif
 
 uint32_t _Py_next_func_version = 1;

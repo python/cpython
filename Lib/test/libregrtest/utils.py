@@ -228,6 +228,11 @@ def get_build_info():
     ldflags_nodist = sysconfig.get_config_var('PY_LDFLAGS_NODIST') or ''
 
     build = []
+
+    # --disable-gil
+    if sysconfig.get_config_var('Py_NOGIL'):
+        build.append("nogil")
+
     if hasattr(sys, 'gettotalrefcount'):
         # --with-pydebug
         build.append('debug')
