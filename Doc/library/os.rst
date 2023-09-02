@@ -3786,8 +3786,6 @@ features:
    The file descriptor supports :func:`read` with a buffer size of 8,
    :func:`~select.select`, and :func:`~select.poll`.
 
-   .. seealso:: The :manpage:`timerfd_create(2)` man page.
-
    *clockid* must be a valid :ref:`clock ID <time-clock-id-constants>`,
    as defined in the :py:mod:`time` module.
 
@@ -3839,6 +3837,8 @@ features:
       finally:
           os.close(fd)
 
+   .. seealso:: The :manpage:`timerfd_create(2)` man page.
+
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
    .. versionadded:: 3.13
@@ -3847,8 +3847,6 @@ features:
 .. function:: timerfd_settime(fd, flags, initial_expiration=0.0, interval=0.0, /)
 
    Alter a timer file descriptor's internal timer.
-
-   .. seealso::  The :manpage:`timerfd_settime(2)` man page.
 
    *fd* must be a valid timer file descriptor.
 
@@ -3873,6 +3871,8 @@ features:
 
    Return a two-item tuple of (``next_expiration``, ``interval``) from
    the previous timer state, before this function executed.
+
+   .. seealso::  The :manpage:`timerfd_settime(2)` man page.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
