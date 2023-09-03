@@ -39,6 +39,7 @@ from email import iterators
 from email import quoprimime
 from email import utils
 
+from test import support
 from test.support import threading_helper
 from test.support.os_helper import unlink
 from test.test_email import openfile, TestEmailBase
@@ -3342,6 +3343,7 @@ Foo
         self.assertEqual(addrs[0][1], 'aperson@dom.ain')
 
     @threading_helper.requires_working_threading()
+    @support.requires_resource('cpu')
     def test_make_msgid_collisions(self):
         # Test make_msgid uniqueness, even with multiple threads
         class MsgidsThread(Thread):
