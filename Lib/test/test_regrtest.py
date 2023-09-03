@@ -22,7 +22,7 @@ from test import libregrtest
 from test import support
 from test.support import os_helper, TestStats
 from test.libregrtest import utils, setup
-from test.libregrtest.runtest import normalize_test_name
+from test.libregrtest.utils import normalize_test_name
 
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
@@ -74,11 +74,6 @@ class ParseArgsTestCase(unittest.TestCase):
     def test_wait(self):
         ns = libregrtest._parse_args(['--wait'])
         self.assertTrue(ns.wait)
-
-    def test_worker_args(self):
-        ns = libregrtest._parse_args(['--worker-args', '[[], {}]'])
-        self.assertEqual(ns.worker_args, '[[], {}]')
-        self.checkError(['--worker-args'], 'expected one argument')
 
     def test_start(self):
         for opt in '-S', '--start':
@@ -288,7 +283,7 @@ class ParseArgsTestCase(unittest.TestCase):
         for opt in '-T', '--coverage':
             with self.subTest(opt=opt):
                 ns = libregrtest._parse_args([opt])
-                self.assertTrue(ns.trace)
+                self.assertTrue(ns.coverage)
 
     def test_coverdir(self):
         for opt in '-D', '--coverdir':
@@ -587,9 +582,9 @@ class BaseTestCase(unittest.TestCase):
         self.check_line(output, f'Result: {state}', full=True)
 
     def parse_random_seed(self, output):
-        match = self.regex_search(r'Using random seed ([0-9]+)', output)
+        match = self.regex_search(r'Using random seed: ([0-9]+)', output)
         randseed = int(match.group(1))
-        self.assertTrue(0 <= randseed <= 10000000, randseed)
+        self.assertTrue(0 <= randseed <= 100_000_000, randseed)
         return randseed
 
     def run_command(self, args, input=None, exitcode=0, **kw):

@@ -1,0 +1,6 @@
+Refactor ``test.libregrtest`` to split the code into sub-files and add new
+classes. Make function arguments simpler: avoid passing complex classes with
+an unclear API ('ns' Namespace class), but instead try to pass simple types
+like bool and str. Functions are becoming more "stateless": only depend on
+their simple arguments. It should ease future maintenance of the code and
+prepare the project to get type annotations. Patch by Victor Stinner.

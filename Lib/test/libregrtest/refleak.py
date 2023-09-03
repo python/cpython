@@ -4,7 +4,8 @@ import warnings
 from inspect import isabstract
 from test import support
 from test.support import os_helper
-from test.libregrtest.utils import clear_caches
+
+from .utils import clear_caches
 
 try:
     from _abc import _get_dump
@@ -19,7 +20,9 @@ except ImportError:
                 cls._abc_negative_cache, cls._abc_negative_cache_version)
 
 
-def dash_R(ns, test_name, test_func):
+def runtest_refleak(test_name: str, test_func,
+                    huntrleaks: tuple[int, int, str],
+                    quiet: bool):
     """Run a test multiple times, looking for reference leaks.
 
     Returns:
@@ -62,7 +65,7 @@ def dash_R(ns, test_name, test_func):
     def get_pooled_int(value):
         return int_pool.setdefault(value, value)
 
-    nwarmup, ntracked, fname = ns.huntrleaks
+    nwarmup, ntracked, fname = huntrleaks
     fname = os.path.join(os_helper.SAVEDCWD, fname)
     repcount = nwarmup + ntracked
 
@@ -78,7 +81,7 @@ def dash_R(ns, test_name, test_func):
     # initialize variables to make pyflakes quiet
     rc_before = alloc_before = fd_before = interned_before = 0
 
-    if not ns.quiet:
+    if not quiet:
         print("beginning", repcount, "repetitions", file=sys.stderr)
         print(("1234567890"*(repcount//10 + 1))[:repcount], file=sys.stderr,
               flush=True)
@@ -102,7 +105,7 @@ def dash_R(ns, test_name, test_func):
         rc_after = gettotalrefcount() - interned_after * 2
         fd_after = fd_count()
 
-        if not ns.quiet:
+        if not quiet:
             print('.', end='', file=sys.stderr, flush=True)
 
         rc_deltas[i] = get_pooled_int(rc_after - rc_before)
@@ -114,7 +117,7 @@ def dash_R(ns, test_name, test_func):
         fd_before = fd_after
         interned_before = interned_after
 
-    if not ns.quiet:
+    if not quiet:
         print(file=sys.stderr)
 
     # These checkers return False on success, True on failure

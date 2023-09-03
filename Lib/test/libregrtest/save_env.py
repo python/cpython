@@ -5,7 +5,8 @@ import sys
 import threading
 from test import support
 from test.support import os_helper
-from test.libregrtest.utils import print_warning
+
+from .utils import print_warning
 
 
 class SkipTestEnvironment(Exception):

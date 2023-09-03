@@ -2,6 +2,7 @@ import argparse
 import os
 import shlex
 import sys
+
 from test.support import os_helper
 
 
@@ -154,7 +155,7 @@ class Namespace(argparse.Namespace):
         self.fromfile = None
         self.fail_env_changed = False
         self.use_resources = None
-        self.trace = False
+        self.coverage = False
         self.coverdir = 'coverage'
         self.runleaks = False
         self.huntrleaks = False
@@ -170,7 +171,8 @@ class Namespace(argparse.Namespace):
         self.ignore_tests = None
         self.pgo = False
         self.pgo_extended = False
-
+        self.threshold = None
+        self.wait = False
         super().__init__(**kwargs)
 
 
@@ -205,7 +207,7 @@ def _create_parser():
     group.add_argument('--wait', action='store_true',
                        help='wait for user input, e.g., allow a debugger '
                             'to be attached')
-    group.add_argument('--worker-args', metavar='ARGS')
+    group.add_argument('--worker-json', metavar='ARGS')
     group.add_argument('-S', '--start', metavar='START',
                        help='the name of the test at which to start.' +
                             more_details)
@@ -283,7 +285,6 @@ def _create_parser():
                        dest='use_mp', type=int,
                        help='run PROCESSES processes at once')
     group.add_argument('-T', '--coverage', action='store_true',
-                       dest='trace',
                        help='turn on code coverage tracing using the trace '
                             'module')
     group.add_argument('-D', '--coverdir', metavar='DIR',
@@ -378,11 +379,11 @@ def _parse_args(args, **kwargs):
 
     if ns.single and ns.fromfile:
         parser.error("-s and -f don't go together!")
-    if ns.use_mp is not None and ns.trace:
+    if ns.use_mp is not None and ns.coverage:
         parser.error("-T and -j don't go together!")
     if ns.python is not None:
         if ns.use_mp is None:
-            parser.error("-p requires -j!")
+            parser.error("--python option requires the -j option!")
         # The "executable" may be two or more parts, e.g. "node python.js"
         ns.python = shlex.split(ns.python)
     if ns.failfast and not (ns.verbose or ns.verbose3):
@@ -401,10 +402,6 @@ def _parse_args(args, **kwargs):
     if ns.timeout is not None:
         if ns.timeout <= 0:
             ns.timeout = None
-    if ns.use_mp is not None:
-        if ns.use_mp <= 0:
-            # Use all cores + extras for tests that like to sleep
-            ns.use_mp = 2 + (os.cpu_count() or 1)
     if ns.use:
         for a in ns.use:
             for r in a:
@@ -447,5 +444,14 @@ def _parse_args(args, **kwargs):
     if ns.forever:
         # --forever implies --failfast
         ns.failfast = True
+
+    if ns.huntrleaks:
+        warmup, repetitions, _ = ns.huntrleaks
+        if warmup < 1 or repetitions < 1:
+            msg = ("Invalid values for the --huntrleaks/-R parameters. The "
+                   "number of warmups and repetitions must be at least 1 "
+                   "each (1:1).")
+            print(msg, file=sys.stderr, flush=True)
+            sys.exit(2)
 
     return ns

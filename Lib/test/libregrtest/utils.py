@@ -1,9 +1,19 @@
+import contextlib
+import io
+import locale
 import math
 import os.path
+import platform
+import random
 import sys
 import sysconfig
+import tempfile
 import textwrap
 from test import support
+from test.support import os_helper
+
+
+TEMP_DIR_PREFIX = 'test_python_'
 
 
 def format_duration(seconds):
@@ -305,3 +315,206 @@ def get_build_info():
         build.append("dtrace")
 
     return build
+
+
+def abs_module_name(test_name: str, test_dir: str | None) -> str:
+    if test_name.startswith('test.') or test_dir:
+        return test_name
+    else:
+        # Import it from the test package
+        return 'test.' + test_name
+
+
+# gh-90681: When rerunning tests, we might need to rerun the whole
+# class or module suite if some its life-cycle hooks fail.
+# Test level hooks are not affected.
+_TEST_LIFECYCLE_HOOKS = frozenset((
+    'setUpClass', 'tearDownClass',
+    'setUpModule', 'tearDownModule',
+))
+
+def normalize_test_name(test_full_name, *, is_error=False):
+    short_name = test_full_name.split(" ")[0]
+    if is_error and short_name in _TEST_LIFECYCLE_HOOKS:
+        if test_full_name.startswith(('setUpModule (', 'tearDownModule (')):
+            # if setUpModule() or tearDownModule() failed, don't filter
+            # tests with the test file name, don't use use filters.
+            return None
+
+        # This means that we have a failure in a life-cycle hook,
+        # we need to rerun the whole module or class suite.
+        # Basically the error looks like this:
+        #    ERROR: setUpClass (test.test_reg_ex.RegTest)
+        # or
+        #    ERROR: setUpModule (test.test_reg_ex)
+        # So, we need to parse the class / module name.
+        lpar = test_full_name.index('(')
+        rpar = test_full_name.index(')')
+        return test_full_name[lpar + 1: rpar].split('.')[-1]
+    return short_name
+
+
+def remove_testfn(test_name: str, verbose: int) -> None:
+    # Try to clean up os_helper.TESTFN if left behind.
+    #
+    # While tests shouldn't leave any files or directories behind, when a test
+    # fails that can be tedious for it to arrange.  The consequences can be
+    # especially nasty on Windows, since if a test leaves a file open, it
+    # cannot be deleted by name (while there's nothing we can do about that
+    # here either, we can display the name of the offending test, which is a
+    # real help).
+    name = os_helper.TESTFN
+    if not os.path.exists(name):
+        return
+
+    if os.path.isdir(name):
+        import shutil
+        kind, nuker = "directory", shutil.rmtree
+    elif os.path.isfile(name):
+        kind, nuker = "file", os.unlink
+    else:
+        raise RuntimeError(f"os.path says {name!r} exists but is neither "
+                           f"directory nor file")
+
+    if verbose:
+        print_warning(f"{test_name} left behind {kind} {name!r}")
+        support.environment_altered = True
+
+    try:
+        import stat
+        # fix possible permissions problems that might prevent cleanup
+        os.chmod(name, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+        nuker(name)
+    except Exception as exc:
+        print_warning(f"{test_name} left behind {kind} {name!r} "
+                      f"and it couldn't be removed: {exc}")
+
+
+def fix_umask():
+    if support.is_emscripten:
+        # Emscripten has default umask 0o777, which breaks some tests.
+        # see https://github.com/emscripten-core/emscripten/issues/17269
+        old_mask = os.umask(0)
+        if old_mask == 0o777:
+            os.umask(0o027)
+        else:
+            os.umask(old_mask)
+
+
+def display_header():
+    # Print basic platform information
+    print("==", platform.python_implementation(), *sys.version.split())
+    print("==", platform.platform(aliased=True),
+                  "%s-endian" % sys.byteorder)
+    print("== Python build:", ' '.join(get_build_info()))
+    print("== cwd:", os.getcwd())
+    cpu_count = os.cpu_count()
+    if cpu_count:
+        print("== CPU count:", cpu_count)
+    print("== encodings: locale=%s, FS=%s"
+          % (locale.getencoding(), sys.getfilesystemencoding()))
+
+    # This makes it easier to remember what to set in your local
+    # environment when trying to reproduce a sanitizer failure.
+    asan = support.check_sanitizer(address=True)
+    msan = support.check_sanitizer(memory=True)
+    ubsan = support.check_sanitizer(ub=True)
+    sanitizers = []
+    if asan:
+        sanitizers.append("address")
+    if msan:
+        sanitizers.append("memory")
+    if ubsan:
+        sanitizers.append("undefined behavior")
+    if not sanitizers:
+        return
+
+    print(f"== sanitizers: {', '.join(sanitizers)}")
+    for sanitizer, env_var in (
+        (asan, "ASAN_OPTIONS"),
+        (msan, "MSAN_OPTIONS"),
+        (ubsan, "UBSAN_OPTIONS"),
+    ):
+        options= os.environ.get(env_var)
+        if sanitizer and options is not None:
+            print(f"== {env_var}={options!r}")
+
+
+def select_temp_dir(tmp_dir) -> str:
+    if tmp_dir:
+        tmp_dir = os.path.expanduser(tmp_dir)
+    elif sysconfig.is_python_build():
+        # When tests are run from the Python build directory, it is best
+        # practice to keep the test files in a subfolder. This eases the
+        # cleanup of leftover files using the "make distclean" command.
+        tmp_dir = sysconfig.get_config_var('abs_builddir')
+        if tmp_dir is None:
+            # bpo-30284: On Windows, only srcdir is available. Using
+            # abs_builddir mostly matters on UNIX when building Python
+            # out of the source tree, especially when the source tree
+            # is read only.
+            tmp_dir = sysconfig.get_config_var('srcdir')
+        tmp_dir = os.path.join(tmp_dir, 'build')
+    else:
+        tmp_dir = tempfile.gettempdir()
+    return os.path.abspath(tmp_dir)
+
+
+def make_temp_dir(tmp_dir, is_worker):
+    os.makedirs(tmp_dir, exist_ok=True)
+
+    # Define a writable temp dir that will be used as cwd while running
+    # the tests. The name of the dir includes the pid to allow parallel
+    # testing (see the -j option).
+    # Emscripten and WASI have stubbed getpid(), Emscripten has only
+    # milisecond clock resolution. Use randint() instead.
+    if sys.platform in {"emscripten", "wasi"}:
+        nounce = random.randint(0, 1_000_000)
+    else:
+        nounce = os.getpid()
+
+    if is_worker:
+        test_cwd = 'worker_{}'.format(nounce)
+    else:
+        test_cwd = '{}'.format(nounce)
+    test_cwd = TEMP_DIR_PREFIX + test_cwd
+    test_cwd += os_helper.FS_NONASCII
+    test_cwd = os.path.join(tmp_dir, test_cwd)
+    return test_cwd
+
+
+def cleanup_directory(tmp_dir):
+    import glob
+
+    path = os.path.join(glob.escape(tmp_dir), TEMP_DIR_PREFIX + '*')
+    print("Cleanup %s directory" % tmp_dir)
+    for name in glob.glob(path):
+        if os.path.isdir(name):
+            print("Remove directory: %s" % name)
+            os_helper.rmtree(name)
+        else:
+            print("Remove file: %s" % name)
+            os_helper.unlink(name)
+
+
+@contextlib.contextmanager
+def capture_output():
+    stream = io.StringIO()
+
+    print_warning = support.print_warning
+    orig_stdout = sys.stdout
+    orig_stderr = sys.stderr
+    orig_print_warnings_stderr = print_warning.orig_stderr
+    try:
+        sys.stdout = stream
+        sys.stderr = stream
+        # print_warning() writes into the temporary stream to preserve
+        # messages order. If support.environment_altered becomes true,
+        # warnings will be written to sys.stderr below.
+        print_warning.orig_stderr = stream
+
+        yield stream
+    finally:
+        sys.stdout = orig_stdout
+        sys.stderr = orig_stderr
+        print_warning.orig_stderr = orig_print_warnings_stderr
