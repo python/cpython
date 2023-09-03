@@ -6099,14 +6099,16 @@ PyDoc_STRVAR(os_timerfd_settime__doc__,
 "    0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.\n"
 "  initial\n"
 "    initial expiration timing in seconds.\n"
-"    If *flags* has TFD_TIMER_ABSTIME bit, *flags* must be in absolute time.\n"
-"    If *flags* doesn\'t have TFD_TIMER_ABSTIME bit, *flags* must be in relative time.\n"
-"    If *flags* has TFD_TIMER_ABSTIME bit and TFD_TIMER_CANCEL_ON_SET bit and *flags* and time.CLOCK_REALTIME\n"
-"    and system clock is changed discontinuously, reading a file descriptor is aborted with ECANCELED.\n"
+"\n"
+"    * If *flags* has TFD_TIMER_ABSTIME bit, *flags* must be in absolute time.\n"
+"    * If *flags* doesn\'t have TFD_TIMER_ABSTIME bit, *flags* must be in relative time.\n"
+"    * If *flags* has TFD_TIMER_ABSTIME bit and TFD_TIMER_CANCEL_ON_SET bit and *flags* and time.CLOCK_REALTIME\n"
+"      and system clock is changed discontinuously, reading a file descriptor is aborted with ECANCELED.\n"
 "  interval\n"
 "    interval for the timer in seconds.\n"
-"    if \'interval\' is zero, timer will be run once.\n"
-"    if \'interval\' is non-zero, timer will be run periodically with the interval.");
+"\n"
+"    * If \'interval\' is zero, timer will be run once.\n"
+"    * If \'interval\' is non-zero, timer will be run periodically with the interval.");
 
 #define OS_TIMERFD_SETTIME_METHODDEF    \
     {"timerfd_settime", _PyCFunction_CAST(os_timerfd_settime), METH_FASTCALL|METH_KEYWORDS, os_timerfd_settime__doc__},
@@ -6213,14 +6215,16 @@ PyDoc_STRVAR(os_timerfd_settime_ns__doc__,
 "    0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.\n"
 "  initial\n"
 "    initial expiration timing in seconds.\n"
-"    If *flags* has TFD_TIMER_ABSTIME bit, *flags* must be in absolute time.\n"
-"    If *flags* doesn\'t have TFD_TIMER_ABSTIME bit, *flags* must be in relative time.\n"
-"    If *flags* has TFD_TIMER_ABSTIME bit and TFD_TIMER_CANCEL_ON_SET bit and *flags* and time.CLOCK_REALTIME\n"
-"    and system clock is changed discontinuously, reading a file descriptor is aborted with ECANCELED.\n"
+"\n"
+"    * If *flags* has TFD_TIMER_ABSTIME bit, *flags* must be in absolute time.\n"
+"    * If *flags* doesn\'t have TFD_TIMER_ABSTIME bit, *flags* must be in relative time.\n"
+"    * If *flags* has TFD_TIMER_ABSTIME bit and TFD_TIMER_CANCEL_ON_SET bit and *flags* and time.CLOCK_REALTIME\n"
+"      and system clock is changed discontinuously, reading a file descriptor is aborted with ECANCELED.\n"
 "  interval\n"
 "    interval for the timer in seconds.\n"
-"    if \'interval\' is zero, timer will be run once.\n"
-"    if \'interval\' is non-zero, timer will be run periodically with the interval.");
+"\n"
+"    * If \'interval\' is zero, timer will be run once.\n"
+"    * If \'interval\' is non-zero, timer will be run periodically with the interval.");
 
 #define OS_TIMERFD_SETTIME_NS_METHODDEF    \
     {"timerfd_settime_ns", _PyCFunction_CAST(os_timerfd_settime_ns), METH_FASTCALL|METH_KEYWORDS, os_timerfd_settime_ns__doc__},
@@ -12393,4 +12397,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=5215bba635c67fee input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f06dc73b83a68476 input=a9049054013a1b77]*/
