@@ -527,7 +527,8 @@ is_wasi = sys.platform == "wasi"
 has_fork_support = hasattr(os, "fork") and not is_emscripten and not is_wasi
 
 def requires_fork():
-    return skipUnless(has_fork_support, "requires working os.fork()", label='requires_fork')
+    return skipUnless(has_fork_support, "requires working os.fork()",
+                      label='requires_fork')
 
 has_subprocess_support = not is_emscripten and not is_wasi
 
