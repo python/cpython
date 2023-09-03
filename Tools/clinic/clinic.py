@@ -3815,7 +3815,7 @@ class unsigned_short_converter(CConverter):
                 argname=argname)
         if not limited_capi:
             return super().parse_arg(argname, displayname, limited_capi=limited_capi)
-        # TODO: Raise ValueError for negative integer
+        # NOTE: Raises OverflowError for negative integer.
         return self.format_code("""
             {{{{
                 unsigned long uval = PyLong_AsUnsignedLong({argname});
@@ -3899,7 +3899,7 @@ class unsigned_int_converter(CConverter):
                 argname=argname)
         if not limited_capi:
             return super().parse_arg(argname, displayname, limited_capi=limited_capi)
-        # TODO: Raise ValueError for negative integer
+        # NOTE: Raises OverflowError for negative integer.
         return self.format_code("""
             {{{{
                 unsigned long uval = PyLong_AsUnsignedLong({argname});
@@ -3960,7 +3960,7 @@ class unsigned_long_converter(CConverter):
             )
         if not limited_capi:
             return super().parse_arg(argname, displayname, limited_capi=limited_capi)
-        # TODO: Raise ValueError for negative integer
+        # NOTE: Raises OverflowError for negative integer.
         return self.format_code("""
             {paramname} = PyLong_AsUnsignedLong({argname});
             if ({paramname} == (unsigned long)-1 && PyErr_Occurred()) {{{{
@@ -4013,7 +4013,7 @@ class unsigned_long_long_converter(CConverter):
             )
         if not limited_capi:
             return super().parse_arg(argname, displayname, limited_capi=limited_capi)
-        # TODO: Raise ValueError for negative integer
+        # NOTE: Raises OverflowError for negative integer.
         return self.format_code("""
             {paramname} = PyLong_AsUnsignedLongLong({argname});
             if ({paramname} == (unsigned long long)-1 && PyErr_Occurred()) {{{{
@@ -4152,7 +4152,7 @@ class size_t_converter(CConverter):
                 argname=argname)
         if not limited_capi:
             return super().parse_arg(argname, displayname, limited_capi=limited_capi)
-        # TODO: Raise ValueError for negative integer
+        # NOTE: Raises OverflowError for negative integer.
         return self.format_code("""
             {paramname} = PyLong_AsSize_t({argname});
             if ({paramname} == (size_t)-1 && PyErr_Occurred()) {{{{
