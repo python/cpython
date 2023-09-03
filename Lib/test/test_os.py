@@ -3923,8 +3923,8 @@ class TimerfdTests(unittest.TestCase):
         self.assertNotEqual(fd, -1)
         self.addCleanup(os.close, fd)
 
-        interval = 0.125
         initial_expiration = 0.25
+        interval = 0.125
 
         # 1st call
         next_expiration, interval2 = os.timerfd_settime(fd, flags=0, initial=initial_expiration, interval=interval)
