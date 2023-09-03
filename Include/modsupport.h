@@ -1,13 +1,10 @@
+// Module support interface
 
 #ifndef Py_MODSUPPORT_H
 #define Py_MODSUPPORT_H
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* Module support interface */
-
-#include <stdarg.h>               // va_list
 
 PyAPI_FUNC(int) PyArg_Parse(PyObject *, const char *, ...);
 PyAPI_FUNC(int) PyArg_ParseTuple(PyObject *, const char *, ...);
