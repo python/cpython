@@ -3793,8 +3793,9 @@ features:
 
    The file descriptor supports :func:`read` with a buffer size of 8.
    If the timer has already expired one or more times, :func:`read` returns
-   the number of expirations in :class:`bytes` of host byte order. You can
-   convert it by :func:`int.from_bytes` with ``byteorder`` is :const:`sys.byteorder`.
+   the number of expirations in :class:`bytes` of host byte order. The return value
+   can be coverted to :class:`int` value by :func:`int.from_bytes` with ``byteorder``
+   is :const:`sys.byteorder`.
 
    :func:`~select.select` and :func:`~select.poll` can be used to wait until
    timer expires and the file descriptor is readable.
