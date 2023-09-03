@@ -942,6 +942,13 @@ Porting to Python 3.13
   and ``setitimer()`` functions.
   (Contributed by Victor Stinner in :gh:`108765`.)
 
+* ``Python.h`` no longer includes the ``<ctype.h>`` standard header file. If
+  needed, it should now be included explicitly. For example, it provides
+  ``isalpha()`` and ``tolower()`` functions which are locale dependent. Python
+  provides locale independent functions, like :c:func:`!Py_ISALPHA` and
+  :c:func:`!Py_TOLOWER`.
+  (Contributed by Victor Stinner in :gh:`108765`.)
+
 Deprecated
 ----------
 

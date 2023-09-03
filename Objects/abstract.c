@@ -9,9 +9,8 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_unionobject.h"   // _PyUnion_Check()
-#include <ctype.h>
-#include <stddef.h>               // offsetof()
 
+#include <stddef.h>               // offsetof()
 
 
 /* Shorthands to return certain errors */
