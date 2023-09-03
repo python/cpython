@@ -1,13 +1,8 @@
 #ifndef Py_PYPORT_H
 #define Py_PYPORT_H
 
-#include "pyconfig.h" /* include for defines */
-
-#include <inttypes.h>
-
-#include <limits.h>
 #ifndef UCHAR_MAX
-#  error "limits.h must define UCHAR_MAX"
+#  error "<limits.h> header must define UCHAR_MAX"
 #endif
 #if UCHAR_MAX != 255
 #  error "Python's source code assumes C's unsigned char is an 8-bit type"
@@ -24,9 +19,10 @@
 #define _Py_CAST(type, expr) ((type)(expr))
 
 // Static inline functions should use _Py_NULL rather than using directly NULL
-// to prevent C++ compiler warnings. On C++11 and newer, _Py_NULL is defined as
-// nullptr.
-#if defined(__cplusplus) && __cplusplus >= 201103
+// to prevent C++ compiler warnings. On C23 and newer and on C++11 and newer,
+// _Py_NULL is defined as nullptr.
+#if (defined (__STDC_VERSION__) && __STDC_VERSION__ > 201710L) \
+        || (defined(__cplusplus) && __cplusplus >= 201103)
 #  define _Py_NULL nullptr
 #else
 #  define _Py_NULL NULL
@@ -184,35 +180,9 @@ typedef Py_ssize_t Py_ssize_clean_t;
 #  define Py_LOCAL_INLINE(type) static inline type
 #endif
 
-// bpo-28126: Py_MEMCPY is kept for backwards compatibility,
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_MEMCPY memcpy
 #endif
-
-#ifdef HAVE_IEEEFP_H
-#include <ieeefp.h>  /* needed for 'finite' declaration on some platforms */
-#endif
-
-#include <math.h> /* Moved here from the math section, before extern "C" */
-
-/********************************************
- * WRAPPER FOR <time.h> and/or <sys/time.h> *
- ********************************************/
-
-#ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
-#endif
-#include <time.h>
-
-/******************************
- * WRAPPER FOR <sys/select.h> *
- ******************************/
-
-/* NB caller must include <sys/types.h> */
-
-#ifdef HAVE_SYS_SELECT_H
-#include <sys/select.h>
-#endif /* !HAVE_SYS_SELECT_H */
 
 /*******************************
  * stat() and fstat() fiddling *
@@ -422,70 +392,6 @@ extern "C" {
 #  define Py_NO_INLINE
 #endif
 
-/**************************************************************************
-Prototypes that are missing from the standard include files on some systems
-(and possibly only some versions of such systems.)
-
-Please be conservative with adding new ones, document them and enclose them
-in platform-specific #ifdefs.
-**************************************************************************/
-
-#ifdef SOLARIS
-/* Unchecked */
-extern int gethostname(char *, int);
-#endif
-
-#ifdef HAVE__GETPTY
-#include <sys/types.h>          /* we need to import mode_t */
-extern char * _getpty(int *, int, mode_t, int);
-#endif
-
-/* On QNX 6, struct termio must be declared by including sys/termio.h
-   if TCGETA, TCSETA, TCSETAW, or TCSETAF are used.  sys/termio.h must
-   be included before termios.h or it will generate an error. */
-#if defined(HAVE_SYS_TERMIO_H) && !defined(__hpux)
-#include <sys/termio.h>
-#endif
-
-
-/* On 4.4BSD-descendants, ctype functions serves the whole range of
- * wchar_t character set rather than single byte code points only.
- * This characteristic can break some operations of string object
- * including str.upper() and str.split() on UTF-8 locales.  This
- * workaround was provided by Tim Robbins of FreeBSD project.
- */
-
-#if defined(__APPLE__)
-#  define _PY_PORT_CTYPE_UTF8_ISSUE
-#endif
-
-#ifdef _PY_PORT_CTYPE_UTF8_ISSUE
-#ifndef __cplusplus
-   /* The workaround below is unsafe in C++ because
-    * the <locale> defines these symbols as real functions,
-    * with a slightly different signature.
-    * See issue #10910
-    */
-#include <ctype.h>
-#include <wctype.h>
-#undef isalnum
-#define isalnum(c) iswalnum(btowc(c))
-#undef isalpha
-#define isalpha(c) iswalpha(btowc(c))
-#undef islower
-#define islower(c) iswlower(btowc(c))
-#undef isspace
-#define isspace(c) iswspace(btowc(c))
-#undef isupper
-#define isupper(c) iswupper(btowc(c))
-#undef tolower
-#define tolower(c) towlower(btowc(c))
-#undef toupper
-#define toupper(c) towupper(btowc(c))
-#endif
-#endif
-
-
 /* Declarations for symbol visibility.
 
   PyAPI_FUNC(type): Declares a public Python API function and return type
@@ -663,10 +569,25 @@ extern char * _getpty(int *, int, mode_t, int);
 #  define WITH_THREAD
 #endif
 
-/* Check that ALT_SOABI is consistent with Py_TRACE_REFS:
-   ./configure --with-trace-refs should must be used to define Py_TRACE_REFS */
-#if defined(ALT_SOABI) && defined(Py_TRACE_REFS)
-#  error "Py_TRACE_REFS ABI is not compatible with release and debug ABI"
+#ifdef WITH_THREAD
+#  ifdef Py_BUILD_CORE
+#    ifdef HAVE_THREAD_LOCAL
+#      error "HAVE_THREAD_LOCAL is already defined"
+#    endif
+#    define HAVE_THREAD_LOCAL 1
+#    ifdef thread_local
+#      define _Py_thread_local thread_local
+#    elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)
+#      define _Py_thread_local _Thread_local
+#    elif defined(_MSC_VER)  /* AKA NT_THREADS */
+#      define _Py_thread_local __declspec(thread)
+#    elif defined(__GNUC__)  /* includes clang */
+#      define _Py_thread_local __thread
+#    else
+       // fall back to the PyThread_tss_*() API, or ignore.
+#      undef HAVE_THREAD_LOCAL
+#    endif
+#  endif
 #endif
 
 #if defined(__ANDROID__) || defined(__VXWORKS__)
@@ -743,6 +664,21 @@ extern char * _getpty(int *, int, mode_t, int);
 /* AIX has __bool__ redefined in it's system header file. */
 #if defined(_AIX) && defined(__bool__)
 #undef __bool__
+#endif
+
+// Make sure we have maximum alignment, even if the current compiler
+// does not support max_align_t. Note that:
+// - Autoconf reports alignment of unknown types to 0.
+// - 'long double' has maximum alignment on *most* platforms,
+//   looks like the best we can do for pre-C11 compilers.
+// - The value is tested, see test_alignof_max_align_t
+#if !defined(ALIGNOF_MAX_ALIGN_T) || ALIGNOF_MAX_ALIGN_T == 0
+#   undef ALIGNOF_MAX_ALIGN_T
+#   define ALIGNOF_MAX_ALIGN_T _Alignof(long double)
+#endif
+
+#if defined(__sgi) && !defined(_SGI_MP_SOURCE)
+#  define _SGI_MP_SOURCE
 #endif
 
 #endif /* Py_PYPORT_H */

@@ -3,10 +3,9 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
 
 PyDoc_STRVAR(sys_addaudithook__doc__,
 "addaudithook($module, /, hook)\n"
@@ -282,9 +281,6 @@ sys_intern(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("intern", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     s = arg;
     return_value = sys_intern_impl(module, s);
 
@@ -447,7 +443,7 @@ sys_setrecursionlimit(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int new_limit;
 
-    new_limit = _PyLong_AsInt(arg);
+    new_limit = PyLong_AsInt(arg);
     if (new_limit == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -510,7 +506,7 @@ sys_set_coroutine_origin_tracking_depth(PyObject *module, PyObject *const *args,
     if (!args) {
         goto exit;
     }
-    depth = _PyLong_AsInt(args[0]);
+    depth = PyLong_AsInt(args[0]);
     if (depth == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -678,7 +674,7 @@ sys_setdlopenflags(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int new_val;
 
-    new_val = _PyLong_AsInt(arg);
+    new_val = PyLong_AsInt(arg);
     if (new_val == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -733,7 +729,7 @@ sys_mdebug(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flag;
 
-    flag = _PyLong_AsInt(arg);
+    flag = PyLong_AsInt(arg);
     if (flag == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -811,7 +807,7 @@ sys_set_int_max_str_digits(PyObject *module, PyObject *const *args, Py_ssize_t n
     if (!args) {
         goto exit;
     }
-    maxdigits = _PyLong_AsInt(args[0]);
+    maxdigits = PyLong_AsInt(args[0]);
     if (maxdigits == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -912,6 +908,34 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys_getunicodeinternedsize__doc__,
+"getunicodeinternedsize($module, /)\n"
+"--\n"
+"\n"
+"Return the number of elements of the unicode interned dictionary");
+
+#define SYS_GETUNICODEINTERNEDSIZE_METHODDEF    \
+    {"getunicodeinternedsize", (PyCFunction)sys_getunicodeinternedsize, METH_NOARGS, sys_getunicodeinternedsize__doc__},
+
+static Py_ssize_t
+sys_getunicodeinternedsize_impl(PyObject *module);
+
+static PyObject *
+sys_getunicodeinternedsize(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t _return_value;
+
+    _return_value = sys_getunicodeinternedsize_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(sys__getframe__doc__,
 "_getframe($module, depth=0, /)\n"
 "--\n"
@@ -944,7 +968,7 @@ sys__getframe(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    depth = _PyLong_AsInt(args[0]);
+    depth = PyLong_AsInt(args[0]);
     if (depth == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1333,7 +1357,7 @@ sys__getframemodulename(PyObject *module, PyObject *const *args, Py_ssize_t narg
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    depth = _PyLong_AsInt(args[0]);
+    depth = PyLong_AsInt(args[0]);
     if (depth == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1387,4 +1411,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=5c761f14326ced54 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6619682ea70e7375 input=a9049054013a1b77]*/

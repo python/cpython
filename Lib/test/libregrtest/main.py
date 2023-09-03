@@ -11,15 +11,14 @@ import time
 import unittest
 from test.libregrtest.cmdline import _parse_args
 from test.libregrtest.runtest import (
-    findtests, runtest, get_abs_module, is_failed,
-    STDTESTS, NOTTESTS, PROGRESS_MIN_TIME,
-    Passed, Failed, EnvChanged, Skipped, ResourceDenied, Interrupted,
-    ChildError, DidNotRun)
+    findtests, split_test_packages, runtest, get_abs_module,
+    PROGRESS_MIN_TIME, State)
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.pgo import setup_pgo_tests
 from test.libregrtest.utils import (removepy, count, format_duration,
                                     printlist, get_build_info)
 from test import support
+from test.support import TestStats
 from test.support import os_helper
 from test.support import threading_helper
 
@@ -28,6 +27,14 @@ from test.support import threading_helper
 # Used to protect against threading._shutdown() hang.
 # Must be smaller than buildbot "1200 seconds without output" limit.
 EXIT_TIMEOUT = 120.0
+
+# gh-90681: When rerunning tests, we might need to rerun the whole
+# class or module suite if some its life-cycle hooks fail.
+# Test level hooks are not affected.
+_TEST_LIFECYCLE_HOOKS = frozenset((
+    'setUpClass', 'tearDownClass',
+    'setUpModule', 'tearDownModule',
+))
 
 EXITCODE_BAD_TEST = 2
 EXITCODE_INTERRUPTED = 130
@@ -70,13 +77,14 @@ class Regrtest:
         self.good = []
         self.bad = []
         self.skipped = []
-        self.resource_denieds = []
+        self.resource_denied = []
         self.environment_changed = []
         self.run_no_tests = []
         self.need_rerun = []
         self.rerun = []
         self.first_result = None
         self.interrupted = False
+        self.stats_dict: dict[str, TestStats] = {}
 
         # used by --slow
         self.test_times = []
@@ -85,7 +93,7 @@ class Regrtest:
         self.tracer = None
 
         # used to display the progress bar "[ 3/100]"
-        self.start_time = time.monotonic()
+        self.start_time = time.perf_counter()
         self.test_count = ''
         self.test_count_width = 1
 
@@ -103,36 +111,41 @@ class Regrtest:
 
     def get_executed(self):
         return (set(self.good) | set(self.bad) | set(self.skipped)
-                | set(self.resource_denieds) | set(self.environment_changed)
+                | set(self.resource_denied) | set(self.environment_changed)
                 | set(self.run_no_tests))
 
     def accumulate_result(self, result, rerun=False):
-        test_name = result.name
+        test_name = result.test_name
 
-        if not isinstance(result, (ChildError, Interrupted)) and not rerun:
-            self.test_times.append((result.duration_sec, test_name))
+        if result.has_meaningful_duration() and not rerun:
+            self.test_times.append((result.duration, test_name))
 
-        if isinstance(result, Passed):
-            self.good.append(test_name)
-        elif isinstance(result, ResourceDenied):
-            self.skipped.append(test_name)
-            self.resource_denieds.append(test_name)
-        elif isinstance(result, Skipped):
-            self.skipped.append(test_name)
-        elif isinstance(result, EnvChanged):
-            self.environment_changed.append(test_name)
-        elif isinstance(result, Failed):
-            if not rerun:
-                self.bad.append(test_name)
-                self.need_rerun.append(result)
-        elif isinstance(result, DidNotRun):
-            self.run_no_tests.append(test_name)
-        elif isinstance(result, Interrupted):
-            self.interrupted = True
-        else:
-            raise ValueError("invalid test result: %r" % result)
+        match result.state:
+            case State.PASSED:
+                self.good.append(test_name)
+            case State.ENV_CHANGED:
+                self.environment_changed.append(test_name)
+            case State.SKIPPED:
+                self.skipped.append(test_name)
+            case State.RESOURCE_DENIED:
+                self.skipped.append(test_name)
+                self.resource_denied.append(test_name)
+            case State.INTERRUPTED:
+                self.interrupted = True
+            case State.DID_NOT_RUN:
+                self.run_no_tests.append(test_name)
+            case _:
+                if result.is_failed(self.ns.fail_env_changed):
+                    if not rerun:
+                        self.bad.append(test_name)
+                        self.need_rerun.append(result)
+                else:
+                    raise ValueError(f"invalid test state: {state!r}")
 
-        if rerun and not isinstance(result, (Failed, Interrupted)):
+        if result.stats is not None:
+            self.stats_dict[result.test_name] = result.stats
+
+        if rerun and not(result.is_failed(False) or result.state == State.INTERRUPTED):
             self.bad.remove(test_name)
 
         xml_data = result.xml_data
@@ -154,7 +167,7 @@ class Regrtest:
             line = f"load avg: {load_avg:.2f} {line}"
 
         # add the timestamp prefix:  "0:01:05 "
-        test_time = time.monotonic() - self.start_time
+        test_time = time.perf_counter() - self.start_time
 
         mins, secs = divmod(int(test_time), 60)
         hours, mins = divmod(mins, 60)
@@ -238,26 +251,23 @@ class Regrtest:
             # add default PGO tests if no tests are specified
             setup_pgo_tests(self.ns)
 
-        stdtests = STDTESTS[:]
-        nottests = NOTTESTS.copy()
+        exclude = set()
         if self.ns.exclude:
             for arg in self.ns.args:
-                if arg in stdtests:
-                    stdtests.remove(arg)
-                nottests.add(arg)
+                exclude.add(arg)
             self.ns.args = []
 
-        # if testdir is set, then we are not running the python tests suite, so
-        # don't add default tests to be executed or skipped (pass empty values)
-        if self.ns.testdir:
-            alltests = findtests(self.ns.testdir, list(), set())
-        else:
-            alltests = findtests(self.ns.testdir, stdtests, nottests)
+        alltests = findtests(testdir=self.ns.testdir, exclude=exclude)
 
         if not self.ns.fromfile:
-            self.selected = self.tests or self.ns.args or alltests
+            self.selected = self.tests or self.ns.args
+            if self.selected:
+                self.selected = split_test_packages(self.selected)
+            else:
+                self.selected = alltests
         else:
             self.selected = self.tests
+
         if self.ns.single:
             self.selected = self.selected[:1]
             try:
@@ -332,13 +342,17 @@ class Regrtest:
         rerun_list = list(self.need_rerun)
         self.need_rerun.clear()
         for result in rerun_list:
-            test_name = result.name
+            test_name = result.test_name
             self.rerun.append(test_name)
 
             errors = result.errors or []
             failures = result.failures or []
-            error_names = [test_full_name.split(" ")[0] for (test_full_name, *_) in errors]
-            failure_names = [test_full_name.split(" ")[0] for (test_full_name, *_) in failures]
+            error_names = [
+                self.normalize_test_name(test_full_name, is_error=True)
+                for (test_full_name, *_) in errors]
+            failure_names = [
+                self.normalize_test_name(test_full_name)
+                for (test_full_name, *_) in failures]
             self.ns.verbose = True
             orig_match_tests = self.ns.match_tests
             if errors or failures:
@@ -355,7 +369,7 @@ class Regrtest:
 
             self.accumulate_result(result, rerun=True)
 
-            if isinstance(result, Interrupted):
+            if result.state == State.INTERRUPTED:
                 break
 
         if self.bad:
@@ -363,6 +377,21 @@ class Regrtest:
             printlist(self.bad)
 
         self.display_result()
+
+    def normalize_test_name(self, test_full_name, *, is_error=False):
+        short_name = test_full_name.split(" ")[0]
+        if is_error and short_name in _TEST_LIFECYCLE_HOOKS:
+            # This means that we have a failure in a life-cycle hook,
+            # we need to rerun the whole module or class suite.
+            # Basically the error looks like this:
+            #    ERROR: setUpClass (test.test_reg_ex.RegTest)
+            # or
+            #    ERROR: setUpModule (test.test_reg_ex)
+            # So, we need to parse the class / module name.
+            lpar = test_full_name.index('(')
+            rpar = test_full_name.index(')')
+            return test_full_name[lpar + 1: rpar].split('.')[-1]
+        return short_name
 
     def display_result(self):
         # If running the test suite for PGO then no one cares about results.
@@ -437,7 +466,7 @@ class Regrtest:
 
         previous_test = None
         for test_index, test_name in enumerate(self.tests, 1):
-            start_time = time.monotonic()
+            start_time = time.perf_counter()
 
             text = test_name
             if previous_test:
@@ -456,14 +485,14 @@ class Regrtest:
                 result = runtest(self.ns, test_name)
                 self.accumulate_result(result)
 
-            if isinstance(result, Interrupted):
+            if result.state == State.INTERRUPTED:
                 break
 
             previous_test = str(result)
-            test_time = time.monotonic() - start_time
+            test_time = time.perf_counter() - start_time
             if test_time >= PROGRESS_MIN_TIME:
                 previous_test = "%s in %s" % (previous_test, format_duration(test_time))
-            elif isinstance(result, Passed):
+            elif result.state == State.PASSED:
                 # be quiet: say nothing if the test passed shortly
                 previous_test = None
 
@@ -472,7 +501,7 @@ class Regrtest:
                 if module not in save_modules and module.startswith("test."):
                     support.unload(module)
 
-            if self.ns.failfast and is_failed(result, self.ns):
+            if self.ns.failfast and result.is_failed(self.ns.fail_env_changed):
                 break
 
         if previous_test:
@@ -499,6 +528,33 @@ class Regrtest:
             print("== CPU count:", cpu_count)
         print("== encodings: locale=%s, FS=%s"
               % (locale.getencoding(), sys.getfilesystemencoding()))
+        self.display_sanitizers()
+
+    def display_sanitizers(self):
+        # This makes it easier to remember what to set in your local
+        # environment when trying to reproduce a sanitizer failure.
+        asan = support.check_sanitizer(address=True)
+        msan = support.check_sanitizer(memory=True)
+        ubsan = support.check_sanitizer(ub=True)
+        sanitizers = []
+        if asan:
+            sanitizers.append("address")
+        if msan:
+            sanitizers.append("memory")
+        if ubsan:
+            sanitizers.append("undefined behavior")
+        if not sanitizers:
+            return
+
+        print(f"== sanitizers: {', '.join(sanitizers)}")
+        for sanitizer, env_var in (
+            (asan, "ASAN_OPTIONS"),
+            (msan, "MSAN_OPTIONS"),
+            (ubsan, "UBSAN_OPTIONS"),
+        ):
+            options= os.environ.get(env_var)
+            if sanitizer and options is not None:
+                print(f"== {env_var}={options!r}")
 
     def no_tests_run(self):
         return not any((self.good, self.bad, self.skipped, self.interrupted,
@@ -587,12 +643,47 @@ class Regrtest:
                             coverdir=self.ns.coverdir)
 
         print()
-        duration = time.monotonic() - self.start_time
-        print("Total duration: %s" % format_duration(duration))
-        print("Tests result: %s" % self.get_tests_result())
+        self.display_summary()
 
         if self.ns.runleaks:
             os.system("leaks %d" % os.getpid())
+
+    def display_summary(self):
+        duration = time.perf_counter() - self.start_time
+
+        # Total duration
+        print("Total duration: %s" % format_duration(duration))
+
+        # Total tests
+        total = TestStats()
+        for stats in self.stats_dict.values():
+            total.accumulate(stats)
+        stats = [f'run={total.tests_run:,}']
+        if total.failures:
+            stats.append(f'failures={total.failures:,}')
+        if total.skipped:
+            stats.append(f'skipped={total.skipped:,}')
+        print(f"Total tests: {' '.join(stats)}")
+
+        # Total test files
+        report = [f'success={len(self.good)}']
+        if self.bad:
+            report.append(f'failed={len(self.bad)}')
+        if self.environment_changed:
+            report.append(f'env_changed={len(self.environment_changed)}')
+        if self.skipped:
+            report.append(f'skipped={len(self.skipped)}')
+        if self.resource_denied:
+            report.append(f'resource_denied={len(self.resource_denied)}')
+        if self.rerun:
+            report.append(f'rerun={len(self.rerun)}')
+        if self.run_no_tests:
+            report.append(f'run_no_tests={len(self.run_no_tests)}')
+        print(f"Total test files: {' '.join(report)}")
+
+        # Result
+        result = self.get_tests_result()
+        print(f"Result: {result}")
 
     def save_xml_result(self):
         if not self.ns.xmlpath and not self.testsuite_xml:

@@ -1,6 +1,5 @@
 /* This is built as a stand-alone executable by the Makefile, and helps turn
-   modules into frozen modules (like Lib/importlib/_bootstrap.py
-   into Python/importlib.h).
+   modules into frozen modules.
 
    This is used directly by Tools/build/freeze_modules.py, and indirectly by "make regen-frozen".
 
@@ -20,7 +19,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #ifndef MS_WINDOWS
-#include <unistd.h>
+#  include <unistd.h>
 #endif
 
 uint32_t _Py_next_func_version = 1;

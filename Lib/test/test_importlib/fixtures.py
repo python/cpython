@@ -10,7 +10,10 @@ import contextlib
 
 from test.support.os_helper import FS_NONASCII
 from test.support import requires_zlib
-from typing import Dict, Union
+
+from . import _path
+from ._path import FilesSpec
+
 
 try:
     from importlib import resources  # type: ignore
@@ -83,13 +86,8 @@ class OnSysPath(Fixtures):
         self.fixtures.enter_context(self.add_sys_path(self.site_dir))
 
 
-# Except for python/mypy#731, prefer to define
-# FilesDef = Dict[str, Union['FilesDef', str]]
-FilesDef = Dict[str, Union[Dict[str, Union[Dict[str, str], str]], str]]
-
-
 class DistInfoPkg(OnSysPath, SiteDir):
-    files: FilesDef = {
+    files: FilesSpec = {
         "distinfo_pkg-1.0.0.dist-info": {
             "METADATA": """
                 Name: distinfo-pkg
@@ -131,7 +129,7 @@ class DistInfoPkg(OnSysPath, SiteDir):
 
 
 class DistInfoPkgWithDot(OnSysPath, SiteDir):
-    files: FilesDef = {
+    files: FilesSpec = {
         "pkg_dot-1.0.0.dist-info": {
             "METADATA": """
                 Name: pkg.dot
@@ -146,7 +144,7 @@ class DistInfoPkgWithDot(OnSysPath, SiteDir):
 
 
 class DistInfoPkgWithDotLegacy(OnSysPath, SiteDir):
-    files: FilesDef = {
+    files: FilesSpec = {
         "pkg.dot-1.0.0.dist-info": {
             "METADATA": """
                 Name: pkg.dot
@@ -173,7 +171,7 @@ class DistInfoPkgOffPath(SiteDir):
 
 
 class EggInfoPkg(OnSysPath, SiteDir):
-    files: FilesDef = {
+    files: FilesSpec = {
         "egginfo_pkg.egg-info": {
             "PKG-INFO": """
                 Name: egginfo-pkg
@@ -212,8 +210,99 @@ class EggInfoPkg(OnSysPath, SiteDir):
         build_files(EggInfoPkg.files, prefix=self.site_dir)
 
 
+class EggInfoPkgPipInstalledNoToplevel(OnSysPath, SiteDir):
+    files: FilesSpec = {
+        "egg_with_module_pkg.egg-info": {
+            "PKG-INFO": "Name: egg_with_module-pkg",
+            # SOURCES.txt is made from the source archive, and contains files
+            # (setup.py) that are not present after installation.
+            "SOURCES.txt": """
+                egg_with_module.py
+                setup.py
+                egg_with_module_pkg.egg-info/PKG-INFO
+                egg_with_module_pkg.egg-info/SOURCES.txt
+                egg_with_module_pkg.egg-info/top_level.txt
+            """,
+            # installed-files.txt is written by pip, and is a strictly more
+            # accurate source than SOURCES.txt as to the installed contents of
+            # the package.
+            "installed-files.txt": """
+                ../egg_with_module.py
+                PKG-INFO
+                SOURCES.txt
+                top_level.txt
+            """,
+            # missing top_level.txt (to trigger fallback to installed-files.txt)
+        },
+        "egg_with_module.py": """
+            def main():
+                print("hello world")
+            """,
+    }
+
+    def setUp(self):
+        super().setUp()
+        build_files(EggInfoPkgPipInstalledNoToplevel.files, prefix=self.site_dir)
+
+
+class EggInfoPkgPipInstalledNoModules(OnSysPath, SiteDir):
+    files: FilesSpec = {
+        "egg_with_no_modules_pkg.egg-info": {
+            "PKG-INFO": "Name: egg_with_no_modules-pkg",
+            # SOURCES.txt is made from the source archive, and contains files
+            # (setup.py) that are not present after installation.
+            "SOURCES.txt": """
+                setup.py
+                egg_with_no_modules_pkg.egg-info/PKG-INFO
+                egg_with_no_modules_pkg.egg-info/SOURCES.txt
+                egg_with_no_modules_pkg.egg-info/top_level.txt
+            """,
+            # installed-files.txt is written by pip, and is a strictly more
+            # accurate source than SOURCES.txt as to the installed contents of
+            # the package.
+            "installed-files.txt": """
+                PKG-INFO
+                SOURCES.txt
+                top_level.txt
+            """,
+            # top_level.txt correctly reflects that no modules are installed
+            "top_level.txt": b"\n",
+        },
+    }
+
+    def setUp(self):
+        super().setUp()
+        build_files(EggInfoPkgPipInstalledNoModules.files, prefix=self.site_dir)
+
+
+class EggInfoPkgSourcesFallback(OnSysPath, SiteDir):
+    files: FilesSpec = {
+        "sources_fallback_pkg.egg-info": {
+            "PKG-INFO": "Name: sources_fallback-pkg",
+            # SOURCES.txt is made from the source archive, and contains files
+            # (setup.py) that are not present after installation.
+            "SOURCES.txt": """
+                sources_fallback.py
+                setup.py
+                sources_fallback_pkg.egg-info/PKG-INFO
+                sources_fallback_pkg.egg-info/SOURCES.txt
+            """,
+            # missing installed-files.txt (i.e. not installed by pip) and
+            # missing top_level.txt (to trigger fallback to SOURCES.txt)
+        },
+        "sources_fallback.py": """
+            def main():
+                print("hello world")
+            """,
+    }
+
+    def setUp(self):
+        super().setUp()
+        build_files(EggInfoPkgSourcesFallback.files, prefix=self.site_dir)
+
+
 class EggInfoFile(OnSysPath, SiteDir):
-    files: FilesDef = {
+    files: FilesSpec = {
         "egginfo_file.egg-info": """
             Metadata-Version: 1.0
             Name: egginfo_file
@@ -233,38 +322,22 @@ class EggInfoFile(OnSysPath, SiteDir):
         build_files(EggInfoFile.files, prefix=self.site_dir)
 
 
-def build_files(file_defs, prefix=pathlib.Path()):
-    """Build a set of files/directories, as described by the
+# dedent all text strings before writing
+orig = _path.create.registry[str]
+_path.create.register(str, lambda content, path: orig(DALS(content), path))
 
-    file_defs dictionary.  Each key/value pair in the dictionary is
-    interpreted as a filename/contents pair.  If the contents value is a
-    dictionary, a directory is created, and the dictionary interpreted
-    as the files within it, recursively.
 
-    For example:
+build_files = _path.build
 
-    {"README.txt": "A README file",
-     "foo": {
-        "__init__.py": "",
-        "bar": {
-            "__init__.py": "",
-        },
-        "baz.py": "# Some code",
-     }
-    }
-    """
-    for name, contents in file_defs.items():
-        full_name = prefix / name
-        if isinstance(contents, dict):
-            full_name.mkdir()
-            build_files(contents, prefix=full_name)
-        else:
-            if isinstance(contents, bytes):
-                with full_name.open('wb') as f:
-                    f.write(contents)
-            else:
-                with full_name.open('w', encoding='utf-8') as f:
-                    f.write(DALS(contents))
+
+def build_record(file_defs):
+    return ''.join(f'{name},,\n' for name in record_names(file_defs))
+
+
+def record_names(file_defs):
+    recording = _path.Recording()
+    _path.build(file_defs, recording)
+    return recording.record
 
 
 class FileBuilder:
@@ -275,11 +348,6 @@ class FileBuilder:
 def DALS(str):
     "Dedent and left-strip"
     return textwrap.dedent(str).lstrip()
-
-
-class NullFinder:
-    def find_module(self, name):
-        pass
 
 
 @requires_zlib()

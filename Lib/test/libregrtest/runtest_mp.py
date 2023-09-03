@@ -1,3 +1,4 @@
+import dataclasses
 import faulthandler
 import json
 import os.path
@@ -13,12 +14,13 @@ from typing import NamedTuple, NoReturn, Literal, Any, TextIO
 
 from test import support
 from test.support import os_helper
+from test.support import TestStats
 
 from test.libregrtest.cmdline import Namespace
 from test.libregrtest.main import Regrtest
 from test.libregrtest.runtest import (
-    runtest, is_failed, TestResult, Interrupted, Timeout, ChildError,
-    PROGRESS_MIN_TIME, Passed, EnvChanged)
+    runtest, TestResult, State,
+    PROGRESS_MIN_TIME)
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.utils import format_duration, print_warning
 
@@ -43,9 +45,9 @@ USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
 
 
 def must_stop(result: TestResult, ns: Namespace) -> bool:
-    if isinstance(result, Interrupted):
+    if result.state == State.INTERRUPTED:
         return True
-    if ns.failfast and is_failed(result, ns):
+    if ns.failfast and result.is_failed(ns.fail_env_changed):
         return True
     return False
 
@@ -130,8 +132,8 @@ class MultiprocessIterator:
 class MultiprocessResult(NamedTuple):
     result: TestResult
     # bpo-45410: stderr is written into stdout to keep messages order
-    stdout: str
-    error_msg: str
+    worker_stdout: str | None = None
+    err_msg: str | None = None
 
 
 ExcStr = str
@@ -209,15 +211,12 @@ class TestWorkerProcess(threading.Thread):
     def mp_result_error(
         self,
         test_result: TestResult,
-        stdout: str = '',
+        stdout: str | None = None,
         err_msg=None
     ) -> MultiprocessResult:
-        test_result.duration_sec = time.monotonic() - self.start_time
         return MultiprocessResult(test_result, stdout, err_msg)
 
     def _run_process(self, test_name: str, tmp_dir: str, stdout_fh: TextIO) -> int:
-        self.start_time = time.monotonic()
-
         self.current_test_name = test_name
         try:
             popen = run_test_in_subprocess(test_name, self.ns, tmp_dir, stdout_fh)
@@ -277,6 +276,7 @@ class TestWorkerProcess(threading.Thread):
             encoding = locale.getencoding()
         else:
             encoding = sys.stdout.encoding
+
         # gh-94026: Write stdout+stderr to a tempfile as workaround for
         # non-blocking pipes on Emscripten with NodeJS.
         with tempfile.TemporaryFile('w+', encoding=encoding) as stdout_fh:
@@ -298,38 +298,48 @@ class TestWorkerProcess(threading.Thread):
                 retcode = self._run_process(test_name, None, stdout_fh)
                 tmp_files = ()
             stdout_fh.seek(0)
-            stdout = stdout_fh.read().strip()
+
+            try:
+                stdout = stdout_fh.read().strip()
+            except Exception as exc:
+                # gh-101634: Catch UnicodeDecodeError if stdout cannot be
+                # decoded from encoding
+                err_msg = f"Cannot read process stdout: {exc}"
+                result = TestResult(test_name, state=State.MULTIPROCESSING_ERROR)
+                return self.mp_result_error(result, err_msg=err_msg)
 
         if retcode is None:
-            return self.mp_result_error(Timeout(test_name), stdout)
+            result = TestResult(test_name, state=State.TIMEOUT)
+            return self.mp_result_error(result, stdout)
 
         err_msg = None
         if retcode != 0:
             err_msg = "Exit code %s" % retcode
         else:
-            stdout, _, result = stdout.rpartition("\n")
+            stdout, _, worker_json = stdout.rpartition("\n")
             stdout = stdout.rstrip()
-            if not result:
+            if not worker_json:
                 err_msg = "Failed to parse worker stdout"
             else:
                 try:
                     # deserialize run_tests_worker() output
-                    result = json.loads(result, object_hook=decode_test_result)
+                    result = json.loads(worker_json,
+                                        object_hook=decode_test_result)
                 except Exception as exc:
                     err_msg = "Failed to parse worker JSON: %s" % exc
 
-        if err_msg is not None:
-            return self.mp_result_error(ChildError(test_name), stdout, err_msg)
+        if err_msg:
+            result = TestResult(test_name, state=State.MULTIPROCESSING_ERROR)
+            return self.mp_result_error(result, stdout, err_msg)
 
         if tmp_files:
             msg = (f'\n\n'
                    f'Warning -- {test_name} leaked temporary files '
                    f'({len(tmp_files)}): {", ".join(sorted(tmp_files))}')
             stdout += msg
-            if isinstance(result, Passed):
-                result = EnvChanged.from_passed(result)
+            result.set_env_changed()
 
-        return MultiprocessResult(result, stdout, err_msg)
+        return MultiprocessResult(result, stdout)
 
     def run(self) -> None:
         while not self._stopped:
@@ -339,7 +349,9 @@ class TestWorkerProcess(threading.Thread):
                 except StopIteration:
                     break
 
+                self.start_time = time.monotonic()
                 mp_result = self._runtest(test_name)
+                mp_result.result.duration = time.monotonic() - self.start_time
                 self.output.put((False, mp_result))
 
                 if must_stop(mp_result.result, self.ns):
@@ -465,11 +477,11 @@ class MultiprocessTestRunner:
         result = mp_result.result
 
         text = str(result)
-        if mp_result.error_msg is not None:
-            # CHILD_ERROR
-            text += ' (%s)' % mp_result.error_msg
-        elif (result.duration_sec >= PROGRESS_MIN_TIME and not self.ns.pgo):
-            text += ' (%s)' % format_duration(result.duration_sec)
+        if mp_result.err_msg:
+            # MULTIPROCESSING_ERROR
+            text += ' (%s)' % mp_result.err_msg
+        elif (result.duration >= PROGRESS_MIN_TIME and not self.ns.pgo):
+            text += ' (%s)' % format_duration(result.duration)
         running = get_running(self.workers)
         if running and not self.ns.pgo:
             text += ' -- running: %s' % ', '.join(running)
@@ -481,6 +493,8 @@ class MultiprocessTestRunner:
             # Thread got an exception
             format_exc = item[1]
             print_warning(f"regrtest worker thread failed: {format_exc}")
+            result = TestResult("<regrtest worker>", state=State.MULTIPROCESSING_ERROR)
+            self.regrtest.accumulate_result(result)
             return True
 
         self.test_index += 1
@@ -488,8 +502,8 @@ class MultiprocessTestRunner:
         self.regrtest.accumulate_result(mp_result.result)
         self.display_result(mp_result)
 
-        if mp_result.stdout:
-            print(mp_result.stdout, flush=True)
+        if mp_result.worker_stdout:
+            print(mp_result.worker_stdout, flush=True)
 
         if must_stop(mp_result.result, self.ns):
             return True
@@ -531,32 +545,20 @@ class EncodeTestResult(json.JSONEncoder):
 
     def default(self, o: Any) -> dict[str, Any]:
         if isinstance(o, TestResult):
-            result = vars(o)
+            result = dataclasses.asdict(o)
             result["__test_result__"] = o.__class__.__name__
             return result
 
         return super().default(o)
 
 
-def decode_test_result(d: dict[str, Any]) -> TestResult | dict[str, Any]:
+def decode_test_result(d: dict[str, Any]) -> TestResult | TestStats | dict[str, Any]:
     """Decode a TestResult (sub)class object from a JSON dict."""
 
     if "__test_result__" not in d:
         return d
 
-    cls_name = d.pop("__test_result__")
-    for cls in get_all_test_result_classes():
-        if cls.__name__ == cls_name:
-            return cls(**d)
-
-
-def get_all_test_result_classes() -> set[type[TestResult]]:
-    prev_count = 0
-    classes = {TestResult}
-    while len(classes) > prev_count:
-        prev_count = len(classes)
-        to_add = []
-        for cls in classes:
-            to_add.extend(cls.__subclasses__())
-        classes.update(to_add)
-    return classes
+    d.pop('__test_result__')
+    if d['stats'] is not None:
+        d['stats'] = TestStats(**d['stats'])
+    return TestResult(**d)

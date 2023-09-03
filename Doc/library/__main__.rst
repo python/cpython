@@ -124,7 +124,7 @@ This is where using the ``if __name__ == '__main__'`` code block comes in
 handy. Code within this block won't run unless the module is executed in the
 top-level environment.
 
-Putting as few statements as possible in the block below ``if __name___ ==
+Putting as few statements as possible in the block below ``if __name__ ==
 '__main__'`` can improve code clarity and correctness. Most often, a function
 named ``main`` encapsulates the program's primary behavior::
 
@@ -336,12 +336,12 @@ Note that importing ``__main__`` doesn't cause any issues with unintentionally
 running top-level code meant for script use which is put in the
 ``if __name__ == "__main__"`` block of the ``start`` module. Why does this work?
 
-Python inserts an empty ``__main__`` module in :attr:`sys.modules` at
+Python inserts an empty ``__main__`` module in :data:`sys.modules` at
 interpreter startup, and populates it by running top-level code. In our example
 this is the ``start`` module which runs line by line and imports ``namely``.
 In turn, ``namely`` imports ``__main__`` (which is really ``start``). That's an
 import cycle! Fortunately, since the partially populated ``__main__``
-module is present in :attr:`sys.modules`, Python passes that to ``namely``.
+module is present in :data:`sys.modules`, Python passes that to ``namely``.
 See :ref:`Special considerations for __main__ <import-dunder-main>` in the
 import system's reference for details on how this works.
 

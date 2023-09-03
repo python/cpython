@@ -9,11 +9,6 @@
 
 **Source code:** :source:`Lib/json/__init__.py`
 
-.. testsetup:: *
-
-   import json
-   from json import AttrDict
-
 --------------
 
 `JSON (JavaScript Object Notation) <https://json.org>`_, specified by
@@ -197,7 +192,7 @@ Basic Usage
    dictionaries will be sorted by key.
 
    To use a custom :class:`JSONEncoder` subclass (e.g. one that overrides the
-   :meth:`default` method to serialize additional types), specify it with the
+   :meth:`~JSONEncoder.default` method to serialize additional types), specify it with the
    *cls* kwarg; otherwise :class:`JSONEncoder` is used.
 
    .. versionchanged:: 3.6
@@ -427,7 +422,7 @@ Encoders and Decoders
       Added support for int- and float-derived Enum classes.
 
    To extend this to recognize other objects, subclass and implement a
-   :meth:`default` method with another method that returns a serializable object
+   :meth:`~JSONEncoder.default` method with another method that returns a serializable object
    for ``o`` if possible, otherwise it should call the superclass implementation
    (to raise :exc:`TypeError`).
 
@@ -488,7 +483,7 @@ Encoders and Decoders
       :exc:`TypeError`).
 
       For example, to support arbitrary iterators, you could implement
-      :meth:`default` like this::
+      :meth:`~JSONEncoder.default` like this::
 
          def default(self, o):
             try:
@@ -547,44 +542,6 @@ Exceptions
       The column corresponding to *pos*.
 
    .. versionadded:: 3.5
-
-.. class:: AttrDict(**kwargs)
-           AttrDict(mapping, **kwargs)
-           AttrDict(iterable, **kwargs)
-
-   Subclass of :class:`dict` object that also supports attribute style dotted access.
-
-   This class is intended for use with the :attr:`object_hook` in
-   :func:`json.load` and :func:`json.loads`::
-
-   .. doctest::
-
-        >>> json_string = '{"mercury": 88, "venus": 225, "earth": 365, "mars": 687}'
-        >>> orbital_period = json.loads(json_string, object_hook=AttrDict)
-        >>> orbital_period['earth']     # Dict style lookup
-        365
-        >>> orbital_period.earth        # Attribute style lookup
-        365
-        >>> orbital_period.keys()       # All dict methods are present
-        dict_keys(['mercury', 'venus', 'earth', 'mars'])
-
-   Attribute style access only works for keys that are valid attribute
-   names.  In contrast, dictionary style access works for all keys.  For
-   example, ``d.two words`` contains a space and is not syntactically
-   valid Python, so ``d["two words"]`` should be used instead.
-
-   If a key has the same name as a dictionary method, then a dictionary
-   lookup finds the key and an attribute lookup finds the method:
-
-   .. doctest::
-
-        >>> d = AttrDict(items=50)
-        >>> d['items']                  # Lookup the key
-        50
-        >>> d.items()                   # Call the method
-        dict_items([('items', 50)])
-
-   .. versionadded:: 3.12
 
 
 Standard Compliance and Interoperability
@@ -726,7 +683,7 @@ The :mod:`json.tool` module provides a simple command line interface to validate
 and pretty-print JSON objects.
 
 If the optional ``infile`` and ``outfile`` arguments are not
-specified, :attr:`sys.stdin` and :attr:`sys.stdout` will be used respectively:
+specified, :data:`sys.stdin` and :data:`sys.stdout` will be used respectively:
 
 .. code-block:: shell-session
 
@@ -764,12 +721,12 @@ Command line options
           }
       ]
 
-   If *infile* is not specified, read from :attr:`sys.stdin`.
+   If *infile* is not specified, read from :data:`sys.stdin`.
 
 .. cmdoption:: outfile
 
    Write the output of the *infile* to the given *outfile*. Otherwise, write it
-   to :attr:`sys.stdout`.
+   to :data:`sys.stdout`.
 
 .. cmdoption:: --sort-keys
 

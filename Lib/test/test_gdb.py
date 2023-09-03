@@ -317,6 +317,7 @@ class PrettyPrintTests(DebuggerTests):
                          ('%r did not equal expected %r; full output was:\n%s'
                           % (gdb_repr, exp_repr, gdb_output)))
 
+    @support.requires_resource('cpu')
     def test_int(self):
         'Verify the pretty-printing of various int values'
         self.assertGdbRepr(42)
@@ -343,6 +344,7 @@ class PrettyPrintTests(DebuggerTests):
         self.assertGdbRepr([])
         self.assertGdbRepr(list(range(5)))
 
+    @support.requires_resource('cpu')
     def test_bytes(self):
         'Verify the pretty-printing of bytes'
         self.assertGdbRepr(b'')
@@ -357,6 +359,7 @@ class PrettyPrintTests(DebuggerTests):
 
         self.assertGdbRepr(bytes([b for b in range(255)]))
 
+    @support.requires_resource('cpu')
     def test_strings(self):
         'Verify the pretty-printing of unicode strings'
         # We cannot simply call locale.getpreferredencoding() here,
@@ -407,6 +410,7 @@ class PrettyPrintTests(DebuggerTests):
         self.assertGdbRepr((1,), '(1,)')
         self.assertGdbRepr(('foo', 'bar', 'baz'))
 
+    @support.requires_resource('cpu')
     def test_sets(self):
         'Verify the pretty-printing of sets'
         if (gdb_major_version, gdb_minor_version) < (7, 3):
@@ -425,6 +429,7 @@ s.remove('a')
 id(s)''')
         self.assertEqual(gdb_repr, "{'b'}")
 
+    @support.requires_resource('cpu')
     def test_frozensets(self):
         'Verify the pretty-printing of frozensets'
         if (gdb_major_version, gdb_minor_version) < (7, 3):
@@ -729,13 +734,13 @@ class PyListTests(DebuggerTests):
 
 SAMPLE_WITH_C_CALL = """
 
-from _testcapi import pyobject_fastcall
+from _testcapi import pyobject_vectorcall
 
 def foo(a, b, c):
     bar(a, b, c)
 
 def bar(a, b, c):
-    pyobject_fastcall(baz, (a, b, c))
+    pyobject_vectorcall(baz, (a, b, c), None)
 
 def baz(*args):
     id(42)
@@ -756,7 +761,7 @@ class StackNavigationTests(DebuggerTests):
         self.assertMultilineMatches(bt,
                                     r'''^.*
 #[0-9]+ Frame 0x-?[0-9a-f]+, for file <string>, line 12, in baz \(args=\(1, 2, 3\)\)
-#[0-9]+ <built-in method pyobject_fastcall of module object at remote 0x[0-9a-f]+>
+#[0-9]+ <built-in method pyobject_vectorcall of module object at remote 0x[0-9a-f]+>
 $''')
 
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
@@ -785,7 +790,7 @@ $''')
         self.assertMultilineMatches(bt,
                                     r'''^.*
 #[0-9]+ Frame 0x-?[0-9a-f]+, for file <string>, line 12, in baz \(args=\(1, 2, 3\)\)
-#[0-9]+ <built-in method pyobject_fastcall of module object at remote 0x[0-9a-f]+>
+#[0-9]+ <built-in method pyobject_vectorcall of module object at remote 0x[0-9a-f]+>
 #[0-9]+ Frame 0x-?[0-9a-f]+, for file <string>, line 12, in baz \(args=\(1, 2, 3\)\)
 $''')
 
@@ -828,6 +833,7 @@ Traceback \(most recent call first\):
 
     @unittest.skipIf(python_is_optimized(),
                      "Python was compiled with optimizations")
+    @support.requires_resource('cpu')
     def test_threads(self):
         'Verify that "py-bt" indicates threads that are waiting for the GIL'
         cmd = '''
@@ -889,6 +895,7 @@ id(42)
 
     @unittest.skipIf(python_is_optimized(),
                      "Python was compiled with optimizations")
+    @support.requires_resource('cpu')
     # Some older versions of gdb will fail with
     #  "Cannot find new threads: generic error"
     # unless we add LD_PRELOAD=PATH-TO-libpthread.so.1 as a workaround
@@ -962,7 +969,7 @@ id(42)
         cmd = textwrap.dedent('''
             class MyList(list):
                 def __init__(self):
-                    super().__init__()   # wrapper_call()
+                    super(*[]).__init__()   # wrapper_call()
 
             id("first break point")
             l = MyList()

@@ -328,7 +328,7 @@ class ElementTreeTest(unittest.TestCase):
         self.serialize_check(element, '<tag key="value" />') # 5
         with self.assertRaises(ValueError) as cm:
             element.remove(subelement)
-        self.assertEqual(str(cm.exception), 'list.remove(x): x not in list')
+        self.assertIn('not in list', str(cm.exception))
         self.serialize_check(element, '<tag key="value" />') # 6
         element[0:0] = [subelement, subelement, subelement]
         self.serialize_check(element[1], '<subtag />')
@@ -4250,7 +4250,7 @@ def test_main(module=None):
         old_factories = None
 
     try:
-        support.run_unittest(*test_classes)
+        return support.run_unittest(*test_classes)
     finally:
         from xml.etree import ElementPath
         # Restore mapping and path cache

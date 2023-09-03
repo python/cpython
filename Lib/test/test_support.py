@@ -30,7 +30,7 @@ class TestSupport(unittest.TestCase):
             "test.support.warnings_helper", like=".*used in test_support.*"
         )
         cls._test_support_token = support.ignore_deprecations_from(
-            "test.test_support", like=".*You should NOT be seeing this.*"
+            __name__, like=".*You should NOT be seeing this.*"
         )
         assert len(warnings.filters) == orig_filter_len + 2
 
@@ -430,10 +430,7 @@ class TestSupport(unittest.TestCase):
 
         extra = {
             'TextTestResult',
-            'findTestCases',
-            'getTestCaseNames',
             'installHandler',
-            'makeSuite',
         }
         not_exported = {'load_tests', "TestProgram", "BaseTestSuite"}
         support.check__all__(self,
@@ -500,6 +497,7 @@ class TestSupport(unittest.TestCase):
         self.assertEqual(proc.stdout.rstrip(), repr(expected))
         self.assertEqual(proc.returncode, 0)
 
+    @support.requires_resource('cpu')
     def test_args_from_interpreter_flags(self):
         # Test test.support.args_from_interpreter_flags()
         for opts in (
