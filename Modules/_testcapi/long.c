@@ -1,5 +1,10 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "parts.h"
 #include "clinic/long.c.h"
+#include "pycore_long.h"          // _PyLong_Sign()
 
 /*[clinic input]
 module _testcapi

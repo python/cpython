@@ -1,4 +1,5 @@
 import itertools
+import logging
 import os
 import pathlib
 import sys
@@ -90,6 +91,7 @@ def compile_c_extension(
     static library of the common parser sources (this is useful in case you are
     creating multiple extensions).
     """
+    import setuptools.command.build_ext
     import setuptools.logging
 
     from setuptools import Extension, Distribution
@@ -98,7 +100,7 @@ def compile_c_extension(
     from setuptools._distutils.sysconfig import customize_compiler
 
     if verbose:
-        setuptools.logging.set_threshold(setuptools.logging.logging.DEBUG)
+        setuptools.logging.set_threshold(logging.DEBUG)
 
     source_file_path = pathlib.Path(generated_source_path)
     extension_name = source_file_path.stem
@@ -140,6 +142,7 @@ def compile_c_extension(
     )
     dist = Distribution({"name": extension_name, "ext_modules": [extension]})
     cmd = dist.get_command_obj("build_ext")
+    assert isinstance(cmd, setuptools.command.build_ext.build_ext)
     fixup_build_ext(cmd)
     cmd.build_lib = str(source_file_path.parent)
     cmd.include_dirs = include_dirs
@@ -156,6 +159,7 @@ def compile_c_extension(
         library_filename = compiler.library_filename(extension_name, output_dir=library_dir)
         if newer_group(common_sources, library_filename, "newer"):
             if sys.platform == "win32":
+                assert compiler.static_lib_format
                 pdb = compiler.static_lib_format % (extension_name, ".pdb")
                 compile_opts = [f"/Fd{library_dir}\\{pdb}"]
                 compile_opts.extend(extra_compile_args)
@@ -208,7 +212,7 @@ def compile_c_extension(
         ext_path,
         libraries=cmd.get_libraries(extension),
         extra_postargs=extra_link_args,
-        export_symbols=cmd.get_export_symbols(extension),
+        export_symbols=cmd.get_export_symbols(extension),  # type: ignore[no-untyped-call]
         debug=cmd.debug,
         build_temp=cmd.build_temp,
     )

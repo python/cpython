@@ -4,6 +4,7 @@ if __name__ != 'test.support':
     raise ImportError('support must be imported from the test package')
 
 import contextlib
+import dataclasses
 import functools
 import getpass
 import _opcode
@@ -118,17 +119,20 @@ class Error(Exception):
 
 class TestFailed(Error):
     """Test failed."""
-
-class TestFailedWithDetails(TestFailed):
-    """Test failed."""
-    def __init__(self, msg, errors, failures):
+    def __init__(self, msg, *args, stats=None):
         self.msg = msg
-        self.errors = errors
-        self.failures = failures
-        super().__init__(msg, errors, failures)
+        self.stats = stats
+        super().__init__(msg, *args)
 
     def __str__(self):
         return self.msg
+
+class TestFailedWithDetails(TestFailed):
+    """Test failed."""
+    def __init__(self, msg, errors, failures, stats):
+        self.errors = errors
+        self.failures = failures
+        super().__init__(msg, errors, failures, stats=stats)
 
 class TestDidNotRun(Error):
     """Test did not run any subtests."""
@@ -779,9 +783,6 @@ def python_is_optimized():
 
 _header = 'nP'
 _align = '0n'
-if hasattr(sys, "getobjects"):
-    _header = '2P' + _header
-    _align = '0P'
 _vheader = _header + 'n'
 
 def calcobjsize(fmt):
@@ -1108,6 +1109,30 @@ def _filter_suite(suite, pred):
                 newtests.append(test)
     suite._tests = newtests
 
+@dataclasses.dataclass(slots=True)
+class TestStats:
+    tests_run: int = 0
+    failures: int = 0
+    skipped: int = 0
+
+    @staticmethod
+    def from_unittest(result):
+        return TestStats(result.testsRun,
+                         len(result.failures),
+                         len(result.skipped))
+
+    @staticmethod
+    def from_doctest(results):
+        return TestStats(results.attempted,
+                         results.failed,
+                         results.skipped)
+
+    def accumulate(self, stats):
+        self.tests_run += stats.tests_run
+        self.failures += stats.failures
+        self.skipped += stats.skipped
+
+
 def _run_suite(suite):
     """Run tests from a unittest.TestSuite-derived class."""
     runner = get_test_runner(sys.stdout,
@@ -1122,6 +1147,7 @@ def _run_suite(suite):
     if not result.testsRun and not result.skipped and not result.errors:
         raise TestDidNotRun
     if not result.wasSuccessful():
+        stats = TestStats.from_unittest(result)
         if len(result.errors) == 1 and not result.failures:
             err = result.errors[0][1]
         elif len(result.failures) == 1 and not result.errors:
@@ -1131,7 +1157,8 @@ def _run_suite(suite):
             if not verbose: err += "; run in verbose mode for details"
         errors = [(str(tc), exc_str) for tc, exc_str in result.errors]
         failures = [(str(tc), exc_str) for tc, exc_str in result.failures]
-        raise TestFailedWithDetails(err, errors, failures)
+        raise TestFailedWithDetails(err, errors, failures, stats=stats)
+    return result
 
 
 # By default, don't filter tests
@@ -1240,7 +1267,7 @@ def run_unittest(*classes):
         else:
             suite.addTest(loader.loadTestsFromTestCase(cls))
     _filter_suite(suite, match_test)
-    _run_suite(suite)
+    return _run_suite(suite)
 
 #=======================================================================
 # Check for the presence of docstrings.
@@ -1280,13 +1307,18 @@ def run_doctest(module, verbosity=None, optionflags=0):
     else:
         verbosity = None
 
-    f, t = doctest.testmod(module, verbose=verbosity, optionflags=optionflags)
-    if f:
-        raise TestFailed("%d of %d doctests failed" % (f, t))
+    results = doctest.testmod(module,
+                             verbose=verbosity,
+                             optionflags=optionflags)
+    if results.failed:
+        stats = TestStats.from_doctest(results)
+        raise TestFailed(f"{results.failed} of {results.attempted} "
+                         f"doctests failed",
+                         stats=stats)
     if verbose:
         print('doctest (%s) ... %d tests with zero failures' %
-              (module.__name__, t))
-    return f, t
+              (module.__name__, results.attempted))
+    return results
 
 
 #=======================================================================
@@ -1821,11 +1853,11 @@ def run_in_subinterp_with_config(code, *, own_gil=None, **config):
     module is enabled.
     """
     _check_tracemalloc()
-    import _testcapi
+    import _testinternalcapi
     if own_gil is not None:
         assert 'gil' not in config, (own_gil, config)
         config['gil'] = 2 if own_gil else 1
-    return _testcapi.run_in_subinterp_with_config(code, **config)
+    return _testinternalcapi.run_in_subinterp_with_config(code, **config)
 
 
 def _check_tracemalloc():
@@ -2469,3 +2501,5 @@ C_RECURSION_LIMIT = 1500
 #Windows doesn't have os.uname() but it doesn't support s390x.
 skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == 's390x',
                                 'skipped on s390x')
+
+Py_TRACE_REFS = hasattr(sys, 'getobjects')
