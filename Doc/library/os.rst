@@ -3799,6 +3799,9 @@ features:
    If the timer file descriptor's counter is zero and
    :const:`TFD_NONBLOCK` is not set as a flag, :func:`read` blocks.
 
+   If :const:`TFD_NONBLOCK` is set as a flag, enable the close-on-exec flag
+   for the new file descriptor.
+
    .. seealso:: The :manpage:`timerfd_create(2)` man page.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8

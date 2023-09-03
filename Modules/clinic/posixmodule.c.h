@@ -5997,9 +5997,25 @@ PyDoc_STRVAR(os_timerfd_create__doc__,
 "Create and return a timer file descriptor.\n"
 "\n"
 "  clockid\n"
-"    CLOCK_REALTIME or CLOCK_MONOTONIC. CLOCK_REALTIME.\n"
+"    CLOCK_REALTIME or CLOCK_MONOTONIC.\n"
+"\n"
+"    CLOCK_REALTIME\n"
+"        A settable system-wide real-time clock.\n"
+"        If system clock is changed, timer setting need to be updated.\n"
+"        See TFD_TIMER_ABSTIME and TFD_TIMER_CANCEL_ON_SET.\n"
+"\n"
+"    CLOCK_MONOTONIC\n"
+"       A nonsettable monotonically increasing clock.\n"
+"       Even if system clock is changed, timer setting will be not affected.\n"
 "  flags\n"
-"    0 or a bit mask of TFD_NONBLOCK or TFD_CLOEXEC.");
+"    0 or a bit mask of TFD_NONBLOCK or TFD_CLOEXEC.\n"
+"\n"
+"    TFD_NONBLOCK\n"
+"        If *TFD_NONBLOCK* is set as a flag, read doesn\'t blocks.\n"
+"        If *TFD_NONBLOCK* is not set as a flag, read block until the timer fires.\n"
+"\n"
+"    TFD_CLOEXEC\n"
+"        If *TFD_CLOEXEC* is set as a flag, enable the close-on-exec flag");
 
 #define OS_TIMERFD_CREATE_METHODDEF    \
     {"timerfd_create", _PyCFunction_CAST(os_timerfd_create), METH_FASTCALL|METH_KEYWORDS, os_timerfd_create__doc__},
@@ -6078,15 +6094,15 @@ PyDoc_STRVAR(os_timerfd_settime__doc__,
 "  flags\n"
 "    0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.\n"
 "  initial\n"
-"    it_initial_expiration is initial expiration timing in seconds. It could be absolute time or relative time\n"
-"    based on TFD_TIMER_ABSTIME flag.\n"
+"    initial expiration timing in seconds.\n"
+"    If *flags* has TFD_TIMER_ABSTIME bit, The value is in absolute time\n"
+"    If *flags* doesn\'t have TFD_TIMER_ABSTIME bit, The value is in relative time\n"
+"    If *flags* has TFD_TIMER_ABSTIME bit and TFD_TIMER_CANCEL_ON_SET bit and *flags* and time.CLOCK_REALTIME\n"
+"    and system clock is changed discontinuously, reading a file descriptor is aborted with ECANCELED.\n"
 "  interval\n"
-"    If TFD_TIMER_ABSTIME is not specified, it_interval is relative time.\n"
-"    If TFD_TIMER_ABSTIME is specified, it_interval is absolute time and epoch time in time_t.\n"
-"    If TFD_TIMER_CANCEL_ON_SET and TFD_TIMER_ABSTIME are specifed as *flags* and time.CLOCK_REALTIME\n"
-"    is specified as *clockid* of timerfd_create, a discontinuous change of system clock will make to\n"
-"    abort reading from a file descriptor with ECANCELED error.\n"
-"    it_interval is interval for timer in seconds.");
+"    interval for the timer in seconds.\n"
+"    if \'interval\' is zero, timer will be run once.\n"
+"    if \'interval\' is non-zero, timer will be run periodically with the interval.");
 
 #define OS_TIMERFD_SETTIME_METHODDEF    \
     {"timerfd_settime", _PyCFunction_CAST(os_timerfd_settime), METH_FASTCALL|METH_KEYWORDS, os_timerfd_settime__doc__},
@@ -12368,4 +12384,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=33c5ec00584f43d6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=182c72ece6b8c7b5 input=a9049054013a1b77]*/
