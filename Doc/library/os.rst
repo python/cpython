@@ -3828,8 +3828,7 @@ features:
    If the timer file descriptor's counter is zero and
    :const:`TFD_NONBLOCK` is not set as a flag, :func:`read` blocks.
 
-   If :const:`TFD_NONBLOCK` is set as a flag, enable the close-on-exec flag
-   for the new file descriptor.
+   If :const:`TFD_CLOEXEC` is set as a flag, set close-on-exec flag for new file descriptor.
 
    .. seealso:: The :manpage:`timerfd_create(2)` man page.
 
@@ -3963,6 +3962,7 @@ features:
 
    A flag for the :func:`timerfd_create` function,
    which sets the :const:`O_NONBLOCK` status flag for the new timer file descriptor.
+   :func:`read` to the new timer file descriptor will not be blocked.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
@@ -3971,7 +3971,7 @@ features:
 .. data:: TFD_CLOEXEC
 
    A flag for the :func:`timerfd_create` function,
-   which sets the :const:`TFD_CLOEXEC` status flag for the new timer file descriptor.
+   If :const:`TFD_CLOEXEC` is set as a flag, set close-on-exec flag for new file descriptor.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
@@ -3980,6 +3980,7 @@ features:
 .. data:: TFD_TIMER_ABSTIME
 
    A flag for the :func:`timerfd_settime` and :func:`timerfd_settime_ns` functions.
+   Use as an absolute value on the timer's clock.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
@@ -3987,7 +3988,9 @@ features:
 
 .. data:: TFD_TIMER_CANCEL_ON_SET
 
-   A flag for the :func:`timerfd_settime` and :func:`timerfd_settime_ns` functions.
+   A flag for the :func:`timerfd_settime` and :func:`timerfd_settime_ns` functions
+   along with :const:`TFD_TIMER_ABSTIME`. Timer is aborted when real-time clock is
+   changed discontinuously.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
