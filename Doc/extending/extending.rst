@@ -458,10 +458,9 @@ Compilation and Linkage
 
 There are two more things to do before you can use your new extension: compiling
 and linking it with the Python system.  If you use dynamic loading, the details
-may depend on the style of dynamic loading your system uses; see the chapters
-about building extension modules (chapter :ref:`building`) and additional
-information that pertains only to building on Windows (chapter
-:ref:`building-on-windows`) for more information about this.
+may depend on the style of dynamic loading your system uses; see the chapter
+about building extension modules (chapter :ref:`building`)
+for more information about this.
 
 If you can't use dynamic loading, or if you want to make your module a permanent
 part of the Python interpreter, you will have to change the configuration setup
