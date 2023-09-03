@@ -3780,7 +3780,7 @@ features:
    .. versionadded:: 3.10
 
 
-.. function:: timerfd_create(clockid, flags, /)
+.. function:: timerfd_create(clockid, /, *, flags)
 
    Create and return a timer file descriptor (*timerfd*).
    The file descriptor supports :func:`read` with a buffer size of 8,
