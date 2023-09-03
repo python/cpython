@@ -1294,8 +1294,8 @@ TreeBuilder Objects
 
    .. method:: pi(target, text)
 
-      Creates a comment with the given *target* name and *text*.  If
-      ``insert_pis`` is true, this will also add it to the tree.
+      Creates a process instruction with the given *target* name and *text*.
+      if ``insert_pis`` is true, this will also add it to the tree.
 
       .. versionadded:: 3.8
 
