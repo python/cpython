@@ -235,6 +235,10 @@ class MyIndexable(object):
     def __index__(self):
         return self.value
 
+class BadDescr:
+    def __get__(self, obj, objtype=None):
+        raise ValueError
+
 class MathTests(unittest.TestCase):
 
     def ftest(self, name, got, expected, ulp_tol=5, abs_tol=0.0):
@@ -419,10 +423,7 @@ class MathTests(unittest.TestCase):
         class TestNoCeil:
             pass
         class TestBadCeil:
-            class BadCeil:
-                def __get__(self, obj, objtype=None):
-                    raise ValueError
-            __ceil__ = BadCeil()
+            __ceil__ = BadDescr()
         self.assertEqual(math.ceil(TestCeil()), 42)
         self.assertEqual(math.ceil(FloatCeil()), 42)
         self.assertEqual(math.ceil(FloatLike(42.5)), 43)
@@ -578,10 +579,7 @@ class MathTests(unittest.TestCase):
         class TestNoFloor:
             pass
         class TestBadFloor:
-            class BadFloor:
-                def __get__(self, obj, objtype=None):
-                    raise ValueError
-            __floor__ = BadFloor()
+            __floor__ = BadDescr()
         self.assertEqual(math.floor(TestFloor()), 42)
         self.assertEqual(math.floor(FloatFloor()), 42)
         self.assertEqual(math.floor(FloatLike(41.9)), 41)
