@@ -3783,8 +3783,21 @@ features:
 .. function:: timerfd_create(clockid, /, *, flags)
 
    Create and return a timer file descriptor (*timerfd*).
-   The file descriptor supports :func:`read` with a buffer size of 8,
-   :func:`~select.select`, and :func:`~select.poll`.
+
+   The file descriptor returned by :func:`timerfd_create` supports the following
+   additional operations:
+
+   - :func:`read`
+   - :func:`~select.select`
+   - :func:`~select.poll`.
+
+   The file descriptor supports :func:`read` with a buffer size of 8.
+   If the timer has already expired one or more times, :func:`read` returns
+   the number of expirations in :class:`bytes` of host byte order. You can
+   convert it by :func:`int.from_bytes` with ``byteorder`` is :const:`sys.byteorder`.
+
+   :func:`~select.select` and :func:`~select.poll` can be used to wait until
+   timer expires and the file descriptor is readable.
 
    *clockid* must be a valid :ref:`clock ID <time-clock-id-constants>`,
    as defined in the :py:mod:`time` module and the following values are
