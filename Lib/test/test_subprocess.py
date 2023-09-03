@@ -869,6 +869,19 @@ class ProcessTestCase(BaseTestCase):
             stdout, stderr = p.communicate()
             self.assertEqual(stdout, b"orange=lemon")
 
+    @unittest.skipUnless(sys.platform == "win32", "Windows only issue")
+    def test_win32_invalid_env(self):
+        # '=' in the environment variable name
+        newenv = os.environ.copy()
+        newenv["FRUIT=VEGETABLE"] = "cabbage"
+        with self.assertRaises(ValueError):
+            subprocess.Popen(ZERO_RETURN_CMD, env=newenv)
+
+        newenv = os.environ.copy()
+        newenv["==FRUIT"] = "cabbage"
+        with self.assertRaises(ValueError):
+            subprocess.Popen(ZERO_RETURN_CMD, env=newenv)
+
     def test_communicate_stdin(self):
         p = subprocess.Popen([sys.executable, "-c",
                               'import sys;'
