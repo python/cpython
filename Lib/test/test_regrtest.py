@@ -20,7 +20,7 @@ import time
 import unittest
 from test import libregrtest
 from test import support
-from test.support import os_helper
+from test.support import os_helper, TestStats
 from test.libregrtest import utils, setup
 
 if not support.has_subprocess_support:
@@ -411,7 +411,9 @@ class BaseTestCase(unittest.TestCase):
             self.fail("%r not found in %r" % (regex, output))
         return match
 
-    def check_line(self, output, regex):
+    def check_line(self, output, regex, full=False):
+        if full:
+            regex += '\n'
         regex = re.compile(r'^' + regex, re.MULTILINE)
         self.assertRegex(output, regex)
 
@@ -423,21 +425,27 @@ class BaseTestCase(unittest.TestCase):
 
     def check_executed_tests(self, output, tests, skipped=(), failed=(),
                              env_changed=(), omitted=(),
-                             rerun={}, no_test_ran=(),
+                             rerun={}, run_no_tests=(),
+                             resource_denied=(),
                              randomize=False, interrupted=False,
-                             fail_env_changed=False):
+                             fail_env_changed=False,
+                             *, stats):
         if isinstance(tests, str):
             tests = [tests]
         if isinstance(skipped, str):
             skipped = [skipped]
+        if isinstance(resource_denied, str):
+            resource_denied = [resource_denied]
         if isinstance(failed, str):
             failed = [failed]
         if isinstance(env_changed, str):
             env_changed = [env_changed]
         if isinstance(omitted, str):
             omitted = [omitted]
-        if isinstance(no_test_ran, str):
-            no_test_ran = [no_test_ran]
+        if isinstance(run_no_tests, str):
+            run_no_tests = [run_no_tests]
+        if isinstance(stats, int):
+            stats = TestStats(stats)
 
         executed = self.parse_executed_tests(output)
         if randomize:
@@ -481,12 +489,12 @@ class BaseTestCase(unittest.TestCase):
                 regex = LOG_PREFIX + f"Re-running {name} in verbose mode \\(matching: {match}\\)"
                 self.check_line(output, regex)
 
-        if no_test_ran:
-            regex = list_regex('%s test%s run no tests', no_test_ran)
+        if run_no_tests:
+            regex = list_regex('%s test%s run no tests', run_no_tests)
             self.check_line(output, regex)
 
         good = (len(tests) - len(skipped) - len(failed)
-                - len(omitted) - len(env_changed) - len(no_test_ran))
+                - len(omitted) - len(env_changed) - len(run_no_tests))
         if good:
             regex = r'%s test%s OK\.$' % (good, plural(good))
             if not skipped and not failed and good > 1:
@@ -496,6 +504,33 @@ class BaseTestCase(unittest.TestCase):
         if interrupted:
             self.check_line(output, 'Test suite interrupted by signal SIGINT.')
 
+        # Total tests
+        parts = [f'run={stats.tests_run:,}']
+        if stats.failures:
+            parts.append(f'failures={stats.failures:,}')
+        if stats.skipped:
+            parts.append(f'skipped={stats.skipped:,}')
+        line = fr'Total tests: {" ".join(parts)}'
+        self.check_line(output, line, full=True)
+
+        # Total test files
+        report = [f'success={good}']
+        if failed:
+            report.append(f'failed={len(failed)}')
+        if env_changed:
+            report.append(f'env_changed={len(env_changed)}')
+        if skipped:
+            report.append(f'skipped={len(skipped)}')
+        if resource_denied:
+            report.append(f'resource_denied={len(resource_denied)}')
+        if rerun:
+            report.append(f'rerun={len(rerun)}')
+        if run_no_tests:
+            report.append(f'run_no_tests={len(run_no_tests)}')
+        line = fr'Total test files: {" ".join(report)}'
+        self.check_line(output, line, full=True)
+
+        # Result
         result = []
         if failed:
             result.append('FAILURE')
@@ -505,15 +540,13 @@ class BaseTestCase(unittest.TestCase):
             result.append('INTERRUPTED')
         if not any((good, result, failed, interrupted, skipped,
                     env_changed, fail_env_changed)):
-            result.append("NO TEST RUN")
+            result.append("NO TESTS RAN")
         elif not result:
             result.append('SUCCESS')
         result = ', '.join(result)
         if rerun:
-            self.check_line(output, 'Tests result: FAILURE')
             result = 'FAILURE then %s' % result
-
-        self.check_line(output, 'Tests result: %s' % result)
+        self.check_line(output, f'Result: {result}', full=True)
 
     def parse_random_seed(self, output):
         match = self.regex_search(r'Using random seed ([0-9]+)', output)
@@ -602,7 +635,8 @@ class ProgramsTestCase(BaseTestCase):
 
     def check_output(self, output):
         self.parse_random_seed(output)
-        self.check_executed_tests(output, self.tests, randomize=True)
+        self.check_executed_tests(output, self.tests,
+                                  randomize=True, stats=len(self.tests))
 
     def run_tests(self, args):
         output = self.run_python(args)
@@ -715,8 +749,9 @@ class ArgsTestCase(BaseTestCase):
         test_failing = self.create_test('failing', code=code)
         tests = [test_ok, test_failing]
 
-        output = self.run_tests(*tests, exitcode=2)
-        self.check_executed_tests(output, tests, failed=test_failing)
+        output = self.run_tests(*tests, exitcode=EXITCODE_BAD_TEST)
+        self.check_executed_tests(output, tests, failed=test_failing,
+                                  stats=TestStats(2, 1))
 
     def test_resources(self):
         # test -u command line option
@@ -735,17 +770,21 @@ class ArgsTestCase(BaseTestCase):
 
         # -u all: 2 resources enabled
         output = self.run_tests('-u', 'all', *test_names)
-        self.check_executed_tests(output, test_names)
+        self.check_executed_tests(output, test_names, stats=2)
 
         # -u audio: 1 resource enabled
         output = self.run_tests('-uaudio', *test_names)
         self.check_executed_tests(output, test_names,
-                                  skipped=tests['network'])
+                                  skipped=tests['network'],
+                                  resource_denied=tests['network'],
+                                  stats=1)
 
         # no option: 0 resources enabled
         output = self.run_tests(*test_names)
         self.check_executed_tests(output, test_names,
-                                  skipped=test_names)
+                                  skipped=test_names,
+                                  resource_denied=test_names,
+                                  stats=0)
 
     def test_random(self):
         # test -r and --randseed command line option
@@ -756,13 +795,14 @@ class ArgsTestCase(BaseTestCase):
         test = self.create_test('random', code)
 
         # first run to get the output with the random seed
-        output = self.run_tests('-r', test)
+        output = self.run_tests('-r', test, exitcode=EXITCODE_NO_TESTS_RAN)
         randseed = self.parse_random_seed(output)
         match = self.regex_search(r'TESTRANDOM: ([0-9]+)', output)
         test_random = int(match.group(1))
 
         # try to reproduce with the random seed
-        output = self.run_tests('-r', '--randseed=%s' % randseed, test)
+        output = self.run_tests('-r', '--randseed=%s' % randseed, test,
+                                exitcode=EXITCODE_NO_TESTS_RAN)
         randseed2 = self.parse_random_seed(output)
         self.assertEqual(randseed2, randseed)
 
@@ -792,7 +832,8 @@ class ArgsTestCase(BaseTestCase):
                 previous = name
 
         output = self.run_tests('--fromfile', filename)
-        self.check_executed_tests(output, tests)
+        stats = len(tests)
+        self.check_executed_tests(output, tests, stats=stats)
 
         # test format '[2/7] test_opcodes'
         with open(filename, "w") as fp:
@@ -800,7 +841,7 @@ class ArgsTestCase(BaseTestCase):
                 print("[%s/%s] %s" % (index, len(tests), name), file=fp)
 
         output = self.run_tests('--fromfile', filename)
-        self.check_executed_tests(output, tests)
+        self.check_executed_tests(output, tests, stats=stats)
 
         # test format 'test_opcodes'
         with open(filename, "w") as fp:
@@ -808,7 +849,7 @@ class ArgsTestCase(BaseTestCase):
                 print(name, file=fp)
 
         output = self.run_tests('--fromfile', filename)
-        self.check_executed_tests(output, tests)
+        self.check_executed_tests(output, tests, stats=stats)
 
         # test format 'Lib/test/test_opcodes.py'
         with open(filename, "w") as fp:
@@ -816,20 +857,20 @@ class ArgsTestCase(BaseTestCase):
                 print('Lib/test/%s.py' % name, file=fp)
 
         output = self.run_tests('--fromfile', filename)
-        self.check_executed_tests(output, tests)
+        self.check_executed_tests(output, tests, stats=stats)
 
     def test_interrupted(self):
         code = TEST_INTERRUPTED
         test = self.create_test('sigint', code=code)
-        output = self.run_tests(test, exitcode=130)
+        output = self.run_tests(test, exitcode=EXITCODE_INTERRUPTED)
         self.check_executed_tests(output, test, omitted=test,
-                                  interrupted=True)
+                                  interrupted=True, stats=0)
 
     def test_slowest(self):
         # test --slowest
         tests = [self.create_test() for index in range(3)]
         output = self.run_tests("--slowest", *tests)
-        self.check_executed_tests(output, tests)
+        self.check_executed_tests(output, tests, stats=len(tests))
         regex = ('10 slowest tests:\n'
                  '(?:- %s: .*\n){%s}'
                  % (self.TESTNAME_REGEX, len(tests)))
@@ -846,9 +887,10 @@ class ArgsTestCase(BaseTestCase):
                     args = ("--slowest", "-j2", test)
                 else:
                     args = ("--slowest", test)
-                output = self.run_tests(*args, exitcode=130)
+                output = self.run_tests(*args, exitcode=EXITCODE_INTERRUPTED)
                 self.check_executed_tests(output, test,
-                                          omitted=test, interrupted=True)
+                                          omitted=test, interrupted=True,
+                                          stats=0)
 
                 regex = ('10 slowest tests:\n')
                 self.check_line(output, regex)
@@ -857,7 +899,7 @@ class ArgsTestCase(BaseTestCase):
         # test --coverage
         test = self.create_test('coverage')
         output = self.run_tests("--coverage", test)
-        self.check_executed_tests(output, [test])
+        self.check_executed_tests(output, [test], stats=1)
         regex = (r'lines +cov% +module +\(path\)\n'
                  r'(?: *[0-9]+ *[0-9]{1,2}% *[^ ]+ +\([^)]+\)+)+')
         self.check_line(output, regex)
@@ -886,8 +928,9 @@ class ArgsTestCase(BaseTestCase):
                         builtins.__dict__['RUN'] = 1
         """)
         test = self.create_test('forever', code=code)
-        output = self.run_tests('--forever', test, exitcode=2)
-        self.check_executed_tests(output, [test]*3, failed=test)
+        output = self.run_tests('--forever', test, exitcode=EXITCODE_BAD_TEST)
+        self.check_executed_tests(output, [test]*3, failed=test,
+                                  stats=TestStats(1, 1))
 
     def check_leak(self, code, what):
         test = self.create_test('huntrleaks', code=code)
@@ -895,9 +938,9 @@ class ArgsTestCase(BaseTestCase):
         filename = 'reflog.txt'
         self.addCleanup(os_helper.unlink, filename)
         output = self.run_tests('--huntrleaks', '3:3:', test,
-                                exitcode=2,
+                                exitcode=EXITCODE_BAD_TEST,
                                 stderr=subprocess.STDOUT)
-        self.check_executed_tests(output, [test], failed=test)
+        self.check_executed_tests(output, [test], failed=test, stats=1)
 
         line = 'beginning 6 repetitions\n123456\n......\n'
         self.check_line(output, re.escape(line))
@@ -977,9 +1020,9 @@ class ArgsTestCase(BaseTestCase):
         crash_test = self.create_test(name="crash", code=code)
 
         tests = [crash_test]
-        output = self.run_tests("-j2", *tests, exitcode=2)
+        output = self.run_tests("-j2", *tests, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, tests, failed=crash_test,
-                                  randomize=True)
+                                  randomize=True, stats=0)
 
     def parse_methods(self, output):
         regex = re.compile("^(test[^ ]+).*ok$", flags=re.MULTILINE)
@@ -1074,12 +1117,14 @@ class ArgsTestCase(BaseTestCase):
 
         # don't fail by default
         output = self.run_tests(testname)
-        self.check_executed_tests(output, [testname], env_changed=testname)
+        self.check_executed_tests(output, [testname],
+                                  env_changed=testname, stats=1)
 
         # fail with --fail-env-changed
-        output = self.run_tests("--fail-env-changed", testname, exitcode=3)
+        output = self.run_tests("--fail-env-changed", testname,
+                                exitcode=EXITCODE_ENV_CHANGED)
         self.check_executed_tests(output, [testname], env_changed=testname,
-                                  fail_env_changed=True)
+                                  fail_env_changed=True, stats=1)
 
     def test_rerun_fail(self):
         # FAILURE then FAILURE
@@ -1096,9 +1141,11 @@ class ArgsTestCase(BaseTestCase):
         """)
         testname = self.create_test(code=code)
 
-        output = self.run_tests("-w", testname, exitcode=2)
+        output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, [testname],
-                                  failed=testname, rerun={testname: "test_fail_always"})
+                                  failed=testname,
+                                  rerun={testname: "test_fail_always"},
+                                  stats=TestStats(1, 1))
 
     def test_rerun_success(self):
         # FAILURE then SUCCESS
@@ -1119,7 +1166,8 @@ class ArgsTestCase(BaseTestCase):
 
         output = self.run_tests("-w", testname, exitcode=0)
         self.check_executed_tests(output, [testname],
-                                  rerun={testname: "test_fail_once"})
+                                  rerun={testname: "test_fail_once"},
+                                  stats=1)
 
     def test_rerun_setup_class_hook_failure(self):
         # FAILURE then FAILURE
@@ -1139,7 +1187,8 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, testname,
                                   failed=[testname],
-                                  rerun={testname: "ExampleTests"})
+                                  rerun={testname: "ExampleTests"},
+                                  stats=0)
 
     def test_rerun_teardown_class_hook_failure(self):
         # FAILURE then FAILURE
@@ -1159,7 +1208,8 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, testname,
                                   failed=[testname],
-                                  rerun={testname: "ExampleTests"})
+                                  rerun={testname: "ExampleTests"},
+                                  stats=1)
 
     def test_rerun_setup_module_hook_failure(self):
         # FAILURE then FAILURE
@@ -1178,7 +1228,8 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, testname,
                                   failed=[testname],
-                                  rerun={testname: testname})
+                                  rerun={testname: testname},
+                                  stats=0)
 
     def test_rerun_teardown_module_hook_failure(self):
         # FAILURE then FAILURE
@@ -1197,7 +1248,8 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, testname,
                                   failed=[testname],
-                                  rerun={testname: testname})
+                                  rerun={testname: testname},
+                                  stats=1)
 
     def test_rerun_setup_hook_failure(self):
         # FAILURE then FAILURE
@@ -1216,7 +1268,8 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, testname,
                                   failed=[testname],
-                                  rerun={testname: "test_success"})
+                                  rerun={testname: "test_success"},
+                                  stats=1)
 
     def test_rerun_teardown_hook_failure(self):
         # FAILURE then FAILURE
@@ -1235,7 +1288,8 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, testname,
                                   failed=[testname],
-                                  rerun={testname: "test_success"})
+                                  rerun={testname: "test_success"},
+                                  stats=1)
 
     def test_rerun_async_setup_hook_failure(self):
         # FAILURE then FAILURE
@@ -1254,7 +1308,8 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, testname,
                                   failed=[testname],
-                                  rerun={testname: "test_success"})
+                                  rerun={testname: "test_success"},
+                                  stats=1)
 
     def test_rerun_async_teardown_hook_failure(self):
         # FAILURE then FAILURE
@@ -1273,7 +1328,8 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, testname,
                                   failed=[testname],
-                                  rerun={testname: "test_success"})
+                                  rerun={testname: "test_success"},
+                                  stats=1)
 
     def test_no_tests_ran(self):
         code = textwrap.dedent("""
@@ -1285,8 +1341,11 @@ class ArgsTestCase(BaseTestCase):
         """)
         testname = self.create_test(code=code)
 
-        output = self.run_tests(testname, "-m", "nosuchtest", exitcode=0)
-        self.check_executed_tests(output, [testname], no_test_ran=testname)
+        output = self.run_tests(testname, "-m", "nosuchtest",
+                                exitcode=EXITCODE_NO_TESTS_RAN)
+        self.check_executed_tests(output, [testname],
+                                  run_no_tests=testname,
+                                  stats=0)
 
     def test_no_tests_ran_skip(self):
         code = textwrap.dedent("""
@@ -1298,8 +1357,9 @@ class ArgsTestCase(BaseTestCase):
         """)
         testname = self.create_test(code=code)
 
-        output = self.run_tests(testname, exitcode=0)
-        self.check_executed_tests(output, [testname])
+        output = self.run_tests(testname)
+        self.check_executed_tests(output, [testname],
+                                  stats=TestStats(1, skipped=1))
 
     def test_no_tests_ran_multiple_tests_nonexistent(self):
         code = textwrap.dedent("""
@@ -1312,9 +1372,11 @@ class ArgsTestCase(BaseTestCase):
         testname = self.create_test(code=code)
         testname2 = self.create_test(code=code)
 
-        output = self.run_tests(testname, testname2, "-m", "nosuchtest", exitcode=0)
+        output = self.run_tests(testname, testname2, "-m", "nosuchtest",
+                                exitcode=EXITCODE_NO_TESTS_RAN)
         self.check_executed_tests(output, [testname, testname2],
-                                  no_test_ran=[testname, testname2])
+                                  run_no_tests=[testname, testname2],
+                                  stats=0)
 
     def test_no_test_ran_some_test_exist_some_not(self):
         code = textwrap.dedent("""
@@ -1337,7 +1399,8 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests(testname, testname2, "-m", "nosuchtest",
                                 "-m", "test_other_bug", exitcode=0)
         self.check_executed_tests(output, [testname, testname2],
-                                  no_test_ran=[testname])
+                                  run_no_tests=[testname],
+                                  stats=1)
 
     @support.cpython_only
     def test_uncollectable(self):
@@ -1360,10 +1423,12 @@ class ArgsTestCase(BaseTestCase):
         """)
         testname = self.create_test(code=code)
 
-        output = self.run_tests("--fail-env-changed", testname, exitcode=3)
+        output = self.run_tests("--fail-env-changed", testname,
+                                exitcode=EXITCODE_ENV_CHANGED)
         self.check_executed_tests(output, [testname],
                                   env_changed=[testname],
-                                  fail_env_changed=True)
+                                  fail_env_changed=True,
+                                  stats=1)
 
     def test_multiprocessing_timeout(self):
         code = textwrap.dedent(r"""
@@ -1386,9 +1451,10 @@ class ArgsTestCase(BaseTestCase):
         """)
         testname = self.create_test(code=code)
 
-        output = self.run_tests("-j2", "--timeout=1.0", testname, exitcode=2)
+        output = self.run_tests("-j2", "--timeout=1.0", testname,
+                                exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, [testname],
-                                  failed=testname)
+                                  failed=testname, stats=0)
         self.assertRegex(output,
                          re.compile('%s timed out' % testname, re.MULTILINE))
 
@@ -1418,10 +1484,12 @@ class ArgsTestCase(BaseTestCase):
         """)
         testname = self.create_test(code=code)
 
-        output = self.run_tests("--fail-env-changed", "-v", testname, exitcode=3)
+        output = self.run_tests("--fail-env-changed", "-v", testname,
+                                exitcode=EXITCODE_ENV_CHANGED)
         self.check_executed_tests(output, [testname],
                                   env_changed=[testname],
-                                  fail_env_changed=True)
+                                  fail_env_changed=True,
+                                  stats=1)
         self.assertIn("Warning -- Unraisable exception", output)
         self.assertIn("Exception: weakref callback bug", output)
 
@@ -1449,10 +1517,12 @@ class ArgsTestCase(BaseTestCase):
         """)
         testname = self.create_test(code=code)
 
-        output = self.run_tests("--fail-env-changed", "-v", testname, exitcode=3)
+        output = self.run_tests("--fail-env-changed", "-v", testname,
+                                exitcode=EXITCODE_ENV_CHANGED)
         self.check_executed_tests(output, [testname],
                                   env_changed=[testname],
-                                  fail_env_changed=True)
+                                  fail_env_changed=True,
+                                  stats=1)
         self.assertIn("Warning -- Uncaught thread exception", output)
         self.assertIn("Exception: bug in thread", output)
 
@@ -1490,10 +1560,11 @@ class ArgsTestCase(BaseTestCase):
         for option in ("-v", "-W"):
             with self.subTest(option=option):
                 cmd = ["--fail-env-changed", option, testname]
-                output = self.run_tests(*cmd, exitcode=3)
+                output = self.run_tests(*cmd, exitcode=EXITCODE_ENV_CHANGED)
                 self.check_executed_tests(output, [testname],
                                           env_changed=[testname],
-                                          fail_env_changed=True)
+                                          fail_env_changed=True,
+                                          stats=1)
                 self.assertRegex(output, regex)
 
     def test_unicode_guard_env(self):
@@ -1518,6 +1589,34 @@ class ArgsTestCase(BaseTestCase):
 
         for name in names:
             self.assertFalse(os.path.exists(name), name)
+
+    @unittest.skipIf(support.is_wasi,
+                     'checking temp files is not implemented on WASI')
+    def test_leak_tmp_file(self):
+        code = textwrap.dedent(r"""
+            import os.path
+            import tempfile
+            import unittest
+
+            class FileTests(unittest.TestCase):
+                def test_leak_tmp_file(self):
+                    filename = os.path.join(tempfile.gettempdir(), 'mytmpfile')
+                    with open(filename, "wb") as fp:
+                        fp.write(b'content')
+        """)
+        testnames = [self.create_test(code=code) for _ in range(3)]
+
+        output = self.run_tests("--fail-env-changed", "-v", "-j2", *testnames,
+                                exitcode=EXITCODE_ENV_CHANGED)
+        self.check_executed_tests(output, testnames,
+                                  env_changed=testnames,
+                                  fail_env_changed=True,
+                                  randomize=True,
+                                  stats=len(testnames))
+        for testname in testnames:
+            self.assertIn(f"Warning -- {testname} leaked temporary "
+                          f"files (1): mytmpfile",
+                          output)
 
     def test_mp_decode_error(self):
         # gh-101634: If a worker stdout cannot be decoded, report a failed test
@@ -1552,7 +1651,47 @@ class ArgsTestCase(BaseTestCase):
                                 exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, [testname],
                                   failed=[testname],
-                                  randomize=True)
+                                  randomize=True,
+                                  stats=0)
+
+    def test_doctest(self):
+        code = textwrap.dedent(fr'''
+            import doctest
+            import sys
+            from test import support
+
+            def my_function():
+                """
+                Pass:
+
+                >>> 1 + 1
+                2
+
+                Failure:
+
+                >>> 2 + 3
+                23
+                >>> 1 + 1
+                11
+
+                Skipped test (ignored):
+
+                >>> id(1.0)  # doctest: +SKIP
+                7948648
+                """
+
+            def test_main():
+                testmod = sys.modules[__name__]
+                return support.run_doctest(testmod)
+        ''')
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("--fail-env-changed", "-v", "-j1", testname,
+                                exitcode=EXITCODE_BAD_TEST)
+        self.check_executed_tests(output, [testname],
+                                  failed=[testname],
+                                  randomize=True,
+                                  stats=TestStats(3, 2, 0))
 
 
 class TestUtils(unittest.TestCase):
