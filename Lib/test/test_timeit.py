@@ -10,6 +10,9 @@ from test.support import captured_stderr
 # timeit's default number of iterations.
 DEFAULT_NUMBER = 1000000
 
+# timeit's default target time.
+DEFAULT_TARGET_TIME = 0.2
+
 # timeit's default number of repetitions.
 DEFAULT_REPEAT = 5
 
@@ -116,8 +119,8 @@ class TestTimeit(unittest.TestCase):
             kwargs['number'] = number
         delta_time = t.timeit(**kwargs)
         self.assertEqual(self.fake_timer.setup_calls, 1)
-        self.assertEqual(self.fake_timer.count, number)
-        self.assertEqual(delta_time, number)
+        self.assertEqual(self.fake_timer.count, number if number else 1)
+        self.assertEqual(delta_time, number if number else (1, 1.0))
 
     # Takes too long to run in debug build.
     #def test_timeit_default_iters(self):
@@ -148,7 +151,7 @@ class TestTimeit(unittest.TestCase):
     def test_timeit_function_zero_iters(self):
         delta_time = timeit.timeit(self.fake_stmt, self.fake_setup, number=0,
                 timer=FakeTimer())
-        self.assertEqual(delta_time, 0)
+        self.assertEqual(delta_time, (1, 1.0))
 
     def test_timeit_globals_args(self):
         global _global_timer
@@ -174,9 +177,13 @@ class TestTimeit(unittest.TestCase):
         else:
             kwargs['number'] = number
         delta_times = t.repeat(**kwargs)
-        self.assertEqual(self.fake_timer.setup_calls, repeat)
-        self.assertEqual(self.fake_timer.count, repeat * number)
-        self.assertEqual(delta_times, repeat * [float(number)])
+        self.assertEqual(self.fake_timer.setup_calls, repeat if number > 0
+                else 1)
+        # self.assertEqual(self.fake_timer.setup_calls, )
+        self.assertEqual(self.fake_timer.count,
+                         (repeat * number) if number else 1)
+        self.assertEqual(delta_times,
+                         repeat * [float(number)] if number else (1, 1.0))
 
     # Takes too long to run in debug build.
     #def test_repeat_default(self):
@@ -187,6 +194,9 @@ class TestTimeit(unittest.TestCase):
 
     def test_repeat_zero_iters(self):
         self.repeat(self.fake_stmt, self.fake_setup, number=0)
+
+    def test_repeat_with_iters(self):
+        self.repeat(self.fake_stmt, self.fake_setup, number=1)
 
     def test_repeat_few_reps_and_iters(self):
         self.repeat(self.fake_stmt, self.fake_setup, repeat=3, number=5)
@@ -217,7 +227,12 @@ class TestTimeit(unittest.TestCase):
     def test_repeat_function_zero_iters(self):
         delta_times = timeit.repeat(self.fake_stmt, self.fake_setup, number=0,
                 timer=FakeTimer())
-        self.assertEqual(delta_times, DEFAULT_REPEAT * [0.0])
+        self.assertEqual(delta_times, (1, 1.0))
+
+    def test_repeat_function_with_iters(self):
+        delta_times = timeit.repeat(self.fake_stmt, self.fake_setup, number=1,
+                                    timer=FakeTimer())
+        self.assertEqual(delta_times, [1.0, 1.0, 1.0, 1.0, 1.0])
 
     def assert_exc_string(self, exc_string, expected_exc_name):
         exc_lines = exc_string.splitlines()
@@ -363,15 +378,32 @@ class TestTimeit(unittest.TestCase):
             s = self.run_main(switches=['-n1', '1/0'])
         self.assert_exc_string(error_stringio.getvalue(), 'ZeroDivisionError')
 
-    def autorange(self, seconds_per_increment=1/1024, callback=None):
+    def autorange(self, seconds_per_increment=1/1024, callback=None,
+                  target_time=0.2):
         timer = FakeTimer(seconds_per_increment=seconds_per_increment)
         t = timeit.Timer(stmt=self.fake_stmt, setup=self.fake_setup, timer=timer)
-        return t.autorange(callback)
+        return t.autorange(callback, target_time)
+
+    def autorange_with_callback(self, loop_count, expected_output,
+                                target_time=0.2):
+        def callback(a, b):
+            print("{} {:.3f}".format(a, b))
+        with captured_stdout() as s:
+            num_loops, time_taken = self.autorange(callback=callback,
+                                                   target_time=target_time)
+            self.assertEqual(num_loops, loop_count)
+            self.assertEqual(time_taken, loop_count/1024)
+            self.assertEqual(s.getvalue(), expected_output)
 
     def test_autorange(self):
         num_loops, time_taken = self.autorange()
         self.assertEqual(num_loops, 500)
         self.assertEqual(time_taken, 500/1024)
+
+    def test_autorange_with_target_time(self):
+        num_loops, time_taken = self.autorange(target_time=0.6)
+        self.assertEqual(num_loops, 1000)
+        self.assertEqual(time_taken, 1000/1024)
 
     def test_autorange_second(self):
         num_loops, time_taken = self.autorange(seconds_per_increment=1.0)
@@ -379,22 +411,33 @@ class TestTimeit(unittest.TestCase):
         self.assertEqual(time_taken, 1.0)
 
     def test_autorange_with_callback(self):
-        def callback(a, b):
-            print("{} {:.3f}".format(a, b))
-        with captured_stdout() as s:
-            num_loops, time_taken = self.autorange(callback=callback)
-        self.assertEqual(num_loops, 500)
-        self.assertEqual(time_taken, 500/1024)
-        expected = ('1 0.001\n'
-                    '2 0.002\n'
-                    '5 0.005\n'
-                    '10 0.010\n'
-                    '20 0.020\n'
-                    '50 0.049\n'
-                    '100 0.098\n'
-                    '200 0.195\n'
-                    '500 0.488\n')
-        self.assertEqual(s.getvalue(), expected)
+        expected = dedent('''\
+                    1 0.001
+                    2 0.002
+                    5 0.005
+                    10 0.010
+                    20 0.020
+                    50 0.049
+                    100 0.098
+                    200 0.195
+                    500 0.488
+        ''')
+        self.autorange_with_callback(500, expected)
+
+    def test_autorange_with_callback_and_target_time(self):
+        expected = dedent('''\
+                    1 0.001
+                    2 0.002
+                    5 0.005
+                    10 0.010
+                    20 0.020
+                    50 0.049
+                    100 0.098
+                    200 0.195
+                    500 0.488
+                    1000 0.977
+        ''')
+        self.autorange_with_callback(1000, expected, target_time=0.6)
 
 
 if __name__ == '__main__':

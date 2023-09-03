@@ -96,7 +96,7 @@ The module defines three convenience functions and a public class:
       :func:`time.perf_counter` is now the default timer.
 
 
-.. class:: Timer(stmt='pass', setup='pass', timer=<timer function>, globals=None)
+.. class:: Timer(stmt='pass', setup='pass', timer=<timer function>, globals=None, target_time=0.2)
 
    Class for timing execution speed of small code snippets.
 
@@ -121,6 +121,8 @@ The module defines three convenience functions and a public class:
 
    .. versionchanged:: 3.5
       The optional *globals* parameter was added.
+   .. versionchanged:: 3.8
+      The optional *target_time* parameter was added.
 
    .. method:: Timer.timeit(number=1000000)
 
@@ -143,20 +145,22 @@ The module defines three convenience functions and a public class:
             timeit.Timer('for i in range(10): oct(i)', 'gc.enable()').timeit()
 
 
-   .. method:: Timer.autorange(callback=None)
+   .. method:: Timer.autorange(callback=None, target_time=0.2)
 
       Automatically determine how many times to call :meth:`.timeit`.
 
       This is a convenience function that calls :meth:`.timeit` repeatedly
-      so that the total time >= 0.2 second, returning the eventual
+      so that the total time is greater than or equal to *target_time*, returning the eventual
       (number of loops, time taken for that number of loops). It calls
       :meth:`.timeit` with increasing numbers from the sequence 1, 2, 5,
-      10, 20, 50, ... until the time taken is at least 0.2 second.
+      10, 20, 50, ... until the time taken is at least *target_time*.
 
       If *callback* is given and is not ``None``, it will be called after
       each trial with two arguments: ``callback(number, time_taken)``.
 
       .. versionadded:: 3.6
+      .. versionchanged:: 3.8
+         The optional *target_time* parameter was added.
 
 
    .. method:: Timer.repeat(repeat=5, number=1000000)
