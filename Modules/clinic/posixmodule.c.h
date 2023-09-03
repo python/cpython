@@ -6112,8 +6112,8 @@ PyDoc_STRVAR(os_timerfd_settime__doc__,
     {"timerfd_settime", _PyCFunction_CAST(os_timerfd_settime), METH_FASTCALL|METH_KEYWORDS, os_timerfd_settime__doc__},
 
 static PyObject *
-os_timerfd_settime_impl(PyObject *module, int fd, int flags,
-                        double it_initial_expiration, double it_interval);
+os_timerfd_settime_impl(PyObject *module, int fd, int flags, double initial,
+                        double interval);
 
 static PyObject *
 os_timerfd_settime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -6148,8 +6148,8 @@ os_timerfd_settime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     int fd;
     int flags;
-    double it_initial_expiration = 0.0;
-    double it_interval = 0.0;
+    double initial = 0.0;
+    double interval = 0.0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 1, argsbuf);
     if (!args) {
@@ -6167,12 +6167,12 @@ os_timerfd_settime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     }
     if (args[2]) {
         if (PyFloat_CheckExact(args[2])) {
-            it_initial_expiration = PyFloat_AS_DOUBLE(args[2]);
+            initial = PyFloat_AS_DOUBLE(args[2]);
         }
         else
         {
-            it_initial_expiration = PyFloat_AsDouble(args[2]);
-            if (it_initial_expiration == -1.0 && PyErr_Occurred()) {
+            initial = PyFloat_AsDouble(args[2]);
+            if (initial == -1.0 && PyErr_Occurred()) {
                 goto exit;
             }
         }
@@ -6181,17 +6181,17 @@ os_timerfd_settime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
         }
     }
     if (PyFloat_CheckExact(args[3])) {
-        it_interval = PyFloat_AS_DOUBLE(args[3]);
+        interval = PyFloat_AS_DOUBLE(args[3]);
     }
     else
     {
-        it_interval = PyFloat_AsDouble(args[3]);
-        if (it_interval == -1.0 && PyErr_Occurred()) {
+        interval = PyFloat_AsDouble(args[3]);
+        if (interval == -1.0 && PyErr_Occurred()) {
             goto exit;
         }
     }
 skip_optional_kwonly:
-    return_value = os_timerfd_settime_impl(module, fd, flags, it_initial_expiration, it_interval);
+    return_value = os_timerfd_settime_impl(module, fd, flags, initial, interval);
 
 exit:
     return return_value;
@@ -6221,8 +6221,7 @@ PyDoc_STRVAR(os_timerfd_settime_ns__doc__,
 
 static PyObject *
 os_timerfd_settime_ns_impl(PyObject *module, int fd, int flags,
-                           long long it_initial_expiration_ns,
-                           long long it_interval_ns);
+                           long long initial, long long interval);
 
 static PyObject *
 os_timerfd_settime_ns(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -6257,8 +6256,8 @@ os_timerfd_settime_ns(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     int fd;
     int flags;
-    long long it_initial_expiration_ns = 0;
-    long long it_interval_ns = 0;
+    long long initial = 0;
+    long long interval = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 1, argsbuf);
     if (!args) {
@@ -6275,20 +6274,20 @@ os_timerfd_settime_ns(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
         goto skip_optional_kwonly;
     }
     if (args[2]) {
-        it_initial_expiration_ns = PyLong_AsLongLong(args[2]);
-        if (it_initial_expiration_ns == -1 && PyErr_Occurred()) {
+        initial = PyLong_AsLongLong(args[2]);
+        if (initial == -1 && PyErr_Occurred()) {
             goto exit;
         }
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    it_interval_ns = PyLong_AsLongLong(args[3]);
-    if (it_interval_ns == -1 && PyErr_Occurred()) {
+    interval = PyLong_AsLongLong(args[3]);
+    if (interval == -1 && PyErr_Occurred()) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = os_timerfd_settime_ns_impl(module, fd, flags, it_initial_expiration_ns, it_interval_ns);
+    return_value = os_timerfd_settime_ns_impl(module, fd, flags, initial, interval);
 
 exit:
     return return_value;
@@ -12388,4 +12387,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=008a8707d1280b81 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3c63cf11b6c1f562 input=a9049054013a1b77]*/
