@@ -10167,13 +10167,13 @@ os.timerfd_settime
         if 'interval' is zero, timer will be run once.
         if 'interval' is non-zero, timer will be run periodically with the interval.
 
-Set timerfd value in seconds.
+Alter a timer file descriptor's internal timer in seconds.
 [clinic start generated code]*/
 
 static PyObject *
 os_timerfd_settime_impl(PyObject *module, int fd, int flags, double initial,
                         double interval)
-/*[clinic end generated code: output=0dda31115317adb9 input=b35269a81991db41]*/
+/*[clinic end generated code: output=0dda31115317adb9 input=93b61023b559c78b]*/
 {
     struct itimerspec new_value;
     struct itimerspec old_value;
@@ -10200,19 +10200,25 @@ os.timerfd_settime_ns
     /
     *
     flags: int
-        similar to timerfd_settime
+        0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.
     initial: long_long = 0
-        similar to timerfd_settime except for in nanoseconds.
+        initial expiration timing in seconds.
+        If *flags* has TFD_TIMER_ABSTIME bit, *flags* must be in absolute time.
+        If *flags* doesn't have TFD_TIMER_ABSTIME bit, *flags* must be in relative time.
+        If *flags* has TFD_TIMER_ABSTIME bit and TFD_TIMER_CANCEL_ON_SET bit and *flags* and time.CLOCK_REALTIME
+        and system clock is changed discontinuously, reading a file descriptor is aborted with ECANCELED.
     interval: long_long = 0
-        similar to timerfd_settime except for in nanoseconds.
+        interval for the timer in seconds.
+        if 'interval' is zero, timer will be run once.
+        if 'interval' is non-zero, timer will be run periodically with the interval.
 
-Set timerfd value in nanoseconds.
+Alter a timer file descriptor's internal timer in nanoseconds.
 [clinic start generated code]*/
 
 static PyObject *
 os_timerfd_settime_ns_impl(PyObject *module, int fd, int flags,
                            long long initial, long long interval)
-/*[clinic end generated code: output=6273ec7d7b4cc0b3 input=7db04c6d512bc69d]*/
+/*[clinic end generated code: output=6273ec7d7b4cc0b3 input=c5ef48d0f5bf5f9d]*/
 {
     struct itimerspec new_value;
     struct itimerspec old_value;
