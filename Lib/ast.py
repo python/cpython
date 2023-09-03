@@ -1254,10 +1254,7 @@ class _Unparser(NodeVisitor):
                     escape_special_whitespace=True,
                 )
             elif "\n" in value:
-                if "'" in quote_types:
-                    quote_types.remove("'")
-                if '"' in quote_types:
-                    quote_types.remove('"')
+                quote_types = [q for q in quote_types if q in _MULTI_QUOTES]
             new_fstring_parts.append(value)
 
         value = "".join(new_fstring_parts)
