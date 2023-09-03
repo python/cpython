@@ -2946,6 +2946,7 @@ class PathTest(unittest.TestCase):
         self.assertEqual(P.from_uri('file://foo/bar'), P('//foo/bar'))
         self.assertEqual(P.from_uri('file:///foo/bar'), P('/foo/bar'))
         self.assertEqual(P.from_uri('file:////foo/bar'), P('//foo/bar'))
+        self.assertEqual(P.from_uri('file://localhost/foo/bar'), P('/foo/bar'))
 
     def test_from_uri_pathname2url_common(self):
         P = self.cls
@@ -3492,6 +3493,9 @@ class WindowsPathTest(PathTest):
         self.assertEqual(P.from_uri('file://server/path/to/file'), P('//server/path/to/file'))
         self.assertEqual(P.from_uri('file:////server/path/to/file'), P('//server/path/to/file'))
         self.assertEqual(P.from_uri('file://///server/path/to/file'), P('//server/path/to/file'))
+        # Localhost paths
+        self.assertEqual(P.from_uri('file://localhost/c:/path/to/file'), P('c:/path/to/file'))
+        self.assertEqual(P.from_uri('file://localhost/c|/path/to/file'), P('c:/path/to/file'))
 
     def test_from_uri_pathname2url(self):
         P = self.cls

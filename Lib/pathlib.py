@@ -1191,6 +1191,9 @@ class Path(PurePath):
         if uri[:3] == '///':
             # Remove empty authority
             uri = uri[2:]
+        elif uri[:12] == '//localhost/':
+            # Remove 'localhost' authority
+            uri = uri[11:]
         if uri[:1] == '/' and (uri[2:3] in ':|' or uri[1:3] == '//'):
             # Remove slash before DOS device/UNC path
             uri = uri[1:]
