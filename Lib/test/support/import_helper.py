@@ -8,6 +8,7 @@ import sys
 import unittest
 import warnings
 
+from .. import support
 from .os_helper import unlink
 
 
@@ -74,6 +75,9 @@ def import_module(name, deprecated=False, *, required_on=()):
     compared against sys.platform.
     """
     with _ignore_deprecated_imports(deprecated):
+        f = sys._getframe(1)
+        if f.f_globals is f.f_locals:
+            support.mark(f'requires_{name}', globals=f.f_globals)
         try:
             return importlib.import_module(name)
         except ImportError as msg:

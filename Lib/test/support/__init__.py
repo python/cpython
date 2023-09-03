@@ -306,6 +306,9 @@ def is_resource_enabled(resource):
 
 def requires(resource, msg=None):
     """Raise ResourceDenied if the specified resource is not available."""
+    f = sys._getframe(1)
+    if f.f_globals is f.f_locals:
+        mark(f'requires_{resource}', globals=f.f_globals)
     if not is_resource_enabled(resource):
         if msg is None:
             msg = "Use of the %r resource not enabled" % resource
@@ -530,22 +533,27 @@ has_subprocess_support = not is_emscripten and not is_wasi
 
 def requires_subprocess():
     """Used for subprocess, os.spawn calls, fd inheritance"""
-    return skipUnless(has_subprocess_support, "requires subprocess support", label='requires_subprocess')
+    return skipUnless(has_subprocess_support, "requires subprocess support",
+                      label='requires_subprocess')
 
 # Emscripten's socket emulation and WASI sockets have limitations.
 has_socket_support = not is_emscripten and not is_wasi
 
-def requires_working_socket(*, module=False):
+def requires_working_socket(*, module=False, globals=None):
     """Skip tests or modules that require working sockets
 
     Can be used as a function/class decorator or to skip an entire module.
     """
+    label = 'requires_socket'
     msg = "requires socket support"
-    if module:
+    if module or globals is not None:
+        if globals is None:
+            globals = sys._getframe(1).f_globals
+        mark(label, globals=globals)
         if not has_socket_support:
             raise unittest.SkipTest(msg)
     else:
-        return skipUnless(has_socket_support, msg, label='requires_socket')
+        return skipUnless(has_socket_support, msg, label=label)
 
 # Does strftime() support glibc extension like '%4Y'?
 has_strftime_extensions = False
@@ -1006,9 +1014,18 @@ def bigaddrspacetest(f):
 #=======================================================================
 # unittest integration.
 
-def mark(label):
+def mark(label, *, globals=None):
+    """Add a label to test.
+
+    To add a label to method or class, use it as a decorator.
+
+    To add a label to module, pass the globals() dict as the globals argument.
+    """
+    if globals is not None:
+        globals[f'_label_{label}'] = True
+        return
     def decorator(test):
-        setattr(test, label, True)
+        setattr(test, f'_label_{label}', True)
         return test
     return decorator
 
@@ -1026,11 +1043,12 @@ def skipIf(condition, reason, *, label):
     return combine(unittest.skipIf(condition, reason), mark(label))
 
 def requires_resource(resource):
+    label = 'requires_' + resource
     if resource == 'gui' and not _is_gui_available():
-        return skipUnless(False, _is_gui_available.reason, label='requires_gui')
+        return skipUnless(False, _is_gui_available.reason, label=label)
     return skipUnless(is_resource_enabled(resource),
                       f"resource {resource!r} is not enabled",
-                      label='requires_' + resource)
+                      label=label)
 
 def cpython_only(test):
     """
@@ -1240,7 +1258,7 @@ def set_match_tests(accept_patterns=None, ignore_patterns=None):
 
 def _check_obj_labels(obj, labels):
     for label in labels:
-        if hasattr(obj, label):
+        if hasattr(obj, f'_label_{label}'):
             return True
     return False
 
@@ -1252,6 +1270,12 @@ def _check_test_labels(test, labels):
         if _check_obj_labels(testMethod, labels):
             return True
         testMethod = getattr(testMethod, '__wrapped__', None)
+    try:
+        module = sys.modules[test.__class__.__module__]
+        if _check_obj_labels(module, labels):
+            return True
+    except KeyError:
+        pass
     return False
 
 def set_match_tests2(accept_labels=None, ignore_labels=None):
