@@ -3962,11 +3962,19 @@ class TimerfdTests(unittest.TestCase):
         count = 3
         t = time.perf_counter()
         for _ in range(count):
-            _ = os.read(fd, size)
+            n = os.read(fd, size)
+            count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
+            self.assertEqual(count_signaled, 1)
         t = time.perf_counter() - t
 
         total_time = initial_expiration + interval * (count - 1)
         self.assertGreater(t, total_time)
+
+        # wait 3.5 time of interval
+        time.sleep( (count+0.5) * interval)
+        n = os.read(fd, size)
+        count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
+        self.assertEqual(count_signaled, count)
 
     def test_timerfd_TFD_TIMER_ABSTIME(self):
         size = 8  # read 8 bytes
@@ -3991,8 +3999,10 @@ class TimerfdTests(unittest.TestCase):
         self.assertAlmostEqual(next_expiration, offset, places=3)
 
         t = time.perf_counter()
-        _ = os.read(fd, size)
+        n = os.read(fd, size)
+        count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
         t = time.perf_counter() - t
+        self.assertEqual(count_signaled, 1)
 
         self.assertGreater(t, offset)
 
@@ -4017,7 +4027,9 @@ class TimerfdTests(unittest.TestCase):
         for _ in range(count):
             rfd, wfd, xfd = select.select([fd], [fd], [fd], initial_expiration + interval)
             self.assertEqual((rfd, wfd, xfd), ([fd], [], []))
-            _ = os.read(fd, size)
+            n = os.read(fd, size)
+            count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
+            self.assertEqual(count_signaled, 1)
         t = time.perf_counter() - t
 
         total_time = initial_expiration + interval * (count - 1)
@@ -4072,11 +4084,19 @@ class TimerfdTests(unittest.TestCase):
         count = 3
         t = time.perf_counter_ns()
         for _ in range(count):
-            _ = os.read(fd, size)
+            n = os.read(fd, size)
+            count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
         t = time.perf_counter_ns() - t
+        self.assertEqual(count_signaled, 1)
 
         total_time_ns = initial_expiration_ns + interval_ns * (count - 1)
         self.assertGreater(t, total_time_ns)
+
+        # wait 3.5 time of interval
+        time.sleep( (count+0.5) * interval_ns / one_sec_in_nsec)
+        n = os.read(fd, size)
+        count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
+        self.assertEqual(count_signaled, count)
 
 
     def test_timerfd_ns_TFD_TIMER_ABSTIME(self):
@@ -4104,8 +4124,10 @@ class TimerfdTests(unittest.TestCase):
         self.assertLess(abs(next_expiration_ns - offset_ns),  limit_error)
 
         t = time.perf_counter_ns()
-        _ = os.read(fd, size)
+        n = os.read(fd, size)
+        count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
         t = time.perf_counter_ns() - t
+        self.assertEqual(count_signaled, 1)
 
         self.assertGreater(t, offset_ns)
 
@@ -4132,8 +4154,10 @@ class TimerfdTests(unittest.TestCase):
         for _ in range(count):
             rfd, wfd, xfd = select.select([fd], [fd], [fd], (initial_expiration_ns + interval_ns) / 1e9 )
             self.assertEqual((rfd, wfd, xfd), ([fd], [], []))
-            _ = os.read(fd, size)
+            n = os.read(fd, size)
+            count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
         t = time.perf_counter_ns() - t
+        self.assertEqual(count_signaled, 1)
 
         total_time_ns = initial_expiration_ns + interval_ns * (count - 1)
         self.assertGreater(t, total_time_ns)
