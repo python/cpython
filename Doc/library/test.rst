@@ -482,7 +482,7 @@ The :mod:`test.support` module defines the following functions:
    ``True`` if called by a function whose ``__name__`` is ``'__main__'``.
    Used when tests are executed by :mod:`test.regrtest`.
 
-   If called at the top level, sets label "requires_\ *resource*" on the module.
+   If called at the top level, sets label "requires\_\ *resource*" on the module.
 
 
 .. function:: sortdict(dict)
@@ -818,7 +818,7 @@ The :mod:`test.support` module defines the following functions:
 .. decorator:: requires_resource(resource)
 
    Decorator for skipping tests if *resource* is not available.
-   Adds label "requires_\ *resource*".
+   Adds label "requires\_\ *resource*".
 
 
 .. decorator:: requires_docstrings
@@ -842,9 +842,9 @@ The :mod:`test.support` module defines the following functions:
 
    Decorator for invoking :func:`check_impl_detail` on *guards*.  If that
    returns ``False``, then uses *msg* as the reason for skipping the test.
-   For every keyword argument *implname* adds a label
-   "impl_detail_\ *implname*" if its value is true or
-   "impl_detail_no_\ *implname*" otherwise.
+   For every keyword argument *name* adds a label
+   "impl_detail\_\ *name*" if its value is true or
+   "impl_detail_no\_\ *name*" otherwise.
 
 .. decorator:: no_tracing
 
@@ -1661,7 +1661,7 @@ The :mod:`test.support.import_helper` module provides support for import tests.
    optional for others, set *required_on* to an iterable of platform prefixes
    which will be compared against :data:`sys.platform`.
 
-   If called at the top level, sets label "requires_\ *name*" on the module.
+   If called at the top level, sets label "requires\_\ *name*" on the module.
 
    .. versionadded:: 3.1
 
