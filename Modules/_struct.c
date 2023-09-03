@@ -110,18 +110,20 @@ class cache_struct_converter(CConverter):
     c_default = "NULL"
     broken_limited_capi = True
 
-    def parse_arg(self, argname, displayname):
-        return """
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        assert not limited_capi
+        return self.format_code("""
             if (!{converter}(module, {argname}, &{paramname})) {{{{
                 goto exit;
             }}}}
-            """.format(argname=argname, paramname=self.name,
-                       converter=self.converter)
+            """,
+            argname=argname,
+            converter=self.converter)
 
     def cleanup(self):
         return "Py_XDECREF(%s);\n" % self.name
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=14e83804f599ed8f]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=c33b27d6b06006c6]*/
 
 static int cache_struct_converter(PyObject *, PyObject *, PyStructObject **);
 
