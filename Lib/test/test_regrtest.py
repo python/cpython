@@ -553,18 +553,16 @@ class BaseTestCase(unittest.TestCase):
         if filtered:
             text = fr'{text} \(filtered\)'
         report = [text]
-        if total_failed:
-            report.append(f'failed={total_failed}')
-        if env_changed:
-            report.append(f'env_changed={len(env_changed)}')
-        if skipped:
-            report.append(f'skipped={len(skipped)}')
-        if resource_denied:
-            report.append(f'resource_denied={len(resource_denied)}')
-        if total_rerun:
-            report.append(f'rerun={total_rerun}')
-        if run_no_tests:
-            report.append(f'run_no_tests={len(run_no_tests)}')
+        for name, ntest in (
+            ('failed', total_failed),
+            ('env_changed', len(env_changed)),
+            ('skipped', len(skipped)),
+            ('resource_denied', len(resource_denied)),
+            ('rerun', total_rerun),
+            ('run_no_tests', len(run_no_tests)),
+        ):
+            if ntest:
+                report.append(f'failed={ntest}')
         line = fr'Total test files: {" ".join(report)}'
         self.check_line(output, line, full=True)
 
@@ -778,6 +776,40 @@ class ArgsTestCase(BaseTestCase):
     def run_tests(self, *testargs, **kw):
         cmdargs = ['-m', 'test', '--testdir=%s' % self.tmptestdir, *testargs]
         return self.run_python(cmdargs, **kw)
+
+    def test_success(self):
+        code = textwrap.dedent("""
+            import unittest
+
+            class PassingTests(unittest.TestCase):
+                def test_test1(self):
+                    pass
+
+                def test_test2(self):
+                    pass
+
+                def test_test3(self):
+                    pass
+        """)
+        tests = [self.create_test(f'ok{i}', code=code) for i in range(1, 6)]
+
+        output = self.run_tests(*tests)
+        self.check_executed_tests(output, tests,
+                                  stats=3 * len(tests))
+
+    def test_skip(self):
+        code = textwrap.dedent("""
+            import unittest
+            raise unittest.SkipTest("nope")
+        """)
+        test_ok = self.create_test('ok')
+        test_skip = self.create_test('skip', code=code)
+        tests = [test_ok, test_skip]
+
+        output = self.run_tests(*tests)
+        self.check_executed_tests(output, tests,
+                                  skipped=[test_skip],
+                                  stats=1)
 
     def test_failing_test(self):
         # test a failing test

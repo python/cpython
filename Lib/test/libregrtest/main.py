@@ -682,19 +682,16 @@ class Regrtest:
         if filtered:
             text = f"{text} (filtered)"
         report = [text]
-        bad = len(self.bad)
-        if bad:
-            report.append(f'failed={bad}')
-        if self.environment_changed:
-            report.append(f'env_changed={len(self.environment_changed)}')
-        if self.skipped:
-            report.append(f'skipped={self.skipped}')
-        if self.resource_denied:
-            report.append(f'resource_denied={len(self.resource_denied)}')
-        if self.rerun:
-            report.append(f'rerun={len(self.rerun)}')
-        if self.run_no_tests:
-            report.append(f'run_no_tests={len(self.run_no_tests)}')
+        for name, tests in (
+            ('failed', self.bad),
+            ('env_changed', self.environment_changed),
+            ('skipped', self.skipped),
+            ('resource_denied', self.resource_denied),
+            ('rerun', self.rerun),
+            ('run_no_tests', self.run_no_tests),
+        ):
+            if tests:
+                report.append(f'{name}={len(tests)}')
         print(f"Total test files: {' '.join(report)}")
 
         # Result
