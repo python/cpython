@@ -3875,7 +3875,7 @@ features:
       fd = os.timerfd_create(time.CLOCK_REALTIME, flags=0)
       initial_expiration = 10**9  # Start the timer in 1 second
       interval = 10**9 // 2  # Set the timer interval to 0.5 seconds
-      os.timerfd_settime_ns(fd, 0, initial=initial_expiration, interval=interval)  # Start the timer
+      os.timerfd_settime_ns(fd, flags=0, initial=initial_expiration, interval=interval)  # Start the timer
 
       try:
           # process timer events four times.
