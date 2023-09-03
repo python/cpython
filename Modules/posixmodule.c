@@ -10147,8 +10147,8 @@ os.timerfd_settime
         0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.
     initial as it_initial_expiration: double = 0.0
         initial expiration timing in seconds.
-        If *flags* has TFD_TIMER_ABSTIME bit, The value is in absolute time 
-        If *flags* doesn't have TFD_TIMER_ABSTIME bit, The value is in relative time 
+        If *flags* has TFD_TIMER_ABSTIME bit, *flags* must be in absolute time.
+        If *flags* doesn't have TFD_TIMER_ABSTIME bit, *flags* must be in relative time.
         If *flags* has TFD_TIMER_ABSTIME bit and TFD_TIMER_CANCEL_ON_SET bit and *flags* and time.CLOCK_REALTIME
         and system clock is changed discontinuously, reading a file descriptor is aborted with ECANCELED.
     interval as it_interval: double = 0.0
@@ -10162,7 +10162,7 @@ Set timerfd value in seconds.
 static PyObject *
 os_timerfd_settime_impl(PyObject *module, int fd, int flags,
                         double it_initial_expiration, double it_interval)
-/*[clinic end generated code: output=c6730e19eca1fa5e input=2a7e910319758e82]*/
+/*[clinic end generated code: output=c6730e19eca1fa5e input=7a11873169df11e2]*/
 {
     struct itimerspec new_value;
     struct itimerspec old_value;
