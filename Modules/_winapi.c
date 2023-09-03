@@ -804,6 +804,7 @@ normalize_environment(PyObject* environment) {
     }
 
     result = PyDict_New();
+    wchar_t *prev_key_string = NULL;
 
     for (int i=0; i<PyList_GET_SIZE(keys); i++) {
         PyObject *key = PyList_GET_ITEM(keys, i);
@@ -836,15 +837,16 @@ normalize_environment(PyObject* environment) {
         }
 
         if (i == 0) {
+            prev_key_string = PyUnicode_AsWideCharString(key, NULL);
             continue;
         }
 
         wchar_t *key_string = PyUnicode_AsWideCharString(key, NULL);
-        wchar_t *prev_key_string = PyUnicode_AsWideCharString(PyList_GET_ITEM(keys, i-1), NULL);
         if (CompareStringOrdinal(prev_key_string, -1, key_string, -1, TRUE) == CSTR_EQUAL) {
             continue;
         }
         PyObject_SetItem(result, key, value);
+        prev_key_string = key_string;
     }
 
 error:
@@ -853,34 +855,37 @@ error:
     Py_DECREF(sort);
     Py_DECREF(args);
     Py_DECREF(kwargs);
+    if (prev_key_string != NULL) {
+        PyMem_Free(prev_key_string);
+    }
 
     return result;
 }
 
 static wchar_t *
-getenvironment(PyObject* env)
+getenvironment(PyObject* environment)
 {
     Py_ssize_t i, envsize, totalsize;
     wchar_t *buffer = NULL, *p, *end;
-    PyObject *environment = NULL, *keys = NULL, *values = NULL;
+    PyObject *normalized_environment = NULL, *keys = NULL, *values = NULL;
 
     /* convert environment dictionary to windows environment string */
-    if (! PyMapping_Check(env)) {
+    if (! PyMapping_Check(environment)) {
         PyErr_SetString(
             PyExc_TypeError, "environment must be dictionary or None");
         return NULL;
     }
 
-    environment = normalize_environment(env);
-    if (environment == NULL) {
+    normalized_environment = normalize_environment(environment);
+    if (normalize_environment == NULL) {
         return NULL;
     }
 
-    keys = PyMapping_Keys(environment);
+    keys = PyMapping_Keys(normalized_environment);
     if (!keys) {
         goto error;
     }
-    values = PyMapping_Values(environment);
+    values = PyMapping_Values(normalized_environment);
     if (!values) {
         goto error;
     }
@@ -952,7 +957,7 @@ getenvironment(PyObject* env)
 
 cleanup:
 error:
-    Py_XDECREF(environment);
+    Py_XDECREF(normalized_environment);
     Py_XDECREF(keys);
     Py_XDECREF(values);
     return buffer;
