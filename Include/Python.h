@@ -17,7 +17,6 @@
 
 // Include standard header files
 #include <assert.h>               // assert()
-#include <ctype.h>                // tolower()
 #include <inttypes.h>             // uintptr_t
 #include <limits.h>               // INT_MAX
 #include <math.h>                 // HUGE_VAL
