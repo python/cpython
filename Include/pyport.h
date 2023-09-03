@@ -184,31 +184,6 @@ typedef Py_ssize_t Py_ssize_clean_t;
 #  define Py_MEMCPY memcpy
 #endif
 
-#ifdef HAVE_IEEEFP_H
-#include <ieeefp.h>  /* needed for 'finite' declaration on some platforms */
-#endif
-
-#include <math.h> /* Moved here from the math section, before extern "C" */
-
-/********************************************
- * WRAPPER FOR <time.h> and/or <sys/time.h> *
- ********************************************/
-
-#ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
-#endif
-#include <time.h>
-
-/******************************
- * WRAPPER FOR <sys/select.h> *
- ******************************/
-
-/* NB caller must include <sys/types.h> */
-
-#ifdef HAVE_SYS_SELECT_H
-#include <sys/select.h>
-#endif /* !HAVE_SYS_SELECT_H */
-
 /*******************************
  * stat() and fstat() fiddling *
  *******************************/
@@ -416,32 +391,6 @@ extern "C" {
 #else
 #  define Py_NO_INLINE
 #endif
-
-/**************************************************************************
-Prototypes that are missing from the standard include files on some systems
-(and possibly only some versions of such systems.)
-
-Please be conservative with adding new ones, document them and enclose them
-in platform-specific #ifdefs.
-**************************************************************************/
-
-#ifdef SOLARIS
-/* Unchecked */
-extern int gethostname(char *, int);
-#endif
-
-#ifdef HAVE__GETPTY
-#include <sys/types.h>          /* we need to import mode_t */
-extern char * _getpty(int *, int, mode_t, int);
-#endif
-
-/* On QNX 6, struct termio must be declared by including sys/termio.h
-   if TCGETA, TCSETA, TCSETAW, or TCSETAF are used.  sys/termio.h must
-   be included before termios.h or it will generate an error. */
-#if defined(HAVE_SYS_TERMIO_H) && !defined(__hpux)
-#include <sys/termio.h>
-#endif
-
 
 /* On 4.4BSD-descendants, ctype functions serves the whole range of
  * wchar_t character set rather than single byte code points only.

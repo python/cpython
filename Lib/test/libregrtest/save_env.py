@@ -23,7 +23,7 @@ class SkipTestEnvironment(Exception):
 class saved_test_environment:
     """Save bits of the test environment and restore them at block exit.
 
-        with saved_test_environment(testname, verbose, quiet):
+        with saved_test_environment(test_name, verbose, quiet):
             #stuff
 
     Unless quiet is True, a warning is printed to stderr if any of
@@ -34,8 +34,8 @@ class saved_test_environment:
     items is also printed.
     """
 
-    def __init__(self, testname, verbose=0, quiet=False, *, pgo=False):
-        self.testname = testname
+    def __init__(self, test_name, verbose=0, quiet=False, *, pgo=False):
+        self.test_name = test_name
         self.verbose = verbose
         self.quiet = quiet
         self.pgo = pgo
@@ -323,7 +323,7 @@ class saved_test_environment:
                 restore(original)
                 if not self.quiet and not self.pgo:
                     print_warning(
-                        f"{name} was modified by {self.testname}\n"
+                        f"{name} was modified by {self.test_name}\n"
                         f"  Before: {original}\n"
                         f"  After:  {current} ")
         return False
