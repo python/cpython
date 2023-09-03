@@ -67,15 +67,16 @@ class Regrtest:
         self.all_runtests: list[RunTests] = []
 
         # test results
-        self.good = []
-        self.bad = []
-        self.rerun_bad = []
-        self.skipped = []
-        self.resource_denied = []
-        self.environment_changed = []
-        self.run_no_tests = []
-        self.need_rerun = []
-        self.rerun = []
+        self.good: list[str] = []
+        self.bad: list[str] = []
+        self.rerun_bad: list[str] = []
+        self.skipped: list[str] = []
+        self.resource_denied: list[str] = []
+        self.environment_changed: list[str] = []
+        self.run_no_tests: list[str] = []
+        self.rerun: list[str] = []
+
+        self.need_rerun: list[TestResult] = []
         self.first_state: str | None = None
         self.interrupted = False
         self.total_stats = TestStats()
@@ -845,6 +846,8 @@ class Regrtest:
             exitcode = EXITCODE_ENV_CHANGED
         elif self.no_tests_run():
             exitcode = EXITCODE_NO_TESTS_RAN
+        elif self.rerun and self.ns.fail_rerun:
+            exitcode = EXITCODE_BAD_TEST
         return exitcode
 
     def action_run_tests(self):

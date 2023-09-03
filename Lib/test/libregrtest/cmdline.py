@@ -311,6 +311,9 @@ def _create_parser():
     group.add_argument('--fail-env-changed', action='store_true',
                        help='if a test file alters the environment, mark '
                             'the test as failed')
+    group.add_argument('--fail-rerun', action='store_true',
+                       help='if a test failed and then passed when re-run, '
+                            'mark the tests as failed')
 
     group.add_argument('--junit-xml', dest='xmlpath', metavar='FILENAME',
                        help='writes JUnit-style XML results to the specified '

@@ -602,13 +602,13 @@ class BaseTestCase(unittest.TestCase):
                               stdout=subprocess.PIPE,
                               **kw)
         if proc.returncode != exitcode:
-            msg = ("Command %s failed with exit code %s\n"
+            msg = ("Command %s failed with exit code %s, but exit code %s expected!\n"
                    "\n"
                    "stdout:\n"
                    "---\n"
                    "%s\n"
                    "---\n"
-                   % (str(args), proc.returncode, proc.stdout))
+                   % (str(args), proc.returncode, exitcode, proc.stdout))
             if proc.stderr:
                 msg += ("\n"
                         "stderr:\n"
@@ -1256,12 +1256,25 @@ class ArgsTestCase(BaseTestCase):
         """)
         testname = self.create_test(code=code)
 
+        # FAILURE then SUCCESS => exit code 0
         output = self.run_tests("--rerun", testname, exitcode=0)
         self.check_executed_tests(output, [testname],
                                   rerun=Rerun(testname,
                                               match="test_fail_once",
                                               success=True),
                                   stats=TestStats(3, 1))
+        os_helper.unlink(marker_filename)
+
+        # with --fail-rerun, exit code EXITCODE_BAD_TEST
+        # on "FAILURE then SUCCESS" state.
+        output = self.run_tests("--rerun", "--fail-rerun", testname,
+                                exitcode=EXITCODE_BAD_TEST)
+        self.check_executed_tests(output, [testname],
+                                  rerun=Rerun(testname,
+                                              match="test_fail_once",
+                                              success=True),
+                                  stats=TestStats(3, 1))
+        os_helper.unlink(marker_filename)
 
     def test_rerun_setup_class_hook_failure(self):
         # FAILURE then FAILURE
