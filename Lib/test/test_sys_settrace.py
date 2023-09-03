@@ -1949,7 +1949,8 @@ class JumpTestCase(unittest.TestCase):
             with self.assertRaisesRegex(*error):
                 func(output)
         else:
-            raise NotImplementedError("Not currently possible to assert both a warning and an error in tandem, as one will be ignored by the unittest framework")
+            with self.assertRaisesRegex(*error) as error_context, self.assertWarnsRegex(*warning) as warning_context:
+                func(output)
 
         sys.settrace(None)
         self.compare_jump_output(expected, output)
@@ -1969,7 +1970,8 @@ class JumpTestCase(unittest.TestCase):
             with self.assertRaisesRegex(*error):
                 asyncio.run(func(output))
         else:
-            raise NotImplementedError("Not currently possible to assert both a warning and an error in tandem, as one will be ignored by the unittest framework")
+            with self.assertRaisesRegex(*error) as error_context, self.assertWarnsRegex(*warning) as warning_context:
+                func(output)
 
         sys.settrace(None)
         asyncio.set_event_loop_policy(None)
