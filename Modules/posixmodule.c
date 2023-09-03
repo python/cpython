@@ -10102,6 +10102,10 @@ os.timerfd_create
         CLOCK_MONOTONIC
            A nonsettable monotonically increasing clock.
            Even if system clock is changed, timer setting will be not affected.
+
+        CLOCK_BOOTTIME
+           Same as CLOCK_MONOTONIC except that it inclues any time that
+           the system is suspended.
     /
     *
     flags: int = 0
@@ -10119,7 +10123,7 @@ Create and return a timer file descriptor.
 
 static PyObject *
 os_timerfd_create_impl(PyObject *module, int clockid, int flags)
-/*[clinic end generated code: output=1caae80fb168004a input=2aa75b57e6a58701]*/
+/*[clinic end generated code: output=1caae80fb168004a input=41557fee095c37a5]*/
 
 {
     int fd;

@@ -3787,7 +3787,22 @@ features:
    :func:`~select.select`, and :func:`~select.poll`.
 
    *clockid* must be a valid :ref:`clock ID <time-clock-id-constants>`,
-   as defined in the :py:mod:`time` module.
+   as defined in the :py:mod:`time` module and the following values are
+   available.
+
+   - :const:`time.CLOCK_REALTIME`
+   - :const:`time.CLOCK_MONOTONIC`
+   - :const:`time.CLOCK_BOOTTIME` (Since Linux 3.15)
+
+   If *clockid* is `time.CLOCK_REALTIME`, a settable system-wide real-time clock
+   is used. If system clock is changed, timer setting need to be updated.
+   To cancel timer when system clock is changed, see :const:`TFD_TIMER_CANCEL_ON_SET`.
+
+   If *clockid* is `time.CLOCK_MONOTONIC`, A nonsettable monotonically increasing clock
+   is used. Even if system clock is changed, timer setting will be not affected.
+
+   If *clockid* is `time.CLOCK_BOOTTIME`, same as `time.CLOCK_MONOTONIC` except
+   it includes any time that the system is suspended.
 
    The file descriptor's behaviour can be modified by specifying a *flags* value.
    Any of the following variables may used, combined using bitwise OR
@@ -3833,6 +3848,11 @@ features:
    If *interval* is zero, the timer only fires once, on the initial expiration.
    If *interval* is greater than zero, the timer fires every time *interval*
    seconds have elapsed since the previous expiration.
+
+   If the :const:`TFD_TIMER_CANCEL_ON_SET` flag is set along with :const:`TFD_TIMER_ABSTIME`
+   and the clock for this timer is :const:`time.CLOCK_REALTIME`, the timer is marked as
+   cancelable when if the real-time clock is changed discontinuously. Reading the descriptor
+   is aborted with with the error ECANCELED.
 
    Return a two-item tuple of (``next_expiration``, ``interval``) from
    the previous timer state, before this function executed.

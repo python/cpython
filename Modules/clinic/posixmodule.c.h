@@ -6007,6 +6007,10 @@ PyDoc_STRVAR(os_timerfd_create__doc__,
 "    CLOCK_MONOTONIC\n"
 "       A nonsettable monotonically increasing clock.\n"
 "       Even if system clock is changed, timer setting will be not affected.\n"
+"\n"
+"    CLOCK_BOOTTIME\n"
+"       Same as CLOCK_MONOTONIC except that it inclues any time that\n"
+"       the system is suspended.\n"
 "  flags\n"
 "    0 or a bit mask of TFD_NONBLOCK or TFD_CLOEXEC.\n"
 "\n"
@@ -12384,4 +12388,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=182c72ece6b8c7b5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fbb67751acb54194 input=a9049054013a1b77]*/
