@@ -562,7 +562,7 @@ class BaseTestCase(unittest.TestCase):
             ('run_no_tests', len(run_no_tests)),
         ):
             if ntest:
-                report.append(f'failed={ntest}')
+                report.append(f'{name}={ntest}')
         line = fr'Total test files: {" ".join(report)}'
         self.check_line(output, line, full=True)
 

@@ -678,7 +678,8 @@ class Regrtest:
         run = sum(map(len, all_tests))
         text = f'run={run}'
         if not forever:
-            text = f"{text}/{len(self.tests)}"
+            ntest = len(first_runtests.tests)
+            text = f"{text}/{ntest}"
         if filtered:
             text = f"{text} (filtered)"
         report = [text]
