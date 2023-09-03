@@ -3941,6 +3941,19 @@ class TimerfdTests(unittest.TestCase):
         self.assertAlmostEqual(interval2, interval, places=3)
         self.assertAlmostEqual(next_expiration, initial_expiration, places=3)
 
+    def test_timerfd_negative(self):
+        fd = os.timerfd_create(time.CLOCK_REALTIME, flags=0)
+        self.assertNotEqual(fd, -1)
+        self.addCleanup(os.close, fd)
+
+        # Any of 'initial' and 'interval' is negative value.
+        for initial, interval in ( (-1, 0), (1, -1), (-1, -1)):
+            for flags in (0, os.TFD_TIMER_ABSTIME, os.TFD_TIMER_ABSTIME|os.TFD_TIMER_CANCEL_ON_SET):
+                with self.subTest(flags=flags, initial=initial, interval=interval):
+                    with self.assertRaises(OSError) as context:
+                        _, _ = os.timerfd_settime(fd, flags=flags, initial=initial, interval=interval)
+                    self.assertEqual(context.exception.errno, errno.EINVAL)
+
     def test_timerfd_interval(self):
         size = 8  # read 8 bytes
         fd = os.timerfd_create(time.CLOCK_REALTIME, flags=0)

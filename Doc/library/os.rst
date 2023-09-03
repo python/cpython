@@ -3838,8 +3838,13 @@ features:
    - :const:`TFD_TIMER_CANCEL_ON_SET`
 
    The timer is disabled by setting *initial* to zero (``0``).
-   If *initial* is set to a non-zero value, the timer is enabled.
+   If *initial* is equal to or greater than zero, the timer is enabled.
+   If *initial* is less than zero, it raises :class:`OSError` with ``errno``
+   set to :const:`errno.EINVAL`
+
    By default timer will fire when *initial* seconds have elapsed.
+   (If *initial* is zero, timer will fire immediately.)
+
    However, if the :const:`TFD_TIMER_ABSTIME` flag is set,
    the timer will fire when the timer's clock
    (set by *clockid* in :func:`timerfd_create`) reaches *initial* seconds.
@@ -3848,6 +3853,8 @@ features:
    If *interval* is zero, the timer only fires once, on the initial expiration.
    If *interval* is greater than zero, the timer fires every time *interval*
    seconds have elapsed since the previous expiration.
+   If *interval* is less than zero, it raises :class:`OSError` with ``errno``
+   set to :const:`errno.EINVAL`
 
    If the :const:`TFD_TIMER_CANCEL_ON_SET` flag is set along with :const:`TFD_TIMER_ABSTIME`
    and the clock for this timer is :const:`time.CLOCK_REALTIME`, the timer is marked as
