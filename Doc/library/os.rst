@@ -3808,15 +3808,15 @@ features:
    - :const:`time.CLOCK_MONOTONIC`
    - :const:`time.CLOCK_BOOTTIME` (Since Linux 3.15)
 
-   If *clockid* is `time.CLOCK_REALTIME`, a settable system-wide real-time clock
+   If *clockid* is :const:`time.CLOCK_REALTIME`, a settable system-wide real-time clock
    is used. If system clock is changed, timer setting need to be updated.
    To cancel timer when system clock is changed, see :const:`TFD_TIMER_CANCEL_ON_SET`.
 
-   If *clockid* is `time.CLOCK_MONOTONIC`, A nonsettable monotonically increasing clock
-   is used. Even if system clock is changed, timer setting will be not affected.
+   If *clockid* is :const:`time.CLOCK_MONOTONIC`, A nonsettable monotonically increasing
+   clock is used. Even if system clock is changed, timer setting will be not affected.
 
-   If *clockid* is `time.CLOCK_BOOTTIME`, same as `time.CLOCK_MONOTONIC` except
-   it includes any time that the system is suspended.
+   If *clockid* is :const:`time.CLOCK_BOOTTIME`, same as :const:`time.CLOCK_MONOTONIC`
+   except it includes any time that the system is suspended.
 
    The file descriptor's behaviour can be modified by specifying a *flags* value.
    Any of the following variables may used, combined using bitwise OR
