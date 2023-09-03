@@ -439,11 +439,6 @@ Please be conservative with adding new ones, document them and enclose them
 in platform-specific #ifdefs.
 **************************************************************************/
 
-#ifdef SOLARIS
-/* Unchecked */
-extern int gethostname(char *, int);
-#endif
-
 #ifdef HAVE__GETPTY
 #include <sys/types.h>          /* we need to import mode_t */
 extern char * _getpty(int *, int, mode_t, int);
