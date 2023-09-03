@@ -10093,16 +10093,17 @@ os.timerfd_create
 
     clockid: int
         CLOCK_REALTIME or CLOCK_MONOTONIC. CLOCK_REALTIME.
+    /
+    *
     flags: int = 0
         0 or a bit mask of TFD_NONBLOCK or TFD_CLOEXEC.
-    /
 
 Create and return a timer file descriptor.
 [clinic start generated code]*/
 
 static PyObject *
 os_timerfd_create_impl(PyObject *module, int clockid, int flags)
-/*[clinic end generated code: output=1caae80fb168004a input=65137ef7f4c50837]*/
+/*[clinic end generated code: output=1caae80fb168004a input=c0e2a0592d493b07]*/
 
 {
     int fd;
@@ -10120,19 +10121,20 @@ os.timerfd_settime
 
     fd: fildes
         A timer file descriptor.
+    /
+    *
     flags: int
         0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.
-    it_initial_expiration: double = 0.0
+    initial as it_initial_expiration: double = 0.0
         it_initial_expiration is initial expiration timing in seconds. It could be absolute time or relative time
         based on TFD_TIMER_ABSTIME flag.
-    it_interval: double = 0.0
+    interval as it_interval: double = 0.0
         If TFD_TIMER_ABSTIME is not specified, it_interval is relative time.
         If TFD_TIMER_ABSTIME is specified, it_interval is absolute time and epoch time in time_t.
         If TFD_TIMER_CANCEL_ON_SET and TFD_TIMER_ABSTIME are specifed as *flags* and time.CLOCK_REALTIME
         is specified as *clockid* of timerfd_create, a discontinuous change of system clock will make to
         abort reading from a file descriptor with ECANCELED error.
         it_interval is interval for timer in seconds.
-    /
 
 Set timerfd value in seconds.
 [clinic start generated code]*/
@@ -10140,7 +10142,7 @@ Set timerfd value in seconds.
 static PyObject *
 os_timerfd_settime_impl(PyObject *module, int fd, int flags,
                         double it_initial_expiration, double it_interval)
-/*[clinic end generated code: output=c6730e19eca1fa5e input=47426f72c5728eac]*/
+/*[clinic end generated code: output=c6730e19eca1fa5e input=ff99bc0a4c2f8c53]*/
 {
     struct itimerspec new_value;
     struct itimerspec old_value;
@@ -10164,13 +10166,14 @@ os.timerfd_settime_ns
 
     fd: fildes
         A timer file descriptor.
+    /
+    *
     flags: int
         similar to timerfd_settime
-    it_initial_expiration_ns: long_long = 0
+    initial as it_initial_expiration_ns: long_long = 0
         similar to timerfd_settime except for in nanoseconds.
-    it_interval_ns: long_long = 0
+    interval as it_interval_ns: long_long = 0
         similar to timerfd_settime except for in nanoseconds.
-    /
 
 Set timerfd value in nanoseconds.
 [clinic start generated code]*/
@@ -10179,7 +10182,7 @@ static PyObject *
 os_timerfd_settime_ns_impl(PyObject *module, int fd, int flags,
                            long long it_initial_expiration_ns,
                            long long it_interval_ns)
-/*[clinic end generated code: output=5a507a762b87c9fe input=e8240c6f8b9c6665]*/
+/*[clinic end generated code: output=5a507a762b87c9fe input=d67ea096c06dfd33]*/
 {
     struct itimerspec new_value;
     struct itimerspec old_value;

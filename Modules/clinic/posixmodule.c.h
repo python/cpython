@@ -5991,7 +5991,7 @@ os_times(PyObject *module, PyObject *Py_UNUSED(ignored))
 #if defined(HAVE_TIMERFD_API)
 
 PyDoc_STRVAR(os_timerfd_create__doc__,
-"timerfd_create($module, clockid, flags=0, /)\n"
+"timerfd_create($module, clockid, /, *, flags=0)\n"
 "--\n"
 "\n"
 "Create and return a timer file descriptor.\n"
@@ -6002,33 +6002,61 @@ PyDoc_STRVAR(os_timerfd_create__doc__,
 "    0 or a bit mask of TFD_NONBLOCK or TFD_CLOEXEC.");
 
 #define OS_TIMERFD_CREATE_METHODDEF    \
-    {"timerfd_create", _PyCFunction_CAST(os_timerfd_create), METH_FASTCALL, os_timerfd_create__doc__},
+    {"timerfd_create", _PyCFunction_CAST(os_timerfd_create), METH_FASTCALL|METH_KEYWORDS, os_timerfd_create__doc__},
 
 static PyObject *
 os_timerfd_create_impl(PyObject *module, int clockid, int flags);
 
 static PyObject *
-os_timerfd_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+os_timerfd_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(flags), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "flags", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "timerfd_create",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     int clockid;
     int flags = 0;
 
-    if (!_PyArg_CheckPositional("timerfd_create", nargs, 1, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     clockid = PyLong_AsInt(args[0]);
     if (clockid == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (nargs < 2) {
-        goto skip_optional;
+    if (!noptargs) {
+        goto skip_optional_kwonly;
     }
     flags = PyLong_AsInt(args[1]);
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
-skip_optional:
+skip_optional_kwonly:
     return_value = os_timerfd_create_impl(module, clockid, flags);
 
 exit:
@@ -6040,8 +6068,7 @@ exit:
 #if defined(HAVE_TIMERFD_API)
 
 PyDoc_STRVAR(os_timerfd_settime__doc__,
-"timerfd_settime($module, fd, flags, it_initial_expiration=0.0,\n"
-"                it_interval=0.0, /)\n"
+"timerfd_settime($module, fd, /, *, flags, initial=0.0, interval=0.0)\n"
 "--\n"
 "\n"
 "Set timerfd value in seconds.\n"
@@ -6050,10 +6077,10 @@ PyDoc_STRVAR(os_timerfd_settime__doc__,
 "    A timer file descriptor.\n"
 "  flags\n"
 "    0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.\n"
-"  it_initial_expiration\n"
+"  initial\n"
 "    it_initial_expiration is initial expiration timing in seconds. It could be absolute time or relative time\n"
 "    based on TFD_TIMER_ABSTIME flag.\n"
-"  it_interval\n"
+"  interval\n"
 "    If TFD_TIMER_ABSTIME is not specified, it_interval is relative time.\n"
 "    If TFD_TIMER_ABSTIME is specified, it_interval is absolute time and epoch time in time_t.\n"
 "    If TFD_TIMER_CANCEL_ON_SET and TFD_TIMER_ABSTIME are specifed as *flags* and time.CLOCK_REALTIME\n"
@@ -6062,22 +6089,50 @@ PyDoc_STRVAR(os_timerfd_settime__doc__,
 "    it_interval is interval for timer in seconds.");
 
 #define OS_TIMERFD_SETTIME_METHODDEF    \
-    {"timerfd_settime", _PyCFunction_CAST(os_timerfd_settime), METH_FASTCALL, os_timerfd_settime__doc__},
+    {"timerfd_settime", _PyCFunction_CAST(os_timerfd_settime), METH_FASTCALL|METH_KEYWORDS, os_timerfd_settime__doc__},
 
 static PyObject *
 os_timerfd_settime_impl(PyObject *module, int fd, int flags,
                         double it_initial_expiration, double it_interval);
 
 static PyObject *
-os_timerfd_settime(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+os_timerfd_settime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(flags), &_Py_ID(initial), &_Py_ID(interval), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "flags", "initial", "interval", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "timerfd_settime",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     int fd;
     int flags;
     double it_initial_expiration = 0.0;
     double it_interval = 0.0;
 
-    if (!_PyArg_CheckPositional("timerfd_settime", nargs, 2, 4)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 1, argsbuf);
+    if (!args) {
         goto exit;
     }
     if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
@@ -6087,21 +6142,23 @@ os_timerfd_settime(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (nargs < 3) {
-        goto skip_optional;
+    if (!noptargs) {
+        goto skip_optional_kwonly;
     }
-    if (PyFloat_CheckExact(args[2])) {
-        it_initial_expiration = PyFloat_AS_DOUBLE(args[2]);
-    }
-    else
-    {
-        it_initial_expiration = PyFloat_AsDouble(args[2]);
-        if (it_initial_expiration == -1.0 && PyErr_Occurred()) {
-            goto exit;
+    if (args[2]) {
+        if (PyFloat_CheckExact(args[2])) {
+            it_initial_expiration = PyFloat_AS_DOUBLE(args[2]);
         }
-    }
-    if (nargs < 4) {
-        goto skip_optional;
+        else
+        {
+            it_initial_expiration = PyFloat_AsDouble(args[2]);
+            if (it_initial_expiration == -1.0 && PyErr_Occurred()) {
+                goto exit;
+            }
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
     }
     if (PyFloat_CheckExact(args[3])) {
         it_interval = PyFloat_AS_DOUBLE(args[3]);
@@ -6113,7 +6170,7 @@ os_timerfd_settime(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
             goto exit;
         }
     }
-skip_optional:
+skip_optional_kwonly:
     return_value = os_timerfd_settime_impl(module, fd, flags, it_initial_expiration, it_interval);
 
 exit:
@@ -6125,8 +6182,7 @@ exit:
 #if defined(HAVE_TIMERFD_API)
 
 PyDoc_STRVAR(os_timerfd_settime_ns__doc__,
-"timerfd_settime_ns($module, fd, flags, it_initial_expiration_ns=0,\n"
-"                   it_interval_ns=0, /)\n"
+"timerfd_settime_ns($module, fd, /, *, flags, initial=0, interval=0)\n"
 "--\n"
 "\n"
 "Set timerfd value in nanoseconds.\n"
@@ -6135,13 +6191,13 @@ PyDoc_STRVAR(os_timerfd_settime_ns__doc__,
 "    A timer file descriptor.\n"
 "  flags\n"
 "    similar to timerfd_settime\n"
-"  it_initial_expiration_ns\n"
+"  initial\n"
 "    similar to timerfd_settime except for in nanoseconds.\n"
-"  it_interval_ns\n"
+"  interval\n"
 "    similar to timerfd_settime except for in nanoseconds.");
 
 #define OS_TIMERFD_SETTIME_NS_METHODDEF    \
-    {"timerfd_settime_ns", _PyCFunction_CAST(os_timerfd_settime_ns), METH_FASTCALL, os_timerfd_settime_ns__doc__},
+    {"timerfd_settime_ns", _PyCFunction_CAST(os_timerfd_settime_ns), METH_FASTCALL|METH_KEYWORDS, os_timerfd_settime_ns__doc__},
 
 static PyObject *
 os_timerfd_settime_ns_impl(PyObject *module, int fd, int flags,
@@ -6149,15 +6205,43 @@ os_timerfd_settime_ns_impl(PyObject *module, int fd, int flags,
                            long long it_interval_ns);
 
 static PyObject *
-os_timerfd_settime_ns(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+os_timerfd_settime_ns(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(flags), &_Py_ID(initial), &_Py_ID(interval), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "flags", "initial", "interval", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "timerfd_settime_ns",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     int fd;
     int flags;
     long long it_initial_expiration_ns = 0;
     long long it_interval_ns = 0;
 
-    if (!_PyArg_CheckPositional("timerfd_settime_ns", nargs, 2, 4)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 1, argsbuf);
+    if (!args) {
         goto exit;
     }
     if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
@@ -6167,21 +6251,23 @@ os_timerfd_settime_ns(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (nargs < 3) {
-        goto skip_optional;
+    if (!noptargs) {
+        goto skip_optional_kwonly;
     }
-    it_initial_expiration_ns = PyLong_AsLongLong(args[2]);
-    if (it_initial_expiration_ns == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    if (nargs < 4) {
-        goto skip_optional;
+    if (args[2]) {
+        it_initial_expiration_ns = PyLong_AsLongLong(args[2]);
+        if (it_initial_expiration_ns == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
     }
     it_interval_ns = PyLong_AsLongLong(args[3]);
     if (it_interval_ns == -1 && PyErr_Occurred()) {
         goto exit;
     }
-skip_optional:
+skip_optional_kwonly:
     return_value = os_timerfd_settime_ns_impl(module, fd, flags, it_initial_expiration_ns, it_interval_ns);
 
 exit:
@@ -12282,4 +12368,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=f379a432ee46efd5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=33c5ec00584f43d6 input=a9049054013a1b77]*/

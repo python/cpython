@@ -3806,7 +3806,7 @@ features:
    .. versionadded:: 3.13
 
 
-.. function:: timerfd_settime(fd, flags, initial_expiration=0.0, interval=0.0, /)
+.. function:: timerfd_settime(fd, /, *, flags=flags, initial=0.0, interval=0.0)
 
    Alter a timer file descriptor's internal timer.
 
@@ -3819,12 +3819,12 @@ features:
    - :const:`TFD_TIMER_ABSTIME`
    - :const:`TFD_TIMER_CANCEL_ON_SET`
 
-   The timer is disabled by setting *initial_expiration* to zero (``0``).
-   If *initial_expiration* is set to a non-zero value, the timer is enabled.
-   By default timer will fire when *initial_expiration* seconds have elapsed.
+   The timer is disabled by setting *initial* to zero (``0``).
+   If *initial* is set to a non-zero value, the timer is enabled.
+   By default timer will fire when *initial* seconds have elapsed.
    However, if the :const:`TFD_TIMER_ABSTIME` flag is set,
    the timer will fire when the timer's clock
-   (set by *clockid* in :func:`timerfd_create`) reaches *value* seconds.
+   (set by *clockid* in :func:`timerfd_create`) reaches *initial* seconds.
 
    The timer's interval is set by the *interval* :py:class:`float`.
    If *interval* is zero, the timer only fires once, on the initial expiration.
@@ -3841,10 +3841,10 @@ features:
 
       import os, time
 
-      fd = os.timerfd_create(time.CLOCK_REALTIME, 0)
+      fd = os.timerfd_create(time.CLOCK_REALTIME, flags=0)
       initial_expiration = 1  # Start the timer in 1 second
       interval = 0.5  # Set the timer interval to 0.5 seconds
-      os.timerfd_settime(fd, 0, initial_expiration, interval)  # Start the timer
+      os.timerfd_settime(fd, flags=0, initial=initial_expiration, interval=interval)  # Start the timer
 
       try:
           # process timer events four times.
@@ -3861,7 +3861,7 @@ features:
    .. versionadded:: 3.13
 
 
-.. function:: timerfd_settime_ns(fd, flags, initial_expiration_ns=0, interval_ns=0, /)
+.. function:: timerfd_settime_ns(fd, /, *, flags=0, initial=0, interval=0)
 
    Similar to :func:`timerfd_settime`, but use time as nanoseconds.
 
@@ -3872,10 +3872,10 @@ features:
 
       import os, time
 
-      fd = os.timerfd_create(time.CLOCK_REALTIME, 0)
+      fd = os.timerfd_create(time.CLOCK_REALTIME, flags=0)
       initial_expiration = 10**9  # Start the timer in 1 second
       interval = 10**9 // 2  # Set the timer interval to 0.5 seconds
-      os.timerfd_settime_ns(fd, 0, initial_expiration, interval)  # Start the timer
+      os.timerfd_settime_ns(fd, 0, initial=initial_expiration, interval=interval)  # Start the timer
 
       try:
           # process timer events four times.
