@@ -158,8 +158,11 @@ GETITEM(PyObject *v, Py_ssize_t i) {
  * for advancing to the next instruction, taking into account cache entries
  * and skipped instructions.
  */
-#define JUMPBY(x)       (next_instr += (x))
-#define SKIP_OVER(x)    (next_instr += (x))
+#define JUMPBY(x)       do { \
+                            next_instr += (x); \
+                            frame->instr_ptr += (x); \
+                        } while(0);
+#define SKIP_OVER(x)    JUMPBY(x)
 
 /* OpCode prediction macros
     Some opcodes tend to come in pairs thus making it possible to

@@ -3968,6 +3968,7 @@
             {
                 #if TIER_ONE
                 frame->prev_instr = next_instr - 1;
+                frame->instr_ptr = next_instr;
                 #endif
                 #if TIER_TWO
                 // Relies on a preceding SAVE_IP
