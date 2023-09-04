@@ -2645,10 +2645,10 @@ you can use the following technique, borrowed from the :ref:`unicode-howto`:
 
 .. note::
 
-   Unlike :attr:`~Cursor.row_factory`, which exists as an attribute both on
-   :class:`Cursor` and :class:`Connection` objects,
-   :attr:`~Connection.text_factory` only exists as an attribute on
-   :class:`!Connection` objects.
+   Strings containing surrogate escapes and must be treated with care.
+   You cannot simply pass them back to SQLite,
+   for example using :meth:`~Cursor.execute`,
+   since the :mod:`!sqlite3` module APIs only accept UTF-8 encoded strings.
 
 .. seealso::
 
