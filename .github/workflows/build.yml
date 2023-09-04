@@ -474,7 +474,7 @@ jobs:
         VENV_PYTHON=$VENV_LOC/bin/python
         echo "HYPOVENV=${VENV_LOC}" >> $GITHUB_ENV
         echo "VENV_PYTHON=${VENV_PYTHON}" >> $GITHUB_ENV
-        ./python -m venv $VENV_LOC && $VENV_PYTHON -m pip install -U hypothesis
+        ./python -m venv $VENV_LOC && $VENV_PYTHON -m pip install -r ${GITHUB_WORKSPACE}/Tools/requirements-hypothesis.txt
     - name: 'Restore Hypothesis database'
       id: cache-hypothesis-database
       uses: actions/cache@v3
