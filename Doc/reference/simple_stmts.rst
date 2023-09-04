@@ -210,7 +210,7 @@ Assignment of an object to a single target is recursively defined as follows.
 
   If the primary is a mapping object (such as a dictionary), the subscript must
   have a type compatible with the mapping's key type, and the mapping is then
-  asked to create a key/datum pair which maps the subscript to the assigned
+  asked to create a key/value pair which maps the subscript to the assigned
   object.  This can either replace an existing key/value pair with the same key
   value, or insert a new key/value pair (if no key with the same value existed).
 

@@ -352,7 +352,7 @@ rather than ``JUMP_FORWARD`` with an argument of ``(2**32)+offset``.
 .. nonce: 3Z_qxd
 .. section: Core and Builtins
 
-Correct the docstring for the :meth:`__bool__` method. Patch by Jelle
+Correct the docstring for the :meth:`~object.__bool__` method. Patch by Jelle
 Zijlstra.
 
 ..

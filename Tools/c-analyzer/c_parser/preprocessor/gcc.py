@@ -3,6 +3,14 @@ import re
 
 from . import common as _common
 
+# The following C files must not be built with Py_BUILD_CORE,
+# because they use the limited C API.
+USE_LIMITED_C_API = frozenset((
+    '_testcapimodule.c',
+    '_testclinic_limited.c',
+    'xxlimited.c',
+    'xxlimited_35.c',
+))
 
 TOOL = 'gcc'
 
@@ -60,6 +68,11 @@ def preprocess(filename,
     if not cwd or not os.path.isabs(cwd):
         cwd = os.path.abspath(cwd or '.')
     filename = _normpath(filename, cwd)
+
+    postargs = POST_ARGS
+    if os.path.basename(filename) not in USE_LIMITED_C_API:
+        postargs += ('-DPy_BUILD_CORE=1',)
+
     text = _common.preprocess(
         TOOL,
         filename,
@@ -67,7 +80,7 @@ def preprocess(filename,
         includes=includes,
         macros=macros,
         #preargs=PRE_ARGS,
-        postargs=POST_ARGS,
+        postargs=postargs,
         executable=['gcc'],
         compiler='unix',
         cwd=cwd,

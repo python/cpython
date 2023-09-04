@@ -544,6 +544,16 @@ class TypeVarTests(BaseTestCase):
                 with self.assertRaises(TypeError):
                     list[T][arg]
 
+    def test_many_weakrefs(self):
+        # gh-108295: this used to segfault
+        for cls in (ParamSpec, TypeVarTuple, TypeVar):
+            with self.subTest(cls=cls):
+                vals = weakref.WeakValueDictionary()
+
+                for x in range(100000):
+                    vals[x] = cls(str(x))
+                del vals
+
 
 def template_replace(templates: list[str], replacements: dict[str, list[str]]) -> list[tuple[str]]:
     """Renders templates with possible combinations of replacements.
@@ -3477,6 +3487,46 @@ class ProtocolTests(BaseTestCase):
         self.assertIsSubclass(OKClass, C)
         self.assertNotIsSubclass(BadClass, C)
 
+    def test_custom_subclasshook_2(self):
+        @runtime_checkable
+        class HasX(Protocol):
+            # The presence of a non-callable member
+            # would mean issubclass() checks would fail with TypeError
+            # if it weren't for the custom `__subclasshook__` method
+            x = 1
+
+            @classmethod
+            def __subclasshook__(cls, other):
+                return hasattr(other, 'x')
+
+        class Empty: pass
+
+        class ImplementsHasX:
+            x = 1
+
+        self.assertIsInstance(ImplementsHasX(), HasX)
+        self.assertNotIsInstance(Empty(), HasX)
+        self.assertIsSubclass(ImplementsHasX, HasX)
+        self.assertNotIsSubclass(Empty, HasX)
+
+        # isinstance() and issubclass() checks against this still raise TypeError,
+        # despite the presence of the custom __subclasshook__ method,
+        # as it's not decorated with @runtime_checkable
+        class NotRuntimeCheckable(Protocol):
+            @classmethod
+            def __subclasshook__(cls, other):
+                return hasattr(other, 'x')
+
+        must_be_runtime_checkable = (
+            "Instance and class checks can only be used "
+            "with @runtime_checkable protocols"
+        )
+
+        with self.assertRaisesRegex(TypeError, must_be_runtime_checkable):
+            issubclass(object, NotRuntimeCheckable)
+        with self.assertRaisesRegex(TypeError, must_be_runtime_checkable):
+            isinstance(object(), NotRuntimeCheckable)
+
     def test_issubclass_fails_correctly(self):
         @runtime_checkable
         class P(Protocol):
@@ -4050,6 +4100,22 @@ class GenericTests(BaseTestCase):
         class C(Generic[T]): pass
         with self.assertRaises(TypeError):
             C[()]
+
+    def test_generic_subclass_checks(self):
+        for typ in [list[int], List[int],
+                    tuple[int, str], Tuple[int, str],
+                    typing.Callable[..., None],
+                    collections.abc.Callable[..., None]]:
+            with self.subTest(typ=typ):
+                self.assertRaises(TypeError, issubclass, typ, object)
+                self.assertRaises(TypeError, issubclass, typ, type)
+                self.assertRaises(TypeError, issubclass, typ, typ)
+                self.assertRaises(TypeError, issubclass, object, typ)
+
+                # isinstance is fine:
+                self.assertTrue(isinstance(typ, object))
+                # but, not when the right arg is also a generic:
+                self.assertRaises(TypeError, isinstance, typ, typ)
 
     def test_init(self):
         T = TypeVar('T')
@@ -5321,7 +5387,7 @@ class AssertTypeTests(BaseTestCase):
 
 
 # We need this to make sure that `@no_type_check` respects `__module__` attr:
-from test import ann_module8
+from test.typinganndata import ann_module8
 
 @no_type_check
 class NoTypeCheck_Outer:
@@ -5754,10 +5820,14 @@ class ForwardRefTests(BaseTestCase):
                 get_type_hints(clazz)
 
     def test_meta_no_type_check(self):
-
-        @no_type_check_decorator
-        def magic_decorator(func):
-            return func
+        depr_msg = (
+            "'typing.no_type_check_decorator' is deprecated "
+            "and slated for removal in Python 3.15"
+        )
+        with self.assertWarnsRegex(DeprecationWarning, depr_msg):
+            @no_type_check_decorator
+            def magic_decorator(func):
+                return func
 
         self.assertEqual(magic_decorator.__name__, 'magic_decorator')
 
@@ -5908,7 +5978,9 @@ class OverloadTests(BaseTestCase):
 
 # Definitions needed for features introduced in Python 3.6
 
-from test import ann_module, ann_module2, ann_module3, ann_module5, ann_module6
+from test.typinganndata import (
+    ann_module, ann_module2, ann_module3, ann_module5, ann_module6,
+)
 
 T_a = TypeVar('T_a')
 
@@ -8117,8 +8189,7 @@ class AnnotatedTests(BaseTestCase):
 
     def test_new(self):
         with self.assertRaisesRegex(
-            TypeError,
-            'Type Annotated cannot be instantiated',
+            TypeError, 'Cannot instantiate typing.Annotated',
         ):
             Annotated()
 

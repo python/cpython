@@ -1818,14 +1818,17 @@ class _ProtocolMeta(ABCMeta):
     def __subclasscheck__(cls, other):
         if cls is Protocol:
             return type.__subclasscheck__(cls, other)
-        if not isinstance(other, type):
-            # Same error message as for issubclass(1, int).
-            raise TypeError('issubclass() arg 1 must be a class')
         if (
             getattr(cls, '_is_protocol', False)
             and not _allow_reckless_class_checks()
         ):
-            if not cls.__callable_proto_members_only__:
+            if not isinstance(other, type):
+                # Same error message as for issubclass(1, int).
+                raise TypeError('issubclass() arg 1 must be a class')
+            if (
+                not cls.__callable_proto_members_only__
+                and cls.__dict__.get("__subclasshook__") is _proto_hook
+            ):
                 raise TypeError(
                     "Protocols with non-method members don't support issubclass()"
                 )
@@ -1867,6 +1870,30 @@ class _ProtocolMeta(ABCMeta):
             return True
 
         return False
+
+
+@classmethod
+def _proto_hook(cls, other):
+    if not cls.__dict__.get('_is_protocol', False):
+        return NotImplemented
+
+    for attr in cls.__protocol_attrs__:
+        for base in other.__mro__:
+            # Check if the members appears in the class dictionary...
+            if attr in base.__dict__:
+                if base.__dict__[attr] is None:
+                    return NotImplemented
+                break
+
+            # ...or in annotations, if it is a sub-protocol.
+            annotations = getattr(base, '__annotations__', {})
+            if (isinstance(annotations, collections.abc.Mapping) and
+                    attr in annotations and
+                    issubclass(other, Generic) and getattr(other, '_is_protocol', False)):
+                break
+        else:
+            return NotImplemented
+    return True
 
 
 class Protocol(Generic, metaclass=_ProtocolMeta):
@@ -1914,37 +1941,11 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
             cls._is_protocol = any(b is Protocol for b in cls.__bases__)
 
         # Set (or override) the protocol subclass hook.
-        def _proto_hook(other):
-            if not cls.__dict__.get('_is_protocol', False):
-                return NotImplemented
-
-            for attr in cls.__protocol_attrs__:
-                for base in other.__mro__:
-                    # Check if the members appears in the class dictionary...
-                    if attr in base.__dict__:
-                        if base.__dict__[attr] is None:
-                            return NotImplemented
-                        break
-
-                    # ...or in annotations, if it is a sub-protocol.
-                    annotations = getattr(base, '__annotations__', {})
-                    if (isinstance(annotations, collections.abc.Mapping) and
-                            attr in annotations and
-                            issubclass(other, Generic) and getattr(other, '_is_protocol', False)):
-                        break
-                else:
-                    return NotImplemented
-            return True
-
         if '__subclasshook__' not in cls.__dict__:
             cls.__subclasshook__ = _proto_hook
 
-        # We have nothing more to do for non-protocols...
-        if not cls._is_protocol:
-            return
-
-        # ... otherwise prohibit instantiation.
-        if cls.__init__ is Protocol.__init__:
+        # Prohibit instantiation for protocol classes
+        if cls._is_protocol and cls.__init__ is Protocol.__init__:
             cls.__init__ = _no_init_or_replace_init
 
 
@@ -2000,7 +2001,8 @@ class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):
         return (self.__origin__,)
 
 
-class Annotated:
+@_SpecialForm
+def Annotated(self, params):
     """Add context-specific metadata to a type.
 
     Example: Annotated[int, runtime_check.Unsigned] indicates to the
@@ -2047,30 +2049,17 @@ class Annotated:
       where T1, T2 etc. are TypeVars, which would be invalid, because
       only one type should be passed to Annotated.
     """
-
-    __slots__ = ()
-
-    def __new__(cls, *args, **kwargs):
-        raise TypeError("Type Annotated cannot be instantiated.")
-
-    @_tp_cache
-    def __class_getitem__(cls, params):
-        if not isinstance(params, tuple) or len(params) < 2:
-            raise TypeError("Annotated[...] should be used "
-                            "with at least two arguments (a type and an "
-                            "annotation).")
-        if _is_unpacked_typevartuple(params[0]):
-            raise TypeError("Annotated[...] should not be used with an "
-                            "unpacked TypeVarTuple")
-        msg = "Annotated[t, ...]: t must be a type."
-        origin = _type_check(params[0], msg, allow_special_forms=True)
-        metadata = tuple(params[1:])
-        return _AnnotatedAlias(origin, metadata)
-
-    def __init_subclass__(cls, *args, **kwargs):
-        raise TypeError(
-            "Cannot subclass {}.Annotated".format(cls.__module__)
-        )
+    if not isinstance(params, tuple) or len(params) < 2:
+        raise TypeError("Annotated[...] should be used "
+                        "with at least two arguments (a type and an "
+                        "annotation).")
+    if _is_unpacked_typevartuple(params[0]):
+        raise TypeError("Annotated[...] should not be used with an "
+                        "unpacked TypeVarTuple")
+    msg = "Annotated[t, ...]: t must be a type."
+    origin = _type_check(params[0], msg, allow_special_forms=True)
+    metadata = tuple(params[1:])
+    return _AnnotatedAlias(origin, metadata)
 
 
 def runtime_checkable(cls):
@@ -2394,6 +2383,8 @@ def no_type_check_decorator(decorator):
     This wraps the decorator with something that wraps the decorated
     function in @no_type_check.
     """
+    import warnings
+    warnings._deprecated("typing.no_type_check_decorator", remove=(3, 15))
     @functools.wraps(decorator)
     def wrapped_decorator(*args, **kwds):
         func = decorator(*args, **kwds)

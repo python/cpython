@@ -21,6 +21,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException, _Py_Offer_Suggestions
 #include "pycore_pylifecycle.h"   // _Py_UnhandledKeyboardInterrupt
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_pythonrun.h"     // define _PyRun_InteractiveLoopObject()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_traceback.h"     // _PyTraceBack_Print_Indented()
 
@@ -276,7 +277,7 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
         return parse_res;
     }
 
-    PyObject *main_module = Py_XNewRef(PyImport_AddModuleObject(&_Py_ID(__main__)));
+    PyObject *main_module = PyImport_AddModuleRef("__main__");
     if (main_module == NULL) {
         _PyArena_Free(arena);
         return -1;
@@ -412,10 +413,11 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
     PyObject *dict = PyModule_GetDict(main_module);  // borrowed ref
 
     int set_file_name = 0;
-    if (_PyDict_GetItemStringWithError(dict, "__file__") == NULL) {
-        if (PyErr_Occurred()) {
-            goto done;
-        }
+    int has_file = PyDict_ContainsString(dict, "__file__");
+    if (has_file < 0) {
+        goto done;
+    }
+    if (!has_file) {
         if (PyDict_SetItemString(dict, "__file__", filename) < 0) {
             goto done;
         }
@@ -834,11 +836,8 @@ _PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
         _PyErr_WriteUnraisableMsg("in audit hook", NULL);
     }
     if (hook) {
-        PyObject* stack[3];
-        stack[0] = typ;
-        stack[1] = exc;
-        stack[2] = tb;
-        PyObject *result = _PyObject_FastCall(hook, stack, 3);
+        PyObject* args[3] = {typ, exc, tb};
+        PyObject *result = PyObject_Vectorcall(hook, args, 3, NULL);
         if (result == NULL) {
             handle_system_exit();
 
@@ -956,7 +955,7 @@ print_exception_file_and_line(struct exception_print_context *ctx,
     PyObject *f = ctx->file;
 
     PyObject *tmp;
-    int res = _PyObject_LookupAttr(*value_p, &_Py_ID(print_file_and_line), &tmp);
+    int res = PyObject_GetOptionalAttr(*value_p, &_Py_ID(print_file_and_line), &tmp);
     if (res <= 0) {
         if (res < 0) {
             PyErr_Clear();
@@ -1134,15 +1133,13 @@ print_exception_notes(struct exception_print_context *ctx, PyObject *value)
         return 0;
     }
 
-    if (!PyObject_HasAttr(value, &_Py_ID(__notes__))) {
-        return 0;
-    }
-    PyObject *notes = PyObject_GetAttr(value, &_Py_ID(__notes__));
-    if (notes == NULL) {
-        return -1;
+    PyObject *notes;
+    int res = PyObject_GetOptionalAttr(value, &_Py_ID(__notes__), &notes);
+    if (res <= 0) {
+        return res;
     }
     if (!PySequence_Check(notes) || PyUnicode_Check(notes) || PyBytes_Check(notes)) {
-        int res = 0;
+        res = 0;
         if (write_indented_margin(ctx, f) < 0) {
             res = -1;
         }
@@ -1567,7 +1564,7 @@ _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
     Py_XDECREF(ctx.seen);
 
     /* Call file.flush() */
-    PyObject *res = _PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
+    PyObject *res = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
     if (!res) {
         /* Silently ignore file.flush() error */
         PyErr_Clear();
@@ -1679,7 +1676,7 @@ flush_io_stream(PyThreadState *tstate, PyObject *name)
 {
     PyObject *f = _PySys_GetAttr(tstate, name);
     if (f != NULL) {
-        PyObject *r = _PyObject_CallMethodNoArgs(f, &_Py_ID(flush));
+        PyObject *r = PyObject_CallMethodNoArgs(f, &_Py_ID(flush));
         if (r) {
             Py_DECREF(r);
         }
@@ -1717,12 +1714,16 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
     _PyRuntime.signals.unhandled_keyboard_interrupt = 0;
 
     /* Set globals['__builtins__'] if it doesn't exist */
-    if (globals != NULL && _PyDict_GetItemStringWithError(globals, "__builtins__") == NULL) {
-        if (PyErr_Occurred() ||
-            PyDict_SetItemString(globals, "__builtins__",
-                                 tstate->interp->builtins) < 0)
-        {
+    if (globals != NULL) {
+        int has_builtins = PyDict_ContainsString(globals, "__builtins__");
+        if (has_builtins < 0) {
             return NULL;
+        }
+        if (!has_builtins) {
+            if (PyDict_SetItemString(globals, "__builtins__",
+                                     tstate->interp->builtins) < 0) {
+                return NULL;
+            }
         }
     }
 
@@ -1811,6 +1812,11 @@ Py_CompileStringObject(const char *str, PyObject *filename, int start,
         return NULL;
     }
     if (flags && (flags->cf_flags & PyCF_ONLY_AST)) {
+        if ((flags->cf_flags & PyCF_OPTIMIZED_AST) == PyCF_OPTIMIZED_AST) {
+            if (_PyCompile_AstOptimize(mod, filename, flags, optimize, arena) < 0) {
+                return NULL;
+            }
+        }
         PyObject *result = PyAST_mod2obj(mod);
         _PyArena_Free(arena);
         return result;

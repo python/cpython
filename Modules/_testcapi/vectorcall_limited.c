@@ -3,7 +3,7 @@
 
 #ifdef LIMITED_API_AVAILABLE
 
-#include "structmember.h"         // PyMemberDef
+
 
 /* Test Vectorcall in the limited API */
 
@@ -132,7 +132,7 @@ leave:
 }
 
 static PyMemberDef LimitedVectorCallClass_members[] = {
-    {"__vectorcalloffset__", T_PYSSIZET, sizeof(PyObject), READONLY},
+    {"__vectorcalloffset__", Py_T_PYSSIZET, sizeof(PyObject), Py_READONLY},
     {NULL}
 };
 

@@ -7,11 +7,13 @@
     Written by Amaury Forgeot d'Arc and Antoine Pitrou
 */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_bytesobject.h"   // _PyBytes_Join()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_object.h"
-#include "structmember.h"         // PyMemberDef
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"      // _Py_FatalErrorFormat()
+#include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
+
 #include "_iomodule.h"
 
 /*[clinic input]
@@ -293,7 +295,7 @@ _enter_buffered_busy(buffered *self)
                      "reentrant call inside %R", self);
         return 0;
     }
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     relax_locking = _Py_IsInterpreterFinalizing(interp);
     Py_BEGIN_ALLOW_THREADS
     if (!relax_locking)
@@ -1462,7 +1464,7 @@ buffered_repr(buffered *self)
 {
     PyObject *nameobj, *res;
 
-    if (_PyObject_LookupAttr((PyObject *) self, &_Py_ID(name), &nameobj) < 0) {
+    if (PyObject_GetOptionalAttr((PyObject *) self, &_Py_ID(name), &nameobj) < 0) {
         if (!PyErr_ExceptionMatches(PyExc_ValueError)) {
             return NULL;
         }
@@ -1629,7 +1631,7 @@ _bufferedreader_read_all(buffered *self)
     }
     _bufferedreader_reset_buf(self);
 
-    if (_PyObject_LookupAttr(self->raw, &_Py_ID(readall), &readall) < 0) {
+    if (PyObject_GetOptionalAttr(self->raw, &_Py_ID(readall), &readall) < 0) {
         goto cleanup;
     }
     if (readall) {
@@ -2476,10 +2478,10 @@ static PyMethodDef bufferedreader_methods[] = {
 };
 
 static PyMemberDef bufferedreader_members[] = {
-    {"raw", T_OBJECT, offsetof(buffered, raw), READONLY},
-    {"_finalizing", T_BOOL, offsetof(buffered, finalizing), 0},
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(buffered, weakreflist), READONLY},
-    {"__dictoffset__", T_PYSSIZET, offsetof(buffered, dict), READONLY},
+    {"raw", _Py_T_OBJECT, offsetof(buffered, raw), Py_READONLY},
+    {"_finalizing", Py_T_BOOL, offsetof(buffered, finalizing), 0},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(buffered, weakreflist), Py_READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(buffered, dict), Py_READONLY},
     {NULL}
 };
 
@@ -2536,10 +2538,10 @@ static PyMethodDef bufferedwriter_methods[] = {
 };
 
 static PyMemberDef bufferedwriter_members[] = {
-    {"raw", T_OBJECT, offsetof(buffered, raw), READONLY},
-    {"_finalizing", T_BOOL, offsetof(buffered, finalizing), 0},
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(buffered, weakreflist), READONLY},
-    {"__dictoffset__", T_PYSSIZET, offsetof(buffered, dict), READONLY},
+    {"raw", _Py_T_OBJECT, offsetof(buffered, raw), Py_READONLY},
+    {"_finalizing", Py_T_BOOL, offsetof(buffered, finalizing), 0},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(buffered, weakreflist), Py_READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(buffered, dict), Py_READONLY},
     {NULL}
 };
 
@@ -2592,8 +2594,8 @@ static PyMethodDef bufferedrwpair_methods[] = {
 };
 
 static PyMemberDef bufferedrwpair_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(rwpair, weakreflist), READONLY},
-    {"__dictoffset__", T_PYSSIZET, offsetof(rwpair, dict), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(rwpair, weakreflist), Py_READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(rwpair, dict), Py_READONLY},
     {NULL}
 };
 
@@ -2654,10 +2656,10 @@ static PyMethodDef bufferedrandom_methods[] = {
 };
 
 static PyMemberDef bufferedrandom_members[] = {
-    {"raw", T_OBJECT, offsetof(buffered, raw), READONLY},
-    {"_finalizing", T_BOOL, offsetof(buffered, finalizing), 0},
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(buffered, weakreflist), READONLY},
-    {"__dictoffset__", T_PYSSIZET, offsetof(buffered, dict), READONLY},
+    {"raw", _Py_T_OBJECT, offsetof(buffered, raw), Py_READONLY},
+    {"_finalizing", Py_T_BOOL, offsetof(buffered, finalizing), 0},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(buffered, weakreflist), Py_READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(buffered, dict), Py_READONLY},
     {NULL}
 };
 

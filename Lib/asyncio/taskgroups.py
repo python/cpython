@@ -2,7 +2,7 @@
 # license: PSFL.
 
 
-__all__ = ["TaskGroup"]
+__all__ = ("TaskGroup",)
 
 from . import events
 from . import exceptions

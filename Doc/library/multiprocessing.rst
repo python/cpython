@@ -2707,7 +2707,7 @@ handler type) for messages from different processes to get mixed up.
    Returns the logger used by :mod:`multiprocessing`.  If necessary, a new one
    will be created.
 
-   When first created the logger has level :data:`logging.NOTSET` and no
+   When first created the logger has level :const:`logging.NOTSET` and no
    default handler. Messages sent to this logger will not by default propagate
    to the root logger.
 
@@ -2988,7 +2988,7 @@ Global variables
 Safe importing of main module
 
     Make sure that the main module can be safely imported by a new Python
-    interpreter without causing unintended side effects (such a starting a new
+    interpreter without causing unintended side effects (such as starting a new
     process).
 
     For example, using the *spawn* or *forkserver* start method

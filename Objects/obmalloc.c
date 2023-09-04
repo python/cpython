@@ -2,10 +2,11 @@
 
 #include "Python.h"
 #include "pycore_code.h"          // stats
-#include "pycore_pystate.h"       // _PyInterpreterState_GET
-
+#include "pycore_object.h"        // _PyDebugAllocatorStats() definition
 #include "pycore_obmalloc.h"
+#include "pycore_pyerrors.h"      // _Py_FatalErrorFormat()
 #include "pycore_pymem.h"
+#include "pycore_pystate.h"       // _PyInterpreterState_GET
 
 #include <stdlib.h>               // malloc()
 #include <stdbool.h>
