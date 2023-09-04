@@ -491,7 +491,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 Pdb._previous_sigint_handler = None
 
         _chained_exceptions, tb = self._get_tb_and_exceptions(tb_or_exc)
-        if not _chained_exceptions and isinstance(tb_or_exc, BaseException):
+        if (
+            not _chained_exceptions
+            and isinstance(tb_or_exc, BaseException)
+            and tb is None
+        ):
             raise ValueError("No exception traceback to inspect")
         with self._hold_exceptions(_chained_exceptions):
             if self.setup(frame, tb):

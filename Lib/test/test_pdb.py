@@ -907,7 +907,7 @@ def test_post_mortem_chained():
 def test_post_mortem_cause_no_context():
     """Test post mortem traceback debugging of chained exception
 
-    >>> def make_ex_with_stack(type_, *content, from_=None):
+    >>> def make_exc_with_stack(type_, *content, from_=None):
     ...     try:
     ...         raise type_(*content) from from_
     ...     except Exception as out:
@@ -918,7 +918,7 @@ def test_post_mortem_cause_no_context():
     ...     try:
     ...         raise ValueError('Context Not Shown')
     ...     except Exception as e1:
-    ...         raise ValueError("With Cause") from make_ex_with_stack(TypeError,'The Cause')
+    ...         raise ValueError("With Cause") from make_exc_with_stack(TypeError,'The Cause')
 
     >>> def test_function():
     ...     import pdb;
@@ -943,22 +943,22 @@ def test_post_mortem_cause_no_context():
     ...    except ValueError:
     ...        print('Ok.')
     > <doctest test.test_pdb.test_post_mortem_cause_no_context[1]>(5)main()
-    -> raise ValueError("With Cause") from make_ex_with_stack(TypeError,'The Cause')
+    -> raise ValueError("With Cause") from make_exc_with_stack(TypeError,'The Cause')
     (Pdb) exceptions
         0 TypeError('The Cause')
     >   1 ValueError('With Cause')
     (Pdb) exceptions 0
-    > <doctest test.test_pdb.test_post_mortem_cause_no_context[0]>(3)make_ex_with_stack()
+    > <doctest test.test_pdb.test_post_mortem_cause_no_context[0]>(3)make_exc_with_stack()
     -> raise type_(*content) from from_
     (Pdb) exceptions 1
     > <doctest test.test_pdb.test_post_mortem_cause_no_context[1]>(5)main()
-    -> raise ValueError("With Cause") from make_ex_with_stack(TypeError,'The Cause')
+    -> raise ValueError("With Cause") from make_exc_with_stack(TypeError,'The Cause')
     (Pdb) up
     > <doctest test.test_pdb.test_post_mortem_cause_no_context[2]>(5)test_function()
     -> main()
     (Pdb) down
     > <doctest test.test_pdb.test_post_mortem_cause_no_context[1]>(5)main()
-    -> raise ValueError("With Cause") from make_ex_with_stack(TypeError,'The Cause')
+    -> raise ValueError("With Cause") from make_exc_with_stack(TypeError,'The Cause')
     (Pdb) exit"""
 
 
