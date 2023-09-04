@@ -865,26 +865,22 @@ which incur interpreter overhead.
        # first_true([a,b], x, f) --> a if f(a) else b if f(b) else x
        return next(filter(pred, iterable), default)
 
-   def iter_index(iterable, value, start=0):
+   def iter_index(iterable, value, start=0, stop=None):
        "Return indices where a value occurs in a sequence or iterable."
        # iter_index('AABCADEAF', 'A') --> 0 1 4 7
-       try:
-           seq_index = iterable.index
-       except AttributeError:
+       seq_index = getattr(iterable, 'index', None)
+       if seq_index is None:
            # Slow path for general iterables
-           it = islice(iterable, start, None)
-           i = start - 1
-           try:
-               while True:
-                   yield (i := i + operator.indexOf(it, value) + 1)
-           except ValueError:
-               pass
+           it = islice(iterable, start, stop)
+           for i, element in enumerate(it, start):
+               if element is value or element == value:
+                   yield i
        else:
            # Fast path for sequences
            i = start - 1
            try:
                while True:
-                   yield (i := seq_index(value, i+1))
+                   yield (i := seq_index(value, i+1, stop))
            except ValueError:
                pass
 
@@ -1333,6 +1329,21 @@ The following recipes have a more mathematical flavor:
     []
     >>> list(iter_index(iter('AABCADEAF'), 'A', 10))
     []
+    >>> list(iter_index('AABCADEAF', 'A', 1, 7))
+    [1, 4]
+    >>> list(iter_index(iter('AABCADEAF'), 'A', 1, 7))
+    [1, 4]
+    >>> # Verify that ValueErrors not swallowed (gh-107208)
+    >>> def assert_no_value(iterable, forbidden_value):
+    ...     for item in iterable:
+    ...         if item == forbidden_value:
+    ...             raise ValueError
+    ...         yield item
+    ...
+    >>> list(iter_index(assert_no_value('AABCADEAF', 'B'), 'A'))
+    Traceback (most recent call last):
+    ...
+    ValueError
 
     >>> list(sieve(30))
     [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
