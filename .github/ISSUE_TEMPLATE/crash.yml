@@ -15,6 +15,8 @@ body:
         Include a [minimal, reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) if possible.
         Copy and paste code where possible rather than using screenshots,
         and put any code blocks inside triple backticks.
+        If there were any error messages or core dumps,
+        make sure to copy them here as well.
 
       value: |
         ```python
@@ -22,24 +24,6 @@ body:
         ```
     validations:
       required: true
-  - type: textarea
-    attributes:
-      label: Error messages
-      description: >
-        Enter any error messages caused by the crash, including a core dump if there is one.
-        Feel free to leave this bit blank if it isn't relevant.
-      placeholder: |
-        Error messages should be formatted like this:
-
-        <details>
-        <summary>Error messages/core dump</summary>
-
-        ```
-        # paste errors here, if you have any
-        ```
-        </details>
-    validations:
-      required: false
   - type: dropdown
     attributes:
       label: "CPython versions tested on:"

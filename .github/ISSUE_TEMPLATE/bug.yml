@@ -9,11 +9,17 @@ body:
 
         For help or advice on using Python, try one of the following options instead of opening a GitHub issue:
 
-          - Posting on [Discourse](https://discuss.python.org/c/users/7)
+          - Asking on [Discourse](https://discuss.python.org/c/users/7) or [Stack Overflow](https://stackoverflow.com)
           - Reading the [Python tutorial](https://docs.python.org/3/tutorial/)
           - Emailing [python-list](https://mail.python.org/mailman/listinfo/python-list)
 
-        Also make sure to search the [CPython issue tracker](https://github.com/python/cpython/issues?q=is%3Aissue+sort%3Acreated-desc) to check that the bug has not already been reported.
+        **Is this issue new?**
+
+        Make sure to search the [CPython issue tracker](https://github.com/python/cpython/issues?q=is%3Aissue+sort%3Acreated-desc) to check that the bug has not already been reported.
+
+        **Is this a bug in CPython?**
+
+        Only use this form to report bugs in the CPython project itself. Bugs in third-party projects (e.g. ``pip`` or ``requests``) should be reported to that project instead.
   - type: textarea
     attributes:
       label: "Bug description:"
