@@ -158,6 +158,13 @@ pathlib
   :meth:`~pathlib.Path.is_dir`.
   (Contributed by Barney Gale in :gh:`77609` and :gh:`105793`.)
 
+pdb
+---
+
+* Expressions/Statements whose prefix is a pdb command are now correctly
+  identified and executed.
+  (Contributed by Tian Gao in :gh:`108464`.)
+
 sqlite3
 -------
 
