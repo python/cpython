@@ -52,7 +52,7 @@ SAM (stand-alone modules), which is part of the Tix distribution
 (https://tix.sourceforge.net/).
 
 Build Tix with SAM enabled, perform the appropriate call to
-:c:func:`Tclsam_init`, etc. inside Python's
+:c:func:`!Tclsam_init`, etc. inside Python's
 :file:`Modules/tkappinit.c`, and link with libtclsam and libtksam (you
 might include the Tix libraries as well).
 
