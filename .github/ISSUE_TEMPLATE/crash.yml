@@ -15,8 +15,6 @@ body:
         Include a [minimal, reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) if possible.
         Copy and paste code where possible rather than using screenshots,
         and put any code blocks inside triple backticks.
-        If there were any error messages or core dumps,
-        make sure to copy them here as well.
 
       value: |
         ```python
