@@ -775,7 +775,6 @@ extern "C" {
     INIT_ID(a), \
     INIT_ID(abs_tol), \
     INIT_ID(access), \
-    INIT_ID(aclose), \
     INIT_ID(add), \
     INIT_ID(add_done_callback), \
     INIT_ID(after_in_child), \
@@ -789,9 +788,7 @@ extern "C" {
     INIT_ID(arguments), \
     INIT_ID(argv), \
     INIT_ID(as_integer_ratio), \
-    INIT_ID(asend), \
     INIT_ID(ast), \
-    INIT_ID(athrow), \
     INIT_ID(attribute), \
     INIT_ID(authorizer_callback), \
     INIT_ID(autocommit), \
@@ -917,7 +914,6 @@ extern "C" {
     INIT_ID(exp), \
     INIT_ID(extend), \
     INIT_ID(extra_tokens), \
-    INIT_ID(f), \
     INIT_ID(facility), \
     INIT_ID(factory), \
     INIT_ID(false), \
@@ -962,7 +958,6 @@ extern "C" {
     INIT_ID(globals), \
     INIT_ID(groupindex), \
     INIT_ID(groups), \
-    INIT_ID(h), \
     INIT_ID(handle), \
     INIT_ID(hash_name), \
     INIT_ID(header), \
