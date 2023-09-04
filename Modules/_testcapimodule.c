@@ -24,9 +24,6 @@
 #include <float.h>                // FLT_MAX
 #include <signal.h>
 #include <stddef.h>               // offsetof()
-#ifndef MS_WINDOWS
-#  include <unistd.h>
-#endif
 
 #ifdef HAVE_SYS_WAIT_H
 #  include <sys/wait.h>           // W_STOPCODE
@@ -43,16 +40,8 @@
 // Several parts of this module are broken out into files in _testcapi/.
 // Include definitions from there.
 #include "_testcapi/parts.h"
+#include "_testcapi/util.h"
 
-#define NULLABLE(x) do { if (x == Py_None) x = NULL; } while (0);
-
-#define RETURN_INT(value) do {          \
-        int _ret = (value);             \
-        if (_ret == -1) {               \
-            return NULL;                \
-        }                               \
-        return PyLong_FromLong(_ret);   \
-    } while (0)
 
 // Forward declarations
 static struct PyModuleDef _testcapimodule;
@@ -1333,19 +1322,13 @@ static PyObject *
 test_PyBuffer_SizeFromFormat(PyObject *self, PyObject *args)
 {
     const char *format;
-    Py_ssize_t result;
 
     if (!PyArg_ParseTuple(args, "s:test_PyBuffer_SizeFromFormat",
                           &format)) {
         return NULL;
     }
 
-    result = PyBuffer_SizeFromFormat(format);
-    if (result == -1) {
-        return NULL;
-    }
-
-    return PyLong_FromSsize_t(result);
+    RETURN_SIZE(PyBuffer_SizeFromFormat(format));
 }
 
 /* Test that the fatal error from not having a current thread doesn't
@@ -1426,104 +1409,6 @@ run_in_subinterp(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_RuntimeError, "sub-interpreter creation failed");
         return NULL;
     }
-    r = PyRun_SimpleStringFlags(code, &cflags);
-    Py_EndInterpreter(substate);
-
-    PyThreadState_Swap(mainstate);
-
-    return PyLong_FromLong(r);
-}
-
-/* To run some code in a sub-interpreter. */
-static PyObject *
-run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    const char *code;
-    int use_main_obmalloc = -1;
-    int allow_fork = -1;
-    int allow_exec = -1;
-    int allow_threads = -1;
-    int allow_daemon_threads = -1;
-    int check_multi_interp_extensions = -1;
-    int gil = -1;
-    int r;
-    PyThreadState *substate, *mainstate;
-    /* only initialise 'cflags.cf_flags' to test backwards compatibility */
-    PyCompilerFlags cflags = {0};
-
-    static char *kwlist[] = {"code",
-                             "use_main_obmalloc",
-                             "allow_fork",
-                             "allow_exec",
-                             "allow_threads",
-                             "allow_daemon_threads",
-                             "check_multi_interp_extensions",
-                             "gil",
-                             NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                    "s$ppppppi:run_in_subinterp_with_config", kwlist,
-                    &code, &use_main_obmalloc,
-                    &allow_fork, &allow_exec,
-                    &allow_threads, &allow_daemon_threads,
-                    &check_multi_interp_extensions,
-                    &gil)) {
-        return NULL;
-    }
-    if (use_main_obmalloc < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing use_main_obmalloc");
-        return NULL;
-    }
-    if (allow_fork < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_fork");
-        return NULL;
-    }
-    if (allow_exec < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_exec");
-        return NULL;
-    }
-    if (allow_threads < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_threads");
-        return NULL;
-    }
-    if (gil < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing gil");
-        return NULL;
-    }
-    if (allow_daemon_threads < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_daemon_threads");
-        return NULL;
-    }
-    if (check_multi_interp_extensions < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing check_multi_interp_extensions");
-        return NULL;
-    }
-
-    mainstate = PyThreadState_Get();
-
-    PyThreadState_Swap(NULL);
-
-    const PyInterpreterConfig config = {
-        .use_main_obmalloc = use_main_obmalloc,
-        .allow_fork = allow_fork,
-        .allow_exec = allow_exec,
-        .allow_threads = allow_threads,
-        .allow_daemon_threads = allow_daemon_threads,
-        .check_multi_interp_extensions = check_multi_interp_extensions,
-        .gil = gil,
-    };
-    PyStatus status = Py_NewInterpreterFromConfig(&substate, &config);
-    if (PyStatus_Exception(status)) {
-        /* Since no new thread state was created, there is no exception to
-           propagate; raise a fresh one after swapping in the old thread
-           state. */
-        PyThreadState_Swap(mainstate);
-        _PyErr_SetFromPyStatus(status);
-        PyObject *exc = PyErr_GetRaisedException();
-        PyErr_SetString(PyExc_RuntimeError, "sub-interpreter creation failed");
-        _PyErr_ChainExceptions1(exc);
-        return NULL;
-    }
-    assert(substate != NULL);
     r = PyRun_SimpleStringFlags(code, &cflags);
     Py_EndInterpreter(substate);
 
@@ -3376,9 +3261,6 @@ static PyMethodDef TestMethods[] = {
     {"crash_no_current_thread", crash_no_current_thread,         METH_NOARGS},
     {"test_current_tstate_matches", test_current_tstate_matches, METH_NOARGS},
     {"run_in_subinterp",        run_in_subinterp,                METH_VARARGS},
-    {"run_in_subinterp_with_config",
-     _PyCFunction_CAST(run_in_subinterp_with_config),
-     METH_VARARGS | METH_KEYWORDS},
     {"get_crossinterp_data",    get_crossinterp_data,            METH_VARARGS},
     {"restore_crossinterp_data", restore_crossinterp_data,       METH_VARARGS},
     {"create_cfunction",        create_cfunction,                METH_NOARGS},
@@ -4103,6 +3985,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_GC(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_PyAtomic(m) < 0) {
         return NULL;
     }
 

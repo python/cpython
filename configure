@@ -669,6 +669,8 @@ MODULE__TESTBUFFER_FALSE
 MODULE__TESTBUFFER_TRUE
 MODULE__TESTINTERNALCAPI_FALSE
 MODULE__TESTINTERNALCAPI_TRUE
+MODULE__TESTCLINIC_LIMITED_FALSE
+MODULE__TESTCLINIC_LIMITED_TRUE
 MODULE__TESTCLINIC_FALSE
 MODULE__TESTCLINIC_TRUE
 MODULE__TESTCAPI_FALSE
@@ -8562,7 +8564,10 @@ printf "%s\n" "$as_me: llvm-profdata found via xcrun: ${LLVM_PROFDATA}" >&6;}
   fi
 fi
 LLVM_PROF_ERR=no
-case $CC in
+
+# GNU Autoconf recommends the use of expr instead of basename.
+CC_BASENAME=$(expr "//$CC" : '.*/\(.*\)')
+case "$CC_BASENAME" in
   *clang*)
     # Any changes made here should be reflected in the GCC+Darwin case below
     PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
@@ -9391,7 +9396,7 @@ fi
 
     # ICC doesn't recognize the option, but only emits a warning
     ## XXX does it emit an unused result warning and can it be disabled?
-    case $CC in #(
+    case "$CC_BASENAME" in #(
   *icc*) :
     ac_cv_disable_unused_result_warning=no
 
@@ -9972,7 +9977,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
     ;;
 esac
 
-case "$CC" in
+case "$CC_BASENAME" in
 *mpicc*)
     CFLAGS_NODIST="$CFLAGS_NODIST"
     ;;
@@ -10319,12 +10324,6 @@ ac_fn_c_check_header_compile "$LINENO" "grp.h" "ac_cv_header_grp_h" "$ac_include
 if test "x$ac_cv_header_grp_h" = xyes
 then :
   printf "%s\n" "#define HAVE_GRP_H 1" >>confdefs.h
-
-fi
-ac_fn_c_check_header_compile "$LINENO" "ieeefp.h" "ac_cv_header_ieeefp_h" "$ac_includes_default"
-if test "x$ac_cv_header_ieeefp_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_IEEEFP_H 1" >>confdefs.h
 
 fi
 ac_fn_c_check_header_compile "$LINENO" "io.h" "ac_cv_header_io_h" "$ac_includes_default"
@@ -23566,8 +23565,9 @@ SOABI='cpython-'`echo $VERSION | tr -d .`${ABIFLAGS}${PLATFORM_TRIPLET:+-$PLATFO
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $SOABI" >&5
 printf "%s\n" "$SOABI" >&6; }
 
-# Release and debug (Py_DEBUG) ABI are compatible, but not Py_TRACE_REFS ABI
-if test "$Py_DEBUG" = 'true' -a "$with_trace_refs" != "yes"; then
+# Release build, debug build (Py_DEBUG), and trace refs build (Py_TRACE_REFS)
+# are ABI compatible
+if test "$Py_DEBUG" = 'true'; then
   # Similar to SOABI but remove "d" flag from ABIFLAGS
 
   ALT_SOABI='cpython-'`echo $VERSION | tr -d .``echo $ABIFLAGS | tr -d d`${PLATFORM_TRIPLET:+-$PLATFORM_TRIPLET}
@@ -26547,6 +26547,7 @@ SRCDIRS="\
   Modules/_sqlite \
   Modules/_sre \
   Modules/_testcapi \
+  Modules/_testinternalcapi \
   Modules/_xxtestfuzz \
   Modules/cjkcodecs \
   Modules/expat \
@@ -29952,6 +29953,44 @@ fi
 printf "%s\n" "$py_cv_module__testclinic" >&6; }
 
 
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testclinic_limited" >&5
+printf %s "checking for stdlib extension module _testclinic_limited... " >&6; }
+        if test "$py_cv_module__testclinic_limited" != "n/a"
+then :
+
+    if test "$TEST_MODULES" = yes
+then :
+  if true
+then :
+  py_cv_module__testclinic_limited=yes
+else $as_nop
+  py_cv_module__testclinic_limited=missing
+fi
+else $as_nop
+  py_cv_module__testclinic_limited=disabled
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__TESTCLINIC_LIMITED_STATE=$py_cv_module__testclinic_limited$as_nl"
+  if test "x$py_cv_module__testclinic_limited" = xyes
+then :
+
+
+
+
+fi
+   if test "$py_cv_module__testclinic_limited" = yes; then
+  MODULE__TESTCLINIC_LIMITED_TRUE=
+  MODULE__TESTCLINIC_LIMITED_FALSE='#'
+else
+  MODULE__TESTCLINIC_LIMITED_TRUE='#'
+  MODULE__TESTCLINIC_LIMITED_FALSE=
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__testclinic_limited" >&5
+printf "%s\n" "$py_cv_module__testclinic_limited" >&6; }
+
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testinternalcapi" >&5
 printf %s "checking for stdlib extension module _testinternalcapi... " >&6; }
         if test "$py_cv_module__testinternalcapi" != "n/a"
@@ -30224,7 +30263,7 @@ printf %s "checking for stdlib extension module xxlimited... " >&6; }
         if test "$py_cv_module_xxlimited" != "n/a"
 then :
 
-    if test "$with_trace_refs" = "no"
+    if true
 then :
   if test "$ac_cv_func_dlopen" = yes
 then :
@@ -30262,7 +30301,7 @@ printf %s "checking for stdlib extension module xxlimited_35... " >&6; }
         if test "$py_cv_module_xxlimited_35" != "n/a"
 then :
 
-    if test "$with_trace_refs" = "no"
+    if true
 then :
   if test "$ac_cv_func_dlopen" = yes
 then :
@@ -30689,6 +30728,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTCLINIC_TRUE}" && test -z "${MODULE__TESTCLINIC_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__TESTCLINIC\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TESTCLINIC_LIMITED_TRUE}" && test -z "${MODULE__TESTCLINIC_LIMITED_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TESTCLINIC_LIMITED\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTINTERNALCAPI_TRUE}" && test -z "${MODULE__TESTINTERNALCAPI_FALSE}"; then

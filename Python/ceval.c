@@ -35,9 +35,7 @@
 #include "pydtrace.h"
 #include "setobject.h"
 
-
-#include <ctype.h>
-#include <stdbool.h>
+#include <stdbool.h>              // bool
 
 #ifdef Py_DEBUG
    /* For debugging the interpreter: */
@@ -189,6 +187,34 @@ lltrace_resume_frame(_PyInterpreterFrame *frame)
     fflush(stdout);
     PyErr_SetRaisedException(exc);
 }
+
+static int
+maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, _PyInterpreterFrame *skip_frame, PyObject *globals)
+{
+    if (globals == NULL) {
+        return 0;
+    }
+    if (frame == skip_frame) {
+        return 0;
+    }
+    int r = PyDict_Contains(globals, &_Py_ID(__lltrace__));
+    if (r < 0) {
+        return -1;
+    }
+    int lltrace = r;
+    if (!lltrace) {
+        // When tracing executed uops, also trace bytecode
+        char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
+        if (uop_debug != NULL && *uop_debug >= '0') {
+            lltrace = (*uop_debug - '0') >= 5;  // TODO: Parse an int and all that
+        }
+    }
+    if (lltrace) {
+        lltrace_resume_frame(frame);
+    }
+    return lltrace;
+}
+
 #endif
 
 static void monitor_raise(PyThreadState *tstate,
@@ -576,6 +602,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     return _PyEval_EvalFrame(tstate, f->f_frame, throwflag);
 }
 
+#define TIER_ONE 1
 #include "ceval_macros.h"
 
 
@@ -714,24 +741,9 @@ resume_frame:
     SET_LOCALS_FROM_FRAME();
 
 #ifdef LLTRACE
-    {
-        if (frame != &entry_frame && GLOBALS()) {
-            int r = PyDict_Contains(GLOBALS(), &_Py_ID(__lltrace__));
-            if (r < 0) {
-                goto exit_unwind;
-            }
-            lltrace = r;
-            if (!lltrace) {
-                // When tracing executed uops, also trace bytecode
-                char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
-                if (uop_debug != NULL && *uop_debug >= '0') {
-                    lltrace = (*uop_debug - '0') >= 5;  // TODO: Parse an int and all that
-                }
-            }
-        }
-        if (lltrace) {
-            lltrace_resume_frame(frame);
-        }
+    lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
+    if (lltrace < 0) {
+        goto exit_unwind;
     }
 #endif
 
@@ -752,7 +764,6 @@ resume_frame:
 #endif
         {
 
-#define TIER_ONE 1
 #include "generated_cases.c.h"
 
     /* INSTRUMENTED_LINE has to be here, rather than in bytecodes.c,

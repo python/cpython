@@ -335,21 +335,34 @@ int PyStatus_IsExit(PyStatus status)
 int PyStatus_Exception(PyStatus status)
 { return _PyStatus_EXCEPTION(status); }
 
-PyObject*
+void
 _PyErr_SetFromPyStatus(PyStatus status)
 {
     if (!_PyStatus_IS_ERROR(status)) {
         PyErr_Format(PyExc_SystemError,
-                     "%s() expects an error PyStatus",
-                     _PyStatus_GET_FUNC());
+                     "_PyErr_SetFromPyStatus() status is not an error");
+        return;
     }
-    else if (status.func) {
-        PyErr_Format(PyExc_ValueError, "%s: %s", status.func, status.err_msg);
+
+    const char *err_msg = status.err_msg;
+    if (err_msg == NULL || strlen(err_msg) == 0) {
+        PyErr_Format(PyExc_SystemError,
+                     "_PyErr_SetFromPyStatus() status has no error message");
+        return;
+    }
+
+    if (strcmp(err_msg, _PyStatus_NO_MEMORY_ERRMSG) == 0) {
+        PyErr_NoMemory();
+        return;
+    }
+
+    const char *func = status.func;
+    if (func) {
+        PyErr_Format(PyExc_RuntimeError, "%s: %s", func, err_msg);
     }
     else {
-        PyErr_Format(PyExc_ValueError, "%s", status.err_msg);
+        PyErr_Format(PyExc_RuntimeError, "%s", err_msg);
     }
-    return NULL;
 }
 
 

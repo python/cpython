@@ -67,7 +67,7 @@ Summary -- Release highlights
 
 New grammar features:
 
-* :pep:`701`: Syntactic formalization of f-strings
+* :ref:`whatsnew312-pep701`
 
 Interpreter improvements:
 
@@ -75,13 +75,13 @@ Interpreter improvements:
 
 New typing features:
 
-* :pep:`688`: Making the buffer protocol accessible in Python
+* :ref:`whatsnew312-pep688`
 
 * :ref:`whatsnew312-pep692`
 
 * :ref:`whatsnew312-pep695`
 
-* :pep:`698`: Override Decorator for Static Typing
+* :ref:`whatsnew312-pep698`
 
 Important deprecations, removals or restrictions:
 
@@ -267,6 +267,8 @@ Inlining does result in a few visible behavior changes:
 
 Contributed by Carl Meyer and Vladimir Matveev in :pep:`709`.
 
+.. _whatsnew312-pep688:
+
 PEP 688: Making the buffer protocol accessible in Python
 --------------------------------------------------------
 
@@ -339,6 +341,8 @@ typed dictionaries::
 See :pep:`692` for more details.
 
 (Contributed by Franek Magiera in :gh:`103629`.)
+
+.. _whatsnew312-pep698:
 
 PEP 698: Override Decorator for Static Typing
 ---------------------------------------------
@@ -1013,7 +1017,7 @@ Deprecated
   (Contributed by Serhiy Storchaka and Guido van Rossum in :gh:`100160`.)
 
 * :mod:`calendar`: ``calendar.January`` and ``calendar.February`` constants are deprecated and
-  replaced by :data:`calendar.Month.JANUARY` and :data:`calendar.Month.FEBRUARY`.
+  replaced by :data:`calendar.JANUARY` and :data:`calendar.FEBRUARY`.
   (Contributed by Prince Roshan in :gh:`103636`.)
 
 * :mod:`datetime`: :class:`datetime.datetime`'s :meth:`~datetime.datetime.utcnow` and
@@ -1312,8 +1316,9 @@ Removed
   * References to, and support for :meth:`!module_repr()` has been removed.
     (Contributed by Barry Warsaw in :gh:`97850`.)
 
-  * ``importlib.util.set_package`` has been removed. (Contributed by Brett
-    Cannon in :gh:`65961`.)
+  * ``importlib.util.set_package``, ``importlib.util.set_loader`` and
+    ``importlib.util.module_for_loader`` have all been removed. (Contributed by
+    Brett Cannon and Nikita Sobolev in :gh:`65961` and :gh:`97850`.)
 
   * Support for ``find_loader()`` and ``find_module()`` APIs have been
     removed.  (Contributed by Barry Warsaw in :gh:`98040`.)

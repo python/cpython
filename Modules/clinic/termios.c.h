@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_fileutils.h"     // _PyLong_FileDescriptor_Converter()
 
 PyDoc_STRVAR(termios_tcgetattr__doc__,
 "tcgetattr($module, fd, /)\n"
@@ -292,4 +288,4 @@ termios_tcsetwinsize(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4c79a3bf87370275 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=daecc8ebc8fe29f5 input=a9049054013a1b77]*/

@@ -300,11 +300,11 @@ _PyCode_Quicken(PyCodeObject *code)
     for (int i = 0; i < Py_SIZE(code); i++) {
         opcode = _Py_GetBaseOpcode(code, i);
         assert(opcode < MIN_INSTRUMENTED_OPCODE);
-        // _PyCode_Quicken is only called when initializing a fresh code object.
-        assert(opcode != ENTER_EXECUTOR);
         int caches = _PyOpcode_Caches[opcode];
         if (caches) {
-            instructions[i + 1].cache = adaptive_counter_warmup();
+            // JUMP_BACKWARD counter counts up from 0 until it is > backedge_threshold
+            instructions[i + 1].cache =
+                opcode == JUMP_BACKWARD ? 0 : adaptive_counter_warmup();
             i += caches;
         }
     }

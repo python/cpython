@@ -31,6 +31,17 @@ extern void _PyDebugAllocatorStats(FILE *out, const char *block_name,
 
 extern void _PyObject_DebugTypeStats(FILE *out);
 
+#ifdef Py_TRACE_REFS
+// Forget a reference registered by _Py_NewReference(). Function called by
+// _Py_Dealloc().
+//
+// On a free list, the function can be used before modifying an object to
+// remove the object from traced objects. Then _Py_NewReference() or
+// _Py_NewReferenceNoTotal() should be called again on the object to trace
+// it again.
+extern void _Py_ForgetReference(PyObject *);
+#endif
+
 // Export for shared _testinternalcapi extension
 PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 
@@ -44,7 +55,6 @@ PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
    backwards compatible solution */
 #define _PyObject_HEAD_INIT(type)         \
     {                                     \
-        _PyObject_EXTRA_INIT              \
         .ob_refcnt = _Py_IMMORTAL_REFCNT, \
         .ob_type = (type)                 \
     },
@@ -172,7 +182,9 @@ _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
 
 extern void _PyType_InitCache(PyInterpreterState *interp);
 
-extern void _PyObject_InitState(PyInterpreterState *interp);
+extern PyStatus _PyObject_InitState(PyInterpreterState *interp);
+extern void _PyObject_FiniState(PyInterpreterState *interp);
+extern bool _PyRefchain_IsTraced(PyInterpreterState *interp, PyObject *obj);
 
 /* Inline functions trading binary compatibility for speed:
    _PyObject_Init() is the fast version of PyObject_Init(), and
@@ -291,7 +303,7 @@ extern void _PyDebug_PrintTotalRefs(void);
 #endif
 
 #ifdef Py_TRACE_REFS
-extern void _Py_AddToAllObjects(PyObject *op, int force);
+extern void _Py_AddToAllObjects(PyObject *op);
 extern void _Py_PrintReferences(PyInterpreterState *, FILE *);
 extern void _Py_PrintReferenceAddresses(PyInterpreterState *, FILE *);
 #endif
@@ -441,6 +453,10 @@ extern int _PyObject_IsAbstract(PyObject *);
 
 extern int _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
 extern PyObject* _PyObject_NextNotImplemented(PyObject *);
+
+// Pickle support.
+// Export for '_datetime' shared extension
+PyAPI_FUNC(PyObject*) _PyObject_GetState(PyObject *);
 
 /* C function call trampolines to mitigate bad function pointer casts.
  *

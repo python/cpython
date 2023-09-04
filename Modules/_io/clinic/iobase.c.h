@@ -2,17 +2,18 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 
 PyDoc_STRVAR(_io__IOBase_seek__doc__,
 "seek($self, offset, whence=os.SEEK_SET, /)\n"
 "--\n"
 "\n"
 "Change the stream position to the given byte offset.\n"
+"\n"
+"  offset\n"
+"    The stream position, relative to \'whence\'.\n"
+"  whence\n"
+"    The relative position to seek from.\n"
 "\n"
 "The offset is interpreted relative to the position indicated by whence.\n"
 "Values for whence are:\n"
@@ -436,4 +437,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=0f064cfd54e3c1a5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=95e1633805d10294 input=a9049054013a1b77]*/
