@@ -110,6 +110,7 @@ bytes(cdata)
 
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_pyerrors.h"      // _PyErr_WriteUnraisableMsg()
 
 
 #include <ffi.h>

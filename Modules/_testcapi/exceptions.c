@@ -279,36 +279,6 @@ _testcapi_set_exception(PyObject *module, PyObject *new_exc)
 }
 
 /*[clinic input]
-_testcapi.write_unraisable_exc
-    exception as exc: object
-    err_msg: object
-    obj: object
-    /
-[clinic start generated code]*/
-
-static PyObject *
-_testcapi_write_unraisable_exc_impl(PyObject *module, PyObject *exc,
-                                    PyObject *err_msg, PyObject *obj)
-/*[clinic end generated code: output=39827c5e0a8c2092 input=582498da5b2ee6cf]*/
-{
-
-    const char *err_msg_utf8;
-    if (err_msg != Py_None) {
-        err_msg_utf8 = PyUnicode_AsUTF8(err_msg);
-        if (err_msg_utf8 == NULL) {
-            return NULL;
-        }
-    }
-    else {
-        err_msg_utf8 = NULL;
-    }
-
-    PyErr_SetObject((PyObject *)Py_TYPE(exc), exc);
-    _PyErr_WriteUnraisableMsg(err_msg_utf8, obj);
-    Py_RETURN_NONE;
-}
-
-/*[clinic input]
 _testcapi.traceback_print
     traceback: object
     file: object
@@ -384,7 +354,6 @@ static PyMethodDef test_methods[] = {
     _TESTCAPI_SET_EXC_INFO_METHODDEF
     _TESTCAPI_SET_EXCEPTION_METHODDEF
     _TESTCAPI_TRACEBACK_PRINT_METHODDEF
-    _TESTCAPI_WRITE_UNRAISABLE_EXC_METHODDEF
     _TESTCAPI_UNSTABLE_EXC_PREP_RERAISE_STAR_METHODDEF
     {NULL},
 };

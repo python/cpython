@@ -289,7 +289,7 @@ def test_excepthook():
 
 
 def test_unraisablehook():
-    from _testcapi import write_unraisable_exc
+    from _testinternalcapi import write_unraisable_exc
 
     def unraisablehook(hookargs):
         pass
