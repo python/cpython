@@ -1784,8 +1784,9 @@ These collections are provided for automatic introspection of bytecode
 instructions:
 
 .. versionchanged:: 3.12
-   The collections now contain pseudo instructions as well. These are
-   opcodes with values ``>= MIN_PSEUDO_OPCODE``.
+   The collections now contain pseudo instructions and instrumented
+   instructions as well. These are opcodes with values ``>= MIN_PSEUDO_OPCODE``
+   and ``>= MIN_INSTRUMENTED_OPCODE``.
 
 .. data:: opname
 
