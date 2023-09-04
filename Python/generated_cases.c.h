@@ -29,6 +29,7 @@
         TARGET(RESUME_CHECK) {
 #if defined(__EMSCRIPTEN__)
             DEOPT_IF(emscripten_signal_clock == 0, RESUME);
+            emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
 #endif
             /* Possibly combine these two checks */
             DEOPT_IF(_PyFrame_GetCode(frame)->_co_instrumentation_version
