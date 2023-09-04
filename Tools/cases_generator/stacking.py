@@ -428,8 +428,8 @@ def write_components(
         if mgr.instr.name in ("_PUSH_FRAME", "_POP_FRAME"):
             # Adjust stack to min_offset (input effects materialized)
             out.stack_adjust(mgr.min_offset.deep, mgr.min_offset.high)
-            # Use clone() since adjust_inverse() mutates final_offset
-            mgr.adjust_inverse(mgr.final_offset.clone())
+            assert mgr is managers[-1]
+            write_all_pokes(mgr.final_offset, managers, out)
 
         if mgr.instr.name == "SAVE_CURRENT_IP":
             next_instr_is_set = True
@@ -445,17 +445,29 @@ def write_components(
         if mgr is managers[-1] and not next_instr_is_set:
             # TODO: Explain why this adjustment is needed.
             out.stack_adjust(mgr.final_offset.deep, mgr.final_offset.high)
-            # Use clone() since adjust_inverse() mutates final_offset
-            mgr.adjust_inverse(mgr.final_offset.clone())
-
-        for poke in mgr.pokes:
-            if not poke.effect.size and poke.effect.name not in mgr.instr.unmoved_names:
-                out.assign(
-                    poke.as_stack_effect(),
-                    poke.effect,
-                )
+            write_all_pokes(mgr.final_offset, managers, out)
 
     return next_instr_is_set
+
+
+def write_all_pokes(
+    offset: StackOffset, managers: list[EffectManager], out: Formatter
+) -> None:
+    # Clone offset since adjust_inverse() mutates final_offset
+    offset = offset.clone()
+    # Emit all remaining pushes (pokes)
+    for m in managers:
+        m.adjust_inverse(offset)
+        write_pokes(m, out)
+
+
+def write_pokes(mgr: EffectManager, out: Formatter) -> None:
+    for poke in mgr.pokes:
+        if not poke.effect.size and poke.effect.name not in mgr.instr.unmoved_names:
+            out.assign(
+                poke.as_stack_effect(),
+                poke.effect,
+            )
 
 
 def write_single_instr_for_abstract_interp(instr: Instruction, out: Formatter) -> None:
