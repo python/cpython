@@ -907,11 +907,18 @@ def test_post_mortem_chained():
 def test_post_mortem_cause_no_context():
     """Test post mortem traceback debugging of chained exception
 
+    >>> def make_ex_with_stack(type_, *content, from_=None):
+    ...     try:
+    ...         raise type_(*content) from from_
+    ...     except Exception as out:
+    ...         return out
+    ...
+
     >>> def main():
     ...     try:
     ...         raise ValueError('Context Not Shown')
     ...     except Exception as e1:
-    ...         raise ValueError("With Cause") from TypeError('The Cause')
+    ...         raise ValueError("With Cause") from make_ex_with_stack(TypeError,'The Cause')
 
     >>> def test_function():
     ...     import pdb;
@@ -925,6 +932,7 @@ def test_post_mortem_cause_no_context():
 
     >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     ...     'exceptions',
+    ...     'exceptions 0',
     ...     'exceptions 1',
     ...     'up',
     ...     'down',
@@ -934,20 +942,23 @@ def test_post_mortem_cause_no_context():
     ...        test_function()
     ...    except ValueError:
     ...        print('Ok.')
-    > <doctest test.test_pdb.test_post_mortem_cause_no_context[0]>(5)main()
-    -> raise ValueError("With Cause") from TypeError('The Cause')
+    > <doctest test.test_pdb.test_post_mortem_cause_no_context[1]>(5)main()
+    -> raise ValueError("With Cause") from make_ex_with_stack(TypeError,'The Cause')
     (Pdb) exceptions
-      0 TypeError('The Cause')
-    > 1 ValueError('With Cause')
+        0 TypeError('The Cause')
+    >   1 ValueError('With Cause')
+    (Pdb) exceptions 0
+    > <doctest test.test_pdb.test_post_mortem_cause_no_context[0]>(3)make_ex_with_stack()
+    -> raise type_(*content) from from_
     (Pdb) exceptions 1
-    > <doctest test.test_pdb.test_post_mortem_cause_no_context[0]>(5)main()
-    -> raise ValueError("With Cause") from TypeError('The Cause')
+    > <doctest test.test_pdb.test_post_mortem_cause_no_context[1]>(5)main()
+    -> raise ValueError("With Cause") from make_ex_with_stack(TypeError,'The Cause')
     (Pdb) up
-    > <doctest test.test_pdb.test_post_mortem_cause_no_context[1]>(5)test_function()
+    > <doctest test.test_pdb.test_post_mortem_cause_no_context[2]>(5)test_function()
     -> main()
     (Pdb) down
-    > <doctest test.test_pdb.test_post_mortem_cause_no_context[0]>(5)main()
-    -> raise ValueError("With Cause") from TypeError('The Cause')
+    > <doctest test.test_pdb.test_post_mortem_cause_no_context[1]>(5)main()
+    -> raise ValueError("With Cause") from make_ex_with_stack(TypeError,'The Cause')
     (Pdb) exit"""
 
 
@@ -1063,6 +1074,65 @@ def test_post_mortem_from_none():
     (Pdb) exceptions
     > 0 ValueError('With Cause, and cause has context')
     (Pdb) exit
+    """
+
+
+def test_post_mortem_from_no_stack():
+    """Test post mortem traceback debugging of chained exception
+
+    especially when one exception has not stack.
+
+    >>> def main():
+    ...     raise Exception() from Exception()
+
+
+    >>> def test_function():
+    ...     import pdb;
+    ...     instance = pdb.Pdb(nosigint=True, readrc=False)
+    ...     try:
+    ...         main()
+    ...     except Exception as e:
+    ...         # same as pdb.post_mortem(e), but with custom pdb instance.
+    ...         instance.reset()
+    ...         instance.interaction(None, e)
+
+    >>> with PdbTestInput(  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...     ["exceptions",
+    ...     "exit"],
+    ... ):
+    ...    try:
+    ...        test_function()
+    ...    except ValueError:
+    ...        print('Correctly reraised.')
+    > <doctest test.test_pdb.test_post_mortem_from_no_stack[0]>(2)main()
+    -> raise Exception() from Exception()
+    (Pdb) exceptions
+    >   0 Exception()
+    (Pdb) exit
+    """
+
+
+def test_post_mortem_single_no_stack():
+    """Test post mortem called when origin exception has not stack
+
+
+    >>> def test_function():
+    ...     import pdb;
+    ...     instance = pdb.Pdb(nosigint=True, readrc=False)
+    ...     import sys
+    ...     sys.last_exc = Exception()
+    ...     # same as pdb.post_mortem(e), but with custom pdb instance.
+    ...     instance.reset()
+    ...     instance.interaction(None, sys.last_exc)
+
+    >>> with PdbTestInput(  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...     []
+    ... ):
+    ...    try:
+    ...        test_function()
+    ...    except ValueError as e:
+    ...        print(e)
+    A valid traceback must be passed if no exception is being handled
     """
 
 

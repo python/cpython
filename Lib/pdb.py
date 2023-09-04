@@ -438,7 +438,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             traceback, current = tb_or_exc.__traceback__, tb_or_exc
 
             while current is not None:
-                if current in _exceptions:
+                if current in _exceptions or not current.__traceback__:
                     break
                 _exceptions.append(current)
                 if current.__cause__ is not None:
@@ -491,6 +491,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 Pdb._previous_sigint_handler = None
 
         _chained_exceptions, tb = self._get_tb_and_exceptions(tb_or_exc)
+        if not _chained_exceptions and isinstance(tb_or_exc, BaseException):
+            raise ValueError(
+                "A valid traceback must be passed if no exception is being handled"
+            )
         with self._hold_exceptions(_chained_exceptions):
             if self.setup(frame, tb):
                 # no interaction desired at this time (happens if .pdbrc contains
