@@ -3947,11 +3947,17 @@ class TimerfdTests(unittest.TestCase):
         self.addCleanup(os.close, fd)
 
         # Any of 'initial' and 'interval' is negative value.
-        for initial, interval in ( (-1, 0), (1, -1), (-1, -1)):
+        for initial, interval in ( (-1, 0), (1, -1), (-1, -1),  (-0.1, 0), (1, -0.1), (-0.1, -0.1)):
             for flags in (0, os.TFD_TIMER_ABSTIME, os.TFD_TIMER_ABSTIME|os.TFD_TIMER_CANCEL_ON_SET):
                 with self.subTest(flags=flags, initial=initial, interval=interval):
                     with self.assertRaises(OSError) as context:
                         _, _ = os.timerfd_settime(fd, flags=flags, initial=initial, interval=interval)
+                    self.assertEqual(context.exception.errno, errno.EINVAL)
+
+                    with self.assertRaises(OSError) as context:
+                        initial_ns = int( (10**9) * initial )
+                        interval_ns = int( (10**9) * interval )
+                        _, _ = os.timerfd_settime_ns(fd, flags=flags, initial=initial_ns, interval=interval_ns)
                     self.assertEqual(context.exception.errno, errno.EINVAL)
 
     def test_timerfd_interval(self):
