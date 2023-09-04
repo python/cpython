@@ -1043,12 +1043,15 @@ from text files and modules with doctests:
    Convert doctest tests from one or more text files to a
    :class:`unittest.TestSuite`.
 
-   The returned :class:`unittest.TestSuite` is to be run by the unittest framework
-   and runs the interactive examples in each file.  If an example in any file
-   fails, then the synthesized unit test fails, and a :exc:`failureException`
-   exception is raised showing the name of the file containing the test and a
-   (sometimes approximate) line number.  If all the examples in a file are
-   skipped, then the synthesized unit test is also marked as skipped.
+   The returned :class:`unittest.TestSuite` is to be run by the unittest
+   framework and runs the interactive examples in each file.
+   Each file is run as a separate unit test, and each example in a file
+   is run as a :ref:`subtest <subtests>`.
+   If any example in a file fails, then the synthesized unit test fails.
+   The traceback for failure or error contains the name of the file
+   containing the test and a (sometimes approximate) line number.
+   If all the examples in a file are skipped, then the synthesized unit
+   test is also marked as skipped.
 
    Pass one or more paths (as strings) to text files to be examined.
 
@@ -1078,12 +1081,12 @@ from text files and modules with doctests:
 
    Optional argument *setUp* specifies a set-up function for the test suite.
    This is called before running the tests in each file.  The *setUp* function
-   will be passed a :class:`DocTest` object.  The setUp function can access the
+   will be passed a :class:`DocTest` object.  The *setUp* function can access the
    test globals as the *globs* attribute of the test passed.
 
    Optional argument *tearDown* specifies a tear-down function for the test
    suite.  This is called after running the tests in each file.  The *tearDown*
-   function will be passed a :class:`DocTest` object.  The setUp function can
+   function will be passed a :class:`DocTest` object.  The *tearDown* function can
    access the test globals as the *globs* attribute of the test passed.
 
    Optional argument *globs* is a dictionary containing the initial global
@@ -1105,16 +1108,22 @@ from text files and modules with doctests:
    The global ``__file__`` is added to the globals provided to doctests loaded
    from a text file using :func:`DocFileSuite`.
 
+   .. versionchanged:: next
+      Run each example as a :ref:`subtest <subtests>`.
+
 
 .. function:: DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None, setUp=None, tearDown=None, optionflags=0, checker=None)
 
    Convert doctest tests for a module to a :class:`unittest.TestSuite`.
 
-   The returned :class:`unittest.TestSuite` is to be run by the unittest framework
-   and runs each doctest in the module.  If any of the doctests fail, then the
-   synthesized unit test fails, and a :exc:`failureException` exception is raised
-   showing the name of the file containing the test and a (sometimes approximate)
-   line number.  If all the examples in a docstring are skipped, then the
+   The returned :class:`unittest.TestSuite` is to be run by the unittest
+   framework and runs each doctest in the module.
+   Each docstring is run as a separate unit test, and each example in
+   a docstring is run as a :ref:`subtest <subtests>`.
+   If any of the doctests fail, then the synthesized unit test fails.
+   The traceback for failure or error contains the name of the file
+   containing the test and a (sometimes approximate) line number.
+   If all the examples in a docstring are skipped, then the
    synthesized unit test is also marked as skipped.
 
    Optional argument *module* provides the module to be tested.  It can be a module
@@ -1132,7 +1141,7 @@ from text files and modules with doctests:
    drop-in replacement) that is used to extract doctests from the module.
 
    Optional arguments *setUp*, *tearDown*, and *optionflags* are the same as for
-   function :func:`DocFileSuite` above.
+   function :func:`DocFileSuite` above, but they are called for each docstring.
 
    This function uses the same search technique as :func:`testmod`.
 
@@ -1140,11 +1149,8 @@ from text files and modules with doctests:
       :func:`DocTestSuite` returns an empty :class:`unittest.TestSuite` if *module*
       contains no docstrings instead of raising :exc:`ValueError`.
 
-.. exception:: failureException
-
-   When doctests which have been converted to unit tests by :func:`DocFileSuite`
-   or :func:`DocTestSuite` fail, this exception is raised showing the name of
-   the file containing the test and a (sometimes approximate) line number.
+   .. versionchanged:: next
+      Run each example as a :ref:`subtest <subtests>`.
 
 Under the covers, :func:`DocTestSuite` creates a :class:`unittest.TestSuite` out
 of :class:`!doctest.DocTestCase` instances, and :class:`!DocTestCase` is a
@@ -1508,7 +1514,7 @@ DocTestRunner objects
    with strings that should be displayed.  It defaults to ``sys.stdout.write``.  If
    capturing the output is not sufficient, then the display output can be also
    customized by subclassing DocTestRunner, and overriding the methods
-   :meth:`report_start`, :meth:`report_success`,
+   :meth:`report_skip`, :meth:`report_start`, :meth:`report_success`,
    :meth:`report_unexpected_exception`, and :meth:`report_failure`.
 
    The optional keyword argument *checker* specifies the :class:`OutputChecker`
@@ -1533,6 +1539,19 @@ DocTestRunner objects
    :class:`DocTestRunner` defines the following methods:
 
 
+   .. method:: report_skip(out, test, example)
+
+      Report that the given example was skipped.  This method is provided to
+      allow subclasses of :class:`DocTestRunner` to customize their output; it
+      should not be called directly.
+
+      *example* is the example about to be processed.  *test* is the test
+      containing *example*.  *out* is the output function that was passed to
+      :meth:`DocTestRunner.run`.
+
+      .. versionadded:: next
+
+
    .. method:: report_start(out, test, example)
 
       Report that the test runner is about to process the given example. This method
@@ -1540,7 +1559,7 @@ DocTestRunner objects
       output; it should not be called directly.
 
       *example* is the example about to be processed.  *test* is the test
-      *containing example*.  *out* is the output function that was passed to
+      containing *example*.  *out* is the output function that was passed to
       :meth:`DocTestRunner.run`.
 
 
