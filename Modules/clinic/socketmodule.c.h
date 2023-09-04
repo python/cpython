@@ -3,10 +3,9 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
 
 static int
 sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
@@ -58,7 +57,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwargs)
         goto skip_optional_pos;
     }
     if (fastargs[0]) {
-        family = _PyLong_AsInt(fastargs[0]);
+        family = PyLong_AsInt(fastargs[0]);
         if (family == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -67,7 +66,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
     if (fastargs[1]) {
-        type = _PyLong_AsInt(fastargs[1]);
+        type = PyLong_AsInt(fastargs[1]);
         if (type == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -76,7 +75,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
     if (fastargs[2]) {
-        proto = _PyLong_AsInt(fastargs[2]);
+        proto = PyLong_AsInt(fastargs[2]);
         if (proto == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -91,4 +90,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=987155ac4b48a198 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1b68ae94d6cbeeb1 input=a9049054013a1b77]*/

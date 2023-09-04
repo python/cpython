@@ -20,7 +20,8 @@ import tempfile
 from test.support import (captured_stdout, captured_stderr,
                           skip_if_broken_multiprocessing_synchronize, verbose,
                           requires_subprocess, is_emscripten, is_wasi,
-                          requires_venv_with_pip, TEST_HOME_DIR)
+                          requires_venv_with_pip, TEST_HOME_DIR,
+                          requires_resource)
 from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree)
 import unittest
 import venv
@@ -208,8 +209,7 @@ class BasicTest(BaseTest):
     def test_upgrade_dependencies(self):
         builder = venv.EnvBuilder()
         bin_path = 'Scripts' if sys.platform == 'win32' else 'bin'
-        python_exe_realpath = os.path.realpath(sys._base_executable)
-        python_exe = os.path.split(python_exe_realpath)[1]
+        python_exe = os.path.split(sys.executable)[1]
         with tempfile.TemporaryDirectory() as fake_env_dir:
             expect_exe = os.path.normcase(
                 os.path.join(fake_env_dir, bin_path, python_exe)
@@ -552,8 +552,7 @@ class BasicTest(BaseTest):
         self.addCleanup(rmtree, non_installed_dir)
         bindir = os.path.join(non_installed_dir, self.bindir)
         os.mkdir(bindir)
-        python_exe_realpath = os.path.realpath(sys._base_executable)
-        shutil.copy2(python_exe_realpath, bindir)
+        shutil.copy2(sys.executable, bindir)
         libdir = os.path.join(non_installed_dir, platlibdir, self.lib[1])
         os.makedirs(libdir)
         landmark = os.path.join(libdir, "os.py")
@@ -597,7 +596,7 @@ class BasicTest(BaseTest):
         # libpython.so
         ld_library_path = sysconfig.get_config_var("LIBDIR")
         if not ld_library_path or sysconfig.is_python_build():
-            ld_library_path = os.path.abspath(os.path.dirname(python_exe_realpath))
+            ld_library_path = os.path.abspath(os.path.dirname(sys.executable))
         if sys.platform == 'darwin':
             ld_library_path_env = "DYLD_LIBRARY_PATH"
         else:
@@ -777,6 +776,7 @@ class EnsurePipTest(BaseTest):
             )
 
     @requires_venv_with_pip()
+    @requires_resource('cpu')
     def test_with_pip(self):
         self.do_test_with_pip(False)
         self.do_test_with_pip(True)

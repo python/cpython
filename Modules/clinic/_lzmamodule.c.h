@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
 
 PyDoc_STRVAR(_lzma_LZMACompressor_compress__doc__,
 "compress($self, data, /)\n"
@@ -241,7 +241,7 @@ _lzma_LZMADecompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto skip_optional_pos;
     }
     if (fastargs[0]) {
-        format = _PyLong_AsInt(fastargs[0]);
+        format = PyLong_AsInt(fastargs[0]);
         if (format == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -283,7 +283,7 @@ _lzma_is_check_supported(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int check_id;
 
-    check_id = _PyLong_AsInt(arg);
+    check_id = PyLong_AsInt(arg);
     if (check_id == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -338,4 +338,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=96c1fbdada1ef232 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eadc9ee7a11a06f5 input=a9049054013a1b77]*/

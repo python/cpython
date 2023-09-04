@@ -7,6 +7,25 @@
             break;
         }
 
+        case RESUME: {
+            assert(frame == tstate->current_frame);
+            /* Possibly combine this with eval breaker */
+            if (_PyFrame_GetCode(frame)->_co_instrumentation_version != tstate->interp->monitoring_version) {
+                int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
+                if (err) goto error;
+                #if TIER_ONE
+                next_instr--;
+                #endif
+                #if TIER_TWO
+                goto deoptimize;
+                #endif
+            }
+            else if (oparg < 2) {
+                CHECK_EVAL_BREAKER();
+            }
+            break;
+        }
+
         case LOAD_FAST_CHECK: {
             PyObject *value;
             value = GETLOCAL(oparg);
@@ -663,6 +682,33 @@
             if (res == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
+            break;
+        }
+
+        case _POP_FRAME: {
+            PyObject *retval;
+            retval = stack_pointer[-1];
+            STACK_SHRINK(1);
+            assert(EMPTY());
+            #if TIER_ONE
+            assert(frame != &entry_frame);
+            #endif
+            STORE_SP();
+            _Py_LeaveRecursiveCallPy(tstate);
+            // GH-99729: We need to unlink the frame *before* clearing it:
+            _PyInterpreterFrame *dying = frame;
+            frame = tstate->current_frame = dying->previous;
+            _PyEval_FrameClearAndPop(tstate, dying);
+            frame->prev_instr += frame->return_offset;
+            _PyFrame_StackPush(frame, retval);
+            LOAD_SP();
+            LOAD_IP();
+#if LLTRACE && TIER_ONE
+            lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
+            if (lltrace < 0) {
+                goto exit_unwind;
+            }
+#endif
             break;
         }
 
@@ -2147,6 +2193,32 @@
             break;
         }
 
+        case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS: {
+            PyObject *null;
+            PyObject *callable;
+            null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            DEOPT_IF(null != NULL, CALL);
+            DEOPT_IF(Py_TYPE(callable) != &PyMethod_Type, CALL);
+            break;
+        }
+
+        case _INIT_CALL_BOUND_METHOD_EXACT_ARGS: {
+            PyObject *callable;
+            PyObject *func;
+            PyObject *self;
+            callable = stack_pointer[-2 - oparg];
+            STAT_INC(CALL, hit);
+            self = Py_NewRef(((PyMethodObject *)callable)->im_self);
+            stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _INIT_CALL_PY_EXACT_ARGS
+            func = Py_NewRef(((PyMethodObject *)callable)->im_func);
+            stack_pointer[-2 - oparg] = func;  // This is used by CALL, upon deoptimization
+            Py_DECREF(callable);
+            stack_pointer[-2 - oparg] = func;
+            stack_pointer[-1 - oparg] = self;
+            break;
+        }
+
         case _CHECK_PEP_523: {
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             break;
@@ -2173,6 +2245,7 @@
             PyFunctionObject *func = (PyFunctionObject *)callable;
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
+            DEOPT_IF(tstate->py_recursion_remaining <= 1, CALL);
             break;
         }
 
@@ -2209,18 +2282,19 @@
             // Eventually this should be the only occurrence of this code.
             frame->return_offset = 0;
             assert(tstate->interp->eval_frame == NULL);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
+            STORE_SP();
             new_frame->previous = frame;
             CALL_STAT_INC(inlined_py_calls);
             frame = tstate->current_frame = new_frame;
-            #if TIER_ONE
-            goto start_frame;
-            #endif
-            #if TIER_TWO
-            if (_Py_EnterRecursivePy(tstate)) goto pop_1_exit_unwind;
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
-            #endif
+            tstate->py_recursion_remaining--;
+            LOAD_SP();
+            LOAD_IP();
+#if LLTRACE && TIER_ONE
+            lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
+            if (lltrace < 0) {
+                goto exit_unwind;
+            }
+#endif
             break;
         }
 
@@ -2607,7 +2681,8 @@
                 goto error;
             }
 
-            func_obj->func_version = ((PyCodeObject *)codeobj)->co_version;
+            _PyFunction_SetVersion(
+                func_obj, ((PyCodeObject *)codeobj)->co_version);
             func = (PyObject *)func_obj;
             stack_pointer[-1] = func;
             break;

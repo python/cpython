@@ -16,8 +16,30 @@ jobs:
     name: 'Docs'
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      branch_base: 'origin/${{ github.event.pull_request.base.ref }}'
+      branch_pr: 'origin/${{ github.event.pull_request.head.ref }}'
+      refspec_base: '+${{ github.event.pull_request.base.sha }}:remotes/origin/${{ github.event.pull_request.base.ref }}'
+      refspec_pr: '+${{ github.event.pull_request.head.sha }}:remotes/origin/${{ github.event.pull_request.head.ref }}'
     steps:
-    - uses: actions/checkout@v3
+    - name: 'Check out latest PR branch commit'
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+    # Adapted from https://github.com/actions/checkout/issues/520#issuecomment-1167205721
+    - name: 'Fetch commits to get branch diff'
+      run: |
+        # Fetch enough history to find a common ancestor commit (aka merge-base):
+        git fetch origin ${{ env.refspec_pr }} --depth=$(( ${{ github.event.pull_request.commits }} + 1 )) \
+          --no-tags --prune --no-recurse-submodules
+
+        # This should get the oldest commit in the local fetched history (which may not be the commit the PR branched from):
+        COMMON_ANCESTOR=$( git rev-list --first-parent --max-parents=0 --max-count=1 ${{ env.branch_pr }} )
+        DATE=$( git log --date=iso8601 --format=%cd "${COMMON_ANCESTOR}" )
+
+        # Get all commits since that commit date from the base branch (eg: master or main):
+        git fetch origin ${{ env.refspec_base }} --shallow-since="${DATE}" \
+          --no-tags --prune --no-recurse-submodules
     - name: 'Set up Python'
       uses: actions/setup-python@v4
       with:
@@ -28,13 +50,6 @@ jobs:
       run: make -C Doc/ venv
 
     # To annotate PRs with Sphinx nitpicks (missing references)
-    - name: 'Get list of changed files'
-      if: github.event_name == 'pull_request'
-      id: changed_files
-      uses: Ana06/get-changed-files@v2.2.0
-      with:
-        filter: "Doc/**"
-        format: csv  # works for paths with spaces
     - name: 'Build HTML documentation'
       continue-on-error: true
       run: |
@@ -45,7 +60,7 @@ jobs:
       if: github.event_name == 'pull_request'
       run: |
         python Doc/tools/check-warnings.py \
-          --check-and-annotate '${{ steps.changed_files.outputs.added_modified }}' \
+          --annotate-diff '${{ env.branch_base }}' '${{ env.branch_pr }}' \
           --fail-if-regression \
           --fail-if-improved
 

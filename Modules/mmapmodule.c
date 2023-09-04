@@ -23,10 +23,14 @@
 #endif
 
 #include <Python.h>
+#include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_fileutils.h"     // _Py_stat_struct
 
 #include <stddef.h>               // offsetof()
+#ifndef MS_WINDOWS
+#  include <unistd.h>             // close()
+#endif
 
 // to support MS_WINDOWS_SYSTEM OpenFileMappingA / CreateFileMappingA
 // need to be replaced with OpenFileMappingW / CreateFileMappingW
@@ -1355,6 +1359,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     m_obj->data = mmap(NULL, map_size, prot, flags, fd, offset);
     Py_END_ALLOW_THREADS
 
+    int saved_errno = errno;
     if (devzero != -1) {
         close(devzero);
     }
@@ -1362,6 +1367,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     if (m_obj->data == (char *)-1) {
         m_obj->data = NULL;
         Py_DECREF(m_obj);
+        errno = saved_errno;
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
