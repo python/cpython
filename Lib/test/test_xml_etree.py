@@ -4250,7 +4250,7 @@ def test_main(module=None):
         old_factories = None
 
     try:
-        support.run_unittest(*test_classes)
+        return support.run_unittest(*test_classes)
     finally:
         from xml.etree import ElementPath
         # Restore mapping and path cache
