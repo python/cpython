@@ -320,6 +320,164 @@ def testing_context(server_cert=SIGNED_CERTFILE, *, server_chain=True):
     return client_context, server_context, hostname
 
 
+def _on_ssl_client(socket, peer_address, certificate=None,
+                   certreqs=ssl.CERT_NONE, cacerts=None,
+                   chatty=True, starttls_server=False,
+                   alpn_protocols=None, ciphers=None, context=None):
+    # A mildly complicated server, because we want it to work both
+    # with and without the SSL wrapper around the socket connection, so
+    # that we can test the STARTTLS functionality.
+
+    def log(message):
+        if support.verbose and chatty:
+            sys.stdout.write(f' server: {message}\n')
+
+    if context is None:
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        context.verify_mode = certreqs
+        if cacerts:
+            context.load_verify_locations(cacerts)
+        if certificate:
+            context.load_cert_chain(certificate)
+        if alpn_protocols:
+            context.set_alpn_protocols(alpn_protocols)
+        if ciphers:
+            context.set_ciphers(ciphers)
+
+    # Returned via the future
+    selected_alpn_protocols = []
+    shared_ciphers = []
+
+    # Functions swithed on wrapping/unwrapping
+    read = lambda: socket.recv(1024)
+    write = socket.send
+    # A caller of on_client will close the socket
+    close = lambda: None
+
+    def wrap_conn(socket):
+        # Notes on how to treat exceptions thrown by wrap_socket:
+        #
+        # We treat ConnectionResetError as though it were an
+        # SSLError - OpenSSL on Ubuntu abruptly closes the
+        # connection when asked to use an unsupported protocol.
+        #
+        # BrokenPipeError is raised in TLS 1.3 mode, when OpenSSL
+        # tries to send session tickets after handshake.
+        # https://github.com/openssl/openssl/issues/6342
+        #
+        # ConnectionAbortedError is raised in TLS 1.3 mode, when OpenSSL
+        # tries to send session tickets after handshake when using WinSock.
+        #
+        # OSError may occur with wrong protocols, e.g. both
+        # sides use PROTOCOL_TLS_SERVER.
+
+        try:
+            sslconn = context.wrap_socket(socket, server_side=True)
+            nonlocal read, write, close
+            read = lambda: sslconn.recv(1024)
+            write = sslconn.write
+            close = sslconn.close
+
+            nonlocal selected_alpn_protocols, shared_ciphers
+            selected_alpn_protocols = sslconn.selected_alpn_protocol()
+            shared_ciphers = sslconn.shared_ciphers()
+
+            if context.verify_mode == ssl.CERT_REQUIRED:
+                cert = sslconn.getpeercert()
+                log(f'client cert is {pprint.pformat(cert)}')
+                cert_binary = sslconn.getpeercert(True)
+                if cert_binary is None:
+                    log('client did not provide a cert')
+                else:
+                    log(f'cert binary is {len(cert_binary)}b')
+
+            log(f'connection cipher is now {sslconn.cipher()}')
+            return sslconn
+
+        except (ssl.SSLError, OSError) as e:
+            # bpo-44229, bpo-43855, bpo-44237, and bpo-33450:
+            # Ignore spurious EPROTOTYPE returned by write() on macOS.
+            # See also http://erickt.github.io/blog/2014/11/19/adventures-in-debugging-a-potential-osx-kernel-bug/
+            if e.errno != errno.EPROTOTYPE and sys.platform != 'darwin':
+                raise
+
+    log(f'new connection from {peer_address!r}')
+    sslconn = None if starttls_server else wrap_conn(socket)
+
+    forced_exit = False
+    while not forced_exit and (msg := read()):
+        stripped = msg.strip()
+
+        if stripped == b'over':
+            log('client closed connection')
+            forced_exit = True
+            close()
+
+        elif starttls_server and stripped == b'STARTTLS':
+            log('read STARTTLS from client, sending OK')
+            write(b'OK\n')
+            sslconn = wrap_conn(socket)
+
+        elif starttls_server and sslconn and stripped == b'ENDTLS':
+            log('read ENDTLS from client, sending OK')
+            write(b'OK\n')
+            socket = sslconn.unwrap()
+            sslconn = None
+            log('connection is now unencrypted')
+
+        elif stripped == b'CB tls-unique':
+            log('read CB tls-unique from client, sending our CB data')
+            data = sslconn.get_channel_binding('tls-unique')
+            write(repr(data).encode('us-ascii') + b'\n')
+
+        elif stripped == b'PHA':
+            log('initiating post handshake auth')
+            try:
+                sslconn.verify_client_post_handshake()
+            except ssl.SSLError as e:
+                write(repr(e).encode('us-ascii') + b'\n')
+            else:
+                write(b'OK\n')
+
+        elif stripped == b'HASCERT':
+            if sslconn.getpeercert() is not None:
+                write(b'TRUE\n')
+            else:
+                write(b'FALSE\n')
+
+        elif stripped == b'GETCERT':
+            cert = sslconn.getpeercert()
+            write(repr(cert).encode('us-ascii') + b'\n')
+
+        elif stripped == b'VERIFIEDCHAIN':
+            certs = sslconn._sslobj.get_verified_chain()
+            write(len(certs).to_bytes(1, 'big') + b'\n')
+
+        elif stripped == b'UNVERIFIEDCHAIN':
+            certs = sslconn._sslobj.get_unverified_chain()
+            write(len(certs).to_bytes(1, 'big') + b'\n')
+
+        else:
+            ctype = 'encrypted' if sslconn else 'unencrypted'
+            in_str = msg.decode()
+            out_str = in_str.lower()
+            log(f'read {in_str} ({ctype}), sending back {out_str} ({ctype})')
+            write(out_str.encode())
+
+    try:
+        socket = sslconn.unwrap()
+    except OSError:
+        # Many tests shut the TCP connection down without an SSL shutdown.
+        # This causes unwrap() to raise OSError with errno=0.
+        pass
+
+    close()
+    return selected_alpn_protocols, shared_ciphers
+
+
+Server = functools.partial(threading_helper.Server, _on_ssl_client)
+
+
 class BasicSocketTests(unittest.TestCase):
 
     def test_constants(self):
@@ -900,13 +1058,15 @@ class BasicSocketTests(unittest.TestCase):
     def test_read_write_zero(self):
         # empty reads and writes now work, bpo-42854, bpo-31711
         client_context, server_context, hostname = testing_context()
-        server = ThreadedEchoServer(context=server_context)
-        with server:
+        with Server(context=server_context) as address:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
-                s.connect((HOST, server.port))
+                s.connect(address)
                 self.assertEqual(s.recv(0), b"")
                 self.assertEqual(s.send(b""), 0)
+                # OpenSSL postpones the handshake until some data are sent so
+                # force it by queuing explicit shutdown.
+                s.unwrap().close()
 
 
 class ContextTests(unittest.TestCase):
@@ -2740,6 +2900,20 @@ def try_protocol_combo(server_protocol, client_protocol, expect_success,
 
 class ThreadedTests(unittest.TestCase):
 
+    def wait_connection(self, socket):
+        """Force a socket to immediately initiate and process a TLS handshake.
+
+        OpenSSL delays TLS 1.3 session ticket exchange until a socket user
+        attempts to send some data. As a result, we need to write some
+        non-empty string to force the handshake and avoid server-side
+        ConnectionAbortedError ("An established connection was aborted by the
+        software in your host machine") when some test has nothing to send and
+        closes a half-open TLS connection.
+        """
+        echo_message = b'hi'
+        socket.write(echo_message)
+        socket.read(len(echo_message))
+
     def test_echo(self):
         """Basic test of an SSL client connecting to a server"""
         if support.verbose:
@@ -2860,38 +3034,52 @@ class ThreadedTests(unittest.TestCase):
                 cert = s.getpeercert()
                 self.assertTrue(cert, "Can't get peer certificate.")
 
-    def test_check_hostname(self):
+    def test_check_hostname_correct(self):
         if support.verbose:
             sys.stdout.write("\n")
 
         client_context, server_context, hostname = testing_context()
 
-        # correct hostname should verify
-        server = ThreadedEchoServer(context=server_context, chatty=True)
-        with server:
+        with Server(context=server_context) as address:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
-                s.connect((HOST, server.port))
+                s.connect(address)
+                self.wait_connection(s)
                 cert = s.getpeercert()
                 self.assertTrue(cert, "Can't get peer certificate.")
 
-        # incorrect hostname should raise an exception
-        server = ThreadedEchoServer(context=server_context, chatty=True)
-        with server:
-            with client_context.wrap_socket(socket.socket(),
-                                            server_hostname="invalid") as s:
-                with self.assertRaisesRegex(
-                        ssl.CertificateError,
-                        "Hostname mismatch, certificate is not valid for 'invalid'."):
-                    s.connect((HOST, server.port))
+    def test_check_hostname_incorrect(self):
+        if support.verbose:
+            sys.stdout.write("\n")
 
-        # missing server_hostname arg should cause an exception, too
-        server = ThreadedEchoServer(context=server_context, chatty=True)
-        with server:
-            with socket.socket() as s:
-                with self.assertRaisesRegex(ValueError,
-                                            "check_hostname requires server_hostname"):
-                    client_context.wrap_socket(s)
+        if sys.platform == 'darwin':
+            server_exc_type = OSError
+            server_exc_msg = '[Errno 9]'
+        else:
+            server_exc_type = ssl.SSLError
+            server_exc_msg = 'SSLV3_ALERT_BAD_CERTIFICATE'
+
+        with self.assertRaisesRegex(server_exc_type, server_exc_msg):
+            client_context, server_context, hostname = testing_context()
+
+            with Server(context=server_context) as address:
+                with client_context.wrap_socket(socket.socket(),
+                                                server_hostname="invalid") as s:
+                    with self.assertRaisesRegex(
+                            ssl.CertificateError,
+                            "Hostname mismatch, certificate is not valid for 'invalid'."):
+                        s.connect(address)
+
+    def test_check_hostname_missing(self):
+        if support.verbose:
+            sys.stdout.write("\n")
+
+        client_context, server_context, hostname = testing_context()
+
+        with socket.socket() as s:
+            with self.assertRaisesRegex(ValueError,
+                                        "check_hostname requires server_hostname"):
+                client_context.wrap_socket(s)
 
     @unittest.skipUnless(
         ssl.HAS_NEVER_CHECK_COMMON_NAME, "test requires hostname_checks_common_name"
@@ -2928,11 +3116,11 @@ class ThreadedTests(unittest.TestCase):
         server_context.load_cert_chain(SIGNED_CERTFILE_ECC)
 
         # correct hostname should verify
-        server = ThreadedEchoServer(context=server_context, chatty=True)
-        with server:
+        with Server(context=server_context) as address:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
-                s.connect((HOST, server.port))
+                s.connect(address)
+                self.wait_connection(s)
                 cert = s.getpeercert()
                 self.assertTrue(cert, "Can't get peer certificate.")
                 cipher = s.cipher()[0].split('-')
@@ -2954,11 +3142,11 @@ class ThreadedTests(unittest.TestCase):
         server_context.load_cert_chain(SIGNED_CERTFILE)
 
         # correct hostname should verify
-        server = ThreadedEchoServer(context=server_context, chatty=True)
-        with server:
+        with Server(context=server_context) as address:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
-                s.connect((HOST, server.port))
+                s.connect(address)
+                self.wait_connection(s)
                 cert = s.getpeercert()
                 self.assertTrue(cert, "Can't get peer certificate.")
                 cipher = s.cipher()[0].split('-')
@@ -3781,21 +3969,17 @@ class ThreadedTests(unittest.TestCase):
     @unittest.skipUnless("tls-unique" in ssl.CHANNEL_BINDING_TYPES,
                          "'tls-unique' channel binding not available")
     def test_tls_unique_channel_binding(self):
-        """Test tls-unique channel binding."""
         if support.verbose:
             sys.stdout.write("\n")
 
         client_context, server_context, hostname = testing_context()
 
-        server = ThreadedEchoServer(context=server_context,
-                                    chatty=True,
-                                    connectionchatty=False)
-
-        with server:
+        with Server(context=server_context, client_count=2) as address:
             with client_context.wrap_socket(
                     socket.socket(),
                     server_hostname=hostname) as s:
-                s.connect((HOST, server.port))
+                s.connect(address)
+                self.wait_connection(s)
                 # get the data
                 cb_data = s.get_channel_binding("tls-unique")
                 if support.verbose:
@@ -3819,7 +4003,7 @@ class ThreadedTests(unittest.TestCase):
             with client_context.wrap_socket(
                     socket.socket(),
                     server_hostname=hostname) as s:
-                s.connect((HOST, server.port))
+                s.connect(address)
                 new_cb_data = s.get_channel_binding("tls-unique")
                 if support.verbose:
                     sys.stdout.write(
@@ -4188,14 +4372,14 @@ class ThreadedTests(unittest.TestCase):
         client_context.maximum_version = ssl.TLSVersion.TLSv1_2
         client_context2.maximum_version = ssl.TLSVersion.TLSv1_2
 
-        server = ThreadedEchoServer(context=server_context, chatty=False)
-        with server:
+        with Server(context=server_context, chatty=False, client_count=3) as address:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
                 # session is None before handshake
                 self.assertEqual(s.session, None)
                 self.assertEqual(s.session_reused, None)
-                s.connect((HOST, server.port))
+                s.connect(address)
+                self.wait_connection(s)
                 session = s.session
                 self.assertTrue(session)
                 with self.assertRaises(TypeError) as e:
@@ -4204,7 +4388,8 @@ class ThreadedTests(unittest.TestCase):
 
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
-                s.connect((HOST, server.port))
+                s.connect(address)
+                self.wait_connection(s)
                 # cannot set session after handshake
                 with self.assertRaises(ValueError) as e:
                     s.session = session
@@ -4216,7 +4401,8 @@ class ThreadedTests(unittest.TestCase):
                 # can set session before handshake and before the
                 # connection was established
                 s.session = session
-                s.connect((HOST, server.port))
+                s.connect(address)
+                self.wait_connection(s)
                 self.assertEqual(s.session.id, session.id)
                 self.assertEqual(s.session, session)
                 self.assertEqual(s.session_reused, True)
@@ -4226,7 +4412,7 @@ class ThreadedTests(unittest.TestCase):
                 # cannot re-use session with a different SSLContext
                 with self.assertRaises(ValueError) as e:
                     s.session = session
-                    s.connect((HOST, server.port))
+                    s.connect(address)
                 self.assertEqual(str(e.exception),
                                  'Session refers to a different SSLContext.')
 
@@ -5092,8 +5278,8 @@ def setUpModule():
         if not os.path.exists(filename):
             raise support.TestFailed("Can't read certificate file %r" % filename)
 
-    thread_info = threading_helper.threading_setup()
-    unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)
+    threading_helper.init()
+    socket.setdefaulttimeout(support.LOOPBACK_TIMEOUT)
 
 
 if __name__ == "__main__":

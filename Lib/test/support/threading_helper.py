@@ -3,10 +3,26 @@ import contextlib
 import functools
 import sys
 import threading
+from socket import socket
 import time
 import unittest
+from concurrent.futures import ThreadPoolExecutor
+from test.support.socket_helper import bind_port, HOST
 
 from test import support
+
+_thread_pool = None
+
+
+def _release():
+    global _thread_pool
+    _thread_pool = None
+
+
+def init():
+    global _thread_pool
+    _thread_pool = ThreadPoolExecutor()
+    unittest.addModuleCleanup(_release)
 
 
 #=======================================================================
@@ -245,3 +261,89 @@ def requires_working_threading(*, module=False):
             raise unittest.SkipTest(msg)
     else:
         return unittest.skipUnless(can_start_thread, msg)
+
+
+class Server:
+    """A context manager for a blocking server in a thread pool.
+
+    The server is designed:
+
+    - for testing purposes so it serves a fixed count of clients, one by one
+    - to be one-pass, short-lived, and terminated by in-protocol means so no
+      stopper flag is used
+    - to be used where asyncio has no application
+
+    The server listens on an address returned from the ``with`` statement.
+
+    For each client connected, the server calls a user-supplied function and
+    preserves whatever the function returns or throws to pass it to a client
+    later.
+
+    When a client attempt to exit the context manager, it blocks until a server
+    stops processing all clients and exits.
+    """
+
+    def __init__(self, client_func, *args, client_count=1, **kwargs):
+        """Create and run the server.
+
+        The method blocks until the server is ready to accept clients.
+
+        After this constructor returns, the server:
+
+        1. Consequently waits for client_count clients
+        1. For each client:
+           a. Calls client_func for each of them
+           b. Closes client connection when the function returns
+           c. Collects returned values into Server.result list
+        5. Terminates a server
+        6. Allows a context manager to exit
+        7. Since ``with ... as`` section keeps its parameter alive,
+           Server.result field can be accessed outside of the section.
+
+        If client_func raises an exception, the server is stopped, all pending
+        clients are discarded and the context manager raises an exception.
+
+        Args:
+            client_func: a function called in a dedicated thread for each new
+                connected client. The function receives all argument passed to
+                the __init__ method excluding client_func and client_count.
+            args: positional arguments passed to client_func.
+            client_count: count of clients the server processes one by one
+                before stopping.
+            results: a reference to a list for collecting client_func
+                return values. Populated after the execution leaves a ``with``
+                blocks associated with the Server context manager.
+            kwargs: keyword arguments passed to client_func.
+        """
+        server_socket = socket()
+        self._port = bind_port(server_socket)
+        server_socket.listen()
+        self._result = _thread_pool.submit(self._thread_func, server_socket,
+                                           client_func, client_count,
+                                           args, kwargs)
+
+    def _thread_func(self, server_socket, client_func, client_count,
+                     args, kwargs):
+        with server_socket:
+            results = []
+            for i in range(client_count):
+                client, peer_address = server_socket.accept()
+                with client:
+                    r = client_func(client, peer_address, *args, **kwargs)
+                    results.append(r)
+            return results
+
+    def __enter__(self):
+        return HOST, self._port
+
+    def __exit__(self, etype, evalue, traceback):
+        peer_willingly_closed = isinstance(etype, ConnectionError)
+        # We find our client disappeared when our socket read() fails.
+        peer_disappeared = etype is OSError
+        if peer_willingly_closed or peer_disappeared:
+            if self._result.exception() is not None:
+                generic = RuntimeError('server-side error')
+                raise generic from self._result.exception()
+            return False
+        self.result = self._result.result()
+        return False
