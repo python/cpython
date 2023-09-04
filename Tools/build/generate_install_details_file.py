@@ -95,6 +95,7 @@ def main() -> None:
     # try to load the data as a sanity check to verify our writer outputed, at least, valid TOML
     with open(args.output_path, 'rb') as f:
         parsed = tomllib.load(f)
+        assert parsed == config
 
 
 if __name__ == '__main__':
