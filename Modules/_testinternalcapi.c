@@ -26,7 +26,6 @@
 #include "pycore_object.h"        // _PyObject_IsFreed()
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
-#include "pycore_pyerrors.h"      // _Py_UTF8_Edit_Cost()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
 #include "interpreteridobject.h"  // PyInterpreterID_LookUp()
@@ -1448,6 +1447,37 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 
+/*[clinic input]
+_testinternalcapi.write_unraisable_exc
+    exception as exc: object
+    err_msg: object
+    obj: object
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_testinternalcapi_write_unraisable_exc_impl(PyObject *module, PyObject *exc,
+                                            PyObject *err_msg, PyObject *obj)
+/*[clinic end generated code: output=a0f063cdd04aad83 input=274381b1a3fa5cd6]*/
+{
+
+    const char *err_msg_utf8;
+    if (err_msg != Py_None) {
+        err_msg_utf8 = PyUnicode_AsUTF8(err_msg);
+        if (err_msg_utf8 == NULL) {
+            return NULL;
+        }
+    }
+    else {
+        err_msg_utf8 = NULL;
+    }
+
+    PyErr_SetObject((PyObject *)Py_TYPE(exc), exc);
+    _PyErr_WriteUnraisableMsg(err_msg_utf8, obj);
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -1503,6 +1533,7 @@ static PyMethodDef module_functions[] = {
     {"run_in_subinterp_with_config",
      _PyCFunction_CAST(run_in_subinterp_with_config),
      METH_VARARGS | METH_KEYWORDS},
+    _TESTINTERNALCAPI_WRITE_UNRAISABLE_EXC_METHODDEF
     {NULL, NULL} /* sentinel */
 };
 
