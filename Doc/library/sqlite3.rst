@@ -1157,12 +1157,9 @@ Connection objects
                  f.write('%s\n' % line)
          con.close()
 
-      .. note::
+      .. seealso::
 
-         If your database contains ``TEXT`` values with invalid Unicode
-         sequences, or encodings incompatible with UTF-8,
-         you must use a custom :attr:`text_factory`.
-         See :ref:`sqlite3-howto-text-factory` for more details.
+         :ref:`sqlite3-howto-encoding`
 
 
    .. method:: backup(target, *, pages=-1, progress=None, name="main", sleep=0.250)
@@ -1229,6 +1226,10 @@ Connection objects
          src.backup(dst)
 
       .. versionadded:: 3.7
+
+      .. seealso:
+
+         :ref:`sqlite3-howto-encoding`
 
    .. method:: getlimit(category, /)
 
@@ -1452,7 +1453,7 @@ Connection objects
       The callable is invoked for SQLite values with the ``TEXT`` data type.
       By default, this attribute is set to :class:`str`.
 
-      See :ref:`sqlite3-howto-text-factory` for more details.
+      See :ref:`sqlite3-howto-encoding` for more details.
 
    .. attribute:: total_changes
 
@@ -2595,62 +2596,52 @@ With some adjustments, the above recipe can be adapted to use a
 instead of a :class:`~collections.namedtuple`.
 
 
-.. _sqlite3-howto-text-factory:
+.. _sqlite3-howto-encoding:
 
-How to create and use text factories
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+How to handle non-UTF-8 text encodings
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 By default, :mod:`!sqlite3` adapts SQLite values with the ``TEXT`` data type
 using :class:`str`.
-This works well for correctly encoded UTF-8 text, but it will fail for invalid
-Unicode sequences and other encodings.
-To work around this, you can use a custom :attr:`~Connection.text_factory`.
+This works well for UTF-8 encoded text, but it will fail for other encodings
+and invalid UTF-8.
+You can use a custom :attr:`~Connection.text_factory` to handle such cases.
 
 Because of SQLite's `flexible typing`_, it is not uncommon to encounter table
-columns with the ``TEXT`` data type, containing arbitrary data.
-To demonstrate, let's create a test database with an invalid Unicode sequence.
-We will use a `CAST expression`_ to coerce an invalid Unicode sequence,
-represented as a hexadecimal string ``X'619F'``,
-into the ``TEXT`` data type:
+columns with the ``TEXT`` data type, containing non-UTF-8 encodings,
+or even arbitrary data.
+To demonstrate, let's assume we build a database by importing a ISO-8859-2
+(Latin 2) encoded CSV file, for example a list of Czech-English dictionary
+entries, :file:`entries.csv`:
+
+.. code-block:: shell
+
+   $ python3
+   >>> with open("entries.csv", "w", encoding="latin2") as f:
+   ...     f.write("czech,english\n")  # header row
+   ...     f.write("položka,entry\n")  # data rows
+   ...     f.write("částka,sum\n")
+   >>> quit()
+   $ sqlite3 dictionary.db
+   sqlite> .mode csv
+   sqlite> .import entries.csv dict
+   sqlite> .quit
+
+:file:`dictionary.db` now contains a database that contains Latin 2 encoded text.
+Assuming we now have a :class:`Connection` instance :py:data:`!con`
+connected to :file:`dictionary.db`,
+we can decode the Latin 2 encoded text using this :attr:`~Connection.text_factory`:
 
 .. testcode::
 
-   con = sqlite3.connect(":memory:")
-   con.executescript("""
-       CREATE TABLE test (data TEXT);
-       INSERT INTO test VALUES(CAST(X'619F' AS TEXT));
-   """)
+   con.text_factory = lambda data: str(data, encoding="latin2")
 
-To work with such databases, we can use the following technique,
-borrowed from the :ref:`unicode-howto`:
+For invalid UTF-8 or arbitrary data in stored in ``TEXT`` table columns,
+you can use the following technique, borrowed from the :ref:`unicode-howto`:
 
 .. testcode::
 
    con.text_factory = lambda data: str(data, errors="surrogateescape")
-   dump = con.iterdump()
-   for line in dump:
-       print(line)
-
-The loop above will print the offending line using Unicode surrogate escapes:
-
-.. testoutput::
-
-   BEGIN TRANSACTION;
-   CREATE TABLE test (data TEXT);
-   INSERT INTO "test" VALUES('a\udc9f');
-   COMMIT;
-
-Note that strings containing surrogate escapes must be treated with care.
-You cannot pass them back to SQLite, for example using :meth:`~Cursor.execute`,
-since the :mod:`!sqlite3` module APIs only accept UTF-8 encoded strings.
-In order to write strings containing surrogate escapes to a file,
-you will have to use ``errors="surrogateescape"`` as an argument to :func:`open`:
-
-.. testcode::
-
-   with open("dump.sql", "w", errors="surrogateescape") as f:
-       sql = "\n".join(dump)
-       f.write(sql)
 
 .. note::
 
@@ -2662,8 +2653,6 @@ you will have to use ``errors="surrogateescape"`` as an argument to :func:`open`
 .. seealso::
 
    :ref:`unicode-howto`
-
-.. _CAST expression: https://www.sqlite.org/lang_expr.html#castexpr
 
 
 .. _sqlite3-explanation:
