@@ -16,8 +16,10 @@ extern "C" {
 #define _PY_MONITORING_EVENTS 17
 
 /* Tables of which tools are active for each monitored event. */
+/* For 3.12 ABI compatibility this is over sized */
 typedef struct _Py_LocalMonitors {
-    uint8_t tools[_PY_MONITORING_LOCAL_EVENTS];
+    /* Only _PY_MONITORING_LOCAL_EVENTS of these are used */
+    uint8_t tools[_PY_MONITORING_UNGROUPED_EVENTS];
 } _Py_LocalMonitors;
 
 typedef struct _Py_GlobalMonitors {
