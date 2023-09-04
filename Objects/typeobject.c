@@ -19,8 +19,6 @@
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 #include "opcode.h"               // MAKE_CELL
 
-
-#include <ctype.h>
 #include <stddef.h>               // ptrdiff_t
 
 /*[clinic input]

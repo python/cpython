@@ -57,6 +57,17 @@
 
 #include <stdio.h>                // ctermid()
 #include <stdlib.h>               // system()
+#ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>           // futimes()
+#endif
+
+
+// SGI apparently needs this forward declaration
+#ifdef HAVE__GETPTY
+#  include <sys/types.h>          // mode_t
+   extern char * _getpty(int *, int, mode_t, int);
+#endif
+
 
 /*
  * A number of APIs are available on macOS from a certain macOS version.
@@ -279,7 +290,7 @@ corresponding Unix manual entries for more information on calls.");
 #endif
 
 #ifdef HAVE_COPY_FILE_RANGE
-#  include <unistd.h>
+#  include <unistd.h>             // copy_file_range()
 #endif
 
 #if !defined(CPU_ALLOC) && defined(HAVE_SCHED_SETAFFINITY)

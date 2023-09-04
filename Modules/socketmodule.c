@@ -111,9 +111,8 @@ Local naming conventions:
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_moduleobject.h"  // _PyModule_GetState
 
-
 #ifdef _Py_MEMORY_SANITIZER
-# include <sanitizer/msan_interface.h>
+#  include <sanitizer/msan_interface.h>
 #endif
 
 /* Socket object documentation */
@@ -265,7 +264,7 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #ifdef HAVE_NETDB_H
 #  include <netdb.h>
 #endif
-# include <unistd.h>
+#include <unistd.h>               // close()
 
 /* Headers needed for inet_ntoa() and inet_addr() */
 #   include <arpa/inet.h>
