@@ -19,8 +19,8 @@ from test.support import TestStats
 from test.libregrtest.cmdline import Namespace
 from test.libregrtest.main import Regrtest
 from test.libregrtest.runtest import (
-    runtest, TestResult, State,
-    PROGRESS_MIN_TIME)
+    runtest, TestResult, State, PROGRESS_MIN_TIME,
+    MatchTests, RunTests)
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.utils import format_duration, print_warning
 
@@ -44,26 +44,54 @@ JOIN_TIMEOUT = 30.0   # seconds
 USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
 
 
-def must_stop(result: TestResult, ns: Namespace) -> bool:
-    if result.state == State.INTERRUPTED:
-        return True
-    if ns.failfast and result.is_failed(ns.fail_env_changed):
-        return True
-    return False
+@dataclasses.dataclass(slots=True)
+class WorkerJob:
+    test_name: str
+    namespace: Namespace
+    rerun: bool = False
+    match_tests: MatchTests | None = None
 
 
-def parse_worker_args(worker_args) -> tuple[Namespace, str]:
-    ns_dict, test_name = json.loads(worker_args)
-    ns = Namespace(**ns_dict)
-    return (ns, test_name)
+class _EncodeWorkerJob(json.JSONEncoder):
+    def default(self, o: Any) -> dict[str, Any]:
+        match o:
+            case WorkerJob():
+                result = dataclasses.asdict(o)
+                result["__worker_job__"] = True
+                return result
+            case Namespace():
+                result = vars(o)
+                result["__namespace__"] = True
+                return result
+            case _:
+                return super().default(o)
 
 
-def run_test_in_subprocess(testname: str, ns: Namespace, tmp_dir: str, stdout_fh: TextIO) -> subprocess.Popen:
-    ns_dict = vars(ns)
-    worker_args = (ns_dict, testname)
-    worker_args = json.dumps(worker_args)
-    if ns.python is not None:
-        executable = ns.python
+def _decode_worker_job(d: dict[str, Any]) -> WorkerJob | dict[str, Any]:
+    if "__worker_job__" in d:
+        d.pop('__worker_job__')
+        return WorkerJob(**d)
+    if "__namespace__" in d:
+        d.pop('__namespace__')
+        return Namespace(**d)
+    else:
+        return d
+
+
+def _parse_worker_args(worker_json: str) -> tuple[Namespace, str]:
+    return json.loads(worker_json,
+                      object_hook=_decode_worker_job)
+
+
+def run_test_in_subprocess(worker_job: WorkerJob,
+                           output_file: TextIO,
+                           tmp_dir: str | None = None) -> subprocess.Popen:
+    ns = worker_job.namespace
+    python = ns.python
+    worker_args = json.dumps(worker_job, cls=_EncodeWorkerJob)
+
+    if python is not None:
+        executable = python
     else:
         executable = [sys.executable]
     cmd = [*executable, *support.args_from_interpreter_flags(),
@@ -82,9 +110,9 @@ def run_test_in_subprocess(testname: str, ns: Namespace, tmp_dir: str, stdout_fh
     # sysconfig.is_python_build() is true. See issue 15300.
     kw = dict(
         env=env,
-        stdout=stdout_fh,
+        stdout=output_file,
         # bpo-45410: Write stderr into stdout to keep messages order
-        stderr=stdout_fh,
+        stderr=output_file,
         text=True,
         close_fds=(os.name != 'nt'),
         cwd=os_helper.SAVEDCWD,
@@ -94,11 +122,27 @@ def run_test_in_subprocess(testname: str, ns: Namespace, tmp_dir: str, stdout_fh
     return subprocess.Popen(cmd, **kw)
 
 
-def run_tests_worker(ns: Namespace, test_name: str) -> NoReturn:
+def run_tests_worker(worker_json: str) -> NoReturn:
+    worker_job = _parse_worker_args(worker_json)
+    ns = worker_job.namespace
+    test_name = worker_job.test_name
+    rerun = worker_job.rerun
+    match_tests = worker_job.match_tests
+
     setup_tests(ns)
 
-    result = runtest(ns, test_name)
+    if rerun:
+        if match_tests:
+            matching = "matching: " + ", ".join(match_tests)
+            print(f"Re-running {test_name} in verbose mode ({matching})", flush=True)
+        else:
+            print(f"Re-running {test_name} in verbose mode", flush=True)
+        ns.verbose = True
 
+    if match_tests is not None:
+        ns.match_tests = match_tests
+
+    result = runtest(ns, test_name)
     print()   # Force a newline (just in case)
 
     # Serialize TestResult as dict in JSON
@@ -148,11 +192,13 @@ class TestWorkerProcess(threading.Thread):
     def __init__(self, worker_id: int, runner: "MultiprocessTestRunner") -> None:
         super().__init__()
         self.worker_id = worker_id
+        self.runtests = runner.runtests
         self.pending = runner.pending
         self.output = runner.output
         self.ns = runner.ns
         self.timeout = runner.worker_timeout
         self.regrtest = runner.regrtest
+        self.rerun = runner.rerun
         self.current_test_name = None
         self.start_time = None
         self._popen = None
@@ -216,10 +262,11 @@ class TestWorkerProcess(threading.Thread):
     ) -> MultiprocessResult:
         return MultiprocessResult(test_result, stdout, err_msg)
 
-    def _run_process(self, test_name: str, tmp_dir: str, stdout_fh: TextIO) -> int:
-        self.current_test_name = test_name
+    def _run_process(self, worker_job, output_file: TextIO,
+                     tmp_dir: str | None = None) -> int:
+        self.current_test_name = worker_job.test_name
         try:
-            popen = run_test_in_subprocess(test_name, self.ns, tmp_dir, stdout_fh)
+            popen = run_test_in_subprocess(worker_job, output_file, tmp_dir)
 
             self._killed = False
             self._popen = popen
@@ -277,9 +324,15 @@ class TestWorkerProcess(threading.Thread):
         else:
             encoding = sys.stdout.encoding
 
+        match_tests = self.runtests.get_match_tests(test_name)
+
         # gh-94026: Write stdout+stderr to a tempfile as workaround for
         # non-blocking pipes on Emscripten with NodeJS.
-        with tempfile.TemporaryFile('w+', encoding=encoding) as stdout_fh:
+        with tempfile.TemporaryFile('w+', encoding=encoding) as stdout_file:
+            worker_job = WorkerJob(test_name,
+                                   namespace=self.ns,
+                                   rerun=self.rerun,
+                                   match_tests=match_tests)
             # gh-93353: Check for leaked temporary files in the parent process,
             # since the deletion of temporary files can happen late during
             # Python finalization: too late for libregrtest.
@@ -290,17 +343,17 @@ class TestWorkerProcess(threading.Thread):
                 tmp_dir = tempfile.mkdtemp(prefix="test_python_")
                 tmp_dir = os.path.abspath(tmp_dir)
                 try:
-                    retcode = self._run_process(test_name, tmp_dir, stdout_fh)
+                    retcode = self._run_process(worker_job, stdout_file, tmp_dir)
                 finally:
                     tmp_files = os.listdir(tmp_dir)
                     os_helper.rmtree(tmp_dir)
             else:
-                retcode = self._run_process(test_name, None, stdout_fh)
+                retcode = self._run_process(worker_job, stdout_file)
                 tmp_files = ()
-            stdout_fh.seek(0)
+            stdout_file.seek(0)
 
             try:
-                stdout = stdout_fh.read().strip()
+                stdout = stdout_file.read().strip()
             except Exception as exc:
                 # gh-101634: Catch UnicodeDecodeError if stdout cannot be
                 # decoded from encoding
@@ -342,6 +395,8 @@ class TestWorkerProcess(threading.Thread):
         return MultiprocessResult(result, stdout)
 
     def run(self) -> None:
+        fail_fast = self.ns.failfast
+        fail_env_changed = self.ns.fail_env_changed
         while not self._stopped:
             try:
                 try:
@@ -354,7 +409,7 @@ class TestWorkerProcess(threading.Thread):
                 mp_result.result.duration = time.monotonic() - self.start_time
                 self.output.put((False, mp_result))
 
-                if must_stop(mp_result.result, self.ns):
+                if mp_result.result.must_stop(fail_fast, fail_env_changed):
                     break
             except ExitThread:
                 break
@@ -410,29 +465,36 @@ def get_running(workers: list[TestWorkerProcess]) -> list[TestWorkerProcess]:
 
 
 class MultiprocessTestRunner:
-    def __init__(self, regrtest: Regrtest) -> None:
+    def __init__(self, regrtest: Regrtest, runtests: RunTests) -> None:
+        ns = regrtest.ns
+        timeout = ns.timeout
+
         self.regrtest = regrtest
+        self.runtests = runtests
+        self.rerun = runtests.rerun
         self.log = self.regrtest.log
-        self.ns = regrtest.ns
+        self.ns = ns
         self.output: queue.Queue[QueueOutput] = queue.Queue()
-        self.pending = MultiprocessIterator(self.regrtest.tests)
-        if self.ns.timeout is not None:
+        tests_iter = runtests.iter_tests()
+        self.pending = MultiprocessIterator(tests_iter)
+        if timeout is not None:
             # Rely on faulthandler to kill a worker process. This timouet is
             # when faulthandler fails to kill a worker process. Give a maximum
             # of 5 minutes to faulthandler to kill the worker.
-            self.worker_timeout = min(self.ns.timeout * 1.5,
-                                      self.ns.timeout + 5 * 60)
+            self.worker_timeout = min(timeout * 1.5, timeout + 5 * 60)
         else:
             self.worker_timeout = None
         self.workers = None
 
     def start_workers(self) -> None:
+        use_mp = self.ns.use_mp
+        timeout = self.ns.timeout
         self.workers = [TestWorkerProcess(index, self)
-                        for index in range(1, self.ns.use_mp + 1)]
+                        for index in range(1, use_mp + 1)]
         msg = f"Run tests in parallel using {len(self.workers)} child processes"
-        if self.ns.timeout:
+        if timeout:
             msg += (" (timeout: %s, worker timeout: %s)"
-                    % (format_duration(self.ns.timeout),
+                    % (format_duration(timeout),
                        format_duration(self.worker_timeout)))
         self.log(msg)
         for worker in self.workers:
@@ -446,6 +508,7 @@ class MultiprocessTestRunner:
             worker.wait_stopped(start_time)
 
     def _get_result(self) -> QueueOutput | None:
+        pgo = self.ns.pgo
         use_faulthandler = (self.ns.timeout is not None)
         timeout = PROGRESS_UPDATE
 
@@ -464,7 +527,7 @@ class MultiprocessTestRunner:
 
             # display progress
             running = get_running(self.workers)
-            if running and not self.ns.pgo:
+            if running and not pgo:
                 self.log('running: %s' % ', '.join(running))
 
         # all worker threads are done: consume pending results
@@ -475,42 +538,46 @@ class MultiprocessTestRunner:
 
     def display_result(self, mp_result: MultiprocessResult) -> None:
         result = mp_result.result
+        pgo = self.ns.pgo
 
         text = str(result)
         if mp_result.err_msg:
             # MULTIPROCESSING_ERROR
             text += ' (%s)' % mp_result.err_msg
-        elif (result.duration >= PROGRESS_MIN_TIME and not self.ns.pgo):
+        elif (result.duration >= PROGRESS_MIN_TIME and not pgo):
             text += ' (%s)' % format_duration(result.duration)
         running = get_running(self.workers)
-        if running and not self.ns.pgo:
+        if running and not pgo:
             text += ' -- running: %s' % ', '.join(running)
         self.regrtest.display_progress(self.test_index, text)
 
     def _process_result(self, item: QueueOutput) -> bool:
         """Returns True if test runner must stop."""
+        rerun = self.runtests.rerun
         if item[0]:
             # Thread got an exception
             format_exc = item[1]
             print_warning(f"regrtest worker thread failed: {format_exc}")
             result = TestResult("<regrtest worker>", state=State.MULTIPROCESSING_ERROR)
-            self.regrtest.accumulate_result(result)
-            return True
+            self.regrtest.accumulate_result(result, rerun=rerun)
+            return result
 
         self.test_index += 1
         mp_result = item[1]
-        self.regrtest.accumulate_result(mp_result.result)
+        result = mp_result.result
+        self.regrtest.accumulate_result(result, rerun=rerun)
         self.display_result(mp_result)
 
         if mp_result.worker_stdout:
             print(mp_result.worker_stdout, flush=True)
 
-        if must_stop(mp_result.result, self.ns):
-            return True
-
-        return False
+        return result
 
     def run_tests(self) -> None:
+        fail_fast = self.ns.failfast
+        fail_env_changed = self.ns.fail_env_changed
+        timeout = self.ns.timeout
+
         self.start_workers()
 
         self.test_index = 0
@@ -520,14 +587,14 @@ class MultiprocessTestRunner:
                 if item is None:
                     break
 
-                stop = self._process_result(item)
-                if stop:
+                result = self._process_result(item)
+                if result.must_stop(fail_fast, fail_env_changed):
                     break
         except KeyboardInterrupt:
             print()
             self.regrtest.interrupted = True
         finally:
-            if self.ns.timeout is not None:
+            if timeout is not None:
                 faulthandler.cancel_dump_traceback_later()
 
             # Always ensure that all worker processes are no longer
@@ -536,8 +603,8 @@ class MultiprocessTestRunner:
             self.stop_workers()
 
 
-def run_tests_multiprocess(regrtest: Regrtest) -> None:
-    MultiprocessTestRunner(regrtest).run_tests()
+def run_tests_multiprocess(regrtest: Regrtest, runtests: RunTests) -> None:
+    MultiprocessTestRunner(regrtest, runtests).run_tests()
 
 
 class EncodeTestResult(json.JSONEncoder):
@@ -552,7 +619,7 @@ class EncodeTestResult(json.JSONEncoder):
         return super().default(o)
 
 
-def decode_test_result(d: dict[str, Any]) -> TestResult | TestStats | dict[str, Any]:
+def decode_test_result(d: dict[str, Any]) -> TestResult | dict[str, Any]:
     """Decode a TestResult (sub)class object from a JSON dict."""
 
     if "__test_result__" not in d:
