@@ -173,6 +173,10 @@ pdb
   the new ``exceptions [exc_number]`` command for Pdb. (Contributed by Matthias
   Bussonnier in :gh:`106676`.)
 
+* Expressions/Statements whose prefix is a pdb command are now correctly
+  identified and executed.
+  (Contributed by Tian Gao in :gh:`108464`.)
+
 sqlite3
 -------
 
