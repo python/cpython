@@ -237,6 +237,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             pass
         self.allow_kbdint = False
         self.nosigint = nosigint
+        # Consider these characters as part of the command so when the users type
+        # c.a or c['a'], it won't be recognized as a c(ontinue) command
+        self.identchars = cmd.Cmd.identchars + '=.[](),"\'+-*/%@&|<>~^'
 
         # Read ~/.pdbrc and ./.pdbrc
         self.rcLines = []
