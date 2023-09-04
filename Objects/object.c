@@ -2034,7 +2034,7 @@ PyObject _Py_NotImplementedStruct = {
 };
 
 
-void
+PyStatus
 _PyObject_InitState(PyInterpreterState *interp)
 {
 #ifdef Py_TRACE_REFS
@@ -2048,9 +2048,10 @@ _PyObject_InitState(PyInterpreterState *interp)
         _Py_hashtable_hash_ptr, _Py_hashtable_compare_direct,
         NULL, NULL, &alloc);
     if (REFCHAIN(interp) == NULL) {
-        Py_FatalError("_PyObject_InitState() memory allocation failure");
+        return _PyStatus_NO_MEMORY();
     }
 #endif
+    return _PyStatus_OK();
 }
 
 void

@@ -35,9 +35,7 @@
 #include "pydtrace.h"
 #include "setobject.h"
 
-
-#include <ctype.h>
-#include <stdbool.h>
+#include <stdbool.h>              // bool
 
 #ifdef Py_DEBUG
    /* For debugging the interpreter: */
