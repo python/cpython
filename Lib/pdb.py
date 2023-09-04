@@ -492,9 +492,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         _chained_exceptions, tb = self._get_tb_and_exceptions(tb_or_exc)
         if not _chained_exceptions and isinstance(tb_or_exc, BaseException):
-            raise ValueError(
-                "A valid traceback must be passed if no exception is being handled"
-            )
+            raise ValueError("No exception traceback to inspect")
         with self._hold_exceptions(_chained_exceptions):
             if self.setup(frame, tb):
                 # no interaction desired at this time (happens if .pdbrc contains

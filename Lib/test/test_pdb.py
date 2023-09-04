@@ -1132,7 +1132,7 @@ def test_post_mortem_single_no_stack():
     ...        test_function()
     ...    except ValueError as e:
     ...        print(e)
-    A valid traceback must be passed if no exception is being handled
+    No exception traceback to inspect
     """
 
 
