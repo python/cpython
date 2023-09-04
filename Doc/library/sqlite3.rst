@@ -1539,8 +1539,6 @@ Cursor objects
 
       Use :meth:`executescript` to execute multiple SQL statements.
 
-      :meth:`!execute` only accepts UTF-8 encoded strings.
-
    .. method:: executemany(sql, parameters, /)
 
       For every item in *parameters*,
@@ -1589,8 +1587,6 @@ Cursor objects
          Starting with Python 3.14, :exc:`ProgrammingError` will
          be raised instead.
 
-      :meth:`!executemany` only accepts UTF-8 encoded strings.
-
    .. method:: executescript(sql_script, /)
 
       Execute the SQL statements in *sql_script*.
@@ -1615,8 +1611,6 @@ Cursor objects
              CREATE TABLE publisher(name, address);
              COMMIT;
          """)
-
-      :meth:`!executescript` only accepts UTF-8 encoded strings.
 
    .. method:: fetchone()
 
