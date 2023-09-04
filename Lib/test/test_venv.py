@@ -20,7 +20,8 @@ import tempfile
 from test.support import (captured_stdout, captured_stderr,
                           skip_if_broken_multiprocessing_synchronize, verbose,
                           requires_subprocess, is_emscripten, is_wasi,
-                          requires_venv_with_pip, TEST_HOME_DIR)
+                          requires_venv_with_pip, TEST_HOME_DIR,
+                          requires_resource)
 from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree)
 import unittest
 import venv
@@ -775,6 +776,7 @@ class EnsurePipTest(BaseTest):
             )
 
     @requires_venv_with_pip()
+    @requires_resource('cpu')
     def test_with_pip(self):
         self.do_test_with_pip(False)
         self.do_test_with_pip(True)
