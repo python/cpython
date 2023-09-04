@@ -1630,6 +1630,8 @@ def test_pdb_show_attribute_and_item():
     ...     'j=1',
     ...     'j+1',
     ...     'r"a"',
+    ...     'next(iter([1]))',
+    ...     'list((0, 1))',
     ...     'c'
     ... ]):
     ...     test_function()
@@ -1646,6 +1648,10 @@ def test_pdb_show_attribute_and_item():
     2
     (Pdb) r"a"
     'a'
+    (Pdb) next(iter([1]))
+    1
+    (Pdb) list((0, 1))
+    [0, 1]
     (Pdb) c
     """
 
