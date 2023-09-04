@@ -264,4 +264,36 @@ _testinternalcapi_assemble_code_object(PyObject *module, PyObject *const *args, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=cba1c94ff4015b82 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_testinternalcapi_write_unraisable_exc__doc__,
+"write_unraisable_exc($module, exception, err_msg, obj, /)\n"
+"--\n"
+"\n");
+
+#define _TESTINTERNALCAPI_WRITE_UNRAISABLE_EXC_METHODDEF    \
+    {"write_unraisable_exc", _PyCFunction_CAST(_testinternalcapi_write_unraisable_exc), METH_FASTCALL, _testinternalcapi_write_unraisable_exc__doc__},
+
+static PyObject *
+_testinternalcapi_write_unraisable_exc_impl(PyObject *module, PyObject *exc,
+                                            PyObject *err_msg, PyObject *obj);
+
+static PyObject *
+_testinternalcapi_write_unraisable_exc(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *exc;
+    PyObject *err_msg;
+    PyObject *obj;
+
+    if (!_PyArg_CheckPositional("write_unraisable_exc", nargs, 3, 3)) {
+        goto exit;
+    }
+    exc = args[0];
+    err_msg = args[1];
+    obj = args[2];
+    return_value = _testinternalcapi_write_unraisable_exc_impl(module, exc, err_msg, obj);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=c7156622e80df1ce input=a9049054013a1b77]*/
