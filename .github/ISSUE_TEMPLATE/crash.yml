@@ -13,7 +13,7 @@ body:
       label: What happened?
       description: >
         Include a [minimal, reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) if possible.
-        Copy and paste code where possible rather than using screenshots,
+        [Copy and paste code where possible rather than using screenshots](https://meta.stackoverflow.com/questions/285551/why-should-i-not-upload-images-of-code-data-errors),
         and put any code blocks inside triple backticks.
 
       value: |
