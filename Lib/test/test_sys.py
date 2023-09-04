@@ -732,7 +732,6 @@ class SysModuleTest(unittest.TestCase):
         s = '__init__'
         t = sys.intern(s)
 
-        print('------------------------')
         interp = interpreters.create()
         interp.run(textwrap.dedent(f'''
             import sys
@@ -1174,6 +1173,27 @@ class SysModuleTest(unittest.TestCase):
         expected = os.path.dirname(marker) if marker else None
         self.assertEqual(os.path.normpath(sys._stdlib_dir),
                          os.path.normpath(expected))
+
+    @unittest.skipUnless(hasattr(sys, 'getobjects'), 'need sys.getobjects()')
+    def test_getobjects(self):
+        # sys.getobjects(0)
+        all_objects = sys.getobjects(0)
+        self.assertIsInstance(all_objects, list)
+        self.assertGreater(len(all_objects), 0)
+
+        # sys.getobjects(0, MyType)
+        class MyType:
+            pass
+        size = 100
+        my_objects = [MyType() for _ in range(size)]
+        get_objects = sys.getobjects(0, MyType)
+        self.assertEqual(len(get_objects), size)
+        for obj in get_objects:
+            self.assertIsInstance(obj, MyType)
+
+        # sys.getobjects(3, MyType)
+        get_objects = sys.getobjects(3, MyType)
+        self.assertEqual(len(get_objects), 3)
 
 
 @test.support.cpython_only

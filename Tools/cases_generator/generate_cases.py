@@ -156,6 +156,8 @@ class Generator(Analyzer):
             return str(n_effect)
 
         instr: AnyInstruction | None
+        popped: str | None = None
+        pushed: str | None = None
         match thing:
             case parsing.InstDef():
                 if thing.kind != "op" or self.instrs[thing.name].is_viable_uop():
@@ -173,7 +175,7 @@ class Generator(Analyzer):
                 instr = self.pseudo_instrs[thing.name]
                 # Calculate stack effect, and check that it's the the same
                 # for all targets.
-                for idx, target in enumerate(self.pseudos[thing.name].targets):
+                for target in self.pseudos[thing.name].targets:
                     target_instr = self.instrs.get(target)
                     # Currently target is always an instr. This could change
                     # in the future, e.g., if we have a pseudo targetting a
@@ -181,13 +183,14 @@ class Generator(Analyzer):
                     assert target_instr
                     target_popped = effect_str(target_instr.input_effects)
                     target_pushed = effect_str(target_instr.output_effects)
-                    if idx == 0:
+                    if popped is None:
                         popped, pushed = target_popped, target_pushed
                     else:
                         assert popped == target_popped
                         assert pushed == target_pushed
             case _:
                 assert_never(thing)
+        assert popped is not None and pushed is not None
         return instr, popped, pushed
 
     @contextlib.contextmanager
@@ -376,6 +379,7 @@ class Generator(Analyzer):
         # Compute the set of all instruction formats.
         all_formats: set[str] = set()
         for thing in self.everything:
+            format: str | None = None
             match thing:
                 case OverriddenInstructionPlaceHolder():
                     continue
@@ -384,15 +388,16 @@ class Generator(Analyzer):
                 case parsing.Macro():
                     format = self.macro_instrs[thing.name].instr_fmt
                 case parsing.Pseudo():
-                    for idx, target in enumerate(self.pseudos[thing.name].targets):
+                    for target in self.pseudos[thing.name].targets:
                         target_instr = self.instrs.get(target)
                         assert target_instr
-                        if idx == 0:
+                        if format is None:
                             format = target_instr.instr_fmt
                         else:
                             assert format == target_instr.instr_fmt
                 case _:
                     assert_never(thing)
+            assert format is not None
             all_formats.add(format)
 
         # Turn it into a sorted list of enum values.
@@ -479,8 +484,7 @@ class Generator(Analyzer):
                         case OverriddenInstructionPlaceHolder():
                             continue
                         case parsing.InstDef():
-                            if thing.kind != "op":
-                                self.write_metadata_for_inst(self.instrs[thing.name])
+                            self.write_metadata_for_inst(self.instrs[thing.name])
                         case parsing.Macro():
                             self.write_metadata_for_macro(self.macro_instrs[thing.name])
                         case parsing.Pseudo():
@@ -648,7 +652,7 @@ class Generator(Analyzer):
         add("SAVE_IP")
 
         for instr in self.instrs.values():
-            if instr.kind == "op" and instr.is_viable_uop():
+            if instr.kind == "op":
                 add(instr.name)
 
     def write_macro_expansions(
