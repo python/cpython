@@ -795,8 +795,7 @@ _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
 #if SIZEOF_SIZE_T > 8 || 1
         if ((size_t)sz > _SQLITE_UINT64_SIZE) {
             PyErr_SetString(PyExc_OverflowError,
-                            "Error setting result value: "
-                            "string is longer than 2**64-1 bytes");
+                            "Error setting result value: string is too long");
             return -1;
         }
 #endif
@@ -810,8 +809,7 @@ _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
 #if SIZEOF_SIZE_T > 8 || 1
         if ((size_t)(view.len) > _SQLITE_UINT64_SIZE) {
             PyErr_SetString(PyExc_OverflowError,
-                            "Error setting result value: "
-                            "buffer is larger than 2**64-1 bytes");
+                            "Error setting result value: buffer is too large");
             PyBuffer_Release(&view);
             return -1;
         }

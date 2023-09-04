@@ -587,7 +587,7 @@ bind_param(pysqlite_state *state, pysqlite_Statement *self, int pos,
             if ((size_t)buflen > _SQLITE_UINT64_SIZE) {
                 PyErr_Format(PyExc_OverflowError,
                              "Error binding parameter %d: "
-                             "string is longer than 2**64-1 bytes",
+                             "string is too large",
                              Py_TYPE(parameter)->tp_name);
                 return -1;
             }
@@ -605,7 +605,7 @@ bind_param(pysqlite_state *state, pysqlite_Statement *self, int pos,
             if ((size_t)(view.len) > _SQLITE_UINT64_SIZE) {
                 PyErr_Format(PyExc_OverflowError,
                              "Error binding parameter %d: "
-                             "buffer is larger than 2**64-1 bytes",
+                             "buffer is too long",
                              Py_TYPE(parameter)->tp_name);
                 PyBuffer_Release(&view);
                 return -1;
