@@ -220,7 +220,7 @@ class EnumMeta(type):
         # save DynamicClassAttribute attributes from super classes so we know
         # if we can take the shortcut of storing members in the class dict
         dynamic_attributes = {
-                k for c in enum_class.mro()
+                k for c in enum_class.__mro__
                 for k, v in c.__dict__.items()
                 if isinstance(v, DynamicClassAttribute)
                 }
