@@ -1,0 +1,4 @@
+# Requirements file for external linters and checks we run on
+# CPython itself in CI.
+
+hypothesis==6.84.0
