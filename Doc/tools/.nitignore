@@ -23,7 +23,6 @@ Doc/c-api/type.rst
 Doc/c-api/typeobj.rst
 Doc/extending/extending.rst
 Doc/extending/newtypes.rst
-Doc/faq/gui.rst
 Doc/glossary.rst
 Doc/howto/descriptor.rst
 Doc/howto/enum.rst
