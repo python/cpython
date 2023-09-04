@@ -42,6 +42,16 @@ interpreter.
       bytecode to specialize it for different runtime conditions. The
       adaptive bytecode can be shown by passing ``adaptive=True``.
 
+   .. versionchanged:: 3.12
+      For instruction leading to a jump, a jump by 0 instruction should always
+      lead to jumping to the instruction directly following the origin instruction.
+      Starting with 3.12, some instructions leading to a jump can be followed
+      by a :opcode:`CACHE` instruction in which case a jump with an argument of
+      0 will jump to the first non-``CACHE`` instruction following the origin
+      instruction.
+      As a consequence, the presence of the :opcode:`CACHE` instructions is
+      transparent for forward jumps but need to be taken into account when
+      reasoning about backward jumps.
 
 Example: Given the function :func:`!myfunc`::
 
