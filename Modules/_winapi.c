@@ -846,6 +846,7 @@ normalize_environment(PyObject* environment) {
             continue;
         }
         PyObject_SetItem(result, key, value);
+        PyMem_Free(prev_key_string);
         prev_key_string = key_string;
     }
 
