@@ -41,13 +41,12 @@ class EnvBuilder:
                      environment
     :param prompt: Alternative terminal prefix for the environment.
     :param upgrade_deps: Update the base venv modules to the latest on PyPI
-    :param gitignore: Create a .gitignore file in the environment directory
-                      which causes it to be ignored by git.
+    :param scm_ignore_file: Create an ignore file for the specified SCM.
     """
 
     def __init__(self, system_site_packages=False, clear=False,
                  symlinks=False, upgrade=False, with_pip=False, prompt=None,
-                 upgrade_deps=False, *, gitignore=False):
+                 upgrade_deps=False, *, scm_ignore_file=None):
         self.system_site_packages = system_site_packages
         self.clear = clear
         self.symlinks = symlinks
@@ -58,7 +57,9 @@ class EnvBuilder:
             prompt = os.path.basename(os.getcwd())
         self.prompt = prompt
         self.upgrade_deps = upgrade_deps
-        self.gitignore = gitignore
+        if scm_ignore_file:
+            scm_ignore_file = scm_ignore_file.lower()
+        self.scm_ignore_file = scm_ignore_file
 
     def create(self, env_dir):
         """
@@ -69,8 +70,8 @@ class EnvBuilder:
         """
         env_dir = os.path.abspath(env_dir)
         context = self.ensure_directories(env_dir)
-        if self.gitignore:
-            self._setup_gitignore(context)
+        if self.scm_ignore_file:
+            getattr(self, f"create_{self.scm_ignore_file}_ignore_file")(context)
         # See issue 24875. We need system_site_packages to be False
         # until after pip is installed.
         true_system_site_packages = self.system_site_packages
@@ -215,8 +216,8 @@ class EnvBuilder:
                 args.append('--upgrade-deps')
             if self.orig_prompt is not None:
                 args.append(f'--prompt="{self.orig_prompt}"')
-            if not self.gitignore:
-                args.append('--without-gitignore')
+            if not self.scm_ignore_file:
+                args.append('--without-scm-ignore-file')
 
             args.append(context.env_dir)
             args = ' '.join(args)
@@ -285,7 +286,7 @@ class EnvBuilder:
 
             shutil.copyfile(src, dst)
 
-    def _setup_gitignore(self, context):
+    def create_git_ignore_file(self, context):
         """
         Create a .gitignore file in the environment directory.
 
@@ -482,12 +483,12 @@ class EnvBuilder:
 
 def create(env_dir, system_site_packages=False, clear=False,
            symlinks=False, with_pip=False, prompt=None, upgrade_deps=False,
-           *, gitignore=False):
+           *, scm_ignore_file=None):
     """Create a virtual environment in a directory."""
     builder = EnvBuilder(system_site_packages=system_site_packages,
                          clear=clear, symlinks=symlinks, with_pip=with_pip,
                          prompt=prompt, upgrade_deps=upgrade_deps,
-                         gitignore=gitignore)
+                         scm_ignore_file=scm_ignore_file)
     builder.create(env_dir)
 
 
@@ -547,11 +548,11 @@ def main(args=None):
                         dest='upgrade_deps',
                         help=f'Upgrade core dependencies ({", ".join(CORE_VENV_DEPS)}) '
                              'to the latest version in PyPI')
-    parser.add_argument('--without-gitignore', dest='gitignore',
-                        default=True, action='store_false',
-                        help='Skips adding a .gitignore file to the '
-                             'environment directory which causes git to ignore '
-                             'the environment directory.')
+    parser.add_argument('--without-scm-ignore-file', dest='scm_ignore_file',
+                        action='store_const', const=None, default='git',
+                        help='Skips adding the default SCM ignore file to the '
+                             'environment directory (the default is a '
+                             '.gitignore file).')
     options = parser.parse_args(args)
     if options.upgrade and options.clear:
         raise ValueError('you cannot supply --upgrade and --clear together.')
@@ -562,7 +563,7 @@ def main(args=None):
                          with_pip=options.with_pip,
                          prompt=options.prompt,
                          upgrade_deps=options.upgrade_deps,
-                         gitignore=options.gitignore)
+                         scm_ignore_file=options.scm_ignore_file)
     for d in options.dirs:
         builder.create(d)
 

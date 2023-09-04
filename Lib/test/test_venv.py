@@ -138,7 +138,7 @@ class BasicTest(BaseTest):
                       os.path.realpath(sys.executable), data)
         copies = '' if os.name=='nt' else ' --copies'
         cmd = (f'command = {sys.executable} -m venv{copies} --without-pip '
-               f'--without-gitignore {self.env_dir}')
+               f'--without-scm-ignore-file {self.env_dir}')
         self.assertIn(cmd, data)
         fn = self.get_env_file(self.bindir, self.exe)
         if not os.path.exists(fn):  # diagnostics for Windows buildbot failures
@@ -148,37 +148,37 @@ class BasicTest(BaseTest):
         self.assertTrue(os.path.exists(fn), 'File %r should exist.' % fn)
 
     def test_config_file_command_key(self):
-        attrs = [
-            (None, None),
-            ('symlinks', '--copies'),
-            ('with_pip', '--without-pip'),
-            ('system_site_packages', '--system-site-packages'),
-            ('clear', '--clear'),
-            ('upgrade', '--upgrade'),
-            ('upgrade_deps', '--upgrade-deps'),
-            ('prompt', '--prompt'),
-            ('gitignore', '--without-gitignore'),
+        options = [
+            (None, None, None),  # Default case.
+            ('--copies', 'symlinks', False),
+            ('--without-pip', 'with_pip', False),
+            ('--system-site-packages', 'system_site_packages', True),
+            ('--clear', 'clear', True),
+            ('--upgrade', 'upgrade', True),
+            ('--upgrade-deps', 'upgrade_deps', True),
+            ('--prompt', 'prompt', True),
+            ('--without-scm-ignore-file', 'scm_ignore_file', None),
         ]
-        negated_attrs = {'with_pip', 'symlinks', 'gitignore'}
-        for attr, opt in attrs:
-            rmtree(self.env_dir)
-            if not attr:
-                b = venv.EnvBuilder()
-            else:
-                b = venv.EnvBuilder(
-                    **{attr: attr not in negated_attrs})
-            b.upgrade_dependencies = Mock() # avoid pip command to upgrade deps
-            b._setup_pip = Mock() # avoid pip setup
-            self.run_with_capture(b.create, self.env_dir)
-            data = self.get_text_file_contents('pyvenv.cfg')
-            if not attr:
-                for opt in ('--system-site-packages', '--clear', '--upgrade',
-                        '--upgrade-deps', '--prompt'):
-                    self.assertNotRegex(data, rf'command = .* {opt}')
-            elif os.name=='nt' and attr=='symlinks':
-                pass
-            else:
-                self.assertRegex(data, rf'command = .* {opt}')
+        for opt, attr, value in options:
+            with self.subTest(opt=opt, attr=attr, value=value):
+                rmtree(self.env_dir)
+                if not attr:
+                    kwargs = {}
+                else:
+                    kwargs = {attr: value}
+                b = venv.EnvBuilder(**kwargs)
+                b.upgrade_dependencies = Mock() # avoid pip command to upgrade deps
+                b._setup_pip = Mock() # avoid pip setup
+                self.run_with_capture(b.create, self.env_dir)
+                data = self.get_text_file_contents('pyvenv.cfg')
+                if not attr or opt.endswith('git'):
+                    for opt in ('--system-site-packages', '--clear', '--upgrade',
+                                '--upgrade-deps', '--prompt'):
+                        self.assertNotRegex(data, rf'command = .* {opt}')
+                elif os.name=='nt' and attr=='symlinks':
+                    pass
+                else:
+                    self.assertRegex(data, rf'command = .* {opt}')
 
     def test_prompt(self):
         env_name = os.path.split(self.env_dir)[1]
@@ -589,7 +589,7 @@ class BasicTest(BaseTest):
                "-m",
                "venv",
                "--without-pip",
-               "--without-gitignore",
+               "--without-scm-ignore-file",
                self.env_dir]
         # Our fake non-installed python is not fully functional because
         # it cannot find the extensions. Set PYTHONPATH so it can run the
@@ -621,6 +621,7 @@ class BasicTest(BaseTest):
         out, err = check_output(cmd)
         self.assertTrue(zip_landmark.encode() in out)
 
+    @requireVenvCreate
     def test_activate_shell_script_has_no_dos_newlines(self):
         """
         Test that the `activate` shell script contains no CR LF.
@@ -637,12 +638,13 @@ class BasicTest(BaseTest):
                 error_message = f"CR LF found in line {i}"
                 self.assertFalse(line.endswith(b'\r\n'), error_message)
 
-    def test_gitignore(self):
+    @requireVenvCreate
+    def test_create_git_ignore_file(self):
         """
-        Test that a .gitignore file is created when requested.
+        Test that a .gitignore file is created.
         The file should contain a `*\n` line.
         """
-        self.run_with_capture(venv.create, self.env_dir, gitignore=True)
+        self.run_with_capture(venv.create, self.env_dir, scm_ignore_file='git')
         file_lines = self.get_text_file_contents('.gitignore').splitlines()
         self.assertIn('*', file_lines)
 

@@ -143,7 +143,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
 .. class:: EnvBuilder(system_site_packages=False, clear=False, \
                       symlinks=False, upgrade=False, with_pip=False, \
-                      prompt=None, upgrade_deps=False, *, gitignore=False)
+                      prompt=None, upgrade_deps=False, *, scm_ignore_file=None)
 
     The :class:`EnvBuilder` class accepts the following keyword arguments on
     instantiation:
@@ -172,9 +172,11 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
     * ``upgrade_deps`` -- Update the base venv modules to the latest on PyPI
 
-    * ``gitignore`` -- a Boolean value which, if true, will create a
-      ``.gitignore`` file in the target directory, containing ``*`` to have the
-      environment ignored by git.
+    * ``scm_ignore_file`` -- Create an ignore file for the specified source
+      control manager (SCM). Support is defined by having a method named
+      ``create_{scm}_ignore_file``. The only value currently supported is
+      ``"git"`` via :meth:`create_git_ignore_file`.
+
 
     .. versionchanged:: 3.4
        Added the ``with_pip`` parameter
@@ -186,7 +188,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
        Added the ``upgrade_deps`` parameter
 
     .. versionadded:: 3.13
-       Added the ``gitignore`` parameter
+       Added the ``scm_ignore_file`` parameter
 
     Creators of third-party virtual environment tools will be free to use the
     provided :class:`EnvBuilder` class as a base class.
@@ -346,11 +348,18 @@ creation according to their needs, the :class:`EnvBuilder` class.
         The directories are allowed to exist (for when an existing environment
         is being upgraded).
 
+    .. method:: create_git_ignore_file(context)
+
+       Creates a ``.gitignore`` file within the virtual environment that causes
+       the entire directory to be ignored by the ``git`` source control manager.
+
+       .. versionadded:: 3.13
+
 There is also a module-level convenience function:
 
 .. function:: create(env_dir, system_site_packages=False, clear=False, \
                      symlinks=False, with_pip=False, prompt=None, \
-                     upgrade_deps=False, *, gitignore=False)
+                     upgrade_deps=False, *, scm_ignore_file=None)
 
     Create an :class:`EnvBuilder` with the given keyword arguments, and call its
     :meth:`~EnvBuilder.create` method with the *env_dir* argument.
@@ -365,6 +374,9 @@ There is also a module-level convenience function:
 
     .. versionchanged:: 3.9
        Added the ``upgrade_deps`` parameter
+
+    .. versionchanged:: 3.13
+       Added the ``scm_ignore_file`` parameter
 
 An example of extending ``EnvBuilder``
 --------------------------------------
