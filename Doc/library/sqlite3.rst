@@ -2610,26 +2610,10 @@ You can use a custom :attr:`~Connection.text_factory` to handle such cases.
 Because of SQLite's `flexible typing`_, it is not uncommon to encounter table
 columns with the ``TEXT`` data type, containing non-UTF-8 encodings,
 or even arbitrary data.
-To demonstrate, let's assume we build a database by importing a ISO-8859-2
-(Latin 2) encoded CSV file, for example a list of Czech-English dictionary
-entries, :file:`entries.csv`:
-
-.. code-block:: shell
-
-   $ python3
-   >>> with open("entries.csv", "w", encoding="latin2") as f:
-   ...     f.write("czech,english\n")  # header row
-   ...     f.write("položka,entry\n")  # data rows
-   ...     f.write("částka,sum\n")
-   >>> quit()
-   $ sqlite3 dictionary.db
-   sqlite> .mode csv
-   sqlite> .import entries.csv dict
-   sqlite> .quit
-
-:file:`dictionary.db` now contains a database that contains Latin 2 encoded text.
+To demonstrate, let's assume we've got a database with ISO-8859-2 (Latin 2)
+encoded text, for example a table of Czech-English dictionary entries.
 Assuming we now have a :class:`Connection` instance :py:data:`!con`
-connected to :file:`dictionary.db`,
+connected to this database,
 we can decode the Latin 2 encoded text using this :attr:`~Connection.text_factory`:
 
 .. testcode::
