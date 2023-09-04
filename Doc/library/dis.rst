@@ -497,6 +497,15 @@ operations on it as if it was a Python list. The top of the stack corresponds to
    .. versionadded:: 3.12
 
 
+.. opcode:: END_SEND
+
+   Removes the top value from the stack.
+   Equivalent to ``POP_TOP``.
+   Used to clean up when a generator exit, hence the name.
+
+   .. versionadded:: 3.12
+
+
 .. opcode:: COPY (i)
 
    Push the i-th item to the top of the stack without removing it from its original
@@ -1608,9 +1617,9 @@ iterations of the loop.
    Equivalent to ``STACK[-1] = STACK[-2].send(STACK[-1])``. Used in ``yield from``
    and ``await`` statements.
 
-   If the call raises :exc:`StopIteration`, pop both items, push the
-   exception's ``value`` attribute, and increment the bytecode counter by
-   *delta*.
+   If the call raises :exc:`StopIteration`, pop the top value from the stack,
+   push the exception's ``value`` attribute, and increment the bytecode counter
+   by *delta*.
 
    .. versionadded:: 3.11
 
