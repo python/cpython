@@ -37,6 +37,7 @@ __credits__ = "Gustavo Niemeyer, Niels Gust\u00e4bel, Richard Townsend."
 # Imports
 #---------
 from builtins import open as bltn_open
+import errno
 import sys
 import os
 import io
@@ -2569,6 +2570,13 @@ class TarFile(object):
         try:
             os.chmod(targetpath, tarinfo.mode)
         except OSError as e:
+            if hasattr(errno, "EFTYPE") and e.errno == errno.EFTYPE:
+                # On FreeBSD, chmod fails when trying to set the sticky bit on
+                # a file as a normal user. It's a noop in most other platforms.
+                try:
+                    os.chmod(targetpath, tarinfo.mode & ~stat.S_ISVTX)
+                except OSError as e:
+                    raise ExtractError("could not change mode") from e
             raise ExtractError("could not change mode") from e
 
     def utime(self, tarinfo, targetpath):

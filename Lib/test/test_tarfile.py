@@ -9,6 +9,7 @@ import shutil
 import re
 import warnings
 import stat
+import errno
 
 import unittest
 import unittest.mock
@@ -3818,7 +3819,15 @@ class TestExtractionFilters(unittest.TestCase):
             pass
         new_mode = (os.stat(tmp_filename).st_mode
                     | stat.S_ISVTX | stat.S_ISGID | stat.S_ISUID)
-        os.chmod(tmp_filename, new_mode)
+        try:
+            os.chmod(tmp_filename, new_mode)
+        except OSError as err:
+            # FreeBSD fails with EFTYPE if sticky bit cannot be set, instead
+            # of ignoring it.
+            if hasattr(errno, "EFTYPE") and err.errno == errno.EFTYPE:
+                os.chmod(tmp_filename, new_mode & ~stat.S_ISVTX)
+            else:
+                raise
         got_mode = os.stat(tmp_filename).st_mode
         _t_file = 't' if (got_mode & stat.S_ISVTX) else 'x'
         _suid_file = 's' if (got_mode & stat.S_ISUID) else 'x'
