@@ -196,14 +196,10 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip('f"""{g(\'\'\'\n\'\'\')}"""')
         self.check_ast_roundtrip('''f"a\\r\\nb"''')
         self.check_ast_roundtrip('''f"\\u2028{'x'}"''')
-        self.check_ast_roundtrip("f\"'''{1}\\\"\\\"\\\"\"")
-        self.check_ast_roundtrip('f\'\\\'\\\'\\\'{1}"""\'')
-        self.check_ast_roundtrip('f\'\'\'\'\'\\\'\'\'\\\'{x:\n}""""\'\'\'')
 
     def test_fstrings_pep701(self):
         self.check_ast_roundtrip('f" something { my_dict["key"] } something else "')
         self.check_ast_roundtrip('f"{f"{f"{f"{f"{f"{1+1}"}"}"}"}"}"')
-        self.check_ast_roundtrip("f'{f'{f'{f'{f'{f'{1+1}'}'}'}'}'}'")
 
     def test_strings(self):
         self.check_ast_roundtrip("u'foo'")
@@ -522,8 +518,6 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip(r"f'{x}\n'")
         self.check_src_roundtrip("f'{'\\n'}\\n'")
         self.check_src_roundtrip("f'{f'{x}\\n'}\\n'")
-        self.check_src_roundtrip('f\'\\\'\\\'\\\'{1}"""\'')
-        self.check_src_roundtrip('f\'\'\'\'\'\\\'\'\'\\\'{x:\n}""""\'\'\'')
 
     def test_docstrings(self):
         docstrings = (

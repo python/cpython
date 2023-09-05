@@ -1225,49 +1225,40 @@ class _Unparser(NodeVisitor):
 
     def visit_JoinedStr(self, node):
         self.write("f")
+        if self._avoid_backslashes:
+            with self.buffered() as buffer:
+                self._write_fstring_inner(node)
+            return self._write_str_avoiding_backslashes("".join(buffer))
 
+        # If we don't need to avoid backslashes globally (i.e., we only need
+        # to avoid them inside FormattedValues), it's cosmetically preferred
+        # to use escaped whitespace. That is, it's preferred to use backslashes
+        # for cases like: f"{x}\n". To accomplish this, we keep track of what
+        # in our buffer corresponds to FormattedValues and what corresponds to
+        # Constant parts of the f-string, and allow escapes accordingly.
         fstring_parts = []
         for value in node.values:
             with self.buffered() as buffer:
                 self._write_fstring_inner(value)
-            fstring_parts.append(("".join(buffer), isinstance(value, Constant)))
-
-        # We decide if we need to write a multi-line `f-string` since it is only
-        # necessary when we have "\n" inside formatted values.
-        use_multiline = any(
-            "\n" in value for value, is_constant in fstring_parts if not is_constant
-        )
-
-        # We then choose the quote type we use. We let `repr` do this work for
-        # now. This can be easily modified afterwards.
-        quote = repr(
-            "".join(value for value, is_constant in fstring_parts if is_constant)
-        )[0]
-        quote_type = quote * 3 if use_multiline else quote
+            fstring_parts.append(
+                ("".join(buffer), isinstance(value, Constant))
+            )
 
         new_fstring_parts = []
+        quote_types = list(_ALL_QUOTES)
         for value, is_constant in fstring_parts:
             if is_constant:
-                consecutive_quotes = 0
-                res = []
-                for c in value:
-                    if c == "\\" or not c.isprintable():
-                        res.append(c.encode("unicode_escape").decode("ascii"))
-                        continue
-                    if c == quote:
-                        if consecutive_quotes == len(quote_type) - 1:
-                            # escape when we see a full `quote_type`
-                            res.append("\\")
-                            consecutive_quotes = 0
-                        else:
-                            consecutive_quotes += 1
-                    else:
-                        consecutive_quotes = 0
-                    res.append(c)
-                value = "".join(res)
+                value, quote_types = self._str_literal_helper(
+                    value,
+                    quote_types=quote_types,
+                    escape_special_whitespace=True,
+                )
+            elif "\n" in value:
+                quote_types = [q for q in quote_types if q in _MULTI_QUOTES]
             new_fstring_parts.append(value)
 
         value = "".join(new_fstring_parts)
+        quote_type = quote_types[0]
         self.write(f"{quote_type}{value}{quote_type}")
 
     def _write_fstring_inner(self, node):
