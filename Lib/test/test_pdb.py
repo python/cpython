@@ -1098,6 +1098,7 @@ def test_post_mortem_from_no_stack():
 
     >>> with PdbTestInput(  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     ...     ["exceptions",
+    ...      "exceptions 0",
     ...     "exit"],
     ... ):
     ...    try:
@@ -1107,7 +1108,10 @@ def test_post_mortem_from_no_stack():
     > <doctest test.test_pdb.test_post_mortem_from_no_stack[0]>(2)main()
     -> raise Exception() from Exception()
     (Pdb) exceptions
-    >   0 Exception()
+        - Exception()
+    >   1 Exception()
+    (Pdb) exceptions 0
+    *** This exception has not traceback, cannot jump to it
     (Pdb) exit
     """
 

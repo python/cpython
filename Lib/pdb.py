@@ -438,7 +438,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             traceback, current = tb_or_exc.__traceback__, tb_or_exc
 
             while current is not None:
-                if current in _exceptions or not current.__traceback__:
+                if current in _exceptions or not current:
                     break
                 _exceptions.append(current)
                 if current.__cause__ is not None:
@@ -491,11 +491,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 Pdb._previous_sigint_handler = None
 
         _chained_exceptions, tb = self._get_tb_and_exceptions(tb_or_exc)
-        if (
-            not _chained_exceptions
-            and isinstance(tb_or_exc, BaseException)
-            and tb is None
-        ):
+        if isinstance(tb_or_exc, BaseException) and tb is None:
             raise ValueError("No exception traceback to inspect")
         with self._hold_exceptions(_chained_exceptions):
             if self.setup(frame, tb):
@@ -1172,7 +1168,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 rep = repr(exc)
                 if len(rep) > 80:
                     rep = rep[:77] + "..."
-                self.message(f"{prompt} {ix:>3} {rep}")
+                indicator = (
+                    "  -"
+                    if self._chained_exceptions[ix].__traceback__ is None
+                    else f"{ix:>3}"
+                )
+                self.message(f"{prompt} {indicator} {rep}")
         else:
             try:
                 number = int(arg)
@@ -1180,6 +1181,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self.error("Argument must be an integer")
                 return
             if 0 <= number < len(self._chained_exceptions):
+                if self._chained_exceptions[number].__traceback__ is None:
+                    self.error("This exception has not traceback, cannot jump to it")
+                    return
+
                 self._chained_exception_index = number
                 self.setup(None, self._chained_exceptions[number].__traceback__)
                 self.print_stack_entry(self.stack[self.curindex])
@@ -2019,7 +2024,7 @@ def post_mortem(t=None):
         if exc is not None:
             t = exc.__traceback__
 
-    if t is None:
+    if t is None or (isinstance(t, BaseException) and t.__traceback__ is None):
         raise ValueError("A valid traceback must be passed if no "
                          "exception is being handled")
 
