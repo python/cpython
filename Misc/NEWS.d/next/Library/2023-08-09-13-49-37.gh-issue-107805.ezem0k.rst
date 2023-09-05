@@ -1,1 +1,0 @@
-Fix signatures of module-level generated functions in :mod:`turtle`.
