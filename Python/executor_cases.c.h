@@ -3,6 +3,17 @@
 //   Python/bytecodes.c
 // Do not edit!
 
+        case _SAVE_CURRENT_IP: {
+            #if TIER_ONE
+            frame->prev_instr = next_instr - 1;
+            #endif
+            #if TIER_TWO
+            /* Should be eliminated in tier 2 */
+            assert(0);
+            #endif
+            break;
+        }
+
         case NOP: {
             break;
         }
@@ -2838,7 +2849,7 @@
             break;
         }
 
-        case _POP_JUMP_IF_FALSE: {
+        case _SIDE_EXIT_IF_FALSE: {
             PyObject *flag;
             flag = stack_pointer[-1];
             if (Py_IsFalse(flag)) {
@@ -2848,7 +2859,7 @@
             break;
         }
 
-        case _POP_JUMP_IF_TRUE: {
+        case _SIDE_EXIT_IF_TRUE: {
             PyObject *flag;
             flag = stack_pointer[-1];
             if (Py_IsTrue(flag)) {
@@ -2866,17 +2877,6 @@
 
         case SAVE_IP: {
             frame->prev_instr = ip_offset + oparg;
-            break;
-        }
-
-        case SAVE_CURRENT_IP: {
-            #if TIER_ONE
-            frame->prev_instr = next_instr - 1;
-            #endif
-            #if TIER_TWO
-            // Relies on a preceding SAVE_IP
-            frame->prev_instr--;
-            #endif
             break;
         }
 

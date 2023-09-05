@@ -45,7 +45,6 @@ TIER_ONE: typing.Final = 1  # Specializing adaptive interpreter (PEP 659)
 TIER_TWO: typing.Final = 2  # Experimental tracing interpreter
 Tiers: typing.TypeAlias = typing.Literal[1, 2]
 
-
 @dataclasses.dataclass
 class Instruction:
     """An instruction with additional data and code."""
@@ -254,6 +253,10 @@ class AbstractInstruction(Instruction):
 class Component:
     instr: Instruction
     active_caches: list[ActiveCacheEffect]
+
+    @property
+    def name(self):
+        return self.instr.name
 
 
 MacroParts = list[Component | parsing.CacheEffect]

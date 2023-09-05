@@ -975,41 +975,28 @@
 
         TARGET(RETURN_VALUE) {
             PyObject *retval;
-            // SAVE_CURRENT_IP
-            {
-                #if TIER_ONE
-                frame->prev_instr = next_instr - 1;
-                #endif
-                #if TIER_TWO
-                // Relies on a preceding SAVE_IP
-                frame->prev_instr--;
-                #endif
-            }
-            // _POP_FRAME
             retval = stack_pointer[-1];
             STACK_SHRINK(1);
-            {
-                assert(EMPTY());
-                #if TIER_ONE
-                assert(frame != &entry_frame);
-                #endif
-                STORE_SP();
-                _Py_LeaveRecursiveCallPy(tstate);
-                // GH-99729: We need to unlink the frame *before* clearing it:
-                _PyInterpreterFrame *dying = frame;
-                frame = tstate->current_frame = dying->previous;
-                _PyEval_FrameClearAndPop(tstate, dying);
-                frame->prev_instr += frame->return_offset;
-                _PyFrame_StackPush(frame, retval);
-                LOAD_SP();
-                LOAD_IP();
-    #if LLTRACE && TIER_ONE
-                lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
-                if (lltrace < 0) {
-                    goto exit_unwind;
-                }
-    #endif
+            assert(EMPTY());
+            #if TIER_ONE
+            assert(frame != &entry_frame);
+            #endif
+            STORE_SP();
+            _Py_LeaveRecursiveCallPy(tstate);
+            // GH-99729: We need to unlink the frame *before* clearing it:
+            _PyInterpreterFrame *dying = frame;
+            frame = tstate->current_frame = dying->previous;
+            _PyEval_FrameClearAndPop(tstate, dying);
+            frame->prev_instr += frame->return_offset;
+            _PyFrame_StackPush(frame, retval);
+            LOAD_SP();
+            LOAD_IP();
+#if LLTRACE && TIER_ONE
+            lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
+            if (lltrace < 0) {
+                goto exit_unwind;
             }
+#endif
             DISPATCH();
         }
 
@@ -1042,16 +1029,6 @@
             {
                 value = GETITEM(FRAME_CO_CONSTS, oparg);
                 Py_INCREF(value);
-            }
-            // SAVE_CURRENT_IP
-            {
-                #if TIER_ONE
-                frame->prev_instr = next_instr - 1;
-                #endif
-                #if TIER_TWO
-                // Relies on a preceding SAVE_IP
-                frame->prev_instr--;
-                #endif
             }
             // _POP_FRAME
             retval = value;
@@ -3860,15 +3837,15 @@
                     new_frame->localsplus[i] = args[i];
                 }
             }
-            // SAVE_CURRENT_IP
+            // _SAVE_CURRENT_IP
             next_instr += 3;
             {
                 #if TIER_ONE
                 frame->prev_instr = next_instr - 1;
                 #endif
                 #if TIER_TWO
-                // Relies on a preceding SAVE_IP
-                frame->prev_instr--;
+                /* Should be eliminated in tier 2 */
+                assert(0);
                 #endif
             }
             // _PUSH_FRAME
@@ -3939,15 +3916,15 @@
                     new_frame->localsplus[i] = args[i];
                 }
             }
-            // SAVE_CURRENT_IP
+            // _SAVE_CURRENT_IP
             next_instr += 3;
             {
                 #if TIER_ONE
                 frame->prev_instr = next_instr - 1;
                 #endif
                 #if TIER_TWO
-                // Relies on a preceding SAVE_IP
-                frame->prev_instr--;
+                /* Should be eliminated in tier 2 */
+                assert(0);
                 #endif
             }
             // _PUSH_FRAME

@@ -129,6 +129,11 @@ dummy_func(
     switch (opcode) {
 
 // BEGIN BYTECODES //
+
+        op(_SAVE_CURRENT_IP, (--)) {
+            frame->prev_instr = next_instr - 1;
+        }
+
         inst(NOP, (--)) {
         }
 
@@ -790,8 +795,6 @@ dummy_func(
         }
 
         macro(RETURN_VALUE) =
-            SAVE_IP +  // Tier 2 only; special-cased oparg
-            SAVE_CURRENT_IP +  // Sets frame->prev_instr
             _POP_FRAME;
 
         inst(INSTRUMENTED_RETURN_VALUE, (retval --)) {
@@ -815,8 +818,6 @@ dummy_func(
 
         macro(RETURN_CONST) =
             LOAD_CONST +
-            SAVE_IP +  // Tier 2 only; special-cased oparg
-            SAVE_CURRENT_IP +  // Sets frame->prev_instr
             _POP_FRAME;
 
         inst(INSTRUMENTED_RETURN_CONST, (--)) {
@@ -3022,8 +3023,7 @@ dummy_func(
             _CHECK_FUNCTION_EXACT_ARGS +
             _CHECK_STACK_SPACE +
             _INIT_CALL_PY_EXACT_ARGS +
-            SAVE_IP +  // Tier 2 only; special-cased oparg
-            SAVE_CURRENT_IP +  // Sets frame->prev_instr
+            _SAVE_CURRENT_IP +  // Sets frame->prev_instr
             _PUSH_FRAME;
 
         macro(CALL_PY_EXACT_ARGS) =
@@ -3032,8 +3032,7 @@ dummy_func(
             _CHECK_FUNCTION_EXACT_ARGS +
             _CHECK_STACK_SPACE +
             _INIT_CALL_PY_EXACT_ARGS +
-            SAVE_IP +  // Tier 2 only; special-cased oparg
-            SAVE_CURRENT_IP +  // Sets frame->prev_instr
+            _SAVE_CURRENT_IP +  // Sets frame->prev_instr
             _PUSH_FRAME;
 
         inst(CALL_PY_WITH_DEFAULTS, (unused/1, func_version/2, callable, self_or_null, args[oparg] -- unused)) {
@@ -3776,13 +3775,13 @@ dummy_func(
 
         ///////// Tier-2 only opcodes /////////
 
-        op(_POP_JUMP_IF_FALSE, (flag -- )) {
+        op(_SIDE_EXIT_IF_FALSE, (flag -- )) {
             if (Py_IsFalse(flag)) {
                 pc = oparg;
             }
         }
 
-        op(_POP_JUMP_IF_TRUE, (flag -- )) {
+        op(_SIDE_EXIT_IF_TRUE, (flag -- )) {
             if (Py_IsTrue(flag)) {
                 pc = oparg;
             }
@@ -3795,16 +3794,6 @@ dummy_func(
 
         op(SAVE_IP, (--)) {
             frame->prev_instr = ip_offset + oparg;
-        }
-
-        op(SAVE_CURRENT_IP, (--)) {
-            #if TIER_ONE
-            frame->prev_instr = next_instr - 1;
-            #endif
-            #if TIER_TWO
-            // Relies on a preceding SAVE_IP
-            frame->prev_instr--;
-            #endif
         }
 
         op(EXIT_TRACE, (--)) {

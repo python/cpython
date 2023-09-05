@@ -3,6 +3,10 @@
 //   Python/bytecodes.c
 // Do not edit!
 
+        case _SAVE_CURRENT_IP: {
+            break;
+        }
+
         case NOP: {
             break;
         }
@@ -776,12 +780,12 @@
             break;
         }
 
-        case _POP_JUMP_IF_FALSE: {
+        case _SIDE_EXIT_IF_FALSE: {
             STACK_SHRINK(1);
             break;
         }
 
-        case _POP_JUMP_IF_TRUE: {
+        case _SIDE_EXIT_IF_TRUE: {
             STACK_SHRINK(1);
             break;
         }
@@ -791,10 +795,6 @@
         }
 
         case SAVE_IP: {
-            break;
-        }
-
-        case SAVE_CURRENT_IP: {
             break;
         }
 

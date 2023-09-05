@@ -177,6 +177,27 @@ class Analyzer:
         if not psr.eof():
             raise psr.make_syntax_error(f"Extra stuff at the end of {filename}")
 
+    def desugar(self) -> None:
+        "Desuger inst"
+        new_ops = {}
+        to_remove = []
+        for name, inst in self.instrs.items():
+            if isinstance(inst, Instruction):
+                if inst.kind == "op":
+                    continue
+                name = inst.name
+                op_name = "_" + name
+                inst.name = op_name
+                new_ops[op_name] = inst
+                uops = [ parsing.OpName("_SAVE_CURRENT_IP"), parsing.OpName(op_name) ]
+                macro = parsing.Macro(name, uops)
+                self.macros[name] = macro
+                self.everything.append(macro)
+                to_remove.append(name)
+        self.instrs.update(new_ops)
+        for name in to_remove:
+            del self.instrs[name]
+
     def analyze(self) -> None:
         """Analyze the inputs.
 
@@ -376,9 +397,9 @@ class Analyzer:
         return MacroInstruction(macro.name, format, flags, macro, parts, offset)
 
     def analyze_pseudo(self, pseudo: parsing.Pseudo) -> PseudoInstruction:
-        targets = [self.instrs[target] for target in pseudo.targets]
+        targets = [self.macro_instrs[target] for target in pseudo.targets]
         assert targets
-        # Make sure the targets have the same fmt
+        # TO DO -- Make sure the targets have the same fmt
         fmts = list(set([t.instr_fmt for t in targets]))
         assert len(fmts) == 1
         ignored_flags = {"HAS_EVAL_BREAK_FLAG", "HAS_DEOPT_FLAG", "HAS_ERROR_FLAG"}
@@ -406,7 +427,11 @@ class Analyzer:
             match uop:
                 case parsing.OpName(name):
                     if name not in self.instrs:
-                        self.error(f"Unknown instruction {name!r}", macro)
+                        op_name = "_" + name
+                        if name in self.macros and op_name in self.instrs:
+                            name = op_name
+                        else:
+                            self.error(f"Unknown instruction {name!r}", macro)
                     components.append(self.instrs[name])
                 case parsing.CacheEffect():
                     components.append(uop)

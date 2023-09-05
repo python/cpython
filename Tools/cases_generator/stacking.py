@@ -368,7 +368,7 @@ def write_macro_instr(
         try:
             next_instr_is_set = write_components(parts, out, TIER_ONE, mac.cache_offset)
         except AssertionError as err:
-            raise AssertionError(f"Error writing macro {mac.name}") from err
+            raise AssertionError(f"Error writing macro {mac.name} {[part.name for part in mac.parts]}") from err
         if not parts[-1].instr.always_exits:
             if not next_instr_is_set and mac.cache_offset:
                 out.emit(f"next_instr += {mac.cache_offset};")
@@ -431,7 +431,7 @@ def write_components(
             # Use clone() since adjust_inverse() mutates final_offset
             mgr.adjust_inverse(mgr.final_offset.clone())
 
-        if mgr.instr.name == "SAVE_CURRENT_IP":
+        if mgr.instr.name == "_SAVE_CURRENT_IP":
             next_instr_is_set = True
             if cache_offset:
                 out.emit(f"next_instr += {cache_offset};")

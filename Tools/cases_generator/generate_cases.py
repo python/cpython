@@ -777,9 +777,7 @@ class Generator(Analyzer):
                     case OverriddenInstructionPlaceHolder():
                         self.write_overridden_instr_place_holder(thing)
                     case parsing.InstDef():
-                        if thing.kind != "op":
-                            n_instrs += 1
-                            self.write_instr(self.instrs[thing.name])
+                        pass
                     case parsing.Macro():
                         n_macros += 1
                         mac = self.macro_instrs[thing.name]
@@ -910,6 +908,7 @@ def main() -> None:
     a = Generator(args.input)
 
     a.parse()  # Raises SyntaxError on failure
+    a.desugar()
     a.analyze()  # Prints messages and sets a.errors on failure
     if a.errors:
         sys.exit(f"Found {a.errors} errors")

@@ -386,8 +386,8 @@ move_stubs(
             (stubs_end - stubs_start) * sizeof(_PyUOpInstruction));
     // Patch up the jump targets
     for (int i = 0; i < trace_length; i++) {
-        if (trace[i].opcode == _POP_JUMP_IF_FALSE ||
-            trace[i].opcode == _POP_JUMP_IF_TRUE)
+        if (trace[i].opcode == _SIDE_EXIT_IF_FALSE ||
+            trace[i].opcode == _SIDE_EXIT_IF_TRUE)
         {
             int target = trace[i].oparg;
             if (target >= stubs_start) {
@@ -503,7 +503,6 @@ translate_bytecode_to_trace(
 top:  // Jump here after _PUSH_FRAME
     for (;;) {
         RESERVE_RAW(2, "epilogue");  // Always need space for SAVE_IP and EXIT_TRACE
-        ADD_TO_TRACE(SAVE_IP, INSTR_IP(instr, code), 0);
 
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;
@@ -552,7 +551,7 @@ pop_jump_if_bool:
                     instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + oparg;
                 max_length -= 2;  // Really the start of the stubs
                 uint32_t uopcode = opcode == POP_JUMP_IF_TRUE ?
-                    _POP_JUMP_IF_TRUE : _POP_JUMP_IF_FALSE;
+                    _SIDE_EXIT_IF_TRUE : _SIDE_EXIT_IF_FALSE;
                 ADD_TO_TRACE(uopcode, max_length, 0);
                 ADD_TO_STUB(max_length, SAVE_IP, INSTR_IP(target_instr, code), 0);
                 ADD_TO_STUB(max_length + 1, EXIT_TRACE, 0, 0);
@@ -610,7 +609,7 @@ pop_jump_if_bool:
                 max_length -= 3;  // Really the start of the stubs
                 ADD_TO_TRACE(check_op, 0, 0);
                 ADD_TO_TRACE(exhausted_op, 0, 0);
-                ADD_TO_TRACE(_POP_JUMP_IF_TRUE, max_length, 0);
+                ADD_TO_TRACE(_SIDE_EXIT_IF_TRUE, max_length, 0);
                 ADD_TO_TRACE(next_op, 0, 0);
 
                 ADD_TO_STUB(max_length + 0, POP_TOP, 0, 0);
@@ -679,7 +678,12 @@ pop_jump_if_bool:
                                         expansion->uops[i].offset);
                                 Py_FatalError("garbled expansion");
                         }
-                        ADD_TO_TRACE(expansion->uops[i].uop, oparg, operand);
+                        if (expansion->uops[i].uop == _SAVE_CURRENT_IP) {
+                            ADD_TO_TRACE(SAVE_IP, INSTR_IP(instr, code), 0);
+                        }
+                        else {
+                            ADD_TO_TRACE(expansion->uops[i].uop, oparg, operand);
+                        }
                         if (expansion->uops[i].uop == _POP_FRAME) {
                             TRACE_STACK_POP();
                             DPRINTF(2,
@@ -811,7 +815,7 @@ remove_unneeded_uops(_PyUOpInstruction *trace, int trace_length)
     bool need_ip = true;
     for (int pc = 0; pc < trace_length; pc++) {
         int opcode = trace[pc].opcode;
-        if (opcode == SAVE_CURRENT_IP) {
+        if (opcode == _SAVE_CURRENT_IP) {
             // Special case: never remove preceding SAVE_IP
             last_save_ip = -1;
         }
@@ -890,7 +894,7 @@ uop_optimize(
     if (uop_optimize != NULL && *uop_optimize > '0') {
         trace_length = _Py_uop_analyze_and_optimize(code, trace, trace_length, curr_stackentries);
     }
-    trace_length = remove_unneeded_uops(trace, trace_length);
+    // trace_length = remove_unneeded_uops(trace, trace_length);
     _PyUOpExecutorObject *executor = PyObject_NewVar(_PyUOpExecutorObject, &UOpExecutor_Type, trace_length);
     if (executor == NULL) {
         return -1;
