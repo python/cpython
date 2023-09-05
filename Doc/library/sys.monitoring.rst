@@ -194,7 +194,7 @@ Events can also be controlled on a per code object basis.
 
    Returns all the local events for ``code``
 
-.. function:: sys.monitoring.set_local_events(tool_id: int, code: CodeType, event_set: int)
+.. function:: set_local_events(tool_id: int, code: CodeType, event_set: int)
 
    Activates all the local events for ``code``  which are set in ``event_set``.
    Raises a ``ValueError`` if ``tool_id`` is not in use.
