@@ -129,7 +129,7 @@ def prepare_class(name, bases=(), kwds=None):
 def _calculate_meta(meta, bases):
     """Calculate the most derived metaclass."""
 
-    candidates = (type, )
+    candidates = (meta, )
     for base in bases:
         new_candidate = type(base)
         if any(issubclass(candidate, new_candidate) for candidate in candidates):
