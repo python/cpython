@@ -128,7 +128,7 @@ def prepare_class(name, bases=(), kwds=None):
 
 def _calculate_meta(meta, bases):
     """Calculate the most derived metaclass."""
-    
+
     def get_most_specific_types(candidates, new_candidate):
         if any(issubclass(candidate, new_candidate) for candidate in candidates):
             return candidates
