@@ -2018,6 +2018,14 @@ def post_mortem(t=None):
     If `t` is an exception object, the `exceptions` command makes it possible to
     list and inspect its chained exceptions (if any).
     """
+    return _post_mortem(t, Pdb())
+
+
+def _post_mortem(t, pdb_instance):
+    """
+    Private version of post_mortem, which allow to pass a pdb instance
+    for testing purposes.
+    """
     # handling the default
     if t is None:
         exc = sys.exception()
@@ -2031,6 +2039,7 @@ def post_mortem(t=None):
     p = Pdb()
     p.reset()
     p.interaction(None, t)
+
 
 def pm():
     """Enter post-mortem debugging of the traceback found in sys.last_exc."""

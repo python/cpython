@@ -848,9 +848,7 @@ def test_post_mortem_chained():
     ...     try:
     ...         test_function_reraise()
     ...     except Exception as e:
-    ...         # same as pdb.post_mortem(e), but with custom pdb instance.
-    ...         instance.reset()
-    ...         instance.interaction(None, e)
+    ...         pdb._post_mortem(e, instance)
 
     >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     ...     'exceptions',
@@ -926,9 +924,7 @@ def test_post_mortem_cause_no_context():
     ...     try:
     ...         main()
     ...     except Exception as e:
-    ...         # same as pdb.post_mortem(e), but with custom pdb instance.
-    ...         instance.reset()
-    ...         instance.interaction(None, e)
+    ...         pdb._post_mortem(e, instance)
 
     >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     ...     'exceptions',
@@ -982,9 +978,7 @@ def test_post_mortem_context_of_the_cause():
     ...     try:
     ...         main()
     ...     except Exception as e:
-    ...         # same as pdb.post_mortem(e), but with custom pdb instance.
-    ...         instance.reset()
-    ...         instance.interaction(None, e)
+    ...         pdb._post_mortem(e, instance)
 
     >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     ...     'exceptions',
@@ -1057,9 +1051,7 @@ def test_post_mortem_from_none():
     ...     try:
     ...         main()
     ...     except Exception as e:
-    ...         # same as pdb.post_mortem(e), but with custom pdb instance.
-    ...         instance.reset()
-    ...         instance.interaction(None, e)
+    ...         pdb._post_mortem(e, instance)
 
     >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     ...     'exceptions',
@@ -1092,9 +1084,7 @@ def test_post_mortem_from_no_stack():
     ...     try:
     ...         main()
     ...     except Exception as e:
-    ...         # same as pdb.post_mortem(e), but with custom pdb instance.
-    ...         instance.reset()
-    ...         instance.interaction(None, e)
+    ...         pdb._post_mortem(e, instance)
 
     >>> with PdbTestInput(  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     ...     ["exceptions",
@@ -1125,9 +1115,7 @@ def test_post_mortem_single_no_stack():
     ...     instance = pdb.Pdb(nosigint=True, readrc=False)
     ...     import sys
     ...     sys.last_exc = Exception()
-    ...     # same as pdb.post_mortem(e), but with custom pdb instance.
-    ...     instance.reset()
-    ...     instance.interaction(None, sys.last_exc)
+    ...     pdb._post_mortem(sys.last_exc, instance)
 
     >>> with PdbTestInput(  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     ...     []
@@ -1136,7 +1124,7 @@ def test_post_mortem_single_no_stack():
     ...        test_function()
     ...    except ValueError as e:
     ...        print(e)
-    No exception traceback to inspect
+    A valid traceback must be passed if no exception is being handled
     """
 
 
@@ -1204,9 +1192,7 @@ def test_post_mortem_complex():
     ...     try:
     ...         main()
     ...     except Exception as e:
-    ...         # same as pdb.post_mortem(e), but with custom pdb instance.
-    ...         instance.reset()
-    ...         instance.interaction(None, e)
+    ...         pdb._post_mortem(e, instance)
 
     >>> with PdbTestInput(  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     ...     ["exceptions",
