@@ -52,7 +52,7 @@ Registering and using tools
 
    Should be called once a tool no longer requires ``id``.
 
-.. function:: get_tool(id: int) ->  str | None
+.. function:: get_tool(id: int) -> str | None
 
    Returns the name of the tool if ``id`` is in use,
    otherwise it returns ``None``.
