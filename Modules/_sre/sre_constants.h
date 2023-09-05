@@ -11,7 +11,7 @@
  * See the sre.c file for information on usage and redistribution.
  */
 
-#define SRE_MAGIC 20221023
+#define SRE_MAGIC 20230612
 #define SRE_OP_FAILURE 0
 #define SRE_OP_SUCCESS 1
 #define SRE_OP_ANY 2
@@ -85,7 +85,6 @@
 #define SRE_CATEGORY_UNI_NOT_WORD 15
 #define SRE_CATEGORY_UNI_LINEBREAK 16
 #define SRE_CATEGORY_UNI_NOT_LINEBREAK 17
-#define SRE_FLAG_TEMPLATE 1
 #define SRE_FLAG_IGNORECASE 2
 #define SRE_FLAG_LOCALE 4
 #define SRE_FLAG_MULTILINE 8

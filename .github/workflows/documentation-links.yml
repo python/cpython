@@ -1,0 +1,27 @@
+name: Read the Docs PR preview
+# Automatically edits a pull request's descriptions with a link
+# to the documentation's preview on Read the Docs.
+
+on:
+  pull_request_target:
+    types:
+      - opened
+    paths:
+    - 'Doc/**'
+    - '.github/workflows/doc.yml'
+
+permissions:
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  documentation-links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: readthedocs/actions/preview@v1
+        with:
+          project-slug: "cpython-previews"
+          single-version: "true"

@@ -83,7 +83,6 @@ class Day(IntEnum):
     SUNDAY = 6
 
 
-
 # Number of days per month (except for February in leap years)
 mdays = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
@@ -156,7 +155,7 @@ def weekday(year, month, day):
     """Return weekday (0-6 ~ Mon-Sun) for year, month (1-12), day (1-31)."""
     if not datetime.MINYEAR <= year <= datetime.MAXYEAR:
         year = 2000 + year % 400
-    return datetime.date(year, month, day).weekday()
+    return Day(datetime.date(year, month, day).weekday())
 
 
 def monthrange(year, month):
@@ -586,8 +585,6 @@ class different_locale:
         _locale.setlocale(_locale.LC_TIME, self.locale)
 
     def __exit__(self, *args):
-        if self.oldlocale is None:
-            return
         _locale.setlocale(_locale.LC_TIME, self.oldlocale)
 
 
@@ -691,7 +688,7 @@ def timegm(tuple):
     return seconds
 
 
-def main(args):
+def main(args=None):
     import argparse
     parser = argparse.ArgumentParser()
     textgroup = parser.add_argument_group('text only arguments')
@@ -748,7 +745,7 @@ def main(args):
         help="month number (1-12, text only)"
     )
 
-    options = parser.parse_args(args[1:])
+    options = parser.parse_args(args)
 
     if options.locale and not options.encoding:
         parser.error("if --locale is specified --encoding is required")
@@ -757,6 +754,9 @@ def main(args):
     locale = options.locale, options.encoding
 
     if options.type == "html":
+        if options.month:
+            parser.error("incorrect number of arguments")
+            sys.exit(1)
         if options.locale:
             cal = LocaleHTMLCalendar(locale=locale)
         else:
@@ -768,11 +768,8 @@ def main(args):
         write = sys.stdout.buffer.write
         if options.year is None:
             write(cal.formatyearpage(datetime.date.today().year, **optdict))
-        elif options.month is None:
-            write(cal.formatyearpage(options.year, **optdict))
         else:
-            parser.error("incorrect number of arguments")
-            sys.exit(1)
+            write(cal.formatyearpage(options.year, **optdict))
     else:
         if options.locale:
             cal = LocaleTextCalendar(locale=locale)
@@ -796,4 +793,4 @@ def main(args):
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main()

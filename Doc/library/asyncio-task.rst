@@ -426,6 +426,9 @@ Sleeping
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
 
+   .. versionchanged:: 3.13
+      Raises :exc:`ValueError` if *delay* is :data:`~math.nan`.
+
 
 Running Tasks Concurrently
 ==========================
@@ -527,6 +530,51 @@ Running Tasks Concurrently
       and there is no running event loop.
 
 
+.. _eager-task-factory:
+
+Eager Task Factory
+==================
+
+.. function:: eager_task_factory(loop, coro, *, name=None, context=None)
+
+    A task factory for eager task execution.
+
+    When using this factory (via :meth:`loop.set_task_factory(asyncio.eager_task_factory) <loop.set_task_factory>`),
+    coroutines begin execution synchronously during :class:`Task` construction.
+    Tasks are only scheduled on the event loop if they block.
+    This can be a performance improvement as the overhead of loop scheduling
+    is avoided for coroutines that complete synchronously.
+
+    A common example where this is beneficial is coroutines which employ
+    caching or memoization to avoid actual I/O when possible.
+
+    .. note::
+
+        Immediate execution of the coroutine is a semantic change.
+        If the coroutine returns or raises, the task is never scheduled
+        to the event loop. If the coroutine execution blocks, the task is
+        scheduled to the event loop. This change may introduce behavior
+        changes to existing applications. For example,
+        the application's task execution order is likely to change.
+
+    .. versionadded:: 3.12
+
+.. function:: create_eager_task_factory(custom_task_constructor)
+
+    Create an eager task factory, similar to :func:`eager_task_factory`,
+    using the provided *custom_task_constructor* when creating a new task instead
+    of the default :class:`Task`.
+
+    *custom_task_constructor* must be a *callable* with the signature matching
+    the signature of :class:`Task.__init__ <Task>`.
+    The callable must return a :class:`asyncio.Task`-compatible object.
+
+    This function returns a *callable* intended to be used as a task factory of an
+    event loop via :meth:`loop.set_task_factory(factory) <loop.set_task_factory>`).
+
+    .. versionadded:: 3.12
+
+
 Shielding From Cancellation
 ===========================
 
@@ -544,7 +592,7 @@ Shielding From Cancellation
 
    is equivalent to::
 
-       res = await something()
+       res = await shield(something())
 
    *except* that if the coroutine containing it is cancelled, the
    Task running in ``something()`` is not cancelled.  From the point
@@ -583,9 +631,9 @@ Shielding From Cancellation
 Timeouts
 ========
 
-.. coroutinefunction:: timeout(delay)
+.. function:: timeout(delay)
 
-    An :ref:`asynchronous context manager <async-context-managers>`
+    Return an :ref:`asynchronous context manager <async-context-managers>`
     that can be used to limit the amount of time spent waiting on
     something.
 
@@ -606,16 +654,16 @@ Timeouts
     If ``long_running_task`` takes more than 10 seconds to complete,
     the context manager will cancel the current task and handle
     the resulting :exc:`asyncio.CancelledError` internally, transforming it
-    into an :exc:`asyncio.TimeoutError` which can be caught and handled.
+    into a :exc:`TimeoutError` which can be caught and handled.
 
     .. note::
 
       The :func:`asyncio.timeout` context manager is what transforms
-      the :exc:`asyncio.CancelledError` into an :exc:`asyncio.TimeoutError`,
-      which means the :exc:`asyncio.TimeoutError` can only be caught
+      the :exc:`asyncio.CancelledError` into a :exc:`TimeoutError`,
+      which means the :exc:`TimeoutError` can only be caught
       *outside* of the context manager.
 
-    Example of catching :exc:`asyncio.TimeoutError`::
+    Example of catching :exc:`TimeoutError`::
 
         async def main():
             try:
@@ -676,7 +724,7 @@ Timeouts
 
     .. versionadded:: 3.11
 
-.. coroutinefunction:: timeout_at(when)
+.. function:: timeout_at(when)
 
    Similar to :func:`asyncio.timeout`, except *when* is the absolute time
    to stop waiting, or ``None``.
@@ -978,7 +1026,7 @@ Introspection
 Task Object
 ===========
 
-.. class:: Task(coro, *, loop=None, name=None)
+.. class:: Task(coro, *, loop=None, name=None, context=None, eager_start=False)
 
    A :class:`Future-like <Future>` object that runs a Python
    :ref:`coroutine <coroutine>`.  Not thread-safe.
@@ -1013,9 +1061,17 @@ Task Object
    APIs except :meth:`Future.set_result` and
    :meth:`Future.set_exception`.
 
-   Tasks support the :mod:`contextvars` module.  When a Task
-   is created it copies the current context and later runs its
-   coroutine in the copied context.
+   An optional keyword-only *context* argument allows specifying a
+   custom :class:`contextvars.Context` for the *coro* to run in.
+   If no *context* is provided, the Task copies the current context
+   and later runs its coroutine in the copied context.
+
+   An optional keyword-only *eager_start* argument allows eagerly starting
+   the execution of the :class:`asyncio.Task` at task creation time.
+   If set to ``True`` and the event loop is running, the task will start
+   executing the coroutine immediately, until the first time the coroutine
+   blocks. If the coroutine returns or raises without blocking, the task
+   will be finished eagerly and will skip scheduling to the event loop.
 
    .. versionchanged:: 3.7
       Added support for the :mod:`contextvars` module.
@@ -1026,6 +1082,12 @@ Task Object
    .. deprecated:: 3.10
       Deprecation warning is emitted if *loop* is not specified
       and there is no running event loop.
+
+   .. versionchanged:: 3.11
+      Added the *context* parameter.
+
+   .. versionchanged:: 3.12
+      Added the *eager_start* parameter.
 
    .. method:: done()
 
@@ -1117,7 +1179,16 @@ Task Object
 
       Return the coroutine object wrapped by the :class:`Task`.
 
+      .. note::
+
+         This will return ``None`` for Tasks which have already
+         completed eagerly. See the :ref:`Eager Task Factory <eager-task-factory>`.
+
       .. versionadded:: 3.8
+
+      .. versionchanged:: 3.12
+
+         Newly added eager task execution means result may be ``None``.
 
    .. method:: get_context()
 

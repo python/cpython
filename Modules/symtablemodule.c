@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_pythonrun.h"     // _Py_SourceAsString()
 #include "pycore_symtable.h"      // struct symtable
 
 #include "clinic/symtablemodule.c.h"
@@ -100,6 +101,7 @@ symtable_init_constants(PyObject *m)
 
 static PyModuleDef_Slot symtable_slots[] = {
     {Py_mod_exec, symtable_init_constants},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

@@ -1,3 +1,0 @@
-Fix incorrect normalization of UNC device path roots, and partial UNC share
-path roots, in :class:`pathlib.PurePath`. Pathlib no longer appends a
-trailing slash to such paths.

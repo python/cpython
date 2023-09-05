@@ -1,0 +1,3 @@
+Add ``--fail-rerun option`` option to regrtest: if a test failed when then
+passed when rerun in verbose mode, exit the process with exit code 2
+(error), instead of exit code 0 (success). Patch by Victor Stinner.
