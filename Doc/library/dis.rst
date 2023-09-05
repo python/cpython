@@ -1695,9 +1695,13 @@ iterations of the loop.
 
 .. opcode:: CALL_INTRINSIC_2
 
-   Calls an intrinsic function with two arguments. Passes ``STACK[-2]``, ``STACK[-1]`` as the
-   arguments and sets ``STACK[-1]`` to the result. Used to implement functionality that is
-   necessary but not performance critical.
+   Calls an intrinsic function with two arguments. Used to implement functionality
+   that is necessary but not performance critical::
+
+      arg2 = STACK.pop()
+      arg1 = STACK.pop()
+      result = intrinsic2(arg1, arg2)
+      STACK.push(result)
 
    The operand determines which intrinsic function is called:
 
