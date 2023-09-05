@@ -2577,7 +2577,8 @@ class TarFile(object):
                     os.chmod(targetpath, tarinfo.mode & ~stat.S_ISVTX)
                 except OSError as e:
                     raise ExtractError("could not change mode") from e
-            raise ExtractError("could not change mode") from e
+            else:
+                raise ExtractError("could not change mode") from e
 
     def utime(self, tarinfo, targetpath):
         """Set modification time of targetpath according to tarinfo.
