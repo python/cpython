@@ -2568,17 +2568,21 @@ class TarFile(object):
         if tarinfo.mode is None:
             return
         try:
-            os.chmod(targetpath, tarinfo.mode)
-        except OSError as e:
-            if hasattr(errno, "EFTYPE") and e.errno == errno.EFTYPE:
-                # On FreeBSD, chmod fails when trying to set the sticky bit on
-                # a file as a normal user. It's a noop in most other platforms.
+            try:
+                os.chmod(targetpath, tarinfo.mode)
+            except OSError as e:
+                if not(hasattr(errno, "EFTYPE") and e.errno == errno.EFTYPE):
+                    raise
+
+                # gh-108948: On FreeBSD, chmod() fails when trying to set the
+                # sticky bit on a file as non-root. But it's a noop in most
+                # other platforms, and we try and match that behavior here.
                 try:
                     os.chmod(targetpath, tarinfo.mode & ~stat.S_ISVTX)
-                except OSError as e:
-                    raise ExtractError("could not change mode") from e
-            else:
-                raise ExtractError("could not change mode") from e
+                except OSError as e2:
+                    raise e2 from e
+        except OSError as e:
+            raise ExtractError("could not change mode") from e
 
     def utime(self, tarinfo, targetpath):
         """Set modification time of targetpath according to tarinfo.
