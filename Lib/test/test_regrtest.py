@@ -34,6 +34,7 @@ LOG_PREFIX = r'[0-9]+:[0-9]+:[0-9]+ (?:load avg: [0-9]+\.[0-9]{2} )?'
 EXITCODE_BAD_TEST = 2
 EXITCODE_ENV_CHANGED = 3
 EXITCODE_NO_TESTS_RAN = 4
+EXITCODE_RERUN_FAIL = 5
 EXITCODE_INTERRUPTED = 130
 
 TEST_INTERRUPTED = textwrap.dedent("""
@@ -1265,10 +1266,10 @@ class ArgsTestCase(BaseTestCase):
                                   stats=TestStats(3, 1))
         os_helper.unlink(marker_filename)
 
-        # with --fail-rerun, exit code EXITCODE_BAD_TEST
+        # with --fail-rerun, exit code EXITCODE_RERUN_FAIL
         # on "FAILURE then SUCCESS" state.
         output = self.run_tests("--rerun", "--fail-rerun", testname,
-                                exitcode=EXITCODE_BAD_TEST)
+                                exitcode=EXITCODE_RERUN_FAIL)
         self.check_executed_tests(output, [testname],
                                   rerun=Rerun(testname,
                                               match="test_fail_once",
