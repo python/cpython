@@ -2041,9 +2041,8 @@ def _post_mortem(t, pdb_instance):
         raise ValueError("A valid traceback must be passed if no "
                          "exception is being handled")
 
-    p = Pdb()
-    p.reset()
-    p.interaction(None, t)
+    pdb_instance.reset()
+    pdb_instance.interaction(None, t)
 
 
 def pm():
