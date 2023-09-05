@@ -1,0 +1,2 @@
+Deprecate ``inspect.getargs``, use :meth:`inspect.Signature.from_code`
+instead.

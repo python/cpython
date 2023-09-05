@@ -435,6 +435,25 @@ class TestPredicates(IsTestBase):
         self.assertEqual(isabstract_checks, [True, True, False])
 
 
+class TestGetArgs(unittest.TestCase):
+    def test_getargs_is_deprecated(self):
+        # We are only interested in the deprecation warning,
+        # because `getargs` is:
+        # - undocumented
+        # - untested
+        # - deprecated
+        # - has modern alternative
+        # - incorrect anyways.
+        def func(): ...
+
+        msg = (
+            'getargs is deprecated since Python3.13, '
+            'use Signature.from_code instead'
+        )
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            inspect.getargs(func.__code__)
+
+
 class TestInterpreterStack(IsTestBase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
@@ -3673,6 +3692,41 @@ class TestSignatureObject(unittest.TestCase):
             with self.subTest(mock=mock):
                 with self.assertRaises(TypeError):
                     inspect.signature(mock)
+
+    def test_signature_on_code_objects(self):
+        def func1(
+            a, b: int,
+            /,
+            c, d: str = 'a',
+            *args: int,
+            e, f: bool = True,
+            **kwargs: str,
+        ) -> float:
+            ...
+
+        def func2(a: str, b: int = 0, /): ...
+        def func3(): ...
+        def func4(*a, **k): ...
+        def func5(*, kw=False): ...
+
+        known_sigs = {
+            func1: '(a, b, /, c, d, *args, e, f, **kwargs)',
+            func2: '(a, b, /)',
+            func3: '()',
+            func4: '(*a, **k)',
+            func5: '(*, kw)',
+        }
+
+        for test_func, expected_sig in known_sigs.items():
+            with self.subTest(test_func=test_func, expected_sig=expected_sig):
+                self.assertEqual(
+                    str(inspect.Signature.from_code(test_func.__code__)),
+                    expected_sig,
+                )
+
+    def test_signature_on_non_code_objects(self):
+        with self.assertRaisesRegex(TypeError, '1 is not a code object'):
+            inspect.Signature.from_code(1)
 
     def test_signature_equality(self):
         def foo(a, *, b:int) -> float: pass
