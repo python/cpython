@@ -40,7 +40,7 @@ jobs:
       run_ssl_tests: ${{ steps.check.outputs.run_ssl_tests }}
       config_hash: ${{ steps.config_hash.outputs.hash }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Check for source changes
         id: check
         run: |
@@ -99,8 +99,8 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
       - name: Install Dependencies
         run: |
             sudo ./.github/workflows/posix-deps-apt.sh
@@ -143,13 +143,13 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Restore config.cache
         uses: actions/cache@v3
         with:
           path: config.cache
           key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v4
       - name: Install Dependencies
         run: sudo ./.github/workflows/posix-deps-apt.sh
       - name: Add ccache to PATH
@@ -203,7 +203,7 @@ jobs:
     env:
        IncludeUwp: 'true'
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Build CPython
       run: .\PCbuild\build.bat -e -d -p Win32
     - name: Display build info
@@ -220,7 +220,7 @@ jobs:
     env:
        IncludeUwp: 'true'
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Register MSVC problem matcher
       run: echo "::add-matcher::.github/problem-matchers/msvc.json"
     - name: Build CPython
@@ -242,7 +242,7 @@ jobs:
       HOMEBREW_NO_INSTALL_CLEANUP: 1
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Restore config.cache
       uses: actions/cache@v3
       with:
@@ -276,7 +276,7 @@ jobs:
       OPENSSL_VER: 1.1.1v
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install Dependencies
@@ -349,7 +349,7 @@ jobs:
       OPENSSL_DIR: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}
       LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}/lib
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Restore config.cache
       uses: actions/cache@v3
       with:
@@ -398,7 +398,7 @@ jobs:
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Restore config.cache
       uses: actions/cache@v3
       with:
