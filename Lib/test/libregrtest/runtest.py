@@ -442,7 +442,7 @@ def _load_run_test(result: TestResult, ns: Namespace) -> None:
 
     if hasattr(test_mod, "test_main"):
         # https://github.com/python/cpython/issues/89392
-        raise Exception("Module {result.test_name} defines test_main() which is no longer supported by regrtest")
+        raise Exception(f"Module {result.test_name} defines test_main() which is no longer supported by regrtest")
     def test_func():
         return run_unittest(test_mod)
 
