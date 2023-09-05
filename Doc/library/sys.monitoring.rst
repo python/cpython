@@ -222,7 +222,7 @@ Registering callback functions
 
 To register a callable for events call
 
-.. function:: sys.monitoring.register_callback(tool_id: int, event: int, func: Callable | None) -> Callable | None
+.. function:: register_callback(tool_id: int, event: int, func: Callable | None) -> Callable | None
 
    Registers the callable ``func`` for the ``event`` with the given ``tool_id``
 
