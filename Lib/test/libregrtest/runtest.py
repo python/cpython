@@ -345,11 +345,10 @@ def _load_run_test(result: TestResult, ns: Namespace) -> None:
 
     the_module = importlib.import_module(abstest)
 
-    # If the test has a test_main, that will run the appropriate
-    # tests.  If not, use normal unittest test loading.
-    test_func = getattr(the_module, "test_main", None)
-    if test_func is None:
-        test_func = functools.partial(_test_module, the_module)
+    if hasattr(the_module, "test_main"):
+        # https://github.com/python/cpython/issues/89392
+        raise Exception(f"Module {result.test_name} defines test_main() which is no longer supported by regrtest")
+    test_func = functools.partial(_test_module, the_module)
 
     try:
         with save_env(ns, result.test_name):

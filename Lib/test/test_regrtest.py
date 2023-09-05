@@ -1678,9 +1678,9 @@ class ArgsTestCase(BaseTestCase):
                 7948648
                 """
 
-            def test_main():
-                testmod = sys.modules[__name__]
-                return support.run_doctest(testmod)
+            def load_tests(loader, tests, pattern):
+                tests.addTest(doctest.DocTestSuite())
+                return tests
         ''')
         testname = self.create_test(code=code)
 
@@ -1689,7 +1689,7 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, [testname],
                                   failed=[testname],
                                   randomize=True,
-                                  stats=TestStats(3, 2, 0))
+                                  stats=TestStats(1, 1, 0))
 
 
 class TestUtils(unittest.TestCase):
