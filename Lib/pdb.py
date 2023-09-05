@@ -1182,7 +1182,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 return
             if 0 <= number < len(self._chained_exceptions):
                 if self._chained_exceptions[number].__traceback__ is None:
-                    self.error("This exception has not traceback, cannot jump to it")
+                    self.error("This exception does not have a traceback, cannot jump to it")
                     return
 
                 self._chained_exception_index = number
