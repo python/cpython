@@ -15,6 +15,7 @@ __all__ = ['dataclass',
            'field',
            'Field',
            'FrozenInstanceError',
+           'AlreadyDataclassError',
            'InitVar',
            'KW_ONLY',
            'MISSING',
@@ -170,6 +171,10 @@ __all__ = ['dataclass',
 
 # Raised when an attempt is made to modify a frozen class.
 class FrozenInstanceError(AttributeError): pass
+
+# Raised when an attempt is made to call dataclass() on a class
+# that's already a dataclass.
+class AlreadyDataclassError(TypeError): pass
 
 # A sentinel object for default values to signal that a default
 # factory will be used.  This is given a nice repr() which will appear
@@ -920,6 +925,11 @@ _hash_action = {(False, False, False, False): None,
 
 def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                    match_args, kw_only, slots, weakref_slot):
+    # If this class is already a dataclass, it's an error to process
+    # it again.
+    if cls.__dict__.get(_FIELDS) is not None:
+        raise AlreadyDataclassError(f'class {cls} is already a dataclass')
+
     # Now that dicts retain insertion order, there's no reason to use
     # an ordered dict.  I am leveraging that ordering here, because
     # derived class fields overwrite base class fields, but the order
