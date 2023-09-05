@@ -438,7 +438,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             traceback, current = tb_or_exc.__traceback__, tb_or_exc
 
             while current is not None:
-                if current in _exceptions or not current:
+                if current in _exceptions:
                     break
                 _exceptions.append(current)
                 if current.__cause__ is not None:
