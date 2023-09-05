@@ -1,0 +1,12 @@
+# This is a dummy config file so that readthedocs.org doesn't fail on security branches.
+# Note that this won't result in docs actually getting built;
+# clicking on the docs preview link on a PR will result in a 404.
+version: 2
+formats: []
+build:
+  os: "ubuntu-22.04"
+  tools:
+    python: "3.11"
+  jobs:
+    post_checkout:
+    - exit 183
