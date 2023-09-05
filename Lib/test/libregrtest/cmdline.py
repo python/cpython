@@ -107,6 +107,8 @@ resources to test.  Currently only the following are defined:
 
     cpu -       Used for certain CPU-heavy tests.
 
+    walltime -  Long running but not CPU-bound tests.
+
     subprocess  Run all tests for the subprocess module.
 
     urlfetch -  It is okay to download files required on testing.
@@ -129,7 +131,7 @@ Pattern examples:
 
 
 ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network',
-                 'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui')
+                 'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui', 'walltime')
 
 # Other resources excluded from --use=all:
 #
