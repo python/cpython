@@ -1,0 +1,1 @@
+Forbid setting a frame's ``f_lineno`` field during a YIELD trace event.
