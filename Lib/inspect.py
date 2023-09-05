@@ -2384,13 +2384,53 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
     return cls(parameters, return_annotation=cls.empty)
 
 
+def _signature_from_builtin(cls, func, skip_bound_arg=True):
+    """Private helper function to get signature for
+    builtin callables.
+    """
+
+    if not _signature_is_builtin(func):
+        raise TypeError("{!r} is not a Python builtin "
+                        "function".format(func))
+
+    s = getattr(func, "__text_signature__", None)
+    if not s:
+        raise ValueError("no signature found for builtin {!r}".format(func))
+
+    return _signature_fromstr(cls, func, s, skip_bound_arg)
+
+
+def _signature_from_function(cls, func, skip_bound_arg=True,
+                             globals=None, locals=None, eval_str=False):
+    """Private helper: constructs Signature for the given python function."""
+
+    is_duck_function = False
+    if not isfunction(func):
+        if _signature_is_functionlike(func):
+            is_duck_function = True
+        else:
+            # If it's not a pure Python function, and not a duck type
+            # of pure function:
+            raise TypeError('{!r} is not a Python function'.format(func))
+
+    s = getattr(func, "__text_signature__", None)
+    if s:
+        return _signature_fromstr(cls, func, s, skip_bound_arg)
+    return _signature_from_code(cls, func.__code__,
+                                       globals=globals,
+                                       locals=locals,
+                                       eval_str=eval_str,
+                                       is_duck_function=is_duck_function,
+                                       func=func)
+
+
 def _signature_from_code(cls,
-                                func_code,
-                                globals=None,
-                                locals=None,
-                                eval_str=False,
-                                is_duck_function=False,
-                                func=None):
+                         func_code,
+                         globals=None,
+                         locals=None,
+                         eval_str=False,
+                         is_duck_function=False,
+                         func=None):
     """Private helper function to get signature for
     code objects.
     """
@@ -2408,7 +2448,6 @@ def _signature_from_code(cls,
         defaults = func.__defaults__
         kwdefaults = func.__kwdefaults__
     else:
-        # `func` can be `None` when we get a signature from just a `CodeObject`
         annotations = {}
         defaults = None
         kwdefaults = None
@@ -2475,46 +2514,6 @@ def _signature_from_code(cls,
     return cls(parameters,
                return_annotation=annotations.get('return', _empty),
                __validate_parameters__=is_duck_function)
-
-
-def _signature_from_builtin(cls, func, skip_bound_arg=True):
-    """Private helper function to get signature for
-    builtin callables.
-    """
-
-    if not _signature_is_builtin(func):
-        raise TypeError("{!r} is not a Python builtin "
-                        "function".format(func))
-
-    s = getattr(func, "__text_signature__", None)
-    if not s:
-        raise ValueError("no signature found for builtin {!r}".format(func))
-
-    return _signature_fromstr(cls, func, s, skip_bound_arg)
-
-
-def _signature_from_function(cls, func, skip_bound_arg=True,
-                             globals=None, locals=None, eval_str=False):
-    """Private helper: constructs Signature for the given python function."""
-
-    is_duck_function = False
-    if not isfunction(func):
-        if _signature_is_functionlike(func):
-            is_duck_function = True
-        else:
-            # If it's not a pure Python function, and not a duck type
-            # of pure function:
-            raise TypeError('{!r} is not a Python function'.format(func))
-
-    s = getattr(func, "__text_signature__", None)
-    if s:
-        return _signature_fromstr(cls, func, s, skip_bound_arg)
-    return _signature_from_code(cls, func.__code__,
-                                       globals=globals,
-                                       locals=locals,
-                                       eval_str=eval_str,
-                                       is_duck_function=is_duck_function,
-                                       func=func)
 
 
 def _signature_from_callable(obj, *,
@@ -3137,7 +3136,7 @@ class Signature:
         or default values.
         """
         if not iscode(co):
-            raise TypeError('{!r} is not a code object'.format(co))
+            raise TypeError(f'code object is expected, got {type(co)}')
         return _signature_from_code(cls, co)
 
     @property

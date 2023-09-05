@@ -772,7 +772,9 @@ function.
 
        Since code objects do not know anything
        about default values or annotations,
-       they will always be ommited from the signature.
+       they will always be omitted from the signature.
+       It is recommended to use :meth:`Signature.from_callable`
+       when function object is available, it does not have these limitations.
 
        .. versionadded:: 3.13
 

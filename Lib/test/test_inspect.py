@@ -3674,7 +3674,7 @@ class TestSignatureObject(unittest.TestCase):
                 with self.assertRaises(TypeError):
                     inspect.signature(mock)
 
-    def test_signature_on_code_objects(self):
+    def test_signature_from_code(self):
         def func1(
             a, b: int,
             /,
@@ -3705,8 +3705,10 @@ class TestSignatureObject(unittest.TestCase):
                     expected_sig,
                 )
 
-    def test_signature_on_non_code_objects(self):
-        with self.assertRaisesRegex(TypeError, '1 is not a code object'):
+        with self.assertRaisesRegex(
+            TypeError,
+            'code object is expected, got int',
+        ):
             inspect.Signature.from_code(1)
 
     def test_signature_equality(self):
