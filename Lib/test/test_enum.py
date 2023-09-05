@@ -4688,8 +4688,6 @@ class TestInternals(unittest.TestCase):
         self.assertEqual(Huh.TWO.value, (2, 2))
         self.assertEqual(Huh.THREE.value, (3, 3, 3))
 
-class TestEnumTypeSubclassing(unittest.TestCase):
-    pass
 
 expected_help_output_with_docs = """\
 Help on class Color in module %s:
