@@ -42,19 +42,21 @@ Identifiers are integers in the range 0 to 5.
 Registering and using tools
 '''''''''''''''''''''''''''
 
-.. function:: use_tool_id(id: range(6), name: str) -> None
+.. function:: use_tool_id(id: int, name: str) -> None
 
    Must be called before ``id`` can be used.
+   ``id`` must be in the range 0 to 5 inclusive.
    Raises a ``ValueError`` if ``id`` is in use.
 
-.. function:: free_tool_id(id: range(6)) -> None
+.. function:: free_tool_id(id: int) -> None
 
    Should be called once a tool no longer requires ``id``.
 
-.. function:: get_tool(id: range(6)) ->  str | None
+.. function:: get_tool(id: int) ->  str | None
 
    Returns the name of the tool if ``id`` is in use,
    otherwise it returns ``None``.
+   ``id`` must be in the range 0 to 5 inclusive.
 
 All IDs are treated the same by the VM with regard to events, but the
 following IDs are pre-defined to make co-operation of tools easier::
