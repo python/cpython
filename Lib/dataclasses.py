@@ -565,8 +565,8 @@ def _init_param(f):
     return f'{f.name}:__dataclass_type_{f.name}__{default}'
 
 
-def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
-             self_name, globals, slots):
+def _main_init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
+                  self_name, globals, slots):
     # fields contains both real fields and InitVar pseudo-fields.
 
     # Make sure we don't have fields without defaults following fields
@@ -601,9 +601,35 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
 
     # Does this class have a post-init function?
     if has_post_init:
-        params_str = ','.join(f.name for f in fields
-                              if f._field_type is _FIELD_INITVAR)
-        body_lines.append(f'{self_name}.{_POST_INIT_NAME}({params_str})')
+        post_init_pos_args_str = ", ".join(
+            [
+                f"MISSING if {f.name!r} in __kwargs else {f.name}"
+                for f in std_fields + kw_only_fields
+                if f._field_type is _FIELD_INITVAR
+            ]
+        )
+
+        body_lines.append(
+            f"post_init_args = list(filter(lambda f: f is not MISSING, [{post_init_pos_args_str}]))"
+        )
+
+        post_init_kw_args_str = ", ".join(
+            [
+                f"{f.name!r} if {f.name!r} in __kwargs else MISSING"
+                for f in std_fields + kw_only_fields
+                if f._field_type is _FIELD_INITVAR
+            ]
+        )
+
+        body_lines.append(
+            "post_init_kwargs = {k: __kwargs[k] "
+            f"for k in list(filter(lambda f: f is not MISSING, [{post_init_kw_args_str}])) }}"
+        )
+
+
+        body_lines.append(
+            f"{self_name}.{_POST_INIT_NAME}(*post_init_args, **post_init_kwargs)"
+        )
 
     # If no body lines, use 'pass'.
     if not body_lines:
@@ -616,6 +642,27 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
         # (instead of just concatenting the lists together).
         _init_params += ['*']
         _init_params += [_init_param(f) for f in kw_only_fields]
+    return _create_fn('__main_init__',
+                      [self_name, "__args", "__kwargs"] + _init_params,
+                      body_lines,
+                      locals=locals,
+                      globals=globals,
+                      return_type=None)
+
+
+def _init_fn(fields, self_name, globals):
+    # fields contains both real fields and InitVar pseudo-fields.
+
+
+    locals = {f'__dataclass_type_{f.name}__': f.type for f in fields}
+    locals.update({
+        '__dataclass_HAS_DEFAULT_FACTORY__': _HAS_DEFAULT_FACTORY,
+        '__dataclass_builtins_object__': object,
+    })
+    body_lines = [
+        f"if hasattr({self_name}, '__main_init__'): {self_name}.__main_init__(args, kwargs, *args, **kwargs)"
+    ]
+    _init_params = ["*args", "**kwargs"]
     return _create_fn('__init__',
                       [self_name] + _init_params,
                       body_lines,
@@ -1058,21 +1105,33 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     if init:
         # Does this class have a post-init function?
         has_post_init = hasattr(cls, _POST_INIT_NAME)
+        _set_new_attribute(
+            cls,
+            "__main_init__",
+            _main_init_fn(
+                all_init_fields,
+                std_init_fields,
+                kw_only_init_fields,
+                frozen,
+                has_post_init,
+                # The name to use for the "self"
+                # param in __init__.  Use "self"
+                # if possible.
+                "__dataclass_self__" if "self" in fields else "self",
+                globals,
+                slots,
+            ),
+        )
 
-        _set_new_attribute(cls, '__init__',
-                           _init_fn(all_init_fields,
-                                    std_init_fields,
-                                    kw_only_init_fields,
-                                    frozen,
-                                    has_post_init,
-                                    # The name to use for the "self"
-                                    # param in __init__.  Use "self"
-                                    # if possible.
-                                    '__dataclass_self__' if 'self' in fields
-                                            else 'self',
-                                    globals,
-                                    slots,
-                          ))
+        _set_new_attribute(
+            cls,
+            "__init__",
+            _init_fn(
+                all_init_fields,
+                "__dataclass_self__" if "self" in fields else "self",
+                globals
+            ),
+        )
 
     # Get the fields as a list, and include only real fields.  This is
     # used in all of the following methods.
@@ -1136,6 +1195,14 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
             # In some cases fetching a signature is not possible.
             # But, we surely should not fail in this case.
             text_sig = str(inspect.signature(cls)).replace(' -> None', '')
+            if hasattr(cls, "__main_init__"):
+                full_sig = str(inspect.signature(cls.__main_init__))
+                all_args = full_sig.split("__kwargs,")
+                args = ")"
+                if len(all_args) > 1:
+                    args = all_args[-1]
+                sig = "(" + args
+                text_sig = sig.replace(' -> None', '')
         except (TypeError, ValueError):
             text_sig = ''
         cls.__doc__ = (cls.__name__ + text_sig)
