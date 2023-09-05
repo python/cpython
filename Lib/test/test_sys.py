@@ -1199,11 +1199,11 @@ class SysModuleTest(unittest.TestCase):
 @test.support.cpython_only
 class UnraisableHookTest(unittest.TestCase):
     def write_unraisable_exc(self, exc, err_msg, obj):
-        import _testcapi
+        import _testinternalcapi
         import types
         err_msg2 = f"Exception ignored {err_msg}"
         try:
-            _testcapi.write_unraisable_exc(exc, err_msg, obj)
+            _testinternalcapi.write_unraisable_exc(exc, err_msg, obj)
             return types.SimpleNamespace(exc_type=type(exc),
                                          exc_value=exc,
                                          exc_traceback=exc.__traceback__,

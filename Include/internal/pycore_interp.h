@@ -187,7 +187,7 @@ struct _is {
     uint16_t optimizer_resume_threshold;
     uint16_t optimizer_backedge_threshold;
 
-    _Py_Monitors monitors;
+    _Py_GlobalMonitors monitors;
     bool f_opcode_trace_set;
     bool sys_profile_initialized;
     bool sys_trace_initialized;
@@ -310,6 +310,10 @@ might not be allowed in the current interpreter (i.e. os.fork() would fail).
 
 extern int _PyInterpreterState_HasFeature(PyInterpreterState *interp,
                                           unsigned long feature);
+
+PyAPI_FUNC(PyStatus) _PyInterpreterState_New(
+    PyThreadState *tstate,
+    PyInterpreterState **pinterp);
 
 
 #ifdef __cplusplus

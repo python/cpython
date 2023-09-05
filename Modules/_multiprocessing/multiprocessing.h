@@ -10,6 +10,10 @@
 #include "pythread.h"
 #include "pycore_signal.h"        // _PyOS_IsMainThread()
 
+#ifndef MS_WINDOWS
+#  include <unistd.h>             // sysconf()
+#endif
+
 /*
  * Platform includes and definitions
  */
