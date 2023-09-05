@@ -1,2 +1,4 @@
-Fixed failure for tests running sequentially in the same process when
-test_importlib occurs between two other tests that use test_importlib.util.
+Fixed order dendence in running tests in the same process
+when a test that has submodules (e.g. test_importlib) follows a test that
+imports its submodule (e.g. test_importlib.util) and precedes a test
+(e.g. test_unittest or test_compileall) that uses that submodule.
