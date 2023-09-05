@@ -1,0 +1,1 @@
+Allow :data:`typing.Annotated` to wrap :data:`typing.ClassVar` and :data:`dataclasses.InitVar` in dataclasses. Patch by Gregory Beauregard.

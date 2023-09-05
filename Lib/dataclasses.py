@@ -220,7 +220,8 @@ _POST_INIT_NAME = '__post_init__'
 # String regex that string annotations for ClassVar or InitVar must match.
 # Allows "identifier.identifier[" or "identifier[".
 # https://bugs.python.org/issue33453 for details.
-_MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
+_MODULE_IDENTIFIER_RE = re.compile(
+    r'^(?:(?:\w+\s*\.\s*)?Annotated\s*\[\s*)*(?:(\w+)\s*\.)?\s*(\w+)')
 
 # Atomic immutable types which don't require any recursive handling and for which deepcopy
 # returns the same object. We can provide a fast-path for these types in asdict and astuple.
@@ -774,6 +775,13 @@ def _get_field(cls, a_name, a_type, default_kw_only):
             default = MISSING
         f = field(default=default)
 
+    typing = sys.modules.get('typing')
+    if typing:
+        while isinstance(a_type, typing._AnnotatedAlias):
+            a_type = a_type.__origin__
+            if isinstance(a_type, typing.ForwardRef):
+                a_type = a_type.__forward_arg__
+
     # Only at this point do we know the name and the type.  Set them.
     f.name = a_name
     f.type = a_type
@@ -797,7 +805,7 @@ def _get_field(cls, a_name, a_type, default_kw_only):
     # annotation to be a ClassVar.  So, only look for ClassVar if
     # typing has been imported by any module (not necessarily cls's
     # module).
-    typing = sys.modules.get('typing')
+
     if typing:
         if (_is_classvar(a_type, typing)
             or (isinstance(f.type, str)
