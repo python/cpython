@@ -1364,14 +1364,6 @@ def getargs(co):
     'args' is the list of argument names. Keyword-only arguments are
     appended. 'varargs' and 'varkw' are the names of the * and **
     arguments or None."""
-    import warnings
-    warnings.warn(
-        'getargs is deprecated since Python3.13, '
-        'use Signature.from_code instead',
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
     if not iscode(co):
         raise TypeError('{!r} is not a code object'.format(co))
 

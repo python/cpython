@@ -435,25 +435,6 @@ class TestPredicates(IsTestBase):
         self.assertEqual(isabstract_checks, [True, True, False])
 
 
-class TestGetArgs(unittest.TestCase):
-    def test_getargs_is_deprecated(self):
-        # We are only interested in the deprecation warning,
-        # because `getargs` is:
-        # - undocumented
-        # - untested
-        # - deprecated
-        # - has modern alternative
-        # - incorrect anyways.
-        def func(): ...
-
-        msg = (
-            'getargs is deprecated since Python3.13, '
-            'use Signature.from_code instead'
-        )
-        with self.assertWarnsRegex(DeprecationWarning, msg):
-            inspect.getargs(func.__code__)
-
-
 class TestInterpreterStack(IsTestBase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
