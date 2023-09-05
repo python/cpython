@@ -1,2 +1,2 @@
-Deprecate ``inspect.getargs``, use :meth:`inspect.Signature.from_code`
-instead.
+Add :meth:`inspect.Signature.from_code` to be able
+to construct :class:`inspect.Signature` objects from :class:`types.CodeType`.
