@@ -190,7 +190,7 @@ Per code object events
 
 Events can also be controlled on a per code object basis.
 
-.. function:: sys.monitoring.get_local_events(tool_id: int, code: CodeType) -> int
+.. function:: get_local_events(tool_id: int, code: CodeType) -> int
 
    Returns all the local events for ``code``
 
