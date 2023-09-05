@@ -1,2 +1,6 @@
 version: 2
 formats: []
+build:
+  jobs:
+    post_checkout:
+    - exit 183
