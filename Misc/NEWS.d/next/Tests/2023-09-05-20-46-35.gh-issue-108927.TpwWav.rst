@@ -1,0 +1,2 @@
+Fixed failure for tests running sequentially in the same process when
+test_importlib occurs between two other tests that use test_importlib.util.

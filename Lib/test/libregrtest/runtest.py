@@ -434,10 +434,6 @@ FOUND_GARBAGE = []
 def _load_run_test(result: TestResult, ns: Namespace) -> None:
     # Load the test function, run the test function.
     module_name = abs_module_name(result.test_name, ns.testdir)
-
-    # Remove the module from sys.module to reload it if it was already imported
-    sys.modules.pop(module_name, None)
-
     test_mod = importlib.import_module(module_name)
 
     if hasattr(test_mod, "test_main"):
