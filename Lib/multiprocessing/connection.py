@@ -133,7 +133,7 @@ class _ConnectionBase:
 
     def _check_closed(self):
         if self._handle is None:
-            raise OSError("handle is closed")
+            raise OSError("handle is closed") from None
 
     def _check_readable(self):
         if not self._readable:
@@ -167,8 +167,10 @@ class _ConnectionBase:
 
     def fileno(self):
         """File descriptor or handle of the connection"""
-        self._check_closed()
-        return self._handle
+        handle = self._handle
+        if handle is None:
+            self._check_closed()
+        return handle
 
     def close(self):
         """Close the connection"""
@@ -180,7 +182,6 @@ class _ConnectionBase:
 
     def send_bytes(self, buf, offset=0, size=None):
         """Send the bytes data from a bytes-like object"""
-        self._check_closed()
         self._check_writable()
         m = memoryview(buf)
         if m.itemsize > 1:
@@ -200,7 +201,6 @@ class _ConnectionBase:
 
     def send(self, obj):
         """Send a (picklable) object"""
-        self._check_closed()
         self._check_writable()
         self._send_bytes(_ForkingPickler.dumps(obj))
 
@@ -208,7 +208,6 @@ class _ConnectionBase:
         """
         Receive bytes data as a bytes object.
         """
-        self._check_closed()
         self._check_readable()
         if maxlength is not None and maxlength < 0:
             raise ValueError("negative maxlength")
@@ -222,7 +221,6 @@ class _ConnectionBase:
         Receive bytes data into a writeable bytes-like object.
         Return the number of bytes read.
         """
-        self._check_closed()
         self._check_readable()
         with memoryview(buf) as m:
             # Get bytesize of arbitrary buffer
@@ -244,14 +242,12 @@ class _ConnectionBase:
 
     def recv(self):
         """Receive a (picklable) object"""
-        self._check_closed()
         self._check_readable()
         buf = self._recv_bytes()
         return _ForkingPickler.loads(buf.getbuffer())
 
     def poll(self, timeout=0.0):
         """Whether there is any input available to be read"""
-        self._check_closed()
         self._check_readable()
         return self._poll(timeout)
 
@@ -273,10 +269,19 @@ if _winapi:
         _got_empty_message = False
 
         def _close(self, _CloseHandle=_winapi.CloseHandle):
-            _CloseHandle(self._handle)
+            try:
+                _CloseHandle(self._handle)
+            except TypeError:
+                self._check_closed()
+                raise
 
         def _send_bytes(self, buf):
-            ov, err = _winapi.WriteFile(self._handle, buf, overlapped=True)
+            try:
+                ov, err = _winapi.WriteFile(self._handle, buf, overlapped=True)
+            except TypeError:
+                self._check_closed()
+                raise
+
             try:
                 if err == _winapi.ERROR_IO_PENDING:
                     waitres = _winapi.WaitForMultipleObjects(
@@ -315,6 +320,9 @@ if _winapi:
                             return f
                         elif err == _winapi.ERROR_MORE_DATA:
                             return self._get_more_data(ov, maxsize)
+                except TypeError:
+                    self._check_closed()
+                    raise
                 except OSError as e:
                     if e.winerror == _winapi.ERROR_BROKEN_PIPE:
                         raise EOFError
@@ -323,10 +331,14 @@ if _winapi:
             raise RuntimeError("shouldn't get here; expected KeyboardInterrupt")
 
         def _poll(self, timeout):
-            if (self._got_empty_message or
-                        _winapi.PeekNamedPipe(self._handle)[0] != 0):
-                return True
-            return bool(wait([self], timeout))
+            try:
+                if (self._got_empty_message or
+                            _winapi.PeekNamedPipe(self._handle)[0] != 0):
+                    return True
+                return bool(wait([self._handle], timeout))
+            except TypeError:
+                self._check_closed()
+                raise
 
         def _get_more_data(self, ov, maxsize):
             buf = ov.getbuffer()
@@ -364,7 +376,12 @@ class Connection(_ConnectionBase):
     def _send(self, buf, write=_write):
         remaining = len(buf)
         while True:
-            n = write(self._handle, buf)
+            try:
+                n = write(self._handle, buf)
+            except TypeError:
+                self._check_closed()
+                raise
+
             remaining -= n
             if remaining == 0:
                 break
@@ -375,7 +392,12 @@ class Connection(_ConnectionBase):
         handle = self._handle
         remaining = size
         while remaining > 0:
-            chunk = read(handle, remaining)
+            try:
+                chunk = read(handle, remaining)
+            except TypeError:
+                self._check_closed()
+                raise
+
             n = len(chunk)
             if n == 0:
                 if remaining == size:
