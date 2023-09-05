@@ -1,1 +1,1 @@
-mod:`tarfile` will not attempt to set the sticky bit on extracted files when it's not possible, matching the behavior of other platforms.
+On FreeBSD, mod:`tarfile` will not attempt to set the sticky bit on extracted files when it's not possible, matching the behavior of other platforms.
