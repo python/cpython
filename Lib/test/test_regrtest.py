@@ -34,6 +34,7 @@ LOG_PREFIX = r'[0-9]+:[0-9]+:[0-9]+ (?:load avg: [0-9]+\.[0-9]{2} )?'
 EXITCODE_BAD_TEST = 2
 EXITCODE_ENV_CHANGED = 3
 EXITCODE_NO_TESTS_RAN = 4
+EXITCODE_RERUN_FAIL = 5
 EXITCODE_INTERRUPTED = 130
 
 TEST_INTERRUPTED = textwrap.dedent("""
@@ -1265,10 +1266,10 @@ class ArgsTestCase(BaseTestCase):
                                   stats=TestStats(3, 1))
         os_helper.unlink(marker_filename)
 
-        # with --fail-rerun, exit code EXITCODE_BAD_TEST
+        # with --fail-rerun, exit code EXITCODE_RERUN_FAIL
         # on "FAILURE then SUCCESS" state.
         output = self.run_tests("--rerun", "--fail-rerun", testname,
-                                exitcode=EXITCODE_BAD_TEST)
+                                exitcode=EXITCODE_RERUN_FAIL)
         self.check_executed_tests(output, [testname],
                                   rerun=Rerun(testname,
                                               match="test_fail_once",
@@ -1802,9 +1803,9 @@ class ArgsTestCase(BaseTestCase):
                 7948648
                 """
 
-            def test_main():
-                testmod = sys.modules[__name__]
-                return support.run_doctest(testmod)
+            def load_tests(loader, tests, pattern):
+                tests.addTest(doctest.DocTestSuite())
+                return tests
         ''')
         testname = self.create_test(code=code)
 
@@ -1813,7 +1814,7 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, [testname],
                                   failed=[testname],
                                   randomize=True,
-                                  stats=TestStats(4, 2, 1))
+                                  stats=TestStats(1, 1, 0))
 
 
 class TestUtils(unittest.TestCase):
