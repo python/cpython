@@ -1837,6 +1837,20 @@ class TestTemporaryDirectory(BaseTestCase):
     @unittest.skipUnless(hasattr(os, 'chflags'), 'requires os.lchflags')
     def test_flags(self):
         flags = stat.UF_IMMUTABLE | stat.UF_NOUNLINK
+
+        # skip the test if these flags are not supported (ex: FreeBSD 13)
+        filename = TESTFN
+        try:
+            open(filename, "w").close()
+            try:
+                os.chflags(filename, flags)
+            except OSError as exc:
+                # "OSError: [Errno 45] Operation not supported"
+                self.skipTest("chflags() doesn't support "
+                              "UF_IMMUTABLE|UF_NOUNLINK: {exc}")
+        finally:
+            support.unlink(filename)
+
         d = self.do_create(recurse=3, dirs=2, files=2)
         with d:
             # Change files and directories flags recursively.
