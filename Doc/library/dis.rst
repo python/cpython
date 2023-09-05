@@ -1151,15 +1151,21 @@ iterations of the loop.
 
 .. opcode:: LOAD_SUPER_ATTR (namei)
 
-   This opcode implements :func:`super` (e.g. ``super().method()`` and
-   ``super().attr``). It works the same as :opcode:`LOAD_ATTR`, except that
-   ``namei`` is shifted left by 2 bits instead of 1, and instead of expecting a
-   single receiver on the stack, it expects three objects (from top of stack
-   down): ``self`` (the first argument to the current method), ``cls`` (the
-   class within which the current method was defined), and the global ``super``.
+   This opcode implements :func:`super` both in its 0 argument form and in its
+   2 arguments form (e.g. ``super().method()``, ``super().attr`` and
+   ``super(cls, self).method()``, ``super(cls, self).attr``).
+
+   It pops three values from the stack (from top of stack down):
+   - ``self``: the first argument to the current method
+   -  ``cls``: the class within which the current method was defined)
+   -  the global ``super``
+
+   With respect to its argument, it works similarly to :opcode:`LOAD_ATTR`,
+   except that ``namei`` is shifted left by 2 bits instead of 1.
 
    The low bit of ``namei`` signals to attempt a method load, as with
-   :opcode:`LOAD_ATTR`.
+   :opcode:`LOAD_ATTR` which results in pushing ``None`` and the loaded method.
+   When it is unset a single value is pushed to the stack.
 
    The second-low bit of ``namei``, if set, means that this was a two-argument
    call to :func:`super` (unset means zero-argument).
