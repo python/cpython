@@ -1,6 +1,9 @@
 version: 2
 formats: []
 build:
+  os: "ubuntu-22.04"
+  tools:
+    python: "3.11"
   jobs:
     post_checkout:
     - exit 183
