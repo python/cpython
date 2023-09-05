@@ -1369,6 +1369,7 @@ def getargs(co):
         'getargs is deprecated since Python3.13, '
         'use Signature.from_code instead',
         DeprecationWarning,
+        stacklevel=2,
     )
 
     if not iscode(co):
