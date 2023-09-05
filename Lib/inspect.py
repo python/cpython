@@ -3136,7 +3136,7 @@ class Signature:
         or default values.
         """
         if not iscode(co):
-            raise TypeError(f'code object is expected, got {type(co)}')
+            raise TypeError(f'code object is expected, got {type(co)!r}')
         return _signature_from_code(cls, co)
 
     @property
