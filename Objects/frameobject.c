@@ -659,7 +659,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     /*
      * This code preserves the historical restrictions on
      * setting the line number of a frame.
-     * Jumps are forbidden on a 'return' trace event (except after a yield).
+     * Jumps are forbidden on a 'return' trace event.
      * Jumps from 'call' trace events are also forbidden.
      * In addition, jumps are forbidden when not tracing,
      * as this is a debugging feature.
@@ -675,7 +675,6 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         case PY_MONITORING_EVENT_JUMP:
         case PY_MONITORING_EVENT_BRANCH:
         case PY_MONITORING_EVENT_LINE:
-        case PY_MONITORING_EVENT_PY_YIELD:
             /* Setting f_lineno is allowed for the above events */
             break;
         case PY_MONITORING_EVENT_PY_START:
@@ -692,6 +691,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         case PY_MONITORING_EVENT_PY_THROW:
         case PY_MONITORING_EVENT_RAISE:
         case PY_MONITORING_EVENT_C_RAISE:
+        case PY_MONITORING_EVENT_PY_YIELD:
         case PY_MONITORING_EVENT_INSTRUCTION:
         case PY_MONITORING_EVENT_EXCEPTION_HANDLED:
             PyErr_Format(PyExc_ValueError,
