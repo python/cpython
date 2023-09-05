@@ -1225,17 +1225,7 @@ class _Unparser(NodeVisitor):
 
     def visit_JoinedStr(self, node):
         self.write("f")
-        if self._avoid_backslashes:
-            with self.buffered() as buffer:
-                self._write_fstring_inner(node)
-            return self._write_str_avoiding_backslashes("".join(buffer))
 
-        # If we don't need to avoid backslashes globally (i.e., we only need
-        # to avoid them inside FormattedValues), it's cosmetically preferred
-        # to use escaped whitespace. That is, it's preferred to use backslashes
-        # for cases like: f"{x}\n". To accomplish this, we keep track of what
-        # in our buffer corresponds to FormattedValues and what corresponds to
-        # Constant parts of the f-string, and allow escapes accordingly.
         fstring_parts = []
         for value in node.values:
             with self.buffered() as buffer:
@@ -1276,7 +1266,7 @@ class _Unparser(NodeVisitor):
 
     def visit_FormattedValue(self, node):
         def unparse_inner(inner):
-            unparser = type(self)(_avoid_backslashes=False)
+            unparser = type(self)()
             unparser.set_precedence(_Precedence.TEST.next(), inner)
             return unparser.visit(inner)
 
