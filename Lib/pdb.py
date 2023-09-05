@@ -438,7 +438,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             traceback, current = tb_or_exc.__traceback__, tb_or_exc
 
             while current is not None:
-                if current in _exceptions or not current:
+                if current in _exceptions:
                     break
                 _exceptions.append(current)
                 if current.__cause__ is not None:
@@ -1187,7 +1187,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 return
             if 0 <= number < len(self._chained_exceptions):
                 if self._chained_exceptions[number].__traceback__ is None:
-                    self.error("This exception has not traceback, cannot jump to it")
+                    self.error("This exception does not have a traceback, cannot jump to it")
                     return
 
                 self._chained_exception_index = number
