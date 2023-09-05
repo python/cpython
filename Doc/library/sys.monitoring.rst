@@ -73,24 +73,40 @@ Events
 
 The following events are supported:
 
-* BRANCH: A conditional branch is taken (or not).
-* CALL: A call in Python code (event occurs before the call).
-* C_RAISE: Exception raised from any callable, except Python functions (event occurs after the exit).
-* C_RETURN: Return from any callable, except Python functions (event occurs after the return).
-* EXCEPTION_HANDLED: An exception is handled.
-* INSTRUCTION: A VM instruction is about to be executed.
-* JUMP: An unconditional jump in the control flow graph is made.
-* LINE: An instruction is about to be executed that has a different line number from the preceding instruction.
-* PY_RESUME: Resumption of a Python function (for generator and coroutine functions), except for throw() calls.
-* PY_RETURN: Return from a Python function (occurs immediately before the return, the callee's frame will be on the stack).
-* PY_START: Start of a Python function (occurs immediately after the call, the callee's frame will be on the stack)
-* PY_THROW: A Python function is resumed by a throw() call.
-* PY_UNWIND:  Exit from a Python function during exception unwinding.
-* PY_YIELD: Yield from a Python function (occurs immediately before the yield, the callee's frame will be on the stack).
-* RAISE: An exception is raised, except those that cause a ``STOP_ITERATION`` event.
-* RERAISE: An exception is re-raised, for example at the end of a ``finally`` block.
-* STOP_ITERATION -- An artificial ``StopIteration`` is raised;
-  see `the STOP_ITERATION event`_.
+BRANCH
+  A conditional branch is taken (or not).
+CALL
+  A call in Python code (event occurs before the call).
+C_RAISE
+  Exception raised from any callable, except Python functions (event occurs after the exit).
+C_RETURN
+  Return from any callable, except Python functions (event occurs after the return).
+EXCEPTION_HANDLED
+  An exception is handled.
+INSTRUCTION
+  A VM instruction is about to be executed.
+JUMP
+  An unconditional jump in the control flow graph is made.
+LINE
+  An instruction is about to be executed that has a different line number from the preceding instruction.
+PY_RESUME
+  Resumption of a Python function (for generator and coroutine functions), except for throw() calls.
+PY_RETURN
+  Return from a Python function (occurs immediately before the return, the callee's frame will be on the stack).
+PY_START
+  Start of a Python function (occurs immediately after the call, the callee's frame will be on the stack)
+PY_THROW
+  A Python function is resumed by a throw() call.
+PY_UNWIND
+  Exit from a Python function during exception unwinding.
+PY_YIELD
+  Yield from a Python function (occurs immediately before the yield, the callee's frame will be on the stack).
+RAISE
+  An exception is raised, except those that cause a ``STOP_ITERATION`` event.
+RERAISE
+  An exception is re-raised, for example at the end of a ``finally`` block.
+STOP_ITERATION
+  An artificial ``StopIteration`` is raised; see `the STOP_ITERATION event`_.
 
 More events may be added in the future.
 
@@ -196,7 +212,7 @@ Events can also be controlled on a per code object basis.
 
 .. function:: set_local_events(tool_id: int, code: CodeType, event_set: int)
 
-   Activates all the local events for ``code``  which are set in ``event_set``.
+   Activates all the local events for ``code`` which are set in ``event_set``.
    Raises a ``ValueError`` if ``tool_id`` is not in use.
 
 Local events add to global events, but do not mask them.
