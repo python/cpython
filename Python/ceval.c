@@ -731,7 +731,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #define SET_LOCALS_FROM_FRAME() do { \
     /* Jump back to the last instruction executed... */ \
     _Py_CODEUNIT *tmp = frame->prev_instr + 1; \
-    if (tmp->op.code != EXTENDED_ARG) assert (frame->instr_ptr == frame->prev_instr + 1); \
+    assert (frame->instr_ptr == frame->prev_instr + 1); \
     next_instr = frame->prev_instr + 1; \
     stack_pointer = _PyFrame_GetStackPointer(frame); \
    } while(0);
