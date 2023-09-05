@@ -728,13 +728,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     PyObject **stack_pointer;
 
 /* Sets the above local variables from the frame */
-#define SET_LOCALS_FROM_FRAME() do { \
+#define SET_LOCALS_FROM_FRAME() \
     /* Jump back to the last instruction executed... */ \
-    _Py_CODEUNIT *tmp = frame->prev_instr + 1; \
     assert (frame->instr_ptr == frame->prev_instr + 1); \
     next_instr = frame->prev_instr + 1; \
-    stack_pointer = _PyFrame_GetStackPointer(frame); \
-   } while(0);
+    stack_pointer = _PyFrame_GetStackPointer(frame);
 
 start_frame:
     if (_Py_EnterRecursivePy(tstate)) {

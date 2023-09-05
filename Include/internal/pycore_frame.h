@@ -66,13 +66,6 @@ typedef struct _PyInterpreterFrame {
     /* The instruction that is currently executing (possibly not started yet). */
     _Py_CODEUNIT *instr_ptr;
     int stacktop;  /* Offset of TOS from localsplus  */
-    /* The new_return_offset determines where a `RETURN` should go in the caller,
-     * relative to `instr_ptr`.
-     * It is only meaningful to the callee,
-     * so it needs to be set in any CALL (to a Python function)
-     * or SEND (to a coroutine or generator).
-     * If there is no callee, then it is meaningless. */
-    uint16_t new_return_offset;
     /* The return_offset determines where a `RETURN` should go in the caller,
      * relative to `prev_instr`.
      * It is only meaningful to the callee,
