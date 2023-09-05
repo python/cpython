@@ -635,7 +635,7 @@ def _repr_fn(fields, globals):
     return _recursive_repr(fn)
 
 
-def _frozen_get_del_attr(cls, fields, globals):
+def _frozen_set_del_attr(cls, fields, globals):
     locals = {'cls': cls,
               'FrozenInstanceError': FrozenInstanceError}
     condition = 'type(self) is cls'
@@ -1055,6 +1055,12 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     (std_init_fields,
      kw_only_init_fields) = _fields_in_init_order(all_init_fields)
 
+    # It's an error to specify weakref_slot if slots is False.
+    if weakref_slot and not slots:
+        raise TypeError('weakref_slot is True but slots is False')
+    if slots:
+        cls = _add_slots(cls, frozen, weakref_slot)
+
     if init:
         # Does this class have a post-init function?
         has_post_init = hasattr(cls, _POST_INIT_NAME)
@@ -1115,7 +1121,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                                 'functools.total_ordering')
 
     if frozen:
-        for fn in _frozen_get_del_attr(cls, field_list, globals):
+        for fn in _frozen_set_del_attr(cls, field_list, globals):
             if _set_new_attribute(cls, fn.__name__, fn):
                 raise TypeError(f'Cannot overwrite attribute {fn.__name__} '
                                 f'in class {cls.__name__}')
@@ -1144,12 +1150,6 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         # I could probably compute this once
         _set_new_attribute(cls, '__match_args__',
                            tuple(f.name for f in std_init_fields))
-
-    # It's an error to specify weakref_slot if slots is False.
-    if weakref_slot and not slots:
-        raise TypeError('weakref_slot is True but slots is False')
-    if slots:
-        cls = _add_slots(cls, frozen, weakref_slot)
 
     abc.update_abstractmethods(cls)
 
