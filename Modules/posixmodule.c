@@ -14260,17 +14260,17 @@ freebsd_listxattr_impl(PyObject* list, path_t *path, int follow_symlinks) {
 
     char *name = path->narrow ? path->narrow : ".";
 
-    Py_BEGIN_ALLOW_THREADS;
     for (int i = 0; i < sizeof(namespaces) / sizeof(int); i++) {
         ssize_t length;
         int namespace = namespaces[i];
+        Py_BEGIN_ALLOW_THREADS;
         if (path->fd > -1)
             length = extattr_list_fd(path->fd, namespace, NULL, 0);
         else if (follow_symlinks)
             length = extattr_list_file(name, namespace, NULL, 0);
         else
             length = extattr_list_link(name, namespace, NULL, 0);
-
+        Py_END_ALLOW_THREADS;
         if (length < 0) {
             if (i < privileged_namespaces && errno == EPERM) {
                 continue;
@@ -14281,18 +14281,23 @@ freebsd_listxattr_impl(PyObject* list, path_t *path, int follow_symlinks) {
             }
         }
         
-        char* buffer = PyMem_RawMalloc(length);
+        char* buffer = PyMem_Malloc(length);
+        if (buffer == NULL) {
+            result = NULL;
+            break;
+        }
+        Py_BEGIN_ALLOW_THREADS;
         if (path->fd > -1)
             length = extattr_list_fd(path->fd, namespace, buffer, length);
         else if (follow_symlinks)
             length = extattr_list_file(name, namespace, buffer, length);
         else
             length = extattr_list_link(name, namespace, buffer, length);
+        Py_END_ALLOW_THREADS;
 
         if (length < 0) {
             path_error(path);
-            result = NULL;
-            break;
+            goto bad;
         }
 
         // buffer to build "{namespace}.{attr}" strings, must include prefix:
@@ -14303,7 +14308,6 @@ freebsd_listxattr_impl(PyObject* list, path_t *path, int follow_symlinks) {
         char *end = buffer + length;
         char *attr_suffix = stpcpy(attr_name, nsprefix[i]);
         ssize_t attr_buf_size = attr_name + attr_name_size - attr_suffix;
-        Py_BLOCK_THREADS;
         while (next < end) {
             char attr_len = *next;
             if (attr_len >= attr_buf_size) {
@@ -14328,12 +14332,14 @@ freebsd_listxattr_impl(PyObject* list, path_t *path, int follow_symlinks) {
             }
             next += attr_len + 1;
         }
-        Py_UNBLOCK_THREADS;
-        if (result == NULL) {
-            break;
-        }
+        if (result == NULL)
+            goto bad;
+        continue;
+        bad:
+        PyMem_Free(buffer);
+        result = NULL;
+        break;
     }
-    Py_END_ALLOW_THREADS;
 
     return result;
 }
