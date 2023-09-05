@@ -174,7 +174,7 @@ Setting events globally
 
 Events can be controlled globally by modifying the set of events being monitored.
 
-.. function:: sys.monitoring.get_events(tool_id: int) -> int
+.. function:: get_events(tool_id: int) -> int
 
    Returns the ``int`` representing all the active events.
 
