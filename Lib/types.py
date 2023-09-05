@@ -128,20 +128,33 @@ def prepare_class(name, bases=(), kwds=None):
 
 def _calculate_meta(meta, bases):
     """Calculate the most derived metaclass."""
-    winner = meta
-    for base in bases:
-        base_meta = type(base)
-        if issubclass(winner, base_meta):
-            continue
-        if issubclass(base_meta, winner):
-            winner = base_meta
-            continue
-        # else:
-        raise TypeError("metaclass conflict: "
-                        "the metaclass of a derived class "
-                        "must be a (non-strict) subclass "
-                        "of the metaclasses of all its bases")
-    return winner
+    
+    def get_most_specific_types(candidates, new_candidate):
+        if any(issubclass(candidate, new_candidate) for candidate in candidates):
+            return candidates
+        else:
+            return (
+                *(
+                    candidate
+                    for candidate in candidates
+                    if not issubclass(new_candidate, candidate)
+                ),
+                new_candidate,
+            )
+    winners = functools.reduce(
+        get_most_specific_types,
+        map(type, bases),
+        (type, ),
+    )
+
+    match winners:
+        case (winner,):
+            return winner
+        case _:
+            raise TypeError("metaclass conflict: "
+                            "the metaclass of a derived class "
+                            "must be a (non-strict) subclass "
+                            "of the metaclasses of all its bases")
 
 
 def get_original_bases(cls, /):
