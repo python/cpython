@@ -1846,8 +1846,10 @@ class TestTemporaryDirectory(BaseTestCase):
                 os.chflags(filename, flags)
             except OSError as exc:
                 # "OSError: [Errno 45] Operation not supported"
-                self.skipTest("chflags() doesn't support "
-                              "UF_IMMUTABLE|UF_NOUNLINK: {exc}")
+                self.skipTest(f"chflags() doesn't support "
+                              f"UF_IMMUTABLE|UF_NOUNLINK: {exc}")
+            else:
+                os.chflags(filename, 0)
         finally:
             os_helper.unlink(filename)
 
