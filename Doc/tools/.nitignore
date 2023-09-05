@@ -131,12 +131,10 @@ Doc/library/tkinter.ttk.rst
 Doc/library/traceback.rst
 Doc/library/tty.rst
 Doc/library/turtle.rst
-Doc/library/unittest.mock-examples.rst
 Doc/library/unittest.mock.rst
 Doc/library/unittest.rst
 Doc/library/urllib.parse.rst
 Doc/library/urllib.request.rst
-Doc/library/uuid.rst
 Doc/library/weakref.rst
 Doc/library/wsgiref.rst
 Doc/library/xml.dom.minidom.rst
