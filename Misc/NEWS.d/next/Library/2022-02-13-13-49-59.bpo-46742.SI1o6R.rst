@@ -1,0 +1,4 @@
+The :mod:`trace` module now has a ``-d 123`` / ``--trace_fd 123`` option to
+send the output of ``-t`` to a file descriptor other than the default of
+standard output.  This makes it trivial to separate it from normal program
+output.

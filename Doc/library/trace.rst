@@ -96,6 +96,15 @@ Modifiers
    Directory where the report files go.  The coverage report for
    ``package.module`` is written to file :file:`{dir}/{package}/{module}.cover`.
 
+.. cmdoption:: -d, --trace_fd
+
+   Specify which file descriptor to write trace information to.
+   (1=stdout, 2=stderr, or any integer fd)
+
+.. code-block:: shell-session
+
+   $ python -m trace -t -d 111 your_program.py 111> /tmp/your_trace.txt
+
 .. cmdoption:: -m, --missing
 
    When generating annotated listings, mark lines which were not executed with

@@ -386,7 +386,7 @@ def _find_executable_linenos(filename):
     return _find_lines(code, strs)
 
 class Trace:
-    def __init__(self, count=1, trace=1, countfuncs=0, countcallers=0,
+    def __init__(self, count=1, trace=1, trace_fd=1, countfuncs=0, countcallers=0,
                  ignoremods=(), ignoredirs=(), infile=None, outfile=None,
                  timing=False):
         """
@@ -394,6 +394,8 @@ class Trace:
                      line is executed
         @param trace true iff it should print out each line that is
                      being counted
+        @param trace_fd file descriptor (int) for writing trace output, defaults
+                     to stdout
         @param countfuncs true iff it should just output a list of
                      (filename, modulename, funcname,) for functions
                      that were called at least once;  This overrides
@@ -413,6 +415,7 @@ class Trace:
         self.pathtobasename = {} # for memoizing os.path.basename
         self.donothing = 0
         self.trace = trace
+        self.trace_fd = trace_fd
         self._calledfuncs = {}
         self._callers = {}
         self._caller_cache = {}
@@ -543,8 +546,9 @@ class Trace:
                     ignore_it = self.ignore.names(filename, modulename)
                     if not ignore_it:
                         if self.trace:
-                            print((" --- modulename: %s, funcname: %s"
-                                   % (modulename, code.co_name)))
+                            with os.fdopen(self.trace_fd, "w", closefd=False) as trace_fp:
+                                print((" --- modulename: %s, funcname: %s"
+                                       % (modulename, code.co_name)), file=trace_fp)
                         return self.localtrace
             else:
                 return None
@@ -560,8 +564,9 @@ class Trace:
             if self.start_time:
                 print('%.2f' % (_time() - self.start_time), end=' ')
             bname = os.path.basename(filename)
-            print("%s(%d): %s" % (bname, lineno,
-                                  linecache.getline(filename, lineno)), end='')
+            with os.fdopen(self.trace_fd, "w", closefd=False) as trace_fp:
+                print("%s(%d): %s" % (bname, lineno,
+                                  linecache.getline(filename, lineno)), end='', file=trace_fp)
         return self.localtrace
 
     def localtrace_trace(self, frame, why, arg):
@@ -573,8 +578,9 @@ class Trace:
             if self.start_time:
                 print('%.2f' % (_time() - self.start_time), end=' ')
             bname = os.path.basename(filename)
-            print("%s(%d): %s" % (bname, lineno,
-                                  linecache.getline(filename, lineno)), end='')
+            with os.fdopen(self.trace_fd, "w", closefd=False) as trace_fp:
+                print("%s(%d): %s" % (bname, lineno,
+                                  linecache.getline(filename, lineno)), end='', file=trace_fp)
         return self.localtrace
 
     def localtrace_count(self, frame, why, arg):
@@ -633,6 +639,10 @@ def main():
             help='Directory where the report files go. The coverage report '
                  'for <package>.<module> will be written to file '
                  '<dir>/<package>/<module>.cover')
+    grp.add_argument('-d', '--trace_fd', type=int, default=1,
+            help='Specify which file descriptor to write trace information to '
+                 '(1=stdout, 2=stderr, or any integer fd).  '
+                 'Example: `python -m trace -t -d 111 your_program.py 111> /tmp/your_trace.txt`')
     grp.add_argument('-m', '--missing', action='store_true',
             help='Annotate executable lines that were not executed with '
                  '">>>>>> "')
@@ -695,7 +705,7 @@ def main():
     if opts.progname is None:
         parser.error('progname is missing: required with the main options')
 
-    t = Trace(opts.count, opts.trace, countfuncs=opts.listfuncs,
+    t = Trace(opts.count, opts.trace, opts.trace_fd, countfuncs=opts.listfuncs,
               countcallers=opts.trackcalls, ignoremods=opts.ignore_module,
               ignoredirs=opts.ignore_dir, infile=opts.file,
               outfile=opts.file, timing=opts.timing)
