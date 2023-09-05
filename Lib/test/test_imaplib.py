@@ -11,7 +11,7 @@ import threading
 import socket
 
 from test.support import (verbose,
-                          run_with_tz, run_with_locale, cpython_only,
+                          run_with_tz, run_with_locale, cpython_only, requires_resource,
                           requires_working_socket)
 from test.support import hashlib_helper
 from test.support import threading_helper
@@ -459,6 +459,7 @@ class NewIMAPTestsMixin():
         with self.imap_class(*server.server_address):
             pass
 
+    @requires_resource('walltime')
     def test_imaplib_timeout_test(self):
         _, server = self._setup(SimpleIMAPHandler)
         addr = server.server_address[1]
@@ -552,6 +553,7 @@ class NewIMAPSSLTests(NewIMAPTestsMixin, unittest.TestCase):
     imap_class = IMAP4_SSL
     server_class = SecureTCPServer
 
+    @requires_resource('walltime')
     def test_ssl_raises(self):
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         self.assertEqual(ssl_context.verify_mode, ssl.CERT_REQUIRED)
@@ -566,6 +568,7 @@ class NewIMAPSSLTests(NewIMAPTestsMixin, unittest.TestCase):
                                      ssl_context=ssl_context)
             client.shutdown()
 
+    @requires_resource('walltime')
     def test_ssl_verified(self):
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ssl_context.load_verify_locations(CAFILE)
