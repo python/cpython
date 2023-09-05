@@ -1206,7 +1206,7 @@ extern const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SI
 #ifdef NEED_OPCODE_METADATA
 const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [NOP] = { true, INSTR_FMT_IX, 0 },
-    [RESUME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG },
+    [RESUME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG },
     [INSTRUMENTED_RESUME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG },
     [LOAD_CLOSURE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_LOCAL_FLAG },
     [LOAD_FAST_CHECK] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_ERROR_FLAG },
@@ -1466,9 +1466,9 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [_POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [_POP_JUMP_IF_TRUE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [JUMP_TO_TOP] = { true, INSTR_FMT_IX, HAS_EVAL_BREAK_FLAG },
-    [SAVE_IP] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
+    [SAVE_IP] = { true, INSTR_FMT_IX, 0 },
     [SAVE_CURRENT_IP] = { true, INSTR_FMT_IX, 0 },
-    [EXIT_TRACE] = { true, INSTR_FMT_IX, 0 },
+    [EXIT_TRACE] = { true, INSTR_FMT_IX, HAS_DEOPT_FLAG },
     [INSERT] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
 };
 #endif // NEED_OPCODE_METADATA

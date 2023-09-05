@@ -42,7 +42,10 @@ class InstructionFlags:
             )
             and not has_free,
             HAS_EVAL_BREAK_FLAG=variable_used(instr, "CHECK_EVAL_BREAKER"),
-            HAS_DEOPT_FLAG=variable_used(instr, "DEOPT_IF"),
+            HAS_DEOPT_FLAG=(
+                variable_used(instr, "DEOPT_IF")
+                or variable_used(instr, "deoptimize")
+            ),
             HAS_ERROR_FLAG=(
                 variable_used(instr, "ERROR_IF")
                 or variable_used(instr, "error")

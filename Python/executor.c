@@ -63,7 +63,6 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
     CHECK_EVAL_BREAKER();
 
     OBJECT_STAT_INC(optimization_traces_executed);
-    _Py_CODEUNIT *ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
     int pc = 0;
     int opcode;
     int oparg;

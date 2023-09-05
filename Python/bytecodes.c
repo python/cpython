@@ -3006,6 +3006,7 @@ dummy_func(
             tstate->py_recursion_remaining--;
             LOAD_SP();
             LOAD_IP();
+            frame->prev_instr = _PyCode_CODE(_PyFrame_GetCode(frame));
 #if LLTRACE && TIER_ONE
             lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
             if (lltrace < 0) {
@@ -3794,7 +3795,7 @@ dummy_func(
         }
 
         op(SAVE_IP, (--)) {
-            frame->prev_instr = ip_offset + oparg;
+            frame->prev_instr = (_Py_CODEUNIT *)(uintptr_t)operand;
         }
 
         op(SAVE_CURRENT_IP, (--)) {
@@ -3808,10 +3809,7 @@ dummy_func(
         }
 
         op(EXIT_TRACE, (--)) {
-            frame->prev_instr--;  // Back up to just before destination
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            Py_DECREF(self);
-            return frame;
+            goto deoptimize;
         }
 
         op(INSERT, (unused[oparg], top -- top, unused[oparg])) {
