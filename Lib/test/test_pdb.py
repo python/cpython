@@ -1072,7 +1072,7 @@ def test_post_mortem_from_none():
 def test_post_mortem_from_no_stack():
     """Test post mortem traceback debugging of chained exception
 
-    especially when one exception has not stack.
+    especially when one exception has no stack.
 
     >>> def main():
     ...     raise Exception() from Exception()
@@ -1101,13 +1101,13 @@ def test_post_mortem_from_no_stack():
         - Exception()
     >   1 Exception()
     (Pdb) exceptions 0
-    *** This exception has not traceback, cannot jump to it
+    *** This exception does not have a traceback, cannot jump to it
     (Pdb) exit
     """
 
 
 def test_post_mortem_single_no_stack():
-    """Test post mortem called when origin exception has not stack
+    """Test post mortem called when origin exception has no stack
 
 
     >>> def test_function():
@@ -1129,7 +1129,7 @@ def test_post_mortem_single_no_stack():
 
 
 def test_post_mortem_base_no_stack():
-    """Test post mortem called when base exception has not stack
+    """Test post mortem called when base exception has no stack
 
     >>> def test_function():
     ...     import pdb;
@@ -1163,7 +1163,7 @@ def test_post_mortem_base_no_stack():
     >   1 ValueError('stack')
         - Exception('base-no-stack')
     (Pdb) exceptions 0
-    *** This exception has not traceback, cannot jump to it
+    *** This exception does not have a traceback, cannot jump to it
     (Pdb) exceptions
         - TypeError('no-stack')
     >   1 ValueError('stack')
