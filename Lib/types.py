@@ -2,7 +2,6 @@
 Define names for built-in types that aren't directly accessible as a builtin.
 """
 import sys
-import functools
 
 # Iterators in Python aren't a matter of type but of protocol.  A large
 # and changing number of builtin types implement *some* flavor of
@@ -130,11 +129,13 @@ def prepare_class(name, bases=(), kwds=None):
 def _calculate_meta(meta, bases):
     """Calculate the most derived metaclass."""
 
-    def get_most_specific_types(candidates, new_candidate):
+    candidates = (type, )
+    for base in bases:
+        new_candidate = type(base)
         if any(issubclass(candidate, new_candidate) for candidate in candidates):
-            return candidates
+            continue
         else:
-            return (
+            candidates = (
                 *(
                     candidate
                     for candidate in candidates
@@ -142,13 +143,8 @@ def _calculate_meta(meta, bases):
                 ),
                 new_candidate,
             )
-    winners = functools.reduce(
-        get_most_specific_types,
-        map(type, bases),
-        (type, ),
-    )
 
-    match winners:
+    match candidates:
         case (winner,):
             return winner
         case _:
