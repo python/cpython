@@ -29,9 +29,10 @@ from test.support import threading_helper
 EXIT_TIMEOUT = 120.0
 
 EXITCODE_BAD_TEST = 2
-EXITCODE_INTERRUPTED = 130
 EXITCODE_ENV_CHANGED = 3
 EXITCODE_NO_TESTS_RAN = 4
+EXITCODE_RERUN_FAIL = 5
+EXITCODE_INTERRUPTED = 130
 
 
 class Regrtest:
@@ -847,7 +848,7 @@ class Regrtest:
         elif self.no_tests_run():
             exitcode = EXITCODE_NO_TESTS_RAN
         elif self.rerun and self.ns.fail_rerun:
-            exitcode = EXITCODE_BAD_TEST
+            exitcode = EXITCODE_RERUN_FAIL
         return exitcode
 
     def action_run_tests(self):
