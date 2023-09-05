@@ -178,7 +178,7 @@ Events can be controlled globally by modifying the set of events being monitored
 
    Returns the ``int`` representing all the active events.
 
-.. function:: sys.monitoring.set_events(tool_id: int, event_set: int)
+.. function:: set_events(tool_id: int, event_set: int)
 
    Activates all events which are set in ``event_set``.
    Raises a ``ValueError`` if ``tool_id`` is not in use.
