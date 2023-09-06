@@ -23,7 +23,7 @@ Data members:
 #include "pycore_long.h"          // _PY_LONG_MAX_STR_DIGITS_THRESHOLD
 #include "pycore_modsupport.h"    // _PyModule_CreateInitialized()
 #include "pycore_namespace.h"     // _PyNamespace_New()
-#include "pycore_object.h"        // _PyObject_IS_GC(), _PyObject_DebugTypeStats()
+#include "pycore_object.h"        // _PyObject_DebugTypeStats()
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pylifecycle.h"   // _PyErr_WriteUnraisableDefaultHook()
@@ -31,18 +31,19 @@ Data members:
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_structseq.h"     // _PyStructSequence_InitBuiltinWithFlags()
-#include "pycore_sysmodule.h"     // Define _PySys_GetSizeOf()
+#include "pycore_sysmodule.h"     // export _PySys_GetSizeOf()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 #include "frameobject.h"          // PyFrame_FastToLocalsWithError()
-#include "pydtrace.h"
+#include "pydtrace.h"             // PyDTrace_AUDIT()
 #include "osdefs.h"               // DELIM
 #include "stdlib_module_names.h"  // _Py_stdlib_module_names
+
 #include <locale.h>
 
 #ifdef MS_WINDOWS
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>
 #endif /* MS_WINDOWS */
 
 #ifdef MS_COREDLL
@@ -52,11 +53,11 @@ extern const char *PyWin_DLLVersionString;
 #endif
 
 #ifdef __EMSCRIPTEN__
-#include <emscripten.h>
+#  include <emscripten.h>
 #endif
 
 #ifdef HAVE_FCNTL_H
-#include <fcntl.h>
+#  include <fcntl.h>
 #endif
 
 /*[clinic input]
@@ -65,6 +66,7 @@ module sys
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=3726b388feee8cea]*/
 
 #include "clinic/sysmodule.c.h"
+
 
 PyObject *
 _PySys_GetAttr(PyThreadState *tstate, PyObject *name)

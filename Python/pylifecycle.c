@@ -17,7 +17,7 @@
 #include "pycore_list.h"          // _PyList_Fini()
 #include "pycore_long.h"          // _PyLong_InitTypes()
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
-#include "pycore_pathconfig.h"    // _PyConfig_WritePathConfig()
+#include "pycore_pathconfig.h"    // _PyPathConfig_UpdateGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pymem.h"         // _PyObject_DebugMallocStats()
@@ -32,13 +32,14 @@
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
+
 #include "opcode.h"
 
 #include <locale.h>               // setlocale()
 #include <stdlib.h>               // getenv()
 
 #if defined(__APPLE__)
-#include <mach-o/loader.h>
+#  include <mach-o/loader.h>
 #endif
 
 #ifdef HAVE_SIGNAL_H
