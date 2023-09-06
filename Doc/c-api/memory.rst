@@ -115,20 +115,21 @@ The three allocation domains are:
   of the Python runtime.  This includes cases where the
   allocation *must* go to the system allocator, when the runtime might
   not be initialized yet, or in non-Python threads.
-  It also includes where the allocator can operate without the :term:`GIL`.
   Examples include general-purpose memory buffers, as well as global
   state for applications that embed Python.
+  The allocator may be called with or without the :term:`GIL` held.
   The memory is requested directly from the system.
 
 * "Mem" domain: intended for allocating memory tied to the
   current interpreter but *not* belonging to any Python objects.
-  Examples include Python buffers, *arrays* of objects,
-  general-purpose memory buffers associated with an extension module,
-  and where the allocation must be performed with the :term:`GIL` held.
+  Examples include Python buffers, *arrays* of objects, and
+  general-purpose memory buffers associated with an extension module.
+  The allocator will always be called with the :term:`GIL` held.
   The memory is taken from the Python private heap.
 
 * Object domain: intended for allocating memory belonging to Python
   objects (which are necessarily tied to the current interpreter).
+  The allocator will always be called with the :term:`GIL` held.
   The memory is taken from the Python private heap.
 
 When freeing memory previously allocated by the allocating functions belonging to a
