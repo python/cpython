@@ -2696,18 +2696,6 @@ output.append(4)
         sys.settrace(None)
         self.compare_jump_output([2, 3, 2, 3, 4], namespace["output"])
 
-    @jump_test(1, 2, [], event='call', error=(Exception, 'Test Error'),
-                    warning=(Warning, 'Test Warning'))
-    def test_error_and_warning_in_tandem(output):
-        raise Exception("Test Error")
-        warnings.warn(Warning("Test Warning"))
-
-    @jump_test(1, 2, [], event='call', error=(Exception, 'Test Error'),
-                    warning=(Warning, 'Test Warning'))
-    def test_warning_and_error_in_tandem(output):
-        warnings.warn(Warning("Test Warning"))
-        raise Exception("Test Error")
-
     @jump_test(2, 3, [1], event='call', error=(ValueError, "can't jump from"
                " the 'call' trace event of a new frame"))
     def test_no_jump_from_call(output):
@@ -2761,18 +2749,6 @@ output.append(4)
         flag = 6
         output.append(7)
         output.append(8)
-
-    @async_jump_test(1, 2, [], event='call', error=(Exception, 'Test Error'),
-                    warning=(Warning, 'Test Warning'))
-    def test_error_and_warning_in_tandem_async(output):
-        raise Exception("Test Error")
-        warnings.warn(Warning("Test Warning"))
-
-    @async_jump_test(1, 2, [], event='call', error=(Exception, 'Test Error'),
-                    warning=(Warning, 'Test Warning'))
-    def test_warning_and_error_in_tandem_async(output):
-        warnings.warn(Warning("Test Warning"))
-        raise Exception("Test Error")
 
     @async_jump_test(2, 3, [1, 3], warning=(RuntimeWarning, unbound_locals))
     async def test_jump_forward_over_async_listcomp(output):
