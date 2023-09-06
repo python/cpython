@@ -494,6 +494,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 Pdb._previous_sigint_handler = None
 
         _chained_exceptions, tb = self._get_tb_and_exceptions(tb_or_exc)
+        if isinstance(tb_or_exc, BaseException):
+            assert tb is not None, "main exception must have a traceback"
         with self._hold_exceptions(_chained_exceptions):
             if self.setup(frame, tb):
                 # no interaction desired at this time (happens if .pdbrc contains
@@ -1169,7 +1171,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 rep = repr(exc)
                 if len(rep) > 80:
                     rep = rep[:77] + "..."
-                self.message(f"{prompt} {ix:>3} {rep}")
+                indicator = (
+                    "  -"
+                    if self._chained_exceptions[ix].__traceback__ is None
+                    else f"{ix:>3}"
+                )
+                self.message(f"{prompt} {indicator} {rep}")
         else:
             try:
                 number = int(arg)
@@ -1177,6 +1184,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self.error("Argument must be an integer")
                 return
             if 0 <= number < len(self._chained_exceptions):
+                if self._chained_exceptions[number].__traceback__ is None:
+                    self.error("This exception does not have a traceback, cannot jump to it")
+                    return
+
                 self._chained_exception_index = number
                 self.setup(None, self._chained_exceptions[number].__traceback__)
                 self.print_stack_entry(self.stack[self.curindex])
@@ -2010,19 +2021,27 @@ def post_mortem(t=None):
     If `t` is an exception object, the `exceptions` command makes it possible to
     list and inspect its chained exceptions (if any).
     """
+    return _post_mortem(t, Pdb())
+
+
+def _post_mortem(t, pdb_instance):
+    """
+    Private version of post_mortem, which allow to pass a pdb instance
+    for testing purposes.
+    """
     # handling the default
     if t is None:
         exc = sys.exception()
         if exc is not None:
             t = exc.__traceback__
 
-    if t is None:
+    if t is None or (isinstance(t, BaseException) and t.__traceback__ is None):
         raise ValueError("A valid traceback must be passed if no "
                          "exception is being handled")
 
-    p = Pdb()
-    p.reset()
-    p.interaction(None, t)
+    pdb_instance.reset()
+    pdb_instance.interaction(None, t)
+
 
 def pm():
     """Enter post-mortem debugging of the traceback found in sys.last_exc."""
