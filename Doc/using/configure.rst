@@ -43,6 +43,29 @@ See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform
 support".
 
 
+Generated files
+===============
+
+To reduce build dependencies, Python source code contains multiple generated
+files. Commands to regenerate all generated files::
+
+    make regen-all
+    make regen-stdlib-module-names
+    make regen-limited-abi
+    make regen-configure
+
+The ``Makefile.pre.in`` file documents generated files, their inputs, and tools used
+to regenerate them. Search for ``regen-*`` make targets.
+
+The ``make regen-configure`` command runs `tiran/cpython_autoconf
+<https://github.com/tiran/cpython_autoconf>`_ container for reproducible build;
+see container ``entry.sh`` script. The container is optional, the following
+command can be run locally, the generated files depend on autoconf and aclocal
+versions::
+
+    autoreconf -ivf -Werror
+
+
 .. _configure-options:
 
 Configure Options
