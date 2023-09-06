@@ -1127,52 +1127,6 @@ def test_post_mortem_single_no_stack():
     A valid traceback must be passed if no exception is being handled
     """
 
-
-def test_post_mortem_base_no_stack():
-    """Test post mortem called when base exception has no stack
-
-    >>> def test_function():
-    ...     import pdb;
-    ...     import sys
-    ...     instance = pdb.Pdb(nosigint=True, readrc=False)
-    ...     try:
-    ...         raise ValueError('stack') from TypeError('no-stack')
-    ...     except ValueError as e:
-    ...         sub_exc = e
-    ...     exc = Exception('base-no-stack')
-    ...     exc.__cause__ = sub_exc
-    ...     instance.reset()
-    ...     instance.interaction(None, exc)
-
-    >>> with PdbTestInput(  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-    ...     [
-    ...      "exceptions",
-    ...      "exceptions 0",
-    ...      "exceptions",
-    ...      "exit"
-    ...     ]
-    ... ):
-    ...    try:
-    ...        test_function()
-    ...    except ValueError as e:
-    ...        print(e)
-    > <doctest test.test_pdb.test_post_mortem_base_no_stack[0]>(6)test_function()
-    -> raise ValueError('stack') from TypeError('no-stack')
-    (Pdb) exceptions
-        - TypeError('no-stack')
-    >   1 ValueError('stack')
-        - Exception('base-no-stack')
-    (Pdb) exceptions 0
-    *** This exception does not have a traceback, cannot jump to it
-    (Pdb) exceptions
-        - TypeError('no-stack')
-    >   1 ValueError('stack')
-        - Exception('base-no-stack')
-    (Pdb) exit
-
-    """
-
-
 def test_post_mortem_complex():
     """Test post mortem traceback debugging of chained exception
 

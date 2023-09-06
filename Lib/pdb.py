@@ -491,14 +491,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 Pdb._previous_sigint_handler = None
 
         _chained_exceptions, tb = self._get_tb_and_exceptions(tb_or_exc)
+        if isinstance(tb_or_exc, BaseException):
+            assert tb is not None, "main exception must have a traceback"
         with self._hold_exceptions(_chained_exceptions):
-            if isinstance(tb_or_exc, BaseException) and tb is None:
-                for ix, exc in reversed(list(enumerate(_chained_exceptions))):
-                    if exc.__traceback__:
-                        tb = exc.__traceback__
-                        self._chained_exception_index = ix
-                        break
-
             if self.setup(frame, tb):
                 # no interaction desired at this time (happens if .pdbrc contains
                 # a command like "continue")
