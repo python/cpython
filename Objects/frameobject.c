@@ -591,39 +591,28 @@ first_line_not_before(int *lines, int len, int line)
     return result;
 }
 
-static PyFrameState
-_PyFrame_GetState(PyFrameObject *frame)
+static bool
+frame_is_cleared(PyFrameObject *frame)
 {
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
     if (frame->f_frame->stacktop == 0) {
-        return FRAME_CLEARED;
+        return true;
     }
-    switch(frame->f_frame->owner) {
-        case FRAME_OWNED_BY_GENERATOR:
-        {
-            PyGenObject *gen = _PyFrame_GetGenerator(frame->f_frame);
-            return gen->gi_frame_state;
-        }
-        case FRAME_OWNED_BY_THREAD:
-        {
-            if (_PyInterpreterFrame_LASTI(frame->f_frame) < 0) {
-                return FRAME_CREATED;
-            }
-            switch (frame->f_frame->prev_instr->op.code)
-            {
-                case COPY_FREE_VARS:
-                case MAKE_CELL:
-                case RETURN_GENERATOR:
-                    /* Frame not fully initialized */
-                    return FRAME_CREATED;
-                default:
-                    return FRAME_EXECUTING;
-            }
-        }
-        case FRAME_OWNED_BY_FRAME_OBJECT:
-            return FRAME_COMPLETED;
+    if (frame->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
+        PyGenObject *gen = _PyFrame_GetGenerator(frame->f_frame);
+        return gen->gi_frame_state == FRAME_CLEARED;
     }
-    Py_UNREACHABLE();
+    return false;
+}
+
+static bool frame_is_suspended(PyFrameObject *frame)
+{
+    assert(!_PyFrame_IsIncomplete(frame->f_frame));
+    if (frame->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
+        PyGenObject *gen = _PyFrame_GetGenerator(frame->f_frame);
+        return gen->gi_frame_state == FRAME_SUSPENDED;
+    }
+    return false;
 }
 
 /* Setter for f_lineno - you can set f_lineno from within a trace function in
@@ -655,7 +644,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         return -1;
     }
 
-    PyFrameState state = _PyFrame_GetState(f);
+    bool is_suspended = frame_is_suspended(f);
     /*
      * This code preserves the historical restrictions on
      * setting the line number of a frame.
@@ -811,7 +800,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         }
         assert(unbound == 0);
     }
-    if (state == FRAME_SUSPENDED) {
+    if (is_suspended) {
         /* Account for value popped by yield */
         start_stack = pop_value(start_stack);
     }
@@ -1455,7 +1444,7 @@ void
 PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 {
     assert(!_PyFrame_IsIncomplete(f->f_frame));
-    if (f && f->f_fast_as_locals && _PyFrame_GetState(f) != FRAME_CLEARED) {
+    if (f && f->f_fast_as_locals && !frame_is_cleared(f)) {
         _PyFrame_LocalsToFast(f->f_frame, clear);
         f->f_fast_as_locals = 0;
     }
