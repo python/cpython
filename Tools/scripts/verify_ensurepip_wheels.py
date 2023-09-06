@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#!/usr/bin/env python3
 
 """
 Compare checksums for wheels in :mod:`ensurepip` against the Cheeseshop.
@@ -35,10 +35,16 @@ def print_error(file_path: str, message: str) -> None:
 
 def verify_wheel(package_name: str) -> bool:
     # Find the package on disk
-    package_path = next(WHEEL_DIR.glob(f"{package_name}*.whl"), None)
-    if not package_path:
-        print_error("", f"Could not find a {package_name} wheel on disk.")
+    package_paths = list(WHEEL_DIR.glob(f"{package_name}*.whl"))
+    if len(package_paths) != 1:
+        if package_paths:
+            for p in package_paths:
+                print_error(p, f"Found more than one wheel for package {package_name}.")
+        else:
+            print_error("", f"Could not find a {package_name} wheel on disk.")
         return False
+
+    package_path = package_paths[0]
 
     print(f"Verifying checksum for {package_path}.")
 
