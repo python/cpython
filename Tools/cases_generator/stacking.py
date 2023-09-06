@@ -261,15 +261,19 @@ class EffectManager:
         self.final_offset.higher(eff)
 
     def adjust(self, offset: StackOffset) -> None:
-        for down in offset.deep:
+        deep = list(offset.deep)
+        high = list(offset.high)
+        for down in deep:
             self.adjust_deeper(down)
-        for up in offset.high:
+        for up in high:
             self.adjust_higher(up)
 
     def adjust_inverse(self, offset: StackOffset) -> None:
-        for down in offset.deep:
+        deep = list(offset.deep)
+        high = list(offset.high)
+        for down in deep:
             self.adjust_higher(down)
-        for up in offset.high:
+        for up in high:
             self.adjust_deeper(up)
 
     def collect_vars(self) -> dict[str, StackEffect]:
@@ -426,15 +430,26 @@ def write_components(
                 )
 
         if mgr.instr.name in ("_PUSH_FRAME", "_POP_FRAME"):
-            # Adjust stack to min_offset (input effects materialized)
+            # Adjust stack to min_offset.
+            # This means that all input effects of this instruction
+            # are materialized, but not its output effects.
+            # That's as intended, since these two are so special.
             out.stack_adjust(mgr.min_offset.deep, mgr.min_offset.high)
-            # Use clone() since adjust_inverse() mutates final_offset
-            mgr.adjust_inverse(mgr.final_offset.clone())
+            # However, for tier 2, pretend the stack is at final offset.
+            mgr.adjust_inverse(mgr.final_offset)
+            if tier == TIER_ONE:
+                # TODO: Check in analyzer that _{PUSH,POP}_FRAME is last.
+                assert (
+                    mgr is managers[-1]
+                ), f"Expected {mgr.instr.name!r} to be the last uop"
+                assert_no_pokes(managers)
 
         if mgr.instr.name == "SAVE_CURRENT_IP":
             next_instr_is_set = True
             if cache_offset:
                 out.emit(f"next_instr += {cache_offset};")
+            if tier == TIER_ONE:
+                assert_no_pokes(managers)
 
         if len(parts) == 1:
             mgr.instr.write_body(out, 0, mgr.active_caches, tier)
@@ -443,19 +458,41 @@ def write_components(
                 mgr.instr.write_body(out, -4, mgr.active_caches, tier)
 
         if mgr is managers[-1] and not next_instr_is_set:
-            # TODO: Explain why this adjustment is needed.
+            # Adjust the stack to its final depth, *then* write the
+            # pokes for all preceding uops.
+            # Note that for array output effects we may still write
+            # past the stack top.
             out.stack_adjust(mgr.final_offset.deep, mgr.final_offset.high)
-            # Use clone() since adjust_inverse() mutates final_offset
-            mgr.adjust_inverse(mgr.final_offset.clone())
-
-        for poke in mgr.pokes:
-            if not poke.effect.size and poke.effect.name not in mgr.instr.unmoved_names:
-                out.assign(
-                    poke.as_stack_effect(),
-                    poke.effect,
-                )
+            write_all_pokes(mgr.final_offset, managers, out)
 
     return next_instr_is_set
+
+
+def assert_no_pokes(managers: list[EffectManager]) -> None:
+    for mgr in managers:
+        for poke in mgr.pokes:
+            if not poke.effect.size and poke.effect.name not in mgr.instr.unmoved_names:
+                assert (
+                    poke.effect.name == UNUSED
+                ), f"Unexpected poke of {poke.effect.name} in {mgr.instr.name!r}"
+
+
+def write_all_pokes(
+    offset: StackOffset, managers: list[EffectManager], out: Formatter
+) -> None:
+    # Emit all remaining pushes (pokes)
+    for m in managers:
+        m.adjust_inverse(offset)
+        write_pokes(m, out)
+
+
+def write_pokes(mgr: EffectManager, out: Formatter) -> None:
+    for poke in mgr.pokes:
+        if not poke.effect.size and poke.effect.name not in mgr.instr.unmoved_names:
+            out.assign(
+                poke.as_stack_effect(),
+                poke.effect,
+            )
 
 
 def write_single_instr_for_abstract_interp(instr: Instruction, out: Formatter) -> None:
@@ -478,8 +515,7 @@ def _write_components_for_abstract_interp(
     for mgr in managers:
         if mgr is managers[-1]:
             out.stack_adjust(mgr.final_offset.deep, mgr.final_offset.high)
-            # Use clone() since adjust_inverse() mutates final_offset
-            mgr.adjust_inverse(mgr.final_offset.clone())
+            mgr.adjust_inverse(mgr.final_offset)
         # NULL out the output stack effects
         for poke in mgr.pokes:
             if not poke.effect.size and poke.effect.name not in mgr.instr.unmoved_names:
