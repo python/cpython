@@ -1200,6 +1200,15 @@ class SysModuleTest(unittest.TestCase):
         get_objects = sys.getobjects(3, MyType)
         self.assertEqual(len(get_objects), 3)
 
+    @unittest.skipUnless(hasattr(sys, '_stats_on'), 'need Py_STATS build')
+    def test_pystats(self):
+        # Call the functions, just check that they don't crash
+        # Cannot save/restore state.
+        sys._stats_on()
+        sys._stats_off()
+        sys._stats_clear()
+        sys._stats_dump()
+
 
 @test.support.cpython_only
 class UnraisableHookTest(unittest.TestCase):
