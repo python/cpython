@@ -3684,10 +3684,10 @@ class TestStringAnnotations(unittest.TestCase):
                 self.assertEqual(C(10).x, 10)
 
     def test_classvar_module_level_import(self):
-        from test import dataclass_module_1
-        from test import dataclass_module_1_str
-        from test import dataclass_module_2
-        from test import dataclass_module_2_str
+        from test.test_dataclasses import dataclass_module_1
+        from test.test_dataclasses import dataclass_module_1_str
+        from test.test_dataclasses import dataclass_module_2
+        from test.test_dataclasses import dataclass_module_2_str
 
         for m in (dataclass_module_1, dataclass_module_1_str,
                   dataclass_module_2, dataclass_module_2_str,
@@ -3725,7 +3725,7 @@ class TestStringAnnotations(unittest.TestCase):
                     self.assertNotIn('not_iv4', c.__dict__)
 
     def test_text_annotations(self):
-        from test import dataclass_textanno
+        from test.test_dataclasses import dataclass_textanno
 
         self.assertEqual(
             get_type_hints(dataclass_textanno.Bar),
