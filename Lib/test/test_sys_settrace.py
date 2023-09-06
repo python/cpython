@@ -8,6 +8,8 @@ import gc
 from functools import wraps
 import asyncio
 from test.support import import_helper
+import contextlib
+import warnings
 
 support.requires_working_socket(module=True)
 
@@ -1939,18 +1941,13 @@ class JumpTestCase(unittest.TestCase):
         tracer = JumpTracer(func, jumpFrom, jumpTo, event, decorated)
         sys.settrace(tracer.trace)
         output = []
-
-        if warning is None and error is None:
+        
+        with contextlib.ExitStack() as stack:
+            if error is not None:
+                stack.enter_context(self.assertRaisesRegex(*error))
+            if warning is not None:
+                stack.enter_context(self.assertWarnsRegex(*warning))
             func(output)
-        elif warning is not None and error is None:
-            with self.assertWarnsRegex(*warning):
-                func(output)
-        elif warning is None and error is not None:
-            with self.assertRaisesRegex(*error):
-                func(output)
-        else:
-            with self.assertRaisesRegex(*error) as error_context, self.assertWarnsRegex(*warning) as warning_context:
-                func(output)
 
         sys.settrace(None)
         self.compare_jump_output(expected, output)
@@ -1961,18 +1958,13 @@ class JumpTestCase(unittest.TestCase):
         sys.settrace(tracer.trace)
         output = []
 
-        if warning is None and error is None:
+        with contextlib.ExitStack() as stack:
+            if error is not None:
+                stack.enter_context(self.assertRaisesRegex(*error))
+            if warning is not None:
+                stack.enter_context(self.assertWarnsRegex(*warning))
             asyncio.run(func(output))
-        elif warning is not None and error is None:
-            with self.assertWarnsRegex(*warning):
-                asyncio.run(func(output))
-        elif warning is None and error is not None:
-            with self.assertRaisesRegex(*error):
-                asyncio.run(func(output))
-        else:
-            with self.assertRaisesRegex(*error) as error_context, self.assertWarnsRegex(*warning) as warning_context:
-                func(output)
-
+        
         sys.settrace(None)
         asyncio.set_event_loop_policy(None)
         self.compare_jump_output(expected, output)
@@ -2704,6 +2696,18 @@ output.append(4)
         sys.settrace(None)
         self.compare_jump_output([2, 3, 2, 3, 4], namespace["output"])
 
+    @jump_test(1, 2, [], event='call', error=(Exception, 'Test Error'),
+                    warning=(Warning, 'Test Warning'))
+    def test_error_and_warning_in_tandem(output):
+        raise Exception("Test Error")
+        warnings.warn(Warning("Test Warning"))
+
+    @jump_test(1, 2, [], event='call', error=(Exception, 'Test Error'),
+                    warning=(Warning, 'Test Warning'))
+    def test_warning_and_error_in_tandem(output):
+        warnings.warn(Warning("Test Warning"))
+        raise Exception("Test Error")
+
     @jump_test(2, 3, [1], event='call', error=(ValueError, "can't jump from"
                " the 'call' trace event of a new frame"))
     def test_no_jump_from_call(output):
@@ -2757,6 +2761,18 @@ output.append(4)
         flag = 6
         output.append(7)
         output.append(8)
+    
+    @async_jump_test(1, 2, [], event='call', error=(Exception, 'Test Error'),
+                    warning=(Warning, 'Test Warning'))
+    def test_error_and_warning_in_tandem_async(output):
+        raise Exception("Test Error")
+        warnings.warn(Warning("Test Warning"))
+
+    @async_jump_test(1, 2, [], event='call', error=(Exception, 'Test Error'),
+                    warning=(Warning, 'Test Warning'))
+    def test_warning_and_error_in_tandem_async(output):
+        warnings.warn(Warning("Test Warning"))
+        raise Exception("Test Error")
 
     @async_jump_test(2, 3, [1, 3], warning=(RuntimeWarning, unbound_locals))
     async def test_jump_forward_over_async_listcomp(output):
