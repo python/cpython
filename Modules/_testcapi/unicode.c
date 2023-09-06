@@ -491,7 +491,7 @@ static PyObject *
 unicode_aswidecharstring(PyObject *self, PyObject *args)
 {
     PyObject *unicode, *result;
-    Py_ssize_t size = 100;
+    Py_ssize_t size = UNINITIALIZED_SIZE;
     wchar_t *buffer;
 
     if (!PyArg_ParseTuple(args, "O", &unicode))
@@ -499,8 +499,10 @@ unicode_aswidecharstring(PyObject *self, PyObject *args)
 
     NULLABLE(unicode);
     buffer = PyUnicode_AsWideCharString(unicode, &size);
-    if (buffer == NULL)
+    if (buffer == NULL) {
+        assert(size == UNINITIALIZED_SIZE);
         return NULL;
+    }
 
     result = PyUnicode_FromWideChar(buffer, size + 1);
     PyMem_Free(buffer);
@@ -625,15 +627,17 @@ unicode_asutf8andsize(PyObject *self, PyObject *args)
     PyObject *unicode;
     Py_ssize_t buflen;
     const char *s;
-    Py_ssize_t size = -100;
+    Py_ssize_t size = UNINITIALIZED_SIZE;
 
     if (!PyArg_ParseTuple(args, "On", &unicode, &buflen))
         return NULL;
 
     NULLABLE(unicode);
     s = PyUnicode_AsUTF8AndSize(unicode, &size);
-    if (s == NULL)
+    if (s == NULL) {
+        assert(size == UNINITIALIZED_SIZE);
         return NULL;
+    }
 
     return Py_BuildValue("(y#n)", s, buflen, size);
 }
@@ -735,7 +739,7 @@ unicode_decodeutf7stateful(PyObject *self, PyObject *args)
     const char *data;
     Py_ssize_t size;
     const char *errors = NULL;
-    Py_ssize_t consumed;
+    Py_ssize_t consumed = UNINITIALIZED_SIZE;
     PyObject *result;
 
     if (!PyArg_ParseTuple(args, "y#|z", &data, &size, &errors))
@@ -743,6 +747,7 @@ unicode_decodeutf7stateful(PyObject *self, PyObject *args)
 
     result = PyUnicode_DecodeUTF7Stateful(data, size, errors, &consumed);
     if (!result) {
+        assert(consumed == UNINITIALIZED_SIZE);
         return NULL;
     }
     return Py_BuildValue("(Nn)", result, consumed);
@@ -769,7 +774,7 @@ unicode_decodeutf8stateful(PyObject *self, PyObject *args)
     const char *data;
     Py_ssize_t size;
     const char *errors = NULL;
-    Py_ssize_t consumed = 123456789;
+    Py_ssize_t consumed = UNINITIALIZED_SIZE;
     PyObject *result;
 
     if (!PyArg_ParseTuple(args, "y#|z", &data, &size, &errors))
@@ -777,6 +782,7 @@ unicode_decodeutf8stateful(PyObject *self, PyObject *args)
 
     result = PyUnicode_DecodeUTF8Stateful(data, size, errors, &consumed);
     if (!result) {
+        assert(consumed == UNINITIALIZED_SIZE);
         return NULL;
     }
     return Py_BuildValue("(Nn)", result, consumed);
@@ -797,7 +803,7 @@ unicode_decodeutf32(PyObject *self, PyObject *args)
     const char *data;
     Py_ssize_t size;
     const char *errors = NULL;
-    int byteorder;
+    int byteorder = UNINITIALIZED_INT;
     PyObject *result;
 
     if (!PyArg_ParseTuple(args, "iy#|z", &byteorder, &data, &size, &errors))
@@ -817,8 +823,8 @@ unicode_decodeutf32stateful(PyObject *self, PyObject *args)
     const char *data;
     Py_ssize_t size;
     const char *errors = NULL;
-    int byteorder;
-    Py_ssize_t consumed;
+    int byteorder = UNINITIALIZED_INT;
+    Py_ssize_t consumed = UNINITIALIZED_SIZE;
     PyObject *result;
 
     if (!PyArg_ParseTuple(args, "iy#|z", &byteorder, &data, &size, &errors))
@@ -826,6 +832,7 @@ unicode_decodeutf32stateful(PyObject *self, PyObject *args)
 
     result = PyUnicode_DecodeUTF32Stateful(data, size, errors, &byteorder, &consumed);
     if (!result) {
+        assert(consumed == UNINITIALIZED_SIZE);
         return NULL;
     }
     return Py_BuildValue("(iNn)", byteorder, result, consumed);
@@ -846,7 +853,7 @@ unicode_decodeutf16(PyObject *self, PyObject *args)
     const char *data;
     Py_ssize_t size;
     const char *errors = NULL;
-    int byteorder = 0;
+    int byteorder = UNINITIALIZED_INT;
     PyObject *result;
 
     if (!PyArg_ParseTuple(args, "iy#|z", &byteorder, &data, &size, &errors))
@@ -866,8 +873,8 @@ unicode_decodeutf16stateful(PyObject *self, PyObject *args)
     const char *data;
     Py_ssize_t size;
     const char *errors = NULL;
-    int byteorder;
-    Py_ssize_t consumed;
+    int byteorder = UNINITIALIZED_INT;
+    Py_ssize_t consumed = UNINITIALIZED_SIZE;
     PyObject *result;
 
     if (!PyArg_ParseTuple(args, "iy#|z", &byteorder, &data, &size, &errors))
@@ -875,6 +882,7 @@ unicode_decodeutf16stateful(PyObject *self, PyObject *args)
 
     result = PyUnicode_DecodeUTF16Stateful(data, size, errors, &byteorder, &consumed);
     if (!result) {
+        assert(consumed == UNINITIALIZED_SIZE);
         return NULL;
     }
     return Py_BuildValue("(iNn)", byteorder, result, consumed);
@@ -1028,7 +1036,7 @@ unicode_decodembcsstateful(PyObject *self, PyObject *args)
     const char *data;
     Py_ssize_t size;
     const char *errors = NULL;
-    Py_ssize_t consumed;
+    Py_ssize_t consumed = UNINITIALIZED_SIZE;
     PyObject *result;
 
     if (!PyArg_ParseTuple(args, "y#|z", &data, &size, &errors))
@@ -1036,6 +1044,7 @@ unicode_decodembcsstateful(PyObject *self, PyObject *args)
 
     result = PyUnicode_DecodeMBCSStateful(data, size, errors, &consumed);
     if (!result) {
+        assert(consumed == UNINITIALIZED_SIZE);
         return NULL;
     }
     return Py_BuildValue("(Nn)", result, consumed);
@@ -1049,7 +1058,7 @@ unicode_decodecodepagestateful(PyObject *self, PyObject *args)
     const char *data;
     Py_ssize_t size;
     const char *errors = NULL;
-    Py_ssize_t consumed;
+    Py_ssize_t consumed = UNINITIALIZED_SIZE;
     PyObject *result;
 
     if (!PyArg_ParseTuple(args, "iy#|z", &code_page, &data, &size, &errors))
@@ -1057,6 +1066,7 @@ unicode_decodecodepagestateful(PyObject *self, PyObject *args)
 
     result = PyUnicode_DecodeCodePageStateful(code_page, data, size, errors, &consumed);
     if (!result) {
+        assert(consumed == UNINITIALIZED_SIZE);
         return NULL;
     }
     return Py_BuildValue("(Nn)", result, consumed);
