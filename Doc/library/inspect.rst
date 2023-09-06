@@ -730,7 +730,7 @@ function.
 
    .. method:: Signature.replace(*[, parameters][, return_annotation])
 
-      Create a new Signature instance based on the instance replace was invoked
+      Create a new Signature instance based on the instance :meth:`replace` was invoked
       on.  It is possible to pass different ``parameters`` and/or
       ``return_annotation`` to override the corresponding properties of the base
       signature.  To remove return_annotation from the copied Signature, pass in

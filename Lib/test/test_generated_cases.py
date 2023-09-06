@@ -532,6 +532,36 @@ class TestGeneratedCases(unittest.TestCase):
     """
         self.run_cases_test(input, output)
 
+    def test_macro_push_push(self):
+        input = """
+        op(A, (-- val1)) {
+            val1 = spam();
+        }
+        op(B, (-- val2)) {
+            val2 = spam();
+        }
+        macro(M) = A + B;
+        """
+        output = """
+        TARGET(M) {
+            PyObject *val1;
+            PyObject *val2;
+            // A
+            {
+                val1 = spam();
+            }
+            // B
+            {
+                val2 = spam();
+            }
+            STACK_GROW(2);
+            stack_pointer[-2] = val1;
+            stack_pointer[-1] = val2;
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
 
 if __name__ == "__main__":
     unittest.main()

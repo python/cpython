@@ -2284,6 +2284,13 @@ def clear_executors(func):
 
 class TestOptimizerAPI(unittest.TestCase):
 
+    def test_get_counter_optimizer_dealloc(self):
+        # See gh-108727
+        def f():
+            _testinternalcapi.get_counter_optimizer()
+
+        f()
+
     def test_get_set_optimizer(self):
         old = _testinternalcapi.get_optimizer()
         opt = _testinternalcapi.get_counter_optimizer()
@@ -2478,7 +2485,7 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc([1, 2, 3])
+            testfunc(range(10))
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -2493,7 +2500,7 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc([1, 2, 3])
+            testfunc(range(10))
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)

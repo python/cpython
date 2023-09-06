@@ -531,7 +531,7 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
     if (backwards_jump == NULL) {
         return ERROR;
     }
-    basicblock_addop(backwards_jump, JUMP, target->b_label.id, NO_LOCATION);
+    basicblock_addop(backwards_jump, JUMP, target->b_label.id, last->i_loc);
     backwards_jump->b_instr[0].i_target = target;
     last->i_opcode = reversed_opcode;
     last->i_target = b->b_next;
@@ -2404,17 +2404,31 @@ build_cellfixedoffsets(_PyCompile_CodeUnitMetadata *umd)
     PyObject *varname, *cellindex;
     Py_ssize_t pos = 0;
     while (PyDict_Next(umd->u_cellvars, &pos, &varname, &cellindex)) {
-        PyObject *varindex = PyDict_GetItem(umd->u_varnames, varname);
-        if (varindex != NULL) {
-            assert(PyLong_AS_LONG(cellindex) < INT_MAX);
-            assert(PyLong_AS_LONG(varindex) < INT_MAX);
-            int oldindex = (int)PyLong_AS_LONG(cellindex);
-            int argoffset = (int)PyLong_AS_LONG(varindex);
-            fixed[oldindex] = argoffset;
+        PyObject *varindex;
+        if (PyDict_GetItemRef(umd->u_varnames, varname, &varindex) < 0) {
+            goto error;
         }
-    }
+        if (varindex == NULL) {
+            continue;
+        }
 
+        int argoffset = PyLong_AsInt(varindex);
+        Py_DECREF(varindex);
+        if (argoffset == -1 && PyErr_Occurred()) {
+            goto error;
+        }
+
+        int oldindex = PyLong_AsInt(cellindex);
+        if (oldindex == -1 && PyErr_Occurred()) {
+            goto error;
+        }
+        fixed[oldindex] = argoffset;
+    }
     return fixed;
+
+error:
+    PyMem_Free(fixed);
+    return NULL;
 }
 
 #define IS_GENERATOR(CF) \
