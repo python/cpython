@@ -215,7 +215,7 @@ General Options
 
    The statistics will be dumped to a arbitrary (probably unique) file in
    ``/tmp/py_stats/`` (Unix) or ``C:\temp\py_stats\`` (Windows). If that
-   directory does not exist, results will be printed on stdout.
+   directory does not exist, results will be printed on stderr.
 
    Use ``Tools/scripts/summarize_stats.py`` to read the stats.
 
