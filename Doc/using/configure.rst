@@ -192,13 +192,68 @@ General Options
 
 .. cmdoption:: --enable-pystats
 
-   Turn on internal statistics gathering.
+   Turn on internal Python performance statistics gathering.
+
+   By default, statistics gathering is off. Use ``python3 -X pystats`` command
+   or set ``PYTHONSTATS=1`` environment variable to turn on statistics
+   gathering at Python startup.
+
+   At Python exit, dump statistics if statistics gathering was on and not
+   cleared.
+
+   Effects:
+
+   * Add :option:`-X pystats <-X>` command line option.
+   * Add :envvar:`!PYTHONSTATS` environment variable.
+   * Define the ``Py_STATS`` macro.
+   * Add functions to the :mod:`sys` module:
+
+     * :func:`!sys._stats_on`: Turns on statistics gathering.
+     * :func:`!sys._stats_off`: Turns off statistics gathering.
+     * :func:`!sys._stats_clear`: Clears the statistics.
+     * :func:`!sys._stats_dump`: Dump statistics to file, and clears the statistics.
 
    The statistics will be dumped to a arbitrary (probably unique) file in
-   ``/tmp/py_stats/``, or ``C:\temp\py_stats\`` on Windows. If that directory
-   does not exist, results will be printed on stdout.
+   ``/tmp/py_stats/`` (Unix) or ``C:\temp\py_stats\`` (Windows). If that
+   directory does not exist, results will be printed on stderr.
 
    Use ``Tools/scripts/summarize_stats.py`` to read the stats.
+
+   Statistics:
+
+   * Opcode:
+
+     * Specialization: success, failure, hit, deferred, miss, deopt, failures;
+     * Execution count;
+     * Pair count.
+
+   * Call:
+
+     * Inlined Python calls;
+     * PyEval calls;
+     * Frames pushed;
+     * Frame object created;
+     * Eval calls: vector, generator, legacy, function VECTORCALL, build class,
+       slot, function "ex", API, method.
+
+   * Object:
+
+     * incref and decref;
+     * interpreter incref and decref;
+     * allocations: all, 512 bytes, 4 kiB, big;
+     * free;
+     * to/from free lists;
+     * dictionary materialized/dematerialized;
+     * type cache;
+     * optimization attemps;
+     * optimization traces created/executed;
+     * uops executed.
+
+   * Garbage collector:
+
+     * Garbage collections;
+     * Objects visited;
+     * Objects collected.
 
    .. versionadded:: 3.11
 
