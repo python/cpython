@@ -157,6 +157,11 @@ The following function sets are wrappers to the system allocator. These
 functions are thread-safe, the :term:`GIL <global interpreter lock>` does not
 need to be held.
 
+Use of these functions is not restricted by the current state of the
+Python runtime.  Likewise, they are not constrained by which interpreter
+is active in the current thread or even if there is one.  The allocated
+memory is process-global and independent of the Python runtime.
+
 These functions use the :ref:`raw <allocator-domains>` allocator.
 :ref:`By default <default-memory-allocators>`, the allocator uses
 the following functions: :c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc`
@@ -223,6 +228,10 @@ Memory Interface
 The following function sets, modeled after the ANSI C standard, but specifying
 behavior when requesting zero bytes, are available for allocating and releasing
 memory from the Python heap.
+
+All allocations happen relative to the current interpreter.  Subsequent
+free (and realloc) operations on the allocated memory must be made using
+the same interpreter.
 
 These functions use the :ref:`"mem" <allocator-domains>` allocator.
 :ref:`By default <default-memory-allocators>` the "mem" allocator uses
@@ -338,6 +347,10 @@ memory from the Python heap.
     successfully cast to a Python object when intercepting the allocating
     functions in this domain by the methods described in
     the :ref:`Customize Memory Allocators <customize-memory-allocators>` section.
+
+All allocations happen relative to the current interpreter.  Subsequent
+free (and realloc) operations on the allocated memory must be made using
+the same interpreter.
 
 These functions use the :ref:`"mem" <allocator-domains>` allocator.
 :ref:`By default <default-memory-allocators>` the object allocator uses
