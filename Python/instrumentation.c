@@ -1295,6 +1295,7 @@ initialize_tools(PyCodeObject *code)
     for (int i = 0; i < code_len; i++) {
         _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
         int opcode = instr->op.code;
+        assert(opcode != ENTER_EXECUTOR);
         if (opcode == INSTRUMENTED_LINE) {
             opcode = code->_co_monitoring->lines[i].original_opcode;
         }
