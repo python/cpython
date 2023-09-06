@@ -1,0 +1,1 @@
+The word "Photoimage" seems a typo. This PR corrects the typo to "PhotoImage".
