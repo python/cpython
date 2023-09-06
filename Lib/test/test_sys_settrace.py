@@ -1941,7 +1941,7 @@ class JumpTestCase(unittest.TestCase):
         tracer = JumpTracer(func, jumpFrom, jumpTo, event, decorated)
         sys.settrace(tracer.trace)
         output = []
-        
+
         with contextlib.ExitStack() as stack:
             if error is not None:
                 stack.enter_context(self.assertRaisesRegex(*error))
@@ -1964,7 +1964,7 @@ class JumpTestCase(unittest.TestCase):
             if warning is not None:
                 stack.enter_context(self.assertWarnsRegex(*warning))
             asyncio.run(func(output))
-        
+
         sys.settrace(None)
         asyncio.set_event_loop_policy(None)
         self.compare_jump_output(expected, output)
@@ -2761,7 +2761,7 @@ output.append(4)
         flag = 6
         output.append(7)
         output.append(8)
-    
+
     @async_jump_test(1, 2, [], event='call', error=(Exception, 'Test Error'),
                     warning=(Warning, 'Test Warning'))
     def test_error_and_warning_in_tandem_async(output):
