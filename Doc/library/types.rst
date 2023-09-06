@@ -200,6 +200,8 @@ Standard names are defined for the following types:
 
      Return a copy of the code object with new values for the specified fields.
 
+     Code objects are also supported by generic function :func:`copy.replace`.
+
      .. versionadded:: 3.8
 
 .. data:: CellType
