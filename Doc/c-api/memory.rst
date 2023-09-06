@@ -111,7 +111,9 @@ The three allocation domains are:
   Examples include general-purpose memory buffers, as well as global
   state for applications that embed Python.
   The allocator may be called with or without an :term:`attached thread state`.
-  The memory is requested directly from the system. See :ref:`Raw Memory Interface <raw-memoryinterface>`.
+  The memory is requested directly from the system.
+  (Also see: :ref:`user API <raw-interface>`,
+  :ref:`custom allocator <custom-raw-allocator>`.)
 
 * "Mem" domain: intended for allocating memory tied to the
   current interpreter but *not* belonging to any Python objects.
@@ -119,12 +121,15 @@ The three allocation domains are:
   general-purpose memory buffers associated with an extension module.
   The allocator will always be called with an :term:`attached thread state`.
   The memory is taken from the Python private heap.
-  See :ref:`Memory Interface <memoryinterface>`.
+  (Also see: :ref:`user API <mem-interface>`,
+  :ref:`custom allocator <custom-mem-allocator>`.)
 
 * Object domain: intended for allocating memory belonging to Python
   objects (which are necessarily tied to the current interpreter).
   The allocator will always be called with an :term:`attached thread state`.
-  The memory is taken from the Python private heap. See :ref:`Object allocators <objectinterface>`.
+  The memory is taken from the Python private heap.
+  (Also see: :ref:`user API <object-interface>`,
+  :ref:`custom allocator <custom-object-allocator>`.)
 
 .. note::
 
@@ -139,6 +144,9 @@ The three allocation domains are:
 
 
 .. _raw-memoryinterface:
+
+
+.. _raw-interface:
 
 Raw Memory Interface
 ====================
@@ -204,7 +212,7 @@ zero bytes.
    If *p* is ``NULL``, no operation is performed.
 
 
-.. _memoryinterface:
+.. _mem-interface:
 
 Memory Interface
 ================
@@ -343,6 +351,8 @@ They exist solely for backwards compatibility.
 
 .. _objectinterface:
 
+.. _object-interface:
+
 Object allocators
 =================
 
@@ -466,6 +476,13 @@ Legend:
   :option:`--with-address-sanitizer`,
   :option:`--with-hwaddress-sanitizer`, and/or
   :option:`--with-memory-sanitizer` option.
+
+
+.. _custom-raw-allocator:
+
+.. _custom-mem-allocator:
+
+.. _custom-object-allocator:
 
 .. _customize-memory-allocators:
 
