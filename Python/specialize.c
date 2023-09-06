@@ -267,7 +267,7 @@ _Py_PrintSpecializationStats(int to_file)
         && MEM_IS_ZERO(&stats->call_stats)
         && MEM_IS_ZERO(&stats->object_stats)
     );
-#undef IS_ZERO
+#undef MEM_IS_ZERO
     if (is_zero) {
         // gh-108753: -X pystats command line was used, but then _stats_off()
         // and _stats_clear() have been called: in this case, avoid printing
