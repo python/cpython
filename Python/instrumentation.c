@@ -1303,7 +1303,6 @@ initialize_tools(PyCodeObject *code)
             opcode = DE_INSTRUMENT[opcode];
             assert(opcode != 0);
         }
-        assert(opcode != ENTER_EXECUTOR);
         opcode = _PyOpcode_Deopt[opcode];
         if (opcode_has_event(opcode)) {
             if (instrumented) {
@@ -1606,6 +1605,7 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
     for (int i = code->_co_firsttraceable; i < code_len; i+= _PyInstruction_GetLength(code, i)) {
         _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
         CHECK(instr->op.code != 0);
+        assert(instr->op.code != ENTER_EXECUTOR);
         int base_opcode = _Py_GetBaseOpcode(code, i);
         assert(base_opcode != ENTER_EXECUTOR);
         if (opcode_has_event(base_opcode)) {
