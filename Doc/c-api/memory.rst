@@ -160,7 +160,8 @@ The following function sets are wrappers to the system allocator. These
 functions are thread-safe, so a :term:`thread state` does not
 need to be :term:`attached <attached thread state>`.
 
-The :ref:`default raw memory allocator <default-memory-allocators>` uses
+These functions use the :ref:`raw <allocator-domains>` allocator.
+:ref:`By default <default-memory-allocators>`, the allocator uses
 the following functions: :c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc`
 and :c:func:`!free`; call ``malloc(1)`` (or ``calloc(1, 1)``) when requesting
 zero bytes.
@@ -226,6 +227,7 @@ The following function sets, modeled after the ANSI C standard, but specifying
 behavior when requesting zero bytes, are available for allocating and releasing
 memory from the Python heap.
 
+These functions use the :ref:`"mem" <allocator-domains>` allocator.
 In the GIL-enabled build (default build) the
 :ref:`default memory allocator <default-memory-allocators>` uses the
 :ref:`pymalloc memory allocator <pymalloc>`, whereas in the
@@ -371,6 +373,7 @@ memory from the Python heap.
     functions in this domain by the methods described in
     the :ref:`Customize Memory Allocators <customize-memory-allocators>` section.
 
+These functions use the :ref:`"mem" <allocator-domains>` allocator.
 The :ref:`default object allocator <default-memory-allocators>` uses the
 :ref:`pymalloc memory allocator <pymalloc>`.  In the
 :term:`free-threaded <free threading>` build, the default is the
