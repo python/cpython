@@ -1187,7 +1187,13 @@ class TestDescriptions(unittest.TestCase):
             "time()")
 
     def test_module_level_callable_o(self):
-        self.assertEqual(self._get_summary_line(stat.S_IMODE),
+        try:
+            import _stat
+        except ImportError:
+            # stat.S_IMODE() and _stat.S_IMODE() have a different signature
+            self.skipTest('_stat extension is missing')
+
+        self.assertEqual(self._get_summary_line(_stat.S_IMODE),
             "S_IMODE(object, /)")
 
     def test_unbound_builtin_method_noargs(self):
@@ -1232,7 +1238,7 @@ class TestDescriptions(unittest.TestCase):
 
     def test_module_level_callable_unrepresentable_default(self):
         self.assertEqual(self._get_summary_line(getattr),
-            "getattr(object, name, default=<unrepresentable>, /)")
+            "getattr(...)")
 
     def test_builtin_staticmethod_unrepresentable_default(self):
         self.assertEqual(self._get_summary_line(str.maketrans),

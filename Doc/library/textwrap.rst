@@ -60,7 +60,7 @@ functions should be good enough; otherwise, you should use an instance of
    First the whitespace in *text* is collapsed (all whitespace is replaced by
    single spaces).  If the result fits in the *width*, it is returned.
    Otherwise, enough words are dropped from the end so that the remaining words
-   plus the :attr:`.placeholder` fit within :attr:`.width`::
+   plus the *placeholder* fit within *width*::
 
       >>> textwrap.shorten("Hello  world!", width=12)
       'Hello world!'

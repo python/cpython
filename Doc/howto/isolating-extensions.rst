@@ -64,7 +64,7 @@ Enter Per-Module State
 
 Instead of focusing on per-interpreter state, Python's C API is evolving
 to better support the more granular *per-module* state.
-This means that C-level data is be attached to a *module object*.
+This means that C-level data should be attached to a *module object*.
 Each interpreter creates its own module object, keeping the data separate.
 For testing the isolation, multiple module objects corresponding to a single
 extension can even be loaded in a single interpreter.

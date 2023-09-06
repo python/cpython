@@ -85,6 +85,12 @@ Other Language Changes
   This change will affect tools using docstrings, like :mod:`doctest`.
   (Contributed by Inada Naoki in :gh:`81283`.)
 
+* The :func:`compile` built-in can now accept a new flag,
+  ``ast.PyCF_OPTIMIZED_AST``, which is similar to ``ast.PyCF_ONLY_AST``
+  except that the returned ``AST`` is optimized according to the value
+  of the ``optimize`` argument.
+  (Contributed by Irit Katriel in :gh:`108113`).
+
 New Modules
 ===========
 
@@ -93,6 +99,14 @@ New Modules
 
 Improved Modules
 ================
+
+ast
+---
+
+* :func:`ast.parse` now accepts an optional argument ``optimize``
+  which is passed on to the :func:`compile` built-in. This makes it
+  possible to obtain an optimized ``AST``.
+  (Contributed by Irit Katriel in :gh:`108113`).
 
 array
 -----
@@ -107,6 +121,14 @@ dbm
 * Add :meth:`dbm.gnu.gdbm.clear` and :meth:`dbm.ndbm.ndbm.clear`  methods that remove all items
   from the database.
   (Contributed by Dong-hee Na in :gh:`107122`.)
+
+doctest
+-------
+
+* The :meth:`doctest.DocTestRunner.run` method now counts the number of skipped
+  tests. Add :attr:`doctest.DocTestRunner.skips` and
+  :attr:`doctest.TestResults.skipped` attributes.
+  (Contributed by Victor Stinner in :gh:`108794`.)
 
 io
 --
@@ -143,6 +165,24 @@ pathlib
   :meth:`~pathlib.Path.rglob`, :meth:`~pathlib.Path.is_file`, and
   :meth:`~pathlib.Path.is_dir`.
   (Contributed by Barney Gale in :gh:`77609` and :gh:`105793`.)
+
+pdb
+---
+
+* Add ability to move between chained exceptions during post mortem debugging in :func:`~pdb.pm` using
+  the new ``exceptions [exc_number]`` command for Pdb. (Contributed by Matthias
+  Bussonnier in :gh:`106676`.)
+
+* Expressions/Statements whose prefix is a pdb command are now correctly
+  identified and executed.
+  (Contributed by Tian Gao in :gh:`108464`.)
+
+sqlite3
+-------
+
+* A :exc:`ResourceWarning` is now emitted if a :class:`sqlite3.Connection`
+  object is not :meth:`closed <sqlite3.Connection.close>` explicitly.
+  (Contributed by Erlend E. Aasland in :gh:`105539`.)
 
 tkinter
 -------
@@ -231,7 +271,23 @@ Deprecated
 * Passing more than one positional argument to :func:`sqlite3.connect` and the
   :class:`sqlite3.Connection` constructor is deprecated. The remaining
   parameters will become keyword-only in Python 3.15.
-  (Contributed by Erlend E. Aasland in :gh:`107948`.)
+
+  Deprecate passing name, number of arguments, and the callable as keyword
+  arguments, for the following :class:`sqlite3.Connection` APIs:
+
+  * :meth:`~sqlite3.Connection.create_function`
+  * :meth:`~sqlite3.Connection.create_aggregate`
+
+  Deprecate passing the callback callable by keyword for the following
+  :class:`sqlite3.Connection` APIs:
+
+  * :meth:`~sqlite3.Connection.set_authorizer`
+  * :meth:`~sqlite3.Connection.set_progress_handler`
+  * :meth:`~sqlite3.Connection.set_trace_callback`
+
+  The affected parameters will become positional-only in Python 3.15.
+
+  (Contributed by Erlend E. Aasland in :gh:`107948` and :gh:`108278`.)
 
 Pending Removal in Python 3.14
 ------------------------------
@@ -414,8 +470,8 @@ although there is currently no date scheduled for their removal.
   * Delegation of ``int()`` to ``__trunc__()`` method.
 
 * :mod:`calendar`: ``calendar.January`` and ``calendar.February`` constants are
-  deprecated and replaced by :data:`calendar.Month.JANUARY` and
-  :data:`calendar.Month.FEBRUARY`.
+  deprecated and replaced by :data:`calendar.JANUARY` and
+  :data:`calendar.FEBRUARY`.
   (Contributed by Prince Roshan in :gh:`103636`.)
 
 * :mod:`datetime`:
@@ -778,11 +834,19 @@ Build Changes
 =============
 
 * Autoconf 2.71 and aclocal 1.16.4 is now required to regenerate
-  :file:`!configure`.
+  the :file:`configure` script.
   (Contributed by Christian Heimes in :gh:`89886`.)
 
 * SQLite 3.15.2 or newer is required to build the :mod:`sqlite3` extension module.
   (Contributed by Erlend Aasland in :gh:`105875`.)
+
+* Python built with :file:`configure` :option:`--with-trace-refs` (tracing
+  references) is now ABI compatible with Python release build and
+  :ref:`debug build <debug-build>`.
+  (Contributed by Victor Stinner in :gh:`108634`.)
+
+* Building CPython now requires a compiler with support for the C11 atomic
+  library, GCC built-in atomic functions, or MSVC interlocked intrinsics.
 
 
 C API Changes
@@ -841,12 +905,53 @@ New Features
   not needed.
   (Contributed by Victor Stinner in :gh:`106004`.)
 
+* Added :c:func:`PyDict_ContainsString` function: same as
+  :c:func:`PyDict_Contains`, but *key* is specified as a :c:expr:`const char*`
+  UTF-8 encoded bytes string, rather than a :c:expr:`PyObject*`.
+  (Contributed by Victor Stinner in :gh:`108314`.)
+
 * Add :c:func:`Py_IsFinalizing` function: check if the main Python interpreter is
   :term:`shutting down <interpreter shutdown>`.
   (Contributed by Victor Stinner in :gh:`108014`.)
 
+* Add :c:func:`PyLong_AsInt` function: similar to :c:func:`PyLong_AsLong`, but
+  store the result in a C :c:expr:`int` instead of a C :c:expr:`long`.
+  Previously, it was known as the private function :c:func:`!_PyLong_AsInt`
+  (with an underscore prefix).
+  (Contributed by Victor Stinner in :gh:`108014`.)
+
+* Python built with :file:`configure` :option:`--with-trace-refs` (tracing
+  references) now supports the :ref:`Limited API <limited-c-api>`.
+  (Contributed by Victor Stinner in :gh:`108634`.)
+
 Porting to Python 3.13
 ----------------------
+
+* ``Python.h`` no longer includes the ``<ieeefp.h>`` standard header. It was
+  included for the ``finite()`` function which is now provided by the
+  ``<math.h>`` header. It should now be included explicitly if needed. Remove
+  also the ``HAVE_IEEEFP_H`` macro.
+  (Contributed by Victor Stinner in :gh:`108765`.)
+
+* ``Python.h`` no longer includes the ``<unistd.h>`` standard header file. If
+  needed, it should now be included explicitly. For example, it provides the
+  functions: ``close()``, ``getpagesize()``, ``getpid()`` and ``sysconf()``.
+  (Contributed by Victor Stinner in :gh:`108765`.)
+
+* ``Python.h`` no longer includes these standard header files: ``<time.h>``,
+  ``<sys/select.h>`` and ``<sys/time.h>``. If needed, they should now be
+  included explicitly. For example, ``<time.h>`` provides the ``clock()`` and
+  ``gmtime()`` functions, ``<sys/select.h>`` provides the ``select()``
+  function, and ``<sys/time.h>`` provides the ``futimes()``, ``gettimeofday()``
+  and ``setitimer()`` functions.
+  (Contributed by Victor Stinner in :gh:`108765`.)
+
+* ``Python.h`` no longer includes the ``<ctype.h>`` standard header file. If
+  needed, it should now be included explicitly. For example, it provides
+  ``isalpha()`` and ``tolower()`` functions which are locale dependent. Python
+  provides locale independent functions, like :c:func:`!Py_ISALPHA` and
+  :c:func:`!Py_TOLOWER`.
+  (Contributed by Victor Stinner in :gh:`108765`.)
 
 Deprecated
 ----------

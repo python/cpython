@@ -607,9 +607,6 @@
 /* Define this if you have le64toh() */
 #undef HAVE_HTOLE64
 
-/* Define to 1 if you have the <ieeefp.h> header file. */
-#undef HAVE_IEEEFP_H
-
 /* Define to 1 if you have the `if_nameindex' function. */
 #undef HAVE_IF_NAMEINDEX
 
@@ -1608,6 +1605,9 @@
 /* Define hash algorithm for str, bytes and memoryview. SipHash24: 1, FNV: 2,
    SipHash13: 3, externally defined: 0 */
 #undef Py_HASH_ALGORITHM
+
+/* Define if you want to disable the GIL */
+#undef Py_NOGIL
 
 /* Define if you want to enable internal statistics gathering. */
 #undef Py_STATS
