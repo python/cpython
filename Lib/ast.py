@@ -1250,6 +1250,7 @@ class _Unparser(NodeVisitor):
                 quote_types = new_quote_types
             elif "\n" in value:
                 quote_types = [q for q in quote_types if q in _MULTI_QUOTES]
+                assert quote_types
             new_fstring_parts.append(value)
 
         if fallback_to_repr:
