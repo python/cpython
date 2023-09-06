@@ -5171,6 +5171,7 @@ class NetworkConnectionNoServer(unittest.TestCase):
         finally:
             socket.socket = old_socket
 
+    @socket_helper.skip_if_tcp_blackhole
     def test_connect(self):
         port = socket_helper.find_unused_port()
         cli = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -5179,6 +5180,7 @@ class NetworkConnectionNoServer(unittest.TestCase):
             cli.connect((HOST, port))
         self.assertEqual(cm.exception.errno, errno.ECONNREFUSED)
 
+    @socket_helper.skip_if_tcp_blackhole
     def test_create_connection(self):
         # Issue #9792: errors raised by create_connection() should have
         # a proper errno attribute.
