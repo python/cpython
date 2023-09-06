@@ -688,6 +688,83 @@ class TestSupport(unittest.TestCase):
         else:
             self.assertTrue(support.has_strftime_extensions)
 
+    def test_get_recursion_depth(self):
+        # test support.get_recursion_depth()
+        code = textwrap.dedent("""
+            from test import support
+            import sys
+
+            def check(cond):
+                if not cond:
+                    raise AssertionError("test failed")
+
+            # depth 1
+            check(support.get_recursion_depth() == 1)
+
+            # depth 2
+            def test_func():
+                check(support.get_recursion_depth() == 2)
+            test_func()
+
+            def test_recursive(depth, limit):
+                if depth >= limit:
+                    # cannot call get_recursion_depth() at this depth,
+                    # it can raise RecursionError
+                    return
+                get_depth = support.get_recursion_depth()
+                print(f"test_recursive: {depth}/{limit}: "
+                      f"get_recursion_depth() says {get_depth}")
+                check(get_depth == depth)
+                test_recursive(depth + 1, limit)
+
+            # depth up to 25
+            with support.infinite_recursion(max_depth=25):
+                limit = sys.getrecursionlimit()
+                print(f"test with sys.getrecursionlimit()={limit}")
+                test_recursive(2, limit)
+
+            # depth up to 500
+            with support.infinite_recursion(max_depth=500):
+                limit = sys.getrecursionlimit()
+                print(f"test with sys.getrecursionlimit()={limit}")
+                test_recursive(2, limit)
+        """)
+        script_helper.assert_python_ok("-c", code)
+
+    def test_recursion(self):
+        # Test infinite_recursion() and get_recursion_available() functions.
+        def recursive_function(depth):
+            if depth:
+                recursive_function(depth - 1)
+
+        for max_depth in (5, 25, 250):
+            with support.infinite_recursion(max_depth):
+                available = support.get_recursion_available()
+
+                # Recursion up to 'available' additional frames should be OK.
+                recursive_function(available)
+
+                # Recursion up to 'available+1' additional frames must raise
+                # RecursionError. Avoid self.assertRaises(RecursionError) which
+                # can consume more than 3 frames and so raises RecursionError.
+                try:
+                    recursive_function(available + 1)
+                except RecursionError:
+                    pass
+                else:
+                    self.fail("RecursionError was not raised")
+
+        # Test the bare minimumum: max_depth=3
+        with support.infinite_recursion(3):
+            try:
+                recursive_function(3)
+            except RecursionError:
+                pass
+            else:
+                self.fail("RecursionError was not raised")
+
+        #self.assertEqual(available, 2)
+
     # XXX -follows a list of untested API
     # make_legacy_pyc
     # is_resource_enabled
