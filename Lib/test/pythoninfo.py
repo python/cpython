@@ -112,6 +112,7 @@ def collect_sys(info_add):
 
     call_func(info_add, 'sys.androidapilevel', sys, 'getandroidapilevel')
     call_func(info_add, 'sys.windowsversion', sys, 'getwindowsversion')
+    call_func(info_add, 'sys.getrecursionlimit', sys, 'getrecursionlimit')
 
     encoding = sys.getfilesystemencoding()
     if hasattr(sys, 'getfilesystemencodeerrors'):
