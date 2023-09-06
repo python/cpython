@@ -31,7 +31,7 @@ def format_duration(seconds):
     return ' '.join(parts)
 
 
-def removepy(names):
+def strip_py_suffix(names: list[str]):
     if not names:
         return
     for idx, name in enumerate(names):

@@ -5,12 +5,14 @@ Configure Python
 Build Requirements
 ==================
 
-Features required to build CPython:
+Features and minimum versions required to build CPython:
 
 * A `C11 <https://en.cppreference.com/w/c/11>`_ compiler. `Optional C11
   features
   <https://en.wikipedia.org/wiki/C11_(C_standard_revision)#Optional_features>`_
   are not required.
+
+* On Windows, Microsoft Visual Studio 2017 or later is required.
 
 * Support for `IEEE 754 <https://en.wikipedia.org/wiki/IEEE_754>`_ floating
   point numbers and `floating point Not-a-Number (NaN)
@@ -18,16 +20,27 @@ Features required to build CPython:
 
 * Support for threads.
 
-* OpenSSL 1.1.1 or newer for the :mod:`ssl` and :mod:`hashlib` modules.
+* OpenSSL 1.1.1 is the minimum version and OpenSSL 3.0.9 is the recommended
+  minimum version for the :mod:`ssl` and :mod:`hashlib` extension modules.
 
-* On Windows, Microsoft Visual Studio 2017 or later is required.
+* SQLite 3.15.2 for the :mod:`sqlite3` extension module.
+
+* Tcl/Tk 8.5.12 for the :mod:`tkinter` module.
+
+* Autoconf 2.71 and aclocal 1.16.4 are required to regenerate the
+  :file:`configure` script.
+
+.. versionchanged:: 3.13:
+   Autoconf 2.71, aclocal 1.16.4 and SQLite 3.15.2 are now required.
 
 .. versionchanged:: 3.11
    C11 compiler, IEEE 754 and NaN support are now required.
    On Windows, Visual Studio 2017 or later is required.
+   Tcl/Tk version 8.5.12 is now required for the :mod:`tkinter` module.
 
 .. versionchanged:: 3.10
    OpenSSL 1.1.1 is now required.
+   Require SQLite 3.7.15.
 
 .. versionchanged:: 3.7
    Thread support and OpenSSL 1.0.2 are now required.
@@ -37,10 +50,37 @@ Features required to build CPython:
    inline`` functions.
 
 .. versionchanged:: 3.5
-   On Windows, Visual Studio 2015 or later is required.
+   On Windows, Visual Studio 2015 or later is now required.
+   Tcl/Tk version 8.4 is now required.
+
+.. versionchanged:: 3.1
+   Tcl/Tk version 8.3.1 is now required.
 
 See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform
 support".
+
+
+Generated files
+===============
+
+To reduce build dependencies, Python source code contains multiple generated
+files. Commands to regenerate all generated files::
+
+    make regen-all
+    make regen-stdlib-module-names
+    make regen-limited-abi
+    make regen-configure
+
+The ``Makefile.pre.in`` file documents generated files, their inputs, and tools used
+to regenerate them. Search for ``regen-*`` make targets.
+
+The ``make regen-configure`` command runs `tiran/cpython_autoconf
+<https://github.com/tiran/cpython_autoconf>`_ container for reproducible build;
+see container ``entry.sh`` script. The container is optional, the following
+command can be run locally, the generated files depend on autoconf and aclocal
+versions::
+
+    autoreconf -ivf -Werror
 
 
 .. _configure-options:
@@ -48,7 +88,7 @@ support".
 Configure Options
 =================
 
-List all ``./configure`` script options using::
+List all :file:`configure` script options using::
 
     ./configure --help
 
@@ -175,13 +215,68 @@ General Options
 
 .. cmdoption:: --enable-pystats
 
-   Turn on internal statistics gathering.
+   Turn on internal Python performance statistics gathering.
+
+   By default, statistics gathering is off. Use ``python3 -X pystats`` command
+   or set ``PYTHONSTATS=1`` environment variable to turn on statistics
+   gathering at Python startup.
+
+   At Python exit, dump statistics if statistics gathering was on and not
+   cleared.
+
+   Effects:
+
+   * Add :option:`-X pystats <-X>` command line option.
+   * Add :envvar:`!PYTHONSTATS` environment variable.
+   * Define the ``Py_STATS`` macro.
+   * Add functions to the :mod:`sys` module:
+
+     * :func:`!sys._stats_on`: Turns on statistics gathering.
+     * :func:`!sys._stats_off`: Turns off statistics gathering.
+     * :func:`!sys._stats_clear`: Clears the statistics.
+     * :func:`!sys._stats_dump`: Dump statistics to file, and clears the statistics.
 
    The statistics will be dumped to a arbitrary (probably unique) file in
-   ``/tmp/py_stats/``, or ``C:\temp\py_stats\`` on Windows. If that directory
-   does not exist, results will be printed on stdout.
+   ``/tmp/py_stats/`` (Unix) or ``C:\temp\py_stats\`` (Windows). If that
+   directory does not exist, results will be printed on stderr.
 
    Use ``Tools/scripts/summarize_stats.py`` to read the stats.
+
+   Statistics:
+
+   * Opcode:
+
+     * Specialization: success, failure, hit, deferred, miss, deopt, failures;
+     * Execution count;
+     * Pair count.
+
+   * Call:
+
+     * Inlined Python calls;
+     * PyEval calls;
+     * Frames pushed;
+     * Frame object created;
+     * Eval calls: vector, generator, legacy, function VECTORCALL, build class,
+       slot, function "ex", API, method.
+
+   * Object:
+
+     * incref and decref;
+     * interpreter incref and decref;
+     * allocations: all, 512 bytes, 4 kiB, big;
+     * free;
+     * to/from free lists;
+     * dictionary materialized/dematerialized;
+     * type cache;
+     * optimization attemps;
+     * optimization traces created/executed;
+     * uops executed.
+
+   * Garbage collector:
+
+     * Garbage collections;
+     * Objects visited;
+     * Objects collected.
 
    .. versionadded:: 3.11
 
@@ -230,7 +325,7 @@ Install Options
    Install architecture-independent files in PREFIX. On Unix, it
    defaults to :file:`/usr/local`.
 
-   This value can be retrived at runtime using :data:`sys.prefix`.
+   This value can be retrieved at runtime using :data:`sys.prefix`.
 
    As an example, one can use ``--prefix="$HOME/.local/"`` to install
    a Python in its home directory.
@@ -239,7 +334,7 @@ Install Options
 
    Install architecture-dependent files in EPREFIX, defaults to :option:`--prefix`.
 
-   This value can be retrived at runtime using :data:`sys.exec_prefix`.
+   This value can be retrieved at runtime using :data:`sys.exec_prefix`.
 
 .. cmdoption:: --disable-test-modules
 
@@ -408,8 +503,7 @@ See also the :ref:`Python Development Mode <devmode>` and the
 .. versionchanged:: 3.8
    Release builds and debug builds are now ABI compatible: defining the
    ``Py_DEBUG`` macro no longer implies the ``Py_TRACE_REFS`` macro (see the
-   :option:`--with-trace-refs` option), which introduces the only ABI
-   incompatibility.
+   :option:`--with-trace-refs` option).
 
 
 Debug options
@@ -430,8 +524,14 @@ Debug options
    * Add :func:`sys.getobjects` function.
    * Add :envvar:`PYTHONDUMPREFS` environment variable.
 
-   This build is not ABI compatible with release build (default build) or debug
-   build (``Py_DEBUG`` and ``Py_REF_DEBUG`` macros).
+   The :envvar:`PYTHONDUMPREFS` environment variable can be used to dump
+   objects and reference counts still alive at Python exit.
+
+   :ref:`Statically allocated objects <static-types>` are not traced.
+
+   .. versionchanged:: 3.13
+      This build is now ABI compatible with release build and :ref:`debug build
+      <debug-build>`.
 
    .. versionadded:: 3.8
 

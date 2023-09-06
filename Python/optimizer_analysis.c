@@ -1,7 +1,6 @@
 #include "Python.h"
 #include "opcode.h"
 #include "pycore_interp.h"
-#include "pycore_opcode.h"
 #include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()

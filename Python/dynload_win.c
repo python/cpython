@@ -5,13 +5,8 @@
 #include "pycore_fileutils.h"     // _Py_add_relfile()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
-#ifdef HAVE_DIRECT_H
-#include <direct.h>
-#endif
-#include <ctype.h>
-
-#include "importdl.h"
-#include "patchlevel.h"
+#include "importdl.h"             // dl_funcptr
+#include "patchlevel.h"           // PY_MAJOR_VERSION
 #include <windows.h>
 
 #ifdef _DEBUG
