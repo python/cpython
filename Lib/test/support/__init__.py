@@ -2242,6 +2242,10 @@ def check_disallow_instantiation(testcase, tp, *args, **kwds):
     testcase.assertRaisesRegex(TypeError, msg, tp, *args, **kwds)
 
 def get_recursion_depth():
+    """Get the recursion depth of the caller function.
+
+    In the __main__ module, at the module level, it should be 1.
+    """
     try:
         import _testinternalcapi
         depth = _testinternalcapi.get_recursion_depth()
@@ -2261,6 +2265,11 @@ def get_recursion_depth():
     return max(depth - 1, 1)
 
 def get_recursion_available():
+    """Get the number of available frames before RecursionError.
+
+    It depends on the current recursion depth of the caller function and
+    sys.getrecursionlimit().
+    """
     limit = sys.getrecursionlimit()
     depth = get_recursion_depth()
     return limit - depth
