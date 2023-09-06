@@ -1257,7 +1257,7 @@ regen-deepfreeze: $(DEEPFREEZE_C)
 DEEPFREEZE_DEPS=$(srcdir)/Tools/build/deepfreeze.py Include/internal/pycore_global_strings.h $(FREEZE_MODULE_DEPS) $(FROZEN_FILES_OUT)
 
 # BEGIN: deepfreeze modules
-$(DEEPFREEZE_C): $(DEEPFREEZE_DEPS)
+Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)
 	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/build/deepfreeze.py \
 	Python/frozen_modules/importlib._bootstrap.h:importlib._bootstrap \
 	Python/frozen_modules/importlib._bootstrap_external.h:importlib._bootstrap_external \
