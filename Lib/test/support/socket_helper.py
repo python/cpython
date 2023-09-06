@@ -304,7 +304,7 @@ def _get_sysctl(name):
         return None
     output = proc.stdout
 
-    # Parse 'net.inet.tcp.blackhole: 0\n' to get '0'
+    # Parse '0\n' to get '0'
     try:
         value = int(output.strip())
     except Exception as exc:
