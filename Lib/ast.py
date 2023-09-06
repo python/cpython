@@ -1194,8 +1194,8 @@ class _Unparser(NodeVisitor):
             quote_types = ["'''"]
             new_fstring_parts.clear()
             for value, is_constant in fstring_parts:
-                value = repr("'" + '"' + value)  # force repr to escape all quotes
-                expected_prefix = r"'\'" + '"'
+                value = repr('"' + value)  # force repr to use single quotes
+                expected_prefix = "'\""
                 assert value.startswith(expected_prefix), repr(value)
                 new_fstring_parts.append(value[len(expected_prefix):-1])
 
