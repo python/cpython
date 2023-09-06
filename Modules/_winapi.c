@@ -2165,6 +2165,52 @@ _winapi_CopyFile2_impl(PyObject *module, LPCWSTR existing_file_name,
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_winapi.LockFile
+
+    file: HANDLE
+    offset_low: DWORD
+    offset_high: DWORD
+    nbytes_low: DWORD
+    nbytes_high: DWORD
+
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_LockFile_impl(PyObject *module, HANDLE file, DWORD offset_low,
+                      DWORD offset_high, DWORD nbytes_low, DWORD nbytes_high)
+/*[clinic end generated code: output=105bb40608d1206a input=a33e513793fd84f0]*/
+{
+    BOOL res = LockFile(file, offset_low, offset_high, nbytes_low, nbytes_high);
+    if (res == TRUE) {
+        return Py_None;
+    }
+    return PyErr_SetExcFromWindowsErr(PyExc_OSError, 0);
+}
+
+/*[clinic input]
+_winapi.UnlockFile
+
+    file: HANDLE
+    offset_low: DWORD
+    offset_high: DWORD
+    nbytes_low: DWORD
+    nbytes_high: DWORD
+
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_UnlockFile_impl(PyObject *module, HANDLE file, DWORD offset_low,
+                        DWORD offset_high, DWORD nbytes_low,
+                        DWORD nbytes_high)
+/*[clinic end generated code: output=c0543b4074bd0438 input=0922985d77faa0e6]*/
+{
+    BOOL res = UnlockFile(file, offset_low, offset_high, nbytes_low, nbytes_high);
+    if (res == TRUE) {
+        return Py_None;
+    }
+    return PyErr_SetExcFromWindowsErr(PyExc_OSError, 0);
+}
 
 static PyMethodDef winapi_functions[] = {
     _WINAPI_CLOSEHANDLE_METHODDEF
@@ -2202,6 +2248,8 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI__MIMETYPES_READ_WINDOWS_REGISTRY_METHODDEF
     _WINAPI_NEEDCURRENTDIRECTORYFOREXEPATH_METHODDEF
     _WINAPI_COPYFILE2_METHODDEF
+    _WINAPI_LOCKFILE_METHODDEF
+    _WINAPI_UNLOCKFILE_METHODDEF
     {NULL, NULL}
 };
 

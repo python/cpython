@@ -1067,6 +1067,8 @@ extern "C" {
     INIT_ID(namespace_separator), \
     INIT_ID(namespaces), \
     INIT_ID(narg), \
+    INIT_ID(nbytes_high), \
+    INIT_ID(nbytes_low), \
     INIT_ID(ndigits), \
     INIT_ID(new_file_name), \
     INIT_ID(new_limit), \
@@ -1085,6 +1087,8 @@ extern "C" {
     INIT_ID(object), \
     INIT_ID(offset), \
     INIT_ID(offset_dst), \
+    INIT_ID(offset_high), \
+    INIT_ID(offset_low), \
     INIT_ID(offset_src), \
     INIT_ID(on_type_read), \
     INIT_ID(onceregistry), \

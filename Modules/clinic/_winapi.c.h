@@ -1478,4 +1478,121 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=6df38b5eb93f2e5a input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_winapi_LockFile__doc__,
+"LockFile($module, /, file, offset_low, offset_high, nbytes_low,\n"
+"         nbytes_high)\n"
+"--\n"
+"\n");
+
+#define _WINAPI_LOCKFILE_METHODDEF    \
+    {"LockFile", _PyCFunction_CAST(_winapi_LockFile), METH_FASTCALL|METH_KEYWORDS, _winapi_LockFile__doc__},
+
+static PyObject *
+_winapi_LockFile_impl(PyObject *module, HANDLE file, DWORD offset_low,
+                      DWORD offset_high, DWORD nbytes_low, DWORD nbytes_high);
+
+static PyObject *
+_winapi_LockFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 5
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(file), &_Py_ID(offset_low), &_Py_ID(offset_high), &_Py_ID(nbytes_low), &_Py_ID(nbytes_high), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"file", "offset_low", "offset_high", "nbytes_low", "nbytes_high", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .format = "" F_HANDLE "kkkk:LockFile",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    HANDLE file;
+    DWORD offset_low;
+    DWORD offset_high;
+    DWORD nbytes_low;
+    DWORD nbytes_high;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &file, &offset_low, &offset_high, &nbytes_low, &nbytes_high)) {
+        goto exit;
+    }
+    return_value = _winapi_LockFile_impl(module, file, offset_low, offset_high, nbytes_low, nbytes_high);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_winapi_UnlockFile__doc__,
+"UnlockFile($module, /, file, offset_low, offset_high, nbytes_low,\n"
+"           nbytes_high)\n"
+"--\n"
+"\n");
+
+#define _WINAPI_UNLOCKFILE_METHODDEF    \
+    {"UnlockFile", _PyCFunction_CAST(_winapi_UnlockFile), METH_FASTCALL|METH_KEYWORDS, _winapi_UnlockFile__doc__},
+
+static PyObject *
+_winapi_UnlockFile_impl(PyObject *module, HANDLE file, DWORD offset_low,
+                        DWORD offset_high, DWORD nbytes_low,
+                        DWORD nbytes_high);
+
+static PyObject *
+_winapi_UnlockFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 5
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(file), &_Py_ID(offset_low), &_Py_ID(offset_high), &_Py_ID(nbytes_low), &_Py_ID(nbytes_high), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"file", "offset_low", "offset_high", "nbytes_low", "nbytes_high", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .format = "" F_HANDLE "kkkk:UnlockFile",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    HANDLE file;
+    DWORD offset_low;
+    DWORD offset_high;
+    DWORD nbytes_low;
+    DWORD nbytes_high;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &file, &offset_low, &offset_high, &nbytes_low, &nbytes_high)) {
+        goto exit;
+    }
+    return_value = _winapi_UnlockFile_impl(module, file, offset_low, offset_high, nbytes_low, nbytes_high);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=b8f4e9dd4049bee7 input=a9049054013a1b77]*/

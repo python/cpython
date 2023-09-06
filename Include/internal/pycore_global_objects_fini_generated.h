@@ -1069,6 +1069,8 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(namespace_separator));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(namespaces));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(narg));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(nbytes_high));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(nbytes_low));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ndigits));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(new_file_name));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(new_limit));
@@ -1087,6 +1089,8 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(object));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(offset));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(offset_dst));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(offset_high));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(offset_low));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(offset_src));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(on_type_read));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(onceregistry));
