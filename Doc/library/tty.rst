@@ -15,6 +15,8 @@
 The :mod:`tty` module defines functions for putting the tty into cbreak and raw
 modes.
 
+.. availability:: Unix.
+
 Because it requires the :mod:`termios` module, it will work only on Unix.
 
 The :mod:`tty` module defines the following functions:
