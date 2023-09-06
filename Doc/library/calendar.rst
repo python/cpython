@@ -570,7 +570,7 @@ The following options are accepted:
 .. option:: --encoding ENCODING, -e ENCODING
 
    The encoding to use for output.
-   :option:`--encoding` is required if option:`--locale` is set.
+   :option:`--encoding` is required if :option:`--locale` is set.
 
 
 .. option:: --type {text,html}, -t {text,html}
@@ -598,7 +598,7 @@ The following options are accepted:
 
 .. option:: --width WIDTH, -w WIDTH
 
-   The width of date column in terminal columns.
+   The width of the date column in terminal columns.
    The date is printed centred in the column.
    Any value lower than 2 is ignored.
    Defaults to 2.
@@ -606,7 +606,7 @@ The following options are accepted:
 
 .. option:: --lines LINES, -l LINES
 
-   The number of lines for each week in terminal rows
+   The number of lines for each week in terminal rows.
    The date is printed top-aligned.
    Any value lower than 1 is ignored.
    Defaults to 1.
