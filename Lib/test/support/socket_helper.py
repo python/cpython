@@ -290,7 +290,8 @@ def _get_sysctl(name):
     except KeyError:
         pass
 
-    cmd = ['sysctl', name]
+    # At least Linux and FreeBSD support the "-n" option
+    cmd = ['sysctl', '-n', name]
     proc = subprocess.run(cmd,
                           stdout=subprocess.PIPE,
                           stderr=subprocess.STDOUT,
@@ -305,8 +306,7 @@ def _get_sysctl(name):
 
     # Parse 'net.inet.tcp.blackhole: 0\n' to get '0'
     try:
-        value = output.rstrip().split(':', 1)[-1].strip()
-        value = int(value)
+        value = int(output.strip())
     except Exception as exc:
         support.print_warning(f'Failed to parse {' '.join(cmd)!r} '
                               f'command output {output!r}: {exc!r}')
