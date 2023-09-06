@@ -1,0 +1,13 @@
+freebsd_task:
+  freebsd_instance:
+    matrix:
+    - image: freebsd-13-2-release-amd64
+  build_script:
+    - mkdir build
+    - cd build
+    - ../configure
+    - make -j$(sysctl -n hw.ncpu)
+  test_script:
+    - cd build
+    # dtrace fails to build on FreeBSD - see gh-73263
+    - make buildbottest TESTOPTS="-j2 -u-network -x test_dtrace"
