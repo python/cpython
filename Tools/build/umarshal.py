@@ -1,4 +1,4 @@
-# Implemention of marshal.loads() in pure Python
+# Implementation of marshal.loads() in pure Python
 
 import ast
 
