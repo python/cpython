@@ -4,14 +4,14 @@
 
 #include "pycore_code.h"
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
-#include "pycore_dict.h"
+#include "pycore_dict.h"          // DICT_KEYS_UNICODE
 #include "pycore_function.h"      // _PyFunction_GetVersionForCurrentState()
-#include "pycore_global_strings.h"  // _Py_ID()
-#include "pycore_long.h"
+#include "pycore_long.h"          // _PyLong_IsNonNegativeCompact()
 #include "pycore_moduleobject.h"
 #include "pycore_object.h"
 #include "pycore_opcode_metadata.h" // _PyOpcode_Caches
 #include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
+#include "pycore_runtime.h"       // _Py_ID()
 
 
 #include <stdlib.h> // rand()
