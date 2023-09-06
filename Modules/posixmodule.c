@@ -14550,15 +14550,13 @@ DirEntry_test_mode(PyTypeObject *defining_class, DirEntry *self,
 
 /*[clinic input]
 os.DirEntry.is_symlink -> bool
-    defining_class: defining_class
-    /
 
 Return True if the entry is a symbolic link; cached per entry.
 [clinic start generated code]*/
 
 static int
-os_DirEntry_is_symlink_impl(DirEntry *self, PyTypeObject *defining_class)
-/*[clinic end generated code: output=293096d589b6d47c input=e9acc5ee4d511113]*/
+os_DirEntry_is_symlink_impl(DirEntry *self)
+/*[clinic end generated code: output=42244667d7bcfc25 input=1605a1b4b96976c3]*/
 {
 #ifdef MS_WINDOWS
     return (self->win32_lstat.st_mode & S_IFMT) == S_IFLNK;
