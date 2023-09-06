@@ -1292,10 +1292,10 @@ regen-importlib: regen-frozen
 ############################################################################
 # Global objects
 
-.PHONY: regen-global-objects
 # Dependencies which can add and/or remove _Py_ID() identifiers:
 # - deepfreeze.c
 # - "make clinic"
+.PHONY: regen-global-objects
 regen-global-objects: $(srcdir)/Tools/build/generate_global_objects.py $(DEEPFREEZE_C) clinic
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_global_objects.py
 
@@ -1319,8 +1319,8 @@ regen-limited-abi: all
 ############################################################################
 # Regenerate all generated files
 
+# "clinic" is regenerated implicitly via "regen-global-objects".
 .PHONY: regen-all
-# "regen-global-objects" runs "clinic".
 regen-all: regen-cases regen-typeslots \
 	regen-token regen-ast regen-keyword regen-sre regen-frozen \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
