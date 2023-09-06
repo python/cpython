@@ -83,11 +83,12 @@ def dash_R(ns, test_name, test_func):
         print(("1234567890"*(repcount//10 + 1))[:repcount], file=sys.stderr,
               flush=True)
 
+    results = None
     dash_R_cleanup(fs, ps, pic, zdc, abcs)
     support.gc_collect()
 
     for i in rep_range:
-        test_func()
+        results = test_func()
 
         dash_R_cleanup(fs, ps, pic, zdc, abcs)
         support.gc_collect()
@@ -151,7 +152,7 @@ def dash_R(ns, test_name, test_func):
                 print(msg, file=refrep)
                 refrep.flush()
             failed = True
-    return failed
+    return (failed, results)
 
 
 def dash_R_cleanup(fs, ps, pic, zdc, abcs):
@@ -173,6 +174,7 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
         zipimport._zip_directory_cache.update(zdc)
 
     # Clear ABC registries, restoring previously saved ABC registries.
+    # ignore deprecation warning for collections.abc.ByteString
     abs_classes = [getattr(collections.abc, a) for a in collections.abc.__all__]
     abs_classes = filter(isabstract, abs_classes)
     for abc in abs_classes:

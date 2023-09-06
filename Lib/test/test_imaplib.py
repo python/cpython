@@ -10,7 +10,7 @@ import calendar
 import threading
 import socket
 
-from test.support import verbose, run_with_tz, run_with_locale, cpython_only
+from test.support import verbose, run_with_tz, run_with_locale, cpython_only, requires_resource
 from test.support import hashlib_helper
 from test.support import threading_helper
 import unittest
@@ -456,6 +456,7 @@ class NewIMAPTestsMixin():
         with self.imap_class(*server.server_address):
             pass
 
+    @requires_resource('walltime')
     def test_imaplib_timeout_test(self):
         _, server = self._setup(SimpleIMAPHandler)
         addr = server.server_address[1]
@@ -549,6 +550,7 @@ class NewIMAPSSLTests(NewIMAPTestsMixin, unittest.TestCase):
     imap_class = IMAP4_SSL
     server_class = SecureTCPServer
 
+    @requires_resource('walltime')
     def test_ssl_raises(self):
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         self.assertEqual(ssl_context.verify_mode, ssl.CERT_REQUIRED)
@@ -563,6 +565,7 @@ class NewIMAPSSLTests(NewIMAPTestsMixin, unittest.TestCase):
                                      ssl_context=ssl_context)
             client.shutdown()
 
+    @requires_resource('walltime')
     def test_ssl_verified(self):
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ssl_context.load_verify_locations(CAFILE)
@@ -963,101 +966,6 @@ class ThreadedNetworkedTestsSSL(ThreadedNetworkedTests):
             client = self.imap_class("localhost", server.server_address[1],
                                      ssl_context=ssl_context)
             client.shutdown()
-
-
-@unittest.skipUnless(
-    support.is_resource_enabled('network'), 'network resource disabled')
-@unittest.skip('cyrus.andrew.cmu.edu blocks connections')
-class RemoteIMAPTest(unittest.TestCase):
-    host = 'cyrus.andrew.cmu.edu'
-    port = 143
-    username = 'anonymous'
-    password = 'pass'
-    imap_class = imaplib.IMAP4
-
-    def setUp(self):
-        with socket_helper.transient_internet(self.host):
-            self.server = self.imap_class(self.host, self.port)
-
-    def tearDown(self):
-        if self.server is not None:
-            with socket_helper.transient_internet(self.host):
-                self.server.logout()
-
-    def test_logincapa(self):
-        with socket_helper.transient_internet(self.host):
-            for cap in self.server.capabilities:
-                self.assertIsInstance(cap, str)
-            self.assertIn('LOGINDISABLED', self.server.capabilities)
-            self.assertIn('AUTH=ANONYMOUS', self.server.capabilities)
-            rs = self.server.login(self.username, self.password)
-            self.assertEqual(rs[0], 'OK')
-
-    def test_logout(self):
-        with socket_helper.transient_internet(self.host):
-            rs = self.server.logout()
-            self.server = None
-            self.assertEqual(rs[0], 'BYE', rs)
-
-
-@unittest.skipUnless(ssl, "SSL not available")
-@unittest.skipUnless(
-    support.is_resource_enabled('network'), 'network resource disabled')
-@unittest.skip('cyrus.andrew.cmu.edu blocks connections')
-class RemoteIMAP_STARTTLSTest(RemoteIMAPTest):
-
-    def setUp(self):
-        super().setUp()
-        with socket_helper.transient_internet(self.host):
-            rs = self.server.starttls()
-            self.assertEqual(rs[0], 'OK')
-
-    def test_logincapa(self):
-        for cap in self.server.capabilities:
-            self.assertIsInstance(cap, str)
-        self.assertNotIn('LOGINDISABLED', self.server.capabilities)
-
-
-@unittest.skipUnless(ssl, "SSL not available")
-@unittest.skip('cyrus.andrew.cmu.edu blocks connections')
-class RemoteIMAP_SSLTest(RemoteIMAPTest):
-    port = 993
-    imap_class = IMAP4_SSL
-
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
-
-    def create_ssl_context(self):
-        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        ssl_context.check_hostname = False
-        ssl_context.verify_mode = ssl.CERT_NONE
-        ssl_context.load_cert_chain(CERTFILE)
-        return ssl_context
-
-    def check_logincapa(self, server):
-        try:
-            for cap in server.capabilities:
-                self.assertIsInstance(cap, str)
-            self.assertNotIn('LOGINDISABLED', server.capabilities)
-            self.assertIn('AUTH=PLAIN', server.capabilities)
-            rs = server.login(self.username, self.password)
-            self.assertEqual(rs[0], 'OK')
-        finally:
-            server.logout()
-
-    def test_logincapa(self):
-        with socket_helper.transient_internet(self.host):
-            _server = self.imap_class(self.host, self.port)
-            self.check_logincapa(_server)
-
-    def test_logout(self):
-        with socket_helper.transient_internet(self.host):
-            _server = self.imap_class(self.host, self.port)
-            rs = _server.logout()
-            self.assertEqual(rs[0], 'BYE', rs)
 
 
 if __name__ == "__main__":
