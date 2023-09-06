@@ -460,9 +460,9 @@ will return a single test (for that function's docstring):
 
 We'll simulate a __file__ attr that ends in pyc:
 
-    >>> import test.test_doctest
-    >>> old = test.test_doctest.__file__
-    >>> test.test_doctest.__file__ = 'test_doctest.pyc'
+    >>> import test.test_doctest.test_doctest
+    >>> old = test.test_doctest.test_doctest.__file__
+    >>> test.test_doctest.test_doctest.__file__ = 'test_doctest.pyc'
 
     >>> tests = finder.find(sample_func)
 
@@ -475,7 +475,7 @@ leading path components.
     >>> tests[0].filename # doctest: +ELLIPSIS
     '...test_doctest.py'
 
-    >>> test.test_doctest.__file__ = old
+    >>> test.test_doctest.test_doctest.__file__ = old
 
 
     >>> e = tests[0].examples[0]
@@ -569,10 +569,10 @@ functions, classes, and the `__test__` dictionary, if it exists:
     ...         'c': triple}})
 
     >>> finder = doctest.DocTestFinder()
-    >>> # Use module=test.test_doctest, to prevent doctest from
+    >>> # Use module=test.test_doctest.test_doctest, to prevent doctest from
     >>> # ignoring the objects since they weren't defined in m.
-    >>> import test.test_doctest
-    >>> tests = finder.find(m, module=test.test_doctest)
+    >>> import test.test_doctest.test_doctest
+    >>> tests = finder.find(m, module=test.test_doctest.test_doctest)
     >>> for t in tests:
     ...     print('%2s  %s' % (len(t.examples), t.name))
      1  some_module
@@ -596,14 +596,14 @@ Duplicate Removal
 If a single object is listed twice (under different names), then tests
 will only be generated for it once:
 
-    >>> from test import doctest_aliases
+    >>> from test.test_doctest import doctest_aliases
     >>> assert doctest_aliases.TwoNames.f
     >>> assert doctest_aliases.TwoNames.g
     >>> tests = excl_empty_finder.find(doctest_aliases)
     >>> print(len(tests))
     2
     >>> print(tests[0].name)
-    test.doctest_aliases.TwoNames
+    test.test_doctest.doctest_aliases.TwoNames
 
     TwoNames.f and TwoNames.g are bound to the same object.
     We can't guess which will be found in doctest's traversal of
@@ -657,21 +657,21 @@ When used with `exclude_empty=False` we are also interested in line numbers
 of doctests that are empty.
 It used to be broken for quite some time until `bpo-28249`.
 
-    >>> from test import doctest_lineno
+    >>> from test.test_doctest import doctest_lineno
     >>> tests = doctest.DocTestFinder(exclude_empty=False).find(doctest_lineno)
     >>> for t in tests:
     ...     print('%5s  %s' % (t.lineno, t.name))
-     None  test.doctest_lineno
-       22  test.doctest_lineno.ClassWithDocstring
-       30  test.doctest_lineno.ClassWithDoctest
-     None  test.doctest_lineno.ClassWithoutDocstring
-     None  test.doctest_lineno.MethodWrapper
-       39  test.doctest_lineno.MethodWrapper.method_with_docstring
-       45  test.doctest_lineno.MethodWrapper.method_with_doctest
-     None  test.doctest_lineno.MethodWrapper.method_without_docstring
-        4  test.doctest_lineno.func_with_docstring
-       12  test.doctest_lineno.func_with_doctest
-     None  test.doctest_lineno.func_without_docstring
+     None  test.test_doctest.doctest_lineno
+       22  test.test_doctest.doctest_lineno.ClassWithDocstring
+       30  test.test_doctest.doctest_lineno.ClassWithDoctest
+     None  test.test_doctest.doctest_lineno.ClassWithoutDocstring
+     None  test.test_doctest.doctest_lineno.MethodWrapper
+       39  test.test_doctest.doctest_lineno.MethodWrapper.method_with_docstring
+       45  test.test_doctest.doctest_lineno.MethodWrapper.method_with_doctest
+     None  test.test_doctest.doctest_lineno.MethodWrapper.method_without_docstring
+        4  test.test_doctest.doctest_lineno.func_with_docstring
+       12  test.test_doctest.doctest_lineno.func_with_doctest
+     None  test.test_doctest.doctest_lineno.func_without_docstring
 
 Turning off Recursion
 ~~~~~~~~~~~~~~~~~~~~~
@@ -1920,9 +1920,9 @@ test with that name in that module, and converts it to a script. The
 example code is converted to regular Python code.  The surrounding
 words and expected output are converted to comments:
 
-    >>> import test.test_doctest
-    >>> name = 'test.test_doctest.sample_func'
-    >>> print(doctest.testsource(test.test_doctest, name))
+    >>> import test.test_doctest.test_doctest
+    >>> name = 'test.test_doctest.test_doctest.sample_func'
+    >>> print(doctest.testsource(test.test_doctest.test_doctest, name))
     # Blah blah
     #
     print(sample_func(22))
@@ -1932,8 +1932,8 @@ words and expected output are converted to comments:
     # Yee ha!
     <BLANKLINE>
 
-    >>> name = 'test.test_doctest.SampleNewStyleClass'
-    >>> print(doctest.testsource(test.test_doctest, name))
+    >>> name = 'test.test_doctest.test_doctest.SampleNewStyleClass'
+    >>> print(doctest.testsource(test.test_doctest.test_doctest, name))
     print('1\n2\n3')
     # Expected:
     ## 1
@@ -1941,8 +1941,8 @@ words and expected output are converted to comments:
     ## 3
     <BLANKLINE>
 
-    >>> name = 'test.test_doctest.SampleClass.a_classmethod'
-    >>> print(doctest.testsource(test.test_doctest, name))
+    >>> name = 'test.test_doctest.test_doctest.SampleClass.a_classmethod'
+    >>> print(doctest.testsource(test.test_doctest.test_doctest, name))
     print(SampleClass.a_classmethod(10))
     # Expected:
     ## 12
@@ -2047,7 +2047,7 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
           ... finally:
           ...     sys.stdin = real_stdin
           --Return--
-          > <doctest test.test_doctest.test_pdb_set_trace[7]>(3)calls_set_trace()->None
+          > <doctest test.test_doctest.test_doctest.test_pdb_set_trace[7]>(3)calls_set_trace()->None
           -> import pdb; pdb.set_trace()
           (Pdb) print(y)
           2
@@ -2158,39 +2158,39 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
         ... finally:
         ...     sys.stdin = real_stdin
         ... # doctest: +REPORT_NDIFF
-        > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(5)calls_set_trace()
+        > <doctest test.test_doctest.test_doctest.test_pdb_set_trace_nested[0]>(5)calls_set_trace()
         -> self.f1()
         (Pdb) print(y)
         1
         (Pdb) step
         --Call--
-        > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(7)f1()
+        > <doctest test.test_doctest.test_doctest.test_pdb_set_trace_nested[0]>(7)f1()
         -> def f1(self):
         (Pdb) step
-        > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(8)f1()
+        > <doctest test.test_doctest.test_doctest.test_pdb_set_trace_nested[0]>(8)f1()
         -> x = 1
         (Pdb) step
-        > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(9)f1()
+        > <doctest test.test_doctest.test_doctest.test_pdb_set_trace_nested[0]>(9)f1()
         -> self.f2()
         (Pdb) step
         --Call--
-        > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(11)f2()
+        > <doctest test.test_doctest.test_doctest.test_pdb_set_trace_nested[0]>(11)f2()
         -> def f2(self):
         (Pdb) step
-        > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(12)f2()
+        > <doctest test.test_doctest.test_doctest.test_pdb_set_trace_nested[0]>(12)f2()
         -> z = 1
         (Pdb) step
-        > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(13)f2()
+        > <doctest test.test_doctest.test_doctest.test_pdb_set_trace_nested[0]>(13)f2()
         -> z = 2
         (Pdb) print(z)
         1
         (Pdb) up
-        > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(9)f1()
+        > <doctest test.test_doctest.test_doctest.test_pdb_set_trace_nested[0]>(9)f1()
         -> self.f2()
         (Pdb) print(x)
         1
         (Pdb) up
-        > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(5)calls_set_trace()
+        > <doctest test.test_doctest.test_doctest.test_pdb_set_trace_nested[0]>(5)calls_set_trace()
         -> self.f1()
         (Pdb) print(y)
         1
@@ -2210,39 +2210,39 @@ def test_DocTestSuite():
        by passing a module object:
 
          >>> import unittest
-         >>> import test.sample_doctest
-         >>> suite = doctest.DocTestSuite(test.sample_doctest)
+         >>> import test.test_doctest.sample_doctest
+         >>> suite = doctest.DocTestSuite(test.test_doctest.sample_doctest)
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=9 errors=0 failures=4>
 
        We can also supply the module by name:
 
-         >>> suite = doctest.DocTestSuite('test.sample_doctest')
+         >>> suite = doctest.DocTestSuite('test.test_doctest.sample_doctest')
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=9 errors=0 failures=4>
 
        The module need not contain any doctest examples:
 
-         >>> suite = doctest.DocTestSuite('test.sample_doctest_no_doctests')
+         >>> suite = doctest.DocTestSuite('test.test_doctest.sample_doctest_no_doctests')
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=0 errors=0 failures=0>
 
        The module need not contain any docstrings either:
 
-         >>> suite = doctest.DocTestSuite('test.sample_doctest_no_docstrings')
+         >>> suite = doctest.DocTestSuite('test.test_doctest.sample_doctest_no_docstrings')
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=0 errors=0 failures=0>
 
        We can use the current module:
 
-         >>> suite = test.sample_doctest.test_suite()
+         >>> suite = test.test_doctest.sample_doctest.test_suite()
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=9 errors=0 failures=4>
 
        We can also provide a DocTestFinder:
 
          >>> finder = doctest.DocTestFinder()
-         >>> suite = doctest.DocTestSuite('test.sample_doctest',
+         >>> suite = doctest.DocTestSuite('test.test_doctest.sample_doctest',
          ...                          test_finder=finder)
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=9 errors=0 failures=4>
@@ -2250,7 +2250,7 @@ def test_DocTestSuite():
        The DocTestFinder need not return any tests:
 
          >>> finder = doctest.DocTestFinder()
-         >>> suite = doctest.DocTestSuite('test.sample_doctest_no_docstrings',
+         >>> suite = doctest.DocTestSuite('test.test_doctest.sample_doctest_no_docstrings',
          ...                          test_finder=finder)
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=0 errors=0 failures=0>
@@ -2259,14 +2259,14 @@ def test_DocTestSuite():
        used instead of the module globals.  Here we'll pass an empty
        globals, triggering an extra error:
 
-         >>> suite = doctest.DocTestSuite('test.sample_doctest', globs={})
+         >>> suite = doctest.DocTestSuite('test.test_doctest.sample_doctest', globs={})
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=9 errors=0 failures=5>
 
        Alternatively, we can provide extra globals.  Here we'll make an
        error go away by providing an extra global variable:
 
-         >>> suite = doctest.DocTestSuite('test.sample_doctest',
+         >>> suite = doctest.DocTestSuite('test.test_doctest.sample_doctest',
          ...                              extraglobs={'y': 1})
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=9 errors=0 failures=3>
@@ -2274,7 +2274,7 @@ def test_DocTestSuite():
        You can pass option flags.  Here we'll cause an extra error
        by disabling the blank-line feature:
 
-         >>> suite = doctest.DocTestSuite('test.sample_doctest',
+         >>> suite = doctest.DocTestSuite('test.test_doctest.sample_doctest',
          ...                      optionflags=doctest.DONT_ACCEPT_BLANKLINE)
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=9 errors=0 failures=5>
@@ -2291,7 +2291,7 @@ def test_DocTestSuite():
 
        Here, we installed a silly variable that the test expects:
 
-         >>> suite = doctest.DocTestSuite('test.sample_doctest',
+         >>> suite = doctest.DocTestSuite('test.test_doctest.sample_doctest',
          ...      setUp=setUp, tearDown=tearDown)
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=9 errors=0 failures=3>
@@ -2310,7 +2310,7 @@ def test_DocTestSuite():
          >>> def setUp(test):
          ...     test.globs['y'] = 1
 
-         >>> suite = doctest.DocTestSuite('test.sample_doctest', setUp=setUp)
+         >>> suite = doctest.DocTestSuite('test.test_doctest.sample_doctest', setUp=setUp)
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=9 errors=0 failures=3>
 
@@ -2338,9 +2338,9 @@ def test_DocFileSuite():
        specify a different relative location.
 
          >>> import unittest
-         >>> suite = doctest.DocFileSuite('test_doctest.txt',
-         ...                              'test_doctest2.txt',
-         ...                              'test_doctest4.txt',
+         >>> suite = doctest.DocFileSuite('test_doctest/test_doctest.txt',
+         ...                              'test_doctest/test_doctest2.txt',
+         ...                              'test_doctest/test_doctest4.txt',
          ...                              package='test')
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=3 errors=0 failures=2>
@@ -2354,9 +2354,9 @@ def test_DocFileSuite():
          ...     test.__loader__ = pkgutil.get_loader(test)
          ...     added_loader = True
          >>> try:
-         ...     suite = doctest.DocFileSuite('test_doctest.txt',
-         ...                                  'test_doctest2.txt',
-         ...                                  'test_doctest4.txt',
+         ...     suite = doctest.DocFileSuite('test_doctest/test_doctest.txt',
+         ...                                  'test_doctest/test_doctest2.txt',
+         ...                                  'test_doctest/test_doctest4.txt',
          ...                                  package='test')
          ...     suite.run(unittest.TestResult())
          ... finally:
@@ -2367,7 +2367,7 @@ def test_DocFileSuite():
        '/' should be used as a path separator.  It will be converted
        to a native separator at run time:
 
-         >>> suite = doctest.DocFileSuite('../test/test_doctest.txt')
+         >>> suite = doctest.DocFileSuite('../test_doctest/test_doctest.txt')
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=1 errors=0 failures=1>
 
@@ -3205,8 +3205,8 @@ def test_run_doctestsuite_multiple_times():
     http://bugs.python.org/issue9736
 
     >>> import unittest
-    >>> import test.sample_doctest
-    >>> suite = doctest.DocTestSuite(test.sample_doctest)
+    >>> import test.test_doctest.sample_doctest
+    >>> suite = doctest.DocTestSuite(test.test_doctest.sample_doctest)
     >>> suite.run(unittest.TestResult())
     <unittest.result.TestResult run=9 errors=0 failures=4>
     >>> suite.run(unittest.TestResult())
