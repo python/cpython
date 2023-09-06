@@ -104,18 +104,26 @@ For example, :c:func:`PyMem_Free` must be used to free memory allocated using :c
 
 The three allocation domains are:
 
-* Raw domain: intended for allocating memory for general-purpose memory
-  buffers where the allocation *must* go to the system allocator or where the
-  allocator can operate without an :term:`attached thread state`. The memory
-  is requested directly from the system. See :ref:`Raw Memory Interface <raw-memoryinterface>`.
+* Raw domain: intended for allocating memory independently
+  of the Python runtime.  This includes cases where the
+  allocation *must* go to the system allocator, when the runtime might
+  not be initialized yet, or in non-Python threads.
+  It also includes where the allocator can operate without an :term:`attached thread state`.
+  Examples include general-purpose memory buffers, as well as global
+  state for applications that embed Python.
+  The memory is requested directly from the system. See :ref:`Raw Memory Interface <raw-memoryinterface>`.
 
-* "Mem" domain: intended for allocating memory for Python buffers and
-  general-purpose memory buffers where the allocation must be performed with
-  an :term:`attached thread state`. The memory is taken from the Python private heap.
+* "Mem" domain: intended for allocating memory tied to the
+  current interpreter but *not* belonging to any Python objects.
+  Examples include Python buffers, *arrays* of objects,
+  general-purpose memory buffers associated with an extension module,
+  and where the allocation must be performed with an :term:`attached thread state`.
+  The memory is taken from the Python private heap.
   See :ref:`Memory Interface <memoryinterface>`.
 
-* Object domain: intended for allocating memory for Python objects. The
-  memory is taken from the Python private heap. See :ref:`Object allocators <objectinterface>`.
+* Object domain: intended for allocating memory belonging to Python
+  objects (which are necessarily tied to the current interpreter).
+  The memory is taken from the Python private heap. See :ref:`Object allocators <objectinterface>`.
 
 .. note::
 
