@@ -20,4 +20,4 @@ freebsd_task:
   test_script:
     - cd build
     # dtrace fails to build on FreeBSD - see gh-73263
-    - make buildbottest TESTOPTS="-j0 -x test_dtrace"
+    - make buildbottest TESTOPTS="-j0 -x test_dtrace --timeout=600"
