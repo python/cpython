@@ -13,7 +13,7 @@ freebsd_task:
   build_script:
     - mkdir build
     - cd build
-    - ../configure
+    - ../configure --with-pydebug
     - make -j$(sysctl -n hw.ncpu)
   pythoninfo_script:
     - cd build && make pythoninfo
