@@ -613,7 +613,6 @@ static bool frame_is_suspended(PyFrameObject *frame)
         return gen->gi_frame_state == FRAME_SUSPENDED;
     }
     return false;
-
 }
 
 /* Setter for f_lineno - you can set f_lineno from within a trace function in
