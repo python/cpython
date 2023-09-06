@@ -1,9 +1,14 @@
-import _winapi
-import msvcrt
+import sys
 import unittest
 
 from test.support import os_helper
 from test.support.os_helper import TESTFN
+
+if sys.platform != "win32":
+    raise unittest.SkipTest("windows related tests")
+
+import msvcrt
+import _winapi
 
 
 class LockFileTest(unittest.TestCase):
