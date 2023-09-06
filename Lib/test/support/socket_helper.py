@@ -3,6 +3,7 @@ import errno
 import os.path
 import socket
 import sys
+import subprocess
 import tempfile
 import unittest
 
@@ -277,3 +278,52 @@ def create_unix_domain_name():
     """
     return tempfile.mktemp(prefix="test_python_", suffix='.sock',
                            dir=os.path.curdir)
+
+
+# consider that sysctl values should not change while tests are running
+_sysctl_cache = {}
+
+def _get_sysctl(name):
+    """Get a sysctl value as an integer."""
+    try:
+        return _sysctl_cache[name]
+    except KeyError:
+        pass
+
+    cmd = ['sysctl', name]
+    proc = subprocess.run(cmd,
+                          stdout=subprocess.PIPE,
+                          stderr=subprocess.STDOUT,
+                          text=True)
+    if proc.returncode:
+        return None
+    # Parse 'net.inet.tcp.blackhole: 0\n' to get '0'
+    value = proc.stdout.rstrip().split(': ')[-1]
+    try:
+        value = int(value)
+    except ValueError:
+        return None
+
+    _sysctl_cache[name] = value
+    return value
+
+
+def tcp_blackhole():
+    if not sys.platform.startswith('freebsd'):
+        return False
+
+    # gh-91960: test if FreeBSD TCP blackhost is enabled
+    value = _get_sysctl('net.inet.tcp.blackhole')
+    if value is None:
+        # don't skip if we fail to get the sysctl value
+        return False
+    return (value != 0)
+
+
+def skip_if_tcp_blackhole(test):
+    """Decorator for tests requiring a functional bind() for unix sockets."""
+    skip_if = unittest.skipIf(
+        tcp_blackhole(),
+        "TCP blackhost is enabled (sysctl net.inet.tcp.blackhole)"
+    )
+    return skip_if(test)

@@ -7,7 +7,8 @@ freebsd_task:
     - cd build
     - ../configure
     - make -j$(sysctl -n hw.ncpu)
+    - make pythoninfo
   test_script:
     - cd build
     # dtrace fails to build on FreeBSD - see gh-73263
-    - make buildbottest TESTOPTS="-j2 -u-network -x test_dtrace"
+    - make buildbottest TESTOPTS="-j0 -u-network -x test_dtrace"
