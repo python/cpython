@@ -1190,6 +1190,14 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
                 if (err) {
                     return -1;
                 }
+                // If trace is disabled in trace function, we need to recalculate the original opcode
+                // of the current instruction because it might be INSTRUMENTED_INSTRUCTION before the
+                // trace function.
+                if (tstate->interp->sys_tracing_threads == 0) {
+                    if (original_opcode == INSTRUMENTED_INSTRUCTION) {
+                        original_opcode = instr->op.code;
+                    }
+                }
             }
         }
         tools &= (255 - (1 << PY_MONITORING_SYS_TRACE_ID));
