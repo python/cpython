@@ -108,21 +108,22 @@ The three allocation domains are:
   of the Python runtime.  This includes cases where the
   allocation *must* go to the system allocator, when the runtime might
   not be initialized yet, or in non-Python threads.
-  It also includes where the allocator can operate without an :term:`attached thread state`.
   Examples include general-purpose memory buffers, as well as global
   state for applications that embed Python.
+  The allocator may be called with or without an :term:`attached thread state`.
   The memory is requested directly from the system. See :ref:`Raw Memory Interface <raw-memoryinterface>`.
 
 * "Mem" domain: intended for allocating memory tied to the
   current interpreter but *not* belonging to any Python objects.
-  Examples include Python buffers, *arrays* of objects,
-  general-purpose memory buffers associated with an extension module,
-  and where the allocation must be performed with an :term:`attached thread state`.
+  Examples include Python buffers, *arrays* of objects, and
+  general-purpose memory buffers associated with an extension module.
+  The allocator will always be called with an :term:`attached thread state`.
   The memory is taken from the Python private heap.
   See :ref:`Memory Interface <memoryinterface>`.
 
 * Object domain: intended for allocating memory belonging to Python
   objects (which are necessarily tied to the current interpreter).
+  The allocator will always be called with an :term:`attached thread state`.
   The memory is taken from the Python private heap. See :ref:`Object allocators <objectinterface>`.
 
 .. note::
