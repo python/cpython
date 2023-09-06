@@ -448,6 +448,35 @@ Legend:
 Customize Memory Allocators
 ===========================
 
+The Python runtime may be configured, with :c:func:`PyMem_SetAllocator`,
+to use custom allocators for any of the
+:ref:`supported allocator domains <allocator-domains>`.
+There are two kinds of custom allocator:
+
+* actual allocator implementations
+* wrappers around other allocators (AKA "hooks")
+
+Applications that embed Python may set either kind before the runtime
+is initialized (e.g. with :c:func:`Py_InitializeFromConfig`).  However,
+from that point on only wrappers around the current allocator
+(see :c:func:`PyMem_GetAllocator`) may be set.  Thus, extension modules
+may only set wrappers.
+
+An actual allocator is responsible for managing its own state and memory
+pool.  For the "mem" and "object" domains, the allocator is responsible
+for maintaining its state and allocations relative to the
+:c:func:`current interpreter <PyInterpreterState_Get>`.
+The ``PyMemAllocatorEx.ctx`` field may be ``NULL`` for
+this kind of allocator.
+
+A wrapper can be useful for tracking allocations, adjusting the behavior
+of another allocator (e.g. handling failures differently), or debugging.
+For example, debug builds of CPython use a wrapper to track memory usage
+and find memory leaks, and the :mod:`tracemalloc` module sets a wrapper
+to identify where allocations happen.  Typically, the wrapped allocator
+is stored in (or within) the ``PyMemAllocatorEx.ctx`` field
+of the wrapper.
+
 .. versionadded:: 3.4
 
 .. c:type:: PyMemAllocatorEx
