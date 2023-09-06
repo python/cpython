@@ -4,6 +4,10 @@
 extern "C" {
 #endif
 
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
+#endif
+
 #include <stdbool.h>
 #include <stddef.h>               // offsetof()
 #include "pycore_code.h"          // STATS
@@ -196,7 +200,7 @@ _PyFrame_GetFirstComplete(_PyInterpreterFrame *frame)
 static inline _PyInterpreterFrame *
 _PyThreadState_GetFrame(PyThreadState *tstate)
 {
-    return _PyFrame_GetFirstComplete(tstate->cframe->current_frame);
+    return _PyFrame_GetFirstComplete(tstate->current_frame);
 }
 
 /* For use by _PyFrame_GetFrameObject
@@ -306,14 +310,6 @@ PyGenObject *_PyFrame_GetGenerator(_PyInterpreterFrame *frame)
     size_t offset_in_gen = offsetof(PyGenObject, gi_iframe);
     return (PyGenObject *)(((char *)frame) - offset_in_gen);
 }
-
-#define PY_EXECUTABLE_KIND_SKIP 0
-#define PY_EXECUTABLE_KIND_PY_FUNCTION 1
-#define PY_EXECUTABLE_KIND_BUILTIN_FUNCTION 3
-#define PY_EXECUTABLE_KIND_METHOD_DESCRIPTOR 4
-#define PY_EXECUTABLE_KINDS 5
-
-PyAPI_DATA(const PyTypeObject *) const PyUnstable_ExecutableKinds[PY_EXECUTABLE_KINDS+1];
 
 #ifdef __cplusplus
 }

@@ -5535,7 +5535,7 @@ Tyler Kieft.
 .. nonce: d0bhEA
 .. section: C API
 
-:c:func:`Py_SetPath` now sets :data:`sys.executable` to the program full
+:c:func:`!Py_SetPath` now sets :data:`sys.executable` to the program full
 path (:c:func:`Py_GetProgramFullPath`) rather than to the program name
 (:c:func:`Py_GetProgramName`).
 
@@ -5546,8 +5546,8 @@ path (:c:func:`Py_GetProgramFullPath`) rather than to the program name
 .. nonce: ZbquVK
 .. section: C API
 
-Python ignored arguments passed to :c:func:`Py_SetPath`,
-:c:func:`Py_SetPythonHome` and :c:func:`Py_SetProgramName`: fix Python
+Python ignored arguments passed to :c:func:`!Py_SetPath`,
+:c:func:`!Py_SetPythonHome` and :c:func:`!Py_SetProgramName`: fix Python
 initialization to use specified arguments.
 
 ..

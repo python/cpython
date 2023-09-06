@@ -1009,8 +1009,7 @@ class Path(PurePath):
         The children are yielded in arbitrary order, and the
         special entries '.' and '..' are not included.
         """
-        for name in os.listdir(self):
-            yield self._make_child_relpath(name)
+        return (self._make_child_relpath(name) for name in os.listdir(self))
 
     def _scandir(self):
         # bpo-24132: a future version of pathlib will support subclassing of

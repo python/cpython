@@ -112,6 +112,7 @@ def collect_sys(info_add):
 
     call_func(info_add, 'sys.androidapilevel', sys, 'getandroidapilevel')
     call_func(info_add, 'sys.windowsversion', sys, 'getwindowsversion')
+    call_func(info_add, 'sys.getrecursionlimit', sys, 'getrecursionlimit')
 
     encoding = sys.getfilesystemencoding()
     if hasattr(sys, 'getfilesystemencodeerrors'):
@@ -308,6 +309,13 @@ def collect_os(info_add):
         "_PYTHON_PROJECT_BASE",
         "_PYTHON_SYSCONFIGDATA_NAME",
         "__PYVENV_LAUNCHER__",
+
+        # Sanitizer options
+        "ASAN_OPTIONS",
+        "LSAN_OPTIONS",
+        "MSAN_OPTIONS",
+        "TSAN_OPTIONS",
+        "UBSAN_OPTIONS",
     ))
     for name, value in os.environ.items():
         uname = name.upper()
@@ -492,6 +500,7 @@ def collect_sysconfig(info_add):
         'PY_STDMODULE_CFLAGS',
         'Py_DEBUG',
         'Py_ENABLE_SHARED',
+        'Py_NOGIL',
         'SHELL',
         'SOABI',
         'prefix',

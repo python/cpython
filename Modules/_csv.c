@@ -233,7 +233,7 @@ _set_int(const char *name, int *target, PyObject *src, int dflt)
                          "\"%s\" must be an integer", name);
             return -1;
         }
-        value = _PyLong_AsInt(src);
+        value = PyLong_AsInt(src);
         if (value == -1 && PyErr_Occurred()) {
             return -1;
         }
