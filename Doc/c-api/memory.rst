@@ -437,12 +437,6 @@ Legend:
 * "Debug build": :ref:`Python build in debug mode <debug-build>`.
 
 
-.. _custom-raw-allocator:
-
-.. _custom-mem-allocator:
-
-.. _custom-object-allocator:
-
 .. _customize-memory-allocators:
 
 Customize Memory Allocators
@@ -476,6 +470,50 @@ and find memory leaks, and the :mod:`tracemalloc` module sets a wrapper
 to identify where allocations happen.  Typically, the wrapped allocator
 is stored in (or within) the ``PyMemAllocatorEx.ctx`` field
 of the wrapper.
+
+Regardless of the kind, the following applies to every custom
+allocator, depending on the domain:
+
+.. _custom-raw-allocator:
+
+Raw domain:
+
+* a system allocator (or wrapper around one)
+* the memory is requested directly from the system
+* independent of the Python runtime
+* not associated with any interpreter
+* may be used before the runtime is initialized and after it's finalized
+* may be used with the runtime in an unknown state
+* must be thread-safe
+* must work whether or not the :term:`GIL` is held
+
+.. _custom-mem-allocator:
+
+"Mem" domain:
+
+* may use a Python-specific heap
+* allocated memory will be used only in a single interpreter
+* memory for each interpreter is likely kept separate
+* must be thread-safe
+* always called with the runtime in an active, stable state
+* always called with the target interpreter/tstate set in the current thread
+  (:c:func:`PyInterpreterState_Get`, :c:func:`PyThreadState_Get`)
+* always called with the current interpreter's :term:`GIL` held
+* never used for memory belonging to Python objects
+
+.. _custom-object-allocator:
+
+Object domain:
+
+* will use a Python-specific heap
+* allocated memory will be used only in a single interpreter
+* memory for each interpreter is kept separate
+* must be thread-safe
+* always called with the runtime in an active, stable state
+* always called with the target interpreter/tstate set in the current thread
+  (:c:func:`PyInterpreterState_Get`, :c:func:`PyThreadState_Get`)
+* always called with the current interpreter's :term:`GIL` held
+* only used for memory belonging to Python objects
 
 .. versionadded:: 3.4
 
