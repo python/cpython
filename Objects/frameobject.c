@@ -27,7 +27,7 @@ frame_getlocals(PyFrameObject *f, void *closure)
 {
     if (f == NULL) {
         PyErr_BadInternalCall();
-        return -1;
+        return NULL;
     }
     assert(!_PyFrame_IsIncomplete(f->f_frame));
     PyObject *locals = _PyFrame_GetLocals(f->f_frame, 1);
