@@ -145,6 +145,11 @@ The three allocation domains are:
 
 .. _raw-memoryinterface:
 
+Likewise, if one or more
+:ref:`custom allocator <customize-memory-allocators>` is used
+then any allocated memory must be freed using the same allocator
+that provided it.
+
 
 .. _raw-interface:
 
