@@ -463,9 +463,9 @@ class Regrtest:
             self.accumulate_result(result)
 
         # Unload the newly imported modules (best effort finalization)
-        for module in sys.modules.keys():
+        for module in list(sys.modules):
             if module not in save_modules and module.startswith("test."):
-                support.unload(module)
+                sys.modules.pop(module, None)
 
         return result
 
@@ -480,7 +480,7 @@ class Regrtest:
             import trace
             self.tracer = trace.Trace(trace=False, count=True)
 
-        save_modules = sys.modules.keys()
+        save_modules = set(sys.modules)
 
         msg = "Run tests sequentially"
         if timeout:
