@@ -405,10 +405,10 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 case LOAD_GLOBAL:
                 {
                     int j = oparg;
+                    next_stack = push_value(next_stack, Object);
                     if (j & 1) {
                         next_stack = push_value(next_stack, Null);
                     }
-                    next_stack = push_value(next_stack, Object);
                     stacks[next_i] = next_stack;
                     break;
                 }
@@ -418,29 +418,9 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     int j = oparg;
                     if (j & 1) {
                         next_stack = pop_value(next_stack);
-                        next_stack = push_value(next_stack, Null);
                         next_stack = push_value(next_stack, Object);
+                        next_stack = push_value(next_stack, Null);
                     }
-                    stacks[next_i] = next_stack;
-                    break;
-                }
-                case CALL:
-                {
-                    int args = oparg;
-                    for (int j = 0; j < args+2; j++) {
-                        next_stack = pop_value(next_stack);
-                    }
-                    next_stack = push_value(next_stack, Object);
-                    stacks[next_i] = next_stack;
-                    break;
-                }
-                case CALL_KW:
-                {
-                    int args = oparg;
-                    for (int j = 0; j < args + 3; j++) {
-                        next_stack = pop_value(next_stack);
-                    }
-                    next_stack = push_value(next_stack, Object);
                     stacks[next_i] = next_stack;
                     break;
                 }

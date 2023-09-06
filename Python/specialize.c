@@ -1594,13 +1594,11 @@ success:
     cache->counter = adaptive_counter_cooldown();
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
 /* Returns a borrowed reference.
  * The reference is only valid if guarded by a type version check.
  */
 static PyFunctionObject *
-get_init_for_simple_managed_python_class(_Py_CODEUNIT *instr, PyTypeObject *tp)
+get_init_for_simple_managed_python_class(PyTypeObject *tp)
 {
     assert(tp->tp_new == PyBaseObject_Type.tp_new);
     if (tp->tp_alloc != PyType_GenericAlloc) {
@@ -1660,7 +1658,7 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
         return -1;
     }
     if (tp->tp_new == PyBaseObject_Type.tp_new) {
-        PyFunctionObject *init = get_init_for_simple_managed_python_class(instr, tp);
+        PyFunctionObject *init = get_init_for_simple_managed_python_class(tp);
         if (init != NULL) {
             if (((PyCodeObject *)init->func_code)->co_argcount != nargs+1) {
                 SPECIALIZATION_FAIL(CALL, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
@@ -1895,7 +1893,7 @@ _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
     assert(_PyOpcode_Caches[CALL] == INLINE_CACHE_ENTRIES_CALL);
     assert(_Py_OPCODE(*instr) != INSTRUMENTED_CALL);
     _PyCallCache *cache = (_PyCallCache *)(instr + 1);
-    int fail = 0;
+    int fail;
     if (PyCFunction_CheckExact(callable)) {
         fail = specialize_c_call(callable, instr, nargs);
     }
@@ -1915,10 +1913,12 @@ _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
         }
         else {
             SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_BOUND_METHOD);
+            fail = -1;
         }
     }
     else {
         SPECIALIZATION_FAIL(CALL, call_fail_kind(callable));
+        fail = -1;
     }
     if (fail) {
         STAT_INC(CALL, failure);
