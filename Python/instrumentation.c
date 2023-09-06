@@ -1603,7 +1603,6 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
         return 0;
     }
     /* Insert instrumentation */
-    int code_len = (int)Py_SIZE(code);
     for (int i = code->_co_firsttraceable; i < code_len; i+= _PyInstruction_GetLength(code, i)) {
         _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
         CHECK(instr->op.code != 0);
