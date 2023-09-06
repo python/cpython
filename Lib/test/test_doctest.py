@@ -111,6 +111,14 @@ class SampleClass:
         """
         return cls.a_class_attribute
 
+    @functools.cached_property
+    def a_cached_property(self):
+        """
+        >>> print(SampleClass(29).get())
+        29
+        """
+        return "hello"
+
     class NestedClass:
         """
         >>> x = SampleClass.NestedClass(5)
@@ -515,6 +523,7 @@ methods, classmethods, staticmethods, properties, and nested classes.
      3  SampleClass.NestedClass
      1  SampleClass.NestedClass.__init__
      1  SampleClass.__init__
+     1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
      1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
@@ -571,6 +580,7 @@ functions, classes, and the `__test__` dictionary, if it exists:
      3  some_module.SampleClass.NestedClass
      1  some_module.SampleClass.NestedClass.__init__
      1  some_module.SampleClass.__init__
+     1  some_module.SampleClass.a_cached_property
      2  some_module.SampleClass.a_classmethod
      1  some_module.SampleClass.a_classmethod_property
      1  some_module.SampleClass.a_property
@@ -613,6 +623,7 @@ By default, an object with no doctests doesn't create any tests:
      3  SampleClass.NestedClass
      1  SampleClass.NestedClass.__init__
      1  SampleClass.__init__
+     1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
      1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
@@ -634,6 +645,7 @@ displays.
      0  SampleClass.NestedClass.get
      0  SampleClass.NestedClass.square
      1  SampleClass.__init__
+     1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
      1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
@@ -734,6 +746,38 @@ Note here that 'bin', 'oct', and 'hex' are functions; 'float.as_integer_ratio',
 'float.hex', and 'int.bit_length' are methods; 'float.fromhex' is a classmethod,
 and 'int' is a type.
 """
+
+
+class TestDocTest(unittest.TestCase):
+
+    def test_run(self):
+        test = '''
+            >>> 1 + 1
+            11
+            >>> 2 + 3      # doctest: +SKIP
+            "23"
+            >>> 5 + 7
+            57
+        '''
+
+        def myfunc():
+            pass
+        myfunc.__doc__ = test
+
+        # test DocTestFinder.run()
+        test = doctest.DocTestFinder().find(myfunc)[0]
+        with support.captured_stdout():
+            with support.captured_stderr():
+                results = doctest.DocTestRunner(verbose=False).run(test)
+
+        # test TestResults
+        self.assertIsInstance(results, doctest.TestResults)
+        self.assertEqual(results.failed, 2)
+        self.assertEqual(results.attempted, 3)
+        self.assertEqual(results.skipped, 1)
+        self.assertEqual(tuple(results), (2, 3))
+        x, y = results
+        self.assertEqual((x, y), (2, 3))
 
 
 class TestDocTestFinder(unittest.TestCase):

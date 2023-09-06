@@ -784,6 +784,7 @@ class TestSpecifics(unittest.TestCase):
         # An implicit test for PyUnicode_FSDecoder().
         compile("42", FakePath("test_compile_pathlike"), "single")
 
+    @support.requires_resource('cpu')
     def test_stack_overflow(self):
         # bpo-31113: Stack overflow when compile a long sequence of
         # complex statements.
@@ -1030,6 +1031,20 @@ class TestSpecifics(unittest.TestCase):
         expected_lines = [0, 1, 2, 1]
         code_lines = self.get_code_lines(test.__code__)
         self.assertEqual(expected_lines, code_lines)
+
+    def test_lineno_of_backward_jump(self):
+        # Issue gh-107901
+        def f():
+            for i in x:
+                if y:
+                    pass
+
+        linenos = list(inst.positions.lineno
+                       for inst in dis.get_instructions(f.__code__)
+                       if inst.opname == 'JUMP_BACKWARD')
+
+        self.assertTrue(len(linenos) > 0)
+        self.assertTrue(all(l is not None for l in linenos))
 
     def test_big_dict_literal(self):
         # The compiler has a flushing point in "compiler_dict" that calls compiles
@@ -1315,18 +1330,18 @@ class TestSourcePositions(unittest.TestCase):
         snippet = textwrap.dedent("""\
             assert (a > 0 and
                     bb > 0 and
-                    ccc == 4), "error msg"
+                    ccc == 1000000), "error msg"
             """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
         self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_ASSERTION_ERROR',
-            line=1, end_line=3, column=0, end_column=30, occurrence=1)
+            line=1, end_line=3, column=0, end_column=36, occurrence=1)
         #  The "error msg":
         self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_CONST',
-            line=3, end_line=3, column=19, end_column=30, occurrence=4)
+            line=3, end_line=3, column=25, end_column=36, occurrence=4)
         self.assertOpcodeSourcePositionIs(compiled_code, 'CALL',
-            line=1, end_line=3, column=0, end_column=30, occurrence=1)
+            line=1, end_line=3, column=0, end_column=36, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'RAISE_VARARGS',
-            line=1, end_line=3, column=0, end_column=30, occurrence=1)
+            line=1, end_line=3, column=8, end_column=22, occurrence=1)
 
     def test_multiline_generator_expression(self):
         snippet = textwrap.dedent("""\

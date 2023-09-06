@@ -57,6 +57,7 @@ Objects/genobject.c	-	_PyCoroWrapper_Type	-
 Objects/interpreteridobject.c	-	PyInterpreterID_Type	-
 Objects/iterobject.c	-	PyCallIter_Type	-
 Objects/iterobject.c	-	PySeqIter_Type	-
+Objects/iterobject.c	-	_PyAnextAwaitable_Type	-
 Objects/listobject.c	-	PyListIter_Type	-
 Objects/listobject.c	-	PyListRevIter_Type	-
 Objects/listobject.c	-	PyList_Type	-
@@ -70,6 +71,7 @@ Objects/moduleobject.c	-	PyModule_Type	-
 Objects/namespaceobject.c	-	_PyNamespace_Type	-
 Objects/object.c	-	_PyNone_Type	-
 Objects/object.c	-	_PyNotImplemented_Type	-
+Objects/object.c 	-	_PyAnextAwaitable_Type	-
 Objects/odictobject.c	-	PyODictItems_Type	-
 Objects/odictobject.c	-	PyODictIter_Type	-
 Objects/odictobject.c	-	PyODictKeys_Type	-
@@ -112,8 +114,6 @@ Objects/codeobject.c	-	_PyLineIterator	-
 # Not in a .h file:
 Objects/codeobject.c	-	_PyPositionsIterator	-
 Objects/genericaliasobject.c	-	_Py_GenericAliasIterType	-
-# Not in a .h file:
-Objects/iterobject.c	-	_PyAnextAwaitable_Type	-
 # Not in a .h file:
 Objects/memoryobject.c	-	_PyMemoryIter_Type	-
 Objects/unicodeobject.c	-	_PyUnicodeASCIIIter_Type	-
@@ -322,6 +322,12 @@ Modules/_testcapi/vectorcall.c	-	MethodDescriptorBase_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorDerived_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorNopGet_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptor2_Type	-
+Modules/_testclinic.c	-	DeprStarInit	-
+Modules/_testclinic.c	-	DeprStarInitNoInline	-
+Modules/_testclinic.c	-	DeprStarNew	-
+Modules/_testclinic.c	-	DeprKwdInit	-
+Modules/_testclinic.c	-	DeprKwdInitNoInline	-
+Modules/_testclinic.c	-	DeprKwdNew	-
 
 
 ##################################

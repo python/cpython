@@ -83,11 +83,12 @@ def dash_R(ns, test_name, test_func):
         print(("1234567890"*(repcount//10 + 1))[:repcount], file=sys.stderr,
               flush=True)
 
+    results = None
     dash_R_cleanup(fs, ps, pic, zdc, abcs)
     support.gc_collect()
 
     for i in rep_range:
-        test_func()
+        results = test_func()
 
         dash_R_cleanup(fs, ps, pic, zdc, abcs)
         support.gc_collect()
@@ -151,7 +152,7 @@ def dash_R(ns, test_name, test_func):
                 print(msg, file=refrep)
                 refrep.flush()
             failed = True
-    return failed
+    return (failed, results)
 
 
 def dash_R_cleanup(fs, ps, pic, zdc, abcs):

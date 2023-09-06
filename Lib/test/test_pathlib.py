@@ -1766,7 +1766,7 @@ class PathTest(unittest.TestCase):
         # __iter__ on something that is not a directory.
         p = self.cls(BASE, 'fileA')
         with self.assertRaises(OSError) as cm:
-            next(p.iterdir())
+            p.iterdir()
         # ENOENT or EINVAL under Windows, ENOTDIR otherwise
         # (see issue #12802).
         self.assertIn(cm.exception.errno, (errno.ENOTDIR,
