@@ -13,7 +13,7 @@ extend-exclude = [
     "test_fstring.py",
     # TODO Fix: F811 Redefinition of unused name
     "test_buffer.py",
-    "test_dataclasses.py",
+    "test_dataclasses/__init__.py",
     "test_descr.py",
     "test_enum.py",
     "test_functools.py",
