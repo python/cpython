@@ -1112,6 +1112,8 @@ class date:
             day = self._day
         return type(self)(year, month, day)
 
+    __replace__ = replace
+
     # Comparisons of date objects with other.
 
     def __eq__(self, other):
@@ -1637,6 +1639,8 @@ class time:
             fold = self._fold
         return type(self)(hour, minute, second, microsecond, tzinfo, fold=fold)
 
+    __replace__ = replace
+
     # Pickle support.
 
     def _getstate(self, protocol=3):
@@ -1982,6 +1986,8 @@ class datetime(date):
             fold = self.fold
         return type(self)(year, month, day, hour, minute, second,
                           microsecond, tzinfo, fold=fold)
+
+    __replace__ = replace
 
     def _local_timezone(self):
         if self.tzinfo is None:
