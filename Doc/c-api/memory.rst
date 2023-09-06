@@ -142,6 +142,11 @@ When freeing memory previously allocated by the allocating functions belonging t
 given domain,the matching specific deallocating functions must be used. For example,
 :c:func:`PyMem_Free` must be used to free memory allocated using :c:func:`PyMem_Malloc`.
 
+Likewise, if one or more
+:ref:`custom allocator <customize-memory-allocators>` is used
+then any allocated memory must be freed using the same allocator
+that provided it.
+
 
 .. _raw-interface:
 
