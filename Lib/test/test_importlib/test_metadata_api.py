@@ -5,7 +5,11 @@ import warnings
 import importlib
 import contextlib
 
+from unittest.mock import patch
+from test.support.hypothesis_helper import hypothesis
+
 from . import fixtures
+from . import identity
 from importlib.metadata import (
     Distribution,
     PackageNotFoundError,
@@ -320,3 +324,53 @@ class InvalidateCache(unittest.TestCase):
     def test_invalidate_cache(self):
         # No externally observable behavior, but ensures test coverage...
         importlib.invalidate_caches()
+
+
+class MetadataAPITests(unittest.TestCase):
+    @staticmethod
+    def metadata_from_text(text):
+        with suppress_known_deprecation():
+            db = Distribution()
+        with patch.object(Distribution, "read_text") as mock_rt:
+            mock_rt.return_value = fixtures.DALS(text)
+            mock_rt.seal()
+            md = db.metadata
+        mock_rt.assert_called()
+        return md
+
+    @hypothesis.given(identity.identities_strategy())
+    @hypothesis.example\
+        ( ( """
+            Author: Another person, Yet Another name
+            Author-email: Pradyun Gedam <pradyun@example.com>, Tzu-Ping Chung <tzu-ping@example.com>, different.person@example.com
+            Maintainer-email: Brett Cannon <brett@python.org>
+            """
+          , { ("Another person"   , None)
+            , ("Yet Another name" , None)
+            , ("Pradyun Gedam"    , "pradyun@example.com")
+            , ("Tzu-Ping Chung"   , "tzu-ping@example.com")
+            , (None               , "different.person@example.com")
+            }
+          , { ("Brett Cannon"     , "brett@python.org") }
+          ) )
+    @hypothesis.settings(max_examples=1000)
+    def test_authors(self, arg):
+        metadata_text, expected_authors, expected_maintainers = arg
+        md = self.metadata_from_text(metadata_text)
+        authors = set(map(tuple, md.authors))
+        maintainers = set(map(tuple, md.maintainers))
+
+        authors_exp_act = expected_authors - authors
+        authors_act_exp = authors - expected_authors
+        maintainers_exp_act = expected_maintainers - maintainers
+        maintainers_act_exp = maintainers - expected_maintainers
+
+        hypothesis.note(f"Authors, expected - actual: {authors_exp_act!r}")
+        hypothesis.note(f"Authors, actual - expected: {authors_act_exp!r}")
+        hypothesis.note(f"Maintainers, expected - actual: {maintainers_exp_act!r}")
+        hypothesis.note(f"Maintainers, actual - expected: {maintainers_act_exp!r}")
+
+        assert not authors_exp_act
+        assert not authors_act_exp
+        assert not maintainers_exp_act
+        assert not maintainers_act_exp

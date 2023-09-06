@@ -21,21 +21,21 @@ _warn = functools.partial(
 # when used as text.
 
 # Split an RFC5233-ish list:
-# 1. Alt 1: match single or double quotes and handle escape characters.
-# 2. Alt 2: match anything except ',' followed by a space. If quote
+# 1. Require a list separator, or beginning-of-string.
+# 2. Alt 1: match single or double quotes and handle escape characters.
+# 3. Alt 2: match anything except ',' followed by a space. If quote
 #    characters are unbalanced, they will be matched here.
-# 3. Match the alternatives at least once, in any order...
-# 4. ... and capture them.
-# 5. Match the list separator, or end-of-string.
+# 4. Match the alternatives at least once, in any order...
+# 5. ... and capture them.
 # Result:
 #   group 1 (list entry): None or non-empty string.
 
 _entries = re.compile(r"""
-( (?: (["']) (?:(?!\2|\\).|\\.)* \2     # 1
-  |   (?!,\ ).                          # 2
-  )+                                    # 3
-)                                       # 4
-(?:,\ |$)                               # 5
+(?: (?<=,\ ) | (?<=^) )                 # 1
+( (?: (["']) (?:(?!\2|\\).|\\.)* \2     # 2
+  |   (?!,\ ).                          # 3
+  )+                                    # 4
+)                                       # 5
 """, re.VERBOSE)
 
 # Split an RFC5233-ish name-email entry:
