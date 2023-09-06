@@ -119,6 +119,8 @@ The three allocation domains are:
   state for applications that embed Python.
   The allocator may be called with or without the :term:`GIL` held.
   The memory is requested directly from the system.
+  (Also see: :ref:`user API <raw-interface>`,
+  :ref:`custom allocator <custom-raw-allocator>`.)
 
 * "Mem" domain: intended for allocating memory tied to the
   current interpreter but *not* belonging to any Python objects.
@@ -126,15 +128,22 @@ The three allocation domains are:
   general-purpose memory buffers associated with an extension module.
   The allocator will always be called with the :term:`GIL` held.
   The memory is taken from the Python private heap.
+  (Also see: :ref:`user API <mem-interface>`,
+  :ref:`custom allocator <custom-mem-allocator>`.)
 
 * Object domain: intended for allocating memory belonging to Python
   objects (which are necessarily tied to the current interpreter).
   The allocator will always be called with the :term:`GIL` held.
   The memory is taken from the Python private heap.
+  (Also see: :ref:`user API <object-interface>`,
+  :ref:`custom allocator <custom-object-allocator>`.)
 
 When freeing memory previously allocated by the allocating functions belonging to a
 given domain,the matching specific deallocating functions must be used. For example,
 :c:func:`PyMem_Free` must be used to free memory allocated using :c:func:`PyMem_Malloc`.
+
+
+.. _raw-interface:
 
 Raw Memory Interface
 ====================
@@ -200,7 +209,7 @@ zero bytes.
    If *p* is ``NULL``, no operation is performed.
 
 
-.. _memoryinterface:
+.. _mem-interface:
 
 Memory Interface
 ================
@@ -308,6 +317,8 @@ versions and is therefore deprecated in extension modules.
 * ``PyMem_DEL(ptr)``
 
 
+.. _object-interface:
+
 Object allocators
 =================
 
@@ -403,6 +414,13 @@ Legend:
 * "+ debug": with :ref:`debug hooks on the Python memory allocators
   <pymem-debug-hooks>`.
 * "Debug build": :ref:`Python build in debug mode <debug-build>`.
+
+
+.. _custom-raw-allocator:
+
+.. _custom-mem-allocator:
+
+.. _custom-object-allocator:
 
 .. _customize-memory-allocators:
 
