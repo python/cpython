@@ -67,21 +67,23 @@ Summary -- Release highlights
 
 New grammar features:
 
-* :pep:`701`: Syntactic formalization of f-strings
+* :ref:`whatsnew312-pep701`
 
 Interpreter improvements:
 
 * :ref:`whatsnew312-pep684`
 
+* :ref:`whatsnew312-pep669`
+
 New typing features:
 
-* :pep:`688`: Making the buffer protocol accessible in Python
+* :ref:`whatsnew312-pep688`
 
 * :ref:`whatsnew312-pep692`
 
 * :ref:`whatsnew312-pep695`
 
-* :pep:`698`: Override Decorator for Static Typing
+* :ref:`whatsnew312-pep698`
 
 Important deprecations, removals or restrictions:
 
@@ -267,6 +269,8 @@ Inlining does result in a few visible behavior changes:
 
 Contributed by Carl Meyer and Vladimir Matveev in :pep:`709`.
 
+.. _whatsnew312-pep688:
+
 PEP 688: Making the buffer protocol accessible in Python
 --------------------------------------------------------
 
@@ -310,6 +314,19 @@ A Python API is anticipated for 3.13.  (See :pep:`554`.)
 
 (Contributed by Eric Snow in :gh:`104210`, etc.)
 
+.. _whatsnew312-pep669:
+
+PEP 669: Low impact monitoring for CPython
+------------------------------------------
+
+CPython 3.12 now supports the ability to monitor calls,
+returns, lines, exceptions and other events using instrumentation.
+This means that you only pay for what you use, providing support
+for near-zero overhead debuggers and coverage tools.
+
+See  :mod:`sys.monitoring` for details.
+
+
 New Features Related to Type Hints
 ==================================
 
@@ -339,6 +356,8 @@ typed dictionaries::
 See :pep:`692` for more details.
 
 (Contributed by Franek Magiera in :gh:`103629`.)
+
+.. _whatsnew312-pep698:
 
 PEP 698: Override Decorator for Static Typing
 ---------------------------------------------

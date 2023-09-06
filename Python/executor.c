@@ -109,7 +109,6 @@ pop_3_error:
 pop_2_error:
     STACK_SHRINK(1);
 pop_1_error:
-pop_1_exit_unwind:
     STACK_SHRINK(1);
 error:
     // On ERROR_IF we return NULL as the frame.
