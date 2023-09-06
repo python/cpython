@@ -455,7 +455,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.13a1 3557 (Make the conversion to boolean in jumps explicit)
 #     Python 3.13a1 3558 (Reorder the stack items for CALL)
 #     Python 3.13a1 3559 (Generate opcode IDs from bytecodes.c)
-#     Python 3.13a1 3560 (Add CALL_KW)
+#     Python 3.13a1 3560 (Add CALL_KW and remove KW_NAMES)
 
 #     Python 3.14 will start with 3600
 

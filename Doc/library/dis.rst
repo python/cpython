@@ -1122,7 +1122,7 @@ iterations of the loop.
    This bytecode distinguishes two cases: if ``STACK[-1]`` has a method with the
    correct name, the bytecode pushes the unbound method and ``STACK[-1]``.
    ``STACK[-1]`` will be used as the first argument (``self``) by :opcode:`CALL`
-   when calling the unbound method. Otherwise, ``NULL`` and the object returned by
+   or :opcode:`CALL_KW` when calling the unbound method. Otherwise, ``NULL`` and the object returned by
    the attribute lookup are pushed.
 
    .. versionchanged:: 3.12
@@ -1393,13 +1393,6 @@ iterations of the loop.
    Calls a callable object with the number of arguments specified by ``argc``.
    On the stack are (in ascending order):
 
-   * NULL
-   * The callable
-   * The positional arguments
-   * The named arguments
-
-   or:
-
    * The callable
    * ``self`` (or ``NULL``)
    * The remaining positional arguments
@@ -1414,21 +1407,16 @@ iterations of the loop.
    .. versionadded:: 3.11
 
    .. versionchanged:: 3.13
+      The callable now always appears at the same position on the stack.
+
+   .. versionchanged:: 3.13
       Calls with keyword arguments are now handled by :opcode:`CALL_KW`.
 
 
 .. opcode:: CALL_KW (argc)
 
    Calls a callable object with the number of arguments specified by ``argc``,
-   including one or more named arguments.
-   On the stack are (in ascending order):
-
-   * NULL
-   * The callable
-   * The positional arguments
-   * The named arguments
-
-   or:
+   including one or more named arguments. On the stack are (in ascending order):
 
    * The callable
    * ``self`` (or ``NULL``)
@@ -1439,9 +1427,9 @@ iterations of the loop.
    ``argc`` is the total of the positional and named arguments, excluding
    ``self`` when a ``NULL`` is not present.
 
-   ``CALL`` pops all arguments, the keyword names, and the callable object off the stack,
-   calls the callable object with those arguments, and pushes the return value
-   returned by the callable object.
+   ``CALL_KW`` pops all arguments, the keyword names, and the callable object
+   off the stack, calls the callable object with those arguments, and pushes the
+   return value returned by the callable object.
 
    .. versionadded:: 3.13
 
