@@ -374,6 +374,8 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
     tstate->py_recursion_remaining++;
 }
 
+/* Marker to specify tier 1 only instructions */
+#define TIER_ONE_ONLY
 
 /* Implementation of "macros" that modify the instruction pointer,
  * stack pointer, or frame pointer.
