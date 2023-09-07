@@ -7,7 +7,7 @@ import textwrap
 
 from c_common.tables import build_table, resolve_columns
 from c_parser.parser._regexes import _ind
-from ._files import iter_header_files, resolve_filename
+from ._files import iter_header_files
 from . import REPO_ROOT
 
 
@@ -610,8 +610,7 @@ def _render_item_full(item, groupby, verbose):
     yield item.name
     yield f'  {"filename:":10} {item.relfile}'
     for extra in ('kind', 'level'):
-        #if groupby != extra:
-            yield f'  {extra+":":10} {getattr(item, extra)}'
+        yield f'  {extra+":":10} {getattr(item, extra)}'
     if verbose:
         print('  ---------------------------------------')
         for lno, line in enumerate(item.text, item.lno):
@@ -636,7 +635,6 @@ def render_summary(items, *,
 
     subtotals = summary['totals']['subs']
     bygroup = summary['totals']['bygroup']
-    lastempty = False
     for outer, subtotal in subtotals.items():
         if bygroup:
             subtotal = f'({subtotal})'
@@ -646,10 +644,6 @@ def render_summary(items, *,
         if outer in bygroup:
             for inner, count in bygroup[outer].items():
                 yield f'   {inner + ":":9} {count}'
-            lastempty = False
-        else:
-            lastempty = True
-
     total = f'*{summary["totals"]["all"]}*'
     label = '*total*:'
     if bygroup:

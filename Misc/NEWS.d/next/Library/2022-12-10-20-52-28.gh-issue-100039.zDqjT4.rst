@@ -1,1 +1,0 @@
-Improve signatures for enums and flags.

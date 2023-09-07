@@ -12,3 +12,10 @@ updates:
         update-types:
           - "version-update:semver-minor"
           - "version-update:semver-patch"
+  - package-ecosystem: "pip"
+    directory: "/Tools/"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "skip issue"
+      - "skip news"

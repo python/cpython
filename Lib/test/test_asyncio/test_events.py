@@ -4,6 +4,7 @@ import collections.abc
 import concurrent.futures
 import functools
 import io
+import multiprocessing
 import os
 import platform
 import re
@@ -670,6 +671,7 @@ class EventLoopTestsMixin:
             self.assertEqual(port, expected)
             tr.close()
 
+    @socket_helper.skip_if_tcp_blackhole
     def test_create_connection_local_addr_skip_different_family(self):
         # See https://github.com/python/cpython/issues/86508
         port1 = socket_helper.find_unused_port()
@@ -691,6 +693,7 @@ class EventLoopTestsMixin:
         with self.assertRaises(OSError):
             self.loop.run_until_complete(f)
 
+    @socket_helper.skip_if_tcp_blackhole
     def test_create_connection_local_addr_nomatch_family(self):
         # See https://github.com/python/cpython/issues/86508
         port1 = socket_helper.find_unused_port()
@@ -1270,6 +1273,7 @@ class EventLoopTestsMixin:
 
         server.close()
 
+    @socket_helper.skip_if_tcp_blackhole
     def test_server_close(self):
         f = self.loop.create_server(MyProto, '0.0.0.0', 0)
         server = self.loop.run_until_complete(f)
@@ -2614,8 +2618,33 @@ class PolicyTests(unittest.TestCase):
     def test_get_event_loop(self):
         policy = asyncio.DefaultEventLoopPolicy()
         self.assertIsNone(policy._local._loop)
-        with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
-            policy.get_event_loop()
+        with self.assertWarns(DeprecationWarning) as cm:
+            loop = policy.get_event_loop()
+        self.assertEqual(cm.filename, __file__)
+        self.assertIsInstance(loop, asyncio.AbstractEventLoop)
+
+        self.assertIs(policy._local._loop, loop)
+        self.assertIs(loop, policy.get_event_loop())
+        loop.close()
+
+    def test_get_event_loop_calls_set_event_loop(self):
+        policy = asyncio.DefaultEventLoopPolicy()
+
+        with mock.patch.object(
+                policy, "set_event_loop",
+                wraps=policy.set_event_loop) as m_set_event_loop:
+
+            with self.assertWarns(DeprecationWarning) as cm:
+                loop = policy.get_event_loop()
+            self.addCleanup(loop.close)
+            self.assertEqual(cm.filename, __file__)
+
+            # policy._local._loop must be set through .set_event_loop()
+            # (the unix DefaultEventLoopPolicy needs this call to attach
+            # the child watcher correctly)
+            m_set_event_loop.assert_called_with(loop)
+
+        loop.close()
 
     def test_get_event_loop_after_set_none(self):
         policy = asyncio.DefaultEventLoopPolicy()
@@ -2737,7 +2766,13 @@ class GetEventLoopTestsMixin:
             support.skip_if_broken_multiprocessing_synchronize()
 
             async def main():
-                pool = concurrent.futures.ProcessPoolExecutor()
+                if multiprocessing.get_start_method() == 'fork':
+                    # Avoid 'fork' DeprecationWarning.
+                    mp_context = multiprocessing.get_context('forkserver')
+                else:
+                    mp_context = None
+                pool = concurrent.futures.ProcessPoolExecutor(
+                        mp_context=mp_context)
                 result = await self.loop.run_in_executor(
                     pool, _test_get_event_loop_new_process__sub_proc)
                 pool.shutdown()
@@ -2801,8 +2836,10 @@ class GetEventLoopTestsMixin:
             loop = asyncio.new_event_loop()
             self.addCleanup(loop.close)
 
-            with self.assertRaisesRegex(RuntimeError, 'no current'):
-                asyncio.get_event_loop()
+            with self.assertWarns(DeprecationWarning) as cm:
+                loop2 = asyncio.get_event_loop()
+            self.addCleanup(loop2.close)
+            self.assertEqual(cm.filename, __file__)
             asyncio.set_event_loop(None)
             with self.assertRaisesRegex(RuntimeError, 'no current'):
                 asyncio.get_event_loop()

@@ -2,6 +2,7 @@
 from test import support
 from test.support import import_helper
 from test.support import os_helper
+from test.support import requires_specialization
 import unittest
 
 from collections import namedtuple
@@ -25,6 +26,7 @@ MACOS = (sys.platform == 'darwin')
 PYMEM_ALLOCATOR_NOT_SET = 0
 PYMEM_ALLOCATOR_DEBUG = 2
 PYMEM_ALLOCATOR_MALLOC = 3
+Py_STATS = hasattr(sys, '_stats_on')
 
 # _PyCoreConfig_InitCompatConfig()
 API_COMPAT = 1
@@ -109,7 +111,7 @@ class EmbeddingTestsMixin:
             print(f"--- {cmd} failed ---")
             print(f"stdout:\n{out}")
             print(f"stderr:\n{err}")
-            print(f"------")
+            print("------")
 
         self.assertEqual(p.returncode, returncode,
                          "bad returncode %d, stderr is %r" %
@@ -346,6 +348,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_simple_init")
         self.assertEqual(out, 'Finalized\n' * INIT_LOOPS)
 
+    @requires_specialization
     def test_specialized_static_code_gets_unspecialized_at_Py_FINALIZE(self):
         # https://github.com/python/cpython/issues/92031
 
@@ -359,7 +362,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                 for instruction in dis.get_instructions(f, adaptive=True):
                     opname = instruction.opname
                     if (
-                        opname in opcode._specialized_instructions
+                        opname in opcode._specialized_opmap
                         # Exclude superinstructions:
                         and "__" not in opname
                     ):
@@ -510,6 +513,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'safe_path': 0,
         '_is_python_build': IGNORE_CONFIG,
     }
+    if Py_STATS:
+        CONFIG_COMPAT['_pystats'] = 0
     if MS_WINDOWS:
         CONFIG_COMPAT.update({
             'legacy_windows_stdio': 0,
@@ -714,8 +719,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         if MS_WINDOWS:
             value = config.get(key := 'program_name')
             if value and isinstance(value, str):
-                ext = '_d.exe' if debug_build(sys.executable) else '.exe'
-                config[key] = value[:len(value.lower().removesuffix(ext))]
+                value = value[:len(value.lower().removesuffix('.exe'))]
+                if debug_build(sys.executable):
+                    value = value[:len(value.lower().removesuffix('_d'))]
+                config[key] = value
         for key, value in list(expected.items()):
             if value is self.IGNORE_CONFIG:
                 config.pop(key, None)
@@ -891,6 +898,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'check_hash_pycs_mode': 'always',
             'pathconfig_warnings': 0,
         }
+        if Py_STATS:
+            config['_pystats'] = 1
         self.check_all_configs("test_init_from_config", config, preconfig,
                                api=API_COMPAT)
 
@@ -923,6 +932,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'safe_path': 1,
             'int_max_str_digits': 4567,
         }
+        if Py_STATS:
+            config['_pystats'] = 1
         self.check_all_configs("test_init_compat_env", config, preconfig,
                                api=API_COMPAT)
 
@@ -956,6 +967,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'safe_path': 1,
             'int_max_str_digits': 4567,
         }
+        if Py_STATS:
+            config['_pystats'] = 1
         self.check_all_configs("test_init_python_env", config, preconfig,
                                api=API_PYTHON)
 
@@ -1292,7 +1305,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             stdlib = os.path.join(home, "Lib")
             # Because we are specifying 'home', module search paths
             # are fairly static
-            expected_paths = [paths[0], stdlib, os.path.join(home, 'DLLs')]
+            expected_paths = [paths[0], os.path.join(home, 'DLLs'), stdlib]
         else:
             version = f'{sys.version_info.major}.{sys.version_info.minor}'
             stdlib = os.path.join(home, sys.platlibdir, f'python{version}')
@@ -1333,7 +1346,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             stdlib = os.path.join(home, "Lib")
             # Because we are specifying 'home', module search paths
             # are fairly static
-            expected_paths = [paths[0], stdlib, os.path.join(home, 'DLLs')]
+            expected_paths = [paths[0], os.path.join(home, 'DLLs'), stdlib]
         else:
             version = f'{sys.version_info.major}.{sys.version_info.minor}'
             stdlib = os.path.join(home, sys.platlibdir, f'python{version}')
@@ -1361,7 +1374,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         config['_is_python_build'] = 1
         exedir = os.path.dirname(sys.executable)
         with open(os.path.join(exedir, 'pybuilddir.txt'), encoding='utf8') as f:
-            expected_paths[2] = os.path.normpath(
+            expected_paths[1 if MS_WINDOWS else 2] = os.path.normpath(
                 os.path.join(exedir, f'{f.read()}\n$'.splitlines()[0]))
         if not MS_WINDOWS:
             # PREFIX (default) is set when running in build directory
@@ -1438,8 +1451,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
             module_search_paths = self.module_search_paths()
             module_search_paths[-3] = os.path.join(tmpdir, os.path.basename(module_search_paths[-3]))
-            module_search_paths[-2] = stdlibdir
-            module_search_paths[-1] = tmpdir
+            module_search_paths[-2] = tmpdir
+            module_search_paths[-1] = stdlibdir
 
             executable = self.test_exe
             config = {
@@ -1652,13 +1665,17 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                                        api=API_PYTHON, env=env)
 
     def test_init_main_interpreter_settings(self):
+        OBMALLOC = 1<<5
+        EXTENSIONS = 1<<8
         THREADS = 1<<10
         DAEMON_THREADS = 1<<11
         FORK = 1<<15
         EXEC = 1<<16
         expected = {
             # All optional features should be enabled.
-            'feature_flags': FORK | EXEC | THREADS | DAEMON_THREADS,
+            'feature_flags':
+                OBMALLOC | FORK | EXEC | THREADS | DAEMON_THREADS,
+            'own_gil': True,
         }
         out, err = self.run_embedded_interpreter(
             'test_init_main_interpreter_settings',

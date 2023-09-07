@@ -139,7 +139,7 @@ purposes.
    The settings are: :data:`PROTOCOL_TLS_CLIENT` or
    :data:`PROTOCOL_TLS_SERVER`, :data:`OP_NO_SSLv2`, and :data:`OP_NO_SSLv3`
    with high encryption cipher suites without RC4 and
-   without unauthenticated cipher suites. Passing :data:`~Purpose.SERVER_AUTH`
+   without unauthenticated cipher suites. Passing :const:`~Purpose.SERVER_AUTH`
    as *purpose* sets :data:`~SSLContext.verify_mode` to :data:`CERT_REQUIRED`
    and either loads CA certificates (when at least one of *cafile*, *capath* or
    *cadata* is given) or uses :meth:`SSLContext.load_default_certs` to load
@@ -320,7 +320,7 @@ Random generation
 
    Mix the given *bytes* into the SSL pseudo-random number generator.  The
    parameter *entropy* (a float) is a lower bound on the entropy contained in
-   string (so you can always use :const:`0.0`).  See :rfc:`1750` for more
+   string (so you can always use ``0.0``).  See :rfc:`1750` for more
    information on sources of entropy.
 
    .. versionchanged:: 3.5
@@ -1054,7 +1054,7 @@ SSL Sockets
 
    .. versionchanged:: 3.5
       The :meth:`shutdown` does not reset the socket timeout each time bytes
-      are received or sent. The socket timeout is now to maximum total duration
+      are received or sent. The socket timeout is now the maximum total duration
       of the shutdown.
 
    .. deprecated:: 3.6
@@ -1087,8 +1087,8 @@ SSL sockets also have the following additional methods and attributes:
    cause write operations.
 
    .. versionchanged:: 3.5
-      The socket timeout is no more reset each time bytes are received or sent.
-      The socket timeout is now to maximum total duration to read up to *len*
+      The socket timeout is no longer reset each time bytes are received or sent.
+      The socket timeout is now the maximum total duration to read up to *len*
       bytes.
 
    .. deprecated:: 3.6
@@ -1106,8 +1106,8 @@ SSL sockets also have the following additional methods and attributes:
    also cause read operations.
 
    .. versionchanged:: 3.5
-      The socket timeout is no more reset each time bytes are received or sent.
-      The socket timeout is now to maximum total duration to write *buf*.
+      The socket timeout is no longer reset each time bytes are received or sent.
+      The socket timeout is now the maximum total duration to write *buf*.
 
    .. deprecated:: 3.6
       Use :meth:`~SSLSocket.send` instead of :meth:`~SSLSocket.write`.
@@ -1134,14 +1134,14 @@ SSL sockets also have the following additional methods and attributes:
       :attr:`~SSLSocket.context` is true.
 
    .. versionchanged:: 3.5
-      The socket timeout is no more reset each time bytes are received or sent.
-      The socket timeout is now to maximum total duration of the handshake.
+      The socket timeout is no longer reset each time bytes are received or sent.
+      The socket timeout is now the maximum total duration of the handshake.
 
    .. versionchanged:: 3.7
       Hostname or IP address is matched by OpenSSL during handshake. The
       function :func:`match_hostname` is no longer used. In case OpenSSL
       refuses a hostname or IP address, the handshake is aborted early and
-      a TLS alert message is send to the peer.
+      a TLS alert message is sent to the peer.
 
 .. method:: SSLSocket.getpeercert(binary_form=False)
 
@@ -1218,7 +1218,7 @@ SSL sockets also have the following additional methods and attributes:
 
 .. method:: SSLSocket.shared_ciphers()
 
-   Return the list of ciphers shared by the client during the handshake.  Each
+   Return the list of ciphers available in both the client and server.  Each
    entry of the returned list is a three-value tuple containing the name of the
    cipher, the version of the SSL protocol that defines its use, and the number
    of secret bits the cipher uses.  :meth:`~SSLSocket.shared_ciphers` returns
@@ -1484,9 +1484,9 @@ to speed up repeated connections from the same clients.
    load CA certificates from other locations, too.
 
    The *purpose* flag specifies what kind of CA certificates are loaded. The
-   default settings :data:`Purpose.SERVER_AUTH` loads certificates, that are
+   default settings :const:`Purpose.SERVER_AUTH` loads certificates, that are
    flagged and trusted for TLS web server authentication (client side
-   sockets). :data:`Purpose.CLIENT_AUTH` loads CA certificates for client
+   sockets). :const:`Purpose.CLIENT_AUTH` loads CA certificates for client
    certificate verification on the server side.
 
    .. versionadded:: 3.4
@@ -1719,7 +1719,7 @@ to speed up repeated connections from the same clients.
    .. versionadded:: 3.3
 
    .. seealso::
-      `SSL/TLS & Perfect Forward Secrecy <https://vincent.bernat.im/en/blog/2011-ssl-perfect-forward-secrecy>`_
+      `SSL/TLS & Perfect Forward Secrecy <https://vincent.bernat.ch/en/blog/2011-ssl-perfect-forward-secrecy>`_
          Vincent Bernat.
 
 .. method:: SSLContext.wrap_socket(sock, server_side=False, \
@@ -1729,7 +1729,7 @@ to speed up repeated connections from the same clients.
    Wrap an existing Python socket *sock* and return an instance of
    :attr:`SSLContext.sslsocket_class` (default :class:`SSLSocket`). The
    returned SSL socket is tied to the context, its settings and certificates.
-   *sock* must be a :data:`~socket.SOCK_STREAM` socket; other
+   *sock* must be a :const:`~socket.SOCK_STREAM` socket; other
    socket types are unsupported.
 
    The parameter ``server_side`` is a boolean which identifies whether
@@ -2592,7 +2592,7 @@ disabled by default.
    >>> client_context.maximum_version = ssl.TLSVersion.TLSv1_3
 
 
-The SSL context created above will only allow TLSv1.2 and later (if
+The SSL context created above will only allow TLSv1.3 and later (if
 supported by your system) connections to a server. :const:`PROTOCOL_TLS_CLIENT`
 implies certificate validation and hostname checks by default. You have to
 load certificates into the context.

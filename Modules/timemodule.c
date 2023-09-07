@@ -6,22 +6,21 @@
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_runtime.h"       // _Py_ID()
 
-#include <ctype.h>
-
+#include <time.h>                 // clock()
 #ifdef HAVE_SYS_TIMES_H
-#  include <sys/times.h>
+#  include <sys/times.h>          // times()
 #endif
 #ifdef HAVE_SYS_TYPES_H
 #  include <sys/types.h>
 #endif
 #if defined(HAVE_SYS_RESOURCE_H)
-#  include <sys/resource.h>
+#  include <sys/resource.h>       // getrusage(RUSAGE_SELF)
 #endif
 #ifdef QUICKWIN
 # include <io.h>
 #endif
 #if defined(HAVE_PTHREAD_H)
-#  include <pthread.h>
+#  include <pthread.h>            // pthread_getcpuclockid()
 #endif
 #if defined(_AIX)
 #   include <sys/thread.h>
@@ -30,7 +29,9 @@
 #  include <i86.h>
 #else
 #  ifdef MS_WINDOWS
-#    define WIN32_LEAN_AND_MEAN
+#    ifndef WIN32_LEAN_AND_MEAN
+#      define WIN32_LEAN_AND_MEAN
+#    endif
 #    include <windows.h>
 #  endif /* MS_WINDOWS */
 #endif /* !__WATCOMC__ || __QNX__ */
@@ -412,6 +413,10 @@ Return the clk_id of a thread's CPU time clock.");
 static PyObject *
 time_sleep(PyObject *self, PyObject *timeout_obj)
 {
+    if (PySys_Audit("time.sleep", "O", timeout_obj) < 0) {
+        return NULL;
+    }
+
     _PyTime_t timeout;
     if (_PyTime_FromSecondsObject(&timeout, timeout_obj, _PyTime_ROUND_TIMEOUT))
         return NULL;
@@ -1135,7 +1140,9 @@ time_tzset(PyObject *self, PyObject *unused)
         return NULL;
     }
 
+#if !defined(MS_WINDOWS) || defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
     tzset();
+#endif
 
     /* Reset timezone, altzone, daylight and tzname */
     if (init_timezone(m) < 0) {
@@ -1753,7 +1760,9 @@ init_timezone(PyObject *m)
      */
 #ifdef HAVE_DECL_TZNAME
     PyObject *otz0, *otz1;
+#if !defined(MS_WINDOWS) || defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
     tzset();
+#endif
     PyModule_AddIntConstant(m, "timezone", _Py_timezone);
 #ifdef HAVE_ALTZONE
     PyModule_AddIntConstant(m, "altzone", altzone);
@@ -1784,11 +1793,9 @@ init_timezone(PyObject *m)
         return -1;
     }
 #endif // MS_WINDOWS
-    PyObject *tzname_obj = Py_BuildValue("(NN)", otz0, otz1);
-    if (tzname_obj == NULL) {
+    if (PyModule_Add(m, "tzname", Py_BuildValue("(NN)", otz0, otz1)) < 0) {
         return -1;
     }
-    PyModule_AddObject(m, "tzname", tzname_obj);
 #else // !HAVE_DECL_TZNAME
     static const time_t YEAR = (365 * 24 + 6) * 3600;
     time_t t;
@@ -1831,10 +1838,9 @@ init_timezone(PyObject *m)
         PyModule_AddIntConstant(m, "daylight", janzone != julyzone);
         tzname_obj = Py_BuildValue("(zz)", janname, julyname);
     }
-    if (tzname_obj == NULL) {
+    if (PyModule_Add(m, "tzname", tzname_obj) < 0) {
         return -1;
     }
-    PyModule_AddObject(m, "tzname", tzname_obj);
 #endif // !HAVE_DECL_TZNAME
 
     if (PyErr_Occurred()) {
@@ -2101,6 +2107,7 @@ time_module_free(void *module)
 
 static struct PyModuleDef_Slot time_slots[] = {
     {Py_mod_exec, time_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

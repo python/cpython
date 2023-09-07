@@ -166,6 +166,11 @@ class CMathTests(unittest.TestCase):
         self.assertEqual(cmath.nan.imag, 0.0)
         self.assertEqual(cmath.nanj.real, 0.0)
         self.assertTrue(math.isnan(cmath.nanj.imag))
+        # Also check that the sign of all of these is positive:
+        self.assertEqual(math.copysign(1., cmath.nan.real), 1.)
+        self.assertEqual(math.copysign(1., cmath.nan.imag), 1.)
+        self.assertEqual(math.copysign(1., cmath.nanj.real), 1.)
+        self.assertEqual(math.copysign(1., cmath.nanj.imag), 1.)
 
         # Check consistency with reprs.
         self.assertEqual(repr(cmath.inf), "inf")
@@ -606,6 +611,14 @@ class IsCloseTests(test_math.IsCloseTests):
 
         self.assertIsClose(0.001-0.001j, 0.001+0.001j, abs_tol=2e-03)
         self.assertIsNotClose(0.001-0.001j, 0.001+0.001j, abs_tol=1e-03)
+
+    def test_complex_special(self):
+        self.assertIsNotClose(INF, INF*1j)
+        self.assertIsNotClose(INF*1j, INF)
+        self.assertIsNotClose(INF, -INF)
+        self.assertIsNotClose(-INF, INF)
+        self.assertIsNotClose(0, INF)
+        self.assertIsNotClose(0, INF*1j)
 
 
 if __name__ == "__main__":

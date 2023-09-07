@@ -756,7 +756,7 @@ API that perform ASCII-only conversions, ignoring the locale setting:
   :c:expr:`double` to an ASCII string.
 
 The code for these functions came from the GLib library
-(https://developer.gnome.org/glib/stable/), whose developers kindly
+(https://developer-old.gnome.org/glib/2.26/), whose developers kindly
 relicensed the relevant functions and donated them to the Python Software
 Foundation.  The :mod:`locale` module  can now change the numeric locale,
 letting extensions such as GTK+  produce the correct results.
@@ -1191,7 +1191,7 @@ complete list of changes, or look through the CVS logs for all the details.
   effect is to make :file:`.pyc` files significantly smaller. (Contributed by
   Martin von Löwis.)
 
-* The :mod:`nntplib` module's :class:`NNTP` class gained :meth:`description` and
+* The :mod:`!nntplib` module's :class:`NNTP` class gained :meth:`description` and
   :meth:`descriptions` methods to retrieve  newsgroup descriptions for a single
   group or for a range of groups. (Contributed by Jürgen A. Erhard.)
 
@@ -1468,7 +1468,7 @@ Some of the changes to Python's build process and to the C API are:
   *X* is a NaN.   (Contributed by Tim Peters.)
 
 * C code can avoid unnecessary locking by using the new
-  :c:func:`PyEval_ThreadsInitialized` function to tell  if any thread operations
+  :c:func:`!PyEval_ThreadsInitialized` function to tell  if any thread operations
   have been performed.  If this function  returns false, no lock operations are
   needed. (Contributed by Nick Coghlan.)
 
@@ -1476,7 +1476,7 @@ Some of the changes to Python's build process and to the C API are:
   :c:func:`PyArg_ParseTupleAndKeywords` but takes a  :c:type:`va_list` instead of a
   number of arguments. (Contributed by Greg Chapman.)
 
-* A new method flag, :const:`METH_COEXISTS`, allows a function defined in slots
+* A new method flag, :c:macro:`METH_COEXIST`, allows a function defined in slots
   to co-exist with a :c:type:`PyCFunction` having the same name.  This can halve
   the access time for a method such as :meth:`set.__contains__`.  (Contributed by
   Raymond Hettinger.)
@@ -1491,7 +1491,7 @@ Some of the changes to Python's build process and to the C API are:
   though that processor architecture doesn't call that register "the TSC
   register".  (Contributed by Jeremy Hylton.)
 
-* The :c:type:`tracebackobject` type has been renamed to
+* The :c:type:`!tracebackobject` type has been renamed to
   :c:type:`PyTracebackObject`.
 
 .. ======================================================================

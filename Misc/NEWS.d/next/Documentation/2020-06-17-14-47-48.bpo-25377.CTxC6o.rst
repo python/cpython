@@ -1,1 +1,0 @@
-Clarify use of octal format of mode argument in help(os.chmod) as well as help(os.fchmod)

@@ -54,8 +54,8 @@ commercial use, to sell copies of Python in source or binary form (modified or
 unmodified), or to sell products that incorporate Python in some form.  We would
 still like to know about all commercial use of Python, of course.
 
-See `the PSF license page <https://www.python.org/psf/license/>`_ to find further
-explanations and a link to the full text of the license.
+See `the license page <https://docs.python.org/3/license.html>`_ to find further
+explanations and the full text of the PSF License.
 
 The Python logo is trademarked, and in certain cases permission is required to
 use it.  Consult `the Trademark Usage Policy
@@ -135,7 +135,7 @@ Python versions are numbered "A.B.C" or "A.B":
 
 See :pep:`6` for more information about bugfix releases.
 
-Not all releases are bugfix releases.  In the run-up to a new major release, a
+Not all releases are bugfix releases.  In the run-up to a new feature release, a
 series of development releases are made, denoted as alpha, beta, or release
 candidate.  Alphas are early releases in which interfaces aren't yet finalized;
 it's not unexpected to see an interface change between two alpha releases.
@@ -215,7 +215,7 @@ every day, and Usenet readers are often more able to cope with this volume.
 Announcements of new software releases and events can be found in
 comp.lang.python.announce, a low-traffic moderated list that receives about five
 postings per day.  It's available as `the python-announce mailing list
-<https://mail.python.org/mailman/listinfo/python-announce-list>`_.
+<https://mail.python.org/mailman3/lists/python-announce-list.python.org/>`_.
 
 More info about other mailing lists and newsgroups
 can be found at https://www.python.org/community/lists/.
@@ -248,8 +248,8 @@ Are there any published articles about Python that I can reference?
 
 It's probably best to cite your favorite book about Python.
 
-The very first article about Python was written in 1991 and is now quite
-outdated.
+The `very first article <https://ir.cwi.nl/pub/18204>`_ about Python was
+written in 1991 and is now quite outdated.
 
     Guido van Rossum and Jelke de Boer, "Interactively Testing Remote Servers
     Using the Python Programming Language", CWI Quarterly, Volume 4, Issue 4
@@ -297,9 +297,9 @@ How stable is Python?
 
 Very stable.  New, stable releases have been coming out roughly every 6 to 18
 months since 1991, and this seems likely to continue.  As of version 3.9,
-Python will have a major new release every 12 months (:pep:`602`).
+Python will have a new feature release every 12 months (:pep:`602`).
 
-The developers issue "bugfix" releases of older versions, so the stability of
+The developers issue bugfix releases of older versions, so the stability of
 existing releases gradually improves.  Bugfix releases, indicated by a third
 component of the version number (e.g. 3.5.3, 3.6.2), are managed for stability;
 only fixes for known problems are included in a bugfix release, and it's
@@ -352,7 +352,7 @@ titled "Python X.Y Release Schedule", where X.Y is a version that hasn't been
 publicly released yet.
 
 New development is discussed on `the python-dev mailing list
-<https://mail.python.org/mailman/listinfo/python-dev/>`_.
+<https://mail.python.org/mailman3/lists/python-dev.python.org/>`_.
 
 
 Is it reasonable to propose incompatible changes to Python?

@@ -443,7 +443,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             else:
                 task = self._task_factory(self, coro, context=context)
 
-            tasks._set_task_name(task, name)
+            task.set_name(name)
 
         return task
 
@@ -727,7 +727,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         always relative to the current time.
 
         Each callback will be called exactly once.  If two callbacks
-        are scheduled for exactly the same time, it undefined which
+        are scheduled for exactly the same time, it is undefined which
         will be called first.
 
         Any positional arguments after the callback will be passed to
@@ -1857,12 +1857,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                                  exc_info=True)
 
     def _add_callback(self, handle):
-        """Add a Handle to _scheduled (TimerHandle) or _ready."""
-        assert isinstance(handle, events.Handle), 'A Handle is required here'
-        if handle._cancelled:
-            return
-        assert not isinstance(handle, events.TimerHandle)
-        self._ready.append(handle)
+        """Add a Handle to _ready."""
+        if not handle._cancelled:
+            self._ready.append(handle)
 
     def _add_callback_signalsafe(self, handle):
         """Like _add_callback() but called from a signal handler."""

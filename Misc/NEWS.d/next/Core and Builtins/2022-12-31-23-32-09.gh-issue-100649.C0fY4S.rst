@@ -1,1 +1,0 @@
-Update the native_thread_id field of PyThreadState after fork.

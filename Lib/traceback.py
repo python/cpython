@@ -179,20 +179,24 @@ def _safe_string(value, what, func=str):
 # --
 
 def print_exc(limit=None, file=None, chain=True):
-    """Shorthand for 'print_exception(*sys.exc_info(), limit, file)'."""
-    print_exception(*sys.exc_info(), limit=limit, file=file, chain=chain)
+    """Shorthand for 'print_exception(sys.exception(), limit, file, chain)'."""
+    print_exception(sys.exception(), limit=limit, file=file, chain=chain)
 
 def format_exc(limit=None, chain=True):
     """Like print_exc() but return a string."""
-    return "".join(format_exception(*sys.exc_info(), limit=limit, chain=chain))
+    return "".join(format_exception(sys.exception(), limit=limit, chain=chain))
 
 def print_last(limit=None, file=None, chain=True):
-    """This is a shorthand for 'print_exception(sys.last_type,
-    sys.last_value, sys.last_traceback, limit, file)'."""
-    if not hasattr(sys, "last_type"):
+    """This is a shorthand for 'print_exception(sys.last_exc, limit, file, chain)'."""
+    if not hasattr(sys, "last_exc") and not hasattr(sys, "last_type"):
         raise ValueError("no last exception")
-    print_exception(sys.last_type, sys.last_value, sys.last_traceback,
-                    limit, file, chain)
+
+    if hasattr(sys, "last_exc"):
+        print_exception(sys.last_exc, limit, file, chain)
+    else:
+        print_exception(sys.last_type, sys.last_value, sys.last_traceback,
+                        limit, file, chain)
+
 
 #
 # Printing and Extracting Stacks.
@@ -654,6 +658,8 @@ class TracebackException:
 
     - :attr:`__cause__` A TracebackException of the original *__cause__*.
     - :attr:`__context__` A TracebackException of the original *__context__*.
+    - :attr:`exceptions` For exception groups - a list of TracebackException
+      instances for the nested *exceptions*.  ``None`` for other exceptions.
     - :attr:`__suppress_context__` The *__suppress_context__* value from the
       original exception.
     - :attr:`stack` A `StackSummary` representing the traceback.
@@ -668,8 +674,8 @@ class TracebackException:
       occurred.
     - :attr:`offset` For syntax errors - the offset into the text where the
       error occurred.
-    - :attr:`end_offset` For syntax errors - the offset into the text where the
-      error occurred. Can be `None` if not present.
+    - :attr:`end_offset` For syntax errors - the end offset into the text where
+      the error occurred. Can be `None` if not present.
     - :attr:`msg` For syntax errors - the compiler error message.
     """
 
@@ -820,7 +826,7 @@ class TracebackException:
     def __str__(self):
         return self._str
 
-    def format_exception_only(self):
+    def format_exception_only(self, *, show_group=False, _depth=0):
         """Format the exception part of the traceback.
 
         The return value is a generator of strings, each ending in a newline.
@@ -833,8 +839,10 @@ class TracebackException:
         The message indicating which exception occurred is always the last
         string in the output.
         """
+
+        indent = 3 * _depth * ' '
         if self.exc_type is None:
-            yield _format_final_exc_line(None, self._str)
+            yield indent + _format_final_exc_line(None, self._str)
             return
 
         stype = self.exc_type.__qualname__
@@ -845,15 +853,23 @@ class TracebackException:
             stype = smod + '.' + stype
 
         if not issubclass(self.exc_type, SyntaxError):
-            yield _format_final_exc_line(stype, self._str)
+            yield indent + _format_final_exc_line(stype, self._str)
         else:
-            yield from self._format_syntax_error(stype)
-        if isinstance(self.__notes__, collections.abc.Sequence):
+            yield from [indent + l for l in self._format_syntax_error(stype)]
+
+        if (
+            isinstance(self.__notes__, collections.abc.Sequence)
+            and not isinstance(self.__notes__, (str, bytes))
+        ):
             for note in self.__notes__:
                 note = _safe_string(note, 'note')
-                yield from [l + '\n' for l in note.split('\n')]
+                yield from [indent + l + '\n' for l in note.split('\n')]
         elif self.__notes__ is not None:
-            yield _safe_string(self.__notes__, '__notes__', func=repr)
+            yield indent + "{}\n".format(_safe_string(self.__notes__, '__notes__', func=repr))
+
+        if self.exceptions and show_group:
+            for ex in self.exceptions:
+                yield from ex.format_exception_only(show_group=show_group, _depth=_depth+1)
 
     def _format_syntax_error(self, stype):
         """Format SyntaxError exceptions (internal helper)."""

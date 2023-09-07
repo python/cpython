@@ -574,6 +574,8 @@ Retrieving source code
    object and the line number indicates where in the original source file the first
    line of code was found.  An :exc:`OSError` is raised if the source code cannot
    be retrieved.
+   A :exc:`TypeError` is raised if the object is a built-in module, class, or
+   function.
 
    .. versionchanged:: 3.3
       :exc:`OSError` is raised instead of :exc:`IOError`, now an alias of the
@@ -586,6 +588,8 @@ Retrieving source code
    class, method, function, traceback, frame, or code object.  The source code is
    returned as a single string.  An :exc:`OSError` is raised if the source code
    cannot be retrieved.
+   A :exc:`TypeError` is raised if the object is a built-in module, class, or
+   function.
 
    .. versionchanged:: 3.3
       :exc:`OSError` is raised instead of :exc:`IOError`, now an alias of the
@@ -685,11 +689,11 @@ function.
    The optional *return_annotation* argument, can be an arbitrary Python object,
    is the "return" annotation of the callable.
 
-   Signature objects are *immutable*.  Use :meth:`Signature.replace` to make a
-   modified copy.
+   Signature objects are *immutable*.  Use :meth:`Signature.replace` or
+   :func:`copy.replace` to make a modified copy.
 
    .. versionchanged:: 3.5
-      Signature objects are picklable and hashable.
+      Signature objects are picklable and :term:`hashable`.
 
    .. attribute:: Signature.empty
 
@@ -726,7 +730,7 @@ function.
 
    .. method:: Signature.replace(*[, parameters][, return_annotation])
 
-      Create a new Signature instance based on the instance replace was invoked
+      Create a new Signature instance based on the instance :meth:`replace` was invoked
       on.  It is possible to pass different ``parameters`` and/or
       ``return_annotation`` to override the corresponding properties of the base
       signature.  To remove return_annotation from the copied Signature, pass in
@@ -741,6 +745,9 @@ function.
          >>> new_sig = sig.replace(return_annotation="new return anno")
          >>> str(new_sig)
          "(a, b) -> 'new return anno'"
+
+      Signature objects are also supported by generic function
+      :func:`copy.replace`.
 
    .. classmethod:: Signature.from_callable(obj, *, follow_wrapped=True, globalns=None, localns=None)
 
@@ -765,10 +772,10 @@ function.
 .. class:: Parameter(name, kind, *, default=Parameter.empty, annotation=Parameter.empty)
 
    Parameter objects are *immutable*.  Instead of modifying a Parameter object,
-   you can use :meth:`Parameter.replace` to create a modified copy.
+   you can use :meth:`Parameter.replace` or :func:`copy.replace` to create a modified copy.
 
    .. versionchanged:: 3.5
-      Parameter objects are picklable and hashable.
+      Parameter objects are picklable and :term:`hashable`.
 
    .. attribute:: Parameter.empty
 
@@ -802,8 +809,9 @@ function.
 
    .. attribute:: Parameter.kind
 
-      Describes how argument values are bound to the parameter.  Possible values
-      (accessible via :class:`Parameter`, like ``Parameter.KEYWORD_ONLY``):
+      Describes how argument values are bound to the parameter.  The possible
+      values are accessible via :class:`Parameter` (like ``Parameter.KEYWORD_ONLY``),
+      and support comparison and ordering, in the following order:
 
       .. tabularcolumns:: |l|L|
 
@@ -886,6 +894,8 @@ function.
 
          >>> str(param.replace(default=Parameter.empty, annotation='spam'))
          "foo:'spam'"
+
+      Parameter objects are also supported by generic function :func:`copy.replace`.
 
    .. versionchanged:: 3.4
       In Python 3.3 Parameter objects were allowed to have ``name`` set
@@ -1439,8 +1449,8 @@ code execution::
            pass
 
 
-Current State of Generators and Coroutines
-------------------------------------------
+Current State of Generators, Coroutines, and Asynchronous Generators
+--------------------------------------------------------------------
 
 When implementing coroutine schedulers and for other advanced uses of
 generators, it is useful to determine whether a generator is currently
@@ -1475,6 +1485,22 @@ generator to be determined easily.
 
    .. versionadded:: 3.5
 
+.. function:: getasyncgenstate(agen)
+
+   Get current state of an asynchronous generator object.  The function is
+   intended to be used with asynchronous iterator objects created by
+   :keyword:`async def` functions which use the :keyword:`yield` statement,
+   but will accept any asynchronous generator-like object that has
+   ``ag_running`` and ``ag_frame`` attributes.
+
+   Possible states are:
+    * AGEN_CREATED: Waiting to start execution.
+    * AGEN_RUNNING: Currently being executed by the interpreter.
+    * AGEN_SUSPENDED: Currently suspended at a yield expression.
+    * AGEN_CLOSED: Execution has completed.
+
+   .. versionadded:: 3.12
+
 The current internal state of the generator can also be queried. This is
 mostly useful for testing purposes, to ensure that internal state is being
 updated as expected:
@@ -1505,6 +1531,14 @@ updated as expected:
    works for coroutine objects created by :keyword:`async def` functions.
 
    .. versionadded:: 3.5
+
+.. function:: getasyncgenlocals(agen)
+
+   This function is analogous to :func:`~inspect.getgeneratorlocals`, but
+   works for asynchronous generator objects created by :keyword:`async def`
+   functions which use the :keyword:`yield` statement.
+
+   .. versionadded:: 3.12
 
 
 .. _inspect-module-co-flags:
@@ -1573,6 +1607,39 @@ the following flags:
    It's recommended to use public APIs from the :mod:`inspect` module
    for any introspection needs.
 
+
+Buffer flags
+------------
+
+.. class:: BufferFlags
+
+   This is an :class:`enum.IntFlag` that represents the flags that
+   can be passed to the :meth:`~object.__buffer__` method of objects
+   implementing the :ref:`buffer protocol <bufferobjects>`.
+
+   The meaning of the flags is explained at :ref:`buffer-request-types`.
+
+   .. attribute:: BufferFlags.SIMPLE
+   .. attribute:: BufferFlags.WRITABLE
+   .. attribute:: BufferFlags.FORMAT
+   .. attribute:: BufferFlags.ND
+   .. attribute:: BufferFlags.STRIDES
+   .. attribute:: BufferFlags.C_CONTIGUOUS
+   .. attribute:: BufferFlags.F_CONTIGUOUS
+   .. attribute:: BufferFlags.ANY_CONTIGUOUS
+   .. attribute:: BufferFlags.INDIRECT
+   .. attribute:: BufferFlags.CONTIG
+   .. attribute:: BufferFlags.CONTIG_RO
+   .. attribute:: BufferFlags.STRIDED
+   .. attribute:: BufferFlags.STRIDED_RO
+   .. attribute:: BufferFlags.RECORDS
+   .. attribute:: BufferFlags.RECORDS_RO
+   .. attribute:: BufferFlags.FULL
+   .. attribute:: BufferFlags.FULL_RO
+   .. attribute:: BufferFlags.READ
+   .. attribute:: BufferFlags.WRITE
+
+   .. versionadded:: 3.12
 
 .. _inspect-module-cli:
 
