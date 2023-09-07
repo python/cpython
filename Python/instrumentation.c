@@ -2,6 +2,7 @@
 
 #include "opcode_ids.h"
 
+#include "pycore_bitutils.h"      // _Py_popcount32
 #include "pycore_call.h"
 #include "pycore_frame.h"
 #include "pycore_interp.h"
