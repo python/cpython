@@ -176,6 +176,7 @@
     <ClInclude Include="..\Include\cpython\pylifecycle.h" />
     <ClInclude Include="..\Include\cpython\pymem.h" />
     <ClInclude Include="..\Include\cpython\pystate.h" />
+    <ClInclude Include="..\Include\cpython\pystats.h" />
     <ClInclude Include="..\Include\cpython\pythonrun.h" />
     <ClInclude Include="..\Include\cpython\pythread.h" />
     <ClInclude Include="..\Include\cpython\setobject.h" />
@@ -261,6 +262,7 @@
     <ClInclude Include="..\Include\internal\pycore_pymem.h" />
     <ClInclude Include="..\Include\internal\pycore_pymem_init.h" />
     <ClInclude Include="..\Include\internal\pycore_pystate.h" />
+    <ClInclude Include="..\Include\internal\pycore_pystats.h" />
     <ClInclude Include="..\Include\internal\pycore_pythonrun.h" />
     <ClInclude Include="..\Include\internal\pycore_pythread.h" />
     <ClInclude Include="..\Include\internal\pycore_range.h" />

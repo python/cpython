@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "pycore_ast.h"           // identifier, stmt_ty
+#include "pycore_ast.h"           // stmt_ty
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntryObject

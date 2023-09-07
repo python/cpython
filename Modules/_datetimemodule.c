@@ -3590,6 +3590,8 @@ static PyMethodDef date_methods[] = {
     {"replace",     _PyCFunction_CAST(date_replace),      METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return date with new specified fields.")},
 
+    {"__replace__", _PyCFunction_CAST(date_replace),      METH_VARARGS | METH_KEYWORDS},
+
     {"__reduce__", (PyCFunction)date_reduce,        METH_NOARGS,
      PyDoc_STR("__reduce__() -> (cls, state)")},
 
@@ -4718,6 +4720,8 @@ static PyMethodDef time_methods[] = {
 
     {"replace",     _PyCFunction_CAST(time_replace),          METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return time with new specified fields.")},
+
+    {"__replace__", _PyCFunction_CAST(time_replace),          METH_VARARGS | METH_KEYWORDS},
 
      {"fromisoformat", (PyCFunction)time_fromisoformat, METH_O | METH_CLASS,
      PyDoc_STR("string -> time from a string in ISO 8601 format")},
@@ -6578,6 +6582,8 @@ static PyMethodDef datetime_methods[] = {
 
     {"replace",     _PyCFunction_CAST(datetime_replace),      METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return datetime with new specified fields.")},
+
+    {"__replace__", _PyCFunction_CAST(datetime_replace),      METH_VARARGS | METH_KEYWORDS},
 
     {"astimezone",  _PyCFunction_CAST(datetime_astimezone), METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("tz -> convert to local time in new timezone tz\n")},
