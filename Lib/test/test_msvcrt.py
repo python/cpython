@@ -60,8 +60,8 @@ class TestConsoleIO(unittest.TestCase):
         self.assertEqual(msvcrt.getch(), b'c')
 
     def test_getwch(self):
-        msvcrt.ungetwch('c')
-        self.assertEqual(msvcrt.getwch(), 'c')
+        msvcrt.ungetwch(c)
+        self.assertEqual(msvcrt.getwch(), c)
 
     def test_getche(self):
         msvcrt.ungetch(b'c')
