@@ -160,9 +160,12 @@ add_new_type(PyObject *mod, PyType_Spec *spec, crossinterpdatafunc shared)
     return cls;
 }
 
+#define XID_IGNORE_EXC 1
+
 static int
-_release_xid_data(_PyCrossInterpreterData *data, int ignoreexc)
+_release_xid_data(_PyCrossInterpreterData *data, int flags)
 {
+    int ignoreexc = flags & XID_IGNORE_EXC;
     PyObject *exc;
     if (ignoreexc) {
         exc = PyErr_GetRaisedException();
@@ -366,7 +369,7 @@ static void
 _channelitem_clear(_channelitem *item)
 {
     if (item->data != NULL) {
-        (void)_release_xid_data(item->data, 1);
+        (void)_release_xid_data(item->data, XID_IGNORE_EXC);
         // It was allocated in _channel_send().
         GLOBAL_FREE(item->data);
         item->data = NULL;
@@ -1439,7 +1442,7 @@ _channel_recv(_channels *channels, int64_t id, PyObject **res)
     PyObject *obj = _PyCrossInterpreterData_NewObject(data);
     if (obj == NULL) {
         assert(PyErr_Occurred());
-        (void)_release_xid_data(data, 1);
+        (void)_release_xid_data(data, XID_IGNORE_EXC);
         // It was allocated in _channel_send().
         GLOBAL_FREE(data);
         return -1;
