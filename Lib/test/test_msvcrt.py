@@ -9,7 +9,9 @@ if sys.platform != "win32":
     raise unittest.SkipTest("windows related tests")
 
 import _winapi
-import msvcrt
+import msvcrt;
+
+from _testconsole import write_input
 
 
 class TestFileOperations(unittest.TestCase):
@@ -50,6 +52,8 @@ class TestFileOperations(unittest.TestCase):
 
 
 c = '\u5b57'  # unicode CJK char (meaning 'character') for 'wide-char' tests 
+c_encoded = b'\x57\x5b' # utf-16-le (which windows internally used) encoded char for this CJK char
+
 
 class TestConsoleIO(unittest.TestCase):
     def test_kbhit(self):
@@ -60,16 +64,28 @@ class TestConsoleIO(unittest.TestCase):
         self.assertEqual(msvcrt.getch(), b'c')
 
     def test_getwch(self):
-        msvcrt.ungetwch(c)
-        self.assertEqual(msvcrt.getwch(), c)
+        stdin = open('CONIN$', 'r')
+        old_stdin = sys.stdin
+        try:
+            sys.stdin = stdin
+            write_input(stdin.buffer.raw, c_encoded)
+            self.assertEqual(msvcrt.getwch(), c)
+        finally:
+            sys.stdin = old_stdin
 
     def test_getche(self):
         msvcrt.ungetch(b'c')
         self.assertEqual(msvcrt.getche(), b'c')
 
     def test_getwche(self):
-        msvcrt.ungetwch(c)
-        self.assertEqual(msvcrt.getwche(), c)
+        stdin = open('CONIN$', 'r')
+        old_stdin = sys.stdin
+        try:
+            sys.stdin = stdin
+            write_input(stdin.buffer.raw, c_encoded)
+            self.assertEqual(msvcrt.getwche(), c)
+        finally:
+            sys.stdin = old_stdin
 
     def test_putch(self):
         msvcrt.putch(b'c')
