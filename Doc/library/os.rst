@@ -3853,7 +3853,7 @@ features:
    If *initial* is less than zero, it raises :class:`OSError` with ``errno``
    set to :const:`errno.EINVAL`
 
-   By default timer will fire when *initial* seconds have elapsed.
+   By default the timer will fire when *initial* seconds have elapsed.
    (If *initial* is zero, timer will fire immediately.)
 
    However, if the :const:`TFD_TIMER_ABSTIME` flag is set,
