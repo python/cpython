@@ -82,6 +82,8 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
             return 0;
         case RESUME:
             return 0;
+        case RESUME_CHECK:
+            return 0;
         case INSTRUMENTED_RESUME:
             return 0;
         case LOAD_CLOSURE:
@@ -613,6 +615,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
         case NOP:
             return 0;
         case RESUME:
+            return 0;
+        case RESUME_CHECK:
             return 0;
         case INSTRUMENTED_RESUME:
             return 0;
@@ -1207,6 +1211,7 @@ extern const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SI
 const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [NOP] = { true, INSTR_FMT_IX, 0 },
     [RESUME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG },
+    [RESUME_CHECK] = { true, INSTR_FMT_IX, HAS_DEOPT_FLAG },
     [INSTRUMENTED_RESUME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG },
     [LOAD_CLOSURE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_LOCAL_FLAG },
     [LOAD_FAST_CHECK] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_ERROR_FLAG },
@@ -1477,7 +1482,7 @@ extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACR
 #ifdef NEED_OPCODE_METADATA
 const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE] = {
     [NOP] = { .nuops = 1, .uops = { { NOP, 0, 0 } } },
-    [RESUME] = { .nuops = 1, .uops = { { RESUME, 0, 0 } } },
+    [RESUME_CHECK] = { .nuops = 1, .uops = { { RESUME_CHECK, 0, 0 } } },
     [LOAD_FAST_CHECK] = { .nuops = 1, .uops = { { LOAD_FAST_CHECK, 0, 0 } } },
     [LOAD_FAST] = { .nuops = 1, .uops = { { LOAD_FAST, 0, 0 } } },
     [LOAD_FAST_AND_CLEAR] = { .nuops = 1, .uops = { { LOAD_FAST_AND_CLEAR, 0, 0 } } },
@@ -1716,6 +1721,7 @@ const char *const _PyOpcode_OpName[268] = {
     [POP_TOP] = "POP_TOP",
     [PUSH_EXC_INFO] = "PUSH_EXC_INFO",
     [PUSH_NULL] = "PUSH_NULL",
+    [RESUME_CHECK] = "RESUME_CHECK",
     [RETURN_GENERATOR] = "RETURN_GENERATOR",
     [RETURN_VALUE] = "RETURN_VALUE",
     [SETUP_ANNOTATIONS] = "SETUP_ANNOTATIONS",
@@ -2077,6 +2083,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [RERAISE] = RERAISE,
     [RESERVED] = RESERVED,
     [RESUME] = RESUME,
+    [RESUME_CHECK] = RESUME,
     [RETURN_CONST] = RETURN_CONST,
     [RETURN_GENERATOR] = RETURN_GENERATOR,
     [RETURN_VALUE] = RETURN_VALUE,
@@ -2122,7 +2129,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif // NEED_OPCODE_METADATA
 
 #define EXTRA_CASES \
-    case 188: \
     case 189: \
     case 190: \
     case 191: \
