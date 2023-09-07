@@ -37,6 +37,7 @@ FORBIDDEN_NAMES_IN_UOPS = (
     "import_from",
     "import_name",
     "_PyObject_CallNoArgs",  # Proxy for BEFORE_WITH
+    "TIER_ONE_ONLY",
 )
 
 

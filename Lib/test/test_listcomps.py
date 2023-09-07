@@ -596,6 +596,13 @@ class ListComprehensionTest(unittest.TestCase):
         """
         self._check_in_scopes(code, {"value": [1, None]})
 
+    def test_frame_locals(self):
+        code = """
+            val = [sys._getframe().f_locals for a in [0]][0]["a"]
+        """
+        import sys
+        self._check_in_scopes(code, {"val": 0}, ns={"sys": sys})
+
 
 __test__ = {'doctests' : doctests}
 
