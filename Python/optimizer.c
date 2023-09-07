@@ -169,6 +169,7 @@ _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNI
     if (err <= 0) {
         assert(executor == NULL);
         if (err < 0) {
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             return NULL;
         }
         goto jump_to_destination;

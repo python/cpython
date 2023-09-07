@@ -1090,8 +1090,7 @@ def requires_limited_api(test):
         import _testcapi
     except ImportError:
         return unittest.skip('needs _testcapi module')(test)
-    return unittest.skipUnless(
-        _testcapi.LIMITED_API_AVAILABLE, 'needs Limited API support')(test)
+    return test
 
 def requires_specialization(test):
     return unittest.skipUnless(

@@ -125,6 +125,7 @@ consts: ('None',)
 
 """
 
+import copy
 import inspect
 import sys
 import threading
@@ -280,8 +281,14 @@ class CodeTest(unittest.TestCase):
             with self.subTest(attr=attr, value=value):
                 new_code = code.replace(**{attr: value})
                 self.assertEqual(getattr(new_code, attr), value)
+                new_code = copy.replace(code, **{attr: value})
+                self.assertEqual(getattr(new_code, attr), value)
 
         new_code = code.replace(co_varnames=code2.co_varnames,
+                                co_nlocals=code2.co_nlocals)
+        self.assertEqual(new_code.co_varnames, code2.co_varnames)
+        self.assertEqual(new_code.co_nlocals, code2.co_nlocals)
+        new_code = copy.replace(code, co_varnames=code2.co_varnames,
                                 co_nlocals=code2.co_nlocals)
         self.assertEqual(new_code.co_varnames, code2.co_varnames)
         self.assertEqual(new_code.co_nlocals, code2.co_nlocals)

@@ -282,7 +282,7 @@ the operations, see :ref:`operator-summary`):
 +---------------------+---------------------------------+---------+--------------------+
 | ``x / y``           | quotient of *x* and *y*         |         |                    |
 +---------------------+---------------------------------+---------+--------------------+
-| ``x // y``          | floored quotient of *x* and     | \(1)    |                    |
+| ``x // y``          | floored quotient of *x* and     | \(1)\(2)|                    |
 |                     | *y*                             |         |                    |
 +---------------------+---------------------------------+---------+--------------------+
 | ``x % y``           | remainder of ``x / y``          | \(2)    |                    |
@@ -319,8 +319,10 @@ the operations, see :ref:`operator-summary`):
 Notes:
 
 (1)
-   Also referred to as integer division.  The resultant value is a whole
-   integer, though the result's type is not necessarily int.  The result is
+   Also referred to as integer division.  For operands of type :class:`int`,
+   the result has type :class:`int`.  For operands of type :class:`float`,
+   the result has type :class:`float`.  In general, the result is a whole
+   integer, though the result's type is not necessarily :class:`int`.  The result is
    always rounded towards minus infinity: ``1//2`` is ``0``, ``(-1)//2`` is
    ``-1``, ``1//(-2)`` is ``-1``, and ``(-1)//(-2)`` is ``0``.
 
