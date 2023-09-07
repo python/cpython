@@ -16,6 +16,10 @@ extern PyObject* _PyErr_GetHandledException(PyThreadState *);
 extern void _PyErr_SetHandledException(PyThreadState *, PyObject *);
 extern void _PyErr_GetExcInfo(PyThreadState *, PyObject **, PyObject **, PyObject **);
 
+// Export for '_testinternalcapi' shared extension
+PyAPI_FUNC(void) _PyErr_SetKeyError(PyObject *);
+
+
 // Like PyErr_Format(), but saves current exception as __context__ and
 // __cause__.
 // Export for '_sqlite3' shared extension.
@@ -150,13 +154,26 @@ extern PyObject* _PyExc_PrepReraiseStar(
 extern int _PyErr_CheckSignalsTstate(PyThreadState *tstate);
 
 extern void _Py_DumpExtensionModules(int fd, PyInterpreterState *interp);
-
+extern PyObject* _Py_CalculateSuggestions(PyObject *dir, PyObject *name);
 extern PyObject* _Py_Offer_Suggestions(PyObject* exception);
+
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(Py_ssize_t) _Py_UTF8_Edit_Cost(PyObject *str_a, PyObject *str_b,
                                           Py_ssize_t max_cost);
 
 void _PyErr_FormatNote(const char *format, ...);
+
+/* Context manipulation (PEP 3134) */
+
+Py_DEPRECATED(3.12) extern void _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
+
+// Export for '_zoneinfo' shared extension
+PyAPI_FUNC(void) _PyErr_ChainExceptions1(PyObject *);
+
+// Export for '_lsprof' shared extension
+PyAPI_FUNC(void) _PyErr_WriteUnraisableMsg(
+    const char *err_msg,
+    PyObject *obj);
 
 #ifdef __cplusplus
 }

@@ -12,6 +12,7 @@
 #ifdef __VXWORKS__
 #  include "pycore_bitutils.h"    // _Py_popcount32()
 #endif
+#include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_ReInitThreads()
 #include "pycore_fileutils.h"     // _Py_closerange()
@@ -56,6 +57,17 @@
 
 #include <stdio.h>                // ctermid()
 #include <stdlib.h>               // system()
+#ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>           // futimes()
+#endif
+
+
+// SGI apparently needs this forward declaration
+#ifdef HAVE__GETPTY
+#  include <sys/types.h>          // mode_t
+   extern char * _getpty(int *, int, mode_t, int);
+#endif
+
 
 /*
  * A number of APIs are available on macOS from a certain macOS version.
@@ -278,7 +290,7 @@ corresponding Unix manual entries for more information on calls.");
 #endif
 
 #ifdef HAVE_COPY_FILE_RANGE
-#  include <unistd.h>
+#  include <unistd.h>             // copy_file_range()
 #endif
 
 #if !defined(CPU_ALLOC) && defined(HAVE_SCHED_SETAFFINITY)
@@ -3876,9 +3888,10 @@ posix_getcwd(int use_bytes)
         return NULL;
     }
     if (!len) {
+        PyErr_SetFromWindowsErr(0);
         if (wbuf2 != wbuf)
             PyMem_RawFree(wbuf2);
-        return PyErr_SetFromWindowsErr(0);
+        return NULL;
     }
 
     PyObject *resobj = PyUnicode_FromWideChar(wbuf2, len);
@@ -3926,8 +3939,9 @@ posix_getcwd(int use_bytes)
         return PyErr_NoMemory();
     }
     if (cwd == NULL) {
+        posix_error();
         PyMem_RawFree(buf);
-        return posix_error();
+        return NULL;
     }
 
     PyObject *obj;
@@ -4139,8 +4153,8 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
         int error = GetLastError();
         if (error == ERROR_FILE_NOT_FOUND)
             goto exit;
-        Py_DECREF(list);
-        list = path_error(path);
+        path_error(path);
+        Py_CLEAR(list);
         goto exit;
     }
     do {
@@ -4153,12 +4167,12 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
                 Py_SETREF(v, PyUnicode_EncodeFSDefault(v));
             }
             if (v == NULL) {
-                Py_SETREF(list, NULL);
+                Py_CLEAR(list);
                 break;
             }
             if (PyList_Append(list, v) != 0) {
                 Py_DECREF(v);
-                Py_SETREF(list, NULL);
+                Py_CLEAR(list);
                 break;
             }
             Py_DECREF(v);
@@ -4169,8 +4183,8 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
         /* FindNextFile sets error to ERROR_NO_MORE_FILES if
            it got to the end of the directory. */
         if (!result && GetLastError() != ERROR_NO_MORE_FILES) {
-            Py_DECREF(list);
-            list = path_error(path);
+            path_error(path);
+            Py_CLEAR(list);
             goto exit;
         }
     } while (result == TRUE);
@@ -4179,8 +4193,8 @@ exit:
     if (hFindFile != INVALID_HANDLE_VALUE) {
         if (FindClose(hFindFile) == FALSE) {
             if (list != NULL) {
-                Py_DECREF(list);
-                list = path_error(path);
+                path_error(path);
+                Py_CLEAR(list);
             }
         }
     }
@@ -4242,7 +4256,8 @@ _posix_listdir(path_t *path, PyObject *list)
     }
 
     if (dirp == NULL) {
-        list = path_error(path);
+        path_error(path);
+        list = NULL;
 #ifdef HAVE_FDOPENDIR
         if (fd != -1) {
             Py_BEGIN_ALLOW_THREADS
@@ -4264,8 +4279,8 @@ _posix_listdir(path_t *path, PyObject *list)
             if (errno == 0) {
                 break;
             } else {
-                Py_DECREF(list);
-                list = path_error(path);
+                path_error(path);
+                Py_CLEAR(list);
                 goto exit;
             }
         }
@@ -5274,7 +5289,9 @@ os__path_normpath_impl(PyObject *module, PyObject *path)
     if (!buffer) {
         return NULL;
     }
-    PyObject *result = PyUnicode_FromWideChar(_Py_normpath(buffer, len), -1);
+    Py_ssize_t norm_len;
+    wchar_t *norm_path = _Py_normpath_and_size(buffer, len, &norm_len);
+    PyObject *result = PyUnicode_FromWideChar(norm_path, norm_len);
     PyMem_Free(buffer);
     return result;
 }
@@ -6606,8 +6623,9 @@ os_execv_impl(PyObject *module, path_t *path, PyObject *argv)
 
     /* If we get here it's definitely an error */
 
+    posix_error();
     free_string_array(argvlist, argc);
-    return posix_error();
+    return NULL;
 }
 
 
@@ -6819,7 +6837,7 @@ parse_posix_spawn_flags(PyObject *module, const char *func_name, PyObject *setpg
             goto fail;
         }
         if (py_schedpolicy != Py_None) {
-            int schedpolicy = _PyLong_AsInt(py_schedpolicy);
+            int schedpolicy = PyLong_AsInt(py_schedpolicy);
 
             if (schedpolicy == -1 && PyErr_Occurred()) {
                 goto fail;
@@ -6911,11 +6929,12 @@ parse_file_actions(PyObject *file_actions,
                 }
                 errno = posix_spawn_file_actions_addopen(file_actionsp,
                         fd, PyBytes_AS_STRING(path), oflag, (mode_t)mode);
-                Py_DECREF(path);
                 if (errno) {
                     posix_error();
+                    Py_DECREF(path);
                     goto fail;
                 }
+                Py_DECREF(path);
                 break;
             }
             case POSIX_SPAWN_CLOSE: {
@@ -7312,12 +7331,15 @@ os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv)
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
 
+    int saved_errno = errno;
     free_string_array(argvlist, argc);
 
-    if (spawnval == -1)
-        return posix_error();
-    else
-        return Py_BuildValue(_Py_PARSE_INTPTR, spawnval);
+    if (spawnval == -1) {
+        errno = saved_errno;
+        posix_error();
+        return NULL;
+    }
+    return Py_BuildValue(_Py_PARSE_INTPTR, spawnval);
 }
 
 /*[clinic input]
@@ -7635,6 +7657,7 @@ os_fork1_impl(PyObject *module)
     }
     PyOS_BeforeFork();
     pid = fork1();
+    int saved_errno = errno;
     if (pid == 0) {
         /* child: this clobbers and resets the import lock. */
         PyOS_AfterFork_Child();
@@ -7643,8 +7666,10 @@ os_fork1_impl(PyObject *module)
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
     }
-    if (pid == -1)
+    if (pid == -1) {
+        errno = saved_errno;
         return posix_error();
+    }
     return PyLong_FromPid(pid);
 }
 #endif /* HAVE_FORK1 */
@@ -7680,6 +7705,7 @@ os_fork_impl(PyObject *module)
     }
     PyOS_BeforeFork();
     pid = fork();
+    int saved_errno = errno;
     if (pid == 0) {
         /* child: this clobbers and resets the import lock. */
         PyOS_AfterFork_Child();
@@ -7688,8 +7714,10 @@ os_fork_impl(PyObject *module)
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
     }
-    if (pid == -1)
+    if (pid == -1) {
+        errno = saved_errno;
         return posix_error();
+    }
     return PyLong_FromPid(pid);
 }
 #endif /* HAVE_FORK */
@@ -8226,13 +8254,17 @@ os_openpty_impl(PyObject *module)
 
     /* change permission of slave */
     if (grantpt(master_fd) < 0) {
+        int saved_errno = errno;
         PyOS_setsig(SIGCHLD, sig_saved);
+        errno = saved_errno;
         goto posix_error;
     }
 
     /* unlock slave */
     if (unlockpt(master_fd) < 0) {
+        int saved_errno = errno;
         PyOS_setsig(SIGCHLD, sig_saved);
+        errno = saved_errno;
         goto posix_error;
     }
 
@@ -8596,8 +8628,9 @@ os_getgroups_impl(PyObject *module)
 
     n = getgroups(n, grouplist);
     if (n == -1) {
+        posix_error();
         PyMem_Free(grouplist);
-        return posix_error();
+        return NULL;
     }
 
     PyObject *result = PyList_New(n);
@@ -9164,8 +9197,9 @@ os_setgroups(PyObject *module, PyObject *groups)
     }
 
     if (setgroups(len, grouplist) < 0) {
+        posix_error();
         PyMem_Free(grouplist);
-        return posix_error();
+        return NULL;
     }
     PyMem_Free(grouplist);
     Py_RETURN_NONE;
@@ -10422,19 +10456,24 @@ os_lockf_impl(PyObject *module, int fd, int command, Py_off_t length)
 os.lseek -> Py_off_t
 
     fd: int
+        An open file descriptor, as returned by os.open().
     position: Py_off_t
-    how: int
+        Position, interpreted relative to 'whence'.
+    whence as how: int
+        The relative position to seek from. Valid values are:
+        - SEEK_SET: seek from the start of the file.
+        - SEEK_CUR: seek from the current file position.
+        - SEEK_END: seek from the end of the file.
     /
 
 Set the position of a file descriptor.  Return the new position.
 
-Return the new cursor position in number of bytes
-relative to the beginning of the file.
+The return value is the number of bytes relative to the beginning of the file.
 [clinic start generated code]*/
 
 static Py_off_t
 os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
-/*[clinic end generated code: output=971e1efb6b30bd2f input=902654ad3f96a6d3]*/
+/*[clinic end generated code: output=971e1efb6b30bd2f input=f096e754c5367504]*/
 {
     Py_off_t result;
 
@@ -10607,10 +10646,13 @@ os_readv_impl(PyObject *module, int fd, PyObject *buffers)
         Py_END_ALLOW_THREADS
     } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 
+    int saved_errno = errno;
     iov_cleanup(iov, buf, cnt);
     if (n < 0) {
-        if (!async_err)
+        if (!async_err) {
+            errno = saved_errno;
             posix_error();
+        }
         return -1;
     }
 
@@ -10659,8 +10701,11 @@ os_pread_impl(PyObject *module, int fd, Py_ssize_t length, Py_off_t offset)
     } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 
     if (n < 0) {
+        if (!async_err) {
+            posix_error();
+        }
         Py_DECREF(buffer);
-        return (!async_err) ? posix_error() : NULL;
+        return NULL;
     }
     if (n != length)
         _PyBytes_Resize(&buffer, n);
@@ -10757,9 +10802,11 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
 
 #endif
 
+    int saved_errno = errno;
     iov_cleanup(iov, buf, cnt);
     if (n < 0) {
         if (!async_err) {
+            errno = saved_errno;
             posix_error();
         }
         return -1;
@@ -10928,24 +10975,26 @@ os_sendfile_impl(PyObject *module, int out_fd, int in_fd, PyObject *offobj,
     } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     _Py_END_SUPPRESS_IPH
 
+    int saved_errno = errno;
     if (sf.headers != NULL)
         iov_cleanup(sf.headers, hbuf, sf.hdr_cnt);
     if (sf.trailers != NULL)
         iov_cleanup(sf.trailers, tbuf, sf.trl_cnt);
 
     if (ret < 0) {
-        if ((errno == EAGAIN) || (errno == EBUSY)) {
+        if ((saved_errno == EAGAIN) || (saved_errno == EBUSY)) {
             if (sbytes != 0) {
                 // some data has been sent
                 goto done;
             }
-            else {
-                // no data has been sent; upper application is supposed
-                // to retry on EAGAIN or EBUSY
-                return posix_error();
-            }
+            // no data has been sent; upper application is supposed
+            // to retry on EAGAIN or EBUSY
         }
-        return (!async_err) ? posix_error() : NULL;
+        if (!async_err) {
+            errno = saved_errno;
+            posix_error();
+        }
+        return NULL;
     }
     goto done;
 
@@ -11262,10 +11311,10 @@ os_writev_impl(PyObject *module, int fd, PyObject *buffers)
         Py_END_ALLOW_THREADS
     } while (result < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 
-    iov_cleanup(iov, buf, cnt);
     if (result < 0 && !async_err)
         posix_error();
 
+    iov_cleanup(iov, buf, cnt);
     return result;
 }
 #endif /* HAVE_WRITEV */
@@ -11400,13 +11449,13 @@ os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
 
 #endif
 
-    iov_cleanup(iov, buf, cnt);
     if (result < 0) {
         if (!async_err) {
             posix_error();
         }
-        return -1;
+        result = -1;
     }
+    iov_cleanup(iov, buf, cnt);
 
     return result;
 }
@@ -11968,12 +12017,13 @@ win32_putenv(PyObject *name, PyObject *value)
        Prefer _wputenv() to be compatible with C libraries using CRT
        variables and CRT functions using these variables (ex: getenv()). */
     int err = _wputenv(env);
-    PyMem_Free(env);
 
     if (err) {
         posix_error();
+        PyMem_Free(env);
         return NULL;
     }
+    PyMem_Free(env);
 
     Py_RETURN_NONE;
 }
@@ -12477,7 +12527,7 @@ conv_confname(PyObject *arg, int *valuep, struct constdef *table,
               size_t tablesize)
 {
     if (PyLong_Check(arg)) {
-        int value = _PyLong_AsInt(arg);
+        int value = PyLong_AsInt(arg);
         if (value == -1 && PyErr_Occurred())
             return 0;
         *valuep = value;
@@ -13815,10 +13865,12 @@ os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
         Py_END_ALLOW_THREADS;
 
         if (result < 0) {
-            Py_DECREF(buffer);
-            if (errno == ERANGE)
+            if (errno == ERANGE) {
+                Py_DECREF(buffer);
                 continue;
+            }
             path_error(path);
+            Py_DECREF(buffer);
             return NULL;
         }
 
@@ -14524,15 +14576,13 @@ os_DirEntry_is_symlink_impl(DirEntry *self, PyTypeObject *defining_class)
 
 /*[clinic input]
 os.DirEntry.is_junction -> bool
-    defining_class: defining_class
-    /
 
 Return True if the entry is a junction; cached per entry.
 [clinic start generated code]*/
 
 static int
-os_DirEntry_is_junction_impl(DirEntry *self, PyTypeObject *defining_class)
-/*[clinic end generated code: output=7061a07b0ef2cd1f input=475cd36fb7d4723f]*/
+os_DirEntry_is_junction_impl(DirEntry *self)
+/*[clinic end generated code: output=97f64d5d99eeccb5 input=4fc8e701eea118a1]*/
 {
 #ifdef MS_WINDOWS
     return self->win32_lstat.st_reparse_tag == IO_REPARSE_TAG_MOUNT_POINT;
@@ -14585,14 +14635,19 @@ DirEntry_fetch_stat(PyObject *module, DirEntry *self, int follow_symlinks)
         }
         Py_END_ALLOW_THREADS
     }
+
+    int saved_errno = errno;
 #if defined(MS_WINDOWS)
     PyMem_Free(path);
 #else
     Py_DECREF(ub);
 #endif
 
-    if (result != 0)
-        return path_object_error(self->path);
+    if (result != 0) {
+        errno = saved_errno;
+        path_object_error(self->path);
+        return NULL;
+    }
 
     return _pystat_fromstructstat(module, &st);
 }
@@ -14784,10 +14839,14 @@ os_DirEntry_inode_impl(DirEntry *self)
         wchar_t *path = PyUnicode_AsWideCharString(unicode, NULL);
         Py_DECREF(unicode);
         result = LSTAT(path, &stat);
+
+        int saved_errno = errno;
         PyMem_Free(path);
 
-        if (result != 0)
+        if (result != 0) {
+            errno = saved_errno;
             return path_object_error(self->path);
+        }
 
         self->win32_file_index = stat.st_ino;
         self->got_file_index = 1;
@@ -15351,12 +15410,12 @@ os_scandir_impl(PyObject *module, path_t *path)
     iterator->handle = FindFirstFileW(path_strW, &iterator->file_data);
     Py_END_ALLOW_THREADS
 
-    PyMem_Free(path_strW);
-
     if (iterator->handle == INVALID_HANDLE_VALUE) {
         path_error(&iterator->path);
+        PyMem_Free(path_strW);
         goto error;
     }
+    PyMem_Free(path_strW);
 #else /* POSIX */
     errno = 0;
 #ifdef HAVE_FDOPENDIR
@@ -15661,7 +15720,7 @@ os_waitstatus_to_exitcode_impl(PyObject *module, PyObject *status_obj)
 /*[clinic end generated code: output=db50b1b0ba3c7153 input=7fe2d7fdaea3db42]*/
 {
 #ifndef MS_WINDOWS
-    int status = _PyLong_AsInt(status_obj);
+    int status = PyLong_AsInt(status_obj);
     if (status == -1 && PyErr_Occurred()) {
         return NULL;
     }

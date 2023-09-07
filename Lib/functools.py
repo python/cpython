@@ -984,6 +984,7 @@ class cached_property:
         self.func = func
         self.attrname = None
         self.__doc__ = func.__doc__
+        self.__module__ = func.__module__
 
     def __set_name__(self, owner, name):
         if self.attrname is None:

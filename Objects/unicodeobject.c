@@ -43,6 +43,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_atomic_funcs.h"  // _Py_atomic_size_get()
 #include "pycore_bytes_methods.h" // _Py_bytes_lower()
 #include "pycore_bytesobject.h"   // _PyBytes_Repeat()
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_codecs.h"        // _PyCodec_Lookup()
 #include "pycore_format.h"        // F_LJUST
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -56,6 +57,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_unicodeobject_generated.h"  // _PyUnicode_InitStaticStrings()
+
 #include "stringlib/eq.h"         // unicode_eq()
 #include <stddef.h>               // ptrdiff_t
 
@@ -7099,7 +7101,7 @@ decode_code_page_errors(UINT code_page,
             if (err != ERROR_NO_UNICODE_TRANSLATION
                 && err != ERROR_INSUFFICIENT_BUFFER)
             {
-                PyErr_SetFromWindowsErr(0);
+                PyErr_SetFromWindowsErr(err);
                 goto error;
             }
             insize++;
@@ -12400,7 +12402,7 @@ str.split as unicode_split
         The separator used to split the string.
 
         When set to None (the default value), will split on any whitespace
-        character (including \\n \\r \\t \\f and spaces) and will discard
+        character (including \n \r \t \f and spaces) and will discard
         empty strings from the result.
     maxsplit: Py_ssize_t = -1
         Maximum number of splits (starting from the left).
@@ -12416,7 +12418,7 @@ the regular expression module.
 
 static PyObject *
 unicode_split_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit)
-/*[clinic end generated code: output=3a65b1db356948dc input=906d953b44efc43b]*/
+/*[clinic end generated code: output=3a65b1db356948dc input=07b9040d98c5fe8d]*/
 {
     if (sep == Py_None)
         return split(self, NULL, maxsplit);
@@ -14032,7 +14034,7 @@ unicode_format_arg_parse(struct unicode_formatter_t *ctx,
                                 "* wants int");
                 return -1;
             }
-            arg->prec = _PyLong_AsInt(v);
+            arg->prec = PyLong_AsInt(v);
             if (arg->prec == -1 && PyErr_Occurred())
                 return -1;
             if (arg->prec < 0)

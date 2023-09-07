@@ -8,8 +8,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-
-#include "pycore_atomic.h"          /* _Py_atomic_address */
 #include "pycore_gil.h"             // struct _gil_runtime_state
 
 

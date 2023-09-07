@@ -1,24 +1,7 @@
 #include <stddef.h>               // ptrdiff_t
 
 #include "parts.h"
-
-#define NULLABLE(x) do { if (x == Py_None) x = NULL; } while (0);
-
-#define RETURN_INT(value) do {          \
-        int _ret = (value);             \
-        if (_ret == -1) {               \
-            return NULL;                \
-        }                               \
-        return PyLong_FromLong(_ret);   \
-    } while (0)
-
-#define RETURN_SIZE(value) do {             \
-        Py_ssize_t _ret = (value);          \
-        if (_ret == -1) {                   \
-            return NULL;                    \
-        }                                   \
-        return PyLong_FromSsize_t(_ret);    \
-    } while (0)
+#include "util.h"
 
 
 static PyObject *
@@ -49,7 +32,7 @@ object_getattrstring(PyObject *self, PyObject *args)
 static PyObject *
 object_getoptionalattr(PyObject *self, PyObject *args)
 {
-    PyObject *obj, *attr_name, *value;
+    PyObject *obj, *attr_name, *value = UNINITIALIZED_PTR;
     if (!PyArg_ParseTuple(args, "OO", &obj, &attr_name)) {
         return NULL;
     }
@@ -74,7 +57,7 @@ object_getoptionalattr(PyObject *self, PyObject *args)
 static PyObject *
 object_getoptionalattrstring(PyObject *self, PyObject *args)
 {
-    PyObject *obj, *value;
+    PyObject *obj, *value = UNINITIALIZED_PTR;
     const char *attr_name;
     Py_ssize_t size;
     if (!PyArg_ParseTuple(args, "Oz#", &obj, &attr_name, &size)) {
@@ -224,7 +207,7 @@ mapping_getitemstring(PyObject *self, PyObject *args)
 static PyObject *
 mapping_getoptionalitem(PyObject *self, PyObject *args)
 {
-    PyObject *obj, *attr_name, *value;
+    PyObject *obj, *attr_name, *value = UNINITIALIZED_PTR;
     if (!PyArg_ParseTuple(args, "OO", &obj, &attr_name)) {
         return NULL;
     }
@@ -249,7 +232,7 @@ mapping_getoptionalitem(PyObject *self, PyObject *args)
 static PyObject *
 mapping_getoptionalitemstring(PyObject *self, PyObject *args)
 {
-    PyObject *obj, *value;
+    PyObject *obj, *value = UNINITIALIZED_PTR;
     const char *attr_name;
     Py_ssize_t size;
     if (!PyArg_ParseTuple(args, "Oz#", &obj, &attr_name, &size)) {

@@ -1099,7 +1099,7 @@ static int obj2ast_int(struct ast_state* Py_UNUSED(state), PyObject* obj, int* o
         return 1;
     }
 
-    i = _PyLong_AsInt(obj);
+    i = PyLong_AsInt(obj);
     if (i == -1 && PyErr_Occurred())
         return 1;
     *out = i;
@@ -12657,6 +12657,9 @@ astmodule_exec(PyObject *m)
         return -1;
     }
     if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0) {
+        return -1;
+    }
+    if (PyModule_AddIntMacro(m, PyCF_OPTIMIZED_AST) < 0) {
         return -1;
     }
     if (PyModule_AddObjectRef(m, "mod", state->mod_type) < 0) {

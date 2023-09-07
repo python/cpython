@@ -32,7 +32,7 @@ class Context(NamedTuple):
     end: int
     owner: PLexer
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.owner.filename}: {self.begin}-{self.end}>"
 
 
@@ -75,7 +75,7 @@ class StackEffect(Node):
     size: str = ""  # Optional `[size]`
     # Note: size cannot be combined with type or cond
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         items = [self.name, self.type, self.cond, self.size]
         while items and items[-1] == "":
             del items[-1]
@@ -362,7 +362,8 @@ class Parser(PLexer):
                 if tkn := self.expect(lx.IDENTIFIER):
                     if self.expect(lx.COMMA):
                         if not (size := self.expect(lx.IDENTIFIER)):
-                            raise self.make_syntax_error("Expected identifier")
+                            if not (size := self.expect(lx.NUMBER)):
+                                raise self.make_syntax_error("Expected identifier or number")
                     if self.expect(lx.RPAREN):
                         if self.expect(lx.EQUALS):
                             if not self.expect(lx.LBRACE):

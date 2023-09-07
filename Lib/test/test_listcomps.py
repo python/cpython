@@ -561,6 +561,48 @@ class ListComprehensionTest(unittest.TestCase):
             }
         )
 
+    def test_comp_in_try_except(self):
+        template = """
+            value = ["a"]
+            try:
+                [{func}(value) for value in value]
+            except:
+                pass
+        """
+        for func in ["str", "int"]:
+            code = template.format(func=func)
+            raises = func != "str"
+            with self.subTest(raises=raises):
+                self._check_in_scopes(code, {"value": ["a"]})
+
+    def test_comp_in_try_finally(self):
+        code = """
+            def f(value):
+                try:
+                    [{func}(value) for value in value]
+                finally:
+                    return value
+            ret = f(["a"])
+        """
+        self._check_in_scopes(code, {"ret": ["a"]})
+
+    def test_exception_in_post_comp_call(self):
+        code = """
+            value = [1, None]
+            try:
+                [v for v in value].sort()
+            except:
+                pass
+        """
+        self._check_in_scopes(code, {"value": [1, None]})
+
+    def test_frame_locals(self):
+        code = """
+            val = [sys._getframe().f_locals for a in [0]][0]["a"]
+        """
+        import sys
+        self._check_in_scopes(code, {"val": 0}, ns={"sys": sys})
+
 
 __test__ = {'doctests' : doctests}
 
