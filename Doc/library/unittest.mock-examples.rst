@@ -365,7 +365,7 @@ Using side_effect to return per file content
 
 :func:`mock_open` is used to patch :func:`open` method. :attr:`~Mock.side_effect`
 can be used to return a new Mock object per call. This can be used to return different
-content per file stored in a dictionary::
+contents per file stored in a dictionary::
 
     DEFAULT = "default"
     data_dict = {"file1": "data1",
