@@ -2263,10 +2263,16 @@ _xidata_init(_PyCrossInterpreterData *data)
 static inline void
 _xidata_clear(_PyCrossInterpreterData *data)
 {
-    if (data->free != NULL) {
-        data->free(data->data);
+    // _PyCrossInterpreterData only has two members that need to be
+    // cleaned up, if set: "data" must be freed and "obj" must be decref'ed.
+    // In both cases the original (owning) interpreter must be used,
+    // which is the caller's responsibility to ensure.
+    if (data->data != NULL) {
+        if (data->free != NULL) {
+            data->free(data->data);
+        }
+        data->data = NULL;
     }
-    data->data = NULL;
     Py_CLEAR(data->obj);
 }
 
@@ -2442,7 +2448,7 @@ _call_in_interpreter(PyInterpreterState *interp, releasefunc func, void *arg)
 int
 _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
 {
-    if (data->free == NULL && data->obj == NULL) {
+    if ((data->data == NULL || data->free == NULL) && data->obj == NULL) {
         // Nothing to release!
         data->data = NULL;
         return 0;
