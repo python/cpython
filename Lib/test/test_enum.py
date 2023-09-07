@@ -441,7 +441,7 @@ class _EnumTests:
 
     def test_bad_new_super(self):
         with self.assertRaisesRegex(
-                ValueError,
+                TypeError,
                 'has no members defined',
             ):
             class BadSuper(self.enum_type):
@@ -601,7 +601,7 @@ class _EnumTests:
         self.assertTrue('description' in dir(SubEnum.sample), dir(SubEnum.sample))
 
     def test_empty_enum_has_no_values(self):
-        with self.assertRaisesRegex(ValueError, "<.... 'NewBaseEnum'> has no members"):
+        with self.assertRaisesRegex(TypeError, "<.... 'NewBaseEnum'> has no members"):
             self.NewBaseEnum(7)
 
     def test_enum_in_enum_out(self):

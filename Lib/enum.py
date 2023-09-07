@@ -732,7 +732,7 @@ class EnumType(type):
         # otherwise, functional API: we're creating a new Enum type
         if names is None and type is None:
             # no body? no data-type? possibly wrong usage
-            raise ValueError(
+            raise TypeError(
                     f"{cls} has no members; specify `names=()` if you meant to create a new, empty, enum"
                     )
         return cls._create_(
@@ -1122,7 +1122,7 @@ class Enum(metaclass=EnumType):
         # still not found -- verify that members exist, in-case somebody got here mistakenly
         # (such as via super when trying to override __new__)
         if not cls._member_map_:
-            raise ValueError("%r has no members defined" % cls)
+            raise TypeError("%r has no members defined" % cls)
         #
         # still not found -- try _missing_ hook
         try:
