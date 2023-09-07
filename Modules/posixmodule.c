@@ -10175,7 +10175,7 @@ Alter a timer file descriptor's internal timer in seconds.
 static PyObject *
 os_timerfd_settime_impl(PyObject *module, int fd, int flags, double initial,
                         double interval)
-/*[clinic end generated code: output=0dda31115317adb9 input=e12c29b4954782a8]*/
+/*[clinic end generated code: output=0dda31115317adb9 input=9b4cb18b00ff7f37]*/
 {
     struct itimerspec new_value;
     struct itimerspec old_value;
