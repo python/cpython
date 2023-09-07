@@ -322,7 +322,7 @@ Notes:
    Also referred to as integer division.  For operands of type :class:`int`,
    the result has type :class:`int`.  For operands of type :class:`float`,
    the result has type :class:`float`.  In general, the result is a whole
-   integer, though the result's type is not necessarily int.  The result is
+   integer, though the result's type is not necessarily :class:`int`.  The result is
    always rounded towards minus infinity: ``1//2`` is ``0``, ``(-1)//2`` is
    ``-1``, ``1//(-2)`` is ``-1``, and ``(-1)//(-2)`` is ``0``.
 
