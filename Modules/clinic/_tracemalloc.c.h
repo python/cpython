@@ -101,7 +101,7 @@ _tracemalloc_start(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    nframe = _PyLong_AsInt(args[0]);
+    nframe = PyLong_AsInt(args[0]);
     if (nframe == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -212,4 +212,4 @@ _tracemalloc_reset_peak(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _tracemalloc_reset_peak_impl(module);
 }
-/*[clinic end generated code: output=2ae4fe05f1a340c9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ad7d1fae89f2bdaa input=a9049054013a1b77]*/

@@ -5,7 +5,6 @@ import os
 import pathlib
 import textwrap
 import unittest
-import warnings
 
 from test import support
 from test.support import os_helper
@@ -114,7 +113,7 @@ class BasicTestCase(CfgParserTestCaseClass):
 
         # The use of spaces in the section names serves as a
         # regression test for SourceForge bug #583248:
-        # http://www.python.org/sf/583248
+        # https://bugs.python.org/issue583248
 
         # API access
         eq(cf.get('Foo Bar', 'foo'), 'bar1')
@@ -907,9 +906,6 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
         if self.interpolation == configparser._UNSET:
             self.assertEqual(e.args, ("bar11", "Foo",
                 "something %(with11)s lots of interpolation (11 steps)"))
-        elif isinstance(self.interpolation, configparser.LegacyInterpolation):
-            self.assertEqual(e.args, ("bar11", "Foo",
-                "something %(with11)s lots of interpolation (11 steps)"))
 
     def test_interpolation_missing_value(self):
         cf = self.get_interpolation_config()
@@ -921,9 +917,6 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
         if self.interpolation == configparser._UNSET:
             self.assertEqual(e.args, ('name', 'Interpolation Error',
                                     '%(reference)s', 'reference'))
-        elif isinstance(self.interpolation, configparser.LegacyInterpolation):
-            self.assertEqual(e.args, ('name', 'Interpolation Error',
-                                    '%(reference)s', 'reference'))
 
     def test_items(self):
         self.check_items_config([('default', '<default>'),
@@ -932,7 +925,7 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
                                  ('name', 'value')])
 
     def test_safe_interpolation(self):
-        # See http://www.python.org/sf/511737
+        # See https://bugs.python.org/issue511737
         cf = self.fromstring("[section]\n"
                              "option1{eq}xxx\n"
                              "option2{eq}%(option1)s/xxx\n"
@@ -942,9 +935,6 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
         self.assertEqual(cf.get("section", "ok"), "xxx/%s")
         if self.interpolation == configparser._UNSET:
             self.assertEqual(cf.get("section", "not_ok"), "xxx/xxx/%s")
-        elif isinstance(self.interpolation, configparser.LegacyInterpolation):
-            with self.assertRaises(TypeError):
-                cf.get("section", "not_ok")
 
     def test_set_malformatted_interpolation(self):
         cf = self.fromstring("[sect]\n"
@@ -1024,31 +1014,6 @@ class ConfigParserTestCaseNoInterpolation(BasicTestCase, unittest.TestCase):
         cf = CustomConfigParser()
         cf.read_string(self.ini)
         self.assertMatchesIni(cf)
-
-
-class ConfigParserTestCaseLegacyInterpolation(ConfigParserTestCase):
-    config_class = configparser.ConfigParser
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", DeprecationWarning)
-        interpolation = configparser.LegacyInterpolation()
-
-    def test_set_malformatted_interpolation(self):
-        cf = self.fromstring("[sect]\n"
-                             "option1{eq}foo\n".format(eq=self.delimiters[0]))
-
-        self.assertEqual(cf.get('sect', "option1"), "foo")
-
-        cf.set("sect", "option1", "%foo")
-        self.assertEqual(cf.get('sect', "option1"), "%foo")
-        cf.set("sect", "option1", "foo%")
-        self.assertEqual(cf.get('sect', "option1"), "foo%")
-        cf.set("sect", "option1", "f%oo")
-        self.assertEqual(cf.get('sect', "option1"), "f%oo")
-
-        # bug #5741: double percents are *not* malformed
-        cf.set("sect", "option2", "foo%%bar")
-        self.assertEqual(cf.get("sect", "option2"), "foo%%bar")
-
 
 class ConfigParserTestCaseInvalidInterpolationType(unittest.TestCase):
     def test_error_on_wrong_type_for_interpolation(self):
@@ -1612,23 +1577,12 @@ class CoverageOneHundredTestCase(unittest.TestCase):
         self.assertEqual(error.section, 'section')
 
     def test_parsing_error(self):
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(TypeError) as cm:
             configparser.ParsingError()
-        self.assertEqual(str(cm.exception), "Required argument `source' not "
-                                            "given.")
-        with self.assertRaises(ValueError) as cm:
-            configparser.ParsingError(source='source', filename='filename')
-        self.assertEqual(str(cm.exception), "Cannot specify both `filename' "
-                                            "and `source'. Use `source'.")
-        error = configparser.ParsingError(filename='source')
+        error = configparser.ParsingError(source='source')
         self.assertEqual(error.source, 'source')
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always", DeprecationWarning)
-            self.assertEqual(error.filename, 'source')
-            error.filename = 'filename'
-            self.assertEqual(error.source, 'filename')
-        for warning in w:
-            self.assertTrue(warning.category is DeprecationWarning)
+        error = configparser.ParsingError('source')
+        self.assertEqual(error.source, 'source')
 
     def test_interpolation_validation(self):
         parser = configparser.ConfigParser()
@@ -1646,35 +1600,6 @@ class CoverageOneHundredTestCase(unittest.TestCase):
             parser['section']['invalid_reference']
         self.assertEqual(str(cm.exception), "bad interpolation variable "
                                             "reference '%(()'")
-
-    def test_readfp_deprecation(self):
-        sio = io.StringIO("""
-        [section]
-        option = value
-        """)
-        parser = configparser.ConfigParser()
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always", DeprecationWarning)
-            parser.readfp(sio, filename='StringIO')
-        for warning in w:
-            self.assertTrue(warning.category is DeprecationWarning)
-        self.assertEqual(len(parser), 2)
-        self.assertEqual(parser['section']['option'], 'value')
-
-    def test_safeconfigparser_deprecation(self):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always", DeprecationWarning)
-            parser = configparser.SafeConfigParser()
-        for warning in w:
-            self.assertTrue(warning.category is DeprecationWarning)
-
-    def test_legacyinterpolation_deprecation(self):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always", DeprecationWarning)
-            configparser.LegacyInterpolation()
-        self.assertGreaterEqual(len(w), 1)
-        for warning in w:
-            self.assertIs(warning.category, DeprecationWarning)
 
     def test_sectionproxy_repr(self):
         parser = configparser.ConfigParser()
@@ -1841,7 +1766,7 @@ class ExceptionPicklingTestCase(unittest.TestCase):
             self.assertEqual(e1.source, e2.source)
             self.assertEqual(e1.errors, e2.errors)
             self.assertEqual(repr(e1), repr(e2))
-        e1 = configparser.ParsingError(filename='filename')
+        e1 = configparser.ParsingError('filename')
         e1.append(1, 'line1')
         e1.append(2, 'line2')
         e1.append(3, 'line3')

@@ -2,7 +2,6 @@
 Various tests for synchronization primitives.
 """
 
-import os
 import gc
 import sys
 import time

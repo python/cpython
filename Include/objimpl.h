@@ -1,12 +1,8 @@
-/* The PyObject_ memory family:  high-level object memory interfaces.
-   See pymem.h for the low-level PyMem_ family.
-*/
+// The PyObject_ memory family:  high-level object memory interfaces.
+// See pymem.h for the low-level PyMem_ family.
 
 #ifndef Py_OBJIMPL_H
 #define Py_OBJIMPL_H
-
-#include "pymem.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -135,14 +131,14 @@ PyAPI_FUNC(PyVarObject *) _PyObject_NewVar(PyTypeObject *, Py_ssize_t);
 
 // Alias to PyObject_New(). In Python 3.8, PyObject_NEW() called directly
 // PyObject_MALLOC() with _PyObject_SIZE().
-#define PyObject_NEW(type, typeobj) PyObject_New(type, typeobj)
+#define PyObject_NEW(type, typeobj) PyObject_New(type, (typeobj))
 
 #define PyObject_NewVar(type, typeobj, n) \
                 ( (type *) _PyObject_NewVar((typeobj), (n)) )
 
 // Alias to PyObject_NewVar(). In Python 3.8, PyObject_NEW_VAR() called
 // directly PyObject_MALLOC() with _PyObject_VAR_SIZE().
-#define PyObject_NEW_VAR(type, typeobj, n) PyObject_NewVar(type, typeobj, n)
+#define PyObject_NEW_VAR(type, typeobj, n) PyObject_NewVar(type, (typeobj), (n))
 
 
 /*
@@ -156,6 +152,25 @@ PyAPI_FUNC(Py_ssize_t) PyGC_Collect(void);
 PyAPI_FUNC(int) PyGC_Enable(void);
 PyAPI_FUNC(int) PyGC_Disable(void);
 PyAPI_FUNC(int) PyGC_IsEnabled(void);
+
+
+#if !defined(Py_LIMITED_API)
+/* Visit all live GC-capable objects, similar to gc.get_objects(None). The
+ * supplied callback is called on every such object with the void* arg set
+ * to the supplied arg. Returning 0 from the callback ends iteration, returning
+ * 1 allows iteration to continue. Returning any other value may result in
+ * undefined behaviour.
+ *
+ * If new objects are (de)allocated by the callback it is undefined if they
+ * will be visited.
+
+ * Garbage collection is disabled during operation. Explicitly running a
+ * collection in the callback may lead to undefined behaviour e.g. visiting the
+ * same objects multiple times or not at all.
+ */
+typedef int (*gcvisitobjects_t)(PyObject*, void*);
+PyAPI_FUNC(void) PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void* arg);
+#endif
 
 /* Test if a type has a GC head */
 #define PyType_IS_GC(t) PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
@@ -212,4 +227,4 @@ PyAPI_FUNC(int) PyObject_GC_IsFinalized(PyObject *);
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_OBJIMPL_H */
+#endif   // !Py_OBJIMPL_H

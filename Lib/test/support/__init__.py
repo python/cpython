@@ -4,13 +4,16 @@ if __name__ != 'test.support':
     raise ImportError('support must be imported from the test package')
 
 import contextlib
+import dataclasses
 import functools
 import getpass
+import _opcode
 import os
 import re
 import stat
 import sys
 import sysconfig
+import textwrap
 import time
 import types
 import unittest
@@ -18,11 +21,6 @@ import warnings
 
 from .testresult import get_test_runner
 
-
-try:
-    from _testcapi import unicode_legacy_string
-except ImportError:
-    unicode_legacy_string = None
 
 __all__ = [
     # globals
@@ -36,7 +34,7 @@ __all__ = [
     "is_resource_enabled", "requires", "requires_freebsd_version",
     "requires_linux_version", "requires_mac_ver",
     "check_syntax_error",
-    "BasicTestRunner", "run_unittest", "run_doctest",
+    "run_unittest", "run_doctest",
     "requires_gzip", "requires_bz2", "requires_lzma",
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "requires_zlib",
@@ -46,9 +44,12 @@ __all__ = [
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_if_buggy_ucrt_strfptime",
     "check_disallow_instantiation", "check_sanitizer", "skip_if_sanitizer",
+    "requires_limited_api", "requires_specialization",
     # sys
     "is_jython", "is_android", "is_emscripten", "is_wasi",
     "check_impl_detail", "unix_shell", "setswitchinterval",
+    # os
+    "get_pagesize",
     # network
     "open_urlresource",
     # processes
@@ -59,6 +60,8 @@ __all__ = [
     "run_with_tz", "PGO", "missing_compiler_executable",
     "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
+    "Py_DEBUG", "EXCEEDS_RECURSION_LIMIT", "C_RECURSION_LIMIT",
+    "skip_on_s390x",
     ]
 
 
@@ -116,17 +119,20 @@ class Error(Exception):
 
 class TestFailed(Error):
     """Test failed."""
-
-class TestFailedWithDetails(TestFailed):
-    """Test failed."""
-    def __init__(self, msg, errors, failures):
+    def __init__(self, msg, *args, stats=None):
         self.msg = msg
-        self.errors = errors
-        self.failures = failures
-        super().__init__(msg, errors, failures)
+        self.stats = stats
+        super().__init__(msg, *args)
 
     def __str__(self):
         return self.msg
+
+class TestFailedWithDetails(TestFailed):
+    """Test failed."""
+    def __init__(self, msg, errors, failures, stats):
+        self.errors = errors
+        self.failures = failures
+        super().__init__(msg, errors, failures, stats=stats)
 
 class TestDidNotRun(Error):
     """Test did not run any subtests."""
@@ -199,6 +205,11 @@ def get_original_stdout():
 def _force_run(path, func, *args):
     try:
         return func(*args)
+    except FileNotFoundError as err:
+        # chmod() won't fix a missing file.
+        if verbose >= 2:
+            print('%s: %s' % (err.__class__.__name__, err))
+        raise
     except OSError as err:
         if verbose >= 2:
             print('%s: %s' % (err.__class__.__name__, err))
@@ -299,6 +310,8 @@ def requires(resource, msg=None):
         if msg is None:
             msg = "Use of the %r resource not enabled" % resource
         raise ResourceDenied(msg)
+    if resource in {"network", "urlfetch"} and not has_socket_support:
+        raise ResourceDenied("No socket support")
     if resource == 'gui' and not _is_gui_available():
         raise ResourceDenied(_is_gui_available.reason)
 
@@ -393,19 +406,19 @@ def check_sanitizer(*, address=False, memory=False, ub=False):
         raise ValueError('At least one of address, memory, or ub must be True')
 
 
-    _cflags = sysconfig.get_config_var('CFLAGS') or ''
-    _config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
+    cflags = sysconfig.get_config_var('CFLAGS') or ''
+    config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
     memory_sanitizer = (
-        '-fsanitize=memory' in _cflags or
-        '--with-memory-sanitizer' in _config_args
+        '-fsanitize=memory' in cflags or
+        '--with-memory-sanitizer' in config_args
     )
     address_sanitizer = (
-        '-fsanitize=address' in _cflags or
-        '--with-memory-sanitizer' in _config_args
+        '-fsanitize=address' in cflags or
+        '--with-address-sanitizer' in config_args
     )
     ub_sanitizer = (
-        '-fsanitize=undefined' in _cflags or
-        '--with-undefined-behavior-sanitizer' in _config_args
+        '-fsanitize=undefined' in cflags or
+        '--with-undefined-behavior-sanitizer' in config_args
     )
     return (
         (memory and memory_sanitizer) or
@@ -493,9 +506,16 @@ def has_no_debug_ranges():
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
     return unittest.skipIf(has_no_debug_ranges(), reason)
 
-requires_legacy_unicode_capi = unittest.skipUnless(unicode_legacy_string,
-                        'requires legacy Unicode C API')
+def requires_legacy_unicode_capi():
+    try:
+        from _testcapi import unicode_legacy_string
+    except ImportError:
+        unicode_legacy_string = None
 
+    return unittest.skipUnless(unicode_legacy_string,
+                               'requires legacy Unicode C API')
+
+# Is not actually used in tests, but is kept for compatibility.
 is_jython = sys.platform.startswith('java')
 
 is_android = hasattr(sys, 'getandroidapilevel')
@@ -521,7 +541,7 @@ def requires_subprocess():
     """Used for subprocess, os.spawn calls, fd inheritance"""
     return unittest.skipUnless(has_subprocess_support, "requires subprocess support")
 
-# Emscripten's socket emulation has limitation. WASI doesn't have sockets yet.
+# Emscripten's socket emulation and WASI sockets have limitations.
 has_socket_support = not is_emscripten and not is_wasi
 
 def requires_working_socket(*, module=False):
@@ -571,7 +591,8 @@ def darwin_malloc_err_warning(test_name):
     msg = ' NOTICE '
     detail = (f'{test_name} may generate "malloc can\'t allocate region"\n'
               'warnings on macOS systems. This behavior is known. Do not\n'
-              'report a bug unless tests are also failing. See bpo-40928.')
+              'report a bug unless tests are also failing.\n'
+              'See https://github.com/python/cpython/issues/85100')
 
     padding, _ = shutil.get_terminal_size()
     print(msg.center(padding, '-'))
@@ -604,6 +625,14 @@ def sortdict(dict):
     reprpairs = ["%r: %r" % pair for pair in items]
     withcommas = ", ".join(reprpairs)
     return "{%s}" % withcommas
+
+
+def run_code(code: str) -> dict[str, object]:
+    """Run a piece of code after dedenting it, and return its global namespace."""
+    ns = {}
+    exec(textwrap.dedent(code), ns)
+    return ns
+
 
 def check_syntax_error(testcase, statement, errtext='', *, lineno=None, offset=None):
     with testcase.assertRaisesRegex(SyntaxError, errtext) as cm:
@@ -727,8 +756,6 @@ def gc_collect():
     """
     import gc
     gc.collect()
-    if is_jython:
-        time.sleep(0.1)
     gc.collect()
     gc.collect()
 
@@ -756,9 +783,6 @@ def python_is_optimized():
 
 _header = 'nP'
 _align = '0n'
-if hasattr(sys, "getobjects"):
-    _header = '2P' + _header
-    _align = '0P'
 _vheader = _header + 'n'
 
 def calcobjsize(fmt):
@@ -983,12 +1007,6 @@ def bigaddrspacetest(f):
 #=======================================================================
 # unittest integration.
 
-class BasicTestRunner:
-    def run(self, test):
-        result = unittest.TestResult()
-        test(result)
-        return result
-
 def _id(obj):
     return obj
 
@@ -1067,6 +1085,17 @@ def refcount_test(test):
     return no_tracing(cpython_only(test))
 
 
+def requires_limited_api(test):
+    try:
+        import _testcapi
+    except ImportError:
+        return unittest.skip('needs _testcapi module')(test)
+    return test
+
+def requires_specialization(test):
+    return unittest.skipUnless(
+        _opcode.ENABLE_SPECIALIZATION, "requires specialization")(test)
+
 def _filter_suite(suite, pred):
     """Recursively filter test cases in a suite based on a predicate."""
     newtests = []
@@ -1079,6 +1108,30 @@ def _filter_suite(suite, pred):
                 newtests.append(test)
     suite._tests = newtests
 
+@dataclasses.dataclass(slots=True)
+class TestStats:
+    tests_run: int = 0
+    failures: int = 0
+    skipped: int = 0
+
+    @staticmethod
+    def from_unittest(result):
+        return TestStats(result.testsRun,
+                         len(result.failures),
+                         len(result.skipped))
+
+    @staticmethod
+    def from_doctest(results):
+        return TestStats(results.attempted,
+                         results.failed,
+                         results.skipped)
+
+    def accumulate(self, stats):
+        self.tests_run += stats.tests_run
+        self.failures += stats.failures
+        self.skipped += stats.skipped
+
+
 def _run_suite(suite):
     """Run tests from a unittest.TestSuite-derived class."""
     runner = get_test_runner(sys.stdout,
@@ -1090,9 +1143,10 @@ def _run_suite(suite):
     if junit_xml_list is not None:
         junit_xml_list.append(result.get_xml_element())
 
-    if not result.testsRun and not result.skipped:
+    if not result.testsRun and not result.skipped and not result.errors:
         raise TestDidNotRun
     if not result.wasSuccessful():
+        stats = TestStats.from_unittest(result)
         if len(result.errors) == 1 and not result.failures:
             err = result.errors[0][1]
         elif len(result.failures) == 1 and not result.errors:
@@ -1102,7 +1156,8 @@ def _run_suite(suite):
             if not verbose: err += "; run in verbose mode for details"
         errors = [(str(tc), exc_str) for tc, exc_str in result.errors]
         failures = [(str(tc), exc_str) for tc, exc_str in result.failures]
-        raise TestFailedWithDetails(err, errors, failures)
+        raise TestFailedWithDetails(err, errors, failures, stats=stats)
+    return result
 
 
 # By default, don't filter tests
@@ -1132,7 +1187,6 @@ def _is_full_match_test(pattern):
 
 def set_match_tests(accept_patterns=None, ignore_patterns=None):
     global _match_test_func, _accept_test_patterns, _ignore_test_patterns
-
 
     if accept_patterns is None:
         accept_patterns = ()
@@ -1211,7 +1265,7 @@ def run_unittest(*classes):
         else:
             suite.addTest(loader.loadTestsFromTestCase(cls))
     _filter_suite(suite, match_test)
-    _run_suite(suite)
+    return _run_suite(suite)
 
 #=======================================================================
 # Check for the presence of docstrings.
@@ -1251,13 +1305,18 @@ def run_doctest(module, verbosity=None, optionflags=0):
     else:
         verbosity = None
 
-    f, t = doctest.testmod(module, verbose=verbosity, optionflags=optionflags)
-    if f:
-        raise TestFailed("%d of %d doctests failed" % (f, t))
+    results = doctest.testmod(module,
+                             verbose=verbosity,
+                             optionflags=optionflags)
+    if results.failed:
+        stats = TestStats.from_doctest(results)
+        raise TestFailed(f"{results.failed} of {results.attempted} "
+                         f"doctests failed",
+                         stats=stats)
     if verbose:
         print('doctest (%s) ... %d tests with zero failures' %
-              (module.__name__, t))
-    return f, t
+              (module.__name__, results.attempted))
+    return results
 
 
 #=======================================================================
@@ -1491,7 +1550,7 @@ class PythonSymlink:
 
             self._env = {k.upper(): os.getenv(k) for k in os.environ}
             self._env["PYTHONHOME"] = os.path.dirname(self.real)
-            if sysconfig.is_python_build(True):
+            if sysconfig.is_python_build():
                 self._env["PYTHONPATH"] = STDLIB_DIR
     else:
         def _platform_specific(self):
@@ -1766,11 +1825,40 @@ def patch(test_instance, object_to_patch, attr_name, new_value):
     setattr(object_to_patch, attr_name, new_value)
 
 
+@contextlib.contextmanager
+def patch_list(orig):
+    """Like unittest.mock.patch.dict, but for lists."""
+    try:
+        saved = orig[:]
+        yield
+    finally:
+        orig[:] = saved
+
+
 def run_in_subinterp(code):
     """
     Run code in a subinterpreter. Raise unittest.SkipTest if the tracemalloc
     module is enabled.
     """
+    _check_tracemalloc()
+    import _testcapi
+    return _testcapi.run_in_subinterp(code)
+
+
+def run_in_subinterp_with_config(code, *, own_gil=None, **config):
+    """
+    Run code in a subinterpreter. Raise unittest.SkipTest if the tracemalloc
+    module is enabled.
+    """
+    _check_tracemalloc()
+    import _testinternalcapi
+    if own_gil is not None:
+        assert 'gil' not in config, (own_gil, config)
+        config['gil'] = 2 if own_gil else 1
+    return _testinternalcapi.run_in_subinterp_with_config(code, **config)
+
+
+def _check_tracemalloc():
     # Issue #10915, #15751: PyGILState_*() functions don't work with
     # sub-interpreters, the tracemalloc module uses these functions internally
     try:
@@ -1782,8 +1870,6 @@ def run_in_subinterp(code):
             raise unittest.SkipTest("run_in_subinterp() cannot be used "
                                      "if tracemalloc module is tracing "
                                      "memory allocations")
-    import _testcapi
-    return _testcapi.run_in_subinterp(code)
 
 
 def check_free_after_iterating(test, iter, cls, args=()):
@@ -1814,15 +1900,16 @@ def missing_compiler_executable(cmd_names=[]):
     missing.
 
     """
-    # TODO (PEP 632): alternate check without using distutils
-    from distutils import ccompiler, sysconfig, spawn, errors
+    from setuptools._distutils import ccompiler, sysconfig, spawn
+    from setuptools import errors
+
     compiler = ccompiler.new_compiler()
     sysconfig.customize_compiler(compiler)
     if compiler.compiler_type == "msvc":
         # MSVC has no executables, so check whether initialization succeeds
         try:
             compiler.initialize()
-        except errors.DistutilsPlatformError:
+        except errors.PlatformError:
             return "msvc"
     for name in compiler.executables:
         if cmd_names and name not in cmd_names:
@@ -1851,6 +1938,18 @@ def setswitchinterval(interval):
         if _is_android_emulator:
             interval = minimum_interval
     return sys.setswitchinterval(interval)
+
+
+def get_pagesize():
+    """Get size of a page in bytes."""
+    try:
+        page_size = os.sysconf('SC_PAGESIZE')
+    except (ValueError, AttributeError):
+        try:
+            page_size = os.sysconf('SC_PAGE_SIZE')
+        except (ValueError, AttributeError):
+            page_size = 4096
+    return page_size
 
 
 @contextlib.contextmanager
@@ -2061,7 +2160,7 @@ def wait_process(pid, *, exitcode, timeout=None):
 
     Raise an AssertionError if the process exit code is not equal to exitcode.
 
-    If the process runs longer than timeout seconds (SHORT_TIMEOUT by default),
+    If the process runs longer than timeout seconds (LONG_TIMEOUT by default),
     kill the process (if signal.SIGKILL is available) and raise an
     AssertionError. The timeout feature is not available on Windows.
     """
@@ -2069,32 +2168,27 @@ def wait_process(pid, *, exitcode, timeout=None):
         import signal
 
         if timeout is None:
-            timeout = SHORT_TIMEOUT
-        t0 = time.monotonic()
-        sleep = 0.001
-        max_sleep = 0.1
-        while True:
+            timeout = LONG_TIMEOUT
+
+        start_time = time.monotonic()
+        for _ in sleeping_retry(timeout, error=False):
             pid2, status = os.waitpid(pid, os.WNOHANG)
             if pid2 != 0:
                 break
-            # process is still running
+            # rety: the process is still running
+        else:
+            try:
+                os.kill(pid, signal.SIGKILL)
+                os.waitpid(pid, 0)
+            except OSError:
+                # Ignore errors like ChildProcessError or PermissionError
+                pass
 
-            dt = time.monotonic() - t0
-            if dt > SHORT_TIMEOUT:
-                try:
-                    os.kill(pid, signal.SIGKILL)
-                    os.waitpid(pid, 0)
-                except OSError:
-                    # Ignore errors like ChildProcessError or PermissionError
-                    pass
-
-                raise AssertionError(f"process {pid} is still running "
-                                     f"after {dt:.1f} seconds")
-
-            sleep = min(sleep * 2, max_sleep)
-            time.sleep(sleep)
+            dt = time.monotonic() - start_time
+            raise AssertionError(f"process {pid} is still running "
+                                 f"after {dt:.1f} seconds")
     else:
-        # Windows implementation
+        # Windows implementation: don't support timeout :-(
         pid2, status = os.waitpid(pid, 0)
 
     exitcode2 = os.waitstatus_to_exitcode(status)
@@ -2146,20 +2240,61 @@ def check_disallow_instantiation(testcase, tp, *args, **kwds):
     msg = f"cannot create '{re.escape(qualname)}' instances"
     testcase.assertRaisesRegex(TypeError, msg, tp, *args, **kwds)
 
+def get_recursion_depth():
+    """Get the recursion depth of the caller function.
+
+    In the __main__ module, at the module level, it should be 1.
+    """
+    try:
+        import _testinternalcapi
+        depth = _testinternalcapi.get_recursion_depth()
+    except (ImportError, RecursionError) as exc:
+        # sys._getframe() + frame.f_back implementation.
+        try:
+            depth = 0
+            frame = sys._getframe()
+            while frame is not None:
+                depth += 1
+                frame = frame.f_back
+        finally:
+            # Break any reference cycles.
+            frame = None
+
+    # Ignore get_recursion_depth() frame.
+    return max(depth - 1, 1)
+
+def get_recursion_available():
+    """Get the number of available frames before RecursionError.
+
+    It depends on the current recursion depth of the caller function and
+    sys.getrecursionlimit().
+    """
+    limit = sys.getrecursionlimit()
+    depth = get_recursion_depth()
+    return limit - depth
+
 @contextlib.contextmanager
-def infinite_recursion(max_depth=75):
+def set_recursion_limit(limit):
+    """Temporarily change the recursion limit."""
+    original_limit = sys.getrecursionlimit()
+    try:
+        sys.setrecursionlimit(limit)
+        yield
+    finally:
+        sys.setrecursionlimit(original_limit)
+
+def infinite_recursion(max_depth=100):
     """Set a lower limit for tests that interact with infinite recursions
     (e.g test_ast.ASTHelpers_Test.test_recursion_direct) since on some
     debug windows builds, due to not enough functions being inlined the
     stack size might not handle the default recursion limit (1000). See
     bpo-11105 for details."""
-
-    original_depth = sys.getrecursionlimit()
-    try:
-        sys.setrecursionlimit(max_depth)
-        yield
-    finally:
-        sys.setrecursionlimit(original_depth)
+    if max_depth < 3:
+        raise ValueError("max_depth must be at least 3, got {max_depth}")
+    depth = get_recursion_depth()
+    depth = max(depth - 1, 1)  # Ignore infinite_recursion() frame.
+    limit = depth + max_depth
+    return set_recursion_limit(limit)
 
 def ignore_deprecations_from(module: str, *, like: str) -> object:
     token = object()
@@ -2189,3 +2324,217 @@ def clear_ignored_deprecations(*tokens: object) -> None:
     if warnings.filters != new_filters:
         warnings.filters[:] = new_filters
         warnings._filters_mutated()
+
+
+# Skip a test if venv with pip is known to not work.
+def requires_venv_with_pip():
+    # ensurepip requires zlib to open ZIP archives (.whl binary wheel packages)
+    try:
+        import zlib
+    except ImportError:
+        return unittest.skipIf(True, "venv: ensurepip requires zlib")
+
+    # bpo-26610: pip/pep425tags.py requires ctypes.
+    # gh-92820: setuptools/windows_support.py uses ctypes (setuptools 58.1).
+    try:
+        import ctypes
+    except ImportError:
+        ctypes = None
+    return unittest.skipUnless(ctypes, 'venv: pip requires ctypes')
+
+
+@functools.cache
+def _findwheel(pkgname):
+    """Try to find a wheel with the package specified as pkgname.
+
+    If set, the wheels are searched for in WHEEL_PKG_DIR (see ensurepip).
+    Otherwise, they are searched for in the test directory.
+    """
+    wheel_dir = sysconfig.get_config_var('WHEEL_PKG_DIR') or TEST_HOME_DIR
+    filenames = os.listdir(wheel_dir)
+    filenames = sorted(filenames, reverse=True)  # approximate "newest" first
+    for filename in filenames:
+        # filename is like 'setuptools-67.6.1-py3-none-any.whl'
+        if not filename.endswith(".whl"):
+            continue
+        prefix = pkgname + '-'
+        if filename.startswith(prefix):
+            return os.path.join(wheel_dir, filename)
+    raise FileNotFoundError(f"No wheel for {pkgname} found in {wheel_dir}")
+
+
+# Context manager that creates a virtual environment, install setuptools and wheel in it
+# and returns the path to the venv directory and the path to the python executable
+@contextlib.contextmanager
+def setup_venv_with_pip_setuptools_wheel(venv_dir):
+    import subprocess
+    from .os_helper import temp_cwd
+
+    with temp_cwd() as temp_dir:
+        # Create virtual environment to get setuptools
+        cmd = [sys.executable, '-X', 'dev', '-m', 'venv', venv_dir]
+        if verbose:
+            print()
+            print('Run:', ' '.join(cmd))
+        subprocess.run(cmd, check=True)
+
+        venv = os.path.join(temp_dir, venv_dir)
+
+        # Get the Python executable of the venv
+        python_exe = os.path.basename(sys.executable)
+        if sys.platform == 'win32':
+            python = os.path.join(venv, 'Scripts', python_exe)
+        else:
+            python = os.path.join(venv, 'bin', python_exe)
+
+        cmd = [python, '-X', 'dev',
+               '-m', 'pip', 'install',
+               _findwheel('setuptools'),
+               _findwheel('wheel')]
+        if verbose:
+            print()
+            print('Run:', ' '.join(cmd))
+        subprocess.run(cmd, check=True)
+
+        yield python
+
+
+# True if Python is built with the Py_DEBUG macro defined: if
+# Python is built in debug mode (./configure --with-pydebug).
+Py_DEBUG = hasattr(sys, 'gettotalrefcount')
+
+
+def late_deletion(obj):
+    """
+    Keep a Python alive as long as possible.
+
+    Create a reference cycle and store the cycle in an object deleted late in
+    Python finalization. Try to keep the object alive until the very last
+    garbage collection.
+
+    The function keeps a strong reference by design. It should be called in a
+    subprocess to not mark a test as "leaking a reference".
+    """
+
+    # Late CPython finalization:
+    # - finalize_interp_clear()
+    # - _PyInterpreterState_Clear(): Clear PyInterpreterState members
+    #   (ex: codec_search_path, before_forkers)
+    # - clear os.register_at_fork() callbacks
+    # - clear codecs.register() callbacks
+
+    ref_cycle = [obj]
+    ref_cycle.append(ref_cycle)
+
+    # Store a reference in PyInterpreterState.codec_search_path
+    import codecs
+    def search_func(encoding):
+        return None
+    search_func.reference = ref_cycle
+    codecs.register(search_func)
+
+    if hasattr(os, 'register_at_fork'):
+        # Store a reference in PyInterpreterState.before_forkers
+        def atfork_func():
+            pass
+        atfork_func.reference = ref_cycle
+        os.register_at_fork(before=atfork_func)
+
+
+def busy_retry(timeout, err_msg=None, /, *, error=True):
+    """
+    Run the loop body until "break" stops the loop.
+
+    After *timeout* seconds, raise an AssertionError if *error* is true,
+    or just stop if *error is false.
+
+    Example:
+
+        for _ in support.busy_retry(support.SHORT_TIMEOUT):
+            if check():
+                break
+
+    Example of error=False usage:
+
+        for _ in support.busy_retry(support.SHORT_TIMEOUT, error=False):
+            if check():
+                break
+        else:
+            raise RuntimeError('my custom error')
+
+    """
+    if timeout <= 0:
+        raise ValueError("timeout must be greater than zero")
+
+    start_time = time.monotonic()
+    deadline = start_time + timeout
+
+    while True:
+        yield
+
+        if time.monotonic() >= deadline:
+            break
+
+    if error:
+        dt = time.monotonic() - start_time
+        msg = f"timeout ({dt:.1f} seconds)"
+        if err_msg:
+            msg = f"{msg}: {err_msg}"
+        raise AssertionError(msg)
+
+
+def sleeping_retry(timeout, err_msg=None, /,
+                     *, init_delay=0.010, max_delay=1.0, error=True):
+    """
+    Wait strategy that applies exponential backoff.
+
+    Run the loop body until "break" stops the loop. Sleep at each loop
+    iteration, but not at the first iteration. The sleep delay is doubled at
+    each iteration (up to *max_delay* seconds).
+
+    See busy_retry() documentation for the parameters usage.
+
+    Example raising an exception after SHORT_TIMEOUT seconds:
+
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+            if check():
+                break
+
+    Example of error=False usage:
+
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT, error=False):
+            if check():
+                break
+        else:
+            raise RuntimeError('my custom error')
+    """
+
+    delay = init_delay
+    for _ in busy_retry(timeout, err_msg, error=error):
+        yield
+
+        time.sleep(delay)
+        delay = min(delay * 2, max_delay)
+
+
+@contextlib.contextmanager
+def adjust_int_max_str_digits(max_digits):
+    """Temporarily change the integer string conversion length limit."""
+    current = sys.get_int_max_str_digits()
+    try:
+        sys.set_int_max_str_digits(max_digits)
+        yield
+    finally:
+        sys.set_int_max_str_digits(current)
+
+#For recursion tests, easily exceeds default recursion limit
+EXCEEDS_RECURSION_LIMIT = 5000
+
+# The default C recursion limit (from Include/cpython/pystate.h).
+C_RECURSION_LIMIT = 1500
+
+#Windows doesn't have os.uname() but it doesn't support s390x.
+skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == 's390x',
+                                'skipped on s390x')
+
+Py_TRACE_REFS = hasattr(sys, 'getobjects')

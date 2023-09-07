@@ -7,7 +7,9 @@ import time
 
 from test import support
 from test.support import import_helper
+from test.support import threading_helper
 _interpreters = import_helper.import_module('_xxsubinterpreters')
+_channels = import_helper.import_module('_xxinterpchannels')
 from test.support import interpreters
 
 
@@ -462,6 +464,29 @@ class TestInterpreterRun(TestBase):
     # test_xxsubinterpreters covers the remaining Interpreter.run() behavior.
 
 
+class StressTests(TestBase):
+
+    # In these tests we generally want a lot of interpreters,
+    # but not so many that any test takes too long.
+
+    @support.requires_resource('cpu')
+    def test_create_many_sequential(self):
+        alive = []
+        for _ in range(100):
+            interp = interpreters.create()
+            alive.append(interp)
+
+    @support.requires_resource('cpu')
+    def test_create_many_threaded(self):
+        alive = []
+        def task():
+            interp = interpreters.create()
+            alive.append(interp)
+        threads = (threading.Thread(target=task) for _ in range(200))
+        with threading_helper.start_threads(threads):
+            pass
+
+
 class TestIsShareable(TestBase):
 
     def test_default_shareables(self):
@@ -533,7 +558,7 @@ class TestRecvChannelAttrs(TestBase):
 
     def test_id_type(self):
         rch, _ = interpreters.create_channel()
-        self.assertIsInstance(rch.id, _interpreters.ChannelID)
+        self.assertIsInstance(rch.id, _channels.ChannelID)
 
     def test_custom_id(self):
         rch = interpreters.RecvChannel(1)
@@ -558,7 +583,7 @@ class TestSendChannelAttrs(TestBase):
 
     def test_id_type(self):
         _, sch = interpreters.create_channel()
-        self.assertIsInstance(sch.id, _interpreters.ChannelID)
+        self.assertIsInstance(sch.id, _channels.ChannelID)
 
     def test_custom_id(self):
         sch = interpreters.SendChannel(1)

@@ -48,12 +48,9 @@ call "%PCBUILD%\get_externals.bat" --tkinter-src %ORG_SETTING%
 
 %MSBUILD% "%PCBUILD%\tcl.vcxproj" /p:Configuration=Release /p:Platform=Win32
 %MSBUILD% "%PCBUILD%\tk.vcxproj" /p:Configuration=Release /p:Platform=Win32
-%MSBUILD% "%PCBUILD%\tix.vcxproj" /p:Configuration=Release /p:Platform=Win32
 
 %MSBUILD% "%PCBUILD%\tcl.vcxproj" /p:Configuration=Release /p:Platform=x64
 %MSBUILD% "%PCBUILD%\tk.vcxproj" /p:Configuration=Release /p:Platform=x64
-%MSBUILD% "%PCBUILD%\tix.vcxproj" /p:Configuration=Release /p:Platform=x64
 
 %MSBUILD% "%PCBUILD%\tcl.vcxproj" /p:Configuration=Release /p:Platform=ARM64
 %MSBUILD% "%PCBUILD%\tk.vcxproj" /p:Configuration=Release /p:Platform=ARM64
-%MSBUILD% "%PCBUILD%\tix.vcxproj" /p:Configuration=Release /p:Platform=ARM64

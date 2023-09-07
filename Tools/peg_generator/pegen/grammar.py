@@ -1,22 +1,15 @@
 from __future__ import annotations
 
-from abc import abstractmethod
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Any,
-    Dict,
     Iterable,
     Iterator,
     List,
     Optional,
-    Set,
     Tuple,
     Union,
 )
-
-if TYPE_CHECKING:
-    from pegen.parser_generator import ParserGenerator
 
 
 class GrammarError(Exception):
@@ -356,7 +349,7 @@ class Cut:
 
 Plain = Union[Leaf, Group]
 Item = Union[Plain, Opt, Repeat, Forced, Lookahead, Rhs, Cut]
-RuleName = Tuple[str, str]
+RuleName = Tuple[str, Optional[str]]
 MetaTuple = Tuple[str, Optional[str]]
 MetaList = List[MetaTuple]
 RuleList = List[Rule]

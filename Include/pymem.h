@@ -1,12 +1,8 @@
-/* The PyMem_ family:  low-level memory allocation interfaces.
-   See objimpl.h for the PyObject_ memory family.
-*/
+// The PyMem_ family:  low-level memory allocation interfaces.
+// See objimpl.h for the PyObject_ memory family.
 
 #ifndef Py_PYMEM_H
 #define Py_PYMEM_H
-
-#include "pyport.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -82,13 +78,13 @@ PyAPI_FUNC(void) PyMem_Free(void *ptr);
 // Deprecated aliases only kept for backward compatibility.
 // PyMem_Del and PyMem_DEL are defined with no parameter to be able to use
 // them as function pointers (ex: dealloc = PyMem_Del).
-#define PyMem_MALLOC(n)           PyMem_Malloc(n)
-#define PyMem_NEW(type, n)        PyMem_New(type, n)
-#define PyMem_REALLOC(p, n)       PyMem_Realloc(p, n)
-#define PyMem_RESIZE(p, type, n)  PyMem_Resize(p, type, n)
-#define PyMem_FREE(p)             PyMem_Free(p)
-#define PyMem_Del                 PyMem_Free
-#define PyMem_DEL                 PyMem_Free
+#define PyMem_MALLOC(n)           PyMem_Malloc((n))
+#define PyMem_NEW(type, n)        PyMem_New(type, (n))
+#define PyMem_REALLOC(p, n)       PyMem_Realloc((p), (n))
+#define PyMem_RESIZE(p, type, n)  PyMem_Resize((p), type, (n))
+#define PyMem_FREE(p)             PyMem_Free((p))
+#define PyMem_Del(p)              PyMem_Free((p))
+#define PyMem_DEL(p)              PyMem_Free((p))
 
 
 #ifndef Py_LIMITED_API
@@ -100,5 +96,4 @@ PyAPI_FUNC(void) PyMem_Free(void *ptr);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* !Py_PYMEM_H */
+#endif   // !Py_PYMEM_H

@@ -8,28 +8,47 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_interp.h"        // PyInterpreterState.eval_frame
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+
 /* Forward declarations */
 struct pyruntimestate;
 struct _ceval_runtime_state;
+
+// Export for '_lsprof' shared extension
+PyAPI_FUNC(int) _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
+
+extern int _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
+
+// Helper to look up a builtin object
+// Export for 'array' shared extension
+PyAPI_FUNC(PyObject*) _PyEval_GetBuiltin(PyObject *);
+
+extern PyObject* _PyEval_GetBuiltinId(_Py_Identifier *);
+
+extern void _PyEval_SetSwitchInterval(unsigned long microseconds);
+extern unsigned long _PyEval_GetSwitchInterval(void);
+
+// Export for '_queue' shared extension
+PyAPI_FUNC(int) _PyEval_MakePendingCalls(PyThreadState *);
 
 #ifndef Py_DEFAULT_RECURSION_LIMIT
 #  define Py_DEFAULT_RECURSION_LIMIT 1000
 #endif
 
-#include "pycore_interp.h"        // PyInterpreterState.eval_frame
-#include "pycore_pystate.h"       // _PyThreadState_GET()
-
-
 extern void _Py_FinishPendingCalls(PyThreadState *tstate);
-extern void _PyEval_InitRuntimeState(struct _ceval_runtime_state *);
-extern void _PyEval_InitState(struct _ceval_state *, PyThread_type_lock);
+extern void _PyEval_InitState(PyInterpreterState *, PyThread_type_lock);
 extern void _PyEval_FiniState(struct _ceval_state *ceval);
-PyAPI_FUNC(void) _PyEval_SignalReceived(PyInterpreterState *interp);
+extern void _PyEval_SignalReceived(PyInterpreterState *interp);
+
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(int) _PyEval_AddPendingCall(
     PyInterpreterState *interp,
     int (*func)(void *),
-    void *arg);
-PyAPI_FUNC(void) _PyEval_SignalAsyncExc(PyInterpreterState *interp);
+    void *arg,
+    int mainthreadonly);
+
+extern void _PyEval_SignalAsyncExc(PyInterpreterState *interp);
 #ifdef HAVE_FORK
 extern PyStatus _PyEval_ReInitThreads(PyThreadState *tstate);
 #endif
@@ -58,10 +77,32 @@ extern PyObject* _PyEval_BuiltinsFromGlobals(
     PyThreadState *tstate,
     PyObject *globals);
 
+// Trampoline API
+
+typedef struct {
+    // Callback to initialize the trampoline state
+    void* (*init_state)(void);
+    // Callback to register every trampoline being created
+    void (*write_state)(void* state, const void *code_addr,
+                        unsigned int code_size, PyCodeObject* code);
+    // Callback to free the trampoline state
+    int (*free_state)(void* state);
+} _PyPerf_Callbacks;
+
+extern int _PyPerfTrampoline_SetCallbacks(_PyPerf_Callbacks *);
+extern void _PyPerfTrampoline_GetCallbacks(_PyPerf_Callbacks *);
+extern int _PyPerfTrampoline_Init(int activate);
+extern int _PyPerfTrampoline_Fini(void);
+extern int _PyIsPerfTrampolineActive(void);
+extern PyStatus _PyPerfTrampoline_AfterFork_Child(void);
+#ifdef PY_HAVE_PERF_TRAMPOLINE
+extern _PyPerf_Callbacks _Py_perfmap_callbacks;
+#endif
 
 static inline PyObject*
 _PyEval_EvalFrame(PyThreadState *tstate, struct _PyInterpreterFrame *frame, int throwflag)
 {
+    EVAL_CALL_STAT_INC(EVAL_CALL_TOTAL);
     if (tstate->interp->eval_frame == NULL) {
         return _PyEval_EvalFrameDefault(tstate, frame, throwflag);
     }
@@ -74,15 +115,13 @@ _PyEval_Vector(PyThreadState *tstate,
             PyObject* const* args, size_t argcount,
             PyObject *kwnames);
 
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-extern int _PyEval_ThreadsInitialized(PyInterpreterState *interp);
-#else
-extern int _PyEval_ThreadsInitialized(struct pyruntimestate *runtime);
-#endif
-extern PyStatus _PyEval_InitGIL(PyThreadState *tstate);
+extern int _PyEval_ThreadsInitialized(void);
+extern PyStatus _PyEval_InitGIL(PyThreadState *tstate, int own_gil);
 extern void _PyEval_FiniGIL(PyInterpreterState *interp);
 
-extern void _PyEval_ReleaseLock(PyThreadState *tstate);
+extern void _PyEval_AcquireLock(PyThreadState *tstate);
+extern void _PyEval_ReleaseLock(PyInterpreterState *, PyThreadState *);
+extern PyThreadState * _PyThreadState_SwapNoGIL(PyThreadState *);
 
 extern void _PyEval_DeactivateOpCache(void);
 
@@ -93,18 +132,23 @@ extern void _PyEval_DeactivateOpCache(void);
 /* With USE_STACKCHECK macro defined, trigger stack checks in
    _Py_CheckRecursiveCall() on every 64th call to _Py_EnterRecursiveCall. */
 static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
-    return (tstate->recursion_remaining-- <= 0
-            || (tstate->recursion_remaining & 63) == 0);
+    return (tstate->c_recursion_remaining-- <= 0
+            || (tstate->c_recursion_remaining & 63) == 0);
 }
 #else
 static inline int _Py_MakeRecCheck(PyThreadState *tstate) {
-    return tstate->recursion_remaining-- <= 0;
+    return tstate->c_recursion_remaining-- <= 0;
 }
 #endif
 
+// Export for '_json' shared extension, used via _Py_EnterRecursiveCall()
+// static inline function.
 PyAPI_FUNC(int) _Py_CheckRecursiveCall(
     PyThreadState *tstate,
     const char *where);
+
+int _Py_CheckRecursiveCallPy(
+    PyThreadState *tstate);
 
 static inline int _Py_EnterRecursiveCallTstate(PyThreadState *tstate,
                                                const char *where) {
@@ -117,7 +161,7 @@ static inline int _Py_EnterRecursiveCall(const char *where) {
 }
 
 static inline void _Py_LeaveRecursiveCallTstate(PyThreadState *tstate)  {
-    tstate->recursion_remaining++;
+    tstate->c_recursion_remaining++;
 }
 
 static inline void _Py_LeaveRecursiveCall(void)  {
@@ -128,6 +172,26 @@ static inline void _Py_LeaveRecursiveCall(void)  {
 extern struct _PyInterpreterFrame* _PyEval_GetFrame(void);
 
 extern PyObject* _Py_MakeCoro(PyFunctionObject *func);
+
+/* Handle signals, pending calls, GIL drop request
+   and asynchronous exception */
+extern int _Py_HandlePending(PyThreadState *tstate);
+
+extern PyObject * _PyEval_GetFrameLocals(void);
+
+extern const binaryfunc _PyEval_BinaryOps[];
+int _PyEval_CheckExceptStarTypeValid(PyThreadState *tstate, PyObject* right);
+int _PyEval_CheckExceptTypeValid(PyThreadState *tstate, PyObject* right);
+int _PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type, PyObject **match, PyObject **rest);
+void _PyEval_FormatAwaitableError(PyThreadState *tstate, PyTypeObject *type, int oparg);
+void _PyEval_FormatExcCheckArg(PyThreadState *tstate, PyObject *exc, const char *format_str, PyObject *obj);
+void _PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *co, int oparg);
+void _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwargs);
+PyObject *_PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t nargs, PyObject *kwargs);
+PyObject *_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys);
+int _PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v, int argcnt, int argcntafter, PyObject **sp);
+void _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
+
 
 #ifdef __cplusplus
 }

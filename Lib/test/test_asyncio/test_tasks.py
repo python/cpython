@@ -1,22 +1,19 @@
 """Tests for tasks.py."""
 
 import collections
-import contextlib
 import contextvars
-import functools
 import gc
 import io
 import random
 import re
 import sys
-import textwrap
 import traceback
+import types
 import unittest
 from unittest import mock
 from types import GenericAlias
 
 import asyncio
-from asyncio import coroutines
 from asyncio import futures
 from asyncio import tasks
 from test.test_asyncio import utils as test_utils
@@ -113,11 +110,7 @@ class BaseTaskTests:
         self.assertTrue(hasattr(t, '_cancel_message'))
         self.assertEqual(t._cancel_message, None)
 
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "Passing 'msg' argument"
-        ):
-            t.cancel('my message')
+        t.cancel('my message')
         self.assertEqual(t._cancel_message, 'my message')
 
         with self.assertRaises(asyncio.CancelledError) as cm:
@@ -129,11 +122,7 @@ class BaseTaskTests:
         async def coro():
             pass
         t = self.new_task(self.loop, coro())
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "Passing 'msg' argument"
-        ):
-            t.cancel('my message')
+        t.cancel('my message')
         t._cancel_message = 'my new message'
         self.assertEqual(t._cancel_message, 'my new message')
 
@@ -208,10 +197,8 @@ class BaseTaskTests:
 
         a = notmuch()
         self.addCleanup(a.close)
-        with self.assertWarns(DeprecationWarning) as cm:
-            with self.assertRaisesRegex(RuntimeError, 'There is no current event loop'):
-                asyncio.ensure_future(a)
-        self.assertEqual(cm.filename, __file__)
+        with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
+            asyncio.ensure_future(a)
 
         async def test():
             return asyncio.ensure_future(notmuch())
@@ -221,12 +208,10 @@ class BaseTaskTests:
         self.assertTrue(t.done())
         self.assertEqual(t.result(), 'ok')
 
-        # Deprecated in 3.10
+        # Deprecated in 3.10, undeprecated in 3.12
         asyncio.set_event_loop(self.loop)
         self.addCleanup(asyncio.set_event_loop, None)
-        with self.assertWarns(DeprecationWarning) as cm:
-            t = asyncio.ensure_future(notmuch())
-        self.assertEqual(cm.filename, __file__)
+        t = asyncio.ensure_future(notmuch())
         self.assertIs(t._loop, self.loop)
         self.loop.run_until_complete(t)
         self.assertTrue(t.done())
@@ -289,6 +274,20 @@ class BaseTaskTests:
         fut = asyncio.ensure_future(Aw(coro()), loop=loop)
         loop.run_until_complete(fut)
         self.assertEqual(fut.result(), 'ok')
+
+    def test_ensure_future_task_awaitable(self):
+        class Aw:
+            def __await__(self):
+                return asyncio.sleep(0, result='ok').__await__()
+
+        loop = asyncio.new_event_loop()
+        self.set_event_loop(loop)
+        task = asyncio.ensure_future(Aw(), loop=loop)
+        loop.run_until_complete(task)
+        self.assertTrue(task.done())
+        self.assertEqual(task.result(), 'ok')
+        self.assertIsInstance(task.get_coro(), types.CoroutineType)
+        loop.close()
 
     def test_ensure_future_neither(self):
         with self.assertRaises(TypeError):
@@ -399,6 +398,18 @@ class BaseTaskTests:
         self.assertLess(int(match1.group(1)), int(match2.group(1)))
         self.loop.run_until_complete(t1)
         self.loop.run_until_complete(t2)
+
+    def test_task_set_name_pylong(self):
+        # test that setting the task name to a PyLong explicitly doesn't
+        # incorrectly trigger the deferred name formatting logic
+        async def notmuch():
+            return 123
+
+        t = self.new_task(self.loop, notmuch(), name=987654321)
+        self.assertEqual(t.get_name(), '987654321')
+        t.set_name(123456789)
+        self.assertEqual(t.get_name(), '123456789')
+        self.loop.run_until_complete(t)
 
     def test_task_repr_name_not_str(self):
         async def notmuch():
@@ -525,7 +536,7 @@ class BaseTaskTests:
         finally:
             loop.close()
 
-    def test_uncancel(self):
+    def test_uncancel_basic(self):
         loop = asyncio.new_event_loop()
 
         async def task():
@@ -538,14 +549,137 @@ class BaseTaskTests:
         try:
             t = self.new_task(loop, task())
             loop.run_until_complete(asyncio.sleep(0.01))
-            self.assertTrue(t.cancel())  # Cancel first sleep
-            self.assertIn(" cancelling ", repr(t))
-            loop.run_until_complete(asyncio.sleep(0.01))
-            self.assertNotIn(" cancelling ", repr(t))  # after .uncancel()
-            self.assertTrue(t.cancel())  # Cancel second sleep
 
+            # Cancel first sleep
+            self.assertTrue(t.cancel())
+            self.assertIn(" cancelling ", repr(t))
+            self.assertEqual(t.cancelling(), 1)
+            self.assertFalse(t.cancelled())  # Task is still not complete
+            loop.run_until_complete(asyncio.sleep(0.01))
+
+            # after .uncancel()
+            self.assertNotIn(" cancelling ", repr(t))
+            self.assertEqual(t.cancelling(), 0)
+            self.assertFalse(t.cancelled())  # Task is still not complete
+
+            # Cancel second sleep
+            self.assertTrue(t.cancel())
+            self.assertEqual(t.cancelling(), 1)
+            self.assertFalse(t.cancelled())  # Task is still not complete
             with self.assertRaises(asyncio.CancelledError):
                 loop.run_until_complete(t)
+            self.assertTrue(t.cancelled())  # Finally, task complete
+            self.assertTrue(t.done())
+
+            # uncancel is no longer effective after the task is complete
+            t.uncancel()
+            self.assertTrue(t.cancelled())
+            self.assertTrue(t.done())
+        finally:
+            loop.close()
+
+    def test_uncancel_structured_blocks(self):
+        # This test recreates the following high-level structure using uncancel()::
+        #
+        #     async def make_request_with_timeout():
+        #         try:
+        #             async with asyncio.timeout(1):
+        #                 # Structured block affected by the timeout:
+        #                 await make_request()
+        #                 await make_another_request()
+        #         except TimeoutError:
+        #             pass  # There was a timeout
+        #         # Outer code not affected by the timeout:
+        #         await unrelated_code()
+
+        loop = asyncio.new_event_loop()
+
+        async def make_request_with_timeout(*, sleep: float, timeout: float):
+            task = asyncio.current_task()
+            loop = task.get_loop()
+
+            timed_out = False
+            structured_block_finished = False
+            outer_code_reached = False
+
+            def on_timeout():
+                nonlocal timed_out
+                timed_out = True
+                task.cancel()
+
+            timeout_handle = loop.call_later(timeout, on_timeout)
+            try:
+                try:
+                    # Structured block affected by the timeout
+                    await asyncio.sleep(sleep)
+                    structured_block_finished = True
+                finally:
+                    timeout_handle.cancel()
+                    if (
+                        timed_out
+                        and task.uncancel() == 0
+                        and type(sys.exception()) is asyncio.CancelledError
+                    ):
+                        # Note the five rules that are needed here to satisfy proper
+                        # uncancellation:
+                        #
+                        # 1. handle uncancellation in a `finally:` block to allow for
+                        #    plain returns;
+                        # 2. our `timed_out` flag is set, meaning that it was our event
+                        #    that triggered the need to uncancel the task, regardless of
+                        #    what exception is raised;
+                        # 3. we can call `uncancel()` because *we* called `cancel()`
+                        #    before;
+                        # 4. we call `uncancel()` but we only continue converting the
+                        #    CancelledError to TimeoutError if `uncancel()` caused the
+                        #    cancellation request count go down to 0.  We need to look
+                        #    at the counter vs having a simple boolean flag because our
+                        #    code might have been nested (think multiple timeouts). See
+                        #    commit 7fce1063b6e5a366f8504e039a8ccdd6944625cd for
+                        #    details.
+                        # 5. we only convert CancelledError to TimeoutError; for other
+                        #    exceptions raised due to the cancellation (like
+                        #    a ConnectionLostError from a database client), simply
+                        #    propagate them.
+                        #
+                        # Those checks need to take place in this exact order to make
+                        # sure the `cancelling()` counter always stays in sync.
+                        #
+                        # Additionally, the original stimulus to `cancel()` the task
+                        # needs to be unscheduled to avoid re-cancelling the task later.
+                        # Here we do it by cancelling `timeout_handle` in the `finally:`
+                        # block.
+                        raise TimeoutError
+            except TimeoutError:
+                self.assertTrue(timed_out)
+
+            # Outer code not affected by the timeout:
+            outer_code_reached = True
+            await asyncio.sleep(0)
+            return timed_out, structured_block_finished, outer_code_reached
+
+        try:
+            # Test which timed out.
+            t1 = self.new_task(loop, make_request_with_timeout(sleep=10.0, timeout=0.1))
+            timed_out, structured_block_finished, outer_code_reached = (
+                loop.run_until_complete(t1)
+            )
+            self.assertTrue(timed_out)
+            self.assertFalse(structured_block_finished)  # it was cancelled
+            self.assertTrue(outer_code_reached)  # task got uncancelled after leaving
+                                                 # the structured block and continued until
+                                                 # completion
+            self.assertEqual(t1.cancelling(), 0) # no pending cancellation of the outer task
+
+            # Test which did not time out.
+            t2 = self.new_task(loop, make_request_with_timeout(sleep=0, timeout=10.0))
+            timed_out, structured_block_finished, outer_code_reached = (
+                loop.run_until_complete(t2)
+            )
+            self.assertFalse(timed_out)
+            self.assertTrue(structured_block_finished)
+            self.assertTrue(outer_code_reached)
+            self.assertEqual(t2.cancelling(), 0)
         finally:
             loop.close()
 
@@ -590,14 +724,7 @@ class BaseTaskTests:
                 async def coro():
                     task = self.new_task(loop, sleep())
                     await asyncio.sleep(0)
-                    if cancel_args not in ((), (None,)):
-                        with self.assertWarnsRegex(
-                                DeprecationWarning,
-                                "Passing 'msg' argument"
-                        ):
-                            task.cancel(*cancel_args)
-                    else:
-                        task.cancel(*cancel_args)
+                    task.cancel(*cancel_args)
                     done, pending = await asyncio.wait([task])
                     task.result()
 
@@ -631,14 +758,7 @@ class BaseTaskTests:
                 async def coro():
                     task = self.new_task(loop, sleep())
                     await asyncio.sleep(0)
-                    if cancel_args not in ((), (None,)):
-                        with self.assertWarnsRegex(
-                                DeprecationWarning,
-                                "Passing 'msg' argument"
-                        ):
-                            task.cancel(*cancel_args)
-                    else:
-                        task.cancel(*cancel_args)
+                    task.cancel(*cancel_args)
                     done, pending = await asyncio.wait([task])
                     task.exception()
 
@@ -661,17 +781,10 @@ class BaseTaskTests:
             fut.set_result(None)
             await asyncio.sleep(10)
 
-        def cancel(task, msg):
-            with self.assertWarnsRegex(
-                    DeprecationWarning,
-                    "Passing 'msg' argument"
-            ):
-                task.cancel(msg)
-
         async def coro():
             inner_task = self.new_task(loop, sleep())
             await fut
-            loop.call_soon(cancel, inner_task, 'msg')
+            loop.call_soon(inner_task.cancel, 'msg')
             try:
                 await inner_task
             except asyncio.CancelledError as ex:
@@ -697,11 +810,7 @@ class BaseTaskTests:
         async def coro():
             task = self.new_task(loop, sleep())
             # We deliberately leave out the sleep here.
-            with self.assertWarnsRegex(
-                    DeprecationWarning,
-                    "Passing 'msg' argument"
-            ):
-                task.cancel('my message')
+            task.cancel('my message')
             done, pending = await asyncio.wait([task])
             task.exception()
 
@@ -1276,6 +1385,22 @@ class BaseTaskTests:
         self.assertEqual(res, 42)
         self.assertAlmostEqual(0.15, loop.time())
 
+
+    def test_wait_generator(self):
+        async def func(a):
+            return a
+
+        loop = self.new_test_loop()
+
+        async def main():
+            tasks = (self.new_task(loop, func(i)) for i in range(10))
+            done, pending = await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
+            self.assertEqual(len(done), 10)
+            self.assertEqual(len(pending), 0)
+
+        loop.run_until_complete(main())
+
+
     def test_as_completed(self):
 
         def gen():
@@ -1446,10 +1571,8 @@ class BaseTaskTests:
         self.addCleanup(a.close)
 
         futs = asyncio.as_completed([a])
-        with self.assertWarns(DeprecationWarning) as cm:
-            with self.assertRaisesRegex(RuntimeError, 'There is no current event loop'):
-                list(futs)
-        self.assertEqual(cm.filename, __file__)
+        with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
+            list(futs)
 
     def test_as_completed_coroutine_use_running_loop(self):
         loop = self.new_test_loop()
@@ -1485,6 +1608,21 @@ class BaseTaskTests:
         self.assertTrue(t.done())
         self.assertEqual(t.result(), 'yeah')
         self.assertAlmostEqual(0.1, loop.time())
+
+    def test_sleep_when_delay_is_nan(self):
+
+        def gen():
+            yield
+
+        loop = self.new_test_loop(gen)
+
+        async def sleeper():
+            await asyncio.sleep(float("nan"))
+
+        t = self.new_task(loop, sleeper())
+
+        with self.assertRaises(ValueError):
+            loop.run_until_complete(t)
 
     def test_sleep_cancel(self):
 
@@ -1653,6 +1791,7 @@ class BaseTaskTests:
         self.assertTrue(asyncio.iscoroutinefunction(fn2))
 
         self.assertFalse(asyncio.iscoroutinefunction(mock.Mock()))
+        self.assertTrue(asyncio.iscoroutinefunction(mock.AsyncMock()))
 
     def test_coroutine_non_gen_function(self):
         async def func():
@@ -1878,10 +2017,8 @@ class BaseTaskTests:
 
         inner = coro()
         self.addCleanup(inner.close)
-        with self.assertWarns(DeprecationWarning) as cm:
-            with self.assertRaisesRegex(RuntimeError, 'There is no current event loop'):
-                asyncio.shield(inner)
-        self.assertEqual(cm.filename, __file__)
+        with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
+            asyncio.shield(inner)
 
     def test_shield_coroutine_use_running_loop(self):
         async def coro():
@@ -1895,15 +2032,13 @@ class BaseTaskTests:
         self.assertEqual(res, 42)
 
     def test_shield_coroutine_use_global_loop(self):
-        # Deprecated in 3.10
+        # Deprecated in 3.10, undeprecated in 3.12
         async def coro():
             return 42
 
         asyncio.set_event_loop(self.loop)
         self.addCleanup(asyncio.set_event_loop, None)
-        with self.assertWarns(DeprecationWarning) as cm:
-            outer = asyncio.shield(coro())
-        self.assertEqual(cm.filename, __file__)
+        outer = asyncio.shield(coro())
         self.assertEqual(outer._loop, self.loop)
         res = self.loop.run_until_complete(outer)
         self.assertEqual(res, 42)
@@ -2015,8 +2150,8 @@ class BaseTaskTests:
         async def create():
             # The indirection fut->child_coro is needed since otherwise the
             # gathering task is done at the same time as the child future
-            def child_coro():
-                return (yield from fut)
+            async def child_coro():
+                return await fut
             gather_future = asyncio.gather(child_coro())
             return asyncio.ensure_future(gather_future)
         gather_task = loop.run_until_complete(create())
@@ -2062,14 +2197,7 @@ class BaseTaskTests:
                 async def main():
                     qwe = self.new_task(loop, test())
                     await asyncio.sleep(0.2)
-                    if cancel_args not in ((), (None,)):
-                        with self.assertWarnsRegex(
-                                DeprecationWarning,
-                                "Passing 'msg' argument"
-                        ):
-                            qwe.cancel(*cancel_args)
-                    else:
-                        qwe.cancel(*cancel_args)
+                    qwe.cancel(*cancel_args)
                     await qwe
 
                 try:
@@ -2365,6 +2493,17 @@ class BaseTaskTests:
         finally:
             loop.close()
 
+    def test_get_context(self):
+        loop = asyncio.new_event_loop()
+        coro = coroutine_function()
+        context = contextvars.copy_context()
+        try:
+            task = self.new_task(loop, coro, context=context)
+            loop.run_until_complete(task)
+            self.assertIs(task.get_context(), context)
+        finally:
+            loop.close()
+
 
 def add_subclass_tests(cls):
     BaseTask = cls.Task
@@ -2383,13 +2522,7 @@ def add_subclass_tests(cls):
             return super().add_done_callback(*args, **kwargs)
 
     class Task(CommonFuture, BaseTask):
-        def __init__(self, *args, **kwargs):
-            self._check_future_called = 0
-            super().__init__(*args, **kwargs)
-
-        def _check_future(self, future):
-            self._check_future_called += 1
-            return super()._check_future(future)
+        pass
 
     class Future(CommonFuture, BaseFuture):
         pass
@@ -2414,8 +2547,6 @@ def add_subclass_tests(cls):
         self.assertEqual(
             dict(fut.calls),
             {'add_done_callback': 1})
-
-        self.assertEqual(1, task._check_future_called)
 
     # Add patched Task & Future back to the test case
     cls.Task = Task
@@ -2731,6 +2862,7 @@ class CIntrospectionTests(test_utils.TestCase, BaseTaskIntrospectionTests):
 
 
 class BaseCurrentLoopTests:
+    current_task = None
 
     def setUp(self):
         super().setUp()
@@ -2741,33 +2873,39 @@ class BaseCurrentLoopTests:
         raise NotImplementedError
 
     def test_current_task_no_running_loop(self):
-        self.assertIsNone(asyncio.current_task(loop=self.loop))
+        self.assertIsNone(self.current_task(loop=self.loop))
 
     def test_current_task_no_running_loop_implicit(self):
-        with self.assertRaises(RuntimeError):
-            asyncio.current_task()
+        with self.assertRaisesRegex(RuntimeError, 'no running event loop'):
+            self.current_task()
 
     def test_current_task_with_implicit_loop(self):
         async def coro():
-            self.assertIs(asyncio.current_task(loop=self.loop), task)
+            self.assertIs(self.current_task(loop=self.loop), task)
 
-            self.assertIs(asyncio.current_task(None), task)
-            self.assertIs(asyncio.current_task(), task)
+            self.assertIs(self.current_task(None), task)
+            self.assertIs(self.current_task(), task)
 
         task = self.new_task(coro())
         self.loop.run_until_complete(task)
-        self.assertIsNone(asyncio.current_task(loop=self.loop))
+        self.assertIsNone(self.current_task(loop=self.loop))
 
 
 class PyCurrentLoopTests(BaseCurrentLoopTests, test_utils.TestCase):
+    current_task = staticmethod(tasks._py_current_task)
 
     def new_task(self, coro):
         return tasks._PyTask(coro, loop=self.loop)
 
 
-@unittest.skipUnless(hasattr(tasks, '_CTask'),
+@unittest.skipUnless(hasattr(tasks, '_CTask') and
+                     hasattr(tasks, '_c_current_task'),
                      'requires the C _asyncio module')
 class CCurrentLoopTests(BaseCurrentLoopTests, test_utils.TestCase):
+    if hasattr(tasks, '_c_current_task'):
+        current_task = staticmethod(tasks._c_current_task)
+    else:
+        current_task = None
 
     def new_task(self, coro):
         return getattr(tasks, '_CTask')(coro, loop=self.loop)
@@ -2908,10 +3046,8 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
         return asyncio.gather(*args, **kwargs)
 
     def test_constructor_empty_sequence_without_loop(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            with self.assertRaises(RuntimeError):
-                asyncio.gather()
-        self.assertEqual(cm.filename, __file__)
+        with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
+            asyncio.gather()
 
     def test_constructor_empty_sequence_use_running_loop(self):
         async def gather():
@@ -2924,12 +3060,10 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
         self.assertEqual(fut.result(), [])
 
     def test_constructor_empty_sequence_use_global_loop(self):
-        # Deprecated in 3.10
+        # Deprecated in 3.10, undeprecated in 3.12
         asyncio.set_event_loop(self.one_loop)
         self.addCleanup(asyncio.set_event_loop, None)
-        with self.assertWarns(DeprecationWarning) as cm:
-            fut = asyncio.gather()
-        self.assertEqual(cm.filename, __file__)
+        fut = asyncio.gather()
         self.assertIsInstance(fut, asyncio.Future)
         self.assertIs(fut._loop, self.one_loop)
         self._run_loop(self.one_loop)
@@ -3017,10 +3151,8 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
         self.addCleanup(gen1.close)
         gen2 = coro()
         self.addCleanup(gen2.close)
-        with self.assertWarns(DeprecationWarning) as cm:
-            with self.assertRaises(RuntimeError):
-                asyncio.gather(gen1, gen2)
-        self.assertEqual(cm.filename, __file__)
+        with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
+            asyncio.gather(gen1, gen2)
 
     def test_constructor_use_running_loop(self):
         async def coro():
@@ -3034,16 +3166,14 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
         self.one_loop.run_until_complete(fut)
 
     def test_constructor_use_global_loop(self):
-        # Deprecated in 3.10
+        # Deprecated in 3.10, undeprecated in 3.12
         async def coro():
             return 'abc'
         asyncio.set_event_loop(self.other_loop)
         self.addCleanup(asyncio.set_event_loop, None)
         gen1 = coro()
         gen2 = coro()
-        with self.assertWarns(DeprecationWarning) as cm:
-            fut = asyncio.gather(gen1, gen2)
-        self.assertEqual(cm.filename, __file__)
+        fut = asyncio.gather(gen1, gen2)
         self.assertIs(fut._loop, self.other_loop)
         self.other_loop.run_until_complete(fut)
 

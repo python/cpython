@@ -51,10 +51,6 @@ __all__ = ['TestResult', 'TestCase', 'IsolatedAsyncioTestCase', 'TestSuite',
            'registerResult', 'removeResult', 'removeHandler',
            'addModuleCleanup', 'doModuleCleanups', 'enterModuleContext']
 
-# Expose obsolete functions for backwards compatibility
-# bpo-5846: Deprecated in Python 3.11, scheduled for removal in Python 3.13.
-__all__.extend(['getTestCaseNames', 'makeSuite', 'findTestCases'])
-
 __unittest = True
 
 from .result import TestResult
@@ -67,20 +63,6 @@ from .main import TestProgram, main
 from .runner import TextTestRunner, TextTestResult
 from .signals import installHandler, registerResult, removeResult, removeHandler
 # IsolatedAsyncioTestCase will be imported lazily.
-from .loader import makeSuite, getTestCaseNames, findTestCases
-
-# deprecated
-_TextTestResult = TextTestResult
-
-
-# There are no tests here, so don't try to run anything discovered from
-# introspecting the symbols (e.g. FunctionTestCase). Instead, all our
-# tests come from within unittest.test.
-def load_tests(loader, tests, pattern):
-    import os.path
-    # top level directory cached on loader instance
-    this_dir = os.path.dirname(__file__)
-    return loader.discover(start_dir=this_dir, pattern=pattern)
 
 
 # Lazy import of IsolatedAsyncioTestCase from .async_case

@@ -1,7 +1,7 @@
 Quick Start Guide
 -----------------
 
-1.  Install Microsoft Visual Studio 2017 with Python workload and
+1.  Install Microsoft Visual Studio 2017 or later with Python workload and
     Python native development component.
 1a. Optionally install Python 3.6 or later.  If not installed,
     get_externals.bat (via build.bat) will download and use Python via
@@ -13,12 +13,10 @@ Quick Start Guide
 Building Python using Microsoft Visual C++
 ------------------------------------------
 
-This directory is used to build CPython for Microsoft Windows NT version
-6.0 or higher (Windows Vista, Windows Server 2008, or later) on 32 and 64
+This directory is used to build CPython for Microsoft Windows on 32- and 64-
 bit platforms.  Using this directory requires an installation of
-Microsoft Visual Studio 2017 (MSVC 14.1) with the *Python workload* and
-its optional *Python native development* component selected. (For
-command-line builds, Visual Studio 2015 may also be used.)
+Microsoft Visual Studio (MSVC) with the *Python workload* and
+its optional *Python native development* component selected.
 
 Building from the command line is recommended in order to obtain any
 external dependencies. To build, simply run the "build.bat" script without
@@ -105,7 +103,7 @@ pythonw
     Prompt window
 pylauncher
     py.exe, the Python Launcher for Windows, see
-        http://docs.python.org/3/using/windows.html#launcher
+        https://docs.python.org/3/using/windows.html#launcher
 pywlauncher
     pyw.exe, a variant of py.exe that doesn't open a Command Prompt
     window
@@ -140,15 +138,17 @@ _zoneinfo
 _decimal
 _elementtree
 _hashlib
-_msi
 _multiprocessing
 _overlapped
 _socket
 _testbuffer
 _testcapi
+_testclinic
+_testclinic_limited
 _testconsole
 _testimportmultiple
 _testmultiphase
+_testsinglephase
 _tkinter
 pyexpat
 select
@@ -168,14 +168,14 @@ _bz2
 _lzma
     Python wrapper for version 5.2.2 of the liblzma compression library
     Homepage:
-        http://tukaani.org/xz/
+        https://tukaani.org/xz/
 _ssl
-    Python wrapper for version 1.1.1k of the OpenSSL secure sockets
+    Python wrapper for version 3.0 of the OpenSSL secure sockets
     library, which is downloaded from our binaries repository at
     https://github.com/python/cpython-bin-deps.
 
     Homepage:
-        http://www.openssl.org/
+        https://www.openssl.org/
 
     Building OpenSSL requires Perl on your path, and can be performed by
     running PCbuild\prepare_ssl.bat. This will retrieve the version of
@@ -189,16 +189,16 @@ _ssl
     again when building.
 
 _sqlite3
-    Wraps SQLite 3.38.3, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.42.0, which is itself built by sqlite3.vcxproj
     Homepage:
-        http://www.sqlite.org/
+        https://www.sqlite.org/
 _tkinter
     Wraps version 8.6.6 of the Tk windowing system, which is downloaded
     from our binaries repository at
     https://github.com/python/cpython-bin-deps.
 
     Homepage:
-        http://www.tcl.tk/
+        https://www.tcl.tk/
 
     Building Tcl and Tk can be performed by running
     PCbuild\prepare_tcltk.bat. This will retrieve the version of the
@@ -252,12 +252,14 @@ against a profiling library and contain extra debug information. The
 PGUpdate configuration takes the profiling data and generates optimized
 binaries.
 
-The build_pgo.bat script automates the creation of optimized binaries.
-It creates the PGI files, runs the unit test suite or PyBench with the
-PGI python, and finally creates the optimized files.
+The build.bat script has an argument `--pgo` that automate the creation
+of optimized binaries.
+It creates the PGI files, runs the unit test suite with the PGI python,
+and finally creates the optimized files.
+You can customize the job for profiling with `--pgo-job <job>` option.
 
 See
-    http://msdn.microsoft.com/en-us/library/e7k32f4k(VS.140).aspx
+    https://docs.microsoft.com/en-us/cpp/build/profile-guided-optimizations
 for more on this topic.
 
 
@@ -284,7 +286,7 @@ The property files used are:
  * python (versions, directories and build names)
  * pyproject (base settings for all projects)
  * openssl (used by projects dependent upon OpenSSL)
- * tcltk (used by _tkinter, tcl, tk and tix projects)
+ * tcltk (used by _tkinter, tcl, and tk projects)
 
 The pyproject property file defines all of the build settings for each
 project, with some projects overriding certain specific values. The GUI

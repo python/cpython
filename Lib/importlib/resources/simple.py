@@ -16,31 +16,28 @@ class SimpleReader(abc.ABC):
     provider.
     """
 
-    @abc.abstractproperty
-    def package(self):
-        # type: () -> str
+    @property
+    @abc.abstractmethod
+    def package(self) -> str:
         """
         The name of the package for which this reader loads resources.
         """
 
     @abc.abstractmethod
-    def children(self):
-        # type: () -> List['SimpleReader']
+    def children(self) -> List['SimpleReader']:
         """
         Obtain an iterable of SimpleReader for available
         child containers (e.g. directories).
         """
 
     @abc.abstractmethod
-    def resources(self):
-        # type: () -> List[str]
+    def resources(self) -> List[str]:
         """
         Obtain available named resources for this virtual package.
         """
 
     @abc.abstractmethod
-    def open_binary(self, resource):
-        # type: (str) -> BinaryIO
+    def open_binary(self, resource: str) -> BinaryIO:
         """
         Obtain a File-like for a named resource.
         """
@@ -50,13 +47,35 @@ class SimpleReader(abc.ABC):
         return self.package.split('.')[-1]
 
 
+class ResourceContainer(Traversable):
+    """
+    Traversable container for a package's resources via its reader.
+    """
+
+    def __init__(self, reader: SimpleReader):
+        self.reader = reader
+
+    def is_dir(self):
+        return True
+
+    def is_file(self):
+        return False
+
+    def iterdir(self):
+        files = (ResourceHandle(self, name) for name in self.reader.resources)
+        dirs = map(ResourceContainer, self.reader.children())
+        return itertools.chain(files, dirs)
+
+    def open(self, *args, **kwargs):
+        raise IsADirectoryError()
+
+
 class ResourceHandle(Traversable):
     """
     Handle to a named resource in a ResourceReader.
     """
 
-    def __init__(self, parent, name):
-        # type: (ResourceContainer, str) -> None
+    def __init__(self, parent: ResourceContainer, name: str):
         self.parent = parent
         self.name = name  # type: ignore
 
@@ -74,44 +93,6 @@ class ResourceHandle(Traversable):
 
     def joinpath(self, name):
         raise RuntimeError("Cannot traverse into a resource")
-
-
-class ResourceContainer(Traversable):
-    """
-    Traversable container for a package's resources via its reader.
-    """
-
-    def __init__(self, reader):
-        # type: (SimpleReader) -> None
-        self.reader = reader
-
-    def is_dir(self):
-        return True
-
-    def is_file(self):
-        return False
-
-    def iterdir(self):
-        files = (ResourceHandle(self, name) for name in self.reader.resources)
-        dirs = map(ResourceContainer, self.reader.children())
-        return itertools.chain(files, dirs)
-
-    def open(self, *args, **kwargs):
-        raise IsADirectoryError()
-
-    @staticmethod
-    def _flatten(compound_names):
-        for name in compound_names:
-            yield from name.split('/')
-
-    def joinpath(self, *descendants):
-        if not descendants:
-            return self
-        names = self._flatten(descendants)
-        target = next(names)
-        return next(
-            traversable for traversable in self.iterdir() if traversable.name == target
-        ).joinpath(*names)
 
 
 class TraversableReader(TraversableResources, SimpleReader):
