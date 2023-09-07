@@ -3848,7 +3848,7 @@ features:
    - :const:`TFD_TIMER_ABSTIME`
    - :const:`TFD_TIMER_CANCEL_ON_SET`
 
-   The timer is disabled by setting *initial* :py:class:`float` to zero (``0``).
+   The timer is disabled by setting *initial* to zero (``0``).
    If *initial* is equal to or greater than zero, the timer is enabled.
    If *initial* is less than zero, it raises an :class:`OSError` exception
    with ``errno`` set to :const:`errno.EINVAL`
