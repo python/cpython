@@ -1190,14 +1190,6 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
                 if (err) {
                     return -1;
                 }
-                // If trace is disabled in trace function, we need to recalculate the original opcode
-                // of the current instruction because it might be INSTRUMENTED_INSTRUCTION before the
-                // trace function.
-                if (tstate->interp->sys_tracing_threads == 0) {
-                    if (original_opcode == INSTRUMENTED_INSTRUCTION) {
-                        original_opcode = instr->op.code;
-                    }
-                }
             }
         }
         tools &= (255 - (1 << PY_MONITORING_SYS_TRACE_ID));
@@ -1231,8 +1223,19 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
             remove_line_tools(code, i, 1 << tool);
         }
     } while (tools);
+
     Py_DECREF(line_obj);
 done:
+    // original_opcode is acquired before trace function and the callbacks. It's
+    // possible that the trace function or the callbacks turn off the instruction
+    // monitoring. If the instruction instrumentation is stripped, using the
+    // opcode could crash the interpreter. We should use the original opcode
+    // instead.
+    if (monitoring->active_monitors.tools[PY_MONITORING_EVENT_INSTRUCTION] == 0 &&
+        original_opcode == INSTRUMENTED_INSTRUCTION) {
+        original_opcode = instr->op.code;
+    }
+
     assert(original_opcode != 0);
     assert(original_opcode != INSTRUMENTED_LINE);
     assert(_PyOpcode_Deopt[original_opcode] == original_opcode);
