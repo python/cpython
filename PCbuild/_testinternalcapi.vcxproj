@@ -94,6 +94,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_testinternalcapi.c" />
+    <ClCompile Include="..\Modules\_testinternalcapi\pytime.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />

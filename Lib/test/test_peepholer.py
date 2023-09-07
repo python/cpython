@@ -4,6 +4,7 @@ import sys
 import textwrap
 import unittest
 
+from test import support
 from test.support.bytecode_helper import BytecodeTestCase, CfgOptimizationTestCase
 
 
@@ -522,6 +523,7 @@ class TestTranforms(BytecodeTestCase):
             return (y for x in a for y in [f(x)])
         self.assertEqual(count_instr_recursively(genexpr, 'FOR_ITER'), 1)
 
+    @support.requires_resource('cpu')
     def test_format_combinations(self):
         flags = '-+ #0'
         testcases = [
@@ -686,7 +688,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         def f():
             x = 1
             y = x + x
-        self.assertInBytecode(f, 'LOAD_FAST')
+        self.assertInBytecode(f, 'LOAD_FAST_LOAD_FAST')
 
     def test_load_fast_unknown_simple(self):
         def f():
@@ -790,7 +792,10 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
                 print(a00, a01, a62, a63)
                 print(a64, a65, a78, a79)
 
-        for i in 0, 1, 62, 63:
+        self.assertInBytecode(f, 'LOAD_FAST_LOAD_FAST', ("a00", "a01"))
+        self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', "a00")
+        self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', "a01")
+        for i in 62, 63:
             # First 64 locals: analyze completely
             self.assertInBytecode(f, 'LOAD_FAST', f"a{i:02}")
             self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', f"a{i:02}")
@@ -988,6 +993,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
             ('LOAD_CONST', 2, 13),
+            ('RETURN_VALUE', 13),
             lbl,
             ('LOAD_CONST', 3, 14),
             ('RETURN_VALUE', 14),
@@ -995,7 +1001,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         expected_insts = [
             ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
-            ('LOAD_CONST', 1, 13),
+            ('RETURN_CONST', 1, 13),
             lbl,
             ('RETURN_CONST', 2, 14),
         ]
@@ -1069,9 +1075,62 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('STORE_FAST', 1, 4),
             ('STORE_FAST', 1, 4),
             ('POP_TOP', 0, 4),
+            ('LOAD_CONST', 0, 5),
             ('RETURN_VALUE', 5)
         ]
-        self.cfg_optimization_test(insts, insts, consts=list(range(3)), nlocals=1)
+        expected_insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('NOP', 0, 3),
+            ('STORE_FAST', 1, 4),
+            ('POP_TOP', 0, 4),
+            ('RETURN_CONST', 0)
+        ]
+        self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
+
+    def test_dead_store_elimination_in_same_lineno(self):
+        insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('LOAD_CONST', 2, 3),
+            ('STORE_FAST', 1, 4),
+            ('STORE_FAST', 1, 4),
+            ('STORE_FAST', 1, 4),
+            ('LOAD_CONST', 0, 5),
+            ('RETURN_VALUE', 5)
+        ]
+        expected_insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('NOP', 0, 3),
+            ('POP_TOP', 0, 4),
+            ('STORE_FAST', 1, 4),
+            ('RETURN_CONST', 0, 5)
+        ]
+        self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
+
+    def test_no_dead_store_elimination_in_different_lineno(self):
+        insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('LOAD_CONST', 2, 3),
+            ('STORE_FAST', 1, 4),
+            ('STORE_FAST', 1, 5),
+            ('STORE_FAST', 1, 6),
+            ('LOAD_CONST', 0, 5),
+            ('RETURN_VALUE', 5)
+        ]
+        expected_insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('LOAD_CONST', 2, 3),
+            ('STORE_FAST', 1, 4),
+            ('STORE_FAST', 1, 5),
+            ('STORE_FAST', 1, 6),
+            ('RETURN_CONST', 0, 5)
+        ]
+        self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
+
 
 if __name__ == "__main__":
     unittest.main()

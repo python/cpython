@@ -489,7 +489,14 @@ class _ExecutorManagerThread(threading.Thread):
 
         # Mark pending tasks as failed.
         for work_id, work_item in self.pending_work_items.items():
-            work_item.future.set_exception(bpe)
+            try:
+                work_item.future.set_exception(bpe)
+            except _base.InvalidStateError as exc:
+                # set_exception() fails if the future is cancelled: ignore it.
+                # Trying to check if the future is cancelled before calling
+                # set_exception() would leave a race condition if the future is
+                # cancelled betwen the check and set_exception().
+                pass
             # Delete references to object. See issue16284
             del work_item
         self.pending_work_items.clear()
@@ -498,6 +505,10 @@ class _ExecutorManagerThread(threading.Thread):
         # locks may be in a dirty state and block forever.
         for p in self.processes.values():
             p.terminate()
+
+        # Prevent queue writing to a pipe which is no longer read.
+        # https://github.com/python/cpython/issues/94777
+        self.call_queue._reader.close()
 
         # clean up resources
         self.join_executor_internals()

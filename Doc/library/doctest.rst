@@ -409,10 +409,10 @@ Simple example::
    >>> [1, 2, 3].remove(42)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   ValueError: list.remove(x): x not in list
+   ValueError: 42 is not in list
 
-That doctest succeeds if :exc:`ValueError` is raised, with the ``list.remove(x):
-x not in list`` detail as shown.
+That doctest succeeds if :exc:`ValueError` is raised, with the ``42 is not in list``
+detail as shown.
 
 The expected output for an exception must start with a traceback header, which
 may be either of the following two lines, indented the same as the first line of
@@ -1409,6 +1409,27 @@ DocTestParser objects
       identifying this string, and is only used for error messages.
 
 
+TestResults objects
+^^^^^^^^^^^^^^^^^^^
+
+
+.. class:: TestResults(failed, attempted)
+
+   .. attribute:: failed
+
+      Number of failed tests.
+
+   .. attribute:: attempted
+
+      Number of attempted tests.
+
+   .. attribute:: skipped
+
+      Number of skipped tests.
+
+      .. versionadded:: 3.13
+
+
 .. _doctest-doctestrunner:
 
 DocTestRunner objects
@@ -1427,7 +1448,7 @@ DocTestRunner objects
    passing a subclass of :class:`OutputChecker` to the constructor.
 
    The test runner's display output can be controlled in two ways. First, an output
-   function can be passed to :meth:`TestRunner.run`; this function will be called
+   function can be passed to :meth:`run`; this function will be called
    with strings that should be displayed.  It defaults to ``sys.stdout.write``.  If
    capturing the output is not sufficient, then the display output can be also
    customized by subclassing DocTestRunner, and overriding the methods
@@ -1448,6 +1469,10 @@ DocTestRunner objects
    runner compares expected output to actual output, and how it displays failures.
    For more information, see section :ref:`doctest-options`.
 
+   The test runner accumulates statistics. The aggregated number of attempted,
+   failed and skipped examples is also available via the :attr:`tries`,
+   :attr:`failures` and :attr:`skips` attributes. The :meth:`run` and
+   :meth:`summarize` methods return a :class:`TestResults` instance.
 
    :class:`DocTestParser` defines the following methods:
 
@@ -1500,7 +1525,8 @@ DocTestRunner objects
    .. method:: run(test, compileflags=None, out=None, clear_globs=True)
 
       Run the examples in *test* (a :class:`DocTest` object), and display the
-      results using the writer function *out*.
+      results using the writer function *out*. Return a :class:`TestResults`
+      instance.
 
       The examples are run in the namespace ``test.globs``.  If *clear_globs* is
       true (the default), then this namespace will be cleared after the test runs,
@@ -1519,11 +1545,28 @@ DocTestRunner objects
    .. method:: summarize(verbose=None)
 
       Print a summary of all the test cases that have been run by this DocTestRunner,
-      and return a :term:`named tuple` ``TestResults(failed, attempted)``.
+      and return a :class:`TestResults` instance.
 
       The optional *verbose* argument controls how detailed the summary is.  If the
       verbosity is not specified, then the :class:`DocTestRunner`'s verbosity is
       used.
+
+   :class:`DocTestParser` has the following attributes:
+
+   .. attribute:: tries
+
+      Number of attempted examples.
+
+   .. attribute:: failures
+
+      Number of failed examples.
+
+   .. attribute:: skips
+
+      Number of skipped examples.
+
+      .. versionadded:: 3.13
+
 
 .. _doctest-outputchecker:
 

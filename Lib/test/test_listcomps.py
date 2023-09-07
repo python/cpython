@@ -539,6 +539,63 @@ class ListComprehensionTest(unittest.TestCase):
         self._check_in_scopes(code, {"x": True, "y": ["b"]}, scopes=["function"])
         self._check_in_scopes(code, raises=NameError, scopes=["class"])
 
+    def test_iter_var_available_in_locals(self):
+        code = """
+            l = [1, 2]
+            y = 0
+            items = [locals()["x"] for x in l]
+            items2 = [vars()["x"] for x in l]
+            items3 = [("x" in dir()) for x in l]
+            items4 = [eval("x") for x in l]
+            # x is available, and does not overwrite y
+            [exec("y = x") for x in l]
+        """
+        self._check_in_scopes(
+            code,
+            {
+                "items": [1, 2],
+                "items2": [1, 2],
+                "items3": [True, True],
+                "items4": [1, 2],
+                "y": 0
+            }
+        )
+
+    def test_comp_in_try_except(self):
+        template = """
+            value = ["a"]
+            try:
+                [{func}(value) for value in value]
+            except:
+                pass
+        """
+        for func in ["str", "int"]:
+            code = template.format(func=func)
+            raises = func != "str"
+            with self.subTest(raises=raises):
+                self._check_in_scopes(code, {"value": ["a"]})
+
+    def test_comp_in_try_finally(self):
+        code = """
+            def f(value):
+                try:
+                    [{func}(value) for value in value]
+                finally:
+                    return value
+            ret = f(["a"])
+        """
+        self._check_in_scopes(code, {"ret": ["a"]})
+
+    def test_exception_in_post_comp_call(self):
+        code = """
+            value = [1, None]
+            try:
+                [v for v in value].sort()
+            except:
+                pass
+        """
+        self._check_in_scopes(code, {"value": [1, None]})
+
 
 __test__ = {'doctests' : doctests}
 

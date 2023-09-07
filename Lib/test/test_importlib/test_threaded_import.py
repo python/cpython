@@ -13,7 +13,6 @@ import time
 import shutil
 import threading
 import unittest
-from unittest import mock
 from test.support import verbose
 from test.support.import_helper import forget, mock_register_at_fork
 from test.support.os_helper import (TESTFN, unlink, rmtree)

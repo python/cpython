@@ -1528,6 +1528,8 @@ class _ActionsContainer(object):
         title_group_map = {}
         for group in self._action_groups:
             if group.title in title_group_map:
+                # This branch could happen if a derived class added
+                # groups with duplicated titles in __init__
                 msg = _('cannot merge actions - two groups are named %r')
                 raise ValueError(msg % (group.title))
             title_group_map[group.title] = group
@@ -1811,13 +1813,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
         # add parent arguments and defaults
         for parent in parents:
+            if not isinstance(parent, ArgumentParser):
+                raise TypeError('parents must be a list of ArgumentParser')
             self._add_container_actions(parent)
-            try:
-                defaults = parent._defaults
-            except AttributeError:
-                pass
-            else:
-                self._defaults.update(defaults)
+            defaults = parent._defaults
+            self._defaults.update(defaults)
 
     # =======================
     # Pretty __repr__ methods

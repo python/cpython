@@ -1,0 +1,3 @@
+Fix various hangs, reference leaks, test failures, and tracing/introspection
+bugs when running with :envvar:`PYTHONUOPS` or :option:`-X uops <-X>`
+enabled.

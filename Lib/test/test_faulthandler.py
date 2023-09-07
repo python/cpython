@@ -9,7 +9,6 @@ import sys
 from test import support
 from test.support import os_helper
 from test.support import script_helper, is_android
-from test.support import skip_if_sanitizer
 import tempfile
 import unittest
 from textwrap import dedent
@@ -64,8 +63,20 @@ class FaultHandlerTests(unittest.TestCase):
         pass_fds = []
         if fd is not None:
             pass_fds.append(fd)
+        env = dict(os.environ)
+
+        # Sanitizers must not handle SIGSEGV (ex: for test_enable_fd())
+        option = 'handle_segv=0'
+        for name in ('ASAN_OPTIONS', 'MSAN_OPTIONS', 'UBSAN_OPTIONS'):
+            if name in env:
+                env[name] += f':{option}'
+            else:
+                env[name] = option
+
         with support.SuppressCrashReport():
-            process = script_helper.spawn_python('-c', code, pass_fds=pass_fds)
+            process = script_helper.spawn_python('-c', code,
+                                                 pass_fds=pass_fds,
+                                                 env=env)
             with process:
                 output, stderr = process.communicate()
                 exitcode = process.wait()
@@ -304,8 +315,6 @@ class FaultHandlerTests(unittest.TestCase):
             3,
             'Segmentation fault')
 
-    @skip_if_sanitizer(memory=True, ub=True, reason="sanitizer "
-                       "builds change crashing process output.")
     @skip_segfault_on_android
     def test_enable_file(self):
         with temporary_filename() as filename:
@@ -321,8 +330,6 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform == "win32",
                      "subprocess doesn't support pass_fds on Windows")
-    @skip_if_sanitizer(memory=True, ub=True, reason="sanitizer "
-                       "builds change crashing process output.")
     @skip_segfault_on_android
     def test_enable_fd(self):
         with tempfile.TemporaryFile('wb+') as fp:
@@ -676,6 +683,7 @@ class FaultHandlerTests(unittest.TestCase):
         with tempfile.TemporaryFile('wb+') as fp:
             self.check_dump_traceback_later(fd=fp.fileno())
 
+    @support.requires_resource('walltime')
     def test_dump_traceback_later_twice(self):
         self.check_dump_traceback_later(loops=2)
 

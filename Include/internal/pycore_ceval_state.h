@@ -8,10 +8,26 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-
-#include "pycore_atomic.h"          /* _Py_atomic_address */
 #include "pycore_gil.h"             // struct _gil_runtime_state
 
+
+struct _pending_calls {
+    int busy;
+    PyThread_type_lock lock;
+    /* Request for running pending calls. */
+    _Py_atomic_int calls_to_do;
+    /* Request for looking at the `async_exc` field of the current
+       thread state.
+       Guarded by the GIL. */
+    int async_exc;
+#define NPENDINGCALLS 32
+    struct _pending_call {
+        int (*func)(void *);
+        void *arg;
+    } calls[NPENDINGCALLS];
+    int first;
+    int last;
+};
 
 typedef enum {
     PERF_STATUS_FAILED = -1,  // Perf trampoline is in an invalid state
@@ -49,6 +65,8 @@ struct _ceval_runtime_state {
        the main thread of the main interpreter can handle signals: see
        _Py_ThreadCanHandleSignals(). */
     _Py_atomic_int signals_pending;
+    /* Pending calls to be made only on the main thread. */
+    struct _pending_calls pending_mainthread;
 };
 
 #ifdef PY_HAVE_PERF_TRAMPOLINE
@@ -62,27 +80,11 @@ struct _ceval_runtime_state {
 #endif
 
 
-struct _pending_calls {
-    int busy;
-    PyThread_type_lock lock;
-    /* Request for running pending calls. */
-    _Py_atomic_int calls_to_do;
-    /* Request for looking at the `async_exc` field of the current
-       thread state.
-       Guarded by the GIL. */
-    int async_exc;
-#define NPENDINGCALLS 32
-    struct {
-        int (*func)(void *);
-        void *arg;
-    } calls[NPENDINGCALLS];
-    int first;
-    int last;
-};
-
 struct _ceval_state {
     /* This single variable consolidates all requests to break out of
-       the fast path in the eval loop. */
+     * the fast path in the eval loop.
+     * It is by far the hottest field in this struct and
+     * should be placed at the beginning. */
     _Py_atomic_int eval_breaker;
     /* Request for dropping the GIL */
     _Py_atomic_int gil_drop_request;
