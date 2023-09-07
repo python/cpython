@@ -3932,7 +3932,7 @@ features:
 
 .. function:: timerfd_gettime(fd, /)
 
-   Return a two-item tuple (``next_expiration``, ``interval``).
+   Return a two-item tuple of floats (``next_expiration``, ``interval``).
 
    ``next_expiration`` denotes the relative time until next the timer next fires,
    regardless of if the :const:`TFD_TIMER_ABSTIME` flag is set.
