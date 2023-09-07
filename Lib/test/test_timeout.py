@@ -183,12 +183,11 @@ class TCPTimeoutTestCase(TimeoutTestCase):
         #
         # -A INPUT -p tcp --destination-port 56666 -j DROP
         # -A INPUT -p udp --destination-port 56666 -j DROP
-        # -A INPUT -p tcp --destination-port 56667 -j RETURN
-        # -A INPUT -p udp --destination-port 56667 -j RETURN
+        # -A INPUT -p tcp --destination-port 56667 -j REJECT
+        # -A INPUT -p udp --destination-port 56667 -j REJECT
         #
-        # See pillar/base/firewall/snakebite.sls in
-        # https://github.com/python/psf-salt for the current configuration.
-        #
+        # See https://github.com/python/psf-salt/blob/main/pillar/base/firewall/snakebite.sls
+        # for the current configuration.
 
         skip = True
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
