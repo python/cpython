@@ -290,8 +290,8 @@ _Py_PrintSpecializationStats(int to_file)
         char hex_name[41];
         _PyOS_URandomNonblock(rand, 20);
         for (int i = 0; i < 20; i++) {
-            hex_name[2*i] = "0123456789abcdef"[rand[i]&15];
-            hex_name[2*i+1] = "0123456789abcdef"[(rand[i]>>4)&15];
+            hex_name[2*i] = Py_hexdigits[rand[i]&15];
+            hex_name[2*i+1] = Py_hexdigits[(rand[i]>>4)&15];
         }
         hex_name[40] = '\0';
         char buf[64];
