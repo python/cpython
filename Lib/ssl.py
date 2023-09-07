@@ -876,6 +876,22 @@ class SSLObject:
         """
         return self._sslobj.getpeercert(binary_form)
 
+    def get_verified_chain(self):
+        """Returns verified verified certificate chain provided by the other
+        end of the SSL channel.
+
+        Return None if no certificates were provided.
+        """
+        return self._sslobj.get_verified_chain()
+
+    def get_unverified_chain(self):
+        """Returns unverified verified certificate chain provided by the other
+        end of the SSL channel.
+
+        Return None if no certificates were provided.
+        """
+        return self._sslobj.get_unverified_chain()
+
     def selected_npn_protocol(self):
         """Return the currently selected NPN protocol as a string, or ``None``
         if a next protocol was not negotiated or if NPN is not supported by one
@@ -1095,6 +1111,14 @@ class SSLSocket(socket):
         self._checkClosed()
         self._check_connected()
         return self._sslobj.getpeercert(binary_form)
+
+    @_sslcopydoc
+    def get_verified_chain(self):
+        return self._sslobj.get_verified_chain()
+
+    @_sslcopydoc
+    def get_unverified_chain(self):
+        return self._sslobj.get_unverified_chain()
 
     @_sslcopydoc
     def selected_npn_protocol(self):

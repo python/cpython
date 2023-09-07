@@ -42,8 +42,10 @@ This module provides a class, :class:`ssl.SSLSocket`, which is derived from the
 :class:`socket.socket` type, and provides a socket-like wrapper that also
 encrypts and decrypts the data going over the socket with SSL.  It supports
 additional methods such as :meth:`getpeercert`, which retrieves the
-certificate of the other side of the connection, and :meth:`cipher`, which
-retrieves the cipher being used for the secure connection.
+certificate of the other side of the connection, :meth:`cipher`, which
+retrieves the cipher being used for the secure connection or
+:meth:`get_verified_chain`, :meth:`get_unverified_chain` which retrieves
+certificate chain.
 
 For more sophisticated applications, the :class:`ssl.SSLContext` class
 helps manage settings and certificates, which can then be inherited
@@ -1221,6 +1223,16 @@ SSL sockets also have the following additional methods and attributes:
    .. versionchanged:: 3.9
       IPv6 address strings no longer have a trailing new line.
 
+.. method:: SSLSocket.get_verified_chain()
+
+   Returns verified verified certificate chain provided by the other
+   end of the SSL channel. Return ``None`` if no certificates were provided.
+
+.. method:: SSLSocket.get_unverified_chain()
+
+   Returns unverified verified certificate chain provided by the other
+   end of the SSL channel. Return ``None`` if no certificates were provided.
+
 .. method:: SSLSocket.cipher()
 
    Returns a three-value tuple containing the name of the cipher being used, the
@@ -1670,8 +1682,9 @@ to speed up repeated connections from the same clients.
    Due to the early negotiation phase of the TLS connection, only limited
    methods and attributes are usable like
    :meth:`SSLSocket.selected_alpn_protocol` and :attr:`SSLSocket.context`.
-   The :meth:`SSLSocket.getpeercert`,
-   :meth:`SSLSocket.cipher` and :meth:`SSLSocket.compression` methods require that
+   The :meth:`SSLSocket.getpeercert`, :meth:`SSLSocket.get_verified_chain`,
+   :meth:`SSLSocket.get_unverified_chain` :meth:`SSLSocket.cipher`
+   and :meth:`SSLSocket.compression` methods require that
    the TLS connection has progressed beyond the TLS Client Hello and therefore
    will not return meaningful values nor can they be called safely.
 
@@ -2428,6 +2441,8 @@ provided.
    - :meth:`~SSLSocket.read`
    - :meth:`~SSLSocket.write`
    - :meth:`~SSLSocket.getpeercert`
+   - :meth:`~SSLSocket.get_verified_chain`
+   - :meth:`~SSLSocket.get_unverified_chain`
    - :meth:`~SSLSocket.selected_alpn_protocol`
    - :meth:`~SSLSocket.selected_npn_protocol`
    - :meth:`~SSLSocket.cipher`
