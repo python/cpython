@@ -2624,9 +2624,9 @@ you can use the following technique, borrowed from the :ref:`unicode-howto`:
 .. note::
 
    Strings containing surrogate escapes and must be treated with care.
-   You cannot simply pass them back to SQLite,
-   for example using :meth:`~Cursor.execute`,
-   since the :mod:`!sqlite3` module APIs only accept UTF-8 encoded strings.
+   For example, you cannot pass them back to SQLite,
+   since the :mod:`!sqlite3` module API does not support strings
+   containing surrogate escape codes.
 
 .. seealso::
 
