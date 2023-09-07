@@ -3784,8 +3784,7 @@ features:
 
    Create and return a timer file descriptor (*timerfd*).
 
-   The file descriptor returned by :func:`timerfd_create` supports the following
-   additional operations:
+   The file descriptor returned by :func:`timerfd_create` supports:
 
    - :func:`read`
    - :func:`~select.select`
