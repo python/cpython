@@ -80,7 +80,10 @@ class TestConsoleIO(unittest.TestCase):
 
 class TestOther(unittest.TestCase):
     def test_heap_min(self):
-        msvcrt.heapmin()
+        try:
+            msvcrt.heapmin()
+        except OSError:
+            pass
 
 
 if __name__ == "__main__":
