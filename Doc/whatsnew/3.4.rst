@@ -1891,7 +1891,7 @@ Other Build and C API Changes
   allowing retrieval of function pointers from named type slots when using
   the limited API.  (Contributed by Martin von Löwis in :issue:`17162`.)
 
-* The new :c:func:`Py_SetStandardStreamEncoding` pre-initialization API
+* The new :c:func:`!Py_SetStandardStreamEncoding` pre-initialization API
   allows applications embedding the CPython interpreter to reliably force
   a particular encoding and error handler for the standard streams.
   (Contributed by Bastien Montagne and Nick Coghlan in :issue:`16129`.)

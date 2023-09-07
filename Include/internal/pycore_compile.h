@@ -19,6 +19,14 @@ PyAPI_FUNC(PyCodeObject*) _PyAST_Compile(
     int optimize,
     struct _arena *arena);
 
+/* AST optimizations */
+extern int _PyCompile_AstOptimize(
+    struct _mod *mod,
+    PyObject *filename,
+    PyCompilerFlags *flags,
+    int optimize,
+    struct _arena *arena);
+
 static const _PyCompilerSrcLocation NO_LOCATION = {-1, -1, -1, -1};
 
 extern int _PyAST_Optimize(
@@ -53,6 +61,11 @@ typedef struct {
     int s_labelmap_size;
     int s_next_free_label; /* next free label id */
 } _PyCompile_InstructionSequence;
+
+int _PyCompile_InstructionSequence_UseLabel(_PyCompile_InstructionSequence *seq, int lbl);
+int _PyCompile_InstructionSequence_Addop(_PyCompile_InstructionSequence *seq,
+                                         int opcode, int oparg,
+                                         _PyCompilerSrcLocation loc);
 
 typedef struct {
     PyObject *u_name;
@@ -94,6 +107,7 @@ int _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj);
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyObject*) _PyCompile_CleanDoc(PyObject *doc);
 
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyObject*) _PyCompile_CodeGen(
         PyObject *ast,
         PyObject *filename,
@@ -101,11 +115,13 @@ PyAPI_FUNC(PyObject*) _PyCompile_CodeGen(
         int optimize,
         int compile_mode);
 
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyObject*) _PyCompile_OptimizeCfg(
         PyObject *instructions,
         PyObject *consts,
         int nlocals);
 
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyCodeObject*)
 _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
                     PyObject *instructions);

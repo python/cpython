@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 
 #include <stdbool.h>
 #ifdef HAVE_SYS_TYPES_H
@@ -264,7 +265,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
             self->fd = -1;
     }
 
-    fd = _PyLong_AsInt(nameobj);
+    fd = PyLong_AsInt(nameobj);
     if (fd < 0) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError,
@@ -393,6 +394,11 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 
             if (async_err)
                 goto error;
+
+            if (self->fd < 0) {
+                PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, nameobj);
+                goto error;
+            }
         }
         else {
             PyObject *fdobj;
@@ -412,7 +418,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
                 goto error;
             }
 
-            self->fd = _PyLong_AsInt(fdobj);
+            self->fd = PyLong_AsInt(fdobj);
             Py_DECREF(fdobj);
             if (self->fd < 0) {
                 if (!PyErr_Occurred()) {
@@ -424,12 +430,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
                 goto error;
             }
         }
-
         fd_is_own = 1;
-        if (self->fd < 0) {
-            PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, nameobj);
-            goto error;
-        }
 
 #ifndef MS_WINDOWS
         if (_Py_set_inheritable(self->fd, 0, atomic_flag_works) < 0)
@@ -1057,8 +1058,8 @@ _io_FileIO_truncate_impl(fileio *self, PyTypeObject *cls, PyObject *posobj)
     Py_END_ALLOW_THREADS
 
     if (ret != 0) {
-        Py_DECREF(posobj);
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_DECREF(posobj);
         return NULL;
     }
 

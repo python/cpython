@@ -33,6 +33,6 @@ jobs:
       matrix:
         type: [x86, x64, arm64]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Build CPython installer
       run: .\Tools\msi\build.bat --doc -${{ matrix.type }}

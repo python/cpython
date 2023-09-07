@@ -14,5 +14,5 @@ repos:
     hooks:
       - id: sphinx-lint
         args: [--enable=default-role]
-        files: ^Doc/
+        files: ^Doc/|^Misc/NEWS.d/next/
         types: [rst]

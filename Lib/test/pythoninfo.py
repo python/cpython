@@ -112,6 +112,7 @@ def collect_sys(info_add):
 
     call_func(info_add, 'sys.androidapilevel', sys, 'getandroidapilevel')
     call_func(info_add, 'sys.windowsversion', sys, 'getwindowsversion')
+    call_func(info_add, 'sys.getrecursionlimit', sys, 'getrecursionlimit')
 
     encoding = sys.getfilesystemencoding()
     if hasattr(sys, 'getfilesystemencodeerrors'):
@@ -162,6 +163,26 @@ def collect_platform(info_add):
     libc_ver = ('%s %s' % platform.libc_ver()).strip()
     if libc_ver:
         info_add('platform.libc_ver', libc_ver)
+
+    try:
+        os_release = platform.freedesktop_os_release()
+    except OSError:
+        pass
+    else:
+        for key in (
+            'ID',
+            'NAME',
+            'PRETTY_NAME'
+            'VARIANT',
+            'VARIANT_ID',
+            'VERSION',
+            'VERSION_CODENAME',
+            'VERSION_ID',
+        ):
+            if key not in os_release:
+                continue
+            info_add(f'platform.freedesktop_os_release[{key}]',
+                     os_release[key])
 
 
 def collect_locale(info_add):
@@ -308,6 +329,13 @@ def collect_os(info_add):
         "_PYTHON_PROJECT_BASE",
         "_PYTHON_SYSCONFIGDATA_NAME",
         "__PYVENV_LAUNCHER__",
+
+        # Sanitizer options
+        "ASAN_OPTIONS",
+        "LSAN_OPTIONS",
+        "MSAN_OPTIONS",
+        "TSAN_OPTIONS",
+        "UBSAN_OPTIONS",
     ))
     for name, value in os.environ.items():
         uname = name.upper()
@@ -492,6 +520,7 @@ def collect_sysconfig(info_add):
         'PY_STDMODULE_CFLAGS',
         'Py_DEBUG',
         'Py_ENABLE_SHARED',
+        'Py_NOGIL',
         'SHELL',
         'SOABI',
         'prefix',
@@ -911,7 +940,6 @@ def dump_info(info, file=None):
     for key, value in infos:
         value = value.replace("\n", " ")
         print("%s: %s" % (key, value))
-    print()
 
 
 def main():
@@ -920,6 +948,7 @@ def main():
     dump_info(info)
 
     if error:
+        print()
         print("Collection failed: exit with error", file=sys.stderr)
         sys.exit(1)
 
