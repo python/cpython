@@ -559,6 +559,9 @@ pop_jump_if_bool:
                 _Py_CODEUNIT *next_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
                 _Py_CODEUNIT *target_instr = next_instr + oparg;
                 _Py_CODEUNIT *stub_target = jump_likely ? next_instr : target_instr;
+                DPRINTF(4, "%s(%d): counter=%x, bitcount=%d, likely=%d, sense=%d, uopcode=%s\n",
+                        uop_name(opcode), oparg,
+                        counter, bitcount, jump_likely, jump_sense, uop_name(uopcode));
                 ADD_TO_TRACE(uopcode, max_length, 0);
                 ADD_TO_STUB(max_length, SAVE_IP, INSTR_IP(stub_target, code), 0);
                 ADD_TO_STUB(max_length + 1, EXIT_TRACE, 0, 0);
@@ -938,6 +941,6 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
     opt->resume_threshold = UINT16_MAX;
     // Need at least 3 iterations to settle specializations.
     // A few lower bits of the counter are reserved for other flags.
-    opt->backedge_threshold = 3 << OPTIMIZER_BITS_IN_COUNTER;
+    opt->backedge_threshold = 16 << OPTIMIZER_BITS_IN_COUNTER;
     return (PyObject *)opt;
 }
