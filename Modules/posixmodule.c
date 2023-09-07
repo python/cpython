@@ -10164,7 +10164,7 @@ os.timerfd_settime
         * If *flags* has TFD_TIMER_ABSTIME bit and TFD_TIMER_CANCEL_ON_SET bit and *flags* and time.CLOCK_REALTIME
           and system clock is changed discontinuously, reading a file descriptor is aborted with ECANCELED.
     interval: double = 0.0
-        interval for the timer in seconds.
+        The timer's interval, in seconds.
 
         * If 'interval' is zero, timer will be run once.
         * If 'interval' is non-zero, timer will be run periodically with the interval.
