@@ -13,10 +13,8 @@ These modules include:
 
 .. toctree::
 
-   parser.rst
    ast.rst
    symtable.rst
-   symbol.rst
    token.rst
    keyword.rst
    tokenize.rst

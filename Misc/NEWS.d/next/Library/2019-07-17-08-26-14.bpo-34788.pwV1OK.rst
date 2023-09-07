@@ -1,2 +1,0 @@
-Add support for scoped IPv6 addresses to :mod:`ipaddress`. Patch by Oleksandr 
-Pavliuk.

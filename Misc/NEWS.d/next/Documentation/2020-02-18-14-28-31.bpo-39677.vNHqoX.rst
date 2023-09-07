@@ -1,1 +1,0 @@
-Changed operand name of **MAKE_FUNCTION** from *argc* to *flags* for module :mod:`dis`

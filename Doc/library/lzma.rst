@@ -19,8 +19,8 @@ interface supporting the ``.xz`` and legacy ``.lzma`` file formats used by the
 :program:`xz` utility, as well as raw compressed streams.
 
 The interface provided by this module is very similar to that of the :mod:`bz2`
-module. However, note that :class:`LZMAFile` is *not* thread-safe, unlike
-:class:`bz2.BZ2File`, so if you need to use a single :class:`LZMAFile` instance
+module. Note that :class:`LZMAFile` and :class:`bz2.BZ2File` are *not*
+thread-safe, so if you need to use a single :class:`LZMAFile` instance
 from multiple threads, it is necessary to protect it with a lock.
 
 
@@ -33,7 +33,7 @@ from multiple threads, it is necessary to protect it with a lock.
 Reading and writing compressed files
 ------------------------------------
 
-.. function:: open(filename, mode="rb", \*, format=None, check=-1, preset=None, filters=None, encoding=None, errors=None, newline=None)
+.. function:: open(filename, mode="rb", *, format=None, check=-1, preset=None, filters=None, encoding=None, errors=None, newline=None)
 
    Open an LZMA-compressed file in binary or text mode, returning a :term:`file
    object`.
@@ -69,7 +69,7 @@ Reading and writing compressed files
       Accepts a :term:`path-like object`.
 
 
-.. class:: LZMAFile(filename=None, mode="r", \*, format=None, check=-1, preset=None, filters=None)
+.. class:: LZMAFile(filename=None, mode="r", *, format=None, check=-1, preset=None, filters=None)
 
    Open an LZMA-compressed file in binary mode.
 
@@ -100,7 +100,8 @@ Reading and writing compressed files
    *filters* arguments have the same meanings as for :class:`LZMACompressor`.
 
    :class:`LZMAFile` supports all the members specified by
-   :class:`io.BufferedIOBase`, except for :meth:`detach` and :meth:`truncate`.
+   :class:`io.BufferedIOBase`, except for :meth:`~io.BufferedIOBase.detach`
+   and :meth:`~io.IOBase.truncate`.
    Iteration and the :keyword:`with` statement are supported.
 
    The following method is also provided:
@@ -258,7 +259,7 @@ Compressing and decompressing data in memory
       will be set to ``True``.
 
       Attempting to decompress data after the end of stream is reached
-      raises an `EOFError`.  Any data found after the end of the
+      raises an :exc:`EOFError`.  Any data found after the end of the
       stream is ignored and saved in the :attr:`~.unused_data` attribute.
 
       .. versionchanged:: 3.5

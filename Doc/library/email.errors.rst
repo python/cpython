@@ -112,3 +112,6 @@ All defect classes are subclassed from :class:`email.errors.MessageDefect`.
 * :class:`InvalidBase64LengthDefect` -- When decoding a block of base64 encoded
   bytes, the number of non-padding base64 characters was invalid (1 more than
   a multiple of 4).  The encoded block was kept as-is.
+
+* :class:`InvalidDateDefect` -- When decoding an invalid or unparsable date field.
+  The original value is kept as-is.

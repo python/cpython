@@ -46,13 +46,13 @@ or :class:`datetime.datetime` objects.
 
 .. seealso::
 
-   `PList manual page <https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/PropertyLists/>`_
+   `PList manual page <https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/PropertyLists/>`_
       Apple's documentation of the file format.
 
 
 This module defines the following functions:
 
-.. function:: load(fp, \*, fmt=None, dict_type=dict)
+.. function:: load(fp, *, fmt=None, dict_type=dict)
 
    Read a plist file. *fp* should be a readable and binary file object.
    Return the unpacked root object (which usually is a
@@ -80,7 +80,7 @@ This module defines the following functions:
    .. versionadded:: 3.4
 
 
-.. function:: loads(data, \*, fmt=None, dict_type=dict)
+.. function:: loads(data, *, fmt=None, dict_type=dict)
 
    Load a plist from a bytes object. See :func:`load` for an explanation of
    the keyword arguments.
@@ -88,7 +88,7 @@ This module defines the following functions:
    .. versionadded:: 3.4
 
 
-.. function:: dump(value, fp, \*, fmt=FMT_XML, sort_keys=True, skipkeys=False)
+.. function:: dump(value, fp, *, fmt=FMT_XML, sort_keys=True, skipkeys=False)
 
    Write *value* to a plist file. *Fp* should be a writable, binary
    file object.
@@ -116,7 +116,7 @@ This module defines the following functions:
    .. versionadded:: 3.4
 
 
-.. function:: dumps(value, \*, fmt=FMT_XML, sort_keys=True, skipkeys=False)
+.. function:: dumps(value, *, fmt=FMT_XML, sort_keys=True, skipkeys=False)
 
    Return *value* as a plist-formatted bytes object. See
    the documentation for :func:`dump` for an explanation of the keyword
@@ -133,7 +133,7 @@ The following classes are available:
    encoded data, which contains UID (see PList manual).
 
    It has one attribute, :attr:`data`, which can be used to retrieve the int value
-   of the UID.  :attr:`data` must be in the range `0 <= data < 2**64`.
+   of the UID.  :attr:`data` must be in the range ``0 <= data < 2**64``.
 
    .. versionadded:: 3.8
 
@@ -159,6 +159,9 @@ Examples
 
 Generating a plist::
 
+    import datetime
+    import plistlib
+
     pl = dict(
         aString = "Doodah",
         aList = ["A", "B", 12, 32.1, [1, 2, 3]],
@@ -172,13 +175,19 @@ Generating a plist::
         ),
         someData = b"<binary gunk>",
         someMoreData = b"<lots of binary gunk>" * 10,
-        aDate = datetime.datetime.fromtimestamp(time.mktime(time.gmtime())),
+        aDate = datetime.datetime.now()
     )
-    with open(fileName, 'wb') as fp:
-        dump(pl, fp)
+    print(plistlib.dumps(pl).decode())
 
 Parsing a plist::
 
-    with open(fileName, 'rb') as fp:
-        pl = load(fp)
-    print(pl["aKey"])
+    import plistlib
+
+    plist = b"""<plist version="1.0">
+    <dict>
+        <key>foo</key>
+        <string>bar</string>
+    </dict>
+    </plist>"""
+    pl = plistlib.loads(plist)
+    print(pl["foo"])

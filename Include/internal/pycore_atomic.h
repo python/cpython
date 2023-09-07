@@ -1,5 +1,5 @@
-#ifndef Py_ATOMIC_H
-#define Py_ATOMIC_H
+#ifndef Py_INTERNAL_ATOMIC_H
+#define Py_INTERNAL_ATOMIC_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -8,19 +8,19 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "dynamic_annotations.h"   /* _Py_ANNOTATE_MEMORY_ORDER */
-#include "pyconfig.h"
+#include "pyconfig.h"             // HAVE_STD_ATOMIC
+#include "dynamic_annotations.h"  // _Py_ANNOTATE_MEMORY_ORDER
 
-#if defined(HAVE_STD_ATOMIC)
-#include <stdatomic.h>
+#ifdef HAVE_STD_ATOMIC
+#  include <stdatomic.h>          // atomic_store_explicit()
 #endif
 
 
 #if defined(_MSC_VER)
-#include <intrin.h>
-#if defined(_M_IX86) || defined(_M_X64)
-#  include <immintrin.h>
-#endif
+#  include <intrin.h>             // _InterlockedExchange64()
+#  if defined(_M_IX86) || defined(_M_X64)
+#    include <immintrin.h>        // _InterlockedExchange_HLEAcquire()
+#  endif
 #endif
 
 /* This is modeled after the atomics interface from C1x, according to
@@ -62,7 +62,7 @@ typedef struct _Py_atomic_int {
 #define _Py_atomic_load_explicit(ATOMIC_VAL, ORDER) \
     atomic_load_explicit(&((ATOMIC_VAL)->_value), ORDER)
 
-/* Use builtin atomic operations in GCC >= 4.7 */
+// Use builtin atomic operations in GCC >= 4.7 and clang
 #elif defined(HAVE_BUILTIN_ATOMIC)
 
 typedef enum _Py_memory_order {
@@ -236,7 +236,7 @@ _Py_ANNOTATE_MEMORY_ORDER(const volatile void *address, _Py_memory_order order)
     in hardware they will fall back to a full memory barrier as well.
 
     This might affect performance but likely only in some very specific and
-    hard to meassure scenario.
+    hard to measure scenario.
 */
 #if defined(_M_IX86) || defined(_M_X64)
 typedef enum _Py_memory_order {
@@ -554,4 +554,4 @@ typedef struct _Py_atomic_int {
 #ifdef __cplusplus
 }
 #endif
-#endif  /* Py_ATOMIC_H */
+#endif  /* Py_INTERNAL_ATOMIC_H */

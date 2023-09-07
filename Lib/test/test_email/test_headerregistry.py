@@ -204,6 +204,22 @@ class TestDateHeader(TestHeaderBase):
         self.assertEqual(len(h.defects), 1)
         self.assertIsInstance(h.defects[0], errors.HeaderMissingRequiredValue)
 
+    def test_invalid_date_format(self):
+        s = 'Not a date header'
+        h = self.make_header('date', s)
+        self.assertEqual(h, s)
+        self.assertIsNone(h.datetime)
+        self.assertEqual(len(h.defects), 1)
+        self.assertIsInstance(h.defects[0], errors.InvalidDateDefect)
+
+    def test_invalid_date_value(self):
+        s = 'Tue, 06 Jun 2017 27:39:33 +0600'
+        h = self.make_header('date', s)
+        self.assertEqual(h, s)
+        self.assertIsNone(h.datetime)
+        self.assertEqual(len(h.defects), 1)
+        self.assertIsInstance(h.defects[0], errors.InvalidDateDefect)
+
     def test_datetime_read_only(self):
         h = self.make_header('date', self.datestring)
         with self.assertRaises(AttributeError):
@@ -698,6 +714,18 @@ class TestContentTypeHeader(TestHeaderBase):
             " charset*=unknown-8bit''utf-8%E2%80%9D\n",
             ),
 
+        'rfc2231_nonascii_in_charset_of_charset_parameter_value': (
+            "text/plain; charset*=utf-8”''utf-8%E2%80%9D",
+            'text/plain',
+            'text',
+            'plain',
+            {'charset': 'utf-8”'},
+            [],
+            'text/plain; charset="utf-8”"',
+            "Content-Type: text/plain;"
+            " charset*=utf-8''utf-8%E2%80%9D\n",
+            ),
+
         'rfc2231_encoded_then_unencoded_segments': (
             ('application/x-foo;'
                 '\tname*0*="us-ascii\'en-us\'My";'
@@ -873,6 +901,25 @@ class TestContentDisposition(TestHeaderBase):
             {'filename': 'foo'},
             [errors.InvalidHeaderDefect]),
 
+        'invalid_parameter_value_with_fws_between_ew': (
+            'attachment; filename="=?UTF-8?Q?Schulbesuchsbest=C3=A4ttigung=2E?='
+            '               =?UTF-8?Q?pdf?="',
+            'attachment',
+            {'filename': 'Schulbesuchsbestättigung.pdf'},
+            [errors.InvalidHeaderDefect]*3,
+            ('attachment; filename="Schulbesuchsbestättigung.pdf"'),
+            ('Content-Disposition: attachment;\n'
+             ' filename*=utf-8\'\'Schulbesuchsbest%C3%A4ttigung.pdf\n'),
+            ),
+
+        'parameter_value_with_fws_between_tokens': (
+            'attachment; filename="File =?utf-8?q?Name?= With Spaces.pdf"',
+            'attachment',
+            {'filename': 'File Name With Spaces.pdf'},
+            [errors.InvalidHeaderDefect],
+            'attachment; filename="File Name With Spaces.pdf"',
+            ('Content-Disposition: attachment; filename="File Name With Spaces.pdf"\n'),
+            )
     }
 
 
@@ -1436,6 +1483,25 @@ class TestAddressAndGroup(TestEmailBase):
     #def test_non_ascii_username_raises(self):
     #    with self.assertRaises(ValueError):
     #        Address('foo', 'wők', 'example.com')
+
+    def test_crlf_in_constructor_args_raises(self):
+        cases = (
+            dict(display_name='foo\r'),
+            dict(display_name='foo\n'),
+            dict(display_name='foo\r\n'),
+            dict(domain='example.com\r'),
+            dict(domain='example.com\n'),
+            dict(domain='example.com\r\n'),
+            dict(username='wok\r'),
+            dict(username='wok\n'),
+            dict(username='wok\r\n'),
+            dict(addr_spec='wok@example.com\r'),
+            dict(addr_spec='wok@example.com\n'),
+            dict(addr_spec='wok@example.com\r\n')
+        )
+        for kwargs in cases:
+            with self.subTest(kwargs=kwargs), self.assertRaisesRegex(ValueError, "invalid arguments"):
+                Address(**kwargs)
 
     def test_non_ascii_username_in_addr_spec_raises(self):
         with self.assertRaises(ValueError):

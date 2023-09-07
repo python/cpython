@@ -1,3 +1,0 @@
-Avoid a possible *"RuntimeError: dictionary changed size during iteration"*
-from :func:`inspect.getmodule` when it tried to loop through
-:attr:`sys.modules`.

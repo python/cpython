@@ -31,11 +31,6 @@ Reflection
    See also :c:func:`PyThreadState_GetFrame`.
 
 
-.. c:function:: int PyFrame_GetLineNumber(PyFrameObject *frame)
-
-   Return the line number that *frame* is currently executing.
-
-
 .. c:function:: const char* PyEval_GetFuncName(PyObject *func)
 
    Return the name of *func* if it is a function, class or instance object, else the

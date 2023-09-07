@@ -4,6 +4,9 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{b9ce64dd-cb95-472d-bbe8-5583b2cd375b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{2bd3a90c-5b2e-45fb-9b2a-fbf1a4faf5f9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_tkinter.c">
@@ -12,5 +15,10 @@
     <ClCompile Include="..\Modules\tkappinit.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\PC\python_nt.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

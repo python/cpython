@@ -1,3 +1,0 @@
-test_subprocess.test_user() now skips the test on an user name if the user
-name doesn't exist. For example, skip the test if the user "nobody" doesn't
-exist on Linux.

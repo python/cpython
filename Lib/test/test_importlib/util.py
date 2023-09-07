@@ -1,24 +1,17 @@
-import abc
 import builtins
 import contextlib
 import errno
 import functools
-import importlib
 from importlib import machinery, util, invalidate_caches
-from importlib.abc import ResourceReader
-import io
 import marshal
 import os
 import os.path
-from pathlib import Path, PurePath
-from test import support
+from test.support import import_helper
+from test.support import os_helper
 import unittest
 import sys
 import tempfile
 import types
-
-from . import data01
-from . import zipdata01
 
 
 BUILTINS = types.SimpleNamespace()
@@ -34,7 +27,7 @@ EXTENSIONS.path = None
 EXTENSIONS.ext = None
 EXTENSIONS.filename = None
 EXTENSIONS.file_path = None
-EXTENSIONS.name = '_testcapi'
+EXTENSIONS.name = '_testsinglephase'
 
 def _extension_details():
     global EXTENSIONS
@@ -55,8 +48,8 @@ _extension_details()
 def import_importlib(module_name):
     """Import a module from importlib both w/ and w/o _frozen_importlib."""
     fresh = ('importlib',) if '.' in module_name else ()
-    frozen = support.import_fresh_module(module_name)
-    source = support.import_fresh_module(module_name, fresh=fresh,
+    frozen = import_helper.import_fresh_module(module_name)
+    source = import_helper.import_fresh_module(module_name, fresh=fresh,
                                          blocked=('_frozen_importlib', '_frozen_importlib_external'))
     return {'Frozen': frozen, 'Source': source}
 
@@ -114,7 +107,7 @@ def case_insensitive_tests(test):
 
 def submodule(parent, name, pkg_dir, content=''):
     path = os.path.join(pkg_dir, name + '.py')
-    with open(path, 'w') as subfile:
+    with open(path, 'w', encoding='utf-8') as subfile:
         subfile.write(content)
     return '{}.{}'.format(parent, name), path
 
@@ -138,9 +131,8 @@ def uncache(*names):
 
     """
     for name in names:
-        if name in ('sys', 'marshal', 'imp'):
-            raise ValueError(
-                "cannot uncache {0}".format(name))
+        if name in ('sys', 'marshal'):
+            raise ValueError("cannot uncache {}".format(name))
         try:
             del sys.modules[name]
         except KeyError:
@@ -158,9 +150,9 @@ def uncache(*names):
 @contextlib.contextmanager
 def temp_module(name, content='', *, pkg=False):
     conflicts = [n for n in sys.modules if n.partition('.')[0] == name]
-    with support.temp_cwd(None) as cwd:
+    with os_helper.temp_cwd(None) as cwd:
         with uncache(name, *conflicts):
-            with support.DirsOnSysPath(cwd):
+            with import_helper.DirsOnSysPath(cwd):
                 invalidate_caches()
 
                 location = os.path.join(cwd, name)
@@ -174,7 +166,7 @@ def temp_module(name, content='', *, pkg=False):
                         content = ''
                 if content is not None:
                     # not a namespace package
-                    with open(modpath, 'w') as modfile:
+                    with open(modpath, 'w', encoding='utf-8') as modfile:
                         modfile.write(content)
                 yield location
 
@@ -202,8 +194,7 @@ def import_state(**kwargs):
                 new_value = default
             setattr(sys, attr, new_value)
         if len(kwargs):
-            raise ValueError(
-                    'unrecognized arguments: {0}'.format(kwargs.keys()))
+            raise ValueError('unrecognized arguments: {}'.format(kwargs))
         yield
     finally:
         for attr, value in originals.items():
@@ -251,30 +242,6 @@ class _ImporterMock:
         self._uncache.__exit__(None, None, None)
 
 
-class mock_modules(_ImporterMock):
-
-    """Importer mock using PEP 302 APIs."""
-
-    def find_module(self, fullname, path=None):
-        if fullname not in self.modules:
-            return None
-        else:
-            return self
-
-    def load_module(self, fullname):
-        if fullname not in self.modules:
-            raise ImportError
-        else:
-            sys.modules[fullname] = self.modules[fullname]
-            if fullname in self.module_code:
-                try:
-                    self.module_code[fullname]()
-                except Exception:
-                    del sys.modules[fullname]
-                    raise
-            return self.modules[fullname]
-
-
 class mock_spec(_ImporterMock):
 
     """Importer mock using PEP 451 APIs."""
@@ -305,7 +272,7 @@ def writes_bytecode_files(fxn):
     """Decorator to protect sys.dont_write_bytecode from mutation and to skip
     tests that require it to be set to False."""
     if sys.dont_write_bytecode:
-        return lambda *args, **kwargs: None
+        return unittest.skip("relies on writing bytecode")(fxn)
     @functools.wraps(fxn)
     def wrapper(*args, **kwargs):
         original = sys.dont_write_bytecode
@@ -382,7 +349,7 @@ def create_modules(*names):
                     os.mkdir(file_path)
                     created_paths.append(file_path)
             file_path = os.path.join(file_path, name_parts[-1] + '.py')
-            with open(file_path, 'w') as file:
+            with open(file_path, 'w', encoding='utf-8') as file:
                 file.write(source.format(name))
             created_paths.append(file_path)
             mapping[name] = file_path
@@ -396,7 +363,7 @@ def create_modules(*names):
             state_manager.__exit__(None, None, None)
         if uncache_manager is not None:
             uncache_manager.__exit__(None, None, None)
-        support.rmtree(temp_dir)
+        os_helper.rmtree(temp_dir)
 
 
 def mock_path_hook(*entries, importer):
@@ -415,166 +382,3 @@ class CASEOKTestBase:
         if any(x in self.importlib._bootstrap_external._os.environ
                     for x in possibilities) != should_exist:
             self.skipTest('os.environ changes not reflected in _os.environ')
-
-
-def create_package(file, path, is_package=True, contents=()):
-    class Reader(ResourceReader):
-        def get_resource_reader(self, package):
-            return self
-
-        def open_resource(self, path):
-            self._path = path
-            if isinstance(file, Exception):
-                raise file
-            else:
-                return file
-
-        def resource_path(self, path_):
-            self._path = path_
-            if isinstance(path, Exception):
-                raise path
-            else:
-                return path
-
-        def is_resource(self, path_):
-            self._path = path_
-            if isinstance(path, Exception):
-                raise path
-            for entry in contents:
-                parts = entry.split('/')
-                if len(parts) == 1 and parts[0] == path_:
-                    return True
-            return False
-
-        def contents(self):
-            if isinstance(path, Exception):
-                raise path
-            # There's no yield from in baseball, er, Python 2.
-            for entry in contents:
-                yield entry
-
-    name = 'testingpackage'
-    # Unfortunately importlib.util.module_from_spec() was not introduced until
-    # Python 3.5.
-    module = types.ModuleType(name)
-    loader = Reader()
-    spec = machinery.ModuleSpec(
-        name, loader,
-        origin='does-not-exist',
-        is_package=is_package)
-    module.__spec__ = spec
-    module.__loader__ = loader
-    return module
-
-
-class CommonResourceTests(abc.ABC):
-    @abc.abstractmethod
-    def execute(self, package, path):
-        raise NotImplementedError
-
-    def test_package_name(self):
-        # Passing in the package name should succeed.
-        self.execute(data01.__name__, 'utf-8.file')
-
-    def test_package_object(self):
-        # Passing in the package itself should succeed.
-        self.execute(data01, 'utf-8.file')
-
-    def test_string_path(self):
-        # Passing in a string for the path should succeed.
-        path = 'utf-8.file'
-        self.execute(data01, path)
-
-    @unittest.skipIf(sys.version_info < (3, 6), 'requires os.PathLike support')
-    def test_pathlib_path(self):
-        # Passing in a pathlib.PurePath object for the path should succeed.
-        path = PurePath('utf-8.file')
-        self.execute(data01, path)
-
-    def test_absolute_path(self):
-        # An absolute path is a ValueError.
-        path = Path(__file__)
-        full_path = path.parent/'utf-8.file'
-        with self.assertRaises(ValueError):
-            self.execute(data01, full_path)
-
-    def test_relative_path(self):
-        # A relative path is a ValueError.
-        with self.assertRaises(ValueError):
-            self.execute(data01, '../data01/utf-8.file')
-
-    def test_importing_module_as_side_effect(self):
-        # The anchor package can already be imported.
-        del sys.modules[data01.__name__]
-        self.execute(data01.__name__, 'utf-8.file')
-
-    def test_non_package_by_name(self):
-        # The anchor package cannot be a module.
-        with self.assertRaises(TypeError):
-            self.execute(__name__, 'utf-8.file')
-
-    def test_non_package_by_package(self):
-        # The anchor package cannot be a module.
-        with self.assertRaises(TypeError):
-            module = sys.modules['test.test_importlib.util']
-            self.execute(module, 'utf-8.file')
-
-    @unittest.skipIf(sys.version_info < (3,), 'No ResourceReader in Python 2')
-    def test_resource_opener(self):
-        bytes_data = io.BytesIO(b'Hello, world!')
-        package = create_package(file=bytes_data, path=FileNotFoundError())
-        self.execute(package, 'utf-8.file')
-        self.assertEqual(package.__loader__._path, 'utf-8.file')
-
-    @unittest.skipIf(sys.version_info < (3,), 'No ResourceReader in Python 2')
-    def test_resource_path(self):
-        bytes_data = io.BytesIO(b'Hello, world!')
-        path = __file__
-        package = create_package(file=bytes_data, path=path)
-        self.execute(package, 'utf-8.file')
-        self.assertEqual(package.__loader__._path, 'utf-8.file')
-
-    def test_useless_loader(self):
-        package = create_package(file=FileNotFoundError(),
-                                 path=FileNotFoundError())
-        with self.assertRaises(FileNotFoundError):
-            self.execute(package, 'utf-8.file')
-
-
-class ZipSetupBase:
-    ZIP_MODULE = None
-
-    @classmethod
-    def setUpClass(cls):
-        data_path = Path(cls.ZIP_MODULE.__file__)
-        data_dir = data_path.parent
-        cls._zip_path = str(data_dir / 'ziptestdata.zip')
-        sys.path.append(cls._zip_path)
-        cls.data = importlib.import_module('ziptestdata')
-
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            sys.path.remove(cls._zip_path)
-        except ValueError:
-            pass
-
-        try:
-            del sys.path_importer_cache[cls._zip_path]
-            del sys.modules[cls.data.__name__]
-        except KeyError:
-            pass
-
-        try:
-            del cls.data
-            del cls._zip_path
-        except AttributeError:
-            pass
-
-    def setUp(self):
-        modules = support.modules_setup()
-        self.addCleanup(support.modules_cleanup, *modules)
-
-
-class ZipSetup(ZipSetupBase):
-    ZIP_MODULE = zipdata01                          # type: ignore

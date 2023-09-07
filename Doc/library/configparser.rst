@@ -33,18 +33,27 @@ can be customized by end users easily.
 
 .. seealso::
 
+   Module :mod:`tomllib`
+      TOML is a well-specified format for application configuration files.
+      It is specifically designed to be an improved version of INI.
+
    Module :mod:`shlex`
-      Support for creating Unix shell-like mini-languages which can be used as
-      an alternate format for application configuration files.
+      Support for creating Unix shell-like mini-languages which can also
+      be used for application configuration files.
 
    Module :mod:`json`
-      The json module implements a subset of JavaScript syntax which can also
-      be used for this purpose.
+      The ``json`` module implements a subset of JavaScript syntax which is
+      sometimes used for configuration, but does not support comments.
 
 
 .. testsetup::
 
    import configparser
+
+.. testcleanup::
+
+   import os
+   os.remove("example.ini")
 
 
 Quick Start
@@ -60,10 +69,10 @@ Let's take a very basic configuration file that looks like this:
    CompressionLevel = 9
    ForwardX11 = yes
 
-   [bitbucket.org]
+   [forge.example]
    User = hg
 
-   [topsecret.server.com]
+   [topsecret.server.example]
    Port = 50022
    ForwardX11 = no
 
@@ -80,10 +89,10 @@ creating the above configuration file programmatically.
    >>> config['DEFAULT'] = {'ServerAliveInterval': '45',
    ...                      'Compression': 'yes',
    ...                      'CompressionLevel': '9'}
-   >>> config['bitbucket.org'] = {}
-   >>> config['bitbucket.org']['User'] = 'hg'
-   >>> config['topsecret.server.com'] = {}
-   >>> topsecret = config['topsecret.server.com']
+   >>> config['forge.example'] = {}
+   >>> config['forge.example']['User'] = 'hg'
+   >>> config['topsecret.server.example'] = {}
+   >>> topsecret = config['topsecret.server.example']
    >>> topsecret['Port'] = '50022'     # mutates the parser
    >>> topsecret['ForwardX11'] = 'no'  # same here
    >>> config['DEFAULT']['ForwardX11'] = 'yes'
@@ -106,34 +115,58 @@ back and explore the data it holds.
    >>> config.read('example.ini')
    ['example.ini']
    >>> config.sections()
-   ['bitbucket.org', 'topsecret.server.com']
-   >>> 'bitbucket.org' in config
+   ['forge.example', 'topsecret.server.example']
+   >>> 'forge.example' in config
    True
-   >>> 'bytebong.com' in config
+   >>> 'python.org' in config
    False
-   >>> config['bitbucket.org']['User']
+   >>> config['forge.example']['User']
    'hg'
    >>> config['DEFAULT']['Compression']
    'yes'
-   >>> topsecret = config['topsecret.server.com']
+   >>> topsecret = config['topsecret.server.example']
    >>> topsecret['ForwardX11']
    'no'
    >>> topsecret['Port']
    '50022'
-   >>> for key in config['bitbucket.org']:  # doctest: +SKIP
+   >>> for key in config['forge.example']:  # doctest: +SKIP
    ...     print(key)
    user
    compressionlevel
    serveraliveinterval
    compression
    forwardx11
-   >>> config['bitbucket.org']['ForwardX11']
+   >>> config['forge.example']['ForwardX11']
    'yes'
 
 As we can see above, the API is pretty straightforward.  The only bit of magic
 involves the ``DEFAULT`` section which provides default values for all other
 sections [1]_.  Note also that keys in sections are
 case-insensitive and stored in lowercase [1]_.
+
+It is possible to read several configurations into a single
+:class:`ConfigParser`, where the most recently added configuration has the
+highest priority. Any conflicting keys are taken from the more recent
+configuration while the previously existing keys are retained.
+
+.. doctest::
+
+   >>> another_config = configparser.ConfigParser()
+   >>> another_config.read('example.ini')
+   ['example.ini']
+   >>> another_config['topsecret.server.example']['Port']
+   '50022'
+   >>> another_config.read_string("[topsecret.server.example]\nPort=48484")
+   >>> another_config['topsecret.server.example']['Port']
+   '48484'
+   >>> another_config.read_dict({"topsecret.server.example": {"Port": 21212}})
+   >>> another_config['topsecret.server.example']['Port']
+   '21212'
+   >>> another_config['topsecret.server.example']['ForwardX11']
+   'no'
+
+This behaviour is equivalent to a :meth:`ConfigParser.read` call with several
+files passed to the *filenames* parameter.
 
 
 Supported Datatypes
@@ -162,9 +195,9 @@ recognizes Boolean values from ``'yes'``/``'no'``, ``'on'``/``'off'``,
 
    >>> topsecret.getboolean('ForwardX11')
    False
-   >>> config['bitbucket.org'].getboolean('ForwardX11')
+   >>> config['forge.example'].getboolean('ForwardX11')
    True
-   >>> config.getboolean('bitbucket.org', 'Compression')
+   >>> config.getboolean('forge.example', 'Compression')
    True
 
 Apart from :meth:`~ConfigParser.getboolean`, config parsers also
@@ -191,7 +224,7 @@ provide fallback values:
 Please note that default values have precedence over fallback values.
 For instance, in our example the ``'CompressionLevel'`` key was
 specified only in the ``'DEFAULT'`` section.  If we try to get it from
-the section ``'topsecret.server.com'``, we will always get the default,
+the section ``'topsecret.server.example'``, we will always get the default,
 even if we specify a fallback:
 
 .. doctest::
@@ -206,7 +239,7 @@ the ``fallback`` keyword-only argument:
 
 .. doctest::
 
-   >>> config.get('bitbucket.org', 'monster',
+   >>> config.get('forge.example', 'monster',
    ...            fallback='No such things as monsters')
    'No such things as monsters'
 
@@ -232,10 +265,14 @@ A configuration file consists of sections, each led by a ``[section]`` header,
 followed by key/value entries separated by a specific string (``=`` or ``:`` by
 default [1]_).  By default, section names are case sensitive but keys are not
 [1]_.  Leading and trailing whitespace is removed from keys and values.
-Values can be omitted, in which case the key/value delimiter may also be left
+Values can be omitted if the parser is configured to allow it [1]_,
+in which case the key/value delimiter may also be left
 out.  Values can also span multiple lines, as long as they are indented deeper
 than the first line of the value.  Depending on the parser's mode, blank lines
 may be treated as parts of multiline values or ignored.
+
+By default,  a valid section name can be any string that does not contain '\\n' or ']'.
+To change this, see :attr:`ConfigParser.SECTCRE`.
 
 Configuration files may include comments, prefixed by specific
 characters (``#`` and ``;`` by default [1]_).  Comments may appear on
@@ -314,7 +351,8 @@ from ``get()`` calls.
       my_pictures: %(my_dir)s/Pictures
 
       [Escape]
-      gain: 80%%  # use a %% to escape the % sign (% is the only character that needs to be escaped)
+      # use a %% to escape the % sign (% is the only character that needs to be escaped):
+      gain: 80%%
 
    In the example above, :class:`ConfigParser` with *interpolation* set to
    ``BasicInterpolation()`` would resolve ``%(home_dir)s`` to the value of
@@ -349,7 +387,8 @@ from ``get()`` calls.
       my_pictures: ${my_dir}/Pictures
 
       [Escape]
-      cost: $$80  # use a $$ to escape the $ sign ($ is the only character that needs to be escaped)
+      # use a $$ to escape the $ sign ($ is the only character that needs to be escaped):
+      cost: $$80
 
    Values from other sections can be fetched as well:
 
@@ -674,97 +713,98 @@ be overridden by subclasses or by attribute assignment.
 
 .. attribute:: ConfigParser.BOOLEAN_STATES
 
-  By default when using :meth:`~ConfigParser.getboolean`, config parsers
-  consider the following values ``True``: ``'1'``, ``'yes'``, ``'true'``,
-  ``'on'`` and the following values ``False``: ``'0'``, ``'no'``, ``'false'``,
-  ``'off'``.  You can override this by specifying a custom dictionary of strings
-  and their Boolean outcomes. For example:
+   By default when using :meth:`~ConfigParser.getboolean`, config parsers
+   consider the following values ``True``: ``'1'``, ``'yes'``, ``'true'``,
+   ``'on'`` and the following values ``False``: ``'0'``, ``'no'``, ``'false'``,
+   ``'off'``.  You can override this by specifying a custom dictionary of strings
+   and their Boolean outcomes. For example:
 
-  .. doctest::
+   .. doctest::
 
-     >>> custom = configparser.ConfigParser()
-     >>> custom['section1'] = {'funky': 'nope'}
-     >>> custom['section1'].getboolean('funky')
-     Traceback (most recent call last):
-     ...
-     ValueError: Not a boolean: nope
-     >>> custom.BOOLEAN_STATES = {'sure': True, 'nope': False}
-     >>> custom['section1'].getboolean('funky')
-     False
+      >>> custom = configparser.ConfigParser()
+      >>> custom['section1'] = {'funky': 'nope'}
+      >>> custom['section1'].getboolean('funky')
+      Traceback (most recent call last):
+      ...
+      ValueError: Not a boolean: nope
+      >>> custom.BOOLEAN_STATES = {'sure': True, 'nope': False}
+      >>> custom['section1'].getboolean('funky')
+      False
 
-  Other typical Boolean pairs include ``accept``/``reject`` or
-  ``enabled``/``disabled``.
+   Other typical Boolean pairs include ``accept``/``reject`` or
+   ``enabled``/``disabled``.
 
 .. method:: ConfigParser.optionxform(option)
+   :noindex:
 
-  This method transforms option names on every read, get, or set
-  operation.  The default converts the name to lowercase.  This also
-  means that when a configuration file gets written, all keys will be
-  lowercase.  Override this method if that's unsuitable.
-  For example:
+   This method transforms option names on every read, get, or set
+   operation.  The default converts the name to lowercase.  This also
+   means that when a configuration file gets written, all keys will be
+   lowercase.  Override this method if that's unsuitable.
+   For example:
 
-  .. doctest::
+   .. doctest::
 
-     >>> config = """
-     ... [Section1]
-     ... Key = Value
-     ...
-     ... [Section2]
-     ... AnotherKey = Value
-     ... """
-     >>> typical = configparser.ConfigParser()
-     >>> typical.read_string(config)
-     >>> list(typical['Section1'].keys())
-     ['key']
-     >>> list(typical['Section2'].keys())
-     ['anotherkey']
-     >>> custom = configparser.RawConfigParser()
-     >>> custom.optionxform = lambda option: option
-     >>> custom.read_string(config)
-     >>> list(custom['Section1'].keys())
-     ['Key']
-     >>> list(custom['Section2'].keys())
-     ['AnotherKey']
+      >>> config = """
+      ... [Section1]
+      ... Key = Value
+      ...
+      ... [Section2]
+      ... AnotherKey = Value
+      ... """
+      >>> typical = configparser.ConfigParser()
+      >>> typical.read_string(config)
+      >>> list(typical['Section1'].keys())
+      ['key']
+      >>> list(typical['Section2'].keys())
+      ['anotherkey']
+      >>> custom = configparser.RawConfigParser()
+      >>> custom.optionxform = lambda option: option
+      >>> custom.read_string(config)
+      >>> list(custom['Section1'].keys())
+      ['Key']
+      >>> list(custom['Section2'].keys())
+      ['AnotherKey']
 
-  .. note::
-     The optionxform function transforms option names to a canonical form.
-     This should be an idempotent function: if the name is already in
-     canonical form, it should be returned unchanged.
+   .. note::
+      The optionxform function transforms option names to a canonical form.
+      This should be an idempotent function: if the name is already in
+      canonical form, it should be returned unchanged.
 
 
 .. attribute:: ConfigParser.SECTCRE
 
-  A compiled regular expression used to parse section headers.  The default
-  matches ``[section]`` to the name ``"section"``.  Whitespace is considered
-  part of the section name, thus ``[  larch  ]`` will be read as a section of
-  name ``"  larch  "``.  Override this attribute if that's unsuitable.  For
-  example:
+   A compiled regular expression used to parse section headers.  The default
+   matches ``[section]`` to the name ``"section"``.  Whitespace is considered
+   part of the section name, thus ``[  larch  ]`` will be read as a section of
+   name ``"  larch  "``.  Override this attribute if that's unsuitable.  For
+   example:
 
-  .. doctest::
+   .. doctest::
 
-     >>> import re
-     >>> config = """
-     ... [Section 1]
-     ... option = value
-     ...
-     ... [  Section 2  ]
-     ... another = val
-     ... """
-     >>> typical = configparser.ConfigParser()
-     >>> typical.read_string(config)
-     >>> typical.sections()
-     ['Section 1', '  Section 2  ']
-     >>> custom = configparser.ConfigParser()
-     >>> custom.SECTCRE = re.compile(r"\[ *(?P<header>[^]]+?) *\]")
-     >>> custom.read_string(config)
-     >>> custom.sections()
-     ['Section 1', 'Section 2']
+      >>> import re
+      >>> config = """
+      ... [Section 1]
+      ... option = value
+      ...
+      ... [  Section 2  ]
+      ... another = val
+      ... """
+      >>> typical = configparser.ConfigParser()
+      >>> typical.read_string(config)
+      >>> typical.sections()
+      ['Section 1', '  Section 2  ']
+      >>> custom = configparser.ConfigParser()
+      >>> custom.SECTCRE = re.compile(r"\[ *(?P<header>[^]]+?) *\]")
+      >>> custom.read_string(config)
+      >>> custom.sections()
+      ['Section 1', 'Section 2']
 
-  .. note::
+   .. note::
 
-     While ConfigParser objects also use an ``OPTCRE`` attribute for recognizing
-     option lines, it's not recommended to override it because that would
-     interfere with constructor options *allow_no_value* and *delimiters*.
+      While ConfigParser objects also use an ``OPTCRE`` attribute for recognizing
+      option lines, it's not recommended to override it because that would
+      interfere with constructor options *allow_no_value* and *delimiters*.
 
 
 Legacy API Examples
@@ -895,8 +935,10 @@ ConfigParser Objects
 
    When *default_section* is given, it specifies the name for the special
    section holding default values for other sections and interpolation purposes
-   (normally named ``"DEFAULT"``).  This value can be retrieved and changed on
-   runtime using the ``default_section`` instance attribute.
+   (normally named ``"DEFAULT"``).  This value can be retrieved and changed at
+   runtime using the ``default_section`` instance attribute. This won't
+   re-evaluate an already parsed config file, but will be used when writing
+   parsed settings to a new config file.
 
    Interpolation behaviour may be customized by providing a custom handler
    through the *interpolation* argument. ``None`` can be used to turn off
@@ -1128,6 +1170,13 @@ ConfigParser Objects
       *space_around_delimiters* is true, delimiters between
       keys and values are surrounded by spaces.
 
+   .. note::
+
+      Comments in the original configuration file are not preserved when
+      writing the configuration back.
+      What is considered a comment, depends on the given values for
+      *comment_prefix* and *inline_comment_prefix*.
+
 
    .. method:: remove_option(section, option)
 
@@ -1161,28 +1210,6 @@ ConfigParser Objects
 
       Note that when reading configuration files, whitespace around the option
       names is stripped before :meth:`optionxform` is called.
-
-
-   .. method:: readfp(fp, filename=None)
-
-      .. deprecated:: 3.2
-         Use :meth:`read_file` instead.
-
-      .. versionchanged:: 3.2
-         :meth:`readfp` now iterates on *fp* instead of calling ``fp.readline()``.
-
-      For existing code calling :meth:`readfp` with arguments which don't
-      support iteration, the following generator may be used as a wrapper
-      around the file-like object::
-
-         def readline_generator(fp):
-             line = fp.readline()
-             while line:
-                 yield line
-                 line = fp.readline()
-
-      Instead of ``parser.readfp(fp)`` use
-      ``parser.read_file(readline_generator(fp))``.
 
 
 .. data:: MAX_INTERPOLATION_DEPTH
@@ -1318,10 +1345,9 @@ Exceptions
 
    Exception raised when errors occur attempting to parse a file.
 
-   .. versionchanged:: 3.2
-      The ``filename`` attribute and :meth:`__init__` argument were renamed to
-      ``source`` for consistency.
-
+.. versionchanged:: 3.12
+   The ``filename`` attribute and :meth:`__init__` constructor argument were
+   removed.  They have been available using the name ``source`` since 3.2.
 
 .. rubric:: Footnotes
 

@@ -1,1 +1,0 @@
-Selecting code context lines no longer causes a jump.

@@ -1,1 +1,0 @@
-Fix :mod:`json.tool` to catch :exc:`BrokenPipeError`. Patch by Dong-hee Na.

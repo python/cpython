@@ -1,3 +1,0 @@
-subinterpreters: Move ``_PyRuntimeState.ceval.tracing_possible`` to
-``PyInterpreterState.ceval.tracing_possible``: each interpreter now has its own
-variable.

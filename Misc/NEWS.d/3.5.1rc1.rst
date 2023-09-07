@@ -900,7 +900,7 @@ Kurenkov.
 .. nonce: QhQ9RD
 .. section: Library
 
-Fixed functools.singledispatch on classes with falsy metaclasses.  Patch by
+Fixed functools.singledispatch on classes with false metaclasses.  Patch by
 Ethan Furman.
 
 ..

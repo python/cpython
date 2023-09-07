@@ -1,2 +1,0 @@
-Ensures the required :file:`vcruntime140.dll` is included in install
-packages.

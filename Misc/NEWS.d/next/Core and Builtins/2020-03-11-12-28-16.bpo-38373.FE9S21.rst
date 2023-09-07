@@ -1,2 +1,0 @@
-Chaged list overallocation strategy. It no longer overallocates if the new
-size is closer to overalocated size than to the old size and adds padding.

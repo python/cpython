@@ -1,11 +1,11 @@
-from .. import abc
-from .. import util
+from test.test_importlib import abc, util
 
 machinery = util.import_importlib('importlib.machinery')
 
 import sys
 import types
 import unittest
+import warnings
 
 @unittest.skipIf(util.BUILTINS.good_name is None, 'no reasonable builtin module')
 class LoaderTests(abc.LoaderTests):
@@ -24,7 +24,9 @@ class LoaderTests(abc.LoaderTests):
         self.assertIn(module.__name__, sys.modules)
 
     def load_module(self, name):
-        return self.machinery.BuiltinImporter.load_module(name)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            return self.machinery.BuiltinImporter.load_module(name)
 
     def test_module(self):
         # Common case.

@@ -1,2 +1,0 @@
-:class:`collections.OrderedDict` now implements ``|`` and ``|=``
-(:pep:`584`).

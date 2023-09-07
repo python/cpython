@@ -1,4 +1,0 @@
-Move the static inline function flavor of Py_EnterRecursiveCall() and
-Py_LeaveRecursiveCall() to the internal C API: they access PyThreadState
-attributes. The limited C API provides regular functions which hide
-implementation details.

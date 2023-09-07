@@ -1,2 +1,0 @@
-Edit "Go to line" now clears any selection, preventing accidental deletion.
-It also updates Ln and Col on the status bar.

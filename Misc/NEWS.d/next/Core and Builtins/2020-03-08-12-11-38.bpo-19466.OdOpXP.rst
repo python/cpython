@@ -1,3 +1,0 @@
-Clear the frames of daemon threads earlier during the Python shutdown to
-call objects destructors. So "unclosed file" resource warnings are now
-emitted for daemon threads in a more reliable way.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016 Stefan Krah. All rights reserved.
+ * Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,12 +26,11 @@
  */
 
 
-#ifndef DIF_RADIX2_H
-#define DIF_RADIX2_H
+#ifndef LIBMPDEC_DIFRADIX2_H_
+#define LIBMPDEC_DIFRADIX2_H_
 
 
 #include "mpdecimal.h"
-#include <stdio.h>
 #include "numbertheory.h"
 
 
@@ -45,4 +44,4 @@ void fnt_dif2(mpd_uint_t a[], mpd_size_t n, struct fnt_params *tparams);
 MPD_PRAGMA(MPD_HIDE_SYMBOLS_END) /* restore previous scope rules */
 
 
-#endif
+#endif /* LIBMPDEC_DIFRADIX2_H_ */
