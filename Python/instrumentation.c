@@ -1125,7 +1125,7 @@ _Py_Instrumentation_GetLine(PyCodeObject *code, int index)
 int
 _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr, _Py_CODEUNIT *prev)
 {
-    frame->prev_instr = instr;
+    assert(frame->prev_instr == instr);
     PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(is_version_up_to_date(code, tstate->interp));
     assert(instrumentation_cross_checks(tstate->interp, code));
