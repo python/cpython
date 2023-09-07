@@ -1,9 +1,10 @@
-# Adapted with permission from the EdgeDB project.
+# Adapted with permission from the EdgeDB project;
+# license: PSFL.
 
 
 import asyncio
 import contextvars
-
+import contextlib
 from asyncio import taskgroups
 import unittest
 
@@ -229,29 +230,29 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(NUM, 15)
 
-    async def test_cancellation_in_body(self):
+    async def test_taskgroup_08(self):
 
         async def foo():
-            await asyncio.sleep(0.1)
-            1 / 0
+            try:
+                await asyncio.sleep(10)
+            finally:
+                1 / 0
 
         async def runner():
             async with taskgroups.TaskGroup() as g:
                 for _ in range(5):
                     g.create_task(foo())
 
-                try:
-                    await asyncio.sleep(10)
-                except asyncio.CancelledError:
-                    raise
+                await asyncio.sleep(10)
 
         r = asyncio.create_task(runner())
         await asyncio.sleep(0.1)
 
         self.assertFalse(r.done())
         r.cancel()
-        with self.assertRaises(asyncio.CancelledError) as cm:
+        with self.assertRaises(ExceptionGroup) as cm:
             await r
+        self.assertEqual(get_error_types(cm.exception), {ZeroDivisionError})
 
     async def test_taskgroup_09(self):
 
@@ -315,8 +316,10 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
     async def test_taskgroup_11(self):
 
         async def foo():
-            await asyncio.sleep(0.1)
-            1 / 0
+            try:
+                await asyncio.sleep(10)
+            finally:
+                1 / 0
 
         async def runner():
             async with taskgroups.TaskGroup():
@@ -324,24 +327,26 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                     for _ in range(5):
                         g2.create_task(foo())
 
-                    try:
-                        await asyncio.sleep(10)
-                    except asyncio.CancelledError:
-                        raise
+                    await asyncio.sleep(10)
 
         r = asyncio.create_task(runner())
         await asyncio.sleep(0.1)
 
         self.assertFalse(r.done())
         r.cancel()
-        with self.assertRaises(asyncio.CancelledError):
+        with self.assertRaises(ExceptionGroup) as cm:
             await r
+
+        self.assertEqual(get_error_types(cm.exception), {ExceptionGroup})
+        self.assertEqual(get_error_types(cm.exception.exceptions[0]), {ZeroDivisionError})
 
     async def test_taskgroup_12(self):
 
         async def foo():
-            await asyncio.sleep(0.1)
-            1 / 0
+            try:
+                await asyncio.sleep(10)
+            finally:
+                1 / 0
 
         async def runner():
             async with taskgroups.TaskGroup() as g1:
@@ -351,18 +356,18 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                     for _ in range(5):
                         g2.create_task(foo())
 
-                    try:
-                        await asyncio.sleep(10)
-                    except asyncio.CancelledError:
-                        raise
+                    await asyncio.sleep(10)
 
         r = asyncio.create_task(runner())
         await asyncio.sleep(0.1)
 
         self.assertFalse(r.done())
         r.cancel()
-        with self.assertRaises(asyncio.CancelledError):
+        with self.assertRaises(ExceptionGroup) as cm:
             await r
+
+        self.assertEqual(get_error_types(cm.exception), {ExceptionGroup})
+        self.assertEqual(get_error_types(cm.exception.exceptions[0]), {ZeroDivisionError})
 
     async def test_taskgroup_13(self):
 
@@ -423,8 +428,9 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         self.assertFalse(r.done())
         r.cancel()
-        with self.assertRaises(asyncio.CancelledError):
+        with self.assertRaises(ExceptionGroup) as cm:
             await r
+        self.assertEqual(get_error_types(cm.exception), {ZeroDivisionError})
 
     async def test_taskgroup_16(self):
 
@@ -450,8 +456,9 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         self.assertFalse(r.done())
         r.cancel()
-        with self.assertRaises(asyncio.CancelledError):
+        with self.assertRaises(ExceptionGroup) as cm:
             await r
+        self.assertEqual(get_error_types(cm.exception), {ZeroDivisionError})
 
     async def test_taskgroup_17(self):
         NUM = 0
@@ -740,6 +747,37 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                 g.create_task(coro2(g))
 
         self.assertEqual(get_error_types(cm.exception), {ZeroDivisionError})
+
+    async def test_taskgroup_context_manager_exit_raises(self):
+        # See https://github.com/python/cpython/issues/95289
+        class CustomException(Exception):
+            pass
+
+        async def raise_exc():
+            raise CustomException
+
+        @contextlib.asynccontextmanager
+        async def database():
+            try:
+                yield
+            finally:
+                raise CustomException
+
+        async def main():
+            task = asyncio.current_task()
+            try:
+                async with taskgroups.TaskGroup() as tg:
+                    async with database():
+                        tg.create_task(raise_exc())
+                        await asyncio.sleep(1)
+            except* CustomException as err:
+                self.assertEqual(task.cancelling(), 0)
+                self.assertEqual(len(err.exceptions), 2)
+
+            else:
+                self.fail('CustomException not raised')
+
+        await asyncio.create_task(main())
 
 
 if __name__ == "__main__":

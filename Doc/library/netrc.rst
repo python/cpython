@@ -51,9 +51,19 @@ the Unix :program:`ftp` program and other FTP clients.
 
    Exception raised by the :class:`~netrc.netrc` class when syntactical errors are
    encountered in source text.  Instances of this exception provide three
-   interesting attributes:  :attr:`msg` is a textual explanation of the error,
-   :attr:`filename` is the name of the source file, and :attr:`lineno` gives the
-   line number on which the error was found.
+   interesting attributes:
+
+   .. attribute:: msg
+
+      Textual explanation of the error.
+
+   .. attribute:: filename
+
+      The name of the source file.
+
+   .. attribute:: lineno
+
+      The line number on which the error was found.
 
 
 .. _netrc-objects:

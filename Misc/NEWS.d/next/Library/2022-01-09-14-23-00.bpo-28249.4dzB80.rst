@@ -1,2 +1,0 @@
-Set :attr:`doctest.DocTest.lineno` to ``None`` when object does not have
-:attr:`__doc__`.

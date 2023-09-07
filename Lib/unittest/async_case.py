@@ -79,12 +79,16 @@ class IsolatedAsyncioTestCase(TestCase):
         return result
 
     def _callSetUp(self):
+        # Force loop to be initialized and set as the current loop
+        # so that setUp functions can use get_event_loop() and get the
+        # correct loop instance.
+        self._asyncioRunner.get_loop()
         self._asyncioTestContext.run(self.setUp)
         self._callAsync(self.asyncSetUp)
 
     def _callTestMethod(self, method):
         if self._callMaybeAsync(method) is not None:
-            warnings.warn(f'It is deprecated to return a value!=None from a '
+            warnings.warn(f'It is deprecated to return a value that is not None from a '
                           f'test case ({method})', DeprecationWarning, stacklevel=4)
 
     def _callTearDown(self):

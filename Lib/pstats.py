@@ -57,7 +57,7 @@ class SortKey:
 
 @dataclass(unsafe_hash=True)
 class FunctionProfile:
-    ncalls: int
+    ncalls: str
     tottime: float
     percall_tottime: float
     cumtime: float
@@ -223,8 +223,6 @@ class Stats:
             for word, tup in self.sort_arg_dict_default.items():
                 fragment = word
                 while fragment:
-                    if not fragment:
-                        break
                     if fragment in dict:
                         bad_list[fragment] = 0
                         break

@@ -49,8 +49,6 @@ PyAPI_FUNC(PyCFunction) PyCFunction_GetFunction(PyObject *);
 PyAPI_FUNC(PyObject *) PyCFunction_GetSelf(PyObject *);
 PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject *);
 
-Py_DEPRECATED(3.9) PyAPI_FUNC(PyObject *) PyCFunction_Call(PyObject *, PyObject *, PyObject *);
-
 struct PyMethodDef {
     const char  *ml_name;   /* The name of the built-in function/method */
     PyCFunction ml_meth;    /* The C function that implements it */

@@ -137,6 +137,10 @@ class GeneralFloatCases(unittest.TestCase):
         check('123\xbd')
         check('  123 456  ')
         check(b'  123 456  ')
+        # all whitespace (cf. https://github.com/python/cpython/issues/95605)
+        check('')
+        check(' ')
+        check('\t \n')
 
         # non-ascii digits (error came from non-digit '!')
         check('\u0663\u0661\u0664!')
@@ -1036,11 +1040,8 @@ class InfNanTest(unittest.TestCase):
         self.assertEqual(copysign(1.0, float('inf')), 1.0)
         self.assertEqual(copysign(1.0, float('-inf')), -1.0)
 
-    @unittest.skipUnless(getattr(sys, 'float_repr_style', '') == 'short',
-                         "applies only when using short float repr style")
     def test_nan_signs(self):
-        # When using the dtoa.c code, the sign of float('nan') should
-        # be predictable.
+        # The sign of float('nan') should be predictable.
         self.assertEqual(copysign(1.0, float('nan')), 1.0)
         self.assertEqual(copysign(1.0, float('-nan')), -1.0)
 

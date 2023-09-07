@@ -90,7 +90,10 @@ def dispatch(c, id, methodname, args=(), kwds={}):
     kind, result = c.recv()
     if kind == '#RETURN':
         return result
-    raise convert_to_error(kind, result)
+    try:
+        raise convert_to_error(kind, result)
+    finally:
+        del result  # break reference cycle
 
 def convert_to_error(kind, result):
     if kind == '#ERROR':
@@ -433,7 +436,6 @@ class Server(object):
                     self.id_to_refcount[ident] = 1
                     self.id_to_obj[ident] = \
                         self.id_to_local_proxy_obj[ident]
-                    obj, exposed, gettypeid = self.id_to_obj[ident]
                     util.debug('Server re-enabled tracking & INCREF %r', ident)
                 else:
                     raise ke
@@ -834,7 +836,10 @@ class BaseProxy(object):
             conn = self._Client(token.address, authkey=self._authkey)
             dispatch(conn, None, 'decref', (token.id,))
             return proxy
-        raise convert_to_error(kind, result)
+        try:
+            raise convert_to_error(kind, result)
+        finally:
+            del result   # break reference cycle
 
     def _getvalue(self):
         '''

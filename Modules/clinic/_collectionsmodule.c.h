@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_abstract.h"      // _PyNumber_Index()
+
 PyDoc_STRVAR(_collections__count_elements__doc__,
 "_count_elements($module, mapping, iterable, /)\n"
 "--\n"
@@ -40,11 +42,11 @@ static PyObject *
 tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = clinic_state()->tuplegetter_type;
     Py_ssize_t index;
     PyObject *doc;
 
-    if ((type == &tuplegetter_type ||
-         type->tp_init == tuplegetter_type.tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("_tuplegetter", kwargs)) {
         goto exit;
     }
@@ -69,4 +71,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=36b0948c4676c831 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b01ddb9fdecc4a2d input=a9049054013a1b77]*/

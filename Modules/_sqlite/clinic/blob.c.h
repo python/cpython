@@ -51,7 +51,7 @@ blob_read(pysqlite_Blob *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    length = _PyLong_AsInt(args[0]);
+    length = PyLong_AsInt(args[0]);
     if (length == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -127,14 +127,14 @@ blob_seek(pysqlite_Blob *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("seek", nargs, 1, 2)) {
         goto exit;
     }
-    offset = _PyLong_AsInt(args[0]);
+    offset = PyLong_AsInt(args[0]);
     if (offset == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (nargs < 2) {
         goto skip_optional;
     }
-    origin = _PyLong_AsInt(args[1]);
+    origin = PyLong_AsInt(args[1]);
     if (origin == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -213,4 +213,4 @@ blob_exit(pysqlite_Blob *self, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=382cbf0977bb158a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8bfd79ab12ac5385 input=a9049054013a1b77]*/

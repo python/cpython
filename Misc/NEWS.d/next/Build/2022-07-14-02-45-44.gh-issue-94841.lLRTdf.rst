@@ -1,1 +1,0 @@
-Fix the possible performance regression of :c:func:`PyObject_Free` compiled with MSVC version 1932.

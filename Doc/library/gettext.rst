@@ -411,6 +411,7 @@ One difference between this module and Henstridge's: his catalog objects
 supported access through a mapping API, but this appears to be unused and so is
 not currently supported.
 
+.. _i18n-howto:
 
 Internationalizing your programs and modules
 --------------------------------------------
@@ -445,7 +446,7 @@ There are a few tools to extract the strings meant for translation.
 The original GNU :program:`gettext` only supported C or C++ source
 code but its extended version :program:`xgettext` scans code written
 in a number of languages, including Python, to find strings marked as
-translatable.  `Babel <http://babel.pocoo.org/>`__ is a Python
+translatable.  `Babel <https://babel.pocoo.org/>`__ is a Python
 internationalization library that includes a :file:`pybabel` script to
 extract and compile message catalogs.  François Pinard's program
 called :program:`xpot` does a similar job and is available as part of

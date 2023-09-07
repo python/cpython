@@ -25,7 +25,7 @@ Python's general purpose built-in containers, :class:`dict`, :class:`list`,
 :func:`namedtuple`      factory function for creating tuple subclasses with named fields
 :class:`deque`          list-like container with fast appends and pops on either end
 :class:`ChainMap`       dict-like class for creating a single view of multiple mappings
-:class:`Counter`        dict subclass for counting hashable objects
+:class:`Counter`        dict subclass for counting :term:`hashable` objects
 :class:`OrderedDict`    dict subclass that remembers the order entries were added
 :class:`defaultdict`    dict subclass that calls a factory function to supply missing values
 :class:`UserDict`       wrapper around dictionary objects for easier dict subclassing
@@ -229,6 +229,7 @@ For example::
     >>> cnt = Counter()
     >>> for word in ['red', 'blue', 'red', 'green', 'blue', 'blue']:
     ...     cnt[word] += 1
+    ...
     >>> cnt
     Counter({'blue': 3, 'red': 2, 'green': 1})
 
@@ -241,7 +242,7 @@ For example::
 
 .. class:: Counter([iterable-or-mapping])
 
-    A :class:`Counter` is a :class:`dict` subclass for counting hashable objects.
+    A :class:`Counter` is a :class:`dict` subclass for counting :term:`hashable` objects.
     It is a collection where elements are stored as dictionary keys
     and their counts are stored as dictionary values.  Counts are allowed to be
     any integer value including zero or negative counts.  The :class:`Counter`
@@ -664,7 +665,7 @@ added elements by appending to the right and popping to the left::
 
     def moving_average(iterable, n=3):
         # moving_average([40, 30, 50, 46, 39, 44]) --> 40.0 42.0 45.0 43.0
-        # http://en.wikipedia.org/wiki/Moving_average
+        # https://en.wikipedia.org/wiki/Moving_average
         it = iter(iterable)
         d = deque(itertools.islice(it, n-1))
         d.appendleft(0)
@@ -818,6 +819,7 @@ zero):
 
     >>> def constant_factory(value):
     ...     return lambda: value
+    ...
     >>> d = defaultdict(constant_factory('<missing>'))
     >>> d.update(name='John', action='ran')
     >>> '%(name)s %(action)s to %(object)s' % d
@@ -976,6 +978,8 @@ field names, the method and attribute names start with an underscore.
 
         >>> for partnum, record in inventory.items():
         ...     inventory[partnum] = record._replace(price=newprices[partnum], timestamp=time.now())
+
+    Named tuples are also supported by generic function :func:`copy.replace`.
 
 .. attribute:: somenamedtuple._fields
 
@@ -1201,6 +1205,7 @@ variants of :func:`functools.lru_cache`:
 
 .. testcode::
 
+    from collections import OrderedDict
     from time import time
 
     class TimeBoundedLRU:
@@ -1221,7 +1226,7 @@ variants of :func:`functools.lru_cache`:
             result = self.func(*args)
             self.cache[args] = time(), result
             if len(self.cache) > self.maxsize:
-                self.cache.popitem(0)
+                self.cache.popitem(last=False)
             return result
 
 
@@ -1253,12 +1258,12 @@ variants of :func:`functools.lru_cache`:
             if self.requests[args] <= self.cache_after:
                 self.requests.move_to_end(args)
                 if len(self.requests) > self.maxrequests:
-                    self.requests.popitem(0)
+                    self.requests.popitem(last=False)
             else:
                 self.requests.pop(args, None)
                 self.cache[args] = result
                 if len(self.cache) > self.maxsize:
-                    self.cache.popitem(0)
+                    self.cache.popitem(last=False)
             return result
 
 .. doctest::

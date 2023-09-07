@@ -3,11 +3,13 @@
 #include "pycore_getopt.h"        // _PyOS_GetOpt()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // _PyInterpreterState.runtime
+#include "pycore_long.h"          // _PY_LONG_MAX_STR_DIGITS_THRESHOLD
 #include "pycore_pathconfig.h"    // _Py_path_config
-#include "pycore_pyerrors.h"      // _PyErr_Fetch()
+#include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromConfig()
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_pystats.h"       // _Py_StatsOn()
 
 #include "osdefs.h"               // DELIM
 
@@ -48,7 +50,7 @@ Options (and corresponding environment variables):\n\
          .pyc extension; also PYTHONOPTIMIZE=x\n\
 -OO    : do -O changes and also discard docstrings; add .opt-2 before\n\
          .pyc extension\n\
--P     : don't prepend a potentially unsafe path to sys.path\n\
+-P     : don't prepend a potentially unsafe path to sys.path; also PYTHONSAFEPATH\n\
 -q     : don't print version and copyright messages on interactive startup\n\
 -s     : don't add user site directory to sys.path; also PYTHONNOUSERSITE\n\
 -S     : don't imply 'import site' on initialization\n\
@@ -118,8 +120,24 @@ The following implementation-specific options are available:\n\
    files are desired as well as suppressing the extra visual location indicators \n\
    when the interpreter displays tracebacks.\n\
 \n\
+-X perf: activate support for the Linux \"perf\" profiler by activating the \"perf\"\n\
+    trampoline. When this option is activated, the Linux \"perf\" profiler will be \n\
+    able to report Python calls. This option is only available on some platforms and will \n\
+    do nothing if is not supported on the current system. The default value is \"off\".\n\
+\n\
 -X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
-   The default is \"on\" (or \"off\" if you are running a local build).";
+   The default is \"on\" (or \"off\" if you are running a local build).\n\
+\n\
+-X int_max_str_digits=number: limit the size of int<->str conversions.\n\
+    This helps avoid denial of service attacks when parsing untrusted data.\n\
+    The default is sys.int_info.default_max_str_digits.  0 disables."
+
+#ifdef Py_STATS
+"\n\
+\n\
+-X pystats: Enable pystats collection at startup."
+#endif
+;
 
 /* Envvars that don't have equivalent command-line options are listed first */
 static const char usage_envvars[] =
@@ -127,7 +145,6 @@ static const char usage_envvars[] =
 "PYTHONSTARTUP: file executed on interactive startup (no default)\n"
 "PYTHONPATH   : '%lc'-separated list of directories prefixed to the\n"
 "               default module search path.  The result is sys.path.\n"
-"PYTHONSAFEPATH: don't prepend a potentially unsafe path to sys.path.\n"
 "PYTHONHOME   : alternate <prefix> directory (or <prefix>%lc<exec_prefix>).\n"
 "               The default module search path uses %s.\n"
 "PYTHONPLATLIBDIR : override sys.platlibdir.\n"
@@ -139,6 +156,10 @@ static const char usage_envvars[] =
 "   to seed the hashes of str and bytes objects.  It can also be set to an\n"
 "   integer in the range [0,4294967295] to get hash values with a\n"
 "   predictable seed.\n"
+"PYTHONINTMAXSTRDIGITS: limits the maximum digit characters in an int value\n"
+"   when converting from a string and when converting an int back to a str.\n"
+"   A value of 0 disables the limit.  Conversions to or from bases 2, 4, 8,\n"
+"   16, and 32 are never limited.\n"
 "PYTHONMALLOC: set the Python memory allocators and/or install debug hooks\n"
 "   on Python memory allocators. Use PYTHONMALLOC=debug to install debug\n"
 "   hooks.\n"
@@ -159,11 +180,18 @@ static const char usage_envvars[] =
 "PYTHONDEBUG             : enable parser debug mode (-d)\n"
 "PYTHONDONTWRITEBYTECODE : don't write .pyc files (-B)\n"
 "PYTHONINSPECT           : inspect interactively after running script (-i)\n"
+"PYTHONINTMAXSTRDIGITS   : limit max digit characters in an int value\n"
+"                          (-X int_max_str_digits=number)\n"
 "PYTHONNOUSERSITE        : disable user site directory (-s)\n"
 "PYTHONOPTIMIZE          : enable level 1 optimizations (-O)\n"
+"PYTHONSAFEPATH          : don't prepend a potentially unsafe path to sys.path (-P)\n"
 "PYTHONUNBUFFERED        : disable stdout/stderr buffering (-u)\n"
 "PYTHONVERBOSE           : trace import statements (-v)\n"
-"PYTHONWARNINGS=arg      : warning control (-W arg)\n";
+"PYTHONWARNINGS=arg      : warning control (-W arg)\n"
+#ifdef Py_STATS
+"PYTHONSTATS             : turns on statistics gathering\n"
+#endif
+;
 
 #if defined(MS_WINDOWS)
 #  define PYTHONHOMEHELP "<prefix>\\python{major}{minor}"
@@ -227,7 +255,7 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 #define FROM_STRING(STR) \
     ((STR != NULL) ? \
         PyUnicode_FromString(STR) \
-        : (Py_INCREF(Py_None), Py_None))
+        : Py_NewRef(Py_None))
 #define SET_ITEM_STR(VAR) \
     SET_ITEM(#VAR, FROM_STRING(VAR))
 
@@ -312,21 +340,34 @@ int PyStatus_IsExit(PyStatus status)
 int PyStatus_Exception(PyStatus status)
 { return _PyStatus_EXCEPTION(status); }
 
-PyObject*
+void
 _PyErr_SetFromPyStatus(PyStatus status)
 {
     if (!_PyStatus_IS_ERROR(status)) {
         PyErr_Format(PyExc_SystemError,
-                     "%s() expects an error PyStatus",
-                     _PyStatus_GET_FUNC());
+                     "_PyErr_SetFromPyStatus() status is not an error");
+        return;
     }
-    else if (status.func) {
-        PyErr_Format(PyExc_ValueError, "%s: %s", status.func, status.err_msg);
+
+    const char *err_msg = status.err_msg;
+    if (err_msg == NULL || strlen(err_msg) == 0) {
+        PyErr_Format(PyExc_SystemError,
+                     "_PyErr_SetFromPyStatus() status has no error message");
+        return;
+    }
+
+    if (strcmp(err_msg, _PyStatus_NO_MEMORY_ERRMSG) == 0) {
+        PyErr_NoMemory();
+        return;
+    }
+
+    const char *func = status.func;
+    if (func) {
+        PyErr_Format(PyExc_RuntimeError, "%s: %s", func, err_msg);
     }
     else {
-        PyErr_Format(PyExc_ValueError, "%s", status.err_msg);
+        PyErr_Format(PyExc_RuntimeError, "%s", err_msg);
     }
-    return NULL;
 }
 
 
@@ -491,99 +532,7 @@ _PyWideStringList_AsList(const PyWideStringList *list)
 }
 
 
-/* --- Py_SetStandardStreamEncoding() ----------------------------- */
-
-/* Helper to allow an embedding application to override the normal
- * mechanism that attempts to figure out an appropriate IO encoding
- */
-
-static char *_Py_StandardStreamEncoding = NULL;
-static char *_Py_StandardStreamErrors = NULL;
-
-int
-Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
-{
-    if (Py_IsInitialized()) {
-        /* This is too late to have any effect */
-        return -1;
-    }
-
-    int res = 0;
-
-    /* Py_SetStandardStreamEncoding() can be called before Py_Initialize(),
-       but Py_Initialize() can change the allocator. Use a known allocator
-       to be able to release the memory later. */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    /* Can't call PyErr_NoMemory() on errors, as Python hasn't been
-     * initialised yet.
-     *
-     * However, the raw memory allocators are initialised appropriately
-     * as C static variables, so _PyMem_RawStrdup is OK even though
-     * Py_Initialize hasn't been called yet.
-     */
-    if (encoding) {
-        PyMem_RawFree(_Py_StandardStreamEncoding);
-        _Py_StandardStreamEncoding = _PyMem_RawStrdup(encoding);
-        if (!_Py_StandardStreamEncoding) {
-            res = -2;
-            goto done;
-        }
-    }
-    if (errors) {
-        PyMem_RawFree(_Py_StandardStreamErrors);
-        _Py_StandardStreamErrors = _PyMem_RawStrdup(errors);
-        if (!_Py_StandardStreamErrors) {
-            PyMem_RawFree(_Py_StandardStreamEncoding);
-            _Py_StandardStreamEncoding = NULL;
-            res = -3;
-            goto done;
-        }
-    }
-#ifdef MS_WINDOWS
-    if (_Py_StandardStreamEncoding) {
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-        /* Overriding the stream encoding implies legacy streams */
-        Py_LegacyWindowsStdioFlag = 1;
-_Py_COMP_DIAG_POP
-    }
-#endif
-
-done:
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    return res;
-}
-
-
-void
-_Py_ClearStandardStreamEncoding(void)
-{
-    /* Use the same allocator than Py_SetStandardStreamEncoding() */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    /* We won't need them anymore. */
-    if (_Py_StandardStreamEncoding) {
-        PyMem_RawFree(_Py_StandardStreamEncoding);
-        _Py_StandardStreamEncoding = NULL;
-    }
-    if (_Py_StandardStreamErrors) {
-        PyMem_RawFree(_Py_StandardStreamErrors);
-        _Py_StandardStreamErrors = NULL;
-    }
-
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-}
-
-
 /* --- Py_GetArgcArgv() ------------------------------------------- */
-
-/* For Py_GetArgcArgv(); set by _Py_SetArgcArgv() */
-static PyWideStringList orig_argv = {.length = 0, .items = NULL};
-
 
 void
 _Py_ClearArgcArgv(void)
@@ -591,7 +540,7 @@ _Py_ClearArgcArgv(void)
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    _PyWideStringList_Clear(&orig_argv);
+    _PyWideStringList_Clear(&_PyRuntime.orig_argv);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
@@ -606,7 +555,9 @@ _Py_SetArgcArgv(Py_ssize_t argc, wchar_t * const *argv)
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    res = _PyWideStringList_Copy(&orig_argv, &argv_list);
+    // XXX _PyRuntime.orig_argv only gets cleared by Py_Main(),
+    // so it currently leaks for embedders.
+    res = _PyWideStringList_Copy(&_PyRuntime.orig_argv, &argv_list);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     return res;
@@ -617,8 +568,8 @@ _Py_SetArgcArgv(Py_ssize_t argc, wchar_t * const *argv)
 void
 Py_GetArgcArgv(int *argc, wchar_t ***argv)
 {
-    *argc = (int)orig_argv.length;
-    *argv = orig_argv.items;
+    *argc = (int)_PyRuntime.orig_argv.length;
+    *argv = _PyRuntime.orig_argv.items;
 }
 
 
@@ -681,8 +632,12 @@ config_check_consistency(const PyConfig *config)
     assert(config->pathconfig_warnings >= 0);
     assert(config->_is_python_build >= 0);
     assert(config->safe_path >= 0);
+    assert(config->int_max_str_digits >= 0);
     // config->use_frozen_modules is initialized later
     // by _PyConfig_InitImportConfig().
+#ifdef Py_STATS
+    assert(config->_pystats >= 0);
+#endif
     return 1;
 }
 #endif
@@ -745,6 +700,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->use_hash_seed = -1;
     config->faulthandler = -1;
     config->tracemalloc = -1;
+    config->perf_profiling = -1;
     config->module_search_paths_set = 0;
     config->parse_argv = 0;
     config->site_import = -1;
@@ -764,7 +720,6 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->check_hash_pycs_mode = NULL;
     config->pathconfig_warnings = -1;
     config->_init_main = 1;
-    config->_isolated_interpreter = 0;
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = -1;
 #endif
@@ -774,6 +729,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->use_frozen_modules = 1;
 #endif
     config->safe_path = 0;
+    config->int_max_str_digits = -1;
     config->_is_python_build = 0;
     config->code_debug_ranges = 1;
 }
@@ -829,6 +785,8 @@ PyConfig_InitIsolatedConfig(PyConfig *config)
     config->use_hash_seed = 0;
     config->faulthandler = 0;
     config->tracemalloc = 0;
+    config->perf_profiling = 0;
+    config->int_max_str_digits = _PY_LONG_DEFAULT_MAX_STR_DIGITS;
     config->safe_path = 1;
     config->pathconfig_warnings = 0;
 #ifdef MS_WINDOWS
@@ -940,6 +898,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(_install_importlib);
     COPY_ATTR(faulthandler);
     COPY_ATTR(tracemalloc);
+    COPY_ATTR(perf_profiling);
     COPY_ATTR(import_time);
     COPY_ATTR(code_debug_ranges);
     COPY_ATTR(show_ref_count);
@@ -995,11 +954,14 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_WSTR_ATTR(check_hash_pycs_mode);
     COPY_ATTR(pathconfig_warnings);
     COPY_ATTR(_init_main);
-    COPY_ATTR(_isolated_interpreter);
     COPY_ATTR(use_frozen_modules);
     COPY_ATTR(safe_path);
     COPY_WSTRLIST(orig_argv);
     COPY_ATTR(_is_python_build);
+    COPY_ATTR(int_max_str_digits);
+#ifdef Py_STATS
+    COPY_ATTR(_pystats);
+#endif
 
 #undef COPY_ATTR
 #undef COPY_WSTR_ATTR
@@ -1035,7 +997,7 @@ _PyConfig_AsDict(const PyConfig *config)
 #define FROM_WSTRING(STR) \
     ((STR != NULL) ? \
         PyUnicode_FromWideChar(STR, -1) \
-        : (Py_INCREF(Py_None), Py_None))
+        : Py_NewRef(Py_None))
 #define SET_ITEM_WSTR(ATTR) \
     SET_ITEM(#ATTR, FROM_WSTRING(config->ATTR))
 #define SET_ITEM_WSTRLIST(LIST) \
@@ -1050,6 +1012,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_UINT(hash_seed);
     SET_ITEM_INT(faulthandler);
     SET_ITEM_INT(tracemalloc);
+    SET_ITEM_INT(perf_profiling);
     SET_ITEM_INT(import_time);
     SET_ITEM_INT(code_debug_ranges);
     SET_ITEM_INT(show_ref_count);
@@ -1101,11 +1064,14 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_WSTR(check_hash_pycs_mode);
     SET_ITEM_INT(pathconfig_warnings);
     SET_ITEM_INT(_init_main);
-    SET_ITEM_INT(_isolated_interpreter);
     SET_ITEM_WSTRLIST(orig_argv);
     SET_ITEM_INT(use_frozen_modules);
     SET_ITEM_INT(safe_path);
     SET_ITEM_INT(_is_python_build);
+    SET_ITEM_INT(int_max_str_digits);
+#ifdef Py_STATS
+    SET_ITEM_INT(_pystats);
+#endif
 
     return dict;
 
@@ -1125,8 +1091,11 @@ fail:
 static PyObject*
 config_dict_get(PyObject *dict, const char *name)
 {
-    PyObject *item = _PyDict_GetItemStringWithError(dict, name);
-    if (item == NULL && !PyErr_Occurred()) {
+    PyObject *item;
+    if (PyDict_GetItemStringRef(dict, name, &item) < 0) {
+        return NULL;
+    }
+    if (item == NULL) {
         PyErr_Format(PyExc_ValueError, "missing config key: %s", name);
         return NULL;
     }
@@ -1155,7 +1124,8 @@ config_dict_get_int(PyObject *dict, const char *name, int *result)
     if (item == NULL) {
         return -1;
     }
-    int value = _PyLong_AsInt(item);
+    int value = PyLong_AsInt(item);
+    Py_DECREF(item);
     if (value == -1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
             config_dict_invalid_type(name);
@@ -1178,6 +1148,7 @@ config_dict_get_ulong(PyObject *dict, const char *name, unsigned long *result)
         return -1;
     }
     unsigned long value = PyLong_AsUnsignedLong(item);
+    Py_DECREF(item);
     if (value == (unsigned long)-1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
             config_dict_invalid_type(name);
@@ -1200,27 +1171,33 @@ config_dict_get_wstr(PyObject *dict, const char *name, PyConfig *config,
     if (item == NULL) {
         return -1;
     }
+
     PyStatus status;
     if (item == Py_None) {
         status = PyConfig_SetString(config, result, NULL);
     }
     else if (!PyUnicode_Check(item)) {
         config_dict_invalid_type(name);
-        return -1;
+        goto error;
     }
     else {
         wchar_t *wstr = PyUnicode_AsWideCharString(item, NULL);
         if (wstr == NULL) {
-            return -1;
+            goto error;
         }
         status = PyConfig_SetString(config, result, wstr);
         PyMem_Free(wstr);
     }
     if (_PyStatus_EXCEPTION(status)) {
         PyErr_NoMemory();
-        return -1;
+        goto error;
     }
+    Py_DECREF(item);
     return 0;
+
+error:
+    Py_DECREF(item);
+    return -1;
 }
 
 
@@ -1234,6 +1211,7 @@ config_dict_get_wstrlist(PyObject *dict, const char *name, PyConfig *config,
     }
 
     if (!PyList_CheckExact(list)) {
+        Py_DECREF(list);
         config_dict_invalid_type(name);
         return -1;
     }
@@ -1267,10 +1245,12 @@ config_dict_get_wstrlist(PyObject *dict, const char *name, PyConfig *config,
         goto error;
     }
     _PyWideStringList_Clear(&wstrlist);
+    Py_DECREF(list);
     return 0;
 
 error:
     _PyWideStringList_Clear(&wstrlist);
+    Py_DECREF(list);
     return -1;
 }
 
@@ -1294,6 +1274,12 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
             return -1; \
         } \
         CHECK_VALUE(#KEY, config->KEY >= 0); \
+    } while (0)
+#define GET_INT(KEY) \
+    do { \
+        if (config_dict_get_int(dict, #KEY, &config->KEY) < 0) { \
+            return -1; \
+        } \
     } while (0)
 #define GET_WSTR(KEY) \
     do { \
@@ -1331,6 +1317,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     CHECK_VALUE("hash_seed", config->hash_seed <= MAX_HASH_SEED);
     GET_UINT(faulthandler);
     GET_UINT(tracemalloc);
+    GET_UINT(perf_profiling);
     GET_UINT(import_time);
     GET_UINT(code_debug_ranges);
     GET_UINT(show_ref_count);
@@ -1388,13 +1375,17 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
 
     GET_UINT(_install_importlib);
     GET_UINT(_init_main);
-    GET_UINT(_isolated_interpreter);
     GET_UINT(use_frozen_modules);
     GET_UINT(safe_path);
     GET_UINT(_is_python_build);
+    GET_INT(int_max_str_digits);
+#ifdef Py_STATS
+    GET_UINT(_pystats);
+#endif
 
 #undef CHECK_VALUE
 #undef GET_UINT
+#undef GET_INT
 #undef GET_WSTR
 #undef GET_WSTR_OPT
     return 0;
@@ -1687,6 +1678,26 @@ config_read_env_vars(PyConfig *config)
     return _PyStatus_OK();
 }
 
+static PyStatus
+config_init_perf_profiling(PyConfig *config)
+{
+    int active = 0;
+    const char *env = config_get_env(config, "PYTHONPERFSUPPORT");
+    if (env) {
+        if (_Py_str_to_int(env, &active) != 0) {
+            active = 0;
+        }
+        if (active) {
+            config->perf_profiling = 1;
+        }
+    }
+    const wchar_t *xoption = config_get_xoption(config, L"perf");
+    if (xoption) {
+        config->perf_profiling = 1;
+    }
+    return _PyStatus_OK();
+
+}
 
 static PyStatus
 config_init_tracemalloc(PyConfig *config)
@@ -1732,6 +1743,52 @@ config_init_tracemalloc(PyConfig *config)
     return _PyStatus_OK();
 }
 
+static PyStatus
+config_init_int_max_str_digits(PyConfig *config)
+{
+    int maxdigits;
+
+    const char *env = config_get_env(config, "PYTHONINTMAXSTRDIGITS");
+    if (env) {
+        bool valid = 0;
+        if (!_Py_str_to_int(env, &maxdigits)) {
+            valid = ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_STR_DIGITS_THRESHOLD));
+        }
+        if (!valid) {
+#define STRINGIFY(VAL) _STRINGIFY(VAL)
+#define _STRINGIFY(VAL) #VAL
+            return _PyStatus_ERR(
+                    "PYTHONINTMAXSTRDIGITS: invalid limit; must be >= "
+                    STRINGIFY(_PY_LONG_MAX_STR_DIGITS_THRESHOLD)
+                    " or 0 for unlimited.");
+        }
+        config->int_max_str_digits = maxdigits;
+    }
+
+    const wchar_t *xoption = config_get_xoption(config, L"int_max_str_digits");
+    if (xoption) {
+        const wchar_t *sep = wcschr(xoption, L'=');
+        bool valid = 0;
+        if (sep) {
+            if (!config_wstr_to_int(sep + 1, &maxdigits)) {
+                valid = ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_STR_DIGITS_THRESHOLD));
+            }
+        }
+        if (!valid) {
+            return _PyStatus_ERR(
+                    "-X int_max_str_digits: invalid limit; must be >= "
+                    STRINGIFY(_PY_LONG_MAX_STR_DIGITS_THRESHOLD)
+                    " or 0 for unlimited.");
+#undef _STRINGIFY
+#undef STRINGIFY
+        }
+        config->int_max_str_digits = maxdigits;
+    }
+    if (config->int_max_str_digits < 0) {
+        config->int_max_str_digits = _PY_LONG_DEFAULT_MAX_STR_DIGITS;
+    }
+    return _PyStatus_OK();
+}
 
 static PyStatus
 config_init_pycache_prefix(PyConfig *config)
@@ -1784,6 +1841,20 @@ config_read_complex_options(PyConfig *config)
     PyStatus status;
     if (config->tracemalloc < 0) {
         status = config_init_tracemalloc(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
+    if (config->perf_profiling < 0) {
+        status = config_init_perf_profiling(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
+    if (config->int_max_str_digits < 0) {
+        status = config_init_int_max_str_digits(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -1857,26 +1928,6 @@ config_init_stdio_encoding(PyConfig *config,
                            const PyPreConfig *preconfig)
 {
     PyStatus status;
-
-    /* If Py_SetStandardStreamEncoding() has been called, use its
-        arguments if they are not NULL. */
-    if (config->stdio_encoding == NULL && _Py_StandardStreamEncoding != NULL) {
-        status = CONFIG_SET_BYTES_STR(config, &config->stdio_encoding,
-                                      _Py_StandardStreamEncoding,
-                                      "_Py_StandardStreamEncoding");
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-    }
-
-    if (config->stdio_errors == NULL && _Py_StandardStreamErrors != NULL) {
-        status = CONFIG_SET_BYTES_STR(config, &config->stdio_errors,
-                                      _Py_StandardStreamErrors,
-                                      "_Py_StandardStreamErrors");
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-    }
 
     // Exit if encoding and errors are defined
     if (config->stdio_encoding != NULL && config->stdio_errors != NULL) {
@@ -2061,49 +2112,6 @@ _PyConfig_InitImportConfig(PyConfig *config)
     return config_init_import(config, 1);
 }
 
-// List of known xoptions to validate against the provided ones. Note that all
-// options are listed, even if they are only available if a specific macro is
-// set, like -X showrefcount which requires a debug build. In this case unknown
-// options are silently ignored.
-const wchar_t* known_xoptions[] = {
-    L"faulthandler",
-    L"showrefcount",
-    L"tracemalloc",
-    L"importtime",
-    L"dev",
-    L"utf8",
-    L"pycache_prefix",
-    L"warn_default_encoding",
-    L"no_debug_ranges",
-    L"frozen_modules",
-    NULL,
-};
-
-static const wchar_t*
-_Py_check_xoptions(const PyWideStringList *xoptions, const wchar_t **names)
-{
-    for (Py_ssize_t i=0; i < xoptions->length; i++) {
-        const wchar_t *option = xoptions->items[i];
-        size_t len;
-        wchar_t *sep = wcschr(option, L'=');
-        if (sep != NULL) {
-            len = (sep - option);
-        }
-        else {
-            len = wcslen(option);
-        }
-        int found = 0;
-        for (const wchar_t** name = names; *name != NULL; name++) {
-            if (wcsncmp(option, *name, len) == 0 && (*name)[len] == L'\0') {
-                found = 1;
-            }
-        }
-        if (found == 0) {
-            return option;
-        }
-    }
-    return NULL;
-}
 
 static PyStatus
 config_read(PyConfig *config, int compute_path_config)
@@ -2119,14 +2127,21 @@ config_read(PyConfig *config, int compute_path_config)
     }
 
     /* -X options */
-    const wchar_t* option = _Py_check_xoptions(&config->xoptions, known_xoptions);
-    if (option != NULL) {
-        return PyStatus_Error("Unknown value for option -X (see --help-xoptions)");
-    }
-
     if (config_get_xoption(config, L"showrefcount")) {
         config->show_ref_count = 1;
     }
+
+#ifdef Py_STATS
+    if (config_get_xoption(config, L"pystats")) {
+        config->_pystats = 1;
+    }
+    else if (config_get_env(config, "PYTHONSTATS")) {
+        config->_pystats = 1;
+    }
+    if (config->_pystats < 0) {
+        config->_pystats = 0;
+    }
+#endif
 
     status = config_read_complex_options(config);
     if (_PyStatus_EXCEPTION(status)) {
@@ -2151,6 +2166,9 @@ config_read(PyConfig *config, int compute_path_config)
     }
     if (config->tracemalloc < 0) {
         config->tracemalloc = 0;
+    }
+    if (config->perf_profiling < 0) {
+        config->perf_profiling = 0;
     }
     if (config->use_hash_seed < 0) {
         config->use_hash_seed = 0;
@@ -2259,6 +2277,13 @@ _PyConfig_Write(const PyConfig *config, _PyRuntimeState *runtime)
     {
         return _PyStatus_NO_MEMORY();
     }
+
+#ifdef Py_STATS
+    if (config->_pystats) {
+        _Py_StatsOn();
+    }
+#endif
+
     return _PyStatus_OK();
 }
 
@@ -2279,13 +2304,13 @@ config_usage(int error, const wchar_t* program)
 }
 
 static void
-config_envvars_usage()
+config_envvars_usage(void)
 {
     printf(usage_envvars, (wint_t)DELIM, (wint_t)DELIM, PYTHONHOMEHELP);
 }
 
 static void
-config_xoptions_usage()
+config_xoptions_usage(void)
 {
     puts(usage_xoptions);
 }
@@ -3067,8 +3092,7 @@ init_dump_ascii_wstr(const wchar_t *str)
 void
 _Py_DumpPathConfig(PyThreadState *tstate)
 {
-    PyObject *exc_type, *exc_value, *exc_tb;
-    _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
 
     PySys_WriteStderr("Python path configuration:\n");
 
@@ -3126,5 +3150,5 @@ _Py_DumpPathConfig(PyThreadState *tstate)
         PySys_WriteStderr("  ]\n");
     }
 
-    _PyErr_Restore(tstate, exc_type, exc_value, exc_tb);
+    _PyErr_SetRaisedException(tstate, exc);
 }

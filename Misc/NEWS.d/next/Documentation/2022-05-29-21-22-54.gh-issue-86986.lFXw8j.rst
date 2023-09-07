@@ -1,1 +1,0 @@
-The minimum Sphinx version required to build the documentation is now 3.2.

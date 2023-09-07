@@ -60,7 +60,7 @@ _multiprocessing_recv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!handle && PyErr_Occurred()) {
         goto exit;
     }
-    size = _PyLong_AsInt(args[1]);
+    size = PyLong_AsInt(args[1]);
     if (size == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -166,4 +166,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEND_METHODDEF
     #define _MULTIPROCESSING_SEND_METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEND_METHODDEF) */
-/*[clinic end generated code: output=ab64ce752f933c55 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8b91c020d4353cc5 input=a9049054013a1b77]*/
