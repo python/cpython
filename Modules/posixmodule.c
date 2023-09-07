@@ -10157,7 +10157,7 @@ os.timerfd_settime
     flags: int
         0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.
     initial: double = 0.0
-        initial expiration timing in seconds.
+        The initial expiration time, in seconds.
 
         * If *flags* has TFD_TIMER_ABSTIME bit, *flags* must be in absolute time.
         * If *flags* doesn't have TFD_TIMER_ABSTIME bit, *flags* must be in relative time.
