@@ -1,0 +1,1 @@
+Make sure instrumentation line returns the correct opcode when instruction instrumentation is stripped
