@@ -1227,7 +1227,7 @@ Connection objects
 
       .. versionadded:: 3.7
 
-      .. seealso:
+      .. seealso::
 
          :ref:`sqlite3-howto-encoding`
 
