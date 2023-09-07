@@ -650,10 +650,10 @@ Expressions
 
 .. class:: NamedExpr(target, value)
 
-    A named expression. This AST node is produced by the assignment expressions
-    operator (also known as the walrus operator). As opposed to the :class:`Assign`
-    node in which the first argument can be multiple nodes, in this case both
-    ``target`` and ``value`` must be single nodes.
+   A named expression. This AST node is produced by the assignment expressions
+   operator (also known as the walrus operator). As opposed to the :class:`Assign`
+   node in which the first argument can be multiple nodes, in this case both
+   ``target`` and ``value`` must be single nodes.
 
    .. doctest::
 
@@ -663,6 +663,7 @@ Expressions
                 target=Name(id='x', ctx=Store()),
                 value=Constant(value=4)))
 
+   .. versionadded:: 3.8
 
 Subscripting
 ~~~~~~~~~~~~
@@ -1036,7 +1037,7 @@ Statements
                     value=Name(id='int', ctx=Load()))],
             type_ignores=[])
 
-    .. versionadded:: 3.12
+   .. versionadded:: 3.12
 
 Other statements which are only applicable inside functions or loops are
 described in other sections.
@@ -1319,7 +1320,7 @@ Control flow
                     finalbody=[])],
             type_ignores=[])
 
-    .. versionadded:: 3.11
+   .. versionadded:: 3.11
 
 .. class:: ExceptHandler(type, name, body)
 
@@ -1462,7 +1463,7 @@ Pattern matching
                                     value=Constant(value=Ellipsis))])])],
             type_ignores=[])
 
-    .. versionadded:: 3.10
+   .. versionadded:: 3.10
 
 .. class:: MatchValue(value)
 
@@ -1491,7 +1492,7 @@ Pattern matching
                                     value=Constant(value=Ellipsis))])])],
             type_ignores=[])
 
-    .. versionadded:: 3.10
+   .. versionadded:: 3.10
 
 .. class:: MatchSingleton(value)
 
@@ -1518,7 +1519,7 @@ Pattern matching
                                     value=Constant(value=Ellipsis))])])],
             type_ignores=[])
 
-    .. versionadded:: 3.10
+   .. versionadded:: 3.10
 
 .. class:: MatchSequence(patterns)
 
@@ -1551,7 +1552,7 @@ Pattern matching
                                     value=Constant(value=Ellipsis))])])],
             type_ignores=[])
 
-    .. versionadded:: 3.10
+   .. versionadded:: 3.10
 
 .. class:: MatchStar(name)
 
@@ -1593,7 +1594,7 @@ Pattern matching
                                     value=Constant(value=Ellipsis))])])],
             type_ignores=[])
 
-    .. versionadded:: 3.10
+   .. versionadded:: 3.10
 
 .. class:: MatchMapping(keys, patterns, rest)
 
@@ -1641,7 +1642,7 @@ Pattern matching
                                     value=Constant(value=Ellipsis))])])],
             type_ignores=[])
 
-    .. versionadded:: 3.10
+   .. versionadded:: 3.10
 
 .. class:: MatchClass(cls, patterns, kwd_attrs, kwd_patterns)
 
@@ -1707,7 +1708,7 @@ Pattern matching
                                     value=Constant(value=Ellipsis))])])],
             type_ignores=[])
 
-    .. versionadded:: 3.10
+   .. versionadded:: 3.10
 
 .. class:: MatchAs(pattern, name)
 
@@ -1750,7 +1751,7 @@ Pattern matching
                                     value=Constant(value=Ellipsis))])])],
             type_ignores=[])
 
-    .. versionadded:: 3.10
+   .. versionadded:: 3.10
 
 .. class:: MatchOr(patterns)
 
@@ -1784,7 +1785,7 @@ Pattern matching
                                     value=Constant(value=Ellipsis))])])],
             type_ignores=[])
 
-    .. versionadded:: 3.10
+   .. versionadded:: 3.10
 
 .. _ast-type-params:
 
@@ -1817,7 +1818,7 @@ aliases.
                         ctx=Load()))],
             type_ignores=[])
 
-    .. versionadded:: 3.12
+   .. versionadded:: 3.12
 
 .. class:: ParamSpec(name)
 
@@ -1842,7 +1843,7 @@ aliases.
                         ctx=Load()))],
             type_ignores=[])
 
-    .. versionadded:: 3.12
+   .. versionadded:: 3.12
 
 .. class:: TypeVarTuple(name)
 
@@ -1868,7 +1869,7 @@ aliases.
                         ctx=Load()))],
             type_ignores=[])
 
-    .. versionadded:: 3.12
+   .. versionadded:: 3.12
 
 Function and class definitions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1889,7 +1890,7 @@ Function and class definitions
 
        ``type_comment`` is an optional string with the type annotation as a comment.
 
-    .. versionchanged:: 3.12
+   .. versionchanged:: 3.12
         Added ``type_params``.
 
 
@@ -2090,7 +2091,7 @@ Function and class definitions
                     type_params=[])],
             type_ignores=[])
 
-    .. versionchanged:: 3.12
+   .. versionchanged:: 3.12
         Added ``type_params``.
 
 Async and await
