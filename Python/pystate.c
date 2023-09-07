@@ -2424,12 +2424,25 @@ _release_xidata_pending(void *data)
     return 0;
 }
 
-int
-_PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
+static int
+_xidata_release_and_rawfree_pending(void *data)
+{
+    _xidata_clear((_PyCrossInterpreterData *)data);
+    PyMem_RawFree(data);
+    return 0;
+}
+
+static int
+_xidata_release(_PyCrossInterpreterData *data, int rawfree)
 {
     if ((data->data == NULL || data->free == NULL) && data->obj == NULL) {
         // Nothing to release!
-        data->data = NULL;
+        if (rawfree) {
+            PyMem_RawFree(data);
+        }
+        else {
+            data->data = NULL;
+        }
         return 0;
     }
 
@@ -2440,19 +2453,34 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
         // This function shouldn't have been called.
         // XXX Someone leaked some memory...
         assert(PyErr_Occurred());
+        if (rawfree) {
+            PyMem_RawFree(data);
+        }
         return -1;
     }
 
     // "Release" the data and/or the object.
     if (interp == current_fast_get(interp->runtime)->interp) {
         _xidata_clear(data);
+        if (rawfree) {
+            PyMem_RawFree(data);
+        }
     }
     else {
         _Py_pending_call_func func = _release_xidata_pending;
+        if (rawfree) {
+            func = _xidata_release_and_rawfree_pending;
+        }
         // XXX Emit a warning if this fails?
         _PyEval_AddPendingCall(interp, func, data, 0);
     }
     return 0;
+}
+
+int
+_PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
+{
+    return _xidata_release(data, 0);
 }
 
 /* registry of {type -> crossinterpdatafunc} */
