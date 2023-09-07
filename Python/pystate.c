@@ -2483,6 +2483,12 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
     return _xidata_release(data, 0);
 }
 
+int
+_PyCrossInterpreterData_ReleaseAndRawFree(_PyCrossInterpreterData *data)
+{
+    return _xidata_release(data, 1);
+}
+
 /* registry of {type -> crossinterpdatafunc} */
 
 /* For now we use a global registry of shareable classes.  An
