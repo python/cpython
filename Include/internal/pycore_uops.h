@@ -23,7 +23,7 @@ typedef struct {
     _PyUOpInstruction trace[1];
 } _PyUOpExecutorObject;
 
-_PyInterpreterFrame *_PyUopExecute(
+_Py_CODEUNIT *_PyUopExecute(
     _PyExecutorObject *executor,
     _PyInterpreterFrame *frame,
     PyObject **stack_pointer);

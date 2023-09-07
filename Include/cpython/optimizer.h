@@ -14,7 +14,7 @@ typedef struct {
 typedef struct _PyExecutorObject {
     PyObject_VAR_HEAD
     /* WARNING: execute consumes a reference to self. This is necessary to allow executors to tail call into each other. */
-    struct _PyInterpreterFrame *(*execute)(struct _PyExecutorObject *self, struct _PyInterpreterFrame *frame, PyObject **stack_pointer);
+    _Py_CODEUNIT *(*execute)(struct _PyExecutorObject *self, struct _PyInterpreterFrame *frame, PyObject **stack_pointer);
     _PyVMData vm_data; /* Used by the VM, but opaque to the optimizer */
     /* Data needed by the executor goes here, but is opaque to the VM */
 } _PyExecutorObject;
@@ -40,7 +40,7 @@ PyAPI_FUNC(_PyOptimizerObject *) PyUnstable_GetOptimizer(void);
 
 PyAPI_FUNC(_PyExecutorObject *) PyUnstable_GetExecutor(PyCodeObject *code, int offset);
 
-struct _PyInterpreterFrame *
+_Py_CODEUNIT *
 _PyOptimizer_BackEdge(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest, PyObject **stack_pointer);
 
 extern _PyOptimizerObject _PyOptimizer_Default;

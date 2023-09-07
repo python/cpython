@@ -34,7 +34,7 @@
 #define ENABLE_SPECIALIZATION 0
 
 
-_PyInterpreterFrame *
+_Py_CODEUNIT *
 _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
 #ifdef Py_DEBUG
@@ -122,8 +122,7 @@ deoptimize:
     // On DEOPT_IF we just repeat the last instruction.
     // This presumes nothing was popped from the stack (nor pushed).
     DPRINTF(2, "DEOPT: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
-    frame->prev_instr--;  // Back up to just before destination
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);
-    return frame;
+    return frame->prev_instr;
 }

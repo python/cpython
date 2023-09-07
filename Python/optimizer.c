@@ -153,10 +153,10 @@ PyUnstable_SetOptimizer(_PyOptimizerObject *optimizer)
     Py_DECREF(old);
 }
 
-_PyInterpreterFrame *
+_Py_CODEUNIT *
 _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest, PyObject **stack_pointer)
 {
-    assert(src->op.code == JUMP_BACKWARD);
+    assert(src->op.code == EXTENDED_ARG || src->op.code == JUMP_BACKWARD);
     PyCodeObject *code = (PyCodeObject *)frame->f_executable;
     assert(PyCode_Check(code));
     PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -165,7 +165,7 @@ _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNI
     }
     _PyOptimizerObject *opt = interp->optimizer;
     _PyExecutorObject *executor = NULL;
-    int err = opt->optimize(opt, code, dest, &executor, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
+    int err = opt->optimize(opt, code, src, &executor, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
     if (err <= 0) {
         assert(executor == NULL);
         if (err < 0) {
@@ -186,13 +186,11 @@ _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNI
         goto jump_to_destination;
     }
     insert_executor(code, src, index, executor);
-    assert(frame->prev_instr == src);
-    frame->prev_instr = dest - 1;
     return executor->execute(executor, frame, stack_pointer);
 jump_to_destination:
     frame->prev_instr = dest - 1;
     _PyFrame_SetStackPointer(frame, stack_pointer);
-    return frame;
+    return dest;
 }
 
 _PyExecutorObject *
@@ -241,14 +239,13 @@ static PyTypeObject CounterExecutor_Type = {
     .tp_dealloc = (destructor)counter_dealloc,
 };
 
-static _PyInterpreterFrame *
+static _Py_CODEUNIT *
 counter_execute(_PyExecutorObject *self, _PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
     ((_PyCounterExecutorObject *)self)->optimizer->count++;
     _PyFrame_SetStackPointer(frame, stack_pointer);
-    frame->prev_instr = ((_PyCounterExecutorObject *)self)->next_instr - 1;
     Py_DECREF(self);
-    return frame;
+    return ((_PyCounterExecutorObject *)self)->next_instr;
 }
 
 static int
@@ -266,8 +263,15 @@ counter_optimize(
     }
     executor->executor.execute = counter_execute;
     Py_INCREF(self);
+    int oparg = 0;
+    while (instr->op.code == EXTENDED_ARG) {
+        oparg = (oparg << 8) | instr->op.arg;
+        instr++;
+    }
+    assert(instr->op.code == JUMP_BACKWARD);
+    oparg = (oparg << 8) | instr->op.arg;
     executor->optimizer = (_PyCounterOptimizerObject *)self;
-    executor->next_instr = instr;
+    executor->next_instr = instr + 2 - oparg;
     *exec_ptr = (_PyExecutorObject *)executor;
     return 1;
 }
@@ -880,6 +884,15 @@ uop_optimize(
     _PyExecutorObject **exec_ptr,
     int curr_stackentries)
 {
+    /* Do backwards jump before handing to trace generation */
+    int oparg = 0;
+    while (instr->op.code == EXTENDED_ARG) {
+        oparg = (oparg << 8) | instr->op.arg;
+        instr++;
+    }
+    assert(instr->op.code == JUMP_BACKWARD);
+    oparg = (oparg << 8) | instr->op.arg;
+    instr += 2 - oparg;
     _PyUOpInstruction trace[_Py_UOP_MAX_TRACE_LENGTH];
     int trace_length = translate_bytecode_to_trace(code, instr, trace, _Py_UOP_MAX_TRACE_LENGTH);
     if (trace_length <= 0) {

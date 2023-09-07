@@ -2218,23 +2218,21 @@ dummy_func(
             JUMPBY(1-oparg);
             #if ENABLE_SPECIALIZATION
             here[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
-            if (here[1].cache > tstate->interp->optimizer_backedge_threshold &&
-                // Double-check that the opcode isn't instrumented or something:
-                here->op.code == JUMP_BACKWARD &&
-                // _PyOptimizer_BackEdge is going to change frame->prev_instr,
-                // which breaks line event calculations:
-                next_instr->op.code != INSTRUMENTED_LINE
-                )
-            {
+            if (here[1].cache > tstate->interp->optimizer_backedge_threshold) {
+                assert(here->op.code == JUMP_BACKWARD);
                 OBJECT_STAT_INC(optimization_attempts);
-                frame = _PyOptimizer_BackEdge(frame, here, next_instr, stack_pointer);
-                if (frame == NULL) {
-                    frame = tstate->current_frame;
+                _Py_CODEUNIT *src = here;
+                while(oparg > 255) {
+                    oparg >>= 8;
+                    src--;
+                }
+                next_instr = _PyOptimizer_BackEdge(frame, src, next_instr, stack_pointer);
+                frame = tstate->current_frame;
+                if (next_instr == NULL) {
                     goto resume_with_error;
                 }
-                assert(frame == tstate->current_frame);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 here[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) -1);
-                goto resume_frame;
             }
             #endif  /* ENABLE_SPECIALIZATION */
         }
@@ -2251,19 +2249,15 @@ dummy_func(
 
         inst(ENTER_EXECUTOR, (--)) {
             CHECK_EVAL_BREAKER();
-
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg&255];
-            int original_oparg = executor->vm_data.oparg | (oparg & 0xfffff00);
-            JUMPBY(1-original_oparg);
-            frame->prev_instr = next_instr - 1;
             Py_INCREF(executor);
-            frame = executor->execute(executor, frame, stack_pointer);
-            if (frame == NULL) {
-                frame = tstate->current_frame;
+            next_instr = executor->execute(executor, frame, stack_pointer);
+            frame = tstate->current_frame;
+            if (next_instr == NULL) {
                 goto resume_with_error;
             }
-            goto resume_frame;
+            stack_pointer = _PyFrame_GetStackPointer(frame);
         }
 
         inst(POP_JUMP_IF_FALSE, (cond -- )) {
@@ -3821,10 +3815,9 @@ dummy_func(
         }
 
         op(EXIT_TRACE, (--)) {
-            frame->prev_instr--;  // Back up to just before destination
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
-            return frame;
+            return frame->prev_instr;
         }
 
         op(INSERT, (unused[oparg], top -- top, unused[oparg])) {
