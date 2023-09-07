@@ -84,7 +84,7 @@ get_proxy_settings(PyObject* Py_UNUSED(mod), PyObject *Py_UNUSED(ignored))
     if (v == NULL) goto error;
 
     r = PyDict_SetItemString(result, "exclude_simple", v);
-    Py_DECREF(v); v = NULL;
+    Py_SETREF(v, NULL);
     if (r == -1) goto error;
 
     anArray = CFDictionaryGetValue(proxyDict,
@@ -206,6 +206,11 @@ get_proxies(PyObject* Py_UNUSED(mod), PyObject *Py_UNUSED(ignored))
         kSCPropNetProxiesGopherProxy,
         kSCPropNetProxiesGopherPort);
     if (r == -1) goto error;
+    r = set_proxy(result, "socks", proxyDict,
+        kSCPropNetProxiesSOCKSEnable,
+        kSCPropNetProxiesSOCKSProxy,
+        kSCPropNetProxiesSOCKSPort);
+    if (r == -1) goto error;
 
     CFRelease(proxyDict);
     return result;
@@ -232,6 +237,7 @@ static PyMethodDef mod_methods[] = {
 };
 
 static PyModuleDef_Slot _scproxy_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

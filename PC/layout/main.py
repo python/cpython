@@ -8,11 +8,8 @@ __author__ = "Steve Dower <steve.dower@python.org>"
 __version__ = "3.8"
 
 import argparse
-import functools
 import os
-import re
 import shutil
-import subprocess
 import sys
 import tempfile
 import zipfile
@@ -38,7 +35,7 @@ TEST_DIRS_ONLY = FileNameSet("test", "tests")
 
 IDLE_DIRS_ONLY = FileNameSet("idlelib")
 
-TCLTK_PYDS_ONLY = FileStemSet("tcl*", "tk*", "_tkinter")
+TCLTK_PYDS_ONLY = FileStemSet("tcl*", "tk*", "_tkinter", "zlib1")
 TCLTK_DIRS_ONLY = FileNameSet("tkinter", "turtledemo")
 TCLTK_FILES_ONLY = FileNameSet("turtle.py")
 
@@ -52,8 +49,6 @@ EXCLUDE_FROM_CATALOG = FileSuffixSet(".exe", ".pyd", ".dll")
 
 REQUIRED_DLLS = FileStemSet("libcrypto*", "libssl*", "libffi*")
 
-LIB2TO3_GRAMMAR_FILES = FileNameSet("Grammar.txt", "PatternGrammar.txt")
-
 PY_FILES = FileSuffixSet(".py")
 PYC_FILES = FileSuffixSet(".pyc")
 CAT_FILES = FileSuffixSet(".cat")
@@ -61,7 +56,7 @@ CDF_FILES = FileSuffixSet(".cdf")
 
 DATA_DIRS = FileNameSet("data")
 
-TOOLS_DIRS = FileNameSet("scripts", "i18n", "pynche", "demo", "parser")
+TOOLS_DIRS = FileNameSet("scripts", "i18n", "parser")
 TOOLS_FILES = FileSuffixSet(".py", ".pyw", ".txt")
 
 
@@ -300,27 +295,6 @@ def _write_to_zip(zf, dest, src, ns, checked=True):
             except:
                 log_exception("Failed to delete {}", pyc)
         return
-
-    if src in LIB2TO3_GRAMMAR_FILES:
-        from lib2to3.pgen2.driver import load_grammar
-
-        tmp = ns.temp / src.name
-        try:
-            shutil.copy(src, tmp)
-            load_grammar(str(tmp))
-            for f in ns.temp.glob(src.stem + "*.pickle"):
-                zf.write(str(f), str(dest.parent / f.name))
-                try:
-                    f.unlink()
-                except:
-                    log_exception("Failed to delete {}", f)
-        except:
-            log_exception("Failed to compile {}", src)
-        finally:
-            try:
-                tmp.unlink()
-            except:
-                log_exception("Failed to delete {}", tmp)
 
     zf.write(str(src), str(dest))
 

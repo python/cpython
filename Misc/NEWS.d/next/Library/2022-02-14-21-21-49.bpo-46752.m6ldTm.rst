@@ -1,2 +1,0 @@
-Add task groups to asyncio (structured concurrency, inspired by Trio's nurseries).
-This also introduces a change to task cancellation, where a cancelled task can't be cancelled again until it calls .uncancel().

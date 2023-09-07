@@ -7,6 +7,8 @@
 
 .. versionadded:: 3.4
 
+**Source code:** :source:`Lib/ensurepip`
+
 --------------
 
 The :mod:`ensurepip` package provides support for bootstrapping the ``pip``
@@ -36,6 +38,7 @@ when creating a virtual environment) or after explicitly uninstalling
    :pep:`453`: Explicit bootstrapping of pip in Python installations
       The original rationale and specification for this module.
 
+.. include:: ../includes/wasm-notavail.rst
 
 Command line interface
 ----------------------

@@ -1,1 +1,0 @@
-Make query dialogs on Windows start with a cursor in the entry box.

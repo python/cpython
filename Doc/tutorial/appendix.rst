@@ -101,8 +101,8 @@ in the script::
 The Customization Modules
 -------------------------
 
-Python provides two hooks to let you customize it: :mod:`sitecustomize` and
-:mod:`usercustomize`.  To see how it works, you need first to find the location
+Python provides two hooks to let you customize it: :index:`sitecustomize` and
+:index:`usercustomize`.  To see how it works, you need first to find the location
 of your user site-packages directory.  Start Python and run this code::
 
    >>> import site
@@ -113,9 +113,9 @@ Now you can create a file named :file:`usercustomize.py` in that directory and
 put anything you want in it.  It will affect every invocation of Python, unless
 it is started with the :option:`-s` option to disable the automatic import.
 
-:mod:`sitecustomize` works in the same way, but is typically created by an
+:index:`sitecustomize` works in the same way, but is typically created by an
 administrator of the computer in the global site-packages directory, and is
-imported before :mod:`usercustomize`.  See the documentation of the :mod:`site`
+imported before :index:`usercustomize`.  See the documentation of the :mod:`site`
 module for more details.
 
 

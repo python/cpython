@@ -1,3 +1,0 @@
-Deprecate kwargs-based syntax for :class:`typing.TypedDict` definitions.
-It had confusing semantics when specifying totality, and was largely unused.
-Patch by Jingchen Ye.

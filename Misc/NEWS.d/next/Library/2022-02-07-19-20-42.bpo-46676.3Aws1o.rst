@@ -1,1 +1,0 @@
-Make :data:`typing.ParamSpec` args and kwargs equal to themselves. Patch by Gregory Beauregard.

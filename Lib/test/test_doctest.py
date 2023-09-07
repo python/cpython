@@ -4,7 +4,6 @@ Test script for doctest.
 
 from test import support
 from test.support import import_helper
-from test.support import os_helper
 import doctest
 import functools
 import os
@@ -14,12 +13,17 @@ import importlib.abc
 import importlib.util
 import unittest
 import tempfile
-import shutil
 import types
 import contextlib
 
+
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test_CLI requires subprocess support.")
+
+
 # NOTE: There are some additional tests relating to interaction with
 #       zipimport in the test_zipimport_support test module.
+# There are also related tests in `test_doctest2` module.
 
 ######################################################################
 ## Sample Objects (used by test cases)
@@ -106,6 +110,14 @@ class SampleClass:
         42
         """
         return cls.a_class_attribute
+
+    @functools.cached_property
+    def a_cached_property(self):
+        """
+        >>> print(SampleClass(29).get())
+        29
+        """
+        return "hello"
 
     class NestedClass:
         """
@@ -455,7 +467,7 @@ We'll simulate a __file__ attr that ends in pyc:
     >>> tests = finder.find(sample_func)
 
     >>> print(tests)  # doctest: +ELLIPSIS
-    [<DocTest sample_func from test_doctest.py:28 (1 example)>]
+    [<DocTest sample_func from test_doctest.py:32 (1 example)>]
 
 The exact name depends on how test_doctest was invoked, so allow for
 leading path components.
@@ -511,6 +523,7 @@ methods, classmethods, staticmethods, properties, and nested classes.
      3  SampleClass.NestedClass
      1  SampleClass.NestedClass.__init__
      1  SampleClass.__init__
+     1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
      1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
@@ -567,6 +580,7 @@ functions, classes, and the `__test__` dictionary, if it exists:
      3  some_module.SampleClass.NestedClass
      1  some_module.SampleClass.NestedClass.__init__
      1  some_module.SampleClass.__init__
+     1  some_module.SampleClass.a_cached_property
      2  some_module.SampleClass.a_classmethod
      1  some_module.SampleClass.a_classmethod_property
      1  some_module.SampleClass.a_property
@@ -609,6 +623,7 @@ By default, an object with no doctests doesn't create any tests:
      3  SampleClass.NestedClass
      1  SampleClass.NestedClass.__init__
      1  SampleClass.__init__
+     1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
      1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
@@ -630,12 +645,33 @@ displays.
      0  SampleClass.NestedClass.get
      0  SampleClass.NestedClass.square
      1  SampleClass.__init__
+     1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
      1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
      1  SampleClass.a_staticmethod
      1  SampleClass.double
      1  SampleClass.get
+
+When used with `exclude_empty=False` we are also interested in line numbers
+of doctests that are empty.
+It used to be broken for quite some time until `bpo-28249`.
+
+    >>> from test import doctest_lineno
+    >>> tests = doctest.DocTestFinder(exclude_empty=False).find(doctest_lineno)
+    >>> for t in tests:
+    ...     print('%5s  %s' % (t.lineno, t.name))
+     None  test.doctest_lineno
+       22  test.doctest_lineno.ClassWithDocstring
+       30  test.doctest_lineno.ClassWithDoctest
+     None  test.doctest_lineno.ClassWithoutDocstring
+     None  test.doctest_lineno.MethodWrapper
+       39  test.doctest_lineno.MethodWrapper.method_with_docstring
+       45  test.doctest_lineno.MethodWrapper.method_with_doctest
+     None  test.doctest_lineno.MethodWrapper.method_without_docstring
+        4  test.doctest_lineno.func_with_docstring
+       12  test.doctest_lineno.func_with_doctest
+     None  test.doctest_lineno.func_without_docstring
 
 Turning off Recursion
 ~~~~~~~~~~~~~~~~~~~~~
@@ -683,7 +719,7 @@ plain ol' Python and is guaranteed to be available.
 
     >>> import builtins
     >>> tests = doctest.DocTestFinder().find(builtins)
-    >>> 825 < len(tests) < 845 # approximate number of objects with docstrings
+    >>> 830 < len(tests) < 860 # approximate number of objects with docstrings
     True
     >>> real_tests = [t for t in tests if len(t.examples) > 0]
     >>> len(real_tests) # objects that actually have doctests
@@ -710,6 +746,38 @@ Note here that 'bin', 'oct', and 'hex' are functions; 'float.as_integer_ratio',
 'float.hex', and 'int.bit_length' are methods; 'float.fromhex' is a classmethod,
 and 'int' is a type.
 """
+
+
+class TestDocTest(unittest.TestCase):
+
+    def test_run(self):
+        test = '''
+            >>> 1 + 1
+            11
+            >>> 2 + 3      # doctest: +SKIP
+            "23"
+            >>> 5 + 7
+            57
+        '''
+
+        def myfunc():
+            pass
+        myfunc.__doc__ = test
+
+        # test DocTestFinder.run()
+        test = doctest.DocTestFinder().find(myfunc)[0]
+        with support.captured_stdout():
+            with support.captured_stderr():
+                results = doctest.DocTestRunner(verbose=False).run(test)
+
+        # test TestResults
+        self.assertIsInstance(results, doctest.TestResults)
+        self.assertEqual(results.failed, 2)
+        self.assertEqual(results.attempted, 3)
+        self.assertEqual(results.skipped, 1)
+        self.assertEqual(tuple(results), (2, 3))
+        x, y = results
+        self.assertEqual((x, y), (2, 3))
 
 
 class TestDocTestFinder(unittest.TestCase):
@@ -1263,14 +1331,14 @@ The NORMALIZE_WHITESPACE flag causes all sequences of whitespace to be
 treated as equal:
 
     >>> def f(x):
-    ...     '>>> print(1, 2, 3)\n  1   2\n 3'
+    ...     '\n>>> print(1, 2, 3)\n  1   2\n 3'
 
     >>> # Without the flag:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
     ... # doctest: +ELLIPSIS
     **********************************************************************
-    File ..., line 2, in f
+    File ..., line 3, in f
     Failed example:
         print(1, 2, 3)
     Expected:
@@ -2785,6 +2853,8 @@ in it, and use a package hook to install a custom loader; on any platform,
 at least one of the line endings will raise a ValueError for inconsistent
 whitespace if doctest does not correctly do the newline conversion.
 
+    >>> from test.support import os_helper
+    >>> import shutil
     >>> dn = tempfile.mkdtemp()
     >>> pkg = os.path.join(dn, "doctest_testpkg")
     >>> os.mkdir(pkg)
@@ -2828,7 +2898,7 @@ except UnicodeEncodeError:
     # Skip the test: the filesystem encoding is unable to encode the filename
     supports_unicode = False
 
-if supports_unicode and not support.has_no_debug_ranges():
+if supports_unicode:
     def test_unicode(): """
 Check doctest with a non-ascii filename:
 
@@ -2850,10 +2920,8 @@ Check doctest with a non-ascii filename:
         Traceback (most recent call last):
           File ...
             exec(compile(example.source, filename, "single",
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
           File "<doctest foo-bär@baz[0]>", line 1, in <module>
             raise Exception('clé')
-            ^^^^^^^^^^^^^^^^^^^^^^
         Exception: clé
     TestResults(failed=1, attempted=1)
     """
@@ -3127,6 +3195,22 @@ def test_no_trailing_whitespace_stripping():
     *NOTE*: `\x20` is for checking the trailing whitespace on the +a line above.
     We cannot use actual spaces there, as a commit hook prevents from committing
     patches that contain trailing whitespace. More info on Issue 24746.
+    """
+
+
+def test_run_doctestsuite_multiple_times():
+    """
+    It was not possible to run the same DocTestSuite multiple times
+    http://bugs.python.org/issue2604
+    http://bugs.python.org/issue9736
+
+    >>> import unittest
+    >>> import test.sample_doctest
+    >>> suite = doctest.DocTestSuite(test.sample_doctest)
+    >>> suite.run(unittest.TestResult())
+    <unittest.result.TestResult run=9 errors=0 failures=4>
+    >>> suite.run(unittest.TestResult())
+    <unittest.result.TestResult run=9 errors=0 failures=4>
     """
 
 

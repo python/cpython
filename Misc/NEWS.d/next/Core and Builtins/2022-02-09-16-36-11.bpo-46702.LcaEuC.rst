@@ -1,2 +1,0 @@
-Specialize :opcode:`UNPACK_SEQUENCE` for :class:`tuple` and :class:`list`
-unpackings.

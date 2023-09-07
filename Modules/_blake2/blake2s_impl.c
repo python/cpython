@@ -18,17 +18,12 @@
 #endif
 
 #include "Python.h"
-#include "pycore_strhex.h"        // _Py_strhex()
+#include "pycore_strhex.h"       // _Py_strhex()
 
 #include "../hashlib.h"
-#include "blake2ns.h"
+#include "blake2module.h"
 
-#define HAVE_BLAKE2S 1
-#define BLAKE2_LOCAL_INLINE(type) Py_LOCAL_INLINE(type)
-
-#include "impl/blake2.h"
-#include "impl/blake2-impl.h" /* for secure_zero_memory() and store48() */
-
+#ifndef HAVE_LIBB2
 /* pure SSE2 implementation is very slow, so only use the more optimized SSSE3+
  * https://bugs.python.org/issue31834 */
 #if defined(__SSSE3__) || defined(__SSE4_1__) || defined(__AVX__) || defined(__XOP__)
@@ -36,8 +31,12 @@
 #else
 #include "impl/blake2s-ref.c"
 #endif
+#endif // !HAVE_LIBB2
+
+#define HAVE_BLAKE2S 1
 
 extern PyType_Spec blake2s_type_spec;
+
 
 typedef struct {
     PyObject_HEAD

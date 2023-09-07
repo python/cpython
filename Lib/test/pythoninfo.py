@@ -6,7 +6,11 @@ import errno
 import re
 import sys
 import traceback
+import unittest
 import warnings
+
+
+MS_WINDOWS = (sys.platform == 'win32')
 
 
 def normalize_text(text):
@@ -78,6 +82,7 @@ def call_func(info_add, name, mod, func_name, *, formatter=None):
 
 def collect_sys(info_add):
     attributes = (
+        '_emscripten_info',
         '_framework',
         'abiflags',
         'api_version',
@@ -107,6 +112,7 @@ def collect_sys(info_add):
 
     call_func(info_add, 'sys.androidapilevel', sys, 'getandroidapilevel')
     call_func(info_add, 'sys.windowsversion', sys, 'getwindowsversion')
+    call_func(info_add, 'sys.getrecursionlimit', sys, 'getrecursionlimit')
 
     encoding = sys.getfilesystemencoding()
     if hasattr(sys, 'getfilesystemencodeerrors'):
@@ -125,13 +131,21 @@ def collect_sys(info_add):
             encoding = '%s/%s' % (encoding, errors)
         info_add('sys.%s.encoding' % name, encoding)
 
-    # Were we compiled --with-pydebug or with #define Py_DEBUG?
+    # Were we compiled --with-pydebug?
     Py_DEBUG = hasattr(sys, 'gettotalrefcount')
     if Py_DEBUG:
         text = 'Yes (sys.gettotalrefcount() present)'
     else:
         text = 'No (sys.gettotalrefcount() missing)'
-    info_add('Py_DEBUG', text)
+    info_add('build.Py_DEBUG', text)
+
+    # Were we compiled --with-trace-refs?
+    Py_TRACE_REFS = hasattr(sys, 'getobjects')
+    if Py_TRACE_REFS:
+        text = 'Yes (sys.getobjects() present)'
+    else:
+        text = 'No (sys.getobjects() missing)'
+    info_add('build.Py_TRACE_REFS', text)
 
 
 def collect_platform(info_add):
@@ -150,11 +164,31 @@ def collect_platform(info_add):
     if libc_ver:
         info_add('platform.libc_ver', libc_ver)
 
+    try:
+        os_release = platform.freedesktop_os_release()
+    except OSError:
+        pass
+    else:
+        for key in (
+            'ID',
+            'NAME',
+            'PRETTY_NAME'
+            'VARIANT',
+            'VARIANT_ID',
+            'VERSION',
+            'VERSION_CODENAME',
+            'VERSION_ID',
+        ):
+            if key not in os_release:
+                continue
+            info_add(f'platform.freedesktop_os_release[{key}]',
+                     os_release[key])
+
 
 def collect_locale(info_add):
     import locale
 
-    info_add('locale.encoding', locale.getpreferredencoding(False))
+    info_add('locale.getencoding', locale.getencoding())
 
 
 def collect_builtins(info_add):
@@ -283,7 +317,6 @@ def collect_os(info_add):
         "TEMP",
         "TERM",
         "TILE_LIBRARY",
-        "TIX_LIBRARY",
         "TMP",
         "TMPDIR",
         "TRAVIS",
@@ -296,6 +329,13 @@ def collect_os(info_add):
         "_PYTHON_PROJECT_BASE",
         "_PYTHON_SYSCONFIGDATA_NAME",
         "__PYVENV_LAUNCHER__",
+
+        # Sanitizer options
+        "ASAN_OPTIONS",
+        "LSAN_OPTIONS",
+        "MSAN_OPTIONS",
+        "TSAN_OPTIONS",
+        "UBSAN_OPTIONS",
     ))
     for name, value in os.environ.items():
         uname = name.upper()
@@ -453,6 +493,11 @@ def collect_datetime(info_add):
 
 
 def collect_sysconfig(info_add):
+    # On Windows, sysconfig is not reliable to get macros used
+    # to build Python
+    if MS_WINDOWS:
+        return
+
     import sysconfig
 
     for name in (
@@ -475,6 +520,7 @@ def collect_sysconfig(info_add):
         'PY_STDMODULE_CFLAGS',
         'Py_DEBUG',
         'Py_ENABLE_SHARED',
+        'Py_NOGIL',
         'SHELL',
         'SOABI',
         'prefix',
@@ -485,6 +531,28 @@ def collect_sysconfig(info_add):
             continue
         value = normalize_text(value)
         info_add('sysconfig[%s]' % name, value)
+
+    PY_CFLAGS = sysconfig.get_config_var('PY_CFLAGS')
+    NDEBUG = (PY_CFLAGS and '-DNDEBUG' in PY_CFLAGS)
+    if NDEBUG:
+        text = 'ignore assertions (macro defined)'
+    else:
+        text= 'build assertions (macro not defined)'
+    info_add('build.NDEBUG',text)
+
+    for name in (
+        'WITH_DOC_STRINGS',
+        'WITH_DTRACE',
+        'WITH_FREELISTS',
+        'WITH_PYMALLOC',
+        'WITH_VALGRIND',
+    ):
+        value = sysconfig.get_config_var(name)
+        if value:
+            text = 'Yes'
+        else:
+            text = 'No'
+        info_add(f'build.{name}', text)
 
 
 def collect_ssl(info_add):
@@ -541,10 +609,19 @@ def collect_ssl(info_add):
 
 
 def collect_socket(info_add):
-    import socket
+    try:
+        import socket
+    except ImportError:
+        return
 
-    hostname = socket.gethostname()
-    info_add('socket.hostname', hostname)
+    try:
+        hostname = socket.gethostname()
+    except (OSError, AttributeError):
+        # WASI SDK 16.0 does not have gethostname(2).
+        if sys.platform != "wasi":
+            raise
+    else:
+        info_add('socket.hostname', hostname)
 
 
 def collect_sqlite(info_add):
@@ -553,7 +630,7 @@ def collect_sqlite(info_add):
     except ImportError:
         return
 
-    attributes = ('version', 'sqlite_version')
+    attributes = ('sqlite_version',)
     copy_attributes(info_add, sqlite3, 'sqlite3.%s', attributes)
 
 
@@ -589,12 +666,11 @@ def collect_decimal(info_add):
 
 def collect_testcapi(info_add):
     try:
-        import _testcapi
+        import _testinternalcapi
     except ImportError:
         return
 
-    call_func(info_add, 'pymem.allocator', _testcapi, 'pymem_getallocatorsname')
-    copy_attr(info_add, 'pymem.with_pymalloc', _testcapi, 'WITH_PYMALLOC')
+    call_func(info_add, 'pymem.allocator', _testinternalcapi, 'pymem_getallocatorsname')
 
 
 def collect_resource(info_add):
@@ -615,7 +691,7 @@ def collect_resource(info_add):
 def collect_test_socket(info_add):
     try:
         from test import test_socket
-    except ImportError:
+    except (ImportError, unittest.SkipTest):
         return
 
     # all check attributes like HAVE_SOCKET_CAN
@@ -635,6 +711,13 @@ def collect_test_support(info_add):
 
     call_func(info_add, 'test_support._is_gui_available', support, '_is_gui_available')
     call_func(info_add, 'test_support.python_is_optimized', support, 'python_is_optimized')
+
+    info_add('test_support.check_sanitizer(address=True)',
+             support.check_sanitizer(address=True))
+    info_add('test_support.check_sanitizer(memory=True)',
+             support.check_sanitizer(memory=True))
+    info_add('test_support.check_sanitizer(ub=True)',
+             support.check_sanitizer(ub=True))
 
 
 def collect_cc(info_add):
@@ -857,7 +940,6 @@ def dump_info(info, file=None):
     for key, value in infos:
         value = value.replace("\n", " ")
         print("%s: %s" % (key, value))
-    print()
 
 
 def main():
@@ -866,6 +948,7 @@ def main():
     dump_info(info)
 
     if error:
+        print()
         print("Collection failed: exit with error", file=sys.stderr)
         sys.exit(1)
 

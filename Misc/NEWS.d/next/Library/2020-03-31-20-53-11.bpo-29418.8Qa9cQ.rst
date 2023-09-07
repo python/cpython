@@ -1,1 +1,0 @@
-Implement :func:`inspect.ismethodwrapper` and fix :func:`inspect.isroutine` for cases where methodwrapper is given. Patch by Hakan Çelik.

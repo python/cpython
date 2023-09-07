@@ -1,3 +1,0 @@
-The function ``make_legacy_pyc`` in ``Lib/test/support/import_helper.py`` no
-longer fails when ``PYTHONPYCACHEPREFIX`` is set to a directory on a
-different device from where tempfiles are stored.

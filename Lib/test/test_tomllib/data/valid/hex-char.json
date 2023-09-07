@@ -1,0 +1,5 @@
+{
+  "a": {"type":"string","value":"a"},
+  "b": {"type":"string","value":"b"},
+  "c": {"type":"string","value":"c"}
+}

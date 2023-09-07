@@ -144,8 +144,10 @@ Functions
       Passing an invalid or expired *thread_id* may result in
       undefined behavior, such as segmentation fault.
 
-   .. availability:: Unix (see the man page for :manpage:`pthread_getcpuclockid(3)` for
-      further information).
+   .. availability:: Unix
+
+      See the man page for :manpage:`pthread_getcpuclockid(3)` for
+      further information.
 
    .. versionadded:: 3.7
 
@@ -256,6 +258,12 @@ Functions
    Like :func:`gmtime` but converts to local time.  If *secs* is not provided or
    :const:`None`, the current time as returned by :func:`.time` is used.  The dst
    flag is set to ``1`` when DST applies to the given time.
+
+   :func:`localtime` may raise :exc:`OverflowError`, if the timestamp is
+   outside the range of values supported by the platform C :c:func:`localtime`
+   or :c:func:`gmtime` functions, and :exc:`OSError` on :c:func:`localtime` or
+   :c:func:`gmtime` failure. It's common for this to be restricted to years
+   between 1970 and 2038.
 
 
 .. function:: mktime(t)
@@ -371,6 +379,8 @@ Functions
    * Or use ``nanosleep()`` if available (resolution: 1 nanosecond);
    * Or use ``select()`` (resolution: 1 microsecond).
 
+   .. audit-event:: time.sleep secs
+
    .. versionchanged:: 3.11
       On Unix, the ``clock_nanosleep()`` and ``nanosleep()`` functions are now
       used if available. On Windows, a waitable timer is now used.
@@ -380,6 +390,9 @@ Functions
       by a signal, except if the signal handler raises an exception (see
       :pep:`475` for the rationale).
 
+
+   .. versionchanged:: 3.13
+      Raises an auditing event.
 
 .. index::
    single: % (percent); datetime format
@@ -645,8 +658,9 @@ Functions
    Use :func:`thread_time_ns` to avoid the precision loss caused by the
    :class:`float` type.
 
-   .. availability::  Windows, Linux, Unix systems supporting
-      ``CLOCK_THREAD_CPUTIME_ID``.
+   .. availability::  Linux, Unix, Windows.
+
+      Unix systems supporting ``CLOCK_THREAD_CPUTIME_ID``.
 
    .. versionadded:: 3.7
 
@@ -764,7 +778,7 @@ These constants are used as parameters for :func:`clock_getres` and
    have  discontinuities if the time is changed using ``settimeofday()`` or
    similar.
 
-   .. availability:: Linux 2.6.39 or later.
+   .. availability:: Linux >= 2.6.39.
 
    .. versionadded:: 3.7
 
@@ -795,7 +809,7 @@ These constants are used as parameters for :func:`clock_getres` and
    Similar to :data:`CLOCK_MONOTONIC`, but provides access to a raw
    hardware-based time that is not subject to NTP adjustments.
 
-   .. availability:: Linux 2.6.28 and newer, macOS 10.12 and newer.
+   .. availability:: Linux >= 2.6.28, macOS >= 10.12.
 
    .. versionadded:: 3.3
 
@@ -813,7 +827,7 @@ These constants are used as parameters for :func:`clock_getres` and
 
    High-resolution per-process timer from the CPU.
 
-   .. availability:: FreeBSD, NetBSD 7 or later, OpenBSD.
+   .. availability:: FreeBSD, NetBSD >= 7, OpenBSD.
 
    .. versionadded:: 3.7
 
@@ -843,7 +857,7 @@ These constants are used as parameters for :func:`clock_getres` and
    suspended, providing accurate uptime measurement, both absolute and
    interval.
 
-   .. availability:: FreeBSD, OpenBSD 5.5 or later.
+   .. availability:: FreeBSD, OpenBSD >= 5.5.
 
    .. versionadded:: 3.7
 
@@ -854,7 +868,7 @@ These constants are used as parameters for :func:`clock_getres` and
    point, unaffected by frequency or time adjustments and not incremented while
    the system is asleep.
 
-   .. availability:: macOS 10.12 and newer.
+   .. availability:: macOS >= 10.12.
 
    .. versionadded:: 3.8
 

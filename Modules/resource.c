@@ -1,10 +1,8 @@
-
 #include "Python.h"
-#include <sys/resource.h>
-#include <sys/time.h>
+#include <errno.h>                // errno
 #include <string.h>
-#include <errno.h>
-#include <unistd.h>
+#include <sys/resource.h>         // getrusage()
+#include <unistd.h>               // getpagesize()
 
 /* On some systems, these aren't in any header file.
    On others they are, with inconsistent prototypes.
@@ -24,8 +22,17 @@ module resource
 class pid_t_converter(CConverter):
     type = 'pid_t'
     format_unit = '" _Py_PARSE_PID "'
+
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        return self.format_code("""
+            {paramname} = PyLong_AsPid({argname});
+            if ({paramname} == -1 && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """,
+            argname=argname)
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=0c1d19f640d57e48]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=c94349aa1aad151d]*/
 
 #include "clinic/resource.c.h"
 
@@ -268,17 +275,15 @@ resource.prlimit
 
     pid: pid_t
     resource: int
-    [
-    limits: object
-    ]
+    limits: object = None
     /
 
 [clinic start generated code]*/
 
 static PyObject *
 resource_prlimit_impl(PyObject *module, pid_t pid, int resource,
-                      int group_right_1, PyObject *limits)
-/*[clinic end generated code: output=ee976b393187a7a3 input=b77743bdccc83564]*/
+                      PyObject *limits)
+/*[clinic end generated code: output=6ebc49ff8c3a816e input=54bb69c9585e33bf]*/
 {
     struct rlimit old_limit, new_limit;
     int retval;
@@ -294,7 +299,7 @@ resource_prlimit_impl(PyObject *module, pid_t pid, int resource,
         return NULL;
     }
 
-    if (group_right_1) {
+    if (limits != Py_None) {
         if (py2rlimit(limits, &new_limit) < 0) {
             return NULL;
         }
@@ -363,9 +368,7 @@ resource_exec(PyObject *module)
     } while (0)
 
     /* Add some symbolic constants to the module */
-    Py_INCREF(PyExc_OSError);
-    if (PyModule_AddObject(module, "error", PyExc_OSError) < 0) {
-        Py_DECREF(PyExc_OSError);
+    if (PyModule_AddObjectRef(module, "error", PyExc_OSError) < 0) {
         return -1;
     }
 
@@ -493,12 +496,7 @@ resource_exec(PyObject *module)
     {
         v = PyLong_FromLong((long) RLIM_INFINITY);
     }
-    if (!v) {
-        return -1;
-    }
-
-    if (PyModule_AddObject(module, "RLIM_INFINITY", v) < 0) {
-        Py_DECREF(v);
+    if (PyModule_Add(module, "RLIM_INFINITY", v) < 0) {
         return -1;
     }
     return 0;
@@ -508,6 +506,7 @@ resource_exec(PyObject *module)
 
 static struct PyModuleDef_Slot resource_slots[] = {
     {Py_mod_exec, resource_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

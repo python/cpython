@@ -11,7 +11,7 @@ PyDoc_STRVAR(tuple_index__doc__,
 "Raises ValueError if the value is not present.");
 
 #define TUPLE_INDEX_METHODDEF    \
-    {"index", (PyCFunction)(void(*)(void))tuple_index, METH_FASTCALL, tuple_index__doc__},
+    {"index", _PyCFunction_CAST(tuple_index), METH_FASTCALL, tuple_index__doc__},
 
 static PyObject *
 tuple_index_impl(PyTupleObject *self, PyObject *value, Py_ssize_t start,
@@ -75,10 +75,10 @@ static PyObject *
 tuple_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &PyTuple_Type;
     PyObject *iterable = NULL;
 
-    if ((type == &PyTuple_Type ||
-         type->tp_init == PyTuple_Type.tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("tuple", kwargs)) {
         goto exit;
     }
@@ -112,4 +112,4 @@ tuple___getnewargs__(PyTupleObject *self, PyObject *Py_UNUSED(ignored))
 {
     return tuple___getnewargs___impl(self);
 }
-/*[clinic end generated code: output=72cc0bc4f7358116 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7c5d9d12e0cf6a83 input=a9049054013a1b77]*/

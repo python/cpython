@@ -13,15 +13,14 @@ import time
 import typing
 import unittest
 import unittest.mock
-import os
 import weakref
 import gc
 from weakref import proxy
 import contextlib
+from inspect import Signature
 
 from test.support import import_helper
 from test.support import threading_helper
-from test.support.script_helper import assert_python_ok
 
 import functools
 
@@ -618,7 +617,7 @@ class TestUpdateWrapper(unittest.TestCase):
 
 
     def _default_update(self):
-        def f(a:'This is a new annotation'):
+        def f[T](a:'This is a new annotation'):
             """This is a test"""
             pass
         f.attr = 'This is also a test'
@@ -631,12 +630,14 @@ class TestUpdateWrapper(unittest.TestCase):
     def test_default_update(self):
         wrapper, f = self._default_update()
         self.check_wrapper(wrapper, f)
+        T, = f.__type_params__
         self.assertIs(wrapper.__wrapped__, f)
         self.assertEqual(wrapper.__name__, 'f')
         self.assertEqual(wrapper.__qualname__, f.__qualname__)
         self.assertEqual(wrapper.attr, 'This is also a test')
         self.assertEqual(wrapper.__annotations__['a'], 'This is a new annotation')
         self.assertNotIn('b', wrapper.__annotations__)
+        self.assertEqual(wrapper.__type_params__, (T,))
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
@@ -942,6 +943,10 @@ class TestCmpToKey:
         k = key(10)
         self.assertRaises(TypeError, hash, k)
         self.assertNotIsInstance(k, collections.abc.Hashable)
+
+    def test_cmp_to_signature(self):
+        self.assertEqual(str(Signature.from_callable(self.cmp_to_key)),
+                         '(mycmp)')
 
 
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
@@ -1637,6 +1642,7 @@ class TestLRU:
         for attr in self.module.WRAPPER_ASSIGNMENTS:
             self.assertEqual(getattr(g, attr), getattr(f, attr))
 
+    @threading_helper.requires_working_threading()
     def test_lru_cache_threaded(self):
         n, m = 5, 11
         def orig(x, y):
@@ -1685,6 +1691,7 @@ class TestLRU:
         finally:
             sys.setswitchinterval(orig_si)
 
+    @threading_helper.requires_working_threading()
     def test_lru_cache_threaded2(self):
         # Simultaneous call with the same arguments
         n, m = 5, 7
@@ -1712,6 +1719,7 @@ class TestLRU:
                 pause.reset()
                 self.assertEqual(f.cache_info(), (0, (i+1)*n, m*n, i+1))
 
+    @threading_helper.requires_working_threading()
     def test_lru_cache_threaded3(self):
         @self.module.lru_cache(maxsize=2)
         def f(x):
@@ -1851,6 +1859,13 @@ class TestLRU:
 
         for ref in refs:
             self.assertIsNone(ref())
+
+    def test_common_signatures(self):
+        def orig(): ...
+        lru = self.module.lru_cache(1)(orig)
+
+        self.assertEqual(str(Signature.from_callable(lru.cache_info)), '()')
+        self.assertEqual(str(Signature.from_callable(lru.cache_clear)), '()')
 
 
 @py_functools.lru_cache()
@@ -2002,7 +2017,7 @@ class TestSingleDispatch(unittest.TestCase):
         c.MutableSequence.register(D)
         bases = [c.MutableSequence, c.MutableMapping]
         for haystack in permutations(bases):
-            m = mro(D, bases)
+            m = mro(D, haystack)
             self.assertEqual(m, [D, c.MutableSequence, c.Sequence, c.Reversible,
                                  collections.defaultdict, dict, c.MutableMapping, c.Mapping,
                                  c.Collection, c.Sized, c.Iterable, c.Container,
@@ -2459,6 +2474,74 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertTrue(A.t(''))
         self.assertEqual(A.t(0.0), 0.0)
 
+    def test_slotted_class(self):
+        class Slot:
+            __slots__ = ('a', 'b')
+            @functools.singledispatchmethod
+            def go(self, item, arg):
+                pass
+
+            @go.register
+            def _(self, item: int, arg):
+                return item + arg
+
+        s = Slot()
+        self.assertEqual(s.go(1, 1), 2)
+
+    def test_classmethod_slotted_class(self):
+        class Slot:
+            __slots__ = ('a', 'b')
+            @functools.singledispatchmethod
+            @classmethod
+            def go(cls, item, arg):
+                pass
+
+            @go.register
+            @classmethod
+            def _(cls, item: int, arg):
+                return item + arg
+
+        s = Slot()
+        self.assertEqual(s.go(1, 1), 2)
+        self.assertEqual(Slot.go(1, 1), 2)
+
+    def test_staticmethod_slotted_class(self):
+        class A:
+            __slots__ = ['a']
+            @functools.singledispatchmethod
+            @staticmethod
+            def t(arg):
+                return arg
+            @t.register(int)
+            @staticmethod
+            def _(arg):
+                return isinstance(arg, int)
+            @t.register(str)
+            @staticmethod
+            def _(arg):
+                return isinstance(arg, str)
+        a = A()
+
+        self.assertTrue(A.t(0))
+        self.assertTrue(A.t(''))
+        self.assertEqual(A.t(0.0), 0.0)
+        self.assertTrue(a.t(0))
+        self.assertTrue(a.t(''))
+        self.assertEqual(a.t(0.0), 0.0)
+
+    def test_assignment_behavior(self):
+        # see gh-106448
+        class A:
+            @functools.singledispatchmethod
+            def t(arg):
+                return arg
+
+        a = A()
+        a.t.foo = 'bar'
+        a2 = A()
+        with self.assertRaises(AttributeError):
+            a2.t.foo
+
     def test_classmethod_register(self):
         class A:
             def __init__(self, arg):
@@ -2789,6 +2872,49 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(f(1), "types.UnionType")
         self.assertEqual(f(1.0), "types.UnionType")
 
+    def test_union_conflict(self):
+        @functools.singledispatch
+        def f(arg):
+            return "default"
+
+        @f.register
+        def _(arg: typing.Union[str, bytes]):
+            return "typing.Union"
+
+        @f.register
+        def _(arg: int | str):
+            return "types.UnionType"
+
+        self.assertEqual(f([]), "default")
+        self.assertEqual(f(""), "types.UnionType")  # last one wins
+        self.assertEqual(f(b""), "typing.Union")
+        self.assertEqual(f(1), "types.UnionType")
+
+    def test_union_None(self):
+        @functools.singledispatch
+        def typing_union(arg):
+            return "default"
+
+        @typing_union.register
+        def _(arg: typing.Union[str, None]):
+            return "typing.Union"
+
+        self.assertEqual(typing_union(1), "default")
+        self.assertEqual(typing_union(""), "typing.Union")
+        self.assertEqual(typing_union(None), "typing.Union")
+
+        @functools.singledispatch
+        def types_union(arg):
+            return "default"
+
+        @types_union.register
+        def _(arg: int | None):
+            return "types.UnionType"
+
+        self.assertEqual(types_union(""), "default")
+        self.assertEqual(types_union(1), "types.UnionType")
+        self.assertEqual(types_union(None), "types.UnionType")
+
     def test_register_genericalias(self):
         @functools.singledispatch
         def f(arg):
@@ -2802,8 +2928,6 @@ class TestSingleDispatch(unittest.TestCase):
             f.register(list[int] | str, lambda arg: "types.UnionTypes(types.GenericAlias)")
         with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
             f.register(typing.List[float] | bytes, lambda arg: "typing.Union[typing.GenericAlias]")
-        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
-            f.register(typing.Any, lambda arg: "typing.Any")
 
         self.assertEqual(f([1]), "default")
         self.assertEqual(f([1.0]), "default")
@@ -2823,8 +2947,6 @@ class TestSingleDispatch(unittest.TestCase):
             f.register(list[int] | str)
         with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
             f.register(typing.List[int] | str)
-        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
-            f.register(typing.Any)
 
     def test_register_genericalias_annotation(self):
         @functools.singledispatch
@@ -2847,10 +2969,6 @@ class TestSingleDispatch(unittest.TestCase):
             @f.register
             def _(arg: typing.List[float] | bytes):
                 return "typing.Union[typing.GenericAlias]"
-        with self.assertRaisesRegex(TypeError, "Invalid annotation for 'arg'"):
-            @f.register
-            def _(arg: typing.Any):
-                return "typing.Any"
 
         self.assertEqual(f([1]), "default")
         self.assertEqual(f([1.0]), "default")
@@ -2883,21 +3001,6 @@ class OptionallyCachedCostItem:
     cached_cost = py_functools.cached_property(get_cost)
 
 
-class CachedCostItemWait:
-
-    def __init__(self, event):
-        self._cost = 1
-        self.lock = py_functools.RLock()
-        self.event = event
-
-    @py_functools.cached_property
-    def cost(self):
-        self.event.wait(1)
-        with self.lock:
-            self._cost += 1
-        return self._cost
-
-
 class CachedCostItemWithSlots:
     __slots__ = ('_cost')
 
@@ -2921,26 +3024,6 @@ class TestCachedProperty(unittest.TestCase):
         self.assertEqual(item.cached_cost, 3)
         self.assertEqual(item.get_cost(), 4)
         self.assertEqual(item.cached_cost, 3)
-
-    def test_threaded(self):
-        go = threading.Event()
-        item = CachedCostItemWait(go)
-
-        num_threads = 3
-
-        orig_si = sys.getswitchinterval()
-        sys.setswitchinterval(1e-6)
-        try:
-            threads = [
-                threading.Thread(target=lambda: item.cost)
-                for k in range(num_threads)
-            ]
-            with threading_helper.start_threads(threads):
-                go.set()
-        finally:
-            sys.setswitchinterval(orig_si)
-
-        self.assertEqual(item.cost, 2)
 
     def test_object_with_slots(self):
         item = CachedCostItemWithSlots()
@@ -2967,7 +3050,7 @@ class TestCachedProperty(unittest.TestCase):
 
     def test_reuse_different_names(self):
         """Disallow this case because decorated function a would not be cached."""
-        with self.assertRaises(RuntimeError) as ctx:
+        with self.assertRaises(TypeError) as ctx:
             class ReusedCachedProperty:
                 @py_functools.cached_property
                 def a(self):
@@ -2976,7 +3059,7 @@ class TestCachedProperty(unittest.TestCase):
                 b = a
 
         self.assertEqual(
-            str(ctx.exception.__context__),
+            str(ctx.exception),
             str(TypeError("Cannot assign the same cached_property to two different names ('a' and 'b')."))
         )
 
@@ -3021,6 +3104,28 @@ class TestCachedProperty(unittest.TestCase):
 
     def test_doc(self):
         self.assertEqual(CachedCostItem.cost.__doc__, "The cost of the item.")
+
+    def test_module(self):
+        self.assertEqual(CachedCostItem.cost.__module__, CachedCostItem.__module__)
+
+    def test_subclass_with___set__(self):
+        """Caching still works for a subclass defining __set__."""
+        class readonly_cached_property(py_functools.cached_property):
+            def __set__(self, obj, value):
+                raise AttributeError("read only property")
+
+        class Test:
+            def __init__(self, prop):
+                self._prop = prop
+
+            @readonly_cached_property
+            def prop(self):
+                return self._prop
+
+        t = Test(1)
+        self.assertEqual(t.prop, 1)
+        t._prop = 999
+        self.assertEqual(t.prop, 1)
 
 
 if __name__ == '__main__':

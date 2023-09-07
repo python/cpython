@@ -1,2 +1,0 @@
-Deprecate undocumented support for using a :class:`pathlib.Path` object as a
-context manager.

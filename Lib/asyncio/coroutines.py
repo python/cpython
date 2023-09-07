@@ -4,7 +4,6 @@ import collections.abc
 import inspect
 import os
 import sys
-import traceback
 import types
 
 
@@ -26,8 +25,7 @@ def iscoroutinefunction(func):
 
 # Prioritize native coroutine check to speed-up
 # asyncio.iscoroutine.
-_COROUTINE_TYPES = (types.CoroutineType, types.GeneratorType,
-                    collections.abc.Coroutine)
+_COROUTINE_TYPES = (types.CoroutineType, collections.abc.Coroutine)
 _iscoroutine_typecache = set()
 
 
