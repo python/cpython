@@ -49,6 +49,8 @@ class TestFileOperations(unittest.TestCase):
             msvcrt.get_osfhandle(f.fileno())
 
 
+c = '\u5b57'  # unicode CJK char (meaning 'character') for 'wide-char' tests 
+
 class TestConsoleIO(unittest.TestCase):
     def test_kbhit(self):
         self.assertEqual(msvcrt.kbhit(), 0)
