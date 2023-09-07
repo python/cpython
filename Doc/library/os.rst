@@ -3850,8 +3850,8 @@ features:
 
    The timer is disabled by setting *initial* :py:class:`float` to zero (``0``).
    If *initial* is equal to or greater than zero, the timer is enabled.
-   If *initial* is less than zero, it raises :class:`OSError` with ``errno``
-   set to :const:`errno.EINVAL`
+   If *initial* is less than zero, it raises an :class:`OSError` exception
+   with ``errno`` set to :const:`errno.EINVAL`
 
    By default the timer will fire when *initial* seconds have elapsed.
    (If *initial* is zero, timer will fire immediately.)
