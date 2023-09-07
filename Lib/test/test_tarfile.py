@@ -3848,8 +3848,8 @@ class TestExtractionFilters(unittest.TestCase):
         try:
             os.chmod(tmp_filename, new_mode)
         except OSError as err:
-            # FreeBSD fails with EFTYPE if sticky bit cannot be set, instead
-            # of ignoring it.
+            # gh-108948: FreeBSD fails with EFTYPE if sticky bit cannot be set,
+            # instead of ignoring it.
             if hasattr(errno, "EFTYPE") and err.errno == errno.EFTYPE:
                 os.chmod(tmp_filename, new_mode & ~stat.S_ISVTX)
             else:
