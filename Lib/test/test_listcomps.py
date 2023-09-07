@@ -125,7 +125,7 @@ class ListComprehensionTest(unittest.TestCase):
                     self.assertIs(type(e), raises)
                 else:
                     for k, v in (outputs or {}).items():
-                        self.assertEqual(get_output(newns, k), v)
+                        self.assertEqual(get_output(newns, k), v, k)
 
     def test_lambdas_with_iteration_var_as_default(self):
         code = """
@@ -563,28 +563,38 @@ class ListComprehensionTest(unittest.TestCase):
 
     def test_comp_in_try_except(self):
         template = """
-            value = ["a"]
+            value = ["ab"]
+            result = snapshot = None
             try:
-                [{func}(value) for value in value]
+                result = [{func}(value) for value in value]
             except:
-                pass
+                snapshot = value
+                raise
         """
-        for func in ["str", "int"]:
-            code = template.format(func=func)
-            raises = func != "str"
-            with self.subTest(raises=raises):
-                self._check_in_scopes(code, {"value": ["a"]})
+        # No exception.
+        code = template.format(func='len')
+        self._check_in_scopes(code, {"value": ["ab"], "result": [2], "snapshot": None})
+        # Handles exception.
+        code = template.format(func='int')
+        self._check_in_scopes(code, {"value": ["ab"], "result": None, "snapshot": ["ab"]},
+                              raises=ValueError)
 
     def test_comp_in_try_finally(self):
-        code = """
-            def f(value):
-                try:
-                    [{func}(value) for value in value]
-                finally:
-                    return value
-            ret = f(["a"])
+        template = """
+            value = ["ab"]
+            result = snapshot = None
+            try:
+                result = [{func}(value) for value in value]
+            finally:
+                snapshot = value
         """
-        self._check_in_scopes(code, {"ret": ["a"]})
+        # No exception.
+        code = template.format(func='len')
+        self._check_in_scopes(code, {"value": ["ab"], "result": [2], "snapshot": ["ab"]})
+        # Handles exception.
+        code = template.format(func='int')
+        self._check_in_scopes(code, {"value": ["ab"], "result": None, "snapshot": ["ab"]},
+                              raises=ValueError)
 
     def test_exception_in_post_comp_call(self):
         code = """
@@ -595,6 +605,13 @@ class ListComprehensionTest(unittest.TestCase):
                 pass
         """
         self._check_in_scopes(code, {"value": [1, None]})
+
+    def test_frame_locals(self):
+        code = """
+            val = [sys._getframe().f_locals for a in [0]][0]["a"]
+        """
+        import sys
+        self._check_in_scopes(code, {"val": 0}, ns={"sys": sys})
 
 
 __test__ = {'doctests' : doctests}

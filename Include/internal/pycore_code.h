@@ -233,6 +233,9 @@ extern void _PyLineTable_InitAddressRange(
 extern int _PyLineTable_NextAddressRange(PyCodeAddressRange *range);
 extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 
+/** API for executors */
+extern void _PyCode_Clear_Executors(PyCodeObject *code);
+
 #define ENABLE_SPECIALIZATION 1
 
 /* Specialization functions */
@@ -461,8 +464,6 @@ adaptive_counter_backoff(uint16_t counter) {
     unsigned int value = (1 << backoff) - 1;
     return adaptive_counter_bits(value, backoff);
 }
-
-extern uint32_t _Py_next_func_version;
 
 
 /* Comparison bit masks. */

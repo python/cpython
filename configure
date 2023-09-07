@@ -27752,6 +27752,85 @@ printf "%s\n" "#define Py_NOGIL 1" >>confdefs.h
 
 fi
 
+# gh-109054: Check if -latomic is needed to get <pyatomic.h> atomic functions.
+# On Linux aarch64, GCC may require programs and libraries to be linked
+# explicitly to libatomic. Call _Py_atomic_or_uint64() which may require
+# libatomic __atomic_fetch_or_8(), or not, depending on the C compiler and the
+# compiler flags.
+#
+# Avoid #include <Python.h> or #include <pyport.h>. The <Python.h> header
+# requires <pyconfig.h> header which is only written below by AC_OUTPUT below.
+# If the check is done after AC_OUTPUT, modifying LIBATOMIC has no effect
+# anymore.  <pyport.h> cannot be included alone, it's designed to be included
+# by <Python.h>: it expects other includes and macros to be defined.
+save_CPPFLAGS=$CPPFLAGS
+CPPFLAGS="${BASECPPFLAGS} -I. -I${srcdir}/Include ${CPPFLAGS}"
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether libatomic is needed by <pyatomic.h>" >&5
+printf %s "checking whether libatomic is needed by <pyatomic.h>... " >&6; }
+if test ${ac_cv_libatomic_needed+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  if test "$cross_compiling" = yes
+then :
+    ac_cv_libatomic_needed=no
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+// pyatomic.h needs uint64_t and Py_ssize_t types
+#include <stdint.h>  // int64_t, intptr_t
+#ifdef HAVE_SYS_TYPES_H
+#  include <sys/types.h> // ssize_t
+#endif
+// Code adapted from Include/pyport.h
+#if HAVE_SSIZE_T
+typedef ssize_t Py_ssize_t;
+#elif SIZEOF_VOID_P == SIZEOF_SIZE_T
+typedef intptr_t Py_ssize_t;
+#else
+#  error "unable to define Py_ssize_t"
+#endif
+
+#include "cpython/pyatomic.h"
+
+int main()
+{
+    uint64_t byte;
+    _Py_atomic_store_uint64(&byte, 2);
+    if (_Py_atomic_or_uint64(&byte, 8) != 2) {
+        return 1; // error
+    }
+    if (_Py_atomic_load_uint64(&byte) != 10) {
+        return 1; // error
+    }
+    return 0; // all good
+}
+
+_ACEOF
+if ac_fn_c_try_run "$LINENO"
+then :
+  ac_cv_libatomic_needed=no
+else $as_nop
+    ac_cv_libatomic_needed=yes
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_libatomic_needed" >&5
+printf "%s\n" "$ac_cv_libatomic_needed" >&6; }
+
+if test "x$ac_cv_libatomic_needed" = xyes
+then :
+  LIBATOMIC=${LIBATOMIC-"-latomic"}
+fi
+CPPFLAGS=$save_CPPFLAGS
+
+
+# stdlib
 
 
 # stdlib not available
@@ -29900,7 +29979,7 @@ fi
 then :
 
 
-
+    as_fn_append MODULE_BLOCK "MODULE__TESTCAPI_LDFLAGS=$LIBATOMIC$as_nl"
 
 fi
    if test "$py_cv_module__testcapi" = yes; then
@@ -30344,6 +30423,7 @@ ac_config_files="$ac_config_files Modules/Setup.bootstrap Modules/Setup.stdlib"
 
 ac_config_files="$ac_config_files Modules/ld_so_aix"
 
+# Generate files like pyconfig.h
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
