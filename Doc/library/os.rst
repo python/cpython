@@ -3787,13 +3787,14 @@ features:
    The file descriptor returned by :func:`timerfd_create` supports:
 
    - :func:`read`
-   - :func:`~select.select`
-   - :func:`~select.poll`.
 
    The file descriptor supports :func:`read` with a buffer size of 8.
    If the timer has already expired one or more times, :func:`read` returns
    the number of expirations with the host's endianness,
    which may be converted to an :class:`int` by ``int.from_bytes(x, byteorder=sys.byteorder)``.
+
+   - :func:`~select.select`
+   - :func:`~select.poll`.
 
    :func:`~select.select` and :func:`~select.poll` can be used to wait until
    timer expires and the file descriptor is readable.
