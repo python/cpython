@@ -1152,6 +1152,15 @@ class TestLineAndInstructionEvents(CheckEvents):
             ('instruction', 'func1', 14),
             ('line', 'get_events', 11)])
 
+    def test_gh108976(self):
+        sys.monitoring.use_tool_id(0, "test")
+        sys.monitoring.set_events(0, 0)
+        sys.monitoring.register_callback(0, E.LINE, lambda *args: sys.monitoring.set_events(0, 0))
+        sys.monitoring.register_callback(0, E.INSTRUCTION, lambda *args: 0)
+        sys.monitoring.set_events(0, E.LINE | E.INSTRUCTION)
+        sys.monitoring.set_events(0, 0)
+
+
 class TestInstallIncrementallly(MonitoringTestBase, unittest.TestCase):
 
     def check_events(self, func, must_include, tool=TEST_TOOL, recorders=(ExceptionRecorder,)):
