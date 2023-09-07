@@ -1718,3 +1718,31 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
             make_foo_optimized_then_set_event()
         finally:
             sys.monitoring.set_events(TEST_TOOL, 0)
+
+
+class TestOptimizer(MonitoringTestBase, unittest.TestCase):
+
+    def setUp(self):
+        import _testinternalcapi
+        self.old_opt = _testinternalcapi.get_optimizer()
+        opt = _testinternalcapi.get_counter_optimizer()
+        _testinternalcapi.set_optimizer(opt)
+        super(TestOptimizer, self).setUp()
+
+    def tearDown(self):
+        import _testinternalcapi
+        super(TestOptimizer, self).tearDown()
+        _testinternalcapi.set_optimizer(self.old_opt)
+
+    def test_for_loop(self):
+        def test_func(x):
+            i = 0
+            while i < x:
+                i += 1
+
+        code = test_func.__code__
+        sys.monitoring.set_local_events(TEST_TOOL, code, E.PY_START)
+        self.assertEqual(sys.monitoring.get_local_events(TEST_TOOL, code), E.PY_START)
+        test_func(1000)
+        sys.monitoring.set_local_events(TEST_TOOL, code, 0)
+        self.assertEqual(sys.monitoring.get_local_events(TEST_TOOL, code), 0)
