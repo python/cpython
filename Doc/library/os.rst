@@ -3959,7 +3959,7 @@ features:
 
    A flag for the :func:`timerfd_create` function,
    which sets the :const:`O_NONBLOCK` status flag for the new timer file descriptor.
-   :func:`read` to the new timer file descriptor will not be blocked.
+   If :const:`TFD_NONBLOCK` is not set as a flag, :func:`read` blocks.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
