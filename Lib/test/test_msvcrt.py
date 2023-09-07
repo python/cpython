@@ -68,8 +68,8 @@ class TestConsoleIO(unittest.TestCase):
         self.assertEqual(msvcrt.getche(), b'c')
 
     def test_getwche(self):
-        msvcrt.ungetwch('c')
-        self.assertEqual(msvcrt.getwche(), 'c')
+        msvcrt.ungetwch(c)
+        self.assertEqual(msvcrt.getwche(), c)
 
     def test_putch(self):
         msvcrt.putch(b'c')
