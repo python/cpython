@@ -67,7 +67,7 @@ typedef struct _PyInterpreterFrame {
     _Py_CODEUNIT *instr_ptr;
     int stacktop;  /* Offset of TOS from localsplus  */
     /* The return_offset determines where a `RETURN` should go in the caller,
-     * relative to `prev_instr`.
+     * relative to `prev_instr`/`instr_ptr`.
      * It is only meaningful to the callee,
      * so it needs to be set in any CALL (to a Python function)
      * or SEND (to a coroutine or generator).
@@ -285,7 +285,7 @@ _PyFrame_PushUnchecked(PyThreadState *tstate, PyFunctionObject *func, int null_l
 /* Pushes a trampoline frame without checking for space.
  * Must be guarded by _PyThreadState_HasStackSpace() */
 static inline _PyInterpreterFrame *
-_PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int stackdepth, int prev_instr, int instr_ptr_offset)
+_PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int stackdepth, int prev_instr)
 {
     CALL_STAT_INC(frames_pushed);
     _PyInterpreterFrame *frame = (_PyInterpreterFrame *)tstate->datastack_top;
@@ -301,7 +301,7 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->stacktop = code->co_nlocalsplus + stackdepth;
     frame->frame_obj = NULL;
     frame->prev_instr = _PyCode_CODE(code) + prev_instr;
-    frame->instr_ptr = _PyCode_CODE(code) + instr_ptr_offset;
+    frame->instr_ptr = _PyCode_CODE(code) + prev_instr + 1;
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->return_offset = 0;
     return frame;
