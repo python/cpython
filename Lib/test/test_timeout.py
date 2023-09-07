@@ -6,7 +6,6 @@ from test import support
 from test.support import socket_helper
 
 import time
-import errno
 import socket
 
 
@@ -147,88 +146,6 @@ class TCPTimeoutTestCase(TimeoutTestCase):
 
     def tearDown(self):
         self.sock.close()
-
-    @unittest.skipIf(True, 'need to replace these hosts; see bpo-35518')
-    def testConnectTimeout(self):
-        # Testing connect timeout is tricky: we need to have IP connectivity
-        # to a host that silently drops our packets.  We can't simulate this
-        # from Python because it's a function of the underlying TCP/IP stack.
-        # So, the following Snakebite host has been defined:
-        blackhole = resolve_address('blackhole.snakebite.net', 56666)
-
-        # Blackhole has been configured to silently drop any incoming packets.
-        # No RSTs (for TCP) or ICMP UNREACH (for UDP/ICMP) will be sent back
-        # to hosts that attempt to connect to this address: which is exactly
-        # what we need to confidently test connect timeout.
-
-        # However, we want to prevent false positives.  It's not unreasonable
-        # to expect certain hosts may not be able to reach the blackhole, due
-        # to firewalling or general network configuration.  In order to improve
-        # our confidence in testing the blackhole, a corresponding 'whitehole'
-        # has also been set up using one port higher:
-        whitehole = resolve_address('whitehole.snakebite.net', 56667)
-
-        # This address has been configured to immediately drop any incoming
-        # packets as well, but it does it respectfully with regards to the
-        # incoming protocol.  RSTs are sent for TCP packets, and ICMP UNREACH
-        # is sent for UDP/ICMP packets.  This means our attempts to connect to
-        # it should be met immediately with ECONNREFUSED.  The test case has
-        # been structured around this premise: if we get an ECONNREFUSED from
-        # the whitehole, we proceed with testing connect timeout against the
-        # blackhole.  If we don't, we skip the test (with a message about not
-        # getting the required RST from the whitehole within the required
-        # timeframe).
-
-        # For the records, the whitehole/blackhole configuration has been set
-        # up using the 'pf' firewall (available on BSDs), using the following:
-        #
-        #   ext_if="bge0"
-        #
-        #   blackhole_ip="35.8.247.6"
-        #   whitehole_ip="35.8.247.6"
-        #   blackhole_port="56666"
-        #   whitehole_port="56667"
-        #
-        #   block return in log quick on $ext_if proto { tcp udp } \
-        #       from any to $whitehole_ip port $whitehole_port
-        #   block drop in log quick on $ext_if proto { tcp udp } \
-        #       from any to $blackhole_ip port $blackhole_port
-        #
-
-        skip = True
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        timeout = support.LOOPBACK_TIMEOUT
-        sock.settimeout(timeout)
-        try:
-            sock.connect((whitehole))
-        except TimeoutError:
-            pass
-        except OSError as err:
-            if err.errno == errno.ECONNREFUSED:
-                skip = False
-        finally:
-            sock.close()
-            del sock
-
-        if skip:
-            self.skipTest(
-                "We didn't receive a connection reset (RST) packet from "
-                "{}:{} within {} seconds, so we're unable to test connect "
-                "timeout against the corresponding {}:{} (which is "
-                "configured to silently drop packets)."
-                    .format(
-                        whitehole[0],
-                        whitehole[1],
-                        timeout,
-                        blackhole[0],
-                        blackhole[1],
-                    )
-            )
-
-        # All that hard work just to test if connect times out in 0.001s ;-)
-        self.addr_remote = blackhole
-        with socket_helper.transient_internet(self.addr_remote[0]):
-            self._sock_operation(1, 0.001, 'connect', self.addr_remote)
 
     def testRecvTimeout(self):
         # Test recv() timeout
