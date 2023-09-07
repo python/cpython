@@ -1,0 +1,38 @@
+# Requirements to build the Python documentation, for the oldest supported
+# Sphinx version.
+#
+# We pin Sphinx and all of its dependencies to ensure a consistent environment.
+
+blurb
+python-docs-theme>=2022.1
+
+# Generated from:
+#     pip install "Sphinx~=3.2.0" "docutils<0.17" "Jinja2<3" "MarkupSafe<2"
+#     pip freeze
+#
+# Sphinx 3.2 comes from ``needs_sphinx = '3.2'`` in ``Doc/conf.py``.
+# Docutils<0.17, Jinja2<3, and MarkupSafe<2 are additionally specified as
+# Sphinx 3.2 is incompatible with newer releases of these packages.
+
+alabaster==0.7.13
+Babel==2.12.1
+certifi==2023.7.22
+charset-normalizer==3.2.0
+colorama==0.4.6
+docutils==0.16
+idna==3.4
+imagesize==1.4.1
+Jinja2==2.11.3
+MarkupSafe==1.1.1
+packaging==23.1
+Pygments==2.15.1
+requests==2.31.0
+snowballstemmer==2.2.0
+Sphinx==3.2.1
+sphinxcontrib-applehelp==1.0.4
+sphinxcontrib-devhelp==1.0.2
+sphinxcontrib-htmlhelp==2.0.1
+sphinxcontrib-jsmath==1.0.1
+sphinxcontrib-qthelp==1.0.3
+sphinxcontrib-serializinghtml==1.1.5
+urllib3==2.0.4

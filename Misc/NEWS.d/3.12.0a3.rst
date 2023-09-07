@@ -505,7 +505,7 @@ return True from this method; now they correctly return False.
 .. nonce: ZoOY5G
 .. section: Library
 
-Add an :data:`~ssl.OP_ENABLE_KTLS` option for enabling the use of the kernel
+Add an :const:`~ssl.OP_ENABLE_KTLS` option for enabling the use of the kernel
 TLS (kTLS). Patch by Illia Volochii.
 
 ..

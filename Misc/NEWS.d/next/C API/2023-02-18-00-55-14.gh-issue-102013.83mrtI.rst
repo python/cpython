@@ -1,1 +1,0 @@
-Add a new (unstable) C-API function for iterating over GC'able objects using a callback: ``PyUnstable_VisitObjects``.

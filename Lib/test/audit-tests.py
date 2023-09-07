@@ -186,7 +186,7 @@ def test_monkeypatch():
     )
 
 
-def test_open():
+def test_open(testfn):
     # SSLContext.load_dh_params uses _Py_fopen_obj rather than normal open()
     try:
         import ssl
@@ -199,11 +199,11 @@ def test_open():
     # All of them should fail
     with TestHook(raise_on_events={"open"}) as hook:
         for fn, *args in [
-            (open, sys.argv[2], "r"),
+            (open, testfn, "r"),
             (open, sys.executable, "rb"),
             (open, 3, "wb"),
-            (open, sys.argv[2], "w", -1, None, None, None, False, lambda *a: 1),
-            (load_dh_params, sys.argv[2]),
+            (open, testfn, "w", -1, None, None, None, False, lambda *a: 1),
+            (load_dh_params, testfn),
         ]:
             if not fn:
                 continue
@@ -216,11 +216,11 @@ def test_open():
         [
             i
             for i in [
-                (sys.argv[2], "r"),
+                (testfn, "r"),
                 (sys.executable, "r"),
                 (3, "w"),
-                (sys.argv[2], "w"),
-                (sys.argv[2], "rb") if load_dh_params else None,
+                (testfn, "w"),
+                (testfn, "rb") if load_dh_params else None,
             ]
             if i is not None
         ],
@@ -289,7 +289,7 @@ def test_excepthook():
 
 
 def test_unraisablehook():
-    from _testcapi import write_unraisable_exc
+    from _testinternalcapi import write_unraisable_exc
 
     def unraisablehook(hookargs):
         pass
@@ -398,15 +398,18 @@ def test_sqlite3():
     cx2 = sqlite3.Connection(":memory:")
 
     # Configured without --enable-loadable-sqlite-extensions
-    if hasattr(sqlite3.Connection, "enable_load_extension"):
-        cx1.enable_load_extension(False)
-        try:
-            cx1.load_extension("test")
-        except sqlite3.OperationalError:
-            pass
-        else:
-            raise RuntimeError("Expected sqlite3.load_extension to fail")
-
+    try:
+        if hasattr(sqlite3.Connection, "enable_load_extension"):
+            cx1.enable_load_extension(False)
+            try:
+                cx1.load_extension("test")
+            except sqlite3.OperationalError:
+                pass
+            else:
+                raise RuntimeError("Expected sqlite3.load_extension to fail")
+    finally:
+        cx1.close()
+        cx2.close()
 
 def test_sys_getframe():
     import sys
@@ -514,10 +517,39 @@ def test_not_in_gc():
             assert hook not in o
 
 
+def test_time(mode):
+    import time
+
+    def hook(event, args):
+        if event.startswith("time."):
+            if mode == 'print':
+                print(event, *args)
+            elif mode == 'fail':
+                raise AssertionError('hook failed')
+    sys.addaudithook(hook)
+
+    time.sleep(0)
+    time.sleep(0.0625)  # 1/16, a small exact float
+    try:
+        time.sleep(-1)
+    except ValueError:
+        pass
+
+def test_sys_monitoring_register_callback():
+    import sys
+
+    def hook(event, args):
+        if event.startswith("sys.monitoring"):
+            print(event, args)
+
+    sys.addaudithook(hook)
+    sys.monitoring.register_callback(1, 1, None)
+
+
 if __name__ == "__main__":
     from test.support import suppress_msvcrt_asserts
 
     suppress_msvcrt_asserts()
 
     test = sys.argv[1]
-    globals()[test]()
+    globals()[test](*sys.argv[2:])
