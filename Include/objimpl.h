@@ -1,12 +1,8 @@
-/* The PyObject_ memory family:  high-level object memory interfaces.
-   See pymem.h for the low-level PyMem_ family.
-*/
+// The PyObject_ memory family:  high-level object memory interfaces.
+// See pymem.h for the low-level PyMem_ family.
 
 #ifndef Py_OBJIMPL_H
 #define Py_OBJIMPL_H
-
-#include "pymem.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -48,8 +44,8 @@ Functions and macros for modules that implement new object types.
 
 Note that objects created with PyObject_{New, NewVar} are allocated using the
 specialized Python allocator (implemented in obmalloc.c), if WITH_PYMALLOC is
-enabled.  In addition, a special debugging allocator is used if PYMALLOC_DEBUG
-is also #defined.
+enabled.  In addition, a special debugging allocator is used if Py_DEBUG
+macro is also defined.
 
 In case a specific form of memory management is needed (for example, if you
 must use the platform malloc heap(s), or shared memory, or C++ local storage or
@@ -135,14 +131,14 @@ PyAPI_FUNC(PyVarObject *) _PyObject_NewVar(PyTypeObject *, Py_ssize_t);
 
 // Alias to PyObject_New(). In Python 3.8, PyObject_NEW() called directly
 // PyObject_MALLOC() with _PyObject_SIZE().
-#define PyObject_NEW(type, typeobj) PyObject_New(type, typeobj)
+#define PyObject_NEW(type, typeobj) PyObject_New(type, (typeobj))
 
 #define PyObject_NewVar(type, typeobj, n) \
                 ( (type *) _PyObject_NewVar((typeobj), (n)) )
 
 // Alias to PyObject_NewVar(). In Python 3.8, PyObject_NEW_VAR() called
 // directly PyObject_MALLOC() with _PyObject_VAR_SIZE().
-#define PyObject_NEW_VAR(type, typeobj, n) PyObject_NewVar(type, typeobj, n)
+#define PyObject_NEW_VAR(type, typeobj, n) PyObject_NewVar(type, (typeobj), (n))
 
 
 /*
@@ -150,8 +146,31 @@ PyAPI_FUNC(PyVarObject *) _PyObject_NewVar(PyTypeObject *, Py_ssize_t);
  * ==========================
  */
 
-/* C equivalent of gc.collect() which ignores the state of gc.enabled. */
+/* C equivalent of gc.collect(). */
 PyAPI_FUNC(Py_ssize_t) PyGC_Collect(void);
+/* C API for controlling the state of the garbage collector */
+PyAPI_FUNC(int) PyGC_Enable(void);
+PyAPI_FUNC(int) PyGC_Disable(void);
+PyAPI_FUNC(int) PyGC_IsEnabled(void);
+
+
+#if !defined(Py_LIMITED_API)
+/* Visit all live GC-capable objects, similar to gc.get_objects(None). The
+ * supplied callback is called on every such object with the void* arg set
+ * to the supplied arg. Returning 0 from the callback ends iteration, returning
+ * 1 allows iteration to continue. Returning any other value may result in
+ * undefined behaviour.
+ *
+ * If new objects are (de)allocated by the callback it is undefined if they
+ * will be visited.
+
+ * Garbage collection is disabled during operation. Explicitly running a
+ * collection in the callback may lead to undefined behaviour e.g. visiting the
+ * same objects multiple times or not at all.
+ */
+typedef int (*gcvisitobjects_t)(PyObject*, void*);
+PyAPI_FUNC(void) PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void* arg);
+#endif
 
 /* Test if a type has a GC head */
 #define PyType_IS_GC(t) PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
@@ -178,9 +197,9 @@ PyAPI_FUNC(void) PyObject_GC_UnTrack(void *);
 PyAPI_FUNC(void) PyObject_GC_Del(void *);
 
 #define PyObject_GC_New(type, typeobj) \
-                ( (type *) _PyObject_GC_New(typeobj) )
+    _Py_CAST(type*, _PyObject_GC_New(typeobj))
 #define PyObject_GC_NewVar(type, typeobj, n) \
-                ( (type *) _PyObject_GC_NewVar((typeobj), (n)) )
+    _Py_CAST(type*, _PyObject_GC_NewVar((typeobj), (n)))
 
 PyAPI_FUNC(int) PyObject_GC_IsTracked(PyObject *);
 PyAPI_FUNC(int) PyObject_GC_IsFinalized(PyObject *);
@@ -201,11 +220,11 @@ PyAPI_FUNC(int) PyObject_GC_IsFinalized(PyObject *);
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_OBJIMPL_H
-#  include  "cpython/objimpl.h"
+#  include "cpython/objimpl.h"
 #  undef Py_CPYTHON_OBJIMPL_H
 #endif
 
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_OBJIMPL_H */
+#endif   // !Py_OBJIMPL_H

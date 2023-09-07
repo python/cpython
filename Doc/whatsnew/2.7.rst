@@ -279,7 +279,7 @@ Comparing an :class:`~collections.OrderedDict` with a regular dictionary
 ignores the insertion order and just compares the keys and values.
 
 How does the :class:`~collections.OrderedDict` work?  It maintains a
-doubly-linked list of keys, appending new keys to the list as they're inserted.
+doubly linked list of keys, appending new keys to the list as they're inserted.
 A secondary dictionary maps keys to their corresponding list node, so
 deletion doesn't have to traverse the entire linked list and therefore
 remains O(1).
@@ -299,7 +299,7 @@ modules.
   constructor was extended with an *object_pairs_hook* parameter to
   allow :class:`OrderedDict` instances to be built by the decoder.
   Support was also added for third-party tools like
-  `PyYAML <http://pyyaml.org/>`_.
+  `PyYAML <https://pyyaml.org/>`_.
 
 .. seealso::
 
@@ -355,7 +355,7 @@ added as a more powerful replacement for the
 This means Python now supports three different modules for parsing
 command-line arguments: :mod:`getopt`, :mod:`optparse`, and
 :mod:`argparse`.  The :mod:`getopt` module closely resembles the C
-library's :c:func:`getopt` function, so it remains useful if you're writing a
+library's :c:func:`!getopt` function, so it remains useful if you're writing a
 Python prototype that will eventually be rewritten in C.
 :mod:`optparse` becomes redundant, but there are no plans to remove it
 because there are many scripts still using it, and there's no
@@ -953,12 +953,12 @@ Several performance enhancements have been added:
   considered and traversed by the collector.
   (Contributed by Antoine Pitrou; :issue:`4688`.)
 
-* Long integers are now stored internally either in base 2**15 or in base
-  2**30, the base being determined at build time.  Previously, they
-  were always stored in base 2**15.  Using base 2**30 gives
+* Long integers are now stored internally either in base ``2**15`` or in base
+  ``2**30``, the base being determined at build time.  Previously, they
+  were always stored in base ``2**15``.  Using base ``2**30`` gives
   significant performance improvements on 64-bit machines, but
   benchmark results on 32-bit machines have been mixed.  Therefore,
-  the default is to use base 2**30 on 64-bit machines and base 2**15
+  the default is to use base ``2**30`` on 64-bit machines and base ``2**15``
   on 32-bit machines; on Unix, there's a new configure option
   :option:`!--enable-big-digits` that can be used to override this default.
 
@@ -1048,7 +1048,7 @@ changes, or look through the Subversion logs for all the details.
   The new version features better Python 3.x compatibility, various bug fixes,
   and adds several new BerkeleyDB flags and methods.
   (Updated by Jesús Cea Avión; :issue:`8156`.  The pybsddb
-  changelog can be read at http://hg.jcea.es/pybsddb/file/tip/ChangeLog.)
+  changelog can be read at https://hg.jcea.es/pybsddb/file/tip/ChangeLog.)
 
 * The :mod:`bz2` module's :class:`~bz2.BZ2File` now supports the context
   management protocol, so you can write ``with bz2.BZ2File(...) as f:``.
@@ -1331,6 +1331,7 @@ changes, or look through the Subversion logs for all the details.
     >>> from inspect import getcallargs
     >>> def f(a, b=1, *pos, **named):
     ...     pass
+    ...
     >>> getcallargs(f, 1, 2, 3)
     {'a': 1, 'b': 2, 'pos': (3,), 'named': {}}
     >>> getcallargs(f, a=2, x=4)
@@ -1428,7 +1429,7 @@ changes, or look through the Subversion logs for all the details.
   become very large.
   (Contributed by Charles Cazabon; :issue:`6963`.)
 
-* The :mod:`nntplib` module now supports IPv6 addresses.
+* The :mod:`!nntplib` module now supports IPv6 addresses.
   (Contributed by Derek Morr; :issue:`1664`.)
 
 * New functions: the :mod:`os` module wraps the following POSIX system
@@ -1545,7 +1546,7 @@ changes, or look through the Subversion logs for all the details.
   *ciphers* argument that's a string listing the encryption algorithms
   to be allowed; the format of the string is described
   `in the OpenSSL documentation
-  <https://www.openssl.org/docs/manmaster/man1/ciphers.html#CIPHER-LIST-FORMAT>`__.
+  <https://www.openssl.org/docs/man1.0.2/man1/ciphers.html>`__.
   (Added by Antoine Pitrou; :issue:`8322`.)
 
   Another change makes the extension load all of OpenSSL's ciphers and
@@ -1555,9 +1556,9 @@ changes, or look through the Subversion logs for all the details.
   :issue:`8484`.)
 
   The version of OpenSSL being used is now available as the module
-  attributes :data:`ssl.OPENSSL_VERSION` (a string),
-  :data:`ssl.OPENSSL_VERSION_INFO` (a 5-tuple), and
-  :data:`ssl.OPENSSL_VERSION_NUMBER` (an integer).  (Added by Antoine
+  attributes :const:`ssl.OPENSSL_VERSION` (a string),
+  :const:`ssl.OPENSSL_VERSION_INFO` (a 5-tuple), and
+  :const:`ssl.OPENSSL_VERSION_NUMBER` (an integer).  (Added by Antoine
   Pitrou; :issue:`8321`.)
 
 * The :mod:`struct` module will no longer silently ignore overflow
@@ -1831,7 +1832,7 @@ packaged as the :mod:`unittest2` package, from
 https://pypi.org/project/unittest2.
 
 When used from the command line, the module can automatically discover
-tests.  It's not as fancy as `py.test <http://pytest.org>`__ or
+tests.  It's not as fancy as `py.test <https://pytest.org>`__ or
 `nose <https://nose.readthedocs.io/>`__, but provides a
 simple way to run tests kept within a set of package directories.  For example,
 the following command will search the :file:`test/` subdirectory for
@@ -1968,7 +1969,7 @@ GvR worked on merging them into Python's version of :mod:`unittest`.
 
 * :meth:`~unittest.TestCase.assertAlmostEqual` and :meth:`~unittest.TestCase.assertNotAlmostEqual` test
   whether *first* and *second* are approximately equal.  This method
-  can either round their difference to an optionally-specified number
+  can either round their difference to an optionally specified number
   of *places* (the default is 7) and compare it to zero, or require
   the difference to be smaller than a supplied *delta* value.
 
@@ -2001,7 +2002,7 @@ module is imported or used.
 
 .. seealso::
 
-  http://www.voidspace.org.uk/python/articles/unittest2.shtml
+  https://web.archive.org/web/20210619163128/http://www.voidspace.org.uk/python/articles/unittest2.shtml
     Describes the new features, how to use them, and the
     rationale for various design decisions.  (By Michael Foord.)
 
@@ -2089,7 +2090,7 @@ version 1.3.  Some of the new features are:
 
 Fredrik Lundh develops ElementTree and produced the 1.3 version;
 you can read his article describing 1.3 at
-http://effbot.org/zone/elementtree-13-intro.htm.
+https://web.archive.org/web/20200703234532/http://effbot.org/zone/elementtree-13-intro.htm.
 Florent Xicluna updated the version included with
 Python, after discussions on python-dev and in :issue:`6472`.)
 
@@ -2103,7 +2104,7 @@ Changes to Python's build process and to the C API include:
 
 * The latest release of the GNU Debugger, GDB 7, can be `scripted
   using Python
-  <https://sourceware.org/gdb/current/onlinedocs/gdb/Python.html>`__.
+  <https://web.archive.org/web/20110715084810/http://sourceware.org/gdb/current/onlinedocs/gdb/Python.html>`__.
   When you begin debugging an executable program P, GDB will look for
   a file named ``P-gdb.py`` and automatically read it.  Dave Malcolm
   contributed a :file:`python-gdb.py` that adds a number of
@@ -2144,23 +2145,23 @@ Changes to Python's build process and to the C API include:
 
 * New functions: :c:func:`PyLong_AsLongAndOverflow` and
   :c:func:`PyLong_AsLongLongAndOverflow`  approximates a Python long
-  integer as a C :c:type:`long` or :c:type:`long long`.
+  integer as a C :c:expr:`long` or :c:expr:`long long`.
   If the number is too large to fit into
   the output type, an *overflow* flag is set and returned to the caller.
   (Contributed by Case Van Horsen; :issue:`7528` and :issue:`7767`.)
 
 * New function: stemming from the rewrite of string-to-float conversion,
   a new :c:func:`PyOS_string_to_double` function was added.  The old
-  :c:func:`PyOS_ascii_strtod` and :c:func:`PyOS_ascii_atof` functions
+  :c:func:`!PyOS_ascii_strtod` and :c:func:`!PyOS_ascii_atof` functions
   are now deprecated.
 
-* New function: :c:func:`PySys_SetArgvEx` sets the value of
+* New function: :c:func:`!PySys_SetArgvEx` sets the value of
   ``sys.argv`` and can optionally update ``sys.path`` to include the
   directory containing the script named by ``sys.argv[0]`` depending
   on the value of an *updatepath* parameter.
 
   This function was added to close a security hole for applications
-  that embed Python.  The old function, :c:func:`PySys_SetArgv`, would
+  that embed Python.  The old function, :c:func:`!PySys_SetArgv`, would
   always update ``sys.path``, and sometimes it would add the current
   directory.  This meant that, if you ran an application embedding
   Python in a directory controlled by someone else, attackers could
@@ -2168,8 +2169,8 @@ Changes to Python's build process and to the C API include:
   :file:`os.py`) that your application would then import and run.
 
   If you maintain a C/C++ application that embeds Python, check
-  whether you're calling :c:func:`PySys_SetArgv` and carefully consider
-  whether the application should be using :c:func:`PySys_SetArgvEx`
+  whether you're calling :c:func:`!PySys_SetArgv` and carefully consider
+  whether the application should be using :c:func:`!PySys_SetArgvEx`
   with *updatepath* set to false.
 
   Security issue reported as `CVE-2008-5983
@@ -2194,15 +2195,15 @@ Changes to Python's build process and to the C API include:
 
   .. XXX these macros don't seem to be described in the c-api docs.
 
-* Removed function: :c:macro:`PyEval_CallObject` is now only available
+* Removed function: :c:func:`!PyEval_CallObject` is now only available
   as a macro.  A function version was being kept around to preserve
   ABI linking compatibility, but that was in 1997; it can certainly be
   deleted by now.  (Removed by Antoine Pitrou; :issue:`8276`.)
 
-* New format codes: the :c:func:`PyFormat_FromString`,
-  :c:func:`PyFormat_FromStringV`, and :c:func:`PyErr_Format` functions now
+* New format codes: the :c:func:`!PyString_FromFormat`,
+  :c:func:`!PyString_FromFormatV`, and :c:func:`PyErr_Format` functions now
   accept ``%lld`` and ``%llu`` format codes for displaying
-  C's :c:type:`long long` types.
+  C's :c:expr:`long long` types.
   (Contributed by Mark Dickinson; :issue:`7228`.)
 
 * The complicated interaction between threads and process forking has
@@ -2230,7 +2231,7 @@ Changes to Python's build process and to the C API include:
 
 * When using the :c:type:`PyMemberDef` structure to define attributes
   of a type, Python will no longer let you try to delete or set a
-  :const:`T_STRING_INPLACE` attribute.
+  :c:macro:`T_STRING_INPLACE` attribute.
 
   .. rev 79644
 
@@ -2286,10 +2287,10 @@ object, and then get the ``void *`` pointer, which will usually point
 to an array of pointers to the module's various API functions.
 
 There is an existing data type already used for this,
-:c:type:`PyCObject`, but it doesn't provide type safety.  Evil code
+:c:type:`!PyCObject`, but it doesn't provide type safety.  Evil code
 written in pure Python could cause a segmentation fault by taking a
-:c:type:`PyCObject` from module A and somehow substituting it for the
-:c:type:`PyCObject` in module B.   Capsules know their own name,
+:c:type:`!PyCObject` from module A and somehow substituting it for the
+:c:type:`!PyCObject` in module B.   Capsules know their own name,
 and getting the pointer requires providing the name:
 
 .. code-block:: c
@@ -2309,10 +2310,10 @@ detect the mismatched name and return false.  Refer to
 :ref:`using-capsules` for more information on using these objects.
 
 Python 2.7 now uses capsules internally to provide various
-extension-module APIs, but the :c:func:`PyCObject_AsVoidPtr` was
+extension-module APIs, but the :c:func:`!PyCObject_AsVoidPtr` was
 modified to handle capsules, preserving compile-time compatibility
-with the :c:type:`CObject` interface.  Use of
-:c:func:`PyCObject_AsVoidPtr` will signal a
+with the :c:type:`!PyCObject` interface.  Use of
+:c:func:`!PyCObject_AsVoidPtr` will signal a
 :exc:`PendingDeprecationWarning`, which is silent by default.
 
 Implemented in Python 3.1 and backported to 2.7 by Larry Hastings;
@@ -2333,7 +2334,7 @@ Port-Specific Changes: Windows
 
 * The :mod:`_winreg` module for accessing the registry now implements
   the :func:`~_winreg.CreateKeyEx` and :func:`~_winreg.DeleteKeyEx`
-  functions, extended versions of previously-supported functions that
+  functions, extended versions of previously supported functions that
   take several extra arguments.  The :func:`~_winreg.DisableReflectionKey`,
   :func:`~_winreg.EnableReflectionKey`, and :func:`~_winreg.QueryReflectionKey`
   were also tested and documented.
@@ -2485,8 +2486,8 @@ In the standard library:
 
 * The ElementTree library, :mod:`xml.etree`, no longer escapes
   ampersands and angle brackets when outputting an XML processing
-  instruction (which looks like `<?xml-stylesheet href="#style1"?>`)
-  or comment (which looks like `<!-- comment -->`).
+  instruction (which looks like ``<?xml-stylesheet href="#style1"?>``)
+  or comment (which looks like ``<!-- comment -->``).
   (Patch by Neil Muller; :issue:`2746`.)
 
 * The :meth:`~StringIO.StringIO.readline` method of :class:`~StringIO.StringIO` objects now does
@@ -2539,16 +2540,16 @@ For C extensions:
   instead of triggering a :exc:`DeprecationWarning` (:issue:`5080`).
 
 * Use the new :c:func:`PyOS_string_to_double` function instead of the old
-  :c:func:`PyOS_ascii_strtod` and :c:func:`PyOS_ascii_atof` functions,
+  :c:func:`!PyOS_ascii_strtod` and :c:func:`!PyOS_ascii_atof` functions,
   which are now deprecated.
 
 For applications that embed Python:
 
-* The :c:func:`PySys_SetArgvEx` function was added, letting
+* The :c:func:`!PySys_SetArgvEx` function was added, letting
   applications close a security hole when the existing
-  :c:func:`PySys_SetArgv` function was used.  Check whether you're
-  calling :c:func:`PySys_SetArgv` and carefully consider whether the
-  application should be using :c:func:`PySys_SetArgvEx` with
+  :c:func:`!PySys_SetArgv` function was used.  Check whether you're
+  calling :c:func:`!PySys_SetArgv` and carefully consider whether the
+  application should be using :c:func:`!PySys_SetArgvEx` with
   *updatepath* set to false.
 
 .. ======================================================================
@@ -2681,7 +2682,7 @@ these commands by default, as long as, when invoked, they provide clear and
 simple directions on how to install them on that platform (usually using
 the system package manager).
 
-__ https://www.python.org/dev/peps/pep-0477/#disabling-ensurepip-by-downstream-distributors
+__ https://peps.python.org/pep-0477/#disabling-ensurepip-by-downstream-distributors
 
 
 Documentation Changes
@@ -2692,12 +2693,12 @@ As part of this change, the :ref:`installing-index` and
 completely redesigned as short getting started and FAQ documents. Most
 packaging documentation has now been moved out to the Python Packaging
 Authority maintained `Python Packaging User Guide
-<http://packaging.python.org>`__ and the documentation of the individual
+<https://packaging.python.org>`__ and the documentation of the individual
 projects.
 
 However, as this migration is currently still incomplete, the legacy
 versions of those guides remaining available as :ref:`install-index`
-and :ref:`distutils-index`.
+and :ref:`setuptools-index`.
 
 .. seealso::
 

@@ -2,7 +2,6 @@
 
    unicodedata -- Provides access to the Unicode database.
 
-   Data was extracted from the UnicodeData.txt file.
    The current version number is reported in the unidata_version constant.
 
    Written by Marc-Andre Lemburg (mal@lemburg.com).
@@ -13,18 +12,15 @@
 
    ------------------------------------------------------------------------ */
 
-#define PY_SSIZE_T_CLEAN
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
-#include "structmember.h"         // PyMemberDef
 
 #include <stdbool.h>
-
-_Py_IDENTIFIER(NFC);
-_Py_IDENTIFIER(NFD);
-_Py_IDENTIFIER(NFKC);
-_Py_IDENTIFIER(NFKD);
+#include <stddef.h>               // offsetof()
 
 /*[clinic input]
 module unicodedata
@@ -86,7 +82,7 @@ typedef struct previous_version {
 #define get_old_record(self, v)    ((((PreviousDBVersion*)self)->getrecord)(v))
 
 static PyMemberDef DB_members[] = {
-        {"unidata_version", T_STRING, offsetof(PreviousDBVersion, name), READONLY},
+        {"unidata_version", Py_T_STRING, offsetof(PreviousDBVersion, name), Py_READONLY},
         {NULL}
 };
 
@@ -102,12 +98,13 @@ new_previous_version(PyTypeObject *ucd_type,
                      Py_UCS4 (*normalization)(Py_UCS4))
 {
     PreviousDBVersion *self;
-    self = PyObject_New(PreviousDBVersion, ucd_type);
+    self = PyObject_GC_New(PreviousDBVersion, ucd_type);
     if (self == NULL)
         return NULL;
     self->name = name;
     self->getrecord = getrecord;
     self->normalization = normalization;
+    PyObject_GC_Track(self);
     return (PyObject*)self;
 }
 
@@ -160,8 +157,7 @@ unicodedata_UCD_decimal_impl(PyObject *self, int chr,
             return NULL;
         }
         else {
-            Py_INCREF(default_value);
-            return default_value;
+            return Py_NewRef(default_value);
         }
     }
     return PyLong_FromLong(rc);
@@ -195,8 +191,7 @@ unicodedata_UCD_digit_impl(PyObject *self, int chr, PyObject *default_value)
             return NULL;
         }
         else {
-            Py_INCREF(default_value);
-            return default_value;
+            return Py_NewRef(default_value);
         }
     }
     return PyLong_FromLong(rc);
@@ -247,8 +242,7 @@ unicodedata_UCD_numeric_impl(PyObject *self, int chr,
             return NULL;
         }
         else {
-            Py_INCREF(default_value);
-            return default_value;
+            return Py_NewRef(default_value);
         }
     }
     return PyFloat_FromDouble(rc);
@@ -804,7 +798,11 @@ is_normalized_quickcheck(PyObject *self, PyObject *input, bool nfc, bool k,
 {
     /* UCD 3.2.0 is requested, quickchecks must be disabled. */
     if (UCD_Check(self)) {
-        return NO;
+        return MAYBE;
+    }
+
+    if (PyUnicode_IS_ASCII(input)) {
+        return YES;
     }
 
     Py_ssize_t i, len;
@@ -864,10 +862,6 @@ unicodedata_UCD_is_normalized_impl(PyObject *self, PyObject *form,
                                    PyObject *input)
 /*[clinic end generated code: output=11e5a3694e723ca5 input=a544f14cea79e508]*/
 {
-    if (PyUnicode_READY(input) == -1) {
-        return NULL;
-    }
-
     if (PyUnicode_GET_LENGTH(input) == 0) {
         /* special case empty input strings. */
         Py_RETURN_TRUE;
@@ -881,17 +875,17 @@ unicodedata_UCD_is_normalized_impl(PyObject *self, PyObject *form,
     PyObject *cmp;
     int match = 0;
 
-    if (_PyUnicode_EqualToASCIIId(form, &PyId_NFC)) {
+    if (PyUnicode_CompareWithASCIIString(form, "NFC") == 0) {
         nfc = true;
     }
-    else if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKC)) {
+    else if (PyUnicode_CompareWithASCIIString(form, "NFKC") == 0) {
         nfc = true;
         k = true;
     }
-    else if (_PyUnicode_EqualToASCIIId(form, &PyId_NFD)) {
+    else if (PyUnicode_CompareWithASCIIString(form, "NFD") == 0) {
         /* matches default values for `nfc` and `k` */
     }
-    else if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKD)) {
+    else if (PyUnicode_CompareWithASCIIString(form, "NFKD") == 0) {
         k = true;
     }
     else {
@@ -914,8 +908,7 @@ unicodedata_UCD_is_normalized_impl(PyObject *self, PyObject *form,
         result = (m == YES) ? Py_True : Py_False;
     }
 
-    Py_INCREF(result);
-    return result;
+    return Py_NewRef(result);
 }
 
 
@@ -940,39 +933,34 @@ unicodedata_UCD_normalize_impl(PyObject *self, PyObject *form,
     if (PyUnicode_GET_LENGTH(input) == 0) {
         /* Special case empty input strings, since resizing
            them  later would cause internal errors. */
-        Py_INCREF(input);
-        return input;
+        return Py_NewRef(input);
     }
 
-    if (_PyUnicode_EqualToASCIIId(form, &PyId_NFC)) {
+    if (PyUnicode_CompareWithASCIIString(form, "NFC") == 0) {
         if (is_normalized_quickcheck(self, input,
                                      true,  false, true) == YES) {
-            Py_INCREF(input);
-            return input;
+            return Py_NewRef(input);
         }
         return nfc_nfkc(self, input, 0);
     }
-    if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKC)) {
+    if (PyUnicode_CompareWithASCIIString(form, "NFKC") == 0) {
         if (is_normalized_quickcheck(self, input,
                                      true,  true,  true) == YES) {
-            Py_INCREF(input);
-            return input;
+            return Py_NewRef(input);
         }
         return nfc_nfkc(self, input, 1);
     }
-    if (_PyUnicode_EqualToASCIIId(form, &PyId_NFD)) {
+    if (PyUnicode_CompareWithASCIIString(form, "NFD") == 0) {
         if (is_normalized_quickcheck(self, input,
                                      false, false, true) == YES) {
-            Py_INCREF(input);
-            return input;
+            return Py_NewRef(input);
         }
         return nfd_nfkd(self, input, 0);
     }
-    if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKD)) {
+    if (PyUnicode_CompareWithASCIIString(form, "NFKD") == 0) {
         if (is_normalized_quickcheck(self, input,
                                      false, true,  true) == YES) {
-            Py_INCREF(input);
-            return input;
+            return Py_NewRef(input);
         }
         return nfd_nfkd(self, input, 1);
     }
@@ -1041,13 +1029,14 @@ is_unified_ideograph(Py_UCS4 code)
 {
     return
         (0x3400 <= code && code <= 0x4DBF)   || /* CJK Ideograph Extension A */
-        (0x4E00 <= code && code <= 0x9FFC)   || /* CJK Ideograph */
-        (0x20000 <= code && code <= 0x2A6DD) || /* CJK Ideograph Extension B */
-        (0x2A700 <= code && code <= 0x2B734) || /* CJK Ideograph Extension C */
+        (0x4E00 <= code && code <= 0x9FFF)   || /* CJK Ideograph */
+        (0x20000 <= code && code <= 0x2A6DF) || /* CJK Ideograph Extension B */
+        (0x2A700 <= code && code <= 0x2B739) || /* CJK Ideograph Extension C */
         (0x2B740 <= code && code <= 0x2B81D) || /* CJK Ideograph Extension D */
         (0x2B820 <= code && code <= 0x2CEA1) || /* CJK Ideograph Extension E */
         (0x2CEB0 <= code && code <= 0x2EBE0) || /* CJK Ideograph Extension F */
-        (0x30000 <= code && code <= 0x3134A);   /* CJK Ideograph Extension G */
+        (0x30000 <= code && code <= 0x3134A) || /* CJK Ideograph Extension G */
+        (0x31350 <= code && code <= 0x323AF);   /* CJK Ideograph Extension H */
 }
 
 /* macros used to determine if the given code point is in the PUA range that
@@ -1366,8 +1355,7 @@ unicodedata_UCD_name_impl(PyObject *self, int chr, PyObject *default_value)
             return NULL;
         }
         else {
-            Py_INCREF(default_value);
-            return default_value;
+            return Py_NewRef(default_value);
         }
     }
 
@@ -1389,8 +1377,8 @@ corresponding character.  If not found, KeyError is raised.
 
 static PyObject *
 unicodedata_UCD_lookup_impl(PyObject *self, const char *name,
-                            Py_ssize_clean_t name_length)
-/*[clinic end generated code: output=765cb8186788e6be input=a557be0f8607a0d6]*/
+                            Py_ssize_t name_length)
+/*[clinic end generated code: output=7f03fc4959b242f6 input=a557be0f8607a0d6]*/
 {
     Py_UCS4 code;
     unsigned int index;
@@ -1435,16 +1423,25 @@ static PyMethodDef unicodedata_functions[] = {
     {NULL, NULL}                /* sentinel */
 };
 
+static int
+ucd_traverse(PreviousDBVersion *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
 static void
 ucd_dealloc(PreviousDBVersion *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject_Free(self);
+    PyObject_GC_UnTrack(self);
+    PyObject_GC_Del(self);
     Py_DECREF(tp);
 }
 
 static PyType_Slot ucd_type_slots[] = {
     {Py_tp_dealloc, ucd_dealloc},
+    {Py_tp_traverse, ucd_traverse},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_methods, unicodedata_functions},
     {Py_tp_members, DB_members},
@@ -1454,7 +1451,8 @@ static PyType_Slot ucd_type_slots[] = {
 static PyType_Spec ucd_type_spec = {
     .name = "unicodedata.UCD",
     .basicsize = sizeof(PreviousDBVersion),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = ucd_type_slots
 };
 
@@ -1489,22 +1487,12 @@ unicodedata_exec(PyObject *module)
     v = new_previous_version(ucd_type, "3.2.0",
                              get_change_3_2_0, normalization_3_2_0);
     Py_DECREF(ucd_type);
-    if (v == NULL) {
-        return -1;
-    }
-    if (PyModule_AddObject(module, "ucd_3_2_0", v) < 0) {
-        Py_DECREF(v);
+    if (PyModule_Add(module, "ucd_3_2_0", v) < 0) {
         return -1;
     }
 
     /* Export C API */
-    PyObject *capsule = unicodedata_create_capi();
-    if (capsule == NULL) {
-        return -1;
-    }
-    int rc = PyModule_AddObjectRef(module, "_ucnhash_CAPI", capsule);
-    Py_DECREF(capsule);
-    if (rc < 0) {
+    if (PyModule_Add(module, "_ucnhash_CAPI", unicodedata_create_capi()) < 0) {
         return -1;
     }
     return 0;
@@ -1512,6 +1500,7 @@ unicodedata_exec(PyObject *module)
 
 static PyModuleDef_Slot unicodedata_slots[] = {
     {Py_mod_exec, unicodedata_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

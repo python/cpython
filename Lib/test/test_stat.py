@@ -113,6 +113,7 @@ class TestFilemode:
             else:
                 self.assertFalse(func(mode))
 
+    @os_helper.skip_unless_working_chmod
     def test_mode(self):
         with open(TESTFN, 'w'):
             pass
@@ -121,8 +122,11 @@ class TestFilemode:
             st_mode, modestr = self.get_mode()
             self.assertEqual(modestr, '-rwx------')
             self.assertS_IS("REG", st_mode)
-            self.assertEqual(self.statmod.S_IMODE(st_mode),
+            imode = self.statmod.S_IMODE(st_mode)
+            self.assertEqual(imode,
                              self.statmod.S_IRWXU)
+            self.assertEqual(self.statmod.filemode(imode),
+                             '?rwx------')
 
             os.chmod(TESTFN, 0o070)
             st_mode, modestr = self.get_mode()
@@ -151,6 +155,7 @@ class TestFilemode:
             self.assertEqual(self.statmod.S_IFMT(st_mode),
                              self.statmod.S_IFREG)
 
+    @os_helper.skip_unless_working_chmod
     def test_directory(self):
         os.mkdir(TESTFN)
         os.chmod(TESTFN, 0o700)
@@ -161,7 +166,7 @@ class TestFilemode:
         else:
             self.assertEqual(modestr[0], 'd')
 
-    @unittest.skipUnless(hasattr(os, 'symlink'), 'os.symlink not available')
+    @os_helper.skip_unless_symlink
     def test_link(self):
         try:
             os.symlink(os.getcwd(), TESTFN)
@@ -236,6 +241,7 @@ class TestFilemode:
             self.assertEqual(value, modvalue, key)
 
 
+@unittest.skipIf(c_stat is None, 'need _stat extension')
 class TestFilemodeCStat(TestFilemode, unittest.TestCase):
     statmod = c_stat
 

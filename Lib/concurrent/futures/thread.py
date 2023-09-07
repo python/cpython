@@ -36,8 +36,14 @@ def _python_exit():
 # See bpo-39812 for context.
 threading._register_atexit(_python_exit)
 
+# At fork, reinitialize the `_global_shutdown_lock` lock in the child process
+if hasattr(os, 'register_at_fork'):
+    os.register_at_fork(before=_global_shutdown_lock.acquire,
+                        after_in_child=_global_shutdown_lock._at_fork_reinit,
+                        after_in_parent=_global_shutdown_lock.release)
 
-class _WorkItem(object):
+
+class _WorkItem:
     def __init__(self, future, fn, args, kwargs):
         self.future = future
         self.fn = fn
@@ -72,17 +78,20 @@ def _worker(executor_reference, work_queue, initializer, initargs):
             return
     try:
         while True:
-            work_item = work_queue.get(block=True)
-            if work_item is not None:
-                work_item.run()
-                # Delete references to object. See issue16284
-                del work_item
-
-                # attempt to increment idle count
+            try:
+                work_item = work_queue.get_nowait()
+            except queue.Empty:
+                # attempt to increment idle count if queue is empty
                 executor = executor_reference()
                 if executor is not None:
                     executor._idle_semaphore.release()
                 del executor
+                work_item = work_queue.get(block=True)
+
+            if work_item is not None:
+                work_item.run()
+                # Delete references to object. See GH-60488
+                del work_item
                 continue
 
             executor = executor_reference()

@@ -2,7 +2,6 @@ import logging
 import sys
 
 from c_common.scriptutil import (
-    CLIArgSpec as Arg,
     add_verbosity_cli,
     add_traceback_cli,
     add_kind_filtering_cli,
@@ -43,7 +42,7 @@ def add_common_cli(parser, *, get_preprocessor=_get_preprocessor):
     def process_args(args, *, argv):
         ns = vars(args)
 
-        process_fail_arg(args, argv)
+        process_fail_arg(args, argv=argv)
         ignore_exc = ns.pop('ignore_exc')
         # We later pass ignore_exc to _get_preprocessor().
 

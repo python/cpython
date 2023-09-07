@@ -96,7 +96,7 @@ def _get_system_version():
     if _SYSTEM_VERSION is None:
         _SYSTEM_VERSION = ''
         try:
-            f = open('/System/Library/CoreServices/SystemVersion.plist')
+            f = open('/System/Library/CoreServices/SystemVersion.plist', encoding="utf-8")
         except OSError:
             # We're on a plain darwin box, fall back to the default
             # behaviour.
@@ -156,9 +156,9 @@ def _default_sysroot(cc):
 
     if _cache_default_sysroot is not None:
         return _cache_default_sysroot
-   
+
     contents = _read_output('%s -c -E -v - </dev/null' % (cc,), True)
-    in_incdirs = False   
+    in_incdirs = False
     for line in contents.splitlines():
         if line.startswith("#include <...>"):
             in_incdirs = True
@@ -428,10 +428,9 @@ def compiler_fixup(compiler_so, cc_args):
             break
 
     if sysroot and not os.path.isdir(sysroot):
-        from distutils import log
-        log.warn("Compiling with an SDK that doesn't seem to exist: %s",
-                sysroot)
-        log.warn("Please check your Xcode installation")
+        sys.stderr.write(f"Compiling with an SDK that doesn't seem to exist: {sysroot}\n")
+        sys.stderr.write("Please check your Xcode installation\n")
+        sys.stderr.flush()
 
     return compiler_so
 
@@ -482,7 +481,7 @@ def customize_compiler(_config_vars):
 
     This customization is performed when the first
     extension module build is requested
-    in distutils.sysconfig.customize_compiler).
+    in distutils.sysconfig.customize_compiler.
     """
 
     # Find a compiler to use for extension module builds
@@ -525,10 +524,10 @@ def get_platform_osx(_config_vars, osname, release, machine):
             try:
                 macrelease = tuple(int(i) for i in macrelease.split('.')[0:2])
             except ValueError:
-                macrelease = (10, 0)
+                macrelease = (10, 3)
         else:
             # assume no universal support
-            macrelease = (10, 0)
+            macrelease = (10, 3)
 
         if (macrelease >= (10, 4)) and '-arch' in cflags.strip():
             # The universal build will build fat binaries, but not on

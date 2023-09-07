@@ -1,4 +1,3 @@
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_abstract.h"   // _PyIndex_Check()
 #include "pycore_bytes_methods.h"
@@ -115,15 +114,14 @@ _Py_bytes_isascii(const char *cptr, Py_ssize_t len)
 {
     const char *p = cptr;
     const char *end = p + len;
-    const char *aligned_end = (const char *) _Py_ALIGN_DOWN(end, SIZEOF_SIZE_T);
 
     while (p < end) {
         /* Fast path, see in STRINGLIB(utf8_decode) in stringlib/codecs.h
            for an explanation. */
-        if (_Py_IS_ALIGNED(p, SIZEOF_SIZE_T)) {
+        if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
             /* Help allocation */
             const char *_p = p;
-            while (_p < aligned_end) {
+            while (_p + SIZEOF_SIZE_T <= end) {
                 size_t value = *(const size_t *) _p;
                 if (value & ASCII_CHAR_MASK) {
                     Py_RETURN_FALSE;
@@ -259,9 +257,12 @@ _Py_bytes_istitle(const char *cptr, Py_ssize_t len)
     const unsigned char *e;
     int cased, previous_is_cased;
 
-    /* Shortcut for single character strings */
-    if (len == 1)
-        return PyBool_FromLong(Py_ISUPPER(*p));
+    if (len == 1) {
+        if (Py_ISUPPER(*p)) {
+            Py_RETURN_TRUE;
+        }
+        Py_RETURN_FALSE;
+    }
 
     /* Special case for empty strings */
     if (len == 0)
@@ -432,6 +433,7 @@ _Py_bytes_maketrans(Py_buffer *frm, Py_buffer *to)
 #define STRINGLIB(F) stringlib_##F
 #define STRINGLIB_CHAR char
 #define STRINGLIB_SIZEOF_CHAR 1
+#define STRINGLIB_FAST_MEMCHR memchr
 
 #include "stringlib/fastsearch.h"
 #include "stringlib/count.h"
@@ -774,7 +776,7 @@ _Py_bytes_tailmatch(const char *str, Py_ssize_t len,
 {
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
-    PyObject *subobj;
+    PyObject *subobj = NULL;
     int result;
 
     if (!stringlib_parse_args_finds(function_name, args, &subobj, &start, &end))

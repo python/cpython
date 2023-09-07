@@ -6,7 +6,7 @@
 
 **Source code:** :source:`Lib/shelve.py`
 
-.. index:: module: pickle
+.. index:: pair: module; pickle
 
 --------------
 
@@ -25,7 +25,7 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    database file is opened for reading and writing.  The optional *flag* parameter
    has the same interpretation as the *flag* parameter of :func:`dbm.open`.
 
-   By default, pickles created with :data:`pickle.DEFAULT_PROTOCOL` are used
+   By default, pickles created with :const:`pickle.DEFAULT_PROTOCOL` are used
    to serialize values.  The version of the pickle protocol can be specified
    with the *protocol* parameter.
 
@@ -42,8 +42,11 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    mutated).
 
    .. versionchanged:: 3.10
-      :data:`pickle.DEFAULT_PROTOCOL` is now used as the default pickle
+      :const:`pickle.DEFAULT_PROTOCOL` is now used as the default pickle
       protocol.
+
+   .. versionchanged:: 3.11
+      Accepts :term:`path-like object` for filename.
 
    .. note::
 
@@ -54,13 +57,16 @@ lots of shared  sub-objects.  The keys are ordinary strings.
           with shelve.open('spam') as db:
               db['eggs'] = 'eggs'
 
+.. _shelve-security:
+
 .. warning::
 
    Because the :mod:`shelve` module is backed by :mod:`pickle`, it is insecure
    to load a shelf from an untrusted source.  Like with pickle, loading a shelf
    can execute arbitrary code.
 
-Shelf objects support all methods supported by dictionaries.  This eases the
+Shelf objects support most of methods and operations supported by dictionaries
+(except copying, constructors and operators ``|`` and ``|=``).  This eases the
 transition from dictionary based scripts to those requiring persistent storage.
 
 Two additional methods are supported:
@@ -89,8 +95,8 @@ Restrictions
 ------------
 
   .. index::
-     module: dbm.ndbm
-     module: dbm.gnu
+     pair: module; dbm.ndbm
+     pair: module; dbm.gnu
 
 * The choice of which database package will be used (such as :mod:`dbm.ndbm` or
   :mod:`dbm.gnu`) depends on which interface is available.  Therefore it is not
@@ -113,7 +119,7 @@ Restrictions
    A subclass of :class:`collections.abc.MutableMapping` which stores pickled
    values in the *dict* object.
 
-   By default, pickles created with :data:`pickle.DEFAULT_PROTOCOL` are used
+   By default, pickles created with :const:`pickle.DEFAULT_PROTOCOL` are used
    to serialize values.  The version of the pickle protocol can be specified
    with the *protocol* parameter.  See the :mod:`pickle` documentation for a
    discussion of the pickle protocols.
@@ -137,7 +143,7 @@ Restrictions
       Added context manager support.
 
    .. versionchanged:: 3.10
-      :data:`pickle.DEFAULT_PROTOCOL` is now used as the default pickle
+      :const:`pickle.DEFAULT_PROTOCOL` is now used as the default pickle
       protocol.
 
 

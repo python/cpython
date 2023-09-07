@@ -1,33 +1,28 @@
 from test.support import verbose, reap_children
 from test.support.import_helper import import_module
 
-# Skip these tests if termios is not available
+# Skip these tests if termios or fcntl are not available
 import_module('termios')
+# fcntl is a proxy for not being one of the wasm32 platforms even though we
+# don't use this module... a proper check for what crashes those is needed.
+import_module("fcntl")
 
 import errno
-import pty
 import os
+import pty
+import tty
 import sys
 import select
 import signal
 import socket
 import io # readline
 import unittest
-
-import struct
-import tty
-import fcntl
 import warnings
 
 TEST_STRING_1 = b"I wish to buy a fish license.\n"
 TEST_STRING_2 = b"For my pet fish, Eric.\n"
 
-try:
-    _TIOCGWINSZ = tty.TIOCGWINSZ
-    _TIOCSWINSZ = tty.TIOCSWINSZ
-    _HAVE_WINSZ = True
-except AttributeError:
-    _HAVE_WINSZ = False
+_HAVE_WINSZ = hasattr(tty, "TIOCGWINSZ") and hasattr(tty, "TIOCSWINSZ")
 
 if verbose:
     def debug(msg):
@@ -81,14 +76,6 @@ def expectedFailureIfStdinIsTTY(fun):
         pass
     return fun
 
-def _get_term_winsz(fd):
-    s = struct.pack("HHHH", 0, 0, 0, 0)
-    return fcntl.ioctl(fd, _TIOCGWINSZ, s)
-
-def _set_term_winsz(fd, winsz):
-    fcntl.ioctl(fd, _TIOCSWINSZ, winsz)
-
-
 # Marginal testing of pty suite. Cannot do extensive 'do or fail' testing
 # because pty code is not too portable.
 class PtyTest(unittest.TestCase):
@@ -104,18 +91,14 @@ class PtyTest(unittest.TestCase):
         self.addCleanup(signal.alarm, 0)
         signal.alarm(10)
 
-        # Save original stdin window size
-        self.stdin_rows = None
-        self.stdin_cols = None
+        # Save original stdin window size.
+        self.stdin_dim = None
         if _HAVE_WINSZ:
             try:
-                stdin_dim = os.get_terminal_size(pty.STDIN_FILENO)
-                self.stdin_rows = stdin_dim.lines
-                self.stdin_cols = stdin_dim.columns
-                old_stdin_winsz = struct.pack("HHHH", self.stdin_rows,
-                                              self.stdin_cols, 0, 0)
-                self.addCleanup(_set_term_winsz, pty.STDIN_FILENO, old_stdin_winsz)
-            except OSError:
+                self.stdin_dim = tty.tcgetwinsize(pty.STDIN_FILENO)
+                self.addCleanup(tty.tcsetwinsize, pty.STDIN_FILENO,
+                                self.stdin_dim)
+            except tty.error:
                 pass
 
     def handle_sig(self, sig, frame):
@@ -123,12 +106,6 @@ class PtyTest(unittest.TestCase):
 
     @staticmethod
     def handle_sighup(signum, frame):
-        # bpo-38547: if the process is the session leader, os.close(master_fd)
-        # of "master_fd, slave_name = pty.master_open()" raises SIGHUP
-        # signal: just ignore the signal.
-        #
-        # NOTE: the above comment is from an older version of the test;
-        # master_open() is not being used anymore.
         pass
 
     @expectedFailureIfStdinIsTTY
@@ -136,41 +113,40 @@ class PtyTest(unittest.TestCase):
         try:
             mode = tty.tcgetattr(pty.STDIN_FILENO)
         except tty.error:
-            # not a tty or bad/closed fd
+            # Not a tty or bad/closed fd.
             debug("tty.tcgetattr(pty.STDIN_FILENO) failed")
             mode = None
 
-        new_stdin_winsz = None
-        if self.stdin_rows != None and self.stdin_cols != None:
+        new_dim = None
+        if self.stdin_dim:
             try:
                 # Modify pty.STDIN_FILENO window size; we need to
                 # check if pty.openpty() is able to set pty slave
                 # window size accordingly.
-                debug("Setting pty.STDIN_FILENO window size")
-                debug(f"original size: (rows={self.stdin_rows}, cols={self.stdin_cols})")
-                target_stdin_rows = self.stdin_rows + 1
-                target_stdin_cols = self.stdin_cols + 1
-                debug(f"target size: (rows={target_stdin_rows}, cols={target_stdin_cols})")
-                target_stdin_winsz = struct.pack("HHHH", target_stdin_rows,
-                                                 target_stdin_cols, 0, 0)
-                _set_term_winsz(pty.STDIN_FILENO, target_stdin_winsz)
+                debug("Setting pty.STDIN_FILENO window size.")
+                debug(f"original size: (row, col) = {self.stdin_dim}")
+                target_dim = (self.stdin_dim[0] + 1, self.stdin_dim[1] + 1)
+                debug(f"target size: (row, col) = {target_dim}")
+                tty.tcsetwinsize(pty.STDIN_FILENO, target_dim)
 
                 # Were we able to set the window size
                 # of pty.STDIN_FILENO successfully?
-                new_stdin_winsz = _get_term_winsz(pty.STDIN_FILENO)
-                self.assertEqual(new_stdin_winsz, target_stdin_winsz,
+                new_dim = tty.tcgetwinsize(pty.STDIN_FILENO)
+                self.assertEqual(new_dim, target_dim,
                                  "pty.STDIN_FILENO window size unchanged")
             except OSError:
-                warnings.warn("Failed to set pty.STDIN_FILENO window size")
+                warnings.warn("Failed to set pty.STDIN_FILENO window size.")
                 pass
 
         try:
             debug("Calling pty.openpty()")
             try:
-                master_fd, slave_fd = pty.openpty(mode, new_stdin_winsz)
+                master_fd, slave_fd, slave_name = pty.openpty(mode, new_dim,
+                                                              True)
             except TypeError:
                 master_fd, slave_fd = pty.openpty()
-            debug(f"Got master_fd '{master_fd}', slave_fd '{slave_fd}'")
+                slave_name = None
+            debug(f"Got {master_fd=}, {slave_fd=}, {slave_name=}")
         except OSError:
             # " An optional feature could not be imported " ... ?
             raise unittest.SkipTest("Pseudo-terminals (seemingly) not functional.")
@@ -186,16 +162,9 @@ class PtyTest(unittest.TestCase):
         if mode:
             self.assertEqual(tty.tcgetattr(slave_fd), mode,
                              "openpty() failed to set slave termios")
-        if new_stdin_winsz:
-            self.assertEqual(_get_term_winsz(slave_fd), new_stdin_winsz,
+        if new_dim:
+            self.assertEqual(tty.tcgetwinsize(slave_fd), new_dim,
                              "openpty() failed to set slave window size")
-
-        # Solaris requires reading the fd before anything is returned.
-        # My guess is that since we open and close the slave fd
-        # in master_open(), we need to read the EOF.
-        #
-        # NOTE: the above comment is from an older version of the test;
-        # master_open() is not being used anymore.
 
         # Ensure the fd is non-blocking in case there's nothing to read.
         blocking = os.get_blocking(master_fd)
@@ -324,22 +293,40 @@ class PtyTest(unittest.TestCase):
 
         self.assertEqual(data, b"")
 
+    def test_spawn_doesnt_hang(self):
+        pty.spawn([sys.executable, '-c', 'print("hi there")'])
+
 class SmallPtyTests(unittest.TestCase):
     """These tests don't spawn children or hang."""
 
     def setUp(self):
         self.orig_stdin_fileno = pty.STDIN_FILENO
         self.orig_stdout_fileno = pty.STDOUT_FILENO
+        self.orig_pty_close = pty.close
+        self.orig_pty__copy = pty._copy
+        self.orig_pty_fork = pty.fork
         self.orig_pty_select = pty.select
+        self.orig_pty_setraw = pty.setraw
+        self.orig_pty_tcgetattr = pty.tcgetattr
+        self.orig_pty_tcsetattr = pty.tcsetattr
+        self.orig_pty_waitpid = pty.waitpid
         self.fds = []  # A list of file descriptors to close.
         self.files = []
-        self.select_rfds_lengths = []
-        self.select_rfds_results = []
+        self.select_input = []
+        self.select_output = []
+        self.tcsetattr_mode_setting = None
 
     def tearDown(self):
         pty.STDIN_FILENO = self.orig_stdin_fileno
         pty.STDOUT_FILENO = self.orig_stdout_fileno
+        pty.close = self.orig_pty_close
+        pty._copy = self.orig_pty__copy
+        pty.fork = self.orig_pty_fork
         pty.select = self.orig_pty_select
+        pty.setraw = self.orig_pty_setraw
+        pty.tcgetattr = self.orig_pty_tcgetattr
+        pty.tcsetattr = self.orig_pty_tcsetattr
+        pty.waitpid = self.orig_pty_waitpid
         for file in self.files:
             try:
                 file.close()
@@ -361,11 +348,18 @@ class SmallPtyTests(unittest.TestCase):
         self.files.extend(socketpair)
         return socketpair
 
-    def _mock_select(self, rfds, wfds, xfds, timeout=0):
+    def _mock_select(self, rfds, wfds, xfds):
         # This will raise IndexError when no more expected calls exist.
-        # This ignores the timeout
-        self.assertEqual(self.select_rfds_lengths.pop(0), len(rfds))
-        return self.select_rfds_results.pop(0), [], []
+        self.assertEqual((rfds, wfds, xfds), self.select_input.pop(0))
+        return self.select_output.pop(0)
+
+    def _make_mock_fork(self, pid):
+        def mock_fork():
+            return (pid, 12)
+        return mock_fork
+
+    def _mock_tcsetattr(self, fileno, opt, mode):
+        self.tcsetattr_mode_setting = mode
 
     def test__copy_to_each(self):
         """Test the normal data case on both master_fd and stdin."""
@@ -380,11 +374,13 @@ class SmallPtyTests(unittest.TestCase):
         os.write(masters[1], b'from master')
         os.write(write_to_stdin_fd, b'from stdin')
 
-        # Expect two select calls, the last one will cause IndexError
+        # Expect three select calls, the last one will cause IndexError
         pty.select = self._mock_select
-        self.select_rfds_lengths.append(2)
-        self.select_rfds_results.append([mock_stdin_fd, masters[0]])
-        self.select_rfds_lengths.append(2)
+        self.select_input.append(([mock_stdin_fd, masters[0]], [], []))
+        self.select_output.append(([mock_stdin_fd, masters[0]], [], []))
+        self.select_input.append(([mock_stdin_fd, masters[0]], [mock_stdout_fd, masters[0]], []))
+        self.select_output.append(([], [mock_stdout_fd, masters[0]], []))
+        self.select_input.append(([mock_stdin_fd, masters[0]], [], []))
 
         with self.assertRaises(IndexError):
             pty._copy(masters[0])
@@ -395,32 +391,31 @@ class SmallPtyTests(unittest.TestCase):
         self.assertEqual(os.read(read_from_stdout_fd, 20), b'from master')
         self.assertEqual(os.read(masters[1], 20), b'from stdin')
 
-    def test__copy_eof_on_all(self):
-        """Test the empty read EOF case on both master_fd and stdin."""
-        read_from_stdout_fd, mock_stdout_fd = self._pipe()
-        pty.STDOUT_FILENO = mock_stdout_fd
-        mock_stdin_fd, write_to_stdin_fd = self._pipe()
-        pty.STDIN_FILENO = mock_stdin_fd
-        socketpair = self._socketpair()
-        masters = [s.fileno() for s in socketpair]
+    def test__restore_tty_mode_normal_return(self):
+        """Test that spawn resets the tty mode no when _copy returns normally."""
 
-        socketpair[1].close()
-        os.close(write_to_stdin_fd)
+        # PID 1 is returned from mocked fork to run the parent branch
+        # of code
+        pty.fork = self._make_mock_fork(1)
 
-        # Expect two select calls, the last one will cause IndexError
-        pty.select = self._mock_select
-        self.select_rfds_lengths.append(2)
-        self.select_rfds_results.append([mock_stdin_fd, masters[0]])
-        # We expect that both fds were removed from the fds list as they
-        # both encountered an EOF before the second select call.
-        self.select_rfds_lengths.append(0)
+        status_sentinel = object()
+        pty.waitpid = lambda _1, _2: [None, status_sentinel]
+        pty.close = lambda _: None
 
-        with self.assertRaises(IndexError):
-            pty._copy(masters[0])
+        pty._copy = lambda _1, _2, _3: None
+
+        mode_sentinel = object()
+        pty.tcgetattr = lambda fd: mode_sentinel
+        pty.tcsetattr = self._mock_tcsetattr
+        pty.setraw = lambda _: None
+
+        self.assertEqual(pty.spawn([]), status_sentinel, "pty.waitpid process status not returned by pty.spawn")
+        self.assertEqual(self.tcsetattr_mode_setting, mode_sentinel, "pty.tcsetattr not called with original mode value")
 
 
 def tearDownModule():
     reap_children()
+
 
 if __name__ == "__main__":
     unittest.main()

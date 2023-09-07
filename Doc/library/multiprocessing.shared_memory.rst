@@ -1,5 +1,5 @@
-:mod:`multiprocessing.shared_memory` ---  Provides shared memory for direct access across processes
-===================================================================================================
+:mod:`multiprocessing.shared_memory` --- Shared memory for direct access across processes
+=========================================================================================
 
 .. module:: multiprocessing.shared_memory
    :synopsis: Provides shared memory for direct access across processes.
@@ -125,7 +125,7 @@ instances::
 
 
 The following example demonstrates a practical use of the :class:`SharedMemory`
-class with `NumPy arrays <https://www.numpy.org/>`_, accessing the
+class with `NumPy arrays <https://numpy.org/>`_, accessing the
 same ``numpy.ndarray`` from two distinct Python shells:
 
 .. doctest::
@@ -255,16 +255,17 @@ shared memory blocks created using that manager are all released when the
 :keyword:`with` statement's code block finishes execution.
 
 
-.. class:: ShareableList(sequence=None, *, name=None)
+.. class:: ShareableList(sequence=None, \*, name=None)
 
    Provides a mutable list-like object where all values stored within are
    stored in a shared memory block.  This constrains storable values to
-   only the ``int``, ``float``, ``bool``, ``str`` (less than 10M bytes each),
-   ``bytes`` (less than 10M bytes each), and ``None`` built-in data types.
-   It also notably differs from the built-in ``list`` type in that these
-   lists can not change their overall length (i.e. no append, insert, etc.)
-   and do not support the dynamic creation of new :class:`ShareableList`
-   instances via slicing.
+   only the ``int`` (signed 64-bit), ``float``, ``bool``, ``str`` (less
+   than 10M bytes each when encoded as utf-8), ``bytes`` (less than 10M
+   bytes each), and ``None`` built-in data types.  It also notably
+   differs from the built-in ``list`` type in that these lists can not
+   change their overall length (i.e. no append, insert, etc.) and do not
+   support the dynamic creation of new :class:`ShareableList` instances
+   via slicing.
 
    *sequence* is used in populating a new ``ShareableList`` full of values.
    Set to ``None`` to instead attach to an already existing
@@ -274,6 +275,35 @@ shared memory blocks created using that manager are all released when the
    in the definition for :class:`SharedMemory`.  When attaching to an
    existing ``ShareableList``, specify its shared memory block's unique
    name while leaving ``sequence`` set to ``None``.
+
+   .. note::
+
+      A known issue exists for :class:`bytes` and :class:`str` values.
+      If they end with ``\x00`` nul bytes or characters, those may be
+      *silently stripped* when fetching them by index from the
+      :class:`ShareableList`. This ``.rstrip(b'\x00')`` behavior is
+      considered a bug and may go away in the future. See :gh:`106939`.
+
+   For applications where rstripping of trailing nulls is a problem,
+   work around it by always unconditionally appending an extra non-0
+   byte to the end of such values when storing and unconditionally
+   removing it when fetching:
+
+   .. doctest::
+
+       >>> from multiprocessing import shared_memory
+       >>> nul_bug_demo = shared_memory.ShareableList(['?\x00', b'\x03\x02\x01\x00\x00\x00'])
+       >>> nul_bug_demo[0]
+       '?'
+       >>> nul_bug_demo[1]
+       b'\x03\x02\x01'
+       >>> nul_bug_demo.shm.unlink()
+       >>> padded = shared_memory.ShareableList(['?\x00\x07', b'\x03\x02\x01\x00\x00\x00\x07'])
+       >>> padded[0][:-1]
+       '?\x00'
+       >>> padded[1][:-1]
+       b'\x03\x02\x01\x00\x00\x00'
+       >>> padded.shm.unlink()
 
    .. method:: count(value)
 
@@ -342,3 +372,30 @@ behind it:
    >>> c.shm.close()
    >>> c.shm.unlink()
 
+The following examples demonstrates that ``ShareableList``
+(and underlying ``SharedMemory``) objects
+can be pickled and unpickled if needed.
+Note, that it will still be the same shared object.
+This happens, because the deserialized object has
+the same unique name and is just attached to an existing
+object with the same name (if the object is still alive):
+
+   >>> import pickle
+   >>> from multiprocessing import shared_memory
+   >>> sl = shared_memory.ShareableList(range(10))
+   >>> list(sl)
+   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+   >>> deserialized_sl = pickle.loads(pickle.dumps(sl))
+   >>> list(deserialized_sl)
+   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+   >>> sl[0] = -1
+   >>> deserialized_sl[1] = -2
+   >>> list(sl)
+   [-1, -2, 2, 3, 4, 5, 6, 7, 8, 9]
+   >>> list(deserialized_sl)
+   [-1, -2, 2, 3, 4, 5, 6, 7, 8, 9]
+
+   >>> sl.shm.close()
+   >>> sl.shm.unlink()
