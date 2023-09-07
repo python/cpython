@@ -75,7 +75,7 @@ class TestConsoleIO(unittest.TestCase):
         msvcrt.putch(b'c')
 
     def test_putwch(self):
-        msvcrt.putwch('字')
+        msvcrt.putwch(c)
 
 
 class TestOther(unittest.TestCase):
