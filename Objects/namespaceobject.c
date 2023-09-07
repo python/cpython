@@ -189,9 +189,31 @@ namespace_reduce(_PyNamespaceObject *ns, PyObject *Py_UNUSED(ignored))
 }
 
 
+static PyObject *
+namespace_replace(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    if (!_PyArg_NoPositional("__replace__", args)) {
+        return NULL;
+    }
+
+    PyObject *result = PyObject_CallNoArgs((PyObject *)Py_TYPE(self));
+    if (result && (
+        PyDict_Update(((_PyNamespaceObject*)result)->ns_dict,
+                      ((_PyNamespaceObject*)self)->ns_dict) < 0 ||
+        (kwargs &&
+         PyDict_Update(((_PyNamespaceObject*)result)->ns_dict, kwargs) < 0)
+        ))
+    {
+        Py_CLEAR(result);
+    }
+    return result;
+}
+
+
 static PyMethodDef namespace_methods[] = {
     {"__reduce__", (PyCFunction)namespace_reduce, METH_NOARGS,
      namespace_reduce__doc__},
+    {"__replace__", _PyCFunction_CAST(namespace_replace), METH_VARARGS|METH_KEYWORDS, NULL},
     {NULL,         NULL}  // sentinel
 };
 
