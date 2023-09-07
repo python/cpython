@@ -12402,7 +12402,7 @@ str.split as unicode_split
         The separator used to split the string.
 
         When set to None (the default value), will split on any whitespace
-        character (including \\n \\r \\t \\f and spaces) and will discard
+        character (including \n \r \t \f and spaces) and will discard
         empty strings from the result.
     maxsplit: Py_ssize_t = -1
         Maximum number of splits (starting from the left).
