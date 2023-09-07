@@ -3996,18 +3996,12 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_PyAtomic(m) < 0) {
         return NULL;
     }
-
-#ifndef LIMITED_API_AVAILABLE
-    PyModule_AddObjectRef(m, "LIMITED_API_AVAILABLE", Py_False);
-#else
-    PyModule_AddObjectRef(m, "LIMITED_API_AVAILABLE", Py_True);
     if (_PyTestCapi_Init_VectorcallLimited(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_HeaptypeRelative(m) < 0) {
         return NULL;
     }
-#endif
 
     PyState_AddModule(m, &_testcapimodule);
     return m;
