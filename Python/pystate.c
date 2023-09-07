@@ -2448,8 +2448,9 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
         _xidata_clear(data);
     }
     else {
+        _Py_pending_call_func func = _release_xidata_pending;
         // XXX Emit a warning if this fails?
-        _PyEval_AddPendingCall(interp, _release_xidata_pending, data, 0);
+        _PyEval_AddPendingCall(interp, func, data, 0);
     }
     return 0;
 }
