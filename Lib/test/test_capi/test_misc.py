@@ -2656,6 +2656,23 @@ class TestUops(unittest.TestCase):
         self.assertIn("_PUSH_FRAME", uops)
         self.assertIn("_BINARY_OP_ADD_INT", uops)
 
+    def test_branch_taken(self):
+        def testfunc(n):
+            for i in range(n):
+                if i < 0:
+                    i = 0
+                else:
+                    i = 1
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            testfunc(20)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        self.assertIn("_POP_JUMP_IF_TRUE", uops)
+
 
 if __name__ == "__main__":
     unittest.main()
