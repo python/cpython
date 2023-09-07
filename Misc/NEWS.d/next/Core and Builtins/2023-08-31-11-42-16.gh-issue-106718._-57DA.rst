@@ -1,1 +1,2 @@
-Explicitly set PyConfig.stdlib_dir is now respected.
+When PyConfig.stdlib_dir is explicitly set, it's now respected and won't be
+overridden by PyConfig.home.

@@ -229,10 +229,10 @@ use_environment = config.get('use_environment', 1)
 
 pythonpath = config.get('module_search_paths')
 pythonpath_was_set = config.get('module_search_paths_set')
-
-real_executable_dir = None
 stdlib_dir = config.get('stdlib_dir')
 stdlib_dir_was_set_in_config = bool(stdlib_dir)
+
+real_executable_dir = None
 platstdlib_dir = None
 
 # ******************************************************************************
@@ -565,7 +565,8 @@ else:
         if STDLIB_SUBDIR and STDLIB_LANDMARKS and not prefix:
             if any(isfile(joinpath(library_dir, f)) for f in STDLIB_LANDMARKS):
                 prefix = library_dir
-                stdlib_dir = joinpath(prefix, STDLIB_SUBDIR)
+                if not stdlib_dir_was_set_in_config:
+                    stdlib_dir = joinpath(prefix, STDLIB_SUBDIR)
 
 
     # Detect prefix by looking for zip file
@@ -576,7 +577,7 @@ else:
                 prefix = executable_dir
         else:
             prefix = search_up(executable_dir, ZIP_LANDMARK)
-        if prefix:
+        if prefix and not stdlib_dir_was_set_in_config:
             stdlib_dir = joinpath(prefix, STDLIB_SUBDIR)
             if not isdir(stdlib_dir):
                 stdlib_dir = None
