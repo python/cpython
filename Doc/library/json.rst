@@ -54,7 +54,7 @@ Compact encoding::
 Pretty printing::
 
     >>> import json
-    >>> print(json.dumps({'4': 5, '6': 7}, sort_keys=True, indent=4))
+    >>> print(json.dumps({'6': 7, '4': 5}, sort_keys=True, indent=4))
     {
         "4": 5,
         "6": 7
