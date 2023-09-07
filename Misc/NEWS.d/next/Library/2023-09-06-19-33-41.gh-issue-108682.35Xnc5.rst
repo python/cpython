@@ -1,0 +1,3 @@
+Enum: raise :exc:`ValueError` if ``Enum.__new__`` is called when no members
+exist; this could be from an incorrect ``super.__new__`` call, and other
+incorrect usage.
