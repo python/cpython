@@ -51,7 +51,7 @@ class TestFileOperations(unittest.TestCase):
 
 class TestConsoleIO(unittest.TestCase):
     def test_kbhit(self):
-        msvcrt.kbhit()
+        self.assertEqual(msvcrt.kbhit(), 0)
 
     def test_getch(self):
         msvcrt.ungetch(b'c')
