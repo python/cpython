@@ -1588,7 +1588,6 @@ class TraceTestCase(unittest.TestCase):
         except Exception as ex:
             count = 0
             tb = ex.__traceback__
-            print(tb)
             while tb:
                 if tb.tb_frame.f_code.co_name == "test_settrace_error":
                     count += 1
