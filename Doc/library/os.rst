@@ -3799,8 +3799,7 @@ features:
    timer expires and the file descriptor is readable.
 
    *clockid* must be a valid :ref:`clock ID <time-clock-id-constants>`,
-   as defined in the :py:mod:`time` module and the following values are
-   available.
+   as defined in the :py:mod:`time` module:
 
    - :const:`time.CLOCK_REALTIME`
    - :const:`time.CLOCK_MONOTONIC`
