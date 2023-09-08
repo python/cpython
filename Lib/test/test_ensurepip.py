@@ -76,6 +76,12 @@ class EnsurepipMixin:
         patched_os.path = os.path
         self.os_environ = patched_os.environ = os.environ.copy()
 
+        # ensure the pip wheel exists
+        pip_filename = os.path.join(test.support.STDLIB_DIR, 'ensurepip', '_bundled',
+                                    f'pip-{ensurepip._PIP_VERSION}-py3-none-any.whl')
+        if not os.path.isfile(pip_filename):
+            open(pip_filename, "wb").close()
+
 
 class TestBootstrap(EnsurepipMixin, unittest.TestCase):
 

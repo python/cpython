@@ -11,8 +11,9 @@ from importlib import resources
 __all__ = ["version", "bootstrap"]
 _PACKAGE_NAMES = ('pip',)
 _PIP_VERSION = "23.2.1"
+_PIP_SHA_256 = "7ccf472345f20d35bdc9d1841ff5f313260c2c33fe417f48c30ac46cccabf5be"
 _PROJECTS = [
-    ("pip", _PIP_VERSION, "py3"),
+    ("pip", _PIP_VERSION, _PIP_SHA_256),
 ]
 
 # Packages bundled in ensurepip._bundled have wheel_name set.
@@ -62,8 +63,8 @@ def _get_packages():
         return _PACKAGES
 
     packages = {}
-    for name, version, py_tag in _PROJECTS:
-        wheel_name = f"{name}-{version}-{py_tag}-none-any.whl"
+    for name, version, _checksum in _PROJECTS:
+        wheel_name = f"{name}-{version}-py3-none-any.whl"
         packages[name] = _Package(version, wheel_name, None)
     if _WHEEL_PKG_DIR:
         dir_packages = _find_packages(_WHEEL_PKG_DIR)

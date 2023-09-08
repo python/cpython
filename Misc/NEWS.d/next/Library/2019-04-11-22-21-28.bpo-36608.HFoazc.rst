@@ -1,0 +1,2 @@
+Replaced vendored ``pip`` wheels for :mod:`ensurepip` with a new bundler script,
+:file:`Tools/build/verify_ensurepip_wheels.py`, to be run by distributors.
