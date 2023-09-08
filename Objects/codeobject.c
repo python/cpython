@@ -1805,20 +1805,18 @@ code_richcompare(PyObject *self, PyObject *other, int op)
         if (co_code == ENTER_EXECUTOR) {
             const int exec_index = co_arg;
             _PyExecutorObject *exec = co->co_executors->executors[exec_index];
-            co_code = exec->vm_data.opcode;
+            co_code = _PyOpcode_Deopt[exec->vm_data.opcode];
             co_arg = exec->vm_data.oparg;
         }
         assert(co_code != ENTER_EXECUTOR);
-        co_code = _PyOpcode_Deopt[co_code];
 
         if (cp_code == ENTER_EXECUTOR) {
             const int exec_index = cp_arg;
             _PyExecutorObject *exec = cp->co_executors->executors[exec_index];
-            cp_code = exec->vm_data.opcode;
+            cp_code = _PyOpcode_Deopt[exec->vm_data.opcode];
             cp_arg = exec->vm_data.oparg;
         }
         assert(cp_code != ENTER_EXECUTOR);
-        cp_code = _PyOpcode_Deopt[cp_code];
 
         if (co_code != cp_code || co_arg != cp_arg) {
             goto unequal;
