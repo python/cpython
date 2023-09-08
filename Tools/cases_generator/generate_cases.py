@@ -255,12 +255,18 @@ class Generator(Analyzer):
         ops: list[tuple[bool, str]] = []  # (has_arg, name) for each opcode
         instrumented_ops: list[str] = []
 
+        specialized_ops = set()
+        for name, family in self.families.items():
+            specialized_ops.update(family.members)
+
         for instr in itertools.chain(
             [instr for instr in self.instrs.values() if instr.kind != "op"],
             self.macro_instrs.values(),
         ):
             assert isinstance(instr, (Instruction, MacroInstruction, PseudoInstruction))
             name = instr.name
+            if name in specialized_ops:
+                continue
             if name.startswith("INSTRUMENTED_"):
                 instrumented_ops.append(name)
             else:
@@ -282,7 +288,7 @@ class Generator(Analyzer):
 
         def map_op(op: int, name: str) -> None:
             assert op < len(opname)
-            assert opname[op] is None
+            assert opname[op] is None, (op, name)
             assert name not in opmap
             opname[op] = name
             opmap[name] = op
@@ -294,25 +300,31 @@ class Generator(Analyzer):
         # This helps catch cases where we attempt to execute a cache.
         map_op(17, "RESERVED")
 
-        # 166 is RESUME - it is hard coded as such in Tools/build/deepfreeze.py
-        map_op(166, "RESUME")
+        # 149 is RESUME - it is hard coded as such in Tools/build/deepfreeze.py
+        map_op(149, "RESUME")
+
+        # Specialized ops appear in their own section
+        # Instrumented opcodes are at the end of the valid range
+        min_internal = 150
+        min_instrumented = 254 - (len(instrumented_ops) - 1)
+        assert min_internal + len(specialized_ops) < min_instrumented
 
         next_opcode = 1
-
         for has_arg, name in sorted(ops):
             if name in opmap:
                 continue  # an anchored name, like CACHE
-            while opname[next_opcode] is not None:
-                next_opcode += 1
-            assert next_opcode < 255
             map_op(next_opcode, name)
-
             if has_arg and "HAVE_ARGUMENT" not in markers:
                 markers["HAVE_ARGUMENT"] = next_opcode
 
-        # Instrumented opcodes are at the end of the valid range
-        min_instrumented = 254 - (len(instrumented_ops) - 1)
-        assert next_opcode <= min_instrumented
+            while opname[next_opcode] is not None:
+                next_opcode += 1
+
+        assert next_opcode < min_internal
+
+        for i, op in enumerate(sorted(specialized_ops)):
+            map_op(min_internal + i, op)
+
         markers["MIN_INSTRUMENTED_OPCODE"] = min_instrumented
         for i, op in enumerate(instrumented_ops):
             map_op(min_instrumented + i, op)
