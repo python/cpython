@@ -615,13 +615,11 @@ all:		@DEF_MAKE_ALL_RULE@
 
 .PHONY: build_all
 build_all:	check-clean-src $(BUILDPYTHON) platform sharedmods \
-		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil \
-		ensurepip-wheels-stamp
+		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil
 
 .PHONY: build_wasm
 build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
-		python-config checksharedmods \
-		ensurepip-wheels-stamp
+		python-config checksharedmods
 
 # Check that the source is clean when building out of source.
 .PHONY: check-clean-src
@@ -907,15 +905,6 @@ download-ensurepip-wheels: $(BUILDPYTHON) platform
 	if test "x$(ENSUREPIP)" != "xno"  ; then \
 		$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/bundle_ensurepip_wheels.py ; \
 	fi
-
-ensurepip-wheels-stamp:
-	$(MAKE) download-ensurepip-wheels
-	touch $@
-
-.PHONY: clean-ensurepip-wheels
-clean-ensurepip-wheels:
-	rm -f $(srcdir)/Lib/ensurepip/_bundled/*.whl
-	rm -f ensurepip-wheels-stamp
 
 ##########################################################################
 # Build static libmpdec.a
@@ -2696,7 +2685,7 @@ profile-removal:
 	rm -f profile-bolt-stamp
 
 .PHONY: clean
-clean: clean-retain-profile clean-bolt clean-ensurepip-wheels
+clean: clean-retain-profile clean-bolt
 	@if test @DEF_MAKE_ALL_RULE@ = profile-opt -o @DEF_MAKE_ALL_RULE@ = bolt-opt; then \
 		rm -f profile-gen-stamp profile-clean-stamp; \
 		$(MAKE) profile-removal; \
