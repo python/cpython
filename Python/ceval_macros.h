@@ -389,8 +389,10 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 
 #if TIER_ONE
 
-#define LOAD_IP() \
-do { next_instr = frame->prev_instr+1; } while (0)
+#define LOAD_IP() do { \
+        assert(frame->prev_instr + 1 == frame->instr_ptr); \
+        next_instr = frame->instr_ptr; \
+    } while (0)
 
 #define STORE_SP() \
 _PyFrame_SetStackPointer(frame, stack_pointer)
