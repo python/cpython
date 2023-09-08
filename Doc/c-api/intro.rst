@@ -105,6 +105,28 @@ defined closer to where they are useful (e.g. :c:macro:`Py_RETURN_NONE`).
 Others of a more general utility are defined here.  This is not necessarily a
 complete listing.
 
+.. c:macro:: PyAPI_DATA(type)
+
+   Declare a variable of type *type* which should be exported by Python. The
+   macro should only be used in Python C API. Example::
+
+       PyAPI_DATA(const unsigned long) Py_Version;
+
+.. c:macro:: PyAPI_FUNC(type)
+
+   Declare a function with a return type *type* which should be exported by
+   Python. The macro should only be used in Python C API. Example::
+
+       PyAPI_FUNC(PyObject *) PyLong_FromLong(long);
+
+.. c:macro:: PyMODINIT_FUNC
+
+   Declare an extension module ``PyInit`` initialization function. The return
+   type is :c:expr:`PyObject*`. The macro should only be used in Python C API.
+   Example with the ``_ssl`` module::
+
+       PyMODINIT_FUNC PyInit__ssl(void)
+
 .. c:macro:: Py_ABS(x)
 
    Return the absolute value of ``x``.
