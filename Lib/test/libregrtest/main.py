@@ -336,7 +336,7 @@ class Regrtest:
 
         # Get tests to re-run
         tests = [result.test_name for result in need_rerun]
-        match_tests = self.get_rerun_match(need_rerun)
+        match_tests_dict = self.get_rerun_match(need_rerun)
 
         # Clear previously failed tests
         self.rerun_bad.extend(self.bad)
@@ -346,7 +346,7 @@ class Regrtest:
         # Re-run failed tests
         self.log(f"Re-running {len(tests)} failed tests in verbose mode in subprocesses")
         runtests = runtests.copy(tests=tuple(tests),
-                                 match_tests=match_tests,
+                                 match_tests_dict=match_tests_dict,
                                  rerun=True,
                                  forever=False)
         self.set_tests(runtests)
@@ -742,7 +742,7 @@ class Regrtest:
         self.tmp_dir = os.path.abspath(self.tmp_dir)
 
     def is_worker(self):
-        return (self.ns.worker_args is not None)
+        return (self.ns.worker_json is not None)
 
     def create_temp_dir(self):
         os.makedirs(self.tmp_dir, exist_ok=True)
@@ -870,8 +870,8 @@ class Regrtest:
 
     def _main(self):
         if self.is_worker():
-            from test.libregrtest.runtest_mp import run_tests_worker
-            run_tests_worker(self.ns.worker_args)
+            from test.libregrtest.runtest_mp import worker_process
+            worker_process(self.ns.worker_json)
             return
 
         if self.want_wait:
