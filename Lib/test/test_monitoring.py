@@ -1181,7 +1181,7 @@ class TestInstallIncrementally(MonitoringTestBase, unittest.TestCase):
 
     MUST_INCLUDE_LI = [
             ('instruction', 'func1', 2),
-            ('line', 'func1', 1),
+            ('line', 'func1', 2),
             ('instruction', 'func1', 4),
             ('instruction', 'func1', 6)]
 
