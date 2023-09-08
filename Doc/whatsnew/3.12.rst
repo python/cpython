@@ -436,8 +436,8 @@ parameters with bounds or constraints::
 
 The value of type aliases and the bound and constraints of type variables
 created through this syntax are evaluated only on demand (see
-:ref:`lazy-evaluation`). This means type aliases are able to refer to other
-types defined later in the file.
+:ref:`lazy evaluation <lazy-evaluation>`). This means type aliases are able to
+refer to other types defined later in the file.
 
 Type parameters declared through a type parameter list are visible within the
 scope of the declaration and any nested scopes, but not in the outer scope. For
