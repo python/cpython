@@ -6963,15 +6963,16 @@ then
 fi
 
 # gh-109054: Check if -latomic is needed to get <pyatomic.h> atomic functions.
-# On aarch64, GCC may require programs to be linked explicitly to libatomic.
-# Use _Py_atomic_or_uint64() which may require libatomic __atomic_fetch_or_8()
-# on Linux aarch64 (or not depending on the compiler and the compiler flags).
+# On Linux aarch64, GCC may require programs and libraries to be linked
+# explicitly to libatomic. Call _Py_atomic_or_uint64() which may require
+# libatomic __atomic_fetch_or_8(), or not, depending on the C compiler and the
+# compiler flags.
 #
 # Avoid #include <Python.h> or #include <pyport.h>. The <Python.h> header
 # requires <pyconfig.h> header which is only written below by AC_OUTPUT below.
-# If the check is done after AC_OUTPUT, modifying LIBS has no effect anymore.
-# <pyport.h> cannot be included alone, it's designed to be included by
-# <Python.h>: it expects other includes and macros to be defined.
+# If the check is done after AC_OUTPUT, modifying LIBATOMIC has no effect
+# anymore.  <pyport.h> cannot be included alone, it's designed to be included
+# by <Python.h>: it expects other includes and macros to be defined.
 _SAVE_VAR([CPPFLAGS])
 CPPFLAGS="${BASECPPFLAGS} -I. -I${srcdir}/Include ${CPPFLAGS}"
 
@@ -6985,19 +6986,17 @@ AC_CACHE_CHECK([whether libatomic is needed by <pyatomic.h>],
 #endif
 // Code adapted from Include/pyport.h
 #if HAVE_SSIZE_T
-typedef ssize_t         Py_ssize_t;
+typedef ssize_t Py_ssize_t;
 #elif SIZEOF_VOID_P == SIZEOF_SIZE_T
 typedef intptr_t Py_ssize_t;
 #else
-#  error "unable to find a type fitting ssize_t"
+#  error "unable to define Py_ssize_t"
 #endif
 
 #include "cpython/pyatomic.h"
 
 int main()
 {
-    // use _Py_atomic_or_uint64() which requires libatomic __atomic_fetch_or_8()
-    // on Linux aarch64.
     uint64_t byte;
     _Py_atomic_store_uint64(&byte, 2);
     if (_Py_atomic_or_uint64(&byte, 8) != 2) {
