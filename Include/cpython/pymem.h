@@ -7,20 +7,6 @@ PyAPI_FUNC(void *) PyMem_RawCalloc(size_t nelem, size_t elsize);
 PyAPI_FUNC(void *) PyMem_RawRealloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyMem_RawFree(void *ptr);
 
-/* Try to get the allocators name set by _PyMem_SetupAllocators(). */
-PyAPI_FUNC(const char*) _PyMem_GetCurrentAllocatorName(void);
-
-PyAPI_FUNC(void *) PyMem_Calloc(size_t nelem, size_t elsize);
-
-/* strdup() using PyMem_RawMalloc() */
-PyAPI_FUNC(char *) _PyMem_RawStrdup(const char *str);
-
-/* strdup() using PyMem_Malloc() */
-PyAPI_FUNC(char *) _PyMem_Strdup(const char *str);
-
-/* wcsdup() using PyMem_RawMalloc() */
-PyAPI_FUNC(wchar_t*) _PyMem_RawWcsdup(const wchar_t *str);
-
 
 typedef enum {
     /* PyMem_RawMalloc(), PyMem_RawRealloc() and PyMem_RawFree() */

@@ -9,6 +9,8 @@ import sys
 import unittest
 from platform import uname
 
+from test import support
+
 if uname().system == "Darwin":
     maj, min, mic = [int(part) for part in uname().release.split(".")]
     if (maj, min, mic) < (8, 0, 0):
@@ -41,7 +43,7 @@ def setUpModule():
                     locale.setlocale(locale.LC_ALL, loc)
                 except Error:
                     continue
-                encoding = locale.getpreferredencoding(False)
+                encoding = locale.getencoding()
                 try:
                     localeconv()
                 except Exception as err:
@@ -71,6 +73,10 @@ known_numerics = {
     'fr_FR' : (',', ''),
     'ps_AF': ('\u066b', '\u066c'),
 }
+
+if sys.platform == 'win32':
+    # ps_AF doesn't work on Windows: see bpo-38324 (msg361830)
+    del known_numerics['ps_AF']
 
 class _LocaleTests(unittest.TestCase):
 
@@ -102,6 +108,10 @@ class _LocaleTests(unittest.TestCase):
             return True
 
     @unittest.skipUnless(nl_langinfo, "nl_langinfo is not available")
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "musl libc issue on Emscripten, bpo-46390"
+    )
     def test_lc_numeric_nl_langinfo(self):
         # Test nl_langinfo against known values
         tested = False
@@ -118,6 +128,10 @@ class _LocaleTests(unittest.TestCase):
         if not tested:
             self.skipTest('no suitable locales')
 
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "musl libc issue on Emscripten, bpo-46390"
+    )
     def test_lc_numeric_localeconv(self):
         # Test localeconv against known values
         tested = False

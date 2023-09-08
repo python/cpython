@@ -26,7 +26,8 @@ class TestFloat:
                 res = self.loads(out)
                 self.assertEqual(len(res), 1)
                 self.assertNotEqual(res[0], res[0])
-            self.assertRaises(ValueError, self.dumps, [val], allow_nan=False)
+            msg = f'Out of range float values are not JSON compliant: {val}'
+            self.assertRaisesRegex(ValueError, msg, self.dumps, [val], allow_nan=False)
 
 
 class TestPyFloat(TestFloat, PyTest): pass

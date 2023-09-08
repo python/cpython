@@ -1,6 +1,12 @@
-import os
-
+import os.path
+import unittest
+from test import support
 from test.support import load_package_tests
+
+
+# Creating a virtual environment and building C extensions is slow
+support.requires('cpu')
+
 
 # Load all tests in package
 def load_tests(*args):

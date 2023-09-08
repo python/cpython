@@ -1,17 +1,23 @@
+// Error codes passed around between file input, tokenizer, parser and
+// interpreter.  This is necessary so we can turn them into Python
+// exceptions at a higher level.  Note that some errors have a
+// slightly different meaning when passed from the tokenizer to the
+// parser than when passed from the parser to the interpreter; e.g.
+// the parser only returns E_EOF when it hits EOF immediately, and it
+// never returns E_OK.
+//
+// The public PyRun_InteractiveOneObjectEx() function can return E_EOF,
+// same as its variants:
+//
+// * PyRun_InteractiveOneObject()
+// * PyRun_InteractiveOneFlags()
+// * PyRun_InteractiveOne()
+
 #ifndef Py_ERRCODE_H
 #define Py_ERRCODE_H
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
-/* Error codes passed around between file input, tokenizer, parser and
-   interpreter.  This is necessary so we can turn them into Python
-   exceptions at a higher level.  Note that some errors have a
-   slightly different meaning when passed from the tokenizer to the
-   parser than when passed from the parser to the interpreter; e.g.
-   the parser only returns E_EOF when it hits EOF immediately, and it
-   never returns E_OK. */
 
 #define E_OK            10      /* No error */
 #define E_EOF           11      /* End Of File */
@@ -30,6 +36,7 @@ extern "C" {
 #define E_EOLS          24      /* EOL in single-quoted string */
 #define E_LINECONT      25      /* Unexpected characters after a line continuation */
 #define E_BADSINGLE     27      /* Ill-formed single statement input */
+#define E_INTERACT_STOP 28      /* Interactive mode stopped tokenization */
 
 #ifdef __cplusplus
 }

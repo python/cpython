@@ -638,10 +638,10 @@ add_size_t_overflow(mpd_size_t a, mpd_size_t b, mpd_size_t *overflow)
 static inline mpd_size_t
 mul_size_t_overflow(mpd_size_t a, mpd_size_t b, mpd_size_t *overflow)
 {
-    mpd_uint_t lo;
+    mpd_uint_t hi, lo;
 
-    _mpd_mul_words((mpd_uint_t *)overflow, &lo, (mpd_uint_t)a,
-                   (mpd_uint_t)b);
+    _mpd_mul_words(&hi, &lo, (mpd_uint_t)a, (mpd_uint_t)b);
+    *overflow = (mpd_size_t)hi;
     return lo;
 }
 

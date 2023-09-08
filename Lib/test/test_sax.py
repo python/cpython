@@ -24,7 +24,7 @@ import sys
 from urllib.error import URLError
 import urllib.request
 from test.support import os_helper
-from test.support import findfile, run_unittest
+from test.support import findfile
 from test.support.os_helper import FakePath, TESTFN
 
 
@@ -1506,22 +1506,5 @@ class CDATAHandlerTest(unittest.TestCase):
         self.assertEqual(self.char_index, 2)
 
 
-def test_main():
-    run_unittest(MakeParserTest,
-                 ParseTest,
-                 SaxutilsTest,
-                 PrepareInputSourceTest,
-                 StringXmlgenTest,
-                 BytesXmlgenTest,
-                 WriterXmlgenTest,
-                 StreamWriterXmlgenTest,
-                 StreamReaderWriterXmlgenTest,
-                 ExpatReaderTest,
-                 ErrorReportingTest,
-                 XmlReaderTest,
-                 LexicalHandlerTest,
-                 CDATAHandlerTest)
-
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

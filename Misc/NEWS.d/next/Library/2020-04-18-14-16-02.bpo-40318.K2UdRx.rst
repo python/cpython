@@ -1,1 +1,0 @@
-Use SQLite3 trace v2 API, if it is available.

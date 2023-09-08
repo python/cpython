@@ -302,7 +302,7 @@ class ZoneInfo(tzinfo):
         # difference between utcoffset() and the "standard" offset, but
         # the "base offset" and "DST offset" are not encoded in the file;
         # we can infer what they are from the isdst flag, but it is not
-        # sufficient to to just look at the last standard offset, because
+        # sufficient to just look at the last standard offset, because
         # occasionally countries will shift both DST offset and base offset.
 
         typecnt = len(isdsts)
@@ -338,7 +338,7 @@ class ZoneInfo(tzinfo):
                 comp_idx = trans_idx[i + 1]
 
                 # If the following transition is also DST and we couldn't
-                # find the DST offset by this point, we're going ot have to
+                # find the DST offset by this point, we're going to have to
                 # skip it and hope this transition gets assigned later
                 if isdsts[comp_idx]:
                     continue

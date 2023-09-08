@@ -1,1 +1,0 @@
-Add :func:`os.cpu_count()` support for VxWorks RTOS.

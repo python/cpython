@@ -45,9 +45,8 @@ class BaseStartServer(func_tests.FunctionalTestCaseMixin):
             async with srv:
                 await srv.serve_forever()
 
-        with self.assertWarns(DeprecationWarning):
-            srv = self.loop.run_until_complete(asyncio.start_server(
-                serve, socket_helper.HOSTv4, 0, loop=self.loop, start_serving=False))
+        srv = self.loop.run_until_complete(asyncio.start_server(
+            serve, socket_helper.HOSTv4, 0, start_serving=False))
 
         self.assertFalse(srv.is_serving())
 
@@ -102,9 +101,8 @@ class SelectorStartServerTests(BaseStartServer, unittest.TestCase):
                 await srv.serve_forever()
 
         with test_utils.unix_socket_path() as addr:
-            with self.assertWarns(DeprecationWarning):
-                srv = self.loop.run_until_complete(asyncio.start_unix_server(
-                    serve, addr, loop=self.loop, start_serving=False))
+            srv = self.loop.run_until_complete(asyncio.start_unix_server(
+                serve, addr, start_serving=False))
 
             main_task = self.loop.create_task(main(srv))
 
@@ -120,6 +118,33 @@ class SelectorStartServerTests(BaseStartServer, unittest.TestCase):
 
             with self.assertRaisesRegex(RuntimeError, r'is closed'):
                 self.loop.run_until_complete(srv.serve_forever())
+
+
+class TestServer2(unittest.IsolatedAsyncioTestCase):
+
+    async def test_wait_closed(self):
+        async def serve(*args):
+            pass
+
+        srv = await asyncio.start_server(serve, socket_helper.HOSTv4, 0)
+
+        # active count = 0
+        task1 = asyncio.create_task(srv.wait_closed())
+        await asyncio.sleep(0)
+        self.assertTrue(task1.done())
+
+        # active count != 0
+        srv._attach()
+        task2 = asyncio.create_task(srv.wait_closed())
+        await asyncio.sleep(0)
+        self.assertFalse(task2.done())
+
+        srv.close()
+        await asyncio.sleep(0)
+        self.assertFalse(task2.done())
+
+        srv._detach()
+        await task2
 
 
 @unittest.skipUnless(hasattr(asyncio, 'ProactorEventLoop'), 'Windows only')

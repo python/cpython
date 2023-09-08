@@ -1,2 +1,0 @@
-Add the private macros ``_Py_COMP_DIAG_PUSH``,
-``_Py_COMP_DIAG_IGNORE_DEPR_DECLS``, and ``_Py_COMP_DIAG_POP``.

@@ -386,7 +386,7 @@ class StreamWriter(Codec):
 
     def reset(self):
 
-        """ Flushes and resets the codec buffers used for keeping state.
+        """ Resets the codec buffers used for keeping internal state.
 
             Calling this method should ensure that the data on the
             output is put into a clean state, that allows appending
@@ -620,7 +620,7 @@ class StreamReader(Codec):
 
     def reset(self):
 
-        """ Resets the codec buffers used for keeping state.
+        """ Resets the codec buffers used for keeping internal state.
 
             Note that no stream repositioning should take place.
             This method is primarily intended to be able to recover
@@ -878,7 +878,8 @@ def open(filename, mode='r', encoding=None, errors='strict', buffering=-1):
         codecs. Output is also codec dependent and will usually be
         Unicode as well.
 
-        Underlying encoded files are always opened in binary mode.
+        If encoding is not None, then the
+        underlying encoded files are always opened in binary mode.
         The default file mode is 'r', meaning to open the file in read mode.
 
         encoding specifies the encoding which is to be used for the
@@ -1114,13 +1115,3 @@ except LookupError:
 _false = 0
 if _false:
     import encodings
-
-### Tests
-
-if __name__ == '__main__':
-
-    # Make stdout translate Latin-1 output into UTF-8 output
-    sys.stdout = EncodedFile(sys.stdout, 'latin-1', 'utf-8')
-
-    # Have stdin translate Latin-1 input into UTF-8 input
-    sys.stdin = EncodedFile(sys.stdin, 'utf-8', 'latin-1')

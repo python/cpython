@@ -1,6 +1,7 @@
 import os
+from pickle import dump
 import sys
-from test.support import captured_stdout
+from test.support import captured_stdout, requires_resource
 from test.support.os_helper import (TESTFN, rmtree, unlink)
 from test.support.script_helper import assert_python_ok, assert_python_failure
 import textwrap
@@ -10,6 +11,11 @@ import trace
 from trace import Trace
 
 from test.tracedmodules import testmod
+
+##
+## See also test_sys_settrace.py, which contains tests that cover
+## tracing of many more code blocks.
+##
 
 #------------------------------- Utilities -----------------------------------#
 
@@ -181,9 +187,7 @@ class TestLineCounts(unittest.TestCase):
         firstlineno_called = get_firstlineno(traced_doubler)
         expected = {
             (self.my_py_filename, firstlineno_calling + 1): 1,
-            # List comprehensions work differently in 3.x, so the count
-            # below changed compared to 2.x.
-            (self.my_py_filename, firstlineno_calling + 2): 12,
+            (self.my_py_filename, firstlineno_calling + 2): 11,
             (self.my_py_filename, firstlineno_calling + 3): 1,
             (self.my_py_filename, firstlineno_called + 1): 10,
         }
@@ -200,9 +204,9 @@ class TestLineCounts(unittest.TestCase):
             (self.my_py_filename, firstlineno + 4): 1,
             (self.my_py_filename, firstlineno + 5): 1,
             (self.my_py_filename, firstlineno + 6): 1,
-            (self.my_py_filename, firstlineno + 7): 1,
-            (self.my_py_filename, firstlineno + 8): 1,
-            (self.my_py_filename, firstlineno + 9): 1,
+            (self.my_py_filename, firstlineno + 7): 2,
+            (self.my_py_filename, firstlineno + 8): 2,
+            (self.my_py_filename, firstlineno + 9): 2,
             (self.my_py_filename, firstlineno + 10): 1,
             (self.my_py_filename, firstlineno + 11): 1,
         }
@@ -356,13 +360,19 @@ class TestCoverage(unittest.TestCase):
         rmtree(TESTFN)
         unlink(TESTFN)
 
-    def _coverage(self, tracer,
-                  cmd='import test.support, test.test_pprint;'
-                      'test.support.run_unittest(test.test_pprint.QueryTestCase)'):
+    DEFAULT_SCRIPT = '''if True:
+        import unittest
+        from test.test_pprint import QueryTestCase
+        loader = unittest.TestLoader()
+        tests = loader.loadTestsFromTestCase(QueryTestCase)
+        tests(unittest.TestResult())
+        '''
+    def _coverage(self, tracer, cmd=DEFAULT_SCRIPT):
         tracer.run(cmd)
         r = tracer.results()
         r.write_results(show_missing=True, summary=True, coverdir=TESTFN)
 
+    @requires_resource('cpu')
     def test_coverage(self):
         tracer = trace.Trace(trace=0, count=1)
         with captured_stdout() as stdout:
@@ -376,7 +386,7 @@ class TestCoverage(unittest.TestCase):
 
     def test_coverage_ignore(self):
         # Ignore all files, nothing should be traced nor printed
-        libpath = os.path.normpath(os.path.dirname(os.__file__))
+        libpath = os.path.normpath(os.path.dirname(os.path.dirname(__file__)))
         # sys.prefix does not work when running from a checkout
         tracer = trace.Trace(ignoredirs=[sys.base_prefix, sys.base_exec_prefix,
                              libpath], trace=0, count=1)
@@ -406,6 +416,15 @@ class TestCoverage(unittest.TestCase):
         modname = trace._fullmodname(sys.modules[modname].__file__)
         self.assertIn(modname, coverage)
         self.assertEqual(coverage[modname], (5, 100))
+
+    def test_coverageresults_update(self):
+        # Update empty CoverageResults with a non-empty infile.
+        infile = TESTFN + '-infile'
+        with open(infile, 'wb') as f:
+            dump(({}, {}, {'caller': 1}), f, protocol=1)
+        self.addCleanup(unlink, infile)
+        results = trace.CoverageResults({}, {}, infile, {})
+        self.assertEqual(results.callers, {'caller': 1})
 
 ### Tests that don't mess with sys.settrace and can be traced
 ### themselves TODO: Skip tests that do mess with sys.settrace when

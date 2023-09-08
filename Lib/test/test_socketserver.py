@@ -8,7 +8,6 @@ import os
 import select
 import signal
 import socket
-import tempfile
 import threading
 import unittest
 import socketserver
@@ -21,6 +20,8 @@ from test.support import threading_helper
 
 
 test.support.requires("network")
+test.support.requires_working_socket(module=True)
+
 
 TEST_STR = b"hello world\n"
 HOST = socket_helper.HOST
@@ -28,7 +29,7 @@ HOST = socket_helper.HOST
 HAVE_UNIX_SOCKETS = hasattr(socket, "AF_UNIX")
 requires_unix_sockets = unittest.skipUnless(HAVE_UNIX_SOCKETS,
                                             'requires Unix sockets')
-HAVE_FORKING = hasattr(os, "fork")
+HAVE_FORKING = test.support.has_fork_support
 requires_forking = unittest.skipUnless(HAVE_FORKING, 'requires forking')
 
 def signal_alarm(n):
@@ -46,16 +47,8 @@ def receive(sock, n, timeout=test.support.SHORT_TIMEOUT):
     else:
         raise RuntimeError("timed out on %r" % (sock,))
 
-if HAVE_UNIX_SOCKETS and HAVE_FORKING:
-    class ForkingUnixStreamServer(socketserver.ForkingMixIn,
-                                  socketserver.UnixStreamServer):
-        pass
 
-    class ForkingUnixDatagramServer(socketserver.ForkingMixIn,
-                                    socketserver.UnixDatagramServer):
-        pass
-
-
+@test.support.requires_fork()
 @contextlib.contextmanager
 def simple_subprocess(testcase):
     """Tests that a custom child process is not waited on (Issue 1540386)"""
@@ -96,8 +89,7 @@ class SocketServerTest(unittest.TestCase):
         else:
             # XXX: We need a way to tell AF_UNIX to pick its own name
             # like AF_INET provides port==0.
-            dir = None
-            fn = tempfile.mktemp(prefix='unix_socket.', dir=dir)
+            fn = socket_helper.create_unix_domain_name()
             self.test_files.append(fn)
             return fn
 
@@ -211,7 +203,7 @@ class SocketServerTest(unittest.TestCase):
     @requires_forking
     def test_ForkingUnixStreamServer(self):
         with simple_subprocess(self):
-            self.run_server(ForkingUnixStreamServer,
+            self.run_server(socketserver.ForkingUnixStreamServer,
                             socketserver.StreamRequestHandler,
                             self.stream_examine)
 
@@ -247,7 +239,7 @@ class SocketServerTest(unittest.TestCase):
     @requires_unix_sockets
     @requires_forking
     def test_ForkingUnixDatagramServer(self):
-        self.run_server(ForkingUnixDatagramServer,
+        self.run_server(socketserver.ForkingUnixDatagramServer,
                         socketserver.DatagramRequestHandler,
                         self.dgram_examine)
 
@@ -276,6 +268,13 @@ class SocketServerTest(unittest.TestCase):
         for t, s in threads:
             t.join()
             s.server_close()
+
+    def test_close_immediately(self):
+        class MyServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+            pass
+
+        server = MyServer((HOST, 0), lambda: None)
+        server.server_close()
 
     def test_tcpserver_bind_leak(self):
         # Issue #22435: the server socket wouldn't be closed if bind()/listen()
@@ -316,8 +315,11 @@ class ErrorHandlerTest(unittest.TestCase):
         self.check_result(handled=True)
 
     def test_threading_not_handled(self):
-        ThreadingErrorTestServer(SystemExit)
-        self.check_result(handled=False)
+        with threading_helper.catch_threading_exception() as cm:
+            ThreadingErrorTestServer(SystemExit)
+            self.check_result(handled=False)
+
+            self.assertIs(cm.exc_type, SystemExit)
 
     @requires_forking
     def test_forking_handled(self):
@@ -489,6 +491,22 @@ class MiscTestCase(unittest.TestCase):
         s.close()
         server.handle_request()
         self.assertEqual(server.shutdown_called, 1)
+        server.server_close()
+
+    def test_threads_reaped(self):
+        """
+        In #37193, users reported a memory leak
+        due to the saving of every request thread. Ensure that
+        not all threads are kept forever.
+        """
+        class MyServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+            pass
+
+        server = MyServer((HOST, 0), socketserver.StreamRequestHandler)
+        for n in range(10):
+            with socket.create_connection(server.server_address):
+                server.handle_request()
+        self.assertLess(len(server._threads), 10)
         server.server_close()
 
 
