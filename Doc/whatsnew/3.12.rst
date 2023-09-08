@@ -472,7 +472,7 @@ Other Language Changes
   have a new a *filter* argument that allows limiting tar features than may be
   surprising or dangerous, such as creating files outside the destination
   directory.
-  See :ref:`tarfile-extraction-filter` for details.
+  See :ref:`tarfile extraction filters <tarfile-extraction-filter>` for details.
   In Python 3.14, the default will switch to ``'data'``.
   (Contributed by Petr Viktorin in :pep:`706`.)
 
