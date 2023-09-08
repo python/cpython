@@ -3751,6 +3751,9 @@ dummy_func(
             _Py_CODEUNIT *here = next_instr - 1;
             int flag = Py_IsFalse(cond);
             int offset = flag * oparg;
+            #if ENABLE_SPECIALIZATION
+            next_instr->cache = (next_instr->cache << 1) | flag;
+            #endif
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }
 
@@ -3776,8 +3779,8 @@ dummy_func(
             PyObject *value = POP();
             _Py_CODEUNIT *here = next_instr-1;
             int offset;
-            int flag = Py_IsNone(value);
-            if (flag) {
+            int nflag = Py_IsNone(value);
+            if (nflag) {
                 offset = 0;
             }
             else {
@@ -3785,7 +3788,7 @@ dummy_func(
                 offset = oparg;
             }
             #if ENABLE_SPECIALIZATION
-            next_instr->cache = (next_instr->cache << 1) | !flag;
+            next_instr->cache = (next_instr->cache << 1) | !nflag;
             #endif
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }
