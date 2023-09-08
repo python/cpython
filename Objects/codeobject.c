@@ -427,9 +427,10 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_framesize = nlocalsplus + con->stacksize + FRAME_SPECIALS_SIZE;
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
-    co->co_version = _Py_next_func_version;
-    if (_Py_next_func_version != 0) {
-        _Py_next_func_version++;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    co->co_version = interp->next_func_version;
+    if (interp->next_func_version != 0) {
+        interp->next_func_version++;
     }
     co->_co_monitoring = NULL;
     co->_co_instrumentation_version = 0;
