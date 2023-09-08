@@ -1552,6 +1552,11 @@ module_exec(PyObject *module)
         return 1;
     }
 
+    if (PyModule_Add(module, "SIZEOF_PYOBJECT",
+                        PyLong_FromSsize_t(sizeof(PyObject))) < 0) {
+        return 1;
+    }
+
     if (PyModule_Add(module, "SIZEOF_TIME_T",
                         PyLong_FromSsize_t(sizeof(time_t))) < 0) {
         return 1;
