@@ -64,7 +64,7 @@
     do { \
         frame->prev_instr = next_instr++; \
         OPCODE_EXE_INC(op); \
-        if (_py_stats) _py_stats->opcode_stats[lastopcode].pair_count[op]++; \
+        if (_Py_stats) _Py_stats->opcode_stats[lastopcode].pair_count[op]++; \
         lastopcode = op; \
     } while (0)
 #else
@@ -374,6 +374,8 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
     tstate->py_recursion_remaining++;
 }
 
+/* Marker to specify tier 1 only instructions */
+#define TIER_ONE_ONLY
 
 /* Implementation of "macros" that modify the instruction pointer,
  * stack pointer, or frame pointer.

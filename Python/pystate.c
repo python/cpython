@@ -6,10 +6,10 @@
 #include "pycore_code.h"          // stats
 #include "pycore_dtoa.h"          // _dtoa_state_INIT()
 #include "pycore_frame.h"
-#include "pycore_initconfig.h"
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyType_InitCache()
-#include "pycore_pyerrors.h"
-#include "pycore_pylifecycle.h"
+#include "pycore_pyerrors.h"      // _PyErr_Clear()
+#include "pycore_pylifecycle.h"   // _PyAST_Fini()
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
