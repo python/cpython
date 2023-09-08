@@ -221,10 +221,13 @@ test_dict_inner(int count)
         Py_DECREF(v);
     }
 
+    k = v = UNINITIALIZED_PTR;
     while (PyDict_Next(dict, &pos, &k, &v)) {
         PyObject *o;
         iterations++;
 
+        assert(k != UNINITIALIZED_PTR);
+        assert(v != UNINITIALIZED_PTR);
         i = PyLong_AS_LONG(v) + 1;
         o = PyLong_FromLong(i);
         if (o == NULL)
@@ -234,7 +237,10 @@ test_dict_inner(int count)
             return -1;
         }
         Py_DECREF(o);
+        k = v = UNINITIALIZED_PTR;
     }
+    assert(k == UNINITIALIZED_PTR);
+    assert(v == UNINITIALIZED_PTR);
 
     Py_DECREF(dict);
 

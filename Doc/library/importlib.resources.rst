@@ -82,18 +82,21 @@ for example, a package and its resources can be imported from a zip file using
 .. function:: as_file(traversable)
 
     Given a :class:`~importlib.resources.abc.Traversable` object representing
-    a file, typically from :func:`importlib.resources.files`, return
-    a context manager for use in a :keyword:`with` statement.
+    a file or directory, typically from :func:`importlib.resources.files`,
+    return a context manager for use in a :keyword:`with` statement.
     The context manager provides a :class:`pathlib.Path` object.
 
-    Exiting the context manager cleans up any temporary file created when the
-    resource was extracted from e.g. a zip file.
+    Exiting the context manager cleans up any temporary file or directory
+    created when the resource was extracted from e.g. a zip file.
 
     Use ``as_file`` when the Traversable methods
-    (``read_text``, etc) are insufficient and an actual file on
+    (``read_text``, etc) are insufficient and an actual file or directory on
     the file system is required.
 
     .. versionadded:: 3.9
+
+    .. versionchanged:: 3.12
+       Added support for ``traversable`` representing a directory.
 
 
 Deprecated functions
