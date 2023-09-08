@@ -19,8 +19,13 @@ from test.libregrtest.save_env import saved_test_environment
 from test.libregrtest.utils import clear_caches, format_duration, print_warning
 
 
-MatchTests = list[str]
-MatchTestsDict = dict[str, MatchTests]
+TestTuple = list[str]
+TestList = list[str]
+
+# --match and --ignore options: list of patterns
+# ('*' joker character can be used)
+FilterTuple = tuple[str, ...]
+FilterDict = dict[str, FilterTuple]
 
 
 # Avoid enum.Enum to reduce the number of imports when tests are run
@@ -174,7 +179,7 @@ class TestResult:
             return True
         return False
 
-    def get_rerun_match_tests(self):
+    def get_rerun_match_tests(self) -> FilterTuple | None:
         match_tests = []
 
         errors = self.errors or []
@@ -195,29 +200,30 @@ class TestResult:
                     return None
                 match_tests.append(match_name)
 
-        return match_tests
+        if not match_tests:
+            return None
+        return tuple(match_tests)
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class RunTests:
-    tests: list[str]
-    match_tests: MatchTestsDict | None = None
+    tests: TestTuple
+    match_tests: FilterDict | None = None
     rerun: bool = False
     forever: bool = False
 
-    def get_match_tests(self, test_name) -> MatchTests | None:
+    def get_match_tests(self, test_name) -> FilterTuple | None:
         if self.match_tests is not None:
             return self.match_tests.get(test_name, None)
         else:
             return None
 
     def iter_tests(self):
-        tests = tuple(self.tests)
         if self.forever:
             while True:
-                yield from tests
+                yield from self.tests
         else:
-            yield from tests
+            yield from self.tests
 
 
 # Minimum duration of a test to display its duration or to mention that

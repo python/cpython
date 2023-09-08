@@ -20,7 +20,7 @@ from test.libregrtest.cmdline import Namespace
 from test.libregrtest.main import Regrtest
 from test.libregrtest.runtest import (
     runtest, TestResult, State, PROGRESS_MIN_TIME,
-    MatchTests, RunTests)
+    FilterTuple, RunTests)
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.utils import format_duration, print_warning
 
@@ -49,7 +49,7 @@ class WorkerJob:
     test_name: str
     namespace: Namespace
     rerun: bool = False
-    match_tests: MatchTests | None = None
+    match_tests: FilterTuple | None = None
 
 
 class _EncodeWorkerJob(json.JSONEncoder):
