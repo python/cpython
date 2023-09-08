@@ -17,6 +17,8 @@ freebsd_task:
     - make -j$(sysctl -n hw.ncpu)
   pythoninfo_script:
     - cd build && make pythoninfo
+  bundle_ensurepip_script:
+    - cd build && make download-ensurepip-wheels
   test_script:
     - cd build
     # dtrace fails to build on FreeBSD - see gh-73263
