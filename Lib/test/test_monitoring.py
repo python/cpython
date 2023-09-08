@@ -1208,12 +1208,12 @@ class TestInstallIncrementallly(MonitoringTestBase, unittest.TestCase):
 
 
 
-    def test_line_then_instruction(self):
+    def test_call_then_instruction(self):
         recorders = [ CallRecorder, InstructionRecorder ]
         self.check_events(self.func2,
                           recorders = recorders, must_include = self.MUST_INCLUDE_CI)
 
-    def test_instruction_then_line(self):
+    def test_instruction_then_call(self):
         recorders = [ InstructionRecorder, CallRecorder ]
         self.check_events(self.func2,
                           recorders = recorders, must_include = self.MUST_INCLUDE_CI)
