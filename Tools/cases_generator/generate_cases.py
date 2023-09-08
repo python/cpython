@@ -550,15 +550,12 @@ class Generator(Analyzer):
                 ";",
             ):
                 family_member_names: set[str] = set()
-                for name, family in self.families.items():
+                for family in self.families.values():
                     family_member_names.update(family.members)
-                    instr = self.instrs[name]
-                    if instr.cache_offset > 0:
-                        self.out.emit(f"[{name}] = {instr.cache_offset},")
                 for instr in self.instrs.values():
                     if (
-                        not instr.family
-                        and instr.cache_offset
+                        instr.name not in family_member_names
+                        and instr.cache_offset > 0
                         and instr.kind == "inst"
                         and not instr.name.startswith("INSTRUMENTED_")
                     ):
