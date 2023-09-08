@@ -412,6 +412,32 @@ class TypeParamsAccessTest(unittest.TestCase):
         func, = T.__bound__
         self.assertEqual(func(), 1)
 
+    def test_gen_exp_in_nested_class(self):
+        class C[T]:
+            T = "class"
+            class Inner(make_base(T for _ in (1,)), make_base(T)):
+                pass
+        T, = C.__type_params__
+        base1, base2 = C.Inner.__bases__
+        self.assertEqual(list(base1.__arg__), [T])
+        self.assertEqual(base2.__arg__, "class")
+
+    def test_gen_exp_in_nested_generic_class(self):
+        class C[T]:
+            T = "class"
+            class Inner[U](make_base(T for _ in (1,)), make_base(T)):
+                pass
+        T, = C.__type_params__
+        base1, base2, _ = C.Inner.__bases__
+        self.assertEqual(list(base1.__arg__), [T])
+        self.assertEqual(base2.__arg__, "class")
+
+
+def make_base(arg):
+    class Base:
+        __arg__ = arg
+    return Base
+
 
 def global_generic_func[T]():
     pass
