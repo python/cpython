@@ -1321,7 +1321,7 @@ dummy_func(
                     }
                 }
             }
-            Py_DECREF(mod_or_class_dict);
+            DECREF_INPUTS();
         }
 
         inst(LOAD_NAME, (-- v)) {
