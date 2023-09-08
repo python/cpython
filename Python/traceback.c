@@ -615,6 +615,11 @@ extract_anchors_from_expr(const char *segment_str, expr_ty expr, Py_ssize_t *lef
                     ++*right_anchor;
                 }
 
+                // Keep going if the current char is not ')'
+                if (i+1 < right->col_offset && (segment_str[i] == ')')) {
+                    continue;
+                }
+
                 // Set the error characters
                 *primary_error_char = "~";
                 *secondary_error_char = "^";
@@ -625,6 +630,18 @@ extract_anchors_from_expr(const char *segment_str, expr_ty expr, Py_ssize_t *lef
         case Subscript_kind: {
             *left_anchor = expr->v.Subscript.value->end_col_offset;
             *right_anchor = expr->v.Subscript.slice->end_col_offset + 1;
+            Py_ssize_t str_len = strlen(segment_str);
+
+            // Move right_anchor and left_anchor forward to the first non-whitespace character that is not ']' and '['
+            while (*left_anchor < str_len && (IS_WHITESPACE(segment_str[*left_anchor]) || segment_str[*left_anchor] != '[')) {
+                ++*left_anchor;
+            }
+            while (*right_anchor < str_len && (IS_WHITESPACE(segment_str[*right_anchor]) || segment_str[*right_anchor] != ']')) {
+                ++*right_anchor;
+            }
+            if (*right_anchor < str_len){
+                *right_anchor += 1;
+            }
 
             // Set the error characters
             *primary_error_char = "~";
