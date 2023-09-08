@@ -4026,7 +4026,7 @@
             STACK_SHRINK(1);
         }
 
-        TARGET(CALL_NO_KW_TYPE_1) {
+        TARGET(CALL_TYPE_1) {
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -4049,7 +4049,7 @@
             DISPATCH();
         }
 
-        TARGET(CALL_NO_KW_STR_1) {
+        TARGET(CALL_STR_1) {
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -4074,7 +4074,7 @@
             DISPATCH();
         }
 
-        TARGET(CALL_NO_KW_TUPLE_1) {
+        TARGET(CALL_TUPLE_1) {
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -4099,7 +4099,7 @@
             DISPATCH();
         }
 
-        TARGET(CALL_NO_KW_ALLOC_AND_ENTER_INIT) {
+        TARGET(CALL_ALLOC_AND_ENTER_INIT) {
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -4205,7 +4205,7 @@
             DISPATCH();
         }
 
-        TARGET(CALL_NO_KW_BUILTIN_O) {
+        TARGET(CALL_BUILTIN_O) {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -4245,7 +4245,7 @@
             DISPATCH();
         }
 
-        TARGET(CALL_NO_KW_BUILTIN_FAST) {
+        TARGET(CALL_BUILTIN_FAST) {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -4328,7 +4328,7 @@
             DISPATCH();
         }
 
-        TARGET(CALL_NO_KW_LEN) {
+        TARGET(CALL_LEN) {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -4364,7 +4364,7 @@
             DISPATCH();
         }
 
-        TARGET(CALL_NO_KW_ISINSTANCE) {
+        TARGET(CALL_ISINSTANCE) {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -4402,7 +4402,7 @@
             DISPATCH();
         }
 
-        TARGET(CALL_NO_KW_LIST_APPEND) {
+        TARGET(CALL_LIST_APPEND) {
             PyObject **args;
             PyObject *self;
             PyObject *callable;
@@ -4429,7 +4429,7 @@
             STACK_SHRINK(1);
         }
 
-        TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_O) {
+        TARGET(CALL_METHOD_DESCRIPTOR_O) {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -4513,7 +4513,7 @@
             DISPATCH();
         }
 
-        TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS) {
+        TARGET(CALL_METHOD_DESCRIPTOR_NOARGS) {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -4555,7 +4555,7 @@
             DISPATCH();
         }
 
-        TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_FAST) {
+        TARGET(CALL_METHOD_DESCRIPTOR_FAST) {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;

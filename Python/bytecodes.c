@@ -2877,21 +2877,21 @@ dummy_func(
             CALL_BOUND_METHOD_EXACT_ARGS,
             CALL_PY_EXACT_ARGS,
             CALL_PY_WITH_DEFAULTS,
-            CALL_NO_KW_TYPE_1,
-            CALL_NO_KW_STR_1,
-            CALL_NO_KW_TUPLE_1,
+            CALL_TYPE_1,
+            CALL_STR_1,
+            CALL_TUPLE_1,
             CALL_BUILTIN_CLASS,
-            CALL_NO_KW_BUILTIN_O,
-            CALL_NO_KW_BUILTIN_FAST,
+            CALL_BUILTIN_O,
+            CALL_BUILTIN_FAST,
             CALL_BUILTIN_FAST_WITH_KEYWORDS,
-            CALL_NO_KW_LEN,
-            CALL_NO_KW_ISINSTANCE,
-            CALL_NO_KW_LIST_APPEND,
-            CALL_NO_KW_METHOD_DESCRIPTOR_O,
+            CALL_LEN,
+            CALL_ISINSTANCE,
+            CALL_LIST_APPEND,
+            CALL_METHOD_DESCRIPTOR_O,
             CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS,
-            CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS,
-            CALL_NO_KW_METHOD_DESCRIPTOR_FAST,
-            CALL_NO_KW_ALLOC_AND_ENTER_INIT,
+            CALL_METHOD_DESCRIPTOR_NOARGS,
+            CALL_METHOD_DESCRIPTOR_FAST,
+            CALL_ALLOC_AND_ENTER_INIT,
         };
 
         // On entry, the stack is either
@@ -3106,7 +3106,7 @@ dummy_func(
             DISPATCH_INLINED(new_frame);
         }
 
-        inst(CALL_NO_KW_TYPE_1, (unused/1, unused/2, callable, null, args[oparg] -- res)) {
+        inst(CALL_TYPE_1, (unused/1, unused/2, callable, null, args[oparg] -- res)) {
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             PyObject *obj = args[0];
@@ -3117,7 +3117,7 @@ dummy_func(
             Py_DECREF(&PyType_Type);  // I.e., callable
         }
 
-        inst(CALL_NO_KW_STR_1, (unused/1, unused/2, callable, null, args[oparg] -- res)) {
+        inst(CALL_STR_1, (unused/1, unused/2, callable, null, args[oparg] -- res)) {
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyUnicode_Type, CALL);
@@ -3130,7 +3130,7 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_NO_KW_TUPLE_1, (unused/1, unused/2, callable, null, args[oparg] -- res)) {
+        inst(CALL_TUPLE_1, (unused/1, unused/2, callable, null, args[oparg] -- res)) {
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyTuple_Type, CALL);
@@ -3143,7 +3143,7 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_NO_KW_ALLOC_AND_ENTER_INIT, (unused/1, unused/2, callable, null, args[oparg] -- unused)) {
+        inst(CALL_ALLOC_AND_ENTER_INIT, (unused/1, unused/2, callable, null, args[oparg] -- unused)) {
             /* This instruction does the following:
              * 1. Creates the object (by calling ``object.__new__``)
              * 2. Pushes a shim frame to the frame stack (to cleanup after ``__init__``)
@@ -3225,7 +3225,7 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_NO_KW_BUILTIN_O, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        inst(CALL_BUILTIN_O, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
             /* Builtin METH_O functions */
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -3253,7 +3253,7 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_NO_KW_BUILTIN_FAST, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        inst(CALL_BUILTIN_FAST, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
             /* Builtin METH_FASTCALL functions, without keywords */
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -3312,7 +3312,7 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_NO_KW_LEN, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        inst(CALL_LEN, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
             /* len(o) */
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -3336,7 +3336,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        inst(CALL_NO_KW_ISINSTANCE, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        inst(CALL_ISINSTANCE, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
             /* isinstance(o, o2) */
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -3363,7 +3363,7 @@ dummy_func(
         }
 
         // This is secretly a super-instruction
-        inst(CALL_NO_KW_LIST_APPEND, (unused/1, unused/2, callable, self, args[oparg] -- unused)) {
+        inst(CALL_LIST_APPEND, (unused/1, unused/2, callable, self, args[oparg] -- unused)) {
             assert(oparg == 1);
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.list_append, CALL);
@@ -3382,7 +3382,7 @@ dummy_func(
             DISPATCH();
         }
 
-        inst(CALL_NO_KW_METHOD_DESCRIPTOR_O, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        inst(CALL_METHOD_DESCRIPTOR_O, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -3442,7 +3442,7 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        inst(CALL_METHOD_DESCRIPTOR_NOARGS, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
             assert(oparg == 0 || oparg == 1);
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -3472,7 +3472,7 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_NO_KW_METHOD_DESCRIPTOR_FAST, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        inst(CALL_METHOD_DESCRIPTOR_FAST, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;

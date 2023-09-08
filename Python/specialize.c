@@ -1651,15 +1651,15 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
         int oparg = instr->op.arg;
         if (nargs == 1 && oparg == 1) {
             if (tp == &PyUnicode_Type) {
-                instr->op.code = CALL_NO_KW_STR_1;
+                instr->op.code = CALL_STR_1;
                 return 0;
             }
             else if (tp == &PyType_Type) {
-                instr->op.code = CALL_NO_KW_TYPE_1;
+                instr->op.code = CALL_TYPE_1;
                 return 0;
             }
             else if (tp == &PyTuple_Type) {
-                instr->op.code = CALL_NO_KW_TUPLE_1;
+                instr->op.code = CALL_TUPLE_1;
                 return 0;
             }
         }
@@ -1680,7 +1680,7 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
             }
             _PyCallCache *cache = (_PyCallCache *)(instr + 1);
             write_u32(cache->func_version, tp->tp_version_tag);
-            _Py_SET_OPCODE(*instr, CALL_NO_KW_ALLOC_AND_ENTER_INIT);
+            _Py_SET_OPCODE(*instr, CALL_ALLOC_AND_ENTER_INIT);
             return 0;
         }
         return -1;
@@ -1748,7 +1748,7 @@ specialize_method_descriptor(PyMethodDescrObject *descr, _Py_CODEUNIT *instr,
                 SPECIALIZATION_FAIL(CALL, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
                 return -1;
             }
-            instr->op.code = CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS;
+            instr->op.code = CALL_METHOD_DESCRIPTOR_NOARGS;
             return 0;
         }
         case METH_O: {
@@ -1762,14 +1762,14 @@ specialize_method_descriptor(PyMethodDescrObject *descr, _Py_CODEUNIT *instr,
             bool pop = (next.op.code == POP_TOP);
             int oparg = instr->op.arg;
             if ((PyObject *)descr == list_append && oparg == 1 && pop) {
-                instr->op.code = CALL_NO_KW_LIST_APPEND;
+                instr->op.code = CALL_LIST_APPEND;
                 return 0;
             }
-            instr->op.code = CALL_NO_KW_METHOD_DESCRIPTOR_O;
+            instr->op.code = CALL_METHOD_DESCRIPTOR_O;
             return 0;
         }
         case METH_FASTCALL: {
-            instr->op.code = CALL_NO_KW_METHOD_DESCRIPTOR_FAST;
+            instr->op.code = CALL_METHOD_DESCRIPTOR_FAST;
             return 0;
         }
         case METH_FASTCALL | METH_KEYWORDS: {
@@ -1844,10 +1844,10 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
             /* len(o) */
             PyInterpreterState *interp = _PyInterpreterState_GET();
             if (callable == interp->callable_cache.len) {
-                instr->op.code = CALL_NO_KW_LEN;
+                instr->op.code = CALL_LEN;
                 return 0;
             }
-            instr->op.code = CALL_NO_KW_BUILTIN_O;
+            instr->op.code = CALL_BUILTIN_O;
             return 0;
         }
         case METH_FASTCALL: {
@@ -1855,11 +1855,11 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
                 /* isinstance(o1, o2) */
                 PyInterpreterState *interp = _PyInterpreterState_GET();
                 if (callable == interp->callable_cache.isinstance) {
-                    instr->op.code = CALL_NO_KW_ISINSTANCE;
+                    instr->op.code = CALL_ISINSTANCE;
                     return 0;
                 }
             }
-            instr->op.code = CALL_NO_KW_BUILTIN_FAST;
+            instr->op.code = CALL_BUILTIN_FAST;
             return 0;
         }
         case METH_FASTCALL | METH_KEYWORDS: {
@@ -2461,7 +2461,7 @@ success:
 }
 
 /* Code init cleanup.
- * CALL_NO_KW_ALLOC_AND_ENTER_INIT will set up
+ * CALL_ALLOC_AND_ENTER_INIT will set up
  * the frame to execute the EXIT_INIT_CHECK
  * instruction.
  * Ends with a RESUME so that it is not traced.

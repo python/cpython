@@ -2326,7 +2326,7 @@
             break;
         }
 
-        case CALL_NO_KW_TYPE_1: {
+        case CALL_TYPE_1: {
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -2348,7 +2348,7 @@
             break;
         }
 
-        case CALL_NO_KW_STR_1: {
+        case CALL_STR_1: {
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -2372,7 +2372,7 @@
             break;
         }
 
-        case CALL_NO_KW_TUPLE_1: {
+        case CALL_TUPLE_1: {
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -2441,7 +2441,7 @@
             break;
         }
 
-        case CALL_NO_KW_BUILTIN_O: {
+        case CALL_BUILTIN_O: {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2480,7 +2480,7 @@
             break;
         }
 
-        case CALL_NO_KW_BUILTIN_FAST: {
+        case CALL_BUILTIN_FAST: {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2561,7 +2561,7 @@
             break;
         }
 
-        case CALL_NO_KW_LEN: {
+        case CALL_LEN: {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2596,7 +2596,7 @@
             break;
         }
 
-        case CALL_NO_KW_ISINSTANCE: {
+        case CALL_ISINSTANCE: {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2633,7 +2633,7 @@
             break;
         }
 
-        case CALL_NO_KW_METHOD_DESCRIPTOR_O: {
+        case CALL_METHOD_DESCRIPTOR_O: {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2715,7 +2715,7 @@
             break;
         }
 
-        case CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS: {
+        case CALL_METHOD_DESCRIPTOR_NOARGS: {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2756,7 +2756,7 @@
             break;
         }
 
-        case CALL_NO_KW_METHOD_DESCRIPTOR_FAST: {
+        case CALL_METHOD_DESCRIPTOR_FAST: {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;

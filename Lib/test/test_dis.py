@@ -1256,7 +1256,7 @@ class DisTests(DisTestBase):
   1        LOAD_NAME                0 (str)
            PUSH_NULL
            LOAD_CONST               0 (1)
-           CALL_NO_KW_STR_1         1
+           CALL_STR_1               1
            RETURN_VALUE
 """
         co = compile("str(1)", "", "eval")
