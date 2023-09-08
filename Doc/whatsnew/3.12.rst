@@ -333,7 +333,7 @@ See  :mod:`sys.monitoring` for details.
 New Features Related to Type Hints
 ==================================
 
-This section covers major changes affecting :pep:`484` type hints and
+This section covers major changes affecting :pep:`type hints <484>` and
 the :mod:`typing` module.
 
 .. _whatsnew312-pep692:
