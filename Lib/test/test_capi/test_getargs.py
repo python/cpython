@@ -1004,7 +1004,6 @@ class String_TestCase(unittest.TestCase):
         buf = bytearray()
         self.assertRaises(ValueError, getargs_et_hash, 'abc\xe9', 'latin1', buf)
 
-
     def test_gh_99240_clear_args(self):
         from _testcapi import gh_99240_clear_args
         self.assertRaises(TypeError, gh_99240_clear_args, 'a', '\0b')
