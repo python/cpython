@@ -824,7 +824,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     /* Finally set the new lasti and return OK. */
     f->f_lineno = 0;
     f->f_frame->prev_instr = _PyCode_CODE(code) + best_addr;
-    f->f_frame->instr_ptr = _PyCode_CODE(code) + best_addr + 1;
+    f->f_frame->instr_ptr = _PyCode_CODE(code) + best_addr;
     return 0;
 }
 
@@ -1096,8 +1096,9 @@ _PyFrame_OpAlreadyRan(_PyInterpreterFrame *frame, int opcode, int oparg)
     // This only works when opcode is a non-quickened form:
     assert(_PyOpcode_Deopt[opcode] == opcode);
     int check_oparg = 0;
+
     for (_Py_CODEUNIT *instruction = _PyCode_CODE(_PyFrame_GetCode(frame));
-         instruction < frame->prev_instr; instruction++)
+         instruction < frame->instr_ptr; instruction++)
     {
         int check_opcode = _PyOpcode_Deopt[instruction->op.code];
         check_oparg |= instruction->op.arg;
