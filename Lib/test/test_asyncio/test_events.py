@@ -671,6 +671,7 @@ class EventLoopTestsMixin:
             self.assertEqual(port, expected)
             tr.close()
 
+    @socket_helper.skip_if_tcp_blackhole
     def test_create_connection_local_addr_skip_different_family(self):
         # See https://github.com/python/cpython/issues/86508
         port1 = socket_helper.find_unused_port()
@@ -692,6 +693,7 @@ class EventLoopTestsMixin:
         with self.assertRaises(OSError):
             self.loop.run_until_complete(f)
 
+    @socket_helper.skip_if_tcp_blackhole
     def test_create_connection_local_addr_nomatch_family(self):
         # See https://github.com/python/cpython/issues/86508
         port1 = socket_helper.find_unused_port()
@@ -1271,6 +1273,7 @@ class EventLoopTestsMixin:
 
         server.close()
 
+    @socket_helper.skip_if_tcp_blackhole
     def test_server_close(self):
         f = self.loop.create_server(MyProto, '0.0.0.0', 0)
         server = self.loop.run_until_complete(f)

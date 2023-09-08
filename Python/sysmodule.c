@@ -30,6 +30,7 @@ Data members:
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_pystats.h"       // _Py_PrintSpecializationStats()
 #include "pycore_structseq.h"     // _PyStructSequence_InitBuiltinWithFlags()
 #include "pycore_sysmodule.h"     // export _PySys_GetSizeOf()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
@@ -2106,32 +2107,33 @@ sys_is_finalizing_impl(PyObject *module)
     return PyBool_FromLong(Py_IsFinalizing());
 }
 
+
 #ifdef Py_STATS
 /*[clinic input]
 sys._stats_on
 
-Turns on stats gathering (stats gathering is on by default).
+Turns on stats gathering (stats gathering is off by default).
 [clinic start generated code]*/
 
 static PyObject *
 sys__stats_on_impl(PyObject *module)
-/*[clinic end generated code: output=aca53eafcbb4d9fe input=8ddc6df94e484f3a]*/
+/*[clinic end generated code: output=aca53eafcbb4d9fe input=43b5bfe145299e55]*/
 {
-    _py_stats = &_py_stats_struct;
+    _Py_StatsOn();
     Py_RETURN_NONE;
 }
 
 /*[clinic input]
 sys._stats_off
 
-Turns off stats gathering (stats gathering is on by default).
+Turns off stats gathering (stats gathering is off by default).
 [clinic start generated code]*/
 
 static PyObject *
 sys__stats_off_impl(PyObject *module)
-/*[clinic end generated code: output=1534c1ee63812214 input=b3e50e71ecf29f66]*/
+/*[clinic end generated code: output=1534c1ee63812214 input=d1a84c60c56cbce2]*/
 {
-    _py_stats = NULL;
+    _Py_StatsOff();
     Py_RETURN_NONE;
 }
 
@@ -2150,21 +2152,23 @@ sys__stats_clear_impl(PyObject *module)
 }
 
 /*[clinic input]
-sys._stats_dump
+sys._stats_dump -> bool
 
 Dump stats to file, and clears the stats.
+
+Return False if no statistics were not dumped because stats gathering was off.
 [clinic start generated code]*/
 
-static PyObject *
+static int
 sys__stats_dump_impl(PyObject *module)
-/*[clinic end generated code: output=79f796fb2b4ddf05 input=92346f16d64f6f95]*/
+/*[clinic end generated code: output=6e346b4ba0de4489 input=31a489e39418b2a5]*/
 {
-    _Py_PrintSpecializationStats(1);
+    int res = _Py_PrintSpecializationStats(1);
     _Py_StatsClear();
-    Py_RETURN_NONE;
+    return res;
 }
+#endif   // Py_STATS
 
-#endif
 
 #ifdef ANDROID_API_LEVEL
 /*[clinic input]
