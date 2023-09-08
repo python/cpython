@@ -1334,7 +1334,7 @@ init_threadstate(PyThreadState *tstate,
 
     tstate->py_recursion_limit = interp->ceval.recursion_limit,
     tstate->py_recursion_remaining = interp->ceval.recursion_limit,
-    tstate->c_recursion_remaining = C_RECURSION_LIMIT;
+    tstate->c_recursion_remaining = Py_C_RECURSION_LIMIT;
 
     tstate->exc_info = &tstate->exc_state;
 
