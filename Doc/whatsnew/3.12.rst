@@ -247,6 +247,7 @@ PEP 709: Comprehension inlining
 Dictionary, list, and set comprehensions are now inlined, rather than creating a
 new single-use function object for each execution of the comprehension. This
 speeds up execution of a comprehension by up to two times.
+See :pep:`709` for further details.
 
 Comprehension iteration variables remain isolated and don't overwrite a
 variable of the same name in the outer scope, nor are they visible after the
