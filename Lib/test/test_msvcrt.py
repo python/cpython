@@ -41,8 +41,13 @@ class TestFileOperations(unittest.TestCase):
         h = _winapi.CreateFile(TESTFN_ASCII, _winapi.GENERIC_WRITE, 0, 0, 1, 128, 0)
         self.addCleanup(os_helper.unlink, TESTFN_ASCII)
 
-        fd = msvcrt.open_osfhandle(h, os.O_RDONLY)
-        os.close(fd)
+        try:
+            fd = msvcrt.open_osfhandle(h, os.O_RDONLY)
+            h = None
+            os.close(fd)
+        finally:
+            if h:
+                _winapi.CloseHandle(h)
 
     def test_get_osfhandle(self):
         with open(TESTFN, "w") as f:
