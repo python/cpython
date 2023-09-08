@@ -596,6 +596,24 @@ class TracebackErrorLocationCaretTestBase:
         result_lines = self.get_exception(f_with_binary_operator)
         self.assertEqual(result_lines, expected_error.splitlines())
 
+    def test_caret_for_binary_operators_with_spaces_and_parenthesis(self):
+        def f_with_binary_operator():
+            a = 1
+            b = ""
+            return ( a   )   + b
+
+        lineno_f = f_with_binary_operator.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            f'  File "{__file__}", line {lineno_f+3}, in f_with_binary_operator\n'
+            '    return ( a   )   + b\n'
+            '           ~~~~~~~~~~^~~\n'
+        )
+        result_lines = self.get_exception(f_with_binary_operator)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
     def test_caret_for_subscript(self):
         def f_with_subscript():
             some_dict = {'x': {'y': None}}
@@ -628,6 +646,24 @@ class TracebackErrorLocationCaretTestBase:
             '           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^\n'
         )
         result_lines = self.get_exception(f_with_subscript)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_caret_for_subscript_with_spaces_and_parenthesis(self):
+        def f_with_binary_operator():
+            a = []
+            b = c = 1
+            return b     [    a  ] + c
+
+        lineno_f = f_with_binary_operator.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            f'  File "{__file__}", line {lineno_f+3}, in f_with_binary_operator\n'
+            '    return b     [    a  ] + c\n'
+            '           ~~~~~~^^^^^^^^^\n'
+        )
+        result_lines = self.get_exception(f_with_binary_operator)
         self.assertEqual(result_lines, expected_error.splitlines())
 
     def test_traceback_specialization_with_syntax_error(self):
