@@ -505,7 +505,6 @@ LIBRARY_OBJS_OMIT_FROZEN=	\
 
 LIBRARY_OBJS=	\
 		$(LIBRARY_OBJS_OMIT_FROZEN) \
-		$(DEEPFREEZE_OBJS) \
 		Modules/getpath.o \
 		Python/frozen.o
 

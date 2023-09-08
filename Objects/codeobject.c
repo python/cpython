@@ -427,9 +427,10 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_framesize = nlocalsplus + con->stacksize + FRAME_SPECIALS_SIZE;
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
-    co->co_version = _Py_next_func_version;
-    if (_Py_next_func_version != 0) {
-        _Py_next_func_version++;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    co->co_version = interp->next_func_version;
+    if (interp->next_func_version != 0) {
+        interp->next_func_version++;
     }
     co->_co_monitoring = NULL;
     co->_co_instrumentation_version = 0;
@@ -1477,6 +1478,23 @@ clear_executors(PyCodeObject *co)
     }
     PyMem_Free(co->co_executors);
     co->co_executors = NULL;
+}
+
+void
+_PyCode_Clear_Executors(PyCodeObject *code) {
+    int code_len = (int)Py_SIZE(code);
+    for (int i = 0; i < code_len; i += _PyInstruction_GetLength(code, i)) {
+        _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
+        uint8_t opcode = instr->op.code;
+        uint8_t oparg = instr->op.arg;
+        if (opcode == ENTER_EXECUTOR) {
+            _PyExecutorObject *exec = code->co_executors->executors[oparg];
+            assert(exec->vm_data.opcode != ENTER_EXECUTOR);
+            instr->op.code = exec->vm_data.opcode;
+            instr->op.arg = exec->vm_data.oparg;
+        }
+    }
+    clear_executors(code);
 }
 
 static void

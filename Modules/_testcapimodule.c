@@ -3922,6 +3922,7 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "instancemethod", (PyObject *)&PyInstanceMethod_Type);
 
     PyModule_AddIntConstant(m, "the_number_three", 3);
+    PyModule_AddIntMacro(m, Py_C_RECURSION_LIMIT);
 
     TestError = PyErr_NewException("_testcapi.error", NULL, NULL);
     Py_INCREF(TestError);
@@ -3996,18 +3997,12 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_PyAtomic(m) < 0) {
         return NULL;
     }
-
-#ifndef LIMITED_API_AVAILABLE
-    PyModule_AddObjectRef(m, "LIMITED_API_AVAILABLE", Py_False);
-#else
-    PyModule_AddObjectRef(m, "LIMITED_API_AVAILABLE", Py_True);
     if (_PyTestCapi_Init_VectorcallLimited(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_HeaptypeRelative(m) < 0) {
         return NULL;
     }
-#endif
 
     PyState_AddModule(m, &_testcapimodule);
     return m;

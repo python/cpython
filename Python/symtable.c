@@ -312,10 +312,10 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
         return NULL;
     }
     /* Be careful here to prevent overflow. */
-    int recursion_depth = C_RECURSION_LIMIT - tstate->c_recursion_remaining;
+    int recursion_depth = Py_C_RECURSION_LIMIT - tstate->c_recursion_remaining;
     starting_recursion_depth = recursion_depth * COMPILER_STACK_FRAME_SCALE;
     st->recursion_depth = starting_recursion_depth;
-    st->recursion_limit = C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
+    st->recursion_limit = Py_C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
 
     /* Make the initial symbol information gathering pass */
     if (!symtable_enter_block(st, &_Py_ID(top), ModuleBlock, (void *)mod, 0, 0, 0, 0)) {
