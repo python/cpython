@@ -832,11 +832,6 @@ pycore_interp_init(PyThreadState *tstate)
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
-    // Intern strings in deep-frozen modules first so that others
-    // can use it instead of creating a heap allocated string.
-    if (_Py_Deepfreeze_Init() < 0) {
-        return _PyStatus_ERR("failed to initialize deep-frozen modules");
-    }
 
     status = pycore_init_types(interp);
     if (_PyStatus_EXCEPTION(status)) {
@@ -1743,7 +1738,6 @@ finalize_interp_clear(PyThreadState *tstate)
         _Py_HashRandomization_Fini();
         _PyArg_Fini();
         _Py_ClearFileSystemEncoding();
-        _Py_Deepfreeze_Fini();
         _PyPerfTrampoline_Fini();
     }
 
