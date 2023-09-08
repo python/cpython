@@ -430,7 +430,7 @@ def emit_comparative_specialization_overview(base_opcode_stats, base_total, head
         )
 
 def get_stats_defines():
-    stats_path = os.path.join(os.path.dirname(__file__), "../../Include/pystats.h")
+    stats_path = os.path.join(os.path.dirname(__file__), "../../Include/cpython/pystats.h")
     with open(stats_path) as stats_src:
         defines = parse_kinds(stats_src, prefix="EVAL_CALL")
     return defines
