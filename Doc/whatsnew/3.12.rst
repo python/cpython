@@ -345,7 +345,7 @@ Typing ``**kwargs`` in a function signature as introduced by :pep:`484` allowed
 for valid annotations only in cases where all of the ``**kwargs`` were of the
 same type.
 
-This PEP specifies a more precise way of typing ``**kwargs`` by relying on
+:pep:`692` specifies a more precise way of typing ``**kwargs`` by relying on
 typed dictionaries::
 
    from typing import TypedDict, Unpack
