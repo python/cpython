@@ -1,0 +1,1 @@
+Enable ``readline`` editing feasibilities in the :mod:`sqlite3` CLI.
