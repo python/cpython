@@ -121,12 +121,15 @@ _testcapi_exc_set_object_fetch_impl(PyObject *module, PyObject *exc,
                                     PyObject *obj)
 /*[clinic end generated code: output=7a5ff5f6d3cf687f input=77ec686f1f95fa38]*/
 {
-    PyObject *type;
-    PyObject *value;
-    PyObject *tb;
+    PyObject *type = UNINITIALIZED_PTR;
+    PyObject *value = UNINITIALIZED_PTR;
+    PyObject *tb = UNINITIALIZED_PTR;
 
     PyErr_SetObject(exc, obj);
     PyErr_Fetch(&type, &value, &tb);
+    assert(type != UNINITIALIZED_PTR);
+    assert(value != UNINITIALIZED_PTR);
+    assert(tb != UNINITIALIZED_PTR);
     Py_XDECREF(type);
     Py_XDECREF(tb);
     return value;
@@ -245,7 +248,7 @@ _testcapi_set_exc_info_impl(PyObject *module, PyObject *new_type,
                             PyObject *new_value, PyObject *new_tb)
 /*[clinic end generated code: output=b55fa35dec31300e input=ea9f19e0f55fe5b3]*/
 {
-    PyObject *type, *value, *tb;
+    PyObject *type = UNINITIALIZED_PTR, *value = UNINITIALIZED_PTR, *tb = UNINITIALIZED_PTR;
     PyErr_GetExcInfo(&type, &value, &tb);
 
     Py_INCREF(new_type);
