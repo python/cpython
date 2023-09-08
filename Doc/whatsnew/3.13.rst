@@ -115,6 +115,18 @@ array
   It can be used instead of ``'u'`` type code, which is deprecated.
   (Contributed by Inada Naoki in :gh:`80480`.)
 
+copy
+----
+
+* Add :func:`copy.replace` function which allows to create a modified copy of
+  an object, which is especially usefule for immutable objects.
+  It supports named tuples created with the factory function
+  :func:`collections.namedtuple`, :class:`~dataclasses.dataclass` instances,
+  various :mod:`datetime` objects, :class:`~inspect.Signature` objects,
+  :class:`~inspect.Parameter` objects, :ref:`code object <code-objects>`, and
+  any user classes which define the :meth:`!__replace__` method.
+  (Contributed by Serhiy Storchaka in :gh:`108751`.)
+
 dbm
 ---
 

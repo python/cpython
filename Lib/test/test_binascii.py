@@ -233,7 +233,7 @@ class BinASCIITest(unittest.TestCase):
         binary=hypothesis.strategies.binary(),
         backtick=hypothesis.strategies.booleans(),
     )
-    def test_hex_roundtrip(self, binary, backtick):
+    def test_b2a_roundtrip(self, binary, backtick):
         converted = binascii.b2a_uu(self.type2test(binary), backtick=backtick)
         restored = binascii.a2b_uu(self.type2test(converted))
         self.assertConversion(binary, converted, restored, backtick=backtick)
