@@ -1122,7 +1122,8 @@ iterations of the loop.
    This bytecode distinguishes two cases: if ``STACK[-1]`` has a method with the
    correct name, the bytecode pushes the unbound method and ``STACK[-1]``.
    ``STACK[-1]`` will be used as the first argument (``self``) by :opcode:`CALL`
-   or :opcode:`CALL_KW` when calling the unbound method. Otherwise, ``NULL`` and the object returned by
+   or :opcode:`CALL_KW` when calling the unbound method.
+   Otherwise, ``NULL`` and the object returned by
    the attribute lookup are pushed.
 
    .. versionchanged:: 3.12
@@ -1394,11 +1395,10 @@ iterations of the loop.
    On the stack are (in ascending order):
 
    * The callable
-   * ``self`` (or ``NULL``)
+   * ``self`` or ``NULL``
    * The remaining positional arguments
 
-   ``argc`` is the total of the positional arguments, excluding
-   ``self`` when a ``NULL`` is not present.
+   ``argc`` is the total of the positional arguments, excluding ``self``.
 
    ``CALL`` pops all arguments and the callable object off the stack,
    calls the callable object with those arguments, and pushes the return value
@@ -1419,13 +1419,13 @@ iterations of the loop.
    including one or more named arguments. On the stack are (in ascending order):
 
    * The callable
-   * ``self`` (or ``NULL``)
+   * ``self`` or ``NULL``
    * The remaining positional arguments
    * The named arguments
    * A :class:`tuple` of keyword argument names
 
-   ``argc`` is the total of the positional and named arguments, excluding
-   ``self`` when a ``NULL`` is not present.
+   ``argc`` is the total of the positional and named arguments, excluding ``self``.
+   The length of the tuple of keyword argument names is the number of named arguments.
 
    ``CALL_KW`` pops all arguments, the keyword names, and the callable object
    off the stack, calls the callable object with those arguments, and pushes the

@@ -3724,6 +3724,7 @@
             args = stack_pointer - oparg;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
+            // oparg counts all of the args, but *not* self:
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -4619,6 +4620,7 @@
             args = stack_pointer - 1 - oparg;
             self_or_null = stack_pointer[-2 - oparg];
             callable = stack_pointer[-3 - oparg];
+            // oparg counts all of the args, but *not* self:
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;

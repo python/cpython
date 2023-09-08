@@ -2894,13 +2894,9 @@ dummy_func(
             CALL_ALLOC_AND_ENTER_INIT,
         };
 
-        // On entry, the stack is either
-        //   [callable, NULL, arg1, arg2, ...]
-        // or
-        //   [callable, self, arg1, arg2, ...]
-        // On exit, the stack is [result].
         // When calling Python, inline the call using DISPATCH_INLINED().
         inst(CALL, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+            // oparg counts all of the args, but *not* self:
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -3514,6 +3510,7 @@ dummy_func(
         }
 
         inst(CALL_KW, (callable, self_or_null, args[oparg], kwnames -- res)) {
+            // oparg counts all of the args, but *not* self:
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
