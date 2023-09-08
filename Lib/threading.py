@@ -50,6 +50,11 @@ try:
 except AttributeError:
     _CRLock = None
 TIMEOUT_MAX = _thread.TIMEOUT_MAX
+_wait_for_threads_fini = _thread._wait_for_threads_fini
+try:
+    _internal_after_fork = _thread._after_fork
+except AttributeError:
+    _internal_after_fork = None
 del _thread
 
 
@@ -975,7 +980,7 @@ class Thread:
         with _active_limbo_lock:
             _limbo[self] = self
         try:
-            _start_new_thread(self._bootstrap, ())
+            _start_new_thread(self._bootstrap, (), daemonic=self._daemonic)
         except Exception:
             with _active_limbo_lock:
                 del _limbo[self]
@@ -1597,6 +1602,7 @@ def _shutdown():
         pass
 
     # Join all non-deamon threads
+    # XXX We should be able to drop this in favor of _wait_for_threads_fini().
     while True:
         with _shutdown_locks_lock:
             locks = list(_shutdown_locks)
@@ -1612,6 +1618,9 @@ def _shutdown():
 
         # new threads can be spawned while we were waiting for the other
         # threads to complete
+
+    # Wait for all non-daemon threads to be finalized.
+    _wait_for_threads_fini()
 
 
 def main_thread():
@@ -1685,4 +1694,6 @@ def _after_fork():
 
 
 if hasattr(_os, "register_at_fork"):
+    if _internal_after_fork is not None:
+        _os.register_at_fork(after_in_child=_internal_after_fork)
     _os.register_at_fork(after_in_child=_after_fork)
