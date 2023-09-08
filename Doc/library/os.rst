@@ -3979,7 +3979,8 @@ features:
 .. data:: TFD_TIMER_ABSTIME
 
    A flag for the :func:`timerfd_settime` and :func:`timerfd_settime_ns` functions.
-   Use as an absolute value on the timer's clock.
+   If this flag is set, the functions use as an absolute value on the timer's clock
+   in UTC not in local time.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
@@ -3988,8 +3989,11 @@ features:
 .. data:: TFD_TIMER_CANCEL_ON_SET
 
    A flag for the :func:`timerfd_settime` and :func:`timerfd_settime_ns` functions
-   along with :const:`TFD_TIMER_ABSTIME`. Timer is aborted when real-time clock is
-   changed discontinuously.
+   along with :const:`TFD_TIMER_ABSTIME`.
+   The timer is cancelled when the time of the underlying clock changes discontinuously.
+
+   Linux manages system clock as UTC. A daylight-savings time transition is done
+   by changing time offset only and doesn't cause discontinuous system clock change.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
