@@ -216,20 +216,6 @@ _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
     "cannot access free variable '%s' where it is not associated with a" \
     " value in enclosing scope"
 
-#ifndef NDEBUG
-/* Ensure that tstate is valid: sanity check for PyEval_AcquireThread() and
-   PyEval_RestoreThread(). Detect if tstate memory was freed. It can happen
-   when a thread continues to run after Python finalization, especially
-   daemon threads. */
-static int
-is_tstate_valid(PyThreadState *tstate)
-{
-    assert(!_PyMem_IsPtrFreed(tstate));
-    assert(!_PyMem_IsPtrFreed(tstate->interp));
-    return 1;
-}
-#endif
-
 
 /* This can set eval_breaker to 0 even though gil_drop_request became
    1.  We believe this is all right because the eval loop will release
@@ -464,7 +450,7 @@ PyEval_AcquireThread(PyThreadState *tstate)
 void
 PyEval_ReleaseThread(PyThreadState *tstate)
 {
-    assert(is_tstate_valid(tstate));
+    assert(_PyThreadState_CheckConsistency(tstate));
 
     _PyRuntimeState *runtime = tstate->interp->runtime;
     PyThreadState *new_tstate = _PyThreadState_Swap(&runtime->gilstate, NULL);
@@ -671,7 +657,7 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
 static int
 handle_signals(PyThreadState *tstate)
 {
-    assert(is_tstate_valid(tstate));
+    assert(_PyThreadState_CheckConsistency(tstate));
     if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         return 0;
     }
@@ -739,7 +725,7 @@ void
 _Py_FinishPendingCalls(PyThreadState *tstate)
 {
     assert(PyGILState_Check());
-    assert(is_tstate_valid(tstate));
+    assert(_PyThreadState_CheckConsistency(tstate));
 
     struct _pending_calls *pending = &tstate->interp->ceval.pending;
 
@@ -764,7 +750,7 @@ Py_MakePendingCalls(void)
     assert(PyGILState_Check());
 
     PyThreadState *tstate = _PyThreadState_GET();
-    assert(is_tstate_valid(tstate));
+    assert(_PyThreadState_CheckConsistency(tstate));
 
     /* Python signal handler doesn't really queue a callback: it only signals
        that a signal was received, see _PyEval_SignalReceived(). */
@@ -6947,7 +6933,7 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
 int
 _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
 {
-    assert(is_tstate_valid(tstate));
+    assert(_PyThreadState_CheckConsistency(tstate));
     /* The caller must hold the GIL */
     assert(PyGILState_Check());
 
@@ -6999,7 +6985,7 @@ PyEval_SetProfile(Py_tracefunc func, PyObject *arg)
 int
 _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
 {
-    assert(is_tstate_valid(tstate));
+    assert(_PyThreadState_CheckConsistency(tstate));
     /* The caller must hold the GIL */
     assert(PyGILState_Check());
 

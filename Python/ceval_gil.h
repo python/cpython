@@ -171,7 +171,7 @@ drop_gil(struct _ceval_runtime_state *ceval, struct _ceval_state *ceval2,
         /* Not switched yet => wait */
         if (((PyThreadState*)_Py_atomic_load_relaxed(&gil->last_holder)) == tstate)
         {
-            assert(is_tstate_valid(tstate));
+            assert(_PyThreadState_CheckConsistency(tstate));
             RESET_GIL_DROP_REQUEST(tstate->interp);
             /* NOTE: if COND_WAIT does not atomically start waiting when
                releasing the mutex, another thread can run through, take
@@ -226,7 +226,7 @@ take_gil(PyThreadState *tstate)
         PyThread_exit_thread();
     }
 
-    assert(is_tstate_valid(tstate));
+    assert(_PyThreadState_CheckConsistency(tstate));
     PyInterpreterState *interp = tstate->interp;
     struct _ceval_runtime_state *ceval = &interp->runtime->ceval;
     struct _ceval_state *ceval2 = &interp->ceval;
@@ -268,7 +268,7 @@ take_gil(PyThreadState *tstate)
                 }
                 PyThread_exit_thread();
             }
-            assert(is_tstate_valid(tstate));
+            assert(_PyThreadState_CheckConsistency(tstate));
 
             SET_GIL_DROP_REQUEST(interp);
             drop_requested = 1;
@@ -307,7 +307,7 @@ _ready:
         drop_gil(ceval, ceval2, tstate);
         PyThread_exit_thread();
     }
-    assert(is_tstate_valid(tstate));
+    assert(_PyThreadState_CheckConsistency(tstate));
 
     if (_Py_atomic_load_relaxed(&ceval2->gil_drop_request)) {
         RESET_GIL_DROP_REQUEST(interp);
