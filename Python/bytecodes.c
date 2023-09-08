@@ -1301,10 +1301,8 @@ dummy_func(
         op(_LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
-                Py_DECREF(mod_or_class_dict);
                 goto error;
             }
-            Py_DECREF(mod_or_class_dict);
             if (v == NULL) {
                 v = PyDict_GetItemWithError(GLOBALS(), name);
                 if (v != NULL) {
@@ -1325,6 +1323,7 @@ dummy_func(
                     }
                 }
             }
+            Py_DECREF(mod_or_class_dict);
         }
 
         macro(LOAD_NAME) = _LOAD_LOCALS + _LOAD_FROM_DICT_OR_GLOBALS;

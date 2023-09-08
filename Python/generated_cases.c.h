@@ -1694,10 +1694,8 @@
             {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
                 if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
-                    Py_DECREF(mod_or_class_dict);
                     goto error;
                 }
-                Py_DECREF(mod_or_class_dict);
                 if (v == NULL) {
                     v = PyDict_GetItemWithError(GLOBALS(), name);
                     if (v != NULL) {
@@ -1718,6 +1716,7 @@
                         }
                     }
                 }
+                Py_DECREF(mod_or_class_dict);
             }
             STACK_GROW(1);
             stack_pointer[-1] = v;
@@ -1730,10 +1729,8 @@
             mod_or_class_dict = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
-                Py_DECREF(mod_or_class_dict);
                 goto error;
             }
-            Py_DECREF(mod_or_class_dict);
             if (v == NULL) {
                 v = PyDict_GetItemWithError(GLOBALS(), name);
                 if (v != NULL) {
@@ -1754,6 +1751,7 @@
                     }
                 }
             }
+            Py_DECREF(mod_or_class_dict);
             stack_pointer[-1] = v;
             DISPATCH();
         }
