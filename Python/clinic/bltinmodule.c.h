@@ -3,10 +3,9 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
 
 PyDoc_STRVAR(builtin___import____doc__,
 "__import__($module, /, name, globals=None, locals=None, fromlist=(),\n"
@@ -99,7 +98,7 @@ builtin___import__(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
             goto skip_optional_pos;
         }
     }
-    level = _PyLong_AsInt(args[4]);
+    level = PyLong_AsInt(args[4]);
     if (level == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -242,7 +241,7 @@ builtin_chr(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int i;
 
-    i = _PyLong_AsInt(arg);
+    i = PyLong_AsInt(arg);
     if (i == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -342,7 +341,7 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         goto skip_optional_pos;
     }
     if (args[3]) {
-        flags = _PyLong_AsInt(args[3]);
+        flags = PyLong_AsInt(args[3]);
         if (flags == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -360,7 +359,7 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         }
     }
     if (args[5]) {
-        optimize = _PyLong_AsInt(args[5]);
+        optimize = PyLong_AsInt(args[5]);
         if (optimize == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -372,7 +371,7 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    feature_version = _PyLong_AsInt(args[6]);
+    feature_version = PyLong_AsInt(args[6]);
     if (feature_version == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1212,4 +1211,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=daeee81b018824f4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=607c62f2341ebfc0 input=a9049054013a1b77]*/

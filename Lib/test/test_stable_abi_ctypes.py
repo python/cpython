@@ -375,6 +375,7 @@ SYMBOL_NAMES = (
     "PyList_Type",
     "PyLongRangeIter_Type",
     "PyLong_AsDouble",
+    "PyLong_AsInt",
     "PyLong_AsLong",
     "PyLong_AsLongAndOverflow",
     "PyLong_AsLongLong",

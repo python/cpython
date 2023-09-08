@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
 
 PyDoc_STRVAR(warnings_warn__doc__,
 "warn($module, /, message, category=None, stacklevel=1, source=None, *,\n"
@@ -194,7 +194,7 @@ warnings_warn_explicit(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
     filename = args[2];
-    lineno = _PyLong_AsInt(args[3]);
+    lineno = PyLong_AsInt(args[3]);
     if (lineno == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -243,4 +243,4 @@ warnings_filters_mutated(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return warnings_filters_mutated_impl(module);
 }
-/*[clinic end generated code: output=f8d67e0f75771c36 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8c396a721ef75739 input=a9049054013a1b77]*/

@@ -2,12 +2,13 @@
  * Provides callables to forward PEP 669 events to legacy events.
  */
 
-#include <stddef.h>
 #include "Python.h"
-#include "opcode.h"
-#include "pycore_ceval.h"
+#include "pycore_ceval.h"         // export _PyEval_SetProfile()
 #include "pycore_object.h"
-#include "pycore_sysmodule.h"
+#include "pycore_sysmodule.h"     // _PySys_Audit()
+
+#include "opcode.h"
+#include <stddef.h>
 
 typedef struct _PyLegacyEventHandler {
     PyObject_HEAD
@@ -256,7 +257,7 @@ sys_trace_line_func(
         Py_RETURN_NONE;
     }
     assert(PyVectorcall_NARGS(nargsf) == 2);
-    int line = _PyLong_AsInt(args[1]);
+    int line = PyLong_AsInt(args[1]);
     assert(line >= 0);
     PyFrameObject *frame = PyEval_GetFrame();
     if (frame == NULL) {
@@ -282,9 +283,9 @@ sys_trace_jump_func(
         Py_RETURN_NONE;
     }
     assert(PyVectorcall_NARGS(nargsf) == 3);
-    int from = _PyLong_AsInt(args[1])/sizeof(_Py_CODEUNIT);
+    int from = PyLong_AsInt(args[1])/sizeof(_Py_CODEUNIT);
     assert(from >= 0);
-    int to = _PyLong_AsInt(args[2])/sizeof(_Py_CODEUNIT);
+    int to = PyLong_AsInt(args[2])/sizeof(_Py_CODEUNIT);
     assert(to >= 0);
     if (to > from) {
         /* Forward jump */

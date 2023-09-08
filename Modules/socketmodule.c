@@ -106,12 +106,13 @@ Local naming conventions:
 #endif
 
 #include "Python.h"
+#include "pycore_capsule.h"       // _PyCapsule_SetTraverse()
+#include "pycore_dict.h"          // _PyDict_Pop()
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_moduleobject.h"  // _PyModule_GetState
 
-
 #ifdef _Py_MEMORY_SANITIZER
-# include <sanitizer/msan_interface.h>
+#  include <sanitizer/msan_interface.h>
 #endif
 
 /* Socket object documentation */
@@ -263,7 +264,7 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #ifdef HAVE_NETDB_H
 #  include <netdb.h>
 #endif
-# include <unistd.h>
+#include <unistd.h>               // close()
 
 /* Headers needed for inet_ntoa() and inet_addr() */
 #   include <arpa/inet.h>
@@ -4878,17 +4879,17 @@ sock_sendmsg_afalg(PySocketSockObject *self, PyObject *args, PyObject *kwds)
 
     /* op is a required, keyword-only argument >= 0 */
     if (opobj != NULL) {
-        op = _PyLong_AsInt(opobj);
+        op = PyLong_AsInt(opobj);
     }
     if (op < 0) {
-        /* override exception from _PyLong_AsInt() */
+        /* override exception from PyLong_AsInt() */
         PyErr_SetString(PyExc_TypeError,
                         "Invalid or missing argument 'op'");
         goto finally;
     }
     /* assoclen is optional but must be >= 0 */
     if (assoclenobj != NULL) {
-        assoclen = _PyLong_AsInt(assoclenobj);
+        assoclen = PyLong_AsInt(assoclenobj);
         if (assoclen == -1 && PyErr_Occurred()) {
             goto finally;
         }
@@ -5006,7 +5007,7 @@ sock_shutdown(PySocketSockObject *s, PyObject *arg)
     int how;
     int res;
 
-    how = _PyLong_AsInt(arg);
+    how = PyLong_AsInt(arg);
     if (how == -1 && PyErr_Occurred())
         return NULL;
     Py_BEGIN_ALLOW_THREADS
@@ -5397,8 +5398,8 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
             }
 
             if (!SetHandleInformation((HANDLE)fd, HANDLE_FLAG_INHERIT, 0)) {
-                closesocket(fd);
                 PyErr_SetFromWindowsErr(0);
+                closesocket(fd);
                 return -1;
             }
 
@@ -5612,8 +5613,9 @@ socket_gethostname(PyObject *self, PyObject *unused)
                            name,
                            &size))
     {
+        PyErr_SetFromWindowsErr(0);
         PyMem_Free(name);
-        return PyErr_SetFromWindowsErr(0);
+        return NULL;
     }
 
     result = PyUnicode_FromWideChar(name, size);
@@ -6211,8 +6213,8 @@ socket_dup(PyObject *self, PyObject *fdobj)
     }
 
     if (!SetHandleInformation((HANDLE)newfd, HANDLE_FLAG_INHERIT, 0)) {
-        closesocket(newfd);
         PyErr_SetFromWindowsErr(0);
+        closesocket(newfd);
         return NULL;
     }
 #else
@@ -6659,11 +6661,12 @@ socket_inet_ntop(PyObject *self, PyObject *args)
 
     /* inet_ntop guarantee NUL-termination of resulting string. */
     retval = inet_ntop(af, packed_ip.buf, ip, sizeof(ip));
-    PyBuffer_Release(&packed_ip);
     if (!retval) {
         PyErr_SetFromErrno(PyExc_OSError);
+        PyBuffer_Release(&packed_ip);
         return NULL;
     } else {
+        PyBuffer_Release(&packed_ip);
         return PyUnicode_FromString(retval);
     }
 }
@@ -7002,8 +7005,8 @@ socket_if_nameindex(PyObject *self, PyObject *arg)
 
     ni = if_nameindex();
     if (ni == NULL) {
-        Py_DECREF(list);
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_DECREF(list);
         return NULL;
     }
 

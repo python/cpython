@@ -3,9 +3,9 @@
 
 #include "Python.h"
 
-#include "pycore_ast.h"           // asdl_seq_*
+#include "pycore_ast.h"           // asdl_seq_GET()
 #include "pycore_call.h"          // _PyObject_CallMethodFormat()
-#include "pycore_compile.h"       // _PyAST_Optimize
+#include "pycore_compile.h"       // _PyAST_Optimize()
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_frame.h"         // _PyFrame_GetCode()
 #include "pycore_interp.h"        // PyInterpreterState.gc
@@ -13,6 +13,7 @@
 #include "pycore_pyarena.h"       // _PyArena_Free()
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_traceback.h"     // EXCEPTION_TB_HEADER
 
 #include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
