@@ -448,4 +448,13 @@ def _parse_args(args, **kwargs):
         # --forever implies --failfast
         ns.failfast = True
 
+    if ns.huntrleaks:
+        warmup, repetitions, _ = ns.huntrleaks
+        if warmup < 1 or repetitions < 1:
+            msg = ("Invalid values for the --huntrleaks/-R parameters. The "
+                   "number of warmups and repetitions must be at least 1 "
+                   "each (1:1).")
+            print(msg, file=sys.stderr, flush=True)
+            sys.exit(2)
+
     return ns
