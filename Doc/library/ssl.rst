@@ -1218,7 +1218,7 @@ SSL sockets also have the following additional methods and attributes:
    end of the SSL channel as a list of ``_ssl.Certificate``.
    Return ``None`` if no certificates were provided.
 
-   .. versionadded:: 3.13 
+   .. versionadded:: 3.13
 
 .. method:: SSLSocket.get_unverified_chain()
 
@@ -1226,7 +1226,7 @@ SSL sockets also have the following additional methods and attributes:
    end of the SSL channel as a list of ``_ssl.Certificate``.
    Return ``None`` if no certificates were provided.
 
-   .. versionadded:: 3.13 
+   .. versionadded:: 3.13
 
 .. method:: SSLSocket.cipher()
 
