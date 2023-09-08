@@ -863,6 +863,8 @@ class EnumType(type):
                 value = first_enum._generate_next_value_(name, start, count, last_values[:])
                 last_values.append(value)
                 names.append((name, value))
+        if names is None:
+            names = ()
 
         # Here, names is either an iterable of (name, value) or a mapping.
         for item in names:
@@ -1107,6 +1109,11 @@ class Enum(metaclass=EnumType):
             for member in cls._member_map_.values():
                 if member._value_ == value:
                     return member
+        # still not found -- verify that members exist, in-case somebody got here mistakenly
+        # (such as via super when trying to override __new__)
+        if not cls._member_map_:
+            raise TypeError("%r has no members defined" % cls)
+        #
         # still not found -- try _missing_ hook
         try:
             exc = None

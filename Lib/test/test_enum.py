@@ -322,6 +322,17 @@ class _EnumTests:
         with self.assertRaises(AttributeError):
             del Season.SPRING.name
 
+    def test_bad_new_super(self):
+        with self.assertRaisesRegex(
+                TypeError,
+                'has no members defined',
+            ):
+            class BadSuper(self.enum_type):
+                def __new__(cls, value):
+                    obj = super().__new__(cls, value)
+                    return obj
+                failed = 1
+
     def test_basics(self):
         TE = self.MainEnum
         if self.is_flag:
