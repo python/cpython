@@ -1286,7 +1286,7 @@ dummy_func(
             }
         }
 
-        op(_LOAD_LOCALS, ( -- locals)) {
+        inst(LOAD_LOCALS, ( -- locals)) {
             locals = LOCALS();
             if (locals == NULL) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
@@ -1296,9 +1296,7 @@ dummy_func(
             Py_INCREF(locals);
         }
 
-        macro(LOAD_LOCALS) = _LOAD_LOCALS;
-
-        op(_LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
+        inst(LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
                 goto error;
@@ -1326,9 +1324,38 @@ dummy_func(
             Py_DECREF(mod_or_class_dict);
         }
 
-        macro(LOAD_NAME) = _LOAD_LOCALS + _LOAD_FROM_DICT_OR_GLOBALS;
-
-        macro(LOAD_FROM_DICT_OR_GLOBALS) = _LOAD_FROM_DICT_OR_GLOBALS;
+        inst(LOAD_NAME, (-- v)) {
+            PyObject *mod_or_class_dict = LOCALS();
+            if (mod_or_class_dict == NULL) {
+                _PyErr_SetString(tstate, PyExc_SystemError,
+                                 "no locals found");
+                ERROR_IF(true, error);
+            }
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
+                goto error;
+            }
+            if (v == NULL) {
+                v = PyDict_GetItemWithError(GLOBALS(), name);
+                if (v != NULL) {
+                    Py_INCREF(v);
+                }
+                else if (_PyErr_Occurred(tstate)) {
+                    goto error;
+                }
+                else {
+                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
+                        goto error;
+                    }
+                    if (v == NULL) {
+                        _PyEval_FormatExcCheckArg(
+                                    tstate, PyExc_NameError,
+                                    NAME_ERROR_MSG, name);
+                        goto error;
+                    }
+                }
+            }
+        }
 
         family(LOAD_GLOBAL, INLINE_CACHE_ENTRIES_LOAD_GLOBAL) = {
             LOAD_GLOBAL_MODULE,
