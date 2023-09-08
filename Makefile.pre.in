@@ -900,6 +900,14 @@ python.worker.js: $(srcdir)/Tools/wasm/python.worker.js
 	@cp $(srcdir)/Tools/wasm/python.worker.js $@
 
 ##########################################################################
+# Bundle wheels for ensurepip
+.PHONY: download-ensurepip-wheels
+download-ensurepip-wheels: $(BUILDPYTHON) platform
+	if test "x$(ENSUREPIP)" != "xno"  ; then \
+		$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/bundle_ensurepip_wheels.py ; \
+	fi
+
+##########################################################################
 # Build static libmpdec.a
 LIBMPDEC_CFLAGS=@LIBMPDEC_CFLAGS@ $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 

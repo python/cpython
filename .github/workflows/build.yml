@@ -421,6 +421,12 @@ jobs:
     - name: Remount sources writable for tests
       # some tests write to srcdir, lack of pyc files slows down testing
       run: sudo mount $CPYTHON_RO_SRCDIR -oremount,rw
+    # Download wheels for the venv step
+    - name: Download ensurepip wheels
+      env:
+        SSL_CERT_DIR: /etc/ssl/certs
+      run: make download-ensurepip-wheels
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
     - name: Setup directory envs for out-of-tree builds
       run: |
         echo "CPYTHON_BUILDDIR=$(realpath -m ${GITHUB_WORKSPACE}/../cpython-builddir)" >> $GITHUB_ENV
