@@ -877,18 +877,16 @@ class SSLObject:
         return self._sslobj.getpeercert(binary_form)
 
     def get_verified_chain(self):
-        """Returns verified verified certificate chain provided by the other
-        end of the SSL channel.
-
-        Return None if no certificates were provided.
+        """Returns verified certificate chain provided by the other
+        end of the SSL channel as a list of ``_ssl.Certificate``.
+        Return ``None`` if no certificates were provided.
         """
         return self._sslobj.get_verified_chain()
 
     def get_unverified_chain(self):
-        """Returns unverified verified certificate chain provided by the other
-        end of the SSL channel.
-
-        Return None if no certificates were provided.
+        """Returns unverified certificate chain provided by the other
+        end of the SSL channel as a list of ``_ssl.Certificate``.
+        Return ``None`` if no certificates were provided.
         """
         return self._sslobj.get_unverified_chain()
 
