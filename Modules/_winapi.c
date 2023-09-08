@@ -796,20 +796,43 @@ normalize_environment(PyObject* environment)
     }
 
     keyfunc = PyCFunction_New(&sortenvironmentkey_def, NULL);
+    if (keyfunc == NULL) {
+        goto error;
+    }
     sort = PyObject_GetAttrString(keys, "sort");
+    if (sort == NULL) {
+        goto error;
+    }
     args = PyTuple_New(0);
+    if (args == NULL) {
+        goto error;
+    }
     kwargs = PyDict_New();
-    PyDict_SetItemString(kwargs, "key", keyfunc);
+    if (kwargs == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(kwargs, "key", keyfunc) < 0) {
+        goto error;
+    }
     if (PyObject_Call(sort, args, kwargs) == NULL) {
         goto error;
     }
 
     result = PyDict_New();
+    if (result == NULL) {
+        goto error;
+    }
     wchar_t *prev_key_string = NULL;
 
     for (int i=0; i<PyList_GET_SIZE(keys); i++) {
         PyObject *key = PyList_GET_ITEM(keys, i);
+        if (key != NULL) {
+            goto error;
+        }
         PyObject* value = PyObject_GetItem(environment, key);
+        if (value != NULL) {
+            goto error;
+        }
 
         if (! PyUnicode_Check(key) || ! PyUnicode_Check(value)) {
             PyErr_SetString(PyExc_TypeError,
@@ -839,14 +862,22 @@ normalize_environment(PyObject* environment)
 
         if (i == 0) {
             prev_key_string = PyUnicode_AsWideCharString(key, NULL);
+            if (prev_key_string == NULL) {
+                goto error;
+            }
             continue;
         }
 
         wchar_t *key_string = PyUnicode_AsWideCharString(key, NULL);
+        if (key_string == NULL) {
+            goto error;
+        }
         if (CompareStringOrdinal(prev_key_string, -1, key_string, -1, TRUE) == CSTR_EQUAL) {
             continue;
         }
-        PyObject_SetItem(result, key, value);
+        if (PyObject_SetItem(result, key, value) < 0) {
+            goto error;
+        }
         PyMem_Free(prev_key_string);
         prev_key_string = key_string;
     }
