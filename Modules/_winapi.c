@@ -786,7 +786,8 @@ static PyMethodDef sortenvironmentkey_def = {
 };
 
 static PyObject *
-normalize_environment(PyObject* environment) {
+normalize_environment(PyObject* environment)
+{
     PyObject *result, *keys, *keyfunc, *sort, *args, *kwargs;
 
     keys = PyMapping_Keys(environment);
