@@ -1,0 +1,2 @@
+Implement the CLI of the :mod:`symtable` module and improve the repr of
+:class:`~symtable.Symbol`.

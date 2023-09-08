@@ -226,17 +226,14 @@ class Symbol:
         self.__module_scope = module_scope
 
     def __repr__(self):
-        flags_repr = [_scopes_value_to_name.get(self.__scope, str(self.__scope))]
-        for flagname, flagvalue in _flags.items():
-            if self.__flags & flagvalue:
-                flags_repr.append(flagname)
-        return "<symbol {!r} {}>".format(self.__name, ', '.join(flags_repr))
+        flags_str = '|'.join(self._flags_str())
+        return f'<symbol {self.__name!r}: {self._scope_str()}, {flags_str}>'
 
     def _scope_str(self):
-        return _scopes_value_to_name[self.__scope]
+        return _scopes_value_to_name.get(self.__scope) or str(self.__scope)
 
     def _flags_str(self):
-        for flagname, flagvalue in _flags.items():
+        for flagname, flagvalue in _flags:
             if self.__flags & flagvalue == flagvalue:
                 yield flagname
 
@@ -328,33 +325,43 @@ class Symbol:
         else:
             return self.__namespaces[0]
 
-_flags = {'USE': USE}
-_flags.update(kv for kv in globals().items() if kv[0].startswith('DEF_'))
+
+_flags = [('USE', USE)]
+_flags.extend(kv for kv in globals().items() if kv[0].startswith('DEF_'))
 _scopes_names = ('FREE', 'LOCAL', 'GLOBAL_IMPLICIT', 'GLOBAL_EXPLICIT', 'CELL')
-_scopes_name_to_value = {n: globals()[n] for n in _scopes_names}
-_scopes_value_to_name = {v: k for k, v in _scopes_name_to_value.items()}
+_scopes_value_to_name = {globals()[n]: n for n in _scopes_names}
+
+
+def main(args):
+    import sys
+    def print_symbols(table, level=0):
+        indent = '    ' * level
+        nested = "nested " if table.is_nested() else ""
+        if table.get_type() == 'module':
+            what = f'from file {table._filename!r}'
+        else:
+            what = f'{table.get_name()!r}'
+        print(f'{indent}symbol table for {nested}{table.get_type()} {what}:')
+        for ident in table.get_identifiers():
+            symbol = table.lookup(ident)
+            flags = ', '.join(symbol._flags_str()).lower()
+            print(f'    {indent}{symbol._scope_str().lower()} symbol {symbol.get_name()!r}: {flags}')
+        print()
+
+        for table2 in table.get_children():
+            print_symbols(table2, level + 1)
+
+    for filename in args or ['-']:
+        if filename == '-':
+            src = sys.stdin.read()
+            filename = '<stdin>'
+        else:
+            with open(filename, 'rb') as f:
+                src = f.read()
+        mod = symtable(src, filename, 'exec')
+        print_symbols(mod)
 
 
 if __name__ == "__main__":
     import sys
-
-    def print_symbols(table, level=0):
-        indent = '    ' * level
-        for ident in table.get_identifiers():
-            info = table.lookup(ident)
-            flags = ', '.join(info._flags_str()).lower()
-            print(f'{indent}{info._scope_str().lower()} symbol {info.get_name()!r}: {flags}')
-            for table2 in info.get_namespaces():
-                print_symbols(table2, level + 1)
-                print()
-
-    if len(sys.argv) > 1:
-        for filename in sys.argv[1:]:
-            with open(filename, 'rb') as f:
-                src = f.read()
-            mod = symtable(src, filename, 'exec')
-            print_symbols(mod)
-    else:
-            src = sys.stdin.read()
-            mod = symtable(src, '<stdin>', 'exec')
-            print_symbols(mod)
+    main(sys.argv[1:])
