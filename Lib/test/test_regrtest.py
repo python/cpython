@@ -5,6 +5,7 @@ Note: test_regrtest cannot be run twice in parallel.
 """
 
 import contextlib
+import dataclasses
 import glob
 import io
 import locale
@@ -21,6 +22,7 @@ from test import libregrtest
 from test import support
 from test.support import os_helper, TestStats
 from test.libregrtest import utils, setup
+from test.libregrtest.runtest import normalize_test_name
 
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
@@ -32,6 +34,7 @@ LOG_PREFIX = r'[0-9]+:[0-9]+:[0-9]+ (?:load avg: [0-9]+\.[0-9]{2} )?'
 EXITCODE_BAD_TEST = 2
 EXITCODE_ENV_CHANGED = 3
 EXITCODE_NO_TESTS_RAN = 4
+EXITCODE_RERUN_FAIL = 5
 EXITCODE_INTERRUPTED = 130
 
 TEST_INTERRUPTED = textwrap.dedent("""
@@ -96,11 +99,11 @@ class ParseArgsTestCase(unittest.TestCase):
         ns = libregrtest._parse_args([])
         self.assertEqual(ns.verbose, 0)
 
-    def test_verbose2(self):
-        for opt in '-w', '--verbose2':
+    def test_rerun(self):
+        for opt in '-w', '--rerun', '--verbose2':
             with self.subTest(opt=opt):
                 ns = libregrtest._parse_args([opt])
-                self.assertTrue(ns.verbose2)
+                self.assertTrue(ns.rerun)
 
     def test_verbose3(self):
         for opt in '-W', '--verbose3':
@@ -362,6 +365,13 @@ class ParseArgsTestCase(unittest.TestCase):
                         'unrecognized arguments: --unknown-option')
 
 
+@dataclasses.dataclass(slots=True)
+class Rerun:
+    name: str
+    match: str | None
+    success: bool
+
+
 class BaseTestCase(unittest.TestCase):
     TEST_UNIQUE_ID = 1
     TESTNAME_PREFIX = 'test_regrtest_'
@@ -423,11 +433,11 @@ class BaseTestCase(unittest.TestCase):
 
     def check_executed_tests(self, output, tests, skipped=(), failed=(),
                              env_changed=(), omitted=(),
-                             rerun={}, run_no_tests=(),
+                             rerun=None, run_no_tests=(),
                              resource_denied=(),
                              randomize=False, interrupted=False,
                              fail_env_changed=False,
-                             *, stats):
+                             *, stats, forever=False, filtered=False):
         if isinstance(tests, str):
             tests = [tests]
         if isinstance(skipped, str):
@@ -445,11 +455,20 @@ class BaseTestCase(unittest.TestCase):
         if isinstance(stats, int):
             stats = TestStats(stats)
 
+        rerun_failed = []
+        if rerun is not None:
+            failed = [rerun.name]
+            if not rerun.success:
+                rerun_failed.append(rerun.name)
+
         executed = self.parse_executed_tests(output)
+        total_tests = list(tests)
+        if rerun is not None:
+            total_tests.append(rerun.name)
         if randomize:
-            self.assertEqual(set(executed), set(tests), output)
+            self.assertEqual(set(executed), set(total_tests), output)
         else:
-            self.assertEqual(executed, tests, output)
+            self.assertEqual(executed, total_tests, output)
 
         def plural(count):
             return 's' if count != 1 else ''
@@ -465,6 +484,10 @@ class BaseTestCase(unittest.TestCase):
             regex = list_regex('%s test%s skipped', skipped)
             self.check_line(output, regex)
 
+        if resource_denied:
+            regex = list_regex(r'%s test%s skipped \(resource denied\)', resource_denied)
+            self.check_line(output, regex)
+
         if failed:
             regex = list_regex('%s test%s failed', failed)
             self.check_line(output, regex)
@@ -478,32 +501,36 @@ class BaseTestCase(unittest.TestCase):
             regex = list_regex('%s test%s omitted', omitted)
             self.check_line(output, regex)
 
-        if rerun:
-            regex = list_regex('%s re-run test%s', rerun.keys())
+        if rerun is not None:
+            regex = list_regex('%s re-run test%s', [rerun.name])
             self.check_line(output, regex)
-            regex = LOG_PREFIX + r"Re-running failed tests in verbose mode"
+            regex = LOG_PREFIX + fr"Re-running 1 failed tests in verbose mode"
             self.check_line(output, regex)
-            for name, match in rerun.items():
-                regex = LOG_PREFIX + f"Re-running {name} in verbose mode \\(matching: {match}\\)"
-                self.check_line(output, regex)
+            regex = fr"Re-running {rerun.name} in verbose mode"
+            if rerun.match:
+                regex = fr"{regex} \(matching: {rerun.match}\)"
+            self.check_line(output, regex)
 
         if run_no_tests:
             regex = list_regex('%s test%s run no tests', run_no_tests)
             self.check_line(output, regex)
 
-        good = (len(tests) - len(skipped) - len(failed)
+        good = (len(tests) - len(skipped) - len(resource_denied) - len(failed)
                 - len(omitted) - len(env_changed) - len(run_no_tests))
         if good:
-            regex = r'%s test%s OK\.$' % (good, plural(good))
-            if not skipped and not failed and good > 1:
+            regex = r'%s test%s OK\.' % (good, plural(good))
+            if not skipped and not failed and (rerun is None or rerun.success) and good > 1:
                 regex = 'All %s' % regex
-            self.check_line(output, regex)
+            self.check_line(output, regex, full=True)
 
         if interrupted:
             self.check_line(output, 'Test suite interrupted by signal SIGINT.')
 
         # Total tests
-        parts = [f'run={stats.tests_run:,}']
+        text = f'run={stats.tests_run:,}'
+        if filtered:
+            text = fr'{text} \(filtered\)'
+        parts = [text]
         if stats.failures:
             parts.append(f'failures={stats.failures:,}')
         if stats.skipped:
@@ -512,39 +539,52 @@ class BaseTestCase(unittest.TestCase):
         self.check_line(output, line, full=True)
 
         # Total test files
-        report = [f'success={good}']
-        if failed:
-            report.append(f'failed={len(failed)}')
-        if env_changed:
-            report.append(f'env_changed={len(env_changed)}')
-        if skipped:
-            report.append(f'skipped={len(skipped)}')
-        if resource_denied:
-            report.append(f'resource_denied={len(resource_denied)}')
-        if rerun:
-            report.append(f'rerun={len(rerun)}')
-        if run_no_tests:
-            report.append(f'run_no_tests={len(run_no_tests)}')
+        run = len(total_tests) - len(resource_denied)
+        if rerun is not None:
+            total_failed = len(rerun_failed)
+            total_rerun = 1
+        else:
+            total_failed = len(failed)
+            total_rerun = 0
+        if interrupted:
+            run = 0
+        text = f'run={run}'
+        if not forever:
+            text = f'{text}/{len(tests)}'
+        if filtered:
+            text = fr'{text} \(filtered\)'
+        report = [text]
+        for name, ntest in (
+            ('failed', total_failed),
+            ('env_changed', len(env_changed)),
+            ('skipped', len(skipped)),
+            ('resource_denied', len(resource_denied)),
+            ('rerun', total_rerun),
+            ('run_no_tests', len(run_no_tests)),
+        ):
+            if ntest:
+                report.append(f'{name}={ntest}')
         line = fr'Total test files: {" ".join(report)}'
         self.check_line(output, line, full=True)
 
         # Result
-        result = []
+        state = []
         if failed:
-            result.append('FAILURE')
+            state.append('FAILURE')
         elif fail_env_changed and env_changed:
-            result.append('ENV CHANGED')
+            state.append('ENV CHANGED')
         if interrupted:
-            result.append('INTERRUPTED')
-        if not any((good, result, failed, interrupted, skipped,
+            state.append('INTERRUPTED')
+        if not any((good, failed, interrupted, skipped,
                     env_changed, fail_env_changed)):
-            result.append("NO TESTS RAN")
-        elif not result:
-            result.append('SUCCESS')
-        result = ', '.join(result)
-        if rerun:
-            result = 'FAILURE then %s' % result
-        self.check_line(output, f'Result: {result}', full=True)
+            state.append("NO TESTS RAN")
+        elif not state:
+            state.append('SUCCESS')
+        state = ', '.join(state)
+        if rerun is not None:
+            new_state = 'SUCCESS' if rerun.success else 'FAILURE'
+            state = 'FAILURE then ' + new_state
+        self.check_line(output, f'Result: {state}', full=True)
 
     def parse_random_seed(self, output):
         match = self.regex_search(r'Using random seed ([0-9]+)', output)
@@ -563,13 +603,13 @@ class BaseTestCase(unittest.TestCase):
                               stdout=subprocess.PIPE,
                               **kw)
         if proc.returncode != exitcode:
-            msg = ("Command %s failed with exit code %s\n"
+            msg = ("Command %s failed with exit code %s, but exit code %s expected!\n"
                    "\n"
                    "stdout:\n"
                    "---\n"
                    "%s\n"
                    "---\n"
-                   % (str(args), proc.returncode, proc.stdout))
+                   % (str(args), proc.returncode, exitcode, proc.stdout))
             if proc.stderr:
                 msg += ("\n"
                         "stderr:\n"
@@ -734,6 +774,40 @@ class ArgsTestCase(BaseTestCase):
         cmdargs = ['-m', 'test', '--testdir=%s' % self.tmptestdir, *testargs]
         return self.run_python(cmdargs, **kw)
 
+    def test_success(self):
+        code = textwrap.dedent("""
+            import unittest
+
+            class PassingTests(unittest.TestCase):
+                def test_test1(self):
+                    pass
+
+                def test_test2(self):
+                    pass
+
+                def test_test3(self):
+                    pass
+        """)
+        tests = [self.create_test(f'ok{i}', code=code) for i in range(1, 6)]
+
+        output = self.run_tests(*tests)
+        self.check_executed_tests(output, tests,
+                                  stats=3 * len(tests))
+
+    def test_skip(self):
+        code = textwrap.dedent("""
+            import unittest
+            raise unittest.SkipTest("nope")
+        """)
+        test_ok = self.create_test('ok')
+        test_skip = self.create_test('skip', code=code)
+        tests = [test_ok, test_skip]
+
+        output = self.run_tests(*tests)
+        self.check_executed_tests(output, tests,
+                                  skipped=[test_skip],
+                                  stats=1)
+
     def test_failing_test(self):
         # test a failing test
         code = textwrap.dedent("""
@@ -773,14 +847,12 @@ class ArgsTestCase(BaseTestCase):
         # -u audio: 1 resource enabled
         output = self.run_tests('-uaudio', *test_names)
         self.check_executed_tests(output, test_names,
-                                  skipped=tests['network'],
                                   resource_denied=tests['network'],
                                   stats=1)
 
         # no option: 0 resources enabled
-        output = self.run_tests(*test_names)
+        output = self.run_tests(*test_names, exitcode=EXITCODE_NO_TESTS_RAN)
         self.check_executed_tests(output, test_names,
-                                  skipped=test_names,
                                   resource_denied=test_names,
                                   stats=0)
 
@@ -926,9 +998,21 @@ class ArgsTestCase(BaseTestCase):
                         builtins.__dict__['RUN'] = 1
         """)
         test = self.create_test('forever', code=code)
+
+        # --forever
         output = self.run_tests('--forever', test, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, [test]*3, failed=test,
-                                  stats=TestStats(1, 1))
+                                  stats=TestStats(3, 1),
+                                  forever=True)
+
+        # --forever --rerun
+        output = self.run_tests('--forever', '--rerun', test, exitcode=0)
+        self.check_executed_tests(output, [test]*3,
+                                  rerun=Rerun(test,
+                                              match='test_run',
+                                              success=True),
+                                  stats=TestStats(4, 1),
+                                  forever=True)
 
     def check_leak(self, code, what):
         test = self.create_test('huntrleaks', code=code)
@@ -1139,33 +1223,55 @@ class ArgsTestCase(BaseTestCase):
         """)
         testname = self.create_test(code=code)
 
-        output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
+        output = self.run_tests("--rerun", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, [testname],
-                                  failed=testname,
-                                  rerun={testname: "test_fail_always"},
-                                  stats=TestStats(1, 1))
+                                  rerun=Rerun(testname,
+                                              "test_fail_always",
+                                              success=False),
+                                  stats=TestStats(3, 2))
 
     def test_rerun_success(self):
         # FAILURE then SUCCESS
-        code = textwrap.dedent("""
-            import builtins
+        marker_filename = os.path.abspath("regrtest_marker_filename")
+        self.addCleanup(os_helper.unlink, marker_filename)
+        self.assertFalse(os.path.exists(marker_filename))
+
+        code = textwrap.dedent(f"""
+            import os.path
             import unittest
+
+            marker_filename = {marker_filename!r}
 
             class Tests(unittest.TestCase):
                 def test_succeed(self):
                     return
 
                 def test_fail_once(self):
-                    if not hasattr(builtins, '_test_failed'):
-                        builtins._test_failed = True
+                    if not os.path.exists(marker_filename):
+                        open(marker_filename, "w").close()
                         self.fail("bug")
         """)
         testname = self.create_test(code=code)
 
-        output = self.run_tests("-w", testname, exitcode=0)
+        # FAILURE then SUCCESS => exit code 0
+        output = self.run_tests("--rerun", testname, exitcode=0)
         self.check_executed_tests(output, [testname],
-                                  rerun={testname: "test_fail_once"},
-                                  stats=1)
+                                  rerun=Rerun(testname,
+                                              match="test_fail_once",
+                                              success=True),
+                                  stats=TestStats(3, 1))
+        os_helper.unlink(marker_filename)
+
+        # with --fail-rerun, exit code EXITCODE_RERUN_FAIL
+        # on "FAILURE then SUCCESS" state.
+        output = self.run_tests("--rerun", "--fail-rerun", testname,
+                                exitcode=EXITCODE_RERUN_FAIL)
+        self.check_executed_tests(output, [testname],
+                                  rerun=Rerun(testname,
+                                              match="test_fail_once",
+                                              success=True),
+                                  stats=TestStats(3, 1))
+        os_helper.unlink(marker_filename)
 
     def test_rerun_setup_class_hook_failure(self):
         # FAILURE then FAILURE
@@ -1182,10 +1288,12 @@ class ArgsTestCase(BaseTestCase):
         """)
         testname = self.create_test(code=code)
 
-        output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
+        output = self.run_tests("--rerun", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, testname,
                                   failed=[testname],
-                                  rerun={testname: "ExampleTests"},
+                                  rerun=Rerun(testname,
+                                              match="ExampleTests",
+                                              success=False),
                                   stats=0)
 
     def test_rerun_teardown_class_hook_failure(self):
@@ -1203,11 +1311,13 @@ class ArgsTestCase(BaseTestCase):
         """)
         testname = self.create_test(code=code)
 
-        output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
+        output = self.run_tests("--rerun", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, testname,
                                   failed=[testname],
-                                  rerun={testname: "ExampleTests"},
-                                  stats=1)
+                                  rerun=Rerun(testname,
+                                              match="ExampleTests",
+                                              success=False),
+                                  stats=2)
 
     def test_rerun_setup_module_hook_failure(self):
         # FAILURE then FAILURE
@@ -1223,10 +1333,12 @@ class ArgsTestCase(BaseTestCase):
         """)
         testname = self.create_test(code=code)
 
-        output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
+        output = self.run_tests("--rerun", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, testname,
                                   failed=[testname],
-                                  rerun={testname: testname},
+                                  rerun=Rerun(testname,
+                                              match=None,
+                                              success=False),
                                   stats=0)
 
     def test_rerun_teardown_module_hook_failure(self):
@@ -1243,11 +1355,13 @@ class ArgsTestCase(BaseTestCase):
         """)
         testname = self.create_test(code=code)
 
-        output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
-        self.check_executed_tests(output, testname,
+        output = self.run_tests("--rerun", testname, exitcode=EXITCODE_BAD_TEST)
+        self.check_executed_tests(output, [testname],
                                   failed=[testname],
-                                  rerun={testname: testname},
-                                  stats=1)
+                                  rerun=Rerun(testname,
+                                              match=None,
+                                              success=False),
+                                  stats=2)
 
     def test_rerun_setup_hook_failure(self):
         # FAILURE then FAILURE
@@ -1263,11 +1377,13 @@ class ArgsTestCase(BaseTestCase):
         """)
         testname = self.create_test(code=code)
 
-        output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
+        output = self.run_tests("--rerun", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, testname,
                                   failed=[testname],
-                                  rerun={testname: "test_success"},
-                                  stats=1)
+                                  rerun=Rerun(testname,
+                                              match="test_success",
+                                              success=False),
+                                  stats=2)
 
     def test_rerun_teardown_hook_failure(self):
         # FAILURE then FAILURE
@@ -1283,11 +1399,13 @@ class ArgsTestCase(BaseTestCase):
         """)
         testname = self.create_test(code=code)
 
-        output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
+        output = self.run_tests("--rerun", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, testname,
                                   failed=[testname],
-                                  rerun={testname: "test_success"},
-                                  stats=1)
+                                  rerun=Rerun(testname,
+                                              match="test_success",
+                                              success=False),
+                                  stats=2)
 
     def test_rerun_async_setup_hook_failure(self):
         # FAILURE then FAILURE
@@ -1303,11 +1421,12 @@ class ArgsTestCase(BaseTestCase):
         """)
         testname = self.create_test(code=code)
 
-        output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
+        output = self.run_tests("--rerun", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, testname,
-                                  failed=[testname],
-                                  rerun={testname: "test_success"},
-                                  stats=1)
+                                  rerun=Rerun(testname,
+                                              match="test_success",
+                                              success=False),
+                                  stats=2)
 
     def test_rerun_async_teardown_hook_failure(self):
         # FAILURE then FAILURE
@@ -1323,11 +1442,13 @@ class ArgsTestCase(BaseTestCase):
         """)
         testname = self.create_test(code=code)
 
-        output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
+        output = self.run_tests("--rerun", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, testname,
                                   failed=[testname],
-                                  rerun={testname: "test_success"},
-                                  stats=1)
+                                  rerun=Rerun(testname,
+                                              match="test_success",
+                                              success=False),
+                                  stats=2)
 
     def test_no_tests_ran(self):
         code = textwrap.dedent("""
@@ -1343,7 +1464,7 @@ class ArgsTestCase(BaseTestCase):
                                 exitcode=EXITCODE_NO_TESTS_RAN)
         self.check_executed_tests(output, [testname],
                                   run_no_tests=testname,
-                                  stats=0)
+                                  stats=0, filtered=True)
 
     def test_no_tests_ran_skip(self):
         code = textwrap.dedent("""
@@ -1374,7 +1495,7 @@ class ArgsTestCase(BaseTestCase):
                                 exitcode=EXITCODE_NO_TESTS_RAN)
         self.check_executed_tests(output, [testname, testname2],
                                   run_no_tests=[testname, testname2],
-                                  stats=0)
+                                  stats=0, filtered=True)
 
     def test_no_test_ran_some_test_exist_some_not(self):
         code = textwrap.dedent("""
@@ -1398,7 +1519,7 @@ class ArgsTestCase(BaseTestCase):
                                 "-m", "test_other_bug", exitcode=0)
         self.check_executed_tests(output, [testname, testname2],
                                   run_no_tests=[testname],
-                                  stats=1)
+                                  stats=1, filtered=True)
 
     @support.cpython_only
     def test_uncollectable(self):
@@ -1714,6 +1835,17 @@ class TestUtils(unittest.TestCase):
                          '3 hour 2 min')
         self.assertEqual(utils.format_duration(3 * 3600 + 1),
                          '3 hour 1 sec')
+
+    def test_normalize_test_name(self):
+        normalize = normalize_test_name
+        self.assertEqual(normalize('test_access (test.test_os.FileTests.test_access)'),
+                         'test_access')
+        self.assertEqual(normalize('setUpClass (test.test_os.ChownFileTests)', is_error=True),
+                         'ChownFileTests')
+        self.assertEqual(normalize('test_success (test.test_bug.ExampleTests.test_success)', is_error=True),
+                         'test_success')
+        self.assertIsNone(normalize('setUpModule (test.test_x)', is_error=True))
+        self.assertIsNone(normalize('tearDownModule (test.test_module)', is_error=True))
 
 
 if __name__ == '__main__':
