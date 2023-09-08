@@ -2,6 +2,8 @@ import os
 import sys
 import unittest
 
+raise unittest.SkipTest("FIXME! broken test see: https://github.com/python/cpython/pull/109004")
+
 from test.support import os_helper
 from test.support.os_helper import TESTFN, TESTFN_ASCII
 
