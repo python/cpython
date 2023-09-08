@@ -12,7 +12,8 @@ import unittest
 from test.libregrtest.cmdline import _parse_args, Namespace
 from test.libregrtest.runtest import (
     findtests, split_test_packages, runtest, abs_module_name,
-    PROGRESS_MIN_TIME, State, FilterDict, RunTests, TestResult, TestList)
+    PROGRESS_MIN_TIME, State, RunTests, TestResult,
+    FilterTuple, FilterDict, TestList)
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.pgo import setup_pgo_tests
 from test.libregrtest.utils import (strip_py_suffix, count, format_duration,
@@ -62,10 +63,35 @@ class Regrtest:
         # Namespace of command line options
         self.ns: Namespace = ns
 
+        # Actions
+        self.want_header = ns.header
+        self.want_list_tests = ns.list_tests
+        self.want_list_cases = ns.list_cases
+        self.want_wait = ns.wait
+        self.want_cleanup = ns.cleanup
+
+        # Select tests
+        if ns.match_tests:
+            self.match_tests: FilterTuple = tuple(ns.match_tests)
+        else:
+            self.match_tests = None
+        if ns.ignore_tests:
+            self.ignore_tests: FilterTuple = tuple(ns.ignore_tests)
+        else:
+            self.ignore_tests = None
+        self.exclude = ns.exclude
+        self.fromfile = ns.fromfile
+        self.starting_test = ns.start
+
+        # Options to run tests
+        self.forever = ns.forever
+        self.randomize = ns.randomize
+        self.random_seed = ns.random_seed
+
         # tests
         self.tests = []
         self.selected = []
-        self.all_runtests: list[RunTests] = []
+        self.first_runtests: RunTests | None = None
 
         # test results
         self.good: TestList = []
@@ -187,12 +213,8 @@ class Regrtest:
     def find_tests(self):
         ns = self.ns
         single = ns.single
-        fromfile = ns.fromfile
         pgo = ns.pgo
-        exclude = ns.exclude
         test_dir = ns.testdir
-        starting_test = ns.start
-        randomize = ns.randomize
 
         if single:
             self.next_single_filename = os.path.join(self.tmp_dir, 'pynexttest')
@@ -203,12 +225,12 @@ class Regrtest:
             except OSError:
                 pass
 
-        if fromfile:
+        if self.fromfile:
             self.tests = []
             # regex to match 'test_builtin' in line:
             # '0:00:00 [  4/400] test_builtin -- test_dict took 1 sec'
             regex = re.compile(r'\btest_[a-zA-Z0-9_]+\b')
-            with open(os.path.join(os_helper.SAVEDCWD, fromfile)) as fp:
+            with open(os.path.join(os_helper.SAVEDCWD, self.fromfile)) as fp:
                 for line in fp:
                     line = line.split('#', 1)[0]
                     line = line.strip()
@@ -223,14 +245,14 @@ class Regrtest:
             setup_pgo_tests(ns)
 
         exclude_tests = set()
-        if exclude:
+        if self.exclude:
             for arg in ns.args:
                 exclude_tests.add(arg)
             ns.args = []
 
         alltests = findtests(testdir=test_dir, exclude=exclude_tests)
 
-        if not fromfile:
+        if not self.fromfile:
             self.selected = self.tests or ns.args
             if self.selected:
                 self.selected = split_test_packages(self.selected)
@@ -248,17 +270,17 @@ class Regrtest:
                 pass
 
         # Remove all the selected tests that precede start if it's set.
-        if starting_test:
+        if self.starting_test:
             try:
-                del self.selected[:self.selected.index(starting_test)]
+                del self.selected[:self.selected.index(self.starting_test)]
             except ValueError:
-                print(f"Cannot find starting test: {starting_test}")
+                print(f"Cannot find starting test: {self.starting_test}")
                 sys.exit(1)
 
-        if randomize:
-            if ns.random_seed is None:
-                ns.random_seed = random.randrange(10000000)
-            random.seed(ns.random_seed)
+        if self.randomize:
+            if self.random_seed is None:
+                self.random_seed = random.randrange(100_000_000)
+            random.seed(self.random_seed)
             random.shuffle(self.selected)
 
     def list_tests(self):
@@ -279,7 +301,7 @@ class Regrtest:
         ns = self.ns
         test_dir = ns.testdir
         support.verbose = False
-        support.set_match_tests(ns.match_tests, ns.ignore_tests)
+        support.set_match_tests(self.match_tests, self.ignore_tests)
 
         skipped = []
         for test_name in self.selected:
@@ -306,20 +328,18 @@ class Regrtest:
                 rerun_match_tests[result.test_name] = match_tests
         return rerun_match_tests
 
-    def _rerun_failed_tests(self, need_rerun):
+    def _rerun_failed_tests(self, need_rerun, runtests: RunTests):
         # Configure the runner to re-run tests
         ns = self.ns
         ns.verbose = True
         ns.failfast = False
         ns.verbose3 = False
-        ns.forever = False
         if ns.use_mp is None:
             ns.use_mp = 1
 
         # Get tests to re-run
         tests = [result.test_name for result in need_rerun]
         match_tests = self.get_rerun_match(need_rerun)
-        self.set_tests(tests)
 
         # Clear previously failed tests
         self.rerun_bad.extend(self.bad)
@@ -328,11 +348,14 @@ class Regrtest:
 
         # Re-run failed tests
         self.log(f"Re-running {len(tests)} failed tests in verbose mode in subprocesses")
-        runtests = RunTests(tuple(tests), match_tests=match_tests, rerun=True)
-        self.all_runtests.append(runtests)
+        runtests = runtests.copy(tests=tuple(tests),
+                                 match_tests=match_tests,
+                                 rerun=True,
+                                 forever=False)
+        self.set_tests(runtests)
         self._run_tests_mp(runtests)
 
-    def rerun_failed_tests(self, need_rerun):
+    def rerun_failed_tests(self, need_rerun, runtests: RunTests):
         if self.ns.python:
             # Temp patch for https://github.com/python/cpython/issues/94052
             self.log(
@@ -344,7 +367,7 @@ class Regrtest:
         self.first_state = self.get_tests_state()
 
         print()
-        self._rerun_failed_tests(need_rerun)
+        self._rerun_failed_tests(need_rerun, runtests)
 
         if self.bad:
             print(count(len(self.bad), 'test'), "failed again:")
@@ -572,9 +595,9 @@ class Regrtest:
                 self.win_load_tracker.close()
                 self.win_load_tracker = None
 
-    def set_tests(self, tests):
-        self.tests = tests
-        if self.ns.forever:
+    def set_tests(self, runtests: RunTests):
+        self.tests = runtests.tests
+        if runtests.forever:
             self.test_count_text = ''
             self.test_count_width = 3
         else:
@@ -583,7 +606,7 @@ class Regrtest:
 
     def run_tests(self):
         # For a partial run, we do not need to clutter the output.
-        if (self.ns.header
+        if (self.want_header
             or not(self.ns.pgo or self.ns.quiet or self.ns.single
                    or self.tests or self.ns.args)):
             self.display_header()
@@ -595,17 +618,18 @@ class Regrtest:
                         "3 warmup repetitions can give false positives!")
                 print(msg, file=sys.stdout, flush=True)
 
-        if self.ns.randomize:
-            print("Using random seed", self.ns.random_seed)
+        if self.randomize:
+            print("Using random seed", self.random_seed)
 
         tests = self.selected
-        self.set_tests(tests)
-        runtests = RunTests(tuple(tests), forever=self.ns.forever)
-        self.all_runtests.append(runtests)
+        runtests = RunTests(tuple(tests), forever=self.forever)
+        self.first_runtests = runtests
+        self.set_tests(runtests)
         if self.ns.use_mp:
             self._run_tests_mp(runtests)
         else:
             self.run_tests_sequentially(runtests)
+        return runtests
 
     def finalize(self):
         if self.next_single_filename:
@@ -627,11 +651,7 @@ class Regrtest:
 
     def display_summary(self):
         duration = time.perf_counter() - self.start_time
-        first_runtests = self.all_runtests[0]
-        # the second runtests (re-run failed tests) disables forever,
-        # use the first runtests
-        forever = first_runtests.forever
-        filtered = bool(self.ns.match_tests) or bool(self.ns.ignore_tests)
+        filtered = bool(self.match_tests) or bool(self.ignore_tests)
 
         # Total duration
         print()
@@ -655,8 +675,8 @@ class Regrtest:
                      self.environment_changed, self.run_no_tests]
         run = sum(map(len, all_tests))
         text = f'run={run}'
-        if not forever:
-            ntest = len(first_runtests.tests)
+        if not self.first_runtests.forever:
+            ntest = len(self.first_runtests.tests)
             text = f"{text}/{ntest}"
         if filtered:
             text = f"{text} (filtered)"
@@ -788,7 +808,7 @@ class Regrtest:
 
         self.fix_umask()
 
-        if ns.cleanup:
+        if self.want_cleanup:
             self.cleanup()
             sys.exit(0)
 
@@ -838,12 +858,12 @@ class Regrtest:
         return exitcode
 
     def action_run_tests(self):
-        self.run_tests()
+        runtests = self.run_tests()
         self.display_result()
 
         need_rerun = self.need_rerun
         if self.ns.rerun and need_rerun:
-            self.rerun_failed_tests(need_rerun)
+            self.rerun_failed_tests(need_rerun, runtests)
 
         self.display_summary()
         self.finalize()
@@ -854,16 +874,16 @@ class Regrtest:
             run_tests_worker(self.ns.worker_args)
             return
 
-        if self.ns.wait:
+        if self.want_wait:
             input("Press any key to continue...")
 
         setup_tests(self.ns)
         self.find_tests()
 
         exitcode = 0
-        if self.ns.list_tests:
+        if self.want_list_tests:
             self.list_tests()
-        elif self.ns.list_cases:
+        elif self.want_list_cases:
             self.list_cases()
         else:
             self.action_run_tests()

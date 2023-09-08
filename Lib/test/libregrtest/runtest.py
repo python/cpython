@@ -212,6 +212,11 @@ class RunTests:
     rerun: bool = False
     forever: bool = False
 
+    def copy(self, **override):
+        state = dataclasses.asdict(self)
+        state.update(override)
+        return RunTests(**state)
+
     def get_match_tests(self, test_name) -> FilterTuple | None:
         if self.match_tests is not None:
             return self.match_tests.get(test_name, None)
