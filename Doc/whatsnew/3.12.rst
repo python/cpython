@@ -154,10 +154,11 @@ New Features
 PEP 701: Syntactic formalization of f-strings
 ---------------------------------------------
 
-:pep:`701` lifts some restrictions on the usage of f-strings. Expression components
-inside f-strings can now be any valid Python expression including backslashes,
-unicode escaped sequences, multi-line expressions, comments and strings reusing the
-same quote as the containing f-string. Let's cover these in detail:
+:pep:`701` lifts some restrictions on the usage of :term:`f-strings <f-string>`.
+Expression components inside f-strings can now be any valid Python expression,
+including strings reusing the same quote as the containing f-string,
+multi-line expressions, comments, backslashes, and unicode escape sequences.
+Let's cover these in detail:
 
 * Quote reuse: in Python 3.11, reusing the same quotes as the containing f-string
   raises a :exc:`SyntaxError`, forcing the user to either use other available
