@@ -1152,7 +1152,7 @@ class TestLineAndInstructionEvents(CheckEvents):
             ('instruction', 'func1', 14),
             ('line', 'get_events', 11)])
 
-class TestInstallIncrementallly(MonitoringTestBase, unittest.TestCase):
+class TestInstallIncrementally(MonitoringTestBase, unittest.TestCase):
 
     def check_events(self, func, must_include, tool=TEST_TOOL, recorders=(ExceptionRecorder,)):
         try:
@@ -1188,12 +1188,12 @@ class TestInstallIncrementallly(MonitoringTestBase, unittest.TestCase):
     def test_line_then_instruction(self):
         recorders = [ LineRecorder, InstructionRecorder ]
         self.check_events(self.func1,
-                          recorders = recorders, must_include = self.EXPECTED_LI)
+                          recorders = recorders, must_include = self.MUST_INCLUDE_LI)
 
     def test_instruction_then_line(self):
-        recorders = [ InstructionRecorder, LineRecorderLowNoise ]
+        recorders = [ InstructionRecorder, LineRecorder ]
         self.check_events(self.func1,
-                          recorders = recorders, must_include = self.EXPECTED_LI)
+                          recorders = recorders, must_include = self.MUST_INCLUDE_LI)
 
     @staticmethod
     def func2():
