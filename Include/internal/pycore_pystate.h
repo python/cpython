@@ -67,6 +67,10 @@ _Py_ThreadCanHandleSignals(PyInterpreterState *interp)
 extern _Py_thread_local PyThreadState *_Py_tss_tstate;
 #endif
 
+#ifndef NDEBUG
+extern int _PyThreadState_CheckConsistency(PyThreadState *tstate);
+#endif
+
 // Export for most shared extensions, used via _PyThreadState_GET() static
 // inline function.
 PyAPI_FUNC(PyThreadState *) _PyThreadState_GetCurrent(void);
