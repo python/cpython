@@ -9,10 +9,10 @@ import sysconfig
 import tempfile
 import time
 import unittest
-from test.libregrtest.cmdline import _parse_args
+from test.libregrtest.cmdline import _parse_args, Namespace
 from test.libregrtest.runtest import (
     findtests, split_test_packages, runtest, abs_module_name,
-    PROGRESS_MIN_TIME, State, MatchTestsDict, RunTests)
+    PROGRESS_MIN_TIME, State, FilterDict, RunTests, TestResult, TestList)
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.pgo import setup_pgo_tests
 from test.libregrtest.utils import (strip_py_suffix, count, format_duration,
@@ -58,9 +58,9 @@ class Regrtest:
     directly to set the values that would normally be set by flags
     on the command line.
     """
-    def __init__(self):
+    def __init__(self, ns: Namespace):
         # Namespace of command line options
-        self.ns = None
+        self.ns: Namespace = ns
 
         # tests
         self.tests = []
@@ -68,14 +68,14 @@ class Regrtest:
         self.all_runtests: list[RunTests] = []
 
         # test results
-        self.good: list[str] = []
-        self.bad: list[str] = []
-        self.rerun_bad: list[str] = []
-        self.skipped: list[str] = []
-        self.resource_denied: list[str] = []
-        self.environment_changed: list[str] = []
-        self.run_no_tests: list[str] = []
-        self.rerun: list[str] = []
+        self.good: TestList = []
+        self.bad: TestList = []
+        self.rerun_bad: TestList = []
+        self.skipped: TestList = []
+        self.resource_denied: TestList = []
+        self.environment_changed: TestList = []
+        self.run_no_tests: TestList = []
+        self.rerun: TestList = []
 
         self.need_rerun: list[TestResult] = []
         self.first_state: str | None = None
@@ -184,29 +184,7 @@ class Regrtest:
             line = f"{line}/{fails}"
         self.log(f"[{line}] {text}")
 
-    def parse_args(self, kwargs):
-        ns = _parse_args(sys.argv[1:], **kwargs)
-
-        if ns.xmlpath:
-            support.junit_xml_list = self.testsuite_xml = []
-
-        strip_py_suffix(ns.args)
-
-        if ns.huntrleaks:
-            warmup, repetitions, _ = ns.huntrleaks
-            if warmup < 1 or repetitions < 1:
-                msg = ("Invalid values for the --huntrleaks/-R parameters. The "
-                       "number of warmups and repetitions must be at least 1 "
-                       "each (1:1).")
-                print(msg, file=sys.stderr, flush=True)
-                sys.exit(2)
-
-        if ns.tempdir:
-            ns.tempdir = os.path.expanduser(ns.tempdir)
-
-        self.ns = ns
-
-    def find_tests(self, tests):
+    def find_tests(self):
         ns = self.ns
         single = ns.single
         fromfile = ns.fromfile
@@ -215,8 +193,6 @@ class Regrtest:
         test_dir = ns.testdir
         starting_test = ns.start
         randomize = ns.randomize
-
-        self.tests = tests
 
         if single:
             self.next_single_filename = os.path.join(self.tmp_dir, 'pynexttest')
@@ -321,7 +297,7 @@ class Regrtest:
             print(count(len(skipped), "test"), "skipped:", file=stderr)
             printlist(skipped, file=stderr)
 
-    def get_rerun_match(self, rerun_list) -> MatchTestsDict:
+    def get_rerun_match(self, rerun_list) -> FilterDict:
         rerun_match_tests = {}
         for result in rerun_list:
             match_tests = result.get_rerun_match_tests()
@@ -352,7 +328,7 @@ class Regrtest:
 
         # Re-run failed tests
         self.log(f"Re-running {len(tests)} failed tests in verbose mode in subprocesses")
-        runtests = RunTests(tests, match_tests=match_tests, rerun=True)
+        runtests = RunTests(tuple(tests), match_tests=match_tests, rerun=True)
         self.all_runtests.append(runtests)
         self._run_tests_mp(runtests)
 
@@ -624,7 +600,7 @@ class Regrtest:
 
         tests = self.selected
         self.set_tests(tests)
-        runtests = RunTests(tests, forever=self.ns.forever)
+        runtests = RunTests(tuple(tests), forever=self.ns.forever)
         self.all_runtests.append(runtests)
         if self.ns.use_mp:
             self._run_tests_mp(runtests)
@@ -737,8 +713,12 @@ class Regrtest:
                 os.umask(old_mask)
 
     def set_temp_dir(self):
-        if self.ns.tempdir:
-            self.tmp_dir = self.ns.tempdir
+        ns = self.ns
+        if ns.tempdir:
+            ns.tempdir = os.path.expanduser(ns.tempdir)
+
+        if ns.tempdir:
+            self.tmp_dir = ns.tempdir
 
         if not self.tmp_dir:
             # When tests are run from the Python build directory, it is best practice
@@ -795,14 +775,20 @@ class Regrtest:
                 print("Remove file: %s" % name)
                 os_helper.unlink(name)
 
-    def main(self, tests=None, **kwargs):
-        self.parse_args(kwargs)
+    def main(self, tests: TestList | None = None):
+        ns = self.ns
+        self.tests = tests
+
+        if ns.xmlpath:
+            support.junit_xml_list = self.testsuite_xml = []
+
+        strip_py_suffix(ns.args)
 
         self.set_temp_dir()
 
         self.fix_umask()
 
-        if self.ns.cleanup:
+        if ns.cleanup:
             self.cleanup()
             sys.exit(0)
 
@@ -817,9 +803,9 @@ class Regrtest:
                 # When using multiprocessing, worker processes will use test_cwd
                 # as their parent temporary directory. So when the main process
                 # exit, it removes also subdirectories of worker processes.
-                self.ns.tempdir = test_cwd
+                ns.tempdir = test_cwd
 
-                self._main(tests, kwargs)
+                self._main()
         except SystemExit as exc:
             # bpo-38203: Python can hang at exit in Py_Finalize(), especially
             # on threading._shutdown() call: put a timeout
@@ -862,7 +848,7 @@ class Regrtest:
         self.display_summary()
         self.finalize()
 
-    def _main(self, tests, kwargs):
+    def _main(self):
         if self.is_worker():
             from test.libregrtest.runtest_mp import run_tests_worker
             run_tests_worker(self.ns.worker_args)
@@ -872,7 +858,7 @@ class Regrtest:
             input("Press any key to continue...")
 
         setup_tests(self.ns)
-        self.find_tests(tests)
+        self.find_tests()
 
         exitcode = 0
         if self.ns.list_tests:
@@ -888,4 +874,5 @@ class Regrtest:
 
 def main(tests=None, **kwargs):
     """Run the Python suite."""
-    Regrtest().main(tests=tests, **kwargs)
+    ns = _parse_args(sys.argv[1:], **kwargs)
+    Regrtest(ns).main(tests=tests)
