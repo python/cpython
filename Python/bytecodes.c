@@ -2252,6 +2252,8 @@ dummy_func(
                 int optimized = _PyOptimizer_BackEdge(frame, here, next_instr, stack_pointer);
                 ERROR_IF(optimized < 0, error);
                 if (optimized) {
+                    // Rewind and enter the executor:
+                    assert(here->op.code == ENTER_EXECUTOR);
                     next_instr = here;
                 }
                 here[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
