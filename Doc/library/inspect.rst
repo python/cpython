@@ -768,13 +768,15 @@ function.
    .. classmethod:: Signature.from_code(co)
 
        Return a :class:`Signature` (or its subclass) object
-       for a given :class:`code object <types.CodeType>` ``co``.
+       for a given :class:`code object <types.CodeType>` *co*.
 
-       Since code objects do not know anything
-       about default values or annotations,
-       they will always be omitted from the signature.
-       It is recommended to use :meth:`Signature.from_callable`
-       when function object is available, it does not have these limitations.
+      .. note::
+
+         Default values and annotations
+         will not be included in the signature,
+         since code objects have no knowledge of such things.
+         It is recommended to use :meth:`Signature.from_callable`
+         when a function object is available, it does not have these limitations.
 
        .. versionadded:: 3.13
 

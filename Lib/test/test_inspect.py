@@ -3707,7 +3707,7 @@ class TestSignatureObject(unittest.TestCase):
 
         with self.assertRaisesRegex(
             TypeError,
-            "code object is expected, got <class 'int'>",
+            "code object was expected, got 'int'",
         ):
             inspect.Signature.from_code(1)
 

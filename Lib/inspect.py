@@ -2416,12 +2416,13 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
     s = getattr(func, "__text_signature__", None)
     if s:
         return _signature_fromstr(cls, func, s, skip_bound_arg)
-    return _signature_from_code(cls, func.__code__,
-                                       globals=globals,
-                                       locals=locals,
-                                       eval_str=eval_str,
-                                       is_duck_function=is_duck_function,
-                                       func=func)
+    return _signature_from_code(cls,
+                                func.__code__,
+                                globals=globals,
+                                locals=locals,
+                                eval_str=eval_str,
+                                is_duck_function=is_duck_function,
+                                func=func)
 
 
 def _signature_from_code(cls,
@@ -2431,9 +2432,7 @@ def _signature_from_code(cls,
                          eval_str=False,
                          is_duck_function=False,
                          func=None):
-    """Private helper function to get signature for
-    code objects.
-    """
+    """Private helper function to get signature for code objects."""
     Parameter = cls._parameter_cls
 
     # Parameter information.
@@ -3136,7 +3135,7 @@ class Signature:
         or default values.
         """
         if not iscode(co):
-            raise TypeError(f'code object is expected, got {type(co)!r}')
+            raise TypeError(f'code object was expected, got {type(co).__name__!r}')
         return _signature_from_code(cls, co)
 
     @property
