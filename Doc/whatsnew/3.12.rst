@@ -389,6 +389,8 @@ Example::
      def get_colour(self) -> str:
        return "red"
 
+See :pep:`698` for more details.
+
 (Contributed by Steven Troxler in :gh:`101561`.)
 
 .. _whatsnew312-pep695:
