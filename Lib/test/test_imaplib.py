@@ -74,6 +74,7 @@ class TestImaplib(unittest.TestCase):
         for t in self.timevalues():
             imaplib.Time2Internaldate(t)
 
+    @socket_helper.skip_if_tcp_blackhole
     def test_imap4_host_default_value(self):
         # Check whether the IMAP4_PORT is truly unavailable.
         with socket.socket() as s:
