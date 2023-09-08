@@ -6972,8 +6972,6 @@ fi
 # If the check is done after AC_OUTPUT, modifying LIBS has no effect anymore.
 # <pyport.h> cannot be included alone, it's designed to be included by
 # <Python.h>: it expects other includes and macros to be defined.
-LIBATOMIC=""
-
 _SAVE_VAR([CPPFLAGS])
 CPPFLAGS="${BASECPPFLAGS} -I. -I${srcdir}/Include ${CPPFLAGS}"
 
