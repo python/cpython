@@ -37,7 +37,8 @@ my_int_func(PyObject *module, PyObject *arg_)
     int arg;
     int _return_value;
 
-    if (!PyArg_Parse(arg_, "i:my_int_func", &arg)) {
+    arg = PyLong_AsInt(arg_);
+    if (arg == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = my_int_func_impl(module, arg);
@@ -56,22 +57,31 @@ PyDoc_STRVAR(my_int_sum__doc__,
 "\n");
 
 #define MY_INT_SUM_METHODDEF    \
-    {"my_int_sum", (PyCFunction)my_int_sum, METH_VARARGS, my_int_sum__doc__},
+    {"my_int_sum", (PyCFunction)(void(*)(void))my_int_sum, METH_FASTCALL, my_int_sum__doc__},
 
 static int
 my_int_sum_impl(PyObject *module, int x, int y);
 
 static PyObject *
-my_int_sum(PyObject *module, PyObject *args)
+my_int_sum(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int x;
     int y;
     int _return_value;
 
-    if (!PyArg_ParseTuple(args, "ii:my_int_sum",
-        &x, &y))
+    if (nargs != 2) {
+        PyErr_Format(PyExc_TypeError, "my_int_sum expected 2 arguments, got %zd", nargs);
         goto exit;
+    }
+    x = PyLong_AsInt(args[0]);
+    if (x == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    y = PyLong_AsInt(args[1]);
+    if (y == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
     _return_value = my_int_sum_impl(module, x, y);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -81,4 +91,4 @@ my_int_sum(PyObject *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=dcd5203d0d29df3a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5cf64baf978d2288 input=a9049054013a1b77]*/

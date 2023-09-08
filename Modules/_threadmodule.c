@@ -7,6 +7,7 @@
 #include "pycore_dict.h"          // _PyDict_Pop()
 #include "pycore_interp.h"        // _PyInterpreterState.threads.count
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_pyerrors.h"      // _PyErr_WriteUnraisableMsg()
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
 #include "pycore_sysmodule.h"     // _PySys_GetAttr()
@@ -1073,9 +1074,12 @@ static void
 thread_run(void *boot_raw)
 {
     struct bootstate *boot = (struct bootstate *) boot_raw;
-    PyThreadState *tstate;
+    PyThreadState *tstate = boot->tstate;
 
-    tstate = boot->tstate;
+    // gh-104690: If Python is being finalized and PyInterpreterState_Delete()
+    // was called, tstate becomes a dangling pointer.
+    assert(_PyThreadState_CheckConsistency(tstate));
+
     _PyThreadState_Bind(tstate);
     PyEval_AcquireThread(tstate);
     tstate->interp->threads.count++;

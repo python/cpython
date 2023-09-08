@@ -10695,22 +10695,18 @@ PyDoc_STRVAR(os_DirEntry_is_junction__doc__,
 "Return True if the entry is a junction; cached per entry.");
 
 #define OS_DIRENTRY_IS_JUNCTION_METHODDEF    \
-    {"is_junction", _PyCFunction_CAST(os_DirEntry_is_junction), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, os_DirEntry_is_junction__doc__},
+    {"is_junction", (PyCFunction)os_DirEntry_is_junction, METH_NOARGS, os_DirEntry_is_junction__doc__},
 
 static int
-os_DirEntry_is_junction_impl(DirEntry *self, PyTypeObject *defining_class);
+os_DirEntry_is_junction_impl(DirEntry *self);
 
 static PyObject *
-os_DirEntry_is_junction(DirEntry *self, PyTypeObject *defining_class, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+os_DirEntry_is_junction(DirEntry *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
     int _return_value;
 
-    if (nargs) {
-        PyErr_SetString(PyExc_TypeError, "is_junction() takes no arguments");
-        goto exit;
-    }
-    _return_value = os_DirEntry_is_junction_impl(self, defining_class);
+    _return_value = os_DirEntry_is_junction_impl(self);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -11992,4 +11988,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=30c63cb556431cea input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1dd5aa7495cd6e3a input=a9049054013a1b77]*/

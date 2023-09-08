@@ -57,6 +57,17 @@
 
 #include <stdio.h>                // ctermid()
 #include <stdlib.h>               // system()
+#ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>           // futimes()
+#endif
+
+
+// SGI apparently needs this forward declaration
+#ifdef HAVE__GETPTY
+#  include <sys/types.h>          // mode_t
+   extern char * _getpty(int *, int, mode_t, int);
+#endif
+
 
 /*
  * A number of APIs are available on macOS from a certain macOS version.
@@ -279,7 +290,7 @@ corresponding Unix manual entries for more information on calls.");
 #endif
 
 #ifdef HAVE_COPY_FILE_RANGE
-#  include <unistd.h>
+#  include <unistd.h>             // copy_file_range()
 #endif
 
 #if !defined(CPU_ALLOC) && defined(HAVE_SCHED_SETAFFINITY)
@@ -14565,15 +14576,13 @@ os_DirEntry_is_symlink_impl(DirEntry *self, PyTypeObject *defining_class)
 
 /*[clinic input]
 os.DirEntry.is_junction -> bool
-    defining_class: defining_class
-    /
 
 Return True if the entry is a junction; cached per entry.
 [clinic start generated code]*/
 
 static int
-os_DirEntry_is_junction_impl(DirEntry *self, PyTypeObject *defining_class)
-/*[clinic end generated code: output=7061a07b0ef2cd1f input=475cd36fb7d4723f]*/
+os_DirEntry_is_junction_impl(DirEntry *self)
+/*[clinic end generated code: output=97f64d5d99eeccb5 input=4fc8e701eea118a1]*/
 {
 #ifdef MS_WINDOWS
     return self->win32_lstat.st_reparse_tag == IO_REPARSE_TAG_MOUNT_POINT;

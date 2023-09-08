@@ -239,6 +239,8 @@ class ExecutorDeadlockTest:
             with self.assertRaises(BrokenProcessPool):
                 list(executor.map(_crash_with_data, [data] * 10))
 
+        executor.shutdown(wait=True)
+
 
 create_executor_tests(globals(), ExecutorDeadlockTest,
                       executor_mixins=(ProcessPoolForkMixin,

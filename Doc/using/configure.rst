@@ -60,6 +60,29 @@ See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform
 support".
 
 
+Generated files
+===============
+
+To reduce build dependencies, Python source code contains multiple generated
+files. Commands to regenerate all generated files::
+
+    make regen-all
+    make regen-stdlib-module-names
+    make regen-limited-abi
+    make regen-configure
+
+The ``Makefile.pre.in`` file documents generated files, their inputs, and tools used
+to regenerate them. Search for ``regen-*`` make targets.
+
+The ``make regen-configure`` command runs `tiran/cpython_autoconf
+<https://github.com/tiran/cpython_autoconf>`_ container for reproducible build;
+see container ``entry.sh`` script. The container is optional, the following
+command can be run locally, the generated files depend on autoconf and aclocal
+versions::
+
+    autoreconf -ivf -Werror
+
+
 .. _configure-options:
 
 Configure Options
@@ -192,13 +215,68 @@ General Options
 
 .. cmdoption:: --enable-pystats
 
-   Turn on internal statistics gathering.
+   Turn on internal Python performance statistics gathering.
+
+   By default, statistics gathering is off. Use ``python3 -X pystats`` command
+   or set ``PYTHONSTATS=1`` environment variable to turn on statistics
+   gathering at Python startup.
+
+   At Python exit, dump statistics if statistics gathering was on and not
+   cleared.
+
+   Effects:
+
+   * Add :option:`-X pystats <-X>` command line option.
+   * Add :envvar:`!PYTHONSTATS` environment variable.
+   * Define the ``Py_STATS`` macro.
+   * Add functions to the :mod:`sys` module:
+
+     * :func:`!sys._stats_on`: Turns on statistics gathering.
+     * :func:`!sys._stats_off`: Turns off statistics gathering.
+     * :func:`!sys._stats_clear`: Clears the statistics.
+     * :func:`!sys._stats_dump`: Dump statistics to file, and clears the statistics.
 
    The statistics will be dumped to a arbitrary (probably unique) file in
-   ``/tmp/py_stats/``, or ``C:\temp\py_stats\`` on Windows. If that directory
-   does not exist, results will be printed on stdout.
+   ``/tmp/py_stats/`` (Unix) or ``C:\temp\py_stats\`` (Windows). If that
+   directory does not exist, results will be printed on stderr.
 
    Use ``Tools/scripts/summarize_stats.py`` to read the stats.
+
+   Statistics:
+
+   * Opcode:
+
+     * Specialization: success, failure, hit, deferred, miss, deopt, failures;
+     * Execution count;
+     * Pair count.
+
+   * Call:
+
+     * Inlined Python calls;
+     * PyEval calls;
+     * Frames pushed;
+     * Frame object created;
+     * Eval calls: vector, generator, legacy, function VECTORCALL, build class,
+       slot, function "ex", API, method.
+
+   * Object:
+
+     * incref and decref;
+     * interpreter incref and decref;
+     * allocations: all, 512 bytes, 4 kiB, big;
+     * free;
+     * to/from free lists;
+     * dictionary materialized/dematerialized;
+     * type cache;
+     * optimization attemps;
+     * optimization traces created/executed;
+     * uops executed.
+
+   * Garbage collector:
+
+     * Garbage collections;
+     * Objects visited;
+     * Objects collected.
 
    .. versionadded:: 3.11
 

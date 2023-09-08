@@ -1,9 +1,9 @@
 #include "Python.h"
 #include "opcode.h"
 #include "pycore_interp.h"
-#include "pycore_opcode_metadata.h"
-#include "pycore_opcode_utils.h"
-#include "pycore_optimizer.h"
+#include "pycore_opcode_metadata.h" // _PyOpcode_OpName()
+#include "pycore_opcode_utils.h"  // MAX_REAL_OPCODE
+#include "pycore_optimizer.h"     // _Py_uop_analyze_and_optimize()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_uops.h"
 #include "cpython/optimizer.h"
@@ -169,6 +169,7 @@ _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNI
     if (err <= 0) {
         assert(executor == NULL);
         if (err < 0) {
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             return NULL;
         }
         goto jump_to_destination;

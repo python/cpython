@@ -132,22 +132,35 @@ dummy_func(
         inst(NOP, (--)) {
         }
 
+        family(RESUME, 0) = {
+            RESUME_CHECK,
+        };
+
         inst(RESUME, (--)) {
+            TIER_ONE_ONLY
             assert(frame == tstate->current_frame);
-            /* Possibly combine this with eval breaker */
             if (_PyFrame_GetCode(frame)->_co_instrumentation_version != tstate->interp->monitoring_version) {
                 int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
                 ERROR_IF(err, error);
-                #if TIER_ONE
                 next_instr--;
-                #endif
-                #if TIER_TWO
-                goto deoptimize;
-                #endif
             }
-            else if (oparg < 2) {
-                CHECK_EVAL_BREAKER();
+            else {
+                if (oparg < 2) {
+                    CHECK_EVAL_BREAKER();
+                }
+                next_instr[-1].op.code = RESUME_CHECK;
             }
+        }
+
+        inst(RESUME_CHECK, (--)) {
+#if defined(__EMSCRIPTEN__)
+            DEOPT_IF(emscripten_signal_clock == 0, RESUME);
+            emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
+#endif
+            /* Possibly combine these two checks */
+            DEOPT_IF(_PyFrame_GetCode(frame)->_co_instrumentation_version
+                != tstate->interp->monitoring_version, RESUME);
+            DEOPT_IF(_Py_atomic_load_relaxed_int32(&tstate->interp->ceval.eval_breaker), RESUME);
         }
 
         inst(INSTRUMENTED_RESUME, (--)) {
@@ -2974,6 +2987,7 @@ dummy_func(
             PyFunctionObject *func = (PyFunctionObject *)callable;
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
+            DEOPT_IF(tstate->py_recursion_remaining <= 1, CALL);
         }
 
         op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
@@ -2998,18 +3012,19 @@ dummy_func(
             // Eventually this should be the only occurrence of this code.
             frame->return_offset = 0;
             assert(tstate->interp->eval_frame == NULL);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
+            STORE_SP();
             new_frame->previous = frame;
             CALL_STAT_INC(inlined_py_calls);
             frame = tstate->current_frame = new_frame;
-            #if TIER_ONE
-            goto start_frame;
-            #endif
-            #if TIER_TWO
-            ERROR_IF(_Py_EnterRecursivePy(tstate), exit_unwind);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
-            #endif
+            tstate->py_recursion_remaining--;
+            LOAD_SP();
+            LOAD_IP();
+#if LLTRACE && TIER_ONE
+            lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
+            if (lltrace < 0) {
+                goto exit_unwind;
+            }
+#endif
         }
 
         macro(CALL_BOUND_METHOD_EXACT_ARGS) =
