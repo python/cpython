@@ -3825,6 +3825,8 @@ features:
 
       try:
           # process timer events four times.
+          # Pratical applications may use an infinite loop to process events for timer
+          # and other file descriptors.
           for _ in range(4):
               # Wait for the timer to expire for 3 seconds.
               timeout=3
@@ -3865,6 +3867,8 @@ features:
 
       try:
           # process timer events four times.
+          # Pratical applications may use an infinite loop to process events for timer
+          # and other file descriptors.
           for _ in range(4):
               timeout=3
 
@@ -3975,13 +3979,13 @@ features:
       os.timerfd_settime(fd, initial=initial_expiration, interval=interval)  # Start the timer
 
       try:
-          # process timer events four times.
-          for _ in range(4):
-              # read() will block until the timer expires
-              _ = os.read(fd, 8)
-              print("Timer expired")
+         # process timer events four times.
+         for _ in range(4):
+            # read() will block until the timer expires
+            _ = os.read(fd, 8)
+            print("Timer expired")
       finally:
-          os.close(fd)
+         os.close(fd)
 
    .. seealso::  The :manpage:`timerfd_settime(2)` man page.
 
@@ -4009,13 +4013,13 @@ features:
       os.timerfd_settime_ns(fd, initial=initial_expiration, interval=interval)  # Start the timer
 
       try:
-          # process timer events four times.
-          for _ in range(4):
-              # read() will block until the timer expires
-              _ = os.read(fd, 8)
-              print("Timer expired")
+         # process timer events four times.
+         for _ in range(4):
+            # read() will block until the timer expires
+            _ = os.read(fd, 8)
+            print("Timer expired")
       finally:
-          os.close(fd)
+         os.close(fd)
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
