@@ -413,23 +413,63 @@ class TypeParamsAccessTest(unittest.TestCase):
         self.assertEqual(func(), 1)
 
     def test_gen_exp_in_nested_class(self):
-        class C[T]:
-            T = "class"
-            class Inner(make_base(T for _ in (1,)), make_base(T)):
-                pass
+        code = """
+            from test.test_type_params import make_base
+
+            class C[T]:
+                T = "class"
+                class Inner(make_base(T for _ in (1,)), make_base(T)):
+                    pass
+        """
+        C = run_code(code)["C"]
         T, = C.__type_params__
         base1, base2 = C.Inner.__bases__
         self.assertEqual(list(base1.__arg__), [T])
         self.assertEqual(base2.__arg__, "class")
 
     def test_gen_exp_in_nested_generic_class(self):
-        class C[T]:
-            T = "class"
-            class Inner[U](make_base(T for _ in (1,)), make_base(T)):
-                pass
+        code = """
+            from test.test_type_params import make_base
+
+            class C[T]:
+                T = "class"
+                class Inner[U](make_base(T for _ in (1,)), make_base(T)):
+                    pass
+        """
+        C = run_code(code)["C"]
         T, = C.__type_params__
         base1, base2, _ = C.Inner.__bases__
         self.assertEqual(list(base1.__arg__), [T])
+        self.assertEqual(base2.__arg__, "class")
+
+    def test_listcomp_in_nested_class(self):
+        code = """
+            from test.test_type_params import make_base
+
+            class C[T]:
+                T = "class"
+                class Inner(make_base([T for _ in (1,)]), make_base(T)):
+                    pass
+        """
+        C = run_code(code)["C"]
+        T, = C.__type_params__
+        base1, base2 = C.Inner.__bases__
+        self.assertEqual(base1.__arg__, [T])
+        self.assertEqual(base2.__arg__, "class")
+
+    def test_listcomp_in_nested_generic_class(self):
+        code = """
+            from test.test_type_params import make_base
+
+            class C[T]:
+                T = "class"
+                class Inner[U](make_base([T for _ in (1,)]), make_base(T)):
+                    pass
+        """
+        C = run_code(code)["C"]
+        T, = C.__type_params__
+        base1, base2, _ = C.Inner.__bases__
+        self.assertEqual(base1.__arg__, [T])
         self.assertEqual(base2.__arg__, "class")
 
 
