@@ -5999,26 +5999,26 @@ PyDoc_STRVAR(os_timerfd_create__doc__,
 "  clockid\n"
 "    A valid clock ID constant as timer file descriptor.\n"
 "\n"
-"    CLOCK_REALTIME\n"
+"    time.CLOCK_REALTIME\n"
 "        A settable system-wide real-time clock.\n"
 "        If system clock is changed, timer setting need to be updated.\n"
 "        See os.TFD_TIMER_ABSTIME and os.TFD_TIMER_CANCEL_ON_SET.\n"
 "\n"
-"    CLOCK_MONOTONIC\n"
+"    time.CLOCK_MONOTONIC\n"
 "       A nonsettable monotonically increasing clock.\n"
 "       Even if system clock is changed, timer setting will be not affected.\n"
 "\n"
-"    CLOCK_BOOTTIME\n"
-"       Same as CLOCK_MONOTONIC except that it inclues any time that\n"
+"    time.CLOCK_BOOTTIME\n"
+"       Same as time.CLOCK_MONOTONIC except that it inclues any time that\n"
 "       the system is suspended.\n"
 "  flags\n"
-"    0 or a bit mask of TFD_NONBLOCK or TFD_CLOEXEC.\n"
+"    0 or a bit mask of os.TFD_NONBLOCK or os.TFD_CLOEXEC.\n"
 "\n"
-"    TFD_NONBLOCK\n"
+"    os.TFD_NONBLOCK\n"
 "        If *TFD_NONBLOCK* is set as a flag, read doesn\'t blocks.\n"
 "        If *TFD_NONBLOCK* is not set as a flag, read block until the timer fires.\n"
 "\n"
-"    TFD_CLOEXEC\n"
+"    os.TFD_CLOEXEC\n"
 "        If *TFD_CLOEXEC* is set as a flag, enable the close-on-exec flag");
 
 #define OS_TIMERFD_CREATE_METHODDEF    \
@@ -12375,4 +12375,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=c1d7ced45aca6e12 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9d1c3c2152490f47 input=a9049054013a1b77]*/

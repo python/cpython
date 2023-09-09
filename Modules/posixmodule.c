@@ -10106,26 +10106,26 @@ os.timerfd_create
     clockid: int
         A valid clock ID constant as timer file descriptor.
 
-        CLOCK_REALTIME
+        time.CLOCK_REALTIME
             A settable system-wide real-time clock.
             If system clock is changed, timer setting need to be updated.
             See os.TFD_TIMER_ABSTIME and os.TFD_TIMER_CANCEL_ON_SET.
 
-        CLOCK_MONOTONIC
+        time.CLOCK_MONOTONIC
            A nonsettable monotonically increasing clock.
            Even if system clock is changed, timer setting will be not affected.
 
-        CLOCK_BOOTTIME
-           Same as CLOCK_MONOTONIC except that it inclues any time that
+        time.CLOCK_BOOTTIME
+           Same as time.CLOCK_MONOTONIC except that it inclues any time that
            the system is suspended.
     flags: int = 0
-        0 or a bit mask of TFD_NONBLOCK or TFD_CLOEXEC.
+        0 or a bit mask of os.TFD_NONBLOCK or os.TFD_CLOEXEC.
 
-        TFD_NONBLOCK
+        os.TFD_NONBLOCK
             If *TFD_NONBLOCK* is set as a flag, read doesn't blocks.
             If *TFD_NONBLOCK* is not set as a flag, read block until the timer fires.
 
-        TFD_CLOEXEC
+        os.TFD_CLOEXEC
             If *TFD_CLOEXEC* is set as a flag, enable the close-on-exec flag
     /
 
@@ -10134,7 +10134,7 @@ Create and return a timer file descriptor.
 
 static PyObject *
 os_timerfd_create_impl(PyObject *module, int clockid, int flags)
-/*[clinic end generated code: output=1caae80fb168004a input=52a6531c7439fa69]*/
+/*[clinic end generated code: output=1caae80fb168004a input=0d6b3fdd3ff34dc3]*/
 
 {
     int fd;
