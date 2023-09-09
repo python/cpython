@@ -579,7 +579,7 @@ class ListComprehensionTest(unittest.TestCase):
         code = """
             def f(value):
                 try:
-                    [{func}(value) for value in value]
+                    [(value) for value in value]
                 finally:
                     return value
             ret = f(["a"])
