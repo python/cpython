@@ -472,6 +472,30 @@ class TypeParamsAccessTest(unittest.TestCase):
         self.assertEqual(base1.__arg__, [T])
         self.assertEqual(base2.__arg__, "class")
 
+    def test_lambda_in_generic_alias(self):
+        code = """
+            class C[T]:
+                T = "class"
+                type Alias1[T] = lambda: T
+                type Alias2 = lambda: T
+                type Alias3[T] = (T for _ in (1,))
+                type Alias4 = (T for _ in (1,))
+                type Alias5[T] = [T for _ in (1,)]
+                type Alias6 = [T for _ in (1,)]
+        """
+        C = run_code(code)["C"]
+        outer_T = C.__type_params__[0]
+        T1 = C.Alias1.__type_params__[0]
+        self.assertIs(C.Alias1.__value__(), T1)
+        # Shouldn't pick up the T from the class scope
+        self.assertIs(C.Alias2.__value__(), outer_T)
+        T3 = C.Alias3.__type_params__[0]
+        self.assertEqual(list(C.Alias3.__value__), [T3])
+        self.assertEqual(list(C.Alias4.__value__), [outer_T])
+        T5 = C.Alias5.__type_params__[0]
+        self.assertEqual(C.Alias5.__value__, [T5])
+        self.assertEqual(C.Alias6.__value__, [outer_T])
+
 
 def make_base(arg):
     class Base:
