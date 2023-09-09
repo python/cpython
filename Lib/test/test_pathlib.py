@@ -3180,8 +3180,12 @@ class PosixPathTest(PathTest):
 
     def _check_symlink_loop(self, *args, strict=True):
         path = self.cls(*args)
-        with self.assertRaises(RuntimeError):
-            print(path.resolve(strict))
+        if strict:
+            with self.assertRaises(OSError) as cm:
+                path.resolve(strict=True)
+            self.assertEqual(cm.exception.errno, errno.ELOOP)
+        else:
+            path.resolve(strict=False)
 
     @unittest.skipIf(
         is_emscripten or is_wasi,
