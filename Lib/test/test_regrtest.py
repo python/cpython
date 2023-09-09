@@ -75,10 +75,10 @@ class ParseArgsTestCase(unittest.TestCase):
         ns = libregrtest._parse_args(['--wait'])
         self.assertTrue(ns.wait)
 
-    def test_worker_args(self):
-        ns = libregrtest._parse_args(['--worker-args', '[[], {}]'])
-        self.assertEqual(ns.worker_args, '[[], {}]')
-        self.checkError(['--worker-args'], 'expected one argument')
+    def test_worker_json(self):
+        ns = libregrtest._parse_args(['--worker-json', '[[], {}]'])
+        self.assertEqual(ns.worker_json, '[[], {}]')
+        self.checkError(['--worker-json'], 'expected one argument')
 
     def test_start(self):
         for opt in '-S', '--start':
@@ -589,7 +589,7 @@ class BaseTestCase(unittest.TestCase):
     def parse_random_seed(self, output):
         match = self.regex_search(r'Using random seed ([0-9]+)', output)
         randseed = int(match.group(1))
-        self.assertTrue(0 <= randseed <= 10000000, randseed)
+        self.assertTrue(0 <= randseed <= 100_000_000, randseed)
         return randseed
 
     def run_command(self, args, input=None, exitcode=0, **kw):

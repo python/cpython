@@ -39,40 +39,38 @@
 #define _BINARY_OP_ADD_UNICODE 311
 #define _BINARY_OP_INPLACE_ADD_UNICODE 312
 #define _POP_FRAME 313
-#define _LOAD_LOCALS 314
-#define _LOAD_FROM_DICT_OR_GLOBALS 315
-#define _GUARD_GLOBALS_VERSION 316
-#define _GUARD_BUILTINS_VERSION 317
-#define _LOAD_GLOBAL_MODULE 318
-#define _LOAD_GLOBAL_BUILTINS 319
-#define _GUARD_TYPE_VERSION 320
-#define _CHECK_MANAGED_OBJECT_HAS_VALUES 321
-#define _LOAD_ATTR_INSTANCE_VALUE 322
-#define IS_NONE 323
-#define _ITER_CHECK_LIST 324
-#define _ITER_JUMP_LIST 325
-#define _IS_ITER_EXHAUSTED_LIST 326
-#define _ITER_NEXT_LIST 327
-#define _ITER_CHECK_TUPLE 328
-#define _ITER_JUMP_TUPLE 329
-#define _IS_ITER_EXHAUSTED_TUPLE 330
-#define _ITER_NEXT_TUPLE 331
-#define _ITER_CHECK_RANGE 332
-#define _ITER_JUMP_RANGE 333
-#define _IS_ITER_EXHAUSTED_RANGE 334
-#define _ITER_NEXT_RANGE 335
-#define _CHECK_CALL_BOUND_METHOD_EXACT_ARGS 336
-#define _INIT_CALL_BOUND_METHOD_EXACT_ARGS 337
-#define _CHECK_PEP_523 338
-#define _CHECK_FUNCTION_EXACT_ARGS 339
-#define _CHECK_STACK_SPACE 340
-#define _INIT_CALL_PY_EXACT_ARGS 341
-#define _PUSH_FRAME 342
-#define _POP_JUMP_IF_FALSE 343
-#define _POP_JUMP_IF_TRUE 344
-#define JUMP_TO_TOP 345
-#define SAVE_CURRENT_IP 346
-#define INSERT 347
+#define _GUARD_GLOBALS_VERSION 314
+#define _GUARD_BUILTINS_VERSION 315
+#define _LOAD_GLOBAL_MODULE 316
+#define _LOAD_GLOBAL_BUILTINS 317
+#define _GUARD_TYPE_VERSION 318
+#define _CHECK_MANAGED_OBJECT_HAS_VALUES 319
+#define _LOAD_ATTR_INSTANCE_VALUE 320
+#define IS_NONE 321
+#define _ITER_CHECK_LIST 322
+#define _ITER_JUMP_LIST 323
+#define _IS_ITER_EXHAUSTED_LIST 324
+#define _ITER_NEXT_LIST 325
+#define _ITER_CHECK_TUPLE 326
+#define _ITER_JUMP_TUPLE 327
+#define _IS_ITER_EXHAUSTED_TUPLE 328
+#define _ITER_NEXT_TUPLE 329
+#define _ITER_CHECK_RANGE 330
+#define _ITER_JUMP_RANGE 331
+#define _IS_ITER_EXHAUSTED_RANGE 332
+#define _ITER_NEXT_RANGE 333
+#define _CHECK_CALL_BOUND_METHOD_EXACT_ARGS 334
+#define _INIT_CALL_BOUND_METHOD_EXACT_ARGS 335
+#define _CHECK_PEP_523 336
+#define _CHECK_FUNCTION_EXACT_ARGS 337
+#define _CHECK_STACK_SPACE 338
+#define _INIT_CALL_PY_EXACT_ARGS 339
+#define _PUSH_FRAME 340
+#define _POP_JUMP_IF_FALSE 341
+#define _POP_JUMP_IF_TRUE 342
+#define JUMP_TO_TOP 343
+#define SAVE_CURRENT_IP 344
+#define INSERT 345
 
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
 #ifdef NEED_OPCODE_METADATA
@@ -268,16 +266,12 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
             return 1;
         case DELETE_GLOBAL:
             return 0;
-        case _LOAD_LOCALS:
-            return 0;
         case LOAD_LOCALS:
-            return 0;
-        case _LOAD_FROM_DICT_OR_GLOBALS:
-            return 1;
-        case LOAD_NAME:
             return 0;
         case LOAD_FROM_DICT_OR_GLOBALS:
             return 1;
+        case LOAD_NAME:
+            return 0;
         case LOAD_GLOBAL:
             return 0;
         case _GUARD_GLOBALS_VERSION:
@@ -802,15 +796,11 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 0;
         case DELETE_GLOBAL:
             return 0;
-        case _LOAD_LOCALS:
-            return 1;
         case LOAD_LOCALS:
             return 1;
-        case _LOAD_FROM_DICT_OR_GLOBALS:
+        case LOAD_FROM_DICT_OR_GLOBALS:
             return 1;
         case LOAD_NAME:
-            return 1;
-        case LOAD_FROM_DICT_OR_GLOBALS:
             return 1;
         case LOAD_GLOBAL:
             return ((oparg & 1) ? 1 : 0) + 1;
@@ -1305,11 +1295,9 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [DELETE_ATTR] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG },
     [STORE_GLOBAL] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG },
     [DELETE_GLOBAL] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG },
-    [_LOAD_LOCALS] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG },
     [LOAD_LOCALS] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG },
-    [_LOAD_FROM_DICT_OR_GLOBALS] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG },
-    [LOAD_NAME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG },
     [LOAD_FROM_DICT_OR_GLOBALS] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG },
+    [LOAD_NAME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG },
     [LOAD_GLOBAL] = { true, INSTR_FMT_IBC000, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG },
     [_GUARD_GLOBALS_VERSION] = { true, INSTR_FMT_IXC, HAS_DEOPT_FLAG },
     [_GUARD_BUILTINS_VERSION] = { true, INSTR_FMT_IXC, HAS_DEOPT_FLAG },
@@ -1546,9 +1534,9 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [DELETE_ATTR] = { .nuops = 1, .uops = { { DELETE_ATTR, 0, 0 } } },
     [STORE_GLOBAL] = { .nuops = 1, .uops = { { STORE_GLOBAL, 0, 0 } } },
     [DELETE_GLOBAL] = { .nuops = 1, .uops = { { DELETE_GLOBAL, 0, 0 } } },
-    [LOAD_LOCALS] = { .nuops = 1, .uops = { { _LOAD_LOCALS, 0, 0 } } },
-    [LOAD_NAME] = { .nuops = 2, .uops = { { _LOAD_LOCALS, 0, 0 }, { _LOAD_FROM_DICT_OR_GLOBALS, 0, 0 } } },
-    [LOAD_FROM_DICT_OR_GLOBALS] = { .nuops = 1, .uops = { { _LOAD_FROM_DICT_OR_GLOBALS, 0, 0 } } },
+    [LOAD_LOCALS] = { .nuops = 1, .uops = { { LOAD_LOCALS, 0, 0 } } },
+    [LOAD_FROM_DICT_OR_GLOBALS] = { .nuops = 1, .uops = { { LOAD_FROM_DICT_OR_GLOBALS, 0, 0 } } },
+    [LOAD_NAME] = { .nuops = 1, .uops = { { LOAD_NAME, 0, 0 } } },
     [LOAD_GLOBAL] = { .nuops = 1, .uops = { { LOAD_GLOBAL, 0, 0 } } },
     [LOAD_GLOBAL_MODULE] = { .nuops = 2, .uops = { { _GUARD_GLOBALS_VERSION, 1, 1 }, { _LOAD_GLOBAL_MODULE, 1, 3 } } },
     [LOAD_GLOBAL_BUILTIN] = { .nuops = 3, .uops = { { _GUARD_GLOBALS_VERSION, 1, 1 }, { _GUARD_BUILTINS_VERSION, 1, 2 }, { _LOAD_GLOBAL_BUILTINS, 1, 3 } } },
@@ -1633,8 +1621,6 @@ const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
     [_BINARY_OP_ADD_UNICODE] = "_BINARY_OP_ADD_UNICODE",
     [_BINARY_OP_INPLACE_ADD_UNICODE] = "_BINARY_OP_INPLACE_ADD_UNICODE",
     [_POP_FRAME] = "_POP_FRAME",
-    [_LOAD_LOCALS] = "_LOAD_LOCALS",
-    [_LOAD_FROM_DICT_OR_GLOBALS] = "_LOAD_FROM_DICT_OR_GLOBALS",
     [_GUARD_GLOBALS_VERSION] = "_GUARD_GLOBALS_VERSION",
     [_GUARD_BUILTINS_VERSION] = "_GUARD_BUILTINS_VERSION",
     [_LOAD_GLOBAL_MODULE] = "_LOAD_GLOBAL_MODULE",
