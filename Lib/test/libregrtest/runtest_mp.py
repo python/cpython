@@ -47,49 +47,16 @@ USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
 @dataclasses.dataclass(slots=True)
 class WorkerJob:
     runtests: RunTests
-    namespace: Namespace
 
 
-class _EncodeWorkerJob(json.JSONEncoder):
-    def default(self, o: Any) -> dict[str, Any]:
-        match o:
-            case WorkerJob():
-                result = dataclasses.asdict(o)
-                result["__worker_job__"] = True
-                return result
-            case Namespace():
-                result = vars(o)
-                result["__namespace__"] = True
-                return result
-            case _:
-                return super().default(o)
-
-
-def _decode_worker_job(d: dict[str, Any]) -> WorkerJob | dict[str, Any]:
-    if "__worker_job__" in d:
-        d.pop('__worker_job__')
-        d['runtests'] = RunTests.from_json_dict(d['runtests'])
-        return WorkerJob(**d)
-    if "__namespace__" in d:
-        d.pop('__namespace__')
-        return Namespace(**d)
-    else:
-        return d
-
-
-def _parse_worker_json(worker_json: str) -> tuple[Namespace, str]:
-    return json.loads(worker_json, object_hook=_decode_worker_job)
-
-
-def create_worker_process(worker_job: WorkerJob,
+def create_worker_process(runtests: RunTests,
                           output_file: TextIO,
                           tmp_dir: str | None = None) -> subprocess.Popen:
-    ns = worker_job.namespace
-    python = ns.python
-    worker_json = json.dumps(worker_job, cls=_EncodeWorkerJob)
+    python_cmd = runtests.python_cmd
+    worker_json = runtests.as_json()
 
-    if python is not None:
-        executable = python
+    if python_cmd is not None:
+        executable = python_cmd
     else:
         executable = [sys.executable]
     cmd = [*executable, *support.args_from_interpreter_flags(),
@@ -121,14 +88,12 @@ def create_worker_process(worker_job: WorkerJob,
 
 
 def worker_process(worker_json: str) -> NoReturn:
-    worker_job = _parse_worker_json(worker_json)
-    runtests = worker_job.runtests
-    ns = worker_job.namespace
+    runtests = RunTests.from_json(worker_json)
     test_name = runtests.tests[0]
     match_tests: FilterTuple | None = runtests.match_tests
 
     setup_test_dir(runtests.test_dir)
-    setup_tests(runtests, ns)
+    setup_tests(runtests)
 
     if runtests.rerun:
         if match_tests:
@@ -137,7 +102,7 @@ def worker_process(worker_json: str) -> NoReturn:
         else:
             print(f"Re-running {test_name} in verbose mode", flush=True)
 
-    result = run_single_test(test_name, runtests, ns)
+    result = run_single_test(test_name, runtests)
     print()   # Force a newline (just in case)
 
     # Serialize TestResult as dict in JSON
@@ -330,9 +295,6 @@ class TestWorkerProcess(threading.Thread):
         if match_tests:
             kwargs['match_tests'] = match_tests
         worker_runtests = self.runtests.copy(tests=tests, **kwargs)
-        worker_job = WorkerJob(
-            worker_runtests,
-            namespace=self.ns)
 
         # gh-94026: Write stdout+stderr to a tempfile as workaround for
         # non-blocking pipes on Emscripten with NodeJS.
@@ -347,12 +309,12 @@ class TestWorkerProcess(threading.Thread):
                 tmp_dir = tempfile.mkdtemp(prefix="test_python_")
                 tmp_dir = os.path.abspath(tmp_dir)
                 try:
-                    retcode = self._run_process(worker_job, stdout_file, tmp_dir)
+                    retcode = self._run_process(worker_runtests, stdout_file, tmp_dir)
                 finally:
                     tmp_files = os.listdir(tmp_dir)
                     os_helper.rmtree(tmp_dir)
             else:
-                retcode = self._run_process(worker_job, stdout_file)
+                retcode = self._run_process(worker_runtests, stdout_file)
                 tmp_files = ()
             stdout_file.seek(0)
 

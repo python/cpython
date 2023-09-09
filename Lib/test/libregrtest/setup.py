@@ -25,7 +25,7 @@ def setup_test_dir(testdir: str | None) -> None:
         sys.path.insert(0, os.path.abspath(testdir))
 
 
-def setup_tests(runtests, ns):
+def setup_tests(runtests):
     try:
         stderr_fd = sys.__stderr__.fileno()
     except (ValueError, AttributeError):
@@ -71,15 +71,15 @@ def setup_tests(runtests, ns):
     if runtests.hunt_refleak:
         unittest.BaseTestSuite._cleanup = False
 
-    if ns.memlimit is not None:
-        support.set_memlimit(ns.memlimit)
+    if runtests.memory_limit is not None:
+        support.set_memlimit(runtests.memory_limit)
 
-    if ns.threshold is not None:
-        gc.set_threshold(ns.threshold)
+    if runtests.gc_threshold is not None:
+        gc.set_threshold(runtests.gc_threshold)
 
     support.suppress_msvcrt_asserts(runtests.verbose and runtests.verbose >= 2)
 
-    support.use_resources = ns.use_resources
+    support.use_resources = runtests.use_resources
 
     if hasattr(sys, 'addaudithook'):
         # Add an auditing hook for all tests to ensure PySys_Audit is tested

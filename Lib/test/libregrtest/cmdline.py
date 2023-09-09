@@ -177,6 +177,8 @@ class Namespace(argparse.Namespace):
         self.worker_json = None
         self.start = None
         self.timeout = None
+        self.memlimit = None
+        self.threshold = None
 
         super().__init__(**kwargs)
 
