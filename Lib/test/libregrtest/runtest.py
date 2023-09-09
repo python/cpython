@@ -208,9 +208,16 @@ class TestResult:
 @dataclasses.dataclass(slots=True, frozen=True)
 class RunTests:
     tests: TestTuple
+    fail_fast: bool = False
+    match_tests: FilterTuple | None = None
+    ignore_tests: FilterTuple | None = None
     match_tests_dict: FilterDict | None = None
     rerun: bool = False
     forever: bool = False
+    pgo: bool = False
+    pgo_extended: bool = False
+    output_on_failure: bool = False
+    timeout: float | None = None
 
     def copy(self, **override):
         state = dataclasses.asdict(self)
@@ -295,11 +302,11 @@ def abs_module_name(test_name: str, test_dir: str | None) -> str:
         return 'test.' + test_name
 
 
-def setup_support(ns: Namespace):
-    support.PGO = ns.pgo
-    support.PGO_EXTENDED = ns.pgo_extended
-    support.set_match_tests(ns.match_tests, ns.ignore_tests)
-    support.failfast = ns.failfast
+def setup_support(runtests: RunTests, ns: Namespace):
+    support.PGO = runtests.pgo
+    support.PGO_EXTENDED = runtests.pgo_extended
+    support.set_match_tests(runtests.match_tests, runtests.ignore_tests)
+    support.failfast = runtests.fail_fast
     support.verbose = ns.verbose
     if ns.xmlpath:
         support.junit_xml_list = []
@@ -307,12 +314,12 @@ def setup_support(ns: Namespace):
         support.junit_xml_list = None
 
 
-def _runtest(result: TestResult, ns: Namespace) -> None:
+def _runtest(result: TestResult, runtests: RunTests, ns: Namespace) -> None:
     # Capture stdout and stderr, set faulthandler timeout,
     # and create JUnit XML report.
     verbose = ns.verbose
-    output_on_failure = ns.verbose3
-    timeout = ns.timeout
+    output_on_failure = runtests.output_on_failure
+    timeout = runtests.timeout
 
     use_timeout = (
         timeout is not None and threading_helper.can_start_thread
@@ -321,7 +328,7 @@ def _runtest(result: TestResult, ns: Namespace) -> None:
         faulthandler.dump_traceback_later(timeout, exit=True)
 
     try:
-        setup_support(ns)
+        setup_support(runtests, ns)
 
         if output_on_failure:
             support.verbose = True
@@ -341,7 +348,7 @@ def _runtest(result: TestResult, ns: Namespace) -> None:
                 # warnings will be written to sys.stderr below.
                 print_warning.orig_stderr = stream
 
-                _runtest_env_changed_exc(result, ns, display_failure=False)
+                _runtest_env_changed_exc(result, runtests, ns, display_failure=False)
                 # Ignore output if the test passed successfully
                 if result.state != State.PASSED:
                     output = stream.getvalue()
@@ -356,7 +363,7 @@ def _runtest(result: TestResult, ns: Namespace) -> None:
         else:
             # Tell tests to be moderately quiet
             support.verbose = verbose
-            _runtest_env_changed_exc(result, ns, display_failure=not verbose)
+            _runtest_env_changed_exc(result, runtests, ns, display_failure=not verbose)
 
         xml_list = support.junit_xml_list
         if xml_list:
@@ -369,7 +376,7 @@ def _runtest(result: TestResult, ns: Namespace) -> None:
         support.junit_xml_list = None
 
 
-def runtest(ns: Namespace, test_name: str) -> TestResult:
+def run_single_test(test_name: str, runtests: RunTests, ns: Namespace) -> TestResult:
     """Run a single test.
 
     ns -- regrtest namespace of options
@@ -382,10 +389,11 @@ def runtest(ns: Namespace, test_name: str) -> TestResult:
     """
     start_time = time.perf_counter()
     result = TestResult(test_name)
+    pgo = runtests.pgo
     try:
-        _runtest(result, ns)
+        _runtest(result, runtests, ns)
     except:
-        if not ns.pgo:
+        if not pgo:
             msg = traceback.format_exc()
             print(f"test {test_name} crashed -- {msg}",
                   file=sys.stderr, flush=True)
@@ -404,8 +412,8 @@ def run_unittest(test_mod):
     return support.run_unittest(tests)
 
 
-def save_env(ns: Namespace, test_name: str):
-    return saved_test_environment(test_name, ns.verbose, ns.quiet, pgo=ns.pgo)
+def save_env(test_name: str, runtests: RunTests, ns: Namespace):
+    return saved_test_environment(test_name, ns.verbose, ns.quiet, pgo=runtests.pgo)
 
 
 def regrtest_runner(result, test_func, ns) -> None:
@@ -442,7 +450,7 @@ def regrtest_runner(result, test_func, ns) -> None:
 FOUND_GARBAGE = []
 
 
-def _load_run_test(result: TestResult, ns: Namespace) -> None:
+def _load_run_test(result: TestResult, runtests: RunTests, ns: Namespace) -> None:
     # Load the test function, run the test function.
     module_name = abs_module_name(result.test_name, ns.testdir)
 
@@ -458,7 +466,7 @@ def _load_run_test(result: TestResult, ns: Namespace) -> None:
         return run_unittest(test_mod)
 
     try:
-        with save_env(ns, result.test_name):
+        with save_env(result.test_name, runtests, ns):
             regrtest_runner(result, test_func, ns)
     finally:
         # First kill any dangling references to open files etc.
@@ -482,7 +490,8 @@ def _load_run_test(result: TestResult, ns: Namespace) -> None:
     support.reap_children()
 
 
-def _runtest_env_changed_exc(result: TestResult, ns: Namespace,
+def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
+                             ns: Namespace,
                              display_failure: bool = True) -> None:
     # Detect environment changes, handle exceptions.
 
@@ -490,7 +499,8 @@ def _runtest_env_changed_exc(result: TestResult, ns: Namespace,
     # the environment
     support.environment_altered = False
 
-    if ns.pgo:
+    pgo = runtests.pgo
+    if pgo:
         display_failure = False
 
     test_name = result.test_name
@@ -498,15 +508,15 @@ def _runtest_env_changed_exc(result: TestResult, ns: Namespace,
         clear_caches()
         support.gc_collect()
 
-        with save_env(ns, test_name):
-            _load_run_test(result, ns)
+        with save_env(test_name, runtests, ns):
+            _load_run_test(result, runtests, ns)
     except support.ResourceDenied as msg:
-        if not ns.quiet and not ns.pgo:
+        if not ns.quiet and not pgo:
             print(f"{test_name} skipped -- {msg}", flush=True)
         result.state = State.RESOURCE_DENIED
         return
     except unittest.SkipTest as msg:
-        if not ns.quiet and not ns.pgo:
+        if not ns.quiet and not pgo:
             print(f"{test_name} skipped -- {msg}", flush=True)
         result.state = State.SKIPPED
         return
@@ -536,7 +546,7 @@ def _runtest_env_changed_exc(result: TestResult, ns: Namespace,
         result.state = State.INTERRUPTED
         return
     except:
-        if not ns.pgo:
+        if not pgo:
             msg = traceback.format_exc()
             print(f"test {test_name} crashed -- {msg}",
                   file=sys.stderr, flush=True)

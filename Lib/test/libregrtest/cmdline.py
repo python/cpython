@@ -149,6 +149,10 @@ class Namespace(argparse.Namespace):
         self.verbose = 0
         self.quiet = False
         self.exclude = False
+        self.cleanup = False
+        self.wait = False
+        self.list_cases = False
+        self.list_tests = False
         self.single = False
         self.randomize = False
         self.fromfile = None
@@ -171,6 +175,8 @@ class Namespace(argparse.Namespace):
         self.pgo = False
         self.pgo_extended = False
         self.worker_json = None
+        self.start = None
+        self.timeout = None
 
         super().__init__(**kwargs)
 
