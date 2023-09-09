@@ -4072,8 +4072,14 @@ class TimerfdTests(unittest.TestCase):
 
         count = 3
         t = time.perf_counter()
-        for _ in range(count):
-            events = epoll.poll(interval * 2)
+        for i in range(count):
+            timeout_margin = interval
+            if i == 0:
+                timeout = initial_expiration + interval + timeout_margin
+            else:
+                timeout = interval + timeout_margin
+            # epoll timeout is in seconds.
+            events = epoll.poll(timeout)
             self.assertEqual(events, [(fd, select.EPOLLIN)])
             n = os.read(fd, size)
             count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
