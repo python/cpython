@@ -1,0 +1,1 @@
+Fixes :func:`os.path.normpath` to handle embedded null characters without truncating the path.
