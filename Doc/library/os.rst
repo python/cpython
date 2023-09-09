@@ -3800,24 +3800,28 @@ features:
    :func:`~select.select` and :func:`~select.poll` can be used to wait until
    timer expires and the file descriptor is readable.
 
-   .. code:: python
+   Example::
 
       import os, time, select
 
+      # Create a timer file descriptor in non-blocking mode.
       fd1 = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
       fd2 = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
 
-      ep = select.epoll() # Create an epoll object
-      ep.register(fd1, select.EPOLLIN) # Register the timer file descriptor for read events
-      ep.register(fd2, select.EPOLLIN) # Register the timer file descriptor for read events
+      # Create an epoll object
+      ep = select.epoll()
 
-      # This sample uses os.timerfd_settime_ns(), but can use os.timerfd_settime() also.
+      # Register the timer file descriptor for read events
+      ep.register(fd1, select.EPOLLIN)
+      ep.register(fd2, select.EPOLLIN)
+
       initial_expiration1 = 10**9 // 2 # Start the timer in 0.5 second
       initial_expiration2 = 10**9 // 4 # Start the timer in 0.25 second
       interval1 = 10**9 // 4  # Set the timer interval to 0.25 seconds
       interval2 = 10**9 // 2  # Set the timer interval to 0.5  seconds
-      os.timerfd_settime_ns(fd1, initial=initial_expiration1, interval=interval1)  # Start the timer
-      os.timerfd_settime_ns(fd2, initial=initial_expiration1, interval=interval2)  # Start the timer
+      # Start the timer
+      os.timerfd_settime_ns(fd1, initial=initial_expiration1, interval=interval1)
+      os.timerfd_settime_ns(fd2, initial=initial_expiration1, interval=interval2)
 
       try:
           # process timer events four times.
@@ -3842,20 +3846,22 @@ features:
           ep.close()
 
 
-   .. code:: python
+   Example::
 
       import os, time, select
 
+      # Create a timer file descriptor in non-blocking mode.
       fd1 = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
       fd2 = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
 
-      initial_expiration1 = 0.5
-      initial_expiration2 = 0.25
-      interval1 = 0.25
-      interval2 = 0.5
-      # This sample uses os.timerfd_settime(), but can use os.timerfd_settime_ns() also.
-      os.timerfd_settime(fd1, initial=initial_expiration1, interval=interval1)  # Start the timer
-      os.timerfd_settime(fd2, initial=initial_expiration2, interval=interval2)  # Start the timer
+      initial_expiration1 = 0.5 # Start the timer in 0.5 second
+      initial_expiration2 = 0.25 # Start the timer in 0.25 second
+      interval1 = 0.25 # Set the timer interval to 0.25 seconds
+      interval2 = 0.5 # Set the timer interval to 0.5  seconds
+
+      # Start the timer
+      os.timerfd_settime(fd1, initial=initial_expiration1, interval=interval1)
+      os.timerfd_settime(fd2, initial=initial_expiration2, interval=interval2)
 
       try:
           # process timer events four times.
@@ -3957,8 +3963,10 @@ features:
    The following example shows how to use a timer file descriptor
    to execute a function twice a second:
 
-   .. code:: python
+   Example::
 
+      # This example uses blocking timer descriptor, but pratical script should use non-blocking timer.
+      # See Example at os.timerfd_create().
       import os, time
 
       fd = os.timerfd_create(time.CLOCK_REALTIME)
@@ -3989,8 +3997,9 @@ features:
    The following example shows how to use a timer file descriptor
    to execute a function twice a second:
 
-   .. code:: python
-
+   Example::
+      # This example uses blocking timer descriptor, but pratical script should use non-blocking timer.
+      # See Example at os.timerfd_create().
       import os, time
 
       fd = os.timerfd_create(time.CLOCK_REALTIME)
