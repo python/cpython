@@ -127,7 +127,7 @@ def worker_process(worker_json: str) -> NoReturn:
     test_name = runtests.tests[0]
     match_tests: FilterTuple | None = runtests.match_tests
 
-    setup_test_dir(ns.testdir)
+    setup_test_dir(runtests.test_dir)
     setup_tests(runtests, ns)
 
     if runtests.rerun:
@@ -136,7 +136,6 @@ def worker_process(worker_json: str) -> NoReturn:
             print(f"Re-running {test_name} in verbose mode ({matching})", flush=True)
         else:
             print(f"Re-running {test_name} in verbose mode", flush=True)
-        ns.verbose = True
 
     result = run_single_test(test_name, runtests, ns)
     print()   # Force a newline (just in case)

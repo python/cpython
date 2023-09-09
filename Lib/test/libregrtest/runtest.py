@@ -28,6 +28,13 @@ FilterTuple = tuple[str, ...]
 FilterDict = dict[str, FilterTuple]
 
 
+@dataclasses.dataclass(slots=True, frozen=True)
+class HuntRefleak:
+    warmups: int
+    runs: int
+    filename: str
+
+
 # Avoid enum.Enum to reduce the number of imports when tests are run
 class State:
     PASSED = "PASSED"
@@ -218,6 +225,11 @@ class RunTests:
     pgo_extended: bool = False
     output_on_failure: bool = False
     timeout: float | None = None
+    verbose: bool = False
+    quiet: bool = False
+    hunt_refleak: HuntRefleak | None = None
+    test_dir: str | None = None
+    junit_filename: str | None = None
 
     def copy(self, **override):
         state = dataclasses.asdict(self)
@@ -260,7 +272,7 @@ def findtestdir(path=None):
     return path or os.path.dirname(os.path.dirname(__file__)) or os.curdir
 
 
-def findtests(*, testdir=None, exclude=(),
+def findtests(*, testdir: str | None =None, exclude=(),
               split_test_dirs=SPLITTESTDIRS, base_mod=""):
     """Return a list of all applicable test modules."""
     testdir = findtestdir(testdir)
@@ -279,7 +291,7 @@ def findtests(*, testdir=None, exclude=(),
     return sorted(tests)
 
 
-def split_test_packages(tests, *, testdir=None, exclude=(),
+def split_test_packages(tests, *, testdir: str | None = None, exclude=(),
                         split_test_dirs=SPLITTESTDIRS):
     testdir = findtestdir(testdir)
     splitted = []
@@ -307,8 +319,8 @@ def setup_support(runtests: RunTests, ns: Namespace):
     support.PGO_EXTENDED = runtests.pgo_extended
     support.set_match_tests(runtests.match_tests, runtests.ignore_tests)
     support.failfast = runtests.fail_fast
-    support.verbose = ns.verbose
-    if ns.xmlpath:
+    support.verbose = runtests.verbose
+    if runtests.junit_filename:
         support.junit_xml_list = []
     else:
         support.junit_xml_list = None
@@ -317,7 +329,7 @@ def setup_support(runtests: RunTests, ns: Namespace):
 def _runtest(result: TestResult, runtests: RunTests, ns: Namespace) -> None:
     # Capture stdout and stderr, set faulthandler timeout,
     # and create JUnit XML report.
-    verbose = ns.verbose
+    verbose = runtests.verbose
     output_on_failure = runtests.output_on_failure
     timeout = runtests.timeout
 
@@ -363,7 +375,8 @@ def _runtest(result: TestResult, runtests: RunTests, ns: Namespace) -> None:
         else:
             # Tell tests to be moderately quiet
             support.verbose = verbose
-            _runtest_env_changed_exc(result, runtests, ns, display_failure=not verbose)
+            _runtest_env_changed_exc(result, runtests, ns,
+                                     display_failure=not verbose)
 
         xml_list = support.junit_xml_list
         if xml_list:
@@ -384,7 +397,7 @@ def run_single_test(test_name: str, runtests: RunTests, ns: Namespace) -> TestRe
 
     Returns a TestResult.
 
-    If ns.xmlpath is not None, xml_data is a list containing each
+    If runtests.junit_filename is not None, xml_data is a list containing each
     generated testsuite element.
     """
     start_time = time.perf_counter()
@@ -412,16 +425,19 @@ def run_unittest(test_mod):
     return support.run_unittest(tests)
 
 
-def save_env(test_name: str, runtests: RunTests, ns: Namespace):
-    return saved_test_environment(test_name, ns.verbose, ns.quiet, pgo=runtests.pgo)
+def save_env(test_name: str, runtests: RunTests):
+    return saved_test_environment(test_name, runtests.verbose, runtests.quiet,
+                                  pgo=runtests.pgo)
 
 
-def regrtest_runner(result, test_func, ns) -> None:
+def regrtest_runner(result: TestResult, test_func, runtests: RunTests) -> None:
     # Run test_func(), collect statistics, and detect reference and memory
     # leaks.
-    if ns.huntrleaks:
-        from test.libregrtest.refleak import dash_R
-        refleak, test_result = dash_R(ns, result.test_name, test_func)
+    if runtests.hunt_refleak:
+        from test.libregrtest.refleak import runtest_refleak
+        refleak, test_result = runtest_refleak(result.test_name, test_func,
+                                               runtests.hunt_refleak,
+                                               runtests.quiet)
     else:
         test_result = test_func()
         refleak = False
@@ -452,7 +468,7 @@ FOUND_GARBAGE = []
 
 def _load_run_test(result: TestResult, runtests: RunTests, ns: Namespace) -> None:
     # Load the test function, run the test function.
-    module_name = abs_module_name(result.test_name, ns.testdir)
+    module_name = abs_module_name(result.test_name, runtests.test_dir)
 
     # Remove the module from sys.module to reload it if it was already imported
     sys.modules.pop(module_name, None)
@@ -466,8 +482,8 @@ def _load_run_test(result: TestResult, runtests: RunTests, ns: Namespace) -> Non
         return run_unittest(test_mod)
 
     try:
-        with save_env(result.test_name, runtests, ns):
-            regrtest_runner(result, test_func, ns)
+        with save_env(result.test_name, runtests):
+            regrtest_runner(result, test_func, runtests)
     finally:
         # First kill any dangling references to open files etc.
         # This can also issue some ResourceWarnings which would otherwise get
@@ -475,7 +491,7 @@ def _load_run_test(result: TestResult, runtests: RunTests, ns: Namespace) -> Non
         # failures.
         support.gc_collect()
 
-        remove_testfn(result.test_name, ns.verbose)
+        remove_testfn(result.test_name, runtests.verbose)
 
     if gc.garbage:
         support.environment_altered = True
@@ -502,21 +518,22 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
     pgo = runtests.pgo
     if pgo:
         display_failure = False
+    quiet = runtests.quiet
 
     test_name = result.test_name
     try:
         clear_caches()
         support.gc_collect()
 
-        with save_env(test_name, runtests, ns):
+        with save_env(test_name, runtests):
             _load_run_test(result, runtests, ns)
     except support.ResourceDenied as msg:
-        if not ns.quiet and not pgo:
+        if not quiet and not pgo:
             print(f"{test_name} skipped -- {msg}", flush=True)
         result.state = State.RESOURCE_DENIED
         return
     except unittest.SkipTest as msg:
-        if not ns.quiet and not pgo:
+        if not quiet and not pgo:
             print(f"{test_name} skipped -- {msg}", flush=True)
         result.state = State.SKIPPED
         return
