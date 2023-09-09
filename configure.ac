@@ -7009,7 +7009,7 @@ int main()
 }
 ]])],[
   ac_cv_libatomic_needed=no
-],[ac_cv_libatomic_needed=yes],[ac_cv_libatomic_needed=yes])
+],[ac_cv_libatomic_needed=yes],[ac_cv_libatomic_needed=no])
 ])
 
 AS_VAR_IF([ac_cv_libatomic_needed], [yes],
