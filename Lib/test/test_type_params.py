@@ -436,11 +436,9 @@ class TypeParamsAccessTest(unittest.TestCase):
                 class Inner[U](make_base(T for _ in (1,)), make_base(T)):
                     pass
         """
-        C = run_code(code)["C"]
-        T, = C.__type_params__
-        base1, base2, _ = C.Inner.__bases__
-        self.assertEqual(list(base1.__arg__), [T])
-        self.assertEqual(base2.__arg__, "class")
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Cannot use comprehension in annotation scope within class scope"):
+            run_code(code)
 
     def test_listcomp_in_nested_class(self):
         code = """
@@ -466,35 +464,40 @@ class TypeParamsAccessTest(unittest.TestCase):
                 class Inner[U](make_base([T for _ in (1,)]), make_base(T)):
                     pass
         """
-        C = run_code(code)["C"]
-        T, = C.__type_params__
-        base1, base2, _ = C.Inner.__bases__
-        self.assertEqual(base1.__arg__, [T])
-        self.assertEqual(base2.__arg__, "class")
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Cannot use comprehension in annotation scope within class scope"):
+            run_code(code)
+
+    def test_gen_exp_in_generic_method(self):
+        code = """
+            class C[T]:
+                T = "class"
+                def meth[U](x: (T for _ in (1,)), y: T):
+                    pass
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Cannot use comprehension in annotation scope within class scope"):
+            run_code(code)
 
     def test_lambda_in_generic_alias(self):
         code = """
             class C[T]:
                 T = "class"
-                type Alias1[T] = lambda: T
-                type Alias2 = lambda: T
-                type Alias3[T] = (T for _ in (1,))
-                type Alias4 = (T for _ in (1,))
-                type Alias5[T] = [T for _ in (1,)]
-                type Alias6 = [T for _ in (1,)]
+                {}
         """
-        C = run_code(code)["C"]
-        outer_T = C.__type_params__[0]
-        T1 = C.Alias1.__type_params__[0]
-        self.assertIs(C.Alias1.__value__(), T1)
-        # Shouldn't pick up the T from the class scope
-        self.assertIs(C.Alias2.__value__(), outer_T)
-        T3 = C.Alias3.__type_params__[0]
-        self.assertEqual(list(C.Alias3.__value__), [T3])
-        self.assertEqual(list(C.Alias4.__value__), [outer_T])
-        T5 = C.Alias5.__type_params__[0]
-        self.assertEqual(C.Alias5.__value__, [T5])
-        self.assertEqual(C.Alias6.__value__, [outer_T])
+        error_cases = [
+            "type Alias1[T] = lambda: T",
+            "type Alias2 = lambda: T",
+            "type Alias3[T] = (T for _ in (1,))",
+            "type Alias4 = (T for _ in (1,))",
+            "type Alias5[T] = [T for _ in (1,)]",
+            "type Alias6 = [T for _ in (1,)]",
+        ]
+        for case in error_cases:
+            with self.subTest(case=case):
+                with self.assertRaisesRegex(SyntaxError,
+                                            r"Cannot use [a-z]+ in annotation scope within class scope"):
+                    run_code(code.format(case))
 
 
 def make_base(arg):
