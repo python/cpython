@@ -197,14 +197,20 @@ namespace_replace(PyObject *self, PyObject *args, PyObject *kwargs)
     }
 
     PyObject *result = PyObject_CallNoArgs((PyObject *)Py_TYPE(self));
-    if (result && (
-        PyDict_Update(((_PyNamespaceObject*)result)->ns_dict,
-                      ((_PyNamespaceObject*)self)->ns_dict) < 0 ||
-        (kwargs &&
-         PyDict_Update(((_PyNamespaceObject*)result)->ns_dict, kwargs) < 0)
-        ))
+    if (!result) {
+        return NULL;
+    }
+    if (PyDict_Update(((_PyNamespaceObject*)result)->ns_dict,
+                      ((_PyNamespaceObject*)self)->ns_dict) < 0)
     {
-        Py_CLEAR(result);
+        Py_DECREF(result);
+        return NULL;
+    }
+    if (kwargs) {
+        if (PyDict_Update(((_PyNamespaceObject*)result)->ns_dict, kwargs) < 0) {
+            Py_DECREF(result);
+            return NULL;
+        }
     }
     return result;
 }
