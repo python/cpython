@@ -11,6 +11,7 @@ __all__ = [
     "strategies",
     "HealthCheck",
     "settings",
+    "note",
     "Verbosity",
 ]
 
@@ -80,6 +81,10 @@ def register_random(*args, **kwargs):
 
 def settings(*args, **kwargs):
     return lambda f: f  # pragma: nocover
+
+
+def note(*args, **kwargs):
+    pass # pragma: no cover
 
 
 class HealthCheck(Enum):
