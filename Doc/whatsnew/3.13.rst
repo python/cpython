@@ -862,7 +862,7 @@ Build Changes
 
 * Wheels for :mod:`ensurepip` are no longer bundled in the CPython source
   tree. Distributors should bundle these as part of the build process by
-  running :file:`Tools/build/verify_ensurepip_wheels.py`.
+  running :file:`Tools/build/bundle_ensurepip_wheels.py`.
 
 
 C API Changes

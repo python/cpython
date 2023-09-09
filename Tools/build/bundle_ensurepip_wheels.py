@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Download wheels for :mod:`ensurepip` packages from the Cheeseshop.
+Download wheels for 'ensurepip' packages from PyPI.
 
 When GitHub Actions executes the script, output is formatted accordingly.
 https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-a-notice-message
@@ -42,7 +42,7 @@ def download_wheels() -> int:
     try:
         projects = _get_projects()
     except (AttributeError, TypeError):
-        print_error("Could not find '_PROJECTS' in {ENSURE_PIP_INIT}.")
+        print_error(f"Could not find '_PROJECTS' in {ENSURE_PIP_INIT}.")
         return 1
 
     errors = 0
