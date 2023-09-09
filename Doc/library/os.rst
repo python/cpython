@@ -3804,29 +3804,40 @@ features:
 
       import os, time, select
 
-      fd = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
+      fd1 = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
+      fd2 = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
 
-      ep = select.epoll()
-      ep.register(fd, select.EPOLLIN)
+      ep = select.epoll() # Create an epoll object
+      ep.register(fd1, select.EPOLLIN) # Register the timer file descriptor for read events
+      ep.register(fd2, select.EPOLLIN) # Register the timer file descriptor for read events
 
-      initial_expiration = 10**9  # Start the timer in 1 second
-      interval = 10**9 // 2  # Set the timer interval to 0.5 seconds
-      os.timerfd_settime_ns(fd, initial=initial_expiration, interval=interval)  # Start the timer
+      # This sample uses os.timerfd_settime_ns(), but can use os.timerfd_settime() also.
+      initial_expiration1 = 10**9 // 2 # Start the timer in 0.5 second
+      initial_expiration2 = 10**9 // 4 # Start the timer in 0.25 second
+      interval1 = 10**9 // 4  # Set the timer interval to 0.25 seconds
+      interval2 = 10**9 // 2  # Set the timer interval to 0.5  seconds
+      os.timerfd_settime_ns(fd1, initial=initial_expiration1, interval=interval1)  # Start the timer
+      os.timerfd_settime_ns(fd2, initial=initial_expiration1, interval=interval2)  # Start the timer
 
       try:
           # process timer events four times.
           for _ in range(4):
               timeout=3
               events = ep.poll(timeout)  # Wait for the timer to expire
-              for fd2, event in events:
-                  if fd2 == fd:
-                     # read() will not block because the timer file descriptor was created with os.TFD_NONBLOCK.
-                     # But if the timer has not expired, read() will raise OSError with errno set to EAGAIN
-                     _ = os.read(fd, 8)
-                     print("Timer expired")
+              # signaled events may be more than one at once.
+              print(f"signaled events={events}")
+              for fd_active, event in events:
+                  if fd_active == fd1:
+                     _ = os.read(fd1, 8)
+                     print("Timer1 expired")
+                  elif fd_active == fd2:
+                     _ = os.read(fd2, 8)
+                     print("Timer2 expired")
       finally:
-          ep.unregister(fd)
-          os.close(fd)
+          ep.unregister(fd1)
+          ep.unregister(fd2)
+          os.close(fd1)
+          os.close(fd2)
           ep.close()
 
 
@@ -3834,24 +3845,35 @@ features:
 
       import os, time, select
 
-      fd = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
+      fd1 = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
+      fd2 = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
 
-      initial_expiration = 1
-      interval = 0.5
-      os.timerfd_settime(fd, initial=initial_expiration, interval=interval)  # Start the timer
+      initial_expiration1 = 0.5
+      initial_expiration2 = 0.25
+      interval1 = 0.25
+      interval2 = 0.5
+      # This sample uses os.timerfd_settime(), but can use os.timerfd_settime_ns() also.
+      os.timerfd_settime(fd1, initial=initial_expiration1, interval=interval1)  # Start the timer
+      os.timerfd_settime(fd2, initial=initial_expiration2, interval=interval2)  # Start the timer
 
       try:
           # process timer events four times.
           for _ in range(4):
-              rfd, wfd, xfd = select.select([fd], [fd], [fd], initial_expiration + interval )
+              timeout=3
+
+              fds = [fd1, fd2]
+              rfd, wfd, xfd = select.select(fds, fds, fds, timeout) # Wait for the timer to expire
               print(rfd, wfd, xfd)
 
-              # read() will not block because the timer file descriptor was created with os.TFD_NONBLOCK.
-              # But if the timer has not expired, read() will raise OSError with errno set to EAGAIN
-              _ = os.read(fd, 8)
-              print("Timer expired")
+              for fd in rfd:
+                  _ = os.read(fd, 8)
+                  if fd == fd1:
+                      print("Timer1 expired")
+                  elif fd == fd2:
+                      print("Timer2 expired")
       finally:
-          os.close(fd)
+          os.close(fd1)
+          os.close(fd2)
 
    *clockid* must be a valid :ref:`clock ID <time-clock-id-constants>`,
    as defined in the :py:mod:`time` module:
