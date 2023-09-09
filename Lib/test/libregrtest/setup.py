@@ -18,7 +18,7 @@ from test.libregrtest.utils import (setup_unraisable_hook,
 UNICODE_GUARD_ENV = "PYTHONREGRTEST_UNICODE_GUARD"
 
 
-def setup_test_dir(testdir):
+def setup_test_dir(testdir: str | None) -> None:
     if testdir:
         # Prepend test directory to sys.path, so runtest() will be able
         # to locate tests
@@ -68,7 +68,7 @@ def setup_tests(runtests, ns):
         if getattr(module, '__file__', None):
             module.__file__ = os.path.abspath(module.__file__)
 
-    if ns.huntrleaks:
+    if runtests.hunt_refleak:
         unittest.BaseTestSuite._cleanup = False
 
     if ns.memlimit is not None:
@@ -77,7 +77,7 @@ def setup_tests(runtests, ns):
     if ns.threshold is not None:
         gc.set_threshold(ns.threshold)
 
-    support.suppress_msvcrt_asserts(ns.verbose and ns.verbose >= 2)
+    support.suppress_msvcrt_asserts(runtests.verbose and runtests.verbose >= 2)
 
     support.use_resources = ns.use_resources
 
@@ -102,7 +102,7 @@ def setup_tests(runtests, ns):
         support.SHORT_TIMEOUT = min(support.SHORT_TIMEOUT, timeout)
         support.LONG_TIMEOUT = min(support.LONG_TIMEOUT, timeout)
 
-    if ns.xmlpath:
+    if runtests.junit_filename:
         from test.support.testresult import RegressionTestResult
         RegressionTestResult.USE_XML = True
 
