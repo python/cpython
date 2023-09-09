@@ -3320,7 +3320,7 @@ Foo
             ('Bud Person', 'bperson@dom.ain')])
 
     def test_getaddresses_parsing_errors(self):
-        """Test for parsing errors from CVE-2023-27043"""
+        """Test for parsing errors from CVE-2023-27043 and CVE-2019-16056"""
         eq = self.assertEqual
         eq(utils.getaddresses(['alice@example.org(<bob@example.com>']),
            [('', '')])
@@ -3346,9 +3346,11 @@ Foo
            [('', '')])
         eq(utils.getaddresses(['alice@example.org]<bob@example.com>']),
            [('', '')])
+        eq(utils.getaddresses(['"Alice, alice@example.org" <bob@example.com>']),
+           [('Alice, alice@example.org', 'bob@example.com')])
 
     def test_parseaddr_parsing_errors(self):
-        """Test for parsing errors from CVE-2023-27043"""
+        """Test for parsing errors from CVE-2023-27043 and CVE-2019-16056"""
         eq = self.assertEqual
         eq(utils.parseaddr(['alice@example.org(<bob@example.com>']),
            ('', ''))
@@ -3374,6 +3376,8 @@ Foo
            ('', ''))
         eq(utils.parseaddr(['alice@example.org]<bob@example.com>']),
            ('', ''))
+        eq(utils.parseaddr(['"Alice, alice@example.org" <bob@example.com>']),
+           ('Alice, alice@example.org', 'bob@example.com'))
 
     def test_getaddresses_nasty(self):
         eq = self.assertEqual
