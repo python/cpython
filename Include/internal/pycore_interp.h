@@ -254,8 +254,6 @@ struct _xidregitem {
     crossinterpdatafunc getdata;
 };
 
-extern PyInterpreterState* _PyInterpreterState_LookUpID(int64_t);
-
 extern int _PyInterpreterState_IDInitref(PyInterpreterState *);
 extern int _PyInterpreterState_IDIncref(PyInterpreterState *);
 extern void _PyInterpreterState_IDDecref(PyInterpreterState *);
