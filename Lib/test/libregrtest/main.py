@@ -11,10 +11,10 @@ import time
 import unittest
 from test.libregrtest.cmdline import _parse_args, Namespace
 from test.libregrtest.runtest import (
-    findtests, split_test_packages, runtest, abs_module_name,
+    findtests, split_test_packages, run_single_test, abs_module_name,
     PROGRESS_MIN_TIME, State, RunTests, TestResult,
     FilterTuple, FilterDict, TestList)
-from test.libregrtest.setup import setup_tests
+from test.libregrtest.setup import setup_tests, setup_test_dir
 from test.libregrtest.pgo import setup_pgo_tests
 from test.libregrtest.utils import (strip_py_suffix, count, format_duration,
                                     printlist, get_build_info)
@@ -64,11 +64,11 @@ class Regrtest:
         self.ns: Namespace = ns
 
         # Actions
-        self.want_header = ns.header
-        self.want_list_tests = ns.list_tests
-        self.want_list_cases = ns.list_cases
-        self.want_wait = ns.wait
-        self.want_cleanup = ns.cleanup
+        self.want_header: bool = ns.header
+        self.want_list_tests: bool = ns.list_tests
+        self.want_list_cases: bool = ns.list_cases
+        self.want_wait: bool = ns.wait
+        self.want_cleanup: bool = ns.cleanup
 
         # Select tests
         if ns.match_tests:
@@ -79,14 +79,19 @@ class Regrtest:
             self.ignore_tests: FilterTuple = tuple(ns.ignore_tests)
         else:
             self.ignore_tests = None
-        self.exclude = ns.exclude
-        self.fromfile = ns.fromfile
-        self.starting_test = ns.start
+        self.exclude: bool = ns.exclude
+        self.fromfile: str | None = ns.fromfile
+        self.starting_test: str | None = ns.start
 
         # Options to run tests
-        self.forever = ns.forever
-        self.randomize = ns.randomize
-        self.random_seed = ns.random_seed
+        self.fail_fast: bool = ns.failfast
+        self.forever: bool = ns.forever
+        self.randomize: bool = ns.randomize
+        self.random_seed: int | None = ns.random_seed
+        self.pgo: bool = ns.pgo
+        self.pgo_extended: bool = ns.pgo_extended
+        self.output_on_failure: bool = ns.verbose3
+        self.timeout: float | None = ns.timeout
 
         # tests
         self.tests = []
@@ -196,21 +201,19 @@ class Regrtest:
 
     def display_progress(self, test_index, text):
         quiet = self.ns.quiet
-        pgo = self.ns.pgo
         if quiet:
             return
 
         # "[ 51/405/1] test_tcl passed"
         line = f"{test_index:{self.test_count_width}}{self.test_count_text}"
         fails = len(self.bad) + len(self.environment_changed)
-        if fails and not pgo:
+        if fails and not self.pgo:
             line = f"{line}/{fails}"
         self.log(f"[{line}] {text}")
 
     def find_tests(self):
         ns = self.ns
         single = ns.single
-        pgo = ns.pgo
         test_dir = ns.testdir
 
         if single:
@@ -237,7 +240,7 @@ class Regrtest:
 
         strip_py_suffix(self.tests)
 
-        if pgo:
+        if self.pgo:
             # add default PGO tests if no tests are specified
             setup_pgo_tests(ns)
 
@@ -329,8 +332,6 @@ class Regrtest:
         # Configure the runner to re-run tests
         ns = self.ns
         ns.verbose = True
-        ns.failfast = False
-        ns.verbose3 = False
         if ns.use_mp is None:
             ns.use_mp = 1
 
@@ -345,12 +346,16 @@ class Regrtest:
 
         # Re-run failed tests
         self.log(f"Re-running {len(tests)} failed tests in verbose mode in subprocesses")
-        runtests = runtests.copy(tests=tuple(tests),
-                                 match_tests_dict=match_tests_dict,
-                                 rerun=True,
-                                 forever=False)
+        runtests = runtests.copy(
+            tests=tuple(tests),
+            rerun=True,
+            forever=False,
+            fail_fast=False,
+            match_tests_dict=match_tests_dict,
+            output_on_failure=False)
         self.set_tests(runtests)
         self._run_tests_mp(runtests)
+        return runtests
 
     def rerun_failed_tests(self, need_rerun, runtests: RunTests):
         if self.ns.python:
@@ -364,16 +369,16 @@ class Regrtest:
         self.first_state = self.get_tests_state()
 
         print()
-        self._rerun_failed_tests(need_rerun, runtests)
+        rerun_runtests = self._rerun_failed_tests(need_rerun, runtests)
 
         if self.bad:
             print(count(len(self.bad), 'test'), "failed again:")
             printlist(self.bad)
 
-        self.display_result()
+        self.display_result(rerun_runtests)
 
-    def display_result(self):
-        pgo = self.ns.pgo
+    def display_result(self, runtests):
+        pgo = runtests.pgo
         quiet = self.ns.quiet
         print_slow = self.ns.print_slow
 
@@ -444,12 +449,12 @@ class Regrtest:
         if tracer is not None:
             # If we're tracing code coverage, then we don't exit with status
             # if on a false return value from main.
-            cmd = ('result = runtest(self.ns, test_name)')
+            cmd = ('result = run_single_test(test_name, runtests, self.ns)')
             ns = dict(locals())
             tracer.runctx(cmd, globals=globals(), locals=ns)
             result = ns['result']
         else:
-            result = runtest(self.ns, test_name)
+            result = run_single_test(test_name, runtests, self.ns)
 
         self.accumulate_result(result)
 
@@ -458,9 +463,7 @@ class Regrtest:
     def run_tests_sequentially(self, runtests):
         ns = self.ns
         coverage = ns.trace
-        fail_fast = ns.failfast
         fail_env_changed = ns.fail_env_changed
-        timeout = ns.timeout
 
         if coverage:
             import trace
@@ -471,8 +474,8 @@ class Regrtest:
         save_modules = sys.modules.keys()
 
         msg = "Run tests sequentially"
-        if timeout:
-            msg += " (timeout: %s)" % format_duration(timeout)
+        if runtests.timeout:
+            msg += " (timeout: %s)" % format_duration(runtests.timeout)
         self.log(msg)
 
         previous_test = None
@@ -492,7 +495,7 @@ class Regrtest:
                 if module not in save_modules and module.startswith("test."):
                     support.unload(module)
 
-            if result.must_stop(fail_fast, fail_env_changed):
+            if result.must_stop(self.fail_fast, fail_env_changed):
                 break
 
             previous_test = str(result)
@@ -850,16 +853,28 @@ class Regrtest:
 
         # For a partial run, we do not need to clutter the output.
         if (self.want_header
-            or not(self.ns.pgo or self.ns.quiet or self.ns.single
+            or not(self.pgo or self.ns.quiet or self.ns.single
                    or self.tests or self.ns.args)):
             self.display_header()
 
         if self.randomize:
             print("Using random seed", self.random_seed)
 
-        runtests = RunTests(tuple(self.selected), forever=self.forever)
+        runtests = RunTests(
+            tuple(self.selected),
+            fail_fast=self.fail_fast,
+            match_tests=self.match_tests,
+            ignore_tests=self.ignore_tests,
+            forever=self.forever,
+            pgo=self.pgo,
+            pgo_extended=self.pgo_extended,
+            output_on_failure=self.output_on_failure,
+            timeout=self.timeout)
+
+        setup_tests(runtests, self.ns)
+
         tracer = self.run_tests(runtests)
-        self.display_result()
+        self.display_result(runtests)
 
         need_rerun = self.need_rerun
         if self.ns.rerun and need_rerun:
@@ -877,7 +892,7 @@ class Regrtest:
         if self.want_wait:
             input("Press any key to continue...")
 
-        setup_tests(self.ns)
+        setup_test_dir(self.ns.testdir)
         self.find_tests()
 
         exitcode = 0
