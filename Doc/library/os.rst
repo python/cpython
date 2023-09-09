@@ -3927,6 +3927,7 @@ features:
 .. function:: timerfd_settime(fd, flags=0, /, *, initial=0.0, interval=0.0)
 
    Alter a timer file descriptor's internal timer.
+   This function operates the same interval timer as :func:`timerfd_settime_ns`.
 
    *fd* must be a valid timer file descriptor.
 
@@ -3997,6 +3998,7 @@ features:
 .. function:: timerfd_settime_ns(fd, flags=0, /, *, initial=0, interval=0)
 
    Similar to :func:`timerfd_settime`, but use time as nanoseconds.
+   This function operates the same interval timer as :func:`timerfd_settime`.
 
    The following example shows how to use a timer file descriptor
    to execute a function twice a second:
