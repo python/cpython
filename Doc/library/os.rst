@@ -3836,7 +3836,7 @@ features:
    .. versionadded:: 3.13
 
 
-.. function:: timerfd_settime(fd, /, *, flags=0, initial=0.0, interval=0.0)
+.. function:: timerfd_settime(fd, flags=0, /, *, initial=0.0, interval=0.0)
 
    Alter a timer file descriptor's internal timer.
 
@@ -3883,10 +3883,10 @@ features:
 
       import os, time
 
-      fd = os.timerfd_create(time.CLOCK_REALTIME, flags=0)
+      fd = os.timerfd_create(time.CLOCK_REALTIME)
       initial_expiration = 1  # Start the timer in 1 second
       interval = 0.5  # Set the timer interval to 0.5 seconds
-      os.timerfd_settime(fd, flags=0, initial=initial_expiration, interval=interval)  # Start the timer
+      os.timerfd_settime(fd, initial=initial_expiration, interval=interval)  # Start the timer
 
       try:
           # process timer events four times.
@@ -3903,7 +3903,7 @@ features:
    .. versionadded:: 3.13
 
 
-.. function:: timerfd_settime_ns(fd, /, *, flags=0, initial=0, interval=0)
+.. function:: timerfd_settime_ns(fd, flags=0, /, *, initial=0, interval=0)
 
    Similar to :func:`timerfd_settime`, but use time as nanoseconds.
 
@@ -3914,10 +3914,10 @@ features:
 
       import os, time
 
-      fd = os.timerfd_create(time.CLOCK_REALTIME, flags=0)
+      fd = os.timerfd_create(time.CLOCK_REALTIME)
       initial_expiration = 10**9  # Start the timer in 1 second
       interval = 10**9 // 2  # Set the timer interval to 0.5 seconds
-      os.timerfd_settime_ns(fd, flags=0, initial=initial_expiration, interval=interval)  # Start the timer
+      os.timerfd_settime_ns(fd, initial=initial_expiration, interval=interval)  # Start the timer
 
       try:
           # process timer events four times.

@@ -10117,8 +10117,6 @@ os.timerfd_create
         CLOCK_BOOTTIME
            Same as CLOCK_MONOTONIC except that it inclues any time that
            the system is suspended.
-    /
-    *
     flags: int = 0
         0 or a bit mask of TFD_NONBLOCK or TFD_CLOEXEC.
 
@@ -10128,13 +10126,14 @@ os.timerfd_create
 
         TFD_CLOEXEC
             If *TFD_CLOEXEC* is set as a flag, enable the close-on-exec flag
+    /
 
 Create and return a timer file descriptor.
 [clinic start generated code]*/
 
 static PyObject *
 os_timerfd_create_impl(PyObject *module, int clockid, int flags)
-/*[clinic end generated code: output=1caae80fb168004a input=41557fee095c37a5]*/
+/*[clinic end generated code: output=1caae80fb168004a input=5e2ac7d67a655944]*/
 
 {
     int fd;
@@ -10152,10 +10151,10 @@ os.timerfd_settime
 
     fd: fildes
         A timer file descriptor.
+    flags: int = 0
+        0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.
     /
     *
-    flags: int
-        0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.
     initial: double = 0.0
         The initial expiration time, in seconds.
 
@@ -10175,7 +10174,7 @@ Alter a timer file descriptor's internal timer in seconds.
 static PyObject *
 os_timerfd_settime_impl(PyObject *module, int fd, int flags, double initial,
                         double interval)
-/*[clinic end generated code: output=0dda31115317adb9 input=9b4cb18b00ff7f37]*/
+/*[clinic end generated code: output=0dda31115317adb9 input=af8570ae7e9835d2]*/
 {
     struct itimerspec new_value;
     struct itimerspec old_value;
@@ -10199,10 +10198,10 @@ os.timerfd_settime_ns
 
     fd: fildes
         A timer file descriptor.
+    flags: int = 0
+        0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.
     /
     *
-    flags: int
-        0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.
     initial: long_long = 0
         initial expiration timing in seconds.
 
@@ -10222,7 +10221,7 @@ Alter a timer file descriptor's internal timer in nanoseconds.
 static PyObject *
 os_timerfd_settime_ns_impl(PyObject *module, int fd, int flags,
                            long long initial, long long interval)
-/*[clinic end generated code: output=6273ec7d7b4cc0b3 input=197d9d6d1c287fac]*/
+/*[clinic end generated code: output=6273ec7d7b4cc0b3 input=b351df41eb72128e]*/
 {
     struct itimerspec new_value;
     struct itimerspec old_value;
