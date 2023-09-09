@@ -4073,6 +4073,7 @@ class TimerfdTests(unittest.TestCase):
 
         epoll = select.epoll()
         epoll.register(fd, select.EPOLLIN)
+        self.addCleanup(epoll.close)
 
         # 0.25 second
         initial_expiration = 0.25
@@ -4100,6 +4101,7 @@ class TimerfdTests(unittest.TestCase):
 
         total_time = initial_expiration + interval * (count - 1)
         self.assertGreater(t, total_time)
+        epoll.unregister(fd)
 
     def test_timerfd_ns_initval(self):
         one_sec_in_nsec = 10**9
@@ -4237,6 +4239,7 @@ class TimerfdTests(unittest.TestCase):
 
         epoll = select.epoll()
         epoll.register(fd, select.EPOLLIN)
+        self.addCleanup(epoll.close)
 
         # 0.25 second
         initial_expiration_ns = one_sec_in_nsec // 4
@@ -4265,6 +4268,7 @@ class TimerfdTests(unittest.TestCase):
 
         total_time = initial_expiration_ns + interval_ns * (count - 1)
         self.assertGreater(t, total_time)
+        epoll.unregister(fd)
 
 class OSErrorTests(unittest.TestCase):
     def setUp(self):
