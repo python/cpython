@@ -4152,8 +4152,8 @@ class TimerfdTests(unittest.TestCase):
         for _ in range(count):
             n = os.read(fd, size)
             count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
+            self.assertEqual(count_signaled, 1)
         t = time.perf_counter_ns() - t
-        self.assertEqual(count_signaled, 1)
 
         total_time_ns = initial_expiration_ns + interval_ns * (count - 1)
         self.assertGreater(t, total_time_ns)
@@ -4222,8 +4222,8 @@ class TimerfdTests(unittest.TestCase):
             self.assertEqual((rfd, wfd, xfd), ([fd], [], []))
             n = os.read(fd, size)
             count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
+            self.assertEqual(count_signaled, 1)
         t = time.perf_counter_ns() - t
-        self.assertEqual(count_signaled, 1)
 
         total_time_ns = initial_expiration_ns + interval_ns * (count - 1)
         self.assertGreater(t, total_time_ns)
