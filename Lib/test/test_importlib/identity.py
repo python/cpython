@@ -262,7 +262,6 @@ def identities_strategy(draw, debug=False):
         return strip
 
     def unbalance(entries):
-        return False
         index_candidates = []
         type_candidates =\
             [ ident_addr_domain_other
@@ -277,8 +276,8 @@ def identities_strategy(draw, debug=False):
             while j >= 0 and not (stop:=entries[i][j].category is quote):
                 token = entries[i][j]
                 if token.category not in type_candidates:
-                    continue
-                if token.category is ident_name_other:
+                    repls = ()
+                elif token.category is ident_name_other:
                     final = entries[i][j+1] is ident_name_only
                     repls = get_name_qchar_idxs(token.value, not final)
                 else:
