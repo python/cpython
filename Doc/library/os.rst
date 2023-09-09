@@ -3998,6 +3998,7 @@ features:
    to execute a function twice a second:
 
    Example::
+
       # This example uses blocking timer descriptor, but pratical script should use non-blocking timer.
       # See Example at os.timerfd_create().
       import os, time
