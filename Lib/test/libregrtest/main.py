@@ -100,6 +100,10 @@ class Regrtest:
             self.hunt_refleak = None
         self.test_dir: str | None = ns.testdir
         self.junit_filename: str | None = ns.xmlpath
+        self.memory_limit: str | None = ns.memlimit
+        self.gc_threshold: int | None = ns.threshold
+        self.use_resources: list[str] = ns.use_resources
+        self.python_cmd: list[str] | None = ns.python
 
         # tests
         self.tests = []
@@ -363,7 +367,7 @@ class Regrtest:
         return runtests
 
     def rerun_failed_tests(self, need_rerun, runtests: RunTests):
-        if self.ns.python:
+        if self.python_cmd:
             # Temp patch for https://github.com/python/cpython/issues/94052
             self.log(
                 "Re-running failed tests is not supported with --python "
@@ -453,12 +457,12 @@ class Regrtest:
         if tracer is not None:
             # If we're tracing code coverage, then we don't exit with status
             # if on a false return value from main.
-            cmd = ('result = run_single_test(test_name, runtests, self.ns)')
+            cmd = ('result = run_single_test(test_name, runtests)')
             ns = dict(locals())
             tracer.runctx(cmd, globals=globals(), locals=ns)
             result = ns['result']
         else:
-            result = run_single_test(test_name, runtests, self.ns)
+            result = run_single_test(test_name, runtests)
 
         self.accumulate_result(result)
 
@@ -876,9 +880,14 @@ class Regrtest:
             quiet=self.quiet,
             hunt_refleak=self.hunt_refleak,
             test_dir=self.test_dir,
-            junit_filename=self.junit_filename)
+            junit_filename=self.junit_filename,
+            memory_limit=self.memory_limit,
+            gc_threshold=self.gc_threshold,
+            use_resources=self.use_resources,
+            python_cmd=self.python_cmd,
+        )
 
-        setup_tests(runtests, self.ns)
+        setup_tests(runtests)
 
         tracer = self.run_tests(runtests)
         self.display_result(runtests)

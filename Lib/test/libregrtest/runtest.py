@@ -4,17 +4,18 @@ import faulthandler
 import gc
 import importlib
 import io
+import json
 import os
 import sys
 import time
 import traceback
 import unittest
+from typing import Any
 
 from test import support
 from test.support import TestStats
 from test.support import os_helper
 from test.support import threading_helper
-from test.libregrtest.cmdline import Namespace
 from test.libregrtest.save_env import saved_test_environment
 from test.libregrtest.utils import clear_caches, format_duration, print_warning
 
@@ -230,6 +231,10 @@ class RunTests:
     hunt_refleak: HuntRefleak | None = None
     test_dir: str | None = None
     junit_filename: str | None = None
+    memory_limit: str | None = None
+    gc_threshold: int | None = None
+    use_resources: list[str] = None
+    python_cmd: list[str] | None = None
 
     def copy(self, **override):
         state = dataclasses.asdict(self)
@@ -249,11 +254,32 @@ class RunTests:
         else:
             yield from self.tests
 
+    def as_json(self):
+        return json.dumps(self, cls=_EncodeRunTests)
+
     @staticmethod
-    def from_json_dict(json_dict):
-        if json_dict['hunt_refleak']:
-            json_dict['hunt_refleak'] = HuntRefleak(**json_dict['hunt_refleak'])
-        return RunTests(**json_dict)
+    def from_json(worker_json):
+        return json.loads(worker_json, object_hook=_decode_runtests)
+
+
+class _EncodeRunTests(json.JSONEncoder):
+    def default(self, o: Any) -> dict[str, Any]:
+        if isinstance(o, RunTests):
+            result = dataclasses.asdict(o)
+            result["__runtests__"] = True
+            return result
+        else:
+            return super().default(o)
+
+
+def _decode_runtests(data: dict[str, Any]) -> RunTests | dict[str, Any]:
+    if "__runtests__" in data:
+        data.pop('__runtests__')
+        if data['hunt_refleak']:
+            data['hunt_refleak'] = HuntRefleak(**data['hunt_refleak'])
+        return RunTests(**data)
+    else:
+        return data
 
 
 # Minimum duration of a test to display its duration or to mention that
@@ -320,7 +346,7 @@ def abs_module_name(test_name: str, test_dir: str | None) -> str:
         return 'test.' + test_name
 
 
-def setup_support(runtests: RunTests, ns: Namespace):
+def setup_support(runtests: RunTests):
     support.PGO = runtests.pgo
     support.PGO_EXTENDED = runtests.pgo_extended
     support.set_match_tests(runtests.match_tests, runtests.ignore_tests)
@@ -332,7 +358,7 @@ def setup_support(runtests: RunTests, ns: Namespace):
         support.junit_xml_list = None
 
 
-def _runtest(result: TestResult, runtests: RunTests, ns: Namespace) -> None:
+def _runtest(result: TestResult, runtests: RunTests) -> None:
     # Capture stdout and stderr, set faulthandler timeout,
     # and create JUnit XML report.
     verbose = runtests.verbose
@@ -346,7 +372,7 @@ def _runtest(result: TestResult, runtests: RunTests, ns: Namespace) -> None:
         faulthandler.dump_traceback_later(timeout, exit=True)
 
     try:
-        setup_support(runtests, ns)
+        setup_support(runtests)
 
         if output_on_failure:
             support.verbose = True
@@ -366,7 +392,7 @@ def _runtest(result: TestResult, runtests: RunTests, ns: Namespace) -> None:
                 # warnings will be written to sys.stderr below.
                 print_warning.orig_stderr = stream
 
-                _runtest_env_changed_exc(result, runtests, ns, display_failure=False)
+                _runtest_env_changed_exc(result, runtests, display_failure=False)
                 # Ignore output if the test passed successfully
                 if result.state != State.PASSED:
                     output = stream.getvalue()
@@ -381,7 +407,7 @@ def _runtest(result: TestResult, runtests: RunTests, ns: Namespace) -> None:
         else:
             # Tell tests to be moderately quiet
             support.verbose = verbose
-            _runtest_env_changed_exc(result, runtests, ns,
+            _runtest_env_changed_exc(result, runtests,
                                      display_failure=not verbose)
 
         xml_list = support.junit_xml_list
@@ -395,10 +421,9 @@ def _runtest(result: TestResult, runtests: RunTests, ns: Namespace) -> None:
         support.junit_xml_list = None
 
 
-def run_single_test(test_name: str, runtests: RunTests, ns: Namespace) -> TestResult:
+def run_single_test(test_name: str, runtests: RunTests) -> TestResult:
     """Run a single test.
 
-    ns -- regrtest namespace of options
     test_name -- the name of the test
 
     Returns a TestResult.
@@ -410,7 +435,7 @@ def run_single_test(test_name: str, runtests: RunTests, ns: Namespace) -> TestRe
     result = TestResult(test_name)
     pgo = runtests.pgo
     try:
-        _runtest(result, runtests, ns)
+        _runtest(result, runtests)
     except:
         if not pgo:
             msg = traceback.format_exc()
@@ -472,7 +497,7 @@ def regrtest_runner(result: TestResult, test_func, runtests: RunTests) -> None:
 FOUND_GARBAGE = []
 
 
-def _load_run_test(result: TestResult, runtests: RunTests, ns: Namespace) -> None:
+def _load_run_test(result: TestResult, runtests: RunTests) -> None:
     # Load the test function, run the test function.
     module_name = abs_module_name(result.test_name, runtests.test_dir)
 
@@ -513,7 +538,6 @@ def _load_run_test(result: TestResult, runtests: RunTests, ns: Namespace) -> Non
 
 
 def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
-                             ns: Namespace,
                              display_failure: bool = True) -> None:
     # Detect environment changes, handle exceptions.
 
@@ -532,7 +556,7 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
         support.gc_collect()
 
         with save_env(test_name, runtests):
-            _load_run_test(result, runtests, ns)
+            _load_run_test(result, runtests)
     except support.ResourceDenied as msg:
         if not quiet and not pgo:
             print(f"{test_name} skipped -- {msg}", flush=True)
