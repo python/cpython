@@ -3822,8 +3822,9 @@ features:
       try:
           # process timer events four times.
           for _ in range(4):
+              # Wait for the timer to expire for 3 seconds.
               timeout=3
-              events = ep.poll(timeout)  # Wait for the timer to expire
+              events = ep.poll(timeout)
               # signaled events may be more than one at once.
               print(f"signaled events={events}")
               for fd_active, event in events:
@@ -3862,7 +3863,8 @@ features:
               timeout=3
 
               fds = [fd1, fd2]
-              rfd, wfd, xfd = select.select(fds, fds, fds, timeout) # Wait for the timer to expire
+              # Wait for the timer to expire for 3 seconds.
+              rfd, wfd, xfd = select.select(fds, fds, fds, timeout)
               print(rfd, wfd, xfd)
 
               for fd in rfd:
