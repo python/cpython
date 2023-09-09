@@ -68,7 +68,7 @@ class _EncodeWorkerJob(json.JSONEncoder):
 def _decode_worker_job(d: dict[str, Any]) -> WorkerJob | dict[str, Any]:
     if "__worker_job__" in d:
         d.pop('__worker_job__')
-        d['runtests'] = RunTests(**d['runtests'])
+        d['runtests'] = RunTests.from_json_dict(d['runtests'])
         return WorkerJob(**d)
     if "__namespace__" in d:
         d.pop('__namespace__')
