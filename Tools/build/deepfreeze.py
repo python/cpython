@@ -491,7 +491,8 @@ def generate(args: list[str], output: TextIO) -> None:
 parser = argparse.ArgumentParser()
 parser.add_argument("-o", "--output", help="Defaults to deepfreeze.c", default="deepfreeze.c")
 parser.add_argument("-v", "--verbose", action="store_true", help="Print diagnostics")
-parser.add_argument('args', nargs="+", help="Input file and module name (required) in file:modname format")
+parser.add_argument("-f", "--file", help="reads rule lines from a file")
+parser.add_argument('args', nargs="*", help="Input file and module name (required) in file:modname format")
 
 @contextlib.contextmanager
 def report_time(label: str):
@@ -509,9 +510,20 @@ def main() -> None:
     args = parser.parse_args()
     verbose = args.verbose
     output = args.output
+    
+    if args.file:
+        if verbose:
+            print(f"reading rules from {args.file}")
+        with open(args.file, "rt", encoding="utf-8") as fin:
+            rules = [x.strip() for x in fin.readlines()]
+    elif args.args:
+        rules = args.args
+    else:
+        raise argparse.ArgumentError(None, "no rule(s) specified")
+    
     with open(output, "w", encoding="utf-8") as file:
         with report_time("generate"):
-            generate(args.args, file)
+            generate(rules, file)
     if verbose:
         print(f"Wrote {os.path.getsize(output)} bytes to {output}")
 

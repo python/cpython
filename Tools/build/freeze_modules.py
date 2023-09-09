@@ -21,12 +21,14 @@ STDLIB_DIR = os.path.join(ROOT_DIR, 'Lib')
 # .gitattributes and .gitignore files needs to be updated.
 FROZEN_MODULES_DIR = os.path.join(ROOT_DIR, 'Python', 'frozen_modules')
 DEEPFROZEN_MODULES_DIR = os.path.join(ROOT_DIR, 'Python', 'deepfreeze')
+DEEPFREEZE_MAPPING_FNAME = 'deepfreeze_mappings.txt'
 
 FROZEN_FILE = os.path.join(ROOT_DIR, 'Python', 'frozen.c')
 MAKEFILE = os.path.join(ROOT_DIR, 'Makefile.pre.in')
 PCBUILD_PROJECT = os.path.join(ROOT_DIR, 'PCbuild', '_freeze_module.vcxproj')
 PCBUILD_FILTERS = os.path.join(ROOT_DIR, 'PCbuild', '_freeze_module.vcxproj.filters')
 PCBUILD_PYTHONCORE = os.path.join(ROOT_DIR, 'PCbuild', 'pythoncore.vcxproj')
+PCBUILD_MAPPINGS = os.path.join(ROOT_DIR, 'PCbuild', DEEPFREEZE_MAPPING_FNAME)
 
 
 OS_PATH = 'ntpath' if os.name == 'nt' else 'posixpath'
@@ -645,7 +647,8 @@ def regen_pcbuild(modules):
     projlines = []
     filterlines = []
     corelines = []
-    deepfreezerules = ['\t<Exec Command=\'$(PythonForBuild) "$(PySourcePath)Tools\\build\\deepfreeze.py" ^']
+    deepfreezerules = [f'\t<Exec Command=\'$(PythonForBuild) "$(PySourcePath)Tools\\build\\deepfreeze.py" -f "$(PySourcePath)PCbuild\\{DEEPFREEZE_MAPPING_FNAME}" -o "$(PySourcePath)Python\\deepfreeze\\deepfreeze.c"\' />']
+    deepfreezemappings = []
     for src in _iter_sources(modules):
         pyfile = relpath_for_windows_display(src.pyfile, ROOT_DIR)
         header = relpath_for_windows_display(src.frozenfile, ROOT_DIR)
@@ -659,8 +662,7 @@ def regen_pcbuild(modules):
         filterlines.append(f'    <None Include="..\\{pyfile}">')
         filterlines.append('      <Filter>Python Files</Filter>')
         filterlines.append('    </None>')
-        deepfreezerules.append(f'\t\t "$(PySourcePath){header}:{src.frozenid}" ^')
-    deepfreezerules.append('\t\t "-o" "$(PySourcePath)Python\\deepfreeze\\deepfreeze.c"\'/>' )
+        deepfreezemappings.append(f'{src.frozenfile}:{src.frozenid}\n')
 
     corelines.append(f'    <ClCompile Include="..\\Python\\deepfreeze\\deepfreeze.c" />')
 
@@ -685,6 +687,9 @@ def regen_pcbuild(modules):
             PCBUILD_PROJECT,
         )
         outfile.writelines(lines)
+    print(f'# Updating {os.path.relpath(PCBUILD_MAPPINGS)}')
+    with open(PCBUILD_MAPPINGS, "wt") as outfile:
+        outfile.writelines(deepfreezemappings)
     print(f'# Updating {os.path.relpath(PCBUILD_FILTERS)}')
     with updating_file_with_tmpfile(PCBUILD_FILTERS) as (infile, outfile):
         lines = infile.readlines()
