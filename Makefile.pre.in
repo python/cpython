@@ -2365,7 +2365,7 @@ $(SCRIPT_IDLE): $(srcdir)/Tools/scripts/idle3
 
 $(SCRIPT_PYDOC): $(srcdir)/Tools/scripts/pydoc3
 	@$(MKDIR_P) $(BUILD_SCRIPTS_DIR)
-	sed -e "s,/usr/bin/env python3,$(EXENAME)," < $(srcdir)/Tools/scripts/pydoc3 > $@
+	cp $(srcdir)/Tools/scripts/pydoc3 $@
 	@chmod +x $@
 
 .PHONY: scripts
