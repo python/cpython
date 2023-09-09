@@ -805,6 +805,20 @@ def wrap_declarations(
     return "\n".join(lines)
 
 
+@dc.dataclass
+class TemplateData:
+    docstring_prototype: str | None = None
+    docstring_definition: str | None = None
+    impl_prototype: str | None = None
+    methoddef_define: str | None = None
+    parser_prototype: str | None = None
+    parser_definition: str | None = None
+    impl_definition: str | None = None
+    cpp_if: str | None = None
+    cpp_endif: str | None = None
+    methoddef_ifndef: str | None = None
+
+
 class CLanguage(Language):
 
     body_prefix   = "#"
@@ -1139,28 +1153,16 @@ class CLanguage(Language):
               not requires_defining_class and
               not new_or_init)
 
-        # we have to set these things before we're done:
-        #
-        # docstring_prototype
-        # docstring_definition
-        # impl_prototype
-        # methoddef_define
-        # parser_prototype
-        # parser_definition
-        # impl_definition
-        # cpp_if
-        # cpp_endif
-        # methoddef_ifndef
+        templ_data = TemplateData()
 
         return_value_declaration = "PyObject *return_value = NULL;"
-        methoddef_define = self.METHODDEF_PROTOTYPE_DEFINE
+        templ_data.methoddef_define = self.METHODDEF_PROTOTYPE_DEFINE
         if new_or_init and not f.docstring:
-            docstring_prototype = docstring_definition = ''
+            templ_data.docstring_prototype = templ_data.docstring_definition = ''
         else:
-            docstring_prototype = self.DOCSTRING_PROTOTYPE_VAR
-            docstring_definition = self.DOCSTRING_PROTOTYPE_STRVAR
-        impl_definition = self.IMPL_DEFINITION_PROTOTYPE
-        impl_prototype = parser_prototype = parser_definition = None
+            templ_data.docstring_prototype = self.DOCSTRING_PROTOTYPE_VAR
+            templ_data.docstring_definition = self.DOCSTRING_PROTOTYPE_STRVAR
+        templ_data.impl_definition = self.IMPL_DEFINITION_PROTOTYPE
 
         # parser_body_fields remembers the fields passed in to the
         # previous call to parser_body. this is used for an awful hack.
@@ -1213,13 +1215,13 @@ class CLanguage(Language):
             if not requires_defining_class:
                 # no parameters, METH_NOARGS
                 flags = "METH_NOARGS"
-                parser_prototype = self.PARSER_PROTOTYPE_NOARGS
+                templ_data.parser_prototype = self.PARSER_PROTOTYPE_NOARGS
                 parser_code = []
             else:
                 assert fastcall
 
                 flags = "METH_METHOD|METH_FASTCALL|METH_KEYWORDS"
-                parser_prototype = self.PARSER_PROTOTYPE_DEF_CLASS
+                templ_data.parser_prototype = self.PARSER_PROTOTYPE_DEF_CLASS
                 return_error = ('return NULL;' if default_return_converter
                                 else 'goto exit;')
                 parser_code = [normalize_snippet("""
@@ -1230,14 +1232,14 @@ class CLanguage(Language):
                     """ % return_error, indent=4)]
 
             if default_return_converter:
-                parser_definition = '\n'.join([
-                    parser_prototype,
+                templ_data.parser_definition = '\n'.join([
+                    templ_data.parser_prototype,
                     '{{',
                     *parser_code,
                     '    return {c_basename}_impl({impl_arguments});',
                     '}}'])
             else:
-                parser_definition = parser_body(parser_prototype, *parser_code)
+                templ_data.parser_definition = parser_body(templ_data.parser_prototype, *parser_code)
 
         elif meth_o:
             flags = "METH_O"
@@ -1250,19 +1252,21 @@ class CLanguage(Language):
                     # maps perfectly to METH_O, doesn't need a return converter.
                     # so we skip making a parse function
                     # and call directly into the impl function.
-                    impl_prototype = parser_prototype = parser_definition = ''
-                    impl_definition = meth_o_prototype
+                    templ_data.impl_definition = meth_o_prototype
+                    templ_data.impl_prototype = ''
+                    templ_data.parser_definition = ''
+                    templ_data.parser_prototype = ''
                 else:
                     # SLIGHT HACK
                     # use impl_parameters for the parser here!
-                    parser_prototype = meth_o_prototype
-                    parser_definition = parser_body(parser_prototype)
+                    templ_data.parser_prototype = meth_o_prototype
+                    templ_data.parser_definition = parser_body(templ_data.parser_prototype)
 
             else:
                 argname = 'arg'
                 if parameters[0].name == argname:
                     argname += '_'
-                parser_prototype = normalize_snippet("""
+                templ_data.parser_prototype = normalize_snippet("""
                     static PyObject *
                     {c_basename}({self_type}{self_name}, PyObject *%s)
                     """ % argname)
@@ -1275,8 +1279,9 @@ class CLanguage(Language):
                             goto exit;
                         }}
                         """ % argname
-                parser_definition = parser_body(parser_prototype,
-                                                normalize_snippet(parsearg, indent=4))
+                snippet = normalize_snippet(parsearg, indent=4)
+                templ_data.parser_definition = parser_body(templ_data.parser_prototype,
+                                                           snippet)
 
         elif has_option_groups:
             # positional parameters with option groups
@@ -1284,8 +1289,10 @@ class CLanguage(Language):
             #  in a big switch statement)
 
             flags = "METH_VARARGS"
-            parser_prototype = self.PARSER_PROTOTYPE_VARARGS
-            parser_definition = parser_body(parser_prototype, '    {option_group_parsing}')
+            snippet = '    {option_group_parsing}'
+            templ_data.parser_prototype = self.PARSER_PROTOTYPE_VARARGS
+            templ_data.parser_definition = parser_body(templ_data.parser_prototype,
+                                                       snippet)
 
         elif not requires_defining_class and pos_only == len(parameters) - pseudo_args:
             if fastcall:
@@ -1293,7 +1300,7 @@ class CLanguage(Language):
                 # we only need one call to _PyArg_ParseStack
 
                 flags = "METH_FASTCALL"
-                parser_prototype = self.PARSER_PROTOTYPE_FASTCALL
+                templ_data.parser_prototype = self.PARSER_PROTOTYPE_FASTCALL
                 nargs = 'nargs'
                 argname_fmt = 'args[%d]'
             else:
@@ -1301,7 +1308,7 @@ class CLanguage(Language):
                 # we only need one call to PyArg_ParseTuple
 
                 flags = "METH_VARARGS"
-                parser_prototype = self.PARSER_PROTOTYPE_VARARGS
+                templ_data.parser_prototype = self.PARSER_PROTOTYPE_VARARGS
                 if limited_capi:
                     nargs = 'PyTuple_Size(args)'
                     argname_fmt = 'PyTuple_GetItem(args, %d)'
@@ -1410,14 +1417,15 @@ class CLanguage(Language):
                         """, indent=4)]
                 else:
                     flags = "METH_VARARGS"
-                    parser_prototype = self.PARSER_PROTOTYPE_VARARGS
+                    templ_data.parser_prototype = self.PARSER_PROTOTYPE_VARARGS
                     parser_code = [normalize_snippet("""
                         if (!PyArg_ParseTuple(args, "{format_units}:{name}",
                             {parse_arguments})) {{
                             goto exit;
                         }}
                         """, indent=4)]
-            parser_definition = parser_body(parser_prototype, *parser_code)
+            templ_data.parser_definition = parser_body(templ_data.parser_prototype,
+                                                       *parser_code)
 
         else:
             deprecated_positionals: dict[int, Parameter] = {}
@@ -1451,7 +1459,7 @@ class CLanguage(Language):
 
             elif fastcall:
                 flags = "METH_FASTCALL|METH_KEYWORDS"
-                parser_prototype = self.PARSER_PROTOTYPE_FASTCALL_KEYWORDS
+                templ_data.parser_prototype = self.PARSER_PROTOTYPE_FASTCALL_KEYWORDS
                 argname_fmt = 'args[%d]'
                 declarations = declare_parser(f, clinic=clinic,
                                               limited_capi=clinic.limited_capi)
@@ -1467,7 +1475,7 @@ class CLanguage(Language):
             else:
                 # positional-or-keyword arguments
                 flags = "METH_VARARGS|METH_KEYWORDS"
-                parser_prototype = self.PARSER_PROTOTYPE_KEYWORD
+                templ_data.parser_prototype = self.PARSER_PROTOTYPE_KEYWORD
                 argname_fmt = 'fastargs[%d]'
                 declarations = declare_parser(f, clinic=clinic,
                                               limited_capi=clinic.limited_capi)
@@ -1485,7 +1493,7 @@ class CLanguage(Language):
 
             if requires_defining_class:
                 flags = 'METH_METHOD|' + flags
-                parser_prototype = self.PARSER_PROTOTYPE_DEF_CLASS
+                templ_data.parser_prototype = self.PARSER_PROTOTYPE_DEF_CLASS
 
             if parser_code is not None:
                 if deprecated_keywords:
@@ -1564,7 +1572,7 @@ class CLanguage(Language):
                     # positional-or-keyword arguments
                     assert not fastcall
                     flags = "METH_VARARGS|METH_KEYWORDS"
-                    parser_prototype = self.PARSER_PROTOTYPE_KEYWORD
+                    templ_data.parser_prototype = self.PARSER_PROTOTYPE_KEYWORD
                     parser_code = [normalize_snippet("""
                         if (!PyArg_ParseTupleAndKeywords(args, kwargs, "{format_units}:{name}", _keywords,
                             {parse_arguments}))
@@ -1602,19 +1610,20 @@ class CLanguage(Language):
                 # Insert the deprecation code before parameter parsing.
                 parser_code.insert(0, code)
 
-            assert parser_prototype is not None
-            parser_definition = parser_body(parser_prototype, *parser_code,
-                                            declarations=declarations)
+            assert templ_data.parser_prototype is not None
+            templ_data.parser_definition = parser_body(templ_data.parser_prototype,
+                                                       *parser_code,
+                                                       declarations=declarations)
 
 
         if new_or_init:
-            methoddef_define = ''
+            templ_data.methoddef_define = ''
 
             if f.kind is METHOD_NEW:
-                parser_prototype = self.PARSER_PROTOTYPE_KEYWORD
+                templ_data.parser_prototype = self.PARSER_PROTOTYPE_KEYWORD
             else:
                 return_value_declaration = "int return_value = -1;"
-                parser_prototype = self.PARSER_PROTOTYPE_KEYWORD___INIT__
+                templ_data.parser_prototype = self.PARSER_PROTOTYPE_KEYWORD___INIT__
 
             fields = list(parser_body_fields)
             parses_positional = 'METH_NOARGS' not in flags
@@ -1639,8 +1648,9 @@ class CLanguage(Language):
                         }}
                         """, indent=4))
 
-            parser_definition = parser_body(parser_prototype, *fields,
-                                            declarations=declarations)
+            templ_data.parser_definition = parser_body(templ_data.parser_prototype,
+                                                       *fields,
+                                                       declarations=declarations)
 
 
         if flags in ('METH_NOARGS', 'METH_O', 'METH_VARARGS'):
@@ -1656,55 +1666,43 @@ class CLanguage(Language):
         if f.methoddef_flags:
             flags += '|' + f.methoddef_flags
 
-        methoddef_define = methoddef_define.replace('{methoddef_flags}', flags)
-        methoddef_define = methoddef_define.replace('{methoddef_cast}', methoddef_cast)
-        methoddef_define = methoddef_define.replace('{methoddef_cast_end}', methoddef_cast_end)
+        templ_data.methoddef_define = templ_data.methoddef_define.replace('{methoddef_flags}', flags)
+        templ_data.methoddef_define = templ_data.methoddef_define.replace('{methoddef_cast}', methoddef_cast)
+        templ_data.methoddef_define = templ_data.methoddef_define.replace('{methoddef_cast_end}', methoddef_cast_end)
 
-        methoddef_ifndef = ''
+        templ_data.methoddef_ifndef = ''
         conditional = self.cpp.condition()
         if not conditional:
-            cpp_if = cpp_endif = ''
+            templ_data.cpp_if = templ_data.cpp_endif = ''
         else:
-            cpp_if = "#if " + conditional
-            cpp_endif = "#endif /* " + conditional + " */"
+            templ_data.cpp_if = "#if " + conditional
+            templ_data.cpp_endif = "#endif /* " + conditional + " */"
 
-            if methoddef_define and f.full_name not in clinic.ifndef_symbols:
+            if templ_data.methoddef_define and f.full_name not in clinic.ifndef_symbols:
                 clinic.ifndef_symbols.add(f.full_name)
-                methoddef_ifndef = self.METHODDEF_PROTOTYPE_IFNDEF
+                templ_data.methoddef_ifndef = self.METHODDEF_PROTOTYPE_IFNDEF
 
-        # add ';' to the end of parser_prototype and impl_prototype
+        # add ';' to the end of templ_data.parser_prototype and impl_prototype
         # (they mustn't be None, but they could be an empty string.)
-        assert parser_prototype is not None
-        if parser_prototype:
-            assert not parser_prototype.endswith(';')
-            parser_prototype += ';'
+        assert templ_data.parser_prototype is not None
+        if templ_data.parser_prototype:
+            assert not templ_data.parser_prototype.endswith(';')
+            templ_data.parser_prototype += ';'
 
-        if impl_prototype is None:
-            impl_prototype = impl_definition
-        if impl_prototype:
-            impl_prototype += ";"
+        if templ_data.impl_prototype is None:
+            templ_data.impl_prototype = templ_data.impl_definition
+        if templ_data.impl_prototype:
+            templ_data.impl_prototype += ";"
 
-        parser_definition = parser_definition.replace("{return_value_declaration}", return_value_declaration)
+        templ_data.parser_definition = templ_data.parser_definition.replace("{return_value_declaration}", return_value_declaration)
 
         compiler_warning = self.compiler_deprecated_warning(f, parameters)
         if compiler_warning:
-            parser_definition = compiler_warning + "\n\n" + parser_definition
-
-        d = {
-            "docstring_prototype" : docstring_prototype,
-            "docstring_definition" : docstring_definition,
-            "impl_prototype" : impl_prototype,
-            "methoddef_define" : methoddef_define,
-            "parser_prototype" : parser_prototype,
-            "parser_definition" : parser_definition,
-            "impl_definition" : impl_definition,
-            "cpp_if" : cpp_if,
-            "cpp_endif" : cpp_endif,
-            "methoddef_ifndef" : methoddef_ifndef,
-        }
+            templ_data.parser_definition = +f"{compiler_warning}\n\n{templ_data.parser_definition}"
 
         # make sure we didn't forget to assign something,
         # and wrap each non-empty value in \n's
+        d = dc.asdict(templ_data)
         d2 = {}
         for name, value in d.items():
             assert value is not None, "got a None value for template " + repr(name)
