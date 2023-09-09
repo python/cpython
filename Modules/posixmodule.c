@@ -10109,7 +10109,7 @@ os.timerfd_create
         CLOCK_REALTIME
             A settable system-wide real-time clock.
             If system clock is changed, timer setting need to be updated.
-            See TFD_TIMER_ABSTIME and TFD_TIMER_CANCEL_ON_SET.
+            See os.TFD_TIMER_ABSTIME and os.TFD_TIMER_CANCEL_ON_SET.
 
         CLOCK_MONOTONIC
            A nonsettable monotonically increasing clock.
@@ -10134,7 +10134,7 @@ Create and return a timer file descriptor.
 
 static PyObject *
 os_timerfd_create_impl(PyObject *module, int clockid, int flags)
-/*[clinic end generated code: output=1caae80fb168004a input=bb48a71f217f58bc]*/
+/*[clinic end generated code: output=1caae80fb168004a input=52a6531c7439fa69]*/
 
 {
     int fd;

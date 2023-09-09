@@ -6002,7 +6002,7 @@ PyDoc_STRVAR(os_timerfd_create__doc__,
 "    CLOCK_REALTIME\n"
 "        A settable system-wide real-time clock.\n"
 "        If system clock is changed, timer setting need to be updated.\n"
-"        See TFD_TIMER_ABSTIME and TFD_TIMER_CANCEL_ON_SET.\n"
+"        See os.TFD_TIMER_ABSTIME and os.TFD_TIMER_CANCEL_ON_SET.\n"
 "\n"
 "    CLOCK_MONOTONIC\n"
 "       A nonsettable monotonically increasing clock.\n"
@@ -12375,4 +12375,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=850487ccd45f7366 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c1d7ced45aca6e12 input=a9049054013a1b77]*/
