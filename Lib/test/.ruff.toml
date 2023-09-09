@@ -1,5 +1,5 @@
 select = [
-    "F811",
+    "F811",  # Redefinition of unused variable (useful for finding test methods with the same name)
 ]
 extend-exclude = [
     # Failed to lint
