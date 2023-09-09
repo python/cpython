@@ -10,7 +10,7 @@ import tempfile
 import threading
 import time
 import traceback
-from typing import NamedTuple, NoReturn, Literal, Any, TextIO
+from typing import NoReturn, Literal, Any, TextIO
 
 from test import support
 from test.support import os_helper
@@ -19,9 +19,9 @@ from test.support import TestStats
 from test.libregrtest.cmdline import Namespace
 from test.libregrtest.main import Regrtest
 from test.libregrtest.runtest import (
-    runtest, TestResult, State, PROGRESS_MIN_TIME,
-    MatchTests, RunTests)
-from test.libregrtest.setup import setup_tests
+    run_single_test, TestResult, State, PROGRESS_MIN_TIME,
+    FilterTuple, RunTests)
+from test.libregrtest.setup import setup_tests, setup_test_dir
 from test.libregrtest.utils import format_duration, print_warning
 
 if sys.platform == 'win32':
@@ -46,10 +46,8 @@ USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
 
 @dataclasses.dataclass(slots=True)
 class WorkerJob:
-    test_name: str
+    runtests: RunTests
     namespace: Namespace
-    rerun: bool = False
-    match_tests: MatchTests | None = None
 
 
 class _EncodeWorkerJob(json.JSONEncoder):
@@ -70,6 +68,7 @@ class _EncodeWorkerJob(json.JSONEncoder):
 def _decode_worker_job(d: dict[str, Any]) -> WorkerJob | dict[str, Any]:
     if "__worker_job__" in d:
         d.pop('__worker_job__')
+        d['runtests'] = RunTests(**d['runtests'])
         return WorkerJob(**d)
     if "__namespace__" in d:
         d.pop('__namespace__')
@@ -78,17 +77,16 @@ def _decode_worker_job(d: dict[str, Any]) -> WorkerJob | dict[str, Any]:
         return d
 
 
-def _parse_worker_args(worker_json: str) -> tuple[Namespace, str]:
-    return json.loads(worker_json,
-                      object_hook=_decode_worker_job)
+def _parse_worker_json(worker_json: str) -> tuple[Namespace, str]:
+    return json.loads(worker_json, object_hook=_decode_worker_job)
 
 
-def run_test_in_subprocess(worker_job: WorkerJob,
-                           output_file: TextIO,
-                           tmp_dir: str | None = None) -> subprocess.Popen:
+def create_worker_process(worker_job: WorkerJob,
+                          output_file: TextIO,
+                          tmp_dir: str | None = None) -> subprocess.Popen:
     ns = worker_job.namespace
     python = ns.python
-    worker_args = json.dumps(worker_job, cls=_EncodeWorkerJob)
+    worker_json = json.dumps(worker_job, cls=_EncodeWorkerJob)
 
     if python is not None:
         executable = python
@@ -97,7 +95,7 @@ def run_test_in_subprocess(worker_job: WorkerJob,
     cmd = [*executable, *support.args_from_interpreter_flags(),
            '-u',    # Unbuffered stdout and stderr
            '-m', 'test.regrtest',
-           '--worker-args', worker_args]
+           '--worker-json', worker_json]
 
     env = dict(os.environ)
     if tmp_dir is not None:
@@ -122,16 +120,17 @@ def run_test_in_subprocess(worker_job: WorkerJob,
     return subprocess.Popen(cmd, **kw)
 
 
-def run_tests_worker(worker_json: str) -> NoReturn:
-    worker_job = _parse_worker_args(worker_json)
+def worker_process(worker_json: str) -> NoReturn:
+    worker_job = _parse_worker_json(worker_json)
+    runtests = worker_job.runtests
     ns = worker_job.namespace
-    test_name = worker_job.test_name
-    rerun = worker_job.rerun
-    match_tests = worker_job.match_tests
+    test_name = runtests.tests[0]
+    match_tests: FilterTuple | None = runtests.match_tests
 
-    setup_tests(ns)
+    setup_test_dir(ns.testdir)
+    setup_tests(runtests, ns)
 
-    if rerun:
+    if runtests.rerun:
         if match_tests:
             matching = "matching: " + ", ".join(match_tests)
             print(f"Re-running {test_name} in verbose mode ({matching})", flush=True)
@@ -139,14 +138,12 @@ def run_tests_worker(worker_json: str) -> NoReturn:
             print(f"Re-running {test_name} in verbose mode", flush=True)
         ns.verbose = True
 
-    if match_tests is not None:
-        ns.match_tests = match_tests
-
-    result = runtest(ns, test_name)
+    result = run_single_test(test_name, runtests, ns)
     print()   # Force a newline (just in case)
 
     # Serialize TestResult as dict in JSON
-    print(json.dumps(result, cls=EncodeTestResult), flush=True)
+    json.dump(result, sys.stdout, cls=EncodeTestResult)
+    sys.stdout.flush()
     sys.exit(0)
 
 
@@ -173,7 +170,8 @@ class MultiprocessIterator:
             self.tests_iter = None
 
 
-class MultiprocessResult(NamedTuple):
+@dataclasses.dataclass(slots=True, frozen=True)
+class MultiprocessResult:
     result: TestResult
     # bpo-45410: stderr is written into stdout to keep messages order
     worker_stdout: str | None = None
@@ -198,7 +196,6 @@ class TestWorkerProcess(threading.Thread):
         self.ns = runner.ns
         self.timeout = runner.worker_timeout
         self.regrtest = runner.regrtest
-        self.rerun = runner.rerun
         self.current_test_name = None
         self.start_time = None
         self._popen = None
@@ -264,9 +261,8 @@ class TestWorkerProcess(threading.Thread):
 
     def _run_process(self, worker_job, output_file: TextIO,
                      tmp_dir: str | None = None) -> int:
-        self.current_test_name = worker_job.test_name
         try:
-            popen = run_test_in_subprocess(worker_job, output_file, tmp_dir)
+            popen = create_worker_process(worker_job, output_file, tmp_dir)
 
             self._killed = False
             self._popen = popen
@@ -316,6 +312,8 @@ class TestWorkerProcess(threading.Thread):
             self.current_test_name = None
 
     def _runtest(self, test_name: str) -> MultiprocessResult:
+        self.current_test_name = test_name
+
         if sys.platform == 'win32':
             # gh-95027: When stdout is not a TTY, Python uses the ANSI code
             # page for the sys.stdout encoding. If the main process runs in a
@@ -324,15 +322,22 @@ class TestWorkerProcess(threading.Thread):
         else:
             encoding = sys.stdout.encoding
 
-        match_tests = self.runtests.get_match_tests(test_name)
+        tests = (test_name,)
+        if self.runtests.rerun:
+            match_tests = self.runtests.get_match_tests(test_name)
+        else:
+            match_tests = None
+        kwargs = {}
+        if match_tests:
+            kwargs['match_tests'] = match_tests
+        worker_runtests = self.runtests.copy(tests=tests, **kwargs)
+        worker_job = WorkerJob(
+            worker_runtests,
+            namespace=self.ns)
 
         # gh-94026: Write stdout+stderr to a tempfile as workaround for
         # non-blocking pipes on Emscripten with NodeJS.
         with tempfile.TemporaryFile('w+', encoding=encoding) as stdout_file:
-            worker_job = WorkerJob(test_name,
-                                   namespace=self.ns,
-                                   rerun=self.rerun,
-                                   match_tests=match_tests)
             # gh-93353: Check for leaked temporary files in the parent process,
             # since the deletion of temporary files can happen late during
             # Python finalization: too late for libregrtest.
@@ -395,7 +400,7 @@ class TestWorkerProcess(threading.Thread):
         return MultiprocessResult(result, stdout)
 
     def run(self) -> None:
-        fail_fast = self.ns.failfast
+        fail_fast = self.runtests.fail_fast
         fail_env_changed = self.ns.fail_env_changed
         while not self._stopped:
             try:
@@ -467,7 +472,6 @@ def get_running(workers: list[TestWorkerProcess]) -> list[TestWorkerProcess]:
 class MultiprocessTestRunner:
     def __init__(self, regrtest: Regrtest, runtests: RunTests) -> None:
         ns = regrtest.ns
-        timeout = ns.timeout
 
         self.regrtest = regrtest
         self.runtests = runtests
@@ -477,24 +481,24 @@ class MultiprocessTestRunner:
         self.output: queue.Queue[QueueOutput] = queue.Queue()
         tests_iter = runtests.iter_tests()
         self.pending = MultiprocessIterator(tests_iter)
-        if timeout is not None:
+        self.timeout = runtests.timeout
+        if self.timeout is not None:
             # Rely on faulthandler to kill a worker process. This timouet is
             # when faulthandler fails to kill a worker process. Give a maximum
             # of 5 minutes to faulthandler to kill the worker.
-            self.worker_timeout = min(timeout * 1.5, timeout + 5 * 60)
+            self.worker_timeout = min(self.timeout * 1.5, self.timeout + 5 * 60)
         else:
             self.worker_timeout = None
         self.workers = None
 
     def start_workers(self) -> None:
         use_mp = self.ns.use_mp
-        timeout = self.ns.timeout
         self.workers = [TestWorkerProcess(index, self)
                         for index in range(1, use_mp + 1)]
         msg = f"Run tests in parallel using {len(self.workers)} child processes"
-        if timeout:
+        if self.timeout:
             msg += (" (timeout: %s, worker timeout: %s)"
-                    % (format_duration(timeout),
+                    % (format_duration(self.timeout),
                        format_duration(self.worker_timeout)))
         self.log(msg)
         for worker in self.workers:
@@ -508,9 +512,8 @@ class MultiprocessTestRunner:
             worker.wait_stopped(start_time)
 
     def _get_result(self) -> QueueOutput | None:
-        pgo = self.ns.pgo
-        use_faulthandler = (self.ns.timeout is not None)
-        timeout = PROGRESS_UPDATE
+        pgo = self.runtests.pgo
+        use_faulthandler = (self.timeout is not None)
 
         # bpo-46205: check the status of workers every iteration to avoid
         # waiting forever on an empty queue.
@@ -521,7 +524,7 @@ class MultiprocessTestRunner:
 
             # wait for a thread
             try:
-                return self.output.get(timeout=timeout)
+                return self.output.get(timeout=PROGRESS_UPDATE)
             except queue.Empty:
                 pass
 
@@ -538,7 +541,7 @@ class MultiprocessTestRunner:
 
     def display_result(self, mp_result: MultiprocessResult) -> None:
         result = mp_result.result
-        pgo = self.ns.pgo
+        pgo = self.runtests.pgo
 
         text = str(result)
         if mp_result.err_msg:
@@ -574,9 +577,8 @@ class MultiprocessTestRunner:
         return result
 
     def run_tests(self) -> None:
-        fail_fast = self.ns.failfast
+        fail_fast = self.runtests.fail_fast
         fail_env_changed = self.ns.fail_env_changed
-        timeout = self.ns.timeout
 
         self.start_workers()
 
@@ -594,7 +596,7 @@ class MultiprocessTestRunner:
             print()
             self.regrtest.interrupted = True
         finally:
-            if timeout is not None:
+            if self.timeout is not None:
                 faulthandler.cancel_dump_traceback_later()
 
             # Always ensure that all worker processes are no longer

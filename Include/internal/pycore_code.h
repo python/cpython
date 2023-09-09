@@ -465,8 +465,6 @@ adaptive_counter_backoff(uint16_t counter) {
     return adaptive_counter_bits(value, backoff);
 }
 
-extern uint32_t _Py_next_func_version;
-
 
 /* Comparison bit masks. */
 

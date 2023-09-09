@@ -1,0 +1,3 @@
+Relax the detection of the error message for invalid lambdas inside
+f-strings to not search for arbitrary replacement fields to avoid false
+positives. Patch by Pablo Galindo
