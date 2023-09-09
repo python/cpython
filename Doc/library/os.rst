@@ -3891,8 +3891,9 @@ features:
       try:
           # process timer events four times.
           for _ in range(4):
-              fd.read(8)  # Wait for the timer to expire
-              do_work()
+              # read() will block until the timer expires
+              _ = os.read(fd, 8)
+              print("Timer expired")
       finally:
           os.close(fd)
 
@@ -3922,8 +3923,64 @@ features:
       try:
           # process timer events four times.
           for _ in range(4):
-              fd.read(8)  # Wait for the timer to expire
-              do_work()
+              # read() will block until the timer expires
+              _ = os.read(fd, 8)
+              print("Timer expired")
+      finally:
+          os.close(fd)
+
+
+
+   .. code:: python
+
+      import os, time, select
+
+      fd = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
+
+      ep = select.epoll()
+      ep.register(fd, select.EPOLLIN)
+
+      initial_expiration = 10**9  # Start the timer in 1 second
+      interval = 10**9 // 2  # Set the timer interval to 0.5 seconds
+      os.timerfd_settime_ns(fd, initial=initial_expiration, interval=interval)  # Start the timer
+
+      try:
+          # process timer events four times.
+          for _ in range(4):
+              timeout=3
+              events = ep.poll(timeout)  # Wait for the timer to expire
+              for fd2, event in events:
+                  if fd2 == fd:
+                     # read() will not block because the timer file descriptor was created with os.TFD_NONBLOCK.
+                     # But if the timer has not expired, read() will raise OSError with errno set to EAGAIN
+                     _ = os.read(fd, 8)
+                     print("Timer expired")
+      finally:
+          ep.unregister(fd)
+          os.close(fd)
+          ep.close()
+
+
+   .. code:: python
+
+      import os, time, select
+
+      fd = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
+
+      initial_expiration = 1
+      interval = 0.5
+      os.timerfd_settime(fd, initial=initial_expiration, interval=interval)  # Start the timer
+
+      try:
+          # process timer events four times.
+          for _ in range(4):
+              rfd, wfd, xfd = select.select([fd], [fd], [fd], initial_expiration + interval )
+              print(rfd, wfd, xfd)
+
+              # read() will not block because the timer file descriptor was created with os.TFD_NONBLOCK.
+              # But if the timer has not expired, read() will raise OSError with errno set to EAGAIN
+              _ = os.read(fd, 8)
+              print("Timer expired")
       finally:
           os.close(fd)
 
