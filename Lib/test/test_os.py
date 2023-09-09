@@ -4054,6 +4054,36 @@ class TimerfdTests(unittest.TestCase):
         total_time = initial_expiration + interval * (count - 1)
         self.assertGreater(t, total_time)
 
+    def test_timerfd_epoll(self):
+        size = 8  # read 8 bytes
+        fd = os.timerfd_create(time.CLOCK_REALTIME, flags=0)
+        self.assertNotEqual(fd, -1)
+        self.addCleanup(os.close, fd)
+
+        epoll = select.epoll()
+        epoll.register(fd, select.EPOLLIN)
+
+        # 0.25 second
+        initial_expiration = 0.25
+        # every 0.125 second
+        interval = 0.125
+
+        _, _ = os.timerfd_settime(fd, flags=0, initial=initial_expiration, interval=interval)
+
+        count = 3
+        t = time.perf_counter()
+        for _ in range(count):
+            events = epoll.poll(interval * 2)
+            self.assertEqual(events, [(fd, select.EPOLLIN)])
+            n = os.read(fd, size)
+            count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
+            self.assertEqual(count_signaled, 1)
+
+        t = time.perf_counter() - t
+
+        total_time = initial_expiration + interval * (count - 1)
+        self.assertGreater(t, total_time)
+
     def test_timerfd_ns_initval(self):
         one_sec_in_nsec = 10**9
         limit_error = one_sec_in_nsec // 10**3
