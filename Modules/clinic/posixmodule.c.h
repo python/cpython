@@ -5997,7 +5997,7 @@ PyDoc_STRVAR(os_timerfd_create__doc__,
 "Create and return a timer file descriptor.\n"
 "\n"
 "  clockid\n"
-"    CLOCK_REALTIME or CLOCK_MONOTONIC.\n"
+"    A valid clock ID constant as timer file descriptor.\n"
 "\n"
 "    CLOCK_REALTIME\n"
 "        A settable system-wide real-time clock.\n"
@@ -12375,4 +12375,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=e081bcb110a97bbe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=850487ccd45f7366 input=a9049054013a1b77]*/

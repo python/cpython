@@ -10104,7 +10104,7 @@ build_itimerspec_ns(const struct itimerspec* curr_value)
 os.timerfd_create
 
     clockid: int
-        CLOCK_REALTIME or CLOCK_MONOTONIC.
+        A valid clock ID constant as timer file descriptor.
 
         CLOCK_REALTIME
             A settable system-wide real-time clock.
@@ -10134,7 +10134,7 @@ Create and return a timer file descriptor.
 
 static PyObject *
 os_timerfd_create_impl(PyObject *module, int clockid, int flags)
-/*[clinic end generated code: output=1caae80fb168004a input=5e2ac7d67a655944]*/
+/*[clinic end generated code: output=1caae80fb168004a input=bb48a71f217f58bc]*/
 
 {
     int fd;
