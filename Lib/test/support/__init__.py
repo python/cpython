@@ -506,15 +506,6 @@ def has_no_debug_ranges():
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
     return unittest.skipIf(has_no_debug_ranges(), reason)
 
-def requires_legacy_unicode_capi():
-    try:
-        from _testcapi import unicode_legacy_string
-    except ImportError:
-        unicode_legacy_string = None
-
-    return unittest.skipUnless(unicode_legacy_string,
-                               'requires legacy Unicode C API')
-
 # Is not actually used in tests, but is kept for compatibility.
 is_jython = sys.platform.startswith('java')
 

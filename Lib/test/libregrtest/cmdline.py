@@ -149,6 +149,10 @@ class Namespace(argparse.Namespace):
         self.verbose = 0
         self.quiet = False
         self.exclude = False
+        self.cleanup = False
+        self.wait = False
+        self.list_cases = False
+        self.list_tests = False
         self.single = False
         self.randomize = False
         self.fromfile = None
@@ -170,6 +174,9 @@ class Namespace(argparse.Namespace):
         self.ignore_tests = None
         self.pgo = False
         self.pgo_extended = False
+        self.worker_json = None
+        self.start = None
+        self.timeout = None
 
         super().__init__(**kwargs)
 
@@ -205,7 +212,7 @@ def _create_parser():
     group.add_argument('--wait', action='store_true',
                        help='wait for user input, e.g., allow a debugger '
                             'to be attached')
-    group.add_argument('--worker-args', metavar='ARGS')
+    group.add_argument('--worker-json', metavar='ARGS')
     group.add_argument('-S', '--start', metavar='START',
                        help='the name of the test at which to start.' +
                             more_details)
