@@ -3941,6 +3941,17 @@ class TimerfdTests(unittest.TestCase):
         self.assertAlmostEqual(interval2, interval, places=3)
         self.assertAlmostEqual(next_expiration, initial_expiration, places=3)
 
+    def test_timerfd_non_blocking(self):
+        size = 8  # read 8 bytes
+        fd = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
+        self.assertNotEqual(fd, -1)
+        self.addCleanup(os.close, fd)
+
+        # non-blocking read() raises OSError with errno is EAGAIN
+        with self.assertRaises(OSError) as ctx:
+            _ = os.read(fd, size)
+        self.assertEqual(ctx.exception.errno, errno.EAGAIN)
+
     def test_timerfd_negative(self):
         fd = os.timerfd_create(time.CLOCK_REALTIME)
         self.assertNotEqual(fd, -1)
@@ -4027,7 +4038,7 @@ class TimerfdTests(unittest.TestCase):
 
     def test_timerfd_select(self):
         size = 8  # read 8 bytes
-        fd = os.timerfd_create(time.CLOCK_REALTIME)
+        fd = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
         self.assertNotEqual(fd, -1)
         self.addCleanup(os.close, fd)
 
@@ -4056,7 +4067,7 @@ class TimerfdTests(unittest.TestCase):
 
     def test_timerfd_epoll(self):
         size = 8  # read 8 bytes
-        fd = os.timerfd_create(time.CLOCK_REALTIME)
+        fd = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
         self.assertNotEqual(fd, -1)
         self.addCleanup(os.close, fd)
 
@@ -4190,7 +4201,7 @@ class TimerfdTests(unittest.TestCase):
         size = 8  # read 8 bytes
         one_sec_in_nsec = 10**9
 
-        fd = os.timerfd_create(time.CLOCK_REALTIME)
+        fd = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
         self.assertNotEqual(fd, -1)
         self.addCleanup(os.close, fd)
 
@@ -4220,7 +4231,7 @@ class TimerfdTests(unittest.TestCase):
     def test_timerfd_ns_epoll(self):
         size = 8  # read 8 bytes
         one_sec_in_nsec = 10**9
-        fd = os.timerfd_create(time.CLOCK_REALTIME)
+        fd = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
         self.assertNotEqual(fd, -1)
         self.addCleanup(os.close, fd)
 
