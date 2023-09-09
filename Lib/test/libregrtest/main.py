@@ -83,8 +83,18 @@ class Regrtest:
         self.fromfile: str | None = ns.fromfile
         self.starting_test: str | None = ns.start
 
+        # Run tests
+        if ns.use_mp is None:
+            num_workers = 0  # run sequentially
+        elif ns.use_mp <= 0:
+            num_workers = -1  # use the number of CPUs
+        else:
+            num_workers = ns.use_mp
+        self.num_workers: int = num_workers
+
         # Options to run tests
         self.fail_fast: bool = ns.failfast
+        self.fail_env_changed: bool = ns.fail_env_changed
         self.forever: bool = ns.forever
         self.randomize: bool = ns.randomize
         self.random_seed: int | None = ns.random_seed
@@ -150,7 +160,6 @@ class Regrtest:
                 | set(self.run_no_tests))
 
     def accumulate_result(self, result, rerun=False):
-        fail_env_changed = self.ns.fail_env_changed
         test_name = result.test_name
 
         match result.state:
@@ -167,7 +176,7 @@ class Regrtest:
             case State.DID_NOT_RUN:
                 self.run_no_tests.append(test_name)
             case _:
-                if result.is_failed(fail_env_changed):
+                if result.is_failed(self.fail_env_changed):
                     self.bad.append(test_name)
                     self.need_rerun.append(result)
                 else:
@@ -339,9 +348,8 @@ class Regrtest:
 
     def _rerun_failed_tests(self, need_rerun, runtests: RunTests):
         # Configure the runner to re-run tests
-        ns = self.ns
-        if ns.use_mp is None:
-            ns.use_mp = 1
+        if self.num_workers == 0:
+            self.num_workers = 1
 
         # Get tests to re-run
         tests = [result.test_name for result in need_rerun]
@@ -363,7 +371,7 @@ class Regrtest:
             match_tests_dict=match_tests_dict,
             output_on_failure=False)
         self.set_tests(runtests)
-        self._run_tests_mp(runtests)
+        self._run_tests_mp(runtests, self.num_workers)
         return runtests
 
     def rerun_failed_tests(self, need_rerun, runtests: RunTests):
@@ -471,7 +479,6 @@ class Regrtest:
     def run_tests_sequentially(self, runtests):
         ns = self.ns
         coverage = ns.trace
-        fail_env_changed = ns.fail_env_changed
 
         if coverage:
             import trace
@@ -503,7 +510,7 @@ class Regrtest:
                 if module not in save_modules and module.startswith("test."):
                     support.unload(module)
 
-            if result.must_stop(self.fail_fast, fail_env_changed):
+            if result.must_stop(self.fail_fast, self.fail_env_changed):
                 break
 
             previous_test = str(result)
@@ -564,12 +571,10 @@ class Regrtest:
                         self.environment_changed))
 
     def get_tests_state(self):
-        fail_env_changed = self.ns.fail_env_changed
-
         result = []
         if self.bad:
             result.append("FAILURE")
-        elif fail_env_changed and self.environment_changed:
+        elif self.fail_env_changed and self.environment_changed:
             result.append("ENV CHANGED")
         elif self.no_tests_run():
             result.append("NO TESTS RAN")
@@ -585,8 +590,9 @@ class Regrtest:
             result = '%s then %s' % (self.first_state, result)
         return result
 
-    def _run_tests_mp(self, runtests: RunTests) -> None:
-        from test.libregrtest.runtest_mp import run_tests_multiprocess
+    def _run_tests_mp(self, runtests: RunTests, num_workers: int) -> None:
+        from test.libregrtest.runtest_mp import RunWorkers
+
         # If we're on windows and this is the parent runner (not a worker),
         # track the load average.
         if sys.platform == 'win32':
@@ -600,7 +606,7 @@ class Regrtest:
                 print(f'Failed to create WindowsLoadTracker: {error}')
 
         try:
-            run_tests_multiprocess(self, runtests)
+            RunWorkers(self, runtests, num_workers).run()
         finally:
             if self.win_load_tracker is not None:
                 self.win_load_tracker.close()
@@ -618,8 +624,8 @@ class Regrtest:
     def run_tests(self, runtests: RunTests):
         self.first_runtests = runtests
         self.set_tests(runtests)
-        if self.ns.use_mp:
-            self._run_tests_mp(runtests)
+        if self.num_workers:
+            self._run_tests_mp(runtests, self.num_workers)
             tracer = None
         else:
             tracer = self.run_tests_sequentially(runtests)
@@ -843,7 +849,7 @@ class Regrtest:
             exitcode = EXITCODE_BAD_TEST
         elif self.interrupted:
             exitcode = EXITCODE_INTERRUPTED
-        elif self.ns.fail_env_changed and self.environment_changed:
+        elif self.fail_env_changed and self.environment_changed:
             exitcode = EXITCODE_ENV_CHANGED
         elif self.no_tests_run():
             exitcode = EXITCODE_NO_TESTS_RAN
@@ -865,6 +871,10 @@ class Regrtest:
 
         if self.randomize:
             print("Using random seed", self.random_seed)
+
+        if self.num_workers < 0:
+            # Use all cores + extras for tests that like to sleep
+            self.num_workers = 2 + (os.cpu_count() or 1)
 
         runtests = RunTests(
             tuple(self.selected),
