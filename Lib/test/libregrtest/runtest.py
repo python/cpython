@@ -249,6 +249,12 @@ class RunTests:
         else:
             yield from self.tests
 
+    @staticmethod
+    def from_json_dict(json_dict):
+        if json_dict['hunt_refleak']:
+            json_dict['hunt_refleak'] = HuntRefleak(**json_dict['hunt_refleak'])
+        return RunTests(**json_dict)
+
 
 # Minimum duration of a test to display its duration or to mention that
 # the test is running in background
