@@ -18,7 +18,14 @@ from test.libregrtest.utils import (setup_unraisable_hook,
 UNICODE_GUARD_ENV = "PYTHONREGRTEST_UNICODE_GUARD"
 
 
-def setup_tests(ns):
+def setup_test_dir(testdir):
+    if testdir:
+        # Prepend test directory to sys.path, so runtest() will be able
+        # to locate tests
+        sys.path.insert(0, os.path.abspath(testdir))
+
+
+def setup_tests(runtests, ns):
     try:
         stderr_fd = sys.__stderr__.fileno()
     except (ValueError, AttributeError):
@@ -43,11 +50,6 @@ def setup_tests(ns):
     _adjust_resource_limits()
     replace_stdout()
     support.record_original_stdout(sys.stdout)
-
-    if ns.testdir:
-        # Prepend test directory to sys.path, so runtest() will be able
-        # to locate tests
-        sys.path.insert(0, os.path.abspath(ns.testdir))
 
     # Some times __path__ and __file__ are not absolute (e.g. while running from
     # Lib/) and, if we change the CWD to run the tests in a temporary dir, some
@@ -88,16 +90,17 @@ def setup_tests(ns):
     setup_unraisable_hook()
     setup_threading_excepthook()
 
-    if ns.timeout is not None:
+    timeout = runtests.timeout
+    if timeout is not None:
         # For a slow buildbot worker, increase SHORT_TIMEOUT and LONG_TIMEOUT
-        support.SHORT_TIMEOUT = max(support.SHORT_TIMEOUT, ns.timeout / 40)
-        support.LONG_TIMEOUT = max(support.LONG_TIMEOUT, ns.timeout / 4)
+        support.SHORT_TIMEOUT = max(support.SHORT_TIMEOUT, timeout / 40)
+        support.LONG_TIMEOUT = max(support.LONG_TIMEOUT, timeout / 4)
 
         # If --timeout is short: reduce timeouts
-        support.LOOPBACK_TIMEOUT = min(support.LOOPBACK_TIMEOUT, ns.timeout)
-        support.INTERNET_TIMEOUT = min(support.INTERNET_TIMEOUT, ns.timeout)
-        support.SHORT_TIMEOUT = min(support.SHORT_TIMEOUT, ns.timeout)
-        support.LONG_TIMEOUT = min(support.LONG_TIMEOUT, ns.timeout)
+        support.LOOPBACK_TIMEOUT = min(support.LOOPBACK_TIMEOUT, timeout)
+        support.INTERNET_TIMEOUT = min(support.INTERNET_TIMEOUT, timeout)
+        support.SHORT_TIMEOUT = min(support.SHORT_TIMEOUT, timeout)
+        support.LONG_TIMEOUT = min(support.LONG_TIMEOUT, timeout)
 
     if ns.xmlpath:
         from test.support.testresult import RegressionTestResult
