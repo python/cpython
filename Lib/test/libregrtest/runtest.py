@@ -208,7 +208,7 @@ class TestResult:
 @dataclasses.dataclass(slots=True, frozen=True)
 class RunTests:
     tests: TestTuple
-    match_tests: FilterDict | None = None
+    match_tests_dict: FilterDict | None = None
     rerun: bool = False
     forever: bool = False
 
@@ -218,8 +218,8 @@ class RunTests:
         return RunTests(**state)
 
     def get_match_tests(self, test_name) -> FilterTuple | None:
-        if self.match_tests is not None:
-            return self.match_tests.get(test_name, None)
+        if self.match_tests_dict is not None:
+            return self.match_tests_dict.get(test_name, None)
         else:
             return None
 
