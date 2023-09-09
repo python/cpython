@@ -107,9 +107,8 @@ def identities_strategy(draw, debug=False):
         return random.choices\
             ((True, False), (true, false))[0]
 
-    def insert_random(seq, item):
-        index = random.randint(0, len(seq))
-        return seq[:index] + item + seq[index:]
+    def replace(seq, index, item):
+        return seq[:index] + item + seq[index+1:]
 
     def generate_blacklist_chars(blacklist_chars):
         return strategies.characters(**merge_char_kwargs
@@ -146,25 +145,49 @@ def identities_strategy(draw, debug=False):
 
         return merged
 
+    def sub_entry(text, opener, closer):
+        repl_chars = generate_blacklist_chars("\"', ")
+        repl_func = generate_repl_func(repl_chars)
+        text = re.sub(r"(?<=,) ", repl_func, text)
+        return text
+
     def sub_name(text, opener, closer, name_only):
         repl_chars = generate_blacklist_chars("\"', @")
         repl_func = generate_repl_func(repl_chars)
-        text = re.sub(r"[^ ]@", " @", text)
+        # "@" is legal if:
+        # * nothing or space before
+        # -- or --
+        # * nothing after
+        #
+        # Inversely (a or b -> -a and -b):
+        # 1. not space before
+        # -- and --
+        # 2. anything after
+        #
+        # The inverse equivalent:
+        # [^ ]@.
+        escape_at = re.compile(rf"""
+            (?: [^ ] {"| ^" if not opener else ""})
+            (?= @. {"| @$" if not closer or not name_only else ""})
+            """, re.VERBOSE)
+        text = escape_at.sub(" ", text)
         # ", t" -> replace " "
         text = re.sub(r"(?<=,) (?!@)", repl_func, text)
         # ", @" -> replace ","
         text = re.sub(r",(?= @)", repl_func, text)
         if closer and not name_only:
             text = re.sub(r"(?<=[, ]$)", repl_func, text)
-        if not opener:
-            text = re.sub(r"^@", " @", text)
         return text
 
-    def sub_entry(text, opener, closer):
-        repl_chars = generate_blacklist_chars("\"', ")
-        repl_func = generate_repl_func(repl_chars)
-        text = re.sub(r"(?<=,) ", repl_func, text)
-        return text
+    def get_name_qchar_idxs(text, succeeded):
+        # Given any legal input (ie, not matching "[^ ]@."), yield the
+        # character indexes for which the text remains valid when the
+        # index is substituted with a quote character.
+        replace_at = re.compile(rf"""
+            # Cannot replace " " before "@" if "@" succeeded by anything.
+            (?! $ | [ ]@. {"| [ ]@$" if succeeded else ""})
+            """, re.VERBOSE)
+        return (m.start() for m in replace_at.finditer(text))
 
     def entries_combined(debug=False):
         text = ""
@@ -239,6 +262,7 @@ def identities_strategy(draw, debug=False):
         return strip
 
     def unbalance(entries):
+        return False
         index_candidates = []
         type_candidates =\
             [ ident_addr_domain_other
@@ -250,9 +274,17 @@ def identities_strategy(draw, debug=False):
         i = len(entries) - 1
         while i >= 0 and not stop:
             j = len(entries[i]) - 1
-            while j >= 0 and not (stop:=entries[i][j] is quote):
-                if entries[i][j] in type_candidates:
-                    index_candidates.append((i,j))
+            while j >= 0 and not (stop:=entries[i][j].category is quote):
+                token = entries[i][j]
+                if token.category not in type_candidates:
+                    continue
+                if token.category is ident_name_other:
+                    final = entries[i][j+1] is ident_name_only
+                    repls = get_name_qchar_idxs(token.value, not final)
+                else:
+                    repls = range(len(token.value))
+                for k in repls:
+                    index_candidates.append((i,j,k))
                 j -= 1
             i -= 1
         if not index_candidates:
@@ -260,10 +292,10 @@ def identities_strategy(draw, debug=False):
         for qchr in "\"'":
             if choose_bool():
                 continue
-            idx_entry, idx_part = random.choice(index_candidates)
-            part = entries[idx_entry][idx_part]
-            part = (part[0], insert_random(part[1], qchr))
-            entries[idx_entry][idx_part] = part
+            idx_entry, idx_token, idx_char =\
+                random.choice(index_candidates)
+            token = entries[idx_entry][idx_token]
+            token.value = replace(token.value, idx_char, qchr)
         return True
 
     def name_entry():
@@ -343,12 +375,14 @@ def identities_strategy(draw, debug=False):
         # split any coupled leading/trailing angle brackets
         value = local[0].value
         if value.startswith("<") and len(value) > 1:
-            split = dataclasses.replace(local[0], value="<")
+            split = dataclasses.replace\
+                (local[0], value="<", category=ident_addr)
             local[0].value = value[1:]
             local = [split, *local]
         value = domain[-1].value
         if value.endswith(">") and len(value) > 1:
-            split = dataclasses.replace(domain[-1], value=">")
+            split = dataclasses.replace\
+                (domain[-1], value=">", category=ident_addr)
             domain[-1].value = value[:-1]
             domain = [*domain, split]
         # if not solitary, ignore single leading/trailing angle brackets
