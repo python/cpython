@@ -139,11 +139,11 @@ The module defines the following functions:
 
    Format the exception part of a traceback using an exception value such as
    given by ``sys.last_value``.  The return value is a list of strings, each
-   ending in a newline.  Normally, the list contains a single string; however,
-   for :exc:`SyntaxError` exceptions, it contains several lines that (when
-   printed) display detailed information about where the syntax error occurred.
-   The message indicating which exception occurred is the always last string in
-   the list.
+   ending in a newline.  The list contains the exception's message, which is
+   normally a single string; however, for :exc:`SyntaxError` exceptions, it
+   contains several lines that (when printed) display detailed information
+   about where the syntax error occurred. Following the message, the list
+   contains the exception's notes.
 
    Since Python 3.10, instead of passing *value*, an exception object
    can be passed as the first argument.  If *value* is provided, the first
@@ -330,20 +330,17 @@ capture data for later printing in a lightweight fashion.
       some containing internal newlines. :func:`~traceback.print_exception`
       is a wrapper around this method which just prints the lines to a file.
 
-      The message indicating which exception occurred is always the last
-      string in the output.
-
    .. method::  format_exception_only(*, show_group=False)
 
       Format the exception part of the traceback.
 
       The return value is a generator of strings, each ending in a newline.
 
-      When *show_group* is ``False``, the generator normally emits a single
-      string; however, for :exc:`SyntaxError` exceptions, it emits several
-      lines that (when printed) display detailed information about where
-      the syntax error occurred.  The message indicating which exception
-      occurred is always the last string in the output.
+      When *show_group* is ``False``, the generator emits the exception's
+      message followed by its notes (if it has any). The exception message
+      is normally a single string; however, for :exc:`SyntaxError` exceptions,
+      it consists of several lines that (when printed) display detailed
+      information about where the syntax error occurred.
 
       When *show_group* is ``True``, and the exception is an instance of
       :exc:`BaseExceptionGroup`, the nested exceptions are included as
