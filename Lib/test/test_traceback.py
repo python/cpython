@@ -1603,21 +1603,21 @@ class BaseExceptionReportingTests:
         for e in [ValueError(42), SyntaxError('bad syntax')]:
             with self.subTest(e=e):
                 vanilla = self.get_report(e)
-    
+
                 e.add_note('Note 1')
                 e.add_note('Note 2')
                 e.add_note('Note 3')
-    
+
                 self.assertEqual(
                     self.get_report(e),
                     vanilla + 'Note 1\n' + 'Note 2\n' + 'Note 3\n')
-    
+
                 del e.__notes__
                 e.add_note('Note 4')
                 del e.__notes__
                 e.add_note('Note 5')
                 e.add_note('Note 6')
-    
+
                 self.assertEqual(
                     self.get_report(e),
                     vanilla + 'Note 5\n' + 'Note 6\n')
