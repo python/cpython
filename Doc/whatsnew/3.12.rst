@@ -1336,14 +1336,14 @@ enum
 ftplib
 ------
 
-* Remove the ``FTP_TLS.ssl_version`` class attribute: use the
+* Remove :mod:`ftplib`'s ``FTP_TLS.ssl_version`` class attribute: use the
   *context* parameter instead.
   (Contributed by Victor Stinner in :gh:`94172`.)
 
 gzip
 ----
 
-* Remove the ``filename`` attribute of :class:`gzip.GzipFile`,
+* Remove the ``filename`` attribute of :mod:`gzip`'s :class:`gzip.GzipFile`,
   deprecated since Python 2.6, use the :attr:`~gzip.GzipFile.name` attribute
   instead. In write mode, the ``filename`` attribute added ``'.gz'`` file
   extension if it was not present.
@@ -1556,7 +1556,7 @@ xml.etree.ElementTree
 zipimport
 ---------
 
-* Remove ``find_loader()`` and ``find_module()`` methods,
+* Remove :mod:`zipimport`'s ``find_loader()`` and ``find_module()`` methods,
   deprecated in Python 3.10: use the ``find_spec()`` method instead.  See
   :pep:`451` for the rationale.
   (Contributed by Victor Stinner in :gh:`94379`.)
