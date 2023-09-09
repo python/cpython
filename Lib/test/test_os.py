@@ -4071,9 +4071,9 @@ class TimerfdTests(unittest.TestCase):
         self.assertNotEqual(fd, -1)
         self.addCleanup(os.close, fd)
 
-        epoll = select.epoll()
-        epoll.register(fd, select.EPOLLIN)
-        self.addCleanup(epoll.close)
+        ep = select.epoll()
+        ep.register(fd, select.EPOLLIN)
+        self.addCleanup(ep.close)
 
         # 0.25 second
         initial_expiration = 0.25
@@ -4091,7 +4091,7 @@ class TimerfdTests(unittest.TestCase):
             else:
                 timeout = interval + timeout_margin
             # epoll timeout is in seconds.
-            events = epoll.poll(timeout)
+            events = ep.poll(timeout)
             self.assertEqual(events, [(fd, select.EPOLLIN)])
             n = os.read(fd, size)
             count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
@@ -4101,7 +4101,7 @@ class TimerfdTests(unittest.TestCase):
 
         total_time = initial_expiration + interval * (count - 1)
         self.assertGreater(t, total_time)
-        epoll.unregister(fd)
+        ep.unregister(fd)
 
     def test_timerfd_ns_initval(self):
         one_sec_in_nsec = 10**9
@@ -4237,9 +4237,9 @@ class TimerfdTests(unittest.TestCase):
         self.assertNotEqual(fd, -1)
         self.addCleanup(os.close, fd)
 
-        epoll = select.epoll()
-        epoll.register(fd, select.EPOLLIN)
-        self.addCleanup(epoll.close)
+        ep = select.epoll()
+        ep.register(fd, select.EPOLLIN)
+        self.addCleanup(ep.close)
 
         # 0.25 second
         initial_expiration_ns = one_sec_in_nsec // 4
@@ -4258,7 +4258,7 @@ class TimerfdTests(unittest.TestCase):
                 timeout_ns = interval_ns + timeout_margin_ns
 
             # epoll timeout is in seconds.
-            events = epoll.poll(timeout_ns / one_sec_in_nsec)
+            events = ep.poll(timeout_ns / one_sec_in_nsec)
             self.assertEqual(events, [(fd, select.EPOLLIN)])
             n = os.read(fd, size)
             count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
@@ -4268,7 +4268,7 @@ class TimerfdTests(unittest.TestCase):
 
         total_time = initial_expiration_ns + interval_ns * (count - 1)
         self.assertGreater(t, total_time)
-        epoll.unregister(fd)
+        ep.unregister(fd)
 
 class OSErrorTests(unittest.TestCase):
     def setUp(self):
