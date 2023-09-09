@@ -3877,8 +3877,9 @@ features:
    - :const:`TFD_NONBLOCK`
    - :const:`TFD_CLOEXEC`
 
-   If the timer file descriptor's counter is zero and
-   :const:`TFD_NONBLOCK` is not set as a flag, :func:`read` blocks.
+   If :const:`TFD_NONBLOCK` is not set as a flag, :func:`read` blocks until the timer expires.
+   If it is set as a flag, :func:`read` doesn't block, but if there is no timer expiration,
+   :func:`read` raises :class:`OSError` with ``errno`` is set to :const:`errno.EAGAIN`.
 
    If :const:`TFD_CLOEXEC` is set as a flag, set close-on-exec flag for new file descriptor.
 
