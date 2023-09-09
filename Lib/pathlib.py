@@ -41,7 +41,7 @@ __all__ = [
 #
 
 # Maximum number of symlinks to follow in _PathBase.resolve()
-MAX_SYMLINKS = 40
+_MAX_SYMLINKS = 40
 
 # Reference for Windows paths can be found at
 # https://learn.microsoft.com/en-gb/windows/win32/fileio/naming-a-file .
@@ -1293,7 +1293,7 @@ class _PathBase(PurePath):
                             break
                 else:
                     link_count += 1
-                    if link_count >= MAX_SYMLINKS:
+                    if link_count >= _MAX_SYMLINKS:
                         raise OSError(ELOOP, "Too many symbolic links in path", path)
                     elif link_target.root or link_target.drive:
                         link_target = link.parent / link_target
