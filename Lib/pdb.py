@@ -534,7 +534,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if line[:1] == '!': line = line[1:].strip()
         locals = self.curframe_locals
         globals = self.curframe.f_globals
-        readline = None
         try:
             if (code := codeop.compile_command(line + '\n', '<stdin>', 'single')) is None:
                 # Multi-line mode
