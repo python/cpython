@@ -16,84 +16,187 @@ _warn = functools.partial(
     stacklevel=2,
 )
 
-# It looks like RFC5322 but it's much much worse. The only takeaway from
-# RFC5233 is that special characters such as "," and "<" must be quoted
-# when used as text.
+# The formatting of the identity fields ("Author", "Maintainer", "Author-email"
+# and "Maintainer-email") in the core metadata specification and related
+# 'pyproject.toml' specification is inspired by RFC5233 but not precisely
+# defined. In practice conflicting definitions are used by many packages and
+# even examples from the specification. For a permissive parser the key
+# takeaway from RFC5233 is that special characters such as "," and "@" must be
+# quoted when used as text.
 
-# Split an RFC5233-ish list:
-# 1. Require a list separator, or beginning-of-string.
-# 2. Alt 1: match single or double quotes and handle escape characters.
-# 3. Alt 2: match anything except ',' followed by a space. If quote
-#    characters are unbalanced, they will be matched here.
-# 4. Match the alternatives at least once, in any order...
-# 5. ... and capture them.
-# Result:
-#   group 1 (list entry): None or non-empty string.
+def _entries_findall(string):
+    """
+    Return a list of entries given an RFC5233-inspired string. Entries are
+    separated by ", " and contents of quoted strings are ignored. Each
+    entry will be a non-empty string.
 
-_entries = re.compile(r"""
-(?: (?<=,\ ) | (?<=^) )                 # 1
-( (?: (["']) (?:(?!\2|\\).|\\.)* \2     # 2
-  |   (?!,\ ).                          # 3
-  )+                                    # 4
-)                                       # 5
-""", re.VERBOSE)
+    >>> _entries_findall('a, b ,  c, "d, e, f"')
+    ['a', 'b ', ' c', '"d, e, f"']
 
-# Split an RFC5233-ish name-email entry:
-# 01. Start at the beginning.
-# 02. Alt 1: match single or double quotes and handle escape characters.
-# 03. Alt 2: match any character if the following is not an address. If
-#     quote characters are unbalanced, they will be matched here. First
-#     match any spaces preceding the address, which are optional if the
-#     display name is missing.
-# 04. Alt 2.1: match single or double quotes and handle escape characters.
-# 05. Alt 2.2: match any character except " " or "@".
-# 06. Match the alternatives at least once - the local part of the address
-#     cannot be empty.
-# 07. Match "@" followed by something - the domain cannot be empty either.
-# 08. (See 03)
-# 09. Match the top-level alternatives at least once, in any order...
-# 10. ... but optionally so the resulting name will be 'None' rather than
-#     an empty string.
-# 11. If the name portion is missing there may or may not be whitespace
-#     before the address. The opening angle bracket is always optional.
-# 12. (See 04)
-# 13. (See 05)
-# 14. (See 06)
-# 15. Match everything after "@" with a non-greedy quantifier to allow for
-#     the optional closing angle bracket.
-# 16. Allow for missing email section.
-# 17. Match the optional closing angle bracket.
-# 18. Finish at the end.
-# Summary:
-#   ^ ( ( quote
-#       | not: space* (quote | not:space-or-at)+ @ anything
-#       )+
-#     )?
-#   space* <? ( (quote | not:space-or-at)+ @ anything+? )? >? $
-# Result:
-#   group 1 (name):  None or non-empty string.
-#   group 4 (email): None or non-empty string.
+    >>> _entries_findall('a')
+    ['a']
 
-_name_email = re.compile(r"""
-^                                                   # 01
-  ( (?: (["']) (?:(?!\2|\\).|\\.)* \2               # 02
-    |   (?! \ *                                     # 03
-            (?: (["']) (?:(?!\3|\\).|\\.)* \3       # 04
-            |   [^ @]                               # 05
-            )+                                      # 06
-            @ .                                     # 07
-        ).                                          # 08
-    )+                                              # 09
-  )?                                                # 10
-  \ * <?                                            # 11
-  ( (?: (["']) (?:(?!\5|\\).|\\.)* \5               # 12
-    |   [^ @]                                       # 13
-    )+                                              # 14
-    @ .+?                                           # 15
-  )?                                                # 16
-  >?                                                # 17
-$                                                   # 18
-""", re.VERBOSE)
+    >>> _entries_findall('')
+    []
+
+    >>> _entries_findall(", ")
+    []
+    """
+
+    # Split an RFC5233-ish list:
+    # 1. Require a list separator, or beginning-of-string.
+    # 2. Alt 1: match single or double quotes and handle escape characters.
+    # 3. Alt 2: match anything except ',' followed by a space. If quote
+    #    characters are unbalanced, they will be matched here.
+    # 4. Match the alternatives at least once, in any order...
+    # 5. ... and capture them.
+    # Result:
+    #   group 1 (list entry): None or non-empty string.
+    _entries = re.compile(r"""
+    (?: (?<=,\ ) | (?<=^) )                 # 1
+    ( (?: (["']) (?:(?!\2|\\).|\\.)* \2     # 2
+      |   (?!,\ ).                          # 3
+      )+                                    # 4
+    )                                       # 5
+    """, re.VERBOSE)
+
+    return [entry[0] for entry in _entries.findall(string)]
+
+
+def _name_email_split(string):
+    """
+    Split an RFC5233-inspired entry into a name and email address tuple. Each
+    component will be either None or a non-empty string. Split the form "name
+    local@domain" on the first unquoted "@" such that:
+
+    * local may not be empty and may not contain any unquoted spaces
+    * domain may not be empty
+    * spaces between name and address are consumed
+    * space between name and address is optional if name ends in "@"
+    * first opening "<" of local is consumed only if local remains non-empty
+    * last closing ">" of domain is consumed only if domain remains non-empty
+
+    >>> _name_email_split("name local@domain")
+    ('name', 'local@domain')
+
+    >>> _name_email_split('@"unlocal@undomain" @    <loc"al@dom\'ain')
+    ('@"unlocal@undomain" @', 'loc"al@dom\'ain')
+
+    >>> _name_email_split('@@ local@domain')
+    ('@@', 'local@domain')
+
+    >>> _name_email_split('@nameonly@')
+    ('@nameonly@', None)
+
+    >>> _name_email_split('@domain@ ')
+    ('@', 'domain@ ')
+
+    >>> _name_email_split('   domain@only')
+    (None, 'domain@only')
+
+    >>> _name_email_split('   ')
+    ('   ', None)
+
+    >>> _name_email_split('')
+    (None, None)
+    """
+
+    # Split an RFC5233-inspired name-address entry:
+    # 01. Start at the beginning.
+    # 02. Capture at least one name component, but optionally so the result
+    #     will be 'None' rather than an empty string.
+    # 03. Stop matching against name components if the lookahead matches an
+    #     address. An address can be preceded by spaces, which are optional if
+    #     the name is missing.
+    # 04. Simulate a possessive quantifier for Python < 3.11 given the
+    #     equivalence between "(...)++" and "(?=( (...)+ ))\1". The contained
+    #     alternatives are not exclusive and the possessive quantifier prevents
+    #     the second alternative from stealing quoted components during
+    #     backtracking.
+    # 05. Alt 1.1: Match single-quoted or double-quoted components and handle
+    #     escape characters.
+    # 06. Alt 1.2: Match any character except the local component delimiters
+    #     " " or "@". If quote characters are unbalanced, they will be matched
+    #     here.
+    # 07. Match the alternatives at least once - the local part of the address
+    #     cannot be empty.
+    # 08. (See 04)
+    # 09. Match "@" followed by something - the domain cannot be empty either.
+    # 10. (See 03)
+    # 11. Alt 2.1: Match a quoted component...
+    # 12. Alt 2.2: ... or match a single character.
+    # ...
+    # 14. (See 02)
+    # 15. (See 02)
+    # 16. If the name portion is missing or ends with an "@", there may or may
+    #     not be whitespace before the address. The opening angle bracket is
+    #     always optional.
+    # ...
+    # 20. Match everything after "@" with a non-greedy quantifier to allow for
+    #     the optional closing angle bracket.
+    # 21. Allow for no address component.
+    # 22. Match the optional closing angle bracket.
+    # 23. Finish at the end.
+    # Summary:
+    #   ^ ( ( not: space* (quote | not:space-or-at)++ @ anything
+    #         quote | anything
+    #       )+
+    #     )?
+    #   space* <? ( (quote | not:space-or-at)+ @ anything+? )? >? $
+    # Result:
+    #   group 1 (name):  None or non-empty string.
+    #   group 5 (email): None or non-empty string.
+    _name_email = re.compile(r"""
+    ^                                                       # 01
+      ( (?:                                                 # 02
+            (?! \ *                                         # 03
+                (?=(                                        # 04
+                   (?: (["']) (?:(?!\3|\\).|\\.)* \3        # 05
+                   |   [^ @]                                # 06
+                   )+                                       # 07
+                ))\2                                        # 08
+                @ .                                         # 09
+            )                                               # 10
+            (?: (["']) (?:(?!\4|\\).|\\.)* \4               # 11
+            |   .                                           # 12
+            )                                               # 13
+        )+                                                  # 14
+      )?                                                    # 15
+      \ * <?                                                # 16
+      ( (?: (["']) (?:(?!\6|\\).|\\.)* \6                   # 17
+        |   [^ @]                                           # 18
+        )+                                                  # 19
+        @ .+?                                               # 20
+      )?                                                    # 21
+      >?                                                    # 22
+    $                                                       # 23
+    """, re.VERBOSE)
+
+    # Equivalent, simpler, version using possessive quantifiers, for
+    # Python >= 3.11.
+    #_name_email = re.compile(r"""
+    #^ ( (?: (?! \ *
+    #            (?: (["']) (?:(?!\2|\\).|\\.)* \2
+    #            |   [^ @]
+    #            )++
+    #            @ .
+    #        )
+    #        (?: (["']) (?:(?!\3|\\).|\\.)* \3
+    #        |   .
+    #        )
+    #    )+
+    #  )?
+    #  \ * <?
+    #  ( (?: (["']) (?:(?!\5|\\).|\\.)* \5
+    #    |   [^ @]
+    #    )+
+    #    @ .+?
+    #  )?
+    #  >?
+    #$
+    #""", re.VERBOSE)
+
+    return _name_email.match(string).groups()[::4]
 
 
 @dataclasses.dataclass(eq=True, frozen=True)
@@ -182,21 +285,17 @@ class Message(email.message.Message):
 
         return dict(map(transform, map(FoldedCase, self)))
 
-    def _parse_idents(self, s):
-        es = (i[0] for i in _entries.findall(s))
-        es = (_name_email.match(i).groups()[::3] for i in es)
-        es = {Ident(*i) for i in es if i != (None, None)}
-        return es
+    def _parse_idents(self, string):
+        entries = (_name_email_split(entry) for entry in _entries_findall(string))
+        return {Ident(*entry) for entry in entries if entry != (None, None)}
 
-    def _parse_names(self, s):
-        es = (i[0] for i in _entries.findall(s))
-        es = {Ident(i, None) for i in es}
-        return es
+    def _parse_names(self, string):
+        return {Ident(entry, None) for entry in _entries_findall(string)}
 
-    def _parse_names_idents(self, fn, fi):
-        sn = self.get(fn, "")
-        si = self.get(fi, "")
-        return self._parse_names(sn) | self._parse_idents(si)
+    def _parse_names_idents(self, names_field, idents_field):
+        names_str = self.get(names_field, "")
+        idents_str = self.get(idents_field, "")
+        return self._parse_names(names_str) | self._parse_idents(idents_str)
 
     @property
     def authors(self):
