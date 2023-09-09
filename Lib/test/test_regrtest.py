@@ -1018,12 +1018,16 @@ class ArgsTestCase(BaseTestCase):
                                   stats=TestStats(4, 1),
                                   forever=True)
 
-    def check_leak(self, code, what):
+    def check_leak(self, code, what, *, multiprocessing=False):
         test = self.create_test('huntrleaks', code=code)
 
         filename = 'reflog.txt'
         self.addCleanup(os_helper.unlink, filename)
-        output = self.run_tests('--huntrleaks', '6:3:', test,
+        cmd = ['--huntrleaks', '6:3:']
+        if multiprocessing:
+            cmd.append('-j1')
+        cmd.append(test)
+        output = self.run_tests(*cmd,
                                 exitcode=EXITCODE_BAD_TEST,
                                 stderr=subprocess.STDOUT)
         self.check_executed_tests(output, [test], failed=test, stats=1)
@@ -1039,7 +1043,7 @@ class ArgsTestCase(BaseTestCase):
             self.assertIn(line2, reflog)
 
     @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
-    def test_huntrleaks(self):
+    def check_huntrleaks(self, *, multiprocessing: bool):
         # test --huntrleaks
         code = textwrap.dedent("""
             import unittest
@@ -1050,7 +1054,13 @@ class ArgsTestCase(BaseTestCase):
                 def test_leak(self):
                     GLOBAL_LIST.append(object())
         """)
-        self.check_leak(code, 'references')
+        self.check_leak(code, 'references', multiprocessing=multiprocessing)
+
+    def test_huntrleaks(self):
+        self.check_huntrleaks(multiprocessing=False)
+
+    def test_huntrleaks_mp(self):
+        self.check_huntrleaks(multiprocessing=True)
 
     @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
     def test_huntrleaks_fd_leak(self):
