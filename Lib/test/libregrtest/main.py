@@ -12,7 +12,7 @@ import unittest
 from test.libregrtest.cmdline import _parse_args, Namespace
 from test.libregrtest.runtest import (
     findtests, split_test_packages, run_single_test, abs_module_name,
-    PROGRESS_MIN_TIME, State, RunTests, TestResult,
+    PROGRESS_MIN_TIME, State, RunTests, TestResult, HuntRefleak,
     FilterTuple, FilterDict, TestList)
 from test.libregrtest.setup import setup_tests, setup_test_dir
 from test.libregrtest.pgo import setup_pgo_tests
@@ -92,6 +92,14 @@ class Regrtest:
         self.pgo_extended: bool = ns.pgo_extended
         self.output_on_failure: bool = ns.verbose3
         self.timeout: float | None = ns.timeout
+        self.verbose: bool = ns.verbose
+        self.quiet: bool = ns.quiet
+        if ns.huntrleaks:
+            self.hunt_refleak: HuntRefleak = HuntRefleak(*ns.huntrleaks)
+        else:
+            self.hunt_refleak = None
+        self.test_dir: str | None = ns.testdir
+        self.junit_filename: str | None = ns.xmlpath
 
         # tests
         self.tests = []
@@ -200,8 +208,7 @@ class Regrtest:
         print(line, flush=True)
 
     def display_progress(self, test_index, text):
-        quiet = self.ns.quiet
-        if quiet:
+        if self.quiet:
             return
 
         # "[ 51/405/1] test_tcl passed"
@@ -214,7 +221,6 @@ class Regrtest:
     def find_tests(self):
         ns = self.ns
         single = ns.single
-        test_dir = ns.testdir
 
         if single:
             self.next_single_filename = os.path.join(self.tmp_dir, 'pynexttest')
@@ -250,7 +256,8 @@ class Regrtest:
                 exclude_tests.add(arg)
             ns.args = []
 
-        alltests = findtests(testdir=test_dir, exclude=exclude_tests)
+        alltests = findtests(testdir=self.test_dir,
+                             exclude=exclude_tests)
 
         if not self.fromfile:
             self.selected = self.tests or ns.args
@@ -298,14 +305,12 @@ class Regrtest:
                     print(test.id())
 
     def list_cases(self):
-        ns = self.ns
-        test_dir = ns.testdir
         support.verbose = False
         support.set_match_tests(self.match_tests, self.ignore_tests)
 
         skipped = []
         for test_name in self.selected:
-            module_name = abs_module_name(test_name, test_dir)
+            module_name = abs_module_name(test_name, self.test_dir)
             try:
                 suite = unittest.defaultTestLoader.loadTestsFromName(module_name)
                 self._list_cases(suite)
@@ -331,7 +336,6 @@ class Regrtest:
     def _rerun_failed_tests(self, need_rerun, runtests: RunTests):
         # Configure the runner to re-run tests
         ns = self.ns
-        ns.verbose = True
         if ns.use_mp is None:
             ns.use_mp = 1
 
@@ -349,6 +353,7 @@ class Regrtest:
         runtests = runtests.copy(
             tests=tuple(tests),
             rerun=True,
+            verbose=True,
             forever=False,
             fail_fast=False,
             match_tests_dict=match_tests_dict,
@@ -379,7 +384,6 @@ class Regrtest:
 
     def display_result(self, runtests):
         pgo = runtests.pgo
-        quiet = self.ns.quiet
         print_slow = self.ns.print_slow
 
         # If running the test suite for PGO then no one cares about results.
@@ -398,7 +402,7 @@ class Regrtest:
             print(count(len(omitted), "test"), "omitted:")
             printlist(omitted)
 
-        if self.good and not quiet:
+        if self.good and not self.quiet:
             print()
             if (not self.bad
                 and not self.skipped
@@ -425,12 +429,12 @@ class Regrtest:
                      count(len(self.environment_changed), "test")))
             printlist(self.environment_changed)
 
-        if self.skipped and not quiet:
+        if self.skipped and not self.quiet:
             print()
             print(count(len(self.skipped), "test"), "skipped:")
             printlist(self.skipped)
 
-        if self.resource_denied and not quiet:
+        if self.resource_denied and not self.quiet:
             print()
             print(count(len(self.resource_denied), "test"), "skipped (resource denied):")
             printlist(self.resource_denied)
@@ -684,7 +688,7 @@ class Regrtest:
         print(f"Result: {result}")
 
     def save_xml_result(self):
-        if not self.ns.xmlpath and not self.testsuite_xml:
+        if not self.junit_filename and not self.testsuite_xml:
             return
 
         import xml.etree.ElementTree as ET
@@ -703,7 +707,7 @@ class Regrtest:
         for k, v in totals.items():
             root.set(k, str(v))
 
-        xmlpath = os.path.join(os_helper.SAVEDCWD, self.ns.xmlpath)
+        xmlpath = os.path.join(os_helper.SAVEDCWD, self.junit_filename)
         with open(xmlpath, 'wb') as f:
             for s in ET.tostringlist(root):
                 f.write(s)
@@ -785,7 +789,7 @@ class Regrtest:
         ns = self.ns
         self.tests = tests
 
-        if ns.xmlpath:
+        if self.junit_filename:
             support.junit_xml_list = self.testsuite_xml = []
 
         strip_py_suffix(ns.args)
@@ -844,16 +848,14 @@ class Regrtest:
         return exitcode
 
     def action_run_tests(self):
-        if self.ns.huntrleaks:
-            warmup, repetitions, _ = self.ns.huntrleaks
-            if warmup < 3:
-                msg = ("WARNING: Running tests with --huntrleaks/-R and less than "
-                        "3 warmup repetitions can give false positives!")
-                print(msg, file=sys.stdout, flush=True)
+        if self.hunt_refleak and self.hunt_refleak.warmups < 3:
+            msg = ("WARNING: Running tests with --huntrleaks/-R and "
+                   "less than 3 warmup repetitions can give false positives!")
+            print(msg, file=sys.stdout, flush=True)
 
         # For a partial run, we do not need to clutter the output.
         if (self.want_header
-            or not(self.pgo or self.ns.quiet or self.ns.single
+            or not(self.pgo or self.quiet or self.ns.single
                    or self.tests or self.ns.args)):
             self.display_header()
 
@@ -869,7 +871,12 @@ class Regrtest:
             pgo=self.pgo,
             pgo_extended=self.pgo_extended,
             output_on_failure=self.output_on_failure,
-            timeout=self.timeout)
+            timeout=self.timeout,
+            verbose=self.verbose,
+            quiet=self.quiet,
+            hunt_refleak=self.hunt_refleak,
+            test_dir=self.test_dir,
+            junit_filename=self.junit_filename)
 
         setup_tests(runtests, self.ns)
 
@@ -892,7 +899,7 @@ class Regrtest:
         if self.want_wait:
             input("Press any key to continue...")
 
-        setup_test_dir(self.ns.testdir)
+        setup_test_dir(self.test_dir)
         self.find_tests()
 
         exitcode = 0
