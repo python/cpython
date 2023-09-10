@@ -1,0 +1,3 @@
+Simplified ``ensurepip`` to stop assuming that it can provision multiple
+wheels. The refreshed implementation now expects to only provision
+a ``pip`` wheel and no other distribution packages.

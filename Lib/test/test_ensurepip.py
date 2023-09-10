@@ -6,12 +6,19 @@ import tempfile
 import test.support
 import unittest
 import unittest.mock
+from pathlib import Path
 
 import ensurepip
 import ensurepip._uninstall
 
 
 class TestPackages(unittest.TestCase):
+    def setUp(self):
+        ensurepip._get_usable_pip_package.cache_clear()
+
+    def tearDown(self):
+        ensurepip._get_usable_pip_package.cache_clear()
+
     def touch(self, directory, filename):
         fullname = os.path.join(directory, filename)
         open(fullname, "wb").close()
@@ -20,41 +27,43 @@ class TestPackages(unittest.TestCase):
         # Test version()
         with tempfile.TemporaryDirectory() as tmpdir:
             self.touch(tmpdir, "pip-1.2.3b1-py2.py3-none-any.whl")
-            with (unittest.mock.patch.object(ensurepip, '_PACKAGES', None),
-                  unittest.mock.patch.object(ensurepip, '_WHEEL_PKG_DIR', tmpdir)):
+            with unittest.mock.patch.object(
+                    ensurepip, '_WHEEL_PKG_DIR', tmpdir,
+            ):
                 self.assertEqual(ensurepip.version(), '1.2.3b1')
 
     def test_get_packages_no_dir(self):
         # Test _get_packages() without a wheel package directory
-        with (unittest.mock.patch.object(ensurepip, '_PACKAGES', None),
-              unittest.mock.patch.object(ensurepip, '_WHEEL_PKG_DIR', None)):
-            packages = ensurepip._get_packages()
+        with unittest.mock.patch.object(ensurepip, '_WHEEL_PKG_DIR', None):
+            pip_pkg = ensurepip._get_usable_pip_package()
 
-            # when bundled wheel packages are used, we get _PIP_VERSION
+            # when bundled pip wheel package is used, we get _PIP_VERSION
             self.assertEqual(ensurepip._PIP_VERSION, ensurepip.version())
 
-        # use bundled wheel packages
-        self.assertIsNotNone(packages['pip'].wheel_name)
+        # use bundled pip wheel package
+        self.assertIsNotNone(pip_pkg.wheel_name)
 
     def test_get_packages_with_dir(self):
         # Test _get_packages() with a wheel package directory
+        older_pip_filename = "pip-1.2.3-py2.py3-none-any.whl"
         pip_filename = "pip-20.2.2-py2.py3-none-any.whl"
 
         with tempfile.TemporaryDirectory() as tmpdir:
+            self.touch(tmpdir, older_pip_filename)
             self.touch(tmpdir, pip_filename)
             # not used, make sure that it's ignored
             self.touch(tmpdir, "wheel-0.34.2-py2.py3-none-any.whl")
+            # not used, make sure that it's ignored
+            self.touch(tmpdir, "non-whl")
 
-            with (unittest.mock.patch.object(ensurepip, '_PACKAGES', None),
-                  unittest.mock.patch.object(ensurepip, '_WHEEL_PKG_DIR', tmpdir)):
-                packages = ensurepip._get_packages()
+            with unittest.mock.patch.object(
+                    ensurepip, '_WHEEL_PKG_DIR', tmpdir,
+            ):
+                pip_pkg = ensurepip._get_usable_pip_package()
 
-            self.assertEqual(packages['pip'].version, '20.2.2')
-            self.assertEqual(packages['pip'].wheel_path,
+            self.assertEqual(pip_pkg.version, '20.2.2')
+            self.assertEqual(pip_pkg.wheel_path,
                              os.path.join(tmpdir, pip_filename))
-
-            # wheel package is ignored
-            self.assertEqual(sorted(packages), ['pip'])
 
 
 class EnsurepipMixin:
@@ -92,6 +101,30 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
 
         additional_paths = self.run_pip.call_args[0][1]
         self.assertEqual(len(additional_paths), 1)
+
+
+    def test_replacement_wheel_bootstrapping(self):
+        ensurepip._get_usable_pip_package.cache_clear()
+
+        pip_wheel_name = (
+            f'pip-{ensurepip._PIP_VERSION !s}-'
+            'py3-none-any.whl'
+        )
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            tmp_wheel_path = tmp_path / pip_wheel_name
+            tmp_wheel_path.touch()
+
+            with unittest.mock.patch.object(
+                    ensurepip, '_WHEEL_PKG_DIR', tmpdir,
+            ):
+                ensurepip.bootstrap()
+
+        ensurepip._get_usable_pip_package.cache_clear()
+
+        additional_paths = self.run_pip.call_args[0][1]
+        self.assertEqual(Path(additional_paths[-1]).name, pip_wheel_name)
 
     def test_bootstrapping_with_root(self):
         ensurepip.bootstrap(root="/foo/bar/")

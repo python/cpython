@@ -5,15 +5,13 @@ import subprocess
 import sys
 import sysconfig
 import tempfile
+from contextlib import suppress
+from functools import cache
 from importlib import resources
 
 
 __all__ = ["version", "bootstrap"]
-_PACKAGE_NAMES = ('pip',)
 _PIP_VERSION = "23.3.2"
-_PROJECTS = [
-    ("pip", _PIP_VERSION, "py3"),
-]
 
 # Packages bundled in ensurepip._bundled have wheel_name set.
 # Packages from WHEEL_PKG_DIR have wheel_path set.
@@ -27,8 +25,13 @@ _Package = collections.namedtuple('Package',
 _WHEEL_PKG_DIR = sysconfig.get_config_var('WHEEL_PKG_DIR')
 
 
-def _find_packages(path):
-    packages = {}
+def _find_packages(path: str | None) -> _Package:
+    if path is None:
+        raise LookupError(
+            'The compile-time `WHEEL_PKG_DIR` is unset so there is '
+            'no place for looking up the wheels.',
+        )
+
     try:
         filenames = os.listdir(path)
     except OSError:
@@ -38,41 +41,39 @@ def _find_packages(path):
     # of the same package, but don't attempt to implement correct version
     # comparison since this case should not happen.
     filenames = sorted(filenames)
+    pip_pkg = None
     for filename in filenames:
         # filename is like 'pip-21.2.4-py3-none-any.whl'
         if not filename.endswith(".whl"):
             continue
-        for name in _PACKAGE_NAMES:
-            prefix = name + '-'
-            if filename.startswith(prefix):
-                break
-        else:
+        if not filename.startswith('pip-'):
             continue
 
         # Extract '21.2.4' from 'pip-21.2.4-py3-none-any.whl'
-        version = filename.removeprefix(prefix).partition('-')[0]
+        discovered_pip_pkg_version = filename.removeprefix(
+            'pip-',
+        ).partition('-')[0]
         wheel_path = os.path.join(path, filename)
-        packages[name] = _Package(version, None, wheel_path)
-    return packages
+        pip_pkg = _Package(discovered_pip_pkg_version, None, wheel_path)
+
+    if pip_pkg is None:
+        raise LookupError(
+            '`WHEEL_PKG_DIR` does not contain any wheel files for `pip`.',
+        )
+
+    return pip_pkg
 
 
-def _get_packages():
-    global _PACKAGES, _WHEEL_PKG_DIR
-    if _PACKAGES is not None:
-        return _PACKAGES
+@cache
+def _get_usable_pip_package() -> _Package:
+    wheel_name = f"pip-{_PIP_VERSION}-py3-none-any.whl"
+    pip_pkg = _Package(_PIP_VERSION, wheel_name, None)
 
-    packages = {}
-    for name, version, py_tag in _PROJECTS:
-        wheel_name = f"{name}-{version}-{py_tag}-none-any.whl"
-        packages[name] = _Package(version, wheel_name, None)
-    if _WHEEL_PKG_DIR:
-        dir_packages = _find_packages(_WHEEL_PKG_DIR)
-        # only used the wheel package directory if all packages are found there
-        if all(name in dir_packages for name in _PACKAGE_NAMES):
-            packages = dir_packages
-    _PACKAGES = packages
-    return packages
-_PACKAGES = None
+    with suppress(LookupError):
+        # only use the wheel package directory if all packages are found there
+        pip_pkg = _find_packages(_WHEEL_PKG_DIR)
+
+    return pip_pkg
 
 
 def _run_pip(args, additional_paths=None):
@@ -105,7 +106,7 @@ def version():
     """
     Returns a string specifying the bundled version of pip.
     """
-    return _get_packages()['pip'].version
+    return _get_usable_pip_package().version
 
 
 def _disable_pip_configuration_settings():
@@ -167,24 +168,21 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
     with tempfile.TemporaryDirectory() as tmpdir:
         # Put our bundled wheels into a temporary directory and construct the
         # additional paths that need added to sys.path
-        additional_paths = []
-        for name, package in _get_packages().items():
-            if package.wheel_name:
-                # Use bundled wheel package
-                wheel_name = package.wheel_name
-                wheel_path = resources.files("ensurepip") / "_bundled" / wheel_name
-                whl = wheel_path.read_bytes()
-            else:
-                # Use the wheel package directory
-                with open(package.wheel_path, "rb") as fp:
-                    whl = fp.read()
-                wheel_name = os.path.basename(package.wheel_path)
+        package = _get_usable_pip_package()
+        if package.wheel_name:
+            # Use bundled wheel package
+            wheel_name = package.wheel_name
+            wheel_path = resources.files("ensurepip") / "_bundled" / wheel_name
+            whl = wheel_path.read_bytes()
+        else:
+            # Use the wheel package directory
+            with open(package.wheel_path, "rb") as fp:
+                whl = fp.read()
+            wheel_name = os.path.basename(package.wheel_path)
 
-            filename = os.path.join(tmpdir, wheel_name)
-            with open(filename, "wb") as fp:
-                fp.write(whl)
-
-            additional_paths.append(filename)
+        filename = os.path.join(tmpdir, wheel_name)
+        with open(filename, "wb") as fp:
+            fp.write(whl)
 
         # Construct the arguments to be passed to the pip command
         args = ["install", "--no-cache-dir", "--no-index", "--find-links", tmpdir]
@@ -197,7 +195,7 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
         if verbosity:
             args += ["-" + "v" * verbosity]
 
-        return _run_pip([*args, *_PACKAGE_NAMES], additional_paths)
+        return _run_pip([*args, "pip"], [filename])
 
 def _uninstall_helper(*, verbosity=0):
     """Helper to support a clean default uninstall process on Windows
@@ -227,7 +225,7 @@ def _uninstall_helper(*, verbosity=0):
     if verbosity:
         args += ["-" + "v" * verbosity]
 
-    return _run_pip([*args, *reversed(_PACKAGE_NAMES)])
+    return _run_pip([*args, "pip"])
 
 
 def _main(argv=None):
