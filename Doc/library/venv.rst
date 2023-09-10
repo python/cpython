@@ -143,7 +143,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
 .. class:: EnvBuilder(system_site_packages=False, clear=False, \
                       symlinks=False, upgrade=False, with_pip=False, \
-                      prompt=None, upgrade_deps=False,
+                      prompt=None, upgrade_deps=False, \
                       *, scm_ignore_files=frozenset())
 
     The :class:`EnvBuilder` class accepts the following keyword arguments on
