@@ -1,0 +1,2 @@
+Implement instrumented instructions in terms of micro-ops and make it
+explicit that instrumented instructions are tier 1 only.
