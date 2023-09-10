@@ -1,8 +1,7 @@
+import ctypes
 import os
 import sys
 import unittest
-
-raise unittest.SkipTest("FIXME! broken test see: https://github.com/python/cpython/pull/109004")
 
 from test.support import os_helper
 from test.support.os_helper import TESTFN, TESTFN_ASCII
@@ -63,6 +62,12 @@ c_encoded = b'\x57\x5b' # utf-16-le (which windows internally used) encoded char
 
 
 class TestConsoleIO(unittest.TestCase):
+    def setUp(self):
+        # The stdin may have left over contents by other tests (especially test_winconsoleio),
+        # so flush it before every test case.
+        h = msvcrt.get_osfhandle(sys.stdin.fileno())
+        ctypes.windll.kernel32.FlushConsoleInputBuffer(h)
+
     def test_kbhit(self):
         self.assertEqual(msvcrt.kbhit(), 0)
 
