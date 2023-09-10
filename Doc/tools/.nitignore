@@ -116,7 +116,6 @@ Doc/library/socket.rst
 Doc/library/socketserver.rst
 Doc/library/ssl.rst
 Doc/library/stdtypes.rst
-Doc/library/string.rst
 Doc/library/subprocess.rst
 Doc/library/sys_path_init.rst
 Doc/library/syslog.rst
