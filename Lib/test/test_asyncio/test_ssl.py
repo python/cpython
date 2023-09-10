@@ -1,5 +1,4 @@
 import asyncio
-import asyncio.sslproto
 import contextlib
 import gc
 import logging
@@ -1689,7 +1688,7 @@ class TestThreadedServer(SocketThread):
     def run(self):
         try:
             with self._sock:
-                self._sock.setblocking(0)
+                self._sock.setblocking(False)
                 self._run()
         finally:
             self._s1.close()

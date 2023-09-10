@@ -3,10 +3,9 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
 
 PyDoc_STRVAR(binascii_a2b_uu__doc__,
 "a2b_uu($module, data, /)\n"
@@ -99,8 +98,8 @@ binascii_b2a_uu(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    backtick = _PyLong_AsInt(args[1]);
-    if (backtick == -1 && PyErr_Occurred()) {
+    backtick = PyObject_IsTrue(args[1]);
+    if (backtick < 0) {
         goto exit;
     }
 skip_optional_kwonly:
@@ -175,8 +174,8 @@ binascii_a2b_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    strict_mode = _PyLong_AsInt(args[1]);
-    if (strict_mode == -1 && PyErr_Occurred()) {
+    strict_mode = PyObject_IsTrue(args[1]);
+    if (strict_mode < 0) {
         goto exit;
     }
 skip_optional_kwonly:
@@ -250,8 +249,8 @@ binascii_b2a_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    newline = _PyLong_AsInt(args[1]);
-    if (newline == -1 && PyErr_Occurred()) {
+    newline = PyObject_IsTrue(args[1]);
+    if (newline < 0) {
         goto exit;
     }
 skip_optional_kwonly:
@@ -448,7 +447,7 @@ binascii_b2a_hex(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
             goto skip_optional_pos;
         }
     }
-    bytes_per_sep = _PyLong_AsInt(args[2]);
+    bytes_per_sep = PyLong_AsInt(args[2]);
     if (bytes_per_sep == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -541,7 +540,7 @@ binascii_hexlify(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
             goto skip_optional_pos;
         }
     }
-    bytes_per_sep = _PyLong_AsInt(args[2]);
+    bytes_per_sep = PyLong_AsInt(args[2]);
     if (bytes_per_sep == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -680,8 +679,8 @@ binascii_a2b_qp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    header = _PyLong_AsInt(args[1]);
-    if (header == -1 && PyErr_Occurred()) {
+    header = PyObject_IsTrue(args[1]);
+    if (header < 0) {
         goto exit;
     }
 skip_optional_pos:
@@ -763,8 +762,8 @@ binascii_b2a_qp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         goto skip_optional_pos;
     }
     if (args[1]) {
-        quotetabs = _PyLong_AsInt(args[1]);
-        if (quotetabs == -1 && PyErr_Occurred()) {
+        quotetabs = PyObject_IsTrue(args[1]);
+        if (quotetabs < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -772,16 +771,16 @@ binascii_b2a_qp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         }
     }
     if (args[2]) {
-        istext = _PyLong_AsInt(args[2]);
-        if (istext == -1 && PyErr_Occurred()) {
+        istext = PyObject_IsTrue(args[2]);
+        if (istext < 0) {
             goto exit;
         }
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    header = _PyLong_AsInt(args[3]);
-    if (header == -1 && PyErr_Occurred()) {
+    header = PyObject_IsTrue(args[3]);
+    if (header < 0) {
         goto exit;
     }
 skip_optional_pos:
@@ -795,4 +794,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=a266ba13c374aefa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=acc9419209dfd568 input=a9049054013a1b77]*/

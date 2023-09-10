@@ -1,3 +1,0 @@
-Fix a bug in ``unicodedata``: ``east_asian_width`` used to return the wrong
-value for unassigned characters; and for yet unassigned, but reserved
-characters.

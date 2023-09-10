@@ -128,7 +128,9 @@ Other functions
 
 .. function:: compare_digest(a, b)
 
-   Return ``True`` if strings *a* and *b* are equal, otherwise ``False``,
+   Return ``True`` if strings or
+   :term:`bytes-like objects <bytes-like object>`
+   *a* and *b* are equal, otherwise ``False``,
    using a "constant-time compare" to reduce the risk of
    `timing attacks <https://codahale.com/a-lesson-in-timing-attacks/>`_.
    See :func:`hmac.compare_digest` for additional details.

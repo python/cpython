@@ -1,4 +1,0 @@
-The deprecated mailcap module now refuses to inject unsafe text (filenames,
-MIME types, parameters) into shell commands. Instead of using such text, it
-will warn and act as if a match was not found (or for test commands, as if
-the test failed).

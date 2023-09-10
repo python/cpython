@@ -167,6 +167,20 @@ class CompileallTestsBase:
                                                 quiet=2))
         self.assertTrue(os.path.isfile(self.bc_path))
 
+    def test_compile_file_pathlike_stripdir(self):
+        self.assertFalse(os.path.isfile(self.bc_path))
+        self.assertTrue(compileall.compile_file(pathlib.Path(self.source_path),
+                                                stripdir=pathlib.Path('stripdir_path'),
+                                                quiet=2))
+        self.assertTrue(os.path.isfile(self.bc_path))
+
+    def test_compile_file_pathlike_prependdir(self):
+        self.assertFalse(os.path.isfile(self.bc_path))
+        self.assertTrue(compileall.compile_file(pathlib.Path(self.source_path),
+                                                prependdir=pathlib.Path('prependdir_path'),
+                                                quiet=2))
+        self.assertTrue(os.path.isfile(self.bc_path))
+
     def test_compile_path(self):
         with test.test_importlib.util.import_state(path=[self.directory]):
             self.assertTrue(compileall.compile_path(quiet=2))
@@ -217,6 +231,20 @@ class CompileallTestsBase:
             compileall.compile_dir(pathlib.Path(self.directory))
         line = stdout.getvalue().splitlines()[0]
         self.assertRegex(line, r'Listing ([^WindowsPath|PosixPath].*)')
+        self.assertTrue(os.path.isfile(self.bc_path))
+
+    def test_compile_dir_pathlike_stripdir(self):
+        self.assertFalse(os.path.isfile(self.bc_path))
+        self.assertTrue(compileall.compile_dir(pathlib.Path(self.directory),
+                                               stripdir=pathlib.Path('stripdir_path'),
+                                               quiet=2))
+        self.assertTrue(os.path.isfile(self.bc_path))
+
+    def test_compile_dir_pathlike_prependdir(self):
+        self.assertFalse(os.path.isfile(self.bc_path))
+        self.assertTrue(compileall.compile_dir(pathlib.Path(self.directory),
+                                               prependdir=pathlib.Path('prependdir_path'),
+                                               quiet=2))
         self.assertTrue(os.path.isfile(self.bc_path))
 
     @skipUnless(_have_multiprocessing, "requires multiprocessing")
@@ -523,6 +551,7 @@ class CommandLineTestsBase:
             self.assertNotCompiled(self.barfn)
 
     @without_source_date_epoch  # timestamp invalidation test
+    @support.requires_resource('cpu')
     def test_no_args_respects_force_flag(self):
         bazfn = script_helper.make_script(self.directory, 'baz', '')
         with self.temporary_pycache_prefix() as env:
@@ -540,6 +569,7 @@ class CommandLineTestsBase:
         mtime2 = os.stat(pycpath).st_mtime
         self.assertNotEqual(mtime, mtime2)
 
+    @support.requires_resource('cpu')
     def test_no_args_respects_quiet_flag(self):
         script_helper.make_script(self.directory, 'baz', '')
         with self.temporary_pycache_prefix() as env:

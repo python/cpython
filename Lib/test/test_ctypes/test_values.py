@@ -2,14 +2,16 @@
 A testcase which accesses *values* in a dll.
 """
 
+import _ctypes_test
 import _imp
 import importlib.util
-import unittest
 import sys
-from ctypes import *
+import unittest
+from ctypes import (Structure, CDLL, POINTER, pythonapi,
+                    _pointer_type_cache,
+                    c_ubyte, c_char_p, c_int)
 from test.support import import_helper
 
-import _ctypes_test
 
 class ValuesTestCase(unittest.TestCase):
 
@@ -30,6 +32,7 @@ class ValuesTestCase(unittest.TestCase):
     def test_undefined(self):
         ctdll = CDLL(_ctypes_test.__file__)
         self.assertRaises(ValueError, c_int.in_dll, ctdll, "Undefined_Symbol")
+
 
 class PythonValuesTestCase(unittest.TestCase):
     """This test only works when python itself is a dll/shared library"""
@@ -55,7 +58,6 @@ class PythonValuesTestCase(unittest.TestCase):
                         ("code", POINTER(c_ubyte)),
                         ("size", c_int),
                         ("is_package", c_int),
-                        ("get_code", POINTER(c_ubyte)),  # Function ptr
                         ]
         FrozenTable = POINTER(struct_frozen)
 
@@ -92,12 +94,12 @@ class PythonValuesTestCase(unittest.TestCase):
                          "_PyImport_FrozenBootstrap example "
                          "in Doc/library/ctypes.rst may be out of date")
 
-        from ctypes import _pointer_type_cache
         del _pointer_type_cache[struct_frozen]
 
     def test_undefined(self):
         self.assertRaises(ValueError, c_int.in_dll, pythonapi,
                           "Undefined_Symbol")
+
 
 if __name__ == '__main__':
     unittest.main()

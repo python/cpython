@@ -11,8 +11,9 @@
 **Source code:** :source:`Lib/optparse.py`
 
 .. deprecated:: 3.2
-   The :mod:`optparse` module is deprecated and will not be developed further;
-   development will continue with the :mod:`argparse` module.
+   The :mod:`optparse` module is :term:`soft deprecated` and will not be
+   developed further; development will continue with the :mod:`argparse`
+   module.
 
 --------------
 
@@ -42,8 +43,8 @@ on the command-line, for example::
    <yourscript> --file=outfile -q
 
 As it parses the command line, :mod:`optparse` sets attributes of the
-``options`` object returned by :meth:`parse_args` based on user-supplied
-command-line values.  When :meth:`parse_args` returns from parsing this command
+``options`` object returned by :meth:`~OptionParser.parse_args` based on user-supplied
+command-line values.  When :meth:`~OptionParser.parse_args` returns from parsing this command
 line, ``options.filename`` will be ``"outfile"`` and ``options.verbose`` will be
 ``False``.  :mod:`optparse` supports both long and short options, allows short
 options to be merged together, and allows options to be associated with their
@@ -285,10 +286,10 @@ program's command line::
 
    (options, args) = parser.parse_args()
 
-(If you like, you can pass a custom argument list to :meth:`parse_args`, but
+(If you like, you can pass a custom argument list to :meth:`~OptionParser.parse_args`, but
 that's rarely necessary: by default it uses ``sys.argv[1:]``.)
 
-:meth:`parse_args` returns two values:
+:meth:`~OptionParser.parse_args` returns two values:
 
 * ``options``, an object containing values for all of your options---e.g. if
   ``--file`` takes a single string argument, then ``options.file`` will be the
@@ -339,7 +340,7 @@ Now let's make up a fake command line and ask :mod:`optparse` to parse it::
 
 When :mod:`optparse` sees the option string ``-f``, it consumes the next
 argument, ``foo.txt``, and stores it in ``options.filename``.  So, after this
-call to :meth:`parse_args`, ``options.filename`` is ``"foo.txt"``.
+call to :meth:`~OptionParser.parse_args`, ``options.filename`` is ``"foo.txt"``.
 
 Some other option types supported by :mod:`optparse` are ``int`` and ``float``.
 Here's an option that expects an integer argument::
@@ -404,7 +405,7 @@ Other actions
 Some other actions supported by :mod:`optparse` are:
 
 ``"store_const"``
-   store a constant value
+   store a constant value, pre-set via :attr:`Option.const`
 
 ``"append"``
    append this option's argument to a list
@@ -453,7 +454,8 @@ Again, the default value for ``verbose`` will be ``True``: the last default
 value supplied for any particular destination is the one that counts.
 
 A clearer way to specify default values is the :meth:`set_defaults` method of
-OptionParser, which you can call at any time before calling :meth:`parse_args`::
+OptionParser, which you can call at any time before calling
+:meth:`~OptionParser.parse_args`::
 
    parser.set_defaults(verbose=True)
    parser.add_option(...)
@@ -811,7 +813,7 @@ The first step in using :mod:`optparse` is to create an OptionParser instance.
       help option.  When :mod:`optparse` prints the usage string, it expands
       ``%prog`` to ``os.path.basename(sys.argv[0])`` (or to ``prog`` if you
       passed that keyword argument).  To suppress a usage message, pass the
-      special value :data:`optparse.SUPPRESS_USAGE`.
+      special value :const:`optparse.SUPPRESS_USAGE`.
 
    ``option_list`` (default: ``[]``)
       A list of Option objects to populate the parser with.  The options in
@@ -925,7 +927,7 @@ The canonical way to create an :class:`Option` instance is with the
       store this option's argument (default)
 
    ``"store_const"``
-      store a constant value
+      store a constant value, pre-set via :attr:`Option.const`
 
    ``"store_true"``
       store ``True``
@@ -937,7 +939,7 @@ The canonical way to create an :class:`Option` instance is with the
       append this option's argument to a list
 
    ``"append_const"``
-      append a constant value to a list
+      append a constant value to a list, pre-set via :attr:`Option.const`
 
    ``"count"``
       increment a counter by one
@@ -954,7 +956,16 @@ The canonical way to create an :class:`Option` instance is with the
 
 As you can see, most actions involve storing or updating a value somewhere.
 :mod:`optparse` always creates a special object for this, conventionally called
-``options`` (it happens to be an instance of :class:`optparse.Values`).  Option
+``options``, which is an instance of :class:`optparse.Values`.
+
+.. class:: Values
+
+   An object holding parsed argument names and values as attributes.
+   Normally created by calling when calling :meth:`OptionParser.parse_args`,
+   and can be overridden by a custom subclass passed to the *values* argument of
+   :meth:`OptionParser.parse_args` (as described in :ref:`optparse-parsing-arguments`).
+
+Option
 arguments (and various other values) are stored as attributes of this object,
 according to the :attr:`~Option.dest` (destination) option attribute.
 
@@ -990,6 +1001,14 @@ one that makes sense for *all* options.
 
 Option attributes
 ^^^^^^^^^^^^^^^^^
+
+.. class:: Option
+
+   A single command line argument,
+   with various attributes passed by keyword to the constructor.
+   Normally created with :meth:`OptionParser.add_option` rather than directly,
+   and can be overridden by a custom class via the *option_class* argument
+   to :class:`OptionParser`.
 
 The following option attributes may be passed as keyword arguments to
 :meth:`OptionParser.add_option`.  If you pass an option attribute that is not
@@ -1060,7 +1079,7 @@ relevant to a particular option, or fail to pass a required option attribute,
    Help text to print for this option when listing all available options after
    the user supplies a :attr:`~Option.help` option (such as ``--help``).  If
    no help text is supplied, the option will be listed without help text.  To
-   hide this option, use the special value :data:`optparse.SUPPRESS_HELP`.
+   hide this option, use the special value :const:`optparse.SUPPRESS_HELP`.
 
 .. attribute:: Option.metavar
 
@@ -1232,7 +1251,7 @@ must specify for any option using that action.
 
   If no :attr:`~Option.help` string is supplied for an option, it will still be
   listed in the help message.  To omit an option entirely, use the special value
-  :data:`optparse.SUPPRESS_HELP`.
+  :const:`optparse.SUPPRESS_HELP`.
 
   :mod:`optparse` automatically adds a :attr:`~Option.help` option to all
   OptionParsers, so you do not normally need to create one.
@@ -1321,35 +1340,37 @@ Parsing arguments
 ^^^^^^^^^^^^^^^^^
 
 The whole point of creating and populating an OptionParser is to call its
-:meth:`parse_args` method::
+:meth:`~OptionParser.parse_args` method.
 
-   (options, args) = parser.parse_args(args=None, values=None)
+.. method:: OptionParser.parse_args(args=None, values=None)
 
-where the input parameters are
+   Parse the command-line options found in *args*.
 
-``args``
-   the list of arguments to process (default: ``sys.argv[1:]``)
+   The input parameters are
 
-``values``
-   an :class:`optparse.Values` object to store option arguments in (default: a
-   new instance of :class:`Values`) -- if you give an existing object, the
-   option defaults will not be initialized on it
+   ``args``
+      the list of arguments to process (default: ``sys.argv[1:]``)
 
-and the return values are
+   ``values``
+      an :class:`Values` object to store option arguments in (default: a
+      new instance of :class:`Values`) -- if you give an existing object, the
+      option defaults will not be initialized on it
 
-``options``
-   the same object that was passed in as ``values``, or the optparse.Values
-   instance created by :mod:`optparse`
+   and the return value is a pair ``(options, args)`` where
 
-``args``
-   the leftover positional arguments after all options have been processed
+   ``options``
+      the same object that was passed in as *values*, or the ``optparse.Values``
+      instance created by :mod:`optparse`
+
+   ``args``
+      the leftover positional arguments after all options have been processed
 
 The most common usage is to supply neither keyword argument.  If you supply
 ``values``, it will be modified with repeated :func:`setattr` calls (roughly one
 for every option argument stored to an option destination) and returned by
-:meth:`parse_args`.
+:meth:`~OptionParser.parse_args`.
 
-If :meth:`parse_args` encounters any errors in the argument list, it calls the
+If :meth:`~OptionParser.parse_args` encounters any errors in the argument list, it calls the
 OptionParser's :meth:`error` method with an appropriate end-user error message.
 This ultimately terminates your process with an exit status of 2 (the
 traditional Unix exit status for command-line errors).
@@ -1501,7 +1522,7 @@ OptionParser supports several other public methods:
 
    Set the usage string according to the rules described above for the ``usage``
    constructor keyword argument.  Passing ``None`` sets the default usage
-   string; use :data:`optparse.SUPPRESS_USAGE` to suppress a usage message.
+   string; use :const:`optparse.SUPPRESS_USAGE` to suppress a usage message.
 
 .. method:: OptionParser.print_usage(file=None)
 
@@ -1644,7 +1665,7 @@ where
       the current list of leftover arguments, ie. arguments that have been
       consumed but are neither options nor option arguments. Feel free to modify
       ``parser.largs``, e.g. by adding more arguments to it.  (This list will
-      become ``args``, the second return value of :meth:`parse_args`.)
+      become ``args``, the second return value of :meth:`~OptionParser.parse_args`.)
 
    ``parser.rargs``
       the current list of remaining arguments, ie. with ``opt_str`` and
@@ -2027,7 +2048,7 @@ Features of note:
      values.ensure_value(attr, value)
 
   If the ``attr`` attribute of ``values`` doesn't exist or is ``None``, then
-  ensure_value() first sets it to ``value``, and then returns 'value. This is
+  ensure_value() first sets it to ``value``, and then returns ``value``. This is
   very handy for actions like ``"extend"``, ``"append"``, and ``"count"``, all
   of which accumulate data in a variable and expect that variable to be of a
   certain type (a list for the first two, an integer for the latter).  Using
@@ -2035,3 +2056,27 @@ Features of note:
   about setting a default value for the option destinations in question; they
   can just leave the default as ``None`` and :meth:`ensure_value` will take care of
   getting it right when it's needed.
+
+Exceptions
+----------
+
+.. exception:: OptionError
+
+   Raised if an :class:`Option` instance is created with invalid or
+   inconsistent arguments.
+
+.. exception:: OptionConflictError
+
+   Raised if conflicting options are added to an :class:`OptionParser`.
+
+.. exception:: OptionValueError
+
+   Raised if an invalid option value is encountered on the command line.
+
+.. exception:: BadOptionError
+
+   Raised if an invalid option is passed on the command line.
+
+.. exception:: AmbiguousOptionError
+
+   Raised if an ambiguous option is passed on the command line.

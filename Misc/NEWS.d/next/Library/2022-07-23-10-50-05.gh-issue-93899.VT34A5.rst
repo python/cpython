@@ -1,1 +1,0 @@
-Fix check for existence of :data:`os.EFD_CLOEXEC`, :data:`os.EFD_NONBLOCK` and :data:`os.EFD_SEMAPHORE` flags on older kernel versions where these flags are not present. Patch by Kumar Aditya.

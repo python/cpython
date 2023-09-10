@@ -1,2 +1,0 @@
-Fix :exc:`AttributeError` missing ``name`` and ``obj`` attributes in
-:meth:`object.__getattribute__`. Patch by Philip Georgi.

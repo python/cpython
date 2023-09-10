@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from test.support import script_helper, captured_stdout, requires_subprocess
+from test.support import script_helper, captured_stdout, requires_subprocess, requires_resource
 from test.support.os_helper import TESTFN, unlink, rmtree
 from test.support.import_helper import unload
 import importlib
@@ -160,6 +160,18 @@ class MiscSourceEncodingTest(unittest.TestCase):
         finally:
             os.unlink(TESTFN)
 
+    def test_tokenizer_fstring_warning_in_first_line(self):
+        source = "0b1and 2"
+        with open(TESTFN, "w") as fd:
+            fd.write("{}".format(source))
+        try:
+            retcode, stdout, stderr = script_helper.assert_python_ok(TESTFN)
+            self.assertIn(b"SyntaxWarning: invalid binary litera", stderr)
+            self.assertEqual(stderr.count(source.encode()), 1)
+        finally:
+            os.unlink(TESTFN)
+
+
 class AbstractSourceEncodingTest:
 
     def test_default_coding(self):
@@ -238,6 +250,7 @@ class AbstractSourceEncodingTest:
 class UTF8ValidatorTest(unittest.TestCase):
     @unittest.skipIf(not sys.platform.startswith("linux"),
                      "Too slow to run on non-Linux platforms")
+    @requires_resource('cpu')
     def test_invalid_utf8(self):
         # This is a port of test_utf8_decode_invalid_sequences in
         # test_unicode.py to exercise the separate utf8 validator in

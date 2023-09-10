@@ -1,1 +1,0 @@
-Add deprecation warning for enum ``member.member`` access (e.g. ``Color.RED.BLUE``).

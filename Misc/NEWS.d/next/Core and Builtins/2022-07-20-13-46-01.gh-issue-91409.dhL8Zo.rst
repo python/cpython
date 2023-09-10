@@ -1,2 +1,0 @@
-Fix incorrect source location info caused by certain optimizations in the
-bytecode compiler.

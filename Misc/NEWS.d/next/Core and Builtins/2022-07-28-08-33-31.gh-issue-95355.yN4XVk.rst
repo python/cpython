@@ -1,1 +1,0 @@
-``_PyPegen_Parser_New`` now properly detects token memory allocation errors. Patch by Honglin Zhu.

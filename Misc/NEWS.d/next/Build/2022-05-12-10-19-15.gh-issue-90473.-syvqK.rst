@@ -1,1 +1,0 @@
-Disable pymalloc and increase stack size on ``wasm32-wasi``.

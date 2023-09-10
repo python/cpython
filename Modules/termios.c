@@ -1,11 +1,22 @@
 /* termios.c -- POSIX terminal I/O module implementation.  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 
-/* Apparently, on SGI, termios.h won't define CTRL if _XOPEN_SOURCE
-   is defined, so we define it here. */
+// On QNX 6, struct termio must be declared by including sys/termio.h
+// if TCGETA, TCSETA, TCSETAW, or TCSETAF are used. sys/termio.h must
+// be included before termios.h or it will generate an error.
+#if defined(HAVE_SYS_TERMIO_H) && !defined(__hpux)
+#  include <sys/termio.h>
+#endif
+
+// Apparently, on SGI, termios.h won't define CTRL if _XOPEN_SOURCE
+// is defined, so we define it here.
 #if defined(__sgi)
-#define CTRL(c) ((c)&037)
+#  define CTRL(c) ((c)&037)
 #endif
 
 #if defined(__sun)
@@ -16,6 +27,9 @@
 
 #include <termios.h>
 #include <sys/ioctl.h>
+#if defined(__sun) && defined(__SVR4)
+#  include <unistd.h>             // ioctl()
+#endif
 
 /* HP-UX requires that this be included to pick up MDCD, MCTS, MDSR,
  * MDTR, MRI, and MRTS (apparently used internally by some things
@@ -82,7 +96,12 @@ termios_tcgetattr_impl(PyObject *module, int fd)
 {
     termiosmodulestate *state = PyModule_GetState(module);
     struct termios mode;
-    if (tcgetattr(fd, &mode) == -1) {
+    int r;
+
+    Py_BEGIN_ALLOW_THREADS
+    r = tcgetattr(fd, &mode);
+    Py_END_ALLOW_THREADS
+    if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
@@ -169,7 +188,12 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
     /* Get the old mode, in case there are any hidden fields... */
     termiosmodulestate *state = PyModule_GetState(module);
     struct termios mode;
-    if (tcgetattr(fd, &mode) == -1) {
+    int r;
+
+    Py_BEGIN_ALLOW_THREADS
+    r = tcgetattr(fd, &mode);
+    Py_END_ALLOW_THREADS
+    if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
@@ -211,7 +235,12 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
         return PyErr_SetFromErrno(state->TermiosError);
     if (cfsetospeed(&mode, (speed_t) ospeed) == -1)
         return PyErr_SetFromErrno(state->TermiosError);
-    if (tcsetattr(fd, when, &mode) == -1)
+
+    Py_BEGIN_ALLOW_THREADS
+    r = tcsetattr(fd, when, &mode);
+    Py_END_ALLOW_THREADS
+
+    if (r == -1)
         return PyErr_SetFromErrno(state->TermiosError);
 
     Py_RETURN_NONE;
@@ -235,7 +264,13 @@ termios_tcsendbreak_impl(PyObject *module, int fd, int duration)
 /*[clinic end generated code: output=5945f589b5d3ac66 input=dc2f32417691f8ed]*/
 {
     termiosmodulestate *state = PyModule_GetState(module);
-    if (tcsendbreak(fd, duration) == -1) {
+    int r;
+
+    Py_BEGIN_ALLOW_THREADS
+    r = tcsendbreak(fd, duration);
+    Py_END_ALLOW_THREADS
+
+    if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
@@ -256,7 +291,13 @@ termios_tcdrain_impl(PyObject *module, int fd)
 /*[clinic end generated code: output=5fd86944c6255955 input=c99241b140b32447]*/
 {
     termiosmodulestate *state = PyModule_GetState(module);
-    if (tcdrain(fd) == -1) {
+    int r;
+
+    Py_BEGIN_ALLOW_THREADS
+    r = tcdrain(fd);
+    Py_END_ALLOW_THREADS
+
+    if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
@@ -282,7 +323,13 @@ termios_tcflush_impl(PyObject *module, int fd, int queue)
 /*[clinic end generated code: output=2424f80312ec2f21 input=0f7d08122ddc07b5]*/
 {
     termiosmodulestate *state = PyModule_GetState(module);
-    if (tcflush(fd, queue) == -1) {
+    int r;
+
+    Py_BEGIN_ALLOW_THREADS
+    r = tcflush(fd, queue);
+    Py_END_ALLOW_THREADS
+
+    if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
@@ -308,7 +355,13 @@ termios_tcflow_impl(PyObject *module, int fd, int action)
 /*[clinic end generated code: output=afd10928e6ea66eb input=c6aff0640b6efd9c]*/
 {
     termiosmodulestate *state = PyModule_GetState(module);
-    if (tcflow(fd, action) == -1) {
+    int r;
+
+    Py_BEGIN_ALLOW_THREADS
+    r = tcflow(fd, action);
+    Py_END_ALLOW_THREADS
+
+    if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
@@ -333,7 +386,13 @@ termios_tcgetwinsize_impl(PyObject *module, int fd)
 #if defined(TIOCGWINSZ)
     termiosmodulestate *state = PyModule_GetState(module);
     struct winsize w;
-    if (ioctl(fd, TIOCGWINSZ, &w) == -1) {
+    int r;
+
+    Py_BEGIN_ALLOW_THREADS
+    r = ioctl(fd, TIOCGWINSZ, &w);
+    Py_END_ALLOW_THREADS
+
+    if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
@@ -352,7 +411,12 @@ termios_tcgetwinsize_impl(PyObject *module, int fd)
 #elif defined(TIOCGSIZE)
     termiosmodulestate *state = PyModule_GetState(module);
     struct ttysize s;
-    if (ioctl(fd, TIOCGSIZE, &s) == -1) {
+    int r;
+
+    Py_BEGIN_ALLOW_THREADS
+    r = ioctl(fd, TIOCGSIZE, &s);
+    Py_END_ALLOW_THREADS
+    if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
@@ -433,15 +497,25 @@ termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
         return NULL;
     }
 
-    if (ioctl(fd, TIOCSWINSZ, &w) == -1) {
+    int r;
+    Py_BEGIN_ALLOW_THREADS
+    r = ioctl(fd, TIOCSWINSZ, &w);
+    Py_END_ALLOW_THREADS
+
+    if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
     Py_RETURN_NONE;
 #elif defined(TIOCGSIZE) && defined(TIOCSSIZE)
     struct ttysize s;
+    int r;
     /* Get the old ttysize because it might have more fields. */
-    if (ioctl(fd, TIOCGSIZE, &s) == -1) {
+    Py_BEGIN_ALLOW_THREADS
+    r = ioctl(fd, TIOCGSIZE, &s);
+    Py_END_ALLOW_THREADS
+
+    if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
@@ -453,7 +527,11 @@ termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
         return NULL;
     }
 
-    if (ioctl(fd, TIOCSSIZE, &s) == -1) {
+    Py_BEGIN_ALLOW_THREADS
+    r = ioctl(fd, TIOCSSIZE, &s);
+    Py_END_ALLOW_THREADS
+
+    if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
@@ -1168,12 +1246,7 @@ termios_exec(PyObject *mod)
     struct constant *constant = termios_constants;
     termiosmodulestate *state = get_termios_state(mod);
     state->TermiosError = PyErr_NewException("termios.error", NULL, NULL);
-    if (state->TermiosError == NULL) {
-        return -1;
-    }
-    Py_INCREF(state->TermiosError);
-    if (PyModule_AddObject(mod, "error", state->TermiosError) < 0) {
-        Py_DECREF(state->TermiosError);
+    if (PyModule_AddObjectRef(mod, "error", state->TermiosError) < 0) {
         return -1;
     }
 
@@ -1189,6 +1262,7 @@ termios_exec(PyObject *mod)
 
 static PyModuleDef_Slot termios_slots[] = {
     {Py_mod_exec, termios_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

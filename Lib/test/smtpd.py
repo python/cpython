@@ -77,16 +77,13 @@ import getopt
 import time
 import socket
 import collections
-from test.support.import_helper import import_module
+from test.support import asyncore, asynchat
 from warnings import warn
 from email._header_value_parser import get_addr_spec, get_angle_addr
 
 __all__ = [
     "SMTPChannel", "SMTPServer", "DebuggingServer", "PureProxy",
 ]
-
-asyncore = import_module('asyncore', deprecated=True)
-asynchat = import_module('asynchat', deprecated=True)
 
 program = sys.argv[0]
 __version__ = 'Python SMTP proxy version 0.3'

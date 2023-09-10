@@ -98,12 +98,6 @@ class _Stop(Exception):
     def __init__(self, value):
         self.value = value
 
-# Jython has PyStringMap; it's a dict subclass with string keys
-try:
-    from org.python.core import PyStringMap
-except ImportError:
-    PyStringMap = None
-
 # Pickle opcodes.  See pickletools.py for extensive docs.  The listing
 # here is in kind-of alphabetical order of 1-character pickle code.
 # pickletools groups them by purpose.
@@ -402,6 +396,8 @@ def decode_long(data):
     return int.from_bytes(data, byteorder='little', signed=True)
 
 
+_NoValue = object()
+
 # Pickling machinery
 
 class _Pickler:
@@ -548,8 +544,8 @@ class _Pickler:
             return
 
         rv = NotImplemented
-        reduce = getattr(self, "reducer_override", None)
-        if reduce is not None:
+        reduce = getattr(self, "reducer_override", _NoValue)
+        if reduce is not _NoValue:
             rv = reduce(obj)
 
         if rv is NotImplemented:
@@ -562,8 +558,8 @@ class _Pickler:
 
             # Check private dispatch table if any, or else
             # copyreg.dispatch_table
-            reduce = getattr(self, 'dispatch_table', dispatch_table).get(t)
-            if reduce is not None:
+            reduce = getattr(self, 'dispatch_table', dispatch_table).get(t, _NoValue)
+            if reduce is not _NoValue:
                 rv = reduce(obj)
             else:
                 # Check for a class with a custom metaclass; treat as regular
@@ -573,12 +569,12 @@ class _Pickler:
                     return
 
                 # Check for a __reduce_ex__ method, fall back to __reduce__
-                reduce = getattr(obj, "__reduce_ex__", None)
-                if reduce is not None:
+                reduce = getattr(obj, "__reduce_ex__", _NoValue)
+                if reduce is not _NoValue:
                     rv = reduce(self.proto)
                 else:
-                    reduce = getattr(obj, "__reduce__", None)
-                    if reduce is not None:
+                    reduce = getattr(obj, "__reduce__", _NoValue)
+                    if reduce is not _NoValue:
                         rv = reduce()
                     else:
                         raise PicklingError("Can't pickle %r object: %r" %
@@ -972,8 +968,6 @@ class _Pickler:
         self._batch_setitems(obj.items())
 
     dispatch[dict] = save_dict
-    if PyStringMap is not None:
-        dispatch[PyStringMap] = save_dict
 
     def _batch_setitems(self, items):
         # Helper to batch up SETITEMS sequences; proto >= 1 only
@@ -1489,7 +1483,7 @@ class _Unpickler:
                 value = klass(*args)
             except TypeError as err:
                 raise TypeError("in constructor for %s: %s" %
-                                (klass.__name__, str(err)), sys.exc_info()[2])
+                                (klass.__name__, str(err)), err.__traceback__)
         else:
             value = klass.__new__(klass)
         self.append(value)
@@ -1713,8 +1707,8 @@ class _Unpickler:
         stack = self.stack
         state = stack.pop()
         inst = stack[-1]
-        setstate = getattr(inst, "__setstate__", None)
-        if setstate is not None:
+        setstate = getattr(inst, "__setstate__", _NoValue)
+        if setstate is not _NoValue:
             setstate(state)
             return
         slotstate = None

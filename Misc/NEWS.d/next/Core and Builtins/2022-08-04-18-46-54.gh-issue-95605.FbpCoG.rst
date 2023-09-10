@@ -1,2 +1,0 @@
-Fix misleading contents of error message when converting an all-whitespace
-string to :class:`float`.

@@ -1,2 +1,0 @@
-:func:`os.path.splitdrive` now understands DOS device paths with UNC
-links (beginning ``\\?\UNC\``). Contributed by Barney Gale.

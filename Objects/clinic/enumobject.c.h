@@ -3,10 +3,9 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
 
 PyDoc_STRVAR(enum_new__doc__,
 "enumerate(iterable, start=0)\n"
@@ -91,10 +90,10 @@ static PyObject *
 reversed_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &PyReversed_Type;
     PyObject *seq;
 
-    if ((type == &PyReversed_Type ||
-         type->tp_init == PyReversed_Type.tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("reversed", kwargs)) {
         goto exit;
     }
@@ -107,4 +106,4 @@ reversed_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=683261097bfd794a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=661b29708f501d19 input=a9049054013a1b77]*/
