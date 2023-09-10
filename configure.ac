@@ -7007,9 +7007,10 @@ int main()
     }
     return 0; // all good
 }
-]])],[
-  ac_cv_libatomic_needed=no
-],[ac_cv_libatomic_needed=yes],[ac_cv_libatomic_needed=yes])
+]])],
+  [ac_cv_libatomic_needed=no],  dnl build succeeded
+  [ac_cv_libatomic_needed=yes], dnl build failed
+  [ac_cv_libatomic_needed=no])  dnl cross compilation
 ])
 
 AS_VAR_IF([ac_cv_libatomic_needed], [yes],
