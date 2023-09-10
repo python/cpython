@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
 
 PyDoc_STRVAR(list_insert__doc__,
 "insert($self, index, object, /)\n"
@@ -215,8 +215,8 @@ list_sort(PyListObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
             goto skip_optional_kwonly;
         }
     }
-    reverse = _PyLong_AsInt(args[1]);
-    if (reverse == -1 && PyErr_Occurred()) {
+    reverse = PyObject_IsTrue(args[1]);
+    if (reverse < 0) {
         goto exit;
     }
 skip_optional_kwonly:
@@ -326,10 +326,11 @@ static int
 list___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
+    PyTypeObject *base_tp = &PyList_Type;
     PyObject *iterable = NULL;
 
-    if ((Py_IS_TYPE(self, &PyList_Type) ||
-         Py_TYPE(self)->tp_new == PyList_Type.tp_new) &&
+    if ((Py_IS_TYPE(self, base_tp) ||
+         Py_TYPE(self)->tp_new == base_tp->tp_new) &&
         !_PyArg_NoKeywords("list", kwargs)) {
         goto exit;
     }
@@ -382,4 +383,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=782ed6c68b1c9f83 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e2d9f4092498a5ca input=a9049054013a1b77]*/

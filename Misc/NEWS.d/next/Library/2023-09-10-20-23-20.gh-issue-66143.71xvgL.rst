@@ -1,0 +1,1 @@
+The CodecInfo object has been made copyable. Patched by Robert Lehmann and Furkan Onder.

@@ -417,6 +417,9 @@ class StreamWriter(Codec):
     def __exit__(self, type, value, tb):
         self.stream.close()
 
+    def __reduce_ex__(self, proto):
+        raise TypeError("can't serialize %s" % self.__class__.__name__)
+
 ###
 
 class StreamReader(Codec):
@@ -666,6 +669,9 @@ class StreamReader(Codec):
     def __exit__(self, type, value, tb):
         self.stream.close()
 
+    def __reduce_ex__(self, proto):
+        raise TypeError("can't serialize %s" % self.__class__.__name__)
+
 ###
 
 class StreamReaderWriter:
@@ -752,6 +758,9 @@ class StreamReaderWriter:
 
     def __exit__(self, type, value, tb):
         self.stream.close()
+
+    def __reduce_ex__(self, proto):
+        raise TypeError("can't serialize %s" % self.__class__.__name__)
 
 ###
 
@@ -869,6 +878,9 @@ class StreamRecoder:
     def __exit__(self, type, value, tb):
         self.stream.close()
 
+    def __reduce_ex__(self, proto):
+        raise TypeError("can't serialize %s" % self.__class__.__name__)
+
 ### Shortcuts
 
 def open(filename, mode='r', encoding=None, errors='strict', buffering=-1):
@@ -881,7 +893,8 @@ def open(filename, mode='r', encoding=None, errors='strict', buffering=-1):
         codecs. Output is also codec dependent and will usually be
         Unicode as well.
 
-        Underlying encoded files are always opened in binary mode.
+        If encoding is not None, then the
+        underlying encoded files are always opened in binary mode.
         The default file mode is 'r', meaning to open the file in read mode.
 
         encoding specifies the encoding which is to be used for the

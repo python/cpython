@@ -6,7 +6,6 @@ import os
 import sys
 import tempfile
 import unittest
-import warnings
 
 from test.test_importlib import util
 
@@ -78,6 +77,10 @@ class SingleNamespacePackage(NamespacePackageTest):
     def test_cant_import_other(self):
         with self.assertRaises(ImportError):
             import foo.two
+
+    def test_simple_repr(self):
+        import foo.one
+        assert repr(foo).startswith("<module 'foo' (namespace) from [")
 
 
 class DynamicPathNamespacePackage(NamespacePackageTest):

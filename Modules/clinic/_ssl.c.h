@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
 
 PyDoc_STRVAR(_ssl__SSLSocket_do_handshake__doc__,
 "do_handshake($self, /)\n"
@@ -435,17 +435,17 @@ static PyObject *
 _ssl__SSLContext(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = get_state_type(type)->PySSLContext_Type;
     int proto_version;
 
-    if ((type == get_state_type(type)->PySSLContext_Type ||
-         type->tp_init == get_state_type(type)->PySSLContext_Type->tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("_SSLContext", kwargs)) {
         goto exit;
     }
     if (!_PyArg_CheckPositional("_SSLContext", PyTuple_GET_SIZE(args), 1, 1)) {
         goto exit;
     }
-    proto_version = _PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
+    proto_version = PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
     if (proto_version == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -757,8 +757,8 @@ _ssl__SSLContext__wrap_socket(PySSLContext *self, PyObject *const *args, Py_ssiz
         goto exit;
     }
     sock = args[0];
-    server_side = _PyLong_AsInt(args[1]);
-    if (server_side == -1 && PyErr_Occurred()) {
+    server_side = PyObject_IsTrue(args[1]);
+    if (server_side < 0) {
         goto exit;
     }
     if (!noptargs) {
@@ -855,8 +855,8 @@ _ssl__SSLContext__wrap_bio(PySSLContext *self, PyObject *const *args, Py_ssize_t
         goto exit;
     }
     outgoing = (PySSLMemoryBIO *)args[1];
-    server_side = _PyLong_AsInt(args[2]);
-    if (server_side == -1 && PyErr_Occurred()) {
+    server_side = PyObject_IsTrue(args[2]);
+    if (server_side < 0) {
         goto exit;
     }
     if (!noptargs) {
@@ -1028,14 +1028,13 @@ static PyObject *
 _ssl_MemoryBIO(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = get_state_type(type)->PySSLMemoryBIO_Type;
 
-    if ((type == get_state_type(type)->PySSLMemoryBIO_Type ||
-         type->tp_init == get_state_type(type)->PySSLMemoryBIO_Type->tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoPositional("MemoryBIO", args)) {
         goto exit;
     }
-    if ((type == get_state_type(type)->PySSLMemoryBIO_Type ||
-         type->tp_init == get_state_type(type)->PySSLMemoryBIO_Type->tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("MemoryBIO", kwargs)) {
         goto exit;
     }
@@ -1074,7 +1073,7 @@ _ssl_MemoryBIO_read(PySSLMemoryBIO *self, PyObject *const *args, Py_ssize_t narg
     if (nargs < 1) {
         goto skip_optional;
     }
-    len = _PyLong_AsInt(args[0]);
+    len = PyLong_AsInt(args[0]);
     if (len == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1224,7 +1223,7 @@ _ssl_RAND_bytes(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int n;
 
-    n = _PyLong_AsInt(arg);
+    n = PyLong_AsInt(arg);
     if (n == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1373,7 +1372,7 @@ _ssl_nid2obj(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int nid;
 
-    nid = _PyLong_AsInt(arg);
+    nid = PyLong_AsInt(arg);
     if (nid == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1543,4 +1542,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=9f477b0c709acb28 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a47d575abe0aceb6 input=a9049054013a1b77]*/

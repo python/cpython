@@ -745,6 +745,7 @@ class SiginterruptTest(unittest.TestCase):
         interrupted = self.readpipe_interrupted(True)
         self.assertTrue(interrupted)
 
+    @support.requires_resource('walltime')
     def test_siginterrupt_off(self):
         # If a signal handler is installed and siginterrupt is called with
         # a false value for the second argument, when that signal arrives, it
@@ -1405,6 +1406,21 @@ class RaiseSignalTest(unittest.TestCase):
 
         signal.raise_signal(signal.SIGINT)
         self.assertTrue(is_ok)
+
+    def test__thread_interrupt_main(self):
+        # See https://github.com/python/cpython/issues/102397
+        code = """if 1:
+        import _thread
+        class Foo():
+            def __del__(self):
+                _thread.interrupt_main()
+
+        x = Foo()
+        """
+
+        rc, out, err = assert_python_ok('-c', code)
+        self.assertIn(b'OSError: Signal 2 ignored due to race condition', err)
+
 
 
 class PidfdSignalTest(unittest.TestCase):

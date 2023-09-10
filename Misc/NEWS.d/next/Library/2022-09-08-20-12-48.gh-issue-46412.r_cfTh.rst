@@ -1,1 +1,0 @@
-Improve performance of ``bool(db)`` for large ndb/gdb databases. Previously this would call ``len(db)`` which would iterate over all keys -- the answer (empty or not) is known after the first key.

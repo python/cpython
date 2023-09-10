@@ -3,10 +3,9 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
 
 PyDoc_STRVAR(pyexpat_xmlparser_Parse__doc__,
 "Parse($self, data, isfinal=False, /)\n"
@@ -52,8 +51,8 @@ pyexpat_xmlparser_Parse(xmlparseobject *self, PyTypeObject *cls, PyObject *const
     if (nargs < 2) {
         goto skip_optional_posonly;
     }
-    isfinal = _PyLong_AsInt(args[1]);
-    if (isfinal == -1 && PyErr_Occurred()) {
+    isfinal = PyObject_IsTrue(args[1]);
+    if (isfinal < 0) {
         goto exit;
     }
 skip_optional_posonly:
@@ -288,7 +287,7 @@ pyexpat_xmlparser_SetParamEntityParsing(xmlparseobject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int flag;
 
-    flag = _PyLong_AsInt(arg);
+    flag = PyLong_AsInt(arg);
     if (flag == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -498,4 +497,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=de5f664ef05ef34a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ac398d94833e802d input=a9049054013a1b77]*/

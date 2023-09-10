@@ -156,9 +156,6 @@
         <_Uuid Include="PythonwExeComponentGuid">
             <Uri>pythonw.exe</Uri>
         </_Uuid>
-        <_Uuid Include="RemoveLib2to3PickleComponentGuid">
-            <Uri>lib2to3/pickles</Uri>
-        </_Uuid>
         <_Uuid Include="CommonPythonRegComponentGuid">
             <Uri>registry</Uri>
         </_Uuid>

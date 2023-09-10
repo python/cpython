@@ -4,6 +4,7 @@ import __future__
 import ast
 import unittest
 from test.support import import_helper
+from test.support.script_helper import spawn_python, kill_python
 from textwrap import dedent
 import os
 import re
@@ -60,7 +61,7 @@ class FutureTest(unittest.TestCase):
     def test_badfuture7(self):
         with self.assertRaises(SyntaxError) as cm:
             from test import badsyntax_future7
-        self.check_syntax_error(cm.exception, "badsyntax_future7", 3, 53)
+        self.check_syntax_error(cm.exception, "badsyntax_future7", 3, 54)
 
     def test_badfuture8(self):
         with self.assertRaises(SyntaxError) as cm:
@@ -120,6 +121,13 @@ class FutureTest(unittest.TestCase):
         scope = {}
         exec("from __future__ import unicode_literals; x = ''", {}, scope)
         self.assertIsInstance(scope["x"], str)
+
+    def test_syntactical_future_repl(self):
+        p = spawn_python('-i')
+        p.stdin.write(b"from __future__ import barry_as_FLUFL\n")
+        p.stdin.write(b"2 <> 3\n")
+        out = kill_python(p)
+        self.assertNotIn(b'SyntaxError: invalid syntax', out)
 
 class AnnotationsFutureTestCase(unittest.TestCase):
     template = dedent(

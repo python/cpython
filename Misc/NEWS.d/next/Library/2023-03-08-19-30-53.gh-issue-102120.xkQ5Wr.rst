@@ -1,0 +1,2 @@
+Added a stream mode to ``tarfile`` that allows for reading
+archives without caching info about the inner files.

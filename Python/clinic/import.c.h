@@ -3,10 +3,9 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
 
 PyDoc_STRVAR(_imp_lock_held__doc__,
 "lock_held($module, /)\n"
@@ -106,9 +105,6 @@ _imp__fix_co_filename(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("_fix_co_filename", "argument 2", "str", args[1]);
         goto exit;
     }
-    if (PyUnicode_READY(args[1]) == -1) {
-        goto exit;
-    }
     path = args[1];
     return_value = _imp__fix_co_filename_impl(module, code, path);
 
@@ -163,9 +159,6 @@ _imp_init_frozen(PyObject *module, PyObject *arg)
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("init_frozen", "argument", "str", arg);
-        goto exit;
-    }
-    if (PyUnicode_READY(arg) == -1) {
         goto exit;
     }
     name = arg;
@@ -237,9 +230,6 @@ _imp_find_frozen(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         _PyArg_BadArgument("find_frozen", "argument 1", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     name = args[0];
     if (!noptargs) {
         goto skip_optional_kwonly;
@@ -282,9 +272,6 @@ _imp_get_frozen_object(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         _PyArg_BadArgument("get_frozen_object", "argument 1", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     name = args[0];
     if (nargs < 2) {
         goto skip_optional;
@@ -319,9 +306,6 @@ _imp_is_frozen_package(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("is_frozen_package", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     name = arg;
     return_value = _imp_is_frozen_package_impl(module, name);
 
@@ -351,9 +335,6 @@ _imp_is_builtin(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("is_builtin", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     name = arg;
     return_value = _imp_is_builtin_impl(module, name);
 
@@ -381,9 +362,6 @@ _imp_is_frozen(PyObject *module, PyObject *arg)
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("is_frozen", "argument", "str", arg);
-        goto exit;
-    }
-    if (PyUnicode_READY(arg) == -1) {
         goto exit;
     }
     name = arg;
@@ -432,11 +410,42 @@ _imp__override_frozen_modules_for_tests(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int override;
 
-    override = _PyLong_AsInt(arg);
+    override = PyLong_AsInt(arg);
     if (override == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _imp__override_frozen_modules_for_tests_impl(module, override);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_imp__override_multi_interp_extensions_check__doc__,
+"_override_multi_interp_extensions_check($module, override, /)\n"
+"--\n"
+"\n"
+"(internal-only) Override PyInterpreterConfig.check_multi_interp_extensions.\n"
+"\n"
+"(-1: \"never\", 1: \"always\", 0: no override)");
+
+#define _IMP__OVERRIDE_MULTI_INTERP_EXTENSIONS_CHECK_METHODDEF    \
+    {"_override_multi_interp_extensions_check", (PyCFunction)_imp__override_multi_interp_extensions_check, METH_O, _imp__override_multi_interp_extensions_check__doc__},
+
+static PyObject *
+_imp__override_multi_interp_extensions_check_impl(PyObject *module,
+                                                  int override);
+
+static PyObject *
+_imp__override_multi_interp_extensions_check(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int override;
+
+    override = PyLong_AsInt(arg);
+    if (override == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _imp__override_multi_interp_extensions_check_impl(module, override);
 
 exit:
     return return_value;
@@ -617,4 +626,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=806352838c3f7008 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=058f6aa1c9f4ebe4 input=a9049054013a1b77]*/

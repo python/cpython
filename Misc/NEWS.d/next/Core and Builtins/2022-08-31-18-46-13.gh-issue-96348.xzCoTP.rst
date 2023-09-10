@@ -1,2 +1,0 @@
-Emit a DeprecationWarning when :meth:`~generator.throw`, :meth:`~coroutine.throw` or :meth:`~agen.athrow`
-are called with more than one argument.

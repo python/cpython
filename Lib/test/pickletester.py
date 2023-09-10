@@ -1,3 +1,4 @@
+import builtins
 import collections
 import copyreg
 import dbm
@@ -11,6 +12,7 @@ import shutil
 import struct
 import sys
 import threading
+import types
 import unittest
 import weakref
 from textwrap import dedent
@@ -1980,6 +1982,33 @@ class AbstractPickleTests:
                 u = self.loads(s)
                 self.assertIs(type(singleton), u)
 
+    def test_builtin_types(self):
+        for t in builtins.__dict__.values():
+            if isinstance(t, type) and not issubclass(t, BaseException):
+                for proto in protocols:
+                    s = self.dumps(t, proto)
+                    self.assertIs(self.loads(s), t)
+
+    def test_builtin_exceptions(self):
+        for t in builtins.__dict__.values():
+            if isinstance(t, type) and issubclass(t, BaseException):
+                for proto in protocols:
+                    s = self.dumps(t, proto)
+                    u = self.loads(s)
+                    if proto <= 2 and issubclass(t, OSError) and t is not BlockingIOError:
+                        self.assertIs(u, OSError)
+                    elif proto <= 2 and issubclass(t, ImportError):
+                        self.assertIs(u, ImportError)
+                    else:
+                        self.assertIs(u, t)
+
+    def test_builtin_functions(self):
+        for t in builtins.__dict__.values():
+            if isinstance(t, types.BuiltinFunctionType):
+                for proto in protocols:
+                    s = self.dumps(t, proto)
+                    self.assertIs(self.loads(s), t)
+
     # Tests for protocol 2
 
     def test_proto(self):
@@ -2379,6 +2408,22 @@ class AbstractPickleTests:
             y = self.loads(s)
             self.assertEqual(y._reduce_called, 1)
 
+    def test_reduce_ex_None(self):
+        c = REX_None()
+        with self.assertRaises(TypeError):
+            self.dumps(c)
+
+    def test_reduce_None(self):
+        c = R_None()
+        with self.assertRaises(TypeError):
+            self.dumps(c)
+
+    def test_pickle_setstate_None(self):
+        c = C_None_setstate()
+        p = self.dumps(c)
+        with self.assertRaises(TypeError):
+            self.loads(p)
+
     @no_tracing
     def test_bad_getattr(self):
         # Issue #3514: crash when there is an infinite loop in __getattr__
@@ -2547,6 +2592,7 @@ class AbstractPickleTests:
             self.assertLess(pos - frameless_start, self.FRAME_SIZE_MIN)
 
     @support.skip_if_pgo_task
+    @support.requires_resource('cpu')
     def test_framing_many_objects(self):
         obj = list(range(10**5))
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
@@ -2776,6 +2822,15 @@ class AbstractPickleTests:
                     unpickled = self.loads(self.dumps(method, proto))
                     self.assertEqual(method(obj), unpickled(obj))
 
+        descriptors = (
+            PyMethodsTest.__dict__['cheese'],  # static method descriptor
+            PyMethodsTest.__dict__['wine'],  # class method descriptor
+        )
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            for descr in descriptors:
+                with self.subTest(proto=proto, descr=descr):
+                    self.assertRaises(TypeError, self.dumps, descr, proto)
+
     def test_c_methods(self):
         global Subclass
         class Subclass(tuple):
@@ -2810,6 +2865,15 @@ class AbstractPickleTests:
                 with self.subTest(proto=proto, method=method):
                     unpickled = self.loads(self.dumps(method, proto))
                     self.assertEqual(method(*args), unpickled(*args))
+
+        descriptors = (
+            bytearray.__dict__['maketrans'],  # built-in static method descriptor
+            dict.__dict__['fromkeys'],  # built-in class method descriptor
+        )
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            for descr in descriptors:
+                with self.subTest(proto=proto, descr=descr):
+                    self.assertRaises(TypeError, self.dumps, descr, proto)
 
     def test_compat_pickle(self):
         tests = [
@@ -3301,6 +3365,21 @@ class REX_state(object):
     def __reduce__(self):
         return type(self), (), self.state
 
+class REX_None:
+    """ Setting __reduce_ex__ to None should fail """
+    __reduce_ex__ = None
+
+class R_None:
+    """ Setting __reduce__ to None should fail """
+    __reduce__ = None
+
+class C_None_setstate:
+    """  Setting __setstate__ to None should fail """
+    def __getstate__(self):
+        return 1
+
+    __setstate__ = None
+
 
 # Test classes for newobj
 
@@ -3704,6 +3783,25 @@ class AbstractPicklerUnpicklerObjectTests:
                 unpickler = self.unpickler_class(f)
                 self.assertEqual(unpickler.load(), data)
 
+    def test_pickle_invalid_reducer_override(self):
+        # gh-103035
+        obj = object()
+
+        f = io.BytesIO()
+        class MyPickler(self.pickler_class):
+            pass
+        pickler = MyPickler(f)
+        pickler.dump(obj)
+
+        pickler.clear_memo()
+        pickler.reducer_override = None
+        with self.assertRaises(TypeError):
+            pickler.dump(obj)
+
+        pickler.clear_memo()
+        pickler.reducer_override = 10
+        with self.assertRaises(TypeError):
+            pickler.dump(obj)
 
 # Tests for dispatch_table attribute
 
@@ -3865,6 +3963,15 @@ class AbstractDispatchTableTests:
             return f.getvalue()
 
         self._test_dispatch_table(dumps, dt)
+
+    def test_dispatch_table_None_item(self):
+        # gh-93627
+        obj = object()
+        f = io.BytesIO()
+        pickler = self.pickler_class(f)
+        pickler.dispatch_table = {type(obj): None}
+        with self.assertRaises(TypeError):
+            pickler.dump(obj)
 
     def _test_dispatch_table(self, dumps, dispatch_table):
         def custom_load_dump(obj):
