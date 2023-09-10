@@ -76,28 +76,28 @@ class TestConsoleIO(unittest.TestCase):
         self.assertEqual(msvcrt.getch(), b'c')
 
     def test_getwch(self):
-        stdin = open('CONIN$', 'r')
-        old_stdin = sys.stdin
-        try:
-            sys.stdin = stdin
-            write_input(stdin.buffer.raw, c_encoded)
-            self.assertEqual(msvcrt.getwch(), c)
-        finally:
-            sys.stdin = old_stdin
+        with open('CONIN$', 'r') as stdin:
+            old_stdin = sys.stdin
+            try:
+                sys.stdin = stdin
+                write_input(stdin.buffer.raw, c_encoded)
+                self.assertEqual(msvcrt.getwch(), c)
+            finally:
+                sys.stdin = old_stdin
 
     def test_getche(self):
         msvcrt.ungetch(b'c')
         self.assertEqual(msvcrt.getche(), b'c')
 
     def test_getwche(self):
-        stdin = open('CONIN$', 'r')
-        old_stdin = sys.stdin
-        try:
-            sys.stdin = stdin
-            write_input(stdin.buffer.raw, c_encoded)
-            self.assertEqual(msvcrt.getwche(), c)
-        finally:
-            sys.stdin = old_stdin
+        with open('CONIN$', 'r') as stdin:
+            old_stdin = sys.stdin
+            try:
+                sys.stdin = stdin
+                write_input(stdin.buffer.raw, c_encoded)
+                self.assertEqual(msvcrt.getwche(), c)
+            finally:
+                sys.stdin = old_stdin
 
     def test_putch(self):
         msvcrt.putch(b'c')
