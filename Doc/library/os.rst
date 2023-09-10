@@ -3861,7 +3861,6 @@ features:
       for i, fd in enumerate(fds):
          initial_expiration = (i + 1) * 0.25
          interval = (i + 1) * 0.25
-         print(i, initial_expiration, interval)
          os.timerfd_settime(fd, initial=initial_expiration, interval=interval)
 
       try:
