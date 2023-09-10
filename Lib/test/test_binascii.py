@@ -478,7 +478,7 @@ class BinASCIITest(unittest.TestCase):
         m = memoryview(bytearray(b'noncontig'))
         noncontig_writable = m[::-2]
         with self.assertRaises(BufferError):
-            binascii.b2a_hex(noncontig_writable)  
+            binascii.b2a_hex(noncontig_writable)
 
 
 class ArrayBinASCIITest(BinASCIITest):
