@@ -21,6 +21,7 @@ from test.libregrtest.runtest import (
     run_single_test, TestResult, State, PROGRESS_MIN_TIME,
     FilterTuple, RunTests, StrPath, StrJSON, TestName)
 from test.libregrtest.setup import setup_tests, setup_test_dir
+from test.libregrtest.results import TestResults
 from test.libregrtest.utils import format_duration, print_warning
 
 if sys.platform == 'win32':
@@ -157,7 +158,7 @@ class WorkerThread(threading.Thread):
         self.pending = runner.pending
         self.output = runner.output
         self.timeout = runner.worker_timeout
-        self.regrtest = runner.regrtest
+        self.log = runner.log
         self.current_test_name = None
         self.start_time = None
         self._popen = None
@@ -408,8 +409,7 @@ class WorkerThread(threading.Thread):
             if not self.is_alive():
                 break
             dt = time.monotonic() - start_time
-            self.regrtest.log(f"Waiting for {self} thread "
-                              f"for {format_duration(dt)}")
+            self.log(f"Waiting for {self} thread for {format_duration(dt)}")
             if dt > JOIN_TIMEOUT:
                 print_warning(f"Failed to join {self} in {format_duration(dt)}")
                 break
@@ -432,8 +432,9 @@ def get_running(workers: list[WorkerThread]) -> list[str]:
 
 class RunWorkers:
     def __init__(self, regrtest: Regrtest, runtests: RunTests, num_workers: int) -> None:
-        self.regrtest = regrtest
+        self.results: TestResults = regrtest.results
         self.log = regrtest.log
+        self.display_progress = regrtest.display_progress
         self.num_workers = num_workers
         self.runtests = runtests
         self.output: queue.Queue[QueueOutput] = queue.Queue()
@@ -511,23 +512,22 @@ class RunWorkers:
             running = get_running(self.workers)
             if running:
                 text += f' -- {running}'
-        self.regrtest.display_progress(self.test_index, text)
+        self.display_progress(self.test_index, text)
 
     def _process_result(self, item: QueueOutput) -> bool:
         """Returns True if test runner must stop."""
-        rerun = self.runtests.rerun
         if item[0]:
             # Thread got an exception
             format_exc = item[1]
             print_warning(f"regrtest worker thread failed: {format_exc}")
             result = TestResult("<regrtest worker>", state=State.MULTIPROCESSING_ERROR)
-            self.regrtest.accumulate_result(result, rerun=rerun)
+            self.results.accumulate_result(result, self.runtests)
             return result
 
         self.test_index += 1
         mp_result = item[1]
         result = mp_result.result
-        self.regrtest.accumulate_result(result, rerun=rerun)
+        self.results.accumulate_result(result, self.runtests)
         self.display_result(mp_result)
 
         if mp_result.worker_stdout:
@@ -553,7 +553,7 @@ class RunWorkers:
                     break
         except KeyboardInterrupt:
             print()
-            self.regrtest.interrupted = True
+            self.results.interrupted = True
         finally:
             if self.timeout is not None:
                 faulthandler.cancel_dump_traceback_later()
