@@ -13,7 +13,7 @@ from test.libregrtest.cmdline import _parse_args, Namespace
 from test.libregrtest.runtest import (
     findtests, split_test_packages, run_single_test, abs_module_name,
     PROGRESS_MIN_TIME, State, RunTests, TestResult, HuntRefleak,
-    FilterTuple, FilterDict, TestList)
+    FilterTuple, FilterDict, TestList, StrPath, StrJSON, TestName)
 from test.libregrtest.setup import setup_tests, setup_test_dir
 from test.libregrtest.pgo import setup_pgo_tests
 from test.libregrtest.utils import (strip_py_suffix, count, format_duration,
@@ -60,15 +60,14 @@ class Regrtest:
     on the command line.
     """
     def __init__(self, ns: Namespace):
-        # Namespace of command line options
-        self.ns: Namespace = ns
-
         # Actions
         self.want_header: bool = ns.header
         self.want_list_tests: bool = ns.list_tests
         self.want_list_cases: bool = ns.list_cases
         self.want_wait: bool = ns.wait
         self.want_cleanup: bool = ns.cleanup
+        self.want_rerun: bool = ns.rerun
+        self.want_run_leaks: bool = ns.runleaks
 
         # Select tests
         if ns.match_tests:
@@ -80,10 +79,11 @@ class Regrtest:
         else:
             self.ignore_tests = None
         self.exclude: bool = ns.exclude
-        self.fromfile: str | None = ns.fromfile
-        self.starting_test: str | None = ns.start
+        self.fromfile: StrPath | None = ns.fromfile
+        self.starting_test: TestName | None = ns.start
+        self.cmdline_args: TestList = ns.args
 
-        # Run tests
+        # Workers
         if ns.use_mp is None:
             num_workers = 0  # run sequentially
         elif ns.use_mp <= 0:
@@ -91,10 +91,12 @@ class Regrtest:
         else:
             num_workers = ns.use_mp
         self.num_workers: int = num_workers
+        self.worker_json: StrJSON | None = ns.worker_json
 
         # Options to run tests
         self.fail_fast: bool = ns.failfast
         self.fail_env_changed: bool = ns.fail_env_changed
+        self.fail_rerun: bool = ns.fail_rerun
         self.forever: bool = ns.forever
         self.randomize: bool = ns.randomize
         self.random_seed: int | None = ns.random_seed
@@ -108,12 +110,15 @@ class Regrtest:
             self.hunt_refleak: HuntRefleak = HuntRefleak(*ns.huntrleaks)
         else:
             self.hunt_refleak = None
-        self.test_dir: str | None = ns.testdir
-        self.junit_filename: str | None = ns.xmlpath
+        self.test_dir: StrPath | None = ns.testdir
+        self.junit_filename: StrPath | None = ns.xmlpath
         self.memory_limit: str | None = ns.memlimit
         self.gc_threshold: int | None = ns.threshold
         self.use_resources: list[str] = ns.use_resources
         self.python_cmd: list[str] | None = ns.python
+        self.coverage: bool = ns.trace
+        self.coverage_dir: StrPath | None = ns.coverdir
+        self.tmp_dir: StrPath | None = ns.tempdir
 
         # tests
         self.tests = []
@@ -135,8 +140,9 @@ class Regrtest:
         self.interrupted = False
         self.total_stats = TestStats()
 
-        # used by --slow
-        self.test_times = []
+        # used by --slowest
+        self.test_times: list[tuple[float, TestName]] = []
+        self.print_slowest: bool = ns.print_slow
 
         # used to display the progress bar "[ 3/100]"
         self.start_time = time.perf_counter()
@@ -144,15 +150,15 @@ class Regrtest:
         self.test_count_width = 1
 
         # used by --single
-        self.next_single_test = None
-        self.next_single_filename = None
+        self.single_test_run: bool = ns.single
+        self.next_single_test: TestName | None = None
+        self.next_single_filename: StrPath | None = None
 
         # used by --junit-xml
         self.testsuite_xml = None
 
         # misc
         self.win_load_tracker = None
-        self.tmp_dir = None
 
     def get_executed(self):
         return (set(self.good) | set(self.bad) | set(self.skipped)
@@ -232,10 +238,7 @@ class Regrtest:
         self.log(f"[{line}] {text}")
 
     def find_tests(self):
-        ns = self.ns
-        single = ns.single
-
-        if single:
+        if self.single_test_run:
             self.next_single_filename = os.path.join(self.tmp_dir, 'pynexttest')
             try:
                 with open(self.next_single_filename, 'r') as fp:
@@ -261,19 +264,19 @@ class Regrtest:
 
         if self.pgo:
             # add default PGO tests if no tests are specified
-            setup_pgo_tests(ns)
+            setup_pgo_tests(self.cmdline_args, self.pgo_extended)
 
         exclude_tests = set()
         if self.exclude:
-            for arg in ns.args:
+            for arg in self.cmdline_args:
                 exclude_tests.add(arg)
-            ns.args = []
+            self.cmdline_args = []
 
         alltests = findtests(testdir=self.test_dir,
                              exclude=exclude_tests)
 
         if not self.fromfile:
-            self.selected = self.tests or ns.args
+            self.selected = self.tests or self.cmdline_args
             if self.selected:
                 self.selected = split_test_packages(self.selected)
             else:
@@ -281,7 +284,7 @@ class Regrtest:
         else:
             self.selected = self.tests
 
-        if single:
+        if self.single_test_run:
             self.selected = self.selected[:1]
             try:
                 pos = alltests.index(self.selected[0])
@@ -303,8 +306,9 @@ class Regrtest:
             random.seed(self.random_seed)
             random.shuffle(self.selected)
 
-    def list_tests(self):
-        for name in self.selected:
+    @staticmethod
+    def list_tests(tests: TestList):
+        for name in tests:
             print(name)
 
     def _list_cases(self, suite):
@@ -337,7 +341,8 @@ class Regrtest:
             print(count(len(skipped), "test"), "skipped:", file=stderr)
             printlist(skipped, file=stderr)
 
-    def get_rerun_match(self, rerun_list) -> FilterDict:
+    @staticmethod
+    def get_rerun_match(rerun_list) -> FilterDict:
         rerun_match_tests = {}
         for result in rerun_list:
             match_tests = result.get_rerun_match_tests()
@@ -396,7 +401,6 @@ class Regrtest:
 
     def display_result(self, runtests):
         pgo = runtests.pgo
-        print_slow = self.ns.print_slow
 
         # If running the test suite for PGO then no one cares about results.
         if pgo:
@@ -423,7 +427,7 @@ class Regrtest:
                 print("All", end=' ')
             print(count(len(self.good), "test"), "OK.")
 
-        if print_slow:
+        if self.print_slowest:
             self.test_times.sort(reverse=True)
             print()
             print("10 slowest tests:")
@@ -461,14 +465,14 @@ class Regrtest:
             print(count(len(self.run_no_tests), "test"), "run no tests:")
             printlist(self.run_no_tests)
 
-    def run_test(self, test_name: str, runtests: RunTests, tracer):
+    def run_test(self, test_name: TestName, runtests: RunTests, tracer):
         if tracer is not None:
             # If we're tracing code coverage, then we don't exit with status
             # if on a false return value from main.
             cmd = ('result = run_single_test(test_name, runtests)')
-            ns = dict(locals())
-            tracer.runctx(cmd, globals=globals(), locals=ns)
-            result = ns['result']
+            namespace = dict(locals())
+            tracer.runctx(cmd, globals=globals(), locals=namespace)
+            result = namespace['result']
         else:
             result = run_single_test(test_name, runtests)
 
@@ -477,10 +481,7 @@ class Regrtest:
         return result
 
     def run_tests_sequentially(self, runtests):
-        ns = self.ns
-        coverage = ns.trace
-
-        if coverage:
+        if self.coverage:
             import trace
             tracer = trace.Trace(trace=False, count=True)
         else:
@@ -526,7 +527,8 @@ class Regrtest:
 
         return tracer
 
-    def display_header(self):
+    @staticmethod
+    def display_header():
         # Print basic platform information
         print("==", platform.python_implementation(), *sys.version.split())
         print("==", platform.platform(aliased=True),
@@ -538,9 +540,7 @@ class Regrtest:
             print("== CPU count:", cpu_count)
         print("== encodings: locale=%s, FS=%s"
               % (locale.getencoding(), sys.getfilesystemencoding()))
-        self.display_sanitizers()
 
-    def display_sanitizers(self):
         # This makes it easier to remember what to set in your local
         # environment when trying to reproduce a sanitizer failure.
         asan = support.check_sanitizer(address=True)
@@ -642,9 +642,9 @@ class Regrtest:
         if tracer is not None:
             results = tracer.results()
             results.write_results(show_missing=True, summary=True,
-                                  coverdir=self.ns.coverdir)
+                                  coverdir=self.coverage_dir)
 
-        if self.ns.runleaks:
+        if self.want_run_leaks:
             os.system("leaks %d" % os.getpid())
 
         self.save_xml_result()
@@ -722,7 +722,8 @@ class Regrtest:
             for s in ET.tostringlist(root):
                 f.write(s)
 
-    def fix_umask(self):
+    @staticmethod
+    def fix_umask():
         if support.is_emscripten:
             # Emscripten has default umask 0o777, which breaks some tests.
             # see https://github.com/emscripten-core/emscripten/issues/17269
@@ -732,37 +733,34 @@ class Regrtest:
             else:
                 os.umask(old_mask)
 
-    def set_temp_dir(self):
-        ns = self.ns
-        if ns.tempdir:
-            ns.tempdir = os.path.expanduser(ns.tempdir)
-
-        if ns.tempdir:
-            self.tmp_dir = ns.tempdir
-
-        if not self.tmp_dir:
+    @staticmethod
+    def select_temp_dir(tmp_dir):
+        if tmp_dir:
+            tmp_dir = os.path.expanduser(tmp_dir)
+        else:
             # When tests are run from the Python build directory, it is best practice
             # to keep the test files in a subfolder.  This eases the cleanup of leftover
             # files using the "make distclean" command.
             if sysconfig.is_python_build():
-                self.tmp_dir = sysconfig.get_config_var('abs_builddir')
-                if self.tmp_dir is None:
+                tmp_dir = sysconfig.get_config_var('abs_builddir')
+                if tmp_dir is None:
                     # bpo-30284: On Windows, only srcdir is available. Using
                     # abs_builddir mostly matters on UNIX when building Python
                     # out of the source tree, especially when the source tree
                     # is read only.
-                    self.tmp_dir = sysconfig.get_config_var('srcdir')
-                self.tmp_dir = os.path.join(self.tmp_dir, 'build')
+                    tmp_dir = sysconfig.get_config_var('srcdir')
+                tmp_dir = os.path.join(tmp_dir, 'build')
             else:
-                self.tmp_dir = tempfile.gettempdir()
+                tmp_dir = tempfile.gettempdir()
 
-        self.tmp_dir = os.path.abspath(self.tmp_dir)
+        return os.path.abspath(tmp_dir)
 
     def is_worker(self):
-        return (self.ns.worker_json is not None)
+        return (self.worker_json is not None)
 
-    def create_temp_dir(self):
-        os.makedirs(self.tmp_dir, exist_ok=True)
+    @staticmethod
+    def make_temp_dir(tmp_dir: StrPath, is_worker: bool):
+        os.makedirs(tmp_dir, exist_ok=True)
 
         # Define a writable temp dir that will be used as cwd while running
         # the tests. The name of the dir includes the pid to allow parallel
@@ -774,19 +772,20 @@ class Regrtest:
         else:
             nounce = os.getpid()
 
-        if self.is_worker():
-            test_cwd = 'test_python_worker_{}'.format(nounce)
+        if is_worker:
+            work_dir = 'test_python_worker_{}'.format(nounce)
         else:
-            test_cwd = 'test_python_{}'.format(nounce)
-        test_cwd += os_helper.FS_NONASCII
-        test_cwd = os.path.join(self.tmp_dir, test_cwd)
-        return test_cwd
+            work_dir = 'test_python_{}'.format(nounce)
+        work_dir += os_helper.FS_NONASCII
+        work_dir = os.path.join(tmp_dir, work_dir)
+        return work_dir
 
-    def cleanup(self):
+    @staticmethod
+    def cleanup_temp_dir(tmp_dir: StrPath):
         import glob
 
-        path = os.path.join(glob.escape(self.tmp_dir), 'test_python_*')
-        print("Cleanup %s directory" % self.tmp_dir)
+        path = os.path.join(glob.escape(tmp_dir), 'test_python_*')
+        print("Cleanup %s directory" % tmp_dir)
         for name in glob.glob(path):
             if os.path.isdir(name):
                 print("Remove directory: %s" % name)
@@ -796,34 +795,33 @@ class Regrtest:
                 os_helper.unlink(name)
 
     def main(self, tests: TestList | None = None):
-        ns = self.ns
         self.tests = tests
 
         if self.junit_filename:
             support.junit_xml_list = self.testsuite_xml = []
 
-        strip_py_suffix(ns.args)
+        strip_py_suffix(self.cmdline_args)
 
-        self.set_temp_dir()
+        self.tmp_dir = self.select_temp_dir(self.tmp_dir)
 
         self.fix_umask()
 
         if self.want_cleanup:
-            self.cleanup()
+            self.cleanup_temp_dir(self.tmp_dir)
             sys.exit(0)
 
-        test_cwd = self.create_temp_dir()
+        work_dir = self.make_temp_dir(self.tmp_dir, self.is_worker())
 
         try:
-            # Run the tests in a context manager that temporarily changes the CWD
-            # to a temporary and writable directory. If it's not possible to
-            # create or change the CWD, the original CWD will be used.
+            # Run the tests in a context manager that temporarily changes the
+            # CWD to a temporary and writable directory. If it's not possible
+            # to create or change the CWD, the original CWD will be used.
             # The original CWD is available from os_helper.SAVEDCWD.
-            with os_helper.temp_cwd(test_cwd, quiet=True):
-                # When using multiprocessing, worker processes will use test_cwd
-                # as their parent temporary directory. So when the main process
-                # exit, it removes also subdirectories of worker processes.
-                ns.tempdir = test_cwd
+            with os_helper.temp_cwd(work_dir, quiet=True):
+                # When using multiprocessing, worker processes will use
+                # work_dir as their parent temporary directory. So when the
+                # main process exit, it removes also subdirectories of worker
+                # processes.
 
                 self._main()
         except SystemExit as exc:
@@ -853,7 +851,7 @@ class Regrtest:
             exitcode = EXITCODE_ENV_CHANGED
         elif self.no_tests_run():
             exitcode = EXITCODE_NO_TESTS_RAN
-        elif self.rerun and self.ns.fail_rerun:
+        elif self.rerun and self.fail_rerun:
             exitcode = EXITCODE_RERUN_FAIL
         return exitcode
 
@@ -865,8 +863,8 @@ class Regrtest:
 
         # For a partial run, we do not need to clutter the output.
         if (self.want_header
-            or not(self.pgo or self.quiet or self.ns.single
-                   or self.tests or self.ns.args)):
+            or not(self.pgo or self.quiet or self.single_test_run
+                   or self.tests or self.cmdline_args)):
             self.display_header()
 
         if self.randomize:
@@ -903,7 +901,7 @@ class Regrtest:
         self.display_result(runtests)
 
         need_rerun = self.need_rerun
-        if self.ns.rerun and need_rerun:
+        if self.want_rerun and need_rerun:
             self.rerun_failed_tests(need_rerun, runtests)
 
         self.display_summary()
@@ -912,7 +910,7 @@ class Regrtest:
     def _main(self):
         if self.is_worker():
             from test.libregrtest.runtest_mp import worker_process
-            worker_process(self.ns.worker_json)
+            worker_process(self.worker_json)
             return
 
         if self.want_wait:
@@ -923,7 +921,7 @@ class Regrtest:
 
         exitcode = 0
         if self.want_list_tests:
-            self.list_tests()
+            self.list_tests(self.selected)
         elif self.want_list_cases:
             self.list_cases()
         else:

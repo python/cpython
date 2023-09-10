@@ -179,6 +179,8 @@ class Namespace(argparse.Namespace):
         self.timeout = None
         self.memlimit = None
         self.threshold = None
+        self.fail_rerun = False
+        self.tempdir = None
 
         super().__init__(**kwargs)
 
