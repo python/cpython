@@ -263,13 +263,12 @@ counter_optimize(
     }
     executor->executor.execute = counter_execute;
     Py_INCREF(self);
-    int oparg = 0;
+    int oparg = instr->op.arg;
     while (instr->op.code == EXTENDED_ARG) {
-        oparg = (oparg << 8) | instr->op.arg;
         instr++;
+        oparg = (oparg << 8) | instr->op.arg;
     }
     assert(instr->op.code == JUMP_BACKWARD);
-    oparg = (oparg << 8) | instr->op.arg;
     executor->optimizer = (_PyCounterOptimizerObject *)self;
     executor->next_instr = instr + 2 - oparg;
     *exec_ptr = (_PyExecutorObject *)executor;
@@ -885,13 +884,12 @@ uop_optimize(
     int curr_stackentries)
 {
     /* Do backwards jump before handing to trace generation */
-    int oparg = 0;
+    int oparg = instr->op.arg;
     while (instr->op.code == EXTENDED_ARG) {
-        oparg = (oparg << 8) | instr->op.arg;
         instr++;
+        oparg = (oparg << 8) | instr->op.arg;
     }
     assert(instr->op.code == JUMP_BACKWARD);
-    oparg = (oparg << 8) | instr->op.arg;
     instr += 2 - oparg;
     _PyUOpInstruction trace[_Py_UOP_MAX_TRACE_LENGTH];
     int trace_length = translate_bytecode_to_trace(code, instr, trace, _Py_UOP_MAX_TRACE_LENGTH);

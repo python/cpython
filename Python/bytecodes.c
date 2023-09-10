@@ -2219,12 +2219,16 @@ dummy_func(
             #if ENABLE_SPECIALIZATION
             here[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
             if (here[1].cache > tstate->interp->optimizer_backedge_threshold) {
-                assert(here->op.code == JUMP_BACKWARD);
+                /* We should not be here if the code has been instrumented,
+                 * or already has an attached executor */
+                assert(here->op.code != ENTER_EXECUTOR);
+                assert(here->op.code != INSTRUMENTED_JUMP_BACKWARD);
                 OBJECT_STAT_INC(optimization_attempts);
                 _Py_CODEUNIT *src = here;
                 while(oparg > 255) {
                     oparg >>= 8;
                     src--;
+                    assert(src->op.code == EXTENDED_ARG);
                 }
                 next_instr = _PyOptimizer_BackEdge(frame, src, next_instr, stack_pointer);
                 frame = tstate->current_frame;
