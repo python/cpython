@@ -1599,7 +1599,7 @@ Changes in the Python API
   functions is now changed due to the changes introduced in :pep:`701`. This
   means that ``STRING`` tokens are not emitted any more for f-strings and the
   tokens described in :pep:`701` are now produced instead: ``FSTRING_START``,
-  ``FSRING_MIDDLE`` and ``FSTRING_END`` are now emitted for f-string "string"
+  ``FSTRING_MIDDLE`` and ``FSTRING_END`` are now emitted for f-string "string"
   parts in addition to the appropriate tokens for the tokenization in the
   expression components. For example for the f-string ``f"start {1+1} end"``
   the old version of the tokenizer emitted::
