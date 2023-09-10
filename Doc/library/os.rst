@@ -3960,7 +3960,8 @@ features:
    cancelable when if the real-time clock is changed discontinuously. Reading the descriptor
    is aborted with with the error ECANCELED.
 
-   .. seealso::  :const:`TFD_TIMER_CANCEL_ON_SET` for discontinuous time change.
+   Linux manages system clock as UTC. A daylight-savings time transition is done
+   by changing time offset only and doesn't cause discontinuous system clock change.
 
    Return a two-item tuple of (``next_expiration``, ``interval``) from
    the previous timer state, before this function executed.
@@ -4087,9 +4088,6 @@ features:
    A flag for the :func:`timerfd_settime` and :func:`timerfd_settime_ns` functions
    along with :const:`TFD_TIMER_ABSTIME`.
    The timer is cancelled when the time of the underlying clock changes discontinuously.
-
-   Linux manages system clock as UTC. A daylight-savings time transition is done
-   by changing time offset only and doesn't cause discontinuous system clock change.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
