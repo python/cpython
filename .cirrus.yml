@@ -20,6 +20,7 @@ freebsd_task:
   pythoninfo_script:
     - cd build
     - make pythoninfo
+  # Download wheels for the venv step
   bundle_ensurepip_script:
     - cd build && make download-ensurepip-wheels
   test_script:
