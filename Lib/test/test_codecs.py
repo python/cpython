@@ -1806,6 +1806,7 @@ class CodecsModuleTest(unittest.TestCase):
             with self.subTest(protocol=proto):
                 pickled_codec_info = pickle.dumps(codec_info)
                 unpickled_codec_info = pickle.loads(pickled_codec_info)
+                self.assertEqual(codec_info, unpickled_codec_info)
 
         # Test a CodecInfo with _is_text_encoding equal to false.
         codec_info = codecs.lookup('rot13')
@@ -1813,6 +1814,7 @@ class CodecsModuleTest(unittest.TestCase):
             with self.subTest(protocol=proto):
                 pickled_codec_info = pickle.dumps(codec_info)
                 unpickled_codec_info = pickle.loads(pickled_codec_info)
+                self.assertNotEqual(codec_info, unpickled_codec_info)
 
 
 class StreamReaderTest(unittest.TestCase):
