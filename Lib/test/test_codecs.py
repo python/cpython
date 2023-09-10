@@ -1763,6 +1763,15 @@ class CodecsModuleTest(unittest.TestCase):
         self.assertEqual(dup.name, orig.name)
         self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
 
+    def test_deep_copy(self):
+        orig = codecs.lookup('utf-8')
+        dup = copy.deepcopy(orig)
+
+        self.assertIsNot(dup, orig)
+        self.assertEqual(dup.encode, orig.encode)
+        self.assertEqual(dup.name, orig.name)
+        self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
+
 
 class StreamReaderTest(unittest.TestCase):
 
