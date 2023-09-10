@@ -364,6 +364,8 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
    .. versionadded:: 3.6
 
 
+.. _hashlib-blake2:
+
 BLAKE2
 ------
 
