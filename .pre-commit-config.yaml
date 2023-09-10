@@ -10,7 +10,7 @@ repos:
     rev: v4.4.0
     hooks:
       - id: check-toml
-        exclude: ^Lib/test/test_tomllib/data/invalid/
+        exclude: ^Lib/test/test_tomllib/
       - id: check-yaml
       - id: end-of-file-fixer
         types: [python]
