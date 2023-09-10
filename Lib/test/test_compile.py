@@ -11,7 +11,7 @@ import textwrap
 import warnings
 from test import support
 from test.support import (script_helper, requires_debug_ranges,
-                          requires_specialization, C_RECURSION_LIMIT)
+                          requires_specialization, Py_C_RECURSION_LIMIT)
 from test.support.os_helper import FakePath
 
 class TestSpecifics(unittest.TestCase):
@@ -111,7 +111,7 @@ class TestSpecifics(unittest.TestCase):
 
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_extended_arg(self):
-        repeat = int(C_RECURSION_LIMIT * 0.9)
+        repeat = int(Py_C_RECURSION_LIMIT * 0.9)
         longexpr = 'x = x or ' + '-x' * repeat
         g = {}
         code = textwrap.dedent('''
@@ -557,12 +557,12 @@ class TestSpecifics(unittest.TestCase):
     @support.cpython_only
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_compiler_recursion_limit(self):
-        # Expected limit is C_RECURSION_LIMIT * 2
+        # Expected limit is Py_C_RECURSION_LIMIT * 2
         # Duplicating the limit here is a little ugly.
         # Perhaps it should be exposed somewhere...
-        fail_depth = C_RECURSION_LIMIT * 2 + 1
-        crash_depth = C_RECURSION_LIMIT * 100
-        success_depth = int(C_RECURSION_LIMIT * 1.8)
+        fail_depth = Py_C_RECURSION_LIMIT * 2 + 1
+        crash_depth = Py_C_RECURSION_LIMIT * 100
+        success_depth = int(Py_C_RECURSION_LIMIT * 1.8)
 
         def check_limit(prefix, repeated, mode="single"):
             expect_ok = prefix + repeated * success_depth
@@ -784,6 +784,7 @@ class TestSpecifics(unittest.TestCase):
         # An implicit test for PyUnicode_FSDecoder().
         compile("42", FakePath("test_compile_pathlike"), "single")
 
+    @support.requires_resource('cpu')
     def test_stack_overflow(self):
         # bpo-31113: Stack overflow when compile a long sequence of
         # complex statements.
@@ -1030,6 +1031,20 @@ class TestSpecifics(unittest.TestCase):
         expected_lines = [0, 1, 2, 1]
         code_lines = self.get_code_lines(test.__code__)
         self.assertEqual(expected_lines, code_lines)
+
+    def test_lineno_of_backward_jump(self):
+        # Issue gh-107901
+        def f():
+            for i in x:
+                if y:
+                    pass
+
+        linenos = list(inst.positions.lineno
+                       for inst in dis.get_instructions(f.__code__)
+                       if inst.opname == 'JUMP_BACKWARD')
+
+        self.assertTrue(len(linenos) > 0)
+        self.assertTrue(all(l is not None for l in linenos))
 
     def test_big_dict_literal(self):
         # The compiler has a flushing point in "compiler_dict" that calls compiles

@@ -18,7 +18,14 @@ from test.libregrtest.utils import (setup_unraisable_hook,
 UNICODE_GUARD_ENV = "PYTHONREGRTEST_UNICODE_GUARD"
 
 
-def setup_tests(ns):
+def setup_test_dir(testdir: str | None) -> None:
+    if testdir:
+        # Prepend test directory to sys.path, so runtest() will be able
+        # to locate tests
+        sys.path.insert(0, os.path.abspath(testdir))
+
+
+def setup_tests(runtests):
     try:
         stderr_fd = sys.__stderr__.fileno()
     except (ValueError, AttributeError):
@@ -44,11 +51,6 @@ def setup_tests(ns):
     replace_stdout()
     support.record_original_stdout(sys.stdout)
 
-    if ns.testdir:
-        # Prepend test directory to sys.path, so runtest() will be able
-        # to locate tests
-        sys.path.insert(0, os.path.abspath(ns.testdir))
-
     # Some times __path__ and __file__ are not absolute (e.g. while running from
     # Lib/) and, if we change the CWD to run the tests in a temporary dir, some
     # imports might fail.  This affects only the modules imported before os.chdir().
@@ -66,18 +68,18 @@ def setup_tests(ns):
         if getattr(module, '__file__', None):
             module.__file__ = os.path.abspath(module.__file__)
 
-    if ns.huntrleaks:
+    if runtests.hunt_refleak:
         unittest.BaseTestSuite._cleanup = False
 
-    if ns.memlimit is not None:
-        support.set_memlimit(ns.memlimit)
+    if runtests.memory_limit is not None:
+        support.set_memlimit(runtests.memory_limit)
 
-    if ns.threshold is not None:
-        gc.set_threshold(ns.threshold)
+    if runtests.gc_threshold is not None:
+        gc.set_threshold(runtests.gc_threshold)
 
-    support.suppress_msvcrt_asserts(ns.verbose and ns.verbose >= 2)
+    support.suppress_msvcrt_asserts(runtests.verbose and runtests.verbose >= 2)
 
-    support.use_resources = ns.use_resources
+    support.use_resources = runtests.use_resources
 
     if hasattr(sys, 'addaudithook'):
         # Add an auditing hook for all tests to ensure PySys_Audit is tested
@@ -88,18 +90,19 @@ def setup_tests(ns):
     setup_unraisable_hook()
     setup_threading_excepthook()
 
-    if ns.timeout is not None:
+    timeout = runtests.timeout
+    if timeout is not None:
         # For a slow buildbot worker, increase SHORT_TIMEOUT and LONG_TIMEOUT
-        support.SHORT_TIMEOUT = max(support.SHORT_TIMEOUT, ns.timeout / 40)
-        support.LONG_TIMEOUT = max(support.LONG_TIMEOUT, ns.timeout / 4)
+        support.SHORT_TIMEOUT = max(support.SHORT_TIMEOUT, timeout / 40)
+        support.LONG_TIMEOUT = max(support.LONG_TIMEOUT, timeout / 4)
 
         # If --timeout is short: reduce timeouts
-        support.LOOPBACK_TIMEOUT = min(support.LOOPBACK_TIMEOUT, ns.timeout)
-        support.INTERNET_TIMEOUT = min(support.INTERNET_TIMEOUT, ns.timeout)
-        support.SHORT_TIMEOUT = min(support.SHORT_TIMEOUT, ns.timeout)
-        support.LONG_TIMEOUT = min(support.LONG_TIMEOUT, ns.timeout)
+        support.LOOPBACK_TIMEOUT = min(support.LOOPBACK_TIMEOUT, timeout)
+        support.INTERNET_TIMEOUT = min(support.INTERNET_TIMEOUT, timeout)
+        support.SHORT_TIMEOUT = min(support.SHORT_TIMEOUT, timeout)
+        support.LONG_TIMEOUT = min(support.LONG_TIMEOUT, timeout)
 
-    if ns.xmlpath:
+    if runtests.junit_filename:
         from test.support.testresult import RegressionTestResult
         RegressionTestResult.USE_XML = True
 

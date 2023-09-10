@@ -12,14 +12,13 @@
 #include "Python.h"
 #include "pycore_pylifecycle.h"   // _Py_SetLocaleFromEnv()
 
-#include <errno.h>
-#include <signal.h>
-#include <stddef.h>
+#include <errno.h>                // errno
+#include <signal.h>               // SIGWINCH
 #include <stdlib.h>               // free()
-#ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
+#include <string.h>               // strdup()
+#ifdef HAVE_SYS_SELECT_H
+#  include <sys/select.h>         // select()
 #endif
-#include <time.h>
 
 #if defined(HAVE_SETLOCALE)
 /* GNU readline() mistakenly sets the LC_CTYPE locale.
@@ -27,7 +26,7 @@
  * We must save and restore the locale around the rl_initialize() call.
  */
 #define SAVE_LOCALE
-#include <locale.h>
+#  include <locale.h>             // setlocale()
 #endif
 
 #ifdef SAVE_LOCALE
@@ -1001,7 +1000,7 @@ on_hook(PyObject *func)
         if (r == Py_None)
             result = 0;
         else {
-            result = _PyLong_AsInt(r);
+            result = PyLong_AsInt(r);
             if (result == -1 && PyErr_Occurred())
                 goto error;
         }
@@ -1333,7 +1332,8 @@ readline_until_enter_or_signal(const char *prompt, int *signal)
         int has_input = 0, err = 0;
 
         while (!has_input)
-        {               struct timeval timeout = {0, 100000}; /* 0.1 seconds */
+        {
+            struct timeval timeout = {0, 100000};  // 100 ms (0.1 seconds)
 
             /* [Bug #1552726] Only limit the pause if an input hook has been
                defined.  */

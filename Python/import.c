@@ -1,7 +1,7 @@
 /* Module definition and import implementation */
 
 #include "Python.h"
-
+#include "pycore_dict.h"          // _PyDict_Pop()
 #include "pycore_hashtable.h"     // _Py_hashtable_new_full()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -15,6 +15,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
+
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
 #include "importdl.h"             // _PyImport_DynLoadFiletab
 #include "pydtrace.h"             // PyDTrace_IMPORT_FIND_LOAD_START_ENABLED()
@@ -2005,7 +2006,6 @@ look_up_frozen(const char *name)
 struct frozen_info {
     PyObject *nameobj;
     const char *data;
-    PyObject *(*get_code)(void);
     Py_ssize_t size;
     bool is_package;
     bool is_alias;
@@ -2039,7 +2039,6 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
     if (info != NULL) {
         info->nameobj = nameobj;  // borrowed
         info->data = (const char *)p->code;
-        info->get_code = p->get_code;
         info->size = p->size;
         info->is_package = p->is_package;
         if (p->size < 0) {
@@ -2050,10 +2049,6 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
         info->origname = name;
         info->is_alias = resolve_module_alias(name, _PyImport_FrozenAliases,
                                               &info->origname);
-    }
-    if (p->code == NULL && p->size == 0 && p->get_code != NULL) {
-        /* It is only deepfrozen. */
-        return FROZEN_OKAY;
     }
     if (p->code == NULL) {
         /* It is frozen but marked as un-importable. */
@@ -2069,11 +2064,6 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
 static PyObject *
 unmarshal_frozen_code(PyInterpreterState *interp, struct frozen_info *info)
 {
-    if (info->get_code && _Py_IsMainInterpreter(interp)) {
-        PyObject *code = info->get_code();
-        assert(code != NULL);
-        return code;
-    }
     PyObject *co = PyMarshal_ReadObjectFromString(info->data, info->size);
     if (co == NULL) {
         /* Does not contain executable code. */
@@ -2434,12 +2424,11 @@ int
 _PyImport_InitDefaultImportFunc(PyInterpreterState *interp)
 {
     // Get the __import__ function
-    PyObject *import_func = _PyDict_GetItemStringWithError(interp->builtins,
-                                                           "__import__");
-    if (import_func == NULL) {
+    PyObject *import_func;
+    if (PyDict_GetItemStringRef(interp->builtins, "__import__", &import_func) <= 0) {
         return -1;
     }
-    IMPORT_FUNC(interp) = Py_NewRef(import_func);
+    IMPORT_FUNC(interp) = import_func;
     return 0;
 }
 
@@ -3567,7 +3556,7 @@ _imp_get_frozen_object_impl(PyObject *module, PyObject *name,
     if (info.nameobj == NULL) {
         info.nameobj = name;
     }
-    if (info.size == 0 && info.get_code == NULL) {
+    if (info.size == 0) {
         /* Does not contain executable code. */
         set_frozen_error(FROZEN_INVALID, name);
         return NULL;
