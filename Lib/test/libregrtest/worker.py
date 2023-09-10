@@ -7,9 +7,11 @@ from test import support
 from test.support import os_helper
 
 from test.libregrtest.setup import setup_tests, setup_test_dir
-from test.libregrtest.runtest import (
-    run_single_test, StrJSON, FilterTuple, RunTests)
-from test.libregrtest.utils import get_work_dir, exit_timeout, StrPath
+from test.libregrtest.runtests import RunTests
+from test.libregrtest.single import run_single_test
+from test.libregrtest.utils import (
+    StrPath, StrJSON, FilterTuple,
+    get_work_dir, exit_timeout)
 
 
 USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))

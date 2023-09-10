@@ -1,11 +1,11 @@
 import sys
 from test.support import TestStats
 
-from test.libregrtest.runtest import (
-    TestName, TestTuple, TestList, FilterDict, State,
-    TestResult, RunTests)
+from test.libregrtest.runtests import RunTests
+from test.libregrtest.result import State, TestResult
 from test.libregrtest.utils import (
-    printlist, count, format_duration, StrPath)
+    StrPath, TestName, TestTuple, TestList, FilterDict,
+    printlist, count, format_duration)
 
 
 EXITCODE_BAD_TEST = 2
