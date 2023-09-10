@@ -3,6 +3,7 @@ repos:
     rev: v0.0.287
     hooks:
       - id: ruff
+        name: Run Ruff on Lib/test/
         args: [--exit-non-zero-on-fix]
         files: ^Lib/test/
 
