@@ -12,7 +12,7 @@
 #include "pycore_ceval.h"           // _Py_EnterRecursiveCall()
 #include "pycore_runtime.h"         // _PyRuntime
 
-#include "pycore_global_objects.h"  // _Py_ID()
+#include "pycore_global_strings.h"  // _Py_ID()
 #include <stdbool.h>                // bool
 
 
@@ -1277,13 +1277,13 @@ _encoded_const(PyObject *obj)
 {
     /* Return the JSON string representation of None, True, False */
     if (obj == Py_None) {
-        return Py_NewRef(&_Py_ID(null));
+        return &_Py_ID(null);
     }
     else if (obj == Py_True) {
-        return Py_NewRef(&_Py_ID(true));
+        return &_Py_ID(true);
     }
     else if (obj == Py_False) {
-        return Py_NewRef(&_Py_ID(false));
+        return &_Py_ID(false);
     }
     else {
         PyErr_SetString(PyExc_ValueError, "not a const");

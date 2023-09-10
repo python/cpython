@@ -10,10 +10,8 @@
 #include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 
-#include <ctype.h>
-#include <float.h>
-#include <stddef.h>
-#include <stdlib.h>               // abs()
+#include <float.h>                // DBL_MANT_DIG
+#include <stddef.h>               // offsetof
 
 #include "clinic/longobject.c.h"
 /*[clinic input]
@@ -174,7 +172,7 @@ _PyLong_FromDigits(int negative, Py_ssize_t digit_count, digit *digits)
 {
     assert(digit_count >= 0);
     if (digit_count == 0) {
-        return (PyLongObject *)Py_NewRef(_PyLong_GetZero());
+        return (PyLongObject *)_PyLong_GetZero();
     }
     PyLongObject *result = _PyLong_New(digit_count);
     if (result == NULL) {
@@ -549,7 +547,7 @@ PyLong_AsLong(PyObject *obj)
    method.  Return -1 and set an error if overflow occurs. */
 
 int
-_PyLong_AsInt(PyObject *obj)
+PyLong_AsInt(PyObject *obj)
 {
     int overflow;
     long result = PyLong_AsLongAndOverflow(obj, &overflow);
@@ -2857,8 +2855,7 @@ long_divrem(PyLongObject *a, PyLongObject *b,
         if (*prem == NULL) {
             return -1;
         }
-        PyObject *zero = _PyLong_GetZero();
-        *pdiv = (PyLongObject*)Py_NewRef(zero);
+        *pdiv = (PyLongObject*)_PyLong_GetZero();
         return 0;
     }
     if (size_b == 1) {

@@ -338,6 +338,7 @@ The available slot types are:
    The *value* pointer of this slot must point to a function of the signature:
 
    .. c:function:: PyObject* create_module(PyObject *spec, PyModuleDef *def)
+      :noindex:
 
    The function receives a :py:class:`~importlib.machinery.ModuleSpec`
    instance, as defined in :PEP:`451`, and the module definition.
@@ -372,6 +373,7 @@ The available slot types are:
    The signature of the function is:
 
    .. c:function:: int exec_module(PyObject* module)
+      :noindex:
 
    If multiple ``Py_mod_exec`` slots are specified, they are processed in the
    order they appear in the *m_slots* array.
@@ -379,6 +381,8 @@ The available slot types are:
 .. c:macro:: Py_mod_multiple_interpreters
 
    Specifies one of the following values:
+
+   .. c:namespace:: NULL
 
    .. c:macro:: Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED
 
@@ -546,7 +550,7 @@ state:
    .. note::
 
       Unlike other functions that steal references, ``PyModule_AddObject()``
-      only decrements the reference count of *value* **on success**.
+      only releases the reference to *value* **on success**.
 
       This means that its return value must be checked, and calling code must
       :c:func:`Py_XDECREF` *value* manually on error.

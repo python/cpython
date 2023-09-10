@@ -148,6 +148,10 @@ class TypeParamsInvalidTest(unittest.TestCase):
         check_syntax_error(self, "def f[T: [(x := 3) for _ in range(2)]](): pass")
         check_syntax_error(self, "type T = [(x := 3) for _ in range(2)]")
 
+    def test_incorrect_mro_explicit_object(self):
+        with self.assertRaisesRegex(TypeError, r"\(MRO\) for bases object, Generic"):
+            class My[X](object): ...
+
 
 class TypeParamsNonlocalTest(unittest.TestCase):
     def test_nonlocal_disallowed_01(self):
@@ -952,3 +956,43 @@ class TypeParamsWeakRefTest(unittest.TestCase):
         for case in cases:
             with self.subTest(case=case):
                 weakref.ref(case)
+
+
+class TypeParamsRuntimeTest(unittest.TestCase):
+    def test_name_error(self):
+        # gh-109118: This crashed the interpreter due to a refcounting bug
+        code = """
+        class name_2[name_5]:
+            class name_4[name_5](name_0):
+                pass
+        """
+        with self.assertRaises(NameError):
+            run_code(code)
+
+        # Crashed with a slightly different stack trace
+        code = """
+        class name_2[name_5]:
+            class name_4[name_5: name_5](name_0):
+                pass
+        """
+        with self.assertRaises(NameError):
+            run_code(code)
+
+    def test_broken_class_namespace(self):
+        code = """
+        class WeirdMapping(dict):
+            def __missing__(self, key):
+                if key == "T":
+                    raise RuntimeError
+                raise KeyError(key)
+
+        class Meta(type):
+            def __prepare__(name, bases):
+                return WeirdMapping()
+
+        class MyClass[V](metaclass=Meta):
+            class Inner[U](T):
+                pass
+        """
+        with self.assertRaises(RuntimeError):
+            run_code(code)

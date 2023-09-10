@@ -4,9 +4,11 @@ output preset block
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=3c81ac2402d06a8b]*/
 
 /*[clinic input]
+module m
+class m.T "TestObj *" "TestType"
 class Test "TestObj *" "TestType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=fc7e50384d12b83f]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f761b4d55cb179cf]*/
 
 /*[clinic input]
 test_object_converter
@@ -471,7 +473,7 @@ test_bool_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    c = _PyLong_AsInt(args[2]);
+    c = PyLong_AsInt(args[2]);
     if (c == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -484,7 +486,7 @@ exit:
 
 static PyObject *
 test_bool_converter_impl(PyObject *module, int a, int b, int c)
-/*[clinic end generated code: output=27f0e653a70b9be3 input=939854fa9f248c60]*/
+/*[clinic end generated code: output=3190e46490de0644 input=939854fa9f248c60]*/
 
 
 /*[clinic input]
@@ -1007,14 +1009,14 @@ test_int_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    a = _PyLong_AsInt(args[0]);
+    a = PyLong_AsInt(args[0]);
     if (a == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (nargs < 2) {
         goto skip_optional;
     }
-    b = _PyLong_AsInt(args[1]);
+    b = PyLong_AsInt(args[1]);
     if (b == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1033,7 +1035,7 @@ test_int_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 4) {
         goto skip_optional;
     }
-    d = _PyLong_AsInt(args[3]);
+    d = PyLong_AsInt(args[3]);
     if (d == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1046,7 +1048,7 @@ exit:
 
 static PyObject *
 test_int_converter_impl(PyObject *module, int a, int b, int c, myenum d)
-/*[clinic end generated code: output=375eedba5ca9a5b3 input=d20541fc1ca0553e]*/
+/*[clinic end generated code: output=5aed87a7589eefb2 input=d20541fc1ca0553e]*/
 
 
 /*[clinic input]
@@ -4507,7 +4509,7 @@ Test_cls_with_param(TestObj *self, PyTypeObject *cls, PyObject *const *args, Py_
     if (!args) {
         goto exit;
     }
-    a = _PyLong_AsInt(args[0]);
+    a = PyLong_AsInt(args[0]);
     if (a == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -4519,7 +4521,7 @@ exit:
 
 static PyObject *
 Test_cls_with_param_impl(TestObj *self, PyTypeObject *cls, int a)
-/*[clinic end generated code: output=00218e7f583e6c81 input=af158077bd237ef9]*/
+/*[clinic end generated code: output=d89b99e83d442be0 input=af158077bd237ef9]*/
 
 
 /*[clinic input]
@@ -4701,7 +4703,7 @@ Test_an_metho_arg_named_arg(TestObj *self, PyObject *arg_)
     PyObject *return_value = NULL;
     int arg;
 
-    arg = _PyLong_AsInt(arg_);
+    arg = PyLong_AsInt(arg_);
     if (arg == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -4713,7 +4715,7 @@ exit:
 
 static PyObject *
 Test_an_metho_arg_named_arg_impl(TestObj *self, int arg)
-/*[clinic end generated code: output=7d590626642194ae input=2a53a57cf5624f95]*/
+/*[clinic end generated code: output=9f04de4a62287e28 input=2a53a57cf5624f95]*/
 
 
 /*[clinic input]
@@ -5004,3 +5006,464 @@ PyDoc_STRVAR(new_dest__doc__,
 "\n"
 "Only this docstring should be outputted to test1.");
 /*[clinic end generated code: output=9cac703f51d90e84 input=090db8df4945576d]*/
+
+
+/*[clinic input]
+mangled_c_keyword_identifier
+    i as int: int
+The 'int' param should be mangled as 'int_value'
+[clinic start generated code]*/
+
+PyDoc_STRVAR(mangled_c_keyword_identifier__doc__,
+"mangled_c_keyword_identifier($module, /, i)\n"
+"--\n"
+"\n"
+"The \'int\' param should be mangled as \'int_value\'");
+
+#define MANGLED_C_KEYWORD_IDENTIFIER_METHODDEF    \
+    {"mangled_c_keyword_identifier", _PyCFunction_CAST(mangled_c_keyword_identifier), METH_FASTCALL|METH_KEYWORDS, mangled_c_keyword_identifier__doc__},
+
+static PyObject *
+mangled_c_keyword_identifier_impl(PyObject *module, int int_value);
+
+static PyObject *
+mangled_c_keyword_identifier(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(i), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"i", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "mangled_c_keyword_identifier",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    int int_value;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    int_value = PyLong_AsInt(args[0]);
+    if (int_value == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = mangled_c_keyword_identifier_impl(module, int_value);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+mangled_c_keyword_identifier_impl(PyObject *module, int int_value)
+/*[clinic end generated code: output=f24b37e0368e0eb8 input=060876448ab567a2]*/
+
+
+/*[clinic input]
+bool_return -> bool
+[clinic start generated code]*/
+
+PyDoc_STRVAR(bool_return__doc__,
+"bool_return($module, /)\n"
+"--\n"
+"\n");
+
+#define BOOL_RETURN_METHODDEF    \
+    {"bool_return", (PyCFunction)bool_return, METH_NOARGS, bool_return__doc__},
+
+static int
+bool_return_impl(PyObject *module);
+
+static PyObject *
+bool_return(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = bool_return_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+static int
+bool_return_impl(PyObject *module)
+/*[clinic end generated code: output=3a65f07830e48e98 input=93ba95d39ee98f39]*/
+
+
+/*[clinic input]
+double_return -> double
+[clinic start generated code]*/
+
+PyDoc_STRVAR(double_return__doc__,
+"double_return($module, /)\n"
+"--\n"
+"\n");
+
+#define DOUBLE_RETURN_METHODDEF    \
+    {"double_return", (PyCFunction)double_return, METH_NOARGS, double_return__doc__},
+
+static double
+double_return_impl(PyObject *module);
+
+static PyObject *
+double_return(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    double _return_value;
+
+    _return_value = double_return_impl(module);
+    if ((_return_value == -1.0) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyFloat_FromDouble(_return_value);
+
+exit:
+    return return_value;
+}
+
+static double
+double_return_impl(PyObject *module)
+/*[clinic end generated code: output=076dc72595d3f66d input=da11b6255e4cbfd7]*/
+
+
+/*[clinic input]
+Test.__init__
+    a: object
+    [
+    b: object
+    ]
+    /
+Should generate two PyArg_ParseTuple calls.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(Test___init____doc__,
+"Test(a, [b])\n"
+"Should generate two PyArg_ParseTuple calls.");
+
+static int
+Test___init___impl(TestObj *self, PyObject *a, int group_right_1,
+                   PyObject *b);
+
+static int
+Test___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int return_value = -1;
+    PyTypeObject *base_tp = TestType;
+    PyObject *a;
+    int group_right_1 = 0;
+    PyObject *b = NULL;
+
+    if ((Py_IS_TYPE(self, base_tp) ||
+         Py_TYPE(self)->tp_new == base_tp->tp_new) &&
+        !_PyArg_NoKeywords("Test", kwargs)) {
+        goto exit;
+    }
+    switch (PyTuple_GET_SIZE(args)) {
+        case 1:
+            if (!PyArg_ParseTuple(args, "O:__init__", &a)) {
+                goto exit;
+            }
+            break;
+        case 2:
+            if (!PyArg_ParseTuple(args, "OO:__init__", &a, &b)) {
+                goto exit;
+            }
+            group_right_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "Test.__init__ requires 1 to 2 arguments");
+            goto exit;
+    }
+    return_value = Test___init___impl((TestObj *)self, a, group_right_1, b);
+
+exit:
+    return return_value;
+}
+
+static int
+Test___init___impl(TestObj *self, PyObject *a, int group_right_1,
+                   PyObject *b)
+/*[clinic end generated code: output=2bbb8ea60e8f57a6 input=10f5d0f1e8e466ef]*/
+
+
+/*[clinic input]
+Test._pyarg_parsestackandkeywords
+    cls: defining_class
+    key: str(accept={str, robuffer}, zeroes=True)
+    /
+Check that _PyArg_ParseStackAndKeywords() is generated.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(Test__pyarg_parsestackandkeywords__doc__,
+"_pyarg_parsestackandkeywords($self, key, /)\n"
+"--\n"
+"\n"
+"Check that _PyArg_ParseStackAndKeywords() is generated.");
+
+#define TEST__PYARG_PARSESTACKANDKEYWORDS_METHODDEF    \
+    {"_pyarg_parsestackandkeywords", _PyCFunction_CAST(Test__pyarg_parsestackandkeywords), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, Test__pyarg_parsestackandkeywords__doc__},
+
+static PyObject *
+Test__pyarg_parsestackandkeywords_impl(TestObj *self, PyTypeObject *cls,
+                                       const char *key,
+                                       Py_ssize_t key_length);
+
+static PyObject *
+Test__pyarg_parsestackandkeywords(TestObj *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .format = "s#:_pyarg_parsestackandkeywords",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    const char *key;
+    Py_ssize_t key_length;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &key, &key_length)) {
+        goto exit;
+    }
+    return_value = Test__pyarg_parsestackandkeywords_impl(self, cls, key, key_length);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+Test__pyarg_parsestackandkeywords_impl(TestObj *self, PyTypeObject *cls,
+                                       const char *key,
+                                       Py_ssize_t key_length)
+/*[clinic end generated code: output=4fda8a7f2547137c input=fc72ef4b4cfafabc]*/
+
+
+/*[clinic input]
+Test.__init__ -> long
+Test overriding the __init__ return converter
+[clinic start generated code]*/
+
+PyDoc_STRVAR(Test___init____doc__,
+"Test()\n"
+"--\n"
+"\n"
+"Test overriding the __init__ return converter");
+
+static long
+Test___init___impl(TestObj *self);
+
+static int
+Test___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int return_value = -1;
+    PyTypeObject *base_tp = TestType;
+    long _return_value;
+
+    if ((Py_IS_TYPE(self, base_tp) ||
+         Py_TYPE(self)->tp_new == base_tp->tp_new) &&
+        !_PyArg_NoPositional("Test", args)) {
+        goto exit;
+    }
+    if ((Py_IS_TYPE(self, base_tp) ||
+         Py_TYPE(self)->tp_new == base_tp->tp_new) &&
+        !_PyArg_NoKeywords("Test", kwargs)) {
+        goto exit;
+    }
+    _return_value = Test___init___impl((TestObj *)self);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromLong(_return_value);
+
+exit:
+    return return_value;
+}
+
+static long
+Test___init___impl(TestObj *self)
+/*[clinic end generated code: output=daf6ee12c4e443fb input=311af0dc7f17e8e9]*/
+
+
+/*[clinic input]
+fn_with_default_binop_expr
+    arg: object(c_default='CONST_A + CONST_B') = a+b
+[clinic start generated code]*/
+
+PyDoc_STRVAR(fn_with_default_binop_expr__doc__,
+"fn_with_default_binop_expr($module, /, arg=a+b)\n"
+"--\n"
+"\n");
+
+#define FN_WITH_DEFAULT_BINOP_EXPR_METHODDEF    \
+    {"fn_with_default_binop_expr", _PyCFunction_CAST(fn_with_default_binop_expr), METH_FASTCALL|METH_KEYWORDS, fn_with_default_binop_expr__doc__},
+
+static PyObject *
+fn_with_default_binop_expr_impl(PyObject *module, PyObject *arg);
+
+static PyObject *
+fn_with_default_binop_expr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(arg), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"arg", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "fn_with_default_binop_expr",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *arg = CONST_A + CONST_B;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    arg = args[0];
+skip_optional_pos:
+    return_value = fn_with_default_binop_expr_impl(module, arg);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+fn_with_default_binop_expr_impl(PyObject *module, PyObject *arg)
+/*[clinic end generated code: output=018672772e4092ff input=1b55c8ae68d89453]*/
+
+
+/*[python input]
+class Custom_converter(CConverter):
+    type = "str"
+    default = "Hello!"
+    converter = "c_converter_func"
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=d612708f0efb8e3c]*/
+
+/*[clinic input]
+docstr_fallback_to_converter_default
+    a: Custom
+Check docstring default value fallback.
+
+Verify that the docstring formatter fetches the default
+value from the converter if no 'py_default' is found.
+The signature should have the default a='Hello!',
+as given by the Custom converter.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(docstr_fallback_to_converter_default__doc__,
+"docstr_fallback_to_converter_default($module, /, a=\'Hello!\')\n"
+"--\n"
+"\n"
+"Check docstring default value fallback.\n"
+"\n"
+"Verify that the docstring formatter fetches the default\n"
+"value from the converter if no \'py_default\' is found.\n"
+"The signature should have the default a=\'Hello!\',\n"
+"as given by the Custom converter.");
+
+#define DOCSTR_FALLBACK_TO_CONVERTER_DEFAULT_METHODDEF    \
+    {"docstr_fallback_to_converter_default", _PyCFunction_CAST(docstr_fallback_to_converter_default), METH_FASTCALL|METH_KEYWORDS, docstr_fallback_to_converter_default__doc__},
+
+static PyObject *
+docstr_fallback_to_converter_default_impl(PyObject *module, str a);
+
+static PyObject *
+docstr_fallback_to_converter_default(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "docstr_fallback_to_converter_default",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    str a;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!c_converter_func(args[0], &a)) {
+        goto exit;
+    }
+    return_value = docstr_fallback_to_converter_default_impl(module, a);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+docstr_fallback_to_converter_default_impl(PyObject *module, str a)
+/*[clinic end generated code: output=ae24a9c6f60ee8a6 input=0cbe6a4d24bc2274]*/

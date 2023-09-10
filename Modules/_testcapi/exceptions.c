@@ -1,5 +1,7 @@
 #include "parts.h"
+#include "util.h"
 #include "clinic/exceptions.c.h"
+
 
 /*[clinic input]
 module _testcapi
@@ -118,15 +120,55 @@ _testcapi_exc_set_object_fetch_impl(PyObject *module, PyObject *exc,
                                     PyObject *obj)
 /*[clinic end generated code: output=7a5ff5f6d3cf687f input=77ec686f1f95fa38]*/
 {
-    PyObject *type;
-    PyObject *value;
-    PyObject *tb;
+    PyObject *type = UNINITIALIZED_PTR;
+    PyObject *value = UNINITIALIZED_PTR;
+    PyObject *tb = UNINITIALIZED_PTR;
 
     PyErr_SetObject(exc, obj);
     PyErr_Fetch(&type, &value, &tb);
+    assert(type != UNINITIALIZED_PTR);
+    assert(value != UNINITIALIZED_PTR);
+    assert(tb != UNINITIALIZED_PTR);
     Py_XDECREF(type);
     Py_XDECREF(tb);
     return value;
+}
+
+/*[clinic input]
+_testcapi.err_setstring
+    exc: object
+    value: str(zeroes=True, accept={robuffer, str, NoneType})
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_testcapi_err_setstring_impl(PyObject *module, PyObject *exc,
+                             const char *value, Py_ssize_t value_length)
+/*[clinic end generated code: output=fba8705e5703dd3f input=e8a95fad66d9004b]*/
+{
+    NULLABLE(exc);
+    PyErr_SetString(exc, value);
+    return NULL;
+}
+
+/*[clinic input]
+_testcapi.err_setfromerrnowithfilename
+    error: int
+    exc: object
+    value: str(zeroes=True, accept={robuffer, str, NoneType})
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_testcapi_err_setfromerrnowithfilename_impl(PyObject *module, int error,
+                                            PyObject *exc, const char *value,
+                                            Py_ssize_t value_length)
+/*[clinic end generated code: output=d02df5749a01850e input=ff7c384234bf097f]*/
+{
+    NULLABLE(exc);
+    errno = error;
+    PyErr_SetFromErrnoWithFilename(exc, value);
+    return NULL;
 }
 
 /*[clinic input]
@@ -205,7 +247,7 @@ _testcapi_set_exc_info_impl(PyObject *module, PyObject *new_type,
                             PyObject *new_value, PyObject *new_tb)
 /*[clinic end generated code: output=b55fa35dec31300e input=ea9f19e0f55fe5b3]*/
 {
-    PyObject *type, *value, *tb;
+    PyObject *type = UNINITIALIZED_PTR, *value = UNINITIALIZED_PTR, *tb = UNINITIALIZED_PTR;
     PyErr_GetExcInfo(&type, &value, &tb);
 
     Py_INCREF(new_type);
@@ -237,36 +279,6 @@ _testcapi_set_exception(PyObject *module, PyObject *new_exc)
     assert(PyExceptionInstance_Check(exc) || exc == NULL);
     PyErr_SetHandledException(new_exc);
     return exc;
-}
-
-/*[clinic input]
-_testcapi.write_unraisable_exc
-    exception as exc: object
-    err_msg: object
-    obj: object
-    /
-[clinic start generated code]*/
-
-static PyObject *
-_testcapi_write_unraisable_exc_impl(PyObject *module, PyObject *exc,
-                                    PyObject *err_msg, PyObject *obj)
-/*[clinic end generated code: output=39827c5e0a8c2092 input=582498da5b2ee6cf]*/
-{
-
-    const char *err_msg_utf8;
-    if (err_msg != Py_None) {
-        err_msg_utf8 = PyUnicode_AsUTF8(err_msg);
-        if (err_msg_utf8 == NULL) {
-            return NULL;
-        }
-    }
-    else {
-        err_msg_utf8 = NULL;
-    }
-
-    PyErr_SetObject((PyObject *)Py_TYPE(exc), exc);
-    _PyErr_WriteUnraisableMsg(err_msg_utf8, obj);
-    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -338,12 +350,13 @@ static PyMethodDef test_methods[] = {
     _TESTCAPI_MAKE_EXCEPTION_WITH_DOC_METHODDEF
     _TESTCAPI_EXC_SET_OBJECT_METHODDEF
     _TESTCAPI_EXC_SET_OBJECT_FETCH_METHODDEF
+    _TESTCAPI_ERR_SETSTRING_METHODDEF
+    _TESTCAPI_ERR_SETFROMERRNOWITHFILENAME_METHODDEF
     _TESTCAPI_RAISE_EXCEPTION_METHODDEF
     _TESTCAPI_RAISE_MEMORYERROR_METHODDEF
     _TESTCAPI_SET_EXC_INFO_METHODDEF
     _TESTCAPI_SET_EXCEPTION_METHODDEF
     _TESTCAPI_TRACEBACK_PRINT_METHODDEF
-    _TESTCAPI_WRITE_UNRAISABLE_EXC_METHODDEF
     _TESTCAPI_UNSTABLE_EXC_PREP_RERAISE_STAR_METHODDEF
     {NULL},
 };
