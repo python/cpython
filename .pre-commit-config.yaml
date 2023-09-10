@@ -3,12 +3,13 @@ repos:
     rev: v0.0.287
     hooks:
       - id: ruff
-        args: [--exit-non-zero-on-fix, --format=github]
+        args: [--exit-non-zero-on-fix]
         files: ^Lib/test/
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
+      - id: check-toml
       - id: check-yaml
       - id: end-of-file-fixer
         types: [python]
