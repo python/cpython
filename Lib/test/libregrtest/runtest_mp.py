@@ -14,6 +14,7 @@ from typing import Literal, TextIO
 from test import support
 from test.support import os_helper
 
+from test.libregrtest.logger import Logger
 from test.libregrtest.main import Regrtest
 from test.libregrtest.result import TestResult, State
 from test.libregrtest.results import TestResults
@@ -360,12 +361,14 @@ def get_running(workers: list[WorkerThread]) -> list[str]:
 
 
 class RunWorkers:
-    def __init__(self, regrtest: Regrtest, runtests: RunTests, num_workers: int) -> None:
-        self.results: TestResults = regrtest.results
-        self.log = regrtest.logger.log
-        self.display_progress = regrtest.display_progress
+    def __init__(self, num_workers: int, runtests: RunTests,
+                 logger: Logger, results: TestResult) -> None:
         self.num_workers = num_workers
         self.runtests = runtests
+        self.log = logger.log
+        self.display_progress = logger.display_progress
+        self.results: TestResults = results
+
         self.output: queue.Queue[QueueOutput] = queue.Queue()
         tests_iter = runtests.iter_tests()
         self.pending = MultiprocessIterator(tests_iter)
