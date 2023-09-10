@@ -58,10 +58,10 @@
                         tstate, oparg > 0, frame, next_instr-1);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err) goto error;
-                if (frame->prev_instr != next_instr-1) {
+                assert(frame->prev_instr == frame->instr_ptr);
+                if (frame->instr_ptr != next_instr-1) {
                     /* Instrumentation has jumped */
-                    next_instr = frame->prev_instr;
-                    frame->instr_ptr = next_instr;
+                    next_instr = frame->instr_ptr;
                     DISPATCH();
                 }
             }
