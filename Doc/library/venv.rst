@@ -143,7 +143,8 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
 .. class:: EnvBuilder(system_site_packages=False, clear=False, \
                       symlinks=False, upgrade=False, with_pip=False, \
-                      prompt=None, upgrade_deps=False, *, scm_ignore_file=None)
+                      prompt=None, upgrade_deps=False,
+                      *, scm_ignore_files=frozenset())
 
     The :class:`EnvBuilder` class accepts the following keyword arguments on
     instantiation:
@@ -172,10 +173,10 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
     * ``upgrade_deps`` -- Update the base venv modules to the latest on PyPI
 
-    * ``scm_ignore_file`` -- Create an ignore file for the specified source
-      control manager (SCM). Support is defined by having a method named
-      ``create_{scm}_ignore_file``. The only value currently supported is
-      ``"git"`` via :meth:`create_git_ignore_file`.
+    * ``scm_ignore_files`` -- Create ignore files based for the specified source
+      control managers (SCM) in the iterable. Support is defined by having a
+      method named ``create_{scm}_ignore_file``. The only value supported by
+      default is ``"git"`` via :meth:`create_git_ignore_file`.
 
 
     .. versionchanged:: 3.4
@@ -188,7 +189,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
        Added the ``upgrade_deps`` parameter
 
     .. versionadded:: 3.13
-       Added the ``scm_ignore_file`` parameter
+       Added the ``scm_ignore_files`` parameter
 
     Creators of third-party virtual environment tools will be free to use the
     provided :class:`EnvBuilder` class as a base class.
@@ -359,7 +360,7 @@ There is also a module-level convenience function:
 
 .. function:: create(env_dir, system_site_packages=False, clear=False, \
                      symlinks=False, with_pip=False, prompt=None, \
-                     upgrade_deps=False, *, scm_ignore_file=None)
+                     upgrade_deps=False, *, scm_ignore_files=frozenset())
 
     Create an :class:`EnvBuilder` with the given keyword arguments, and call its
     :meth:`~EnvBuilder.create` method with the *env_dir* argument.
@@ -376,7 +377,7 @@ There is also a module-level convenience function:
        Added the ``upgrade_deps`` parameter
 
     .. versionchanged:: 3.13
-       Added the ``scm_ignore_file`` parameter
+       Added the ``scm_ignore_files`` parameter
 
 An example of extending ``EnvBuilder``
 --------------------------------------
