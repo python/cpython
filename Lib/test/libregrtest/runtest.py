@@ -20,20 +20,23 @@ from test.libregrtest.save_env import saved_test_environment
 from test.libregrtest.utils import clear_caches, format_duration, print_warning
 
 
-TestTuple = list[str]
-TestList = list[str]
+StrJSON = str
+StrPath = str
+TestName = str
+TestTuple = tuple[TestName, ...]
+TestList = list[TestName]
 
 # --match and --ignore options: list of patterns
 # ('*' joker character can be used)
-FilterTuple = tuple[str, ...]
-FilterDict = dict[str, FilterTuple]
+FilterTuple = tuple[TestName, ...]
+FilterDict = dict[TestName, FilterTuple]
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class HuntRefleak:
     warmups: int
     runs: int
-    filename: str
+    filename: StrPath
 
 
 # Avoid enum.Enum to reduce the number of imports when tests are run
@@ -110,7 +113,7 @@ def normalize_test_name(test_full_name, *, is_error=False):
 
 @dataclasses.dataclass(slots=True)
 class TestResult:
-    test_name: str
+    test_name: TestName
     state: str | None = None
     # Test duration in seconds
     duration: float | None = None
@@ -230,8 +233,8 @@ class RunTests:
     verbose: bool = False
     quiet: bool = False
     hunt_refleak: HuntRefleak | None = None
-    test_dir: str | None = None
-    junit_filename: str | None = None
+    test_dir: StrPath | None = None
+    junit_filename: StrPath | None = None
     memory_limit: str | None = None
     gc_threshold: int | None = None
     use_resources: list[str] = None
@@ -255,11 +258,11 @@ class RunTests:
         else:
             yield from self.tests
 
-    def as_json(self):
+    def as_json(self) -> StrJSON:
         return json.dumps(self, cls=_EncodeRunTests)
 
     @staticmethod
-    def from_json(worker_json):
+    def from_json(worker_json: StrJSON) -> 'RunTests':
         return json.loads(worker_json, object_hook=_decode_runtests)
 
 
@@ -292,7 +295,7 @@ PROGRESS_MIN_TIME = 30.0   # seconds
 # Beware this can't generally be done for any directory with sub-tests as the
 # __init__.py may do things which alter what tests are to be run.
 
-SPLITTESTDIRS = {
+SPLITTESTDIRS: set[TestName] = {
     "test_asyncio",
     "test_concurrent_futures",
     "test_multiprocessing_fork",
@@ -305,8 +308,9 @@ def findtestdir(path=None):
     return path or os.path.dirname(os.path.dirname(__file__)) or os.curdir
 
 
-def findtests(*, testdir: str | None =None, exclude=(),
-              split_test_dirs=SPLITTESTDIRS, base_mod=""):
+def findtests(*, testdir: StrPath | None = None, exclude=(),
+              split_test_dirs: set[TestName] = SPLITTESTDIRS,
+              base_mod: str = "") -> TestList:
     """Return a list of all applicable test modules."""
     testdir = findtestdir(testdir)
     tests = []
@@ -318,13 +322,14 @@ def findtests(*, testdir: str | None =None, exclude=(),
             subdir = os.path.join(testdir, mod)
             mod = f"{base_mod or 'test'}.{mod}"
             tests.extend(findtests(testdir=subdir, exclude=exclude,
-                                   split_test_dirs=split_test_dirs, base_mod=mod))
+                                   split_test_dirs=split_test_dirs,
+                                   base_mod=mod))
         elif ext in (".py", ""):
             tests.append(f"{base_mod}.{mod}" if base_mod else mod)
     return sorted(tests)
 
 
-def split_test_packages(tests, *, testdir: str | None = None, exclude=(),
+def split_test_packages(tests, *, testdir: StrPath | None = None, exclude=(),
                         split_test_dirs=SPLITTESTDIRS):
     testdir = findtestdir(testdir)
     splitted = []
@@ -339,7 +344,7 @@ def split_test_packages(tests, *, testdir: str | None = None, exclude=(),
     return splitted
 
 
-def abs_module_name(test_name: str, test_dir: str | None) -> str:
+def abs_module_name(test_name: TestName, test_dir: StrPath | None) -> TestName:
     if test_name.startswith('test.') or test_dir:
         return test_name
     else:
@@ -422,7 +427,7 @@ def _runtest(result: TestResult, runtests: RunTests) -> None:
         support.junit_xml_list = None
 
 
-def run_single_test(test_name: str, runtests: RunTests) -> TestResult:
+def run_single_test(test_name: TestName, runtests: RunTests) -> TestResult:
     """Run a single test.
 
     test_name -- the name of the test
@@ -457,7 +462,7 @@ def run_unittest(test_mod):
     return support.run_unittest(tests)
 
 
-def save_env(test_name: str, runtests: RunTests):
+def save_env(test_name: TestName, runtests: RunTests):
     return saved_test_environment(test_name, runtests.verbose, runtests.quiet,
                                   pgo=runtests.pgo)
 
@@ -608,7 +613,7 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
         result.state = State.PASSED
 
 
-def remove_testfn(test_name: str, verbose: int) -> None:
+def remove_testfn(test_name: TestName, verbose: int) -> None:
     # Try to clean up os_helper.TESTFN if left behind.
     #
     # While tests shouldn't leave any files or directories behind, when a test
