@@ -112,8 +112,7 @@ class Leaf:
         return self.value
 
     def __iter__(self) -> Iterable[str]:
-        if False:
-            yield
+        yield from ()
 
 
 class NameLeaf(Leaf):
@@ -335,8 +334,7 @@ class Cut:
         return f"~"
 
     def __iter__(self) -> Iterator[Tuple[str, str]]:
-        if False:
-            yield
+        yield from ()
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Cut):

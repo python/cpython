@@ -75,10 +75,10 @@ class ParseArgsTestCase(unittest.TestCase):
         ns = libregrtest._parse_args(['--wait'])
         self.assertTrue(ns.wait)
 
-    def test_worker_args(self):
-        ns = libregrtest._parse_args(['--worker-args', '[[], {}]'])
-        self.assertEqual(ns.worker_args, '[[], {}]')
-        self.checkError(['--worker-args'], 'expected one argument')
+    def test_worker_json(self):
+        ns = libregrtest._parse_args(['--worker-json', '[[], {}]'])
+        self.assertEqual(ns.worker_json, '[[], {}]')
+        self.checkError(['--worker-json'], 'expected one argument')
 
     def test_start(self):
         for opt in '-S', '--start':
@@ -589,7 +589,7 @@ class BaseTestCase(unittest.TestCase):
     def parse_random_seed(self, output):
         match = self.regex_search(r'Using random seed ([0-9]+)', output)
         randseed = int(match.group(1))
-        self.assertTrue(0 <= randseed <= 10000000, randseed)
+        self.assertTrue(0 <= randseed <= 100_000_000, randseed)
         return randseed
 
     def run_command(self, args, input=None, exitcode=0, **kw):
@@ -1018,12 +1018,16 @@ class ArgsTestCase(BaseTestCase):
                                   stats=TestStats(4, 1),
                                   forever=True)
 
-    def check_leak(self, code, what):
+    def check_leak(self, code, what, *, multiprocessing=False):
         test = self.create_test('huntrleaks', code=code)
 
         filename = 'reflog.txt'
         self.addCleanup(os_helper.unlink, filename)
-        output = self.run_tests('--huntrleaks', '6:3:', test,
+        cmd = ['--huntrleaks', '6:3:']
+        if multiprocessing:
+            cmd.append('-j1')
+        cmd.append(test)
+        output = self.run_tests(*cmd,
                                 exitcode=EXITCODE_BAD_TEST,
                                 stderr=subprocess.STDOUT)
         self.check_executed_tests(output, [test], failed=test, stats=1)
@@ -1039,7 +1043,7 @@ class ArgsTestCase(BaseTestCase):
             self.assertIn(line2, reflog)
 
     @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
-    def test_huntrleaks(self):
+    def check_huntrleaks(self, *, multiprocessing: bool):
         # test --huntrleaks
         code = textwrap.dedent("""
             import unittest
@@ -1050,7 +1054,13 @@ class ArgsTestCase(BaseTestCase):
                 def test_leak(self):
                     GLOBAL_LIST.append(object())
         """)
-        self.check_leak(code, 'references')
+        self.check_leak(code, 'references', multiprocessing=multiprocessing)
+
+    def test_huntrleaks(self):
+        self.check_huntrleaks(multiprocessing=False)
+
+    def test_huntrleaks_mp(self):
+        self.check_huntrleaks(multiprocessing=True)
 
     @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
     def test_huntrleaks_fd_leak(self):

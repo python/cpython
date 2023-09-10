@@ -7,22 +7,15 @@
             break;
         }
 
-        case RESUME: {
-            assert(frame == tstate->current_frame);
-            /* Possibly combine this with eval breaker */
-            if (_PyFrame_GetCode(frame)->_co_instrumentation_version != tstate->interp->monitoring_version) {
-                int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
-                if (err) goto error;
-                #if TIER_ONE
-                next_instr--;
-                #endif
-                #if TIER_TWO
-                goto deoptimize;
-                #endif
-            }
-            else if (oparg < 2) {
-                CHECK_EVAL_BREAKER();
-            }
+        case RESUME_CHECK: {
+#if defined(__EMSCRIPTEN__)
+            DEOPT_IF(_Py_emscripten_signal_clock == 0, RESUME);
+            _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
+#endif
+            /* Possibly combine these two checks */
+            DEOPT_IF(_PyFrame_GetCode(frame)->_co_instrumentation_version
+                != tstate->interp->monitoring_version, RESUME);
+            DEOPT_IF(_Py_atomic_load_relaxed_int32(&tstate->interp->ceval.eval_breaker), RESUME);
             break;
         }
 
@@ -1053,7 +1046,7 @@
             break;
         }
 
-        case _LOAD_LOCALS: {
+        case LOAD_LOCALS: {
             PyObject *locals;
             locals = LOCALS();
             if (locals == NULL) {
@@ -1067,16 +1060,14 @@
             break;
         }
 
-        case _LOAD_FROM_DICT_OR_GLOBALS: {
+        case LOAD_FROM_DICT_OR_GLOBALS: {
             PyObject *mod_or_class_dict;
             PyObject *v;
             mod_or_class_dict = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
-                Py_DECREF(mod_or_class_dict);
                 goto error;
             }
-            Py_DECREF(mod_or_class_dict);
             if (v == NULL) {
                 v = PyDict_GetItemWithError(GLOBALS(), name);
                 if (v != NULL) {
@@ -1097,6 +1088,44 @@
                     }
                 }
             }
+            Py_DECREF(mod_or_class_dict);
+            stack_pointer[-1] = v;
+            break;
+        }
+
+        case LOAD_NAME: {
+            PyObject *v;
+            PyObject *mod_or_class_dict = LOCALS();
+            if (mod_or_class_dict == NULL) {
+                _PyErr_SetString(tstate, PyExc_SystemError,
+                                 "no locals found");
+                if (true) goto error;
+            }
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
+                goto error;
+            }
+            if (v == NULL) {
+                v = PyDict_GetItemWithError(GLOBALS(), name);
+                if (v != NULL) {
+                    Py_INCREF(v);
+                }
+                else if (_PyErr_Occurred(tstate)) {
+                    goto error;
+                }
+                else {
+                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
+                        goto error;
+                    }
+                    if (v == NULL) {
+                        _PyEval_FormatExcCheckArg(
+                                    tstate, PyExc_NameError,
+                                    NAME_ERROR_MSG, name);
+                        goto error;
+                    }
+                }
+            }
+            STACK_GROW(1);
             stack_pointer[-1] = v;
             break;
         }

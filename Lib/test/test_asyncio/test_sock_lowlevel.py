@@ -10,6 +10,10 @@ from test.test_asyncio import utils as test_utils
 from test import support
 from test.support import socket_helper
 
+if socket_helper.tcp_blackhole():
+    raise unittest.SkipTest('Not relevant to ProactorEventLoop')
+
+
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
 
