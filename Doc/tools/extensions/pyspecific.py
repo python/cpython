@@ -48,6 +48,10 @@ Body.enum.converters['loweralpha'] = \
     Body.enum.converters['lowerroman'] = \
     Body.enum.converters['upperroman'] = lambda x: None
 
+# monkey-patch productionlist directive to allow hyphens in group names
+from sphinx.domains import std
+
+std.token_re = re.compile(r'`((~?[\w-]*:)?\w+)`')
 
 # Support for marking up and linking to bugs.python.org issues
 
