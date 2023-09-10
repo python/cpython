@@ -141,10 +141,6 @@ marshal_loads(PyObject *module, PyObject *arg)
     if (PyObject_GetBuffer(arg, &bytes, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&bytes, 'C')) {
-        _PyArg_BadArgument("loads", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
     return_value = marshal_loads_impl(module, &bytes);
 
 exit:
@@ -155,4 +151,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=23091e077319f596 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c39be6077f0cc2cb input=a9049054013a1b77]*/

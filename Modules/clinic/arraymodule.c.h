@@ -441,10 +441,6 @@ array_array_frombytes(arrayobject *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("frombytes", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
     return_value = array_array_frombytes_impl(self, &buffer);
 
 exit:
@@ -670,4 +666,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=8595b1906b5a6552 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bc8cea06e9cbc0cf input=a9049054013a1b77]*/

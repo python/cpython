@@ -97,10 +97,6 @@ skip_optional_posonly:
         if (PyObject_GetBuffer(fastargs[2], &key, PyBUF_SIMPLE) != 0) {
             goto exit;
         }
-        if (!PyBuffer_IsContiguous(&key, 'C')) {
-            _PyArg_BadArgument("blake2s", "argument 'key'", "contiguous buffer", fastargs[2]);
-            goto exit;
-        }
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
@@ -109,20 +105,12 @@ skip_optional_posonly:
         if (PyObject_GetBuffer(fastargs[3], &salt, PyBUF_SIMPLE) != 0) {
             goto exit;
         }
-        if (!PyBuffer_IsContiguous(&salt, 'C')) {
-            _PyArg_BadArgument("blake2s", "argument 'salt'", "contiguous buffer", fastargs[3]);
-            goto exit;
-        }
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
     if (fastargs[4]) {
         if (PyObject_GetBuffer(fastargs[4], &person, PyBUF_SIMPLE) != 0) {
-            goto exit;
-        }
-        if (!PyBuffer_IsContiguous(&person, 'C')) {
-            _PyArg_BadArgument("blake2s", "argument 'person'", "contiguous buffer", fastargs[4]);
             goto exit;
         }
         if (!--noptargs) {
@@ -276,4 +264,4 @@ _blake2_blake2s_hexdigest(BLAKE2sObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _blake2_blake2s_hexdigest_impl(self);
 }
-/*[clinic end generated code: output=90ca2b52b8c40785 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d05804e632822adb input=a9049054013a1b77]*/

@@ -4594,10 +4594,6 @@ class Py_buffer_converter(CConverter):
                 if (PyObject_GetBuffer({argname}, &{paramname}, PyBUF_SIMPLE) != 0) {{{{
                     goto exit;
                 }}}}
-                if (!PyBuffer_IsContiguous(&{paramname}, 'C')) {{{{
-                    {bad_argument}
-                    goto exit;
-                }}}}
                 """,
                 argname=argname,
                 bad_argument=self.bad_argument(displayname, 'contiguous buffer', limited_capi=limited_capi),
@@ -4616,10 +4612,6 @@ class Py_buffer_converter(CConverter):
                     if (PyObject_GetBuffer({argname}, &{paramname}, PyBUF_SIMPLE) != 0) {{{{
                         goto exit;
                     }}}}
-                    if (!PyBuffer_IsContiguous(&{paramname}, 'C')) {{{{
-                        {bad_argument}
-                        goto exit;
-                    }}}}
                 }}}}
                 """,
                 argname=argname,
@@ -4629,10 +4621,6 @@ class Py_buffer_converter(CConverter):
             return self.format_code("""
                 if (PyObject_GetBuffer({argname}, &{paramname}, PyBUF_WRITABLE) < 0) {{{{
                     {bad_argument}
-                    goto exit;
-                }}}}
-                if (!PyBuffer_IsContiguous(&{paramname}, 'C')) {{{{
-                    {bad_argument2}
                     goto exit;
                 }}}}
                 """,

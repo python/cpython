@@ -236,10 +236,6 @@ _ssl__SSLSocket_write(PySSLSocket *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &b, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&b, 'C')) {
-        _PyArg_BadArgument("write", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
     return_value = _ssl__SSLSocket_write_impl(self, &b);
 
 exit:
@@ -527,10 +523,6 @@ _ssl__SSLContext__set_alpn_protocols(PySSLContext *self, PyObject *arg)
     Py_buffer protos = {NULL, NULL};
 
     if (PyObject_GetBuffer(arg, &protos, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&protos, 'C')) {
-        _PyArg_BadArgument("_set_alpn_protocols", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _ssl__SSLContext__set_alpn_protocols_impl(self, &protos);
@@ -1107,10 +1099,6 @@ _ssl_MemoryBIO_write(PySSLMemoryBIO *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &b, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&b, 'C')) {
-        _PyArg_BadArgument("write", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
     return_value = _ssl_MemoryBIO_write_impl(self, &b);
 
 exit:
@@ -1177,10 +1165,6 @@ _ssl_RAND_add(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     else { /* any bytes-like object */
         if (PyObject_GetBuffer(args[0], &view, PyBUF_SIMPLE) != 0) {
-            goto exit;
-        }
-        if (!PyBuffer_IsContiguous(&view, 'C')) {
-            _PyArg_BadArgument("RAND_add", "argument 1", "contiguous buffer", args[0]);
             goto exit;
         }
     }
@@ -1542,4 +1526,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=a47d575abe0aceb6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4896f57f3d581d9d input=a9049054013a1b77]*/
