@@ -3803,90 +3803,86 @@ features:
 
    Example::
 
-      import os, time, select
-
-      # Create a timer file descriptor in non-blocking mode.
-      fd1 = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
-      fd2 = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
+      import os, time, select, sys
 
       # Create an epoll object
       ep = select.epoll()
 
-      # Register the timer file descriptor for read events
-      ep.register(fd1, select.EPOLLIN)
-      ep.register(fd2, select.EPOLLIN)
+      num = 3
+      # Create timer file descriptors in non-blocking mode.
+      fds = []
+      for _ in range(num):
+         fd = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
+         fds.append(fd)
 
-      initial_expiration1 = 10**9 // 2 # Start the timer in 0.5 second
-      initial_expiration2 = 10**9 // 4 # Start the timer in 0.25 second
-      interval1 = 10**9 // 4  # Set the timer interval to 0.25 seconds
-      interval2 = 10**9 // 2  # Set the timer interval to 0.5  seconds
-      # Start the timer
-      os.timerfd_settime_ns(fd1, initial=initial_expiration1, interval=interval1)
-      os.timerfd_settime_ns(fd2, initial=initial_expiration1, interval=interval2)
+         # Register the timer file descriptor for read events
+         ep.register(fd, select.EPOLLIN)
+
+      # Start the timer with os.timerfd_settime_ns() in nanoseconds.
+      for i, fd in enumerate(fds):
+         initial_expiration = (i + 1) * 10**9 // 4
+         interval = (i + 1) * 10**9 // 4
+         os.timerfd_settime_ns(fd, initial=initial_expiration, interval=interval)
 
       try:
-          # process timer events four times.
-          # Pratical applications may use an infinite loop to process events for timer
-          # and other file descriptors.
-          for _ in range(4):
+          # process timer events in fixed count for simplicity.
+          # Pratical applications should use an infinite loop to process events for timer
+          # and use other stop trigger
+          for _ in range(num*3):
               # Wait for the timer to expire for 3 seconds.
               timeout=3
               events = ep.poll(timeout)
               # signaled events may be more than one at once.
               print(f"signaled events={events}")
-              for fd_active, event in events:
-                  if fd_active == fd1:
-                     _ = os.read(fd1, 8)
-                     print("Timer1 expired")
-                  elif fd_active == fd2:
-                     _ = os.read(fd2, 8)
-                     print("Timer2 expired")
+              for fd, event in events:
+                  index = fds.index(fd)
+                  n = os.read(fd, 8)
+                  count = int.from_bytes(n, byteorder=sys.byteorder)
+                  print(f"Timer{index + 1} expired : {count} times")
       finally:
-          ep.unregister(fd1)
-          ep.unregister(fd2)
-          os.close(fd1)
-          os.close(fd2)
+          for fd in fds:
+              ep.unregister(fd)
+              os.close(fd)
           ep.close()
 
 
    Example::
 
-      import os, time, select
+      import os, time, select, sys
 
-      # Create a timer file descriptor in non-blocking mode.
-      fd1 = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
-      fd2 = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
+      # Create timer file descriptors in non-blocking mode.
+      num = 3
+      fds = []
+      for _ in range(num):
+         fd = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
+         fds.append(fd)
 
-      initial_expiration1 = 0.5 # Start the timer in 0.5 second
-      initial_expiration2 = 0.25 # Start the timer in 0.25 second
-      interval1 = 0.25 # Set the timer interval to 0.25 seconds
-      interval2 = 0.5 # Set the timer interval to 0.5  seconds
-
-      # Start the timer
-      os.timerfd_settime(fd1, initial=initial_expiration1, interval=interval1)
-      os.timerfd_settime(fd2, initial=initial_expiration2, interval=interval2)
+      # Start the timer with os.timerfd_settime() in seconds.
+      for i, fd in enumerate(fds):
+         initial_expiration = (i + 1) * 0.25
+         interval = (i + 1) * 0.25
+         print(i, initial_expiration, interval)
+         os.timerfd_settime(fd, initial=initial_expiration, interval=interval)
 
       try:
-          # process timer events four times.
-          # Pratical applications may use an infinite loop to process events for timer
-          # and other file descriptors.
-          for _ in range(4):
+          # process timer events in fixed count for simplicity.
+          # Pratical applications should use an infinite loop to process events for timer
+          # and use other stop trigger
+          for _ in range(num*3):
               timeout=3
 
-              fds = [fd1, fd2]
               # Wait for the timer to expire for 3 seconds.
               rfd, wfd, xfd = select.select(fds, fds, fds, timeout)
               print(rfd, wfd, xfd)
 
               for fd in rfd:
-                  _ = os.read(fd, 8)
-                  if fd == fd1:
-                      print("Timer1 expired")
-                  elif fd == fd2:
-                      print("Timer2 expired")
+                  index = fds.index(fd)
+                  n = os.read(fd, 8)
+                  count = int.from_bytes(n, byteorder=sys.byteorder)
+                  print(f"Timer{index + 1} expired : {count} times")
       finally:
-          os.close(fd1)
-          os.close(fd2)
+          for fd in fds:
+              os.close(fd)
 
    *clockid* must be a valid :ref:`clock ID <time-clock-id-constants>`,
    as defined in the :py:mod:`time` module:
