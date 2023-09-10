@@ -56,4 +56,3 @@ def split_test_packages(tests, *, testdir: StrPath | None = None, exclude=(),
         else:
             splitted.append(name)
     return splitted
-
