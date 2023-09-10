@@ -217,6 +217,7 @@ class TestResult:
 class RunTests:
     tests: TestTuple
     fail_fast: bool = False
+    fail_env_changed: bool = False
     match_tests: FilterTuple | None = None
     ignore_tests: FilterTuple | None = None
     match_tests_dict: FilterDict | None = None
