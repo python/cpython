@@ -132,7 +132,7 @@ class TestResults:
         import xml.etree.ElementTree as ET
         for e in xml_data:
             try:
-                self.suite.testsuite_xml.append(ET.fromstring(e))
+                self.testsuite_xml.append(ET.fromstring(e))
             except ET.ParseError:
                 print(xml_data, file=sys.__stderr__)
                 raise
