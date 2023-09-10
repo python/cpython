@@ -3835,9 +3835,10 @@ features:
               # signaled events may be more than one at once.
               print(f"signaled events={events}")
               for fd, event in events:
-                  index = fds.index(fd)
                   n = os.read(fd, 8)
                   count = int.from_bytes(n, byteorder=sys.byteorder)
+
+                  index = fds.index(fd)
                   print(f"Timer{index + 1} expired : {count} times")
       finally:
           for fd in fds:
@@ -3875,9 +3876,10 @@ features:
               print(rfd, wfd, xfd)
 
               for fd in rfd:
-                  index = fds.index(fd)
                   n = os.read(fd, 8)
                   count = int.from_bytes(n, byteorder=sys.byteorder)
+
+                  index = fds.index(fd)
                   print(f"Timer{index + 1} expired : {count} times")
       finally:
           for fd in fds:
