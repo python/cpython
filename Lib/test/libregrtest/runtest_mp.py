@@ -19,7 +19,7 @@ from test.support import TestStats
 from test.libregrtest.main import Regrtest
 from test.libregrtest.runtest import (
     run_single_test, TestResult, State, PROGRESS_MIN_TIME,
-    FilterTuple, RunTests)
+    FilterTuple, RunTests, StrPath, StrJSON, TestName)
 from test.libregrtest.setup import setup_tests, setup_test_dir
 from test.libregrtest.utils import format_duration, print_warning
 
@@ -50,7 +50,7 @@ class WorkerJob:
 
 def create_worker_process(runtests: RunTests,
                           output_file: TextIO,
-                          tmp_dir: str | None = None) -> subprocess.Popen:
+                          tmp_dir: StrPath | None = None) -> subprocess.Popen:
     python_cmd = runtests.python_cmd
     worker_json = runtests.as_json()
 
@@ -86,7 +86,7 @@ def create_worker_process(runtests: RunTests,
     return subprocess.Popen(cmd, **kw)
 
 
-def worker_process(worker_json: str) -> NoReturn:
+def worker_process(worker_json: StrJSON) -> NoReturn:
     runtests = RunTests.from_json(worker_json)
     test_name = runtests.tests[0]
     match_tests: FilterTuple | None = runtests.match_tests
@@ -222,7 +222,7 @@ class WorkerThread(threading.Thread):
         return MultiprocessResult(test_result, stdout, err_msg)
 
     def _run_process(self, worker_job, output_file: TextIO,
-                     tmp_dir: str | None = None) -> int:
+                     tmp_dir: StrPath | None = None) -> int:
         try:
             popen = create_worker_process(worker_job, output_file, tmp_dir)
 
@@ -273,7 +273,7 @@ class WorkerThread(threading.Thread):
             self._popen = None
             self.current_test_name = None
 
-    def _runtest(self, test_name: str) -> MultiprocessResult:
+    def _runtest(self, test_name: TestName) -> MultiprocessResult:
         self.current_test_name = test_name
 
         if sys.platform == 'win32':
