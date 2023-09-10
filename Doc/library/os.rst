@@ -3960,6 +3960,8 @@ features:
    cancelable when if the real-time clock is changed discontinuously. Reading the descriptor
    is aborted with with the error ECANCELED.
 
+   .. seealso::  :const:`TFD_TIMER_CANCEL_ON_SET` for discontinuous time change.
+
    Return a two-item tuple of (``next_expiration``, ``interval``) from
    the previous timer state, before this function executed.
 
