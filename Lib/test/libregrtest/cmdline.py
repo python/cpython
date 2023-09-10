@@ -1,5 +1,5 @@
 import argparse
-import os
+import os.path
 import shlex
 import sys
 from test.support import os_helper
@@ -177,6 +177,10 @@ class Namespace(argparse.Namespace):
         self.worker_json = None
         self.start = None
         self.timeout = None
+        self.memlimit = None
+        self.threshold = None
+        self.fail_rerun = False
+        self.tempdir = None
 
         super().__init__(**kwargs)
 
@@ -408,10 +412,6 @@ def _parse_args(args, **kwargs):
     if ns.timeout is not None:
         if ns.timeout <= 0:
             ns.timeout = None
-    if ns.use_mp is not None:
-        if ns.use_mp <= 0:
-            # Use all cores + extras for tests that like to sleep
-            ns.use_mp = 2 + (os.cpu_count() or 1)
     if ns.use:
         for a in ns.use:
             for r in a:
