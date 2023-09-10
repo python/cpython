@@ -414,6 +414,9 @@ class StreamWriter(Codec):
     def __exit__(self, type, value, tb):
         self.stream.close()
 
+    def __reduce_ex__(self, proto):
+        raise TypeError("can't serialize %s" % self.__class__.__name__)
+
 ###
 
 class StreamReader(Codec):
@@ -663,6 +666,9 @@ class StreamReader(Codec):
     def __exit__(self, type, value, tb):
         self.stream.close()
 
+    def __reduce_ex__(self, proto):
+        raise TypeError("can't serialize %s" % self.__class__.__name__)
+
 ###
 
 class StreamReaderWriter:
@@ -749,6 +755,9 @@ class StreamReaderWriter:
 
     def __exit__(self, type, value, tb):
         self.stream.close()
+
+    def __reduce_ex__(self, proto):
+        raise TypeError("can't serialize %s" % self.__class__.__name__)
 
 ###
 
@@ -865,6 +874,9 @@ class StreamRecoder:
 
     def __exit__(self, type, value, tb):
         self.stream.close()
+
+    def __reduce_ex__(self, proto):
+        raise TypeError("can't serialize %s" % self.__class__.__name__)
 
 ### Shortcuts
 
