@@ -3784,6 +3784,7 @@ features:
 .. function:: timerfd_create(clockid, /, *, flags)
 
    Create and return a timer file descriptor (*timerfd*).
+   The file descriptor must be closed with :func:`os.close` on cleanup.
 
    The file descriptor returned by :func:`timerfd_create` supports:
 
