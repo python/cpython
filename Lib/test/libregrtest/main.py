@@ -10,6 +10,7 @@ import tempfile
 import time
 import unittest
 from test.libregrtest.cmdline import _parse_args, Namespace
+from test.libregrtest.logger import Logger
 from test.libregrtest.runtest import (
     findtests, split_test_packages, run_single_test, abs_module_name,
     PROGRESS_MIN_TIME, State, RunTests, HuntRefleak,
@@ -54,6 +55,8 @@ class Regrtest:
     on the command line.
     """
     def __init__(self, ns: Namespace):
+        self.logger = Logger()
+
         # Actions
         self.want_header: bool = ns.header
         self.want_list_tests: bool = ns.list_tests
@@ -137,29 +140,8 @@ class Regrtest:
         self.next_single_test: TestName | None = None
         self.next_single_filename: StrPath | None = None
 
-        # misc
-        self.win_load_tracker = None
-
     def log(self, line=''):
-        empty = not line
-
-        # add the system load prefix: "load avg: 1.80 "
-        load_avg = self.getloadavg()
-        if load_avg is not None:
-            line = f"load avg: {load_avg:.2f} {line}"
-
-        # add the timestamp prefix:  "0:01:05 "
-        test_time = time.perf_counter() - self.start_time
-
-        mins, secs = divmod(int(test_time), 60)
-        hours, mins = divmod(mins, 60)
-        test_time = "%d:%02d:%02d" % (hours, mins, secs)
-
-        line = f"{test_time} {line}"
-        if empty:
-            line = line[:-1]
-
-        print(line, flush=True)
+        self.logger.log(line)
 
     def display_progress(self, test_index, text):
         if self.quiet:
@@ -293,7 +275,7 @@ class Regrtest:
             fail_fast=False,
             match_tests_dict=match_tests_dict,
             output_on_failure=False)
-        self.set_tests(runtests)
+        self.logger.set_tests(runtests)
         self._run_tests_mp(runtests, self.num_workers)
         return runtests
 
@@ -437,44 +419,7 @@ class Regrtest:
 
     def _run_tests_mp(self, runtests: RunTests, num_workers: int) -> None:
         from test.libregrtest.runtest_mp import RunWorkers
-
-        # If we're on windows and this is the parent runner (not a worker),
-        # track the load average.
-        if sys.platform == 'win32':
-            from test.libregrtest.win_utils import WindowsLoadTracker
-
-            try:
-                self.win_load_tracker = WindowsLoadTracker()
-            except PermissionError as error:
-                # Standard accounts may not have access to the performance
-                # counters.
-                print(f'Failed to create WindowsLoadTracker: {error}')
-
-        try:
-            RunWorkers(self, runtests, num_workers).run()
-        finally:
-            if self.win_load_tracker is not None:
-                self.win_load_tracker.close()
-                self.win_load_tracker = None
-
-    def set_tests(self, runtests: RunTests):
-        self.tests = runtests.tests
-        if runtests.forever:
-            self.test_count_text = ''
-            self.test_count_width = 3
-        else:
-            self.test_count_text = '/{}'.format(len(self.tests))
-            self.test_count_width = len(self.test_count_text) - 1
-
-    def run_tests(self, runtests: RunTests):
-        self.first_runtests = runtests
-        self.set_tests(runtests)
-        if self.num_workers:
-            self._run_tests_mp(runtests, self.num_workers)
-            tracer = None
-        else:
-            tracer = self.run_tests_sequentially(runtests)
-        return tracer
+        RunWorkers(self, runtests, num_workers).run()
 
     def finalize_tests(self, tracer):
         if self.next_single_filename:
@@ -496,7 +441,7 @@ class Regrtest:
             self.results.write_junit(self.junit_filename)
 
     def display_summary(self):
-        duration = time.perf_counter() - self.start_time
+        duration = time.perf_counter() - self.logger.start_time
         filtered = bool(self.match_tests) or bool(self.ignore_tests)
 
         # Total duration
@@ -619,35 +564,8 @@ class Regrtest:
 
             sys.exit(exc.code)
 
-    def getloadavg(self):
-        if self.win_load_tracker is not None:
-            return self.win_load_tracker.getloadavg()
-
-        if hasattr(os, 'getloadavg'):
-            return os.getloadavg()[0]
-
-        return None
-
-    def action_run_tests(self):
-        if self.hunt_refleak and self.hunt_refleak.warmups < 3:
-            msg = ("WARNING: Running tests with --huntrleaks/-R and "
-                   "less than 3 warmup repetitions can give false positives!")
-            print(msg, file=sys.stdout, flush=True)
-
-        # For a partial run, we do not need to clutter the output.
-        if (self.want_header
-            or not(self.pgo or self.quiet or self.single_test_run
-                   or self.tests or self.cmdline_args)):
-            self.display_header()
-
-        if self.randomize:
-            print("Using random seed", self.random_seed)
-
-        if self.num_workers < 0:
-            # Use all cores + extras for tests that like to sleep
-            self.num_workers = 2 + (os.cpu_count() or 1)
-
-        runtests = RunTests(
+    def create_run_tests(self):
+        return RunTests(
             tuple(self.selected),
             fail_fast=self.fail_fast,
             match_tests=self.match_tests,
@@ -668,16 +586,52 @@ class Regrtest:
             python_cmd=self.python_cmd,
         )
 
+    def run_tests(self) -> int:
+        if self.hunt_refleak and self.hunt_refleak.warmups < 3:
+            msg = ("WARNING: Running tests with --huntrleaks/-R and "
+                   "less than 3 warmup repetitions can give false positives!")
+            print(msg, file=sys.stdout, flush=True)
+
+        if self.num_workers < 0:
+            # Use all CPUs + 2 extra worker processes for tests
+            # that like to sleep
+            self.num_workers = (os.cpu_count() or 1) + 2
+
+        # For a partial run, we do not need to clutter the output.
+        if (self.want_header
+            or not(self.pgo or self.quiet or self.single_test_run
+                   or self.tests or self.cmdline_args)):
+            self.display_header()
+
+        if self.randomize:
+            print("Using random seed", self.random_seed)
+
+        runtests = self.create_run_tests()
+        self.first_runtests = runtests
+        self.logger.set_tests(runtests)
+
         setup_tests(runtests)
 
-        tracer = self.run_tests(runtests)
-        self.display_result(runtests)
+        self.logger.start_load_tracker()
+        try:
+            if self.num_workers:
+                self._run_tests_mp(runtests, self.num_workers)
+                tracer = None
+            else:
+                tracer = self.run_tests_sequentially(runtests)
 
-        if self.want_rerun and self.results.need_rerun():
-            self.rerun_failed_tests(runtests)
+            self.display_result(runtests)
+
+            if self.want_rerun and self.results.need_rerun():
+                self.rerun_failed_tests(runtests)
+        finally:
+            self.logger.stop_load_tracker()
 
         self.display_summary()
         self.finalize_tests(tracer)
+
+        return self.results.get_exitcode(self.fail_env_changed,
+                                         self.fail_rerun)
 
     def _main(self):
         if self.is_worker():
@@ -697,9 +651,7 @@ class Regrtest:
         elif self.want_list_cases:
             self.list_cases()
         else:
-            self.action_run_tests()
-            exitcode = self.results.get_exitcode(self.fail_env_changed,
-                                                 self.fail_rerun)
+            exitcode = self.run_tests()
 
         sys.exit(exitcode)
 

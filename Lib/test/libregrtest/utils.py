@@ -6,6 +6,9 @@ import textwrap
 from test import support
 
 
+MS_WINDOWS = (sys.platform == 'win32')
+
+
 def format_duration(seconds):
     ms = math.ceil(seconds * 1e3)
     seconds, ms = divmod(ms, 1000)
