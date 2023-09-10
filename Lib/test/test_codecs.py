@@ -1780,7 +1780,6 @@ class CodecsModuleTest(unittest.TestCase):
         self.assertEqual(dup.name, orig.name)
         self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
 
-
     def test_deep_copy(self):
         orig = codecs.lookup('utf-8')
         dup = copy.deepcopy(orig)
@@ -1798,7 +1797,6 @@ class CodecsModuleTest(unittest.TestCase):
         self.assertNotEqual(dup.encode, orig.encode)
         self.assertEqual(dup.name, orig.name)
         self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
-
 
     def test_pickle(self):
         codec_info = codecs.lookup('utf-8')
