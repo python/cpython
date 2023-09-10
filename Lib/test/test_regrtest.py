@@ -75,11 +75,6 @@ class ParseArgsTestCase(unittest.TestCase):
         ns = libregrtest._parse_args(['--wait'])
         self.assertTrue(ns.wait)
 
-    def test_worker_json(self):
-        ns = libregrtest._parse_args(['--worker-json', '[[], {}]'])
-        self.assertEqual(ns.worker_json, '[[], {}]')
-        self.checkError(['--worker-json'], 'expected one argument')
-
     def test_start(self):
         for opt in '-S', '--start':
             with self.subTest(opt=opt):

@@ -17,11 +17,11 @@ from test.support import TestStats
 from test.support import os_helper
 from test.support import threading_helper
 from test.libregrtest.save_env import saved_test_environment
-from test.libregrtest.utils import clear_caches, format_duration, print_warning
+from test.libregrtest.utils import (
+    clear_caches, format_duration, print_warning, StrPath)
 
 
 StrJSON = str
-StrPath = str
 TestName = str
 TestTuple = tuple[TestName, ...]
 TestList = list[TestName]
@@ -215,6 +215,33 @@ class TestResult:
             return None
         return tuple(match_tests)
 
+    def write_json(self, file) -> None:
+        json.dump(self, file, cls=_EncodeTestResult)
+
+    @staticmethod
+    def from_json(worker_json) -> 'TestResult':
+        return json.loads(worker_json, object_hook=_decode_test_result)
+
+
+class _EncodeTestResult(json.JSONEncoder):
+    def default(self, o: Any) -> dict[str, Any]:
+        if isinstance(o, TestResult):
+            result = dataclasses.asdict(o)
+            result["__test_result__"] = o.__class__.__name__
+            return result
+        else:
+            return super().default(o)
+
+
+def _decode_test_result(data: dict[str, Any]) -> TestResult | dict[str, Any]:
+    if "__test_result__" in data:
+        data.pop('__test_result__')
+        if data['stats'] is not None:
+            data['stats'] = TestStats(**data['stats'])
+        return TestResult(**data)
+    else:
+        return data
+
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class RunTests:
@@ -234,7 +261,7 @@ class RunTests:
     quiet: bool = False
     hunt_refleak: HuntRefleak | None = None
     test_dir: StrPath | None = None
-    junit_filename: StrPath | None = None
+    use_junit: bool = False
     memory_limit: str | None = None
     gc_threshold: int | None = None
     use_resources: list[str] = None
@@ -358,7 +385,7 @@ def setup_support(runtests: RunTests):
     support.set_match_tests(runtests.match_tests, runtests.ignore_tests)
     support.failfast = runtests.fail_fast
     support.verbose = runtests.verbose
-    if runtests.junit_filename:
+    if runtests.use_junit:
         support.junit_xml_list = []
     else:
         support.junit_xml_list = None
@@ -434,8 +461,8 @@ def run_single_test(test_name: TestName, runtests: RunTests) -> TestResult:
 
     Returns a TestResult.
 
-    If runtests.junit_filename is not None, xml_data is a list containing each
-    generated testsuite element.
+    If runtests.use_junit, xml_data is a list containing each generated
+    testsuite element.
     """
     start_time = time.perf_counter()
     result = TestResult(test_name)
