@@ -41,6 +41,20 @@ async def asynciter(iterable):
     for x in iterable:
         yield x
 
+def clean_asynciter(test):
+    @wraps(test)
+    async def wrapper(*args, **kwargs):
+        cleanups = []
+        def wrapped_asynciter(iterable):
+            it = asynciter(iterable)
+            cleanups.append(it.aclose)
+            return it
+        try:
+            return await test(*args, **kwargs, asynciter=wrapped_asynciter)
+        finally:
+            while cleanups:
+                await cleanups.pop()()
+    return wrapper
 
 # A very basic example.  If this fails, we're in deep trouble.
 def basic():
@@ -303,6 +317,13 @@ generator_example.events = ([(0, 'call'),
                             [(5, 'line'), (5, 'return')])
 
 
+def lineno_matches_lasti(frame):
+    last_line = None
+    for start, end, line in frame.f_code.co_lines():
+        if start <= frame.f_lasti < end:
+            last_line = line
+    return last_line == frame.f_lineno
+
 class Tracer:
     def __init__(self, trace_line_events=None, trace_opcode_events=None):
         self.trace_line_events = trace_line_events
@@ -316,6 +337,7 @@ class Tracer:
             frame.f_trace_opcodes = self.trace_opcode_events
 
     def trace(self, frame, event, arg):
+        assert lineno_matches_lasti(frame)
         self._reconfigure_frame(frame)
         self.events.append((frame.f_lineno, event))
         return self.trace
@@ -1654,7 +1676,6 @@ class TraceTestCase(unittest.TestCase):
         except Exception as ex:
             count = 0
             tb = ex.__traceback__
-            print(tb)
             while tb:
                 if tb.tb_frame.f_code.co_name == "test_settrace_error":
                     count += 1
@@ -1877,6 +1898,7 @@ class JumpTracer:
     def trace(self, frame, event, arg):
         if self.done:
             return
+        assert lineno_matches_lasti(frame)
         # frame.f_code.co_firstlineno is the first line of the decorator when
         # 'function' is decorated and the decorator may be written using
         # multiple physical lines when it is too long. Use the first line
@@ -1937,7 +1959,11 @@ class JumpTestCase(unittest.TestCase):
 
     def run_test(self, func, jumpFrom, jumpTo, expected, error=None,
                  event='line', decorated=False, warning=None):
-        tracer = JumpTracer(func, jumpFrom, jumpTo, event, decorated)
+        wrapped = func
+        while hasattr(wrapped, '__wrapped__'):
+            wrapped = wrapped.__wrapped__
+
+        tracer = JumpTracer(wrapped, jumpFrom, jumpTo, event, decorated)
         sys.settrace(tracer.trace)
         output = []
 
@@ -1953,7 +1979,11 @@ class JumpTestCase(unittest.TestCase):
 
     def run_async_test(self, func, jumpFrom, jumpTo, expected, error=None,
                  event='line', decorated=False, warning=None):
-        tracer = JumpTracer(func, jumpFrom, jumpTo, event, decorated)
+        wrapped = func
+        while hasattr(wrapped, '__wrapped__'):
+            wrapped = wrapped.__wrapped__
+
+        tracer = JumpTracer(wrapped, jumpFrom, jumpTo, event, decorated)
         sys.settrace(tracer.trace)
         output = []
 
@@ -2024,7 +2054,8 @@ class JumpTestCase(unittest.TestCase):
         output.append(7)
 
     @async_jump_test(4, 5, [3, 5])
-    async def test_jump_out_of_async_for_block_forwards(output):
+    @clean_asynciter
+    async def test_jump_out_of_async_for_block_forwards(output, asynciter):
         for i in [1]:
             async for i in asynciter([1, 2]):
                 output.append(3)
@@ -2032,7 +2063,8 @@ class JumpTestCase(unittest.TestCase):
             output.append(5)
 
     @async_jump_test(5, 2, [2, 4, 2, 4, 5, 6])
-    async def test_jump_out_of_async_for_block_backwards(output):
+    @clean_asynciter
+    async def test_jump_out_of_async_for_block_backwards(output, asynciter):
         for i in [1]:
             output.append(2)
             async for i in asynciter([1]):
