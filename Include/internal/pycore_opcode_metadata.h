@@ -39,38 +39,42 @@
 #define _BINARY_OP_ADD_UNICODE 311
 #define _BINARY_OP_INPLACE_ADD_UNICODE 312
 #define _POP_FRAME 313
-#define _GUARD_GLOBALS_VERSION 314
-#define _GUARD_BUILTINS_VERSION 315
-#define _LOAD_GLOBAL_MODULE 316
-#define _LOAD_GLOBAL_BUILTINS 317
-#define _GUARD_TYPE_VERSION 318
-#define _CHECK_MANAGED_OBJECT_HAS_VALUES 319
-#define _LOAD_ATTR_INSTANCE_VALUE 320
-#define IS_NONE 321
-#define _ITER_CHECK_LIST 322
-#define _ITER_JUMP_LIST 323
-#define _IS_ITER_EXHAUSTED_LIST 324
-#define _ITER_NEXT_LIST 325
-#define _ITER_CHECK_TUPLE 326
-#define _ITER_JUMP_TUPLE 327
-#define _IS_ITER_EXHAUSTED_TUPLE 328
-#define _ITER_NEXT_TUPLE 329
-#define _ITER_CHECK_RANGE 330
-#define _ITER_JUMP_RANGE 331
-#define _IS_ITER_EXHAUSTED_RANGE 332
-#define _ITER_NEXT_RANGE 333
-#define _CHECK_CALL_BOUND_METHOD_EXACT_ARGS 334
-#define _INIT_CALL_BOUND_METHOD_EXACT_ARGS 335
-#define _CHECK_PEP_523 336
-#define _CHECK_FUNCTION_EXACT_ARGS 337
-#define _CHECK_STACK_SPACE 338
-#define _INIT_CALL_PY_EXACT_ARGS 339
-#define _PUSH_FRAME 340
-#define _POP_JUMP_IF_FALSE 341
-#define _POP_JUMP_IF_TRUE 342
-#define JUMP_TO_TOP 343
-#define SAVE_CURRENT_IP 344
-#define INSERT 345
+#define _MONITOR_RETURN 314
+#define _SUSPEND_GENERATOR 315
+#define _MONITOR_YIELD_VALUE 316
+#define _DO_YIELD 317
+#define _GUARD_GLOBALS_VERSION 318
+#define _GUARD_BUILTINS_VERSION 319
+#define _LOAD_GLOBAL_MODULE 320
+#define _LOAD_GLOBAL_BUILTINS 321
+#define _GUARD_TYPE_VERSION 322
+#define _CHECK_MANAGED_OBJECT_HAS_VALUES 323
+#define _LOAD_ATTR_INSTANCE_VALUE 324
+#define IS_NONE 325
+#define _ITER_CHECK_LIST 326
+#define _ITER_JUMP_LIST 327
+#define _IS_ITER_EXHAUSTED_LIST 328
+#define _ITER_NEXT_LIST 329
+#define _ITER_CHECK_TUPLE 330
+#define _ITER_JUMP_TUPLE 331
+#define _IS_ITER_EXHAUSTED_TUPLE 332
+#define _ITER_NEXT_TUPLE 333
+#define _ITER_CHECK_RANGE 334
+#define _ITER_JUMP_RANGE 335
+#define _IS_ITER_EXHAUSTED_RANGE 336
+#define _ITER_NEXT_RANGE 337
+#define _CHECK_CALL_BOUND_METHOD_EXACT_ARGS 338
+#define _INIT_CALL_BOUND_METHOD_EXACT_ARGS 339
+#define _CHECK_PEP_523 340
+#define _CHECK_FUNCTION_EXACT_ARGS 341
+#define _CHECK_STACK_SPACE 342
+#define _INIT_CALL_PY_EXACT_ARGS 343
+#define _PUSH_FRAME 344
+#define _POP_JUMP_IF_FALSE 345
+#define _POP_JUMP_IF_TRUE 346
+#define JUMP_TO_TOP 347
+#define SAVE_CURRENT_IP 348
+#define INSERT 349
 
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
 #ifdef NEED_OPCODE_METADATA
@@ -110,9 +114,13 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
             return 0;
         case END_FOR:
             return 2;
+        case _END_FOR_MONITOR:
+            return 2;
         case INSTRUMENTED_END_FOR:
             return 2;
         case END_SEND:
+            return 2;
+        case _END_SEND_MONITOR:
             return 2;
         case INSTRUMENTED_END_SEND:
             return 2;
@@ -228,9 +236,11 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
             return 2;
         case SEND_GEN:
             return 2;
-        case INSTRUMENTED_YIELD_VALUE:
+        case _SUSPEND_GENERATOR:
             return 1;
         case YIELD_VALUE:
+            return 1;
+        case INSTRUMENTED_YIELD_VALUE:
             return 1;
         case POP_EXCEPT:
             return 1;
@@ -640,10 +650,14 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 1;
         case END_FOR:
             return 0;
+        case _END_FOR_MONITOR:
+            return 2;
         case INSTRUMENTED_END_FOR:
             return 0;
         case END_SEND:
             return 1;
+        case _END_SEND_MONITOR:
+            return 2;
         case INSTRUMENTED_END_SEND:
             return 1;
         case UNARY_NEGATIVE:
@@ -758,9 +772,11 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 2;
         case SEND_GEN:
             return 2;
-        case INSTRUMENTED_YIELD_VALUE:
+        case _SUSPEND_GENERATOR:
             return 1;
         case YIELD_VALUE:
+            return 1;
+        case INSTRUMENTED_YIELD_VALUE:
             return 1;
         case POP_EXCEPT:
             return 0;
@@ -1216,8 +1232,10 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [POP_TOP] = { true, INSTR_FMT_IX, 0 },
     [PUSH_NULL] = { true, INSTR_FMT_IX, 0 },
     [END_FOR] = { true, INSTR_FMT_IX, 0 },
+    [_END_FOR_MONITOR] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG },
     [INSTRUMENTED_END_FOR] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG },
     [END_SEND] = { true, INSTR_FMT_IX, 0 },
+    [_END_SEND_MONITOR] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG },
     [INSTRUMENTED_END_SEND] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG },
     [UNARY_NEGATIVE] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG },
     [UNARY_NOT] = { true, INSTR_FMT_IX, 0 },
@@ -1268,6 +1286,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [INTERPRETER_EXIT] = { true, INSTR_FMT_IX, 0 },
     [_POP_FRAME] = { true, INSTR_FMT_IX, 0 },
     [RETURN_VALUE] = { true, INSTR_FMT_IX, 0 },
+    [_MONITOR_RETURN] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG },
     [INSTRUMENTED_RETURN_VALUE] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG },
     [RETURN_CONST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_CONST_FLAG },
     [INSTRUMENTED_RETURN_CONST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_CONST_FLAG | HAS_ERROR_FLAG },
@@ -1276,8 +1295,11 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [GET_AWAITABLE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG },
     [SEND] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_ERROR_FLAG },
     [SEND_GEN] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_DEOPT_FLAG },
-    [INSTRUMENTED_YIELD_VALUE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG },
+    [_SUSPEND_GENERATOR] = { true, INSTR_FMT_IX, 0 },
+    [_MONITOR_YIELD_VALUE] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG },
+    [_DO_YIELD] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [YIELD_VALUE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
+    [INSTRUMENTED_YIELD_VALUE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG },
     [POP_EXCEPT] = { true, INSTR_FMT_IX, 0 },
     [RERAISE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG },
     [END_ASYNC_FOR] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG },
@@ -1621,6 +1643,10 @@ const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
     [_BINARY_OP_ADD_UNICODE] = "_BINARY_OP_ADD_UNICODE",
     [_BINARY_OP_INPLACE_ADD_UNICODE] = "_BINARY_OP_INPLACE_ADD_UNICODE",
     [_POP_FRAME] = "_POP_FRAME",
+    [_MONITOR_RETURN] = "_MONITOR_RETURN",
+    [_SUSPEND_GENERATOR] = "_SUSPEND_GENERATOR",
+    [_MONITOR_YIELD_VALUE] = "_MONITOR_YIELD_VALUE",
+    [_DO_YIELD] = "_DO_YIELD",
     [_GUARD_GLOBALS_VERSION] = "_GUARD_GLOBALS_VERSION",
     [_GUARD_BUILTINS_VERSION] = "_GUARD_BUILTINS_VERSION",
     [_LOAD_GLOBAL_MODULE] = "_LOAD_GLOBAL_MODULE",
@@ -1728,6 +1754,8 @@ const char *const _PyOpcode_OpName[268] = {
     [UNARY_NEGATIVE] = "UNARY_NEGATIVE",
     [UNARY_NOT] = "UNARY_NOT",
     [WITH_EXCEPT_START] = "WITH_EXCEPT_START",
+    [_END_FOR_MONITOR] = "_END_FOR_MONITOR",
+    [_END_SEND_MONITOR] = "_END_SEND_MONITOR",
     [BINARY_OP] = "BINARY_OP",
     [BUILD_CONST_KEY_MAP] = "BUILD_CONST_KEY_MAP",
     [BUILD_LIST] = "BUILD_LIST",
@@ -1849,11 +1877,6 @@ const char *const _PyOpcode_OpName[268] = {
     [UNPACK_SEQUENCE_TWO_TUPLE] = "UNPACK_SEQUENCE_TWO_TUPLE",
     [YIELD_VALUE] = "YIELD_VALUE",
     [INSTRUMENTED_RESUME] = "INSTRUMENTED_RESUME",
-    [INSTRUMENTED_END_FOR] = "INSTRUMENTED_END_FOR",
-    [INSTRUMENTED_END_SEND] = "INSTRUMENTED_END_SEND",
-    [INSTRUMENTED_RETURN_VALUE] = "INSTRUMENTED_RETURN_VALUE",
-    [INSTRUMENTED_RETURN_CONST] = "INSTRUMENTED_RETURN_CONST",
-    [INSTRUMENTED_YIELD_VALUE] = "INSTRUMENTED_YIELD_VALUE",
     [INSTRUMENTED_LOAD_SUPER_ATTR] = "INSTRUMENTED_LOAD_SUPER_ATTR",
     [INSTRUMENTED_FOR_ITER] = "INSTRUMENTED_FOR_ITER",
     [INSTRUMENTED_CALL] = "INSTRUMENTED_CALL",
@@ -1865,6 +1888,11 @@ const char *const _PyOpcode_OpName[268] = {
     [INSTRUMENTED_POP_JUMP_IF_FALSE] = "INSTRUMENTED_POP_JUMP_IF_FALSE",
     [INSTRUMENTED_POP_JUMP_IF_NONE] = "INSTRUMENTED_POP_JUMP_IF_NONE",
     [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = "INSTRUMENTED_POP_JUMP_IF_NOT_NONE",
+    [INSTRUMENTED_END_FOR] = "INSTRUMENTED_END_FOR",
+    [INSTRUMENTED_END_SEND] = "INSTRUMENTED_END_SEND",
+    [INSTRUMENTED_RETURN_VALUE] = "INSTRUMENTED_RETURN_VALUE",
+    [INSTRUMENTED_RETURN_CONST] = "INSTRUMENTED_RETURN_CONST",
+    [INSTRUMENTED_YIELD_VALUE] = "INSTRUMENTED_YIELD_VALUE",
     [INSTRUMENTED_LINE] = "INSTRUMENTED_LINE",
     [JUMP] = "JUMP",
     [JUMP_NO_INTERRUPT] = "JUMP_NO_INTERRUPT",
@@ -2111,12 +2139,12 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [UNPACK_SEQUENCE_TWO_TUPLE] = UNPACK_SEQUENCE,
     [WITH_EXCEPT_START] = WITH_EXCEPT_START,
     [YIELD_VALUE] = YIELD_VALUE,
+    [_END_FOR_MONITOR] = _END_FOR_MONITOR,
+    [_END_SEND_MONITOR] = _END_SEND_MONITOR,
 };
 #endif // NEED_OPCODE_METADATA
 
 #define EXTRA_CASES \
-    case 189: \
-    case 190: \
     case 191: \
     case 192: \
     case 193: \

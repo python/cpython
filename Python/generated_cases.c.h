@@ -39,14 +39,13 @@
         }
 
         TARGET(INSTRUMENTED_RESUME) {
+            TIER_ONE_ONLY;
             /* Possible performance enhancement:
              *   We need to check the eval breaker anyway, can we
              * combine the instrument verison check and the eval breaker test?
              */
             if (_PyFrame_GetCode(frame)->_co_instrumentation_version != tstate->interp->monitoring_version) {
-                if (_Py_Instrument(_PyFrame_GetCode(frame), tstate->interp)) {
-                    goto error;
-                }
+                if (_Py_Instrument(_PyFrame_GetCode(frame), tstate->interp)) goto error;
                 next_instr--;
             }
             else {
@@ -187,22 +186,47 @@
             DISPATCH();
         }
 
-        TARGET(INSTRUMENTED_END_FOR) {
+        TARGET(_END_FOR_MONITOR) {
             PyObject *value;
             PyObject *receiver;
             value = stack_pointer[-1];
             receiver = stack_pointer[-2];
+            TIER_ONE_ONLY;
             /* Need to create a fake StopIteration error here,
              * to conform to PEP 380 */
             if (PyGen_Check(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
-                if (monitor_stop_iteration(tstate, frame, next_instr-1)) {
-                    goto error;
-                }
+                if (monitor_stop_iteration(tstate, frame, next_instr-1)) goto error;
                 PyErr_SetRaisedException(NULL);
             }
-            Py_DECREF(receiver);
-            Py_DECREF(value);
+            DISPATCH();
+        }
+
+        TARGET(INSTRUMENTED_END_FOR) {
+            PyObject *value;
+            PyObject *receiver;
+            // _END_FOR_MONITOR
+            value = stack_pointer[-1];
+            receiver = stack_pointer[-2];
+            {
+                TIER_ONE_ONLY;
+                /* Need to create a fake StopIteration error here,
+                 * to conform to PEP 380 */
+                if (PyGen_Check(receiver)) {
+                    PyErr_SetObject(PyExc_StopIteration, value);
+                    if (monitor_stop_iteration(tstate, frame, next_instr-1)) goto error;
+                    PyErr_SetRaisedException(NULL);
+                }
+            }
+            // POP_TOP
+            {
+                Py_DECREF(value);
+            }
+            // POP_TOP
+            value = receiver;
+            {
+                Py_DECREF(value);
+            }
             STACK_SHRINK(2);
             DISPATCH();
         }
@@ -218,19 +242,38 @@
             DISPATCH();
         }
 
-        TARGET(INSTRUMENTED_END_SEND) {
+        TARGET(_END_SEND_MONITOR) {
             PyObject *value;
             PyObject *receiver;
             value = stack_pointer[-1];
             receiver = stack_pointer[-2];
+            TIER_ONE_ONLY;
             if (PyGen_Check(receiver) || PyCoro_CheckExact(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
-                if (monitor_stop_iteration(tstate, frame, next_instr-1)) {
-                    goto error;
-                }
+                if (monitor_stop_iteration(tstate, frame, next_instr-1)) goto error;
                 PyErr_SetRaisedException(NULL);
             }
-            Py_DECREF(receiver);
+            DISPATCH();
+        }
+
+        TARGET(INSTRUMENTED_END_SEND) {
+            PyObject *value;
+            PyObject *receiver;
+            // _END_SEND_MONITOR
+            value = stack_pointer[-1];
+            receiver = stack_pointer[-2];
+            {
+                TIER_ONE_ONLY;
+                if (PyGen_Check(receiver) || PyCoro_CheckExact(receiver)) {
+                    PyErr_SetObject(PyExc_StopIteration, value);
+                    if (monitor_stop_iteration(tstate, frame, next_instr-1)) goto error;
+                    PyErr_SetRaisedException(NULL);
+                }
+            }
+            // END_SEND
+            {
+                Py_DECREF(receiver);
+            }
             STACK_SHRINK(1);
             stack_pointer[-1] = value;
             DISPATCH();
@@ -948,6 +991,7 @@
         TARGET(RAISE_VARARGS) {
             PyObject **args;
             args = stack_pointer - oparg;
+            TIER_ONE_ONLY;
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
             case 2:
@@ -1027,24 +1071,50 @@
 
         TARGET(INSTRUMENTED_RETURN_VALUE) {
             PyObject *retval;
+            // _MONITOR_RETURN
             retval = stack_pointer[-1];
-            int err = _Py_call_instrumentation_arg(
-                    tstate, PY_MONITORING_EVENT_PY_RETURN,
-                    frame, next_instr-1, retval);
-            if (err) goto error;
+            {
+                TIER_ONE_ONLY;
+                int err = _Py_call_instrumentation_arg(
+                        tstate, PY_MONITORING_EVENT_PY_RETURN,
+                        frame, next_instr-1, retval);
+                if (err) goto error;
+            }
+            // SAVE_CURRENT_IP
+            {
+                #if TIER_ONE
+                frame->prev_instr = next_instr - 1;
+                #endif
+                #if TIER_TWO
+                // Relies on a preceding SAVE_IP
+                frame->prev_instr--;
+                #endif
+            }
+            // _POP_FRAME
             STACK_SHRINK(1);
-            assert(EMPTY());
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _Py_LeaveRecursiveCallPy(tstate);
-            assert(frame != &entry_frame);
-            // GH-99729: We need to unlink the frame *before* clearing it:
-            _PyInterpreterFrame *dying = frame;
-            frame = tstate->current_frame = dying->previous;
-            _PyEval_FrameClearAndPop(tstate, dying);
-            frame->prev_instr += frame->return_offset;
-            _PyFrame_StackPush(frame, retval);
-            goto resume_frame;
-            STACK_SHRINK(1);
+            {
+                assert(EMPTY());
+                #if TIER_ONE
+                assert(frame != &entry_frame);
+                #endif
+                STORE_SP();
+                _Py_LeaveRecursiveCallPy(tstate);
+                // GH-99729: We need to unlink the frame *before* clearing it:
+                _PyInterpreterFrame *dying = frame;
+                frame = tstate->current_frame = dying->previous;
+                _PyEval_FrameClearAndPop(tstate, dying);
+                frame->prev_instr += frame->return_offset;
+                _PyFrame_StackPush(frame, retval);
+                LOAD_SP();
+                LOAD_IP();
+    #if LLTRACE && TIER_ONE
+                lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
+                if (lltrace < 0) {
+                    goto exit_unwind;
+                }
+    #endif
+            }
+            DISPATCH();
         }
 
         TARGET(RETURN_CONST) {
@@ -1093,23 +1163,56 @@
         }
 
         TARGET(INSTRUMENTED_RETURN_CONST) {
-            PyObject *retval = GETITEM(FRAME_CO_CONSTS, oparg);
-            int err = _Py_call_instrumentation_arg(
-                    tstate, PY_MONITORING_EVENT_PY_RETURN,
-                    frame, next_instr-1, retval);
-            if (err) goto error;
-            Py_INCREF(retval);
-            assert(EMPTY());
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _Py_LeaveRecursiveCallPy(tstate);
-            assert(frame != &entry_frame);
-            // GH-99729: We need to unlink the frame *before* clearing it:
-            _PyInterpreterFrame *dying = frame;
-            frame = tstate->current_frame = dying->previous;
-            _PyEval_FrameClearAndPop(tstate, dying);
-            frame->prev_instr += frame->return_offset;
-            _PyFrame_StackPush(frame, retval);
-            goto resume_frame;
+            PyObject *value;
+            PyObject *retval;
+            // LOAD_CONST
+            {
+                value = GETITEM(FRAME_CO_CONSTS, oparg);
+                Py_INCREF(value);
+            }
+            // _MONITOR_RETURN
+            retval = value;
+            {
+                TIER_ONE_ONLY;
+                int err = _Py_call_instrumentation_arg(
+                        tstate, PY_MONITORING_EVENT_PY_RETURN,
+                        frame, next_instr-1, retval);
+                if (err) goto error;
+            }
+            // SAVE_CURRENT_IP
+            {
+                #if TIER_ONE
+                frame->prev_instr = next_instr - 1;
+                #endif
+                #if TIER_TWO
+                // Relies on a preceding SAVE_IP
+                frame->prev_instr--;
+                #endif
+            }
+            // _POP_FRAME
+            {
+                assert(EMPTY());
+                #if TIER_ONE
+                assert(frame != &entry_frame);
+                #endif
+                STORE_SP();
+                _Py_LeaveRecursiveCallPy(tstate);
+                // GH-99729: We need to unlink the frame *before* clearing it:
+                _PyInterpreterFrame *dying = frame;
+                frame = tstate->current_frame = dying->previous;
+                _PyEval_FrameClearAndPop(tstate, dying);
+                frame->prev_instr += frame->return_offset;
+                _PyFrame_StackPush(frame, retval);
+                LOAD_SP();
+                LOAD_IP();
+    #if LLTRACE && TIER_ONE
+                lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
+                if (lltrace < 0) {
+                    goto exit_unwind;
+                }
+    #endif
+            }
+            DISPATCH();
         }
 
         TARGET(GET_AITER) {
@@ -1240,6 +1343,7 @@
             PyObject *retval;
             v = stack_pointer[-1];
             receiver = stack_pointer[-2];
+            TIER_ONE_ONLY;
             #if ENABLE_SPECIALIZATION
             _PySendCache *cache = (_PySendCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
@@ -1313,47 +1417,76 @@
             DISPATCH_INLINED(gen_frame);
         }
 
-        TARGET(INSTRUMENTED_YIELD_VALUE) {
+        TARGET(YIELD_VALUE) {
+            PyObject *val;
             PyObject *retval;
-            retval = stack_pointer[-1];
-            assert(frame != &entry_frame);
-            assert(oparg >= 0); /* make the generator identify this as HAS_ARG */
-            PyGenObject *gen = _PyFrame_GetGenerator(frame);
-            gen->gi_frame_state = FRAME_SUSPENDED;
-            _PyFrame_SetStackPointer(frame, stack_pointer - 1);
-            int err = _Py_call_instrumentation_arg(
-                    tstate, PY_MONITORING_EVENT_PY_YIELD,
-                    frame, next_instr-1, retval);
-            if (err) goto error;
-            tstate->exc_info = gen->gi_exc_state.previous_item;
-            gen->gi_exc_state.previous_item = NULL;
-            _Py_LeaveRecursiveCallPy(tstate);
-            _PyInterpreterFrame *gen_frame = frame;
-            frame = tstate->current_frame = frame->previous;
-            gen_frame->previous = NULL;
-            _PyFrame_StackPush(frame, retval);
-            goto resume_frame;
+            // _SUSPEND_GENERATOR
+            val = stack_pointer[-1];
+            {
+    #if TIER_ONE
+                assert(frame != &entry_frame);
+    #endif
+                PyGenObject *gen = _PyFrame_GetGenerator(frame);
+                gen->gi_frame_state = FRAME_SUSPENDED;
+                _PyFrame_SetStackPointer(frame, stack_pointer - 1);
+            }
+            // _DO_YIELD
+            retval = val;
+            {
+                // NOTE: It's important that YIELD_VALUE never raises an exception!
+                // The compiler treats any exception raised here as a failed close()
+                // or throw() call.
+                assert(oparg >= 0); /* make the generator identify this as HAS_ARG */
+                PyGenObject *gen = _PyFrame_GetGenerator(frame);
+                tstate->exc_info = gen->gi_exc_state.previous_item;
+                gen->gi_exc_state.previous_item = NULL;
+                _Py_LeaveRecursiveCallPy(tstate);
+                _PyInterpreterFrame *gen_frame = frame;
+                frame = tstate->current_frame = frame->previous;
+                gen_frame->previous = NULL;
+                _PyFrame_StackPush(frame, retval);
+                goto resume_frame;
+            }
         }
 
-        TARGET(YIELD_VALUE) {
+        TARGET(INSTRUMENTED_YIELD_VALUE) {
+            PyObject *val;
             PyObject *retval;
-            retval = stack_pointer[-1];
-            // NOTE: It's important that YIELD_VALUE never raises an exception!
-            // The compiler treats any exception raised here as a failed close()
-            // or throw() call.
-            assert(oparg >= 0); /* make the generator identify this as HAS_ARG */
-            assert(frame != &entry_frame);
-            PyGenObject *gen = _PyFrame_GetGenerator(frame);
-            gen->gi_frame_state = FRAME_SUSPENDED;
-            _PyFrame_SetStackPointer(frame, stack_pointer - 1);
-            tstate->exc_info = gen->gi_exc_state.previous_item;
-            gen->gi_exc_state.previous_item = NULL;
-            _Py_LeaveRecursiveCallPy(tstate);
-            _PyInterpreterFrame *gen_frame = frame;
-            frame = tstate->current_frame = frame->previous;
-            gen_frame->previous = NULL;
-            _PyFrame_StackPush(frame, retval);
-            goto resume_frame;
+            // _SUSPEND_GENERATOR
+            val = stack_pointer[-1];
+            {
+    #if TIER_ONE
+                assert(frame != &entry_frame);
+    #endif
+                PyGenObject *gen = _PyFrame_GetGenerator(frame);
+                gen->gi_frame_state = FRAME_SUSPENDED;
+                _PyFrame_SetStackPointer(frame, stack_pointer - 1);
+            }
+            // _MONITOR_YIELD_VALUE
+            {
+                TIER_ONE_ONLY;
+                int err = _Py_call_instrumentation_arg(
+                        tstate, PY_MONITORING_EVENT_PY_YIELD,
+                        frame, next_instr-1, val);
+                if (err) goto error;
+            }
+            // _DO_YIELD
+            retval = val;
+            {
+                // NOTE: It's important that YIELD_VALUE never raises an exception!
+                // The compiler treats any exception raised here as a failed close()
+                // or throw() call.
+                assert(oparg >= 0); /* make the generator identify this as HAS_ARG */
+                PyGenObject *gen = _PyFrame_GetGenerator(frame);
+                tstate->exc_info = gen->gi_exc_state.previous_item;
+                gen->gi_exc_state.previous_item = NULL;
+                _Py_LeaveRecursiveCallPy(tstate);
+                _PyInterpreterFrame *gen_frame = frame;
+                frame = tstate->current_frame = frame->previous;
+                gen_frame->previous = NULL;
+                _PyFrame_StackPush(frame, retval);
+                goto resume_frame;
+            }
         }
 
         TARGET(POP_EXCEPT) {
@@ -1370,6 +1503,7 @@
             PyObject **values;
             exc = stack_pointer[-1];
             values = stack_pointer - 1 - oparg;
+            TIER_ONE_ONLY;
             assert(oparg >= 0 && oparg <= 2);
             if (oparg) {
                 PyObject *lasti = values[0];
@@ -1396,6 +1530,7 @@
             PyObject *awaitable;
             exc = stack_pointer[-1];
             awaitable = stack_pointer[-2];
+            TIER_ONE_ONLY;
             assert(exc && PyExceptionInstance_Check(exc));
             if (PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration)) {
                 Py_DECREF(awaitable);
@@ -1420,6 +1555,7 @@
             exc_value = stack_pointer[-1];
             last_sent_val = stack_pointer[-2];
             sub_iter = stack_pointer[-3];
+            TIER_ONE_ONLY;
             assert(throwflag);
             assert(exc_value && PyExceptionInstance_Check(exc_value));
             if (PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration)) {
@@ -2208,6 +2344,7 @@
         }
 
         TARGET(INSTRUMENTED_LOAD_SUPER_ATTR) {
+            TIER_ONE_ONLY;
             _PySuperAttrCache *cache = (_PySuperAttrCache *)next_instr;
             // cancel out the decrement that will happen in LOAD_SUPER_ATTR; we
             // don't want to specialize instrumented instructions
@@ -3197,6 +3334,7 @@
             PyObject *iter;
             PyObject *next;
             iter = stack_pointer[-1];
+            TIER_ONE_ONLY;
             #if ENABLE_SPECIALIZATION
             _PyForIterCache *cache = (_PyForIterCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
@@ -3235,6 +3373,7 @@
         }
 
         TARGET(INSTRUMENTED_FOR_ITER) {
+            TIER_ONE_ONLY;
             _Py_CODEUNIT *here = next_instr-1;
             _Py_CODEUNIT *target;
             PyObject *iter = TOP();
@@ -3687,6 +3826,7 @@
         }
 
         TARGET(INSTRUMENTED_CALL) {
+            TIER_ONE_ONLY;
             int is_meth = PEEK(oparg + 1) != NULL;
             int total_args = oparg + is_meth;
             PyObject *function = PEEK(oparg + 2);
@@ -4611,6 +4751,7 @@
         }
 
         TARGET(INSTRUMENTED_CALL_FUNCTION_EX) {
+            TIER_ONE_ONLY;
             GO_TO_INSTRUCTION(CALL_FUNCTION_EX);
         }
 
@@ -4893,6 +5034,7 @@
         }
 
         TARGET(INSTRUMENTED_INSTRUCTION) {
+            TIER_ONE_ONLY;
             int next_opcode = _Py_call_instrumentation_instruction(
                 tstate, frame, next_instr-1);
             if (next_opcode < 0) goto error;
@@ -4907,17 +5049,20 @@
         }
 
         TARGET(INSTRUMENTED_JUMP_FORWARD) {
+            TIER_ONE_ONLY;
             INSTRUMENTED_JUMP(next_instr-1, next_instr+oparg, PY_MONITORING_EVENT_JUMP);
             DISPATCH();
         }
 
         TARGET(INSTRUMENTED_JUMP_BACKWARD) {
+            TIER_ONE_ONLY;
             CHECK_EVAL_BREAKER();
             INSTRUMENTED_JUMP(next_instr-1, next_instr+1-oparg, PY_MONITORING_EVENT_JUMP);
             DISPATCH();
         }
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_TRUE) {
+            TIER_ONE_ONLY;
             PyObject *cond = POP();
             assert(PyBool_Check(cond));
             _Py_CODEUNIT *here = next_instr - 1;
@@ -4927,6 +5072,7 @@
         }
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_FALSE) {
+            TIER_ONE_ONLY;
             PyObject *cond = POP();
             assert(PyBool_Check(cond));
             _Py_CODEUNIT *here = next_instr - 1;
@@ -4936,6 +5082,7 @@
         }
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_NONE) {
+            TIER_ONE_ONLY;
             PyObject *value = POP();
             _Py_CODEUNIT *here = next_instr-1;
             int offset;
@@ -4951,6 +5098,7 @@
         }
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_NOT_NONE) {
+            TIER_ONE_ONLY;
             PyObject *value = POP();
             _Py_CODEUNIT *here = next_instr-1;
             int offset;

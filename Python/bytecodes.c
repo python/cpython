@@ -164,14 +164,13 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_RESUME, (--)) {
+            TIER_ONE_ONLY;
             /* Possible performance enhancement:
              *   We need to check the eval breaker anyway, can we
              * combine the instrument verison check and the eval breaker test?
              */
             if (_PyFrame_GetCode(frame)->_co_instrumentation_version != tstate->interp->monitoring_version) {
-                if (_Py_Instrument(_PyFrame_GetCode(frame), tstate->interp)) {
-                    goto error;
-                }
+                ERROR_IF(_Py_Instrument(_PyFrame_GetCode(frame), tstate->interp), error);
                 next_instr--;
             }
             else {
@@ -260,33 +259,33 @@ dummy_func(
 
         macro(END_FOR) = POP_TOP + POP_TOP;
 
-        inst(INSTRUMENTED_END_FOR, (receiver, value --)) {
+        inst(_END_FOR_MONITOR, (receiver, value -- receiver, value)) {
+            TIER_ONE_ONLY;
             /* Need to create a fake StopIteration error here,
              * to conform to PEP 380 */
             if (PyGen_Check(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
-                if (monitor_stop_iteration(tstate, frame, next_instr-1)) {
-                    goto error;
-                }
+                ERROR_IF(monitor_stop_iteration(tstate, frame, next_instr-1), error);
                 PyErr_SetRaisedException(NULL);
             }
-            DECREF_INPUTS();
         }
+
+        macro(INSTRUMENTED_END_FOR) = _END_FOR_MONITOR + POP_TOP + POP_TOP;
 
         inst(END_SEND, (receiver, value -- value)) {
             Py_DECREF(receiver);
         }
 
-        inst(INSTRUMENTED_END_SEND, (receiver, value -- value)) {
+        inst(_END_SEND_MONITOR, (receiver, value -- receiver, value)) {
+            TIER_ONE_ONLY;
             if (PyGen_Check(receiver) || PyCoro_CheckExact(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
-                if (monitor_stop_iteration(tstate, frame, next_instr-1)) {
-                    goto error;
-                }
+                ERROR_IF(monitor_stop_iteration(tstate, frame, next_instr-1), error);
                 PyErr_SetRaisedException(NULL);
             }
-            Py_DECREF(receiver);
         }
+
+        macro(INSTRUMENTED_END_SEND) = _END_SEND_MONITOR + END_SEND;
 
         inst(UNARY_NEGATIVE, (value -- res)) {
             res = PyNumber_Negative(value);
@@ -742,6 +741,7 @@ dummy_func(
         }
 
         inst(RAISE_VARARGS, (args[oparg] -- )) {
+            TIER_ONE_ONLY;
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
             case 2:
@@ -807,24 +807,19 @@ dummy_func(
             SAVE_CURRENT_IP +  // Sets frame->prev_instr
             _POP_FRAME;
 
-        inst(INSTRUMENTED_RETURN_VALUE, (retval --)) {
+        op(_MONITOR_RETURN, (retval -- retval)) {
+            TIER_ONE_ONLY;
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_RETURN,
                     frame, next_instr-1, retval);
-            if (err) goto error;
-            STACK_SHRINK(1);
-            assert(EMPTY());
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _Py_LeaveRecursiveCallPy(tstate);
-            assert(frame != &entry_frame);
-            // GH-99729: We need to unlink the frame *before* clearing it:
-            _PyInterpreterFrame *dying = frame;
-            frame = tstate->current_frame = dying->previous;
-            _PyEval_FrameClearAndPop(tstate, dying);
-            frame->prev_instr += frame->return_offset;
-            _PyFrame_StackPush(frame, retval);
-            goto resume_frame;
+            ERROR_IF(err, error);
         }
+
+        macro(INSTRUMENTED_RETURN_VALUE) =
+            _MONITOR_RETURN +
+            SAVE_IP +  // Tier 2 only; special-cased oparg
+            SAVE_CURRENT_IP +  // Sets frame->prev_instr
+            _POP_FRAME;
 
         macro(RETURN_CONST) =
             LOAD_CONST +
@@ -832,25 +827,12 @@ dummy_func(
             SAVE_CURRENT_IP +  // Sets frame->prev_instr
             _POP_FRAME;
 
-        inst(INSTRUMENTED_RETURN_CONST, (--)) {
-            PyObject *retval = GETITEM(FRAME_CO_CONSTS, oparg);
-            int err = _Py_call_instrumentation_arg(
-                    tstate, PY_MONITORING_EVENT_PY_RETURN,
-                    frame, next_instr-1, retval);
-            if (err) goto error;
-            Py_INCREF(retval);
-            assert(EMPTY());
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _Py_LeaveRecursiveCallPy(tstate);
-            assert(frame != &entry_frame);
-            // GH-99729: We need to unlink the frame *before* clearing it:
-            _PyInterpreterFrame *dying = frame;
-            frame = tstate->current_frame = dying->previous;
-            _PyEval_FrameClearAndPop(tstate, dying);
-            frame->prev_instr += frame->return_offset;
-            _PyFrame_StackPush(frame, retval);
-            goto resume_frame;
-        }
+        macro(INSTRUMENTED_RETURN_CONST) =
+            LOAD_CONST +
+            _MONITOR_RETURN +
+            SAVE_IP +  // Tier 2 only; special-cased oparg
+            SAVE_CURRENT_IP +  // Sets frame->prev_instr
+            _POP_FRAME;
 
         inst(GET_AITER, (obj -- iter)) {
             unaryfunc getter = NULL;
@@ -961,6 +943,7 @@ dummy_func(
         };
 
         inst(SEND, (unused/1, receiver, v -- receiver, retval)) {
+            TIER_ONE_ONLY;
             #if ENABLE_SPECIALIZATION
             _PySendCache *cache = (_PySendCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
@@ -1027,16 +1010,29 @@ dummy_func(
             DISPATCH_INLINED(gen_frame);
         }
 
-        inst(INSTRUMENTED_YIELD_VALUE, (retval -- unused)) {
+        op(_SUSPEND_GENERATOR, (val -- val)) {
+#if TIER_ONE
             assert(frame != &entry_frame);
-            assert(oparg >= 0); /* make the generator identify this as HAS_ARG */
+#endif
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
             gen->gi_frame_state = FRAME_SUSPENDED;
             _PyFrame_SetStackPointer(frame, stack_pointer - 1);
+        }
+
+        op(_MONITOR_YIELD_VALUE, (val -- val)) {
+            TIER_ONE_ONLY;
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_YIELD,
-                    frame, next_instr-1, retval);
-            if (err) goto error;
+                    frame, next_instr-1, val);
+            ERROR_IF(err, error);
+        }
+
+        op(_DO_YIELD, (retval -- unused)) {
+            // NOTE: It's important that YIELD_VALUE never raises an exception!
+            // The compiler treats any exception raised here as a failed close()
+            // or throw() call.
+            assert(oparg >= 0); /* make the generator identify this as HAS_ARG */
+            PyGenObject *gen = _PyFrame_GetGenerator(frame);
             tstate->exc_info = gen->gi_exc_state.previous_item;
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
@@ -1047,24 +1043,14 @@ dummy_func(
             goto resume_frame;
         }
 
-        inst(YIELD_VALUE, (retval -- unused)) {
-            // NOTE: It's important that YIELD_VALUE never raises an exception!
-            // The compiler treats any exception raised here as a failed close()
-            // or throw() call.
-            assert(oparg >= 0); /* make the generator identify this as HAS_ARG */
-            assert(frame != &entry_frame);
-            PyGenObject *gen = _PyFrame_GetGenerator(frame);
-            gen->gi_frame_state = FRAME_SUSPENDED;
-            _PyFrame_SetStackPointer(frame, stack_pointer - 1);
-            tstate->exc_info = gen->gi_exc_state.previous_item;
-            gen->gi_exc_state.previous_item = NULL;
-            _Py_LeaveRecursiveCallPy(tstate);
-            _PyInterpreterFrame *gen_frame = frame;
-            frame = tstate->current_frame = frame->previous;
-            gen_frame->previous = NULL;
-            _PyFrame_StackPush(frame, retval);
-            goto resume_frame;
-        }
+        macro(YIELD_VALUE) =
+            _SUSPEND_GENERATOR +
+            _DO_YIELD;
+
+        macro(INSTRUMENTED_YIELD_VALUE) =
+            _SUSPEND_GENERATOR +
+            _MONITOR_YIELD_VALUE +
+            _DO_YIELD;
 
         inst(POP_EXCEPT, (exc_value -- )) {
             _PyErr_StackItem *exc_info = tstate->exc_info;
@@ -1072,6 +1058,7 @@ dummy_func(
         }
 
         inst(RERAISE, (values[oparg], exc -- values[oparg])) {
+            TIER_ONE_ONLY;
             assert(oparg >= 0 && oparg <= 2);
             if (oparg) {
                 PyObject *lasti = values[0];
@@ -1093,6 +1080,7 @@ dummy_func(
         }
 
         inst(END_ASYNC_FOR, (awaitable, exc -- )) {
+            TIER_ONE_ONLY;
             assert(exc && PyExceptionInstance_Check(exc));
             if (PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration)) {
                 DECREF_INPUTS();
@@ -1106,6 +1094,7 @@ dummy_func(
         }
 
         inst(CLEANUP_THROW, (sub_iter, last_sent_val, exc_value -- none, value)) {
+            TIER_ONE_ONLY;
             assert(throwflag);
             assert(exc_value && PyExceptionInstance_Check(exc_value));
             if (PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration)) {
@@ -1132,7 +1121,6 @@ dummy_func(
                 ERROR_IF(true, error);
             }
         }
-
 
         inst(STORE_NAME, (v -- )) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -1691,6 +1679,7 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_LOAD_SUPER_ATTR, (unused/9, unused, unused, unused -- unused, unused if (oparg & 1))) {
+            TIER_ONE_ONLY;
             _PySuperAttrCache *cache = (_PySuperAttrCache *)next_instr;
             // cancel out the decrement that will happen in LOAD_SUPER_ATTR; we
             // don't want to specialize instrumented instructions
@@ -2412,6 +2401,7 @@ dummy_func(
         };
 
         inst(FOR_ITER, (unused/1, iter -- iter, next)) {
+            TIER_ONE_ONLY;
             #if ENABLE_SPECIALIZATION
             _PyForIterCache *cache = (_PyForIterCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
@@ -2446,6 +2436,7 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_FOR_ITER, ( -- )) {
+            TIER_ONE_ONLY;
             _Py_CODEUNIT *here = next_instr-1;
             _Py_CODEUNIT *target;
             PyObject *iter = TOP();
@@ -2856,6 +2847,7 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_CALL, ( -- )) {
+            TIER_ONE_ONLY;
             int is_meth = PEEK(oparg + 1) != NULL;
             int total_args = oparg + is_meth;
             PyObject *function = PEEK(oparg + 2);
@@ -3528,6 +3520,7 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_CALL_FUNCTION_EX, ( -- )) {
+            TIER_ONE_ONLY;
             GO_TO_INSTRUCTION(CALL_FUNCTION_EX);
         }
 
@@ -3729,6 +3722,7 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_INSTRUCTION, ( -- )) {
+            TIER_ONE_ONLY;
             int next_opcode = _Py_call_instrumentation_instruction(
                 tstate, frame, next_instr-1);
             ERROR_IF(next_opcode < 0, error);
@@ -3743,15 +3737,18 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_JUMP_FORWARD, ( -- )) {
+            TIER_ONE_ONLY;
             INSTRUMENTED_JUMP(next_instr-1, next_instr+oparg, PY_MONITORING_EVENT_JUMP);
         }
 
         inst(INSTRUMENTED_JUMP_BACKWARD, ( -- )) {
+            TIER_ONE_ONLY;
             CHECK_EVAL_BREAKER();
             INSTRUMENTED_JUMP(next_instr-1, next_instr+1-oparg, PY_MONITORING_EVENT_JUMP);
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_TRUE, ( -- )) {
+            TIER_ONE_ONLY;
             PyObject *cond = POP();
             assert(PyBool_Check(cond));
             _Py_CODEUNIT *here = next_instr - 1;
@@ -3760,6 +3757,7 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_FALSE, ( -- )) {
+            TIER_ONE_ONLY;
             PyObject *cond = POP();
             assert(PyBool_Check(cond));
             _Py_CODEUNIT *here = next_instr - 1;
@@ -3768,6 +3766,7 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_NONE, ( -- )) {
+            TIER_ONE_ONLY;
             PyObject *value = POP();
             _Py_CODEUNIT *here = next_instr-1;
             int offset;
@@ -3782,6 +3781,7 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_NOT_NONE, ( -- )) {
+            TIER_ONE_ONLY;
             PyObject *value = POP();
             _Py_CODEUNIT *here = next_instr-1;
             int offset;

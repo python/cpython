@@ -825,6 +825,18 @@
             break;
         }
 
+        case _SUSPEND_GENERATOR: {
+            PyObject *val;
+            val = stack_pointer[-1];
+#if TIER_ONE
+            assert(frame != &entry_frame);
+#endif
+            PyGenObject *gen = _PyFrame_GetGenerator(frame);
+            gen->gi_frame_state = FRAME_SUSPENDED;
+            _PyFrame_SetStackPointer(frame, stack_pointer - 1);
+            break;
+        }
+
         case POP_EXCEPT: {
             PyObject *exc_value;
             exc_value = stack_pointer[-1];

@@ -216,6 +216,10 @@
             break;
         }
 
+        case _SUSPEND_GENERATOR: {
+            break;
+        }
+
         case POP_EXCEPT: {
             STACK_SHRINK(1);
             break;
