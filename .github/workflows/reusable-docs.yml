@@ -80,7 +80,7 @@ jobs:
     - name: 'Install build dependencies'
       run: make -C Doc/ venv REQUIREMENTS="requirements-oldest-sphinx.txt"
     - name: 'Build HTML documentation'
-      run: make -C Doc/ PYTHON=Doc/venv/bin/python3 SPHINXOPTS="-q" SPHINXERRORHANDLING="-W --keep-going" html
+      run: make -C Doc/ PYTHON=../python SPHINXOPTS="-q" SPHINXERRORHANDLING="-W --keep-going" html
 
   # Run "doctest" on HEAD as new syntax doesn't exist in the latest stable release
   doctest:
