@@ -1,12 +1,27 @@
+import contextlib
+import faulthandler
 import math
 import os.path
+import random
 import sys
 import sysconfig
+import tempfile
 import textwrap
+
 from test import support
+from test.support import os_helper
+from test.support import threading_helper
 
 
 MS_WINDOWS = (sys.platform == 'win32')
+
+# bpo-38203: Maximum delay in seconds to exit Python (call Py_Finalize()).
+# Used to protect against threading._shutdown() hang.
+# Must be smaller than buildbot "1200 seconds without output" limit.
+EXIT_TIMEOUT = 120.0
+
+
+StrPath = str
 
 
 def format_duration(seconds):
@@ -308,3 +323,69 @@ def get_build_info():
         build.append("dtrace")
 
     return build
+
+
+def get_temp_dir(tmp_dir):
+    if tmp_dir:
+        tmp_dir = os.path.expanduser(tmp_dir)
+    else:
+        # When tests are run from the Python build directory, it is best practice
+        # to keep the test files in a subfolder.  This eases the cleanup of leftover
+        # files using the "make distclean" command.
+        if sysconfig.is_python_build():
+            tmp_dir = sysconfig.get_config_var('abs_builddir')
+            if tmp_dir is None:
+                # bpo-30284: On Windows, only srcdir is available. Using
+                # abs_builddir mostly matters on UNIX when building Python
+                # out of the source tree, especially when the source tree
+                # is read only.
+                tmp_dir = sysconfig.get_config_var('srcdir')
+            tmp_dir = os.path.join(tmp_dir, 'build')
+        else:
+            tmp_dir = tempfile.gettempdir()
+
+    return os.path.abspath(tmp_dir)
+
+
+def fix_umask():
+    if support.is_emscripten:
+        # Emscripten has default umask 0o777, which breaks some tests.
+        # see https://github.com/emscripten-core/emscripten/issues/17269
+        old_mask = os.umask(0)
+        if old_mask == 0o777:
+            os.umask(0o027)
+        else:
+            os.umask(old_mask)
+
+
+def get_work_dir(*, parent_dir: StrPath = '', worker: bool = False):
+    # Define a writable temp dir that will be used as cwd while running
+    # the tests. The name of the dir includes the pid to allow parallel
+    # testing (see the -j option).
+    # Emscripten and WASI have stubbed getpid(), Emscripten has only
+    # milisecond clock resolution. Use randint() instead.
+    if sys.platform in {"emscripten", "wasi"}:
+        nounce = random.randint(0, 1_000_000)
+    else:
+        nounce = os.getpid()
+
+    if worker:
+        work_dir = 'test_python_worker_{}'.format(nounce)
+    else:
+        work_dir = 'test_python_{}'.format(nounce)
+    work_dir += os_helper.FS_NONASCII
+    if parent_dir:
+        work_dir = os.path.join(parent_dir, work_dir)
+    return work_dir
+
+
+@contextlib.contextmanager
+def exit_timeout():
+    try:
+        yield
+    except SystemExit as exc:
+        # bpo-38203: Python can hang at exit in Py_Finalize(), especially
+        # on threading._shutdown() call: put a timeout
+        if threading_helper.can_start_thread:
+            faulthandler.dump_traceback_later(EXIT_TIMEOUT, exit=True)
+        sys.exit(exc.code)
