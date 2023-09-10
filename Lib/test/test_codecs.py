@@ -1767,18 +1767,40 @@ class CodecsModuleTest(unittest.TestCase):
         dup = copy.copy(orig)
 
         self.assertIsNot(dup, orig)
+        self.assertTrue(orig._is_text_encoding)
         self.assertEqual(dup.encode, orig.encode)
         self.assertEqual(dup.name, orig.name)
         self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
+
+        # Test a CodecInfo with _is_text_encoding equal to false.
+        orig = codecs.lookup("rot13")
+        dup = copy.copy(orig)
+        self.assertIsNot(dup, orig)
+        self.assertFalse(orig._is_text_encoding)
+        self.assertEqual(dup.encode, orig.encode)
+        self.assertEqual(dup.name, orig.name)
+        self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
+
 
     def test_deep_copy(self):
         orig = codecs.lookup('utf-8')
         dup = copy.deepcopy(orig)
 
         self.assertIsNot(dup, orig)
+        self.assertTrue(orig._is_text_encoding)
         self.assertEqual(dup.encode, orig.encode)
         self.assertEqual(dup.name, orig.name)
         self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
+
+        # Test a CodecInfo with _is_text_encoding equal to false.
+        orig = codecs.lookup("rot13")
+        dup = copy.deepcopy(orig)
+        self.assertIsNot(dup, orig)
+        self.assertFalse(orig._is_text_encoding)
+        self.assertNotEqual(dup.encode, orig.encode)
+        self.assertEqual(dup.name, orig.name)
+        self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
+
 
     def test_pickle(self):
         codec_info = codecs.lookup('utf-8')
@@ -1787,6 +1809,12 @@ class CodecsModuleTest(unittest.TestCase):
                 pickled_codec_info = pickle.dumps(codec_info)
                 unpickled_codec_info = pickle.loads(pickled_codec_info)
 
+        # Test a CodecInfo with _is_text_encoding equal to false.
+        codec_info = codecs.lookup('rot13')
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=proto):
+                pickled_codec_info = pickle.dumps(codec_info)
+                unpickled_codec_info = pickle.loads(pickled_codec_info)
 
 
 class StreamReaderTest(unittest.TestCase):
