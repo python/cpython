@@ -3,7 +3,7 @@ repos:
     rev: v0.0.287
     hooks:
       - id: ruff
-        args: [--diff, --exit-non-zero-on-fix, --format=github]
+        args: [--exit-non-zero-on-fix, --format=github]
         files: ^Lib/test/
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
