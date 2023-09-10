@@ -16,7 +16,6 @@ from test import support
 from test.support import os_helper
 from test.support import TestStats
 
-from test.libregrtest.cmdline import Namespace
 from test.libregrtest.main import Regrtest
 from test.libregrtest.runtest import (
     run_single_test, TestResult, State, PROGRESS_MIN_TIME,
@@ -150,14 +149,13 @@ class ExitThread(Exception):
     pass
 
 
-class TestWorkerProcess(threading.Thread):
-    def __init__(self, worker_id: int, runner: "MultiprocessTestRunner") -> None:
+class WorkerThread(threading.Thread):
+    def __init__(self, worker_id: int, runner: "RunWorkers") -> None:
         super().__init__()
         self.worker_id = worker_id
         self.runtests = runner.runtests
         self.pending = runner.pending
         self.output = runner.output
-        self.ns = runner.ns
         self.timeout = runner.worker_timeout
         self.regrtest = runner.regrtest
         self.current_test_name = None
@@ -167,7 +165,7 @@ class TestWorkerProcess(threading.Thread):
         self._stopped = False
 
     def __repr__(self) -> str:
-        info = [f'TestWorkerProcess #{self.worker_id}']
+        info = [f'WorkerThread #{self.worker_id}']
         if self.is_alive():
             info.append("running")
         else:
@@ -203,7 +201,7 @@ class TestWorkerProcess(threading.Thread):
             else:
                 popen.kill()
         except ProcessLookupError:
-            # popen.kill(): the process completed, the TestWorkerProcess thread
+            # popen.kill(): the process completed, the WorkerThread thread
             # read its exit status, but Popen.send_signal() read the returncode
             # just before Popen.wait() set returncode.
             pass
@@ -362,7 +360,7 @@ class TestWorkerProcess(threading.Thread):
 
     def run(self) -> None:
         fail_fast = self.runtests.fail_fast
-        fail_env_changed = self.ns.fail_env_changed
+        fail_env_changed = self.runtests.fail_env_changed
         while not self._stopped:
             try:
                 try:
@@ -394,10 +392,10 @@ class TestWorkerProcess(threading.Thread):
                           f"{exc!r}")
 
     def wait_stopped(self, start_time: float) -> None:
-        # bpo-38207: MultiprocessTestRunner.stop_workers() called self.stop()
+        # bpo-38207: RunWorkers.stop_workers() called self.stop()
         # which killed the process. Sometimes, killing the process from the
         # main thread does not interrupt popen.communicate() in
-        # TestWorkerProcess thread. This loop with a timeout is a workaround
+        # WorkerThread thread. This loop with a timeout is a workaround
         # for that.
         #
         # Moreover, if this method fails to join the thread, it is likely
@@ -417,7 +415,7 @@ class TestWorkerProcess(threading.Thread):
                 break
 
 
-def get_running(workers: list[TestWorkerProcess]) -> list[TestWorkerProcess]:
+def get_running(workers: list[WorkerThread]) -> list[str]:
     running = []
     for worker in workers:
         current_test_name = worker.current_test_name
@@ -427,18 +425,17 @@ def get_running(workers: list[TestWorkerProcess]) -> list[TestWorkerProcess]:
         if dt >= PROGRESS_MIN_TIME:
             text = '%s (%s)' % (current_test_name, format_duration(dt))
             running.append(text)
-    return running
+    if not running:
+        return None
+    return f"running ({len(running)}): {', '.join(running)}"
 
 
-class MultiprocessTestRunner:
-    def __init__(self, regrtest: Regrtest, runtests: RunTests) -> None:
-        ns = regrtest.ns
-
+class RunWorkers:
+    def __init__(self, regrtest: Regrtest, runtests: RunTests, num_workers: int) -> None:
         self.regrtest = regrtest
+        self.log = regrtest.log
+        self.num_workers = num_workers
         self.runtests = runtests
-        self.rerun = runtests.rerun
-        self.log = self.regrtest.log
-        self.ns = ns
         self.output: queue.Queue[QueueOutput] = queue.Queue()
         tests_iter = runtests.iter_tests()
         self.pending = MultiprocessIterator(tests_iter)
@@ -453,9 +450,8 @@ class MultiprocessTestRunner:
         self.workers = None
 
     def start_workers(self) -> None:
-        use_mp = self.ns.use_mp
-        self.workers = [TestWorkerProcess(index, self)
-                        for index in range(1, use_mp + 1)]
+        self.workers = [WorkerThread(index, self)
+                        for index in range(1, self.num_workers + 1)]
         msg = f"Run tests in parallel using {len(self.workers)} child processes"
         if self.timeout:
             msg += (" (timeout: %s, worker timeout: %s)"
@@ -489,10 +485,11 @@ class MultiprocessTestRunner:
             except queue.Empty:
                 pass
 
-            # display progress
-            running = get_running(self.workers)
-            if running and not pgo:
-                self.log('running: %s' % ', '.join(running))
+            if not pgo:
+                # display progress
+                running = get_running(self.workers)
+                if running:
+                    self.log(running)
 
         # all worker threads are done: consume pending results
         try:
@@ -510,9 +507,10 @@ class MultiprocessTestRunner:
             text += ' (%s)' % mp_result.err_msg
         elif (result.duration >= PROGRESS_MIN_TIME and not pgo):
             text += ' (%s)' % format_duration(result.duration)
-        running = get_running(self.workers)
-        if running and not pgo:
-            text += ' -- running: %s' % ', '.join(running)
+        if not pgo:
+            running = get_running(self.workers)
+            if running:
+                text += f' -- {running}'
         self.regrtest.display_progress(self.test_index, text)
 
     def _process_result(self, item: QueueOutput) -> bool:
@@ -537,9 +535,9 @@ class MultiprocessTestRunner:
 
         return result
 
-    def run_tests(self) -> None:
+    def run(self) -> None:
         fail_fast = self.runtests.fail_fast
-        fail_env_changed = self.ns.fail_env_changed
+        fail_env_changed = self.runtests.fail_env_changed
 
         self.start_workers()
 
@@ -564,10 +562,6 @@ class MultiprocessTestRunner:
             # worker when we exit this function
             self.pending.stop()
             self.stop_workers()
-
-
-def run_tests_multiprocess(regrtest: Regrtest, runtests: RunTests) -> None:
-    MultiprocessTestRunner(regrtest, runtests).run_tests()
 
 
 class EncodeTestResult(json.JSONEncoder):
