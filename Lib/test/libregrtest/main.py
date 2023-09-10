@@ -1,34 +1,27 @@
-import faulthandler
 import locale
 import os
 import platform
 import random
 import re
 import sys
-import sysconfig
-import tempfile
 import time
 import unittest
+
+from test import support
+from test.support import os_helper
+
 from test.libregrtest.cmdline import _parse_args, Namespace
 from test.libregrtest.logger import Logger
 from test.libregrtest.runtest import (
     findtests, split_test_packages, run_single_test, abs_module_name,
     PROGRESS_MIN_TIME, State, RunTests, HuntRefleak,
-    FilterTuple, TestList, StrPath, StrJSON, TestName)
+    FilterTuple, TestList, StrJSON, TestName)
 from test.libregrtest.setup import setup_tests, setup_test_dir
 from test.libregrtest.pgo import setup_pgo_tests
 from test.libregrtest.results import TestResults
-from test.libregrtest.utils import (strip_py_suffix, count, format_duration,
-                                    printlist, get_build_info)
-from test import support
-from test.support import os_helper
-from test.support import threading_helper
-
-
-# bpo-38203: Maximum delay in seconds to exit Python (call Py_Finalize()).
-# Used to protect against threading._shutdown() hang.
-# Must be smaller than buildbot "1200 seconds without output" limit.
-EXIT_TIMEOUT = 120.0
+from test.libregrtest.utils import (
+    strip_py_suffix, count, format_duration, StrPath,
+    printlist, get_build_info, get_temp_dir, get_work_dir, exit_timeout)
 
 
 class Regrtest:
@@ -104,7 +97,9 @@ class Regrtest:
         self.verbose: bool = ns.verbose
         self.quiet: bool = ns.quiet
         if ns.huntrleaks:
-            self.hunt_refleak: HuntRefleak = HuntRefleak(*ns.huntrleaks)
+            warmups, runs, filename = ns.huntrleaks
+            filename = os.path.abspath(filename)
+            self.hunt_refleak: HuntRefleak = HuntRefleak(warmups, runs, filename)
         else:
             self.hunt_refleak = None
         self.test_dir: StrPath | None = ns.testdir
@@ -455,64 +450,6 @@ class Regrtest:
         print(f"Result: {state}")
 
     @staticmethod
-    def fix_umask():
-        if support.is_emscripten:
-            # Emscripten has default umask 0o777, which breaks some tests.
-            # see https://github.com/emscripten-core/emscripten/issues/17269
-            old_mask = os.umask(0)
-            if old_mask == 0o777:
-                os.umask(0o027)
-            else:
-                os.umask(old_mask)
-
-    @staticmethod
-    def select_temp_dir(tmp_dir):
-        if tmp_dir:
-            tmp_dir = os.path.expanduser(tmp_dir)
-        else:
-            # When tests are run from the Python build directory, it is best practice
-            # to keep the test files in a subfolder.  This eases the cleanup of leftover
-            # files using the "make distclean" command.
-            if sysconfig.is_python_build():
-                tmp_dir = sysconfig.get_config_var('abs_builddir')
-                if tmp_dir is None:
-                    # bpo-30284: On Windows, only srcdir is available. Using
-                    # abs_builddir mostly matters on UNIX when building Python
-                    # out of the source tree, especially when the source tree
-                    # is read only.
-                    tmp_dir = sysconfig.get_config_var('srcdir')
-                tmp_dir = os.path.join(tmp_dir, 'build')
-            else:
-                tmp_dir = tempfile.gettempdir()
-
-        return os.path.abspath(tmp_dir)
-
-    def is_worker(self):
-        return (self.worker_json is not None)
-
-    @staticmethod
-    def make_temp_dir(tmp_dir: StrPath, is_worker: bool):
-        os.makedirs(tmp_dir, exist_ok=True)
-
-        # Define a writable temp dir that will be used as cwd while running
-        # the tests. The name of the dir includes the pid to allow parallel
-        # testing (see the -j option).
-        # Emscripten and WASI have stubbed getpid(), Emscripten has only
-        # milisecond clock resolution. Use randint() instead.
-        if sys.platform in {"emscripten", "wasi"}:
-            nounce = random.randint(0, 1_000_000)
-        else:
-            nounce = os.getpid()
-
-        if is_worker:
-            work_dir = 'test_python_worker_{}'.format(nounce)
-        else:
-            work_dir = 'test_python_{}'.format(nounce)
-        work_dir += os_helper.FS_NONASCII
-        work_dir = os.path.join(tmp_dir, work_dir)
-        return work_dir
-
-    @staticmethod
     def cleanup_temp_dir(tmp_dir: StrPath):
         import glob
 
@@ -534,17 +471,16 @@ class Regrtest:
 
         strip_py_suffix(self.cmdline_args)
 
-        self.tmp_dir = self.select_temp_dir(self.tmp_dir)
-
-        self.fix_umask()
+        self.tmp_dir = get_temp_dir(self.tmp_dir)
 
         if self.want_cleanup:
             self.cleanup_temp_dir(self.tmp_dir)
             sys.exit(0)
 
-        work_dir = self.make_temp_dir(self.tmp_dir, self.is_worker())
+        os.makedirs(self.tmp_dir, exist_ok=True)
+        work_dir = get_work_dir(parent_dir=self.tmp_dir)
 
-        try:
+        with exit_timeout():
             # Run the tests in a context manager that temporarily changes the
             # CWD to a temporary and writable directory. If it's not possible
             # to create or change the CWD, the original CWD will be used.
@@ -556,13 +492,6 @@ class Regrtest:
                 # processes.
 
                 self._main()
-        except SystemExit as exc:
-            # bpo-38203: Python can hang at exit in Py_Finalize(), especially
-            # on threading._shutdown() call: put a timeout
-            if threading_helper.can_start_thread:
-                faulthandler.dump_traceback_later(EXIT_TIMEOUT, exit=True)
-
-            sys.exit(exc.code)
 
     def create_run_tests(self):
         return RunTests(
@@ -579,7 +508,7 @@ class Regrtest:
             quiet=self.quiet,
             hunt_refleak=self.hunt_refleak,
             test_dir=self.test_dir,
-            junit_filename=self.junit_filename,
+            use_junit=(self.junit_filename is not None),
             memory_limit=self.memory_limit,
             gc_threshold=self.gc_threshold,
             use_resources=self.use_resources,
@@ -634,11 +563,6 @@ class Regrtest:
                                          self.fail_rerun)
 
     def _main(self):
-        if self.is_worker():
-            from test.libregrtest.runtest_mp import worker_process
-            worker_process(self.worker_json)
-            return
-
         if self.want_wait:
             input("Press any key to continue...")
 

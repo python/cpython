@@ -11,8 +11,8 @@ try:
 except ImportError:
     gc = None
 
-from test.libregrtest.utils import (setup_unraisable_hook,
-                                    setup_threading_excepthook)
+from test.libregrtest.utils import (
+    setup_unraisable_hook, setup_threading_excepthook, fix_umask)
 
 
 UNICODE_GUARD_ENV = "PYTHONREGRTEST_UNICODE_GUARD"
@@ -26,6 +26,8 @@ def setup_test_dir(testdir: str | None) -> None:
 
 
 def setup_tests(runtests):
+    fix_umask()
+
     try:
         stderr_fd = sys.__stderr__.fileno()
     except (ValueError, AttributeError):
@@ -102,7 +104,7 @@ def setup_tests(runtests):
         support.SHORT_TIMEOUT = min(support.SHORT_TIMEOUT, timeout)
         support.LONG_TIMEOUT = min(support.LONG_TIMEOUT, timeout)
 
-    if runtests.junit_filename:
+    if runtests.use_junit:
         from test.support.testresult import RegressionTestResult
         RegressionTestResult.USE_XML = True
 

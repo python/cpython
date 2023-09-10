@@ -68,7 +68,6 @@ def runtest_refleak(test_name, test_func,
     warmups = hunt_refleak.warmups
     runs = hunt_refleak.runs
     filename = hunt_refleak.filename
-    filename = os.path.join(os_helper.SAVEDCWD, filename)
     repcount = warmups + runs
 
     # Pre-allocate to ensure that the loop doesn't allocate anything new
