@@ -2079,11 +2079,13 @@ def main():
 
     parser = argparse.ArgumentParser(prog="pdb",
                                      description=_usage,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+                                     formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     allow_abbrev=False)
 
-    parser.add_argument('-c', '--command', action='append', default=[])
-    parser.add_argument('-m', action='store_true')
-    parser.add_argument('pyfile', nargs=1)
+    parser.add_argument('-c', '--command', action='append', default=[], metavar='command')
+    grp = parser.add_mutually_exclusive_group(required=True)
+    grp.add_argument('-m', metavar='module')
+    grp.add_argument('pyfile', nargs='?')
     parser.add_argument('args', nargs="*")
 
     if len(sys.argv) == 1:
@@ -2092,12 +2094,16 @@ def main():
 
     opts = parser.parse_args()
 
-    cls = _ModuleTarget if opts.m else _ScriptTarget
-    target = cls(opts.pyfile[0])
+    if opts.m:
+        file = opts.m
+        target = _ModuleTarget(file)
+    else:
+        file = opts.pyfile
+        target = _ScriptTarget(opts.pyfile[0])
 
     target.check()
 
-    sys.argv[:] = opts.pyfile + opts.args  # Hide "pdb.py" and pdb options from argument list
+    sys.argv[:] = [file] + opts.args  # Hide "pdb.py" and pdb options from argument list
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
     # modified by the script being debugged. It's a bad idea when it was
