@@ -433,7 +433,7 @@ def get_running(workers: list[WorkerThread]) -> list[str]:
 class RunWorkers:
     def __init__(self, regrtest: Regrtest, runtests: RunTests, num_workers: int) -> None:
         self.results: TestResults = regrtest.results
-        self.log = regrtest.log
+        self.log = regrtest.logger.log
         self.display_progress = regrtest.display_progress
         self.num_workers = num_workers
         self.runtests = runtests
