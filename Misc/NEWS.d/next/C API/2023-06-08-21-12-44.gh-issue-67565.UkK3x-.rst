@@ -1,1 +1,1 @@
-Remove redundant C-contiguity check in :file:`getargs.c`. Patched by Stefan Krah and Furkan Onder
+Remove redundant C-contiguity check in :file:`getargs.c`, :mod:`binascii` and :mod:`ssl`. Patched by Stefan Krah and Furkan Onder
