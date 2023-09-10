@@ -1286,15 +1286,15 @@ asynchat and asyncore
 configparser
 ------------
 
-Several names deprecated in the :mod:`configparser` way back in 3.2 have
-been removed per :gh:`89336`:
+* Several names deprecated in the :mod:`configparser` way back in 3.2 have
+  been removed per :gh:`89336`:
 
-* :class:`configparser.ParsingError` no longer has a ``filename`` attribute
-  or argument. Use the ``source`` attribute and argument instead.
-* :mod:`configparser` no longer has a ``SafeConfigParser`` class. Use the
-  shorter :class:`~configparser.ConfigParser` name instead.
-* :class:`configparser.ConfigParser` no longer has a ``readfp`` method.
-  Use :meth:`~configparser.ConfigParser.read_file` instead.
+  * :class:`configparser.ParsingError` no longer has a ``filename`` attribute
+    or argument. Use the ``source`` attribute and argument instead.
+  * :mod:`configparser` no longer has a ``SafeConfigParser`` class. Use the
+    shorter :class:`~configparser.ConfigParser` name instead.
+  * :class:`configparser.ConfigParser` no longer has a ``readfp`` method.
+    Use :meth:`~configparser.ConfigParser.read_file` instead.
 
 distutils
 ---------
@@ -1361,21 +1361,21 @@ hashlib
 importlib
 ---------
 
-Many previously deprecated cleanups in :mod:`importlib` have now been
-completed:
+  Many previously deprecated cleanups in :mod:`importlib` have now been
+  completed:
 
-* References to, and support for :meth:`!module_repr()` has been removed.
-  (Contributed by Barry Warsaw in :gh:`97850`.)
+  * References to, and support for :meth:`!module_repr()` has been removed.
+    (Contributed by Barry Warsaw in :gh:`97850`.)
 
-* ``importlib.util.set_package``, ``importlib.util.set_loader`` and
-  ``importlib.util.module_for_loader`` have all been removed. (Contributed by
-  Brett Cannon and Nikita Sobolev in :gh:`65961` and :gh:`97850`.)
+  * ``importlib.util.set_package``, ``importlib.util.set_loader`` and
+    ``importlib.util.module_for_loader`` have all been removed. (Contributed by
+    Brett Cannon and Nikita Sobolev in :gh:`65961` and :gh:`97850`.)
 
-* Support for ``find_loader()`` and ``find_module()`` APIs have been
-  removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
+  * Support for ``find_loader()`` and ``find_module()`` APIs have been
+    removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
 
-* ``importlib.abc.Finder``, ``pkgutil.ImpImporter``, and ``pkgutil.ImpLoader``
-  have been removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
+  * ``importlib.abc.Finder``, ``pkgutil.ImpImporter``, and ``pkgutil.ImpLoader``
+    have been removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
 
 imp
 ---
@@ -1498,9 +1498,9 @@ ssl
 unittest
 --------
 
-Removed many old deprecated :mod:`unittest` features:
+* Removed many old deprecated :mod:`unittest` features:
 
-* A number of :class:`~unittest.TestCase` method aliases:
+  * A number of :class:`~unittest.TestCase` method aliases:
 
     ============================ =============================== ===============
        Deprecated alias           Method Name                     Deprecated in
@@ -1522,20 +1522,20 @@ Removed many old deprecated :mod:`unittest` features:
      ``assertNotRegexpMatches``   :meth:`.assertNotRegex`         3.5
     ============================ =============================== ===============
 
-  You can use https://github.com/isidentical/teyit to automatically modernise
-  your unit tests.
+    You can use https://github.com/isidentical/teyit to automatically modernise
+    your unit tests.
 
-* Undocumented and broken :class:`~unittest.TestCase` method
-  ``assertDictContainsSubset`` (deprecated in Python 3.2).
+  * Undocumented and broken :class:`~unittest.TestCase` method
+    ``assertDictContainsSubset`` (deprecated in Python 3.2).
 
-* Undocumented :meth:`TestLoader.loadTestsFromModule
-  <unittest.TestLoader.loadTestsFromModule>` parameter *use_load_tests*
-  (deprecated and ignored since Python 3.2).
+  * Undocumented :meth:`TestLoader.loadTestsFromModule
+    <unittest.TestLoader.loadTestsFromModule>` parameter *use_load_tests*
+    (deprecated and ignored since Python 3.2).
 
-* An alias of the :class:`~unittest.TextTestResult` class:
-  ``_TextTestResult`` (deprecated in Python 3.2).
+  * An alias of the :class:`~unittest.TextTestResult` class:
+    ``_TextTestResult`` (deprecated in Python 3.2).
 
-(Contributed by Serhiy Storchaka in :issue:`45162`.)
+  (Contributed by Serhiy Storchaka in :issue:`45162`.)
 
 webbrowser
 ----------
