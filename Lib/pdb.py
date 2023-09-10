@@ -520,8 +520,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             try:
                 import readline
             except ImportError:
-                pass
-            if readline and self.use_rawinput and self.completekey == 'tab':
+                yield
+                return
+
+            if self.use_rawinput and self.completekey == 'tab':
                 try:
                     readline.parse_and_bind('tab: self-insert')
                     yield
