@@ -1765,7 +1765,6 @@ class CodecsModuleTest(unittest.TestCase):
     def test_copy(self):
         orig = codecs.lookup('utf-8')
         dup = copy.copy(orig)
-
         self.assertIsNot(dup, orig)
         self.assertTrue(orig._is_text_encoding)
         self.assertEqual(dup.encode, orig.encode)
@@ -1785,7 +1784,6 @@ class CodecsModuleTest(unittest.TestCase):
     def test_deep_copy(self):
         orig = codecs.lookup('utf-8')
         dup = copy.deepcopy(orig)
-
         self.assertIsNot(dup, orig)
         self.assertTrue(orig._is_text_encoding)
         self.assertEqual(dup.encode, orig.encode)
