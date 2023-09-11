@@ -2917,7 +2917,7 @@
             break;
         }
 
-        case INSERT: {
+        case _INSERT: {
             PyObject *top;
             top = stack_pointer[-1];
             // Inserts TOS at position specified by oparg;
