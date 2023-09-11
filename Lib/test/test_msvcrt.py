@@ -1,4 +1,3 @@
-import ctypes
 import os
 import sys
 import unittest
@@ -12,7 +11,7 @@ if sys.platform != "win32":
 import _winapi
 import msvcrt;
 
-from _testconsole import write_input
+from _testconsole import write_input, flush_console_input_buffer
 
 
 class TestFileOperations(unittest.TestCase):
@@ -64,7 +63,7 @@ c_encoded = b'\x57\x5b' # utf-16-le (which windows internally used) encoded char
 class TestConsoleIO(unittest.TestCase):
     def test_kbhit(self):
         h = msvcrt.get_osfhandle(sys.stdin.fileno())
-        ctypes.windll.kernel32.FlushConsoleInputBuffer(h)
+        flush_console_input_buffer(h)
         self.assertEqual(msvcrt.kbhit(), 0)
 
     def test_getch(self):
@@ -74,7 +73,7 @@ class TestConsoleIO(unittest.TestCase):
     def test_getwch(self):
         with open('CONIN$', 'rb', buffering=0) as stdin:
             h = msvcrt.get_osfhandle(stdin.fileno())
-            ctypes.windll.kernel32.FlushConsoleInputBuffer(h)
+            flush_console_input_buffer(h)
 
             old_stdin = sys.stdin
             try:
@@ -91,7 +90,7 @@ class TestConsoleIO(unittest.TestCase):
     def test_getwche(self):
         with open('CONIN$', 'rb', buffering=0) as stdin:
             h = msvcrt.get_osfhandle(stdin.fileno())
-            ctypes.windll.kernel32.FlushConsoleInputBuffer(h)
+            flush_console_input_buffer(h)
 
             old_stdin = sys.stdin
             try:
