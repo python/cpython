@@ -154,8 +154,8 @@ dummy_func(
 
         inst(RESUME_CHECK, (--)) {
 #if defined(__EMSCRIPTEN__)
-            DEOPT_IF(emscripten_signal_clock == 0, RESUME);
-            emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
+            DEOPT_IF(_Py_emscripten_signal_clock == 0, RESUME);
+            _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
 #endif
             /* Possibly combine these two checks */
             DEOPT_IF(_PyFrame_GetCode(frame)->_co_instrumentation_version
@@ -1286,7 +1286,7 @@ dummy_func(
             }
         }
 
-        op(_LOAD_LOCALS, ( -- locals)) {
+        inst(LOAD_LOCALS, ( -- locals)) {
             locals = LOCALS();
             if (locals == NULL) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
@@ -1296,15 +1296,45 @@ dummy_func(
             Py_INCREF(locals);
         }
 
-        macro(LOAD_LOCALS) = _LOAD_LOCALS;
-
-        op(_LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
+        inst(LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
-                Py_DECREF(mod_or_class_dict);
                 goto error;
             }
-            Py_DECREF(mod_or_class_dict);
+            if (v == NULL) {
+                v = PyDict_GetItemWithError(GLOBALS(), name);
+                if (v != NULL) {
+                    Py_INCREF(v);
+                }
+                else if (_PyErr_Occurred(tstate)) {
+                    goto error;
+                }
+                else {
+                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
+                        goto error;
+                    }
+                    if (v == NULL) {
+                        _PyEval_FormatExcCheckArg(
+                                    tstate, PyExc_NameError,
+                                    NAME_ERROR_MSG, name);
+                        goto error;
+                    }
+                }
+            }
+            DECREF_INPUTS();
+        }
+
+        inst(LOAD_NAME, (-- v)) {
+            PyObject *mod_or_class_dict = LOCALS();
+            if (mod_or_class_dict == NULL) {
+                _PyErr_SetString(tstate, PyExc_SystemError,
+                                 "no locals found");
+                ERROR_IF(true, error);
+            }
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
+                goto error;
+            }
             if (v == NULL) {
                 v = PyDict_GetItemWithError(GLOBALS(), name);
                 if (v != NULL) {
@@ -1326,10 +1356,6 @@ dummy_func(
                 }
             }
         }
-
-        macro(LOAD_NAME) = _LOAD_LOCALS + _LOAD_FROM_DICT_OR_GLOBALS;
-
-        macro(LOAD_FROM_DICT_OR_GLOBALS) = _LOAD_FROM_DICT_OR_GLOBALS;
 
         family(LOAD_GLOBAL, INLINE_CACHE_ENTRIES_LOAD_GLOBAL) = {
             LOAD_GLOBAL_MODULE,
