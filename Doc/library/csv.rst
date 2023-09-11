@@ -59,7 +59,7 @@ The :mod:`csv` module defines the following functions:
    *csvfile* can be any object which supports the :term:`iterator` protocol and returns a
    string each time its :meth:`!__next__` method is called --- :term:`file objects
    <file object>` and list objects are both suitable.   If *csvfile* is a file object,
-   it should be opened with ``newline=''``. [1]_  An optional
+   it should be opened with ``newline=None``. [1]_  An optional
    *dialect* parameter can be given which is used to define a set of parameters
    specific to a particular CSV dialect.  It may be an instance of a subclass of
    the :class:`Dialect` class or one of the strings returned by the
@@ -75,7 +75,7 @@ The :mod:`csv` module defines the following functions:
    A short usage example::
 
       >>> import csv
-      >>> with open('eggs.csv', newline='') as csvfile:
+      >>> with open('eggs.csv', newline=None) as csvfile:
       ...     spamreader = csv.reader(csvfile, delimiter=' ', quotechar='|')
       ...     for row in spamreader:
       ...         print(', '.join(row))
