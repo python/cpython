@@ -1807,6 +1807,7 @@ class CodecsModuleTest(unittest.TestCase):
             with self.subTest(protocol=proto):
                 pickled_codec_info = pickle.dumps(codec_info)
                 unpickled_codec_info = pickle.loads(pickled_codec_info)
+                self.assertIsNot(codec_info, unpickled_codec_info)
                 self.assertEqual(codec_info, unpickled_codec_info)
                 self.assertEqual(codec_info.name, unpickled_codec_info.name)
                 self.assertEqual(
@@ -1821,6 +1822,7 @@ class CodecsModuleTest(unittest.TestCase):
             with self.subTest(protocol=proto):
                 pickled_codec_info = pickle.dumps(codec_info)
                 unpickled_codec_info = pickle.loads(pickled_codec_info)
+                self.assertIsNot(codec_info, unpickled_codec_info)
                 self.assertEqual(codec_info, unpickled_codec_info)
                 self.assertEqual(unpickled_codec_info.name, codec_info.name)
                 self.assertEqual(codec_info.name, unpickled_codec_info.name)
