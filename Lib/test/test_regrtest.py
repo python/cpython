@@ -19,7 +19,7 @@ import tempfile
 import textwrap
 import unittest
 from test import support
-from test.support import os_helper, TestStats
+from test.support import os_helper, TestStats, without_optimizer
 from test.libregrtest import cmdline
 from test.libregrtest import utils
 from test.libregrtest import setup
@@ -1018,12 +1018,13 @@ class ArgsTestCase(BaseTestCase):
                                   stats=TestStats(4, 1),
                                   forever=True)
 
+    @without_optimizer
     def check_leak(self, code, what, *, multiprocessing=False):
         test = self.create_test('huntrleaks', code=code)
 
         filename = 'reflog.txt'
         self.addCleanup(os_helper.unlink, filename)
-        cmd = ['--huntrleaks', '6:3:']
+        cmd = ['--huntrleaks', '3:3:']
         if multiprocessing:
             cmd.append('-j1')
         cmd.append(test)
@@ -1032,7 +1033,7 @@ class ArgsTestCase(BaseTestCase):
                                 stderr=subprocess.STDOUT)
         self.check_executed_tests(output, [test], failed=test, stats=1)
 
-        line = 'beginning 9 repetitions\n123456789\n.........\n'
+        line = 'beginning 6 repetitions\n123456\n......\n'
         self.check_line(output, re.escape(line))
 
         line2 = '%s leaked [1, 1, 1] %s, sum=3\n' % (test, what)

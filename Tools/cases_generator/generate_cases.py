@@ -549,10 +549,20 @@ class Generator(Analyzer):
                 "=",
                 ";",
             ):
-                for name, _ in self.families.items():
-                    instr = self.instrs[name]
-                    if instr.cache_offset > 0:
-                        self.out.emit(f'[{name}] = {instr.cache_offset},')
+                family_member_names: set[str] = set()
+                for family in self.families.values():
+                    family_member_names.update(family.members)
+                for instr in self.instrs.values():
+                    if (
+                        instr.name not in family_member_names
+                        and instr.cache_offset > 0
+                        and instr.kind == "inst"
+                        and not instr.name.startswith("INSTRUMENTED_")
+                    ):
+                        self.out.emit(f"[{instr.name}] = {instr.cache_offset},")
+                for mac in self.macro_instrs.values():
+                    if mac.name not in family_member_names and mac.cache_offset > 0:
+                        self.out.emit(f"[{mac.name}] = {mac.cache_offset},")
                 # Irregular case:
                 self.out.emit('[JUMP_BACKWARD] = 1,')
 

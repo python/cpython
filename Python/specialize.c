@@ -338,9 +338,23 @@ _PyCode_Quicken(PyCodeObject *code)
         assert(opcode < MIN_INSTRUMENTED_OPCODE);
         int caches = _PyOpcode_Caches[opcode];
         if (caches) {
-            // JUMP_BACKWARD counter counts up from 0 until it is > backedge_threshold
-            instructions[i + 1].cache =
-                opcode == JUMP_BACKWARD ? 0 : adaptive_counter_warmup();
+            // The initial value depends on the opcode
+            int initial_value;
+            switch (opcode) {
+                case JUMP_BACKWARD:
+                    initial_value = 0;
+                    break;
+                case POP_JUMP_IF_FALSE:
+                case POP_JUMP_IF_TRUE:
+                case POP_JUMP_IF_NONE:
+                case POP_JUMP_IF_NOT_NONE:
+                    initial_value = 0x5555;  // Alternating 0, 1 bits
+                    break;
+                default:
+                    initial_value = adaptive_counter_warmup();
+                    break;
+            }
+            instructions[i + 1].cache = initial_value;
             i += caches;
         }
     }

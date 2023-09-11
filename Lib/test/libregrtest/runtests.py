@@ -36,6 +36,9 @@ class RunTests:
     gc_threshold: int | None = None
     use_resources: list[str] = dataclasses.field(default_factory=list)
     python_cmd: list[str] | None = None
+    # On Unix, it's a file descriptor.
+    # On Windows, it's a handle.
+    json_fd: int | None = None
 
     def copy(self, **override):
         state = dataclasses.asdict(self)
