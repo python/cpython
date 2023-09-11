@@ -1796,6 +1796,7 @@ class CodecsModuleTest(unittest.TestCase):
         orig = codecs.lookup("base64")
         dup = copy.deepcopy(orig)
         self.assertIsNot(dup, orig)
+        self.assertEqual(dup, orig)
         self.assertFalse(orig._is_text_encoding)
         self.assertEqual(dup.encode, orig.encode)
         self.assertEqual(dup.name, orig.name)
