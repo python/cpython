@@ -21,7 +21,16 @@ MS_WINDOWS = (sys.platform == 'win32')
 EXIT_TIMEOUT = 120.0
 
 
+# Types for types hints
 StrPath = str
+TestName = str
+StrJSON = str
+TestTuple = tuple[TestName, ...]
+TestList = list[TestName]
+# --match and --ignore options: list of patterns
+# ('*' joker character can be used)
+FilterTuple = tuple[TestName, ...]
+FilterDict = dict[TestName, FilterTuple]
 
 
 def format_duration(seconds):
@@ -389,3 +398,76 @@ def exit_timeout():
         if threading_helper.can_start_thread:
             faulthandler.dump_traceback_later(EXIT_TIMEOUT, exit=True)
         sys.exit(exc.code)
+
+
+def remove_testfn(test_name: TestName, verbose: int) -> None:
+    # Try to clean up os_helper.TESTFN if left behind.
+    #
+    # While tests shouldn't leave any files or directories behind, when a test
+    # fails that can be tedious for it to arrange.  The consequences can be
+    # especially nasty on Windows, since if a test leaves a file open, it
+    # cannot be deleted by name (while there's nothing we can do about that
+    # here either, we can display the name of the offending test, which is a
+    # real help).
+    name = os_helper.TESTFN
+    if not os.path.exists(name):
+        return
+
+    if os.path.isdir(name):
+        import shutil
+        kind, nuker = "directory", shutil.rmtree
+    elif os.path.isfile(name):
+        kind, nuker = "file", os.unlink
+    else:
+        raise RuntimeError(f"os.path says {name!r} exists but is neither "
+                           f"directory nor file")
+
+    if verbose:
+        print_warning(f"{test_name} left behind {kind} {name!r}")
+        support.environment_altered = True
+
+    try:
+        import stat
+        # fix possible permissions problems that might prevent cleanup
+        os.chmod(name, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+        nuker(name)
+    except Exception as exc:
+        print_warning(f"{test_name} left behind {kind} {name!r} "
+                      f"and it couldn't be removed: {exc}")
+
+
+def abs_module_name(test_name: TestName, test_dir: StrPath | None) -> TestName:
+    if test_name.startswith('test.') or test_dir:
+        return test_name
+    else:
+        # Import it from the test package
+        return 'test.' + test_name
+
+
+# gh-90681: When rerunning tests, we might need to rerun the whole
+# class or module suite if some its life-cycle hooks fail.
+# Test level hooks are not affected.
+_TEST_LIFECYCLE_HOOKS = frozenset((
+    'setUpClass', 'tearDownClass',
+    'setUpModule', 'tearDownModule',
+))
+
+def normalize_test_name(test_full_name, *, is_error=False):
+    short_name = test_full_name.split(" ")[0]
+    if is_error and short_name in _TEST_LIFECYCLE_HOOKS:
+        if test_full_name.startswith(('setUpModule (', 'tearDownModule (')):
+            # if setUpModule() or tearDownModule() failed, don't filter
+            # tests with the test file name, don't use use filters.
+            return None
+
+        # This means that we have a failure in a life-cycle hook,
+        # we need to rerun the whole module or class suite.
+        # Basically the error looks like this:
+        #    ERROR: setUpClass (test.test_reg_ex.RegTest)
+        # or
+        #    ERROR: setUpModule (test.test_reg_ex)
+        # So, we need to parse the class / module name.
+        lpar = test_full_name.index('(')
+        rpar = test_full_name.index(')')
+        return test_full_name[lpar + 1: rpar].split('.')[-1]
+    return short_name

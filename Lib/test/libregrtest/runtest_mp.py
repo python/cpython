@@ -15,12 +15,13 @@ from test import support
 from test.support import os_helper
 
 from test.libregrtest.main import Regrtest
-from test.libregrtest.runtest import (
-    TestResult, State, PROGRESS_MIN_TIME,
-    RunTests, TestName)
+from test.libregrtest.result import TestResult, State
 from test.libregrtest.results import TestResults
+from test.libregrtest.runtests import RunTests
+from test.libregrtest.single import PROGRESS_MIN_TIME
 from test.libregrtest.utils import (
-    format_duration, print_warning, StrPath)
+    StrPath, TestName,
+    format_duration, print_warning)
 from test.libregrtest.worker import create_worker_process, USE_PROCESS_GROUP
 
 if sys.platform == 'win32':
