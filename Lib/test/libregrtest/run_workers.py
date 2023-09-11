@@ -14,15 +14,15 @@ from typing import Literal, TextIO
 from test import support
 from test.support import os_helper
 
-from test.libregrtest.logger import Logger
-from test.libregrtest.result import TestResult, State
-from test.libregrtest.results import TestResults
-from test.libregrtest.runtests import RunTests
-from test.libregrtest.single import PROGRESS_MIN_TIME
-from test.libregrtest.utils import (
+from .logger import Logger
+from .result import TestResult, State
+from .results import TestResults
+from .runtests import RunTests
+from .single import PROGRESS_MIN_TIME
+from .utils import (
     StrPath, TestName,
     format_duration, print_warning)
-from test.libregrtest.worker import create_worker_process, USE_PROCESS_GROUP
+from .worker import create_worker_process, USE_PROCESS_GROUP
 
 if sys.platform == 'win32':
     import locale

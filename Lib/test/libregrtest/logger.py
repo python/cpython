@@ -1,12 +1,12 @@
 import os
 import time
 
-from test.libregrtest.results import TestResults
-from test.libregrtest.runtests import RunTests
-from test.libregrtest.utils import print_warning, MS_WINDOWS
+from .results import TestResults
+from .runtests import RunTests
+from .utils import print_warning, MS_WINDOWS
 
 if MS_WINDOWS:
-    from test.libregrtest.win_utils import WindowsLoadTracker
+    from .win_utils import WindowsLoadTracker
 
 
 class Logger:

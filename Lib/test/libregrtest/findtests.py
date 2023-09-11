@@ -1,6 +1,6 @@
 import os
 
-from test.libregrtest.utils import StrPath, TestName, TestList
+from .utils import StrPath, TestName, TestList
 
 
 # If these test directories are encountered recurse into them and treat each

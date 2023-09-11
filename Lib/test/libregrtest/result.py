@@ -4,7 +4,7 @@ from typing import Any
 
 from test.support import TestStats
 
-from test.libregrtest.utils import (
+from .utils import (
     StrJSON, TestName, FilterTuple,
     format_duration, normalize_test_name, print_warning)
 
