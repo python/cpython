@@ -10,13 +10,16 @@ freebsd_task:
   sysctl_script:
     - sysctl net.inet.tcp.blackhole=0
     - sysctl net.inet.udp.blackhole=0
-  build_script:
+  configure_script:
     - mkdir build
     - cd build
     - ../configure --with-pydebug
+  build_script:
+    - cd build
     - make -j$(sysctl -n hw.ncpu)
   pythoninfo_script:
-    - cd build && make pythoninfo
+    - cd build
+    - make pythoninfo
   test_script:
     - cd build
     # dtrace fails to build on FreeBSD - see gh-73263

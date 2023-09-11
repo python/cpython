@@ -317,6 +317,13 @@ generator_example.events = ([(0, 'call'),
                             [(5, 'line'), (5, 'return')])
 
 
+def lineno_matches_lasti(frame):
+    last_line = None
+    for start, end, line in frame.f_code.co_lines():
+        if start <= frame.f_lasti < end:
+            last_line = line
+    return last_line == frame.f_lineno
+
 class Tracer:
     def __init__(self, trace_line_events=None, trace_opcode_events=None):
         self.trace_line_events = trace_line_events
@@ -330,6 +337,7 @@ class Tracer:
             frame.f_trace_opcodes = self.trace_opcode_events
 
     def trace(self, frame, event, arg):
+        assert lineno_matches_lasti(frame)
         self._reconfigure_frame(frame)
         self.events.append((frame.f_lineno, event))
         return self.trace
@@ -1890,6 +1898,7 @@ class JumpTracer:
     def trace(self, frame, event, arg):
         if self.done:
             return
+        assert lineno_matches_lasti(frame)
         # frame.f_code.co_firstlineno is the first line of the decorator when
         # 'function' is decorated and the decorator may be written using
         # multiple physical lines when it is too long. Use the first line

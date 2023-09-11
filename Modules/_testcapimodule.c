@@ -3922,6 +3922,7 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "instancemethod", (PyObject *)&PyInstanceMethod_Type);
 
     PyModule_AddIntConstant(m, "the_number_three", 3);
+    PyModule_AddIntMacro(m, Py_C_RECURSION_LIMIT);
 
     TestError = PyErr_NewException("_testcapi.error", NULL, NULL);
     Py_INCREF(TestError);
