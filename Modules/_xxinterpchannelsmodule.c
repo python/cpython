@@ -273,6 +273,58 @@ static PyType_Spec XIBufferViewType_spec = {
 };
 
 
+/* extra XID types **********************************************************/
+
+static PyTypeObject * _get_current_xibufferview_type(void);
+
+static PyObject *
+_memoryview_from_xid(_PyCrossInterpreterData *data)
+{
+    PyTypeObject *cls = _get_current_xibufferview_type();
+    if (cls == NULL) {
+        return NULL;
+    }
+    PyObject *obj = xibufferview_from_xid(cls, data);
+    if (obj == NULL) {
+        return NULL;
+    }
+    return PyMemoryView_FromObject(obj);
+}
+
+static int
+_memoryview_shared(PyThreadState *tstate, PyObject *obj,
+                   _PyCrossInterpreterData *data)
+{
+    Py_buffer *view = PyMem_RawMalloc(sizeof(Py_buffer));
+    if (view == NULL) {
+        return -1;
+    }
+    if (PyObject_GetBuffer(obj, view, PyBUF_FULL_RO) < 0) {
+        PyMem_RawFree(view);
+        return -1;
+    }
+    _PyCrossInterpreterData_Init(data, tstate->interp, view, NULL,
+                                 _memoryview_from_xid);
+    return 0;
+}
+
+static int
+register_xid_types(void)
+{
+    PyTypeObject *cls;
+    crossinterpdatafunc func;
+
+    // builtin memoryview
+    cls = &PyMemoryView_Type;
+    func = _memoryview_shared;
+    if (_PyCrossInterpreterData_RegisterClass(cls, func)) {
+        return -1;
+    }
+
+    return 0;
+}
+
+
 /* module state *************************************************************/
 
 typedef struct {
@@ -2656,6 +2708,10 @@ module_exec(PyObject *mod)
 
     state->XIBufferViewType = add_new_type(mod, &XIBufferViewType_spec, NULL);
     if (state->XIBufferViewType == NULL) {
+        goto error;
+    }
+
+    if (register_xid_types() < 0) {
         goto error;
     }
 
