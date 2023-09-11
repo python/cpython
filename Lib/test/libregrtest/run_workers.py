@@ -1,6 +1,5 @@
 import dataclasses
 import faulthandler
-import json
 import os.path
 import queue
 import signal
@@ -10,19 +9,20 @@ import tempfile
 import threading
 import time
 import traceback
-from typing import NoReturn, Literal, Any, TextIO
+from typing import Literal, TextIO
 
 from test import support
 from test.support import os_helper
-from test.support import TestStats
 
-from test.libregrtest.main import Regrtest
-from test.libregrtest.runtest import (
-    run_single_test, TestResult, State, PROGRESS_MIN_TIME,
-    FilterTuple, RunTests, StrPath, StrJSON, TestName)
-from test.libregrtest.setup import setup_tests, setup_test_dir
-from test.libregrtest.results import TestResults
-from test.libregrtest.utils import format_duration, print_warning
+from .logger import Logger
+from .result import TestResult, State
+from .results import TestResults
+from .runtests import RunTests
+from .single import PROGRESS_MIN_TIME
+from .utils import (
+    StrPath, TestName,
+    format_duration, print_warning)
+from .worker import create_worker_process, USE_PROCESS_GROUP
 
 if sys.platform == 'win32':
     import locale
@@ -40,75 +40,6 @@ assert MAIN_PROCESS_TIMEOUT >= PROGRESS_UPDATE
 
 # Time to wait until a worker completes: should be immediate
 JOIN_TIMEOUT = 30.0   # seconds
-
-USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
-
-
-@dataclasses.dataclass(slots=True)
-class WorkerJob:
-    runtests: RunTests
-
-
-def create_worker_process(runtests: RunTests,
-                          output_file: TextIO,
-                          tmp_dir: StrPath | None = None) -> subprocess.Popen:
-    python_cmd = runtests.python_cmd
-    worker_json = runtests.as_json()
-
-    if python_cmd is not None:
-        executable = python_cmd
-    else:
-        executable = [sys.executable]
-    cmd = [*executable, *support.args_from_interpreter_flags(),
-           '-u',    # Unbuffered stdout and stderr
-           '-m', 'test.regrtest',
-           '--worker-json', worker_json]
-
-    env = dict(os.environ)
-    if tmp_dir is not None:
-        env['TMPDIR'] = tmp_dir
-        env['TEMP'] = tmp_dir
-        env['TMP'] = tmp_dir
-
-    # Running the child from the same working directory as regrtest's original
-    # invocation ensures that TEMPDIR for the child is the same when
-    # sysconfig.is_python_build() is true. See issue 15300.
-    kw = dict(
-        env=env,
-        stdout=output_file,
-        # bpo-45410: Write stderr into stdout to keep messages order
-        stderr=output_file,
-        text=True,
-        close_fds=(os.name != 'nt'),
-        cwd=os_helper.SAVEDCWD,
-    )
-    if USE_PROCESS_GROUP:
-        kw['start_new_session'] = True
-    return subprocess.Popen(cmd, **kw)
-
-
-def worker_process(worker_json: StrJSON) -> NoReturn:
-    runtests = RunTests.from_json(worker_json)
-    test_name = runtests.tests[0]
-    match_tests: FilterTuple | None = runtests.match_tests
-
-    setup_test_dir(runtests.test_dir)
-    setup_tests(runtests)
-
-    if runtests.rerun:
-        if match_tests:
-            matching = "matching: " + ", ".join(match_tests)
-            print(f"Re-running {test_name} in verbose mode ({matching})", flush=True)
-        else:
-            print(f"Re-running {test_name} in verbose mode", flush=True)
-
-    result = run_single_test(test_name, runtests)
-    print()   # Force a newline (just in case)
-
-    # Serialize TestResult as dict in JSON
-    json.dump(result, sys.stdout, cls=EncodeTestResult)
-    sys.stdout.flush()
-    sys.exit(0)
 
 
 # We do not use a generator so multiple threads can call next().
@@ -222,10 +153,10 @@ class WorkerThread(threading.Thread):
     ) -> MultiprocessResult:
         return MultiprocessResult(test_result, stdout, err_msg)
 
-    def _run_process(self, worker_job, output_file: TextIO,
+    def _run_process(self, runtests: RunTests, output_file: TextIO,
                      tmp_dir: StrPath | None = None) -> int:
         try:
-            popen = create_worker_process(worker_job, output_file, tmp_dir)
+            popen = create_worker_process(runtests, output_file, tmp_dir)
 
             self._killed = False
             self._popen = popen
@@ -340,9 +271,7 @@ class WorkerThread(threading.Thread):
                 err_msg = "Failed to parse worker stdout"
             else:
                 try:
-                    # deserialize run_tests_worker() output
-                    result = json.loads(worker_json,
-                                        object_hook=decode_test_result)
+                    result = TestResult.from_json(worker_json)
                 except Exception as exc:
                     err_msg = "Failed to parse worker JSON: %s" % exc
 
@@ -431,12 +360,14 @@ def get_running(workers: list[WorkerThread]) -> list[str]:
 
 
 class RunWorkers:
-    def __init__(self, regrtest: Regrtest, runtests: RunTests, num_workers: int) -> None:
-        self.results: TestResults = regrtest.results
-        self.log = regrtest.logger.log
-        self.display_progress = regrtest.display_progress
+    def __init__(self, num_workers: int, runtests: RunTests,
+                 logger: Logger, results: TestResult) -> None:
         self.num_workers = num_workers
         self.runtests = runtests
+        self.log = logger.log
+        self.display_progress = logger.display_progress
+        self.results: TestResults = results
+
         self.output: queue.Queue[QueueOutput] = queue.Queue()
         tests_iter = runtests.iter_tests()
         self.pending = MultiprocessIterator(tests_iter)
@@ -562,27 +493,3 @@ class RunWorkers:
             # worker when we exit this function
             self.pending.stop()
             self.stop_workers()
-
-
-class EncodeTestResult(json.JSONEncoder):
-    """Encode a TestResult (sub)class object into a JSON dict."""
-
-    def default(self, o: Any) -> dict[str, Any]:
-        if isinstance(o, TestResult):
-            result = dataclasses.asdict(o)
-            result["__test_result__"] = o.__class__.__name__
-            return result
-
-        return super().default(o)
-
-
-def decode_test_result(d: dict[str, Any]) -> TestResult | dict[str, Any]:
-    """Decode a TestResult (sub)class object from a JSON dict."""
-
-    if "__test_result__" not in d:
-        return d
-
-    d.pop('__test_result__')
-    if d['stats'] is not None:
-        d['stats'] = TestStats(**d['stats'])
-    return TestResult(**d)

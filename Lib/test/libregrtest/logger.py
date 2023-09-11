@@ -1,19 +1,23 @@
 import os
 import time
 
-from test.libregrtest.runtest import RunTests
-from test.libregrtest.utils import print_warning, MS_WINDOWS
+from .results import TestResults
+from .runtests import RunTests
+from .utils import print_warning, MS_WINDOWS
 
 if MS_WINDOWS:
-    from test.libregrtest.win_utils import WindowsLoadTracker
+    from .win_utils import WindowsLoadTracker
 
 
 class Logger:
-    def __init__(self):
+    def __init__(self, results: TestResults, quiet: bool, pgo: bool):
         self.start_time = time.perf_counter()
         self.test_count_text = ''
         self.test_count_width = 3
         self.win_load_tracker = None
+        self._results: TestResults = results
+        self._quiet: bool = quiet
+        self._pgo: bool = pgo
 
     def log(self, line: str = '') -> None:
         empty = not line
@@ -42,6 +46,18 @@ class Logger:
         if self.win_load_tracker is not None:
             return self.win_load_tracker.getloadavg()
         return None
+
+    def display_progress(self, test_index: int, text: str) -> None:
+        if self._quiet:
+            return
+        results = self._results
+
+        # "[ 51/405/1] test_tcl passed"
+        line = f"{test_index:{self.test_count_width}}{self.test_count_text}"
+        fails = len(results.bad) + len(results.env_changed)
+        if fails and not self._pgo:
+            line = f"{line}/{fails}"
+        self.log(f"[{line}] {text}")
 
     def set_tests(self, runtests: RunTests) -> None:
         if runtests.forever:
