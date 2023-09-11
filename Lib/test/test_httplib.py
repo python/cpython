@@ -1954,6 +1954,7 @@ class HTTPSTest(TestCase):
             h.close()
             self.assertIn('nginx', server_string)
 
+    @support.requires_resource('walltime')
     def test_networked_bad_cert(self):
         # We feed a "CA" cert that is unrelated to the server's cert
         import ssl
@@ -2403,6 +2404,19 @@ class TunnelTests(TestCase):
         self.conn.request('PUT', '/', '')
         headers = self.conn.get_proxy_response_headers()
         self.assertIn(expected_header, headers.items())
+
+    def test_no_proxy_response_headers(self):
+        expected_header = ('X-Dummy', '1')
+        response_text = (
+            'HTTP/1.0 200 OK\r\n'
+            '{0}\r\n\r\n'.format(':'.join(expected_header))
+        )
+
+        self.conn._create_connection = self._create_connection(response_text)
+
+        self.conn.request('PUT', '/', '')
+        headers = self.conn.get_proxy_response_headers()
+        self.assertIsNone(headers)
 
     def test_tunnel_leak(self):
         sock = None

@@ -9,12 +9,13 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_codecs.h"        // _PyCodecInfo_GetIncrementalDecoder()
+#include "pycore_fileutils.h"     // _Py_GetLocaleEncoding()
 #include "pycore_interp.h"        // PyInterpreterState.fs_codec
 #include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_fileutils.h"     // _Py_GetLocaleEncoding()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "structmember.h"         // PyMemberDef
+
 #include "_iomodule.h"
 
 /*[clinic input]
@@ -234,7 +235,7 @@ _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
 {
 
     if (errors == NULL) {
-        errors = Py_NewRef(&_Py_ID(strict));
+        errors = &_Py_ID(strict);
     }
     else {
         errors = Py_NewRef(errors);
@@ -1138,7 +1139,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
 
     if (encoding == NULL && _PyRuntime.preconfig.utf8_mode) {
         _Py_DECLARE_STR(utf_8, "utf-8");
-        self->encoding = Py_NewRef(&_Py_STR(utf_8));
+        self->encoding = &_Py_STR(utf_8);
     }
     else if (encoding == NULL || (strcmp(encoding, "locale") == 0)) {
         self->encoding = _Py_GetLocaleEncodingObject();
@@ -2267,7 +2268,7 @@ _textiowrapper_readline(textio *self, Py_ssize_t limit)
         Py_CLEAR(chunks);
     }
     if (line == NULL) {
-        line = Py_NewRef(&_Py_STR(empty));
+        line = &_Py_STR(empty);
     }
 
     return line;
@@ -2428,13 +2429,29 @@ _textiowrapper_encoder_setstate(textio *self, cookie_type *cookie)
 /*[clinic input]
 _io.TextIOWrapper.seek
     cookie as cookieObj: object
-    whence: int = 0
+      Zero or an opaque number returned by tell().
+    whence: int(c_default='0') = os.SEEK_SET
+      The relative position to seek from.
     /
+
+Set the stream position, and return the new stream position.
+
+Four operations are supported, given by the following argument
+combinations:
+
+- seek(0, SEEK_SET): Rewind to the start of the stream.
+- seek(cookie, SEEK_SET): Restore a previous position;
+  'cookie' must be a number returned by tell().
+- seek(0, SEEK_END): Fast-forward to the end of the stream.
+- seek(0, SEEK_CUR): Leave the current stream position unchanged.
+
+Any other argument combinations are invalid,
+and may raise exceptions.
 [clinic start generated code]*/
 
 static PyObject *
 _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
-/*[clinic end generated code: output=0a15679764e2d04d input=0458abeb3d7842be]*/
+/*[clinic end generated code: output=0a15679764e2d04d input=0f68adcb02cf2823]*/
 {
     PyObject *posobj;
     cookie_type cookie;
@@ -2624,11 +2641,16 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
 
 /*[clinic input]
 _io.TextIOWrapper.tell
+
+Return the stream position as an opaque number.
+
+The return value of tell() can be given as input to seek(), to restore a
+previous stream position.
 [clinic start generated code]*/
 
 static PyObject *
 _io_TextIOWrapper_tell_impl(textio *self)
-/*[clinic end generated code: output=4f168c08bf34ad5f input=9a2caf88c24f9ddf]*/
+/*[clinic end generated code: output=4f168c08bf34ad5f input=0852d627d76fb520]*/
 {
     PyObject *res;
     PyObject *posobj = NULL;
@@ -3230,13 +3252,13 @@ static PyMethodDef textiowrapper_methods[] = {
 };
 
 static PyMemberDef textiowrapper_members[] = {
-    {"encoding", T_OBJECT, offsetof(textio, encoding), READONLY},
-    {"buffer", T_OBJECT, offsetof(textio, buffer), READONLY},
-    {"line_buffering", T_BOOL, offsetof(textio, line_buffering), READONLY},
-    {"write_through", T_BOOL, offsetof(textio, write_through), READONLY},
-    {"_finalizing", T_BOOL, offsetof(textio, finalizing), 0},
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(textio, weakreflist), READONLY},
-    {"__dictoffset__", T_PYSSIZET, offsetof(textio, dict), READONLY},
+    {"encoding", _Py_T_OBJECT, offsetof(textio, encoding), Py_READONLY},
+    {"buffer", _Py_T_OBJECT, offsetof(textio, buffer), Py_READONLY},
+    {"line_buffering", Py_T_BOOL, offsetof(textio, line_buffering), Py_READONLY},
+    {"write_through", Py_T_BOOL, offsetof(textio, write_through), Py_READONLY},
+    {"_finalizing", Py_T_BOOL, offsetof(textio, finalizing), 0},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(textio, weakreflist), Py_READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(textio, dict), Py_READONLY},
     {NULL}
 };
 

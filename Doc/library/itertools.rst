@@ -865,26 +865,22 @@ which incur interpreter overhead.
        # first_true([a,b], x, f) --> a if f(a) else b if f(b) else x
        return next(filter(pred, iterable), default)
 
-   def iter_index(iterable, value, start=0):
+   def iter_index(iterable, value, start=0, stop=None):
        "Return indices where a value occurs in a sequence or iterable."
        # iter_index('AABCADEAF', 'A') --> 0 1 4 7
-       try:
-           seq_index = iterable.index
-       except AttributeError:
+       seq_index = getattr(iterable, 'index', None)
+       if seq_index is None:
            # Slow path for general iterables
-           it = islice(iterable, start, None)
-           i = start - 1
-           try:
-               while True:
-                   yield (i := i + operator.indexOf(it, value) + 1)
-           except ValueError:
-               pass
+           it = islice(iterable, start, stop)
+           for i, element in enumerate(it, start):
+               if element is value or element == value:
+                   yield i
        else:
            # Fast path for sequences
            i = start - 1
            try:
                while True:
-                   yield (i := seq_index(value, i+1))
+                   yield (i := seq_index(value, i+1, stop))
            except ValueError:
                pass
 
@@ -1034,24 +1030,26 @@ The following recipes have a more mathematical flavor:
    def sieve(n):
        "Primes less than n."
        # sieve(30) --> 2 3 5 7 11 13 17 19 23 29
+       if n > 2:
+           yield 2
+       start = 3
        data = bytearray((0, 1)) * (n // 2)
-       data[:3] = 0, 0, 0
        limit = math.isqrt(n) + 1
-       for p in compress(range(limit), data):
+       for p in iter_index(data, 1, start, limit):
+           yield from iter_index(data, 1, start, p*p)
            data[p*p : n : p+p] = bytes(len(range(p*p, n, p+p)))
-       data[2] = 1
-       return iter_index(data, 1) if n > 2 else iter([])
+           start = p*p
+       yield from iter_index(data, 1, start)
 
    def factor(n):
        "Prime factors of n."
        # factor(99) --> 3 3 11
+       # factor(1_000_000_000_000_007) --> 47 59 360620266859
+       # factor(1_000_000_000_000_403) --> 1000000000000403
        for prime in sieve(math.isqrt(n) + 1):
-           while True:
-               quotient, remainder = divmod(n, prime)
-               if remainder:
-                   break
+           while not n % prime:
                yield prime
-               n = quotient
+               n //= prime
                if n == 1:
                    return
        if n > 1:
@@ -1332,6 +1330,21 @@ The following recipes have a more mathematical flavor:
     []
     >>> list(iter_index(iter('AABCADEAF'), 'A', 10))
     []
+    >>> list(iter_index('AABCADEAF', 'A', 1, 7))
+    [1, 4]
+    >>> list(iter_index(iter('AABCADEAF'), 'A', 1, 7))
+    [1, 4]
+    >>> # Verify that ValueErrors not swallowed (gh-107208)
+    >>> def assert_no_value(iterable, forbidden_value):
+    ...     for item in iterable:
+    ...         if item == forbidden_value:
+    ...             raise ValueError
+    ...         yield item
+    ...
+    >>> list(iter_index(assert_no_value('AABCADEAF', 'B'), 'A'))
+    Traceback (most recent call last):
+    ...
+    ValueError
 
     >>> list(sieve(30))
     [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
@@ -1352,6 +1365,12 @@ The following recipes have a more mathematical flavor:
     >>> set(sieve(10_000)).isdisjoint(carmichael)
     True
 
+    >>> list(factor(99))                    # Code example 1
+    [3, 3, 11]
+    >>> list(factor(1_000_000_000_000_007)) # Code example 2
+    [47, 59, 360620266859]
+    >>> list(factor(1_000_000_000_000_403)) # Code example 3
+    [1000000000000403]
     >>> list(factor(0))
     []
     >>> list(factor(1))

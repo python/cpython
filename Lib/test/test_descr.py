@@ -989,8 +989,8 @@ class ClassPropertiesAndMethods(unittest.TestCase):
 
     def test_mro_disagreement(self):
         # Testing error messages for MRO disagreement...
-        mro_err_msg = """Cannot create a consistent method resolution
-order (MRO) for bases """
+        mro_err_msg = ("Cannot create a consistent method resolution "
+                       "order (MRO) for bases ")
 
         def raises(exc, expected, callable, *args):
             try:
@@ -4457,6 +4457,7 @@ order (MRO) for bases """
         o.whatever = Provoker(o)
         del o
 
+    @support.requires_resource('cpu')
     def test_wrapper_segfault(self):
         # SF 927248: deeply nested wrappers could cause stack overflow
         f = lambda:None

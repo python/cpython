@@ -9,6 +9,10 @@
 
 #include "multiprocessing.h"
 
+#ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>           // gettimeofday()
+#endif
+
 #ifdef HAVE_MP_SEMAPHORE
 
 enum { RECURSIVE_MUTEX, SEMAPHORE };
@@ -516,12 +520,12 @@ _multiprocessing_SemLock_impl(PyTypeObject *type, int kind, int value,
     return result;
 
   failure:
-    if (handle != SEM_FAILED)
-        SEM_CLOSE(handle);
-    PyMem_Free(name_copy);
     if (!PyErr_Occurred()) {
         _PyMp_SetError(NULL, MP_STANDARD_ERROR);
     }
+    if (handle != SEM_FAILED)
+        SEM_CLOSE(handle);
+    PyMem_Free(name_copy);
     return NULL;
 }
 
@@ -556,8 +560,9 @@ _multiprocessing_SemLock__rebuild_impl(PyTypeObject *type, SEM_HANDLE handle,
     if (name != NULL) {
         handle = sem_open(name, 0);
         if (handle == SEM_FAILED) {
+            PyErr_SetFromErrno(PyExc_OSError);
             PyMem_Free(name_copy);
-            return PyErr_SetFromErrno(PyExc_OSError);
+            return NULL;
         }
     }
 #endif
@@ -734,13 +739,13 @@ static PyMethodDef semlock_methods[] = {
  */
 
 static PyMemberDef semlock_members[] = {
-    {"handle", T_SEM_HANDLE, offsetof(SemLockObject, handle), READONLY,
+    {"handle", T_SEM_HANDLE, offsetof(SemLockObject, handle), Py_READONLY,
      ""},
-    {"kind", T_INT, offsetof(SemLockObject, kind), READONLY,
+    {"kind", Py_T_INT, offsetof(SemLockObject, kind), Py_READONLY,
      ""},
-    {"maxvalue", T_INT, offsetof(SemLockObject, maxvalue), READONLY,
+    {"maxvalue", Py_T_INT, offsetof(SemLockObject, maxvalue), Py_READONLY,
      ""},
-    {"name", T_STRING, offsetof(SemLockObject, name), READONLY,
+    {"name", Py_T_STRING, offsetof(SemLockObject, name), Py_READONLY,
      ""},
     {NULL}
 };

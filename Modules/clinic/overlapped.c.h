@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_long.h"          // _PyLong_UnsignedLong_Converter()
 
 PyDoc_STRVAR(_overlapped_CreateIoCompletionPort__doc__,
 "CreateIoCompletionPort($module, handle, port, key, concurrency, /)\n"
@@ -288,11 +288,11 @@ _overlapped_CreateEvent(PyObject *module, PyObject *const *args, Py_ssize_t narg
         goto exit;
     }
     EventAttributes = args[0];
-    ManualReset = _PyLong_AsInt(args[1]);
+    ManualReset = PyLong_AsInt(args[1]);
     if (ManualReset == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    InitialState = _PyLong_AsInt(args[2]);
+    InitialState = PyLong_AsInt(args[2]);
     if (InitialState == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -402,7 +402,7 @@ _overlapped_BindLocal(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!Socket && PyErr_Occurred()) {
         goto exit;
     }
-    Family = _PyLong_AsInt(args[1]);
+    Family = PyLong_AsInt(args[1]);
     if (Family == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -546,7 +546,7 @@ _overlapped_Overlapped_getresult(OverlappedObject *self, PyObject *const *args, 
     if (nargs < 1) {
         goto skip_optional;
     }
-    wait = _PyLong_AsInt(args[0]);
+    wait = PyLong_AsInt(args[0]);
     if (wait == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1262,4 +1262,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=05fd038b8a81272d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=31bcc780209593a2 input=a9049054013a1b77]*/

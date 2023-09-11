@@ -43,20 +43,20 @@ interpreter.
       adaptive bytecode can be shown by passing ``adaptive=True``.
 
 
-Example: Given the function :func:`myfunc`::
+Example: Given the function :func:`!myfunc`::
 
    def myfunc(alist):
        return len(alist)
 
 the following command can be used to display the disassembly of
-:func:`myfunc`:
+:func:`!myfunc`:
 
 .. doctest::
 
    >>> dis.dis(myfunc)
      2           0 RESUME                   0
    <BLANKLINE>
-     3           2 LOAD_GLOBAL              1 (NULL + len)
+     3           2 LOAD_GLOBAL              1 (len + NULL)
                 12 LOAD_FAST                0 (alist)
                 14 CALL                     1
                 22 RETURN_VALUE
@@ -297,6 +297,9 @@ operation is being performed, so the intermediate analysis object isn't useful:
       The :pep:`626` ``co_lines`` method is used instead of the ``co_firstlineno``
       and ``co_lnotab`` attributes of the code object.
 
+   .. versionchanged:: 3.13
+      Line numbers can be ``None`` for bytecode that does not map to source lines.
+
 
 .. function:: findlabels(code)
 
@@ -402,7 +405,12 @@ details of bytecode instructions as :class:`Instruction` instances:
 
    .. data:: starts_line
 
-      line started by this opcode (if any), otherwise ``None``
+      ``True`` if this opcode starts a source line, otherwise ``False``
+
+
+   .. data:: line_number
+
+      source line number associated with this opcode (if any), otherwise ``None``
 
 
    .. data:: is_jump_target
@@ -429,8 +437,11 @@ details of bytecode instructions as :class:`Instruction` instances:
 
    .. versionchanged:: 3.13
 
+      Changed field ``starts_line``.
+
       Added fields ``start_offset``, ``cache_offset``, ``end_offset``,
-      ``baseopname``, ``baseopcode``, ``jump_target`` and ``oparg``.
+      ``baseopname``, ``baseopcode``, ``jump_target``, ``oparg``, and
+      ``line_number``.
 
 
 .. class:: Positions
@@ -851,7 +862,7 @@ iterations of the loop.
 
 .. opcode:: LOAD_BUILD_CLASS
 
-   Pushes :func:`builtins.__build_class__` onto the stack.  It is later called
+   Pushes :func:`!builtins.__build_class__` onto the stack.  It is later called
    to construct a class.
 
 
@@ -876,7 +887,7 @@ iterations of the loop.
 .. opcode:: MATCH_MAPPING
 
    If ``STACK[-1]`` is an instance of :class:`collections.abc.Mapping` (or, more
-   technically: if it has the :const:`Py_TPFLAGS_MAPPING` flag set in its
+   technically: if it has the :c:macro:`Py_TPFLAGS_MAPPING` flag set in its
    :c:member:`~PyTypeObject.tp_flags`), push ``True`` onto the stack.  Otherwise,
    push ``False``.
 
@@ -887,7 +898,7 @@ iterations of the loop.
 
    If ``STACK[-1]`` is an instance of :class:`collections.abc.Sequence` and is *not* an instance
    of :class:`str`/:class:`bytes`/:class:`bytearray` (or, more technically: if it has
-   the :const:`Py_TPFLAGS_SEQUENCE` flag set in its :c:member:`~PyTypeObject.tp_flags`),
+   the :c:macro:`Py_TPFLAGS_SEQUENCE` flag set in its :c:member:`~PyTypeObject.tp_flags`),
    push ``True`` onto the stack.  Otherwise, push ``False``.
 
    .. versionadded:: 3.10
@@ -909,22 +920,23 @@ iterations of the loop.
 .. opcode:: STORE_NAME (namei)
 
    Implements ``name = STACK.pop()``. *namei* is the index of *name* in the attribute
-   :attr:`co_names` of the code object. The compiler tries to use
-   :opcode:`STORE_FAST` or :opcode:`STORE_GLOBAL` if possible.
+   :attr:`!co_names` of the :ref:`code object <code-objects>`.
+   The compiler tries to use :opcode:`STORE_FAST` or :opcode:`STORE_GLOBAL` if possible.
 
 
 .. opcode:: DELETE_NAME (namei)
 
-   Implements ``del name``, where *namei* is the index into :attr:`co_names`
-   attribute of the code object.
+   Implements ``del name``, where *namei* is the index into :attr:`!co_names`
+   attribute of the :ref:`code object <code-objects>`.
 
 
 .. opcode:: UNPACK_SEQUENCE (count)
 
    Unpacks ``STACK[-1]`` into *count* individual values, which are put onto the stack
-   right-to-left::
+   right-to-left. Require there to be exactly *count* values.::
 
-      STACK.extend(STACK.pop()[:count:-1])
+      assert(len(STACK[-1]) == count)
+      STACK.extend(STACK.pop()[:-count-1:-1])
 
 
 .. opcode:: UNPACK_EX (counts)
@@ -954,7 +966,8 @@ iterations of the loop.
       value = STACK.pop()
       obj.name = value
 
-   where *namei* is the index of name in :attr:`co_names`.
+   where *namei* is the index of name in :attr:`!co_names` of the
+   :ref:`code object <code-objects>`.
 
 .. opcode:: DELETE_ATTR (namei)
 
@@ -963,7 +976,8 @@ iterations of the loop.
       obj = STACK.pop()
       del obj.name
 
-   where *namei* is the index of name into :attr:`co_names`.
+   where *namei* is the index of name into :attr:`!co_names` of the
+   :ref:`code object <code-objects>`.
 
 
 .. opcode:: STORE_GLOBAL (namei)
@@ -1803,15 +1817,12 @@ instructions:
    Sequence of bytecodes that access an attribute by name.
 
 
-.. data:: hasjrel
+.. data:: hasjump
 
-   Sequence of bytecodes that have a relative jump target.
+   Sequence of bytecodes that have a jump target. All jumps
+   are relative.
 
-
-.. data:: hasjabs
-
-   Sequence of bytecodes that have an absolute jump target.
-
+   .. versionadded:: 3.13
 
 .. data:: haslocal
 
@@ -1827,3 +1838,20 @@ instructions:
    Sequence of bytecodes that set an exception handler.
 
    .. versionadded:: 3.12
+
+
+.. data:: hasjrel
+
+   Sequence of bytecodes that have a relative jump target.
+
+   .. deprecated:: 3.13
+      All jumps are now relative. Use :data:`hasjump`.
+
+
+.. data:: hasjabs
+
+   Sequence of bytecodes that have an absolute jump target.
+
+   .. deprecated:: 3.13
+      All jumps are now relative. This list is empty.
+
