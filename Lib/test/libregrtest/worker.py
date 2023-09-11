@@ -1,7 +1,7 @@
 import subprocess
 import sys
 import os
-from typing import TextIO, NoReturn
+from typing import NoReturn
 
 from test import support
 from test.support import os_helper
@@ -11,7 +11,7 @@ from .runtests import RunTests
 from .single import run_single_test
 from .utils import (
     StrPath, StrJSON, FilterTuple, MS_WINDOWS,
-    get_work_dir, exit_timeout)
+    exit_timeout, set_temp_dir_environ)
 
 
 USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
@@ -19,7 +19,7 @@ USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
 
 def create_worker_process(runtests: RunTests,
                           output_fd: int, json_fd: int,
-                          tmp_dir: StrPath | None = None) -> subprocess.Popen:
+                          start_work_dir: StrPath | None = None) -> subprocess.Popen:
     python_cmd = runtests.python_cmd
     worker_json = runtests.as_json()
 
@@ -33,10 +33,7 @@ def create_worker_process(runtests: RunTests,
            worker_json]
 
     env = dict(os.environ)
-    if tmp_dir is not None:
-        env['TMPDIR'] = tmp_dir
-        env['TEMP'] = tmp_dir
-        env['TMP'] = tmp_dir
+    set_temp_dir_environ(env, runtests.work_dir)
 
     # Running the child from the same working directory as regrtest's original
     # invocation ensures that TEMPDIR for the child is the same when
@@ -48,6 +45,7 @@ def create_worker_process(runtests: RunTests,
         stderr=output_fd,
         text=True,
         close_fds=True,
+        cwd=start_work_dir,
     )
     if not MS_WINDOWS:
         kwargs['pass_fds'] = [json_fd]
@@ -67,8 +65,9 @@ def create_worker_process(runtests: RunTests,
             os.set_handle_inheritable(json_fd, False)
 
 
-def worker_process(worker_json: StrJSON) -> NoReturn:
-    runtests = RunTests.from_json(worker_json)
+def worker_process(runtests: RunTests) -> NoReturn:
+    set_temp_dir_environ(os.environ, os.getcwd())
+
     test_name = runtests.tests[0]
     match_tests: FilterTuple | None = runtests.match_tests
     json_fd: int = runtests.json_fd
@@ -76,7 +75,6 @@ def worker_process(worker_json: StrJSON) -> NoReturn:
     if MS_WINDOWS:
         import msvcrt
         json_fd = msvcrt.open_osfhandle(json_fd, os.O_WRONLY)
-
 
     setup_test_dir(runtests.test_dir)
     setup_process()
@@ -100,13 +98,12 @@ def main():
     if len(sys.argv) != 2:
         print("usage: python -m test.libregrtest.worker JSON")
         sys.exit(1)
-    worker_json = sys.argv[1]
-
-    work_dir = get_work_dir(worker=True)
+    worker_json: StrJSON = sys.argv[1]
 
     with exit_timeout():
-        with os_helper.temp_cwd(work_dir, quiet=True):
-            worker_process(worker_json)
+        runtests = RunTests.from_json(worker_json)
+        with os_helper.change_cwd(runtests.work_dir):
+            worker_process(runtests)
 
 
 if __name__ == "__main__":

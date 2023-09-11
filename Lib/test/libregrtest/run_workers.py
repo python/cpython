@@ -9,7 +9,7 @@ import tempfile
 import threading
 import time
 import traceback
-from typing import Literal, TextIO
+from typing import Literal
 
 from test import support
 from test.support import os_helper
@@ -21,7 +21,7 @@ from .runtests import RunTests
 from .single import PROGRESS_MIN_TIME
 from .utils import (
     StrPath, StrJSON, TestName, MS_WINDOWS,
-    format_duration, print_warning)
+    format_duration, print_warning, WORKER_DIR_PREFIX)
 from .worker import create_worker_process, USE_PROCESS_GROUP
 
 if MS_WINDOWS:
@@ -156,10 +156,10 @@ class WorkerThread(threading.Thread):
         return MultiprocessResult(test_result, stdout, err_msg)
 
     def _run_process(self, runtests: RunTests, output_fd: int, json_fd: int,
-                     tmp_dir: StrPath | None = None) -> int:
+                     start_work_dir: StrPath | None = None) -> int:
         try:
             popen = create_worker_process(runtests, output_fd, json_fd,
-                                          tmp_dir)
+                                          start_work_dir)
 
             self._killed = False
             self._popen = popen
@@ -235,33 +235,39 @@ class WorkerThread(threading.Thread):
             if MS_WINDOWS:
                 json_fd = msvcrt.get_osfhandle(json_fd)
 
+            # gh-93353: Check for leaked temporary files in the parent process,
+            # since the deletion of temporary files can happen late during
+            # Python finalization: too late for libregrtest.
+            tmp_dir = tempfile.mkdtemp(prefix=WORKER_DIR_PREFIX)
+            tmp_dir = os.path.abspath(tmp_dir)
+
             kwargs = {}
             if match_tests:
                 kwargs['match_tests'] = match_tests
             worker_runtests = self.runtests.copy(
                 tests=tests,
                 json_fd=json_fd,
+                work_dir=tmp_dir,
                 **kwargs)
 
-            # gh-93353: Check for leaked temporary files in the parent process,
-            # since the deletion of temporary files can happen late during
-            # Python finalization: too late for libregrtest.
-            if not support.is_wasi:
-                # Don't check for leaked temporary files and directories if Python is
-                # run on WASI. WASI don't pass environment variables like TMPDIR to
-                # worker processes.
-                tmp_dir = tempfile.mkdtemp(prefix="test_python_")
-                tmp_dir = os.path.abspath(tmp_dir)
-                try:
-                    retcode = self._run_process(worker_runtests,
-                                                stdout_fd, json_fd, tmp_dir)
-                finally:
-                    tmp_files = os.listdir(tmp_dir)
-                    os_helper.rmtree(tmp_dir)
+            # Starting working directory of the worker process.
+            #
+            # Emscripten and WASI Python must start in the Python source code
+            # directory to get 'python.js' or 'python.wasm' file.
+            #
+            # Then worker_process() calls change_cwd(runtests.work_dir).
+            if support.is_emscripten or support.is_wasi:
+                start_work_dir = os_helper.SAVEDCWD
             else:
+                start_work_dir = tmp_dir
+
+            try:
                 retcode = self._run_process(worker_runtests,
-                                            stdout_fd, json_fd)
-                tmp_files = ()
+                                            stdout_fd, json_fd,
+                                            start_work_dir)
+            finally:
+                tmp_files = os.listdir(tmp_dir)
+                os_helper.rmtree(tmp_dir)
             stdout_file.seek(0)
 
             try:
@@ -280,7 +286,7 @@ class WorkerThread(threading.Thread):
                 if worker_json:
                     result = TestResult.from_json(worker_json)
                 else:
-                    err_msg = f"empty JSON"
+                    err_msg = "empty JSON"
             except Exception as exc:
                 # gh-101634: Catch UnicodeDecodeError if stdout cannot be
                 # decoded from encoding

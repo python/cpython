@@ -17,6 +17,8 @@ from test.support import threading_helper
 
 
 MS_WINDOWS = (sys.platform == 'win32')
+WORK_DIR_PREFIX = 'test_python_'
+WORKER_DIR_PREFIX = f'{WORK_DIR_PREFIX}worker_'
 
 # bpo-38203: Maximum delay in seconds to exit Python (call Py_Finalize()).
 # Used to protect against threading._shutdown() hang.
@@ -338,9 +340,7 @@ def get_build_info():
 
 
 def get_temp_dir(tmp_dir):
-    if tmp_dir:
-        tmp_dir = os.path.expanduser(tmp_dir)
-    else:
+    if not tmp_dir:
         # When tests are run from the Python build directory, it is best practice
         # to keep the test files in a subfolder.  This eases the cleanup of leftover
         # files using the "make distclean" command.
@@ -359,6 +359,12 @@ def get_temp_dir(tmp_dir):
     return os.path.abspath(tmp_dir)
 
 
+def set_temp_dir_environ(environ: dict, tmp_dir: StrPath) -> None:
+    environ['TMPDIR'] = tmp_dir
+    environ['TEMP'] = tmp_dir
+    environ['TMP'] = tmp_dir
+
+
 def fix_umask():
     if support.is_emscripten:
         # Emscripten has default umask 0o777, which breaks some tests.
@@ -370,21 +376,18 @@ def fix_umask():
             os.umask(old_mask)
 
 
-def get_work_dir(*, parent_dir: StrPath = '', worker: bool = False):
+def get_work_dir(*, parent_dir: StrPath | None = None) -> StrPath:
     # Define a writable temp dir that will be used as cwd while running
     # the tests. The name of the dir includes the pid to allow parallel
     # testing (see the -j option).
     # Emscripten and WASI have stubbed getpid(), Emscripten has only
     # milisecond clock resolution. Use randint() instead.
-    if sys.platform in {"emscripten", "wasi"}:
+    if support.is_emscripten or support.is_wasi:
         nounce = random.randint(0, 1_000_000)
     else:
         nounce = os.getpid()
 
-    if worker:
-        work_dir = 'test_python_worker_{}'.format(nounce)
-    else:
-        work_dir = 'test_python_{}'.format(nounce)
+    work_dir = WORK_DIR_PREFIX + str(nounce)
     work_dir += os_helper.FS_NONASCII
     if parent_dir:
         work_dir = os.path.join(parent_dir, work_dir)
@@ -570,7 +573,7 @@ def display_header():
 def cleanup_temp_dir(tmp_dir: StrPath):
     import glob
 
-    path = os.path.join(glob.escape(tmp_dir), 'test_python_*')
+    path = os.path.join(glob.escape(tmp_dir), WORK_DIR_PREFIX + '*')
     print("Cleanup %s directory" % tmp_dir)
     for name in glob.glob(path):
         if os.path.isdir(name):

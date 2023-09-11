@@ -331,7 +331,9 @@ def _create_parser():
                        help='writes JUnit-style XML results to the specified '
                             'file')
     group.add_argument('--tempdir', metavar='PATH',
-                       help='override the working directory for the test run')
+                       help='Override the working directory for the test run. '
+                            'It should not be too long and should only '
+                            'use ASCII characters.')
     group.add_argument('--cleanup', action='store_true',
                        help='remove old test_python_* directories')
     return parser

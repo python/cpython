@@ -3,6 +3,7 @@ import random
 import re
 import sys
 import time
+import tempfile
 
 from test import support
 from test.support import os_helper
@@ -20,7 +21,7 @@ from .utils import (
     StrPath, StrJSON, TestName, TestList, TestTuple, FilterTuple,
     strip_py_suffix, count, format_duration,
     printlist, get_temp_dir, get_work_dir, exit_timeout,
-    display_header, cleanup_temp_dir)
+    display_header, cleanup_temp_dir, set_temp_dir_environ)
 
 
 class Regrtest:
@@ -393,6 +394,7 @@ class Regrtest:
             gc_threshold=self.gc_threshold,
             use_resources=self.use_resources,
             python_cmd=self.python_cmd,
+            work_dir=os.getcwd(),
         )
 
     def _run_tests(self, selected: TestTuple, tests: TestList | None) -> int:
@@ -465,10 +467,18 @@ class Regrtest:
 
         strip_py_suffix(self.cmdline_args)
 
+        if self.tmp_dir:
+            self.tmp_dir = os.path.abspath(os.path.expanduser(self.tmp_dir))
+            set_temp_dir_environ(os.environ, self.tmp_dir)
         self.tmp_dir = get_temp_dir(self.tmp_dir)
+        # Don't use set_temp_dir_environ() on get_temp_dir() result, since many
+        # tests fail if the temporary directory is non-ASCII or is too long.
 
         if self.want_cleanup:
             cleanup_temp_dir(self.tmp_dir)
+            tmp_dir2 = os.path.abspath(tempfile.gettempdir())
+            if tmp_dir2 != self.tmp_dir:
+                cleanup_temp_dir(tmp_dir2)
             sys.exit(0)
 
         if self.want_wait:

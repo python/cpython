@@ -39,6 +39,7 @@ class RunTests:
     # On Unix, it's a file descriptor.
     # On Windows, it's a handle.
     json_fd: int | None = None
+    work_dir: StrPath = None
 
     def copy(self, **override):
         state = dataclasses.asdict(self)
