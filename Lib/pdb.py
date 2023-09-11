@@ -522,15 +522,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             except ImportError:
                 yield
                 return
-
-            if self.use_rawinput and self.completekey == 'tab':
-                try:
-                    readline.parse_and_bind('tab: self-insert')
-                    yield
-                finally:
-                    readline.parse_and_bind('tab: complete')
-            else:
+            try:
+                readline.parse_and_bind('tab: self-insert')
                 yield
+            finally:
+                readline.parse_and_bind('tab: complete')
+        else:
+            yield
 
     def default(self, line):
         if line[:1] == '!': line = line[1:].strip()
