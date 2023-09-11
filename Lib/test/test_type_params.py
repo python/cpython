@@ -479,7 +479,7 @@ class TypeParamsAccessTest(unittest.TestCase):
                                     "Cannot use comprehension in annotation scope within class scope"):
             run_code(code)
 
-    def test_lambda_in_generic_alias(self):
+    def test_nested_scope_in_generic_alias(self):
         code = """
             class C[T]:
                 T = "class"
