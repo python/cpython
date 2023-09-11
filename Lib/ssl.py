@@ -878,17 +878,25 @@ class SSLObject:
 
     def get_verified_chain(self):
         """Returns verified certificate chain provided by the other
-        end of the SSL channel as a list of ``_ssl.Certificate``.
-        Return ``None`` if no certificates were provided.
+        end of the SSL channel as a list of DER-encoded bytes.
         """
-        return self._sslobj.get_verified_chain()
+        chain = self._sslobj.get_verified_chain()
+
+        if chain is None:
+            return []
+
+        return [cert.public_bytes(_ssl.ENCODING_DER) for cert in chain]
 
     def get_unverified_chain(self):
         """Returns unverified certificate chain provided by the other
-        end of the SSL channel as a list of ``_ssl.Certificate``.
-        Return ``None`` if no certificates were provided.
+        end of the SSL channel as a list of DER-encoded bytes.
         """
-        return self._sslobj.get_unverified_chain()
+        chain = self._sslobj.get_verified_chain()
+
+        if chain is None:
+            return []
+
+        return [cert.public_bytes(_ssl.ENCODING_DER) for cert in chain]
 
     def selected_npn_protocol(self):
         """Return the currently selected NPN protocol as a string, or ``None``

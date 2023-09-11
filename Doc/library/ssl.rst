@@ -1215,16 +1215,14 @@ SSL sockets also have the following additional methods and attributes:
 .. method:: SSLSocket.get_verified_chain()
 
    Returns verified certificate chain provided by the other
-   end of the SSL channel as a list of ``_ssl.Certificate``.
-   Return ``None`` if no certificates were provided.
+   end of the SSL channel as a list of DER-encoded bytes.
 
    .. versionadded:: 3.13
 
 .. method:: SSLSocket.get_unverified_chain()
 
    Returns unverified certificate chain provided by the other
-   end of the SSL channel as a list of ``_ssl.Certificate``.
-   Return ``None`` if no certificates were provided.
+   end of the SSL channel as a list of DER-encoded bytes.
 
    .. versionadded:: 3.13
 
