@@ -3,7 +3,7 @@
 import os
 import sys
 import threading
-from os.path import pardir, realpath
+from os.path import realpath
 
 __all__ = [
     'get_config_h_filename',
@@ -465,10 +465,14 @@ def _get_sysconfigdata_name():
         f'_sysconfigdata_{sys.abiflags}_{sys.platform}_{multiarch}',
     )
 
+def _print_config_dict(d, stream):
+    print ("{", file=stream)
+    for k, v in sorted(d.items()):
+        print(f"    {k!r}: {v!r},", file=stream)
+    print ("}", file=stream)
 
 def _generate_posix_vars():
     """Generate the Python module containing build-time variables."""
-    import pprint
     vars = {}
     # load the installed Makefile:
     makefile = get_makefile_filename()
@@ -523,7 +527,7 @@ def _generate_posix_vars():
         f.write('# system configuration generated and used by'
                 ' the sysconfig module\n')
         f.write('build_time_vars = ')
-        pprint.pprint(vars, stream=f)
+        _print_config_dict(vars, stream=f)
 
     # Create file used for sys.path fixup -- see Modules/getpath.c
     with open('pybuilddir.txt', 'w', encoding='utf8') as f:
@@ -544,7 +548,12 @@ def _init_non_posix(vars):
     vars['LIBDEST'] = get_path('stdlib')
     vars['BINLIBDEST'] = get_path('platstdlib')
     vars['INCLUDEPY'] = get_path('include')
-    vars['EXT_SUFFIX'] = _imp.extension_suffixes()[0]
+    try:
+        # GH-99201: _imp.extension_suffixes may be empty when
+        # HAVE_DYNAMIC_LOADING is not set. In this case, don't set EXT_SUFFIX.
+        vars['EXT_SUFFIX'] = _imp.extension_suffixes()[0]
+    except IndexError:
+        pass
     vars['EXE'] = '.exe'
     vars['VERSION'] = _PY_VERSION_SHORT_NO_DOT
     vars['BINDIR'] = os.path.dirname(_safe_realpath(sys.executable))

@@ -111,6 +111,14 @@ class SampleClass:
         """
         return cls.a_class_attribute
 
+    @functools.cached_property
+    def a_cached_property(self):
+        """
+        >>> print(SampleClass(29).get())
+        29
+        """
+        return "hello"
+
     class NestedClass:
         """
         >>> x = SampleClass.NestedClass(5)
@@ -515,6 +523,7 @@ methods, classmethods, staticmethods, properties, and nested classes.
      3  SampleClass.NestedClass
      1  SampleClass.NestedClass.__init__
      1  SampleClass.__init__
+     1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
      1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
@@ -571,6 +580,7 @@ functions, classes, and the `__test__` dictionary, if it exists:
      3  some_module.SampleClass.NestedClass
      1  some_module.SampleClass.NestedClass.__init__
      1  some_module.SampleClass.__init__
+     1  some_module.SampleClass.a_cached_property
      2  some_module.SampleClass.a_classmethod
      1  some_module.SampleClass.a_classmethod_property
      1  some_module.SampleClass.a_property
@@ -613,6 +623,7 @@ By default, an object with no doctests doesn't create any tests:
      3  SampleClass.NestedClass
      1  SampleClass.NestedClass.__init__
      1  SampleClass.__init__
+     1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
      1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
@@ -634,6 +645,7 @@ displays.
      0  SampleClass.NestedClass.get
      0  SampleClass.NestedClass.square
      1  SampleClass.__init__
+     1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
      1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
@@ -707,7 +719,7 @@ plain ol' Python and is guaranteed to be available.
 
     >>> import builtins
     >>> tests = doctest.DocTestFinder().find(builtins)
-    >>> 825 < len(tests) < 845 # approximate number of objects with docstrings
+    >>> 830 < len(tests) < 860 # approximate number of objects with docstrings
     True
     >>> real_tests = [t for t in tests if len(t.examples) > 0]
     >>> len(real_tests) # objects that actually have doctests
@@ -736,19 +748,49 @@ and 'int' is a type.
 """
 
 
+class TestDocTest(unittest.TestCase):
+
+    def test_run(self):
+        test = '''
+            >>> 1 + 1
+            11
+            >>> 2 + 3      # doctest: +SKIP
+            "23"
+            >>> 5 + 7
+            57
+        '''
+
+        def myfunc():
+            pass
+        myfunc.__doc__ = test
+
+        # test DocTestFinder.run()
+        test = doctest.DocTestFinder().find(myfunc)[0]
+        with support.captured_stdout():
+            with support.captured_stderr():
+                results = doctest.DocTestRunner(verbose=False).run(test)
+
+        # test TestResults
+        self.assertIsInstance(results, doctest.TestResults)
+        self.assertEqual(results.failed, 2)
+        self.assertEqual(results.attempted, 3)
+        self.assertEqual(results.skipped, 1)
+        self.assertEqual(tuple(results), (2, 3))
+        x, y = results
+        self.assertEqual((x, y), (2, 3))
+
+
 class TestDocTestFinder(unittest.TestCase):
 
     def test_issue35753(self):
         # This import of `call` should trigger issue35753 when
-        # `support.run_doctest` is called due to unwrap failing,
+        # DocTestFinder.find() is called due to inspect.unwrap() failing,
         # however with a patched doctest this should succeed.
         from unittest.mock import call
         dummy_module = types.ModuleType("dummy")
         dummy_module.__dict__['inject_call'] = call
-        try:
-            support.run_doctest(dummy_module, verbosity=True)
-        except ValueError as e:
-            raise support.TestFailed("Doctest unwrap failed") from e
+        finder = doctest.DocTestFinder()
+        self.assertEqual(finder.find(dummy_module), [])
 
     def test_empty_namespace_package(self):
         pkg_name = 'doctest_empty_pkg'
@@ -1287,14 +1329,14 @@ The NORMALIZE_WHITESPACE flag causes all sequences of whitespace to be
 treated as equal:
 
     >>> def f(x):
-    ...     '>>> print(1, 2, 3)\n  1   2\n 3'
+    ...     '\n>>> print(1, 2, 3)\n  1   2\n 3'
 
     >>> # Without the flag:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
     ... # doctest: +ELLIPSIS
     **********************************************************************
-    File ..., line 2, in f
+    File ..., line 3, in f
     Failed example:
         print(1, 2, 3)
     Expected:

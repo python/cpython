@@ -72,6 +72,7 @@ available, and then make assertions about how they have been used:
 :attr:`side_effect` allows you to perform side effects, including raising an
 exception when a mock is called:
 
+   >>> from unittest.mock import Mock
    >>> mock = Mock(side_effect=KeyError('foo'))
    >>> mock()
    Traceback (most recent call last):
@@ -204,8 +205,10 @@ The Mock Class
     import asyncio
     import inspect
     import unittest
+    import threading
     from unittest.mock import sentinel, DEFAULT, ANY
     from unittest.mock import patch, call, Mock, MagicMock, PropertyMock, AsyncMock
+    from unittest.mock import ThreadingMock
     from unittest.mock import mock_open
 
 :class:`Mock` is a flexible mock object intended to replace the use of stubs and
@@ -406,7 +409,7 @@ the *new_callable* argument to :func:`patch`.
             False
 
         .. versionchanged:: 3.6
-           Added two keyword only argument to the reset_mock function.
+           Added two keyword-only arguments to the reset_mock function.
 
         This can be useful where you want to make a series of assertions that
         reuse the same object. Note that :meth:`reset_mock` *doesn't* clear the
@@ -416,8 +419,8 @@ the *new_callable* argument to :func:`patch`.
         parameter as ``True``. Child mocks and the return value mock
         (if any) are reset as well.
 
-        .. note:: *return_value*, and :attr:`side_effect` are keyword only
-                  argument.
+        .. note:: *return_value*, and :attr:`side_effect` are keyword-only
+                  arguments.
 
 
     .. method:: mock_add_spec(spec, spec_set=False)
@@ -1098,6 +1101,51 @@ object::
       [call('foo'), call('bar')]
 
 
+.. class:: ThreadingMock(spec=None, side_effect=None, return_value=DEFAULT, wraps=None, name=None, spec_set=None, unsafe=False, *, timeout=UNSET, **kwargs)
+
+  A version of :class:`MagicMock` for multithreading tests. The
+  :class:`ThreadingMock` object provides extra methods to wait for a call to
+  be invoked, rather than assert on it immediately.
+
+  The default timeout is specified by the ``timeout`` argument, or if unset by the
+  :attr:`ThreadingMock.DEFAULT_TIMEOUT` attribute, which defaults to blocking (``None``).
+
+  You can configure the global default timeout by setting :attr:`ThreadingMock.DEFAULT_TIMEOUT`.
+
+  .. method:: wait_until_called(*, timeout=UNSET)
+
+      Waits until the mock is called.
+
+      If a timeout was passed at the creation of the mock or if a timeout
+      argument is passed to this function, the function raises an
+      :exc:`AssertionError` if the call is not performed in time.
+
+        >>> mock = ThreadingMock()
+        >>> thread = threading.Thread(target=mock)
+        >>> thread.start()
+        >>> mock.wait_until_called(timeout=1)
+        >>> thread.join()
+
+  .. method:: wait_until_any_call_with(*args, **kwargs)
+
+      Waits until the the mock is called with the specified arguments.
+
+      If a timeout was passed at the creation of the mock
+      the function raises an :exc:`AssertionError` if the call is not performed in time.
+
+        >>> mock = ThreadingMock()
+        >>> thread = threading.Thread(target=mock, args=("arg1", "arg2",), kwargs={"arg": "thing"})
+        >>> thread.start()
+        >>> mock.wait_until_any_call_with("arg1", "arg2", arg="thing")
+        >>> thread.join()
+
+  .. attribute:: DEFAULT_TIMEOUT
+
+    Global default timeout in seconds to create instances of :class:`ThreadingMock`.
+
+  .. versionadded:: 3.13
+
+
 Calling
 ~~~~~~~
 
@@ -1604,6 +1652,7 @@ decorator:
     >>> @patch.dict(foo, {'newkey': 'newvalue'})
     ... def test():
     ...     assert foo == {'newkey': 'newvalue'}
+    ...
     >>> test()
     >>> assert foo == {}
 
@@ -2436,7 +2485,7 @@ behaviour you can switch it off by setting the module level switch
 
 Alternatively you can just use ``vars(my_mock)`` (instance members) and
 ``dir(type(my_mock))`` (type members) to bypass the filtering irrespective of
-:data:`mock.FILTER_DIR`.
+:const:`mock.FILTER_DIR`.
 
 
 mock_open

@@ -215,6 +215,11 @@ typedef struct PyConfig {
 
     // If non-zero, we believe we're running from a source tree.
     int _is_python_build;
+
+#ifdef Py_STATS
+    // If non-zero, turns on statistics gathering.
+    int _pystats;
+#endif
 } PyConfig;
 
 PyAPI_FUNC(void) PyConfig_InitPythonConfig(PyConfig *config);
@@ -240,21 +245,6 @@ PyAPI_FUNC(PyStatus) PyConfig_SetWideStringList(PyConfig *config,
     PyWideStringList *list,
     Py_ssize_t length, wchar_t **items);
 
-
-/* --- PyInterpreterConfig ------------------------------------ */
-
-typedef struct {
-    int allow_fork;
-    int allow_subprocess;
-    int allow_threads;
-} _PyInterpreterConfig;
-
-#define _PyInterpreterConfig_LEGACY_INIT \
-    { \
-        .allow_fork = 1, \
-        .allow_subprocess = 1, \
-        .allow_threads = 1, \
-    }
 
 /* --- Helper functions --------------------------------------- */
 

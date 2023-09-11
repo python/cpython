@@ -21,8 +21,8 @@ lognormal, negative exponential, gamma, and beta distributions. For generating
 distributions of angles, the von Mises distribution is available.
 
 Almost all module functions depend on the basic function :func:`.random`, which
-generates a random float uniformly in the semi-open range [0.0, 1.0).  Python
-uses the Mersenne Twister as the core generator.  It produces 53-bit precision
+generates a random float uniformly in the half-open range ``0.0 <= X < 1.0``.
+Python uses the Mersenne Twister as the core generator.  It produces 53-bit precision
 floats and has a period of 2\*\*19937-1.  The underlying implementation in C is
 both fast and threadsafe.  The Mersenne Twister is one of the most extensively
 tested random number generators in existence.  However, being completely
@@ -294,7 +294,7 @@ be found in any statistics text.
 
 .. function:: random()
 
-   Return the next random floating point number in the range [0.0, 1.0).
+   Return the next random floating point number in the range ``0.0 <= X < 1.0``
 
 
 .. function:: uniform(a, b)
@@ -320,7 +320,7 @@ be found in any statistics text.
    ``beta > 0``. Returned values range between 0 and 1.
 
 
-.. function:: expovariate(lambd)
+.. function:: expovariate(lambd = 1.0)
 
    Exponential distribution.  *lambd* is 1.0 divided by the desired
    mean.  It should be nonzero.  (The parameter would be called
@@ -328,11 +328,16 @@ be found in any statistics text.
    range from 0 to positive infinity if *lambd* is positive, and from
    negative infinity to 0 if *lambd* is negative.
 
+   .. versionchanged:: 3.12
+      Added the default value for ``lambd``.
+
 
 .. function:: gammavariate(alpha, beta)
 
-   Gamma distribution.  (*Not* the gamma function!)  Conditions on the
-   parameters are ``alpha > 0`` and ``beta > 0``.
+   Gamma distribution.  (*Not* the gamma function!)  The shape and
+   scale parameters, *alpha* and *beta*, must have positive values.
+   (Calling conventions vary and some sources define 'beta'
+   as the inverse of the scale).
 
    The probability distribution function is::
 
@@ -343,7 +348,8 @@ be found in any statistics text.
 
 .. function:: gauss(mu=0.0, sigma=1.0)
 
-   Normal distribution, also called the Gaussian distribution.  *mu* is the mean,
+   Normal distribution, also called the Gaussian distribution.
+   *mu* is the mean,
    and *sigma* is the standard deviation.  This is slightly faster than
    the :func:`normalvariate` function defined below.
 
@@ -401,8 +407,8 @@ Alternative Generator
    Class that implements the default pseudo-random number generator used by the
    :mod:`random` module.
 
-   .. deprecated:: 3.9
-      In the future, the *seed* must be one of the following types:
+   .. deprecated-removed:: 3.9 3.11
+      Formerly the *seed* could be any hashable object.  Now it is limited to:
       :class:`NoneType`, :class:`int`, :class:`float`, :class:`str`,
       :class:`bytes`, or :class:`bytearray`.
 
@@ -420,7 +426,7 @@ Notes on Reproducibility
 ------------------------
 
 Sometimes it is useful to be able to reproduce the sequences given by a
-pseudo-random number generator.  By re-using a seed value, the same sequence should be
+pseudo-random number generator.  By reusing a seed value, the same sequence should be
 reproducible from run to run as long as multiple threads are not running.
 
 Most of the random module's algorithms and seeding functions are subject to
@@ -607,7 +613,8 @@ from the combinatoric iterators in the :mod:`itertools` module:
        return tuple(pool[i] for i in indices)
 
    def random_combination_with_replacement(iterable, r):
-       "Random selection from itertools.combinations_with_replacement(iterable, r)"
+       "Choose r elements with replacement.  Order the result to match the iterable."
+       # Result will be in set(itertools.combinations_with_replacement(iterable, r)).
        pool = tuple(iterable)
        n = len(pool)
        indices = sorted(random.choices(range(n), k=r))

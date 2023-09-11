@@ -54,13 +54,6 @@ On FreeBSD and OpenBSD
      pkg_add ftp://ftp.openbsd.org/pub/OpenBSD/4.2/packages/i386/python-2.5.1p2.tgz
 
 
-On OpenSolaris
---------------
-
-You can get Python from `OpenCSW <https://www.opencsw.org/>`_.  Various versions
-of Python are available and can be installed with e.g. ``pkgutil -i python27``.
-
-
 .. _building-python-on-unix:
 
 Building Python
@@ -93,7 +86,7 @@ Python-related paths and files
 ==============================
 
 These are subject to difference depending on local installation conventions;
-:envvar:`prefix` (``${prefix}``) and :envvar:`exec_prefix` (``${exec_prefix}``)
+:option:`prefix <--prefix>` and :option:`exec_prefix <--exec-prefix>`
 are installation-dependent and should be interpreted as for GNU software; they
 may be the same.
 

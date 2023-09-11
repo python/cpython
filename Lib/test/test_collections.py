@@ -25,7 +25,7 @@ from collections.abc import Sized, Container, Callable, Collection
 from collections.abc import Set, MutableSet
 from collections.abc import Mapping, MutableMapping, KeysView, ItemsView, ValuesView
 from collections.abc import Sequence, MutableSequence
-from collections.abc import ByteString
+from collections.abc import ByteString, Buffer
 
 
 class TestUserObjects(unittest.TestCase):
@@ -810,6 +810,8 @@ class TestOneTrickPonyABCs(ABCTestCase):
             def __await__(self):
                 yield
 
+        self.validate_abstract_methods(Awaitable, '__await__')
+
         non_samples = [None, int(), gen(), object()]
         for x in non_samples:
             self.assertNotIsInstance(x, Awaitable)
@@ -859,6 +861,8 @@ class TestOneTrickPonyABCs(ABCTestCase):
                 super().throw(typ, val, tb)
             def __await__(self):
                 yield
+
+        self.validate_abstract_methods(Coroutine, '__await__', 'send', 'throw')
 
         non_samples = [None, int(), gen(), object(), Bar()]
         for x in non_samples:
@@ -1602,6 +1606,7 @@ class TestCollectionABCs(ABCTestCase):
         containers = [
             seq,
             ItemsView({1: nan, 2: obj}),
+            KeysView({1: nan, 2: obj}),
             ValuesView({1: nan, 2: obj})
         ]
         for container in containers:
@@ -1621,7 +1626,7 @@ class TestCollectionABCs(ABCTestCase):
         class SetUsingInstanceFromIterable(MutableSet):
             def __init__(self, values, created_by):
                 if not created_by:
-                    raise ValueError(f'created_by must be specified')
+                    raise ValueError('created_by must be specified')
                 self.created_by = created_by
                 self._values = set(values)
 
@@ -1865,6 +1870,8 @@ class TestCollectionABCs(ABCTestCase):
         mymap['red'] = 5
         self.assertIsInstance(mymap.keys(), Set)
         self.assertIsInstance(mymap.keys(), KeysView)
+        self.assertIsInstance(mymap.values(), Collection)
+        self.assertIsInstance(mymap.values(), ValuesView)
         self.assertIsInstance(mymap.items(), Set)
         self.assertIsInstance(mymap.items(), ItemsView)
 
@@ -1933,13 +1940,34 @@ class TestCollectionABCs(ABCTestCase):
 
     def test_ByteString(self):
         for sample in [bytes, bytearray]:
-            self.assertIsInstance(sample(), ByteString)
+            with self.assertWarns(DeprecationWarning):
+                self.assertIsInstance(sample(), ByteString)
             self.assertTrue(issubclass(sample, ByteString))
         for sample in [str, list, tuple]:
-            self.assertNotIsInstance(sample(), ByteString)
+            with self.assertWarns(DeprecationWarning):
+                self.assertNotIsInstance(sample(), ByteString)
             self.assertFalse(issubclass(sample, ByteString))
-        self.assertNotIsInstance(memoryview(b""), ByteString)
+        with self.assertWarns(DeprecationWarning):
+            self.assertNotIsInstance(memoryview(b""), ByteString)
         self.assertFalse(issubclass(memoryview, ByteString))
+        with self.assertWarns(DeprecationWarning):
+            self.validate_abstract_methods(ByteString, '__getitem__', '__len__')
+
+        with self.assertWarns(DeprecationWarning):
+            class X(ByteString): pass
+
+        with self.assertWarns(DeprecationWarning):
+            # No metaclass conflict
+            class Z(ByteString, Awaitable): pass
+
+    def test_Buffer(self):
+        for sample in [bytes, bytearray, memoryview]:
+            self.assertIsInstance(sample(b"x"), Buffer)
+            self.assertTrue(issubclass(sample, Buffer))
+        for sample in [str, list, tuple]:
+            self.assertNotIsInstance(sample(), Buffer)
+            self.assertFalse(issubclass(sample, Buffer))
+        self.validate_abstract_methods(Buffer, '__buffer__')
 
     def test_MutableSequence(self):
         for sample in [tuple, str, bytes]:

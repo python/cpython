@@ -22,7 +22,7 @@
 
 This module provides :term:`abstract base classes <abstract base class>` that
 can be used to test whether a class provides a particular interface; for
-example, whether it is hashable or whether it is a mapping.
+example, whether it is :term:`hashable` or whether it is a mapping.
 
 An :func:`issubclass` or :func:`isinstance` test for an interface works in one
 of three ways.
@@ -177,6 +177,7 @@ ABC                            Inherits from          Abstract Methods        Mi
 :class:`AsyncIterable` [1]_                           ``__aiter__``
 :class:`AsyncIterator` [1]_    :class:`AsyncIterable` ``__anext__``           ``__aiter__``
 :class:`AsyncGenerator` [1]_   :class:`AsyncIterator` ``asend``, ``athrow``   ``aclose``, ``__aiter__``, ``__anext__``
+:class:`Buffer` [1]_                                  ``__buffer__``
 ============================== ====================== ======================= ====================================================
 
 
@@ -272,6 +273,12 @@ Collections Abstract Base Classes -- Detailed Descriptions
       The index() method added support for *stop* and *start*
       arguments.
 
+   .. deprecated-removed:: 3.12 3.14
+      The :class:`ByteString` ABC has been deprecated.
+      For use in typing, prefer a union, like ``bytes | bytearray``, or
+      :class:`collections.abc.Buffer`.
+      For use as an ABC, prefer :class:`Sequence` or :class:`collections.abc.Buffer`.
+
 .. class:: Set
            MutableSet
 
@@ -346,6 +353,13 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    .. versionadded:: 3.6
 
+.. class:: Buffer
+
+   ABC for classes that provide the :meth:`~object.__buffer__` method,
+   implementing the :ref:`buffer protocol <bufferobjects>`. See :pep:`688`.
+
+   .. versionadded:: 3.12
+
 Examples and Recipes
 --------------------
 
@@ -406,7 +420,7 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
 (3)
    The :class:`Set` mixin provides a :meth:`_hash` method to compute a hash value
    for the set; however, :meth:`__hash__` is not defined because not all sets
-   are hashable or immutable.  To add set hashability using mixins,
+   are :term:`hashable` or immutable.  To add set hashability using mixins,
    inherit from both :meth:`Set` and :meth:`Hashable`, then define
    ``__hash__ = Set._hash``.
 

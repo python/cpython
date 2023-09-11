@@ -114,7 +114,7 @@ DOM APIs as well as limited networking capabilities with JavaScript's
 
 .. _WebAssembly: https://webassembly.org/
 .. _Emscripten: https://emscripten.org/
-.. _Emscripten Networking: https://emscripten.org/docs/porting/networking.html>
+.. _Emscripten Networking: https://emscripten.org/docs/porting/networking.html
 .. _WASI: https://wasi.dev/
 .. _wasmtime: https://wasmtime.dev/
 .. _Pyodide: https://pyodide.org/

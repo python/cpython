@@ -1,6 +1,13 @@
+import re
+import sys
 import unittest
-from ctypes import *
-import re, sys
+from ctypes import (CFUNCTYPE, POINTER, sizeof, Union,
+                    Structure, LittleEndianStructure, BigEndianStructure,
+                    c_char, c_byte, c_ubyte,
+                    c_short, c_ushort, c_int, c_uint,
+                    c_long, c_ulong, c_longlong, c_ulonglong, c_uint64,
+                    c_bool, c_float, c_double, c_longdouble, py_object)
+
 
 if sys.byteorder == "little":
     THIS_ENDIAN = "<"
@@ -8,6 +15,7 @@ if sys.byteorder == "little":
 else:
     THIS_ENDIAN = ">"
     OTHER_ENDIAN = "<"
+
 
 def normalize(format):
     # Remove current endian specifier and white space from a format
@@ -17,65 +25,54 @@ def normalize(format):
     format = format.replace(OTHER_ENDIAN, THIS_ENDIAN)
     return re.sub(r"\s", "", format)
 
-class Test(unittest.TestCase):
 
+class Test(unittest.TestCase):
     def test_native_types(self):
         for tp, fmt, shape, itemtp in native_types:
             ob = tp()
             v = memoryview(ob)
-            try:
-                self.assertEqual(normalize(v.format), normalize(fmt))
-                if shape:
-                    self.assertEqual(len(v), shape[0])
-                else:
-                    self.assertEqual(len(v) * sizeof(itemtp), sizeof(ob))
-                self.assertEqual(v.itemsize, sizeof(itemtp))
-                self.assertEqual(v.shape, shape)
-                # XXX Issue #12851: PyCData_NewGetBuffer() must provide strides
-                #     if requested. memoryview currently reconstructs missing
-                #     stride information, so this assert will fail.
-                # self.assertEqual(v.strides, ())
+            self.assertEqual(normalize(v.format), normalize(fmt))
+            if shape:
+                self.assertEqual(len(v), shape[0])
+            else:
+                self.assertRaises(TypeError, len, v)
+            self.assertEqual(v.itemsize, sizeof(itemtp))
+            self.assertEqual(v.shape, shape)
+            # XXX Issue #12851: PyCData_NewGetBuffer() must provide strides
+            #     if requested. memoryview currently reconstructs missing
+            #     stride information, so this assert will fail.
+            # self.assertEqual(v.strides, ())
 
-                # they are always read/write
-                self.assertFalse(v.readonly)
+            # they are always read/write
+            self.assertFalse(v.readonly)
 
-                if v.shape:
-                    n = 1
-                    for dim in v.shape:
-                        n = n * dim
-                    self.assertEqual(n * v.itemsize, len(v.tobytes()))
-            except:
-                # so that we can see the failing type
-                print(tp)
-                raise
+            n = 1
+            for dim in v.shape:
+                n = n * dim
+            self.assertEqual(n * v.itemsize, len(v.tobytes()))
 
     def test_endian_types(self):
         for tp, fmt, shape, itemtp in endian_types:
             ob = tp()
             v = memoryview(ob)
-            try:
-                self.assertEqual(v.format, fmt)
-                if shape:
-                    self.assertEqual(len(v), shape[0])
-                else:
-                    self.assertEqual(len(v) * sizeof(itemtp), sizeof(ob))
-                self.assertEqual(v.itemsize, sizeof(itemtp))
-                self.assertEqual(v.shape, shape)
-                # XXX Issue #12851
-                # self.assertEqual(v.strides, ())
+            self.assertEqual(v.format, fmt)
+            if shape:
+                self.assertEqual(len(v), shape[0])
+            else:
+                self.assertRaises(TypeError, len, v)
+            self.assertEqual(v.itemsize, sizeof(itemtp))
+            self.assertEqual(v.shape, shape)
+            # XXX Issue #12851
+            # self.assertEqual(v.strides, ())
 
-                # they are always read/write
-                self.assertFalse(v.readonly)
+            # they are always read/write
+            self.assertFalse(v.readonly)
 
-                if v.shape:
-                    n = 1
-                    for dim in v.shape:
-                        n = n * dim
-                    self.assertEqual(n, len(v))
-            except:
-                # so that we can see the failing type
-                print(tp)
-                raise
+            n = 1
+            for dim in v.shape:
+                n = n * dim
+            self.assertEqual(n * v.itemsize, len(v.tobytes()))
+
 
 # define some structure classes
 
@@ -85,6 +82,20 @@ class Point(Structure):
 class PackedPoint(Structure):
     _pack_ = 2
     _fields_ = [("x", c_long), ("y", c_long)]
+
+class PointMidPad(Structure):
+    _fields_ = [("x", c_byte), ("y", c_uint)]
+
+class PackedPointMidPad(Structure):
+    _pack_ = 2
+    _fields_ = [("x", c_byte), ("y", c_uint64)]
+
+class PointEndPad(Structure):
+    _fields_ = [("x", c_uint), ("y", c_byte)]
+
+class PackedPointEndPad(Structure):
+    _pack_ = 2
+    _fields_ = [("x", c_uint64), ("y", c_byte)]
 
 class Point2(Structure):
     pass
@@ -106,6 +117,7 @@ class Complete(Structure):
     pass
 PComplete = POINTER(Complete)
 Complete._fields_ = [("a", c_long)]
+
 
 ################################################################
 #
@@ -176,18 +188,23 @@ native_types = [
     ## arrays and pointers
 
     (c_double * 4,              "<d",                   (4,),           c_double),
+    (c_double * 0,              "<d",                   (0,),           c_double),
     (c_float * 4 * 3 * 2,       "<f",                   (2,3,4),        c_float),
+    (c_float * 4 * 0 * 2,       "<f",                   (2,0,4),        c_float),
     (POINTER(c_short) * 2,      "&<" + s_short,         (2,),           POINTER(c_short)),
     (POINTER(c_short) * 2 * 3,  "&<" + s_short,         (3,2,),         POINTER(c_short)),
     (POINTER(c_short * 2),      "&(2)<" + s_short,      (),             POINTER(c_short)),
 
     ## structures and unions
 
-    (Point,                     "T{<l:x:<l:y:}".replace('l', s_long),  (),  Point),
-    # packed structures do not implement the pep
-    (PackedPoint,               "B",                                   (),  PackedPoint),
-    (Point2,                    "T{<l:x:<l:y:}".replace('l', s_long),  (),  Point2),
-    (EmptyStruct,               "T{}",                                 (),  EmptyStruct),
+    (Point2,                    "T{<l:x:<l:y:}".replace('l', s_long),   (),  Point2),
+    (Point,                     "T{<l:x:<l:y:}".replace('l', s_long),   (),  Point),
+    (PackedPoint,               "T{<l:x:<l:y:}".replace('l', s_long),   (),  PackedPoint),
+    (PointMidPad,               "T{<b:x:3x<I:y:}".replace('I', s_uint), (),  PointMidPad),
+    (PackedPointMidPad,         "T{<b:x:x<Q:y:}",                       (),  PackedPointMidPad),
+    (PointEndPad,               "T{<I:x:<b:y:3x}".replace('I', s_uint), (),  PointEndPad),
+    (PackedPointEndPad,         "T{<Q:x:<b:y:x}",                       (),  PackedPointEndPad),
+    (EmptyStruct,               "T{}",                                  (),  EmptyStruct),
     # the pep doesn't support unions
     (aUnion,                    "B",                                   (),  aUnion),
     # structure with sub-arrays
@@ -211,23 +228,23 @@ native_types = [
 
     ]
 
+
 class BEPoint(BigEndianStructure):
     _fields_ = [("x", c_long), ("y", c_long)]
 
 class LEPoint(LittleEndianStructure):
     _fields_ = [("x", c_long), ("y", c_long)]
 
-################################################################
-#
+
 # This table contains format strings as they really look, on both big
 # and little endian machines.
-#
 endian_types = [
     (BEPoint, "T{>l:x:>l:y:}".replace('l', s_long), (), BEPoint),
-    (LEPoint, "T{<l:x:<l:y:}".replace('l', s_long), (), LEPoint),
+    (LEPoint * 1, "T{<l:x:<l:y:}".replace('l', s_long), (1,), LEPoint),
     (POINTER(BEPoint), "&T{>l:x:>l:y:}".replace('l', s_long), (), POINTER(BEPoint)),
     (POINTER(LEPoint), "&T{<l:x:<l:y:}".replace('l', s_long), (), POINTER(LEPoint)),
     ]
+
 
 if __name__ == "__main__":
     unittest.main()
