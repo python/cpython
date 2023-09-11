@@ -1766,6 +1766,7 @@ class CodecsModuleTest(unittest.TestCase):
         orig = codecs.lookup('utf-8')
         dup = copy.copy(orig)
         self.assertIsNot(dup, orig)
+        self.assertEqual(dup, orig)
         self.assertTrue(orig._is_text_encoding)
         self.assertEqual(dup.encode, orig.encode)
         self.assertEqual(dup.name, orig.name)
