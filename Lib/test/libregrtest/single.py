@@ -132,9 +132,7 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
         support.gc_collect()
 
         with saved_test_environment(test_name,
-                                    runtests.verbose,
-                                    runtests.quiet,
-                                    pgo=runtests.pgo):
+                                    runtests.verbose, quiet, pgo=pgo):
             _load_run_test(result, runtests)
     except support.ResourceDenied as msg:
         if not quiet and not pgo:
