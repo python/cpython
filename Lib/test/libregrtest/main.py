@@ -50,7 +50,18 @@ class Regrtest:
     on the command line.
     """
     def __init__(self, ns: Namespace):
-        self.logger = Logger()
+        # Log verbosity
+        self.verbose: bool = ns.verbose
+        self.quiet: bool = ns.quiet
+        self.pgo: bool = ns.pgo
+        self.pgo_extended: bool = ns.pgo_extended
+
+        # Test results
+        self.results: TestResults = TestResults()
+        self.first_state: str | None = None
+
+        # Logger
+        self.logger = Logger(self.results, self.quiet, self.pgo)
 
         # Actions
         self.want_header: bool = ns.header
@@ -92,12 +103,8 @@ class Regrtest:
         self.forever: bool = ns.forever
         self.randomize: bool = ns.randomize
         self.random_seed: int | None = ns.random_seed
-        self.pgo: bool = ns.pgo
-        self.pgo_extended: bool = ns.pgo_extended
         self.output_on_failure: bool = ns.verbose3
         self.timeout: float | None = ns.timeout
-        self.verbose: bool = ns.verbose
-        self.quiet: bool = ns.quiet
         if ns.huntrleaks:
             warmups, runs, filename = ns.huntrleaks
             filename = os.path.abspath(filename)
@@ -119,18 +126,11 @@ class Regrtest:
         self.selected: TestList = []
         self.first_runtests: RunTests | None = None
 
-        # test results
-        self.results: TestResults = TestResults()
-
-        self.first_state: str | None = None
-
         # used by --slowest
         self.print_slowest: bool = ns.print_slow
 
         # used to display the progress bar "[ 3/100]"
         self.start_time = time.perf_counter()
-        self.test_count_text = ''
-        self.test_count_width = 1
 
         # used by --single
         self.single_test_run: bool = ns.single
@@ -139,17 +139,6 @@ class Regrtest:
 
     def log(self, line=''):
         self.logger.log(line)
-
-    def display_progress(self, test_index, text):
-        if self.quiet:
-            return
-
-        # "[ 51/405/1] test_tcl passed"
-        line = f"{test_index:{self.test_count_width}}{self.test_count_text}"
-        fails = len(self.results.bad) + len(self.results.env_changed)
-        if fails and not self.pgo:
-            line = f"{line}/{fails}"
-        self.log(f"[{line}] {text}")
 
     def find_tests(self):
         if self.single_test_run:
@@ -344,7 +333,7 @@ class Regrtest:
             text = test_name
             if previous_test:
                 text = '%s -- %s' % (text, previous_test)
-            self.display_progress(test_index, text)
+            self.logger.display_progress(test_index, text)
 
             result = self.run_test(test_name, runtests, tracer)
 
@@ -416,7 +405,7 @@ class Regrtest:
 
     def _run_tests_mp(self, runtests: RunTests, num_workers: int) -> None:
         from test.libregrtest.runtest_mp import RunWorkers
-        RunWorkers(self, runtests, num_workers).run()
+        RunWorkers(num_workers, runtests, self.logger, self.results).run()
 
     def finalize_tests(self, tracer):
         if self.next_single_filename:
