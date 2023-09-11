@@ -205,6 +205,22 @@ typedef struct {
     int64_t interp;
 } XIBufferViewObject;
 
+static PyObject *
+xibufferview_from_xid(PyTypeObject *cls, _PyCrossInterpreterData *data)
+{
+    assert(data->data != NULL);
+    assert(data->obj == NULL);
+    assert(data->interp >= 0);
+    XIBufferViewObject *self = PyObject_Malloc(sizeof(XIBufferViewObject));
+    if (self == NULL) {
+        return NULL;
+    }
+    PyObject_Init((PyObject *)self, cls);
+    self->view = (Py_buffer *)data->data;
+    self->interp = data->interp;
+    return (PyObject *)self;
+}
+
 static void
 xibufferview_dealloc(XIBufferViewObject *self)
 {
