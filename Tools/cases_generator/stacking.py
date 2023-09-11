@@ -444,7 +444,7 @@ def write_components(
                 ), f"Expected {mgr.instr.name!r} to be the last uop"
                 assert_no_pokes(managers)
 
-        if mgr.instr.name == "SAVE_CURRENT_IP":
+        if mgr.instr.name == "_SAVE_CURRENT_IP":
             next_instr_is_set = True
             if cache_offset:
                 out.emit(f"next_instr += {cache_offset};")

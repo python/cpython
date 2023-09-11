@@ -812,7 +812,7 @@ remove_unneeded_uops(_PyUOpInstruction *trace, int trace_length)
     bool need_ip = true;
     for (int pc = 0; pc < trace_length; pc++) {
         int opcode = trace[pc].opcode;
-        if (opcode == SAVE_CURRENT_IP) {
+        if (opcode == _SAVE_CURRENT_IP) {
             // Special case: never remove preceding _SET_IP
             last_set_ip = -1;
         }

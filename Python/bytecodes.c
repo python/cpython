@@ -804,7 +804,7 @@ dummy_func(
 
         macro(RETURN_VALUE) =
             _SET_IP +  // Tier 2 only; special-cased oparg
-            SAVE_CURRENT_IP +  // Sets frame->prev_instr
+            _SAVE_CURRENT_IP +  // Sets frame->prev_instr
             _POP_FRAME;
 
         inst(INSTRUMENTED_RETURN_VALUE, (retval --)) {
@@ -829,7 +829,7 @@ dummy_func(
         macro(RETURN_CONST) =
             LOAD_CONST +
             _SET_IP +  // Tier 2 only; special-cased oparg
-            SAVE_CURRENT_IP +  // Sets frame->prev_instr
+            _SAVE_CURRENT_IP +  // Sets frame->prev_instr
             _POP_FRAME;
 
         inst(INSTRUMENTED_RETURN_CONST, (--)) {
@@ -3062,7 +3062,7 @@ dummy_func(
             _CHECK_STACK_SPACE +
             _INIT_CALL_PY_EXACT_ARGS +
             _SET_IP +  // Tier 2 only; special-cased oparg
-            SAVE_CURRENT_IP +  // Sets frame->prev_instr
+            _SAVE_CURRENT_IP +  // Sets frame->prev_instr
             _PUSH_FRAME;
 
         macro(CALL_PY_EXACT_ARGS) =
@@ -3072,7 +3072,7 @@ dummy_func(
             _CHECK_STACK_SPACE +
             _INIT_CALL_PY_EXACT_ARGS +
             _SET_IP +  // Tier 2 only; special-cased oparg
-            SAVE_CURRENT_IP +  // Sets frame->prev_instr
+            _SAVE_CURRENT_IP +  // Sets frame->prev_instr
             _PUSH_FRAME;
 
         inst(CALL_PY_WITH_DEFAULTS, (unused/1, func_version/2, callable, self_or_null, args[oparg] -- unused)) {
@@ -3836,7 +3836,7 @@ dummy_func(
             frame->prev_instr = ip_offset + oparg;
         }
 
-        op(SAVE_CURRENT_IP, (--)) {
+        op(_SAVE_CURRENT_IP, (--)) {
             #if TIER_ONE
             frame->prev_instr = next_instr - 1;
             #endif

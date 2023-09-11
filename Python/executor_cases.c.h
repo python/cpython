@@ -2898,7 +2898,7 @@
             break;
         }
 
-        case SAVE_CURRENT_IP: {
+        case _SAVE_CURRENT_IP: {
             #if TIER_ONE
             frame->prev_instr = next_instr - 1;
             #endif

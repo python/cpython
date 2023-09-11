@@ -987,7 +987,7 @@
 
         TARGET(RETURN_VALUE) {
             PyObject *retval;
-            // SAVE_CURRENT_IP
+            // _SAVE_CURRENT_IP
             {
                 #if TIER_ONE
                 frame->prev_instr = next_instr - 1;
@@ -1055,7 +1055,7 @@
                 value = GETITEM(FRAME_CO_CONSTS, oparg);
                 Py_INCREF(value);
             }
-            // SAVE_CURRENT_IP
+            // _SAVE_CURRENT_IP
             {
                 #if TIER_ONE
                 frame->prev_instr = next_instr - 1;
@@ -3859,7 +3859,7 @@
                     new_frame->localsplus[i] = args[i];
                 }
             }
-            // SAVE_CURRENT_IP
+            // _SAVE_CURRENT_IP
             next_instr += 3;
             {
                 #if TIER_ONE
@@ -3938,7 +3938,7 @@
                     new_frame->localsplus[i] = args[i];
                 }
             }
-            // SAVE_CURRENT_IP
+            // _SAVE_CURRENT_IP
             next_instr += 3;
             {
                 #if TIER_ONE

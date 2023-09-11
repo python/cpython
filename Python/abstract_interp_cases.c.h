@@ -800,7 +800,7 @@
             break;
         }
 
-        case SAVE_CURRENT_IP: {
+        case _SAVE_CURRENT_IP: {
             break;
         }
 
