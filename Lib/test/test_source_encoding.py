@@ -68,6 +68,7 @@ class MiscSourceEncodingTest(unittest.TestCase):
     def test_20731(self):
         sub = subprocess.Popen([sys.executable,
                         os.path.join(os.path.dirname(__file__),
+                                     'tokenizedata',
                                      'coding20731.py')],
                         stderr=subprocess.PIPE)
         err = sub.communicate()[1]

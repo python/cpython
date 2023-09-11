@@ -264,14 +264,18 @@ class PyCompileCLITestCase(unittest.TestCase):
         self.assertTrue(os.path.exists(self.cache_path))
 
     def test_bad_syntax(self):
-        bad_syntax = os.path.join(os.path.dirname(__file__), 'badsyntax_3131.py')
+        bad_syntax = os.path.join(os.path.dirname(__file__),
+                                  'tokenizedata',
+                                  'badsyntax_3131.py')
         rc, stdout, stderr = self.pycompilecmd_failure(bad_syntax)
         self.assertEqual(rc, 1)
         self.assertEqual(stdout, b'')
         self.assertIn(b'SyntaxError', stderr)
 
     def test_bad_syntax_with_quiet(self):
-        bad_syntax = os.path.join(os.path.dirname(__file__), 'badsyntax_3131.py')
+        bad_syntax = os.path.join(os.path.dirname(__file__),
+                                  'tokenizedata',
+                                  'badsyntax_3131.py')
         rc, stdout, stderr = self.pycompilecmd_failure('-q', bad_syntax)
         self.assertEqual(rc, 1)
         self.assertEqual(stdout, b'')
