@@ -131,34 +131,7 @@ class Test_TestLoader(unittest.TestCase):
         loader = unittest.TestLoader()
         suite = loader.loadTestsFromModule(m)
         self.assertIsInstance(suite, loader.suiteClass)
-
-        expected = []
-        self.assertEqual(list(suite), expected)
-
-    # "This test ensures that subclasses of internal type are still loaded."
-    def test_loadTestsFromModule__TestCase_subclass_custom(self):
-        class MyBaseTestCase(unittest.TestCase):
-            # Base class for some 3rd-party library that should not be loaded.
-            @classmethod
-            def _shouldBeLoaded(cls):
-                if not super()._shouldBeLoaded():
-                    return False
-                return cls != MyBaseTestCase
-
-        class MyTestCase(MyBaseTestCase):
-            def test_my(self):
-                pass
-
-        m = types.ModuleType('m')
-        m.MyBaseTestCase = MyBaseTestCase
-        m.MyTestCase = MyTestCase
-
-        loader = unittest.TestLoader()
-        suite = loader.loadTestsFromModule(m)
-        self.assertIsInstance(suite, loader.suiteClass)
-
-        expected = [loader.suiteClass([MyTestCase('test_my')])]
-        self.assertEqual(list(suite), expected)
+        self.assertEqual(list(suite), [])
 
     # "This method searches `module` for classes derived from TestCase"
     #
