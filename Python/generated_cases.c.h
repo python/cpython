@@ -987,13 +987,13 @@
 
         TARGET(RETURN_VALUE) {
             PyObject *retval;
-            // SAVE_CURRENT_IP
+            // _SAVE_CURRENT_IP
             {
                 #if TIER_ONE
                 frame->prev_instr = next_instr - 1;
                 #endif
                 #if TIER_TWO
-                // Relies on a preceding SAVE_IP
+                // Relies on a preceding _SET_IP
                 frame->prev_instr--;
                 #endif
             }
@@ -1055,13 +1055,13 @@
                 value = GETITEM(FRAME_CO_CONSTS, oparg);
                 Py_INCREF(value);
             }
-            // SAVE_CURRENT_IP
+            // _SAVE_CURRENT_IP
             {
                 #if TIER_ONE
                 frame->prev_instr = next_instr - 1;
                 #endif
                 #if TIER_TWO
-                // Relies on a preceding SAVE_IP
+                // Relies on a preceding _SET_IP
                 frame->prev_instr--;
                 #endif
             }
@@ -3024,7 +3024,7 @@
             PyObject *value;
             PyObject *b;
             PyObject *cond;
-            // IS_NONE
+            // _IS_NONE
             value = stack_pointer[-1];
             {
                 if (Py_IsNone(value)) {
@@ -3054,7 +3054,7 @@
             PyObject *value;
             PyObject *b;
             PyObject *cond;
-            // IS_NONE
+            // _IS_NONE
             value = stack_pointer[-1];
             {
                 if (Py_IsNone(value)) {
@@ -3879,14 +3879,14 @@
                     new_frame->localsplus[i] = args[i];
                 }
             }
-            // SAVE_CURRENT_IP
+            // _SAVE_CURRENT_IP
             next_instr += 3;
             {
                 #if TIER_ONE
                 frame->prev_instr = next_instr - 1;
                 #endif
                 #if TIER_TWO
-                // Relies on a preceding SAVE_IP
+                // Relies on a preceding _SET_IP
                 frame->prev_instr--;
                 #endif
             }
@@ -3958,14 +3958,14 @@
                     new_frame->localsplus[i] = args[i];
                 }
             }
-            // SAVE_CURRENT_IP
+            // _SAVE_CURRENT_IP
             next_instr += 3;
             {
                 #if TIER_ONE
                 frame->prev_instr = next_instr - 1;
                 #endif
                 #if TIER_TWO
-                // Relies on a preceding SAVE_IP
+                // Relies on a preceding _SET_IP
                 frame->prev_instr--;
                 #endif
             }
