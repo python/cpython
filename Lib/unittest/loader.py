@@ -86,7 +86,7 @@ class TestLoader(object):
                             "TestCase?")
         if (
             issubclass(testCaseClass, case.TestCase)
-            and cls in (case.TestCase, case.FunctionTestCase)
+            and testCaseClass in (case.TestCase, case.FunctionTestCase)
         ):
             # We don't load any tests from base types that should not be loaded.
             testCaseNames = []
@@ -105,7 +105,7 @@ class TestLoader(object):
             if (
                 isinstance(obj, type)
                 and issubclass(obj, case.TestCase)
-                and cls not in (case.TestCase, case.FunctionTestCase)
+                and obj not in (case.TestCase, case.FunctionTestCase)
             ):
                 tests.append(self.loadTestsFromTestCase(obj))
 
@@ -178,7 +178,7 @@ class TestLoader(object):
         elif (
             isinstance(obj, type)
             and issubclass(obj, case.TestCase)
-            and cls not in (case.TestCase, case.FunctionTestCase)
+            and obj not in (case.TestCase, case.FunctionTestCase)
         ):
             return self.loadTestsFromTestCase(obj)
         elif (isinstance(obj, types.FunctionType) and
