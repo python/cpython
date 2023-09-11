@@ -171,6 +171,9 @@ class RecvChannel(_ChannelEnd):
         else:
             return _channels.recv(self._id, default)
 
+    def close(self):
+        _channels.close(self._id, recv=True)
+
 
 class SendChannel(_ChannelEnd):
     """The sending end of a cross-interpreter channel."""
@@ -196,3 +199,6 @@ class SendChannel(_ChannelEnd):
         # None.  This should be fixed when channel_send_wait() is added.
         # See bpo-32604 and gh-19829.
         return _channels.send(self._id, obj)
+
+    def close(self):
+        _channels.close(self._id, send=True)
