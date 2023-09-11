@@ -27,6 +27,7 @@ import os
 import sys
 import posixpath
 import urllib.parse
+import imghdr
 
 try:
     from _winapi import _mimetypes_read_windows_registry
@@ -141,6 +142,16 @@ class MimeTypes:
                 type = 'text/plain'
             return type, None           # never compressed, so encoding is None
         base, ext = posixpath.splitext(url)
+        
+        # file path or url without extension
+        if ext is None:
+            try:
+                ext = '.' + imghdr.what(url)
+            except Exception:
+                # TypeError: can only concatenate str (not "NoneType") to str
+                # FileNotFoundError: No such file or directory
+                pass
+
         while (ext_lower := ext.lower()) in self.suffix_map:
             base, ext = posixpath.splitext(base + self.suffix_map[ext_lower])
         # encodings_map is case sensitive
