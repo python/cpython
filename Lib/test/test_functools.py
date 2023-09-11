@@ -67,17 +67,6 @@ class MyDict(dict):
 
 class TestPartial:
 
-    class AllowPickle:
-        def __init__(self, module_to_use):
-            self._cm = replaced_module('functools', module_to_use)
-        def __enter__(self):
-            return self._cm.__enter__()
-        def __exit__(self, type, value, tb):
-            return self._cm.__exit__(type, value, tb)
-
-    def allow_pickle(self):
-        return self.AllowPickle(self.module)
-
     def test_basic_examples(self):
         p = self.partial(capture, 1, 2, a=10, b=20)
         self.assertTrue(callable(p))
@@ -267,7 +256,7 @@ class TestPartial:
             f.__setstate__((capture, (), {}, {}))
 
     def test_pickle(self):
-        with self.allow_pickle():
+        with replaced_module('functools', self.module):
             f = self.partial(signature, ['asdf'], bar=[True])
             f.attr = []
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -350,7 +339,7 @@ class TestPartial:
         self.assertIs(type(r[0]), tuple)
 
     def test_recursive_pickle(self):
-        with self.allow_pickle():
+        with replaced_module('functools', self.module):
             f = self.partial(capture)
             f.__setstate__((f, (), {}, {}))
             try:
