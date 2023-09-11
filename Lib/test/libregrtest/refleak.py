@@ -1,10 +1,11 @@
-import os
 import sys
 import warnings
 from inspect import isabstract
+
 from test import support
 from test.support import os_helper
-from test.libregrtest.runtest import HuntRefleak
+
+from test.libregrtest.runtests import HuntRefleak
 from test.libregrtest.utils import clear_caches
 
 try:

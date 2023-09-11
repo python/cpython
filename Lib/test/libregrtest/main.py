@@ -11,17 +11,19 @@ from test import support
 from test.support import os_helper
 
 from test.libregrtest.cmdline import _parse_args, Namespace
+from test.libregrtest.findtests import findtests, split_test_packages
 from test.libregrtest.logger import Logger
-from test.libregrtest.runtest import (
-    findtests, split_test_packages, run_single_test, abs_module_name,
-    PROGRESS_MIN_TIME, State, RunTests, HuntRefleak,
-    FilterTuple, TestList, StrJSON, TestName)
+from test.libregrtest.result import State
+from test.libregrtest.runtests import RunTests, HuntRefleak
 from test.libregrtest.setup import setup_tests, setup_test_dir
+from test.libregrtest.single import run_single_test, PROGRESS_MIN_TIME
 from test.libregrtest.pgo import setup_pgo_tests
 from test.libregrtest.results import TestResults
 from test.libregrtest.utils import (
-    strip_py_suffix, count, format_duration, StrPath,
-    printlist, get_build_info, get_temp_dir, get_work_dir, exit_timeout)
+    StrPath, StrJSON, TestName, TestList, FilterTuple,
+    strip_py_suffix, count, format_duration,
+    printlist, get_build_info, get_temp_dir, get_work_dir, exit_timeout,
+     abs_module_name)
 
 
 class Regrtest:
