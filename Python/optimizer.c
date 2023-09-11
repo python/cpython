@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "opcode.h"
 #include "pycore_interp.h"
+#include "pycore_bitutils.h"        // _Py_popcount32()
 #include "pycore_opcode_metadata.h" // _PyOpcode_OpName()
 #include "pycore_opcode_utils.h"  // MAX_REAL_OPCODE
 #include "pycore_optimizer.h"     // _Py_uop_analyze_and_optimize()
@@ -501,7 +502,7 @@ translate_bytecode_to_trace(
             code->co_firstlineno,
             2 * INSTR_IP(initial_instr, code));
 
-top:  // Jump here after _PUSH_FRAME
+top:  // Jump here after _PUSH_FRAME or likely branches
     for (;;) {
         RESERVE_RAW(2, "epilogue");  // Always need space for SAVE_IP and EXIT_TRACE
         ADD_TO_TRACE(SAVE_IP, INSTR_IP(instr, code), 0);
@@ -547,16 +548,29 @@ top:  // Jump here after _PUSH_FRAME
             case POP_JUMP_IF_TRUE:
             {
 pop_jump_if_bool:
-                // Assume jump unlikely (TODO: handle jump likely case)
                 RESERVE(1, 2);
-                _Py_CODEUNIT *target_instr =
-                    instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + oparg;
                 max_length -= 2;  // Really the start of the stubs
-                uint32_t uopcode = opcode == POP_JUMP_IF_TRUE ?
+                int counter = instr[1].cache;
+                int bitcount = _Py_popcount32(counter);
+                bool jump_likely = bitcount > 8;
+                bool jump_sense = opcode == POP_JUMP_IF_TRUE;
+                uint32_t uopcode = jump_sense ^ jump_likely ?
                     _POP_JUMP_IF_TRUE : _POP_JUMP_IF_FALSE;
+                _Py_CODEUNIT *next_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
+                _Py_CODEUNIT *target_instr = next_instr + oparg;
+                _Py_CODEUNIT *stub_target = jump_likely ? next_instr : target_instr;
+                DPRINTF(4, "%s(%d): counter=%x, bitcount=%d, likely=%d, sense=%d, uopcode=%s\n",
+                        uop_name(opcode), oparg,
+                        counter, bitcount, jump_likely, jump_sense, uop_name(uopcode));
                 ADD_TO_TRACE(uopcode, max_length, 0);
-                ADD_TO_STUB(max_length, SAVE_IP, INSTR_IP(target_instr, code), 0);
+                ADD_TO_STUB(max_length, SAVE_IP, INSTR_IP(stub_target, code), 0);
                 ADD_TO_STUB(max_length + 1, EXIT_TRACE, 0, 0);
+                if (jump_likely) {
+                    DPRINTF(2, "Jump likely (%x = %d bits), continue at byte offset %d\n",
+                            instr[1].cache, bitcount, 2 * INSTR_IP(target_instr, code));
+                    instr = target_instr;
+                    goto top;
+                }
                 break;
             }
 
@@ -927,6 +941,6 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
     opt->resume_threshold = UINT16_MAX;
     // Need at least 3 iterations to settle specializations.
     // A few lower bits of the counter are reserved for other flags.
-    opt->backedge_threshold = 3 << OPTIMIZER_BITS_IN_COUNTER;
+    opt->backedge_threshold = 16 << OPTIMIZER_BITS_IN_COUNTER;
     return (PyObject *)opt;
 }
