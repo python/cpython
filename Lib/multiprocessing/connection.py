@@ -273,10 +273,7 @@ if _winapi:
         with FILE_FLAG_OVERLAPPED.
         """
         _got_empty_message = False
-
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            self._send_ov = None
+        _send_ov = None
 
         def _close(self, _CloseHandle=_winapi.CloseHandle):
             ov = self._send_ov
