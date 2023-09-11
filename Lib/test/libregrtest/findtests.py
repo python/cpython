@@ -1,6 +1,12 @@
 import os
+import sys
+import unittest
 
-from .utils import StrPath, TestName, TestList
+from test import support
+
+from .utils import (
+    StrPath, TestName, TestTuple, TestList, FilterTuple,
+    abs_module_name, count, printlist)
 
 
 # If these test directories are encountered recurse into them and treat each
@@ -56,3 +62,37 @@ def split_test_packages(tests, *, testdir: StrPath | None = None, exclude=(),
         else:
             splitted.append(name)
     return splitted
+
+
+def _list_cases(suite):
+    for test in suite:
+        if isinstance(test, unittest.loader._FailedTest):
+            continue
+        if isinstance(test, unittest.TestSuite):
+            _list_cases(test)
+        elif isinstance(test, unittest.TestCase):
+            if support.match_test(test):
+                print(test.id())
+
+def list_cases(tests: TestTuple, *,
+               match_tests: FilterTuple | None = None,
+               ignore_tests: FilterTuple | None = None,
+               test_dir: StrPath | None = None):
+    support.verbose = False
+    support.set_match_tests(match_tests, ignore_tests)
+
+    skipped = []
+    for test_name in tests:
+        module_name = abs_module_name(test_name, test_dir)
+        try:
+            suite = unittest.defaultTestLoader.loadTestsFromName(module_name)
+            _list_cases(suite)
+        except unittest.SkipTest:
+            skipped.append(test_name)
+
+    if skipped:
+        sys.stdout.flush()
+        stderr = sys.stderr
+        print(file=stderr)
+        print(count(len(skipped), "test"), "skipped:", file=stderr)
+        printlist(skipped, file=stderr)
