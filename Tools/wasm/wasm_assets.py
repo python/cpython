@@ -111,7 +111,8 @@ def get_builddir(args: argparse.Namespace) -> pathlib.Path:
 
 def get_sysconfigdata(args: argparse.Namespace) -> pathlib.Path:
     """Get path to sysconfigdata relative to build root"""
-    data_name = sysconfig._get_sysconfigdata_name()  # type: ignore[attr-defined]
+    assert isinstance(args.builddir, pathlib.Path)
+    data_name: str = sysconfig._get_sysconfigdata_name()  # type: ignore[attr-defined]
     if not data_name.startswith(SYSCONFIG_NAMES):
         raise ValueError(
             f"Invalid sysconfig data name '{data_name}'.", SYSCONFIG_NAMES
