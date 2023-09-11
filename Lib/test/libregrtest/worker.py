@@ -10,7 +10,7 @@ from .setup import setup_process, setup_test_dir
 from .runtests import RunTests
 from .single import run_single_test
 from .utils import (
-    StrPath, StrJSON, FilterTuple,
+    StrPath, StrJSON, FilterTuple, MS_WINDOWS,
     get_work_dir, exit_timeout)
 
 
@@ -18,7 +18,7 @@ USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
 
 
 def create_worker_process(runtests: RunTests,
-                          output_file: TextIO,
+                          output_fd: int, json_fd: int,
                           tmp_dir: StrPath | None = None) -> subprocess.Popen:
     python_cmd = runtests.python_cmd
     worker_json = runtests.as_json()
@@ -41,23 +41,42 @@ def create_worker_process(runtests: RunTests,
     # Running the child from the same working directory as regrtest's original
     # invocation ensures that TEMPDIR for the child is the same when
     # sysconfig.is_python_build() is true. See issue 15300.
-    kw = dict(
+    kwargs = dict(
         env=env,
-        stdout=output_file,
+        stdout=output_fd,
         # bpo-45410: Write stderr into stdout to keep messages order
-        stderr=output_file,
+        stderr=output_fd,
         text=True,
-        close_fds=(os.name != 'nt'),
+        close_fds=True,
     )
+    if not MS_WINDOWS:
+        kwargs['pass_fds'] = [json_fd]
+    else:
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.lpAttributeList = {"handle_list": [json_fd]}
+        kwargs['startupinfo'] = startupinfo
     if USE_PROCESS_GROUP:
-        kw['start_new_session'] = True
-    return subprocess.Popen(cmd, **kw)
+        kwargs['start_new_session'] = True
+
+    if MS_WINDOWS:
+        os.set_handle_inheritable(json_fd, True)
+    try:
+        return subprocess.Popen(cmd, **kwargs)
+    finally:
+        if MS_WINDOWS:
+            os.set_handle_inheritable(json_fd, False)
 
 
 def worker_process(worker_json: StrJSON) -> NoReturn:
     runtests = RunTests.from_json(worker_json)
     test_name = runtests.tests[0]
     match_tests: FilterTuple | None = runtests.match_tests
+    json_fd: int = runtests.json_fd
+
+    if MS_WINDOWS:
+        import msvcrt
+        json_fd = msvcrt.open_osfhandle(json_fd, os.O_WRONLY)
+
 
     setup_test_dir(runtests.test_dir)
     setup_process()
@@ -70,11 +89,10 @@ def worker_process(worker_json: StrJSON) -> NoReturn:
             print(f"Re-running {test_name} in verbose mode", flush=True)
 
     result = run_single_test(test_name, runtests)
-    print()   # Force a newline (just in case)
 
-    # Serialize TestResult as dict in JSON
-    result.write_json(sys.stdout)
-    sys.stdout.flush()
+    with open(json_fd, 'w', encoding='utf-8') as json_file:
+        result.write_json_into(json_file)
+
     sys.exit(0)
 
 
