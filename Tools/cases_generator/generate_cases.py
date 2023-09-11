@@ -68,7 +68,7 @@ OPARG_SIZES = {
     "OPARG_CACHE_4": 4,
     "OPARG_TOP": 5,
     "OPARG_BOTTOM": 6,
-    "OPARG_SAVE_IP": 7,
+    "OPARG_SET_IP": 7,
 }
 
 INSTR_FMT_PREFIX = "INSTR_FMT_"
@@ -658,8 +658,8 @@ class Generator(Analyzer):
             seen.add(name)
 
         # These two are first by convention
-        add("EXIT_TRACE")
-        add("SAVE_IP")
+        add("_EXIT_TRACE")
+        add("_SET_IP")
 
         for instr in self.instrs.values():
             if instr.kind == "op":
@@ -687,8 +687,8 @@ class Generator(Analyzer):
                     )
                     return
                 if not part.active_caches:
-                    if part.instr.name == "SAVE_IP":
-                        size, offset = OPARG_SIZES["OPARG_SAVE_IP"], cache_offset
+                    if part.instr.name == "_SET_IP":
+                        size, offset = OPARG_SIZES["OPARG_SET_IP"], cache_offset
                     else:
                         size, offset = OPARG_SIZES["OPARG_FULL"], 0
                 else:
