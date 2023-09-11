@@ -6,6 +6,7 @@ permissions:
   contents: read
 
 env:
+  FORCE_COLOR: 1
   RUFF_FORMAT: github
 
 concurrency:
