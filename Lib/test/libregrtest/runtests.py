@@ -27,14 +27,14 @@ class RunTests:
     pgo_extended: bool = False
     output_on_failure: bool = False
     timeout: float | None = None
-    verbose: bool = False
+    verbose: int = 0
     quiet: bool = False
     hunt_refleak: HuntRefleak | None = None
     test_dir: StrPath | None = None
     use_junit: bool = False
     memory_limit: str | None = None
     gc_threshold: int | None = None
-    use_resources: list[str] = None
+    use_resources: list[str] = dataclasses.field(default_factory=list)
     python_cmd: list[str] | None = None
 
     def copy(self, **override):

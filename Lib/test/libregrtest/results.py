@@ -106,7 +106,7 @@ class TestResults:
 
         xml_data = result.xml_data
         if xml_data:
-            self.add_junit(result.xml_data)
+            self.add_junit(xml_data)
 
     def need_rerun(self):
         return bool(self.bad_results)
@@ -163,7 +163,7 @@ class TestResults:
             for s in ET.tostringlist(root):
                 f.write(s)
 
-    def display_result(self, tests: TestList, quiet: bool, print_slowest: bool):
+    def display_result(self, tests: TestTuple, quiet: bool, print_slowest: bool):
         if self.interrupted:
             print("Test suite interrupted by signal SIGINT.")
 

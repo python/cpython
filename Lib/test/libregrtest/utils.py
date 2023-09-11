@@ -1,3 +1,4 @@
+import atexit
 import contextlib
 import faulthandler
 import math
@@ -471,3 +472,55 @@ def normalize_test_name(test_full_name, *, is_error=False):
         rpar = test_full_name.index(')')
         return test_full_name[lpar + 1: rpar].split('.')[-1]
     return short_name
+
+
+def replace_stdout():
+    """Set stdout encoder error handler to backslashreplace (as stderr error
+    handler) to avoid UnicodeEncodeError when printing a traceback"""
+    stdout = sys.stdout
+    try:
+        fd = stdout.fileno()
+    except ValueError:
+        # On IDLE, sys.stdout has no file descriptor and is not a TextIOWrapper
+        # object. Leaving sys.stdout unchanged.
+        #
+        # Catch ValueError to catch io.UnsupportedOperation on TextIOBase
+        # and ValueError on a closed stream.
+        return
+
+    sys.stdout = open(fd, 'w',
+        encoding=stdout.encoding,
+        errors="backslashreplace",
+        closefd=False,
+        newline='\n')
+
+    def restore_stdout():
+        sys.stdout.close()
+        sys.stdout = stdout
+    atexit.register(restore_stdout)
+
+
+def adjust_rlimit_nofile():
+    """
+    On macOS the default fd limit (RLIMIT_NOFILE) is sometimes too low (256)
+    for our test suite to succeed. Raise it to something more reasonable. 1024
+    is a common Linux default.
+    """
+    try:
+        import resource
+    except ImportError:
+        return
+
+    fd_limit, max_fds = resource.getrlimit(resource.RLIMIT_NOFILE)
+
+    desired_fds = 1024
+
+    if fd_limit < desired_fds and fd_limit < max_fds:
+        new_fd_limit = min(desired_fds, max_fds)
+        try:
+            resource.setrlimit(resource.RLIMIT_NOFILE,
+                               (new_fd_limit, max_fds))
+            print(f"Raised RLIMIT_NOFILE: {fd_limit} -> {new_fd_limit}")
+        except (ValueError, OSError) as err:
+            print_warning(f"Unable to raise RLIMIT_NOFILE from {fd_limit} to "
+                          f"{new_fd_limit}: {err}.")
