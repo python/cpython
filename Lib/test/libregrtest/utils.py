@@ -1,8 +1,10 @@
 import atexit
 import contextlib
 import faulthandler
+import locale
 import math
 import os.path
+import platform
 import random
 import sys
 import sysconfig
@@ -524,3 +526,56 @@ def adjust_rlimit_nofile():
         except (ValueError, OSError) as err:
             print_warning(f"Unable to raise RLIMIT_NOFILE from {fd_limit} to "
                           f"{new_fd_limit}: {err}.")
+
+
+def display_header():
+    # Print basic platform information
+    print("==", platform.python_implementation(), *sys.version.split())
+    print("==", platform.platform(aliased=True),
+                  "%s-endian" % sys.byteorder)
+    print("== Python build:", ' '.join(get_build_info()))
+    print("== cwd:", os.getcwd())
+    cpu_count = os.cpu_count()
+    if cpu_count:
+        print("== CPU count:", cpu_count)
+    print("== encodings: locale=%s, FS=%s"
+          % (locale.getencoding(), sys.getfilesystemencoding()))
+
+    # This makes it easier to remember what to set in your local
+    # environment when trying to reproduce a sanitizer failure.
+    asan = support.check_sanitizer(address=True)
+    msan = support.check_sanitizer(memory=True)
+    ubsan = support.check_sanitizer(ub=True)
+    sanitizers = []
+    if asan:
+        sanitizers.append("address")
+    if msan:
+        sanitizers.append("memory")
+    if ubsan:
+        sanitizers.append("undefined behavior")
+    if not sanitizers:
+        return
+
+    print(f"== sanitizers: {', '.join(sanitizers)}")
+    for sanitizer, env_var in (
+        (asan, "ASAN_OPTIONS"),
+        (msan, "MSAN_OPTIONS"),
+        (ubsan, "UBSAN_OPTIONS"),
+    ):
+        options= os.environ.get(env_var)
+        if sanitizer and options is not None:
+            print(f"== {env_var}={options!r}")
+
+
+def cleanup_temp_dir(tmp_dir: StrPath):
+    import glob
+
+    path = os.path.join(glob.escape(tmp_dir), 'test_python_*')
+    print("Cleanup %s directory" % tmp_dir)
+    for name in glob.glob(path):
+        if os.path.isdir(name):
+            print("Remove directory: %s" % name)
+            os_helper.rmtree(name)
+        else:
+            print("Remove file: %s" % name)
+            os_helper.unlink(name)
