@@ -84,10 +84,7 @@ class TestLoader(object):
             raise TypeError("Test cases should not be derived from "
                             "TestSuite. Maybe you meant to derive from "
                             "TestCase?")
-        if (
-            issubclass(testCaseClass, case.TestCase)
-            and testCaseClass in (case.TestCase, case.FunctionTestCase)
-        ):
+        if testCaseClass in (case.TestCase, case.FunctionTestCase):
             # We don't load any tests from base types that should not be loaded.
             testCaseNames = []
         else:
