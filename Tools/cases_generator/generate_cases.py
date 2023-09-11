@@ -648,7 +648,7 @@ class Generator(Analyzer):
             seen.add(name)
 
         # These two are first by convention
-        add("EXIT_TRACE")
+        add("_EXIT_TRACE")
         add("_SET_IP")
 
         for instr in self.instrs.values():

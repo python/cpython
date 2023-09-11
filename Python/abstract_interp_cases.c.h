@@ -804,7 +804,7 @@
             break;
         }
 
-        case EXIT_TRACE: {
+        case _EXIT_TRACE: {
             break;
         }
 

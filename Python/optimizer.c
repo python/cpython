@@ -473,7 +473,7 @@ translate_bytecode_to_trace(
     } \
     reserved = (n);  // Keep ADD_TO_TRACE / ADD_TO_STUB honest
 
-// Reserve space for main+stub uops, plus 2 for _SET_IP and EXIT_TRACE
+// Reserve space for main+stub uops, plus 2 for _SET_IP and _EXIT_TRACE
 #define RESERVE(main, stub) RESERVE_RAW((main) + (stub) + 2, uop_name(opcode))
 
 // Trace stack operations (used by _PUSH_FRAME, _POP_FRAME)
@@ -503,7 +503,7 @@ translate_bytecode_to_trace(
 
 top:  // Jump here after _PUSH_FRAME
     for (;;) {
-        RESERVE_RAW(2, "epilogue");  // Always need space for _SET_IP and EXIT_TRACE
+        RESERVE_RAW(2, "epilogue");  // Always need space for _SET_IP and _EXIT_TRACE
         ADD_TO_TRACE(_SET_IP, INSTR_IP(instr, code), 0);
 
         uint32_t opcode = instr->op.code;
@@ -556,7 +556,7 @@ pop_jump_if_bool:
                     _POP_JUMP_IF_TRUE : _POP_JUMP_IF_FALSE;
                 ADD_TO_TRACE(uopcode, max_length, 0);
                 ADD_TO_STUB(max_length, _SET_IP, INSTR_IP(target_instr, code), 0);
-                ADD_TO_STUB(max_length + 1, EXIT_TRACE, 0, 0);
+                ADD_TO_STUB(max_length + 1, _EXIT_TRACE, 0, 0);
                 break;
             }
 
@@ -616,7 +616,7 @@ pop_jump_if_bool:
 
                 ADD_TO_STUB(max_length + 0, POP_TOP, 0, 0);
                 ADD_TO_STUB(max_length + 1, _SET_IP, INSTR_IP(target_instr, code), 0);
-                ADD_TO_STUB(max_length + 2, EXIT_TRACE, 0, 0);
+                ADD_TO_STUB(max_length + 2, _EXIT_TRACE, 0, 0);
                 break;
             }
 
@@ -624,7 +624,7 @@ pop_jump_if_bool:
             {
                 const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
                 if (expansion->nuops > 0) {
-                    // Reserve space for nuops (+ _SET_IP + EXIT_TRACE)
+                    // Reserve space for nuops (+ _SET_IP + _EXIT_TRACE)
                     int nuops = expansion->nuops;
                     RESERVE(nuops, 0);
                     if (expansion->uops[nuops-1].uop == _POP_FRAME) {
@@ -754,9 +754,9 @@ done:
         TRACE_STACK_POP();
     }
     assert(code == initial_code);
-    // Skip short traces like _SET_IP, LOAD_FAST, _SET_IP, EXIT_TRACE
+    // Skip short traces like _SET_IP, LOAD_FAST, _SET_IP, _EXIT_TRACE
     if (trace_length > 3) {
-        ADD_TO_TRACE(EXIT_TRACE, 0, 0);
+        ADD_TO_TRACE(_EXIT_TRACE, 0, 0);
         DPRINTF(1,
                 "Created a trace for %s (%s:%d) at byte offset %d -- length %d+%d\n",
                 PyUnicode_AsUTF8(code->co_qualname),
@@ -823,7 +823,7 @@ remove_unneeded_uops(_PyUOpInstruction *trace, int trace_length)
             need_ip = false;
             last_set_ip = pc;
         }
-        else if (opcode == JUMP_TO_TOP || opcode == EXIT_TRACE) {
+        else if (opcode == JUMP_TO_TOP || opcode == _EXIT_TRACE) {
             last_instr = pc + 1;
             break;
         }

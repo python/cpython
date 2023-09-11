@@ -25,7 +25,7 @@
     ((OP) == POP_BLOCK) || \
     0)
 
-#define EXIT_TRACE 300
+#define _EXIT_TRACE 300
 #define _SET_IP 301
 #define _GUARD_BOTH_INT 302
 #define _BINARY_OP_MULTIPLY_INT 303
@@ -592,7 +592,7 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
             return 0;
         case SAVE_CURRENT_IP:
             return 0;
-        case EXIT_TRACE:
+        case _EXIT_TRACE:
             return 0;
         case INSERT:
             return oparg + 1;
@@ -1122,7 +1122,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 0;
         case SAVE_CURRENT_IP:
             return 0;
-        case EXIT_TRACE:
+        case _EXIT_TRACE:
             return 0;
         case INSERT:
             return oparg + 1;
@@ -1461,7 +1461,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [JUMP_TO_TOP] = { true, INSTR_FMT_IX, HAS_EVAL_BREAK_FLAG },
     [_SET_IP] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [SAVE_CURRENT_IP] = { true, INSTR_FMT_IX, 0 },
-    [EXIT_TRACE] = { true, INSTR_FMT_IX, 0 },
+    [_EXIT_TRACE] = { true, INSTR_FMT_IX, 0 },
     [INSERT] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
 };
 #endif // NEED_OPCODE_METADATA
@@ -1607,7 +1607,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
 extern const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE];
 #ifdef NEED_OPCODE_METADATA
 const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
-    [EXIT_TRACE] = "EXIT_TRACE",
+    [_EXIT_TRACE] = "_EXIT_TRACE",
     [_SET_IP] = "_SET_IP",
     [_GUARD_BOTH_INT] = "_GUARD_BOTH_INT",
     [_BINARY_OP_MULTIPLY_INT] = "_BINARY_OP_MULTIPLY_INT",

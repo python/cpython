@@ -2909,7 +2909,7 @@
             break;
         }
 
-        case EXIT_TRACE: {
+        case _EXIT_TRACE: {
             frame->prev_instr--;  // Back up to just before destination
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
