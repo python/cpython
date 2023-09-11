@@ -2,7 +2,7 @@ import dataclasses
 import json
 from typing import Any
 
-from test.libregrtest.utils import (
+from .utils import (
     StrPath, StrJSON, TestTuple, FilterTuple, FilterDict)
 
 

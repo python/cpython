@@ -10,8 +10,8 @@ try:
 except ImportError:
     gc = None
 
-from test.libregrtest.runtests import RunTests
-from test.libregrtest.utils import (
+from .runtests import RunTests
+from .utils import (
     setup_unraisable_hook, setup_threading_excepthook, fix_umask,
     replace_stdout, adjust_rlimit_nofile)
 

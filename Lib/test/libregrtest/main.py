@@ -10,16 +10,16 @@ import unittest
 from test import support
 from test.support import os_helper
 
-from test.libregrtest.cmdline import _parse_args, Namespace
-from test.libregrtest.findtests import findtests, split_test_packages
-from test.libregrtest.logger import Logger
-from test.libregrtest.result import State
-from test.libregrtest.runtests import RunTests, HuntRefleak
-from test.libregrtest.setup import setup_process, setup_test_dir
-from test.libregrtest.single import run_single_test, PROGRESS_MIN_TIME
-from test.libregrtest.pgo import setup_pgo_tests
-from test.libregrtest.results import TestResults
-from test.libregrtest.utils import (
+from .cmdline import _parse_args, Namespace
+from .findtests import findtests, split_test_packages
+from .logger import Logger
+from .result import State
+from .runtests import RunTests, HuntRefleak
+from .setup import setup_process, setup_test_dir
+from .single import run_single_test, PROGRESS_MIN_TIME
+from .pgo import setup_pgo_tests
+from .results import TestResults
+from .utils import (
     StrPath, StrJSON, TestName, TestList, TestTuple, FilterTuple,
     strip_py_suffix, count, format_duration,
     printlist, get_build_info, get_temp_dir, get_work_dir, exit_timeout,
@@ -409,7 +409,7 @@ class Regrtest:
         return state
 
     def _run_tests_mp(self, runtests: RunTests, num_workers: int) -> None:
-        from test.libregrtest.run_workers import RunWorkers
+        from .run_workers import RunWorkers
         RunWorkers(num_workers, runtests, self.logger, self.results).run()
 
     def finalize_tests(self, tracer):
