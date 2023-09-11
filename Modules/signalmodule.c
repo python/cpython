@@ -315,7 +315,7 @@ trip_signal(int sig_num)
                     _PyEval_AddPendingCall(interp,
                                            report_wakeup_send_error,
                                            (void *)(intptr_t) last_error,
-                                           1);
+                                           _Py_PENDING_MAINTHREADONLY);
                 }
             }
         }
@@ -335,7 +335,7 @@ trip_signal(int sig_num)
                     _PyEval_AddPendingCall(interp,
                                            report_wakeup_write_error,
                                            (void *)(intptr_t)errno,
-                                           1);
+                                           _Py_PENDING_MAINTHREADONLY);
                 }
             }
         }

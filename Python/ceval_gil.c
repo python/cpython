@@ -763,7 +763,7 @@ _PyEval_SignalReceived(PyInterpreterState *interp)
 /* Push one item onto the queue while holding the lock. */
 static int
 _push_pending_call(struct _pending_calls *pending,
-                   _Py_pending_call_func func, void *arg)
+                   _Py_pending_call_func func, void *arg, int flags)
 {
     int i = pending->last;
     int j = (i + 1) % NPENDINGCALLS;
@@ -772,13 +772,14 @@ _push_pending_call(struct _pending_calls *pending,
     }
     pending->calls[i].func = func;
     pending->calls[i].arg = arg;
+    pending->calls[i].flags = flags;
     pending->last = j;
     return 0;
 }
 
 static int
 _next_pending_call(struct _pending_calls *pending,
-                   int (**func)(void *), void **arg)
+                   int (**func)(void *), void **arg, int *flags)
 {
     int i = pending->first;
     if (i == pending->last) {
@@ -788,15 +789,16 @@ _next_pending_call(struct _pending_calls *pending,
     }
     *func = pending->calls[i].func;
     *arg = pending->calls[i].arg;
+    *flags = pending->calls[i].flags;
     return i;
 }
 
 /* Pop one item off the queue while holding the lock. */
 static void
 _pop_pending_call(struct _pending_calls *pending,
-                  int (**func)(void *), void **arg)
+                  int (**func)(void *), void **arg, int *flags)
 {
-    int i = _next_pending_call(pending, func, arg);
+    int i = _next_pending_call(pending, func, arg, flags);
     if (i >= 0) {
         pending->calls[i] = (struct _pending_call){0};
         pending->first = (i + 1) % NPENDINGCALLS;
@@ -810,12 +812,12 @@ _pop_pending_call(struct _pending_calls *pending,
 
 int
 _PyEval_AddPendingCall(PyInterpreterState *interp,
-                       _Py_pending_call_func func, void *arg,
-                       int mainthreadonly)
+                       _Py_pending_call_func func, void *arg, int flags)
 {
-    assert(!mainthreadonly || _Py_IsMainInterpreter(interp));
+    assert(!(flags & _Py_PENDING_MAINTHREADONLY)
+           || _Py_IsMainInterpreter(interp));
     struct _pending_calls *pending = &interp->ceval.pending;
-    if (mainthreadonly) {
+    if (flags & _Py_PENDING_MAINTHREADONLY) {
         /* The main thread only exists in the main interpreter. */
         assert(_Py_IsMainInterpreter(interp));
         pending = &_PyRuntime.ceval.pending_mainthread;
@@ -825,7 +827,7 @@ _PyEval_AddPendingCall(PyInterpreterState *interp,
     assert(pending->lock != NULL);
 
     PyThread_acquire_lock(pending->lock, WAIT_LOCK);
-    int result = _push_pending_call(pending, func, arg);
+    int result = _push_pending_call(pending, func, arg, flags);
     PyThread_release_lock(pending->lock);
 
     /* signal main loop */
@@ -839,7 +841,7 @@ Py_AddPendingCall(_Py_pending_call_func func, void *arg)
     /* Legacy users of this API will continue to target the main thread
        (of the main interpreter). */
     PyInterpreterState *interp = _PyInterpreterState_Main();
-    return _PyEval_AddPendingCall(interp, func, arg, 1);
+    return _PyEval_AddPendingCall(interp, func, arg, _Py_PENDING_MAINTHREADONLY);
 }
 
 static int
@@ -880,17 +882,22 @@ _make_pending_calls(struct _pending_calls *pending)
     for (int i=0; i<NPENDINGCALLS; i++) {
         _Py_pending_call_func func = NULL;
         void *arg = NULL;
+        int flags = 0;
 
         /* pop one item off the queue while holding the lock */
         PyThread_acquire_lock(pending->lock, WAIT_LOCK);
-        _pop_pending_call(pending, &func, &arg);
+        _pop_pending_call(pending, &func, &arg, &flags);
         PyThread_release_lock(pending->lock);
 
         /* having released the lock, perform the callback */
         if (func == NULL) {
             break;
         }
-        if (func(arg) != 0) {
+        int res = func(arg);
+        if ((flags & _Py_PENDING_RAWFREE) && arg != NULL) {
+            PyMem_RawFree(arg);
+        }
+        if (res != 0) {
             return -1;
         }
     }
