@@ -143,7 +143,7 @@ class LocaltimeTests(unittest.TestCase):
         t2 = utils.localtime(t0.replace(tzinfo=None))
         self.assertEqual(t1, t2)
 
-    @unittest.skipUnless("Europe/Kyiv" in zoneinfo.available_timezones()
+    @unittest.skipUnless("Europe/Kyiv" in zoneinfo.available_timezones(),
                          "Can't find a Kyiv timezone database")
     @test.support.run_with_tz('Europe/Kyiv')
     def test_variable_tzname(self):
