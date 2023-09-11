@@ -504,6 +504,8 @@ Additional Utility Classes and Functions
    However, for a structured record type use :func:`~collections.namedtuple`
    instead.
 
+   :class:`!SimpleNamespace` objects are supported by :func:`copy.replace`.
+
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.9
