@@ -6,7 +6,7 @@ from typing import TextIO, NoReturn
 from test import support
 from test.support import os_helper
 
-from test.libregrtest.setup import setup_tests, setup_test_dir
+from test.libregrtest.setup import setup_process, setup_test_dir
 from test.libregrtest.runtests import RunTests
 from test.libregrtest.single import run_single_test
 from test.libregrtest.utils import (
@@ -60,7 +60,7 @@ def worker_process(worker_json: StrJSON) -> NoReturn:
     match_tests: FilterTuple | None = runtests.match_tests
 
     setup_test_dir(runtests.test_dir)
-    setup_tests(runtests)
+    setup_process()
 
     if runtests.rerun:
         if match_tests:

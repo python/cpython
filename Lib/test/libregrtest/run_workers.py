@@ -15,7 +15,6 @@ from test import support
 from test.support import os_helper
 
 from test.libregrtest.logger import Logger
-from test.libregrtest.main import Regrtest
 from test.libregrtest.result import TestResult, State
 from test.libregrtest.results import TestResults
 from test.libregrtest.runtests import RunTests
@@ -154,10 +153,10 @@ class WorkerThread(threading.Thread):
     ) -> MultiprocessResult:
         return MultiprocessResult(test_result, stdout, err_msg)
 
-    def _run_process(self, worker_job, output_file: TextIO,
+    def _run_process(self, runtests: RunTests, output_file: TextIO,
                      tmp_dir: StrPath | None = None) -> int:
         try:
-            popen = create_worker_process(worker_job, output_file, tmp_dir)
+            popen = create_worker_process(runtests, output_file, tmp_dir)
 
             self._killed = False
             self._popen = popen
