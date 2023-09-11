@@ -3827,7 +3827,7 @@ dummy_func(
             }
         }
 
-        op(JUMP_TO_TOP, (--)) {
+        op(_JUMP_TO_TOP, (--)) {
             pc = 0;
             CHECK_EVAL_BREAKER();
         }

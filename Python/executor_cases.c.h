@@ -2887,7 +2887,7 @@
             break;
         }
 
-        case JUMP_TO_TOP: {
+        case _JUMP_TO_TOP: {
             pc = 0;
             CHECK_EVAL_BREAKER();
             break;

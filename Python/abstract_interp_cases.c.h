@@ -792,7 +792,7 @@
             break;
         }
 
-        case JUMP_TO_TOP: {
+        case _JUMP_TO_TOP: {
             break;
         }
 

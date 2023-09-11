@@ -68,7 +68,7 @@
 #define _PUSH_FRAME 340
 #define _POP_JUMP_IF_FALSE 341
 #define _POP_JUMP_IF_TRUE 342
-#define JUMP_TO_TOP 343
+#define _JUMP_TO_TOP 343
 #define _SAVE_CURRENT_IP 344
 #define _INSERT 345
 
@@ -586,7 +586,7 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
             return 1;
         case _POP_JUMP_IF_TRUE:
             return 1;
-        case JUMP_TO_TOP:
+        case _JUMP_TO_TOP:
             return 0;
         case _SET_IP:
             return 0;
@@ -1116,7 +1116,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 0;
         case _POP_JUMP_IF_TRUE:
             return 0;
-        case JUMP_TO_TOP:
+        case _JUMP_TO_TOP:
             return 0;
         case _SET_IP:
             return 0;
@@ -1458,7 +1458,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [RESERVED] = { true, INSTR_FMT_IX, 0 },
     [_POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [_POP_JUMP_IF_TRUE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [JUMP_TO_TOP] = { true, INSTR_FMT_IX, HAS_EVAL_BREAK_FLAG },
+    [_JUMP_TO_TOP] = { true, INSTR_FMT_IX, HAS_EVAL_BREAK_FLAG },
     [_SET_IP] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [_SAVE_CURRENT_IP] = { true, INSTR_FMT_IX, 0 },
     [_EXIT_TRACE] = { true, INSTR_FMT_IX, 0 },
@@ -1650,7 +1650,7 @@ const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
     [_PUSH_FRAME] = "_PUSH_FRAME",
     [_POP_JUMP_IF_FALSE] = "_POP_JUMP_IF_FALSE",
     [_POP_JUMP_IF_TRUE] = "_POP_JUMP_IF_TRUE",
-    [JUMP_TO_TOP] = "JUMP_TO_TOP",
+    [_JUMP_TO_TOP] = "_JUMP_TO_TOP",
     [_SAVE_CURRENT_IP] = "_SAVE_CURRENT_IP",
     [_INSERT] = "_INSERT",
 };

@@ -564,7 +564,7 @@ pop_jump_if_bool:
             {
                 if (instr + 2 - oparg == initial_instr && code == initial_code) {
                     RESERVE(1, 0);
-                    ADD_TO_TRACE(JUMP_TO_TOP, 0, 0);
+                    ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0);
                 }
                 else {
                     DPRINTF(2, "JUMP_BACKWARD not to top ends trace\n");
@@ -823,7 +823,7 @@ remove_unneeded_uops(_PyUOpInstruction *trace, int trace_length)
             need_ip = false;
             last_set_ip = pc;
         }
-        else if (opcode == JUMP_TO_TOP || opcode == _EXIT_TRACE) {
+        else if (opcode == _JUMP_TO_TOP || opcode == _EXIT_TRACE) {
             last_instr = pc + 1;
             break;
         }
