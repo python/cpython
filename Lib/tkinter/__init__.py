@@ -901,6 +901,85 @@ class Misc:
         """Ring a display's bell."""
         self.tk.call(('bell',) + self._displayof(displayof))
 
+    def tk_busy_cget(self, option):
+        """Return the value of busy configuration option.
+
+        The widget must have been previously made busy by
+        tk_busy_hold().  Option may have any of the values accepted by
+        tk_busy_hold().
+        """
+        return self.tk.call('tk', 'busy', 'cget', self._w, '-'+option)
+    busy_cget = tk_busy_cget
+
+    def tk_busy_configure(self, cnf=None, **kw):
+        """Query or modify the busy configuration options.
+
+        The widget must have been previously made busy by
+        tk_busy_hold().  Options may have any of the values accepted by
+        tk_busy_hold().
+
+        Please note that the option database is referenced by the widget
+        name or class.  For example, if a Frame widget with name "frame"
+        is to be made busy, the busy cursor can be specified for it by
+        either call:
+
+            w.option_add('*frame.busyCursor', 'gumby')
+            w.option_add('*Frame.BusyCursor', 'gumby')
+        """
+        if kw:
+            cnf = _cnfmerge((cnf, kw))
+        elif cnf:
+            cnf = _cnfmerge(cnf)
+        if cnf is None:
+            return self._getconfigure(
+                        'tk', 'busy', 'configure', self._w)
+        if isinstance(cnf, str):
+            return self._getconfigure1(
+                        'tk', 'busy', 'configure', self._w, '-'+cnf)
+        self.tk.call('tk', 'busy', 'configure', self._w, *self._options(cnf))
+    busy_config = busy_configure = tk_busy_config = tk_busy_configure
+
+    def tk_busy_current(self, pattern=None):
+        """Return a list of widgets that are currently busy.
+
+        If a pattern is given, only busy widgets whose path names match
+        a pattern are returned.
+        """
+        return [self._nametowidget(x) for x in
+                self.tk.splitlist(self.tk.call(
+                   'tk', 'busy', 'current', pattern))]
+    busy_current = tk_busy_current
+
+    def tk_busy_forget(self):
+        """Make this widget no longer busy.
+
+        User events will again be received by the widget.
+        """
+        self.tk.call('tk', 'busy', 'forget', self._w)
+    busy_forget = tk_busy_forget
+
+    def tk_busy_hold(self, **kw):
+        """Make this widget appear busy.
+
+        The specified widget and its descendants will be blocked from
+        user interactions.  Normally update() should be called
+        immediately afterward to insure that the hold operation is in
+        effect before the application starts its processing.
+
+        The only supported configuration option is:
+
+            cursor: the cursor to be displayed when the widget is made
+                    busy.
+        """
+        self.tk.call('tk', 'busy', 'hold', self._w, *self._options(kw))
+    busy = busy_hold = tk_busy = tk_busy_hold
+
+    def tk_busy_status(self):
+        """Return True if the widget is busy, False otherwise."""
+        return self.tk.getboolean(self.tk.call(
+                'tk', 'busy', 'status', self._w))
+    busy_status = tk_busy_status
+
     # Clipboard handling:
     def clipboard_get(self, **kw):
         """Retrieve data from the clipboard on window's display.
@@ -2817,7 +2896,7 @@ class Canvas(Widget, XView, YView):
 
     def coords(self, *args):
         """Return a list of coordinates for the item given in ARGS."""
-        # XXX Should use _flatten on args
+        args = _flatten(args)
         return [self.tk.getdouble(x) for x in
                            self.tk.splitlist(
                    self.tk.call((self._w, 'coords') + args))]
@@ -4069,8 +4148,6 @@ class Image:
         elif kw: cnf = kw
         options = ()
         for k, v in cnf.items():
-            if callable(v):
-                v = self._register(v)
             options = options + ('-'+k, v)
         self.tk.call(('image', 'create', imgtype, name,) + options)
         self.name = name
@@ -4097,8 +4174,6 @@ class Image:
         for k, v in _cnfmerge(kw).items():
             if v is not None:
                 if k[-1] == '_': k = k[:-1]
-                if callable(v):
-                    v = self._register(v)
                 res = res + ('-'+k, v)
         self.tk.call((self.name, 'config') + res)
 

@@ -8,7 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_global_objects.h"  // _PY_NSMALLNEGINTS
+#include "pycore_bytesobject.h"   // _PyBytesWriter
+#include "pycore_global_objects.h"// _PY_NSMALLNEGINTS
 #include "pycore_runtime.h"       // _PyRuntime
 
 /*
@@ -46,6 +47,34 @@ extern "C" {
 # error "_PY_LONG_DEFAULT_MAX_STR_DIGITS smaller than threshold."
 #endif
 
+extern PyLongObject* _PyLong_New(Py_ssize_t);
+
+// Return a copy of src.
+extern PyObject* _PyLong_Copy(PyLongObject *src);
+
+// Export for '_decimal' shared extension
+PyAPI_FUNC(PyLongObject*) _PyLong_FromDigits(
+    int negative,
+    Py_ssize_t digit_count,
+    digit *digits);
+
+// _PyLong_Sign.  Return 0 if v is 0, -1 if v < 0, +1 if v > 0.
+// v must not be NULL, and must be a normalized long.
+// There are no error cases.
+//
+// Export for '_pickle' shared extension.
+PyAPI_FUNC(int) _PyLong_Sign(PyObject *v);
+
+// _PyLong_NumBits.  Return the number of bits needed to represent the
+// absolute value of a long.  For example, this returns 1 for 1 and -1, 2
+// for 2 and -2, and 2 for 3 and -3.  It returns 0 for 0.
+// v must not be NULL, and must be a normalized long.
+// (size_t)-1 is returned and OverflowError set if the true result doesn't
+// fit in a size_t.
+//
+// Export for 'math' shared extension.
+PyAPI_FUNC(size_t) _PyLong_NumBits(PyObject *v);
+
 
 /* runtime lifecycle */
 
@@ -63,50 +92,144 @@ extern void _PyLong_FiniTypes(PyInterpreterState *interp);
 #  error "_PY_NSMALLPOSINTS must be greater than or equal to 257"
 #endif
 
-// Return a borrowed reference to the zero singleton.
+// Return a reference to the immortal zero singleton.
 // The function cannot return NULL.
 static inline PyObject* _PyLong_GetZero(void)
 { return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS]; }
 
-// Return a borrowed reference to the one singleton.
+// Return a reference to the immortal one singleton.
 // The function cannot return NULL.
 static inline PyObject* _PyLong_GetOne(void)
 { return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+1]; }
 
 static inline PyObject* _PyLong_FromUnsignedChar(unsigned char i)
 {
-    return Py_NewRef((PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+i]);
+    return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+i];
 }
 
-PyObject *_PyLong_Add(PyLongObject *left, PyLongObject *right);
-PyObject *_PyLong_Multiply(PyLongObject *left, PyLongObject *right);
-PyObject *_PyLong_Subtract(PyLongObject *left, PyLongObject *right);
+// _PyLong_Frexp returns a double x and an exponent e such that the
+// true value is approximately equal to x * 2**e.  e is >= 0.  x is
+// 0.0 if and only if the input is 0 (in which case, e and x are both
+// zeroes); otherwise, 0.5 <= abs(x) < 1.0.  On overflow, which is
+// possible if the number of bits doesn't fit into a Py_ssize_t, sets
+// OverflowError and returns -1.0 for x, 0 for e.
+//
+// Export for 'math' shared extension
+PyAPI_DATA(double) _PyLong_Frexp(PyLongObject *a, Py_ssize_t *e);
 
-/* Used by Python/mystrtoul.c, _PyBytes_FromHex(),
-   _PyBytes_DecodeEscape(), etc. */
+extern PyObject* _PyLong_FromBytes(const char *, Py_ssize_t, int);
+
+// _PyLong_DivmodNear.  Given integers a and b, compute the nearest
+// integer q to the exact quotient a / b, rounding to the nearest even integer
+// in the case of a tie.  Return (q, r), where r = a - q*b.  The remainder r
+// will satisfy abs(r) <= abs(b)/2, with equality possible only if q is
+// even.
+//
+// Export for '_datetime' shared extension.
+PyAPI_DATA(PyObject*) _PyLong_DivmodNear(PyObject *, PyObject *);
+
+// _PyLong_FromByteArray:  View the n unsigned bytes as a binary integer in
+// base 256, and return a Python int with the same numeric value.
+// If n is 0, the integer is 0.  Else:
+// If little_endian is 1/true, bytes[n-1] is the MSB and bytes[0] the LSB;
+// else (little_endian is 0/false) bytes[0] is the MSB and bytes[n-1] the
+// LSB.
+// If is_signed is 0/false, view the bytes as a non-negative integer.
+// If is_signed is 1/true, view the bytes as a 2's-complement integer,
+// non-negative if bit 0x80 of the MSB is clear, negative if set.
+// Error returns:
+// + Return NULL with the appropriate exception set if there's not
+//   enough memory to create the Python int.
+//
+// Export for '_multibytecodec' shared extension.
+PyAPI_DATA(PyObject*) _PyLong_FromByteArray(
+    const unsigned char* bytes, size_t n,
+    int little_endian, int is_signed);
+
+// _PyLong_AsByteArray: Convert the least-significant 8*n bits of long
+// v to a base-256 integer, stored in array bytes.  Normally return 0,
+// return -1 on error.
+// If little_endian is 1/true, store the MSB at bytes[n-1] and the LSB at
+// bytes[0]; else (little_endian is 0/false) store the MSB at bytes[0] and
+// the LSB at bytes[n-1].
+// If is_signed is 0/false, it's an error if v < 0; else (v >= 0) n bytes
+// are filled and there's nothing special about bit 0x80 of the MSB.
+// If is_signed is 1/true, bytes is filled with the 2's-complement
+// representation of v's value.  Bit 0x80 of the MSB is the sign bit.
+// Error returns (-1):
+// + is_signed is 0 and v < 0.  TypeError is set in this case, and bytes
+//   isn't altered.
+// + n isn't big enough to hold the full mathematical value of v.  For
+//   example, if is_signed is 0 and there are more digits in the v than
+//   fit in n; or if is_signed is 1, v < 0, and n is just 1 bit shy of
+//   being large enough to hold a sign bit.  OverflowError is set in this
+//   case, but bytes holds the least-significant n bytes of the true value.
+//
+// Export for '_struct' shared extension.
+PyAPI_DATA(int) _PyLong_AsByteArray(PyLongObject* v,
+    unsigned char* bytes, size_t n,
+    int little_endian, int is_signed);
+
+// _PyLong_Format: Convert the long to a string object with given base,
+// appending a base prefix of 0[box] if base is 2, 8 or 16.
+// Export for '_tkinter' shared extension.
+PyAPI_DATA(PyObject*) _PyLong_Format(PyObject *obj, int base);
+
+// For use by the math.gcd() function.
+// Export for 'math' shared extension.
+PyAPI_DATA(PyObject*) _PyLong_GCD(PyObject *, PyObject *);
+
+// Export for 'math' shared extension
+PyAPI_DATA(PyObject*) _PyLong_Rshift(PyObject *, size_t);
+
+// Export for 'math' shared extension
+PyAPI_DATA(PyObject*) _PyLong_Lshift(PyObject *, size_t);
+
+extern PyObject* _PyLong_Add(PyLongObject *left, PyLongObject *right);
+extern PyObject* _PyLong_Multiply(PyLongObject *left, PyLongObject *right);
+extern PyObject* _PyLong_Subtract(PyLongObject *left, PyLongObject *right);
+
+// Export for 'binascii' shared extension.
 PyAPI_DATA(unsigned char) _PyLong_DigitValue[256];
 
 /* Format the object based on the format_spec, as defined in PEP 3101
    (Advanced String Formatting). */
-PyAPI_FUNC(int) _PyLong_FormatAdvancedWriter(
+extern int _PyLong_FormatAdvancedWriter(
     _PyUnicodeWriter *writer,
     PyObject *obj,
     PyObject *format_spec,
     Py_ssize_t start,
     Py_ssize_t end);
 
-PyAPI_FUNC(int) _PyLong_FormatWriter(
+extern int _PyLong_FormatWriter(
     _PyUnicodeWriter *writer,
     PyObject *obj,
     int base,
     int alternate);
 
-PyAPI_FUNC(char*) _PyLong_FormatBytesWriter(
+extern char* _PyLong_FormatBytesWriter(
     _PyBytesWriter *writer,
     char *str,
     PyObject *obj,
     int base,
     int alternate);
+
+// Argument converters used by Argument Clinic
+
+// Export for 'select' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_UnsignedShort_Converter(PyObject *, void *);
+
+// Export for '_testclinic' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_UnsignedInt_Converter(PyObject *, void *);
+
+// Export for '_blake2' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_UnsignedLong_Converter(PyObject *, void *);
+
+// Export for '_blake2' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_UnsignedLongLong_Converter(PyObject *, void *);
+
+// Export for '_testclinic' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_Size_t_Converter(PyObject *, void *);
 
 /* Long value tag bits:
  * 0-1: Sign bits value = (1-sign), ie. negative=2, positive=0, zero=1.
@@ -117,6 +240,21 @@ PyAPI_FUNC(char*) _PyLong_FormatBytesWriter(
 #define SIGN_ZERO 1
 #define SIGN_NEGATIVE 2
 #define NON_SIZE_BITS 3
+
+/* The functions _PyLong_IsCompact and _PyLong_CompactValue are defined
+ * in Include/cpython/longobject.h, since they need to be inline.
+ *
+ * "Compact" values have at least one bit to spare,
+ * so that addition and subtraction can be performed on the values
+ * without risk of overflow.
+ *
+ * The inline functions need tag bits.
+ * For readability, rather than do `#define SIGN_MASK _PyLong_SIGN_MASK`
+ * we define them to the numbers in both places and then assert that
+ * they're the same.
+ */
+static_assert(SIGN_MASK == _PyLong_SIGN_MASK, "SIGN_MASK does not match _PyLong_SIGN_MASK");
+static_assert(NON_SIZE_BITS == _PyLong_NON_SIZE_BITS, "NON_SIZE_BITS does not match _PyLong_NON_SIZE_BITS");
 
 /* All *compact" values are guaranteed to fit into
  * a Py_ssize_t with at least one bit to spare.
@@ -131,32 +269,12 @@ _PyLong_IsNonNegativeCompact(const PyLongObject* op) {
     return op->long_value.lv_tag <= (1 << NON_SIZE_BITS);
 }
 
-static inline int
-_PyLong_IsCompact(const PyLongObject* op) {
-    assert(PyLong_Check(op));
-    return op->long_value.lv_tag < (2 << NON_SIZE_BITS);
-}
 
 static inline int
 _PyLong_BothAreCompact(const PyLongObject* a, const PyLongObject* b) {
     assert(PyLong_Check(a));
     assert(PyLong_Check(b));
     return (a->long_value.lv_tag | b->long_value.lv_tag) < (2 << NON_SIZE_BITS);
-}
-
-/* Returns a *compact* value, iff `_PyLong_IsCompact` is true for `op`.
- *
- * "Compact" values have at least one bit to spare,
- * so that addition and subtraction can be performed on the values
- * without risk of overflow.
- */
-static inline Py_ssize_t
-_PyLong_CompactValue(const PyLongObject *op)
-{
-    assert(PyLong_Check(op));
-    assert(_PyLong_IsCompact(op));
-    Py_ssize_t sign = 1 - (op->long_value.lv_tag & SIGN_MASK);
-    return sign * (Py_ssize_t)op->long_value.ob_digit[0];
 }
 
 static inline bool

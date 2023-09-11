@@ -166,7 +166,7 @@ buf = _mm_perm_epi8(t1, m3, _mm_set_epi32(TOB(3),TOB(2),TOB(1),TOB(7)) );
 #define LOAD_MSG_8_3(buf) \
 t0 = _mm_perm_epi8(m0, m2, _mm_set_epi32(TOB(6),TOB(1),TOB(0),TOB(0)) ); \
 buf = _mm_perm_epi8(t0, m3, _mm_set_epi32(TOB(3),TOB(2),TOB(5),TOB(4)) ); \
- 
+
 #define LOAD_MSG_8_4(buf) \
 buf = _mm_perm_epi8(m0, m1, _mm_set_epi32(TOB(5),TOB(4),TOB(7),TOB(2)) );
 

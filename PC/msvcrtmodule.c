@@ -38,13 +38,14 @@ class HANDLE_converter(CConverter):
     type = 'void *'
     format_unit = '"_Py_PARSE_UINTPTR"'
 
-    def parse_arg(self, argname, displayname):
-        return """
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        return self.format_code("""
             {paramname} = PyLong_AsVoidPtr({argname});
             if (!{paramname} && PyErr_Occurred()) {{{{
                 goto exit;
             }}}}
-            """.format(argname=argname, paramname=self.parser_name)
+            """,
+            argname=argname)
 
 class HANDLE_return_converter(CReturnConverter):
     type = 'void *'
@@ -74,7 +75,7 @@ class wchar_t_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = PyUnicode_FromOrdinal(_return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=1e8e9fa3538ec08f]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=ff031be44ab3250d]*/
 
 /*[clinic input]
 module msvcrt
@@ -565,15 +566,9 @@ static struct PyMethodDef msvcrt_functions[] = {
 };
 
 static int
-insertptr(PyObject *mod, char *name, void *value)
+insertptr(PyObject *mod, const char *name, void *value)
 {
-    PyObject *v = PyLong_FromVoidPtr(value);
-    if (v == NULL) {
-        return -1;
-    }
-    int rc = PyModule_AddObjectRef(mod, name, v);
-    Py_DECREF(v);
-    return rc;
+    return PyModule_Add(mod, name, PyLong_FromVoidPtr(value));
 }
 
 #define INSERTINT(MOD, NAME, VAL) do {                  \
@@ -646,12 +641,7 @@ exec_module(PyObject* m)
                                              _VC_CRT_MINOR_VERSION,
                                              _VC_CRT_BUILD_VERSION,
                                              _VC_CRT_RBUILD_VERSION);
-    if (version == NULL) {
-        return -1;
-    }
-    int st = PyModule_AddObjectRef(m, "CRT_ASSEMBLY_VERSION", version);
-    Py_DECREF(version);
-    if (st < 0) {
+    if (PyModule_Add(m, "CRT_ASSEMBLY_VERSION", version) < 0) {
         return -1;
     }
 #endif
@@ -661,6 +651,7 @@ exec_module(PyObject* m)
 
 static PyModuleDef_Slot msvcrt_slots[] = {
     {Py_mod_exec, exec_module},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

@@ -1,1 +1,0 @@
-Allow built-in modules to be submodules. This allows submodules to be statically linked into a CPython binary.

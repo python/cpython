@@ -30,7 +30,7 @@ The :mod:`runpy` module provides two functions:
 .. function:: run_module(mod_name, init_globals=None, run_name=None, alter_sys=False)
 
    .. index::
-      module: __main__
+      pair: module; __main__
 
    Execute the code of the specified module and return the resulting module
    globals dictionary. The module's code is first located using the standard
@@ -39,7 +39,7 @@ The :mod:`runpy` module provides two functions:
 
    The *mod_name* argument should be an absolute module name.
    If the module name refers to a package rather than a normal
-   module, then that package is imported and the ``__main__`` submodule within
+   module, then that package is imported and the :mod:`__main__` submodule within
    that package is then executed and the resulting module globals dictionary
    returned.
 
@@ -74,7 +74,7 @@ The :mod:`runpy` module provides two functions:
 
    Note that this manipulation of :mod:`sys` is not thread-safe. Other threads
    may see the partially initialised module, as well as the altered list of
-   arguments. It is recommended that the :mod:`sys` module be left alone when
+   arguments. It is recommended that the ``sys`` module be left alone when
    invoking this function from threaded code.
 
    .. seealso::
@@ -82,7 +82,7 @@ The :mod:`runpy` module provides two functions:
       command line.
 
    .. versionchanged:: 3.1
-      Added ability to execute packages by looking for a ``__main__`` submodule.
+      Added ability to execute packages by looking for a :mod:`__main__` submodule.
 
    .. versionchanged:: 3.2
       Added ``__cached__`` global variable (see :pep:`3147`).
@@ -101,20 +101,21 @@ The :mod:`runpy` module provides two functions:
 .. function:: run_path(path_name, init_globals=None, run_name=None)
 
    .. index::
-      module: __main__
+      pair: module; __main__
 
    Execute the code at the named filesystem location and return the resulting
    module globals dictionary. As with a script name supplied to the CPython
    command line, the supplied path may refer to a Python source file, a
-   compiled bytecode file or a valid sys.path entry containing a ``__main__``
-   module (e.g. a zipfile containing a top-level ``__main__.py`` file).
+   compiled bytecode file or a valid :data:`sys.path` entry containing a
+   :mod:`__main__` module
+   (e.g. a zipfile containing a top-level ``__main__.py`` file).
 
    For a simple script, the specified code is simply executed in a fresh
-   module namespace. For a valid sys.path entry (typically a zipfile or
+   module namespace. For a valid :data:`sys.path` entry (typically a zipfile or
    directory), the entry is first added to the beginning of ``sys.path``. The
    function then looks for and executes a :mod:`__main__` module using the
    updated path. Note that there is no special protection against invoking
-   an existing :mod:`__main__` entry located elsewhere on ``sys.path`` if
+   an existing ``__main__`` entry located elsewhere on ``sys.path`` if
    there is no such module at the specified location.
 
    The optional dictionary argument *init_globals* may be used to pre-populate
@@ -137,14 +138,14 @@ The :mod:`runpy` module provides two functions:
    supplied path, and ``__spec__``, ``__cached__``, ``__loader__`` and
    ``__package__`` will all be set to :const:`None`.
 
-   If the supplied path is a reference to a valid sys.path entry, then
-   ``__spec__`` will be set appropriately for the imported ``__main__``
+   If the supplied path is a reference to a valid :data:`sys.path` entry, then
+   ``__spec__`` will be set appropriately for the imported :mod:`__main__`
    module (that is, ``__spec__.name`` will always be ``__main__``).
    ``__file__``, ``__cached__``, ``__loader__`` and ``__package__`` will be
    :ref:`set as normal <import-mod-attrs>` based on the module spec.
 
    A number of alterations are also made to the :mod:`sys` module. Firstly,
-   ``sys.path`` may be altered as described above. ``sys.argv[0]`` is updated
+   :data:`sys.path` may be altered as described above. ``sys.argv[0]`` is updated
    with the value of ``path_name`` and ``sys.modules[__name__]`` is updated
    with a temporary module object for the module being executed. All
    modifications to items in :mod:`sys` are reverted before the function
@@ -152,7 +153,7 @@ The :mod:`runpy` module provides two functions:
 
    Note that, unlike :func:`run_module`, the alterations made to :mod:`sys`
    are not optional in this function as these adjustments are essential to
-   allowing the execution of sys.path entries. As the thread-safety
+   allowing the execution of :data:`sys.path` entries. As the thread-safety
    limitations still apply, use of this function in threaded code should be
    either serialised with the import lock or delegated to a separate process.
 
@@ -165,7 +166,7 @@ The :mod:`runpy` module provides two functions:
    .. versionchanged:: 3.4
       Updated to take advantage of the module spec feature added by
       :pep:`451`. This allows ``__cached__`` to be set correctly in the
-      case where ``__main__`` is imported from a valid sys.path entry rather
+      case where ``__main__`` is imported from a valid :data:`sys.path` entry rather
       than being executed directly.
 
    .. versionchanged:: 3.12

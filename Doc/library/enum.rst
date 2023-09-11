@@ -241,6 +241,10 @@ Data Types
         >>> list(reversed(Color))
         [<Color.BLUE: 3>, <Color.GREEN: 2>, <Color.RED: 1>]
 
+   .. versionadded:: 3.11
+
+      Before 3.11 ``enum`` used ``EnumMeta`` type, which is kept as an alias.
+
 
 .. class:: Enum
 
@@ -406,18 +410,18 @@ Data Types
    with an *IntEnum* member, the resulting value loses its enumeration status.
 
       >>> from enum import IntEnum
-      >>> class Numbers(IntEnum):
+      >>> class Number(IntEnum):
       ...     ONE = 1
       ...     TWO = 2
       ...     THREE = 3
       ...
-      >>> Numbers.THREE
-      <Numbers.THREE: 3>
-      >>> Numbers.ONE + Numbers.TWO
+      >>> Number.THREE
+      <Number.THREE: 3>
+      >>> Number.ONE + Number.TWO
       3
-      >>> Numbers.THREE + 5
+      >>> Number.THREE + 5
       8
-      >>> Numbers.THREE == 3
+      >>> Number.THREE == 3
       True
 
    .. note::

@@ -6,14 +6,13 @@
               representations.
 
 .. index::
-   module: uu
-   module: base64
+   pair: module; base64
 
 --------------
 
 The :mod:`binascii` module contains a number of methods to convert between
 binary and various ASCII-encoded binary representations. Normally, you will not
-use these functions directly but use wrapper modules like :mod:`uu` or
+use these functions directly but use wrapper modules like
 :mod:`base64` instead. The :mod:`binascii` module contains
 low-level functions written in C for greater speed that are used by the
 higher-level modules.
@@ -178,9 +177,6 @@ The :mod:`binascii` module defines the following functions:
    Module :mod:`base64`
       Support for RFC compliant base64-style encoding in base 16, 32, 64,
       and 85.
-
-   Module :mod:`uu`
-      Support for UU encoding used on Unix.
 
    Module :mod:`quopri`
       Support for quoted-printable encoding used in MIME email messages.

@@ -601,6 +601,7 @@ class Obj2ModVisitor(PickleVisitor):
         args = [f.name for f in prod.fields]
         args.extend([a.name for a in prod.attributes])
         self.emit("*out = %s(%s);" % (ast_func_name(name), self.buildArgs(args)), 1)
+        self.emit("if (*out == NULL) goto failed;", 1)
         self.emit("return 0;", 1)
         self.emit("failed:", 0)
         self.emit("Py_XDECREF(tmp);", 1)
@@ -628,33 +629,42 @@ class Obj2ModVisitor(PickleVisitor):
 
     def visitField(self, field, name, sum=None, prod=None, depth=0):
         ctype = get_c_type(field.type)
-        line = "if (_PyObject_LookupAttr(obj, state->%s, &tmp) < 0) {"
+        line = "if (PyObject_GetOptionalAttr(obj, state->%s, &tmp) < 0) {"
         self.emit(line % field.name, depth)
         self.emit("return 1;", depth+1)
         self.emit("}", depth)
-        if not field.opt:
+        if field.seq:
             self.emit("if (tmp == NULL) {", depth)
-            message = "required field \\\"%s\\\" missing from %s" % (field.name, name)
-            format = "PyErr_SetString(PyExc_TypeError, \"%s\");"
-            self.emit(format % message, depth+1, reflow=False)
-            self.emit("return 1;", depth+1)
+            self.emit("tmp = PyList_New(0);", depth+1)
+            self.emit("if (tmp == NULL) {", depth+1)
+            self.emit("return 1;", depth+2)
+            self.emit("}", depth+1)
+            self.emit("}", depth)
+            self.emit("{", depth)
         else:
-            self.emit("if (tmp == NULL || tmp == Py_None) {", depth)
-            self.emit("Py_CLEAR(tmp);", depth+1)
-            if self.isNumeric(field):
-                if field.name in self.attribute_special_defaults:
-                    self.emit(
-                        "%s = %s;" % (field.name, self.attribute_special_defaults[field.name]),
-                        depth+1,
-                    )
-                else:
-                    self.emit("%s = 0;" % field.name, depth+1)
-            elif not self.isSimpleType(field):
-                self.emit("%s = NULL;" % field.name, depth+1)
+            if not field.opt:
+                self.emit("if (tmp == NULL) {", depth)
+                message = "required field \\\"%s\\\" missing from %s" % (field.name, name)
+                format = "PyErr_SetString(PyExc_TypeError, \"%s\");"
+                self.emit(format % message, depth+1, reflow=False)
+                self.emit("return 1;", depth+1)
             else:
-                raise TypeError("could not determine the default value for %s" % field.name)
-        self.emit("}", depth)
-        self.emit("else {", depth)
+                self.emit("if (tmp == NULL || tmp == Py_None) {", depth)
+                self.emit("Py_CLEAR(tmp);", depth+1)
+                if self.isNumeric(field):
+                    if field.name in self.attribute_special_defaults:
+                        self.emit(
+                            "%s = %s;" % (field.name, self.attribute_special_defaults[field.name]),
+                            depth+1,
+                        )
+                    else:
+                        self.emit("%s = 0;" % field.name, depth+1)
+                elif not self.isSimpleType(field):
+                    self.emit("%s = NULL;" % field.name, depth+1)
+                else:
+                    raise TypeError("could not determine the default value for %s" % field.name)
+            self.emit("}", depth)
+            self.emit("else {", depth)
 
         self.emit("int res;", depth+1)
         if field.seq:
@@ -803,7 +813,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t i, numfields = 0;
     int res = -1;
     PyObject *key, *value, *fields;
-    if (_PyObject_LookupAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
+    if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
         goto cleanup;
     }
     if (fields) {
@@ -877,7 +887,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
     }
 
     PyObject *dict;
-    if (_PyObject_LookupAttr(self, state->__dict__, &dict) < 0) {
+    if (PyObject_GetOptionalAttr(self, state->__dict__, &dict) < 0) {
         return NULL;
     }
     if (dict) {
@@ -887,7 +897,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
 }
 
 static PyMemberDef ast_type_members[] = {
-    {"__dictoffset__", T_PYSSIZET, offsetof(AST_object, dict), READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(AST_object, dict), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -1064,7 +1074,7 @@ static int obj2ast_int(struct ast_state* Py_UNUSED(state), PyObject* obj, int* o
         return 1;
     }
 
-    i = _PyLong_AsInt(obj);
+    i = PyLong_AsInt(obj);
     if (i == -1 && PyErr_Occurred())
         return 1;
     *out = i;
@@ -1198,6 +1208,9 @@ class ASTModuleVisitor(PickleVisitor):
         self.emit('if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0) {', 1)
         self.emit("return -1;", 2)
         self.emit('}', 1)
+        self.emit('if (PyModule_AddIntMacro(m, PyCF_OPTIMIZED_AST) < 0) {', 1)
+        self.emit("return -1;", 2)
+        self.emit('}', 1)
         for dfn in mod.dfns:
             self.visit(dfn)
         self.emit("return 0;", 1)
@@ -1206,6 +1219,7 @@ class ASTModuleVisitor(PickleVisitor):
         self.emit("""
 static PyModuleDef_Slot astmodule_slots[] = {
     {Py_mod_exec, astmodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
@@ -1382,13 +1396,13 @@ PyObject* PyAST_mod2obj(mod_ty t)
 
     int starting_recursion_depth;
     /* Be careful here to prevent overflow. */
-    int COMPILER_STACK_FRAME_SCALE = 3;
+    int COMPILER_STACK_FRAME_SCALE = 2;
     PyThreadState *tstate = _PyThreadState_GET();
     if (!tstate) {
         return 0;
     }
-    state->recursion_limit = C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
-    int recursion_depth = C_RECURSION_LIMIT - tstate->c_recursion_remaining;
+    state->recursion_limit = Py_C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
+    int recursion_depth = Py_C_RECURSION_LIMIT - tstate->c_recursion_remaining;
     starting_recursion_depth = recursion_depth * COMPILER_STACK_FRAME_SCALE;
     state->recursion_depth = starting_recursion_depth;
 
@@ -1531,7 +1545,6 @@ def generate_module_def(mod, metadata, f, internal_h):
         #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
         #include "pycore_interp.h"        // _PyInterpreterState.ast
         #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-        #include "structmember.h"
         #include <stddef.h>
 
         // Forward declaration
@@ -1572,7 +1585,7 @@ def write_header(mod, metadata, f):
         #  error "this header requires Py_BUILD_CORE define"
         #endif
 
-        #include "pycore_asdl.h"
+        #include "pycore_asdl.h"          // _ASDL_SEQ_HEAD
 
     """).lstrip())
 
