@@ -62,6 +62,7 @@ __all__ = [
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
     "Py_DEBUG", "EXCEEDS_RECURSION_LIMIT", "Py_C_RECURSION_LIMIT",
     "skip_on_s390x",
+    "without_optimizer",
     ]
 
 
@@ -2533,3 +2534,19 @@ skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == '
                                 'skipped on s390x')
 
 Py_TRACE_REFS = hasattr(sys, 'getobjects')
+
+# Decorator to disable optimizer while a function run
+def without_optimizer(func):
+    try:
+        import _testinternalcapi
+    except ImportError:
+        return func
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        save_opt = _testinternalcapi.get_optimizer()
+        try:
+            _testinternalcapi.set_optimizer(None)
+            return func(*args, **kwargs)
+        finally:
+            _testinternalcapi.set_optimizer(save_opt)
+    return wrapper

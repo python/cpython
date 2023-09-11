@@ -27774,7 +27774,7 @@ then :
 else $as_nop
   if test "$cross_compiling" = yes
 then :
-  ac_cv_libatomic_needed=yes
+    ac_cv_libatomic_needed=no
 else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -27811,16 +27811,13 @@ int main()
 _ACEOF
 if ac_fn_c_try_run "$LINENO"
 then :
-
   ac_cv_libatomic_needed=no
-
 else $as_nop
-  ac_cv_libatomic_needed=yes
+    ac_cv_libatomic_needed=yes
 fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
-
 
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_libatomic_needed" >&5
