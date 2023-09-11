@@ -271,5 +271,9 @@ def run_single_test(test_name: TestName, runtests: RunTests) -> TestResult:
             print(f"test {test_name} crashed -- {msg}",
                   file=sys.stderr, flush=True)
         result.state = State.UNCAUGHT_EXC
+
+    sys.stdout.flush()
+    sys.stderr.flush()
+
     result.duration = time.perf_counter() - start_time
     return result
