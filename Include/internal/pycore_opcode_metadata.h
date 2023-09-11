@@ -46,7 +46,7 @@
 #define _GUARD_TYPE_VERSION 318
 #define _CHECK_MANAGED_OBJECT_HAS_VALUES 319
 #define _LOAD_ATTR_INSTANCE_VALUE 320
-#define IS_NONE 321
+#define _IS_NONE 321
 #define _ITER_CHECK_LIST 322
 #define _ITER_JUMP_LIST 323
 #define _IS_ITER_EXHAUSTED_LIST 324
@@ -402,7 +402,7 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
             return 1;
         case POP_JUMP_IF_TRUE:
             return 1;
-        case IS_NONE:
+        case _IS_NONE:
             return 1;
         case POP_JUMP_IF_NONE:
             return 1;
@@ -932,7 +932,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 0;
         case POP_JUMP_IF_TRUE:
             return 0;
-        case IS_NONE:
+        case _IS_NONE:
             return 1;
         case POP_JUMP_IF_NONE:
             return 0;
@@ -1363,7 +1363,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [ENTER_EXECUTOR] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG },
     [POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [POP_JUMP_IF_TRUE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
-    [IS_NONE] = { true, INSTR_FMT_IX, 0 },
+    [_IS_NONE] = { true, INSTR_FMT_IX, 0 },
     [POP_JUMP_IF_NONE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [POP_JUMP_IF_NOT_NONE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [JUMP_BACKWARD_NO_INTERRUPT] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
@@ -1628,7 +1628,7 @@ const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
     [_GUARD_TYPE_VERSION] = "_GUARD_TYPE_VERSION",
     [_CHECK_MANAGED_OBJECT_HAS_VALUES] = "_CHECK_MANAGED_OBJECT_HAS_VALUES",
     [_LOAD_ATTR_INSTANCE_VALUE] = "_LOAD_ATTR_INSTANCE_VALUE",
-    [IS_NONE] = "IS_NONE",
+    [_IS_NONE] = "_IS_NONE",
     [_ITER_CHECK_LIST] = "_ITER_CHECK_LIST",
     [_ITER_JUMP_LIST] = "_ITER_JUMP_LIST",
     [_IS_ITER_EXHAUSTED_LIST] = "_IS_ITER_EXHAUSTED_LIST",

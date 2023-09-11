@@ -521,7 +521,7 @@
             break;
         }
 
-        case IS_NONE: {
+        case _IS_NONE: {
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
             break;
         }

@@ -2302,7 +2302,7 @@ dummy_func(
             JUMPBY(oparg * Py_IsTrue(cond));
         }
 
-        op(IS_NONE, (value -- b)) {
+        op(_IS_NONE, (value -- b)) {
             if (Py_IsNone(value)) {
                 b = Py_True;
             }
@@ -2312,9 +2312,9 @@ dummy_func(
             }
         }
 
-        macro(POP_JUMP_IF_NONE) = IS_NONE + POP_JUMP_IF_TRUE;
+        macro(POP_JUMP_IF_NONE) = _IS_NONE + POP_JUMP_IF_TRUE;
 
-        macro(POP_JUMP_IF_NOT_NONE) = IS_NONE + POP_JUMP_IF_FALSE;
+        macro(POP_JUMP_IF_NOT_NONE) = _IS_NONE + POP_JUMP_IF_FALSE;
 
         inst(JUMP_BACKWARD_NO_INTERRUPT, (--)) {
             /* This bytecode is used in the `yield from` or `await` loop.

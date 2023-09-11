@@ -530,7 +530,7 @@ top:  // Jump here after _PUSH_FRAME
             case POP_JUMP_IF_NONE:
             {
                 RESERVE(2, 2);
-                ADD_TO_TRACE(IS_NONE, 0, 0);
+                ADD_TO_TRACE(_IS_NONE, 0, 0);
                 opcode = POP_JUMP_IF_TRUE;
                 goto pop_jump_if_bool;
             }
@@ -538,7 +538,7 @@ top:  // Jump here after _PUSH_FRAME
             case POP_JUMP_IF_NOT_NONE:
             {
                 RESERVE(2, 2);
-                ADD_TO_TRACE(IS_NONE, 0, 0);
+                ADD_TO_TRACE(_IS_NONE, 0, 0);
                 opcode = POP_JUMP_IF_FALSE;
                 goto pop_jump_if_bool;
             }
