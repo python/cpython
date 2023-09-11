@@ -1,7 +1,7 @@
 import os
 import time
 
-from test.libregrtest.runtest import RunTests
+from test.libregrtest.runtests import RunTests
 from test.libregrtest.utils import print_warning, MS_WINDOWS
 
 if MS_WINDOWS:

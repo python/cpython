@@ -22,7 +22,7 @@ from test import libregrtest
 from test import support
 from test.support import os_helper, TestStats
 from test.libregrtest import utils, setup
-from test.libregrtest.runtest import normalize_test_name
+from test.libregrtest.utils import normalize_test_name
 
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")

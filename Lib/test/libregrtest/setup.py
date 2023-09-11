@@ -11,6 +11,7 @@ try:
 except ImportError:
     gc = None
 
+from test.libregrtest.runtests import RunTests
 from test.libregrtest.utils import (
     setup_unraisable_hook, setup_threading_excepthook, fix_umask)
 
@@ -23,6 +24,18 @@ def setup_test_dir(testdir: str | None) -> None:
         # Prepend test directory to sys.path, so runtest() will be able
         # to locate tests
         sys.path.insert(0, os.path.abspath(testdir))
+
+
+def setup_support(runtests: RunTests):
+    support.PGO = runtests.pgo
+    support.PGO_EXTENDED = runtests.pgo_extended
+    support.set_match_tests(runtests.match_tests, runtests.ignore_tests)
+    support.failfast = runtests.fail_fast
+    support.verbose = runtests.verbose
+    if runtests.use_junit:
+        support.junit_xml_list = []
+    else:
+        support.junit_xml_list = None
 
 
 def setup_tests(runtests):
