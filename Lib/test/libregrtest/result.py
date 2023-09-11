@@ -5,7 +5,7 @@ from typing import Any
 from test.support import TestStats
 
 from test.libregrtest.utils import (
-    TestName, FilterTuple,
+    StrJSON, TestName, FilterTuple,
     format_duration, normalize_test_name, print_warning)
 
 
@@ -160,7 +160,7 @@ class TestResult:
         json.dump(self, file, cls=_EncodeTestResult)
 
     @staticmethod
-    def from_json(worker_json) -> 'TestResult':
+    def from_json(worker_json: StrJSON) -> 'TestResult':
         return json.loads(worker_json, object_hook=_decode_test_result)
 
 

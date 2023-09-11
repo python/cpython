@@ -15,7 +15,7 @@ from test.support import threading_helper
 from test.libregrtest.result import State, TestResult
 from test.libregrtest.runtests import RunTests
 from test.libregrtest.save_env import saved_test_environment
-from test.libregrtest.setup import setup_support
+from test.libregrtest.setup import setup_tests
 from test.libregrtest.utils import (
     TestName,
     clear_caches, remove_testfn, abs_module_name, print_warning)
@@ -201,7 +201,7 @@ def _runtest(result: TestResult, runtests: RunTests) -> None:
         faulthandler.dump_traceback_later(timeout, exit=True)
 
     try:
-        setup_support(runtests)
+        setup_tests(runtests)
 
         if output_on_failure:
             support.verbose = True

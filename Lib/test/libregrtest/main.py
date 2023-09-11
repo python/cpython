@@ -15,12 +15,12 @@ from test.libregrtest.findtests import findtests, split_test_packages
 from test.libregrtest.logger import Logger
 from test.libregrtest.result import State
 from test.libregrtest.runtests import RunTests, HuntRefleak
-from test.libregrtest.setup import setup_tests, setup_test_dir
+from test.libregrtest.setup import setup_process, setup_test_dir
 from test.libregrtest.single import run_single_test, PROGRESS_MIN_TIME
 from test.libregrtest.pgo import setup_pgo_tests
 from test.libregrtest.results import TestResults
 from test.libregrtest.utils import (
-    StrPath, StrJSON, TestName, TestList, FilterTuple,
+    StrPath, StrJSON, TestName, TestList, TestTuple, FilterTuple,
     strip_py_suffix, count, format_duration,
     printlist, get_build_info, get_temp_dir, get_work_dir, exit_timeout,
      abs_module_name)
@@ -51,7 +51,7 @@ class Regrtest:
     """
     def __init__(self, ns: Namespace):
         # Log verbosity
-        self.verbose: bool = ns.verbose
+        self.verbose: int = int(ns.verbose)
         self.quiet: bool = ns.quiet
         self.pgo: bool = ns.pgo
         self.pgo_extended: bool = ns.pgo_extended
@@ -122,8 +122,6 @@ class Regrtest:
         self.tmp_dir: StrPath | None = ns.tempdir
 
         # tests
-        self.tests = []
-        self.selected: TestList = []
         self.first_runtests: RunTests | None = None
 
         # used by --slowest
@@ -140,18 +138,18 @@ class Regrtest:
     def log(self, line=''):
         self.logger.log(line)
 
-    def find_tests(self):
+    def find_tests(self, tests: TestList | None = None) -> tuple[TestTuple, TestList | None]:
         if self.single_test_run:
             self.next_single_filename = os.path.join(self.tmp_dir, 'pynexttest')
             try:
                 with open(self.next_single_filename, 'r') as fp:
                     next_test = fp.read().strip()
-                    self.tests = [next_test]
+                    tests = [next_test]
             except OSError:
                 pass
 
         if self.fromfile:
-            self.tests = []
+            tests = []
             # regex to match 'test_builtin' in line:
             # '0:00:00 [  4/400] test_builtin -- test_dict took 1 sec'
             regex = re.compile(r'\btest_[a-zA-Z0-9_]+\b')
@@ -161,9 +159,9 @@ class Regrtest:
                     line = line.strip()
                     match = regex.search(line)
                     if match is not None:
-                        self.tests.append(match.group())
+                        tests.append(match.group())
 
-        strip_py_suffix(self.tests)
+        strip_py_suffix(tests)
 
         if self.pgo:
             # add default PGO tests if no tests are specified
@@ -179,18 +177,18 @@ class Regrtest:
                              exclude=exclude_tests)
 
         if not self.fromfile:
-            self.selected = self.tests or self.cmdline_args
-            if self.selected:
-                self.selected = split_test_packages(self.selected)
+            selected = tests or self.cmdline_args
+            if selected:
+                selected = split_test_packages(selected)
             else:
-                self.selected = alltests
+                selected = alltests
         else:
-            self.selected = self.tests
+            selected = tests
 
         if self.single_test_run:
-            self.selected = self.selected[:1]
+            selected = selected[:1]
             try:
-                pos = alltests.index(self.selected[0])
+                pos = alltests.index(selected[0])
                 self.next_single_test = alltests[pos + 1]
             except IndexError:
                 pass
@@ -198,7 +196,7 @@ class Regrtest:
         # Remove all the selected tests that precede start if it's set.
         if self.starting_test:
             try:
-                del self.selected[:self.selected.index(self.starting_test)]
+                del selected[:selected.index(self.starting_test)]
             except ValueError:
                 print(f"Cannot find starting test: {self.starting_test}")
                 sys.exit(1)
@@ -207,10 +205,12 @@ class Regrtest:
             if self.random_seed is None:
                 self.random_seed = random.randrange(100_000_000)
             random.seed(self.random_seed)
-            random.shuffle(self.selected)
+            random.shuffle(selected)
+
+        return (tuple(selected), tests)
 
     @staticmethod
-    def list_tests(tests: TestList):
+    def list_tests(tests: TestTuple):
         for name in tests:
             print(name)
 
@@ -224,12 +224,12 @@ class Regrtest:
                 if support.match_test(test):
                     print(test.id())
 
-    def list_cases(self):
+    def list_cases(self, tests: TestTuple):
         support.verbose = False
         support.set_match_tests(self.match_tests, self.ignore_tests)
 
         skipped = []
-        for test_name in self.selected:
+        for test_name in tests:
             module_name = abs_module_name(test_name, self.test_dir)
             try:
                 suite = unittest.defaultTestLoader.loadTestsFromName(module_name)
@@ -247,6 +247,10 @@ class Regrtest:
     def _rerun_failed_tests(self, runtests: RunTests):
         # Configure the runner to re-run tests
         if self.num_workers == 0:
+            # Always run tests in fresh processes to have more deterministic
+            # initial state. Don't re-run tests in parallel but limit to a
+            # single worker process to have side effects (on the system load
+            # and timings) between tests.
             self.num_workers = 1
 
         tests, match_tests_dict = self.results.prepare_rerun()
@@ -294,7 +298,8 @@ class Regrtest:
         print()
         print(f"== Tests result: {state} ==")
 
-        self.results.display_result(self.selected, self.quiet, self.print_slowest)
+        self.results.display_result(runtests.tests,
+                                    self.quiet, self.print_slowest)
 
     def run_test(self, test_name: TestName, runtests: RunTests, tracer):
         if tracer is not None:
@@ -404,7 +409,7 @@ class Regrtest:
         return state
 
     def _run_tests_mp(self, runtests: RunTests, num_workers: int) -> None:
-        from test.libregrtest.runtest_mp import RunWorkers
+        from test.libregrtest.run_workers import RunWorkers
         RunWorkers(num_workers, runtests, self.logger, self.results).run()
 
     def finalize_tests(self, tracer):
@@ -454,39 +459,9 @@ class Regrtest:
                 print("Remove file: %s" % name)
                 os_helper.unlink(name)
 
-    def main(self, tests: TestList | None = None):
-        if self.junit_filename and not os.path.isabs(self.junit_filename):
-            self.junit_filename = os.path.abspath(self.junit_filename)
-
-        self.tests = tests
-
-        strip_py_suffix(self.cmdline_args)
-
-        self.tmp_dir = get_temp_dir(self.tmp_dir)
-
-        if self.want_cleanup:
-            self.cleanup_temp_dir(self.tmp_dir)
-            sys.exit(0)
-
-        os.makedirs(self.tmp_dir, exist_ok=True)
-        work_dir = get_work_dir(parent_dir=self.tmp_dir)
-
-        with exit_timeout():
-            # Run the tests in a context manager that temporarily changes the
-            # CWD to a temporary and writable directory. If it's not possible
-            # to create or change the CWD, the original CWD will be used.
-            # The original CWD is available from os_helper.SAVEDCWD.
-            with os_helper.temp_cwd(work_dir, quiet=True):
-                # When using multiprocessing, worker processes will use
-                # work_dir as their parent temporary directory. So when the
-                # main process exit, it removes also subdirectories of worker
-                # processes.
-
-                self._main()
-
-    def create_run_tests(self):
+    def create_run_tests(self, tests: TestTuple):
         return RunTests(
-            tuple(self.selected),
+            tests,
             fail_fast=self.fail_fast,
             match_tests=self.match_tests,
             ignore_tests=self.ignore_tests,
@@ -506,7 +481,7 @@ class Regrtest:
             python_cmd=self.python_cmd,
         )
 
-    def run_tests(self) -> int:
+    def _run_tests(self, selected: TestTuple, tests: TestList | None) -> int:
         if self.hunt_refleak and self.hunt_refleak.warmups < 3:
             msg = ("WARNING: Running tests with --huntrleaks/-R and "
                    "less than 3 warmup repetitions can give false positives!")
@@ -520,17 +495,17 @@ class Regrtest:
         # For a partial run, we do not need to clutter the output.
         if (self.want_header
             or not(self.pgo or self.quiet or self.single_test_run
-                   or self.tests or self.cmdline_args)):
+                   or tests or self.cmdline_args)):
             self.display_header()
 
         if self.randomize:
             print("Using random seed", self.random_seed)
 
-        runtests = self.create_run_tests()
+        runtests = self.create_run_tests(selected)
         self.first_runtests = runtests
         self.logger.set_tests(runtests)
 
-        setup_tests(runtests)
+        setup_process()
 
         self.logger.start_load_tracker()
         try:
@@ -553,20 +528,48 @@ class Regrtest:
         return self.results.get_exitcode(self.fail_env_changed,
                                          self.fail_rerun)
 
-    def _main(self):
+    def run_tests(self, selected: TestTuple, tests: TestList | None) -> int:
+        os.makedirs(self.tmp_dir, exist_ok=True)
+        work_dir = get_work_dir(parent_dir=self.tmp_dir)
+
+        # Put a timeout on Python exit
+        with exit_timeout():
+            # Run the tests in a context manager that temporarily changes the
+            # CWD to a temporary and writable directory. If it's not possible
+            # to create or change the CWD, the original CWD will be used.
+            # The original CWD is available from os_helper.SAVEDCWD.
+            with os_helper.temp_cwd(work_dir, quiet=True):
+                # When using multiprocessing, worker processes will use
+                # work_dir as their parent temporary directory. So when the
+                # main process exit, it removes also subdirectories of worker
+                # processes.
+                return self._run_tests(selected, tests)
+
+    def main(self, tests: TestList | None = None):
+        if self.junit_filename and not os.path.isabs(self.junit_filename):
+            self.junit_filename = os.path.abspath(self.junit_filename)
+
+        strip_py_suffix(self.cmdline_args)
+
+        self.tmp_dir = get_temp_dir(self.tmp_dir)
+
+        if self.want_cleanup:
+            self.cleanup_temp_dir(self.tmp_dir)
+            sys.exit(0)
+
         if self.want_wait:
             input("Press any key to continue...")
 
         setup_test_dir(self.test_dir)
-        self.find_tests()
+        selected, tests = self.find_tests(tests)
 
         exitcode = 0
         if self.want_list_tests:
-            self.list_tests(self.selected)
+            self.list_tests(selected)
         elif self.want_list_cases:
-            self.list_cases()
+            self.list_cases(selected)
         else:
-            exitcode = self.run_tests()
+            exitcode = self.run_tests(selected, tests)
 
         sys.exit(exitcode)
 
