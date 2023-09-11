@@ -1793,11 +1793,11 @@ class CodecsModuleTest(unittest.TestCase):
         self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
 
         # Test a CodecInfo with _is_text_encoding equal to false.
-        orig = codecs.lookup("rot13")
+        orig = codecs.lookup("base64")
         dup = copy.deepcopy(orig)
         self.assertIsNot(dup, orig)
         self.assertFalse(orig._is_text_encoding)
-        self.assertNotEqual(dup.encode, orig.encode)
+        self.assertEqual(dup.encode, orig.encode)
         self.assertEqual(dup.name, orig.name)
         self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
 
@@ -1810,12 +1810,12 @@ class CodecsModuleTest(unittest.TestCase):
                 self.assertEqual(codec_info, unpickled_codec_info)
 
         # Test a CodecInfo with _is_text_encoding equal to false.
-        codec_info = codecs.lookup('rot13')
+        codec_info = codecs.lookup('base64')
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.subTest(protocol=proto):
                 pickled_codec_info = pickle.dumps(codec_info)
                 unpickled_codec_info = pickle.loads(pickled_codec_info)
-                self.assertNotEqual(codec_info, unpickled_codec_info)
+                self.assertEqual(codec_info, unpickled_codec_info)
 
 
 class StreamReaderTest(unittest.TestCase):
