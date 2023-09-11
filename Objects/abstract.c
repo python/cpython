@@ -806,6 +806,27 @@ PyBuffer_Release(Py_buffer *view)
     Py_DECREF(obj);
 }
 
+static int
+_buffer_release_call(void *arg)
+{
+    PyBuffer_Release((Py_buffer *)arg);
+    return 0;
+}
+
+int
+PyUnstable_Buffer_ReleaseInInterpreter(PyInterpreterState *interp,
+                                       Py_buffer *view)
+{
+    return _Py_CallInInterpreter(interp, _buffer_release_call, view);
+}
+
+int
+PyUnstable_Buffer_ReleaseInInterpreterAndRawFree(PyInterpreterState *interp,
+                                                 Py_buffer *view)
+{
+    return _Py_CallInInterpreterAndRawFree(interp, _buffer_release_call, view);
+}
+
 PyObject *
 PyObject_Format(PyObject *obj, PyObject *format_spec)
 {

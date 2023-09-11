@@ -100,6 +100,10 @@ PyAPI_FUNC(int) PyBuffer_FillInfo(Py_buffer *view, PyObject *o, void *buf,
 
 /* Releases a Py_buffer obtained from getbuffer ParseTuple's "s*". */
 PyAPI_FUNC(void) PyBuffer_Release(Py_buffer *view);
+PyAPI_FUNC(int) PyUnstable_Buffer_ReleaseInInterpreter(
+        PyInterpreterState *interp, Py_buffer *view);
+PyAPI_FUNC(int) PyUnstable_Buffer_ReleaseInInterpreterAndRawFree(
+        PyInterpreterState *interp, Py_buffer *view);
 
 /* Maximum number of dimensions */
 #define PyBUF_MAX_NDIM 64
