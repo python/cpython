@@ -734,9 +734,6 @@ compute_parser_flags(PyCompilerFlags *flags)
     if (flags->cf_flags & PyCF_TYPE_COMMENTS) {
         parser_flags |= PyPARSE_TYPE_COMMENTS;
     }
-    if ((flags->cf_flags & PyCF_ONLY_AST) && flags->cf_feature_version < 7) {
-        parser_flags |= PyPARSE_ASYNC_HACKS;
-    }
     if (flags->cf_flags & PyCF_ALLOW_INCOMPLETE_INPUT) {
         parser_flags |= PyPARSE_ALLOW_INCOMPLETE_INPUT;
     }
@@ -755,7 +752,6 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     }
     assert(tok != NULL);
     tok->type_comments = (flags & PyPARSE_TYPE_COMMENTS) > 0;
-    tok->async_hacks = (flags & PyPARSE_ASYNC_HACKS) > 0;
     p->tok = tok;
     p->keywords = NULL;
     p->n_keyword_lists = -1;

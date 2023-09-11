@@ -1,0 +1,1 @@
+Unsupported modules now always fail to be imported.

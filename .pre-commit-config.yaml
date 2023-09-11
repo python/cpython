@@ -10,9 +10,9 @@ repos:
         types_or: [c, python, rst]
 
   - repo: https://github.com/sphinx-contrib/sphinx-lint
-    rev: v0.6.7
+    rev: v0.6.8
     hooks:
       - id: sphinx-lint
         args: [--enable=default-role]
-        files: ^Doc/
+        files: ^Doc/|^Misc/NEWS.d/next/
         types: [rst]

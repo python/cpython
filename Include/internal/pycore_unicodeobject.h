@@ -9,8 +9,23 @@ extern "C" {
 #endif
 
 #include "pycore_fileutils.h"     // _Py_error_handler
+#include "pycore_identifier.h"    // _Py_Identifier
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
+/* --- Characters Type APIs ----------------------------------------------- */
+
+extern int _PyUnicode_IsXidStart(Py_UCS4 ch);
+extern int _PyUnicode_IsXidContinue(Py_UCS4 ch);
+extern int _PyUnicode_ToLowerFull(Py_UCS4 ch, Py_UCS4 *res);
+extern int _PyUnicode_ToTitleFull(Py_UCS4 ch, Py_UCS4 *res);
+extern int _PyUnicode_ToUpperFull(Py_UCS4 ch, Py_UCS4 *res);
+extern int _PyUnicode_ToFoldedFull(Py_UCS4 ch, Py_UCS4 *res);
+extern int _PyUnicode_IsCaseIgnorable(Py_UCS4 ch);
+extern int _PyUnicode_IsCased(Py_UCS4 ch);
+
+/* --- Unicode API -------------------------------------------------------- */
+
+// Export for '_json' shared extension
 PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
     PyObject *op,
     int check_content);
@@ -18,10 +33,10 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
 extern void _PyUnicode_ExactDealloc(PyObject *op);
 extern Py_ssize_t _PyUnicode_InternedSize(void);
 
-/* Get a copy of a Unicode string. */
+// Get a copy of a Unicode string.
+// Export for '_datetime' shared extension.
 PyAPI_FUNC(PyObject*) _PyUnicode_Copy(
-    PyObject *unicode
-    );
+    PyObject *unicode);
 
 /* Unsafe version of PyUnicode_Fill(): don't check arguments and so may crash
    if parameters are invalid (e.g. if length is longer than the string). */
@@ -80,11 +95,13 @@ typedef struct {
     unsigned char readonly;
 } _PyUnicodeWriter ;
 
-/* Initialize a Unicode writer.
- *
- * By default, the minimum buffer size is 0 character and overallocation is
- * disabled. Set min_length, min_char and overallocate attributes to control
- * the allocation of the buffer. */
+// Initialize a Unicode writer.
+//
+// By default, the minimum buffer size is 0 character and overallocation is
+// disabled. Set min_length, min_char and overallocate attributes to control
+// the allocation of the buffer.
+//
+// Export the _PyUnicodeWriter API for '_multibytecodec' shared extension.
 PyAPI_FUNC(void)
 _PyUnicodeWriter_Init(_PyUnicodeWriter *writer);
 
@@ -174,7 +191,7 @@ _PyUnicodeWriter_Dealloc(_PyUnicodeWriter *writer);
 
 /* Format the object based on the format_spec, as defined in PEP 3101
    (Advanced String Formatting). */
-PyAPI_FUNC(int) _PyUnicode_FormatAdvancedWriter(
+extern int _PyUnicode_FormatAdvancedWriter(
     _PyUnicodeWriter *writer,
     PyObject *obj,
     PyObject *format_spec,
@@ -191,12 +208,14 @@ extern PyObject* _PyUnicode_EncodeUTF7(
 
 /* --- UTF-8 Codecs ------------------------------------------------------- */
 
+// Export for '_tkinter' shared extension.
 PyAPI_FUNC(PyObject*) _PyUnicode_AsUTF8String(
     PyObject *unicode,
     const char *errors);
 
 /* --- UTF-32 Codecs ------------------------------------------------------ */
 
+// Export for '_tkinter' shared extension
 PyAPI_FUNC(PyObject*) _PyUnicode_EncodeUTF32(
     PyObject *object,           /* Unicode object */
     const char *errors,         /* error handling */
@@ -204,20 +223,21 @@ PyAPI_FUNC(PyObject*) _PyUnicode_EncodeUTF32(
 
 /* --- UTF-16 Codecs ------------------------------------------------------ */
 
-/* Returns a Python string object holding the UTF-16 encoded value of
-   the Unicode data.
-
-   If byteorder is not 0, output is written according to the following
-   byte order:
-
-   byteorder == -1: little endian
-   byteorder == 0:  native byte order (writes a BOM mark)
-   byteorder == 1:  big endian
-
-   If byteorder is 0, the output string will always start with the
-   Unicode BOM mark (U+FEFF). In the other two modes, no BOM mark is
-   prepended.
-*/
+// Returns a Python string object holding the UTF-16 encoded value of
+// the Unicode data.
+//
+// If byteorder is not 0, output is written according to the following
+// byte order:
+//
+// byteorder == -1: little endian
+// byteorder == 0:  native byte order (writes a BOM mark)
+// byteorder == 1:  big endian
+//
+// If byteorder is 0, the output string will always start with the
+// Unicode BOM mark (U+FEFF). In the other two modes, no BOM mark is
+// prepended.
+//
+// Export for '_tkinter' shared extension
 PyAPI_FUNC(PyObject*) _PyUnicode_EncodeUTF16(
     PyObject* unicode,          /* Unicode object */
     const char *errors,         /* error handling */
@@ -232,8 +252,9 @@ extern PyObject* _PyUnicode_DecodeUnicodeEscapeStateful(
     const char *errors,     /* error handling */
     Py_ssize_t *consumed);  /* bytes consumed */
 
-/* Helper for PyUnicode_DecodeUnicodeEscape that detects invalid escape
-   chars. */
+// Helper for PyUnicode_DecodeUnicodeEscape that detects invalid escape
+// chars.
+// Export for test_peg_generator.
 PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscapeInternal(
     const char *string,     /* Unicode-Escape encoded string */
     Py_ssize_t length,      /* size of string */
@@ -283,13 +304,14 @@ extern PyObject* _PyUnicode_EncodeCharmap(
 
 /* --- Decimal Encoder ---------------------------------------------------- */
 
-/* Coverts a Unicode object holding a decimal value to an ASCII string
-   for using in int, float and complex parsers.
-   Transforms code points that have decimal digit property to the
-   corresponding ASCII digit code points.  Transforms spaces to ASCII.
-   Transforms code points starting from the first non-ASCII code point that
-   is neither a decimal digit nor a space to the end into '?'. */
-
+// Coverts a Unicode object holding a decimal value to an ASCII string
+// for using in int, float and complex parsers.
+// Transforms code points that have decimal digit property to the
+// corresponding ASCII digit code points.  Transforms spaces to ASCII.
+// Transforms code points starting from the first non-ASCII code point that
+// is neither a decimal digit nor a space to the end into '?'.
+//
+// Export for '_testinternalcapi' shared extension.
 PyAPI_FUNC(PyObject*) _PyUnicode_TransformDecimalAndSpaceToASCII(
     PyObject *unicode);         /* Unicode object */
 
@@ -309,9 +331,10 @@ extern int _PyUnicode_EqualToASCIIId(
     _Py_Identifier *right       /* Right identifier */
     );
 
-/* Test whether a unicode is equal to ASCII string.  Return 1 if true,
-   0 otherwise.  The right argument must be ASCII-encoded string.
-   Any error occurs inside will be cleared before return. */
+// Test whether a unicode is equal to ASCII string.  Return 1 if true,
+// 0 otherwise.  The right argument must be ASCII-encoded string.
+// Any error occurs inside will be cleared before return.
+// Export for '_ctypes' shared extension
 PyAPI_FUNC(int) _PyUnicode_EqualToASCIIString(
     PyObject *left,
     const char *right           /* ASCII-encoded string */
@@ -343,19 +366,23 @@ extern Py_ssize_t _PyUnicode_InsertThousandsGrouping(
 
 extern PyObject* _PyUnicode_FormatLong(PyObject *, int, int, int);
 
-/* Return an interned Unicode object for an Identifier; may fail if there is no memory.*/
+// Return an interned Unicode object for an Identifier; may fail if there is no
+// memory.
+// Export for '_testembed' program.
 PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);
 
 /* Fast equality check when the inputs are known to be exact unicode types
    and where the hash values are equal (i.e. a very probable match) */
 extern int _PyUnicode_EQ(PyObject *, PyObject *);
 
-/* Equality check. */
+// Equality check.
+// Export for '_pickle' shared extension.
 PyAPI_FUNC(int) _PyUnicode_Equal(PyObject *, PyObject *);
 
 extern int _PyUnicode_WideCharString_Converter(PyObject *, void *);
 extern int _PyUnicode_WideCharString_Opt_Converter(PyObject *, void *);
 
+// Export for test_peg_generator
 PyAPI_FUNC(Py_ssize_t) _PyUnicode_ScanIdentifier(PyObject *);
 
 /* --- Runtime lifecycle -------------------------------------------------- */
