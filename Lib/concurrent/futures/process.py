@@ -503,6 +503,10 @@ class _ExecutorManagerThread(threading.Thread):
         # https://github.com/python/cpython/issues/94777
         self.call_queue._reader.close()
 
+        # gh-107219: Close the connection writer which can unblock
+        # Queue._feed() if it was stuck in send_bytes().
+        self.call_queue._writer.close()
+
         # clean up resources
         self.join_executor_internals()
 
