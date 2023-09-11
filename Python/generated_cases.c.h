@@ -2996,8 +2996,13 @@
             PyObject *cond;
             cond = stack_pointer[-1];
             assert(PyBool_Check(cond));
-            JUMPBY(oparg * Py_IsFalse(cond));
+            int flag = Py_IsFalse(cond);
+            #if ENABLE_SPECIALIZATION
+            next_instr->cache = (next_instr->cache << 1) | flag;
+            #endif
+            JUMPBY(oparg * flag);
             STACK_SHRINK(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -3005,8 +3010,13 @@
             PyObject *cond;
             cond = stack_pointer[-1];
             assert(PyBool_Check(cond));
-            JUMPBY(oparg * Py_IsTrue(cond));
+            int flag = Py_IsTrue(cond);
+            #if ENABLE_SPECIALIZATION
+            next_instr->cache = (next_instr->cache << 1) | flag;
+            #endif
+            JUMPBY(oparg * flag);
             STACK_SHRINK(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -3029,9 +3039,14 @@
             cond = b;
             {
                 assert(PyBool_Check(cond));
-                JUMPBY(oparg * Py_IsTrue(cond));
+                int flag = Py_IsTrue(cond);
+                #if ENABLE_SPECIALIZATION
+                next_instr->cache = (next_instr->cache << 1) | flag;
+                #endif
+                JUMPBY(oparg * flag);
             }
             STACK_SHRINK(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -3054,9 +3069,14 @@
             cond = b;
             {
                 assert(PyBool_Check(cond));
-                JUMPBY(oparg * Py_IsFalse(cond));
+                int flag = Py_IsFalse(cond);
+                #if ENABLE_SPECIALIZATION
+                next_instr->cache = (next_instr->cache << 1) | flag;
+                #endif
+                JUMPBY(oparg * flag);
             }
             STACK_SHRINK(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -4921,8 +4941,13 @@
             PyObject *cond = POP();
             assert(PyBool_Check(cond));
             _Py_CODEUNIT *here = next_instr - 1;
-            int offset = Py_IsTrue(cond) * oparg;
+            int flag = Py_IsTrue(cond);
+            int offset = flag * oparg;
+            #if ENABLE_SPECIALIZATION
+            next_instr->cache = (next_instr->cache << 1) | flag;
+            #endif
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -4930,23 +4955,33 @@
             PyObject *cond = POP();
             assert(PyBool_Check(cond));
             _Py_CODEUNIT *here = next_instr - 1;
-            int offset = Py_IsFalse(cond) * oparg;
+            int flag = Py_IsFalse(cond);
+            int offset = flag * oparg;
+            #if ENABLE_SPECIALIZATION
+            next_instr->cache = (next_instr->cache << 1) | flag;
+            #endif
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
+            next_instr += 1;
             DISPATCH();
         }
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_NONE) {
             PyObject *value = POP();
-            _Py_CODEUNIT *here = next_instr-1;
+            _Py_CODEUNIT *here = next_instr - 1;
+            int flag = Py_IsNone(value);
             int offset;
-            if (Py_IsNone(value)) {
+            if (flag) {
                 offset = oparg;
             }
             else {
                 Py_DECREF(value);
                 offset = 0;
             }
+            #if ENABLE_SPECIALIZATION
+            next_instr->cache = (next_instr->cache << 1) | flag;
+            #endif
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -4954,14 +4989,19 @@
             PyObject *value = POP();
             _Py_CODEUNIT *here = next_instr-1;
             int offset;
-            if (Py_IsNone(value)) {
+            int nflag = Py_IsNone(value);
+            if (nflag) {
                 offset = 0;
             }
             else {
                 Py_DECREF(value);
                 offset = oparg;
             }
+            #if ENABLE_SPECIALIZATION
+            next_instr->cache = (next_instr->cache << 1) | !nflag;
+            #endif
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
+            next_instr += 1;
             DISPATCH();
         }
 
