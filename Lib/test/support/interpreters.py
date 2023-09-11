@@ -7,7 +7,8 @@ import _xxinterpchannels as _channels
 # aliases:
 from _xxsubinterpreters import is_shareable
 from _xxinterpchannels import (
-    ChannelError, ChannelNotFoundError, ChannelEmptyError,
+    ChannelError, ChannelNotFoundError, ChannelClosedError,
+    ChannelEmptyError, ChannelNotEmptyError,
 )
 
 
