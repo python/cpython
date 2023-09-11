@@ -132,7 +132,9 @@ class PyCompileTestsBase:
             os.chmod(self.directory, mode.st_mode)
 
     def test_bad_coding(self):
-        bad_coding = os.path.join(os.path.dirname(__file__), 'bad_coding2.py')
+        bad_coding = os.path.join(os.path.dirname(__file__),
+                                  'tokenizedata',
+                                  'bad_coding2.py')
         with support.captured_stderr():
             self.assertIsNone(py_compile.compile(bad_coding, doraise=False))
         self.assertFalse(os.path.exists(
@@ -195,7 +197,9 @@ class PyCompileTestsBase:
         self.assertEqual(flags, 0b1)
 
     def test_quiet(self):
-        bad_coding = os.path.join(os.path.dirname(__file__), 'bad_coding2.py')
+        bad_coding = os.path.join(os.path.dirname(__file__),
+                                  'tokenizedata',
+                                  'bad_coding2.py')
         with support.captured_stderr() as stderr:
             self.assertIsNone(py_compile.compile(bad_coding, doraise=False, quiet=2))
             self.assertIsNone(py_compile.compile(bad_coding, doraise=True, quiet=2))
