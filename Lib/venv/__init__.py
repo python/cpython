@@ -551,7 +551,7 @@ def main(args=None):
                         action='store_const', const=frozenset(),
                         default=frozenset(['git']),
                         help='Skips adding SCM ignore files to the environment '
-                             'directory (git is supported by default).')
+                             'directory (Git is supported by default).')
     options = parser.parse_args(args)
     if options.upgrade and options.clear:
         raise ValueError('you cannot supply --upgrade and --clear together.')
