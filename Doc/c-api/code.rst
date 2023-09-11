@@ -33,27 +33,46 @@ bound into a function.
 
    Return the number of free variables in *co*.
 
-.. c:function:: PyCodeObject* PyCode_New(int argcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
+.. c:function:: PyCodeObject* PyUnstable_Code_New(int argcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, PyObject *qualname, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
 
    Return a new code object.  If you need a dummy code object to create a frame,
-   use :c:func:`PyCode_NewEmpty` instead.  Calling :c:func:`PyCode_New` directly
-   will bind you to a precise Python version since the definition of the bytecode
-   changes often. The many arguments of this function are inter-dependent in complex
+   use :c:func:`PyCode_NewEmpty` instead.
+
+   Since the definition of the bytecode changes often, calling
+   :c:func:`PyUnstable_Code_New` directly can bind you to a precise Python version.
+
+   The many arguments of this function are inter-dependent in complex
    ways, meaning that subtle changes to values are likely to result in incorrect
    execution or VM crashes. Use this function only with extreme care.
 
    .. versionchanged:: 3.11
-      Added ``exceptiontable`` parameter.
+      Added ``qualname`` and ``exceptiontable`` parameters.
 
-.. c:function:: PyCodeObject* PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
+   .. index:: single: PyCode_New
 
-   Similar to :c:func:`PyCode_New`, but with an extra "posonlyargcount" for positional-only arguments.
-   The same caveats that apply to ``PyCode_New`` also apply to this function.
+   .. versionchanged:: 3.12
 
-   .. versionadded:: 3.8
+      Renamed from ``PyCode_New`` as part of :ref:`unstable-c-api`.
+      The old name is deprecated, but will remain available until the
+      signature changes again.
+
+.. c:function:: PyCodeObject* PyUnstable_Code_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, PyObject *qualname, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
+
+   Similar to :c:func:`PyUnstable_Code_New`, but with an extra "posonlyargcount" for positional-only arguments.
+   The same caveats that apply to ``PyUnstable_Code_New`` also apply to this function.
+
+   .. index:: single: PyCode_NewWithPosOnlyArgs
+
+   .. versionadded:: 3.8 as ``PyCode_NewWithPosOnlyArgs``
 
    .. versionchanged:: 3.11
-      Added ``exceptiontable`` parameter.
+      Added ``qualname`` and  ``exceptiontable`` parameters.
+
+   .. versionchanged:: 3.12
+
+      Renamed to ``PyUnstable_Code_NewWithPosOnlyArgs``.
+      The old name is deprecated, but will remain available until the
+      signature changes again.
 
 .. c:function:: PyCodeObject* PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
 
@@ -76,6 +95,8 @@ bound into a function.
    information is not available for any particular element.
 
    Returns ``1`` if the function succeeds and 0 otherwise.
+
+   .. versionadded:: 3.11
 
 .. c:function:: PyObject* PyCode_GetCode(PyCodeObject *co)
 
@@ -151,6 +172,11 @@ bound into a function.
    before the destruction of *co* takes place, so the prior state of *co*
    can be inspected.
 
+   If *event* is ``PY_CODE_EVENT_DESTROY``, taking a reference in the callback
+   to the about-to-be-destroyed code object will resurrect it and prevent it
+   from being freed at this time. When the resurrected object is destroyed
+   later, any watcher callbacks active at that time will be called again.
+
    Users of this API should not rely on internal runtime implementation
    details. Such details may include, but are not limited to, the exact
    order and timing of creation and destruction of code objects. While
@@ -158,8 +184,81 @@ bound into a function.
    (including whether a callback is invoked or not), it does not change
    the semantics of the Python code being executed.
 
-   If the callback returns with an exception set, it must return ``-1``; this
-   exception will be printed as an unraisable exception using
-   :c:func:`PyErr_WriteUnraisable`. Otherwise it should return ``0``.
+   If the callback sets an exception, it must return ``-1``; this exception will
+   be printed as an unraisable exception using :c:func:`PyErr_WriteUnraisable`.
+   Otherwise it should return ``0``.
+
+   There may already be a pending exception set on entry to the callback. In
+   this case, the callback should return ``0`` with the same exception still
+   set. This means the callback may not call any other API that can set an
+   exception unless it saves and clears the exception state first, and restores
+   it before returning.
 
    .. versionadded:: 3.12
+
+
+Extra information
+-----------------
+
+To support low-level extensions to frame evaluation, such as external
+just-in-time compilers, it is possible to attach arbitrary extra data to
+code objects.
+
+These functions are part of the unstable C API tier:
+this functionality is a CPython implementation detail, and the API
+may change without deprecation warnings.
+
+.. c:function:: Py_ssize_t PyUnstable_Eval_RequestCodeExtraIndex(freefunc free)
+
+   Return a new an opaque index value used to adding data to code objects.
+
+   You generally call this function once (per interpreter) and use the result
+   with ``PyCode_GetExtra`` and ``PyCode_SetExtra`` to manipulate
+   data on individual code objects.
+
+   If *free* is not ``NULL``: when a code object is deallocated,
+   *free* will be called on non-``NULL`` data stored under the new index.
+   Use :c:func:`Py_DecRef` when storing :c:type:`PyObject`.
+
+   .. index:: single: _PyEval_RequestCodeExtraIndex
+
+   .. versionadded:: 3.6 as ``_PyEval_RequestCodeExtraIndex``
+
+   .. versionchanged:: 3.12
+
+     Renamed to ``PyUnstable_Eval_RequestCodeExtraIndex``.
+     The old private name is deprecated, but will be available until the API
+     changes.
+
+.. c:function:: int PyUnstable_Code_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
+
+   Set *extra* to the extra data stored under the given index.
+   Return 0 on success. Set an exception and return -1 on failure.
+
+   If no data was set under the index, set *extra* to ``NULL`` and return
+   0 without setting an exception.
+
+   .. index:: single: _PyCode_GetExtra
+
+   .. versionadded:: 3.6 as ``_PyCode_GetExtra``
+
+   .. versionchanged:: 3.12
+
+     Renamed to ``PyUnstable_Code_GetExtra``.
+     The old private name is deprecated, but will be available until the API
+     changes.
+
+.. c:function:: int PyUnstable_Code_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
+
+   Set the extra data stored under the given index to *extra*.
+   Return 0 on success. Set an exception and return -1 on failure.
+
+   .. index:: single: _PyCode_SetExtra
+
+   .. versionadded:: 3.6 as ``_PyCode_SetExtra``
+
+   .. versionchanged:: 3.12
+
+     Renamed to ``PyUnstable_Code_SetExtra``.
+     The old private name is deprecated, but will be available until the API
+     changes.

@@ -14,6 +14,10 @@ try:
     import _testcapi
 except ImportError:
     _testcapi = None
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 
 from test.support import skip_if_buggy_ucrt_strfptime
 
@@ -761,7 +765,8 @@ class TestPytime(unittest.TestCase):
         self.assertIs(lt.tm_zone, None)
 
 
-@unittest.skipIf(_testcapi is None, 'need the _testcapi module')
+@unittest.skipIf(_testcapi is None, 'need the _testinternalcapi module')
+@unittest.skipIf(_testinternalcapi is None, 'need the _testinternalcapi module')
 class CPyTimeTestCase:
     """
     Base class to test the C _PyTime_t API.
@@ -769,7 +774,7 @@ class CPyTimeTestCase:
     OVERFLOW_SECONDS = None
 
     def setUp(self):
-        from _testcapi import SIZEOF_TIME_T
+        from _testinternalcapi import SIZEOF_TIME_T
         bits = SIZEOF_TIME_T * 8 - 1
         self.time_t_min = -2 ** bits
         self.time_t_max = 2 ** bits - 1
@@ -897,39 +902,39 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
     OVERFLOW_SECONDS = math.ceil((2**63 + 1) / SEC_TO_NS)
 
     def test_FromSeconds(self):
-        from _testcapi import PyTime_FromSeconds
+        from _testinternalcapi import _PyTime_FromSeconds
 
-        # PyTime_FromSeconds() expects a C int, reject values out of range
+        # _PyTime_FromSeconds() expects a C int, reject values out of range
         def c_int_filter(secs):
             return (_testcapi.INT_MIN <= secs <= _testcapi.INT_MAX)
 
-        self.check_int_rounding(lambda secs, rnd: PyTime_FromSeconds(secs),
+        self.check_int_rounding(lambda secs, rnd: _PyTime_FromSeconds(secs),
                                 lambda secs: secs * SEC_TO_NS,
                                 value_filter=c_int_filter)
 
         # test nan
         for time_rnd, _ in ROUNDING_MODES:
             with self.assertRaises(TypeError):
-                PyTime_FromSeconds(float('nan'))
+                _PyTime_FromSeconds(float('nan'))
 
     def test_FromSecondsObject(self):
-        from _testcapi import PyTime_FromSecondsObject
+        from _testinternalcapi import _PyTime_FromSecondsObject
 
         self.check_int_rounding(
-            PyTime_FromSecondsObject,
+            _PyTime_FromSecondsObject,
             lambda secs: secs * SEC_TO_NS)
 
         self.check_float_rounding(
-            PyTime_FromSecondsObject,
+            _PyTime_FromSecondsObject,
             lambda ns: self.decimal_round(ns * SEC_TO_NS))
 
         # test nan
         for time_rnd, _ in ROUNDING_MODES:
             with self.assertRaises(ValueError):
-                PyTime_FromSecondsObject(float('nan'), time_rnd)
+                _PyTime_FromSecondsObject(float('nan'), time_rnd)
 
     def test_AsSecondsDouble(self):
-        from _testcapi import PyTime_AsSecondsDouble
+        from _testinternalcapi import _PyTime_AsSecondsDouble
 
         def float_converter(ns):
             if abs(ns) % SEC_TO_NS == 0:
@@ -937,14 +942,14 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
             else:
                 return float(ns) / SEC_TO_NS
 
-        self.check_int_rounding(lambda ns, rnd: PyTime_AsSecondsDouble(ns),
+        self.check_int_rounding(lambda ns, rnd: _PyTime_AsSecondsDouble(ns),
                                 float_converter,
                                 NS_TO_SEC)
 
         # test nan
         for time_rnd, _ in ROUNDING_MODES:
             with self.assertRaises(TypeError):
-                PyTime_AsSecondsDouble(float('nan'))
+                _PyTime_AsSecondsDouble(float('nan'))
 
     def create_decimal_converter(self, denominator):
         denom = decimal.Decimal(denominator)
@@ -956,7 +961,7 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
         return converter
 
     def test_AsTimeval(self):
-        from _testcapi import PyTime_AsTimeval
+        from _testinternalcapi import _PyTime_AsTimeval
 
         us_converter = self.create_decimal_converter(US_TO_NS)
 
@@ -973,28 +978,28 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
         else:
             seconds_filter = self.time_t_filter
 
-        self.check_int_rounding(PyTime_AsTimeval,
+        self.check_int_rounding(_PyTime_AsTimeval,
                                 timeval_converter,
                                 NS_TO_SEC,
                                 value_filter=seconds_filter)
 
-    @unittest.skipUnless(hasattr(_testcapi, 'PyTime_AsTimespec'),
-                         'need _testcapi.PyTime_AsTimespec')
+    @unittest.skipUnless(hasattr(_testinternalcapi, '_PyTime_AsTimespec'),
+                         'need _testinternalcapi._PyTime_AsTimespec')
     def test_AsTimespec(self):
-        from _testcapi import PyTime_AsTimespec
+        from _testinternalcapi import _PyTime_AsTimespec
 
         def timespec_converter(ns):
             return divmod(ns, SEC_TO_NS)
 
-        self.check_int_rounding(lambda ns, rnd: PyTime_AsTimespec(ns),
+        self.check_int_rounding(lambda ns, rnd: _PyTime_AsTimespec(ns),
                                 timespec_converter,
                                 NS_TO_SEC,
                                 value_filter=self.time_t_filter)
 
-    @unittest.skipUnless(hasattr(_testcapi, 'PyTime_AsTimeval_clamp'),
-                         'need _testcapi.PyTime_AsTimeval_clamp')
+    @unittest.skipUnless(hasattr(_testinternalcapi, '_PyTime_AsTimeval_clamp'),
+                         'need _testinternalcapi._PyTime_AsTimeval_clamp')
     def test_AsTimeval_clamp(self):
-        from _testcapi import PyTime_AsTimeval_clamp
+        from _testinternalcapi import _PyTime_AsTimeval_clamp
 
         if sys.platform == 'win32':
             from _testcapi import LONG_MIN, LONG_MAX
@@ -1005,7 +1010,7 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
             tv_sec_min = self.time_t_min
 
         for t in (_PyTime_MIN, _PyTime_MAX):
-            ts = PyTime_AsTimeval_clamp(t, _PyTime.ROUND_CEILING)
+            ts = _PyTime_AsTimeval_clamp(t, _PyTime.ROUND_CEILING)
             with decimal.localcontext() as context:
                 context.rounding = decimal.ROUND_CEILING
                 us = self.decimal_round(decimal.Decimal(t) / US_TO_NS)
@@ -1018,13 +1023,13 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
                 tv_usec = 0
             self.assertEqual(ts, (tv_sec, tv_usec))
 
-    @unittest.skipUnless(hasattr(_testcapi, 'PyTime_AsTimespec_clamp'),
-                         'need _testcapi.PyTime_AsTimespec_clamp')
+    @unittest.skipUnless(hasattr(_testinternalcapi, '_PyTime_AsTimespec_clamp'),
+                         'need _testinternalcapi._PyTime_AsTimespec_clamp')
     def test_AsTimespec_clamp(self):
-        from _testcapi import PyTime_AsTimespec_clamp
+        from _testinternalcapi import _PyTime_AsTimespec_clamp
 
         for t in (_PyTime_MIN, _PyTime_MAX):
-            ts = PyTime_AsTimespec_clamp(t)
+            ts = _PyTime_AsTimespec_clamp(t)
             tv_sec, tv_nsec = divmod(t, NS_TO_SEC)
             if self.time_t_max < tv_sec:
                 tv_sec = self.time_t_max
@@ -1035,16 +1040,16 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
             self.assertEqual(ts, (tv_sec, tv_nsec))
 
     def test_AsMilliseconds(self):
-        from _testcapi import PyTime_AsMilliseconds
+        from _testinternalcapi import _PyTime_AsMilliseconds
 
-        self.check_int_rounding(PyTime_AsMilliseconds,
+        self.check_int_rounding(_PyTime_AsMilliseconds,
                                 self.create_decimal_converter(MS_TO_NS),
                                 NS_TO_SEC)
 
     def test_AsMicroseconds(self):
-        from _testcapi import PyTime_AsMicroseconds
+        from _testinternalcapi import _PyTime_AsMicroseconds
 
-        self.check_int_rounding(PyTime_AsMicroseconds,
+        self.check_int_rounding(_PyTime_AsMicroseconds,
                                 self.create_decimal_converter(US_TO_NS),
                                 NS_TO_SEC)
 
@@ -1058,13 +1063,13 @@ class TestOldPyTime(CPyTimeTestCase, unittest.TestCase):
     OVERFLOW_SECONDS = 2 ** 64
 
     def test_object_to_time_t(self):
-        from _testcapi import pytime_object_to_time_t
+        from _testinternalcapi import _PyTime_ObjectToTime_t
 
-        self.check_int_rounding(pytime_object_to_time_t,
+        self.check_int_rounding(_PyTime_ObjectToTime_t,
                                 lambda secs: secs,
                                 value_filter=self.time_t_filter)
 
-        self.check_float_rounding(pytime_object_to_time_t,
+        self.check_float_rounding(_PyTime_ObjectToTime_t,
                                   self.decimal_round,
                                   value_filter=self.time_t_filter)
 
@@ -1084,36 +1089,36 @@ class TestOldPyTime(CPyTimeTestCase, unittest.TestCase):
         return converter
 
     def test_object_to_timeval(self):
-        from _testcapi import pytime_object_to_timeval
+        from _testinternalcapi import _PyTime_ObjectToTimeval
 
-        self.check_int_rounding(pytime_object_to_timeval,
+        self.check_int_rounding(_PyTime_ObjectToTimeval,
                                 lambda secs: (secs, 0),
                                 value_filter=self.time_t_filter)
 
-        self.check_float_rounding(pytime_object_to_timeval,
+        self.check_float_rounding(_PyTime_ObjectToTimeval,
                                   self.create_converter(SEC_TO_US),
                                   value_filter=self.time_t_filter)
 
          # test nan
         for time_rnd, _ in ROUNDING_MODES:
             with self.assertRaises(ValueError):
-                pytime_object_to_timeval(float('nan'), time_rnd)
+                _PyTime_ObjectToTimeval(float('nan'), time_rnd)
 
     def test_object_to_timespec(self):
-        from _testcapi import pytime_object_to_timespec
+        from _testinternalcapi import _PyTime_ObjectToTimespec
 
-        self.check_int_rounding(pytime_object_to_timespec,
+        self.check_int_rounding(_PyTime_ObjectToTimespec,
                                 lambda secs: (secs, 0),
                                 value_filter=self.time_t_filter)
 
-        self.check_float_rounding(pytime_object_to_timespec,
+        self.check_float_rounding(_PyTime_ObjectToTimespec,
                                   self.create_converter(SEC_TO_NS),
                                   value_filter=self.time_t_filter)
 
         # test nan
         for time_rnd, _ in ROUNDING_MODES:
             with self.assertRaises(ValueError):
-                pytime_object_to_timespec(float('nan'), time_rnd)
+                _PyTime_ObjectToTimespec(float('nan'), time_rnd)
 
 @unittest.skipUnless(sys.platform == "darwin", "test weak linking on macOS")
 class TestTimeWeaklinking(unittest.TestCase):

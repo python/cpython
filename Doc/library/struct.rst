@@ -1,6 +1,10 @@
 :mod:`struct` --- Interpret bytes as packed binary data
 =======================================================
 
+.. testsetup:: *
+
+   from struct import *
+
 .. module:: struct
    :synopsis: Interpret bytes as packed binary data.
 
@@ -231,9 +235,9 @@ platform-dependent.
 | ``Q``  | :c:expr:`unsigned long   | integer            | 8              | \(2)       |
 |        | long`                    |                    |                |            |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``n``  | :c:expr:`ssize_t`        | integer            |                | \(3)       |
+| ``n``  | :c:type:`ssize_t`        | integer            |                | \(3)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``N``  | :c:expr:`size_t`         | integer            |                | \(3)       |
+| ``N``  | :c:type:`size_t`         | integer            |                | \(3)       |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``e``  | \(6)                     | float              | 2              | \(4)       |
 +--------+--------------------------+--------------------+----------------+------------+
@@ -266,11 +270,11 @@ Notes:
 
 (2)
    When attempting to pack a non-integer using any of the integer conversion
-   codes, if the non-integer has a :meth:`__index__` method then that method is
+   codes, if the non-integer has a :meth:`~object.__index__` method then that method is
    called to convert the argument to an integer before packing.
 
    .. versionchanged:: 3.2
-      Added use of the :meth:`__index__` method for non-integers.
+      Added use of the :meth:`~object.__index__` method for non-integers.
 
 (3)
    The ``'n'`` and ``'N'`` conversion codes are only available for the native
@@ -371,7 +375,7 @@ ordering::
     >>> from struct import *
     >>> pack(">bhl", 1, 2, 3)
     b'\x01\x00\x02\x00\x00\x00\x03'
-    >>> unpack('>bhl', b'\x01\x00\x02\x00\x00\x00\x03'
+    >>> unpack('>bhl', b'\x01\x00\x02\x00\x00\x00\x03')
     (1, 2, 3)
     >>> calcsize('>bhl')
     7
@@ -462,7 +466,7 @@ In such cases, the ``@`` format character should be used to specify
 native byte ordering and data sizes.  Internal pad bytes are normally inserted
 automatically.  It is possible that a zero-repeat format code will be
 needed at the end of a format string to round up to the correct
-byte boundary for proper alignment of consective chunks of data.
+byte boundary for proper alignment of consecutive chunks of data.
 
 Consider these two simple examples (on a 64-bit, little-endian
 machine)::
@@ -548,9 +552,9 @@ The :mod:`struct` module also defines the following type:
    .. note::
 
       The compiled versions of the most recent format strings passed to
-      :class:`Struct` and the module-level functions are cached, so programs
-      that use only a few format strings needn't worry about reusing a single
-      :class:`Struct` instance.
+      the module-level functions are cached, so programs that use only a few
+      format strings needn't worry about reusing a single :class:`Struct`
+      instance.
 
    Compiled Struct objects support the following methods and attributes:
 
@@ -597,9 +601,14 @@ The :mod:`struct` module also defines the following type:
       The calculated size of the struct (and hence of the bytes object produced
       by the :meth:`pack` method) corresponding to :attr:`format`.
 
+   .. versionchanged:: 3.13 The *repr()* of structs has changed.  It
+      is now:
+
+         >>> Struct('i')
+         Struct('i')
 
 .. _half precision format: https://en.wikipedia.org/wiki/Half-precision_floating-point_format
 
 .. _ieee 754 standard: https://en.wikipedia.org/wiki/IEEE_754-2008_revision
 
-.. _IETF RFC 1700: https://tools.ietf.org/html/rfc1700
+.. _IETF RFC 1700: https://datatracker.ietf.org/doc/html/rfc1700

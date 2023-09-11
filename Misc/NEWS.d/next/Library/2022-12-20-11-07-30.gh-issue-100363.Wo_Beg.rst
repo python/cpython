@@ -1,1 +1,0 @@
-Speed up :func:`asyncio.get_running_loop` by removing redundant ``getpid`` checks. Patch by Kumar Aditya.

@@ -12,6 +12,7 @@ import stat
 import types
 import weakref
 import gc
+import shutil
 from unittest import mock
 
 import unittest
@@ -849,6 +850,15 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         finally:
             tempfile.tempdir = orig_tempdir
 
+    def test_path_is_absolute(self):
+        # Test that the path returned by mkdtemp with a relative `dir`
+        # argument is absolute
+        try:
+            path = tempfile.mkdtemp(dir=".")
+            self.assertTrue(os.path.isabs(path))
+        finally:
+            os.rmdir(path)
+
 
 class TestMktemp(BaseTestCase):
     """Test mktemp()."""
@@ -1015,7 +1025,7 @@ class TestNamedTemporaryFile(BaseTestCase):
         self.assertRaises(ValueError, use_closed)
 
     def test_context_man_not_del_on_close_if_delete_on_close_false(self):
-        # Issue gh-58451: tempfile.NamedTemporaryFile is not particulary useful
+        # Issue gh-58451: tempfile.NamedTemporaryFile is not particularly useful
         # on Windows
         # A NamedTemporaryFile is NOT deleted when closed if
         # delete_on_close=False, but is deleted on context manager exit
@@ -1607,7 +1617,7 @@ class TestTemporaryDirectory(BaseTestCase):
         finally:
             os.rmdir(dir)
 
-    def test_explict_cleanup_ignore_errors(self):
+    def test_explicit_cleanup_ignore_errors(self):
         """Test that cleanup doesn't return an error when ignoring them."""
         with tempfile.TemporaryDirectory() as working_dir:
             temp_dir = self.do_create(
@@ -1824,9 +1834,25 @@ class TestTemporaryDirectory(BaseTestCase):
                     d.cleanup()
                 self.assertFalse(os.path.exists(d.name))
 
-    @unittest.skipUnless(hasattr(os, 'chflags'), 'requires os.lchflags')
+    @unittest.skipUnless(hasattr(os, 'chflags'), 'requires os.chflags')
     def test_flags(self):
         flags = stat.UF_IMMUTABLE | stat.UF_NOUNLINK
+
+        # skip the test if these flags are not supported (ex: FreeBSD 13)
+        filename = os_helper.TESTFN
+        try:
+            open(filename, "w").close()
+            try:
+                os.chflags(filename, flags)
+            except OSError as exc:
+                # "OSError: [Errno 45] Operation not supported"
+                self.skipTest(f"chflags() doesn't support "
+                              f"UF_IMMUTABLE|UF_NOUNLINK: {exc}")
+            else:
+                os.chflags(filename, 0)
+        finally:
+            os_helper.unlink(filename)
+
         d = self.do_create(recurse=3, dirs=2, files=2)
         with d:
             # Change files and directories flags recursively.
@@ -1837,6 +1863,11 @@ class TestTemporaryDirectory(BaseTestCase):
             d.cleanup()
         self.assertFalse(os.path.exists(d.name))
 
+    def test_delete_false(self):
+        with tempfile.TemporaryDirectory(delete=False) as working_dir:
+            pass
+        self.assertTrue(os.path.exists(working_dir))
+        shutil.rmtree(working_dir)
 
 if __name__ == "__main__":
     unittest.main()

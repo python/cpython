@@ -2460,9 +2460,24 @@ class TestPatma(unittest.TestCase):
             def __eq__(self, other):
                 return True
         x = eq = Eq()
+        # None
         y = None
         match x:
             case None:
+                y = 0
+        self.assertIs(x, eq)
+        self.assertEqual(y, None)
+        # True
+        y = None
+        match x:
+            case True:
+                y = 0
+        self.assertIs(x, eq)
+        self.assertEqual(y, None)
+        # False
+        y = None
+        match x:
+            case False:
                 y = 0
         self.assertIs(x, eq)
         self.assertEqual(y, None)
@@ -2667,6 +2682,83 @@ class TestPatma(unittest.TestCase):
         c = C()
         setattr(c, "__attr", "spam")  # setattr is needed because we're in a class scope
         self.assertEqual(Outer().f(c), "spam")
+
+    def test_patma_250(self):
+        def f(x):
+            match x:
+                case {"foo": y} if y >= 0:
+                    return True
+                case {"foo": y} if y < 0:
+                    return False
+
+        self.assertIs(f({"foo": 1}), True)
+        self.assertIs(f({"foo": -1}), False)
+
+    def test_patma_251(self):
+        def f(v, x):
+            match v:
+                case x.attr if x.attr >= 0:
+                    return True
+                case x.attr if x.attr < 0:
+                    return False
+                case _:
+                    return None
+
+        class X:
+            def __init__(self, attr):
+                self.attr = attr
+
+        self.assertIs(f(1, X(1)), True)
+        self.assertIs(f(-1, X(-1)), False)
+        self.assertIs(f(1, X(-1)), None)
+
+    def test_patma_252(self):
+        # Side effects must be possible in guards:
+        effects = []
+        def lt(x, y):
+            effects.append((x, y))
+            return x < y
+
+        res = None
+        match {"foo": 1}:
+            case {"foo": x} if lt(x, 0):
+                res = 0
+            case {"foo": x} if lt(x, 1):
+                res = 1
+            case {"foo": x} if lt(x, 2):
+                res = 2
+
+        self.assertEqual(res, 2)
+        self.assertEqual(effects, [(1, 0), (1, 1), (1, 2)])
+
+    def test_patma_253(self):
+        def f(v):
+            match v:
+                case [x] | x:
+                    return x
+
+        self.assertEqual(f(1), 1)
+        self.assertEqual(f([1]), 1)
+
+    def test_patma_254(self):
+        def f(v):
+            match v:
+                case {"x": x} | x:
+                    return x
+
+        self.assertEqual(f(1), 1)
+        self.assertEqual(f({"x": 1}), 1)
+
+    def test_patma_255(self):
+        x = []
+        match x:
+            case [] as z if z.append(None):
+                y = 0
+            case [None]:
+                y = 1
+        self.assertEqual(x, [None])
+        self.assertEqual(y, 1)
+        self.assertIs(z, x)
 
 
 class TestSyntaxErrors(unittest.TestCase):
@@ -2885,6 +2977,37 @@ class TestSyntaxErrors(unittest.TestCase):
                 pass
         """)
 
+    def test_real_number_multiple_ops(self):
+        self.assert_syntax_error("""
+        match ...:
+            case 0 + 0j + 0:
+                pass
+        """)
+
+    def test_real_number_wrong_ops(self):
+        for op in ["*", "/", "@", "**", "%", "//"]:
+            with self.subTest(op=op):
+                self.assert_syntax_error(f"""
+                match ...:
+                    case 0 {op} 0j:
+                        pass
+                """)
+                self.assert_syntax_error(f"""
+                match ...:
+                    case 0j {op} 0:
+                        pass
+                """)
+                self.assert_syntax_error(f"""
+                match ...:
+                    case -0j {op} 0:
+                        pass
+                """)
+                self.assert_syntax_error(f"""
+                match ...:
+                    case 0j {op} -0:
+                        pass
+                """)
+
     def test_wildcard_makes_remaining_patterns_unreachable_0(self):
         self.assert_syntax_error("""
         match ...:
@@ -3067,6 +3190,14 @@ class TestTypeErrors(unittest.TestCase):
         self.assertIs(y, None)
         self.assertIs(z, None)
 
+    def test_class_pattern_not_type(self):
+        w = None
+        with self.assertRaises(TypeError):
+            match 1:
+                case max(0, 1):
+                    w = 0
+        self.assertIsNone(w)
+
 
 class TestValueErrors(unittest.TestCase):
 
@@ -3164,6 +3295,19 @@ class TestTracing(unittest.TestCase):
         self.assertListEqual(self._trace(f, "go n"), [1, 2, 3])
         self.assertListEqual(self._trace(f, "go x"), [1, 2, 3])
         self.assertListEqual(self._trace(f, "spam"), [1, 2, 3])
+
+    def test_unreachable_code(self):
+        def f(command):               # 0
+            match command:            # 1
+                case 1:               # 2
+                    if False:         # 3
+                        return 1      # 4
+                case _:               # 5
+                    if False:         # 6
+                        return 0      # 7
+
+        self.assertListEqual(self._trace(f, 1), [1, 2, 3])
+        self.assertListEqual(self._trace(f, 0), [1, 2, 5, 6])
 
     def test_parser_deeply_nested_patterns(self):
         # Deeply nested patterns can cause exponential backtracking when parsing.

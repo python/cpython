@@ -8,6 +8,7 @@ import random
 import re
 import sys
 import traceback
+import types
 import unittest
 from unittest import mock
 from types import GenericAlias
@@ -274,6 +275,20 @@ class BaseTaskTests:
         loop.run_until_complete(fut)
         self.assertEqual(fut.result(), 'ok')
 
+    def test_ensure_future_task_awaitable(self):
+        class Aw:
+            def __await__(self):
+                return asyncio.sleep(0, result='ok').__await__()
+
+        loop = asyncio.new_event_loop()
+        self.set_event_loop(loop)
+        task = asyncio.ensure_future(Aw(), loop=loop)
+        loop.run_until_complete(task)
+        self.assertTrue(task.done())
+        self.assertEqual(task.result(), 'ok')
+        self.assertIsInstance(task.get_coro(), types.CoroutineType)
+        loop.close()
+
     def test_ensure_future_neither(self):
         with self.assertRaises(TypeError):
             asyncio.ensure_future('ok')
@@ -383,6 +398,18 @@ class BaseTaskTests:
         self.assertLess(int(match1.group(1)), int(match2.group(1)))
         self.loop.run_until_complete(t1)
         self.loop.run_until_complete(t2)
+
+    def test_task_set_name_pylong(self):
+        # test that setting the task name to a PyLong explicitly doesn't
+        # incorrectly trigger the deferred name formatting logic
+        async def notmuch():
+            return 123
+
+        t = self.new_task(self.loop, notmuch(), name=987654321)
+        self.assertEqual(t.get_name(), '987654321')
+        t.set_name(123456789)
+        self.assertEqual(t.get_name(), '123456789')
+        self.loop.run_until_complete(t)
 
     def test_task_repr_name_not_str(self):
         async def notmuch():
@@ -591,7 +618,7 @@ class BaseTaskTests:
                     if (
                         timed_out
                         and task.uncancel() == 0
-                        and sys.exc_info()[0] is asyncio.CancelledError
+                        and type(sys.exception()) is asyncio.CancelledError
                     ):
                         # Note the five rules that are needed here to satisfy proper
                         # uncancellation:
@@ -1358,6 +1385,22 @@ class BaseTaskTests:
         self.assertEqual(res, 42)
         self.assertAlmostEqual(0.15, loop.time())
 
+
+    def test_wait_generator(self):
+        async def func(a):
+            return a
+
+        loop = self.new_test_loop()
+
+        async def main():
+            tasks = (self.new_task(loop, func(i)) for i in range(10))
+            done, pending = await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
+            self.assertEqual(len(done), 10)
+            self.assertEqual(len(pending), 0)
+
+        loop.run_until_complete(main())
+
+
     def test_as_completed(self):
 
         def gen():
@@ -1565,6 +1608,21 @@ class BaseTaskTests:
         self.assertTrue(t.done())
         self.assertEqual(t.result(), 'yeah')
         self.assertAlmostEqual(0.1, loop.time())
+
+    def test_sleep_when_delay_is_nan(self):
+
+        def gen():
+            yield
+
+        loop = self.new_test_loop(gen)
+
+        async def sleeper():
+            await asyncio.sleep(float("nan"))
+
+        t = self.new_task(loop, sleeper())
+
+        with self.assertRaises(ValueError):
+            loop.run_until_complete(t)
 
     def test_sleep_cancel(self):
 

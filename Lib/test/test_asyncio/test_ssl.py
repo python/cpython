@@ -1,5 +1,4 @@
 import asyncio
-import asyncio.sslproto
 import contextlib
 import gc
 import logging

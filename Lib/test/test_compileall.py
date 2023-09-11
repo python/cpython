@@ -551,6 +551,7 @@ class CommandLineTestsBase:
             self.assertNotCompiled(self.barfn)
 
     @without_source_date_epoch  # timestamp invalidation test
+    @support.requires_resource('cpu')
     def test_no_args_respects_force_flag(self):
         bazfn = script_helper.make_script(self.directory, 'baz', '')
         with self.temporary_pycache_prefix() as env:
@@ -568,6 +569,7 @@ class CommandLineTestsBase:
         mtime2 = os.stat(pycpath).st_mtime
         self.assertNotEqual(mtime, mtime2)
 
+    @support.requires_resource('cpu')
     def test_no_args_respects_quiet_flag(self):
         script_helper.make_script(self.directory, 'baz', '')
         with self.temporary_pycache_prefix() as env:

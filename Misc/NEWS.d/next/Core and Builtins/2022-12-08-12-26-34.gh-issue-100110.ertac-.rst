@@ -1,1 +1,0 @@
-Specialize ``FOR_ITER`` for tuples.

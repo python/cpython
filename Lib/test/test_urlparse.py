@@ -72,20 +72,20 @@ class UrlParseTestCase(unittest.TestCase):
 
     def checkRoundtrips(self, url, parsed, split):
         result = urllib.parse.urlparse(url)
-        self.assertEqual(result, parsed)
+        self.assertSequenceEqual(result, parsed)
         t = (result.scheme, result.netloc, result.path,
              result.params, result.query, result.fragment)
-        self.assertEqual(t, parsed)
+        self.assertSequenceEqual(t, parsed)
         # put it back together and it should be the same
         result2 = urllib.parse.urlunparse(result)
-        self.assertEqual(result2, url)
-        self.assertEqual(result2, result.geturl())
+        self.assertSequenceEqual(result2, url)
+        self.assertSequenceEqual(result2, result.geturl())
 
         # the result of geturl() is a fixpoint; we can always parse it
         # again to get the same result:
         result3 = urllib.parse.urlparse(result.geturl())
         self.assertEqual(result3.geturl(), result.geturl())
-        self.assertEqual(result3,          result)
+        self.assertSequenceEqual(result3, result)
         self.assertEqual(result3.scheme,   result.scheme)
         self.assertEqual(result3.netloc,   result.netloc)
         self.assertEqual(result3.path,     result.path)
@@ -99,18 +99,18 @@ class UrlParseTestCase(unittest.TestCase):
 
         # check the roundtrip using urlsplit() as well
         result = urllib.parse.urlsplit(url)
-        self.assertEqual(result, split)
+        self.assertSequenceEqual(result, split)
         t = (result.scheme, result.netloc, result.path,
              result.query, result.fragment)
-        self.assertEqual(t, split)
+        self.assertSequenceEqual(t, split)
         result2 = urllib.parse.urlunsplit(result)
-        self.assertEqual(result2, url)
-        self.assertEqual(result2, result.geturl())
+        self.assertSequenceEqual(result2, url)
+        self.assertSequenceEqual(result2, result.geturl())
 
         # check the fixpoint property of re-parsing the result of geturl()
         result3 = urllib.parse.urlsplit(result.geturl())
         self.assertEqual(result3.geturl(), result.geturl())
-        self.assertEqual(result3,          result)
+        self.assertSequenceEqual(result3, result)
         self.assertEqual(result3.scheme,   result.scheme)
         self.assertEqual(result3.netloc,   result.netloc)
         self.assertEqual(result3.path,     result.path)
@@ -162,10 +162,15 @@ class UrlParseTestCase(unittest.TestCase):
              ('svn+ssh', 'svn.zope.org', '/repos/main/ZConfig/trunk/',
               '', '')),
             ('git+ssh://git@github.com/user/project.git',
-            ('git+ssh', 'git@github.com','/user/project.git',
-             '','',''),
-            ('git+ssh', 'git@github.com','/user/project.git',
-             '', '')),
+             ('git+ssh', 'git@github.com','/user/project.git',
+              '','',''),
+             ('git+ssh', 'git@github.com','/user/project.git',
+              '', '')),
+            ('itms-services://?action=download-manifest&url=https://example.com/app',
+             ('itms-services', '', '', '',
+              'action=download-manifest&url=https://example.com/app', ''),
+             ('itms-services', '', '',
+              'action=download-manifest&url=https://example.com/app', '')),
             ]
         def _encode(t):
             return (t[0].encode('ascii'),
@@ -649,6 +654,65 @@ class UrlParseTestCase(unittest.TestCase):
             self.assertEqual(p.scheme, "http")
             self.assertEqual(p.geturl(), "http://www.python.org/javascript:alert('msg')/?query=something#fragment")
 
+    def test_urlsplit_strip_url(self):
+        noise = bytes(range(0, 0x20 + 1))
+        base_url = "http://User:Pass@www.python.org:080/doc/?query=yes#frag"
+
+        url = noise.decode("utf-8") + base_url
+        p = urllib.parse.urlsplit(url)
+        self.assertEqual(p.scheme, "http")
+        self.assertEqual(p.netloc, "User:Pass@www.python.org:080")
+        self.assertEqual(p.path, "/doc/")
+        self.assertEqual(p.query, "query=yes")
+        self.assertEqual(p.fragment, "frag")
+        self.assertEqual(p.username, "User")
+        self.assertEqual(p.password, "Pass")
+        self.assertEqual(p.hostname, "www.python.org")
+        self.assertEqual(p.port, 80)
+        self.assertEqual(p.geturl(), base_url)
+
+        url = noise + base_url.encode("utf-8")
+        p = urllib.parse.urlsplit(url)
+        self.assertEqual(p.scheme, b"http")
+        self.assertEqual(p.netloc, b"User:Pass@www.python.org:080")
+        self.assertEqual(p.path, b"/doc/")
+        self.assertEqual(p.query, b"query=yes")
+        self.assertEqual(p.fragment, b"frag")
+        self.assertEqual(p.username, b"User")
+        self.assertEqual(p.password, b"Pass")
+        self.assertEqual(p.hostname, b"www.python.org")
+        self.assertEqual(p.port, 80)
+        self.assertEqual(p.geturl(), base_url.encode("utf-8"))
+
+        # Test that trailing space is preserved as some applications rely on
+        # this within query strings.
+        query_spaces_url = "https://www.python.org:88/doc/?query=    "
+        p = urllib.parse.urlsplit(noise.decode("utf-8") + query_spaces_url)
+        self.assertEqual(p.scheme, "https")
+        self.assertEqual(p.netloc, "www.python.org:88")
+        self.assertEqual(p.path, "/doc/")
+        self.assertEqual(p.query, "query=    ")
+        self.assertEqual(p.port, 88)
+        self.assertEqual(p.geturl(), query_spaces_url)
+
+        p = urllib.parse.urlsplit("www.pypi.org ")
+        # That "hostname" gets considered a "path" due to the
+        # trailing space and our existing logic...  YUCK...
+        # and re-assembles via geturl aka unurlsplit into the original.
+        # django.core.validators.URLValidator (at least through v3.2) relies on
+        # this, for better or worse, to catch it in a ValidationError via its
+        # regular expressions.
+        # Here we test the basic round trip concept of such a trailing space.
+        self.assertEqual(urllib.parse.urlunsplit(p), "www.pypi.org ")
+
+        # with scheme as cache-key
+        url = "//www.python.org/"
+        scheme = noise.decode("utf-8") + "https" + noise.decode("utf-8")
+        for _ in range(2):
+            p = urllib.parse.urlsplit(url, scheme=scheme)
+            self.assertEqual(p.scheme, "https")
+            self.assertEqual(p.geturl(), "https://www.python.org/")
+
     def test_attributes_bad_port(self):
         """Check handling of invalid ports."""
         for bytes in (False, True):
@@ -656,7 +720,7 @@ class UrlParseTestCase(unittest.TestCase):
                 for port in ("foo", "1.5", "-1", "0x10", "-0", "1_1", " 1", "1 ", "६"):
                     with self.subTest(bytes=bytes, parse=parse, port=port):
                         netloc = "www.example.net:" + port
-                        url = "http://" + netloc
+                        url = "http://" + netloc + "/"
                         if bytes:
                             if netloc.isascii() and port.isascii():
                                 netloc = netloc.encode("ascii")
@@ -1036,6 +1100,32 @@ class UrlParseTestCase(unittest.TestCase):
         p2 = urllib.parse.urlparse('tel:+31641044153')
         self.assertEqual(p2.scheme, 'tel')
         self.assertEqual(p2.path, '+31641044153')
+
+    def test_invalid_bracketed_hosts(self):
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[192.0.2.146]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[important.com:8000]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[v123r.IP]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[v12ae]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[v.IP]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[v123.]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[v]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[0439:23af::2309::fae7:1234]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[0439:23af:2309::fae7:1234:2342:438e:192.0.2.146]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@]v6a.ip[/Path')
+
+    def test_splitting_bracketed_hosts(self):
+        p1 = urllib.parse.urlsplit('scheme://user@[v6a.ip]/path?query')
+        self.assertEqual(p1.hostname, 'v6a.ip')
+        self.assertEqual(p1.username, 'user')
+        self.assertEqual(p1.path, '/path')
+        p2 = urllib.parse.urlsplit('scheme://user@[0439:23af:2309::fae7%test]/path?query')
+        self.assertEqual(p2.hostname, '0439:23af:2309::fae7%test')
+        self.assertEqual(p2.username, 'user')
+        self.assertEqual(p2.path, '/path')
+        p3 = urllib.parse.urlsplit('scheme://user@[0439:23af:2309::fae7:1234:192.0.2.146%test]/path?query')
+        self.assertEqual(p3.hostname, '0439:23af:2309::fae7:1234:192.0.2.146%test')
+        self.assertEqual(p3.username, 'user')
+        self.assertEqual(p3.path, '/path')
 
     def test_port_casting_failure_message(self):
         message = "Port could not be cast to integer value as 'oracle'"

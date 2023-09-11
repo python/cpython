@@ -352,10 +352,10 @@ class CompressorDecompressorTestCase(unittest.TestCase):
     @bigmemtest(size=_4G + 100, memuse=3)
     def test_decompressor_bigmem(self, size):
         lzd = LZMADecompressor()
-        blocksize = 10 * 1024 * 1024
+        blocksize = min(10 * 1024 * 1024, size)
         block = random.randbytes(blocksize)
         try:
-            input = block * (size // blocksize + 1)
+            input = block * ((size-1) // blocksize + 1)
             cdata = lzma.compress(input)
             ddata = lzd.decompress(cdata)
             self.assertEqual(ddata, input)
@@ -379,6 +379,10 @@ class CompressorDecompressorTestCase(unittest.TestCase):
         for i in range(100):
             lzd.__init__()
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
+
+    def test_uninitialized_LZMADecompressor_crash(self):
+        self.assertEqual(LZMADecompressor.__new__(LZMADecompressor).
+                         decompress(bytes()), b'')
 
 
 class CompressDecompressFunctionTestCase(unittest.TestCase):

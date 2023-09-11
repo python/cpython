@@ -12,8 +12,7 @@ import sys
 import unicodedata
 import unittest
 from test.support import (open_urlresource, requires_resource, script_helper,
-                          cpython_only, check_disallow_instantiation,
-                          ResourceDenied)
+                          cpython_only, check_disallow_instantiation)
 
 
 class UnicodeMethodsTest(unittest.TestCase):
@@ -314,6 +313,7 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
         self.assertTrue("\u1d79".upper()=='\ua77d')
         self.assertTrue(".".upper()=='.')
 
+    @requires_resource('cpu')
     def test_bug_5828(self):
         self.assertEqual("\u1d79".lower(), "\u1d79")
         # Only U+0000 should have U+0000 as its upper/lower/titlecase variant
@@ -354,6 +354,7 @@ class NormalizationTest(unittest.TestCase):
         return "".join([chr(x) for x in data])
 
     @requires_resource('network')
+    @requires_resource('cpu')
     def test_normalization(self):
         TESTDATAFILE = "NormalizationTest.txt"
         TESTDATAURL = f"http://www.pythontest.net/unicode/{unicodedata.unidata_version}/{TESTDATAFILE}"

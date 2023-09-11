@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
 
 PyDoc_STRVAR(_lzma_LZMACompressor_compress__doc__,
 "compress($self, data, /)\n"
@@ -169,7 +169,7 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_lzma_LZMADecompressor___init____doc__,
+PyDoc_STRVAR(_lzma_LZMADecompressor__doc__,
 "LZMADecompressor(format=FORMAT_AUTO, memlimit=None, filters=None)\n"
 "--\n"
 "\n"
@@ -192,14 +192,14 @@ PyDoc_STRVAR(_lzma_LZMADecompressor___init____doc__,
 "\n"
 "For one-shot decompression, use the decompress() function instead.");
 
-static int
-_lzma_LZMADecompressor___init___impl(Decompressor *self, int format,
-                                     PyObject *memlimit, PyObject *filters);
+static PyObject *
+_lzma_LZMADecompressor_impl(PyTypeObject *type, int format,
+                            PyObject *memlimit, PyObject *filters);
 
-static int
-_lzma_LZMADecompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+static PyObject *
+_lzma_LZMADecompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    int return_value = -1;
+    PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     #define NUM_KEYWORDS 3
@@ -241,7 +241,7 @@ _lzma_LZMADecompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs
         goto skip_optional_pos;
     }
     if (fastargs[0]) {
-        format = _PyLong_AsInt(fastargs[0]);
+        format = PyLong_AsInt(fastargs[0]);
         if (format == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -257,7 +257,7 @@ _lzma_LZMADecompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs
     }
     filters = fastargs[2];
 skip_optional_pos:
-    return_value = _lzma_LZMADecompressor___init___impl((Decompressor *)self, format, memlimit, filters);
+    return_value = _lzma_LZMADecompressor_impl(type, format, memlimit, filters);
 
 exit:
     return return_value;
@@ -283,7 +283,7 @@ _lzma_is_check_supported(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int check_id;
 
-    check_id = _PyLong_AsInt(arg);
+    check_id = PyLong_AsInt(arg);
     if (check_id == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -338,4 +338,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=da3e83ba97244044 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eadc9ee7a11a06f5 input=a9049054013a1b77]*/
