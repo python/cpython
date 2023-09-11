@@ -788,7 +788,8 @@ static PyMethodDef sortenvironmentkey_def = {
 static PyObject *
 normalize_environment(PyObject* environment)
 {
-    PyObject *result, *keys, *keyfunc, *sort, *args, *kwargs;
+    PyObject *result = NULL, *keys = NULL, *keyfunc = NULL, *sort = NULL,
+             *args = NULL, *kwargs = NULL;
 
     keys = PyMapping_Keys(environment);
     if (keys == NULL) {
@@ -883,11 +884,11 @@ normalize_environment(PyObject* environment)
     }
 
 error:
-    Py_DECREF(keys);
-    Py_DECREF(keyfunc);
-    Py_DECREF(sort);
-    Py_DECREF(args);
-    Py_DECREF(kwargs);
+    Py_XDECREF(keys);
+    Py_XDECREF(keyfunc);
+    Py_XDECREF(sort);
+    Py_XDECREF(args);
+    Py_XDECREF(kwargs);
     if (prev_key_string != NULL) {
         PyMem_Free(prev_key_string);
     }
