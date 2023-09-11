@@ -1348,10 +1348,10 @@ class TestBranchAndJumpEvents(CheckEvents):
 
         self.check_events(func, recorders = JUMP_AND_BRANCH_RECORDERS, expected = [
             ('branch', 'func', 2, 2),
-            ('branch', 'func', 3, 6),
+            ('branch', 'func', 3, 4),
             ('jump', 'func', 6, 2),
             ('branch', 'func', 2, 2),
-            ('branch', 'func', 3, 4),
+            ('branch', 'func', 3, 3),
             ('jump', 'func', 4, 2),
             ('branch', 'func', 2, 2)])
 
@@ -1361,13 +1361,13 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('line', 'func', 2),
             ('branch', 'func', 2, 2),
             ('line', 'func', 3),
-            ('branch', 'func', 3, 6),
+            ('branch', 'func', 3, 4),
             ('line', 'func', 6),
             ('jump', 'func', 6, 2),
             ('line', 'func', 2),
             ('branch', 'func', 2, 2),
             ('line', 'func', 3),
-            ('branch', 'func', 3, 4),
+            ('branch', 'func', 3, 3),
             ('line', 'func', 4),
             ('jump', 'func', 4, 2),
             ('line', 'func', 2),
@@ -1400,8 +1400,8 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('line', 'func', 5),
             ('line', 'meth', 1),
             ('jump', 'func', 5, 5),
-            ('jump', 'func', 5, '[offset=112]'),
-            ('branch', 'func', '[offset=118]', '[offset=120]'),
+            ('jump', 'func', 5, '[offset=114]'),
+            ('branch', 'func', '[offset=120]', '[offset=122]'),
             ('line', 'get_events', 11)])
 
         self.check_events(func, recorders = FLOW_AND_LINE_RECORDERS, expected = [
@@ -1416,8 +1416,8 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('line', 'meth', 1),
             ('return', None),
             ('jump', 'func', 5, 5),
-            ('jump', 'func', 5, '[offset=112]'),
-            ('branch', 'func', '[offset=118]', '[offset=120]'),
+            ('jump', 'func', 5, '[offset=114]'),
+            ('branch', 'func', '[offset=120]', '[offset=122]'),
             ('return', None),
             ('line', 'get_events', 11)])
 
