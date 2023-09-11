@@ -1,9 +1,9 @@
 import sys
 from test.support import TestStats
 
-from test.libregrtest.runtests import RunTests
-from test.libregrtest.result import State, TestResult
-from test.libregrtest.utils import (
+from .runtests import RunTests
+from .result import State, TestResult
+from .utils import (
     StrPath, TestName, TestTuple, TestList, FilterDict,
     printlist, count, format_duration)
 

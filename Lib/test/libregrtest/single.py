@@ -12,11 +12,11 @@ from test import support
 from test.support import TestStats
 from test.support import threading_helper
 
-from test.libregrtest.result import State, TestResult
-from test.libregrtest.runtests import RunTests
-from test.libregrtest.save_env import saved_test_environment
-from test.libregrtest.setup import setup_tests
-from test.libregrtest.utils import (
+from .result import State, TestResult
+from .runtests import RunTests
+from .save_env import saved_test_environment
+from .setup import setup_tests
+from .utils import (
     TestName,
     clear_caches, remove_testfn, abs_module_name, print_warning)
 
@@ -40,7 +40,7 @@ def regrtest_runner(result: TestResult, test_func, runtests: RunTests) -> None:
     # Run test_func(), collect statistics, and detect reference and memory
     # leaks.
     if runtests.hunt_refleak:
-        from test.libregrtest.refleak import runtest_refleak
+        from .refleak import runtest_refleak
         refleak, test_result = runtest_refleak(result.test_name, test_func,
                                                runtests.hunt_refleak,
                                                runtests.quiet)

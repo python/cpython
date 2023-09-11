@@ -5,8 +5,8 @@ from inspect import isabstract
 from test import support
 from test.support import os_helper
 
-from test.libregrtest.runtests import HuntRefleak
-from test.libregrtest.utils import clear_caches
+from .runtests import HuntRefleak
+from .utils import clear_caches
 
 try:
     from _abc import _get_dump
