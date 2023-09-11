@@ -26,7 +26,7 @@
     0)
 
 #define EXIT_TRACE 300
-#define SAVE_IP 301
+#define _SET_IP 301
 #define _GUARD_BOTH_INT 302
 #define _BINARY_OP_MULTIPLY_INT 303
 #define _BINARY_OP_ADD_INT 304
@@ -588,7 +588,7 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
             return 1;
         case JUMP_TO_TOP:
             return 0;
-        case SAVE_IP:
+        case _SET_IP:
             return 0;
         case SAVE_CURRENT_IP:
             return 0;
@@ -1118,7 +1118,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 0;
         case JUMP_TO_TOP:
             return 0;
-        case SAVE_IP:
+        case _SET_IP:
             return 0;
         case SAVE_CURRENT_IP:
             return 0;
@@ -1186,7 +1186,7 @@ struct opcode_macro_expansion {
 #define OPARG_CACHE_4 4
 #define OPARG_TOP 5
 #define OPARG_BOTTOM 6
-#define OPARG_SAVE_IP 7
+#define OPARG_SET_IP 7
 
 #define OPCODE_METADATA_FMT(OP) (_PyOpcode_opcode_metadata[(OP)].instr_format)
 #define SAME_OPCODE_METADATA(OP1, OP2) \
@@ -1459,7 +1459,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [_POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [_POP_JUMP_IF_TRUE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [JUMP_TO_TOP] = { true, INSTR_FMT_IX, HAS_EVAL_BREAK_FLAG },
-    [SAVE_IP] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
+    [_SET_IP] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [SAVE_CURRENT_IP] = { true, INSTR_FMT_IX, 0 },
     [EXIT_TRACE] = { true, INSTR_FMT_IX, 0 },
     [INSERT] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
@@ -1515,8 +1515,8 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [DELETE_SUBSCR] = { .nuops = 1, .uops = { { DELETE_SUBSCR, 0, 0 } } },
     [CALL_INTRINSIC_1] = { .nuops = 1, .uops = { { CALL_INTRINSIC_1, 0, 0 } } },
     [CALL_INTRINSIC_2] = { .nuops = 1, .uops = { { CALL_INTRINSIC_2, 0, 0 } } },
-    [RETURN_VALUE] = { .nuops = 3, .uops = { { SAVE_IP, 7, 0 }, { SAVE_CURRENT_IP, 0, 0 }, { _POP_FRAME, 0, 0 } } },
-    [RETURN_CONST] = { .nuops = 4, .uops = { { LOAD_CONST, 0, 0 }, { SAVE_IP, 7, 0 }, { SAVE_CURRENT_IP, 0, 0 }, { _POP_FRAME, 0, 0 } } },
+    [RETURN_VALUE] = { .nuops = 3, .uops = { { _SET_IP, 7, 0 }, { SAVE_CURRENT_IP, 0, 0 }, { _POP_FRAME, 0, 0 } } },
+    [RETURN_CONST] = { .nuops = 4, .uops = { { LOAD_CONST, 0, 0 }, { _SET_IP, 7, 0 }, { SAVE_CURRENT_IP, 0, 0 }, { _POP_FRAME, 0, 0 } } },
     [GET_AITER] = { .nuops = 1, .uops = { { GET_AITER, 0, 0 } } },
     [GET_ANEXT] = { .nuops = 1, .uops = { { GET_ANEXT, 0, 0 } } },
     [GET_AWAITABLE] = { .nuops = 1, .uops = { { GET_AWAITABLE, 0, 0 } } },
@@ -1579,8 +1579,8 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [GET_YIELD_FROM_ITER] = { .nuops = 1, .uops = { { GET_YIELD_FROM_ITER, 0, 0 } } },
     [WITH_EXCEPT_START] = { .nuops = 1, .uops = { { WITH_EXCEPT_START, 0, 0 } } },
     [PUSH_EXC_INFO] = { .nuops = 1, .uops = { { PUSH_EXC_INFO, 0, 0 } } },
-    [CALL_BOUND_METHOD_EXACT_ARGS] = { .nuops = 9, .uops = { { _CHECK_PEP_523, 0, 0 }, { _CHECK_CALL_BOUND_METHOD_EXACT_ARGS, 0, 0 }, { _INIT_CALL_BOUND_METHOD_EXACT_ARGS, 0, 0 }, { _CHECK_FUNCTION_EXACT_ARGS, 2, 1 }, { _CHECK_STACK_SPACE, 0, 0 }, { _INIT_CALL_PY_EXACT_ARGS, 0, 0 }, { SAVE_IP, 7, 3 }, { SAVE_CURRENT_IP, 0, 0 }, { _PUSH_FRAME, 0, 0 } } },
-    [CALL_PY_EXACT_ARGS] = { .nuops = 7, .uops = { { _CHECK_PEP_523, 0, 0 }, { _CHECK_FUNCTION_EXACT_ARGS, 2, 1 }, { _CHECK_STACK_SPACE, 0, 0 }, { _INIT_CALL_PY_EXACT_ARGS, 0, 0 }, { SAVE_IP, 7, 3 }, { SAVE_CURRENT_IP, 0, 0 }, { _PUSH_FRAME, 0, 0 } } },
+    [CALL_BOUND_METHOD_EXACT_ARGS] = { .nuops = 9, .uops = { { _CHECK_PEP_523, 0, 0 }, { _CHECK_CALL_BOUND_METHOD_EXACT_ARGS, 0, 0 }, { _INIT_CALL_BOUND_METHOD_EXACT_ARGS, 0, 0 }, { _CHECK_FUNCTION_EXACT_ARGS, 2, 1 }, { _CHECK_STACK_SPACE, 0, 0 }, { _INIT_CALL_PY_EXACT_ARGS, 0, 0 }, { _SET_IP, 7, 3 }, { SAVE_CURRENT_IP, 0, 0 }, { _PUSH_FRAME, 0, 0 } } },
+    [CALL_PY_EXACT_ARGS] = { .nuops = 7, .uops = { { _CHECK_PEP_523, 0, 0 }, { _CHECK_FUNCTION_EXACT_ARGS, 2, 1 }, { _CHECK_STACK_SPACE, 0, 0 }, { _INIT_CALL_PY_EXACT_ARGS, 0, 0 }, { _SET_IP, 7, 3 }, { SAVE_CURRENT_IP, 0, 0 }, { _PUSH_FRAME, 0, 0 } } },
     [CALL_NO_KW_TYPE_1] = { .nuops = 1, .uops = { { CALL_NO_KW_TYPE_1, 0, 0 } } },
     [CALL_NO_KW_STR_1] = { .nuops = 1, .uops = { { CALL_NO_KW_STR_1, 0, 0 } } },
     [CALL_NO_KW_TUPLE_1] = { .nuops = 1, .uops = { { CALL_NO_KW_TUPLE_1, 0, 0 } } },
@@ -1608,7 +1608,7 @@ extern const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE];
 #ifdef NEED_OPCODE_METADATA
 const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
     [EXIT_TRACE] = "EXIT_TRACE",
-    [SAVE_IP] = "SAVE_IP",
+    [_SET_IP] = "_SET_IP",
     [_GUARD_BOTH_INT] = "_GUARD_BOTH_INT",
     [_BINARY_OP_MULTIPLY_INT] = "_BINARY_OP_MULTIPLY_INT",
     [_BINARY_OP_ADD_INT] = "_BINARY_OP_ADD_INT",

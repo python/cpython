@@ -796,7 +796,7 @@
             break;
         }
 
-        case SAVE_IP: {
+        case _SET_IP: {
             break;
         }
 

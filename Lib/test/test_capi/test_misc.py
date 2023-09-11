@@ -2390,7 +2390,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("SAVE_IP", uops)
+        self.assertIn("_SET_IP", uops)
         self.assertIn("LOAD_FAST", uops)
 
     def test_extended_arg(self):

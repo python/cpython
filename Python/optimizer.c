@@ -473,14 +473,14 @@ translate_bytecode_to_trace(
     } \
     reserved = (n);  // Keep ADD_TO_TRACE / ADD_TO_STUB honest
 
-// Reserve space for main+stub uops, plus 2 for SAVE_IP and EXIT_TRACE
+// Reserve space for main+stub uops, plus 2 for _SET_IP and EXIT_TRACE
 #define RESERVE(main, stub) RESERVE_RAW((main) + (stub) + 2, uop_name(opcode))
 
 // Trace stack operations (used by _PUSH_FRAME, _POP_FRAME)
 #define TRACE_STACK_PUSH() \
     if (trace_stack_depth >= TRACE_STACK_SIZE) { \
         DPRINTF(2, "Trace stack overflow\n"); \
-        ADD_TO_TRACE(SAVE_IP, 0, 0); \
+        ADD_TO_TRACE(_SET_IP, 0, 0); \
         goto done; \
     } \
     trace_stack[trace_stack_depth].code = code; \
@@ -503,8 +503,8 @@ translate_bytecode_to_trace(
 
 top:  // Jump here after _PUSH_FRAME
     for (;;) {
-        RESERVE_RAW(2, "epilogue");  // Always need space for SAVE_IP and EXIT_TRACE
-        ADD_TO_TRACE(SAVE_IP, INSTR_IP(instr, code), 0);
+        RESERVE_RAW(2, "epilogue");  // Always need space for _SET_IP and EXIT_TRACE
+        ADD_TO_TRACE(_SET_IP, INSTR_IP(instr, code), 0);
 
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;
@@ -555,7 +555,7 @@ pop_jump_if_bool:
                 uint32_t uopcode = opcode == POP_JUMP_IF_TRUE ?
                     _POP_JUMP_IF_TRUE : _POP_JUMP_IF_FALSE;
                 ADD_TO_TRACE(uopcode, max_length, 0);
-                ADD_TO_STUB(max_length, SAVE_IP, INSTR_IP(target_instr, code), 0);
+                ADD_TO_STUB(max_length, _SET_IP, INSTR_IP(target_instr, code), 0);
                 ADD_TO_STUB(max_length + 1, EXIT_TRACE, 0, 0);
                 break;
             }
@@ -575,7 +575,7 @@ pop_jump_if_bool:
             case JUMP_FORWARD:
             {
                 RESERVE(0, 0);
-                // This will emit two SAVE_IP instructions; leave it to the optimizer
+                // This will emit two _SET_IP instructions; leave it to the optimizer
                 instr += oparg;
                 break;
             }
@@ -615,7 +615,7 @@ pop_jump_if_bool:
                 ADD_TO_TRACE(next_op, 0, 0);
 
                 ADD_TO_STUB(max_length + 0, POP_TOP, 0, 0);
-                ADD_TO_STUB(max_length + 1, SAVE_IP, INSTR_IP(target_instr, code), 0);
+                ADD_TO_STUB(max_length + 1, _SET_IP, INSTR_IP(target_instr, code), 0);
                 ADD_TO_STUB(max_length + 2, EXIT_TRACE, 0, 0);
                 break;
             }
@@ -624,7 +624,7 @@ pop_jump_if_bool:
             {
                 const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
                 if (expansion->nuops > 0) {
-                    // Reserve space for nuops (+ SAVE_IP + EXIT_TRACE)
+                    // Reserve space for nuops (+ _SET_IP + EXIT_TRACE)
                     int nuops = expansion->nuops;
                     RESERVE(nuops, 0);
                     if (expansion->uops[nuops-1].uop == _POP_FRAME) {
@@ -668,7 +668,7 @@ pop_jump_if_bool:
                             case OPARG_BOTTOM:  // Second half of super-instr
                                 oparg = orig_oparg & 0xF;
                                 break;
-                            case OPARG_SAVE_IP:  // op==SAVE_IP; oparg=next instr
+                            case OPARG_SET_IP:  // op==_SET_IP; oparg=next instr
                                 oparg = INSTR_IP(instr + offset, code);
                                 break;
 
@@ -708,7 +708,7 @@ pop_jump_if_bool:
                                             PyUnicode_AsUTF8(new_code->co_qualname),
                                             PyUnicode_AsUTF8(new_code->co_filename),
                                             new_code->co_firstlineno);
-                                    ADD_TO_TRACE(SAVE_IP, 0, 0);
+                                    ADD_TO_TRACE(_SET_IP, 0, 0);
                                     goto done;
                                 }
                                 if (new_code->co_version != func_version) {
@@ -716,7 +716,7 @@ pop_jump_if_bool:
                                     // Perhaps it may happen again, so don't bother tracing.
                                     // TODO: Reason about this -- is it better to bail or not?
                                     DPRINTF(2, "Bailing because co_version != func_version\n");
-                                    ADD_TO_TRACE(SAVE_IP, 0, 0);
+                                    ADD_TO_TRACE(_SET_IP, 0, 0);
                                     goto done;
                                 }
                                 // Increment IP to the return address
@@ -732,7 +732,7 @@ pop_jump_if_bool:
                                     2 * INSTR_IP(instr, code));
                                 goto top;
                             }
-                            ADD_TO_TRACE(SAVE_IP, 0, 0);
+                            ADD_TO_TRACE(_SET_IP, 0, 0);
                             goto done;
                         }
                     }
@@ -754,7 +754,7 @@ done:
         TRACE_STACK_POP();
     }
     assert(code == initial_code);
-    // Skip short traces like SAVE_IP, LOAD_FAST, SAVE_IP, EXIT_TRACE
+    // Skip short traces like _SET_IP, LOAD_FAST, _SET_IP, EXIT_TRACE
     if (trace_length > 3) {
         ADD_TO_TRACE(EXIT_TRACE, 0, 0);
         DPRINTF(1,
@@ -805,23 +805,23 @@ done:
 static int
 remove_unneeded_uops(_PyUOpInstruction *trace, int trace_length)
 {
-    // Stage 1: Replace unneeded SAVE_IP uops with NOP.
-    // Note that we don't enter stubs, those SAVE_IPs are needed.
-    int last_save_ip = -1;
+    // Stage 1: Replace unneeded _SET_IP uops with NOP.
+    // Note that we don't enter stubs, those SET_IPs are needed.
+    int last_set_ip = -1;
     int last_instr = 0;
     bool need_ip = true;
     for (int pc = 0; pc < trace_length; pc++) {
         int opcode = trace[pc].opcode;
         if (opcode == SAVE_CURRENT_IP) {
-            // Special case: never remove preceding SAVE_IP
-            last_save_ip = -1;
+            // Special case: never remove preceding _SET_IP
+            last_set_ip = -1;
         }
-        else if (opcode == SAVE_IP) {
-            if (!need_ip && last_save_ip >= 0) {
-                trace[last_save_ip].opcode = NOP;
+        else if (opcode == _SET_IP) {
+            if (!need_ip && last_set_ip >= 0) {
+                trace[last_set_ip].opcode = NOP;
             }
             need_ip = false;
-            last_save_ip = pc;
+            last_set_ip = pc;
         }
         else if (opcode == JUMP_TO_TOP || opcode == EXIT_TRACE) {
             last_instr = pc + 1;

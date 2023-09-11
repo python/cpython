@@ -362,7 +362,7 @@ def write_macro_instr(
     parts = [
         part
         for part in mac.parts
-        if isinstance(part, Component) and part.instr.name != "SAVE_IP"
+        if isinstance(part, Component) and part.instr.name != "_SET_IP"
     ]
     out.emit("")
     with out.block(f"TARGET({mac.name})"):

@@ -2893,7 +2893,7 @@
             break;
         }
 
-        case SAVE_IP: {
+        case _SET_IP: {
             frame->prev_instr = ip_offset + oparg;
             break;
         }
@@ -2903,7 +2903,7 @@
             frame->prev_instr = next_instr - 1;
             #endif
             #if TIER_TWO
-            // Relies on a preceding SAVE_IP
+            // Relies on a preceding _SET_IP
             frame->prev_instr--;
             #endif
             break;
