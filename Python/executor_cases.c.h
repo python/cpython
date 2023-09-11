@@ -3,11 +3,11 @@
 //   Python/bytecodes.c
 // Do not edit!
 
-        case NOP: {
+        case __NOP: {
             break;
         }
 
-        case RESUME_CHECK: {
+        case __RESUME_CHECK: {
 #if defined(__EMSCRIPTEN__)
             DEOPT_IF(_Py_emscripten_signal_clock == 0, RESUME);
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
@@ -19,7 +19,7 @@
             break;
         }
 
-        case LOAD_FAST_CHECK: {
+        case __LOAD_FAST_CHECK: {
             PyObject *value;
             value = GETLOCAL(oparg);
             if (value == NULL) goto unbound_local_error;
@@ -29,7 +29,7 @@
             break;
         }
 
-        case LOAD_FAST: {
+        case __LOAD_FAST: {
             PyObject *value;
             value = GETLOCAL(oparg);
             assert(value != NULL);
@@ -39,7 +39,7 @@
             break;
         }
 
-        case LOAD_FAST_AND_CLEAR: {
+        case __LOAD_FAST_AND_CLEAR: {
             PyObject *value;
             value = GETLOCAL(oparg);
             // do not use SETLOCAL here, it decrefs the old value
@@ -49,7 +49,7 @@
             break;
         }
 
-        case LOAD_CONST: {
+        case __LOAD_CONST: {
             PyObject *value;
             value = GETITEM(FRAME_CO_CONSTS, oparg);
             Py_INCREF(value);
@@ -58,7 +58,7 @@
             break;
         }
 
-        case STORE_FAST: {
+        case __STORE_FAST: {
             PyObject *value;
             value = stack_pointer[-1];
             SETLOCAL(oparg, value);
@@ -66,7 +66,7 @@
             break;
         }
 
-        case POP_TOP: {
+        case __POP_TOP: {
             PyObject *value;
             value = stack_pointer[-1];
             Py_DECREF(value);
@@ -74,7 +74,7 @@
             break;
         }
 
-        case PUSH_NULL: {
+        case __PUSH_NULL: {
             PyObject *res;
             res = NULL;
             STACK_GROW(1);
@@ -82,7 +82,7 @@
             break;
         }
 
-        case END_SEND: {
+        case __END_SEND: {
             PyObject *value;
             PyObject *receiver;
             value = stack_pointer[-1];
@@ -93,7 +93,7 @@
             break;
         }
 
-        case UNARY_NEGATIVE: {
+        case __UNARY_NEGATIVE: {
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -104,7 +104,7 @@
             break;
         }
 
-        case UNARY_NOT: {
+        case __UNARY_NOT: {
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -114,7 +114,7 @@
             break;
         }
 
-        case TO_BOOL: {
+        case __TO_BOOL: {
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -136,7 +136,7 @@
             break;
         }
 
-        case TO_BOOL_BOOL: {
+        case __TO_BOOL_BOOL: {
             PyObject *value;
             value = stack_pointer[-1];
             DEOPT_IF(!PyBool_Check(value), TO_BOOL);
@@ -144,7 +144,7 @@
             break;
         }
 
-        case TO_BOOL_INT: {
+        case __TO_BOOL_INT: {
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -162,7 +162,7 @@
             break;
         }
 
-        case TO_BOOL_LIST: {
+        case __TO_BOOL_LIST: {
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -174,7 +174,7 @@
             break;
         }
 
-        case TO_BOOL_NONE: {
+        case __TO_BOOL_NONE: {
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -186,7 +186,7 @@
             break;
         }
 
-        case TO_BOOL_STR: {
+        case __TO_BOOL_STR: {
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -205,7 +205,7 @@
             break;
         }
 
-        case TO_BOOL_ALWAYS_TRUE: {
+        case __TO_BOOL_ALWAYS_TRUE: {
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -220,7 +220,7 @@
             break;
         }
 
-        case UNARY_INVERT: {
+        case __UNARY_INVERT: {
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -373,7 +373,7 @@
             break;
         }
 
-        case BINARY_SUBSCR: {
+        case __BINARY_SUBSCR: {
             PyObject *sub;
             PyObject *container;
             PyObject *res;
@@ -398,7 +398,7 @@
             break;
         }
 
-        case BINARY_SLICE: {
+        case __BINARY_SLICE: {
             PyObject *stop;
             PyObject *start;
             PyObject *container;
@@ -423,7 +423,7 @@
             break;
         }
 
-        case STORE_SLICE: {
+        case __STORE_SLICE: {
             PyObject *stop;
             PyObject *start;
             PyObject *container;
@@ -448,7 +448,7 @@
             break;
         }
 
-        case BINARY_SUBSCR_LIST_INT: {
+        case __BINARY_SUBSCR_LIST_INT: {
             PyObject *sub;
             PyObject *list;
             PyObject *res;
@@ -472,7 +472,7 @@
             break;
         }
 
-        case BINARY_SUBSCR_STR_INT: {
+        case __BINARY_SUBSCR_STR_INT: {
             PyObject *sub;
             PyObject *str;
             PyObject *res;
@@ -495,7 +495,7 @@
             break;
         }
 
-        case BINARY_SUBSCR_TUPLE_INT: {
+        case __BINARY_SUBSCR_TUPLE_INT: {
             PyObject *sub;
             PyObject *tuple;
             PyObject *res;
@@ -519,7 +519,7 @@
             break;
         }
 
-        case BINARY_SUBSCR_DICT: {
+        case __BINARY_SUBSCR_DICT: {
             PyObject *sub;
             PyObject *dict;
             PyObject *res;
@@ -544,7 +544,7 @@
             break;
         }
 
-        case LIST_APPEND: {
+        case __LIST_APPEND: {
             PyObject *v;
             PyObject *list;
             v = stack_pointer[-1];
@@ -554,7 +554,7 @@
             break;
         }
 
-        case SET_ADD: {
+        case __SET_ADD: {
             PyObject *v;
             PyObject *set;
             v = stack_pointer[-1];
@@ -566,7 +566,7 @@
             break;
         }
 
-        case STORE_SUBSCR: {
+        case __STORE_SUBSCR: {
             PyObject *sub;
             PyObject *container;
             PyObject *v;
@@ -593,7 +593,7 @@
             break;
         }
 
-        case STORE_SUBSCR_LIST_INT: {
+        case __STORE_SUBSCR_LIST_INT: {
             PyObject *sub;
             PyObject *list;
             PyObject *value;
@@ -620,7 +620,7 @@
             break;
         }
 
-        case STORE_SUBSCR_DICT: {
+        case __STORE_SUBSCR_DICT: {
             PyObject *sub;
             PyObject *dict;
             PyObject *value;
@@ -636,7 +636,7 @@
             break;
         }
 
-        case DELETE_SUBSCR: {
+        case __DELETE_SUBSCR: {
             PyObject *sub;
             PyObject *container;
             sub = stack_pointer[-1];
@@ -650,7 +650,7 @@
             break;
         }
 
-        case CALL_INTRINSIC_1: {
+        case __CALL_INTRINSIC_1: {
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -662,7 +662,7 @@
             break;
         }
 
-        case CALL_INTRINSIC_2: {
+        case __CALL_INTRINSIC_2: {
             PyObject *value1;
             PyObject *value2;
             PyObject *res;
@@ -705,7 +705,7 @@
             break;
         }
 
-        case GET_AITER: {
+        case __GET_AITER: {
             PyObject *obj;
             PyObject *iter;
             obj = stack_pointer[-1];
@@ -743,7 +743,7 @@
             break;
         }
 
-        case GET_ANEXT: {
+        case __GET_ANEXT: {
             PyObject *aiter;
             PyObject *awaitable;
             aiter = stack_pointer[-1];
@@ -794,7 +794,7 @@
             break;
         }
 
-        case GET_AWAITABLE: {
+        case __GET_AWAITABLE: {
             PyObject *iterable;
             PyObject *iter;
             iterable = stack_pointer[-1];
@@ -825,7 +825,7 @@
             break;
         }
 
-        case POP_EXCEPT: {
+        case __POP_EXCEPT: {
             PyObject *exc_value;
             exc_value = stack_pointer[-1];
             _PyErr_StackItem *exc_info = tstate->exc_info;
@@ -834,7 +834,7 @@
             break;
         }
 
-        case LOAD_ASSERTION_ERROR: {
+        case __LOAD_ASSERTION_ERROR: {
             PyObject *value;
             value = Py_NewRef(PyExc_AssertionError);
             STACK_GROW(1);
@@ -842,7 +842,7 @@
             break;
         }
 
-        case LOAD_BUILD_CLASS: {
+        case __LOAD_BUILD_CLASS: {
             PyObject *bc;
             if (PyMapping_GetOptionalItem(BUILTINS(), &_Py_ID(__build_class__), &bc) < 0) goto error;
             if (bc == NULL) {
@@ -855,7 +855,7 @@
             break;
         }
 
-        case STORE_NAME: {
+        case __STORE_NAME: {
             PyObject *v;
             v = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -877,7 +877,7 @@
             break;
         }
 
-        case DELETE_NAME: {
+        case __DELETE_NAME: {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *ns = LOCALS();
             int err;
@@ -897,7 +897,7 @@
             break;
         }
 
-        case UNPACK_SEQUENCE: {
+        case __UNPACK_SEQUENCE: {
             PyObject *seq;
             seq = stack_pointer[-1];
             #if ENABLE_SPECIALIZATION
@@ -919,7 +919,7 @@
             break;
         }
 
-        case UNPACK_SEQUENCE_TWO_TUPLE: {
+        case __UNPACK_SEQUENCE_TWO_TUPLE: {
             PyObject *seq;
             PyObject **values;
             seq = stack_pointer[-1];
@@ -936,7 +936,7 @@
             break;
         }
 
-        case UNPACK_SEQUENCE_TUPLE: {
+        case __UNPACK_SEQUENCE_TUPLE: {
             PyObject *seq;
             PyObject **values;
             seq = stack_pointer[-1];
@@ -954,7 +954,7 @@
             break;
         }
 
-        case UNPACK_SEQUENCE_LIST: {
+        case __UNPACK_SEQUENCE_LIST: {
             PyObject *seq;
             PyObject **values;
             seq = stack_pointer[-1];
@@ -972,7 +972,7 @@
             break;
         }
 
-        case UNPACK_EX: {
+        case __UNPACK_EX: {
             PyObject *seq;
             seq = stack_pointer[-1];
             int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
@@ -984,7 +984,7 @@
             break;
         }
 
-        case STORE_ATTR: {
+        case __STORE_ATTR: {
             PyObject *owner;
             PyObject *v;
             owner = stack_pointer[-1];
@@ -1009,7 +1009,7 @@
             break;
         }
 
-        case DELETE_ATTR: {
+        case __DELETE_ATTR: {
             PyObject *owner;
             owner = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -1020,7 +1020,7 @@
             break;
         }
 
-        case STORE_GLOBAL: {
+        case __STORE_GLOBAL: {
             PyObject *v;
             v = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -1031,7 +1031,7 @@
             break;
         }
 
-        case DELETE_GLOBAL: {
+        case __DELETE_GLOBAL: {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err;
             err = PyDict_DelItem(GLOBALS(), name);
@@ -1046,7 +1046,7 @@
             break;
         }
 
-        case LOAD_LOCALS: {
+        case __LOAD_LOCALS: {
             PyObject *locals;
             locals = LOCALS();
             if (locals == NULL) {
@@ -1060,7 +1060,7 @@
             break;
         }
 
-        case LOAD_FROM_DICT_OR_GLOBALS: {
+        case __LOAD_FROM_DICT_OR_GLOBALS: {
             PyObject *mod_or_class_dict;
             PyObject *v;
             mod_or_class_dict = stack_pointer[-1];
@@ -1093,7 +1093,7 @@
             break;
         }
 
-        case LOAD_NAME: {
+        case __LOAD_NAME: {
             PyObject *v;
             PyObject *mod_or_class_dict = LOCALS();
             if (mod_or_class_dict == NULL) {
@@ -1130,7 +1130,7 @@
             break;
         }
 
-        case LOAD_GLOBAL: {
+        case __LOAD_GLOBAL: {
             PyObject *res;
             PyObject *null = NULL;
             #if ENABLE_SPECIALIZATION
@@ -1240,14 +1240,14 @@
             break;
         }
 
-        case DELETE_FAST: {
+        case __DELETE_FAST: {
             PyObject *v = GETLOCAL(oparg);
             if (v == NULL) goto unbound_local_error;
             SETLOCAL(oparg, NULL);
             break;
         }
 
-        case DELETE_DEREF: {
+        case __DELETE_DEREF: {
             PyObject *cell = GETLOCAL(oparg);
             PyObject *oldobj = PyCell_GET(cell);
             // Can't use ERROR_IF here.
@@ -1261,7 +1261,7 @@
             break;
         }
 
-        case LOAD_FROM_DICT_OR_DEREF: {
+        case __LOAD_FROM_DICT_OR_DEREF: {
             PyObject *class_dict;
             PyObject *value;
             class_dict = stack_pointer[-1];
@@ -1287,7 +1287,7 @@
             break;
         }
 
-        case LOAD_DEREF: {
+        case __LOAD_DEREF: {
             PyObject *value;
             PyObject *cell = GETLOCAL(oparg);
             value = PyCell_GET(cell);
@@ -1301,7 +1301,7 @@
             break;
         }
 
-        case STORE_DEREF: {
+        case __STORE_DEREF: {
             PyObject *v;
             v = stack_pointer[-1];
             PyObject *cell = GETLOCAL(oparg);
@@ -1312,7 +1312,7 @@
             break;
         }
 
-        case COPY_FREE_VARS: {
+        case __COPY_FREE_VARS: {
             /* Copy closure variables to free variables */
             PyCodeObject *co = _PyFrame_GetCode(frame);
             assert(PyFunction_Check(frame->f_funcobj));
@@ -1326,7 +1326,7 @@
             break;
         }
 
-        case BUILD_STRING: {
+        case __BUILD_STRING: {
             PyObject **pieces;
             PyObject *str;
             pieces = stack_pointer - oparg;
@@ -1341,7 +1341,7 @@
             break;
         }
 
-        case BUILD_TUPLE: {
+        case __BUILD_TUPLE: {
             PyObject **values;
             PyObject *tup;
             values = stack_pointer - oparg;
@@ -1353,7 +1353,7 @@
             break;
         }
 
-        case BUILD_LIST: {
+        case __BUILD_LIST: {
             PyObject **values;
             PyObject *list;
             values = stack_pointer - oparg;
@@ -1365,7 +1365,7 @@
             break;
         }
 
-        case LIST_EXTEND: {
+        case __LIST_EXTEND: {
             PyObject *iterable;
             PyObject *list;
             iterable = stack_pointer[-1];
@@ -1389,7 +1389,7 @@
             break;
         }
 
-        case SET_UPDATE: {
+        case __SET_UPDATE: {
             PyObject *iterable;
             PyObject *set;
             iterable = stack_pointer[-1];
@@ -1401,7 +1401,7 @@
             break;
         }
 
-        case BUILD_SET: {
+        case __BUILD_SET: {
             PyObject **values;
             PyObject *set;
             values = stack_pointer - oparg;
@@ -1425,7 +1425,7 @@
             break;
         }
 
-        case BUILD_MAP: {
+        case __BUILD_MAP: {
             PyObject **values;
             PyObject *map;
             values = stack_pointer - oparg*2;
@@ -1443,7 +1443,7 @@
             break;
         }
 
-        case SETUP_ANNOTATIONS: {
+        case __SETUP_ANNOTATIONS: {
             int err;
             PyObject *ann_dict;
             if (LOCALS() == NULL) {
@@ -1484,7 +1484,7 @@
             break;
         }
 
-        case BUILD_CONST_KEY_MAP: {
+        case __BUILD_CONST_KEY_MAP: {
             PyObject *keys;
             PyObject **values;
             PyObject *map;
@@ -1509,7 +1509,7 @@
             break;
         }
 
-        case DICT_UPDATE: {
+        case __DICT_UPDATE: {
             PyObject *update;
             PyObject *dict;
             update = stack_pointer[-1];
@@ -1528,7 +1528,7 @@
             break;
         }
 
-        case DICT_MERGE: {
+        case __DICT_MERGE: {
             PyObject *update;
             PyObject *dict;
             PyObject *callable;
@@ -1545,7 +1545,7 @@
             break;
         }
 
-        case MAP_ADD: {
+        case __MAP_ADD: {
             PyObject *value;
             PyObject *key;
             PyObject *dict;
@@ -1560,7 +1560,7 @@
             break;
         }
 
-        case LOAD_SUPER_ATTR_ATTR: {
+        case __LOAD_SUPER_ATTR_ATTR: {
             PyObject *self;
             PyObject *class;
             PyObject *global_super;
@@ -1583,7 +1583,7 @@
             break;
         }
 
-        case LOAD_SUPER_ATTR_METHOD: {
+        case __LOAD_SUPER_ATTR_METHOD: {
             PyObject *self;
             PyObject *class;
             PyObject *global_super;
@@ -1619,7 +1619,7 @@
             break;
         }
 
-        case LOAD_ATTR: {
+        case __LOAD_ATTR: {
             PyObject *owner;
             PyObject *attr;
             PyObject *self_or_null = NULL;
@@ -1714,7 +1714,7 @@
             break;
         }
 
-        case COMPARE_OP: {
+        case __COMPARE_OP: {
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -1746,7 +1746,7 @@
             break;
         }
 
-        case COMPARE_OP_FLOAT: {
+        case __COMPARE_OP_FLOAT: {
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -1768,7 +1768,7 @@
             break;
         }
 
-        case COMPARE_OP_INT: {
+        case __COMPARE_OP_INT: {
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -1794,7 +1794,7 @@
             break;
         }
 
-        case COMPARE_OP_STR: {
+        case __COMPARE_OP_STR: {
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -1817,7 +1817,7 @@
             break;
         }
 
-        case IS_OP: {
+        case __IS_OP: {
             PyObject *right;
             PyObject *left;
             PyObject *b;
@@ -1832,7 +1832,7 @@
             break;
         }
 
-        case CONTAINS_OP: {
+        case __CONTAINS_OP: {
             PyObject *right;
             PyObject *left;
             PyObject *b;
@@ -1848,7 +1848,7 @@
             break;
         }
 
-        case CHECK_EG_MATCH: {
+        case __CHECK_EG_MATCH: {
             PyObject *match_type;
             PyObject *exc_value;
             PyObject *rest;
@@ -1880,7 +1880,7 @@
             break;
         }
 
-        case CHECK_EXC_MATCH: {
+        case __CHECK_EXC_MATCH: {
             PyObject *right;
             PyObject *left;
             PyObject *b;
@@ -1914,7 +1914,7 @@
             break;
         }
 
-        case GET_LEN: {
+        case __GET_LEN: {
             PyObject *obj;
             PyObject *len_o;
             obj = stack_pointer[-1];
@@ -1928,7 +1928,7 @@
             break;
         }
 
-        case MATCH_CLASS: {
+        case __MATCH_CLASS: {
             PyObject *names;
             PyObject *type;
             PyObject *subject;
@@ -1955,7 +1955,7 @@
             break;
         }
 
-        case MATCH_MAPPING: {
+        case __MATCH_MAPPING: {
             PyObject *subject;
             PyObject *res;
             subject = stack_pointer[-1];
@@ -1966,7 +1966,7 @@
             break;
         }
 
-        case MATCH_SEQUENCE: {
+        case __MATCH_SEQUENCE: {
             PyObject *subject;
             PyObject *res;
             subject = stack_pointer[-1];
@@ -1977,7 +1977,7 @@
             break;
         }
 
-        case MATCH_KEYS: {
+        case __MATCH_KEYS: {
             PyObject *keys;
             PyObject *subject;
             PyObject *values_or_none;
@@ -1991,7 +1991,7 @@
             break;
         }
 
-        case GET_ITER: {
+        case __GET_ITER: {
             PyObject *iterable;
             PyObject *iter;
             iterable = stack_pointer[-1];
@@ -2003,7 +2003,7 @@
             break;
         }
 
-        case GET_YIELD_FROM_ITER: {
+        case __GET_YIELD_FROM_ITER: {
             PyObject *iterable;
             PyObject *iter;
             iterable = stack_pointer[-1];
@@ -2162,7 +2162,7 @@
             break;
         }
 
-        case WITH_EXCEPT_START: {
+        case __WITH_EXCEPT_START: {
             PyObject *val;
             PyObject *lasti;
             PyObject *exit_func;
@@ -2200,7 +2200,7 @@
             break;
         }
 
-        case PUSH_EXC_INFO: {
+        case __PUSH_EXC_INFO: {
             PyObject *new_exc;
             PyObject *prev_exc;
             new_exc = stack_pointer[-1];
@@ -2323,7 +2323,7 @@
             break;
         }
 
-        case CALL_TYPE_1: {
+        case __CALL_TYPE_1: {
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -2345,7 +2345,7 @@
             break;
         }
 
-        case CALL_STR_1: {
+        case __CALL_STR_1: {
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -2369,7 +2369,7 @@
             break;
         }
 
-        case CALL_TUPLE_1: {
+        case __CALL_TUPLE_1: {
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -2393,7 +2393,7 @@
             break;
         }
 
-        case EXIT_INIT_CHECK: {
+        case __EXIT_INIT_CHECK: {
             PyObject *should_be_none;
             should_be_none = stack_pointer[-1];
             assert(STACK_LEVEL() == 2);
@@ -2407,7 +2407,7 @@
             break;
         }
 
-        case CALL_BUILTIN_CLASS: {
+        case __CALL_BUILTIN_CLASS: {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2438,7 +2438,7 @@
             break;
         }
 
-        case CALL_BUILTIN_O: {
+        case __CALL_BUILTIN_O: {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2477,7 +2477,7 @@
             break;
         }
 
-        case CALL_BUILTIN_FAST: {
+        case __CALL_BUILTIN_FAST: {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2520,7 +2520,7 @@
             break;
         }
 
-        case CALL_BUILTIN_FAST_WITH_KEYWORDS: {
+        case __CALL_BUILTIN_FAST_WITH_KEYWORDS: {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2558,7 +2558,7 @@
             break;
         }
 
-        case CALL_LEN: {
+        case __CALL_LEN: {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2593,7 +2593,7 @@
             break;
         }
 
-        case CALL_ISINSTANCE: {
+        case __CALL_ISINSTANCE: {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2630,7 +2630,7 @@
             break;
         }
 
-        case CALL_METHOD_DESCRIPTOR_O: {
+        case __CALL_METHOD_DESCRIPTOR_O: {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2672,7 +2672,7 @@
             break;
         }
 
-        case CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
+        case __CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2712,7 +2712,7 @@
             break;
         }
 
-        case CALL_METHOD_DESCRIPTOR_NOARGS: {
+        case __CALL_METHOD_DESCRIPTOR_NOARGS: {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2753,7 +2753,7 @@
             break;
         }
 
-        case CALL_METHOD_DESCRIPTOR_FAST: {
+        case __CALL_METHOD_DESCRIPTOR_FAST: {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2792,7 +2792,7 @@
             break;
         }
 
-        case MAKE_FUNCTION: {
+        case __MAKE_FUNCTION: {
             PyObject *codeobj;
             PyObject *func;
             codeobj = stack_pointer[-1];
@@ -2812,7 +2812,7 @@
             break;
         }
 
-        case SET_FUNCTION_ATTRIBUTE: {
+        case __SET_FUNCTION_ATTRIBUTE: {
             PyObject *func;
             PyObject *attr;
             func = stack_pointer[-1];
@@ -2846,7 +2846,7 @@
             break;
         }
 
-        case BUILD_SLICE: {
+        case __BUILD_SLICE: {
             PyObject *step = NULL;
             PyObject *stop;
             PyObject *start;
@@ -2865,7 +2865,7 @@
             break;
         }
 
-        case CONVERT_VALUE: {
+        case __CONVERT_VALUE: {
             PyObject *value;
             PyObject *result;
             value = stack_pointer[-1];
@@ -2879,7 +2879,7 @@
             break;
         }
 
-        case FORMAT_SIMPLE: {
+        case __FORMAT_SIMPLE: {
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -2897,7 +2897,7 @@
             break;
         }
 
-        case FORMAT_WITH_SPEC: {
+        case __FORMAT_WITH_SPEC: {
             PyObject *fmt_spec;
             PyObject *value;
             PyObject *res;
@@ -2912,7 +2912,7 @@
             break;
         }
 
-        case COPY: {
+        case __COPY: {
             PyObject *bottom;
             PyObject *top;
             bottom = stack_pointer[-1 - (oparg-1)];
@@ -2923,7 +2923,7 @@
             break;
         }
 
-        case BINARY_OP: {
+        case __BINARY_OP: {
             PyObject *rhs;
             PyObject *lhs;
             PyObject *res;
@@ -2951,7 +2951,7 @@
             break;
         }
 
-        case SWAP: {
+        case __SWAP: {
             PyObject *top;
             PyObject *bottom;
             top = stack_pointer[-1];

@@ -177,6 +177,29 @@ class Analyzer:
         if not psr.eof():
             raise psr.make_syntax_error(f"Extra stuff at the end of {filename}")
 
+    def desugar(self) -> None:
+        """Desugar inst(X, ...) to op(__X, ...) and macro(X) = __X"""
+        updates: dict[str, Instruction] = {}
+        for name, instr in self.instrs.items():
+            if isinstance(instr, Instruction) and instr.kind == "inst":
+                assert name == instr.name
+                opname = "__" + name
+                instr.name = opname
+                instr.inst.name = opname
+                instr.kind = "op"
+                updates[opname] = instr
+                macro = parsing.Macro(name, [parsing.OpName(opname)])
+                self.macros[name] = macro
+                self.everything.append(macro)
+        self.instrs.update(updates)
+        for name in updates:
+            assert name.startswith("__")
+            del self.instrs[name[2:]]
+        for name, instr in self.instrs.items():
+            assert instr.name == name, instr
+            assert instr.kind == "op", instr
+        print(f"Desugared {len(updates)} instructions to ops", file=sys.stderr)
+
     def analyze(self) -> None:
         """Analyze the inputs.
 

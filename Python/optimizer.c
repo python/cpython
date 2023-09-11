@@ -619,7 +619,7 @@ pop_jump_if_bool:
                 ADD_TO_TRACE(_POP_JUMP_IF_TRUE, max_length, 0);
                 ADD_TO_TRACE(next_op, 0, 0);
 
-                ADD_TO_STUB(max_length + 0, POP_TOP, 0, 0);
+                ADD_TO_STUB(max_length + 0, __POP_TOP, 0, 0);
                 ADD_TO_STUB(max_length + 1, _SET_IP, INSTR_IP(target_instr, code), 0);
                 ADD_TO_STUB(max_length + 2, _EXIT_TRACE, 0, 0);
                 break;

@@ -160,11 +160,11 @@ class Generator(Analyzer):
         pushed: str | None = None
         match thing:
             case parsing.InstDef():
-                if thing.kind != "op" or self.instrs[thing.name].is_viable_uop():
-                    instr = self.instrs[thing.name]
-                    popped = effect_str(instr.input_effects)
-                    pushed = effect_str(instr.output_effects)
-                else:
+                # if thing.kind != "op" or self.instrs[thing.name].is_viable_uop():
+                #     instr = self.instrs[thing.name]
+                #     popped = effect_str(instr.input_effects)
+                #     pushed = effect_str(instr.output_effects)
+                # else:
                     instr = None
                     popped = ""
                     pushed = ""
@@ -396,7 +396,7 @@ class Generator(Analyzer):
                 case OverriddenInstructionPlaceHolder():
                     continue
                 case parsing.InstDef():
-                    format = self.instrs[thing.name].instr_fmt
+                    continue
                 case parsing.Macro():
                     format = self.macro_instrs[thing.name].instr_fmt
                 case parsing.Pseudo():
@@ -496,7 +496,8 @@ class Generator(Analyzer):
                         case OverriddenInstructionPlaceHolder():
                             continue
                         case parsing.InstDef():
-                            self.write_metadata_for_inst(self.instrs[thing.name])
+                            continue
+                            # self.write_metadata_for_inst(self.instrs[thing.name])
                         case parsing.Macro():
                             self.write_metadata_for_macro(self.macro_instrs[thing.name])
                         case parsing.Pseudo():
@@ -518,21 +519,22 @@ class Generator(Analyzer):
                         case OverriddenInstructionPlaceHolder():
                             pass
                         case parsing.InstDef(name=name):
-                            instr = self.instrs[name]
-                            # Since an 'op' is not a bytecode, it has no expansion; but 'inst' is
-                            if instr.kind == "inst" and instr.is_viable_uop():
-                                # Construct a dummy Component -- input/output mappings are not used
-                                part = Component(instr, instr.active_caches)
-                                self.write_macro_expansions(
-                                    instr.name, [part], instr.cache_offset
-                                )
-                            elif instr.kind == "inst" and variable_used(
-                                instr.inst, "oparg1"
-                            ):
-                                assert variable_used(
-                                    instr.inst, "oparg2"
-                                ), "Half super-instr?"
-                                self.write_super_expansions(instr.name)
+                            pass
+                            # instr = self.instrs[name]
+                            # # Since an 'op' is not a bytecode, it has no expansion; but 'inst' is
+                            # if instr.kind == "inst" and instr.is_viable_uop():
+                            #     # Construct a dummy Component -- input/output mappings are not used
+                            #     part = Component(instr, instr.active_caches)
+                            #     self.write_macro_expansions(
+                            #         instr.name, [part], instr.cache_offset
+                            #     )
+                            # elif instr.kind == "inst" and variable_used(
+                            #     instr.inst, "oparg1"
+                            # ):
+                            #     assert variable_used(
+                            #         instr.inst, "oparg2"
+                            #     ), "Half super-instr?"
+                            #     self.write_super_expansions(instr.name)
                         case parsing.Macro():
                             mac = self.macro_instrs[thing.name]
                             self.write_macro_expansions(
@@ -658,7 +660,7 @@ class Generator(Analyzer):
 
     def write_uop_items(self, make_text: typing.Callable[[str, int], str]) -> None:
         """Write '#define XXX NNN' for each uop"""
-        counter = 300  # TODO: Avoid collision with pseudo instructions
+        counter = 275  # TODO: Avoid collision with pseudo instructions
         seen = set()
 
         def add(name: str) -> None:
@@ -693,10 +695,11 @@ class Generator(Analyzer):
                     # It is sometimes emitted for macros that have a
                     # manual translation in translate_bytecode_to_trace()
                     # in Python/optimizer.c.
-                    self.note(
-                        f"Part {part.instr.name} of {name} is not a viable uop",
-                        part.instr.inst,
-                    )
+                    if len(parts) > 1 or part.instr.name != "__" + name or True:
+                        self.note(
+                            f"Part {part.instr.name} of {name} is not a viable uop",
+                            part.instr.inst,
+                        )
                     return
                 if not part.active_caches:
                     if part.instr.name == "_SET_IP":
@@ -799,9 +802,10 @@ class Generator(Analyzer):
                     case OverriddenInstructionPlaceHolder():
                         self.write_overridden_instr_place_holder(thing)
                     case parsing.InstDef():
-                        if thing.kind != "op":
-                            n_instrs += 1
-                            self.write_instr(self.instrs[thing.name])
+                        pass
+                        # if thing.kind != "op":
+                        #     n_instrs += 1
+                        #     self.write_instr(self.instrs[thing.name])
                     case parsing.Macro():
                         n_macros += 1
                         mac = self.macro_instrs[thing.name]
@@ -834,8 +838,12 @@ class Generator(Analyzer):
                     case OverriddenInstructionPlaceHolder():
                         # TODO: Is this helpful?
                         self.write_overridden_instr_place_holder(thing)
-                    case parsing.InstDef():
+                    case parsing.InstDef(name=name):
+                        if name not in self.instrs:
+                            breakpoint()
+                            continue
                         instr = self.instrs[thing.name]
+                        assert instr.kind == "op"
                         if instr.is_viable_uop():
                             if instr.kind == "op":
                                 n_uops += 1
@@ -849,8 +857,8 @@ class Generator(Analyzer):
                                 if instr.check_eval_breaker:
                                     self.out.emit("CHECK_EVAL_BREAKER();")
                                 self.out.emit("break;")
-                        # elif instr.kind != "op":
-                        #     print(f"NOTE: {thing.name} is not a viable uop")
+                        elif instr.kind != "op":
+                            print(f"NOTE: {thing.name} is not a viable uop")
                     case parsing.Macro():
                         pass
                     case parsing.Pseudo():
@@ -874,15 +882,16 @@ class Generator(Analyzer):
                     case OverriddenInstructionPlaceHolder():
                         pass
                     case parsing.InstDef():
-                        instr = AbstractInstruction(self.instrs[thing.name].inst)
-                        if (
-                            instr.is_viable_uop()
-                            and instr.name not in SPECIALLY_HANDLED_ABSTRACT_INSTR
-                        ):
-                            self.out.emit("")
-                            with self.out.block(f"case {thing.name}:"):
-                                instr.write(self.out, tier=TIER_TWO)
-                                self.out.emit("break;")
+                        pass
+                        # instr = AbstractInstruction(self.instrs[thing.name].inst)
+                        # if (
+                        #     instr.is_viable_uop()
+                        #     and instr.name not in SPECIALLY_HANDLED_ABSTRACT_INSTR
+                        # ):
+                        #     self.out.emit("")
+                        #     with self.out.block(f"case {thing.name}:"):
+                        #         instr.write(self.out, tier=TIER_TWO)
+                        #         self.out.emit("break;")
                     case parsing.Macro():
                         pass
                     case parsing.Pseudo():
@@ -932,6 +941,7 @@ def main() -> None:
     a = Generator(args.input)
 
     a.parse()  # Raises SyntaxError on failure
+    a.desugar()  # inst(X) --> op(__X); macro(X) = __X
     a.analyze()  # Prints messages and sets a.errors on failure
     if a.errors:
         sys.exit(f"Found {a.errors} errors")
