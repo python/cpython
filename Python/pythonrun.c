@@ -1183,7 +1183,7 @@ print_exception(struct exception_print_context *ctx, PyObject *value)
 
     /* grab the type and notes now because value can change below */
     PyObject *type = (PyObject *) Py_TYPE(value);
-    if (PyObject_GetOptionalAttr(value, &_Py_ID(__notes__), &notes) < 0) {
+    if (_PyObject_LookupAttr(value, &_Py_ID(__notes__), &notes) < 0) {
         goto error;
     }
 
