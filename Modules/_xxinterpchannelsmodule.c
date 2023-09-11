@@ -2473,6 +2473,39 @@ PyDoc_STRVAR(channel_send_doc,
 Add the object's data to the channel's queue.");
 
 static PyObject *
+channel_send_buffer(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"cid", "obj", NULL};
+    int64_t cid;
+    struct channel_id_converter_data cid_data = {
+        .module = self,
+    };
+    PyObject *obj;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&O:channel_send", kwlist,
+                                     channel_id_converter, &cid_data, &obj)) {
+        return NULL;
+    }
+    cid = cid_data.cid;
+
+    PyObject *tempobj = PyMemoryView_FromObject(obj);
+    if (tempobj == NULL) {
+        return NULL;
+    }
+
+    int err = _channel_send(&_globals.channels, cid, tempobj);
+    Py_DECREF(tempobj);
+    if (handle_channel_error(err, self, cid)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(channel_send_buffer_doc,
+"channel_send_buffer(cid, obj)\n\
+\n\
+Add the object's buffer to the channel's queue.");
+
+static PyObject *
 channel_recv(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", "default", NULL};
@@ -2660,6 +2693,8 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS, channel_list_interpreters_doc},
     {"send",                      _PyCFunction_CAST(channel_send),
      METH_VARARGS | METH_KEYWORDS, channel_send_doc},
+    {"send_buffer",               _PyCFunction_CAST(channel_send_buffer),
+     METH_VARARGS | METH_KEYWORDS, channel_send_buffer_doc},
     {"recv",                      _PyCFunction_CAST(channel_recv),
      METH_VARARGS | METH_KEYWORDS, channel_recv_doc},
     {"close",                     _PyCFunction_CAST(channel_close),
