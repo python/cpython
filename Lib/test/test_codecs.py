@@ -1808,6 +1808,12 @@ class CodecsModuleTest(unittest.TestCase):
                 pickled_codec_info = pickle.dumps(codec_info)
                 unpickled_codec_info = pickle.loads(pickled_codec_info)
                 self.assertEqual(codec_info, unpickled_codec_info)
+                self.assertEqual(codec_info.name, unpickled_codec_info.name)
+                self.assertEqual(
+                     codec_info.incrementalencoder,
+                     unpickled_codec_info.incrementalencoder
+                )
+                self.assertTrue(unpickled_codec_info._is_text_encoding)
 
         # Test a CodecInfo with _is_text_encoding equal to false.
         codec_info = codecs.lookup('base64')
@@ -1816,6 +1822,13 @@ class CodecsModuleTest(unittest.TestCase):
                 pickled_codec_info = pickle.dumps(codec_info)
                 unpickled_codec_info = pickle.loads(pickled_codec_info)
                 self.assertEqual(codec_info, unpickled_codec_info)
+                self.assertEqual(unpickled_codec_info.name, codec_info.name)
+                self.assertEqual(codec_info.name, unpickled_codec_info.name)
+                self.assertEqual(
+                     codec_info.incrementalencoder,
+                     unpickled_codec_info.incrementalencoder
+                )
+                self.assertFalse(unpickled_codec_info._is_text_encoding)
 
 
 class StreamReaderTest(unittest.TestCase):
