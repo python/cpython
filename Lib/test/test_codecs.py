@@ -1773,7 +1773,7 @@ class CodecsModuleTest(unittest.TestCase):
         self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
 
         # Test a CodecInfo with _is_text_encoding equal to false.
-        orig = codecs.lookup("rot13")
+        orig = codecs.lookup("base64")
         dup = copy.copy(orig)
         self.assertIsNot(dup, orig)
         self.assertEqual(dup, orig)
