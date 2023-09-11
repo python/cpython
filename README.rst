@@ -28,6 +28,7 @@ General Information
 - Issue tracker: https://github.com/python/cpython/issues
 - Documentation: https://docs.python.org
 - Developer's Guide: https://devguide.python.org/
+- Bedevere: https://github.com/python/bedevere
 
 Contributing to CPython
 -----------------------
